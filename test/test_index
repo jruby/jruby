@@ -23,14 +23,13 @@ testFile.rb
 testThread.rb
 testMarshal.rb
 testBackquote.rb
-# (isKindOf fixes) testHash.rb
+testHash.rb
 testSymbol.rb
 testPackUnpack.rb
 testRandom.rb
 testStruct.rb
 testGC.rb
-##testSocket.rb
-# (isKindOf fixes) testJavaSupport.rb
+testJavaSupport.rb
 testDir.rb
 testVisibility.rb
 
