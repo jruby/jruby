@@ -388,6 +388,28 @@ END
         value = Java.java_to_primitive(constant.static_value)
         proxy_class.const_set(constant.name, value)
       }
+      naughty_constants = fields.select {|field|
+        field.static? and field.final? and !JavaUtilities.valid_constant_name?(field.name)
+      }
+
+      class_methods = java_class.java_class_methods.collect { |m| m.name }
+
+      naughty_constants.each do |constant|
+	# Do not add any constants that has same-name class method
+	next if class_methods.detect {|m| m == constant.name }
+
+        proxy_class.class_eval(<<END
+	  def self.#{constant.name}(*args)
+	    result = @java_class.field('#{constant.name}').static_value
+            result = Java.java_to_primitive(result)
+            if result.kind_of?(JavaObject)
+               result = JavaUtilities.wrap(result, result.java_type)
+            end
+            result
+          end
+END
+        );
+      end
     end
 
     def setup_inner_classes(java_class, proxy_class)
