@@ -67,7 +67,7 @@ public class RubyMatchData extends RubyObject {
             return RubyArray.m_newArray(getRuby());
         }
         
-        RubyArray arr = RubyArray.m_newArray(getRuby());
+        RubyArray arr = RubyArray.m_newArray(getRuby(), 0);
         for (long i = beg; i < beg + len; i++) {
             arr.push(group(i));
         }
@@ -107,29 +107,29 @@ public class RubyMatchData extends RubyObject {
      */
     public RubyObject m_aref(RubyObject[] args) {
         RubyObject result = null;
-        if (args.length == 2) {
-            long beg = ((RubyFixnum)args[0]).getValue();
-            long len = ((RubyFixnum)args[1]).getValue();
+        int argc = argCount(args, 1, 2);
+        if (argc == 2) {
+            long beg = RubyNumeric.fix2long(args[0]);
+            long len = RubyNumeric.fix2long(args[1]);
             if (beg < 0) {
                 beg += size();
             }
             return subseq(beg, len);
         }
-        if (args.length == 1) {
-            if (args[0] instanceof RubyFixnum) {
-                return group(((RubyFixnum)args[0]).getValue());
-            }
-            if (args[0] instanceof RubyBignum) {
-                throw new RubyIndexException("index too big");
-            }
-            if (args[0] instanceof RubyRange) {
-                long[] begLength = ((RubyRange)args[0]).getBeginLength(size());
-                if (begLength != null) {
-                    return subseq(begLength[0], begLength[1]);
-                }
-            }
+        if (args[0] instanceof RubyFixnum) {
+            return group(RubyNumeric.fix2long(args[0]));
         }
-        return getRuby().getNil();
+        if (args[0] instanceof RubyBignum) {
+            throw new RubyIndexException("index too big");
+        }
+        if (args[0] instanceof RubyRange) {
+            long[] begLen = ((RubyRange)args[0]).getBeginLength(size(), true, false);
+            if (begLen != null) {
+                return getRuby().getNil();
+            }
+            return subseq(begLen[0], begLen[1]);
+        }
+        return group(RubyNumeric.num2long(args[0]));
     }
     
     /** match_begin

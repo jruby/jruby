@@ -96,6 +96,16 @@ public class RubyString extends RubyObject {
         return c >= 0x20 && c <= 0x7E;
     }
     
+    /** rb_obj_as_string
+     *
+     */
+    public static RubyString objAsString(Ruby ruby, RubyObject obj) {
+        if (obj instanceof RubyString) {
+            return (RubyString)obj;
+        }
+        return (RubyString)obj.funcall(ruby.intern("to_s"));
+    }
+    
     /** rb_str_cmp
      *
      */
@@ -701,8 +711,8 @@ public class RubyString extends RubyObject {
             int len = RubyNumeric.fix2int(args[1]);
             return substr(beg, len);
         }
-        if (args[0] instanceof RubyFixnum) { // RubyNumeric?
-            int idx = RubyNumeric.fix2int(args[0]); // num2int?
+        if (args[0] instanceof RubyFixnum) {
+            int idx = RubyNumeric.fix2int(args[0]);
             if (idx < 0) {
                 idx += getValue().length();
             }
@@ -723,7 +733,21 @@ public class RubyString extends RubyObject {
             }
             return getRuby().getNil();
         }
-        throw new RubyTypeException("wrong argument type");
+        if (args[0] instanceof RubyRange) {
+            long[] begLen = ((RubyRange)args[0]).getBeginLength(getValue().length(), true, false);
+            if (begLen == null) {
+                return getRuby().getNil();
+            }
+            return substr((int)begLen[0], (int)begLen[1]);
+        }
+        int idx = (int)RubyNumeric.num2long(args[0]);
+        if (idx < 0) {
+            idx += getValue().length();
+        }
+        if (idx < 0 || idx >= getValue().length()) {
+            return getRuby().getNil();
+        }
+        return new RubyFixnum(getRuby(), getValue().charAt(idx));
     }
     
     /** rb_str_aset, rb_str_aset_m
@@ -779,7 +803,7 @@ public class RubyString extends RubyObject {
             return args[1];
         }
         if (args[0] instanceof RubyRange) {
-            long[] idxs = ((RubyRange)args[0]).getBeginLength(getValue().length());
+            long[] idxs = ((RubyRange)args[0]).getBeginLength(getValue().length(), false, true);
             replace((int)idxs[0], (int)idxs[1], stringValue(args[1]));
             return args[1];
         }
@@ -973,7 +997,7 @@ public class RubyString extends RubyObject {
                 return RubyArray.m_newArray(getRuby(), m_dup());
             }
         }
-        RubyArray result = RubyArray.m_create(getRuby(), new RubyObject[0]);
+        RubyArray result = RubyArray.m_newArray(getRuby(), 0);
         int pos = 0;
         int beg = 0;
         int hits = 0;
@@ -1036,9 +1060,9 @@ public class RubyString extends RubyObject {
             while (pat.m_search(this, start) != -1) {
                 RubyMatchData md = (RubyMatchData)getRuby().getBackRef();
                 if (md.size() == 1) {
-                    ary.push(md.group(0));
+                    ary.m_push(md.group(0));
                 } else {
-                    ary.push(md.subseq(1, md.size()));
+                    ary.m_push(md.subseq(1, md.size()));
                 }
                 if (md.matchEndPosition() == md.matchStartPosition()) {
                     start++;
@@ -1479,7 +1503,7 @@ public class RubyString extends RubyObject {
         if (sep == null) {
             sep = "(?:\\n|\\r\\n?)";
         } else if (sep.length() == 0) {
-            sep = "[\\n\\r]+";
+            sep = "(?:\\n|\\r\\n?){2,}";
         }
         RubyRegexp pat = RubyRegexp.m_newRegexp(getRuby(), ".*?" + sep,
                                                 RubyRegexp.RE_OPTION_MULTILINE);

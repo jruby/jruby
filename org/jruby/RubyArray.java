@@ -40,17 +40,28 @@ import org.jruby.util.*;
  * @author  jpetersen
  */
 public class RubyArray extends RubyObject {
-    private RubyPointer list;
+    private ArrayList list;
     private boolean tmpLock;
 
     public RubyArray(Ruby ruby) {
-        this(ruby, null);
+        this(ruby, new ArrayList());
     }
 
     public RubyArray(Ruby ruby, List array) {
         super(ruby, ruby.getRubyClass("Array"));
         
-        this.list = new RubyPointer(new ArrayList(array));
+        this.list = new ArrayList(array);
+    }
+    
+    /** Getter for property list.
+     * @return Value of property list.
+     */
+    public List getList() {
+        return list;
+    }
+    
+    public RubyObject[] toJavaArray() {
+        return (RubyObject[])list.toArray(new RubyObject[length()]);
     }
     
     /** Getter for property tmpLock.
@@ -91,19 +102,18 @@ public class RubyArray extends RubyObject {
      */
     public void store(long idx, RubyObject value) {
         modify();
-
         if (idx < 0) {
-            idx += list.size();
+            idx += length();
             if (idx < 0) {
-                throw new RubyIndexException("index " + (idx - list.size()) + " out of array");
+                throw new RubyIndexException("index " + (idx - length()) + " out of array");
             }
-        } else if (idx > list.size()) {
-            // list.ensureCapacity((int)idx + 1);
-            for (int i = list.size(); i < idx; i++) {
+        } else if (idx > length()) {
+            list.ensureCapacity((int)idx + 1);
+            for (int i = length(); i < idx; i++) {
                 list.add(getRuby().getNil());
             }
         }
-        if (idx == list.size()) {
+        if (idx == length()) {
             list.add(value);
         } else {
             list.set((int)idx, value);
@@ -115,15 +125,15 @@ public class RubyArray extends RubyObject {
      *
      */
     public RubyObject entry(long offset) {
-        if (list.size() == 0) {
+        if (length() == 0) {
             return getRuby().getNil();
         }
         
         if (offset < 0) {
-            offset += list.size();
+            offset += length();
         }
         
-        if (offset < 0 || list.size() <= offset) {
+        if (offset < 0 || length() <= offset) {
             return getRuby().getNil();
         }
         return (RubyObject)list.get((int)offset);
@@ -151,22 +161,22 @@ public class RubyArray extends RubyObject {
     /** rb_ary_subseq
      *
      */
-    public RubyArray subseq(long beg, long len) {
-        /*if (beg > array.size()) {
+    public RubyObject subseq(long beg, long len) {
+        if (beg > length()) {
             return getRuby().getNil();
-        }*/
-        /* if (beg < 0 || len < 0) {
+        }
+        if (beg < 0 || len < 0) {
             return getRuby().getNil();
-        }*/
+        }
         
-        if (beg + len > list.size()) {
-            len = list.size() - beg;
+        if (beg + len > length()) {
+            len = length() - beg;
         }
         if (len < 0) {
             len = 0;
         }
         if (len == 0) {
-            return m_newArray(getRuby());
+            return m_newArray(getRuby(), 0);
         }
         
         RubyArray ary2 = m_newArray(getRuby(), list.subList((int)beg, (int)(len + beg)));
@@ -174,6 +184,55 @@ public class RubyArray extends RubyObject {
         return ary2;
     }
     
+    /** rb_ary_replace
+     *
+     */
+    public void replace(long beg, long len, RubyObject repl) {
+        if (len < 0) {
+            throw new RubyIndexException("Negative array length: " + len);
+        }
+        if (beg < 0) {
+            beg += length();
+        }
+        if (beg < 0) {
+            throw new RubyIndexException("Index out of bounds: " + beg);
+        }
+
+        modify();
+
+        for (int i = 0; beg < length() && i < len; i++) {
+            list.remove((int)beg);
+        }
+        if (beg > length()) {
+            list.ensureCapacity((int)beg + 1);
+            for (int i = length(); i < beg; i++) {
+                list.add(getRuby().getNil());
+            }
+        }
+        if (repl instanceof RubyArray) {
+            List repList = ((RubyArray)repl).getList();
+            list.ensureCapacity(length() + repList.size());
+            list.addAll((int)beg, repList);
+        } else if (!repl.isNil()) {
+            list.add((int)beg, repl);
+        }
+    }
+    
+    /** to_ary
+     *
+     */
+    public static RubyArray arrayValue(RubyObject other) {
+        if (other instanceof RubyArray) {
+            return (RubyArray)other;
+        } else {
+            try {
+                return (RubyArray)other.convertType(RubyArray.class, "Array", "to_ary");
+            } catch (Exception ex) {
+                throw new RubyArgumentException("can't convert arg to Array: " + ex.getMessage());
+            }
+        }
+    }
+
     //
     // Methods of the Array Class (rb_ary_*):
     //
@@ -244,24 +303,24 @@ public class RubyArray extends RubyObject {
     public RubyArray m_push(RubyObject[] items) {
         // Performance
         int length = items.length;
-        
-        if (items.length == 0) {
+
+        if (length == 0) {
             throw new RubyArgumentException("wrong # of arguments(at least 1)");
         }
-        
         modify();
-        
+        boolean taint = false;
         for (int i = 0; i < length; i++) {
+            taint |= items[i].isTaint();
             list.add(items[i]);
         }
+        setTaint(isTaint() || taint);
         return this;
     }
     
     public RubyArray m_push(RubyObject value) {
         modify();
-        
         list.add(value);
-        
+        infectObject(value);
         return this;
     }
 
@@ -270,10 +329,10 @@ public class RubyArray extends RubyObject {
      */
     public RubyObject m_pop() {
         modify();
-        if (list.size() == 0) {
+        if (length() == 0) {
             return getRuby().getNil();
         }
-        return (RubyObject)list.remove(list.size() - 1);
+        return (RubyObject)list.remove(length() - 1);
     }
     
     /** rb_ary_shift
@@ -281,7 +340,7 @@ public class RubyArray extends RubyObject {
      */
     public RubyObject m_shift() {
         modify();
-        if (list.size() == 0) {
+        if (length() == 0) {
             return getRuby().getNil();
         }
         
@@ -296,8 +355,12 @@ public class RubyArray extends RubyObject {
             throw new RubyArgumentException("wrong # of arguments(at least 1)");
         }
         modify();
-        list.addAll(0, Arrays.asList(items));
-                
+        boolean taint = false;
+        for (int i = 0; i < items.length; i++) {
+            taint |= items[i].isTaint();
+            list.add(i, items[i]);
+        }
+        setTaint(isTaint() || taint);
         return this;
     }
     
@@ -323,63 +386,85 @@ public class RubyArray extends RubyObject {
      *
      */
     public RubyObject m_initialize(RubyObject[] args) {
-        if (args.length < 2) {
-            return this;
-        }
-        
-        RubyFixnum size = (RubyFixnum)args[0];
+        int argc = argCount(args, 1, 2);
+        long len = RubyNumeric.fix2long(args[0]);
         
         modify();
         
-        long len = size.getValue();
         if (len < 0) {
             throw new RubyArgumentException("negative array size");
         }
         if (len > Integer.MAX_VALUE) {
             throw new RubyArgumentException("array size too big");
         }
-        Collections.fill(list, args[1]);
-        for (int i = list.size(); i < len; i++) {
-            list.add(args[1]);
+        list = new ArrayList((int)len);
+        if (len > 0) {
+            RubyObject obj = (argc == 2) ? args[1] : (RubyObject)getRuby().getNil();
+            Collections.fill(list, obj);
         }
         return this;
     }
 
     public RubyObject m_dup() {
-      return m_slice(new RubyObject[] { new RubyFixnum(getRuby(), 0), m_length() });
+        return m_aref(new RubyObject[] { RubyFixnum.zero(getRuby()), m_length() });
     }
 
     /** rb_ary_aref
      *
      */
-    public RubyObject m_slice(RubyObject[] args) {
-        if (args.length == 2) {
-            long beg = ((RubyFixnum)args[0]).getValue();
-            long len = ((RubyFixnum)args[1]).getValue();
+    public RubyObject m_aref(RubyObject[] args) {
+        int argc = argCount(args, 1, 2);
+        if (argc == 2) {
+            long beg = RubyNumeric.fix2long(args[0]);
+            long len = RubyNumeric.fix2long(args[1]);
             if (beg < 0) {
-                beg += list.size();
+                beg += length();
             }
             return subseq(beg, len);
         }
-        if (args.length == 1) {
-            if (args[0] instanceof RubyFixnum) {
-                return entry(((RubyFixnum)args[0]).getValue());
-            }
-            if (args[0] instanceof RubyBignum) {
-                throw new RubyIndexException("index too big");
-            }
-            if (args[0] instanceof RubyRange) {
-                long[] begLength = ((RubyRange)args[0]).getBeginLength(length());
-                if (begLength == null) {
-                    return getRuby().getNil();
-                } else {
-                    return subseq(begLength[0], begLength[1]);
-                }
-            }
+        if (args[0] instanceof RubyFixnum) {
+            return entry(RubyNumeric.fix2long(args[0]));
         }
-        return getRuby().getNil();
+        if (args[0] instanceof RubyBignum) {
+            throw new RubyIndexException("index too big");
+        }
+        if (args[0] instanceof RubyRange) {
+            long[] begLen = ((RubyRange)args[0]).getBeginLength(length(), true, false);
+            if (begLen == null) {
+                return getRuby().getNil();
+            }
+            return subseq(begLen[0], begLen[1]);
+        }
+        return entry(RubyNumeric.num2long(args[0]));
     }
     
+    /** rb_ary_aset
+     *
+     */
+    public RubyObject m_aset(RubyObject[] args) {
+        int argc = argCount(args, 2, 3);
+        if (argc == 3) {
+            long beg = RubyNumeric.fix2long(args[0]);
+            long len = RubyNumeric.fix2long(args[1]);
+            replace(beg, len, args[2]);
+            return args[2];
+        }
+        if (args[0] instanceof RubyFixnum) {
+            store(RubyNumeric.fix2long(args[0]), args[1]);
+            return args[1];
+        }
+        if (args[0] instanceof RubyRange) {
+            long[] begLen = ((RubyRange)args[0]).getBeginLength(length(), false, true);
+            replace(begLen[0], begLen[1], args[1]);
+            return args[1];
+        }
+        if (args[0] instanceof RubyBignum) {
+            throw new RubyIndexException("Index too large");
+        }
+        store(RubyNumeric.num2long(args[0]), args[1]);
+        return args[1];
+    }
+
     /** rb_ary_at
      *
      */
@@ -391,8 +476,10 @@ public class RubyArray extends RubyObject {
      *
      */
     public RubyArray m_concat(RubyObject obj) {
-        // obj.toArray();
-        
+        modify();
+        RubyArray other = arrayValue(obj);
+        list.addAll(other.getList());
+        infectObject(other);
         return this;
     }
     
@@ -401,31 +488,204 @@ public class RubyArray extends RubyObject {
      */
     public RubyString m_inspect() {
         // HACK +++
-        StringBuffer sb = new StringBuffer(100);
-        sb.append("[");
+        if (length() == 0) {
+            return RubyString.m_newString(getRuby(), "[]");
+        }
+        RubyString result = RubyString.m_newString(getRuby(), "[");
         
         // Performance
         int length = length();
         for (int i = 0; i < length; i++)  {
             if (i > 0) {
-                sb.append(", ");
+                result.m_append(RubyString.m_newString(getRuby(), ", "));
             }
-            sb.append(((RubyString)entry(i).funcall(getRuby().intern("inspect"))).getValue());
+            result.m_append(entry(i).funcall(getRuby().intern("inspect")));
         }
-        sb.append("]");
-        return RubyString.m_newString(getRuby(), sb.toString());
+        result.m_cat("]");
+        return result;
         // HACK ---
     }
+
+    /** rb_ary_first
+     *
+     */
+    public RubyObject m_first() {
+        if (length() == 0) {
+            return getRuby().getNil();
+        }
+        return entry(0);
+    }
+
+    /** rb_ary_last
+     *
+     */
+    public RubyObject m_last() {
+        if (length() == 0) {
+            return getRuby().getNil();
+        }
+        return entry(length() - 1);
+    }
     
+    /** rb_ary_each
+     *
+     */
+    public RubyObject m_each() {
+        for (int i = 0; i < length(); i++) {
+            getRuby().yield(entry(i));
+        }
+        return this;
+    }
     
+    /** rb_ary_each_index
+     *
+     */
+    public RubyObject m_each_index() {
+        for (int i = 0; i < length(); i++) {
+            getRuby().yield(RubyFixnum.m_newFixnum(getRuby(), i));
+        }
+        return this;
+    }
+    
+    /** rb_ary_reverse_each
+     *
+     */
+    public RubyObject m_reverse_each() {
+        for (long i = length(); i > 0; i--) {
+            getRuby().yield(entry(i-1));
+        }
+        return this;
+    }
+    
+    /** rb_ary_join
+     *
+     */
+    RubyString join(RubyString sep) {
+        if (length() == 0) {
+            RubyString.m_newString(getRuby(), "");
+        }
+        StringBuffer sbuf = new StringBuffer();
+        boolean taint = isTaint() || sep.isTaint();
+        RubyString str;
+        RubyObject tmp = entry(0);
+        taint |= tmp.isTaint();
+        if (tmp instanceof RubyString) {
+            str = (RubyString)tmp.m_dup();
+        } else if (tmp instanceof RubyArray) {
+            str = (RubyString)((RubyArray)tmp).join(sep);
+        } else {
+            str = RubyString.objAsString(getRuby(), tmp);
+        }
+        for (long i = 1; i < length(); i++) {
+            tmp = entry(i);
+            taint |= tmp.isTaint();
+            if (tmp instanceof RubyArray) {
+                tmp = ((RubyArray)tmp).join(sep);
+            } else if (!(tmp instanceof RubyString)) {
+                tmp = RubyString.objAsString(getRuby(), tmp);
+            }
+            str.m_append(sep.op_plus(tmp));
+        }
+        str.setTaint(taint);
+        return str;
+    }
+    
+    /** rb_ary_join_m
+     *
+     */
+    public RubyString m_join(RubyObject[] args) {
+        int argc = argCount(args, 0, 1);
+        RubyObject sep = (argc == 1)  ? args[0] : getRuby().getGlobalVar("$,");
+        return join(sep.isNil() ? RubyString.m_newString(getRuby(), "") 
+                                : RubyString.stringValue(sep));
+    }
+    
+    /** rb_ary_to_s
+     *
+     */
+    public RubyString m_to_s() {
+        RubyObject sep = getRuby().getGlobalVar("$,");
+        return join(sep.isNil() ? RubyString.m_newString(getRuby(), "") 
+                                : RubyString.stringValue(sep));
+    }
+    
+    /** rb_ary_to_a
+     *
+     */
+    public RubyArray m_to_a() {
+        return this;
+    }
+    
+    /** rb_ary_equal
+     *
+     */
+    public RubyBoolean m_equal(RubyObject obj) {
+        if (!(obj instanceof RubyArray)) {
+            return getRuby().getFalse();
+        }
+        RubyArray ary = (RubyArray)obj;
+        if (length() != ary.length()) {
+            return getRuby().getFalse();
+        }
+        RubyId equals = getRuby().intern("==");
+        for (long i = 0; i < length(); i++) {
+            RubyBoolean result = (RubyBoolean)entry(i).funcall(equals, ary.entry(i));
+            if (result.isFalse()) {
+                return result;
+            }
+        }
+        return getRuby().getTrue();
+    }
+    
+    /** rb_ary_eql
+     *
+     */
+    public RubyBoolean m_eql(RubyObject obj) {
+        if (!(obj instanceof RubyArray)) {
+            return getRuby().getFalse();
+        }
+        RubyArray ary = (RubyArray)obj;
+        if (length() != ary.length()) {
+            return getRuby().getFalse();
+        }
+        RubyId equals = getRuby().intern("eql?");
+        for (long i = 0; i < length(); i++) {
+            RubyBoolean result = (RubyBoolean)entry(i).funcall(equals, ary.entry(i));
+            if (result.isFalse()) {
+                return result;
+            }
+        }
+        return getRuby().getTrue();
+    }
+    
+    /** rb_ary_compact_bang
+     *
+     */
+    public RubyObject m_compact_bang() {
+        modify();
+        boolean changed = false;
+        for (int i = 0; i < length(); i++) {
+            if (entry(i).isNil()) {
+                list.remove(i);
+                changed = true;
+            }
+        }
+        return changed ? (RubyObject)this : (RubyObject)getRuby().getNil();
+    }
+
+    /** rb_ary_compact
+     *
+     */
+    public RubyObject m_compact() {
+        RubyArray ary = (RubyArray)m_dup();
+        return ary.m_compact_bang();
+    }
+
     /** rb_ary_sort
      *
      */
     public RubyArray m_sort() {
         RubyArray rubyArray = (RubyArray)m_dup();
-        
         rubyArray.m_sort_bang();
-        
         return rubyArray;
     }
     
@@ -436,53 +696,44 @@ public class RubyArray extends RubyObject {
         if (length() <= 1) {
             return getRuby().getNil();
         }
-        
         modify();
-        
         setTmpLock(true);
-        
-        Comparator blockComparator = new Comparator() {
-            public int compare(Object o1, Object o2) {
-                RubyObject result = getRuby().yield(RubyArray.m_newArray(getRuby(), 
-                                                    (RubyObject)o1, (RubyObject)o2));
-                return (int)((RubyNumeric)result).getLongValue();
-            }
-            
-            public boolean equals(Object other) {
-                return this == other;
-            }
-        };
-        
-        Comparator defaultComparator = new Comparator() {
-            public int compare(Object o1, Object o2) {
-                if (o1 instanceof RubyFixnum && o2 instanceof RubyFixnum) {
-                    return (int)(((RubyFixnum)o1).getLongValue() - ((RubyFixnum)o2).getLongValue());
-                }
-                
-                if (o1 instanceof RubyString && o2 instanceof RubyString) {
-                    return (int)((RubyString)o1).op_cmp((RubyObject)o2).getLongValue();
-                }
-                
-                return (int)((RubyFixnum)((RubyObject)o1).funcall(getRuby().intern("<=>"), (RubyObject)o2)).getLongValue();
-            }
-            
-            public boolean equals(Object other) {
-                return this == other;
-            }
-        };
-        
-        Collections.sort(list, getRuby().isBlockGiven() ? blockComparator : 
-                                                          defaultComparator);
-        
+        Collections.sort(getList(), getRuby().isBlockGiven()
+                                    ? (Comparator)new BlockComparator()
+                                    : (Comparator)new DefaultComparator());
         setTmpLock(false);
-        
         return this;
     }
-    
-    /** Getter for property list.
-     * @return Value of property list.
-     */
-    public RubyPointer getList() {
-        return list;
+
+    class BlockComparator implements Comparator {
+        public int compare(Object o1, Object o2) {
+            RubyObject result = getRuby().yield(RubyArray.m_newArray(getRuby(), 
+                                                (RubyObject)o1, (RubyObject)o2));
+            return (int)((RubyNumeric)result).getLongValue();
+        }
+        
+        public boolean equals(Object other) {
+            return this == other;
+        }
+    }
+
+    class DefaultComparator implements Comparator {
+        public int compare(Object o1, Object o2) {
+            RubyObject obj1 = (RubyObject)o1;
+            RubyObject obj2 = (RubyObject)o2;
+            if (o1 instanceof RubyFixnum && o2 instanceof RubyFixnum) {
+                return (int)(RubyNumeric.fix2long(obj1) - RubyNumeric.fix2long(obj2));
+            }
+            
+            if (o1 instanceof RubyString && o2 instanceof RubyString) {
+                return RubyNumeric.fix2int(((RubyString)o1).op_cmp((RubyObject)o2));
+            }
+            
+            return RubyNumeric.fix2int(obj1.funcall(getRuby().intern("<=>"), obj2));
+        }
+        
+        public boolean equals(Object other) {
+            return this == other;
+        }
     }
 }

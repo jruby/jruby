@@ -50,24 +50,23 @@ public class RbArray {
         arrayClass.defineMethod("initialize", getRestArgsMethod("m_initialize"));
      
         arrayClass.defineMethod("inspect", getMethod("m_inspect"));
-//        rb_define_method(rb_cArray, "to_s", rb_ary_to_s, 0);
-//        rb_define_method(rb_cArray, "inspect", rb_ary_inspect, 0);
-//        rb_define_method(rb_cArray, "to_a", rb_ary_to_a, 0);
-//        rb_define_method(rb_cArray, "to_ary", rb_ary_to_a, 0);
+        arrayClass.defineMethod("to_s", getMethod("m_to_s"));
+        arrayClass.defineMethod("to_a", getMethod("m_to_a"));
+        arrayClass.defineMethod("to_ary", getMethod("m_to_a"));
         arrayClass.defineMethod("frozen?", getMethod("m_frozen"));
 
-//        rb_define_method(rb_cArray, "==", rb_ary_equal, 1);
-//        rb_define_method(rb_cArray, "eql?", rb_ary_eql, 1);
+        arrayClass.defineMethod("==", getMethod("m_equal", RubyObject.class));
+        arrayClass.defineMethod("eql?", getMethod("m_eql", RubyObject.class));
 //        rb_define_method(rb_cArray, "hash", rb_ary_hash, 0);
-//        rb_define_method(rb_cArray, "===", rb_ary_equal, 1);
+        arrayClass.defineMethod("===", getMethod("m_equal", RubyObject.class));
 
-        arrayClass.defineMethod("[]", getRestArgsMethod("m_slice"));
-//        rb_define_method(rb_cArray, "[]=", rb_ary_aset, -1);
+        arrayClass.defineMethod("[]", getRestArgsMethod("m_aref"));
+        arrayClass.defineMethod("[]=", getRestArgsMethod("m_aset"));
         arrayClass.defineMethod("at", getMethod("m_at", RubyFixnum.class));
 
-//        rb_define_method(rb_cArray, "first", rb_ary_first, 0);
-//        rb_define_method(rb_cArray, "last", rb_ary_last, 0);
-//        rb_define_method(rb_cArray, "concat", rb_ary_concat, 1);
+        arrayClass.defineMethod("first", getMethod("m_first"));
+        arrayClass.defineMethod("last", getMethod("m_last"));
+        arrayClass.defineMethod("concat", getMethod("m_concat", RubyObject.class));
 
         arrayClass.defineMethod("<<", getMethod("m_push", RubyObject.class));
         arrayClass.defineMethod("push", getRestArgsMethod("m_push"));
@@ -75,9 +74,9 @@ public class RbArray {
     
         arrayClass.defineMethod("shift", getMethod("m_shift"));
         arrayClass.defineMethod("unshift", getRestArgsMethod("m_unshift"));
-//        rb_define_method(rb_cArray, "each", rb_ary_each, 0);
-//        rb_define_method(rb_cArray, "each_index", rb_ary_each_index, 0);
-//        rb_define_method(rb_cArray, "reverse_each", rb_ary_reverse_each, 0);
+        arrayClass.defineMethod("each", getMethod("m_each"));
+        arrayClass.defineMethod("each_index", getMethod("m_each_index"));
+        arrayClass.defineMethod("reverse_each", getMethod("m_reverse_each"));
 
         arrayClass.defineMethod("length", getMethod("m_length"));
         arrayClass.defineMethod("size", getMethod("m_length"));
@@ -87,7 +86,7 @@ public class RbArray {
 //        rb_define_method(rb_cArray, "indexes", rb_ary_indexes, -1);
 //        rb_define_method(rb_cArray, "indices", rb_ary_indexes, -1);
 //        rb_define_method(rb_cArray, "clone", rb_ary_clone, 0);
-//        rb_define_method(rb_cArray, "join", rb_ary_join_m, -1);
+        arrayClass.defineMethod("join", getRestArgsMethod("m_join"));
 //        rb_define_method(rb_cArray, "reverse", rb_ary_reverse_m, 0);
 //        rb_define_method(rb_cArray, "reverse!", rb_ary_reverse_bang, 0);
 
@@ -110,7 +109,7 @@ public class RbArray {
     
 //        rb_define_method(rb_cArray, "<=>", rb_ary_cmp, 1);
 
-        arrayClass.defineMethod("slice", getRestArgsMethod("m_slice"));
+        arrayClass.defineMethod("slice", getRestArgsMethod("m_aref"));
 //        rb_define_method(rb_cArray, "slice!", rb_ary_slice_bang, -1);
 
 //        rb_define_method(rb_cArray, "assoc", rb_ary_assoc, 1);
@@ -125,8 +124,8 @@ public class RbArray {
 
 //        rb_define_method(rb_cArray, "uniq", rb_ary_uniq, 0);
 //        rb_define_method(rb_cArray, "uniq!", rb_ary_uniq_bang, 0);
-//        rb_define_method(rb_cArray, "compact", rb_ary_compact, 0);
-//        rb_define_method(rb_cArray, "compact!", rb_ary_compact_bang, 0);
+        arrayClass.defineMethod("compact", getMethod("m_compact"));
+        arrayClass.defineMethod("compact!", getMethod("m_compact_bang"));
 //        rb_define_method(rb_cArray, "flatten", rb_ary_flatten, 0);
 //        rb_define_method(rb_cArray, "flatten!", rb_ary_flatten_bang, 0);
 //        rb_define_method(rb_cArray, "nitems", rb_ary_nitems, 0);*/

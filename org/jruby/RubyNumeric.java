@@ -61,6 +61,13 @@ public abstract class RubyNumeric extends RubyObject {
     
     public abstract long getLongValue();
     
+    public static long num2long(RubyObject arg) {
+        if (arg instanceof RubyNumeric) {
+            return ((RubyNumeric)arg).getLongValue();
+        }
+        throw new RubyTypeException("argument is not numeric");
+    }
+        
     public static long fix2long(RubyObject arg) {
         if (arg instanceof RubyFixnum) {
             return ((RubyFixnum)arg).getLongValue();
@@ -76,6 +83,29 @@ public abstract class RubyNumeric extends RubyObject {
         return (int)val;
     }
 
+    /**
+     * Converts a string representation of an integer to the integer value. 
+     * Parsing starts at the beginning of the string (after leading and 
+     * trailing whitespace have been removed), and stops at the end or at the 
+     * first character that can't be part of an integer.  Leading signs are
+     * allowed. If <code>base</code> is zero, strings that begin with '0[xX]',
+     * '0[bB]', or '0' (optionally preceded by a sign) will be treated as hex, 
+     * binary, or octal numbers, respectively.  If a non-zero base is given, 
+     * only the prefix (if any) that is appropriate to that base will be 
+     * parsed correctly.  For example, if the base is zero or 16, the string
+     * "0xff" will be converted to 256, but the base is 10, it will come out 
+     * as zero, since 'x' is not a valid decimal digit.  If the string fails 
+     * to parse as a number, zero is returned.
+     * 
+     * @param ruby  the ruby runtime
+     * @param str   the string to be converted
+     * @param base  the expected base of the number (2, 8, 10 or 16), or 0 
+     *              if the method should determine the base automatically 
+     *              (defaults to 10).
+     * @return  a RubyFixnum or (if necessary) a RubyBignum representing 
+     *          the result of the conversion, which will be zero if the 
+     *          conversion failed.
+     */
     public static RubyObject str2inum(Ruby ruby, RubyString str, int base) {
         StringBuffer sbuf = new StringBuffer(str.getValue().trim());
         if (sbuf.length() == 0) {
@@ -133,13 +163,32 @@ public abstract class RubyNumeric extends RubyObject {
         }
     }
         
+    /**
+     * Converts a string representation of an floating-point number to the 
+     * numeric value.  Parsing starts at the beginning of the string (after 
+     * leading and trailing whitespace have been removed), and stops at the 
+     * end or at the first character that can't be part of a number.  If 
+     * the string fails to parse as a number, 0.0 is returned.
+     * 
+     * @param ruby  the ruby runtime
+     * @param str   the string to be converted
+     * @return  a RubyFloat representing the result of the conversion, which
+     *          will be 0.0 if the conversion failed.
+     */
     public static RubyObject str2d(Ruby ruby, RubyString arg) {
         String str = arg.getValue().trim();
         double d = 0.0;
-        for (int pos = str.length(); pos > 0; pos--) {
+        int pos = str.length();
+        for (int i = 0; i < pos; i++) {
+            if ("0123456789eE+-.".indexOf(str.charAt(i)) == -1) {
+                pos = i + 1;
+                break;
+            }
+        }
+        for (; pos > 0; pos--) {
             try {
                 d = Double.parseDouble(str.substring(0, pos));
-            } catch (Exception ex) {
+            } catch (NumberFormatException ex) {
                 continue;
             }
             break;

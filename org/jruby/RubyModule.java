@@ -1010,7 +1010,7 @@ public class RubyModule extends RubyObject {
             return "false";
         }
         
-        return ((RubyString)getClassPath()).toString();
+        return ((RubyString)getClassPath()).getValue();
     }
     
     
@@ -1139,7 +1139,7 @@ public class RubyModule extends RubyObject {
             }
         }
         
-        Iterator iter = ary.getList();
+        Iterator iter = ary.getList().iterator();
         while (iter.hasNext()) {
             if (getRuby().getNil() == iter.next()) {
                 iter.remove();

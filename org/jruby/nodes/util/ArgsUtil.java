@@ -77,7 +77,7 @@ public class ArgsUtil {
             if (!(args instanceof RubyArray)) {
                 args = RubyArray.m_newArray(ruby, args);
             }
-            result = ((RubyArray)args).getList().toRubyArray();
+            result = ((RubyArray)args).toJavaArray();
             
             ruby.setSourceFile(file);
             ruby.setSourceLine(line);

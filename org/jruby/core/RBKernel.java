@@ -85,10 +85,15 @@ public class RBKernel {
     public static RubyObject m_puts(Ruby ruby, RubyObject recv, RubyObject args[]) {
         if (args.length == 0) {
             System.out.println();
-        } else {
-            for (int i = 0; i < args.length; i++) {
-                if (args[i] != null) {
-                    System.out.println(((RubyString)args[i].funcall(ruby.intern("to_s"))).getValue());
+            return ruby.getNil();
+        }
+        for (int i = 0; i < args.length; i++) {
+            if (args[i] != null) {
+                if (args[i] instanceof RubyArray) {
+                    m_puts(ruby, recv, ((RubyArray)args[i]).toJavaArray());
+                } else {
+                    System.out.println(args[i].isNil() ? "nil" :
+                        ((RubyString)args[i].funcall(ruby.intern("to_s"))).getValue());
                 }
             }
         }
@@ -96,11 +101,19 @@ public class RBKernel {
     }
     
     public static RubyObject m_print(Ruby ruby, RubyObject recv, RubyObject args[]) {
+        RubyObject ofsObj = ruby.getGlobalVar("$,");
+        RubyObject orsObj = ruby.getGlobalVar("$\\");
+        String ofs = ofsObj.isNil() ? "" : RubyString.stringValue(ofsObj).getValue();
         for (int i = 0; i < args.length; i++) {
             if (args[i] != null) {
-                System.out.print(((RubyString)args[i].funcall(ruby.intern("to_s"))).getValue());
+                if (i > 0) {
+                    System.out.print(ofs);
+                }
+                System.out.print(args[i].isNil() ? "nil" :
+                        ((RubyString)args[i].funcall(ruby.intern("to_s"))).getValue());
             }
         }
+        System.out.print(orsObj.isNil() ? "" : RubyString.stringValue(orsObj).getValue());
         return ruby.getNil();
     }
     

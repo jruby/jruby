@@ -150,6 +150,10 @@ public class RubyScope {
             localVars = new ShiftableList(new ArrayList());
             localVars.shiftLeft(index + 1);
         }*/
+        if (localVars == null) {
+            localVars = new RubyPointer(new ArrayList());
+            localVars.inc(index + 1);
+        }
         // HACK ---
         localVars.set(index, newValue);
     }

@@ -55,31 +55,44 @@ public class RubyRange extends RubyObject {
         setInstanceVar("excl", exclusive);
     }
 
-    /**
-     * rb_range_beg_len
+    /** rb_range_beg_len
+     * 
      */
-    public long[] getBeginLength(long length) {
+    public long[] getBeginLength(long length, boolean limit, boolean strict) {
         long begin = ((RubyNumeric)getInstanceVar("begin")).getLongValue();
         long end = ((RubyNumeric)getInstanceVar("end")).getLongValue();
-        end += getInstanceVar("excl").isTrue() ? 0 : 1;
+        boolean excl = getInstanceVar("excl").isTrue();
+        end += excl ? 0 : 1;
 
-        if (begin < 0) {
-            begin += length;
-        }
-
-        if (begin < 0 || begin > length) {
+        if (begin < 0 && (begin += length) < 0) {
+            if (strict) {
+                throw new RubyIndexException("Index out of bounds: " + begin);
+            }
             return null;
         }
 
-        if (end > length) {
+        if (limit && begin > length) {
+            if (strict) {
+                throw new RubyIndexException("Index out of bounds: " + begin);
+            }
+            return null;
+        }
+
+        if (limit && end > length) {
             end = length;
         }
 
-        if (end < 0) {
-            end += length;
+        if (end < 0 && (end += length) < 0) {
+            if (strict) {
+                throw new RubyIndexException("Index out of bounds: " + end);
+            }
+            return null;
         }
 
-        if (end < 0) {
+        if (begin > end) {
+            if (strict) {
+                throw new RubyIndexException("Malformed range");
+            }
             return null;
         }
 

@@ -69,7 +69,7 @@ public class RubyNil extends RubyObject {
      *
      */
     public RubyString m_to_s() {
-        return RubyString.m_newString(getRuby(), "nil");
+        return RubyString.m_newString(getRuby(), "");
     }
     
     /** nil_to_a

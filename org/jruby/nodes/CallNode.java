@@ -66,7 +66,7 @@ public class CallNode extends Node implements AssignableNode {
         } else {
             RubyArray args = (RubyArray)getArgsNode().eval(ruby, self);
             args.push(value);
-            recv.getRubyClass().call(recv, getMId(), args.getList().toRubyArray(), 0);
+            recv.getRubyClass().call(recv, getMId(), args.toJavaArray(), 0);
         }
     }
 }

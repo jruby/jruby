@@ -611,7 +611,7 @@ public class RubyObject {
             }, ary);
             rbClass = rbClass.getSuperClass();
         }
-        //ary.removeNil();
+        ary.m_compact_bang();
         return ary;
     }
     
@@ -620,7 +620,7 @@ public class RubyObject {
         String cname = getRubyClass().toName();
         
         RubyString str = RubyString.m_newString(getRuby(), ""); /* 6:tags 16:addr 1:eos */
-        str.setValue("#<" + cname + ":0x" + this + "x>");
+        str.setValue("#<" + cname + ":0x" + Integer.toHexString(hashCode()) + ">");
         if (isTaint()) {
             str.setTaint(true);
         }
