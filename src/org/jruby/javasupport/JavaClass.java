@@ -267,13 +267,17 @@ public class JavaClass extends RubyObject implements IndexCallable {
     }
 
     public RubyBoolean primitive_p() {
-        return RubyBoolean.newBoolean(getRuntime(), javaClass.isPrimitive());
+        return RubyBoolean.newBoolean(getRuntime(), isPrimitive());
     }
 
     public RubyBoolean assignable_from_p(IRubyObject other) {
+        if (other == getRuntime().getClasses().getNilClass()) {
+            return new RubyBoolean(getRuntime(), ! isPrimitive());
+        }
         if (! (other instanceof JavaClass)) {
             throw new TypeError(getRuntime(), "assignable_from requires JavaClass (" + other.getType() + " given)");
         }
+
         Class otherClass = ((JavaClass) other).getValue();
 
         if (javaClass.isAssignableFrom(otherClass)) {
@@ -298,6 +302,10 @@ public class JavaClass extends RubyObject implements IndexCallable {
             }
         }
         return getRuntime().getFalse();
+    }
+
+    private boolean isPrimitive() {
+        return javaClass.isPrimitive();
     }
 
     public JavaClass component_type() {

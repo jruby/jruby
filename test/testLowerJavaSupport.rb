@@ -213,6 +213,8 @@ if defined? Java
   object_class = Java::JavaClass.for_name("java.lang.Object")
   test_ok(object_class.assignable_from?(string_class))
   test_ok(! string_class.assignable_from?(object_class))
+  test_ok(object_class.assignable_from?(nil.type))
+  test_ok(string_class.assignable_from?(nil.type))
 
   # Assignability, primitives
   long_class = Java::JavaClass.for_name("long")
@@ -221,4 +223,6 @@ if defined? Java
   character_class = Java::JavaClass.for_name("char")
   test_ok(int_class.assignable_from?(character_class))
   test_ok(character_class.assignable_from?(int_class))
+  test_ok(! int_class.assignable_from?(nil.type))
+  test_ok(! character_class.assignable_from?(nil.type))
 end
