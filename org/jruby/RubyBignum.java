@@ -127,6 +127,7 @@ public class RubyBignum extends RubyInteger {
         bignumClass.defineMethod(">=", CallbackFactory.getMethod(RubyBignum.class, "op_ge", RubyObject.class));
         bignumClass.defineMethod("<", CallbackFactory.getMethod(RubyBignum.class, "op_lt", RubyObject.class));
         bignumClass.defineMethod("<=", CallbackFactory.getMethod(RubyBignum.class, "op_le", RubyObject.class));
+        bignumClass.defineMethod("[]", CallbackFactory.getMethod(RubyBignum.class, "aref", RubyInteger.class));
 
         return bignumClass;
     }
@@ -284,6 +285,11 @@ public class RubyBignum extends RubyInteger {
     public RubyBoolean op_le(RubyObject num) {
         RubyNumeric other = numericValue(num);
         return RubyBoolean.newBoolean(getRuby(), compareValue(other) <= 0);
+    }
+
+    public RubyFixnum aref(RubyInteger pos) {
+        boolean isSet = getValue().testBit((int) pos.getLongValue());
+        return RubyFixnum.newFixnum(getRuby(), (isSet ? 1 : 0));
     }
 
     public RubyString to_s() {

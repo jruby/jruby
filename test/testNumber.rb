@@ -16,6 +16,15 @@ test_equal(1, 10000000000000000000000000000000001 & 3)
 test_equal(10000000000000000000000000000000001,
            10000000000000000000000000000000001 & 10000000000000000000000000000000001)
 
+test_equal(0, 0[0])
+test_equal([0,1,1], [3[2], 3[1], 3[0]])
+test_equal([1,1,0], [-2[2], -2[1], -2[0]])
+test_equal(1, -2[1000])
+
+test_equal(1, (2 ** 100)[100])
+test_equal(0, (2 ** 100)[101])
+test_equal(0, (2 ** 100)[0])
+
 test_equal(1, Integer.induced_from(1))
 test_equal(1, Integer.induced_from(1.0))
 test_exception(TypeError) { Integer.induced_from(:hello) }

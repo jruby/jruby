@@ -80,6 +80,7 @@ public class RubyFixnum extends RubyInteger {
         fixnumClass.defineMethod("<=", CallbackFactory.getMethod(RubyFixnum.class, "op_le", RubyObject.class));
         fixnumClass.defineMethod("&", CallbackFactory.getMethod(RubyFixnum.class, "op_and", RubyObject.class));
         fixnumClass.defineMethod("size", CallbackFactory.getMethod(RubyFixnum.class, "size"));
+        fixnumClass.defineMethod("[]", CallbackFactory.getMethod(RubyFixnum.class, "aref", RubyInteger.class));
 
         return fixnumClass;
     }
@@ -326,6 +327,10 @@ public class RubyFixnum extends RubyInteger {
         return newFixnum(64);
     }
 
+    public RubyFixnum aref(RubyInteger pos) {
+        long mask = 1 << pos.getLongValue();
+        return newFixnum((value & mask) == 0 ? 0 : 1);
+    }
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {
         output.write('i');
