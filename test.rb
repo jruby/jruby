@@ -69,12 +69,21 @@ end
 
 # test methods
 
-def testMethod(output)
-    puts output
+def testMethod
     puts "method tested."
+    "some output"
 end
 
-testMethod "some output"
+# def testMethod2
+#     puts "before return."
+#     return "some output"
+#     puts "after return."
+# end
+
+puts testMethod
+puts ""
+# puts testMethod2
+# puts ""
 
 # test classes
 
