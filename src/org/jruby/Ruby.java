@@ -3,10 +3,12 @@
  * Created on 04. Juli 2001, 22:53
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2004
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -77,6 +79,7 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Random;
 import java.util.Stack;
@@ -97,7 +100,7 @@ public final class Ruby {
 
     public final RubyFixnum[] fixnumCache = new RubyFixnum[256];
     public final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable();
-
+    public Hashtable ioHandlers = new Hashtable();
     public long randomSeed = 0;
     public Random random = new Random();
 

@@ -48,7 +48,7 @@ import org.jruby.util.IOModes;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Hashtable;
+import java.lang.ref.WeakReference;
 
 /**
  * 
@@ -130,23 +130,21 @@ public class RubyIO extends RubyObject {
      * On reopen, the fileno's IOHandler gets replaced by a new handler. 
      */
     
-    protected static Hashtable ioHandlers = new Hashtable();
-    
     /*
      * I considered making all callers of this be moved into IOHandlers
      * constructors (since it would be less error prone to forget there).
      * However, reopen() makes doing this a little funky. 
      */
-    public static void registerIOHandler(IOHandler handler) {
-        ioHandlers.put(new Integer(handler.getFileno()), handler);
+    public void registerIOHandler(IOHandler handler) {
+        getRuntime().ioHandlers.put(new Integer(handler.getFileno()), new WeakReference(handler));
     }
     
-    public static void unregisterIOHandler(int fileno) {
-        ioHandlers.remove(new Integer(fileno));
+    public void unregisterIOHandler(int fileno) {
+        getRuntime().ioHandlers.remove(new Integer(fileno));
     }
     
-    public static IOHandler getIOHandlerByFileno(int fileno) {
-        return (IOHandler) ioHandlers.get(new Integer(fileno));
+    public IOHandler getIOHandlerByFileno(int fileno) {
+        return (IOHandler) (((WeakReference) getRuntime().ioHandlers.get(new Integer(fileno))).get());
     }
     
     protected static int fileno = 2;
@@ -894,11 +892,6 @@ public class RubyIO extends RubyObject {
     // by a jruby script (their own fault if they forget).  If an IO 
     // object gets GC'd and it has not been closed yet, then we should 
     // clean up.
-    //
-    // The underlying problem is that IOHandlers are kept track or
-    // by a file descriptor pool.  This means IOHandlers have two
-    // references, so they will not automagically get closed and
-    // removed when an IO object gets reclaimed by GC.
     public void finalize() throws Throwable {
         try {
             if (isOpen() == true) {
