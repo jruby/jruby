@@ -154,7 +154,7 @@ public class RubyObject implements VALUE {
     }
     
     public boolean isTrue() {
-        return false;
+        return true;
     }
     
     public boolean isFalse() {
@@ -371,7 +371,7 @@ public class RubyObject implements VALUE {
      *
      */
     public RubyId toId() {
-        throw new RubyTypeException(m_inspect().getString() + " is not a symbol");
+        throw new RubyTypeException(m_inspect().getValue() + " is not a symbol");
     }
     
     /** rb_convert_type
@@ -631,7 +631,7 @@ public class RubyObject implements VALUE {
         String cname = getRubyClass().toName();
         
         RubyString str = RubyString.m_newString(getRuby(), ""); /* 6:tags 16:addr 1:eos */
-        str.setString("#<" + cname + ":0x" + this + "x>");
+        str.setValue("#<" + cname + ":0x" + this + "x>");
         if (isTaint()) {
             str.setTaint(true);
         }

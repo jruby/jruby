@@ -154,7 +154,7 @@ public abstract class RubyNumeric extends RubyObject {
      *
      */
     public RubyNumeric m_abs() {
-        if (((RubyBoolean)funcall(getRuby().intern("<"), RubyFixnum.m_newFixnum(getRuby(), 0))).isTrue()) {
+        if (funcall(getRuby().intern("<"), RubyFixnum.m_newFixnum(getRuby(), 0)).isTrue()) {
             return (RubyNumeric)funcall(getRuby().intern("-@"));
         } else {
             return this;
@@ -179,7 +179,7 @@ public abstract class RubyNumeric extends RubyObject {
      *
      */
     public RubyObject m_nonzero_p() {
-        if (((RubyBoolean)funcall(getRuby().intern("zero?"))).isTrue()) {
+        if (funcall(getRuby().intern("zero?")).isTrue()) {
             return getRuby().getNil();
         }
         return this;

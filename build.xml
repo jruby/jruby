@@ -1,85 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- Thanks to Benoit Cerrina <b.cerrina@wanadoo.fr> for this buildfile. -->
+<project name="JRuby" basedir="." default="main">
 
-<project basedir="." default="all" name="JRuby">
-    <!--<property name="build.compiler" value="jikes"/>-->
-    <property name="build.compiler" value="modern"/>
-    <!--<property name="build.compiler" value="classic"/>-->
+  <property name="src.dir" value="."/>
+  <property name="build.dir" value="build"/>
+  <property name="jar.file" value="jruby.jar"/>
+  <property name="build.compiler" value="modern"/>
 
-    <property name="build.compiler.fulldepend" value="on"/>
-    <!--<property name="build.compiler.emacs" value="on"/>-->
+  <target name="clean">
+    <delete dir="${build.dir}"/>
+  </target>
 
-    <property name="build.dir" value="build"/>
-    <property name="build.src" value="${build.dir}/src"/>
-    <property name="build.dest" value="${build.dir}/classes"/>
-    <property name="build.docs" value="${build.dir}/docs"/>
-    <property name="build.tars" value="${build.dir}/tars"/>
-    <property name="src.dir" value="."/>
-    <property name="base.dir" value="."/>
+  <target name="compile">
+    <mkdir dir="${build.dir}"/>
+    <javac srcdir="${src.dir}" destdir="${build.dir}" deprecation="true"
+           debug="true" includeantruntime="false">
+      <include name="org/jruby/**/*.java"/>
+      <exclude name="org/jruby/regex/Jakarta*.java"/>
+    </javac>
+  </target>
 
-    <target name="init">
-        <property name="version" value="0.1.8"/>
-        <property name="version.file" value="0_1_8"/>
+  <target name="jar">
+    <jar jarfile="${jar.file}" manifest="jruby.mf" compress="false">
+      <fileset dir="${build.dir}" includes="**/*.class"/>
+    </jar>
+  </target>
 
-        <property name="javadoc.title" value="JRuby"/>
+  <target name="main" depends="compile, jar"
+      description="Compile out-of-date source files and rebuild the jar file"/>
 
-        <mkdir dir="${build.dir}"/>
-        <mkdir dir="${build.src}"/>
-        <mkdir dir="${build.dest}"/>
-        <mkdir dir="${build.docs}"/>
-    </target>
+  <target name="all" depends="clean, compile, jar"
+      description="Recompile all source files and rebuild the jar file"/>
 
-    <target depends="init" name="compile">
-        <javac debug="true" deprecation="true" destdir="${build.dest}" srcdir="${src.dir}"/>
-    </target>
+  <target name="new" depends="all">
+    <delete>
+      <fileset dir="." includes="**/.nbattrs,org/**/*.class"/>
+    </delete>
+  </target>
 
-    <target depends="init,compile," name="bin-gz">
-        <jar basedir="${build.dest}" compress="true" jarfile="${build.dir}/jruby.jar" manifest="${base.dir}/jruby.mf"/>
-
-        <mkdir dir="${build.tars}"/>
-        
-        <copy todir="${build.tars}">
-            <fileset dir="${build.dir}">
-                <include name="jruby.jar"/>
-            </fileset>
-            <fileset dir="${base.dir}">
-                <include name="COPYING"/>
-                <include name="README"/>
-                <include name="test.rb"/>
-                <include name="samples/**/*"/>
-            </fileset>
-        </copy>
-        
-        <tar basedir="${build.tars}" tarfile="${build.dir}/jruby.tar"/>
-
-        <gzip src="${build.dir}/jruby.tar" zipfile="${build.dir}/jruby-${version.file}.tar.gz"/>
-
-        <!--<delete dir="${build.tars}"/>
-        <delete file="${build.dir}/jruby.tar"/>
-        <delete file="${build.dir}/jruby.jar"/> -->
-    </target>
-
-    <target depends="init" name="src-gz">
-        <tar basedir="${base.dir}" tarfile="${build.dir}/jruby-src.tar">
-            <exclude name="${build.dir}/**/*"/>
-            <exclude name="**/*.class"/>
-        </tar>
-
-        <gzip src="${build.dir}/jruby-src.tar" zipfile="${build.dir}/jruby-src-${version.file}.tar.gz"/>
-
-        <!-- <delete file="${build.dir}/jruby-src.tar"/> -->
-    </target>
-
-    <target depends="init" name="javadocs">
-        <javadoc destdir="${build.docs}" doctitle="${javadoc.title}" packagenames="org.jruby.*" public="true" sourcepath="${src.dir}" use="true" version="true" windowtitle="${javadoc.title}"/>
-    </target>
-	
-    <target depends="init,bin-gz,src-gz" description="Build everything." name="all">
-        <echo message="JRuby built."/>
-    </target>
-
-    <target depends="init" description="Clean all build products." name="clean">
-        <delete dir="${build.dir}"/>
-    </target>
 </project>

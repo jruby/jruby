@@ -92,7 +92,7 @@ public abstract class RubyInteger extends RubyNumeric {
     public RubyObject m_times() {
         RubyNumeric i = RubyFixnum.m_newFixnum(getRuby(), 0);
         while (true) {
-            if (((RubyBoolean)i.funcall(getRuby().intern("<"), this)).isFalse()) {
+            if (i.funcall(getRuby().intern("<"), this).isFalse()) {
                 break;
             }
             getRuby().yield(i);
@@ -108,7 +108,7 @@ public abstract class RubyInteger extends RubyNumeric {
     public RubyObject m_upto(RubyNumeric to) {
         RubyNumeric i = this;
         while (true) {
-            if (((RubyBoolean)i.funcall(getRuby().intern(">"), to)).isTrue()) {
+            if (i.funcall(getRuby().intern(">"), to).isTrue()) {
                 break;
             }
             getRuby().yield(i);

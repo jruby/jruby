@@ -118,9 +118,9 @@ public class RubyRange extends RubyObject {
     
     public RubyString m_inspect() {
         String str =
-            ((RubyString)getInstanceVar("begin").funcall(getRuby().intern("to_s"))).getString();
+            ((RubyString)getInstanceVar("begin").funcall(getRuby().intern("to_s"))).getValue();
         String str2 =
-            ((RubyString)getInstanceVar("end").funcall(getRuby().intern("to_s"))).getString();
+            ((RubyString)getInstanceVar("end").funcall(getRuby().intern("to_s"))).getValue();
 
         str += "..";
         if (getInstanceVar("excl").isTrue())

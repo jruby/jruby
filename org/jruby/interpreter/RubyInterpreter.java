@@ -144,7 +144,7 @@ public class RubyInterpreter implements node_type, Scope {
     public RubyObject eval(RubyObject self, NODE n) {
         NODE node = n;
         
-        RubyBoolean cond = null;
+        RubyObject cond = null;
         RubyObject[] args = null;
         RubyObject value = null;
         RubyObject result = null;
@@ -234,7 +234,7 @@ public class RubyInterpreter implements node_type, Scope {
                     
                 case NODE_IF:
                     //                ruby_sourceline = node.nd_line();
-                    cond = (RubyBoolean)eval(self, node.nd_cond());
+                    cond = eval(self, node.nd_cond());
                     if (cond.isTrue()) {
                         node = node.nd_body();
                     } else {
@@ -268,7 +268,7 @@ public class RubyInterpreter implements node_type, Scope {
                                 }
                                 
                                 for (int i = 0; i < ((RubyArray)obj).length(); i++) {
-                                    if (((RubyBoolean)((RubyArray)obj).entry(i)).isTrue()) {
+                                    if (((RubyArray)obj).entry(i).isTrue()) {
                                         node = node.nd_body();
                                         break;
                                     }
@@ -276,7 +276,7 @@ public class RubyInterpreter implements node_type, Scope {
                                 tag = tag.nd_next();
                                 continue;
                             }
-                            if (((RubyBoolean)eval(self, tag.nd_head())).isTrue()) {
+                            if (eval(self, tag.nd_head()).isTrue()) {
                                 node = node.nd_body();
                                 break;
                             }
@@ -313,7 +313,7 @@ public class RubyInterpreter implements node_type, Scope {
                                     obj2 = RubyArray.m_newArray(getRuby(), obj2);
                                 }
                                 for (int i = 0; i < ((RubyArray)obj).length(); i++) {
-                                    RubyBoolean eqq = (RubyBoolean)((RubyArray)obj2).entry(i).funcall(getRuby().intern("==="), obj);
+                                    RubyObject eqq = ((RubyArray)obj2).entry(i).funcall(getRuby().intern("==="), obj);
                                     if (eqq.isTrue()) {
                                         node = node.nd_body();
                                         break;
@@ -322,7 +322,7 @@ public class RubyInterpreter implements node_type, Scope {
                                 tag = tag.nd_next();
                                 continue;
                             }
-                            if (((RubyBoolean)eval(self, tag.nd_head()).funcall(getRuby().intern("==="), obj)).isTrue()) {
+                            if (eval(self, tag.nd_head()).funcall(getRuby().intern("==="), obj).isTrue()) {
                                 node = node.nd_body();
                                 break;
                             }
@@ -500,7 +500,7 @@ public class RubyInterpreter implements node_type, Scope {
         break;*/
                     
                 case NODE_AND:
-                    cond = (RubyBoolean)eval(self, node.nd_1st());
+                    cond = eval(self, node.nd_1st());
                     if (cond.isFalse()) {
                         return cond;
                     }
@@ -508,7 +508,7 @@ public class RubyInterpreter implements node_type, Scope {
                     break;
                     
                 case NODE_OR:
-                    cond = (RubyBoolean)eval(self, node.nd_1st());
+                    cond = eval(self, node.nd_1st());
                     if (cond.isTrue()) {
                         return cond;
                     }
@@ -684,23 +684,23 @@ public class RubyInterpreter implements node_type, Scope {
                     
                     ArrayList argsList = new ArrayList(Arrays.asList(args));
                     argsList.remove(args.length - 1);                    
-                    RubyBoolean val = (RubyBoolean)recv.funcall(getRuby().intern("[]"), (RubyObject[])argsList.toArray(new RubyObject[argsList.size()]));
+                    RubyObject val = recv.funcall(getRuby().intern("[]"), (RubyObject[])argsList.toArray(new RubyObject[argsList.size()]));
                     
                     switch (node.nd_mid().intValue()) {
                         case 0: /* OR */
                             if (val.isTrue()) {
                                 return val;
                             }
-                            val = (RubyBoolean)eval(self, rval);
+                            val = eval(self, rval);
                             break;
                         case 1: /* AND */
                             if (val.isFalse()) {
                                 return val;
                             }
-                            val = (RubyBoolean)eval(self, rval);
+                            val = eval(self, rval);
                             break;
                         default:
-                            val = (RubyBoolean)val.funcall((RubyId)node.nd_mid(), eval(self, rval));
+                            val = val.funcall((RubyId)node.nd_mid(), eval(self, rval));
                     }
                     args[args.length - 1] = val;
                     return recv.funcall(getRuby().intern("[]="), args);
@@ -709,33 +709,33 @@ public class RubyInterpreter implements node_type, Scope {
                     ID id = node.nd_next().nd_vid();
                     
                     recv = eval(self, node.nd_recv());
-                    val = (RubyBoolean)recv.funcall((RubyId)id, (RubyObject[])null);
+                    val = recv.funcall((RubyId)id, (RubyObject[])null);
                     
                     switch (node.nd_next().nd_mid().intValue()) {
                         case 0: /* OR */
                             if (val.isTrue()) {
                                 return val;
                             }
-                            val = (RubyBoolean)eval(self, node.nd_value());
+                            val = eval(self, node.nd_value());
                             break;
                         case 1: /* AND */
                             if (val.isFalse()) {
                                 return val;
                             }
-                            val = (RubyBoolean)eval(self, node.nd_value());
+                            val = eval(self, node.nd_value());
                             break;
                         default:
-                            val = (RubyBoolean)val.funcall((RubyId)node.nd_mid(), eval(self, node.nd_value()));
+                            val = val.funcall((RubyId)node.nd_mid(), eval(self, node.nd_value()));
                     }
                     
                     // HACK +++
-                    val = (RubyBoolean)recv.funcall((RubyId)node.nd_next().nd_aid(), val);
+                    val = recv.funcall((RubyId)node.nd_next().nd_aid(), val);
                     // HACK ---
                     
                     return val;
                     
                 case NODE_OP_ASGN_AND:
-                    cond = (RubyBoolean)eval(self, node.nd_head());
+                    cond = eval(self, node.nd_head());
                     
                     if (cond.isFalse()) {
                         return cond;
@@ -745,7 +745,7 @@ public class RubyInterpreter implements node_type, Scope {
                     break;
                     
                 case NODE_OP_ASGN_OR:
-                    cond = (RubyBoolean)eval(self, node.nd_head());
+                    cond = eval(self, node.nd_head());
                     
                     if ((node.nd_aid() != null && !self.isInstanceVarDefined((RubyId)node.nd_aid())) || cond.isFalse()) {
                         node = node.nd_value();
