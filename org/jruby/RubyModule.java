@@ -728,7 +728,7 @@ public class RubyModule extends RubyObject {
     /** rb_call
      *
      */
-    public RubyObject call(RubyObject recv, String name, RubyObject[] args, int scope) {
+    public final RubyObject call(final RubyObject recv, String name, RubyObject[] args, final int scope) {
         if (args == null) {
             args = new RubyObject[0];
         }
@@ -790,18 +790,10 @@ public class RubyModule extends RubyObject {
     /** rb_call0
      *
      */
-    public RubyObject call0(RubyObject recv, String name, RubyObject[] args, IMethod method, boolean noSuper) {
-        if (args == null) {
-            args = new RubyObject[0];
-        }
-
+    public final RubyObject call0(final RubyObject recv, final String name, final RubyObject[] args, final IMethod method, final boolean noSuper) {
         // ...
-        Ruby ruby = getRuby();
-        if (ruby.getActIter().isPre()) {
-            ruby.getIterStack().push(Iter.ITER_CUR);
-        } else {
-            ruby.getIterStack().push(Iter.ITER_NOT);
-        }
+        ruby.getIterStack().push(ruby.getActIter().isPre() ? Iter.ITER_CUR :
+                                                             Iter.ITER_NOT);
 
         ruby.getFrameStack().push();
         ruby.getActFrame().setLastFunc(name);

@@ -412,7 +412,7 @@ public class RubyObject implements Cloneable {
             EvaluateVisitor.createVisitor(this).eval(n);
     }
 
-    public void callInit(RubyObject[] args) {
+    public final void callInit(final RubyObject[] args) {
         ruby.getIterStack().push(ruby.isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
         funcall("initialize", args);
         ruby.getIterStack().pop();

@@ -782,14 +782,14 @@ public final class Ruby {
     /** Getter for property iter.
      * @return Value of property iter.
      */
-    public IStack getIterStack() {
+    public final IStack getIterStack() {
         return iterStack;
     }
 
     /** Setter for property iter.
      * @param iter New value of property iter.
      */
-    public Iter getActIter() {
+    public final Iter getActIter() {
         return (Iter) getIterStack().peek();
     }
 

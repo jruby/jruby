@@ -31,7 +31,7 @@ package org.jruby.runtime;
  * @author  jpetersen
  * @version $Revision$
  */
-public class Iter {
+public final class Iter {
     public static final Iter ITER_NOT = new Iter("NOT");
     public static final Iter ITER_PRE = new Iter("PRE");
     public static final Iter ITER_CUR = new Iter("CUR");
@@ -42,36 +42,36 @@ public class Iter {
         this.debug = debug;
     }
 
-    public boolean isNot() {
+    public final boolean isNot() {
         return this == ITER_NOT;
     }
 
-    public boolean isPre() {
+    public final boolean isPre() {
         return this == ITER_PRE;
     }
 
-    public boolean isCur() {
+    public final boolean isCur() {
         return this == ITER_CUR;
     }
 
 	/**
      * @see Object#equals(Object)
      */
-    public boolean equals(Object obj) {
+    public final boolean equals(final Object obj) {
         return this == obj;
     }
 
     /**
      * @see Object#hashCode()
      */
-    public int hashCode() {
+    public final int hashCode() {
         return debug.hashCode();
     }
 
     /**
      * @see Object#toString()
      */
-    public String toString() {
+    public final String toString() {
         return debug;
     }
 }

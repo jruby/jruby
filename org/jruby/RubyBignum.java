@@ -216,10 +216,10 @@ public class RubyBignum extends RubyInteger {
         return bigNorm(getRuby(), getValue().remainder(bigIntValue(other)));
     }
 
-    public RubyNumeric op_plus(RubyObject num) {
-        RubyNumeric other = numericValue(num);
+    public final RubyNumeric op_plus(final RubyObject num) {
+        final RubyNumeric other = numericValue(num);
         if (other instanceof RubyFloat) {
-            return RubyFloat.newFloat(getRuby(), getDoubleValue()).op_plus(other);
+            return ((RubyFloat)other).op_plus(this);
         }
         return bigNorm(getRuby(), getValue().add(bigIntValue(other)));
     }

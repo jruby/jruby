@@ -64,8 +64,46 @@ public class RubyFixnum extends RubyInteger {
         fixnumClass.defineMethod("<<", CallbackFactory.getMethod(RubyFixnum.class, "op_lshift", RubyObject.class));
         fixnumClass.defineMethod(">>", CallbackFactory.getMethod(RubyFixnum.class, "op_rshift", RubyObject.class));
 
+        /*
         fixnumClass.defineMethod("+", CallbackFactory.getMethod(RubyFixnum.class, "op_plus", RubyObject.class));
         fixnumClass.defineMethod("-", CallbackFactory.getMethod(RubyFixnum.class, "op_minus", RubyObject.class));
+        */
+        fixnumClass.defineMethod("+", new Callback() {
+            /**
+             * @see org.jruby.runtime.Callback#execute(RubyObject, RubyObject[], Ruby)
+             */
+            public final RubyObject execute(
+                final RubyObject recv,
+                final RubyObject[] args,
+                final Ruby ruby) {
+                return ((RubyFixnum)recv).op_plus(args[0]);
+            }
+
+            /**
+             * @see org.jruby.runtime.Callback#getArity()
+             */
+            public final int getArity() {
+                return 1;
+            }
+        });
+        fixnumClass.defineMethod("-", new Callback() {
+            /**
+             * @see org.jruby.runtime.Callback#execute(RubyObject, RubyObject[], Ruby)
+             */
+            public final RubyObject execute(
+                final RubyObject recv,
+                final RubyObject[] args,
+                final Ruby ruby) {
+                    return ((RubyFixnum)recv).op_minus(args[0]);
+            }
+
+            /**
+             * @see org.jruby.runtime.Callback#getArity()
+             */
+            public final int getArity() {
+                return 1;
+            }
+        });
         fixnumClass.defineMethod("*", CallbackFactory.getMethod(RubyFixnum.class, "op_mul", RubyObject.class));
         fixnumClass.defineMethod("/", CallbackFactory.getMethod(RubyFixnum.class, "op_div", RubyObject.class));
         fixnumClass.defineMethod("%", CallbackFactory.getMethod(RubyFixnum.class, "op_mod", RubyObject.class));
@@ -77,7 +115,25 @@ public class RubyFixnum extends RubyInteger {
         fixnumClass.defineMethod("<=>", CallbackFactory.getMethod(RubyFixnum.class, "op_cmp", RubyObject.class));
         fixnumClass.defineMethod(">", CallbackFactory.getMethod(RubyFixnum.class, "op_gt", RubyObject.class));
         fixnumClass.defineMethod(">=", CallbackFactory.getMethod(RubyFixnum.class, "op_ge", RubyObject.class));
-        fixnumClass.defineMethod("<", CallbackFactory.getMethod(RubyFixnum.class, "op_lt", RubyObject.class));
+        // fixnumClass.defineMethod("<", CallbackFactory.getMethod(RubyFixnum.class, "op_lt", RubyObject.class));
+        fixnumClass.defineMethod("<", new Callback() {
+            /**
+             * @see org.jruby.runtime.Callback#execute(RubyObject, RubyObject[], Ruby)
+             */
+            public final RubyObject execute(
+                final RubyObject recv,
+                final RubyObject[] args,
+                final Ruby ruby) {
+                return ((RubyFixnum)recv).op_lt(args[0]);
+            }
+
+            /**
+             * @see org.jruby.runtime.Callback#getArity()
+             */
+            public final int getArity() {
+                return 1;
+            }
+        });
         fixnumClass.defineMethod("<=", CallbackFactory.getMethod(RubyFixnum.class, "op_le", RubyObject.class));
         fixnumClass.defineMethod("&", CallbackFactory.getMethod(RubyFixnum.class, "op_and", RubyObject.class));
         fixnumClass.defineMethod("|", CallbackFactory.getMethod(RubyFixnum.class, "op_or", RubyInteger.class));
@@ -112,16 +168,15 @@ public class RubyFixnum extends RubyInteger {
         return newFixnum(ruby, -1);
     }
 
-    protected int compareValue(RubyNumeric other) {
+    protected final int compareValue(final RubyNumeric other) {
         if (other instanceof RubyBignum) {
-            return ((RubyBignum) other).compareValue(this) * -1;
+            return -((RubyBignum) other).compareValue(this);
         } else if (other instanceof RubyFloat) {
-            double otherVal = other.getDoubleValue();
-            double thisVal = getDoubleValue();
-            return thisVal > otherVal ? 1 : thisVal < otherVal ? -1 : 0;
+            final double otherVal = other.getDoubleValue();
+            return value > otherVal ? 1 : value < otherVal ? -1 : 0;
         } else {
-            long otherVal = other.getLongValue();
-            return getLongValue() > otherVal ? 1 : getLongValue() < otherVal ? -1 : 0;
+            final long otherVal = other.getLongValue();
+            return value > otherVal ? 1 : value < otherVal ? -1 : 0;
         }
     }
 
@@ -160,15 +215,15 @@ public class RubyFixnum extends RubyInteger {
         return (RubyFixnum) number.convertToType("Fixnum", "to_int", true);
     }
 
-    public RubyNumeric op_plus(RubyObject num) {
-        RubyNumeric other = numericValue(num);
+    public final RubyNumeric op_plus(final RubyObject num) {
+        final RubyNumeric other = numericValue(num);
         if (other instanceof RubyFloat) {
-            return RubyFloat.newFloat(getRuby(), getDoubleValue()).op_plus(other);
+            return ((RubyFloat)other).op_plus(this);
         } else if (other instanceof RubyBignum) {
-            return RubyBignum.newBignum(getRuby(), value).op_plus(other);
+            return ((RubyBignum)other).op_plus(this);
         } else {
-            long otherValue = other.getLongValue();
-            long result = value + otherValue;
+            final long otherValue = other.getLongValue();
+            final long result = value + otherValue;
             if ((value < 0 && otherValue < 0 && result > 0) || (value > 0 && otherValue > 0 && result < 0)) {
                 return RubyBignum.newBignum(getRuby(), value).op_plus(other);
             }
@@ -176,15 +231,15 @@ public class RubyFixnum extends RubyInteger {
         }
     }
 
-    public RubyNumeric op_minus(RubyObject num) {
-        RubyNumeric other = numericValue(num);
+    public final RubyNumeric op_minus(final RubyObject num) {
+        final RubyNumeric other = numericValue(num);
         if (other instanceof RubyFloat) {
             return RubyFloat.newFloat(getRuby(), getDoubleValue()).op_minus(other);
         } else if (other instanceof RubyBignum) {
             return RubyBignum.newBignum(getRuby(), value).op_minus(other);
         } else {
-            long otherValue = other.getLongValue();
-            long result = value - otherValue;
+            final long otherValue = other.getLongValue();
+            final long result = value - otherValue;
             if ((value < 0 && otherValue > 0 && result > 0) || (value > 0 && otherValue < 0 && result < 0)) {
                 return RubyBignum.newBignum(getRuby(), value).op_minus(other);
             }
@@ -271,8 +326,8 @@ public class RubyFixnum extends RubyInteger {
         return RubyBoolean.newBoolean(getRuby(), compareValue(other) >= 0);
     }
 
-    public RubyBoolean op_lt(RubyObject num) {
-        RubyNumeric other = numericValue(num);
+    public final RubyBoolean op_lt(final RubyObject num) {
+        final RubyNumeric other = numericValue(num);
         return RubyBoolean.newBoolean(getRuby(), compareValue(other) < 0);
     }
 

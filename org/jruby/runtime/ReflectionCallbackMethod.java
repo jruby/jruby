@@ -39,7 +39,7 @@ import org.jruby.util.ErrorMessage;
  * @author  jpetersen
  * @version $Revision$
  */
-public class ReflectionCallbackMethod implements Callback {
+public final class ReflectionCallbackMethod implements Callback {
     private Class klass = null;
     private String methodName = null;
     private Class[] args = null;
@@ -100,7 +100,7 @@ public class ReflectionCallbackMethod implements Callback {
         return method;
     }
 
-    protected void testArgsCount(Ruby ruby, RubyObject[] methodArgs) {
+    protected final void testArgsCount(final Ruby ruby, final RubyObject[] methodArgs) {
         if (isRestArgs) {
             if (methodArgs.length < (args.length - 1)) {
                 throw new ArgumentError(
@@ -116,7 +116,7 @@ public class ReflectionCallbackMethod implements Callback {
         }
     }
 
-    protected RubyObject invokeMethod(
+    protected final RubyObject invokeMethod(
         final RubyObject recv,
         final Object[] methodArgs,
         final Ruby ruby) {
@@ -184,17 +184,17 @@ public class ReflectionCallbackMethod implements Callback {
         throw new AssertError("[BUG] Run again with Asserts.ENABLE_ASSERT=true");
     }
 
-    public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
+    public final RubyObject execute(final RubyObject recv, RubyObject[] args, final Ruby ruby) {
         args = (args != null) ? args : new RubyObject[0];
         testArgsCount(ruby, args);
         // testArgsClass(args);
         return invokeMethod(recv, args, ruby);
     }
 
-    private Object[] packageArgumentsForReflection(
-        Object[] arguments,
-        Ruby ruby,
-        RubyObject rubyClass) {
+    private final Object[] packageArgumentsForReflection(
+        final Object[] arguments,
+        final Ruby ruby,
+        final RubyObject rubyClass) {
         Object[] result = arguments;
         if (isRestArgs) {
             result = packageRestArgumentsForReflection(result);
@@ -206,10 +206,10 @@ public class ReflectionCallbackMethod implements Callback {
         return result;
     }
 
-    private Object[] packageStaticArgumentsForReflection(
-        Object[] arguments,
-        Ruby ruby,
-        RubyObject rubyClass) {
+    private final Object[] packageStaticArgumentsForReflection(
+        final Object[] arguments,
+        final Ruby ruby,
+        final RubyObject rubyClass) {
         Object[] result = new Object[arguments.length + 2];
         result[0] = ruby;
         result[1] = rubyClass;
@@ -217,7 +217,7 @@ public class ReflectionCallbackMethod implements Callback {
         return result;
     }
 
-    private Object[] packageRestArgumentsForReflection(Object[] originalArgs) {
+    private final Object[] packageRestArgumentsForReflection(final Object[] originalArgs) {
         RubyObject[] restArray =
             new RubyObject[originalArgs.length - (args.length - 1)];
         Object[] result = new Object[args.length];

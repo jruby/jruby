@@ -101,15 +101,19 @@ public final class EvaluateVisitor implements NodeVisitor {
 
     public RubyObject eval(INode node) {
         result = ruby.getNil();
-        /*try {
-            if (node != null) {
+        /*
+        try {
+         */
+        if (node != null) {
+        /*
                 ISourcePosition position = node.getPosition();
                 if (position != null) {
                     _curPos = position;
                 }
-        */        node.accept(this);
-        /*    }
-
+        */
+            node.accept(this);
+        }
+        /*
         } catch (JumpException lJump) {
             throw lJump;
         } catch (RubyBugException lException) {

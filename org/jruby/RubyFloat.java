@@ -186,7 +186,7 @@ public class RubyFloat extends RubyNumeric {
         return RubyFloat.newFloat(getRuby(), -value);
     }
 
-    public RubyNumeric op_plus(RubyObject num) {
+    public final RubyNumeric op_plus(final RubyObject num) {
         RubyNumeric other = numericValue(num);
         return RubyFloat.newFloat(getRuby(), getDoubleValue() + other.getDoubleValue());
     }

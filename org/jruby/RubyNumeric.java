@@ -104,7 +104,7 @@ public abstract class RubyNumeric extends RubyObject {
         return (int) val;
     }
 
-    public static RubyNumeric numericValue(RubyObject arg) {
+    public static final RubyNumeric numericValue(RubyObject arg) {
         if (!(arg instanceof RubyNumeric)) {
             throw new TypeError(arg.getRuby(), "argument not numeric");
         }
