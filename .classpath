@@ -7,5 +7,5 @@
     <classpathentry kind="lib" path="lib/jakarta-oro-2.0.6.jar"/>
     <classpathentry kind="lib" path="lib/junit.jar"/>
     <classpathentry kind="lib" path="lib/gnu-regexp-1.1.4.jar"/>
-    <classpathentry kind="output" path="src"/>
+    <classpathentry kind="output" path=".tmp/eclipse-src"/>
 </classpath>

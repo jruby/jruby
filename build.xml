@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Thanks to Benoit Cerrina <b.cerrina@wanadoo.fr> for this buildfile. -->
 
-<project basedir="." default="compile" name="JRuby">
+<project basedir="." default="create-jar" name="JRuby">
   <description>
     JRuby is a pure Java implementation of a Ruby interpreter.
   </description>
@@ -37,6 +37,10 @@
              name="**/GNURegexpAdapter.java"/>
   </patternset>
 
+  <patternset id="ruby.src.pattern">
+      <include name="**/*.rb"/>
+  </patternset>
+
   <target name="init" description="initialize the build">
     <xmlproperty file="build-config.xml" keepRoot="false"
                  collapseAttributes="true"/>
@@ -69,13 +73,14 @@
     <copy todir="${tmp.dir}/src">
       <fileset dir="${src.dir}">
         <patternset refid="java.src.pattern"/>
+	<patternset refid="ruby.src.pattern"/>
       </fileset>
       <filterchain>
         <expandproperties/>
       </filterchain>
     </copy>
 	  
-    <javac destdir="${src.dir}">
+    <javac destdir="${tmp.dir}/src">
       <classpath refid="build.classpath"/>
       <src path="${tmp.dir}/src"/>
       <patternset refid="java.src.pattern"/>
@@ -90,5 +95,18 @@
   <target name="compile"
           description="compile JRuby"
 	  depends="compile-src,compile-test">
+  </target>
+
+  <target name="create-jar" description="create the jruby.jar" depends="compile">
+    <jar destfile="${lib.dir}/jruby.jar">
+      <fileset dir="${tmp.dir}/src">
+        <include name="**/*.class"/>
+	<include name="**/*.rb"/>
+      </fileset>
+      <manifest>
+        <attribute name="Built-By" value="${user.name}"/>
+        <attribute name="Main-Class" value="org.jruby.Main"/>
+      </manifest>
+    </jar>
   </target>
 </project>
