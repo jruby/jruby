@@ -70,7 +70,8 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
 //     private static final int M_OP_OR = 18;
 //     private static final int M_OP_XOR = 19;
     private static final int M_SIZE = 20;
-	private static final int M_HASH = 100;
+    private static final int M_HASH = 100;
+    private static final int M_ID2NAME = 101;
 
     public static RubyClass createFixnumClass(Ruby ruby) {
         RubyClass fixnumClass = ruby.defineClass("Fixnum", ruby.getClasses().getIntegerClass());
@@ -108,7 +109,8 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
         fixnumClass.defineMethod("^", CallbackFactory.getMethod(RubyFixnum.class, "op_xor", RubyInteger.class));
         fixnumClass.defineMethod("size", IndexedCallback.create(M_SIZE, 0));
         fixnumClass.defineMethod("[]", CallbackFactory.getMethod(RubyFixnum.class, "aref", RubyInteger.class));
-		fixnumClass.defineMethod("hash", IndexedCallback.create(M_HASH, 0));
+        fixnumClass.defineMethod("hash", IndexedCallback.create(M_HASH, 0));
+        fixnumClass.defineMethod("id2name", IndexedCallback.create(M_ID2NAME, 0));
 
         return fixnumClass;
     }
@@ -151,8 +153,10 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
             return op_and(args[0]);
         case M_SIZE:
             return size();
-		case M_HASH:
-			return hash();
+        case M_HASH:
+            return hash();
+        case M_ID2NAME:
+            return id2name();
         }
         Asserts.assertNotReached();
         return null;
@@ -405,6 +409,10 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
     public RubyFixnum aref(RubyInteger pos) {
         long mask = 1 << pos.getLongValue();
         return newFixnum((value & mask) == 0 ? 0 : 1);
+    }
+
+    public RubySymbol id2name() {
+        return RubySymbol.getSymbol(ruby, value);
     }
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {

@@ -19,3 +19,10 @@ test_ok(! s.tainted?)
 test_ok(! s.frozen?)
 test_equal(s, s.freeze)
 test_ok(! s.frozen?)
+
+# Symbol#id2name, Fixnum#id2name
+
+s = :alpha
+test_ok("alpha", s.id2name)
+id = s.to_i
+test_ok("alpha", id.id2name)
