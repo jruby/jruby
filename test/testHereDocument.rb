@@ -14,11 +14,11 @@ result =
     one ending with the same
     text that followed the '<<'
 "
-test_ok("    The body of the string
+test_equal("    The body of the string
     is the input lines up to
     one ending with the same
     text that followed the '<<'
-" ==  aString)
+", aString)
 
 multiDoc = <<-STRING1, <<-STRING2
    Concat
@@ -26,4 +26,4 @@ multiDoc = <<-STRING1, <<-STRING2
       enate
       STRING2
 
-test_ok(["   Concat\n","      enate\n"]  ==  multiDoc)
+test_equal(["   Concat\n","      enate\n"], multiDoc)
