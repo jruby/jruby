@@ -63,8 +63,52 @@ public class JavaMethod implements Callback {
     }
 
     public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
+        Method method = findMatchingMethod(args);
+
+        if (method == null) {
+            if (callSuper) {
+            	return ruby.getRuntime().callSuper(args);
+            } else {
+            	throw new ArgumentError(ruby, "wrong argument count or types.");
+            }
+        }
+
         int argsLength = args != null ? args.length : 0;
-        
+        Object[] newArgs = new Object[argsLength];
+        for (int i = 0; i < argsLength; i++) {
+            newArgs[i] = JavaUtil.convertRubyToJava(ruby, args[i], method.getParameterTypes()[i]);
+        }
+
+        try {
+            Object receiver = !singleton ? ((RubyJavaObject)recv).getValue() : null;
+
+            return JavaUtil.convertJavaToRuby(ruby, method.invoke(receiver, newArgs));
+        } catch (Exception e) {
+            throw convertException(ruby, e);
+        }
+    }
+
+    private static RuntimeException convertException(Ruby ruby, Exception e) {
+        if (e instanceof RaiseException) {
+            return (RaiseException) e;
+        } else if (e instanceof IOException) {
+            return IOError.fromException(ruby, (IOException) e);
+        } else {
+            StringWriter stackTrace = new StringWriter();
+            e.printStackTrace(new PrintWriter(stackTrace));
+
+            StringBuffer sb = new StringBuffer();
+            sb.append("Native Exception: '");
+            sb.append(e.getClass()).append("\'; Message: ");
+            sb.append(e.getMessage());
+            sb.append("; StackTrace: ");
+            sb.append(stackTrace.getBuffer().toString());
+            throw new RaiseException(ruby, "RuntimeError", sb.toString());
+        }
+    }
+
+
+    private Method findMatchingMethod(RubyObject[] args) {
         ArrayList executeMethods = new ArrayList(methods.length);
 
         for (int i = 0; i < methods.length; i++) {
@@ -73,40 +117,11 @@ public class JavaMethod implements Callback {
                 executeMethods.add(method);
             }
         }
-        
-        if (executeMethods.isEmpty()) {
-            if (callSuper) {
-            	return ruby.getRuntime().callSuper(args);
-            } else {
-            	throw new ArgumentError(ruby, "wrong argument count or types.");
-            }
-        }
-        
-        // take the first method.
-        Method method = (Method)executeMethods.get(0);
-        
-        Object[] newArgs = new Object[argsLength];
-        
-        for (int i = 0; i < argsLength; i++) {
-            newArgs[i] = JavaUtil.convertRubyToJava(ruby, args[i], method.getParameterTypes()[i]);
-        }
 
-        try {
-            Object receiver = !singleton ? ((RubyJavaObject)recv).getValue() : null;
-            
-            return JavaUtil.convertJavaToRuby(ruby, method.invoke(receiver, newArgs));
-        } catch (Exception excptn) {
-            StringWriter stackTrace = new StringWriter();
-            excptn.printStackTrace(new PrintWriter(stackTrace));
-            
-            StringBuffer sb = new StringBuffer();
-            sb.append("Native Exception: '");
-            sb.append(excptn.getClass()).append("\'; Message: ");
-            sb.append(excptn.getMessage());
-            sb.append("; StackTrace: ");
-            sb.append(stackTrace.getBuffer().toString());
-            throw new RaiseException(ruby, "RuntimeError", sb.toString());
+        if (executeMethods.isEmpty()) {
+            return null;
         }
+        return (Method) executeMethods.get(0);
     }
 
     private static boolean hasMatchingArgumentCount(Method method, int expected) {

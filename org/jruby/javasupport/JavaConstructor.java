@@ -48,46 +48,20 @@ public class JavaConstructor implements Callback {
     public JavaConstructor(Constructor[] constructors) {
         this.constructors = constructors;
     }
-    
+
     public int getArity() {
         return -1;
     }
 
     public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
-        LinkedList executeConstructors = new LinkedList(Arrays.asList(constructors));
+        Constructor constructor = findMatchingConstructor(args);
 
-        int argsLength = args != null ? args.length : 0;
-
-        // remove constructors with wrong parameter count.
-        Iterator iter = executeConstructors.iterator();
-        while (iter.hasNext()) {
-            Constructor constructor = (Constructor) iter.next();
-            if (constructor.getParameterTypes().length != argsLength) {
-                iter.remove();
-            }
-        }
-
-        // remove constructors with wrong parameter types.
-        iter = executeConstructors.iterator();
-        while (iter.hasNext()) {
-            Constructor constructor = (Constructor) iter.next();
-            for (int i = 0; i < constructor.getParameterTypes().length; i++) {
-                if (!JavaUtil.isCompatible(args[i], constructor.getParameterTypes()[i])) {
-                    iter.remove();
-                    break;
-                }
-            }
-        }
-
-        if (executeConstructors.isEmpty()) {
+        if (constructor == null) {
             throw new ArgumentError(ruby, "wrong arguments.");
         }
 
-        // take the first constructor.
-        Constructor constructor = (Constructor) executeConstructors.getFirst();
-
+        int argsLength = args != null ? args.length : 0;
         Object[] newArgs = new Object[argsLength];
-
         for (int i = 0; i < argsLength; i++) {
             newArgs[i] =
                 JavaUtil.convertRubyToJava(ruby, args[i], constructor.getParameterTypes()[i]);
@@ -99,6 +73,7 @@ public class JavaConstructor implements Callback {
                 new RubyJavaObject(ruby, (RubyClass) recv, javaValue);
             javaObject.callInit(args);
             return javaObject;
+
         } catch (IllegalAccessException ex) {
             throw new RaiseException(ruby, "RuntimeError", ex.getMessage());
         } catch (InstantiationException ex) {
@@ -109,4 +84,39 @@ public class JavaConstructor implements Callback {
             throw new RaiseException(ruby, "RuntimeError", ex.getMessage());
         }
     }
+
+    private Constructor findMatchingConstructor(RubyObject[] args) {
+        ArrayList executeConstructors = new ArrayList(constructors.length);
+
+        for (int i = 0; i < constructors.length; i++) {
+            Constructor constructor = constructors[i];
+            if (hasMatchingArguments(constructor, args)) {
+                executeConstructors.add(constructor);
+            }
+        }
+
+        if (executeConstructors.isEmpty()) {
+            return null;
+        }
+        return (Constructor) executeConstructors.get(0);
+    }
+
+    private static boolean hasMatchingArgumentCount(Constructor constructor, int expected) {
+        return (constructor.getParameterTypes().length == expected);
+    }
+
+    private static boolean hasMatchingArguments(Constructor constructor, RubyObject[] args) {
+        int expectedLength = (args != null ? args.length : 0);
+        if (! hasMatchingArgumentCount(constructor, expectedLength)) {
+            return false;
+        }
+        Class[] parameterTypes = constructor.getParameterTypes();
+        for (int i = 0; i < parameterTypes.length; i++) {
+            if (! JavaUtil.isCompatible(args[i], parameterTypes[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
+

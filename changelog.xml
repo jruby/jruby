@@ -2,6 +2,7 @@
 
 <changelog>
 	<release version="0.5.1">
+        <change type="new" description="Converts thrown IOExceptions into IOErrors for imported Java classes" author="ndrs" date="2002-06-23"/>
         <change type="new" description="Support for using RubyObject's in imported Java classes." author="Paul Butcher" date="2002-06-20"/>
         <change type="update" description="Symbol instance cache added" author="ndrs" date="13 Jun 2002"/>
         <change type="update" description="Added GC module." author="ndrs" date="27 May 2002"/>
