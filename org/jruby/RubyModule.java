@@ -339,6 +339,7 @@ public class RubyModule extends RubyObject {
                     throw new RubySecurityException(getRuby(), "Insecure: can't modify class variable");
                 }
                 tmp.getInstanceVariables().put(name, value);
+                return;
             }
             tmp = tmp.getSuperClass();
         }
@@ -828,8 +829,7 @@ public class RubyModule extends RubyObject {
             }
         }
         if (methodNode == null || methodNode.getBodyNode() == null) {
-            // print_undef( klass, def );
-            return; //CEF
+            throw new NameError(ruby, "undefined method '" + name + "' for " + (isModule() ? "module" : "class") + " '" + toName() + "'");
         }
         origin = methodNode.getMethodOrigin();
 
@@ -1077,18 +1077,17 @@ public class RubyModule extends RubyObject {
         }
 
         MethodNode body = searchMethod(name);
-        RubyModule origin = body.getMethodOrigin();
 
         if (body == null && isModule()) {
             body = getRuby().getClasses().getObjectClass().searchMethod(name);
-            origin = body.getMethodOrigin();
         }
 
         if (body == null) {
+            throw new NameError(ruby, "undefined method '" + name + "' for " + (isModule() ? "module" : "class") + " '" + toName() + "'");
         }
 
         if (body.getNoex() != noex) {
-            if (this == origin) {
+            if (this == body.getMethodOrigin()) {
                 body.setNoex(noex);
             } else {
                 getRuby().getMethodCache().clearByName(name);
@@ -1254,7 +1253,7 @@ public class RubyModule extends RubyObject {
 
         // clone the methods.
         if (getMethods() != null) {
-            clone.setMethods(new RubyHashMap());
+            // clone.setMethods(new RubyHashMap());
             getMethods().foreach(new RubyMapMethod() {
                 NodeFactory nf = new NodeFactory(getRuby());
 
@@ -1472,7 +1471,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_const_get
      *
      */
-    public RubyObject const_get(RubySymbol symbol) {
+    public RubyObject const_get(RubyObject symbol) {
         String name = symbol.toId();
 
         if (!IdUtil.isConstant(name)) {
@@ -1485,7 +1484,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_const_set
      *
      */
-    public RubyObject const_set(RubySymbol symbol, RubyObject value) {
+    public RubyObject const_set(RubyObject symbol, RubyObject value) {
         String name = symbol.toId();
 
         if (!IdUtil.isConstant(name)) {
@@ -1753,7 +1752,7 @@ public class RubyModule extends RubyObject {
                 }
                 getRuby().getMethodCache().clearByName(name);
                 getSingletonClass().addMethod(name, body.getBodyNode(), Constants.NOEX_PUBLIC);
-                funcall("singleton_added", RubySymbol.newSymbol(getRuby(), name));
+                funcall("singleton_method_added", RubySymbol.newSymbol(getRuby(), name));
             }
         }
 

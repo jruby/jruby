@@ -102,7 +102,7 @@ public class RubyArray extends RubyObject {
 
         arrayClass.includeModule(ruby.getRubyModule("Enumerable"));
 
-        arrayClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyArray.class, "create"));
+        arrayClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyArray.class, "newInstance"));
         arrayClass.defineSingletonMethod("[]", CallbackFactory.getOptSingletonMethod(RubyArray.class, "create"));
         arrayClass.defineMethod("initialize", CallbackFactory.getOptMethod(RubyArray.class, "initialize"));
 
@@ -399,7 +399,10 @@ public class RubyArray extends RubyObject {
      *
      */
     public static RubyArray create(Ruby ruby, RubyObject recv, RubyObject[] args) {
-        return newArray(ruby, Arrays.asList(args));
+        RubyArray array = newArray(ruby, Arrays.asList(args));
+        array.setRubyClass((RubyClass) recv);
+
+        return array;
     }
 
     /** rb_ary_hash
@@ -525,9 +528,9 @@ public class RubyArray extends RubyObject {
         return this;
     }
 
-    public RubyObject dup() {
+    /*public RubyObject dup() {
         return aref(new RubyObject[] { RubyFixnum.zero(getRuby()), length()});
-    }
+    }*/
 
     /** rb_ary_aref
      *
@@ -903,7 +906,7 @@ public class RubyArray extends RubyObject {
      */
     public RubyObject rbClone() {
         RubyArray ary = newArray(getRuby(), list);
-        ary.infectObject(this);
+        ary.setupClone(this);
         return ary;
     }
 

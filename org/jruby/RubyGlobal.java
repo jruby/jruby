@@ -56,10 +56,13 @@ public class RubyGlobal {
         ruby.defineHookedVariable("$!", ruby.getNil(), null, new ErrorInfoSetter());
 
         ruby.defineVirtualVariable("$SAFE", safeAccessor, safeAccessor);
+        
+        BacktraceAccessor btAccessor = new BacktraceAccessor();
+        ruby.defineVirtualVariable("$@", btAccessor, btAccessor);
 
-        RubyObject stdin = RubyIO.stdin(ruby, ruby.getClasses().getIoClass());
-        RubyObject stdout = RubyIO.stdout(ruby, ruby.getClasses().getIoClass());
-        RubyObject stderr = RubyIO.stderr(ruby, ruby.getClasses().getIoClass());
+        RubyObject stdin = RubyIO.stdin(ruby, ruby.getClasses().getIoClass(), System.in);
+        RubyObject stdout = RubyIO.stdout(ruby, ruby.getClasses().getIoClass(), System.out);
+        RubyObject stderr = RubyIO.stderr(ruby, ruby.getClasses().getIoClass(), System.err);
 
         ruby.defineHookedVariable("$stdin", stdin, null, new StdInSetter());
         ruby.defineHookedVariable("$stdout", stdout, null, new StdOutSetter());
@@ -555,6 +558,32 @@ public class RubyGlobal {
         }
     }
 
+    private static class BacktraceAccessor implements RubyGlobalEntry.GetterMethod, RubyGlobalEntry.SetterMethod {
+        /*
+         * @see GetterMethod#get(String, RubyObject, RubyGlobalEntry)
+         */
+        public RubyObject get(String id, RubyObject value, RubyGlobalEntry entry) {
+            Ruby ruby = entry.getRuby();
+            
+            RubyObject errorInfo = ruby.getGlobalVar("$!");
+            
+            return errorInfo.isNil() ? ruby.getNil() : errorInfo.funcall("backtrace");
+        }
+
+        /*
+         * @see SetterMethod#set(RubyObject, String, RubyObject, RubyGlobalEntry)
+         */
+        public void set(RubyObject value, String id, RubyObject data, RubyGlobalEntry entry) {
+            Ruby ruby = entry.getRuby();
+
+            if (ruby.getGlobalVar("$!").isNil()) {
+                throw new RubyArgumentException(ruby, "$! not set.");
+            }
+
+            ruby.getGlobalVar("$!").funcall("set_backtrace", value);
+        }
+    }
+
     private static class LastlineAccessor implements RubyGlobalEntry.GetterMethod, RubyGlobalEntry.SetterMethod {
         /*
          * @see GetterMethod#get(String, RubyObject, RubyGlobalEntry)
@@ -586,7 +615,6 @@ public class RubyGlobal {
                 // ((RubyIO)value).fileno = 0;
 
                 entry.setData(value);
-                ((RubyIO) value).setAsRubyInputStream();
             }
         }
     }
@@ -603,11 +631,9 @@ public class RubyGlobal {
                 return;
             } else {
                 ((RubyIO) value).checkWriteable();
-                // ((RubyIO)value).fileno = 0;
+                //((RubyIO)value).fileno = 0;
 
                 entry.setData(value);
-                //set the ruby outputstream to match
-                 ((RubyIO) value).setAsRubyOutputStream();
             }
         }
     }
@@ -627,7 +653,6 @@ public class RubyGlobal {
                 // ((RubyIO)value).f= 0;
 
                 entry.setData(value);
-                ((RubyIO) value).setAsRubyErrorStream();
             }
         }
     }

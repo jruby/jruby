@@ -45,24 +45,24 @@ public class SClassNode extends Node {
     }
     
     public RubyObject eval(Ruby ruby, RubyObject self) {
-        RubyClass rubyClass = (RubyClass)getRecvNode().eval(ruby, self);
-        if (rubyClass.isSpecialConst()) {
-            throw new TypeError(ruby, "no virtual class for " + rubyClass.getRubyClass().toName());
+        RubyClass type = (RubyClass)getRecvNode().eval(ruby, self);
+        if (type.isSpecialConst()) {
+            throw new TypeError(ruby, "no virtual class for " + type.getRubyClass().toName());
         }
-        if (ruby.getSafeLevel() >= 4 && !rubyClass.isTaint()) {
+        if (ruby.getSafeLevel() >= 4 && !type.isTaint()) {
             throw new RubySecurityException(ruby, "Insecure: can't extend object");
         }
-        if (rubyClass.getRubyClass().isSingleton()) {
+        if (type.getRubyClass().isSingleton()) {
             // rb_clear_cache();
         }
-        ruby.setRubyClass(rubyClass.getSingletonClass());
+        type = type.getSingletonClass();
         
         if (ruby.getWrapper() != null) {
-            rubyClass.getSingletonClass().includeModule(ruby.getWrapper());
-            rubyClass.includeModule(ruby.getWrapper());
+            type.extendObject(ruby.getWrapper());
+            type.includeModule(ruby.getWrapper());
         }
         
-        return ((ScopeNode)getBodyNode()).setupModule(ruby, rubyClass);
+        return ((ScopeNode)getBodyNode()).setupModule(ruby, type);
     }
 	/**
 	 * Accept for the visitor pattern.

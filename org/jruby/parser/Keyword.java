@@ -29,17 +29,17 @@
  */
 package org.jruby.parser;
 
-public class kwtable implements Token, LexState {
+public class Keyword implements Token, LexState {
 
     String name;
     int id0, id1;
     int state;
 
-    private kwtable() {
+    private Keyword() {
         this("", 0, 0, 0);
     }
 
-    private kwtable(String name, int id0, int id1, int state) {
+    private Keyword(String name, int id0, int id1, int state) {
         this.name = name;
         this.id0 = id0;
         this.id1 = id1;
@@ -95,66 +95,66 @@ public class kwtable implements Token, LexState {
         return hval + asso_values[str.charAt(len - 1) & 255];
     }
 
-    private static final kwtable[] wordlist = {
-        new kwtable(),
-        new kwtable(),
-        new kwtable(),
-        new kwtable(),
-        new kwtable(),
-        new kwtable(),
-        new kwtable("end", kEND, kEND, EXPR_END),
-        new kwtable("else", kELSE, kELSE, EXPR_BEG),
-        new kwtable("case", kCASE, kCASE, EXPR_BEG),
-        new kwtable("ensure", kENSURE, kENSURE, EXPR_BEG),
-        new kwtable("module", kMODULE, kMODULE, EXPR_BEG),
-        new kwtable("elsif", kELSIF, kELSIF, EXPR_BEG),
-        new kwtable("def", kDEF, kDEF, EXPR_FNAME),
-        new kwtable("rescue", kRESCUE, kRESCUE_MOD, EXPR_END),
-        new kwtable("not", kNOT, kNOT, EXPR_BEG),
-        new kwtable("then", kTHEN, kTHEN, EXPR_BEG),
-        new kwtable("yield", kYIELD, kYIELD, EXPR_ARG),
-        new kwtable("for", kFOR, kFOR, EXPR_BEG),
-        new kwtable("self", kSELF, kSELF, EXPR_END),
-        new kwtable("false", kFALSE, kFALSE, EXPR_END),
-        new kwtable("retry", kRETRY, kRETRY, EXPR_END),
-        new kwtable("return", kRETURN, kRETURN, EXPR_MID),
-        new kwtable("true", kTRUE, kTRUE, EXPR_END),
-        new kwtable("if", kIF, kIF_MOD, EXPR_BEG),
-        new kwtable("defined?", kDEFINED, kDEFINED, EXPR_ARG),
-        new kwtable("super", kSUPER, kSUPER, EXPR_ARG),
-        new kwtable("undef", kUNDEF, kUNDEF, EXPR_FNAME),
-        new kwtable("break", kBREAK, kBREAK, EXPR_END),
-        new kwtable("in", kIN, kIN, EXPR_BEG),
-        new kwtable("do", kDO, kDO, EXPR_BEG),
-        new kwtable("nil", kNIL, kNIL, EXPR_END),
-        new kwtable("until", kUNTIL, kUNTIL_MOD, EXPR_BEG),
-        new kwtable("unless", kUNLESS, kUNLESS_MOD, EXPR_BEG),
-        new kwtable("or", kOR, kOR, EXPR_BEG),
-        new kwtable("next", kNEXT, kNEXT, EXPR_END),
-        new kwtable("when", kWHEN, kWHEN, EXPR_BEG),
-        new kwtable("redo", kREDO, kREDO, EXPR_END),
-        new kwtable("and", kAND, kAND, EXPR_BEG),
-        new kwtable("begin", kBEGIN, kBEGIN, EXPR_BEG),
-        new kwtable("__LINE__", k__LINE__, k__LINE__, EXPR_END),
-        new kwtable("class", kCLASS, kCLASS, EXPR_CLASS),
-        new kwtable("__FILE__", k__FILE__, k__FILE__, EXPR_END),
-        new kwtable("END", klEND, klEND, EXPR_END),
-        new kwtable("BEGIN", klBEGIN, klBEGIN, EXPR_END),
-        new kwtable("while", kWHILE, kWHILE_MOD, EXPR_BEG),
-        new kwtable(),
-        new kwtable(),
-        new kwtable(),
-        new kwtable(),
-        new kwtable(),
-        new kwtable(),
-        new kwtable(),
-        new kwtable(),
-        new kwtable(),
-        new kwtable(),
-        new kwtable("alias", kALIAS, kALIAS, EXPR_FNAME)
+    private static final Keyword[] wordlist = {
+        new Keyword(),
+        new Keyword(),
+        new Keyword(),
+        new Keyword(),
+        new Keyword(),
+        new Keyword(),
+        new Keyword("end", kEND, kEND, EXPR_END),
+        new Keyword("else", kELSE, kELSE, EXPR_BEG),
+        new Keyword("case", kCASE, kCASE, EXPR_BEG),
+        new Keyword("ensure", kENSURE, kENSURE, EXPR_BEG),
+        new Keyword("module", kMODULE, kMODULE, EXPR_BEG),
+        new Keyword("elsif", kELSIF, kELSIF, EXPR_BEG),
+        new Keyword("def", kDEF, kDEF, EXPR_FNAME),
+        new Keyword("rescue", kRESCUE, kRESCUE_MOD, EXPR_END),
+        new Keyword("not", kNOT, kNOT, EXPR_BEG),
+        new Keyword("then", kTHEN, kTHEN, EXPR_BEG),
+        new Keyword("yield", kYIELD, kYIELD, EXPR_ARG),
+        new Keyword("for", kFOR, kFOR, EXPR_BEG),
+        new Keyword("self", kSELF, kSELF, EXPR_END),
+        new Keyword("false", kFALSE, kFALSE, EXPR_END),
+        new Keyword("retry", kRETRY, kRETRY, EXPR_END),
+        new Keyword("return", kRETURN, kRETURN, EXPR_MID),
+        new Keyword("true", kTRUE, kTRUE, EXPR_END),
+        new Keyword("if", kIF, kIF_MOD, EXPR_BEG),
+        new Keyword("defined?", kDEFINED, kDEFINED, EXPR_ARG),
+        new Keyword("super", kSUPER, kSUPER, EXPR_ARG),
+        new Keyword("undef", kUNDEF, kUNDEF, EXPR_FNAME),
+        new Keyword("break", kBREAK, kBREAK, EXPR_END),
+        new Keyword("in", kIN, kIN, EXPR_BEG),
+        new Keyword("do", kDO, kDO, EXPR_BEG),
+        new Keyword("nil", kNIL, kNIL, EXPR_END),
+        new Keyword("until", kUNTIL, kUNTIL_MOD, EXPR_BEG),
+        new Keyword("unless", kUNLESS, kUNLESS_MOD, EXPR_BEG),
+        new Keyword("or", kOR, kOR, EXPR_BEG),
+        new Keyword("next", kNEXT, kNEXT, EXPR_END),
+        new Keyword("when", kWHEN, kWHEN, EXPR_BEG),
+        new Keyword("redo", kREDO, kREDO, EXPR_END),
+        new Keyword("and", kAND, kAND, EXPR_BEG),
+        new Keyword("begin", kBEGIN, kBEGIN, EXPR_BEG),
+        new Keyword("__LINE__", k__LINE__, k__LINE__, EXPR_END),
+        new Keyword("class", kCLASS, kCLASS, EXPR_CLASS),
+        new Keyword("__FILE__", k__FILE__, k__FILE__, EXPR_END),
+        new Keyword("END", klEND, klEND, EXPR_END),
+        new Keyword("BEGIN", klBEGIN, klBEGIN, EXPR_END),
+        new Keyword("while", kWHILE, kWHILE_MOD, EXPR_BEG),
+        new Keyword(),
+        new Keyword(),
+        new Keyword(),
+        new Keyword(),
+        new Keyword(),
+        new Keyword(),
+        new Keyword(),
+        new Keyword(),
+        new Keyword(),
+        new Keyword(),
+        new Keyword("alias", kALIAS, kALIAS, EXPR_FNAME)
     };
 
-    public static kwtable rb_reserved_word(String str, int len) {
+    public static Keyword rb_reserved_word(String str, int len) {
         if (len <= MAX_WORD_LENGTH && len >= MIN_WORD_LENGTH) {
             int key = hash(str, len);
             if (key <= MAX_HASH_VALUE && key >= MIN_HASH_VALUE) {

@@ -253,13 +253,11 @@ stmt          : kALIAS fitem {
                 }
               | stmt kIF_MOD expr {
                     ph.value_expr($3);
-                    $$ = nf.newIf(ph.cond($3), $1, null);
-                    ph.fixpos($$, $3);
+                    $$ = nf.newIf(ph.cond($3), $1, null).setPosFrom($3);
                 }
               | stmt kUNLESS_MOD expr {
                     ph.value_expr($3);
-                    $$ = nf.newUnless(ph.cond($3), $1, null);
-                    ph.fixpos($$, $3);
+                    $$ = nf.newUnless(ph.cond($3), $1, null).setPosFrom($3);
                 }
               | stmt kWHILE_MOD expr {
                     ph.value_expr($3);
@@ -318,12 +316,12 @@ expr          : mlhs '=' mrhs {
                     $1.setValueNode($3);
                     $$ = $1;
                 }
-              | kRETURN call_args {
+              | kRETURN ret_args {
                     if (!ph.isCompileForEval() && !ph.isInDef()
                                                && !ph.isInSingle()) {
                         yyerror("return appeared outside of method");
                     }
-                    $$ = nf.newReturn(ph.ret_args($2));
+                    $$ = nf.newReturn($2);
                 }
               | command_call
               | expr kAND expr {
@@ -355,30 +353,25 @@ block_command : block_call
                 }
 
 command       : operation command_args {
-                    $$ = ph.new_fcall($1, $2);
-                    ph.fixpos($$, $2);
+                    $$ = ph.new_fcall($1, $2).setPosFrom($2);
                 }
               | primary '.' operation2 command_args {
                     ph.value_expr($1);
-                    $$ = ph.new_call($1, $3, $4);
-                    ph.fixpos($$, $1);
+                    $$ = ph.new_call($1, $3, $4).setPosFrom($1);
                 }
               | primary tCOLON2 operation2 command_args {
                     ph.value_expr($1);
-                    $$ = ph.new_call($1, $3, $4);
-                    ph.fixpos($$, $1);
+                    $$ = ph.new_call($1, $3, $4).setPosFrom($1);
                 }
               | kSUPER command_args {
                     if (!ph.isCompileForEval() && ph.isInDef() 
                                                && ph.isInSingle()){
                         yyerror("super called outside of method");
                     }
-		    $$ = ph.new_super($2);
-		    ph.fixpos($$, $2);
+		    $$ = ph.new_super($2).setPosFrom($2);
 		}
-              | kYIELD call_args {
-	            $$ = nf.newYield(ph.ret_args($2));
-                    ph.fixpos($$, $2);
+              | kYIELD ret_args {
+	            $$ = nf.newYield($2).setPosFrom($2);
 		}
 
 mlhs          : mlhs_basic
@@ -582,27 +575,23 @@ arg           : lhs '=' arg {
                             $<Node>$.setValueNode(ph.call_op(ph.getAccessNode($1),$2,1,$4));
                         }
                     }
-                    ph.fixpos($$, $4);
+                    $<Node>$.setPosFrom($4);
                 }
               | primary '[' aref_args ']' tOP_ASGN arg {
                     ArrayNode args = nf.newList($6);
 
                     ph.list_append($3, nf.newNil());
                     ph.list_concat(args, $3);
-                    $$ = nf.newOpAsgn1($1, $5, args);
-                    ph.fixpos($$, $1);
+                    $$ = nf.newOpAsgn1($1, $5, args).setPosFrom($1);
                 }
               | primary '.' tIDENTIFIER tOP_ASGN arg {
-                    $$ = nf.newOpAsgn2($1, $3, $4, $5);
-                    ph.fixpos($$, $1);
+                    $$ = nf.newOpAsgn2($1, $3, $4, $5).setPosFrom($1);
                 }
               | primary '.' tCONSTANT tOP_ASGN arg {
-                    $$ = nf.newOpAsgn2($1, $3, $4, $5);
-                    ph.fixpos($$, $1);
+                    $$ = nf.newOpAsgn2($1, $3, $4, $5).setPosFrom($1);
                 }
               | primary tCOLON2 tIDENTIFIER tOP_ASGN arg {
-                    $$ = nf.newOpAsgn2($1, $3, $4, $5);
-                    ph.fixpos($$, $1);
+                    $$ = nf.newOpAsgn2($1, $3, $4, $5).setPosFrom($1);
                 }
               | backref tOP_ASGN arg {
                     ph.rb_backref_error($1);
@@ -730,8 +719,7 @@ arg           : lhs '=' arg {
                 }
               | arg '?' arg ':' arg {
                     ph.value_expr($1);
-                    $$ = nf.newIf(ph.cond($1), $3, $5);
-                    ph.fixpos($$, $1);
+                    $$ = nf.newIf(ph.cond($1), $3, $5).setPosFrom($1);
                 }
               | primary
                 {
@@ -900,7 +888,7 @@ primary       : literal {
                         }
                         $$ = $2;
                     }
-                    ph.fixpos($$, $2);
+                    $<Node>$.setPosFrom($2);
                 }
               | tLPAREN compstmt ')' {
                     $$ = $2;
@@ -970,22 +958,21 @@ primary       : literal {
                 }
               | method_call
               | method_call brace_block {
-                if ($1 != null && $1.getType() == Constants.NODE_BLOCK_PASS) {
-                    ph.rb_compile_error("both block arg and actual block given");
-                }
+                    if ($1 != null && 
+		                    $1.getType() == Constants.NODE_BLOCK_PASS) {
+                       ph.rb_compile_error("both block arg and actual block given");
+                    }
                     $2.setIterNode($1);
                     $$ = $2;
-                    ph.fixpos($$, $1);
+                    $<Node>$.setPosFrom($1);
                 }
               | kIF expr then compstmt if_tail kEND {
                     ph.value_expr($2);
-                    $$ = nf.newIf(ph.cond($2), $4, $5);
-                    ph.fixpos($$, $2);
+                    $$ = nf.newIf(ph.cond($2), $4, $5).setPosFrom($2);
                 }
               | kUNLESS expr then compstmt opt_else kEND {
                     ph.value_expr($2);
-                    $$ = nf.newUnless(ph.cond($2), $4, $5);
-                    ph.fixpos($$, $2);
+                    $$ = nf.newUnless(ph.cond($2), $4, $5).setPosFrom($2);
                 }
               | kWHILE { 
 	            rs.COND_PUSH();
@@ -993,8 +980,7 @@ primary       : literal {
 		    rs.COND_POP();
 		} compstmt kEND {
                     ph.value_expr($3);
-                    $$ = nf.newWhile(ph.cond($3), $6); // , 1
-                    ph.fixpos($$, $3);
+                    $$ = nf.newWhile(ph.cond($3), $6).setPosFrom($3);
                 }
               | kUNTIL {
                     rs.COND_PUSH();
@@ -1002,13 +988,11 @@ primary       : literal {
                     rs.COND_POP();
                 } compstmt kEND {
                     ph.value_expr($3);
-                    $$ = nf.newUntil(ph.cond($3), $6); //, 1
-                    ph.fixpos($$, $3);
+                    $$ = nf.newUntil(ph.cond($3), $6).setPosFrom($3);
                 }
               | kCASE expr opt_terms case_body kEND {
                     ph.value_expr($2);
-                    $$ = nf.newCase($2, $4);
-                    ph.fixpos($$, $2);
+                    $$ = nf.newCase($2, $4).setPosFrom($2);
                 }
               | kCASE opt_terms case_body kEND {
                     $$ = $3;
@@ -1019,8 +1003,7 @@ primary       : literal {
                     rs.COND_POP();
                 } compstmt kEND {
                     ph.value_expr($5);
-                    $$ = nf.newFor($2, $5, $8);
-                    ph.fixpos($$, $2);
+                    $$ = nf.newFor($2, $5, $8).setPosFrom($2);
                 }
               | kCLASS cname superclass {
                     if (ph.isInDef() || ph.isInSingle()) {
@@ -1044,8 +1027,7 @@ primary       : literal {
                     ph.setClassNest(ph.getClassNest() - 1);
                     ph.local_push();
                 } compstmt kEND {
-                    $$ = nf.newSClass($3, $7);
-                    ph.fixpos($$, $3);
+                    $$ = nf.newSClass($3, $7).setPosFrom($3);
                     ph.local_pop();
                     ph.setClassNest(ph.getClassNest() - 1);
                     ph.setInDef($<Integer>4.intValue());
@@ -1089,7 +1071,7 @@ primary       : literal {
                     if (IdUtil.isAttrSet($2)) {
                         $<Node>$.setNoex(Constants.NOEX_PUBLIC);
                     }
-                    ph.fixpos($$, $4);
+                    $<Node>$.setPosFrom($4);
                     ph.local_pop();
                     ph.setInDef(ph.getInDef() - 1);
                     //+++ ph.setCurMid($3);
@@ -1113,7 +1095,7 @@ primary       : literal {
                         $<>8 = nf.newEnsure($8, $11);
                     }
                     $$ = nf.newDefs($2, $5, $7, $8);
-                    ph.fixpos($$, $2);
+                    $<Node>$.setPosFrom($2);
                     ph.local_pop();
                     ph.setInSingle(ph.getInSingle() - 1);
                 }
@@ -1140,8 +1122,7 @@ do            : term
 if_tail       : opt_else
               | kELSIF expr then compstmt if_tail {
                     ph.value_expr($2);
-                    $$ = nf.newIf(ph.cond($2), $4, $5);
-                    ph.fixpos($$, $2);
+                    $$ = nf.newIf(ph.cond($2), $4, $5).setPosFrom($2);
                 }
 
 opt_else      : none
@@ -1166,8 +1147,7 @@ opt_block_var : none
 do_block      : kDO_BLOCK {
                     $$ = ph.dyna_push();
                 } opt_block_var compstmt kEND {
-                    $$ = nf.newIter($3, null, $4);
-                    ph.fixpos($$, $3!=null?$3:$4);
+                    $$ = nf.newIter($3, null, $4).setPosFrom($3 != null ? $3 : $4);
                     ph.dyna_pop($<RubyVarmap>2);
                 }
 
@@ -1178,7 +1158,7 @@ block_call    : command do_block {
                     }
                     $2.setIterNode($1);
                     $$ = $2;
-                    ph.fixpos($$, $2);
+                    // $$$2);
                 }
               | block_call '.' operation2 opt_paren_args {
                     ph.value_expr($1);
@@ -1190,18 +1170,15 @@ block_call    : command do_block {
                 }
 
 method_call   : operation paren_args {
-                    $$ = ph.new_fcall($1, $2);
-                    ph.fixpos($$, $2);
+                    $$ = ph.new_fcall($1, $2).setPosFrom($2);
                 }
               | primary '.' operation2 opt_paren_args {
                     ph.value_expr($1);
-                    $$ = ph.new_call($1, $3, $4);
-                    ph.fixpos($$, $1);
+                    $$ = ph.new_call($1, $3, $4).setPosFrom($1);
                 }
               | primary tCOLON2 operation2 paren_args {
                     ph.value_expr($1);
-                    $$ = ph.new_call($1, $3, $4);
-                    ph.fixpos($$, $1);
+                    $$ = ph.new_call($1, $3, $4).setPosFrom($1);
                 }
               | primary tCOLON2 operation3 {
                     ph.value_expr($1);
@@ -1225,15 +1202,13 @@ method_call   : operation paren_args {
 brace_block   : '{' {
                     $$ = ph.dyna_push();
                 } opt_block_var compstmt '}' {
-                    $$ = nf.newIter($3, null, $4);
-                    ph.fixpos($$, $4);
+                    $$ = nf.newIter($3, null, $4).setPosFrom($4);
                     ph.dyna_pop($<RubyVarmap>2);
                 }
               | kDO {
                     $$ = ph.dyna_push();
                 } opt_block_var compstmt kEND {
-                    $$ = nf.newIter($3, null, $4);
-                    ph.fixpos($$, $4);
+                    $$ = nf.newIter($3, null, $4).setPosFrom($4);
                     ph.dyna_pop($<RubyVarmap>2);
                 }
 
@@ -1267,8 +1242,7 @@ rescue        : kRESCUE exc_list exc_var then compstmt rescue {
                         $<>3 = ph.node_assign($3, nf.newGVar("$!"));
                         $<>5 = ph.block_append($3, $5);
                     }
-                    $$ = nf.newResBody($2, $5, $6);
-                    ph.fixpos($$, $2!=null?$2:$5);
+                    $$ = nf.newResBody($2, $5, $6).setPosFrom($2 != null ? $2 : $5);
                 }
               | none
 
@@ -1331,15 +1305,33 @@ variable      : tIDENTIFIER
               | tGVAR
               | tCONSTANT
               | tCVAR
-              | kNIL {$$ = "#nil";}
+/*              | kNIL {$$ = "#nil";}
               | kSELF {$$ = "#self";}
               | kTRUE {$$ = "#true";}
               | kFALSE {$$ = "#false";}
               | k__FILE__ {$$ = "#__FILE__";}
-              | k__LINE__ {$$ = "#__LINE__";}
+              | k__LINE__ {$$ = "#__LINE__";}*/
 
 var_ref       : variable {
                     $$ = ph.getAccessNode($1);
+                }
+              | kNIL { 
+                    $$ = nf.newNil();
+                }
+              | kSELF {
+                    $$ = nf.newSelf();
+                }
+              | kTRUE { 
+                    $$ = nf.newTrue();
+                }
+              | kFALSE {
+                    $$ = nf.newFalse();
+                }
+              | k__FILE__ {
+                    $$ = nf.newStr(RubyString.newString(ruby, ruby.getSourceFile())); 
+                }
+              | k__LINE__ {
+                    $$ = nf.newLit(RubyFixnum.newFixnum(ruby, ruby.getSourceLine()));
                 }
 
 backref       : tNTH_REF

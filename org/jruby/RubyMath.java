@@ -36,34 +36,23 @@ public class RubyMath {
      * 
      */
     public static RubyModule createMathModule(Ruby ruby) {
-        Callback atan2 =
-            new ReflectionCallbackMethod(RubyMath.class, "atan2", new Class[] { RubyNumeric.class, RubyNumeric.class });
-        Callback cos = new ReflectionCallbackMethod(RubyMath.class, "cos", RubyNumeric.class);
-        Callback exp = new ReflectionCallbackMethod(RubyMath.class, "exp", RubyNumeric.class);
-        Callback frexp = new ReflectionCallbackMethod(RubyMath.class, "frexp", RubyNumeric.class);
-        Callback ldexp =
-            new ReflectionCallbackMethod(RubyMath.class, "ldexp", new Class[] { RubyFloat.class, RubyInteger.class });
-        Callback log = new ReflectionCallbackMethod(RubyMath.class, "log", RubyNumeric.class);
-        Callback log10 = new ReflectionCallbackMethod(RubyMath.class, "log10", RubyNumeric.class);
-        Callback sin = new ReflectionCallbackMethod(RubyMath.class, "sin", RubyNumeric.class);
-        Callback sqrt = new ReflectionCallbackMethod(RubyMath.class, "sqrt", RubyNumeric.class);
-        Callback tan = new ReflectionCallbackMethod(RubyMath.class, "tan", RubyNumeric.class);
-
         RubyModule mathModule = ruby.defineModule("Math");
 
         mathModule.defineConstant("E", RubyFloat.newFloat(ruby, Math.E));
         mathModule.defineConstant("PI", RubyFloat.newFloat(ruby, Math.PI));
 
-        mathModule.defineSingletonMethod("atan2", atan2);
-        mathModule.defineSingletonMethod("cos", cos);
-        mathModule.defineSingletonMethod("exp", exp);
-//        mathModule.defineSingletonMethod("frexp", frexp);
-        mathModule.defineSingletonMethod("ldexp", ldexp);
-        mathModule.defineSingletonMethod("log", log);
-        mathModule.defineSingletonMethod("log10", log10);
-        mathModule.defineSingletonMethod("sin", sin);
-        mathModule.defineSingletonMethod("sqrt", sqrt);
-        mathModule.defineSingletonMethod("tan", tan);
+        mathModule.defineSingletonMethod(
+            "atan2",
+            CallbackFactory.getSingletonMethod(RubyMath.class, "atan2", RubyNumeric.class, RubyNumeric.class));
+        mathModule.defineSingletonMethod("cos", CallbackFactory.getSingletonMethod(RubyMath.class, "cos", RubyNumeric.class));
+        mathModule.defineSingletonMethod("exp", CallbackFactory.getSingletonMethod(RubyMath.class, "exp", RubyNumeric.class));
+        //        mathModule.defineSingletonMethod("frexp", frexp);
+        mathModule.defineSingletonMethod("ldexp", CallbackFactory.getSingletonMethod(RubyMath.class, "ldexp", RubyFloat.class, RubyInteger.class));
+        mathModule.defineSingletonMethod("log", CallbackFactory.getSingletonMethod(RubyMath.class, "log", RubyNumeric.class));
+        mathModule.defineSingletonMethod("log10", CallbackFactory.getSingletonMethod(RubyMath.class, "log10", RubyNumeric.class));
+        mathModule.defineSingletonMethod("sin", CallbackFactory.getSingletonMethod(RubyMath.class, "sin", RubyNumeric.class));
+        mathModule.defineSingletonMethod("sqrt", CallbackFactory.getSingletonMethod(RubyMath.class, "sqrt", RubyNumeric.class));
+        mathModule.defineSingletonMethod("tan", CallbackFactory.getSingletonMethod(RubyMath.class, "tan", RubyNumeric.class));
 
         return mathModule;
     }

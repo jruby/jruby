@@ -242,8 +242,8 @@ public class RubyObject {
         kernelModule.defineMethod("protected_methods", protected_methods);
         kernelModule.defineMethod("public_methods", methods);
         kernelModule.defineMethod("nil?", CallbackFactory.getFalseMethod());
-        kernelModule.defineMethod("send", CallbackFactory.getOptMethod(RubyObject.class, "send", RubyString.class));
-        kernelModule.defineMethod("__send__", CallbackFactory.getOptMethod(RubyObject.class, "send", RubyString.class));
+        kernelModule.defineMethod("send", CallbackFactory.getOptMethod(RubyObject.class, "send", RubyObject.class));
+        kernelModule.defineMethod("__send__", CallbackFactory.getOptMethod(RubyObject.class, "send", RubyObject.class));
         kernelModule.defineMethod("taint", taint);
         kernelModule.defineMethod("tainted?", tainted);
         kernelModule.defineMethod("to_a", to_a);
@@ -870,7 +870,7 @@ public class RubyObject {
     public RubyBoolean kind_of(RubyModule type) {
         RubyClass currType = getRubyClass();
         while (currType != null) {
-            if (currType == type || currType.getMethods().keySet().retainAll(type.getMethods().keySet())) {
+            if (currType == type || currType.getMethods().keySet().containsAll(type.getMethods().keySet())) {
                 return getRuby().getTrue();
             }
             currType = currType.getSuperClass();
@@ -969,13 +969,13 @@ public class RubyObject {
         Ruby ruby = getRuby();
         throw new NameError(
             ruby,
-            ruby.getSourceFile() + ":" + ruby.getSourceLine() + " undefined method '" + symbol.toId() + "' for " + type().toName());
+            ruby.getSourceFile() + ":" + ruby.getSourceLine() + " undefined method '" + symbol.toId() + "' for '" + type().toName() + '\'');
     }
 
-    public RubyObject send(RubyString method, RubyObject[] args) {
+    public RubyObject send(RubyObject method, RubyObject[] args) {
         try {
             getRuby().getIter().push(getRuby().isBlockGiven() ? RubyIter.ITER_PRE : RubyIter.ITER_NOT);
-            return getRubyClass().call(this, method.getValue(), new RubyPointer(args), 1);
+            return getRubyClass().call(this, method.toId(), new RubyPointer(args), 1);
         } finally {
             getRuby().getIter().pop();
         }

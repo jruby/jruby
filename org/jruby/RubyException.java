@@ -138,7 +138,7 @@ public class RubyException extends RubyObject {
         } else {
             message.setTaint(isTaint());
 
-            return (RubyString) message;
+            return (RubyString)message.funcall("to_s");
         }
     }
 

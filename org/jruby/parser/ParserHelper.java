@@ -70,21 +70,12 @@ public class ParserHelper {
     // XXX is this really needed?
     private RubyArray rubyDebugLines; // separate a Ruby string into lines...
 
-    private int _line;
-
     public String getFile() {
         return ruby.getSourceFile();
     }
 
-    public void setLine(int iLine) {
-        _line = iLine;
-    }
     public int getLine() {
-        return _line;
-    }
-
-    public void incrementLine() {
-        _line++;
+        return ruby.getSourceLine();
     }
 
     public ParserHelper(Ruby ruby) {
@@ -183,14 +174,6 @@ public class ParserHelper {
         }
     }
 
-    /**
-     *  Copies position info (added to reduce the need for casts).
-     *
-     */
-    public void fixpos(Object n1, Node n2) {
-        fixpos((Node) n1, n2);
-    }
-
     public Node arg_blk_pass(Node node1, Node node2) {
         if (node2 != null) {
             node2.setHeadNode(node1);
@@ -273,7 +256,7 @@ public class ParserHelper {
      */
     public Node getAccessNode(String id) {
         id = id.intern();
-        if (id.charAt(0) == '#') {
+        /*if (id.charAt(0) == '#') {
             // Special variable or constant
             id = id.substring(1).intern();
             if (id == "self") {
@@ -289,7 +272,8 @@ public class ParserHelper {
             } else if (id == "__LINE__") {
                 return nf.newLit(RubyFixnum.newFixnum(ruby, ruby.getSourceLine()));
             }
-        } else {
+        } else { */
+        // moved to DefaultRubyParser.y
             if (IdUtil.isLocal(id)) {
                 if (dyna_in_block() && RubyVarmap.isDefined(ruby, id)) {
                     return nf.newDVar(id);
@@ -312,7 +296,7 @@ public class ParserHelper {
                 }
                 return nf.newCVar(id);
             }
-        }
+        // }
         rb_bug("Invalid id '" + id + "' for getAccessNode.");
         return null;
     }
@@ -329,7 +313,7 @@ public class ParserHelper {
         value_expr(valueNode);
 
         id = id.intern();
-        if (id.charAt(0) == '#') {
+        /*if (id.charAt(0) == '#') {
             // Special variable or constant.
             id = id.substring(1).intern();
             if (id == "self") {
@@ -339,6 +323,8 @@ public class ParserHelper {
                 yyerror("Can't assign to " + id);
             }
         } else {
+        */
+        // No correct grammar anymore
             if (IdUtil.isLocal(id)) {
                 if (RubyVarmap.isCurrent(ruby, id)) {
                     return nf.newDAsgnCurr(id, valueNode);
@@ -367,23 +353,8 @@ public class ParserHelper {
             } else {
                 rb_bug("Id '" + id + "' not allowed for variable.");
             }
-        }
+        // }
         return null;
-    }
-
-    /**
-     *  Copies filename and line number from "orig" to "node".
-     *
-     *@param  node  Description of Parameter
-     *@param  orig  Description of Parameter
-     */
-    private void fixpos(Node node, Node orig) {
-        if (node == null || orig == null) {
-            return;
-        }
-
-        node.setFile(orig.getFile());
-        node.setLine(orig.getLine());
     }
 
     /**
@@ -396,8 +367,7 @@ public class ParserHelper {
         NewlineNode nl = null;
         if (node != null) {
             nl = nf.newNewline(node);
-            fixpos(nl, node);
-            //			nl.setNth(node.getLine());		not needed anymore Benoit
+            nl.setPosFrom(node);
         }
         return nl;
     }
@@ -414,8 +384,7 @@ public class ParserHelper {
             end = ((BlockNode) head).getEndNode();
         } else {
             end = nf.newBlock(head);
-            //            end.setEndNode(end);  not needed anymore Benoit
-            fixpos(end, head);
+            end.setPosFrom(head);
             head = end;
         }
 
@@ -578,15 +547,12 @@ public class ParserHelper {
                 lhs.setArgsNode(arg_add(lhs.getArgsNode(), rhs));
                 break;
             default :
-                /*
-                 *  should not happen
-                 */
+                // should not happen
                 break;
         }
 
-        if (rhs != null) {
-            fixpos(lhs, rhs);
-        }
+		lhs.setPosFrom(rhs);
+
         return lhs;
     }
 
@@ -794,58 +760,26 @@ public class ParserHelper {
         }
     }
 
-    /*private Node range_op(Node node, int logop) {
-        int type; // enum node_type
-
-        if (logop != 0) {
-            return node;
-        }
-        if (!e_option_supplied()) {
-            return node;
-        }
-
-        warn_unless_e_option("integer literal in condition");
-        node = cond0(node, 0);
-        //XXX second argument was missing
-        type = node.getType();
-        if (type == Constants.NODE_NEWLINE) {
-            node = node.getNextNode();
-        }
-        if (type == Constants.NODE_LIT && node.getLiteral() instanceof RubyFixnum) {
-            return call_op(node, Token.tEQ, 1, nf.newGVar("$."));
-        }
-        return node;
-    }*/
-
-    private Node cond0(Node node /*, int logop*/) {
-        int type = node.getType(); // enum node_type
+    private Node cond0(Node node) {
+        int type = node.getType();
 
         assign_in_cond(node);
         
         // DOT => FLIP
         boolean exclusive = true;
         switch (type) {
-            /*case Constants.NODE_DSTR :
-            case Constants.NODE_STR :
-                if (logop != 0) {
-                    break;
-                }
-                rb_warn("string literal in condition");
-                break;*/
             case Constants.NODE_DREGX :
             case Constants.NODE_DREGX_ONCE :
-                // warning_unless_e_option("regex literal in condition");
                 getLocalIndex("_");
                 getLocalIndex("~");
                 return nf.newMatch2(node, nf.newGVar("$_"));
             case Constants.NODE_DOT2 :
             	exclusive = false;
             case Constants.NODE_DOT3 :
-            	Node flipNode = new FlipNode(cond2(node.getBeginNode()/*, logop*/), cond2(node.getEndNode()/*, logop*/), exclusive);
+            	Node flipNode = new FlipNode(cond2(node.getBeginNode()), cond2(node.getEndNode()), exclusive);
             	
             	flipNode.setCount(registerLocal(null));
 
-                // warning_unless_e_option("range literal in condition");
                 return flipNode;
             case Constants.NODE_LIT :
                 if (node.getLiteral() instanceof RubyRegexp) {
@@ -862,30 +796,17 @@ public class ParserHelper {
         }
     }
 
-    /*private Node cond1(Node node, int logop) {
-        if (node == null) {
-            return null;
-        }
-        if (node.getType() == Constants.NODE_NEWLINE) {
-            node.setNextNode(cond0(node.getNextNode(), logop));
-            return node;
-        }
-        return cond0(node, logop);
-    }*/
-
     public Node cond(Node node) {
-        // return cond1(node, 0);
-        
         if (node == null) {
             return null;
         }
 
         if (node.getType() == Constants.NODE_NEWLINE) {
-            node.setNextNode(cond0(node.getNextNode()/*, logop*/));
+            node.setNextNode(cond0(node.getNextNode()));
             return node;
         }
 
-        return cond0(node/*, logop*/);
+        return cond0(node);
     }
     
     private Node cond2(Node node) {

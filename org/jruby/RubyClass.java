@@ -30,7 +30,10 @@
 
 package org.jruby;
 
+import java.util.*;
+
 import org.jruby.exceptions.*;
+import org.jruby.nodes.*;
 import org.jruby.runtime.*;
 
 /**
@@ -105,6 +108,16 @@ public class RubyClass extends RubyModule {
         RubyClass clone = newClass(getRuby(), getRubyClass(), getSuperClass());
         clone.setupClone(this);
         clone.setInstanceVariables(getInstanceVariables().cloneRubyMap());
+        
+        
+        Iterator iter = getMethods().entrySet().iterator();
+        while (iter.hasNext()) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            
+            MethodNode value = (MethodNode)entry.getValue();
+            
+            clone.getMethods().put(entry.getKey(), new MethodNode(value.getBodyNode(), value.getNoex()));
+        }      
 
         //clone.setMethods();
 

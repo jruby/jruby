@@ -36,10 +36,10 @@ if [ -z "$JRUBY_HOME" ] ; then
   done
   
   JRUBY_HOME_1=`dirname "$PRG"`
-  echo "Guessing JRUBY_HOME from jruby.sh to ${JRUBY_HOME_1}" 
+  # echo "Guessing JRUBY_HOME from jruby.sh to ${JRUBY_HOME_1}" 
     if [ -d ${JRUBY_HOME_1}/samples ] ; then 
 	JRUBY_HOME=${JRUBY_HOME_1}
-	echo "Setting JRUBY_HOME to $JRUBY_HOME"
+	# echo "Setting JRUBY_HOME to $JRUBY_HOME"
     fi
 fi
 
@@ -72,7 +72,7 @@ fi
 
 # ----- Set Up The System Classpath -------------------------------------------
 
-CP="$JRUBY_HOME/jruby.jar"
+CP="$JRUBY_HOME/jruby.jar:$JRUBY_HOME"
 
 if [ -f "$JAVA_HOME/lib/tools.jar" ] ; then
   CP=$CP:"$JAVA_HOME/lib/tools.jar"
@@ -98,14 +98,20 @@ fi
 
 # ----- Execute The Requested Command -----------------------------------------
 
-echo "Using CLASSPATH:  $CP"
-echo "Using JRUBY_BASE: $JRUBY_BASE"
-echo "Using JRUBY_HOME: $JRUBY_HOME"
-echo "Using JAVA_HOME:  $JAVA_HOME"
+# echo "Using CLASSPATH:  $CP"
+# echo "Using JRUBY_BASE: $JRUBY_BASE"
+# echo "Using JRUBY_HOME: $JRUBY_HOME"
+# echo "Using JAVA_HOME:  $JAVA_HOME"
 
 # shift
 #  touch $JRUBY_BASE/logs/jruby.out
-  $JAVA_HOME/bin/java -classpath $CP \
+DEBUG=""
+if [ "$1" = "debug" ]; then
+  DEBUG="-Xdebug -Xrunjdwp:transport=dt_socket,address=8000,server=y,suspend=y"
+  shift
+fi
+	
+  $JAVA_HOME/bin/java $DEBUG -classpath $CP \
   -Djruby.base=$JRUBY_BASE \
   -Djruby.home=$JRUBY_HOME \
      org.jruby.Main $JRUBY_OPTS "$@" 

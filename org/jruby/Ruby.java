@@ -158,6 +158,7 @@ public final class Ruby {
         Ruby ruby = new Ruby();
         ruby.setRegexpAdapterClass(regexpAdapterClass);
         ruby.init();
+        ruby.setGlobalVar("$*", RubyArray.newArray(ruby));
         return ruby;
     }
 

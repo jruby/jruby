@@ -51,9 +51,9 @@ public class ConstNode extends Node {
         CRefNode cbase = cref;
         
         // HACK +++
-        if (ruby.getClasses().getClassMap().get(id) != null) {
-            return (RubyObject)ruby.getClasses().getClassMap().get(id);
-        }
+//        if (ruby.getClasses().getClassMap().get(id) != null) {
+//            return (RubyObject)ruby.getClasses().getClassMap().get(id);
+//        }
         // HACK ---
         
         while (cbase != null && cbase.getNextNode() != null) {

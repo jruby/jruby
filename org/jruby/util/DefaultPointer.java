@@ -213,13 +213,13 @@ public class DefaultPointer extends AbstractList implements Pointer {
     public Object[] toArray() {
         int len = size();
         Object[] array = new Object[len];
-        System.arraycopy(super.toArray(), position, array, 0, len);
+        System.arraycopy(delegate.toArray(), position, array, 0, len);
         return array;
     }
 
     public Object[] toArray(Object[] array) {
         int len = size();
-        System.arraycopy(super.toArray(), position, array, 0, len);
+        System.arraycopy(delegate.toArray(), position, array, 0, len);
         return array;
     }
 }

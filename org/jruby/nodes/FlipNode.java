@@ -1,11 +1,9 @@
 /*
- * DotNode.java - No description
+ * FlipNode.java - No description
  * Created on 05. November 2001, 21:45
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
- * Stefan Matthias Aust <sma@3plus4.de>
- * Alan Moore <alan_moore@gmx.net>
+ * Copyright (C) 2001 Jan Arne Petersen, Benoit Cerrina
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * 
  * JRuby - http://jruby.sourceforge.net
@@ -27,7 +25,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-
 package org.jruby.nodes;
 
 import org.jruby.*;
@@ -89,6 +86,6 @@ public class FlipNode extends Node {
      * @param iVisitor the visitor
      **/
     public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitFlip2Node(this);
+        iVisitor.visitFlipNode(this);
     }
 }

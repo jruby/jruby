@@ -27,15 +27,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-
 package org.jruby.parser;
 
 import java.io.*;
 
+import org.jlf.scanner.*;
 import org.jruby.*;
 import org.jruby.nodes.*;
 import org.jruby.nodes.types.*;
 import org.jruby.runtime.*;
+import org.jruby.scanner.*;
 
 /**
  *
@@ -51,16 +52,22 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
 
     private int token = 0; // yyInput implementation
 
-    private String lex_curline; // current line
-    private int lex_pbeg;
-    private int lex_p; // pointer in current line
-    private int lex_pend; // pointer to end of line
+    /*
+        private String lex_curline; // current line
+        private int lex_pbeg;
+        private int col; // pointer in current line
+        private int lex_pend; // pointer to end of line
+    
+        private int lex_gets_ptr; // beginning of the next line
+        private RubyObject lex_input; // non-nil if File
+        private RubyObject lex_lastline;
+    
+        private boolean lex_file_io; //true, if scanner source is a file and false, if lex_get_str() shall be used.
+    */
 
-    private int lex_gets_ptr; // beginning of the next line
-    private RubyObject lex_input; // non-nil if File
-    private RubyObject lex_lastline;
-
-    private boolean lex_file_io; //true, if scanner source is a file and false, if lex_get_str() shall be used.
+    private MarkFilterScannerSource markFilterSource;
+    private LineFilterScannerSource source;
+    private IScannerSupport support;
 
     // deal with tokens..................
     private StringBuffer tokenbuf;
@@ -127,32 +134,8 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
 
     // Helper methods
 
-    private kwtable rb_reserved_word(String w, int len) {
-        return kwtable.rb_reserved_word(w, len);
-    }
-
-    private RubyInteger rb_cstr2inum(String s, int radix) {
-        return RubyNumeric.str2inum(ruby, RubyString.newString(ruby, s), radix);
-    }
-
-    private RubyRegexp rb_reg_new(String s, int len, int options) {
-        return RubyRegexp.newRegexp(ruby, RubyString.newString(ruby, s, len), options);
-    }
-
-    private void yyerror(String msg) {
-        System.err.println(msg);
-    }
-
-    /**
-     *  Returns true if "ch" is a valid identifier character (letter, digit or
-     *  underscore)
-     */
-    private boolean is_identchar(int ch) {
-        return Character.isLetterOrDigit((char) ch) || ch == '_';
-    }
-
     /* gc protect */
-    private RubyObject lex_gets_str(RubyObject _s) {
+    /*private RubyObject lex_gets_str(RubyObject _s) {
         String s = ((RubyString) _s).getValue();
         if (lex_gets_ptr != 0) {
             if (s.length() == lex_gets_ptr) {
@@ -169,12 +152,12 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
         }
         lex_gets_ptr += end;
         return RubyString.newString(ruby, s, end);
-    }
+    }*/
 
     /**
      *  Returns next line either from file or from a string.
      */
-    private RubyObject lex_getline() {
+    /*private RubyObject lex_getline() {
         RubyObject line;
         if (lex_file_io) {
             // uses rb_io_gets(lex_input)
@@ -186,18 +169,27 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
             ph.getRubyDebugLines().push(line);
         }
         return line;
-    }
+    }*/
 
     /**
      *  Returns the next character from input
      */
     private int nextc() {
-        int c;
+        int c = source.read();
 
-        if (lex_p == lex_pend) {
+        if (c == 65535) {
+            c = -1;
+        }
+        
+        ruby.setSourceLine(source.getLine());
+
+        return c;
+        /*int c;
+        
+        if (col == lex_pend) {
             if (lex_input != null) {
                 RubyObject v = lex_getline();
-
+        
                 if (v.isNil()) {
                     return -1;
                 }
@@ -207,7 +199,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                 }
                 ruby.setSourceLine(ruby.getSourceLine() + 1);
                 lex_curline = ((RubyString) v).getValue();
-                lex_p = lex_pbeg = 0;
+                col = lex_pbeg = 0;
                 lex_pend = lex_curline.length();
                 if (lex_curline.startsWith("__END__")
                     && (lex_pend == 7 || lex_curline.charAt(7) == '\n' || lex_curline.charAt(7) == '\r')) {
@@ -221,13 +213,13 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                 return -1;
             }
         }
-        c = lex_curline.charAt(lex_p++);
-        if (c == '\r' && lex_p <= lex_pend && lex_curline.charAt(lex_p) == '\n') {
-            lex_p++;
+        c = lex_curline.charAt(col++);
+        if (c == '\r' && col <= lex_pend && lex_curline.charAt(col) == '\n') {
+            col++;
             c = '\n';
         }
-
-        return c;
+        
+        return c;*/
     }
 
     /**
@@ -235,10 +227,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
      *  it'll be called.
      */
     private void pushback(int c) {
-        if (c == -1) {
-            return;
-        }
-        lex_p--;
+        source.unread();
     }
 
     /**
@@ -246,7 +235,8 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
      *  stream
      */
     private boolean peek(int c) {
-        return lex_p != lex_pend && c == lex_curline.charAt(lex_p);
+        // return col != lex_pend && c == lex_curline.charAt(col);
+        return source.isNext((char) c);
     }
 
     private String tok() {
@@ -255,9 +245,6 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
 
     private int toklen() {
         return tokenbuf.length();
-    }
-
-    private void tokfix() {
     }
 
     private char toklast() {
@@ -325,8 +312,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
             case 'x' : // hex constant
                 {
                     int[] numlen = new int[1];
-                    c = (int) scan_hex(lex_curline, lex_p, 2, numlen);
-                    lex_p += numlen[0];
+                    c = (int) support.readHexAsInt(2);
                 }
                 return c;
             case 'b' : // backspace
@@ -425,10 +411,10 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                     tokadd('\\');
                     tokadd(c);
 
-                    int[] numlen = new int[1];
-                    scan_hex(lex_curline, lex_p, 2, numlen);
-                    while (numlen[0]-- != 0) {
-                        tokadd(nextc());
+                    // +++ don't look nice
+                    String hex = support.readHex(2);
+                    for (int i = 0; i < hex.length(); i++) {
+                        tokadd(hex.charAt(i));
                     }
                 }
                 return 0;
@@ -599,8 +585,8 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
             }
         }
 
-        tokfix();
         ph.setLexState(LexState.EXPR_END);
+
         if (list != null) {
             list.setLine(re_start);
             if (toklen() > 0) {
@@ -618,7 +604,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
             yyVal = list;
             return Token.tDREGEXP;
         } else {
-            yyVal = rb_reg_new(tok(), toklen(), options | kcode);
+            yyVal = newRegexp(tok(), toklen(), options | kcode);
             return Token.tREGEXP;
         }
         //unterminated:
@@ -639,8 +625,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
         if (func == 0) {
             // read 1 line for heredoc
             // -1 for chomp
-            yyVal = RubyString.newString(ruby, lex_curline, lex_pend - 1);
-            lex_p = lex_pend;
+            yyVal = RubyString.newString(ruby, support.readLine());
             return Token.tSTRING;
         }
         strstart = ruby.getSourceLine();
@@ -698,7 +683,6 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
             tokadd(c);
         }
 
-        tokfix();
         ph.setLexState(LexState.EXPR_END);
 
         if (list != null) {
@@ -764,7 +748,6 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
             tokadd(c);
         }
 
-        tokfix();
         yyVal = RubyString.newString(ruby, tok(), toklen());
         ph.setLexState(LexState.EXPR_END);
         return Token.tSTRING;
@@ -780,7 +763,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
         newtok();
 
         c = nextc();
-        while (ISSPACE(c)) {
+        while (isSpace(c)) {
             c = nextc();
         }
         /*
@@ -806,14 +789,13 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                             tokadd(c);
                             continue;
                         }
-                        if (!ISSPACE(c)) {
+                        if (!isSpace(c)) {
                             tokadd('\\');
                         }
                         break;
                 }
-            } else if (ISSPACE(c)) {
+            } else if (isSpace(c)) {
 
-                tokfix();
                 Node str = nf.newStr(RubyString.newString(ruby, tok(), toklen()));
                 newtok();
                 if (qwords == null) {
@@ -822,7 +804,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                     ph.list_append(qwords, str);
                 }
                 c = nextc();
-                while (ISSPACE(c)) {
+                while (isSpace(c)) {
                     c = nextc();
                 }
                 // skip continuous spaces
@@ -840,7 +822,6 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
             tokadd(c);
         }
 
-        tokfix();
         if (toklen() > 0) {
             Node str = nf.newStr(RubyString.newString(ruby, tok(), toklen()));
             if (qwords == null) {
@@ -861,11 +842,12 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
         throw new Error("not supported yet");
     }*/
 
-    private int here_document(int term, int indent) {
+    private int parseHereDocument(int term, boolean indent) {
         int c;
         Node list = null;
 
         int linesave = ruby.getSourceLine();
+
         newtok();
 
         switch (term) {
@@ -882,57 +864,41 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
             default :
                 c = term;
                 term = '"';
-                if (!is_identchar(c)) {
+                if (!isIdentifierChar(c)) {
                     ph.rb_warn("use of bare << to mean <<\"\" is deprecated");
                     break;
                 }
 
-                while (is_identchar(c)) {
+                while (isIdentifierChar(c)) {
                     tokadd(c);
                     c = nextc();
                 }
                 pushback(c);
                 break;
         }
-        tokfix();
-        RubyObject lastline_save = lex_lastline;
-        int offset_save = lex_p - lex_pbeg;
-        String eos = tok();
-        int len = eos.length();
-        RubyString str = RubyString.newString(ruby, "");
+        
+        markFilterSource.mark();
+        support.readLine();
 
-        RubyObject line;
+        String eos = tok();
+
+        StringBuffer sb = new StringBuffer();
 
         while (true) {
-            lex_lastline = line = lex_getline();
-            if (line.isNil()) {
+            // test if the end of file or end of string is reached.
+            String line = support.readLine();
+            if (line == null) {
                 // error:
                 ruby.setSourceLine(linesave);
                 ph.rb_compile_error("can't find string \"" + eos + "\" anywhere before EOF");
                 return 0;
-            }
-            ruby.setSourceLine(ruby.getSourceLine());
-            String p = ((RubyString) line).getValue();
-            if (indent != 0) {
-                while (Character.isWhitespace(p.charAt(0))) {
-                    p = p.substring(1);
-                }
-                //  while (*p && (*p == ' ' || *p == '\t')) {
-                //      p++;
-                //  } 
-            }
-            if (p /*.trim()*/
-                .startsWith(eos)) {
-                if (p.charAt(len) == '\n' || p.charAt(len) == '\r') {
-                    break;
-                }
-                if (len == ((RubyString) line).getValue().length()) {
+            } else if ((indent && line.trim().startsWith(eos)) || line.startsWith(eos)) {
+                if (line.trim().length() == eos.length()) {
+                    source.addCurrentLine();
                     break;
                 }
             }
-            lex_curline = ((RubyString) line).getValue();
-            lex_pbeg = lex_p = 0;
-            lex_pend = lex_curline.length();
+            source.unread(line.length() + 1);
 
             while (true) {
                 switch (parse_string(term, '\n', '\n')) {
@@ -940,19 +906,19 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                     case Token.tXSTRING :
                          ((RubyString) yyVal).cat("\n");
                         if (list == null) {
-                            str.concat((RubyString) yyVal);
+                            sb.append(yyVal.toString());
                         } else {
                             ph.list_append(list, nf.newStr((RubyObject) yyVal));
                         }
                         break;
                     case Token.tDSTRING :
                         if (list == null) {
-                            list = nf.newDStr(str);
+                            list = nf.newDStr(RubyString.newString(ruby, sb.toString()));
                         }
                         /* fall through */
                     case Token.tDXSTRING :
                         if (list == null) {
-                            list = nf.newDXStr(str);
+                            list = nf.newDXStr(RubyString.newString(ruby, sb.toString()));
                         }
                         ph.list_append((Node) yyVal, nf.newStr(RubyString.newString(ruby, "\n")));
 
@@ -968,21 +934,18 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                         ph.rb_compile_error("can't find string \"" + eos + "\" anywhere before EOF");
                         return 0;
                 }
-                if (lex_p == lex_pend) {
+                if (source.isEOL()) {
+                    source.addCurrentLine();
                     break;
                 }
             }
         }
 
-        lex_lastline = lastline_save;
-
-        lex_curline = ((RubyString) lex_lastline).getValue();
-        lex_pbeg = 0;
-        lex_pend = lex_pbeg + lex_curline.length();
-        lex_p = lex_pbeg + offset_save;
         ph.setLexState(LexState.EXPR_END);
         ph.setHeredocEnd(ruby.getSourceLine());
         ruby.setSourceLine(linesave);
+
+        markFilterSource.reset();
 
         if (list != null) {
             list.setLine(linesave + 1);
@@ -995,13 +958,13 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                 if (list != null) {
                     return Token.tDSTRING;
                 }
-                yyVal = str;
+                yyVal = RubyString.newString(ruby, sb.toString());
                 return Token.tSTRING;
             case '`' :
                 if (list != null) {
                     return Token.tDXSTRING;
                 }
-                yyVal = str;
+                yyVal = RubyString.newString(ruby, sb.toString());
                 return Token.tXSTRING;
         }
         return 0;
@@ -1009,10 +972,6 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
 
     private void arg_ambiguous() {
         ph.rb_warning("ambiguous first argument; make sure");
-    }
-
-    private boolean IS_ARG() {
-        return ph.getLexState() == LexState.EXPR_ARG;
     }
 
     /**
@@ -1023,7 +982,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
     private int yylex() {
         int c;
         int space_seen = 0;
-        kwtable kw;
+        Keyword kw;
 
         retry : for (;;) {
             switch (c = nextc()) {
@@ -1074,7 +1033,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                         return Token.tOP_ASGN;
                     }
                     pushback(c);
-                    if (IS_ARG() && space_seen != 0 && !ISSPACE(c)) {
+                    if (isArgState() && space_seen != 0 && !isSpace(c)) {
                         ph.rb_warning("'*' interpreted as argument prefix");
                         c = Token.tSTAR;
                     } else if (ph.getLexState() == LexState.EXPR_BEG || ph.getLexState() == LexState.EXPR_MID) {
@@ -1095,25 +1054,22 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                     pushback(c);
                     return '!';
                 case '=' :
-                    if (lex_p == 1) {
+                    if (source.getColumn() == 1) {
                         // skip embedded rd document
-                        if (lex_curline.startsWith("=begin") && (lex_pend == 6 || ISSPACE(lex_curline.charAt(6)))) {
+                        if (support.isNext("begin") && Character.isWhitespace(support.getCharAt(5))) {
                             for (;;) {
-                                lex_p = lex_pend;
+                                // col = lex_pend;
                                 c = nextc();
                                 if (c == -1) {
                                     ph.rb_compile_error("embedded document meets end of file");
                                     return 0;
-                                }
-                                if (c != '=') {
+                                } else if (c != '=') {
                                     continue;
-                                }
-                                if (lex_curline.substring(lex_p, lex_p + 3).equals("end")
-                                    && (lex_p + 3 == lex_pend || ISSPACE(lex_curline.charAt(lex_p + 3)))) {
+                                } else if (source.getColumn() == 1 && support.isNext("end") && Character.isWhitespace(support.getCharAt(3))) {
                                     break;
                                 }
                             }
-                            lex_p = lex_pend;
+                            support.readLine();
                             continue retry;
                         }
                     }
@@ -1139,15 +1095,15 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                         && ph.getLexState() != LexState.EXPR_END
                         && ph.getLexState() != LexState.EXPR_ENDARG
                         && ph.getLexState() != LexState.EXPR_CLASS
-                        && (!IS_ARG() || space_seen != 0)) {
+                        && (!isArgState() || space_seen != 0)) {
                         int c2 = nextc();
-                        int indent = 0;
+                        boolean indent = false;
                         if (c2 == '-') {
-                            indent = 1;
+                            indent = true;
                             c2 = nextc();
                         }
-                        if (!ISSPACE(c2) && ("\"'`".indexOf(c2) != -1 || is_identchar(c2))) {
-                            return here_document(c2, indent);
+                        if (!isSpace(c2) && ("\"'`".indexOf(c2) != -1 || isIdentifierChar(c2))) {
+                            return parseHereDocument(c2, indent);
                         }
                         pushback(c2);
                     }
@@ -1206,7 +1162,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                         ph.rb_compile_error("incomplete character syntax");
                         return 0;
                     }
-                    if (IS_ARG() && ISSPACE(c)) {
+                    if (isArgState() && isSpace(c)) {
                         pushback(c);
                         ph.setLexState(LexState.EXPR_BEG);
                         return '?';
@@ -1233,7 +1189,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                         return Token.tOP_ASGN;
                     }
                     pushback(c);
-                    if (IS_ARG() && space_seen != 0 && !ISSPACE(c)) {
+                    if (isArgState() && space_seen != 0 && !isSpace(c)) {
                         ph.rb_warning("`&' interpeted as argument prefix");
                         c = Token.tAMPER;
                     } else if (ph.getLexState() == LexState.EXPR_BEG || ph.getLexState() == LexState.EXPR_MID) {
@@ -1272,10 +1228,8 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                         yyVal = "+"; //ph.newId('+');
                         return Token.tOP_ASGN;
                     }
-                    if (ph.getLexState() == LexState.EXPR_BEG
-                        || ph.getLexState() == LexState.EXPR_MID
-                        || (IS_ARG() && space_seen != 0 && !ISSPACE(c))) {
-                        if (IS_ARG()) {
+                    if (ph.getLexState() == LexState.EXPR_BEG || ph.getLexState() == LexState.EXPR_MID || (isArgState() && space_seen != 0 && !isSpace(c))) {
+                        if (isArgState()) {
                             arg_ambiguous();
                         }
                         ph.setLexState(LexState.EXPR_BEG);
@@ -1303,10 +1257,8 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                         yyVal = "-"; // ph.newId('-');
                         return Token.tOP_ASGN;
                     }
-                    if (ph.getLexState() == LexState.EXPR_BEG
-                        || ph.getLexState() == LexState.EXPR_MID
-                        || (IS_ARG() && space_seen != 0 && !ISSPACE(c))) {
-                        if (IS_ARG()) {
+                    if (ph.getLexState() == LexState.EXPR_BEG || ph.getLexState() == LexState.EXPR_MID || (isArgState() && space_seen != 0 && !isSpace(c))) {
+                        if (isArgState()) {
                             arg_ambiguous();
                         }
                         ph.setLexState(LexState.EXPR_BEG);
@@ -1362,7 +1314,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                 case ':' :
                     c = nextc();
                     if (c == ':') {
-                        if (ph.getLexState() == LexState.EXPR_BEG || ph.getLexState() == LexState.EXPR_MID || (IS_ARG() && space_seen != 0)) {
+                        if (ph.getLexState() == LexState.EXPR_BEG || ph.getLexState() == LexState.EXPR_MID || (isArgState() && space_seen != 0)) {
                             ph.setLexState(LexState.EXPR_BEG);
                             return Token.tCOLON3;
                         }
@@ -1370,7 +1322,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                         return Token.tCOLON2;
                     }
                     pushback(c);
-                    if (ph.getLexState() == LexState.EXPR_END || ISSPACE(c)) {
+                    if (ph.getLexState() == LexState.EXPR_END || isSpace(c)) {
                         ph.setLexState(LexState.EXPR_BEG);
                         return ':';
                     }
@@ -1386,8 +1338,8 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                         return Token.tOP_ASGN;
                     }
                     pushback(c);
-                    if (IS_ARG() && space_seen != 0) {
-                        if (!ISSPACE(c)) {
+                    if (isArgState() && space_seen != 0) {
+                        if (!isSpace(c)) {
                             arg_ambiguous();
                             return parse_regx('/', '/');
                         }
@@ -1438,7 +1390,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                         return '[';
                     } else if (ph.getLexState() == LexState.EXPR_BEG || ph.getLexState() == LexState.EXPR_MID) {
                         c = Token.tLBRACK;
-                    } else if (IS_ARG() && space_seen != 0) {
+                    } else if (isArgState() && space_seen != 0) {
                         c = Token.tLBRACK;
                     }
                     ph.setLexState(LexState.EXPR_BEG);
@@ -1459,61 +1411,16 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                     pushback(c);
                     return '\\';
                 case '%' :
-                    quotation : for (;;) {
                         if (ph.getLexState() == LexState.EXPR_BEG || ph.getLexState() == LexState.EXPR_MID) {
-                            int term;
-                            int paren;
-
-                            c = nextc();
-                            if (!Character.isLetterOrDigit((char) c)) {
-                                term = c;
-                                c = 'Q';
-                            } else {
-                                term = nextc();
-                            }
-                            if (c == -1 || term == -1) {
-                                ph.rb_compile_error("unterminated quoted string meets end of file");
-                                return 0;
-                            }
-                            paren = term;
-                            if (term == '(') {
-                                term = ')';
-                            } else if (term == '[') {
-                                term = ']';
-                            } else if (term == '{') {
-                                term = '}';
-                            } else if (term == '<') {
-                                term = '>';
-                            } else {
-                                paren = 0;
-                            }
-
-                            switch (c) {
-                                case 'Q' :
-                                    return parse_string('"', term, paren);
-                                case 'q' :
-                                    return parse_qstring(term, paren);
-                                case 'w' :
-                                    return parse_quotedwords(term, paren);
-                                case 'x' :
-                                    return parse_string('`', term, paren);
-                                case 'r' :
-                                    return parse_regx(term, paren);
-                                default :
-                                    yyerror("unknown type of %string");
-                                    return 0;
-                            }
+                            return parseQuotation(nextc());
                         }
                         if ((c = nextc()) == '=') {
                             yyVal = "%"; //ph.newId('%');
                             return Token.tOP_ASGN;
                         }
-                        if (IS_ARG() && space_seen != 0 && !ISSPACE(c)) {
-                            pushback(c);
-                            continue quotation;
+                        if (isArgState() && space_seen != 0 && !isSpace(c)) {
+                            return parseQuotation(c);
                         }
-                        break quotation;
-                    }
                     ph.setLexState(LexState.EXPR_BEG);
                     pushback(c);
                     return '%';
@@ -1524,7 +1431,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                     switch (c) {
                         case '_' : // $_: last read line string
                             c = nextc();
-                            if (is_identchar(c)) {
+                            if (isIdentifierChar(c)) {
                                 tokadd('$');
                                 tokadd('_');
                                 break;
@@ -1552,16 +1459,14 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                         case '\"' : // $": already loaded files
                             tokadd('$');
                             tokadd(c);
-                            tokfix();
-                            yyVal = tok(); // ruby.intern(tok());
+                            yyVal = tok();
                             return Token.tGVAR;
                         case '-' :
                             tokadd('$');
                             tokadd(c);
                             c = nextc();
                             tokadd(c);
-                            tokfix();
-                            yyVal = tok(); // ruby.intern(tok());
+                            yyVal = tok();
                             /* xxx shouldn't check if valid option variable */
                             return Token.tGVAR;
                         case '&' : // $&: last match
@@ -1584,15 +1489,14 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                                 tokadd(c);
                                 c = nextc();
                             }
-                            if (is_identchar(c)) {
+                            if (isIdentifierChar(c)) {
                                 break;
                             }
                             pushback(c);
-                            tokfix();
                             yyVal = nf.newNthRef(Integer.parseInt(tok().substring(1)));
                             return Token.tNTH_REF;
                         default :
-                            if (!is_identchar(c)) {
+                            if (!isIdentifierChar(c)) {
                                 pushback(c);
                                 return '$';
                             }
@@ -1611,13 +1515,13 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                     if (Character.isDigit((char) c)) {
                         ph.rb_compile_error("`@" + c + "' is not a valid instance variable name");
                     }
-                    if (!is_identchar(c)) {
+                    if (!isIdentifierChar(c)) {
                         pushback(c);
                         return '@';
                     }
                     break;
                 default :
-                    if (!is_identchar(c) || Character.isDigit((char) c)) {
+                    if (!isIdentifierChar(c) || Character.isDigit((char) c)) {
                         ph.rb_compile_error("Invalid char `\\" + c + "' in expression");
                         continue retry;
                     }
@@ -1628,16 +1532,15 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
             break retry;
         }
 
-        while (is_identchar(c)) {
+        while (isIdentifierChar(c)) {
             tokadd(c);
             c = nextc();
         }
-        if ((c == '!' || c == '?') && is_identchar(tok().charAt(0)) && !peek('=')) {
+        if ((c == '!' || c == '?') && isIdentifierChar(tok().charAt(0)) && !peek('=')) {
             tokadd(c);
         } else {
             pushback(c);
         }
-        tokfix();
         {
             int result = 0;
 
@@ -1657,7 +1560,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                 default :
                     if (ph.getLexState() != LexState.EXPR_DOT) {
                         // See if it is a reserved word.
-                        kw = rb_reserved_word(tok(), toklen());
+                        kw = getKeyword(tok(), toklen());
                         if (kw != null) {
                             // enum lex_state
                             int state = ph.getLexState();
@@ -1689,10 +1592,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                         result = Token.tFID;
                     } else {
                         if (ph.getLexState() == LexState.EXPR_FNAME) {
-                            if ((c = nextc()) == '='
-                                && !peek('~')
-                                && !peek('>')
-                                && (!peek('=') || lex_p + 1 < lex_pend && lex_curline.charAt(lex_p + 1) == '>')) {
+                            if ((c = nextc()) == '=' && !peek('~') && !peek('>') && (!peek('=') || support.getCharAt(1) == '>')) {
                                 result = Token.tIDENTIFIER;
                                 tokadd(c);
                             } else {
@@ -1705,18 +1605,57 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                             result = Token.tIDENTIFIER;
                         }
                     }
-                    if (ph.getLexState() == LexState.EXPR_BEG
-                        || ph.getLexState() == LexState.EXPR_DOT
-                        || ph.getLexState() == LexState.EXPR_ARG) {
+                    if (ph.getLexState() == LexState.EXPR_BEG || ph.getLexState() == LexState.EXPR_DOT || ph.getLexState() == LexState.EXPR_ARG) {
                         ph.setLexState(LexState.EXPR_ARG);
                     } else {
                         ph.setLexState(LexState.EXPR_END);
                     }
             }
-            tokfix();
-
-            yyVal = tok(); // ruby.intern(tok());
+            yyVal = tok();
             return result;
+        }
+    }
+
+    private int parseQuotation(int c) {
+        int term;
+
+        if (!Character.isLetterOrDigit((char) c)) {
+            term = c;
+            c = 'Q';
+        } else {
+            term = nextc();
+        }
+        if (c == -1 || term == -1) {
+            ph.rb_compile_error("unterminated quoted string meets end of file");
+            return 0;
+        }
+        int paren = term;
+        if (term == '(') {
+            term = ')';
+        } else if (term == '[') {
+            term = ']';
+        } else if (term == '{') {
+            term = '}';
+        } else if (term == '<') {
+            term = '>';
+        } else {
+            paren = 0;
+        }
+
+        switch (c) {
+            case 'Q' :
+                return parse_string('"', term, paren);
+            case 'q' :
+                return parse_qstring(term, paren);
+            case 'w' :
+                return parse_quotedwords(term, paren);
+            case 'x' :
+                return parse_string('`', term, paren);
+            case 'r' :
+                return parse_regx(term, paren);
+            default :
+                yyerror("unknown type of %string");
+                return 0;
         }
     }
 
@@ -1727,12 +1666,11 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
      *@return    Description of the Returned Value
      */
     private int start_num(int c) {
-        boolean is_float;
-        boolean seen_point;
-        boolean seen_e;
-        boolean seen_uc;
+        boolean is_float = false;
+        boolean seen_point = false;
+        boolean seen_e = false;
+        boolean seen_uc = false;
 
-        is_float = seen_point = seen_e = seen_uc = false;
         ph.setLexState(LexState.EXPR_END);
         newtok();
         if (c == '-' || c == '+') {
@@ -1749,20 +1687,19 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                         seen_uc = true;
                         continue;
                     }
-                    if (!ISXDIGIT(c)) {
+                    if (!isHexDigit(c)) {
                         break;
                     }
                     seen_uc = false;
                     tokadd(c);
                 } while ((c = nextc()) != 0);
                 pushback(c);
-                tokfix();
                 if (toklen() == 0) {
                     yyerror("hexadecimal number without hex-digits");
                 } else if (seen_uc) {
                     return decode_num(c, is_float, seen_uc, true);
                 }
-                yyVal = rb_cstr2inum(tok(), 16);
+                yyVal = getNumFromString(tok(), 16);
                 return Token.tINTEGER;
             }
             if (c == 'b' || c == 'B') {
@@ -1780,13 +1717,12 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                     tokadd(c);
                 } while ((c = nextc()) != 0);
                 pushback(c);
-                tokfix();
                 if (toklen() == 0) {
                     yyerror("numeric literal without digits");
                 } else if (seen_uc) {
                     return decode_num(c, is_float, seen_uc, true);
                 }
-                yyVal = rb_cstr2inum(tok(), 2);
+                yyVal = getNumFromString(tok(), 2);
                 return Token.tINTEGER;
             }
             if (c >= '0' && c <= '7' || c == '_') {
@@ -1803,11 +1739,10 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                     tokadd(c);
                 } while ((c = nextc()) != 0);
                 pushback(c);
-                tokfix();
                 if (seen_uc) {
                     return decode_num(c, is_float, seen_uc, true);
                 }
-                yyVal = rb_cstr2inum(tok(), 8);
+                yyVal = getNumFromString(tok(), 8);
                 return Token.tINTEGER;
             }
             if (c > '7' && c <= '9') {
@@ -1887,7 +1822,6 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
     private int decode_num(int c, boolean is_float, boolean seen_uc, boolean trailing_uc) {
         if (!trailing_uc) {
             pushback(c);
-            tokfix();
         }
         if (seen_uc || trailing_uc) {
             //trailing_uc:
@@ -1903,7 +1837,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
             yyVal = RubyFloat.newFloat(ruby, d);
             return Token.tFLOAT;
         }
-        yyVal = rb_cstr2inum(tok(), 10);
+        yyVal = getNumFromString(tok(), 10);
         return Token.tINTEGER;
     }
 
@@ -2000,14 +1934,14 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                                     tokadd(c);
                                     break fetch_id;
                             }
-                            if (!is_identchar(c)) {
+                            if (!isIdentifierChar(c)) {
                                 yyerror("bad global variable in string");
                                 newtok();
                                 return list;
                             }
                     }
 
-                    while (is_identchar(c)) {
+                    while (isIdentifierChar(c)) {
                         tokadd(c);
                         c = nextc();
                     }
@@ -2020,7 +1954,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                         tokadd(c);
                         c = nextc();
                     }
-                    while (is_identchar(c)) {
+                    while (isIdentifierChar(c)) {
                         tokadd(c);
                         c = nextc();
                     }
@@ -2074,7 +2008,6 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                                         pushback(c);
                                         ph.list_append(list, nf.newStr(RubyString.newString(ruby, "#")));
                                         ph.rb_warning("bad substitution in string");
-                                        tokfix();
                                         ph.list_append(list, nf.newStr(RubyString.newString(ruby, tok(), toklen())));
                                         newtok();
                                         return list;
@@ -2091,7 +2024,6 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
         }
 
         //fetch_id:
-        tokfix();
         node = nf.newEVStr(tok(), toklen());
         ph.list_append(list, node);
         newtok();
@@ -2102,87 +2034,66 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
 
     // Helper functions....................
 
-    //XXX private helpers, can be inlined
+    private final boolean isArgState() {
+        return ph.getLexState() == LexState.EXPR_ARG;
+    }
+
+    private static final Keyword getKeyword(String w, int len) {
+        return Keyword.rb_reserved_word(w, len);
+    }
+
+    private final RubyInteger getNumFromString(String s, int radix) {
+        return RubyNumeric.str2inum(ruby, RubyString.newString(ruby, s), radix);
+    }
+
+    private final RubyRegexp newRegexp(String s, int len, int options) {
+        return RubyRegexp.newRegexp(ruby, RubyString.newString(ruby, s, len), options);
+    }
+
+    private final void yyerror(String msg) {
+        ph.rb_errmess(msg);
+    }
+
+    /**
+     *  Returns true if "ch" is a valid identifier character (letter, digit or
+     *  underscore)
+     */
+    private static final boolean isIdentifierChar(int ch) {
+        return Character.isLetterOrDigit((char) ch) || ch == '_';
+    }
 
     /**
      *  Returns true if "c" is a white space character.
      *
-     *@param  c  Description of Parameter
-     *@return    Description of the Returned Value
      */
-    private boolean ISSPACE(int c) {
+    private static final boolean isSpace(int c) {
         return Character.isWhitespace((char) c);
     }
 
     /**
      *  Returns true if "c" is a hex-digit.
      *
-     *@param  c  Description of Parameter
-     *@return    Description of the Returned Value
      */
-    private boolean ISXDIGIT(int c) {
+    private static final boolean isHexDigit(int c) {
         return c >= '0' && c <= '9' || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F';
     }
 
     /**
-     *  Returns the value of a hex number with max "len" characters. Also
-     *  returns the number of characters read. Please note the "x"-hack.
-     *
-     *@param  s       Description of Parameter
-     *@param  start   Description of Parameter
-     *@param  len     Description of Parameter
-     *@param  retlen  Description of Parameter
-     *@return         Description of the Returned Value
+     * Gets the source.
+     * @return Returns a IScannerSource
      */
-    private long scan_hex(String s, int start, int len, int[] retlen) {
-        String hexdigit = "0123456789abcdef0123456789ABCDEFx";
-        long retval = 0;
-        int tmp;
-        int st = start;
-
-        while (len-- != 0 && st < s.length() && (tmp = hexdigit.indexOf(s.charAt(st))) != -1) {
-            retval <<= 4;
-            retval |= tmp & 15;
-            st++;
-        }
-        retlen[0] = st - start;
-        return retval;
+    public IScannerSource getSource() {
+        return source;
     }
 
-    // setter for lex options
-
-    /** Setter for property lex_file_io.
-     * @param lex_file_io New value of property lex_file_io.
+    /**
+     * Sets the source.
+     * @param source The source to set
      */
-    public void setLexFileIo(boolean lex_file_io) {
-        this.lex_file_io = lex_file_io;
-    }
+    public void setSource(IScannerSource source) {
+        this.markFilterSource = new MarkFilterScannerSource(source);
+        this.source = new LineFilterScannerSource(markFilterSource);
 
-    /** Setter for property lex_gets_ptr.
-     * @param lex_gets_ptr New value of property lex_gets_ptr.
-     */
-    public void setLexGetsPtr(int lex_gets_ptr) {
-        this.lex_gets_ptr = lex_gets_ptr;
-    }
-
-    /** Setter for property lex_input.
-     * @param lex_input New value of property lex_input.
-     */
-    public void setLexInput(org.jruby.RubyObject lex_input) {
-        this.lex_input = lex_input;
-    }
-
-    /** Setter for property lex_p.
-     * @param lex_p New value of property lex_p.
-     */
-    public void setLexP(int lex_p) {
-        this.lex_p = lex_p;
-    }
-
-    /** Setter for property lex_pend.
-     * @param lex_pend New value of property lex_pend.
-     */
-    public void setLexPEnd(int lex_pend) {
-        this.lex_pend = lex_pend;
+        this.support = new DefaultScannerSupport(this.source);
     }
 }

@@ -46,7 +46,7 @@ import com.ibm.bsf.util.*;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
+ * @version $Revision: 1.4 $
  */
 public class JRubyEngine extends BSFEngineImpl {
     private Ruby ruby;
@@ -136,8 +136,7 @@ public class JRubyEngine extends BSFEngineImpl {
 
             return JavaUtil.convertRubyToJava(ruby, result, Object.class);
         } catch (Exception excptn) {
-            ruby.printException(excptn);
-            throw new BSFException(BSFException.REASON_EXECUTION_ERROR, excptn.getMessage(), excptn);
+            throw new BSFException(BSFException.REASON_EXECUTION_ERROR, "Exception", excptn);
         }
     }
 

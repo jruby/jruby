@@ -98,28 +98,28 @@ public class RubyIO extends RubyObject {
         return ioClass;
     }
 
-    public static RubyObject stdin(Ruby ruby, RubyClass rubyClass) {
+    public static RubyObject stdin(Ruby ruby, RubyClass rubyClass, InputStream inStream) {
         RubyIO io = new RubyIO(ruby, rubyClass);
 
-        io.inStream = new RubyInputStream(ruby.getRuntime().getInputStream());
+        io.inStream = new RubyInputStream(inStream);
         io.readable = true;
 
         return io;
     }
 
-    public static RubyObject stdout(Ruby ruby, RubyClass rubyClass) {
+    public static RubyObject stdout(Ruby ruby, RubyClass rubyClass, OutputStream outStream) {
         RubyIO io = new RubyIO(ruby, rubyClass);
 
-        io.outStream = ruby.getRuntime().getOutputStream();
+        io.outStream = outStream;
         io.writeable = true;
 
         return io;
     }
 
-    public static RubyObject stderr(Ruby ruby, RubyClass rubyClass) {
+    public static RubyObject stderr(Ruby ruby, RubyClass rubyClass, OutputStream errStream) {
         RubyIO io = new RubyIO(ruby, rubyClass);
 
-        io.outStream = ruby.getRuntime().getErrorStream();
+        io.outStream = errStream;
         io.writeable = true;
 
         return io;
@@ -143,6 +143,14 @@ public class RubyIO extends RubyObject {
 
     protected boolean isWriteable() {
         return writeable;
+    }
+    
+    public OutputStream getOutStream() {
+        return outStream;
+    }
+
+    public InputStream getInStream() {
+        return inStream;
     }
 
     protected void closeStreams() {
@@ -582,26 +590,5 @@ public class RubyIO extends RubyObject {
         recv.funcall("write", RubyGlobal.sprintf(ruby, recv, args));
 
         return ruby.getNil();
-    }
-
-    /**
-     * Set this IO object outputstream as Ruby's outputstream.
-     **/
-    public void setAsRubyOutputStream() {
-        ruby.getRuntime().setOutputStream(new java.io.PrintStream(outStream));
-    }
-
-    /**
-     * Set this IO object outputstream as Ruby's errorstream.
-     **/
-    public void setAsRubyErrorStream() {
-        ruby.getRuntime().setErrorStream(new java.io.PrintStream(outStream));
-    }
-
-    /**
-     * Set this IO object inputStream as Ruby's inputstream.
-     **/
-    public void setAsRubyInputStream() {
-        ruby.getRuntime().setInputStream(inStream);
     }
 }

@@ -100,7 +100,7 @@ public class ClassNode extends Node {
             rubyClass.setClassPath(ruby.getRubyClass(), getClassNameId());
         }
         if (ruby.getWrapper() != null) {
-            rubyClass.getSingletonClass().includeModule(ruby.getWrapper());
+            rubyClass.extendObject(ruby.getWrapper());
             rubyClass.includeModule(ruby.getWrapper());
         }
         
