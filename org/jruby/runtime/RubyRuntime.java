@@ -33,7 +33,9 @@ package org.jruby.runtime;
 import java.io.*;
 
 import org.jruby.*;
+import org.jruby.exceptions.*;
 import org.jruby.nodes.*;
+import org.jruby.util.*;
 
 /**
  *
@@ -61,6 +63,28 @@ public class RubyRuntime {
             getErrorStream().println("[BUG] " + description);
         }
     }
+    
+    /** Call the current method in the superclass of the current object
+     * 
+     * @matz rb_call_super
+     */
+    public RubyObject callSuper(RubyObject[] args) {
+        if (ruby.getRubyFrame().getLastClass() == null) {
+            throw new RubyNameException(ruby, "superclass method '" + ruby.getRubyFrame().getLastFunc() + "' must be enabled by enableSuper().");
+        }
+        
+        ruby.getIter().push();
+        
+        RubyObject result = ruby.getNil();
+        
+        try {
+        	result = ruby.getRubyFrame().getLastClass().getSuperClass().call(ruby.getRubyFrame().getSelf(), ruby.getRubyFrame().getLastFunc(), new RubyPointer(args), 3);
+        } finally {
+        	ruby.getIter().pop();
+        }
+        
+        return result;
+    }
 
     /** This method compiles and interprets a Ruby script.
      *
@@ -72,7 +96,7 @@ public class RubyRuntime {
         CRefNode savedCRef = ruby.getCRef();
 
         // TMP_PROTECT;
-        if (wrap && ruby.getSecurityLevel() >= 4) {
+        if (wrap && ruby.getSafeLevel() >= 4) {
             // Check_Type(fname, T_STRING);
         } else {
             // Check_SafeStr(fname);

@@ -8,11 +8,16 @@ public class RubyOptions {
     }
     
     public class JavaSupport {
-		private boolean rubyNames;
-		private boolean rubyModules;
+		private boolean rubyNames = true;
+		private boolean javaNames = true;
+		private boolean rubyModules = true;
 		
 		public boolean isRubyNames() {
 		    return rubyNames;
+		}
+		
+		public boolean isJavaNames() {
+		    return javaNames;
 		}
 		
 		public boolean isRubyModules() {
@@ -23,9 +28,12 @@ public class RubyOptions {
 		    this.rubyNames = rubyNames;
 		}
 		
+		public void setJavaNames(boolean javaNames) {
+		    this.javaNames = javaNames;
+		}
+		
 		public void setRubyModules(boolean rubyModules) {
 		    this.rubyModules = rubyModules;
 		}
     }
 }
-

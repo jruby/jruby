@@ -2,8 +2,8 @@
  * RubyGlobalEntry.java - No description
  * Created on 16. September 2001, 17:26
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
@@ -38,7 +38,7 @@ import org.jruby.exceptions.*;
  * @author  jpetersen
  * @version $Revision$
  */
-public class RubyGlobalEntry {
+public final class RubyGlobalEntry {
     private Ruby ruby = null;
 
     private String id = null;
@@ -48,15 +48,19 @@ public class RubyGlobalEntry {
     private SetterMethod setter = null;
 
     private static UndefMethods undefMethods = new UndefMethods();
-    private static ValueMethods valueMethods = new ValueMethods();
-    private static ReadonlySetter readonlySetter = new ReadonlySetter();
+    public static ValueMethods valueMethods = new ValueMethods();
+    public static ReadonlySetter readonlySetter = new ReadonlySetter();
 
-    private RubyGlobalEntry(Ruby ruby, String id) {
+    public RubyGlobalEntry(Ruby ruby, String id) {
         this.ruby = ruby;
         this.id = id;
 
         this.getter = undefMethods;
         this.setter = undefMethods;
+    }
+
+    public Ruby getRuby() {
+        return ruby;
     }
 
     /** Getter for property id.
@@ -90,28 +94,28 @@ public class RubyGlobalEntry {
     /** Getter for property getter.
      * @return Value of property getter.
      */
-    protected GetterMethod getGetter() {
+    private GetterMethod getGetter() {
         return getter;
     }
 
     /** Setter for property getter.
      * @param getter New value of property getter.
      */
-    protected void setGetter(GetterMethod getter) {
+    public void setGetter(GetterMethod getter) {
         this.getter = getter;
     }
 
     /** Getter for property setter.
      * @return Value of property setter.
      */
-    protected SetterMethod getSetter() {
+    private SetterMethod getSetter() {
         return setter;
     }
 
     /** Setter for property setter.
      * @param setter New value of property setter.
      */
-    protected void setSetter(SetterMethod setter) {
+    public void setSetter(SetterMethod setter) {
         this.setter = setter;
     }
 
@@ -126,7 +130,7 @@ public class RubyGlobalEntry {
      *
      */
     public RubyObject set(RubyObject value) {
-        if (ruby.getSecurityLevel() >= 4) {
+        if (ruby.getSafeLevel() >= 4) {
             throw new RubySecurityException(ruby, "Insecure: can't change global variable value");
         }
 
@@ -143,76 +147,14 @@ public class RubyGlobalEntry {
      *
      */
     public void alias(String newId) {
-        if (ruby.getSecurityLevel() >= 4) {
+        if (ruby.getSafeLevel() >= 4) {
             throw new RubySecurityException(ruby, "Insecure: can't alias global variable");
         }
 
-        RubyGlobalEntry entry = getGlobalEntry(ruby, newId);
+        RubyGlobalEntry entry = ruby.getGlobalEntry(newId);
         entry.data = data;
         entry.getter = getter;
         entry.setter = setter;
-    }
-
-    /** rb_global_entry
-     *
-     */
-    public static RubyGlobalEntry getGlobalEntry(Ruby ruby, String id) {
-        //Ruby ruby = id.getRuby();
-
-        RubyGlobalEntry entry = (RubyGlobalEntry) ruby.getGlobalMap().get(id);
-
-        if (entry == null) {
-            entry = new RubyGlobalEntry(ruby, id);
-            ruby.getGlobalMap().put(id, entry);
-        }
-
-        return entry;
-    }
-
-    public static String getGlobalId(String name) {
-        if (name.charAt(0) != '$') {
-            return '$' + name;
-        }
-        return name;
-    }
-
-    /** defines a global variable with getter and setter methods
-     * 
-     */
-    public static void defineHookedVariable(
-        Ruby ruby,
-        String name,
-        RubyObject value,
-        GetterMethod getter,
-        SetterMethod setter) {
-
-        name = RubyGlobalEntry.getGlobalId(name);
-
-        RubyGlobalEntry globalEntry = getGlobalEntry(ruby, name);
-        globalEntry.setData(value);
-        globalEntry.setGetter(getter != null ? getter : valueMethods);
-        globalEntry.setSetter(setter != null ? setter : valueMethods);
-    }
-
-    /** defines a global variable
-     * 
-     */
-    public static void defineVariable(Ruby ruby, String name, RubyObject value) {
-        defineHookedVariable(ruby, name, value, null, null);
-    }
-
-    /** defines a readonly global variable
-     * 
-     */
-    public static void defineReadonlyVariable(Ruby ruby, String name, RubyObject value) {
-        defineHookedVariable(ruby, name, value, null, readonlySetter);
-    }
-
-    public static void defineVirtualVariable(Ruby ruby, String name, GetterMethod getter, SetterMethod setter) {
-        getter = getter != null ? getter : valueMethods;
-        setter = setter != null ? setter : readonlySetter;
-
-        defineHookedVariable(ruby, name, null, getter, setter);
     }
 
     public interface GetterMethod {

@@ -57,6 +57,17 @@ public class RubyIter {
         iter = newIter;
     }
     
+    /** push default iter:
+     * 
+     * <ul>
+     * <li>ITER_NOT if current iter equals ITER_NOT</li>
+     * <li>ITER_PRE otherwise</li>
+     * </ul>
+     */
+    public void push() {
+        push(iter == ITER_NOT ? ITER_NOT : ITER_PRE);
+    }
+    
     public void pop() {
         iter = prev.iter;
         prev = prev.prev;
