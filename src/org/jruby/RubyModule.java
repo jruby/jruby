@@ -3,9 +3,11 @@
  * Created on 09. Juli 2001, 21:38
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -320,46 +322,52 @@ public class RubyModule extends RubyObject {
             return path;
         }
 
-        String s = "Module";
-        if (isClass()) {
-            s = "Class";
-        }
-
-        return "<" + s + " 01x" + Integer.toHexString(System.identityHashCode(this)) + ">";
+        return "<" + (isClass() ? "Class" : "Module") + " 01x" + 
+        	Integer.toHexString(System.identityHashCode(this)) + ">";
         // 0 = pointer
+    }
+    
+    private RubyModule getModuleWithInstanceVar(String name) {
+        for (RubyModule tmp = this; tmp != null; tmp = tmp.getSuperClass()) {
+            if (tmp.hasInstanceVariable(name)) {
+                return tmp;
+            }
+        }
+        return null;
     }
 
     /** rb_cvar_set
      *
      */
     public void setClassVar(String name, IRubyObject value) {
-        RubyModule tmp = this;
-        while (tmp != null) {
-            if (tmp.hasInstanceVariable(name)) {
-                if (tmp.isTaint() && getRuntime().getSafeLevel() >= 4) {
-                    throw new SecurityError(getRuntime(), "Insecure: can't modify class variable");
-                }
-                tmp.setInstanceVariable(name, value);
-                return;
+        RubyModule module = getModuleWithInstanceVar(name);
+        
+        if (module != null) {
+            if (module.isTaint() && getRuntime().getSafeLevel() >= 4) {
+                throw new SecurityError(getRuntime(), "Insecure: can't modify class variable");
             }
-            tmp = tmp.getSuperClass();
+            module.setInstanceVariable(name, value);
+            return;
         }
-        throw new NameError(getRuntime(), "uninitialized class variable " + name + " in " + toName());
+
+        // If we cannot find the class var, then create it in the super class.
+        if (isTaint() && getRuntime().getSafeLevel() >= 4) {
+            throw new SecurityError(getRuntime(), "Insecure: can't modify class variable");
+        }
+        setInstanceVariable(name, value);
     }
 
     /** rb_cvar_declare
      *
      */
     public void declareClassVar(String name, IRubyObject value) {
-        RubyModule tmp = this;
-        while (tmp != null) {
-            if (tmp.hasInstanceVariable(name)) {
-                if (tmp.isTaint() && getRuntime().getSafeLevel() >= 4) {
-                    throw new SecurityError(getRuntime(), "Insecure: can't modify class variable");
-                }
-                tmp.setInstanceVariable(name, value);
+        RubyModule module = getModuleWithInstanceVar(name);
+        
+        if (module != null) {
+            if (module.isTaint() && getRuntime().getSafeLevel() >= 4) {
+                throw new SecurityError(getRuntime(), "Insecure: can't modify class variable");
             }
-            tmp = tmp.getSuperClass();
+            module.setInstanceVariable(name, value);
         }
         setAv(name, value, false);
     }
@@ -368,12 +376,10 @@ public class RubyModule extends RubyObject {
      *
      */
     public IRubyObject getClassVar(String name) {
-        RubyModule tmp = this;
-        while (tmp != null) {
-            if (tmp.hasInstanceVariable(name)) {
-                return tmp.getInstanceVariable(name);
-            }
-            tmp = tmp.getSuperClass();
+        RubyModule module = getModuleWithInstanceVar(name);
+        
+        if (module != null) {
+            return module.getInstanceVariable(name);
         }
         throw new NameError(getRuntime(), "uninitialized class variable " + name + " in " + toName());
     }
@@ -382,14 +388,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public boolean isClassVarDefined(String name) {
-        RubyModule tmp = this;
-        while (tmp != null) {
-            if (tmp.hasInstanceVariable(name)) {
-                return true;
-            }
-            tmp = tmp.getSuperClass();
-        }
-        return false;
+        return getModuleWithInstanceVar(name) != null;
     }
 
     public void setConstant(String name, IRubyObject value) {
