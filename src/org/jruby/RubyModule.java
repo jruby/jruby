@@ -3,11 +3,12 @@
  * Created on 09. Juli 2001, 21:38
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
- * Copyright (C) 2004 Thomas E Enebo
+ * Copyright (C) 2004 Thomas E Enebo, Charles O Nutter
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Thomas E Enebo <enebo@acm.org>
+ * Charles O Nutter <headius@headius.com>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -297,6 +298,11 @@ public class RubyModule extends RubyObject {
     }
     
     public IRubyObject getConstant(String name, boolean invokeConstMissing) {
+    	// special case code for "NIL"
+    	if (name.equals("NIL")) {
+    		return runtime.getNil();
+    	}
+    	
     	// First look for constants in module hierachy
     	for (RubyModule p = this; p != p.parentModule; p = p.parentModule) {
             IRubyObject var = p.getInstanceVariable(name);

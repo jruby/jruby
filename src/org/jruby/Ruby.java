@@ -3,12 +3,13 @@
  * Created on 04. Juli 2001, 22:53
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Copyright (C) 2004 Thomas E Enebo
+ * Copyright (C) 2004 Thomas E Enebo, Charles O Nutter
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Thomas E Enebo <enebo@acm.org>
+ * Charles O Nutter <headius@headius.com>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -151,7 +152,7 @@ public final class Ruby {
      * Create and initialize a new jruby Runtime.
      */
     private Ruby() {
-        nilObject = RubyObject.nilObject(this);
+        nilObject = new RubyNil(this);
         trueObject = new RubyBoolean(this, true);
         falseObject = new RubyBoolean(this, false);
 

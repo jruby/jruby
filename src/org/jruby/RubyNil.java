@@ -3,10 +3,12 @@
  * Created on 09. Juli 2001, 21:38
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2004 Charles O Nutter
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Charles O Nutter <headius@headius.com>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -37,7 +39,11 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author  jpetersen
  */
-public class RubyNil {
+public class RubyNil extends RubyObject {
+	public RubyNil(Ruby runtime) {
+		super(runtime);
+	}
+	
     public static RubyClass createNilClass(Ruby runtime) {
         RubyClass nilClass = runtime.defineClass("NilClass", runtime.getClasses().getObjectClass());
         CallbackFactory callbackFactory = runtime.callbackFactory();
@@ -45,6 +51,7 @@ public class RubyNil {
         nilClass.defineMethod("to_i", callbackFactory.getSingletonMethod(RubyNil.class, "to_i"));
         nilClass.defineMethod("to_s", callbackFactory.getSingletonMethod(RubyNil.class, "to_s"));
         nilClass.defineMethod("to_a", callbackFactory.getSingletonMethod(RubyNil.class, "to_a"));
+        nilClass.defineMethod("to_f", callbackFactory.getSingletonMethod(RubyNil.class, "to_f"));
         nilClass.defineMethod("inspect", callbackFactory.getSingletonMethod(RubyNil.class, "inspect"));
         
         nilClass.defineMethod("&", callbackFactory.getSingletonMethod(RubyNil.class, "op_and", IRubyObject.class));
@@ -69,11 +76,19 @@ public class RubyNil {
     // Methods of the Nil Class (nil_*):
         
     /** nil_to_i
-     *
-     */
-    public static RubyFixnum to_i(IRubyObject recv) {
-        return RubyFixnum.zero(recv.getRuntime());
-    }
+    *
+    */
+   public static RubyFixnum to_i(IRubyObject recv) {
+       return RubyFixnum.zero(recv.getRuntime());
+   }
+
+   /**
+    * nil_to_f
+    *  
+    */
+	public static RubyFloat to_f(IRubyObject recv) {
+		return RubyFloat.newFloat(recv.getRuntime(), 0.0D);
+	}
 
     /** nil_to_s
      *
@@ -127,4 +142,15 @@ public class RubyNil {
     public static RubyFixnum id(IRubyObject recv) {
         return RubyFixnum.newFixnum(recv.getRuntime(), 4);
     }
+
+    public boolean isNil() {
+        return true;
+    }	
+    
+    public boolean isFalse() {
+    	return true;
+	}
+	public boolean isTrue() {
+		return false;
+	}
 }
