@@ -124,8 +124,8 @@ public class DefaultRubyParser implements RubyParser {
 %type <Node>  block_var opt_block_var brace_block do_block lhs none
 %type <Node>  mlhs mlhs_head mlhs_basic mlhs_entry mlhs_item mlhs_node
 %type <RubyId>    fitem variable sym symbol operation operation2 operation3
-%type <RubyId>    cname fname op f_rest_arg
-%type <Integer>   f_norm_arg f_arg
+%type <RubyId>    cname fname op
+%type <Integer>   f_rest_arg f_norm_arg f_arg
 %token <RubyId> tUPLUS 	/* unary+ */
 %token <RubyId> tUMINUS 	/* unary- */
 %token <RubyId> tPOW		/* ** */
@@ -1553,39 +1553,39 @@ f_arglist	: '(' f_args opt_nl ')'
 
 f_args		: f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg
 		    {
-                $$ = ph.block_append(nf.newArgs($1, $3, $5), $6);
+                $$ = ph.block_append(nf.newArgs($1, $3, $5.intValue()), $6);
 		    }
 		| f_arg ',' f_optarg opt_f_block_arg
 		    {
-                $$ = ph.block_append(nf.newArgs($1, $3, RubyId.newId(ruby, -1)), $4);
+                $$ = ph.block_append(nf.newArgs($1, $3, -1), $4);
 		    }
 		| f_arg ',' f_rest_arg opt_f_block_arg
 		    {
-                $$ = ph.block_append(nf.newArgs($1, null, $3), $4);
+                $$ = ph.block_append(nf.newArgs($1, null, $3.intValue()), $4);
 		    }
 		| f_arg opt_f_block_arg
 		    {
-                $$ = ph.block_append(nf.newArgs($1, null, RubyId.newId(ruby, -1)), $2);
+                $$ = ph.block_append(nf.newArgs($1, null, -1), $2);
 		    }
 		| f_optarg ',' f_rest_arg opt_f_block_arg
 		    {
-			    $$ = ph.block_append(nf.newArgs(null, $1, $3), $4);
+			    $$ = ph.block_append(nf.newArgs(null, $1, $3.intValue()), $4);
 		    }
 		| f_optarg opt_f_block_arg
 		    {
-			    $$ = ph.block_append(nf.newArgs(null, $1, RubyId.newId(ruby, -1)), $2);
+			    $$ = ph.block_append(nf.newArgs(null, $1, -1), $2);
 		    }
 		| f_rest_arg opt_f_block_arg
 		    {
-			    $$ = ph.block_append(nf.newArgs(null, null, $1), $2);
+			    $$ = ph.block_append(nf.newArgs(null, null, $1.intValue()), $2);
 		    }
 		| f_block_arg
 		    {
-			    $$ = ph.block_append(nf.newArgs(null, null, RubyId.newId(ruby, -1)), $1);
+			    $$ = ph.block_append(nf.newArgs(null, null, -1), $1);
 		    }
 		| /* none */
 		    {
-			    $$ = nf.newArgs(null, null, RubyId.newId(ruby, -1));
+			    $$ = nf.newArgs(null, null, -1);
 		    }
 
 f_norm_arg	: tCONSTANT

@@ -2121,55 +2121,55 @@ case 358:
 case 359:
 					// line 1555 "parse.y"
   {
-                yyVal = ph.block_append(nf.newArgs(((Integer)yyVals[-5+yyTop]), ((Node)yyVals[-3+yyTop]), ((RubyId)yyVals[-1+yyTop])), ((Node)yyVals[0+yyTop]));
+                yyVal = ph.block_append(nf.newArgs(((Integer)yyVals[-5+yyTop]), ((Node)yyVals[-3+yyTop]), ((Integer)yyVals[-1+yyTop]).intValue()), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 360:
 					// line 1559 "parse.y"
   {
-                yyVal = ph.block_append(nf.newArgs(((Integer)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]), RubyId.newId(ruby, -1)), ((Node)yyVals[0+yyTop]));
+                yyVal = ph.block_append(nf.newArgs(((Integer)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]), -1), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 361:
 					// line 1563 "parse.y"
   {
-                yyVal = ph.block_append(nf.newArgs(((Integer)yyVals[-3+yyTop]), null, ((RubyId)yyVals[-1+yyTop])), ((Node)yyVals[0+yyTop]));
+                yyVal = ph.block_append(nf.newArgs(((Integer)yyVals[-3+yyTop]), null, ((Integer)yyVals[-1+yyTop]).intValue()), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 362:
 					// line 1567 "parse.y"
   {
-                yyVal = ph.block_append(nf.newArgs(((Integer)yyVals[-1+yyTop]), null, RubyId.newId(ruby, -1)), ((Node)yyVals[0+yyTop]));
+                yyVal = ph.block_append(nf.newArgs(((Integer)yyVals[-1+yyTop]), null, -1), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 363:
 					// line 1571 "parse.y"
   {
-			    yyVal = ph.block_append(nf.newArgs(null, ((Node)yyVals[-3+yyTop]), ((RubyId)yyVals[-1+yyTop])), ((Node)yyVals[0+yyTop]));
+			    yyVal = ph.block_append(nf.newArgs(null, ((Node)yyVals[-3+yyTop]), ((Integer)yyVals[-1+yyTop]).intValue()), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 364:
 					// line 1575 "parse.y"
   {
-			    yyVal = ph.block_append(nf.newArgs(null, ((Node)yyVals[-1+yyTop]), RubyId.newId(ruby, -1)), ((Node)yyVals[0+yyTop]));
+			    yyVal = ph.block_append(nf.newArgs(null, ((Node)yyVals[-1+yyTop]), -1), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 365:
 					// line 1579 "parse.y"
   {
-			    yyVal = ph.block_append(nf.newArgs(null, null, ((RubyId)yyVals[-1+yyTop])), ((Node)yyVals[0+yyTop]));
+			    yyVal = ph.block_append(nf.newArgs(null, null, ((Integer)yyVals[-1+yyTop]).intValue()), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 366:
 					// line 1583 "parse.y"
   {
-			    yyVal = ph.block_append(nf.newArgs(null, null, RubyId.newId(ruby, -1)), ((Node)yyVals[0+yyTop]));
+			    yyVal = ph.block_append(nf.newArgs(null, null, -1), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 367:
 					// line 1587 "parse.y"
   {
-			    yyVal = nf.newArgs(null, null, RubyId.newId(ruby, -1));
+			    yyVal = nf.newArgs(null, null, -1);
 		    }
   break;
 case 368:
