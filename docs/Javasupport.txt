@@ -10,13 +10,14 @@ Java:
 
     java_to_primitive(obj) -> ruby primitive or obj
         If obj is a Java object and either a boolean, numeric type or
-        string, a corresponding instance of a primitive(*) Ruby type is
+        string, a corresponding instance of a primitive (boolean, numeric or
+        string) Ruby type is
         returned.
         Otherwise obj is returned.
 
     primitive_to_java(obj) -> java primitive or obj
-        If obj is of a primitive Ruby type(*) a corresponding Java object is
-        returned. Otherwise obj is returned.
+        If obj is of a primitive Ruby type (boolean, numeric or string) a
+        corresponding Java object is returned. Otherwise obj is returned.
 
 
 Java::JavaClass:
@@ -90,6 +91,122 @@ Java::JavaClass:
         Raises NameError if there isn't a matching constructor.
 
 
+Java::JavaMethod:
+
+    instance methods:
+
+    meth.name -> aString
+        Returns the name of the method.
+
+        Example:
+            java_class.java_method("toString").name  # --> "toString"
+
+    meth.arity -> aFixnum
+        Returns the number of arguments on this method.
+
+    meth.public? -> true or false
+        Returns true if the Java method is public, false otherwise.
+
+    meth.final? -> true or false
+        Returns true if the Java method is final, false otherwise.
+
+    meth.invoke( aJavaObject, [anObject]* ) -> aJavaObject
+        Invokes the corresponding Java instance method on the Java object
+        given as first arguments. The remaining arguments are passed as
+        arguments in the invokation.
+        The returned object is a Java object, instance of the class given
+        by proxy_class().
+
+        Example:
+            meth.name    # -> "indexOf"
+            meth.arity   # -> 1
+            meth.invoke(java_string, another_java_string)
+                         # -> an instance of java.lang.Integer
+
+    meth.invoke_static( [anObject]* ) -> aJavaObject
+        Invokes the corresponding Java class ("static") method. All
+        arguments are passed as arguments in the invokation.
+        The returned object is a Java object, instance of the class given
+        by proxy_class().
+
+        Example:
+            meth = string_class.java_method("valueOf", "int")
+            meth.static?   # -> true
+            meth.invoke_static(java_integer_five)
+                           # -> the java.lang.String value "5"
+
+    meth.argument_types -> anArray
+        Returns a list of the names of the Java argument types.
+
+        Example:
+            meth.argument_types  # -> ["int", "java.lang.String"]
+
+    meth.inspect -> aString
+        Returns a human-readable representation of this Java method.
+
+    meth.static? -> true or false
+        Returns true if this method is a class ("static") method, false
+        otherwise.
+
+    meth.return_type -> aString
+        Returns the name of the Java return type for this method.
+
+        Example:
+            meth = java_obj.java_method("toString")
+            meth.return_type                        # -> "java.lang.String"
+
+    meth.proxy_class -> aClass
+        Returns the proxy class, that is, the class that all returned Java
+        objects of this JavaMethod will be instances of. Defaults to
+        JavaObject.
+
+        Example:
+            meth = string_class.java_method("hashCode")
+            meth.proxy_class                     # -> JavaObject
+            result =  meth.invoke(java_string)
+            result.type                          # -> JavaObject
+            
+            meth.proxy_class = MyStringProxy
+            result = meth.invoke(java_string)
+            result.type                          # -> MyStringProxy
+
+    meth.proxy_class = aClass -> aClass
+        Sets the proxy class, that is, the class that all returned Java
+        objects of this JavaMethod will be instances of. Defaults to
+        JavaObject.
+
+        Example:
+            meth = string_class.java_method("hashCode")
+            meth.proxy_class                     # -> JavaObject
+            result =  meth.invoke(java_string)
+            result.type                          # -> JavaObject
+            
+            meth.proxy_class = MyStringProxy
+            result = meth.invoke(java_string)
+            result.type                          # -> MyStringProxy
 
 
-*) Primitive types are in this case booleans, numeric types and strings.
+Java::JavaConstructor:
+
+    instance methods:
+
+    cons.arity -> aFixnum
+        Returns the number of arguments on this constructor.
+
+    cons.new_instance( aClass, [anObject]* ) -> aJavaObject
+        Creates a new instance of the Java class this constructor belongs
+        to, with the given arguments. The returned instance will be of the
+        class given as the first argument, usually a proxy class.
+
+        Example:
+
+            cons = integer_class.constructor("int")
+            result = cons.new_instance(MyIntegerProxy, java_integer_ten)
+            result.type     # -> MyIntegerProxy
+
+
+    cons.inspect -> aString
+        Returns a human-readable representation of this Java method.
+
+    cons.argument_types -> anArray
+        Returns a list of the names of the Java argument types.
