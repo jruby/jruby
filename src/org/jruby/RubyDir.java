@@ -179,9 +179,11 @@ public class RubyDir extends RubyObject {
     public static IRubyObject chdir(IRubyObject recv, RubyString path) {
         File dir = getDir(recv.getRuntime(), path.toString());
         String realPath = null;
+        String oldCwd = System.getProperty("user.dir");
     
         // We get canonical path to try and flatten the path out.
-        // a dir '/subdir/..' should return as '/' 
+        // a dir '/subdir/..' should return as '/'
+        // cnutter: Do we want to flatten path out?
         try {
             realPath = dir.getCanonicalPath();
         } catch (IOException e) {
@@ -190,11 +192,10 @@ public class RubyDir extends RubyObject {
         
         IRubyObject result = null;
         if (recv.getRuntime().isBlockGiven()) {
-        	// FIXME: Bad to manipulate system property for cwd; not thread safe
-        	String oldPath = System.getProperty("user.dir");
+        	// FIXME: Don't use user.dir for cwd
         	System.setProperty("user.dir", realPath);
         	result = recv.getRuntime().yield(path);
-        	System.setProperty("user.dir", oldPath); 
+        	System.setProperty("user.dir", oldCwd); 
         } else {
         	System.setProperty("user.dir", realPath);
         	result = recv.getRuntime().newFixnum(0);
