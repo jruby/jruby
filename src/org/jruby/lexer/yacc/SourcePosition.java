@@ -85,13 +85,14 @@ public class SourcePosition implements Serializable {
     }
 
     /**
+     * @param object the object which should be compared
      * @return simple Object.equals() implementation
      */
     public boolean equals(Object object) {
     	if (object == this) {
     		return true;
     	}
-        if (object instanceof SourcePosition) {
+        if (!(object instanceof SourcePosition)) {
         	return false;
         }
         

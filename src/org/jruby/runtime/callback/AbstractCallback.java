@@ -58,61 +58,7 @@ public abstract class AbstractCallback implements Callback {
         this.arity = arity;
         this.isStaticMethod = isStaticMethod;
     }
-
-    /**
-     * Returns a string enumerating the given and the expected arguments types. 
-     */
-    protected String getExpectedArgsString(IRubyObject[] args) {
-        StringBuffer sb = new StringBuffer();
-        sb.append("Wrong arguments: ");
-
-        if (args.length == 0) {
-            sb.append("No args");
-        } else {
-            sb.append("(");
-            for (int i = 0; i < args.length; i++) {
-                if (i > 0) {
-                    sb.append(", ");
-                }
-                String className = args[i].getType().getName();
-                sb.append("a");
-                if (isVowel(className.charAt(0))) {
-                    sb.append("n");
-                }
-                sb.append(className);
-            }
-            sb.append(")");
-        }
-        sb.append(" given, ");
-
-        if (argumentTypes.length == 0) {
-            sb.append("no arguments expected.");
-        } else {
-            sb.append("(");
-            for (int i = 0; i < argumentTypes.length; i++) {
-                if (i > 0) {
-                    sb.append(", ");
-                }
-                String className = argumentTypes[i].getName();
-                className = className.substring(className.lastIndexOf(".Ruby") + 5);
-                sb.append("a");
-                if (isVowel(className.charAt(0))) {
-                	sb.append("n");
-                }
-                sb.append(className);
-            }
-            if (isRestArgs) {
-                sb.append(", ...");
-            }
-            sb.append(") expected.");
-        }
-        return sb.toString();
-    }
     
-    private boolean isVowel(char c) {
-    	return c == 'A' || c == 'E' || c == 'I' || c == 'O' || c == 'U';
-    }
-
     /**
      * Returns an object array that collects all rest arguments in its own object array which
      * is then put into the last slot of the first object array.  That is, assuming that this
@@ -125,32 +71,12 @@ public abstract class AbstractCallback implements Callback {
         try {
             System.arraycopy(originalArgs, argumentTypes.length - 1, restArray, 0, originalArgs.length - (argumentTypes.length - 1));
         } catch (ArrayIndexOutOfBoundsException e) {
-            throw new RuntimeException(
-                    "Cannot call \""
-                    + methodName
-                    + "\" in class \""
-                    + type.getName()
-                    + "\". "
-                    + getExpectedArgsString((IRubyObject[]) originalArgs));
+            assert false : e;
+        	return null;
         }
         System.arraycopy(originalArgs, 0, result, 0, argumentTypes.length - 1);
         result[argumentTypes.length - 1] = restArray;
         return result;
-    }
-
-    /**
-     * Checks whether 
-     */
-    protected void testArgsCount(Ruby runtime, IRubyObject[] methodArgs) {
-        if (isRestArgs) {
-            if (methodArgs.length < argumentTypes.length - 1) {
-                throw runtime.newArgumentError(getExpectedArgsString(methodArgs));
-            }
-        } else {
-            if (methodArgs.length != argumentTypes.length) {
-                throw runtime.newArgumentError(getExpectedArgsString(methodArgs));
-            }
-        }
     }
 
     /**
@@ -207,7 +133,7 @@ public abstract class AbstractCallback implements Callback {
      */
     public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
         args = (args != null) ? args : IRubyObject.NULL_ARRAY;
-        testArgsCount(recv.getRuntime(), args);
+        arity.checkArity(recv.getRuntime(), args);
         return invokeMethod(recv, args);
     }
 

@@ -38,49 +38,35 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class ReflectionCallback extends AbstractCallback {
     private final Method method;
 
-    public ReflectionCallback(
-        Class type,
-        String methodName,
-        Class[] argumentTypes,
-        boolean isRestArgs,
-        boolean isStaticMethod,
-        Arity arity)
-    {
+    public ReflectionCallback(Class type, String methodName, Class[] argumentTypes,
+            boolean isRestArgs, boolean isStaticMethod, Arity arity) {
         super(type, methodName, argumentTypes, isRestArgs, isStaticMethod, arity);
-    	if (isStaticMethod) {
-    		Class[] types = new Class[argumentTypes.length + 1];
-    		System.arraycopy(argumentTypes, 0, types, 1, argumentTypes.length);
-    		types[0] = IRubyObject.class;
-    		argumentTypes = types;
-    	}
-    	try {
+        if (isStaticMethod) {
+            Class[] types = new Class[argumentTypes.length + 1];
+            System.arraycopy(argumentTypes, 0, types, 1, argumentTypes.length);
+            types[0] = IRubyObject.class;
+            argumentTypes = types;
+        }
+        try {
             this.method = type.getMethod(methodName, argumentTypes);
         } catch (NoSuchMethodException e) {
-            throw new RuntimeException(
-                "NoSuchMethodException: Cannot get method \""
-                    + methodName
-                    + "\" in class \""
-                    + type.getName()
-                    + "\" by Reflection.");
+            throw new RuntimeException("NoSuchMethodException: Cannot get method \"" + methodName
+                    + "\" in class \"" + type.getName() + "\" by Reflection.");
         } catch (SecurityException e) {
-            throw new RuntimeException(
-                "SecurityException: Cannot get method \""
-                    + methodName
-                    + "\" in class \""
-                    + type.getName()
-                    + "\" by Reflection.");
+            throw new RuntimeException("SecurityException: Cannot get method \"" + methodName
+                    + "\" in class \"" + type.getName() + "\" by Reflection.");
         }
     }
-    
-	protected IRubyObject invokeMethod0(IRubyObject recv, Object[] methodArgs)
-			throws IllegalAccessException, InvocationTargetException {
-		if (isStaticMethod) {
-			Object[] args = new Object[methodArgs.length + 1];
-			System.arraycopy(methodArgs, 0, args, 1, methodArgs.length);
-			args[0] = recv;
-			recv = null;
-			methodArgs = args;
-		}
-		return (IRubyObject) method.invoke(recv, methodArgs);
-	}
+
+    protected IRubyObject invokeMethod0(IRubyObject recv, Object[] methodArgs)
+            throws IllegalAccessException, InvocationTargetException {
+        if (isStaticMethod) {
+            Object[] args = new Object[methodArgs.length + 1];
+            System.arraycopy(methodArgs, 0, args, 1, methodArgs.length);
+            args[0] = recv;
+            recv = null;
+            methodArgs = args;
+        }
+        return (IRubyObject) method.invoke(recv, methodArgs);
+    }
 }
