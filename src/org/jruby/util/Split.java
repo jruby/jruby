@@ -44,6 +44,7 @@ import java.util.ArrayList;
  * Internals for String#split
  */
 public class Split {
+    private boolean isWhitespace = false;
     private Ruby runtime;
     private int limit = 0;
     private RubyRegexp pattern;
@@ -84,11 +85,9 @@ public class Split {
 			hits++;
 			RubyMatchData matchData = (RubyMatchData) runtime.getBackref();
 			int end = matchData.matchEndPosition();
-			// We do not want to add any elements if the split pattern is
-			// at the front of the string;  Unless we match against an empty
-			// re.  (This is icky as it is the side-effect of the ternary 
-			// conditional in the addResult below).
-			if (beg != 0 || beg == 0 && beg == end) {
+
+			// Whitespace splits are supposed to ignore leading whitespace
+			if (beg != 0 || isWhitespace != true) {
 			    addResult(substring(splitee, pos, (beg == pos && end == beg) ? 1 : beg - pos));
 			    // Add to list any /(.)/ matched.
 			    long extraPatterns = matchData.getSize();
@@ -124,14 +123,19 @@ public class Split {
 
     private RubyRegexp getPattern(IRubyObject[] args) {
         if (args.length == 0) {
+            isWhitespace = true;
             return RubyRegexp.newRegexp(runtime, "\\s+", 0);
         }
         if (args[0] instanceof RubyRegexp) {
+            // Even if we have whitespace-only explicit regexp we do not
+            // mark it as whitespace.  Apparently, this is so ruby can
+            // still get the do not ignore the front match behavior.
             return RubyRegexp.regexpValue(args[0]);
         } else {
             String stringPattern = RubyString.stringValue(args[0]).getValue();
             
             if (stringPattern.equals(" ")) {
+                isWhitespace = true;
                 return RubyRegexp.newRegexp(runtime, "\\s+", 0);
             } else {
                 return RubyRegexp.newRegexp(runtime, unescapeString(stringPattern), 0);
