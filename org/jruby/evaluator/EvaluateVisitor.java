@@ -1,28 +1,28 @@
 /*
  * EvaluateVisitor.java - description
  * Created on 19.02.2002, 18:14:29
- * 
+ *
  * Copyright (C) 2001, 2002 Jan Arne Petersen
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  *
  * JRuby - http://jruby.sourceforge.net
- * 
+ *
  * This file is part of JRuby
- * 
+ *
  * JRuby is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with JRuby; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  */
 package org.jruby.evaluator;
 
@@ -74,9 +74,9 @@ public final class EvaluateVisitor implements NodeVisitor {
 
     /**
      * Helper method.
-     * 
+     *
      * test if a trace function is avaiable.
-     * 
+     *
      */
     private boolean isTrace() {
         return ruby.getRuntime().getTraceFunction() != null;
@@ -460,7 +460,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                 // create JavaPackage module.
                 // return;
             }
-        }         
+        }
         // Java package support hack end;
         eval(iVisited.getLeftNode());
         if (result instanceof RubyModule) {
@@ -695,22 +695,19 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public final void visitEvStrNode(final EvStrNode iVisited) {
         if (iVisited.getEvaluatedNode() == null) {
-            // FIXME Move the variable stuff to a Runtime method
-
             RubyParserConfiguration config = new RubyParserConfiguration();
-            config.setLocalVariables(ruby.getScope().getLocalNames());
+//            config.setLocalVariables(ruby.getScope().getLocalNames());
+
             config.setBlockVariables(RubyVarmap.getNames(ruby));
-            ruby.getParser().init(config);
 
-            IRubyParserResult result = (IRubyParserResult) ruby.getParser().parse(LexerFactory.getInstance().getSource("#{}", iVisited.getValue()));
+//            ruby.getInternalParser().init(config);
 
-            int oldLen = ruby.getScope().getLocalNames() != null ? ruby.getScope().getLocalNames().size() : 0;
-            int newLen = result.getLocalVariables() != null ? result.getLocalVariables().size() : 0;
-            if (newLen > oldLen) {
-                ruby.getScope().setLocalNames(result.getLocalVariables());
-            }
+//            IRubyParserResult result = (IRubyParserResult) ruby.getInternalParser().parse(LexerFactory.getInstance().getSource("#{}", iVisited.getValue()));
 
-            iVisited.setEvaluatedNode(result.getAST());
+//            ruby.getScope().setLocalNames(result.getLocalVariables());
+
+            INode node = ruby.getParser().parse("#{}", iVisited.getValue(), config);
+            iVisited.setEvaluatedNode(node);
         }
 
         eval(iVisited.getEvaluatedNode());
@@ -959,7 +956,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
             /*if (!(module instanceof RubyModule)) {
               throw new RubyTypeException(moduleName.toName() + " is not a module");
-            
+
               }*/
 
             if (ruby.getSafeLevel() >= 4) {
@@ -986,7 +983,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         if (iVisited.getPosition() != null) {
             ruby.setSourceFile(iVisited.getPosition().getFile());
             ruby.setSourceLine(iVisited.getPosition().getLine());
-            
+
             if (isTrace()) {
                 callTraceFunction(
                     "line",
@@ -1495,7 +1492,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     }
 
     /** Evaluates the body in a class or module definition statement.
-     * 
+     *
      */
     private void evalClassDefinitionBody(ScopeNode iVisited, RubyModule type) {
         /* String file = ruby.getSourceFile();

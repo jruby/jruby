@@ -275,7 +275,7 @@ public class Main {
 			for (int i = 0; i < lNbRequire; i++)
 				RubyKernel.require(ruby, null, new RubyString(ruby, (String) sRequireFirst.get(i)));
         // +++
-            INode lScript = ruby.compile(iString2Eval, iFileName, 0);
+            INode lScript = ruby.parse(iString2Eval, iFileName, 0);
 
             //				DumpVisitor laVisitor = new DumpVisitor();
             //				lScript.accept(laVisitor);

@@ -147,7 +147,7 @@ public class RubyRuntime {
 			// FIXME
 			ruby.setInEval(ruby.getInEval() + 1);
 
-			INode node = ruby.compile(source.toString(), scriptName.getValue(), 0);
+			INode node = ruby.parse(source.toString(), scriptName.getValue(), 0);
 
 			// ---
 			ruby.setInEval(ruby.getInEval() - 1);

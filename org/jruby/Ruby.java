@@ -60,9 +60,7 @@ import org.jruby.internal.runtime.methods.IterateMethod;
 import org.jruby.internal.runtime.methods.RubyMethodCache;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.parser.DefaultRubyParser;
-import org.jruby.parser.IRubyParserResult;
-import org.jruby.parser.RubyParserConfiguration;
+import org.jruby.parser.*;
 import org.jruby.runtime.AliasGlobalVariable;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockStack;
@@ -181,7 +179,7 @@ public final class Ruby {
     // pluggable Regexp engine
     private Class regexpAdapterClass;
 
-    private IParser parser;
+    private Parser parser = new Parser(this);
 
     /**
      * Create and initialize a new jruby Runtime.
@@ -231,7 +229,7 @@ public final class Ruby {
      * Evaluates a script and returns a RubyObject.
      */
     public IRubyObject evalScript(String script) {
-        return eval(compile(script, "<script>", 1));
+        return eval(parse(script, "<script>", 1));
     }
 
     public IRubyObject eval(INode node) {
@@ -483,21 +481,11 @@ public final class Ruby {
      *
      */
     private void init() {
-        if (initialized) {
-            return;
-        }
-        initialized = true;
-
         getIterStack().push(Iter.ITER_NOT);
         getFrameStack().push();
         topFrame = getCurrentFrame();
 
-        // rb_origenviron = environ;
-
-        // Init_stack(0);
-        // Init_heap();
-        getScope().push(); // PUSH_SCOPE();
-        // rubyScope.setLocalVars(null);
+        getScope().push();
         topScope = currentScope();
 
         setCurrentMethodScope(Constants.SCOPE_PRIVATE);
@@ -518,8 +506,7 @@ public final class Ruby {
             topNamespace = new Namespace(getClasses().getObjectClass());
             namespace = topNamespace;
             getCurrentFrame().setNamespace(namespace);
-            // defineGlobalConstant("TOPLEVEL_BINDING", rb_f_binding(ruby_top_self));
-            // ruby_prog_init();
+
         } catch (Exception excptn) {
             excptn.printStackTrace();
         }
@@ -859,24 +846,8 @@ public final class Ruby {
         }
     }
 
-    /**
-     * @fixme
-     **/
-    public INode compile(String content, String file, int line) {
-        // FIXME (fix what?)
-        RubyParserConfiguration config = new RubyParserConfiguration();
-
-        config.setLocalVariables(getScope().getLocalNames());
-
-        getParser().init(config);
-
-        IRubyParserResult result = (IRubyParserResult) getParser().parse(LexerFactory.getInstance().getSource(file, content));
-
-        if (result.getLocalVariables() != null) {
-            getScope().setLocalNames(new ArrayList(result.getLocalVariables()));
-        }
-
-        return result.getAST();
+    public INode parse(String content, String file, int line) {
+        return parser.parse(file, content);
     }
 
     public RubyObject getLastline() {
@@ -907,15 +878,7 @@ public final class Ruby {
         getScope().setValue(1, match);
     }
 
-    /**
-     * Gets the parser.
-     * @return Returns a IParser
-     */
-    public IParser getParser() {
-        if (parser == null) {
-            parser = new DefaultRubyParser();
-            parser.setErrorHandler(new RubyErrorHandler(this, verbose));
-        }
+    public Parser getParser() {
         return parser;
     }
 }
