@@ -47,13 +47,14 @@ import org.jruby.util.PrintfFormat;
  * @author  amoore
  */
 public class RubyRegexp extends RubyObject implements ReOptions {
-	/** Class which represents the multibyte character set code.
+    private static final Pattern COMMENT_PATTERN = Pattern.compile("\\(\\?#[^)]*\\)");
+    private static final Pattern HEX_SINGLE_DIGIT_PATTERN = Pattern.compile("\\\\x(\\p{XDigit})(?!\\p{XDigit})");
+    /** Class which represents the multibyte character set code.
 	 * (should be an enum in Java 5.0).
 	 * 
 	 * Warning: THIS IS NOT REALLY SUPPORTED BY JRUBY. 
 	 */
-    private static String COMMENT_PATTERN = "\\(\\?#[^)]*\\)";
-    
+
 	private static final class Code {
 		private static final Code NIL = new Code(null);
 		private static final Code NONE = new Code("none");
@@ -143,7 +144,8 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         if ((options & RE_OPTION_MULTILINE) > 0) {
         	flags |= Pattern.DOTALL;
         }
-        regex = regex.replaceAll(COMMENT_PATTERN, "");
+        regex = COMMENT_PATTERN.matcher(regex).replaceAll("");
+        regex = HEX_SINGLE_DIGIT_PATTERN.matcher(regex).replaceAll("\\\\"+"x0$1");
         pattern = Pattern.compile(regex, flags | this.code.flags());
     }
 

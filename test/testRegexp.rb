@@ -33,3 +33,9 @@ test_ok("(?mix:pattern)" == /pattern/mix.to_s)
 
 #########    test8   #################
 test_ok(/ab (?# comment )c/ =~ 'ab c')
+
+#########    test9   #################
+test_ok("\tZ"   =~ /\x9Z/)
+test_ok("\t"   =~ /\x9/)
+test_ok("\tZ\tQ"   =~ /\x9Z\x9Q/)
+test_ok("\x9cZ" =~ /\x9cZ/)
