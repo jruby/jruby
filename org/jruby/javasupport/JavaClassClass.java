@@ -29,6 +29,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyArray;
+import org.jruby.RubyFixnum;
 import org.jruby.exceptions.TypeError;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.CallbackFactory;
@@ -53,15 +54,15 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
     private static final int INTERFACE_P = 3;
     private static final int NAME = 5;
     private static final int SUPERCLASS = 7;
-    private static final int OP_GT = 8;
-    private static final int OP_LT = 9;
-    private static final int JAVA_INSTANCE_METHODS = 10;
-    private static final int CONSTANTS = 11;
-    private static final int JAVA_METHOD = 12;
+    private static final int OP_CMP = 8;
+    private static final int JAVA_INSTANCE_METHODS = 11;
+    private static final int CONSTANTS = 12;
+    private static final int JAVA_METHOD = 13;
 
     public static RubyClass createJavaClassClass(Ruby runtime, RubyModule javaModule) {
         RubyClass javaClassClass =
                 javaModule.defineClassUnder("JavaClass", runtime.getClasses().getObjectClass());
+        javaClassClass.includeModule(runtime.getClasses().getComparableModule());
 
         javaClassClass.defineSingletonMethod("for_name", CallbackFactory.getSingletonMethod(JavaClassClass.class, "for_name", IRubyObject.class));
         javaClassClass.defineMethod("public?", IndexedCallback.create(PUBLIC_P, 0));
@@ -70,8 +71,7 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
         javaClassClass.defineMethod("name", IndexedCallback.create(NAME, 0));
         javaClassClass.defineMethod("to_s", IndexedCallback.create(NAME, 0));
         javaClassClass.defineMethod("superclass", IndexedCallback.create(SUPERCLASS, 0));
-        javaClassClass.defineMethod(">", IndexedCallback.create(OP_GT, 1));
-        javaClassClass.defineMethod("<", IndexedCallback.create(OP_LT, 1));
+        javaClassClass.defineMethod("<=>", IndexedCallback.create(OP_CMP, 1));
         javaClassClass.defineMethod("java_instance_methods", IndexedCallback.create(JAVA_INSTANCE_METHODS, 0));
         javaClassClass.defineMethod("constants", IndexedCallback.create(CONSTANTS, 0));
         javaClassClass.defineMethod("java_method", IndexedCallback.createOptional(JAVA_METHOD, 1));
@@ -109,20 +109,18 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
         return new JavaClassClass(runtime, superclass.getName());
     }
 
-    public RubyBoolean op_gt(IRubyObject other) {
+    public RubyFixnum op_cmp(IRubyObject other) {
         if (! (other instanceof JavaClassClass)) {
-            throw new TypeError(runtime, "compared with non-javaclass");
+            throw new TypeError(getRuntime(), "<=> requires JavaClass (" + other.getType() + " given)");
         }
-        boolean result = javaClass.isAssignableFrom(((JavaClassClass) other).javaClass);
-        return RubyBoolean.newBoolean(runtime, result);
-    }
-
-    public RubyBoolean op_lt(IRubyObject other) {
-        if (! (other instanceof JavaClassClass)) {
-            throw new TypeError(runtime, "compared with non-javaclass");
+        JavaClassClass otherClass = (JavaClassClass) other;
+        if (this.javaClass == otherClass.javaClass) {
+            return RubyFixnum.newFixnum(getRuntime(), 0);
         }
-        boolean result = ((JavaClassClass) other).javaClass.isAssignableFrom(javaClass);
-        return RubyBoolean.newBoolean(runtime, result);
+        if (this.javaClass.isAssignableFrom(otherClass.javaClass)) {
+            return RubyFixnum.newFixnum(getRuntime(), -1);
+        }
+        return RubyFixnum.newFixnum(getRuntime(), 1);
     }
 
     public RubyArray java_instance_methods() {
@@ -176,10 +174,8 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
                 return name();
             case SUPERCLASS :
                 return superclass();
-            case OP_GT :
-                return op_gt(args[0]);
-            case OP_LT :
-                return op_lt(args[0]);
+            case OP_CMP :
+                return op_cmp(args[0]);
             case JAVA_INSTANCE_METHODS :
                 return java_instance_methods();
             case CONSTANTS :

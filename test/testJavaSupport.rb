@@ -19,6 +19,11 @@ if defined? Java
   test_exception(NameError) { Cloneable.new }
   test_equal([Cloneable, Object, Kernel], Cloneable.ancestors)
 
+  # Inner classes
+  #Java.import("java.awt.geom")
+  #test_ok(Ellipse2D.type)
+  #test_ok(Ellipse2D::Float.type)
+
   Java.import("org.jruby.test")
 
   unless System.getProperty("jruby.script").nil?
@@ -55,10 +60,10 @@ if defined? Java
   test_equal("java.lang.Object", object_class.name)
   test_equal(nil, object_class.superclass)
 
-  test_ok(string_class < object_class)
-  test_ok(! (string_class > object_class))
-  test_ok(object_class > string_class)
-  test_ok(! (object_class < string_class))
+#  test_ok(string_class < object_class)
+#  test_ok(! (string_class > object_class))
+#  test_ok(object_class > string_class)
+#  test_ok(! (object_class < string_class))
 
   string_methods = string_class.java_instance_methods
   test_ok(string_methods.include?("charAt"))

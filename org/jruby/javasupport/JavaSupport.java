@@ -1,9 +1,7 @@
 package org.jruby.javasupport;
 
-import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.lang.reflect.Method;
@@ -45,7 +43,7 @@ public class JavaSupport {
         if (loadedJavaClasses.containsKey(javaClass)) {
             return (RubyModule) loadedJavaClasses.get(javaClass);
         }
- 
+
         if (rubyName == null) {
             String javaName = javaClass.getName();
             rubyName = javaName.substring(javaName.lastIndexOf('.') + 1);
@@ -177,7 +175,7 @@ public class JavaSupport {
 
     /**
      * translate java naming convention in ruby naming convention.
-     * translate getter and setter in ruby style accessor and 
+     * translate getter and setter in ruby style accessor and
      * boolean getter in ruby style ? method
      * @param javaName the name of the java method
      * @return the name of the equivalent rubyMethod if a translation
@@ -245,7 +243,7 @@ public class JavaSupport {
         }
         throw new NameError(ruby, "cannot load Java class: " + className);
     }
-    
+
     public void addToClasspath(URL url) {
         javaClassLoader = new URLClassLoader(new URL[] { url }, javaClassLoader);
     }
