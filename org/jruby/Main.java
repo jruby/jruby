@@ -119,7 +119,7 @@ public class Main {
         System.out.println("    -e 'command'    one line of script. Several -e's allowed. Omit [programfile]");
         System.out.println("    -b              benchmark mode, times the script execution");
         System.out.println("    -rx 'adapter class'    The adapter class for the regexp engine, for now can be:");
-        System.out.println("                           org.jruby.GNURegexpAdapter or org.jruby.JDKRegexpAdapter");
+        System.out.println("                           org.jruby.regexp.GNURegexpAdapter or org.jruby.regexp.JDKRegexpAdapter");
     }
 
     /**
@@ -131,9 +131,14 @@ public class Main {
     protected static void runInterpreter(String iString2Eval, String iFileName, String[] args) {
         // Initialize Runtime
         Ruby ruby = new Ruby();
-        if (sRegexpAdapter != null) {
-            ruby.setRegexpAdapterClass(sRegexpAdapter);
+        if (sRegexpAdapter == null) {
+            try {
+                sRegexpAdapter = Class.forName("org.jruby.regexp.GNURegexpAdapter");
+            } catch (Exception e) {
+                throw new RuntimeException("Class GNURegexpAdapter not found");
+            }
         }
+        ruby.setRegexpAdapterClass(sRegexpAdapter);
         ruby.init();
 
         // Parse and interpret file

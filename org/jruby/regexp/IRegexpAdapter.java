@@ -23,19 +23,23 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  * 
  */
-package org.jruby;
+package org.jruby.regexp;
+
+import org.jruby.Ruby;
+import org.jruby.RubyObject;
+import org.jruby.exceptions.RubyRegexpException;
 
 /**
  * Regexp adapter base class.
  * This abstract class is used to decouple ruby from the actual regexp engine
  */
-abstract class IRegexpAdapter
+public abstract class IRegexpAdapter
 {
 
     /**
      * Compile the regex.
      */
-    public abstract void compile(String pattern) throws org.jruby.exceptions.RubyRegexpException;
+    public abstract void compile(String pattern) throws RubyRegexpException;
 
     /**
      * Set whether matches should be case-insensitive or not

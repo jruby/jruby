@@ -29,6 +29,7 @@ package org.jruby;
 
 import org.jruby.exceptions.*;
 import org.jruby.parser.ReOptions;
+import org.jruby.regexp.*;
 import org.jruby.util.PrintfFormat;
 
 /**

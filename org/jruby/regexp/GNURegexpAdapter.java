@@ -24,14 +24,19 @@
  * 
  */
 
-package org.jruby;
+package org.jruby.regexp;
+
 import gnu.regexp.*;
+
+import org.jruby.Ruby;
+import org.jruby.RubyMatchData;
+import org.jruby.RubyObject;
 import org.jruby.exceptions.RubyRegexpException;
 
 /**
  * Regexp adapter for gnu.regexp.
  */
-class GNURegexpAdapter extends IRegexpAdapter
+public class GNURegexpAdapter extends IRegexpAdapter
 {
 
     private RE re;

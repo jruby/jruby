@@ -43,11 +43,13 @@ public class RBKernel {
         
         kernelModule.defineMethod("puts", getKernelMethod("m_puts"));
         kernelModule.defineMethod("print", getKernelMethod("m_print"));
+        kernelModule.defineMethod("p", getKernelMethod("m_p"));
         kernelModule.defineMethod("sprintf", getKernelMethod("m_sprintf"));
         kernelModule.defineMethod("format", getKernelMethod("m_sprintf"));
         kernelModule.defineMethod("printf", getKernelMethod("m_printf"));
         kernelModule.defineMethod("require", getKernelMethod("m_require", RubyString.class));
         kernelModule.defineMethod("to_s", getObjectMethod("m_to_s"));
+        kernelModule.defineMethod("inspect", getObjectMethod("m_inspect"));
         kernelModule.defineMethod("nil?", DefaultCallbackMethods.getMethodFalse());
         kernelModule.defineMethod("=~", DefaultCallbackMethods.getMethodFalse());
         
@@ -93,6 +95,15 @@ public class RBKernel {
         for (int i = 0; i < args.length; i++) {
             if (args[i] != null) {
                 System.out.print(((RubyString)args[i].funcall(ruby.intern("to_s"))).getValue());
+            }
+        }
+        return ruby.getNil();
+    }
+    
+    public static RubyObject m_p(Ruby ruby, RubyObject recv, RubyObject args[]) {
+        for (int i = 0; i < args.length; i++) {
+            if (args[i] != null) {
+                System.out.println(((RubyString)args[i].funcall(ruby.intern("inspect"))).getValue());
             }
         }
         return ruby.getNil();

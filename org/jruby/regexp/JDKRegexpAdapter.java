@@ -24,25 +24,30 @@
  * 
  */
 
-package org.jruby;
+package org.jruby.regexp;
+
 import java.util.regex.*;
+
+import org.jruby.Ruby;
+import org.jruby.RubyMatchData;
+import org.jruby.RubyObject;
 import org.jruby.exceptions.RubyRegexpException;
 
 /**
  * Regexp adapter for gnu.regexp.
  */
-class JDKRegexpAdapter extends IRegexpAdapter {
+public class JDKRegexpAdapter extends IRegexpAdapter {
 
-    private Pattern _Pat;
-    private Matcher _Matcher;
+    private Pattern pattern;
+    private Matcher matcher;
     private int cflags = Pattern.MULTILINE;
 
     /**
      * Compile the regex.
      */
-    public void compile(String pattern) throws RubyRegexpException {
+    public void compile(String regex) throws RubyRegexpException {
         try {
-            _Pat = Pattern.compile(pattern, cflags);
+            pattern = Pattern.compile(regex, cflags);
         } catch (PatternSyntaxException e) {
             throw new RubyRegexpException(e.getMessage());
         }
@@ -92,16 +97,16 @@ class JDKRegexpAdapter extends IRegexpAdapter {
      * Does the given argument match the pattern?
      */
     public RubyObject search(Ruby ruby, String target, int startPos) {
-        if (_Matcher == null) {
-            _Matcher = _Pat.matcher(target);
+        if (matcher == null) {
+            matcher = pattern.matcher(target);
         }
-        if (_Matcher.find(startPos)) {
-            int count = _Matcher.groupCount() + 1;
+        if (matcher.find(startPos)) {
+            int count = matcher.groupCount() + 1;
             int[] begin = new int[count];
             int[] end = new int[count];
             for (int i = 0; i < count; i++) {
-                begin[i] = _Matcher.start(i);
-                end[i] = _Matcher.end(i);
+                begin[i] = matcher.start(i);
+                end[i] = matcher.end(i);
             }
             return new RubyMatchData(ruby, target, begin, end);
         }

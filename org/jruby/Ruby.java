@@ -108,7 +108,7 @@ public final class Ruby {
     private ClassLoader javaClassLoader = ClassLoader.getSystemClassLoader();
  
     // pluggable Regexp engine	
-    private Class regexpAdapterClass = GNURegexpAdapter.class;
+    private Class regexpAdapterClass;
 
     /**
      * Create and initialize a new jruby Runtime.
