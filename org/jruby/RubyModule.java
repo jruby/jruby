@@ -738,7 +738,7 @@ public class RubyModule extends RubyObject {
 
 		if (ent != null) {
 			if (ent.getMethod() == null) {
-				throw new RuntimeException("Undefined");
+				throw new RuntimeException("undefined method " + mid.toName() + " for " + recv + ":" + recv.getRubyClass().toName());
 			}
 
 			klass = ent.getOrigin();
@@ -758,7 +758,7 @@ public class RubyModule extends RubyObject {
 						getRuby(),
 						"super: no superclass method '" + mid.toName() + "'");
 				}
-				throw new RuntimeException("Undefined");
+				throw new RuntimeException("undefined method " + mid.toName() + " for " + recv + ":" + recv.getRubyClass().toName());
 			}
 		}
 
@@ -841,7 +841,8 @@ public class RubyModule extends RubyObject {
 		}
 
 		MethodNode methodNode = searchMethod(oldId);
-		RubyModule origin = methodNode.getMethodOrigin();
+
+		RubyModule origin = null;
 
 		if (methodNode == null || methodNode.getBodyNode() == null) {
 			if (isModule()) {
@@ -851,7 +852,9 @@ public class RubyModule extends RubyObject {
 		}
 		if (methodNode == null || methodNode.getBodyNode() == null) {
 			// print_undef( klass, def );
+			return; //CEF
 		}
+		origin = methodNode.getMethodOrigin();
 
 		Node body = methodNode.getBodyNode();
 		// methodNode.setCnt(methodNode.nd_cnt() + 1);
