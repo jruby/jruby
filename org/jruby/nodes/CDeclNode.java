@@ -52,7 +52,7 @@ public class CDeclNode extends Node implements AssignableNode {
     
     public RubyObject eval(Ruby ruby, RubyObject self) {
         if (ruby.getRubyClass() == null) {
-            throw new RubyTypeException("no class/module to define constant");
+            throw new RubyTypeException(ruby, "no class/module to define constant");
         }
         RubyObject result = getValueNode().eval(ruby, self);
         ruby.getRubyClass().setConstant(getVId(), result);

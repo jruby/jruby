@@ -49,7 +49,7 @@ public class DefsNode extends Node {
             RubyObject recv = getRecvNode().eval(ruby, self);
             
             if (ruby.getSecurityLevel() >= 4 && !recv.isTaint()) {
-                throw new RubySecurityException("Insecure; can't define singleton method");
+                throw new RubySecurityException(ruby, "Insecure; can't define singleton method");
             }
                 /*if (FIXNUM_P(recv) || SYMBOL_P(recv)) {
                     rb_raise(rb_eTypeError, "can't define singleton method \"%s\" for %s",
@@ -57,14 +57,14 @@ public class DefsNode extends Node {
                 }*/ // not needed in jruby
             
             if (recv.isFrozen()) {
-                throw new RubyFrozenException("object");
+                throw new RubyFrozenException(ruby, "object");
             }
             RubyClass rubyClass = recv.getSingletonClass();
             
             Node body = (Node)rubyClass.getMethods().get(getMId());
             if (body != null) {
                 if (ruby.getSecurityLevel() >= 4) {
-                    throw new RubySecurityException("redefining method prohibited");
+                    throw new RubySecurityException(ruby, "redefining method prohibited");
                 }
                 /*if (RTEST(ruby_verbose)) {
                     rb_warning("redefine %s", rb_id2name(node.nd_mid()));

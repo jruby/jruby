@@ -56,7 +56,7 @@ public class CVDeclNode extends Node implements AssignableNode {
     
     public RubyObject eval(Ruby ruby, RubyObject self) {
         if (ruby.getCBase() == null) {
-            throw new RubyTypeException("no class/module to define class variable");
+            throw new RubyTypeException(ruby, "no class/module to define class variable");
         }
         RubyObject result = getValueNode().eval(ruby, self);
         if (ruby.getCBase().isSingleton()) {

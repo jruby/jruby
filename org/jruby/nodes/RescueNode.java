@@ -63,22 +63,21 @@ public class RescueNode extends Node {
 
                 Node body = getResqNode();
                 while (body != null) {
-                    if (isRescueHandled(ruby, self, body)) {
+                    if (isRescueHandled(ruby, raExcptn.getActException(), self, body)) {
                         try {
                             return body.eval(ruby, self);
                         } catch (RetryException rExcptn) {
-                            ruby.setActException(ruby.getNil());
                             continue RescuedBlock;
                         }
                     }
                     body = body.getHeadNode();
                 }
-                throw new RaiseException();
+                throw raExcptn;
             }
         }
     }
     
-    private boolean isRescueHandled(Ruby ruby, RubyObject self, Node node) {
+    private boolean isRescueHandled(Ruby ruby, RubyException actExcptn, RubyObject self, Node node) {
         // TMP_PROTECT;
         
         if (node.getArgsNode() == null) {
@@ -91,9 +90,9 @@ public class RescueNode extends Node {
         
         for (int i = 0; i < args.size(); i++) {
             if (args.getRuby(i).m_kind_of(ruby.getClasses().getModuleClass()).isFalse()) {
-                throw new RubyTypeException("class or module required for rescue clause");
+                throw new RubyTypeException(ruby, "class or module required for rescue clause");
             }
-            if (ruby.getActException().m_kind_of((RubyModule)args.getRuby(i)).isTrue()) {
+            if (actExcptn.m_kind_of((RubyModule)args.getRuby(i)).isTrue()) {
                 return true;
             }
         }

@@ -47,10 +47,10 @@ public class SClassNode extends Node {
     public RubyObject eval(Ruby ruby, RubyObject self) {
         RubyClass rubyClass = (RubyClass)getRecvNode().eval(ruby, self);
         if (rubyClass.isSpecialConst()) {
-            throw new RubyTypeException("no virtual class for " + rubyClass.getRubyClass().toName());
+            throw new RubyTypeException(ruby, "no virtual class for " + rubyClass.getRubyClass().toName());
         }
         if (ruby.getSecurityLevel() >= 4 && !rubyClass.isTaint()) {
-            throw new RubySecurityException("Insecure: can't extend object");
+            throw new RubySecurityException(ruby, "Insecure: can't extend object");
         }
         if (rubyClass.getRubyClass().isSingleton()) {
             // rb_clear_cache();

@@ -48,17 +48,6 @@ public class CFuncNode extends Node implements CallableNode {
     }
     
     public RubyObject call(Ruby ruby, RubyObject recv, RubyId id, RubyPointer args, boolean noSuper) {
-        // HACK +++
-        try {
-        // HACK ---
-            return getCallbackMethod().execute(recv, args == null ? null : args.toRubyArray(), ruby);
-        // HACK +++
-        } catch (RaiseException rrExcptn) {
-            System.out.print("[BUG] Cannot call method \"" + id.toName() + "\". ");
-            System.out.println(rrExcptn.getMessage());
-            
-            return ruby.getNil();
-        }
-        // HACK ---
+        return getCallbackMethod().execute(recv, args == null ? null : args.toRubyArray(), ruby);
     }
 }

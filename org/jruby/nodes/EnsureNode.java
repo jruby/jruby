@@ -49,11 +49,11 @@ public class EnsureNode extends Node {
             result = getHeadNode().eval(ruby, self);
         } finally {
             if (getEnsureNode() != null) {
-                RubyObject actExcptn = ruby.getActException();
+                // RubyObject actExcptn = ruby.getActException();
             
                 getEnsureNode().eval(ruby, self);
 
-                ruby.setActException(actExcptn);
+                // ruby.setActException(actExcptn);
 
                 // VALUE retval = prot_tag->retval; /* save retval */
                 // return_value(retval);

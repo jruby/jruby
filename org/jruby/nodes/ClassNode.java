@@ -46,7 +46,7 @@ public class ClassNode extends Node {
     
     public RubyObject eval(Ruby ruby, RubyObject self) {
         if (ruby.getRubyClass() == null) {
-            throw new RubyTypeException("no outer class/module");
+            throw new RubyTypeException(ruby, "no outer class/module");
         }
         
         RubyModule superClass = null;
@@ -64,7 +64,7 @@ public class ClassNode extends Node {
         }
         if (rubyClass != null) {
             if (!rubyClass.isClass()) {
-                throw new RubyTypeException(getClassNameId().toName() + " is not a class");
+                throw new RubyTypeException(ruby, getClassNameId().toName() + " is not a class");
             }
             if (superClass != null) {
                 RubyModule tmp = rubyClass.getSuperClass();
@@ -87,7 +87,7 @@ public class ClassNode extends Node {
                 }
             }
             if (ruby.getSecurityLevel() >= 4) {
-                throw new RubySecurityException("extending class prohibited");
+                throw new RubySecurityException(ruby, "extending class prohibited");
             }
             // rb_clear_cache();
         } else {
@@ -133,7 +133,7 @@ public class ClassNode extends Node {
             // goto superclass_error;
         }
         if (((RubyClass)obj).isSingleton()) {
-            throw new RubyTypeException("can't make subclass of virtual class");
+            throw new RubyTypeException(ruby, "can't make subclass of virtual class");
         }
         return (RubyClass)obj;
     }

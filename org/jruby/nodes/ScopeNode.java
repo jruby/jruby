@@ -209,7 +209,7 @@ public class ScopeNode extends Node implements CallableNode {
                 
                 int i = callNode.getCount();
                 if (i > (args != null ? args.size() : 0)) {
-                    throw new RubyArgumentException("wrong # of arguments(" + args.size() + " for " + i + ")");
+                    throw new RubyArgumentException(ruby, "wrong # of arguments(" + args.size() + " for " + i + ")");
                 }
                 if (callNode.getRest() == -1) {
                     int opt = i;
@@ -220,7 +220,7 @@ public class ScopeNode extends Node implements CallableNode {
                         optNode = optNode.getNextNode();
                     }
                     if (opt < (args != null ? args.size() : 0)) {
-                        throw new RubyArgumentException("wrong # of arguments(" + args.size() + " for " + opt + ")");
+                        throw new RubyArgumentException(ruby, "wrong # of arguments(" + args.size() + " for " + opt + ")");
                     }
                     
                     ruby.getRubyFrame().setArgs(localVarsList != null ? localVarsList.getPointer(2) : null);

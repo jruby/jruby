@@ -47,7 +47,7 @@ public class ModuleNode extends Node {
     
     public RubyObject eval(Ruby ruby, RubyObject self) {
         if (ruby.getRubyClass() == null) {
-            throw new RubyTypeException("no outer class/module");
+            throw new RubyTypeException(ruby, "no outer class/module");
         }
         
         RubyModule module = null;
@@ -65,7 +65,7 @@ public class ModuleNode extends Node {
                 
             }*/
             if (ruby.getSecurityLevel() >= 4) {
-                throw new RubySecurityException("extending module prohibited");
+                throw new RubySecurityException(ruby, "extending module prohibited");
             }
         } else {
             module = ruby.defineModuleId(getClassNameId());

@@ -50,7 +50,7 @@ public class AttrSetNode extends Node implements CallableNode {
     
     public RubyObject eval(Ruby ruby, RubyObject self) {
         if (ruby.getRubyFrame().getArgs().size() != 1) {
-            throw new RubyArgumentException("wrong # of arguments(" + ruby.getRubyFrame().getArgs().size() + "for 1)");
+            throw new RubyArgumentException(ruby, "wrong # of arguments(" + ruby.getRubyFrame().getArgs().size() + "for 1)");
         }
         return self.setInstanceVar(getVId(), (RubyObject)ruby.getRubyFrame().getArgs().get(0));
     }
