@@ -100,12 +100,10 @@ public class DefaultPointer extends AbstractList implements Pointer {
         if (!autoResize) {
             return;
         } else if (index < 0) {
-            delegate.addAll(0, Collections.nCopies(-index, autoResizeObject));
-            
-            position += -index;
-        } else if (index >= delegate.size()) {
+            throw new UnsupportedOperationException("Cannot access an element left of the list");
+        } else if (index > delegate.size()) {
             delegate.ensureCapacity(index);
-            for (int i = delegate.size(); i <= index; i++) {
+            for (int i = delegate.size(); i < index; i++) {
                 delegate.add(autoResizeObject);
             }
         }
@@ -116,19 +114,19 @@ public class DefaultPointer extends AbstractList implements Pointer {
     }
     
     public Object get(int index) {
-        autoResize(index + position);
+        autoResize(index + position + 1);
 
         return delegate.get(index + position);
     }
     
     public Object set(int index, Object element) {
-        autoResize(index + position);
+        autoResize(index + position + 1);
 
         return delegate.set(index + position, element);
     }
 
     public void add(int index, Object element) {
-        autoResize(Math.max(0, index + position - 1));
+        autoResize(Math.max(0, index + position));
 
         delegate.add(index + position, element);
     }
@@ -156,7 +154,7 @@ public class DefaultPointer extends AbstractList implements Pointer {
     }
     
     public Object remove(int index) {
-        autoResize(position);
+        autoResize(position + 1);
         
         return delegate.remove(position + index);
     }
