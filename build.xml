@@ -169,6 +169,7 @@
         		<path refid="build.classpath"/>
         		<pathelement path="${lib.dir}/jruby.jar"/>
         		<pathelement path="${test.classes.dir}"/>
+        		<pathelement path="${test.dir}/requireTest.jar"/>
       		</classpath>
       		<sysproperty key="jruby.base" value="${basedir}"/>
       		<sysproperty key="jruby.home" value="${basedir}"/>

@@ -77,31 +77,31 @@ public class LoadService implements ILoadService {
     }
 
     public void init(List additionalDirectories) {
-        for (Iterator iter = additionalDirectories.iterator(); iter.hasNext();) {
-            addPath((String) iter.next());
+      for (Iterator iter = additionalDirectories.iterator(); iter.hasNext();) {
+        addPath((String) iter.next());
+      }
+      if (runtime.getSafeLevel() == 0) {
+        String jrubyLib = System.getProperty("jruby.lib");
+        if (jrubyLib != null) {
+          addPath(jrubyLib);
         }
-        if (runtime.getSafeLevel() == 0) {
-            String jrubyLib = System.getProperty("jruby.lib");
-            if (jrubyLib != null) {
-                addPath(jrubyLib);
-            }
-        }
-
-        String jrubyHome = System.getProperty("jruby.home");
-        if (jrubyHome != null) {
-            char sep = File.separatorChar;
-			String rubyDir = jrubyHome + sep + "lib" + sep + "ruby" + sep;
-
-            addPath(rubyDir + "site_ruby" + sep + Constants.RUBY_MAJOR_VERSION);
-            addPath(rubyDir + "site_ruby" + sep + Constants.RUBY_MAJOR_VERSION + sep + "java");
-            addPath(rubyDir + "site_ruby");
-            addPath(rubyDir + Constants.RUBY_MAJOR_VERSION);
-            addPath(rubyDir + Constants.RUBY_MAJOR_VERSION + sep + "java");
-        }
-
-        if (runtime.getSafeLevel() == 0) {
-            addPath(".");
-        }
+      }
+      
+      String jrubyHome = System.getProperty("jruby.home");
+      if (jrubyHome != null) {
+        char sep = File.separatorChar;
+        String rubyDir = jrubyHome + sep + "lib" + sep + "ruby" + sep;
+        
+        addPath(rubyDir + "site_ruby" + sep + Constants.RUBY_MAJOR_VERSION);
+        addPath(rubyDir + "site_ruby" + sep + Constants.RUBY_MAJOR_VERSION + sep + "java");
+        addPath(rubyDir + "site_ruby");
+        addPath(rubyDir + Constants.RUBY_MAJOR_VERSION);
+        addPath(rubyDir + Constants.RUBY_MAJOR_VERSION + sep + "java");
+      }
+      
+      if (runtime.getSafeLevel() == 0) {
+        addPath(".");
+      }
     }
 
     private void addPath(String path) {
@@ -194,11 +194,31 @@ public class LoadService implements ILoadService {
      * @param name the file to find, this is a path name
      * @return the correct file
      */
-    private URL findFile(String name) {    	
+    private URL findFile(String name) {
         try {
             if (name.startsWith("jar:")) {
                 return new URL(name);
             }
+
+            ClassLoader classLoader = Thread.currentThread().getContextClassLoader(); 
+
+            // Absolute path names
+            if (name.startsWith("/") || name.startsWith("\\")) {
+               	// Load from local filesystem
+                File current = new File(name);
+                if (current.exists() && current.isFile()) {
+                	return current.toURL();
+                }
+                
+                // otherwise, try to load from classpath
+                URL loc = classLoader.getResource(name);
+
+                // Make sure this is not a directory or unavailable in some way
+                if (isRequireable(loc)) {
+                	return loc;
+                }
+            }
+            
             for (Iterator pathIter = loadPath.iterator(); pathIter.hasNext();) {
                 String entry = pathIter.next().toString();
                 if (entry.startsWith("jar:")) {
@@ -211,42 +231,41 @@ public class LoadService implements ILoadService {
                     } catch (IOException e) {
                         throw IOError.fromException(runtime, e);
                     }
-                } else {
-                    File current = new File(entry, name);
-                    if (current.exists() && current.isFile()) {
-                        return current.toURL();
-                    }
+                } 
+
+               	// Load from local filesystem
+                File current = new File(entry, name);
+                if (current.exists() && current.isFile()) {
+                	return current.toURL();
+                }
+                
+                // otherwise, try to load from classpath
+                URL loc = classLoader.getResource(entry + "/" + name);
+
+                // Make sure this is not a directory or unavailable in some way
+                if (isRequireable(loc)) {
+                	return loc;
                 }
             }
-            File current = new File(name);
-            // Make sure that the file exists and isn't a directory
-            if (current.exists() && current.isFile()) {
-                return current.toURL();
-            }
-            
-            // otherwise, try to load from classpath
-            URL loc = Thread.currentThread().getContextClassLoader().getResource(name);
-            
-            // libraries is a name in a jar file to allow jar files to include modules into the
-            // distribution classpath.  We should perhaps kill this in favor of moving src/library
-            // files into top of jar file via ant build process?
-            if (loc == null) {
-            	loc = 
-            		Thread.currentThread().getContextClassLoader().getResource("libraries/" + name);
-            }
-            
-            // make sure resource URL has something available or return null
-            if (loc != null) {
-	            try {
-	            	loc.openStream().close();
-	            } catch (Exception ioe) {
-	            	loc = null;
-	            }
-            }
-            
-            return loc;
+
+            // Try to load from classpath without prefix. "A/b.rb" will not load as 
+            // "./A/b.rb" in a jar file.
+            URL loc = classLoader.getResource(name);
+
+            return isRequireable(loc) ? loc : null;
         } catch (MalformedURLException e) {
             throw new IOError(runtime, e.getMessage());
         }
+    }
+    
+    /* Directories and unavailable resources are not able to open a stream. */
+    private boolean isRequireable(URL loc) {
+        if (loc != null) {
+        	try {
+            	loc.openStream().close();
+            	return true;
+            } catch (Exception e) {}
+        }
+        return false;
     }
 }
