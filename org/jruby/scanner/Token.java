@@ -60,6 +60,6 @@ public final class Token implements IToken {
     }
     
     public String toString() {
-        return "Token: Type = " + getType() + "; Line = " + getLine() + "; Column = " + getColumn() + "; Data = \"" + String.valueOf(getData()).replaceAll("\n", "\\\\n") + "\"";
+        return "Token: Type = " + getType() + "; Line = " + getLine() + "; Column = " + getColumn() + "; Data = \"" + String.valueOf(getData()) + "\"";
     }
 }
