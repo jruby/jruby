@@ -33,6 +33,7 @@ package org.jruby.marshal;
 import java.io.*;
 import java.util.*;
 import org.jruby.*;
+import org.jruby.exceptions.ArgumentError;
 
 /**
  * Marshals objects into Ruby's binary marshal format.
@@ -46,49 +47,54 @@ public class MarshalStream extends FilterOutputStream {
     private static final int MARSHAL_MAJOR = 4;
     private static final int MARSHAL_MINOR = 5;
 
-	private Map dumpedObjects = new HashMap();
-	private Map dumpedSymbols = new HashMap();
-	private int objectCounter = 0;
-	private int symbolCounter = 0;
+    private final Ruby ruby;
+    private final int depthLimit;
+    private int depth = 0;
+    private Map dumpedObjects = new HashMap();
+    private Map dumpedSymbols = new HashMap();
 
-    public MarshalStream(OutputStream out) throws IOException {
+    public MarshalStream(Ruby ruby, OutputStream out, int depthLimit) throws IOException {
 		super(out);
+        this.ruby = ruby;
+        if (depthLimit >= 0) {
+            this.depthLimit = depthLimit;
+        } else {
+            this.depthLimit = Integer.MAX_VALUE;
+        }
 		out.write(MARSHAL_MAJOR);
 		out.write(MARSHAL_MINOR);
     }
 
     public void dumpObject(RubyObject value) throws IOException {
+        depth++;
+        if (depth > depthLimit) {
+            throw new ArgumentError(ruby, "exceed depth limit");
+        }
 		if (value.isNil()) {
 			out.write('0');
-			return;
-		}
-
-		if (dumpedObjects.containsKey(value)) {
-			writeLink('@', dumpedObjects, value);
-		} else {
-            dumpedObjects.put(value, new Integer(dumpedObjects.size()));
-			value.marshalTo(this);
-		}
+        } else {
+            writeAndRegister(value);
+        }
+        depth--;
     }
 
-	public void dumpObject(RubySymbol value) throws IOException {
-		if (value.isNil()) {
-			out.write('0');
-			return;
-		}
+    private void writeAndRegister(RubyObject value) throws IOException {
+        writeAndRegister(dumpedObjects, '@', value);
+    }
 
-		if (dumpedSymbols.containsKey(value)) {
-			writeLink(';', dumpedSymbols, value);
-		} else {
-			dumpedSymbols.put(value, new Integer(dumpedSymbols.size()));
-			value.marshalTo(this);
-		}
-	}
+    private void writeAndRegister(RubySymbol value) throws IOException {
+        writeAndRegister(dumpedSymbols, ';', value);
+    }
 
-	private void writeLink(char linkType, Map objectMap, RubyObject value) throws IOException {
-		out.write(linkType);
-		dumpInt(((Integer) objectMap.get(value)).intValue());
-	}
+    private void writeAndRegister(Map registry, char linkSymbol, RubyObject value) throws IOException {
+        if (registry.containsKey(value)) {
+            out.write(linkSymbol);
+            dumpInt(((Integer) registry.get(value)).intValue());
+        } else {
+            registry.put(value, new Integer(registry.size()));
+            value.marshalTo(this);
+        }
+    }
 
     public void dumpString(String value) throws IOException {
 		dumpInt(value.length());

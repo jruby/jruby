@@ -55,10 +55,22 @@ test_equal(2000, Marshal.load(MARSHAL_HEADER + "i\002Ð\a"))
 test_equal(-2000, Marshal.load(MARSHAL_HEADER + "iþ0ø"))
 test_equal([1, 2, 3], Marshal.load(MARSHAL_HEADER + "[\010i\006i\ai\010"))
 test_equal({1=>2}, Marshal.load(MARSHAL_HEADER + "{\006i\006i\a"))
-
 object = Marshal.load(MARSHAL_HEADER + "o:\013Object\000")
 test_equal(Object, object.class)
 
+exception_thrown = false
+begin
+  Marshal.dump([1,2,3], 1)
+rescue ArgumentError
+  exception_thrown = true  
+end
+test_ok(exception_thrown)
 
-# FIXME: remove me ....
-test_print_report
+
+exception_thrown = false
+begin
+  Marshal.dump([1,2,3], 2)
+rescue ArgumentError
+  exception_thrown = true  
+end
+test_ok(!exception_thrown)

@@ -128,24 +128,20 @@ public class UnmarshalStream extends FilterInputStream {
 
     public int unmarshalInt() throws IOException {
         int c = readSignedByte();
-
-        long result;
-
         if (c == 0) {
             return 0;
+        } else if (4 < c && c < 128) {
+            return c - 5;
+        } else if (-129 < c && c < -4) {
+            return c + 5;
         }
+        long result;
         if (c > 0) {
-            if (4 < c && c < 128) {
-                return c - 5;
-            }
             result = 0;
             for (int i = 0; i < c; i++) {
                 result |= (long) readUnsignedByte() << (8 * i);
             }
         } else {
-            if (-129 < c && c < -4) {
-                return c + 5;
-            }
             c = -c;
             result = -1;
             for (int i = 0; i < c; i++) {

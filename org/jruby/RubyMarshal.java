@@ -59,16 +59,29 @@ public class RubyMarshal {
         }
         RubyObject objectToDump = args[0];
 
+        RubyIO io = null;
+        int depthLimit = -1;
+
+        if (args.length >= 2) {
+            if (args[1] instanceof RubyIO) {
+                io = (RubyIO) args[1];
+            } else if (args[1] instanceof RubyFixnum) {
+                depthLimit = (int) ((RubyFixnum) args[1]).getLongValue();
+            }
+            if (args.length == 3) {
+                depthLimit = (int) ((RubyFixnum) args[2]).getLongValue();
+            }
+        }
+
         try {
-            if (args.length >= 2) {
-                RubyIO io = (RubyIO) args[1];
-                MarshalStream output = new MarshalStream(io.getOutStream());
+
+            if (io != null) {
+                MarshalStream output = new MarshalStream(ruby, io.getOutStream(), depthLimit);
                 output.dumpObject(objectToDump);
                 return io;
-
             } else {
                 ByteArrayOutputStream stringOutput = new ByteArrayOutputStream();
-                MarshalStream output = new MarshalStream(stringOutput);
+                MarshalStream output = new MarshalStream(ruby, stringOutput, depthLimit);
                 output.dumpObject(objectToDump);
                 return RubyString.newString(ruby, stringOutput.toString());
             }
@@ -89,13 +102,18 @@ public class RubyMarshal {
 
             // FIXME: handle more parameters
 
-            RubyObject in = args[0];  // ..... could be either an IO or something with to_str() ...
+            RubyObject in = args[0];
+
+            InputStream rawInput;
             if (in instanceof RubyIO) {
                 throw new NotImplementedError();
+            } else if (respondsTo(in, "to_str")) {
+                String inString = ((RubyString) in.funcall("to_str")).getValue();
+                rawInput = new ByteArrayInputStream(inString.getBytes());
+            } else {
+                throw new TypeError(ruby, "instance of IO needed");
             }
-            String inString = in.toString(); // FIXME: should use to_str()
 
-            InputStream rawInput = new ByteArrayInputStream(inString.getBytes());
             UnmarshalStream input = new UnmarshalStream(ruby, rawInput);
 
             return input.unmarshalObject();
@@ -106,5 +124,9 @@ public class RubyMarshal {
             exception.initCause(ioe);
             throw exception;
         }
+    }
+
+    private static boolean respondsTo(RubyObject object, String method) {
+        return object.respond_to(RubySymbol.newSymbol(object.getRuby(), method)).isTrue();
     }
 }
