@@ -46,14 +46,7 @@ import org.jruby.exceptions.SecurityError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.internal.runtime.builtin.definitions.ObjectDefinition;
 import org.jruby.internal.runtime.methods.EvaluateMethod;
-import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.CallType;
-import org.jruby.runtime.Callback;
-import org.jruby.runtime.ICallable;
-import org.jruby.runtime.IndexCallable;
-import org.jruby.runtime.Iter;
-import org.jruby.runtime.LastCallStatus;
+import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.util.Asserts;
@@ -524,27 +517,29 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
     }
 
     public IRubyObject eval(IRubyObject src, IRubyObject scope, String file, int line) {
-        ISourcePosition savedPosition = runtime.getPosition();
-        Iter iter = runtime.getCurrentFrame().getIter();
+        ThreadContext threadContext = runtime.getCurrentContext();
+        ISourcePosition savedPosition = threadContext.getPosition();
+        Iter iter = threadContext.getCurrentFrame().getIter();
         if (file == null) {
-            file = runtime.getSourceFile();
+            file = threadContext.getSourceFile();
         }
         if (scope.isNil()) {
-            if (runtime.getFrameStack().getPrevious() != null) {
-                runtime.getCurrentFrame().setIter(runtime.getFrameStack().getPrevious().getIter());
+            FrameStack frameStack = threadContext.getFrameStack();
+            if (frameStack.getPrevious() != null) {
+                ((Frame) frameStack.peek()).setIter(frameStack.getPrevious().getIter());
             }
         }
-        getRuntime().pushClass(runtime.getCBase());
+        threadContext.pushClass(runtime.getCBase());
         IRubyObject result = getRuntime().getNil();
         try {
             INode node = getRuntime().parse(src.toString(), file);
             result = eval(node);
         } finally {
-            runtime.popClass();
+            threadContext.popClass();
             if (scope.isNil()) {
-                runtime.getCurrentFrame().setIter(iter);
+                threadContext.getCurrentFrame().setIter(iter);
             }
-            runtime.setPosition(savedPosition);
+            threadContext.setPosition(savedPosition);
         }
         return result;
     }

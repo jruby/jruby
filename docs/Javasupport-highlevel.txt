@@ -55,11 +55,22 @@ following properties:
         class is returned.
         If it is an interface, then a "reflection proxy" for that
         interface is returned (see java.lang.reflect.Proxy).
+        If it is an array type, then the only valid constructor
+        argument is an integer for the wanted array length.
 
     cls.java_class() -> a Java::JavaClass instance
+
         Returns the low-level representation of the Java class. Useful
         only if you need to access the inner workings of the Java
         support.
+
+    cls[] -> aClass
+
+        Returns the Class for the array-type of the current class.
+
+        Example:
+
+            JFrame[].new(3)  # -> An array of JFrames with length 3.
 
 
     instance methods:

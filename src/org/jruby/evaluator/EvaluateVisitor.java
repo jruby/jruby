@@ -224,12 +224,12 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitAliasNode(AliasNode)
      */
     public void visitAliasNode(AliasNode iVisited) {
-        if (runtime.getRubyClass() == null) {
+        if (threadContext.getRubyClass() == null) {
             throw new TypeError(runtime, "no class to make alias");
         }
 
-        runtime.getRubyClass().aliasMethod(iVisited.getNewName(), iVisited.getOldName());
-        runtime.getRubyClass().callMethod("method_added", builtins.toSymbol(iVisited.getNewName()));
+        threadContext.getRubyClass().aliasMethod(iVisited.getNewName(), iVisited.getOldName());
+        threadContext.getRubyClass().callMethod("method_added", builtins.toSymbol(iVisited.getNewName()));
     }
 
     /**
@@ -367,10 +367,10 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitConstDeclNode(ConstDeclNode)
      */
     public void visitConstDeclNode(ConstDeclNode iVisited) {
-        if (runtime.getRubyClass() == null) {
+        if (threadContext.getRubyClass() == null) {
             throw new TypeError(runtime, "no class/module to define constant");
         }
-        runtime.getRubyClass().setConstant(iVisited.getName(), eval(iVisited.getValueNode()));
+        threadContext.getRubyClass().setConstant(iVisited.getName(), eval(iVisited.getValueNode()));
     }
 
     /**
@@ -455,7 +455,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitClassNode(ClassNode)
      */
     public void visitClassNode(ClassNode iVisited) {
-        if (runtime.getRubyClass().isNil()) {
+        if (threadContext.getRubyClass().isNil()) {
             throw new TypeError(runtime, "no outer class/module");
         }
 
@@ -480,8 +480,8 @@ public final class EvaluateVisitor implements NodeVisitor {
 
         RubyClass rubyClass = null;
 
-        if (runtime.getRubyClass().isConstantDefined(iVisited.getClassName())) {
-            IRubyObject type = runtime.getRubyClass().getConstant(iVisited.getClassName());
+        if (threadContext.getRubyClass().isConstantDefined(iVisited.getClassName())) {
+            IRubyObject type = threadContext.getRubyClass().getConstant(iVisited.getClassName());
 
             if (!(type instanceof RubyClass)) {
                 throw new TypeError(runtime, iVisited.getClassName() + " is not a class");
@@ -492,8 +492,8 @@ public final class EvaluateVisitor implements NodeVisitor {
             if (superClass != null && rubyClass.getSuperClass().getRealClass() != superClass) {
                 rubyClass = runtime.defineClass(iVisited.getClassName(), superClass);
 
-                rubyClass.setClassPath(runtime.getRubyClass(), iVisited.getClassName());
-                runtime.getRubyClass().setConstant(iVisited.getClassName(), rubyClass);
+                rubyClass.setClassPath(threadContext.getRubyClass(), iVisited.getClassName());
+                threadContext.getRubyClass().setConstant(iVisited.getClassName(), rubyClass);
             } else {
                 if (runtime.getSafeLevel() >= 4) {
                     throw new SecurityError(runtime, "extending class prohibited");
@@ -504,13 +504,13 @@ public final class EvaluateVisitor implements NodeVisitor {
                 superClass = runtime.getClasses().getObjectClass();
             }
             rubyClass = runtime.defineClass(iVisited.getClassName(), superClass);
-            runtime.getRubyClass().setConstant(iVisited.getClassName(), rubyClass);
-            rubyClass.setClassPath(runtime.getRubyClass(), iVisited.getClassName());
+            threadContext.getRubyClass().setConstant(iVisited.getClassName(), rubyClass);
+            rubyClass.setClassPath(threadContext.getRubyClass(), iVisited.getClassName());
         }
 
-        if (runtime.getWrapper() != null) {
-            rubyClass.extendObject(runtime.getWrapper());
-            rubyClass.includeModule(runtime.getWrapper());
+        if (threadContext.getWrapper() != null) {
+            rubyClass.extendObject(threadContext.getWrapper());
+            rubyClass.includeModule(threadContext.getWrapper());
         }
 
         evalClassDefinitionBody(iVisited.getBodyNode(), rubyClass);
@@ -547,7 +547,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitDAsgnNode(DAsgnNode iVisited) {
         eval(iVisited.getValueNode());
-        runtime.setDynamicVariable(iVisited.getName(), result);
+        runtime.getDynamicVars().set(iVisited.getName(), result);
     }
 
     /**
@@ -616,7 +616,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitDefnNode(DefnNode)
      */
     public void visitDefnNode(DefnNode iVisited) {
-        RubyModule rubyClass = runtime.getRubyClass();
+        RubyModule rubyClass = threadContext.getRubyClass();
         if (rubyClass == null) {
             throw new TypeError(runtime, "No class to add method.");
         }
@@ -937,27 +937,27 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitModuleNode(ModuleNode)
      */
     public void visitModuleNode(ModuleNode iVisited) {
-        if (runtime.getRubyClass() == null) {
+        if (threadContext.getRubyClass() == null) {
             throw new TypeError(runtime, "no outer class/module");
         }
 
         RubyModule module = null;
 
-        if (runtime.getRubyClass().isConstantDefined(iVisited.getName())) {
-            module = (RubyModule) runtime.getRubyClass().getConstant(iVisited.getName());
+        if (threadContext.getRubyClass().isConstantDefined(iVisited.getName())) {
+            module = (RubyModule) threadContext.getRubyClass().getConstant(iVisited.getName());
 
             if (runtime.getSafeLevel() >= 4) {
                 throw new SecurityError(runtime, "Extending module prohibited.");
             }
         } else {
             module = runtime.defineModule(iVisited.getName());
-            runtime.getRubyClass().setConstant(iVisited.getName(), module);
-            module.setClassPath(runtime.getRubyClass(), iVisited.getName());
+            threadContext.getRubyClass().setConstant(iVisited.getName(), module);
+            module.setClassPath(threadContext.getRubyClass(), iVisited.getName());
         }
 
-        if (runtime.getWrapper() != null) {
-            module.getSingletonClass().includeModule(runtime.getWrapper());
-            module.includeModule(runtime.getWrapper());
+        if (threadContext.getWrapper() != null) {
+            module.getSingletonClass().includeModule(threadContext.getWrapper());
+            module.includeModule(threadContext.getWrapper());
         }
 
         evalClassDefinitionBody(iVisited.getBodyNode(), module);
@@ -1223,9 +1223,9 @@ public final class EvaluateVisitor implements NodeVisitor {
             singletonClass = receiver.getSingletonClass();
         }
 
-        if (runtime.getWrapper() != null) {
-            singletonClass.extendObject(runtime.getWrapper());
-            singletonClass.includeModule(runtime.getWrapper());
+        if (threadContext.getWrapper() != null) {
+            singletonClass.extendObject(threadContext.getWrapper());
+            singletonClass.includeModule(threadContext.getWrapper());
         }
 
         evalClassDefinitionBody(iVisited.getBodyNode(), singletonClass);
@@ -1289,11 +1289,10 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitUndefNode(UndefNode)
      */
     public void visitUndefNode(UndefNode iVisited) {
-        if (runtime.getRubyClass() == null) {
+        if (threadContext.getRubyClass() == null) {
             throw new TypeError(runtime, "No class to undef method '" + iVisited.getName() + "'.");
         }
-
-        runtime.getRubyClass().undef(iVisited.getName());
+        threadContext.getRubyClass().undef(iVisited.getName());
     }
 
     /**
@@ -1452,7 +1451,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     private void evalClassDefinitionBody(ScopeNode iVisited, RubyModule type) {
         threadContext.getFrameStack().pushCopy();
-        runtime.pushClass(type);
+        threadContext.pushClass(type);
         threadContext.getScopeStack().push(iVisited.getLocalNames());
         threadContext.pushDynamicVars();
 
@@ -1474,7 +1473,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             runtime.setNamespace(runtime.getNamespace().getParent());
             threadContext.popDynamicVars();
             threadContext.getScopeStack().pop();
-            runtime.popClass();
+            threadContext.popClass();
             threadContext.getFrameStack().pop();
 
             if (isTrace()) {

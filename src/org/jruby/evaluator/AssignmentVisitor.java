@@ -133,7 +133,7 @@ public class AssignmentVisitor extends AbstractVisitor {
      * @see AbstractVisitor#visitDAsgnNode(DAsgnNode)
      */
     public void visitDAsgnNode(DAsgnNode iVisited) {
-        ruby.setDynamicVariable(iVisited.getName(), value);
+        ruby.getDynamicVars().set(iVisited.getName(), value);
     }
 
     /**

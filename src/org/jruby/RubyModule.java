@@ -53,15 +53,7 @@ import org.jruby.internal.runtime.methods.WrapperCallable;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.runtime.Callback;
-import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.ICallable;
-import org.jruby.runtime.Visibility;
-import org.jruby.runtime.CallType;
-import org.jruby.runtime.LastCallStatus;
-import org.jruby.runtime.Frame;
-import org.jruby.runtime.Namespace;
-import org.jruby.runtime.Iter;
+import org.jruby.runtime.*;
 import org.jruby.util.Asserts;
 import org.jruby.util.IdUtil;
 
@@ -1069,27 +1061,27 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject executeUnder(Callback method, IRubyObject[] args) {
-        runtime.pushClass(this);
+        ThreadContext threadContext = runtime.getCurrentContext();
 
-        Frame frame = runtime.getCurrentFrame();
-        runtime.getFrameStack().push();
-        runtime.getCurrentFrame().setLastFunc(frame.getLastFunc());
-        runtime.getCurrentFrame().setLastClass(frame.getLastClass());
-        runtime.getCurrentFrame().setArgs(frame.getArgs());
+        threadContext.pushClass(this);
+
+        Frame frame = threadContext.getCurrentFrame();
+        threadContext.getFrameStack().push();
+        threadContext.getCurrentFrame().setLastFunc(frame.getLastFunc());
+        threadContext.getCurrentFrame().setLastClass(frame.getLastClass());
+        threadContext.getCurrentFrame().setArgs(frame.getArgs());
         if (runtime.getCBase() != this) {
-            runtime.getCurrentFrame().setNamespace(new Namespace(this, runtime.getCurrentFrame().getNamespace()));
+            threadContext.getCurrentFrame().setNamespace(new Namespace(this,
+                                                                       threadContext.getCurrentFrame().getNamespace()));
         }
         runtime.setNamespace(new Namespace(this, runtime.getNamespace()));
-
-        // mode = scope_vmode;
-        // SCOPE_SET(SCOPE_PUBLIC);
 
         try {
             return method.execute(this, args);
         } finally {
             runtime.setNamespace(runtime.getNamespace().getParent());
-            runtime.getFrameStack().pop();
-            runtime.popClass();
+            threadContext.getFrameStack().pop();
+            threadContext.popClass();
         }
     }
 

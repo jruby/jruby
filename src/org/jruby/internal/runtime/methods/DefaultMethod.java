@@ -17,6 +17,7 @@ import org.jruby.exceptions.ReturnJump;
 import org.jruby.runtime.Namespace;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -45,19 +46,21 @@ public final class DefaultMethod extends AbstractMethod {
             optionalBlockArg = RubyProc.newProc(ruby);
         }
 
-        ruby.getScope().push();
+        ThreadContext context = ruby.getCurrentContext();
+
+        context.getScopeStack().push();
 
         Namespace savedNamespace = null;
 
         savedNamespace = ruby.getNamespace();
         ruby.setNamespace(namespace);
-        ruby.getCurrentFrame().setNamespace(namespace);
+        context.getCurrentFrame().setNamespace(namespace);
 
         if (body.getLocalNames() != null) {
-            ruby.getScope().resetLocalVariables(body.getLocalNames());
+            context.getScopeStack().resetLocalVariables(body.getLocalNames());
         }
 
-        ruby.pushDynamicVars();
+        context.pushDynamicVars();
 
         try {
             if (argsNode != null) {
@@ -65,7 +68,7 @@ public final class DefaultMethod extends AbstractMethod {
             }
 
             if (optionalBlockArg != null) {
-                ruby.getScope().setValue(argsNode.getBlockArgNode().getCount(), optionalBlockArg);
+                context.getScopeStack().setValue(argsNode.getBlockArgNode().getCount(), optionalBlockArg);
             }
 
             traceCall(ruby, receiver, name);
@@ -75,8 +78,8 @@ public final class DefaultMethod extends AbstractMethod {
         } catch (ReturnJump re) {
             return re.getReturnValue();
         } finally {
-            ruby.popDynamicVars();
-            ruby.getScope().pop();
+            context.popDynamicVars();
+            context.getScopeStack().pop();
             ruby.setNamespace(savedNamespace);
             traceReturn(ruby, receiver, name);
         }

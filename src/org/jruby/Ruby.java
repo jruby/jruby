@@ -81,7 +81,6 @@ import org.jruby.runtime.load.ILoadService;
 import org.jruby.runtime.load.LoadServiceFactory;
 import org.jruby.runtime.regexp.IRegexpAdapter;
 import org.jruby.util.Asserts;
-import org.jruby.util.collections.ArrayStack;
 import org.jruby.util.collections.IStack;
 
 /**
@@ -162,10 +161,6 @@ public final class Ruby {
     private Namespace topNamespace;
 
     private boolean isVerbose = false;
-
-    private RubyModule wrapper;
-
-    private ArrayStack classStack = new ArrayStack();
 
     // Java support
     private JavaSupport javaSupport;
@@ -431,7 +426,6 @@ public final class Ruby {
 
         topSelf = TopSelfFactory.createTopSelf(this);
 
-        classStack.push(getClasses().getObjectClass());
         getCurrentFrame().setSelf(topSelf);
         topNamespace = new Namespace(getClasses().getObjectClass());
         namespace = topNamespace;
@@ -483,14 +477,6 @@ public final class Ruby {
         return previous.isBlockGiven();
     }
 
-    public void pushClass(RubyModule newClass) {
-        classStack.push(newClass);
-    }
-
-    public void popClass() {
-        classStack.pop();
-    }
-
     /** Setter for property isVerbose.
      * @param verbose New value of property isVerbose.
      */
@@ -514,15 +500,8 @@ public final class Ruby {
         return result;
     }
 
-    /** Getter for property rubyClass.
-     * @return Value of property rubyClass.
-     */
     public RubyModule getRubyClass() {
-        RubyModule rubyClass = (RubyModule) classStack.peek();
-        if (rubyClass.isIncluded()) {
-            return ((IncludedModuleWrapper) rubyClass).getDelegate();
-        }
-        return rubyClass;
+        return getCurrentContext().getRubyClass();
     }
 
     public FrameStack getFrameStack() {
@@ -594,14 +573,14 @@ public final class Ruby {
      * @return Value of property wrapper.
      */
     public RubyModule getWrapper() {
-        return wrapper;
+        return getCurrentContext().getWrapper();
     }
 
     /** Setter for property wrapper.
      * @param wrapper New value of property wrapper.
      */
     public void setWrapper(RubyModule wrapper) {
-        this.wrapper = wrapper;
+        getCurrentContext().setWrapper(wrapper);
     }
 
     /**
@@ -696,18 +675,6 @@ public final class Ruby {
 
     public void setPosition(ISourcePosition position) {
         getCurrentContext().setPosition(position);
-    }
-
-    public void pushDynamicVars() {
-        getCurrentContext().pushDynamicVars();
-    }
-
-    public void popDynamicVars() {
-        getCurrentContext().popDynamicVars();
-    }
-
-    public void setDynamicVariable(String name, IRubyObject value) {
-        getDynamicVars().set(name, value);
     }
 
     public List getDynamicNames() {
@@ -869,32 +836,34 @@ public final class Ruby {
         IRubyObject self = getTopSelf();
         Namespace savedNamespace = getNamespace();
 
-        pushDynamicVars();
+        ThreadContext context = getCurrentContext();
 
-        RubyModule wrapper = getWrapper();
+        context.pushDynamicVars();
+
+        RubyModule wrapper = context.getWrapper();
         setNamespace(getTopNamespace());
 
         if (!wrap) {
             secure(4); /* should alter global state */
-            pushClass(getClasses().getObjectClass());
-            setWrapper(null);
+            context.pushClass(getClasses().getObjectClass());
+            context.setWrapper(null);
         } else {
             /* load in anonymous module as toplevel */
-            setWrapper(RubyModule.newModule(this));
-            pushClass(getWrapper());
+            context.setWrapper(RubyModule.newModule(this));
+            context.pushClass(getWrapper());
             self = getTopSelf().rbClone();
-            self.extendObject(getRubyClass());
+            self.extendObject(context.getRubyClass());
             setNamespace(new Namespace(getWrapper(), getNamespace()));
         }
 
-        String last_func = getCurrentFrame().getLastFunc();
+        String last_func = context.getCurrentFrame().getLastFunc();
 
-        getFrameStack().push();
-        getCurrentFrame().setLastFunc(null);
-        getCurrentFrame().setLastClass(null);
-        getCurrentFrame().setSelf(self);
-        getCurrentFrame().setNamespace(new Namespace(getRubyClass(), null));
-        getScope().push();
+        context.getFrameStack().push();
+        context.getCurrentFrame().setLastFunc(null);
+        context.getCurrentFrame().setLastClass(null);
+        context.getCurrentFrame().setSelf(self);
+        context.getCurrentFrame().setNamespace(new Namespace(context.getRubyClass(), null));
+        context.getScopeStack().push();
 
         /* default visibility is private at loading toplevel */
         setCurrentVisibility(Visibility.PRIVATE);
@@ -904,13 +873,13 @@ public final class Ruby {
             self.eval(node);
 
         } finally {
-            getCurrentFrame().setLastFunc(last_func);
+            context.getCurrentFrame().setLastFunc(last_func);
             setNamespace(savedNamespace);
-            getScope().pop();
-            getFrameStack().pop();
-            popClass();
-            popDynamicVars();
-            setWrapper(wrapper);
+            context.getScopeStack().pop();
+            context.getFrameStack().pop();
+            context.popClass();
+            context.popDynamicVars();
+            context.setWrapper(wrapper);
         }
     }
     
@@ -918,32 +887,34 @@ public final class Ruby {
         IRubyObject self = getTopSelf();
         Namespace savedNamespace = getNamespace();
 
-        pushDynamicVars();
+        ThreadContext context = getCurrentContext();
 
-        RubyModule wrapper = getWrapper();
+        context.pushDynamicVars();
+
+        RubyModule wrapper = context.getWrapper();
         setNamespace(getTopNamespace());
 
         if (!wrap) {
             secure(4); /* should alter global state */
-            pushClass(getClasses().getObjectClass());
-            setWrapper(null);
+            context.pushClass(getClasses().getObjectClass());
+            context.setWrapper(null);
         } else {
             /* load in anonymous module as toplevel */
-            setWrapper(RubyModule.newModule(this));
-            pushClass(getWrapper());
+            context.setWrapper(RubyModule.newModule(this));
+            context.pushClass(context.getWrapper());
             self = getTopSelf().rbClone();
-            self.extendObject(getRubyClass());
+            self.extendObject(context.getRubyClass());
             setNamespace(new Namespace(getWrapper(), getNamespace()));
         }
 
         String last_func = getCurrentFrame().getLastFunc();
 
-        getFrameStack().push();
-        getCurrentFrame().setLastFunc(null);
-        getCurrentFrame().setLastClass(null);
-        getCurrentFrame().setSelf(self);
-        getCurrentFrame().setNamespace(new Namespace(getRubyClass(), null));
-        getScope().push();
+        context.getFrameStack().push();
+        context.getCurrentFrame().setLastFunc(null);
+        context.getCurrentFrame().setLastClass(null);
+        context.getCurrentFrame().setSelf(self);
+        context.getCurrentFrame().setNamespace(new Namespace(context.getRubyClass(), null));
+        context.getScopeStack().push();
 
         /* default visibility is private at loading toplevel */
         setCurrentVisibility(Visibility.PRIVATE);
@@ -952,13 +923,13 @@ public final class Ruby {
             self.eval(node);
 
         } finally {
-            getCurrentFrame().setLastFunc(last_func);
+            context.getCurrentFrame().setLastFunc(last_func);
             setNamespace(savedNamespace);
-            getScope().pop();
-            getFrameStack().pop();
-            popClass();
-            popDynamicVars();
-            setWrapper(wrapper);
+            context.getScopeStack().pop();
+            context.getFrameStack().pop();
+            context.popClass();
+            context.popDynamicVars();
+            context.setWrapper(wrapper);
         }
     }
 

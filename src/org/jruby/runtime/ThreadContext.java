@@ -36,11 +36,7 @@ import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.util.collections.ArrayStack;
 import org.jruby.util.collections.CollectionFactory;
 import org.jruby.util.collections.IStack;
-import org.jruby.Ruby;
-import org.jruby.ThreadClass;
-import org.jruby.RubyModule;
-import org.jruby.RubyClass;
-import org.jruby.RubyArray;
+import org.jruby.*;
 import org.ablaf.ast.INode;
 import org.ablaf.common.ISourcePosition;
 import org.ablaf.internal.lexer.DefaultLexerPosition;
@@ -52,28 +48,32 @@ import java.util.List;
  * @version $Revision$
  */
 public class ThreadContext {
-    private final Ruby ruby;
+    private final Ruby runtime;
 
     private BlockStack blockStack;
     private ArrayStack dynamicVarsStack;
 
     private ThreadClass currentThread;
 
+    private ArrayStack classStack;
     private ScopeStack scopeStack;
     private FrameStack frameStack;
     private IStack iterStack;
+
+    private RubyModule wrapper;
 
     private ISourcePosition sourcePosition = DefaultLexerPosition.getInstance("", 0);
 
     /**
      * Constructor for Context.
      */
-    public ThreadContext(Ruby ruby) {
-        this.ruby = ruby;
+    public ThreadContext(Ruby runtime) {
+        this.runtime = runtime;
 
         this.blockStack = new BlockStack();
         this.dynamicVarsStack = new ArrayStack();
-        this.scopeStack = new ScopeStack(ruby);
+        this.classStack = new ArrayStack();
+        this.scopeStack = new ScopeStack(runtime);
         this.frameStack = new FrameStack(this);
         this.iterStack = CollectionFactory.getInstance().newStack();
 
@@ -113,7 +113,7 @@ public class ThreadContext {
     }
 
     public IRubyObject eval(INode node) {
-        return EvaluateVisitor.createVisitor(ruby.getTopSelf()).eval(node);
+        return EvaluateVisitor.createVisitor(runtime.getTopSelf()).eval(node);
     }
 
     public ScopeStack getScopeStack() {
@@ -160,7 +160,7 @@ public class ThreadContext {
         if (getScopeStack().hasLocalVariables()) {
             return getScopeStack().getValue(1);
         }
-        return ruby.getNil();
+        return runtime.getNil();
     }
 
     public RubyModule getCBase() {
@@ -174,7 +174,7 @@ public class ThreadContext {
     public IRubyObject callSuper(IRubyObject[] args) {
         if (getCurrentFrame().getLastClass() == null) {
             throw new NameError(
-                ruby,
+                runtime,
                 "superclass method '" + getCurrentFrame().getLastFunc() + "' must be enabled by enableSuper().");
         }
         getIterStack().push(getCurrentIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
@@ -190,8 +190,8 @@ public class ThreadContext {
     }
 
     public IRubyObject yield(IRubyObject value, IRubyObject self, RubyModule klass, boolean checkArguments) {
-        if (! ruby.isBlockGiven()) {
-            throw new RaiseException(ruby, ruby.getExceptions().getLocalJumpError(), "yield called out of block");
+        if (! runtime.isBlockGiven()) {
+            throw new RaiseException(runtime, runtime.getExceptions().getLocalJumpError(), "yield called out of block");
         }
 
         pushDynamicVars();
@@ -199,8 +199,8 @@ public class ThreadContext {
 
         getFrameStack().push(currentBlock.getFrame());
 
-        Namespace oldNamespace = ruby.getNamespace();
-        ruby.setNamespace(getCurrentFrame().getNamespace());
+        Namespace oldNamespace = runtime.getNamespace();
+        runtime.setNamespace(getCurrentFrame().getNamespace());
 
         Scope oldScope = (Scope) getScopeStack().getTop();
         getScopeStack().setTop(currentBlock.getScope());
@@ -209,18 +209,18 @@ public class ThreadContext {
 
         dynamicVarsStack.push(currentBlock.getDynamicVariables());
 
-        ruby.pushClass((klass != null) ? klass : currentBlock.getKlass());
+        pushClass((klass != null) ? klass : currentBlock.getKlass());
 
         if (klass == null) {
             self = currentBlock.getSelf();
         }
         if (value == null) {
-            value = RubyArray.newArray(ruby, 0);
+            value = RubyArray.newArray(runtime, 0);
         }
 
         ICallable method = currentBlock.getMethod();
         if (method == null) {
-            return ruby.getNil();
+            return runtime.getNil();
         }
 
         getIterStack().push(currentBlock.getIter());
@@ -230,23 +230,23 @@ public class ThreadContext {
         try {
             while (true) {
                 try {
-                    return method.call(ruby, self, null, args, false);
+                    return method.call(runtime, self, null, args, false);
                 } catch (RedoJump rExcptn) {
                 }
             }
         } catch (NextJump nExcptn) {
-            return ruby.getNil();
+            return runtime.getNil();
         /*} catch (BreakJump rExcptn) {
-            return ruby.getNil(); */
+            return runtime.getNil(); */
         } finally {
             getIterStack().pop();
-            ruby.popClass();
+            popClass();
             dynamicVarsStack.pop();
 
             getBlockStack().setCurrent(currentBlock);
             getFrameStack().pop();
 
-            ruby.setNamespace(oldNamespace);
+            runtime.setNamespace(oldNamespace);
 
             getScopeStack().setTop(oldScope);
             dynamicVarsStack.pop();
@@ -282,7 +282,7 @@ public class ThreadContext {
             RubyArray arrayValue = ((RubyArray) value);
             if (blockVariableNode instanceof ZeroArgNode) {
                 if (arrayValue.getLength() != 0) {
-                    throw new ArgumentError(ruby, arrayValue.getLength(), 0);
+                    throw new ArgumentError(runtime, arrayValue.getLength(), 0);
                 }
             }
             if (!(blockVariableNode instanceof MultipleAsgnNode)) {
@@ -291,11 +291,35 @@ public class ThreadContext {
                 }
             }
         }
-        new AssignmentVisitor(ruby, self).assign(blockVariableNode, value, checkArguments);
+        new AssignmentVisitor(runtime, self).assign(blockVariableNode, value, checkArguments);
         return value;
     }
 
     public void pollThreadEvents() {
         getCurrentThread().pollThreadEvents();
+    }
+
+    public void pushClass(RubyModule newClass) {
+        classStack.push(newClass);
+    }
+
+    public void popClass() {
+        classStack.pop();
+    }
+
+    public RubyModule getRubyClass() {
+        RubyModule rubyClass = (RubyModule) classStack.peek();
+        if (rubyClass.isIncluded()) {
+            return ((IncludedModuleWrapper) rubyClass).getDelegate();
+        }
+        return rubyClass;
+    }
+
+    public RubyModule getWrapper() {
+        return wrapper;
+    }
+
+    public void setWrapper(RubyModule wrapper) {
+        this.wrapper = wrapper;
     }
 }
