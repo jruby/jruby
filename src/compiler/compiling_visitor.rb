@@ -356,8 +356,21 @@ module JRuby
       end
 
       def visitClassNode(node)
-        # FIXME
+        if node.getSuperNode
+          emit_bytecodes(node.getSuperNode)
+        else
+          @bytecodes << PushNil.new
+        end
+
+        # Top on stack as superclass
+#        @bytecodes << GetClass.new(node.getClassName)
+
+        # .. push class stack
+
         emit_bytecodes(node.getBodyNode)
+
+        # ... pop class stack
+
       end
 
       def visitColon2Node(node)

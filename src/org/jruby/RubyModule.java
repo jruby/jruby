@@ -761,17 +761,13 @@ public class RubyModule extends RubyObject {
      */
     public void aliasMethod(String name, String oldName) {
         testFrozen();
-
         if (oldName.equals(name)) {
             return;
         }
-
         if (this == getRuntime().getClasses().getObjectClass()) {
             getRuntime().secure(4);
         }
-
         ICallable method = searchMethod(oldName);
-
         if (method.isUndefined()) {
             if (isModule()) {
                 method = getRuntime().getClasses().getObjectClass().searchMethod(oldName);
@@ -783,7 +779,6 @@ public class RubyModule extends RubyObject {
                                     toName() + "'");
             }
         }
-
         getMethods().put(name, new AliasMethod(method, oldName));
         clearMethodCache();
     }

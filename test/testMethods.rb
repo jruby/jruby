@@ -88,5 +88,5 @@ class TM_B < TM_A
     super()
   end
 end
-test_equal("x", TM_B.new.foo)
-test_equal("y", TM_B.new.bar)
+test_equal("x", TM_B.new.foo) # Tests ZSuperNode
+test_equal("y", TM_B.new.bar) # Tests SuperNode

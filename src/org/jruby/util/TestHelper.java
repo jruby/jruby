@@ -102,11 +102,16 @@ public class TestHelper {
         Loader loader = new Loader();
         Class c = loader.loadClass(name, javaClass);
         Method method = c.getMethod(methodName, new Class[] { Ruby.class, IRubyObject.class });
+        Ruby runtime = self.getRuntime();
         try {
+
+            runtime.getCurrentContext().pushClass(self.getType());
             return (IRubyObject) method.invoke(null,
-                                               new Object[] { self.getRuntime(), self });
+                                               new Object[] { runtime, self });
         } catch (InvocationTargetException e) {
             throw unrollException(e);
+        } finally {
+            runtime.getCurrentContext().popClass();
         }
     }
 
