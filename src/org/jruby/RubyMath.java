@@ -32,7 +32,6 @@
  */
 package org.jruby;
 
-import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -145,8 +144,7 @@ public class RubyMath {
         double x = other.getDoubleValue();
 
         if (x < 0) {
-            throw new ArgumentError(recv.getRuntime(), 
-            	"square root for negative number");
+        	return RubyFloat.newFloat(recv.getRuntime(), Double.NaN);
         }
         
         return RubyFloat.newFloat(recv.getRuntime(), Math.sqrt(x));
