@@ -9,6 +9,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  * will need to be explicitly created.
  **/
 public final class CallbackFactory {
+    public static final Class[] NULL_CLASS_ARRAY = new Class[0];
+    
     /**
      * gets an instance method with no arguments.
      * @param type java class where the method is implemented
@@ -16,7 +18,7 @@ public final class CallbackFactory {
      * @return a CallBack object corresponding to the appropriate method
      **/
     public static Callback getMethod(Class type, String method) {
-        return new ReflectionCallbackMethod(type, method, new Class[0], false, false, Arity.noArguments());
+        return new ReflectionCallbackMethod(type, method, NULL_CLASS_ARRAY, false, false, Arity.noArguments());
     }
 
     /**
@@ -49,7 +51,7 @@ public final class CallbackFactory {
      * @return a CallBack object corresponding to the appropriate method
      **/
     public static Callback getSingletonMethod(Class type, String method) {
-        return new ReflectionCallbackMethod(type, method, new Class[0], false, true, Arity.noArguments());
+        return new ReflectionCallbackMethod(type, method, NULL_CLASS_ARRAY, false, true, Arity.noArguments());
     }
 
     /**

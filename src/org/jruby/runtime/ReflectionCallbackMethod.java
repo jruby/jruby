@@ -63,7 +63,7 @@ public final class ReflectionCallbackMethod implements Callback {
 
         this.klass = klass;
         this.methodName = methodName;
-        this.args = args != null ? args : new Class[0];
+        this.args = args != null ? args : CallbackFactory.NULL_CLASS_ARRAY;
         this.isRestArgs = isRestArgs;
         this.isStaticMethod = isStaticMethod;
         this.arity = arity;

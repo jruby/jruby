@@ -48,7 +48,6 @@ import org.jruby.util.Glob;
  * @version $Revision$
  */
 public class RubyDir extends RubyObject {
-
     protected String    path;
     protected File      dir;
     private   String[]  snapshot;   // snapshot of contents of directory
@@ -121,7 +120,7 @@ public class RubyDir extends RubyObject {
 		snapshotList.add(".");
 		snapshotList.add("..");
 		snapshotList.addAll(getContents(dir));
-		snapshot = (String[]) snapshotList.toArray(new String[0]);
+		snapshot = (String[]) snapshotList.toArray(new String[snapshotList.size()]);
 		pos = 0;
 
         return this;

@@ -632,7 +632,7 @@ public class RubyIO extends RubyObject {
         if (args.length >= 2) {
             separatorArguments = new IRubyObject[] { args[1] };
         } else {
-            separatorArguments = new IRubyObject[0];
+            separatorArguments = IRubyObject.NULL_ARRAY;
         }
 
         RubyIO file = (RubyIO) KernelModule.open(recv, new IRubyObject[] { fileName });
