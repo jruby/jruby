@@ -1,244 +1,230 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Thanks to Benoit Cerrina <b.cerrina@wanadoo.fr> for this buildfile. -->
 
-<project basedir="." default="create-jar" name="JRuby">
-  <description>
-    JRuby is a pure Java implementation of a Ruby interpreter.
-  </description>
+<project basedir="." default="jar" name="JRuby">
+  	<description>
+    	JRuby is a pure Java implementation of a Ruby interpreter.
+  	</description>
 
-  <property name="base.dir" value="."/>
-  <property name="src.dir" value="${base.dir}/src"/>
-  <property name="test.dir" value="${base.dir}/test"/>
-  <property name="lib.dir" value="${base.dir}/lib"/>
-  <property name="test.dir" value="${base.dir}/test"/>
+	<!-- First try to load machine-specific properties. -->
+	<property file="build.properties"/>
+
+	<!-- And then load the defaults. It seems backwards to set defaults AFTER 
+		 setting local overrides, but that's how Ant works. -->
+	<property file="default.build.properties"/>
+
+  	<path id="build.classpath">
+    	<fileset dir="${lib.dir}" includes="*.jar" excludes="jruby.jar"/>
+  	</path>
+
+  	<patternset id="java.src.pattern">
+    	<include name="**/*.java"/>
+    	<exclude unless="bsf.present" name="org/jruby/javasupport/bsf/**/*.java"/>
+    	<exclude unless="oro.present" name="**/ORORegexpAdapter.java"/>
+    	<exclude unless="jdk1.4+" name="**/JDKRegexpAdapter.java"/>
+    	<exclude unless="jdk1.4+" name="**/XmlAstMarshal.java"/>
+    	<exclude unless="jdk1.4+" name="**/AstPersistenceDelegates.java"/>
+    	<exclude unless="gnuregexp.present" name="**/GNURegexpAdapter.java"/>
+  	</patternset>
+
+  	<patternset id="rubyclass.src.pattern">
+    	<include name="**/*.xml"/>
+		<exclude name="**/Object.xml"/>
+  	</patternset>
+
+  	<patternset id="ruby.src.pattern">
+    	<include name="**/*.rb"/>
+  	</patternset>
+		
+  	<patternset id="other.src.pattern">
+    	<include name="**/*.properties"/>
+  	</patternset>
+
+  	<target name="init" description="initialize the build">
+    	<xmlproperty file="build-config.xml" keepRoot="false" collapseAttributes="true"/>
+    	<tstamp>
+      		<format property="build.date" pattern="yyyy-MM-dd"/>
+    	</tstamp>
+    	<property name="version.ruby" value="${version.ruby.major}.${version.ruby.minor}"/>
+  	</target>
+
+	<target name="prepare" depends="init" 
+		description="Creates the directories needed for building">
+		<mkdir dir="${build.dir}"/>
+		<mkdir dir="${classes.dir}"/>
+		<mkdir dir="${jruby.classes.dir}"/>
+    	<mkdir dir="${test.classes.dir}"/>
+		<mkdir dir="${gen-src.dir}"/>
+		<mkdir dir="${test.results.dir}"/>
+		<mkdir dir="${html.test.results.dir}"/>
+		<mkdir dir="${docs.dir}"/>
+		<mkdir dir="${api.docs.dir}"/>
+	</target>
+
+  	<target name="check-for-optional-packages"
+          	description="check if specific libs and versions are avaiable"
+          	depends="init">
+    	<available property="jdk1.4+"
+               	classname="java.lang.CharSequence"/>
+    	<available property="bsf.present"
+               	classname="org.apache.bsf.BSFManager"
+               	classpathref="build.classpath"/>
+    	<available property="junit.present"
+               	classname="junit.framework.TestCase"
+               	classpathref="build.classpath"/>
+    	<available property="oro.present"
+               	classname="org.apache.oro.text.regex.Perl5Pattern"
+               	classpathref="build.classpath"/>
+    	<available property="gnuregexp.present"
+               	classname="gnu.regexp.RE"
+	       	classpathref="build.classpath"/>
+  	</target>
+
+	<target name="compile.tasks" depends="prepare"
+		description="Builds the Ant tasks that we need later on in the build">
+    	<javac destdir="${jruby.classes.dir}" debug="true"
+			srcdir="${src.dir}"
+      		includes="org/jruby/util/ant/**/*.java">
+      		<classpath refid="build.classpath"/>
+    	</javac>
+
+    	<taskdef name="jruby-methodGenerate" 
+			classname="org.jruby.util.ant.methodgenerator.JRubyMethodGenerator">
+      		<classpath path="${jruby.classes.dir}"/>
+    	</taskdef>
+
+    	<taskdef name="jruby-serialize" classname="org.jruby.util.ant.JRubySerialize">
+			<classpath path="${jruby.classes.dir}"/>
+    	</taskdef>
+
+		<copy todir="${jruby.classes.dir}">
+			<fileset dir="${src.dir}" includes="**/*.properties"/>
+		</copy>
+	</target>
+
+	<target name="generate" depends="compile.tasks, check-for-optional-packages"
+		description="Generates Ruby artifacts from XML description files.">
+    	<jruby-methodGenerate destdir="${gen-src.dir}">
+      		<fileset dir="${src.dir}">
+        		<patternset refid="rubyclass.src.pattern"/>
+      		</fileset>
+    	</jruby-methodGenerate>
+	</target>
+
+	<target name="copy.with.expansion" depends="generate"
+		description="Copy those files who need variables expanded">
+		<copy todir="${gen-src.dir}">
+			<fileset dir="${src.dir}" includes="**/Constants.java"/>
+			<filterchain>
+				<expandproperties/>
+			</filterchain>
+		</copy>
+	</target>
+
+  	<target name="compile" depends="copy.with.expansion"
+		description="Compile the source files for the project.">
+
+		<javac destdir="${jruby.classes.dir}" debug="true">
+			<classpath refid="build.classpath"/>
+			<src path="${gen-src.dir}"/>
+			<include name="**/Constants.java"/>
+		</javac>
+
+    	<javac destdir="${jruby.classes.dir}" debug="true">
+      		<classpath refid="build.classpath"/>
+      		<src path="${src.dir}"/>
+			<src path="${gen-src.dir}"/>
+      		<patternset refid="java.src.pattern"/>
+			<exclude name="**/Constants.java"/>
+    	</javac>
+  	</target>
+
+	<target name="serialize" depends="compile"
+		description="Serializes the core Ruby library into Java format">
+    	<jruby-serialize destdir="${jruby.classes.dir}">
+      		<fileset dir="${src.dir}">
+        		<patternset refid="ruby.src.pattern"/>
+      		</fileset>
+    	</jruby-serialize>
+	</target>
+
+  	<target name="jar" depends="serialize"
+		description="Create the jruby.jar file">
+    	<jar destfile="${lib.dir}/jruby.jar">
+      		<fileset dir="${jruby.classes.dir}">
+        		<include name="**/*.class"/>
+	    		<include name="**/*.properties"/>
+	    		<include name="**/*.rb.ast.ser"/>
+      		</fileset>
+      		<manifest>
+        		<attribute name="Built-By" value="${user.name}"/>
+        		<attribute name="Main-Class" value="org.jruby.Main"/>
+      		</manifest>
+    	</jar>
+  	</target>
   
-  <property name="docs.dir" value="${base.dir}/docs"/>
-  <property name="apidocs.dir" value="${docs.dir}/api"/>
+  	<target name="compile-test" depends="jar" 
+		description="Compile the unit tests">
+    	<javac destdir="${test.classes.dir}" deprecation="true" debug="true">
+      		<classpath>
+        		<path refid="build.classpath"/>
+				<pathelement path="${jruby.classes.dir}"/>
+        		<pathelement path="${lib.dir}/jruby.jar"/>
+      		</classpath>
+      		<src path="${test.dir}"/>
+      		<patternset refid="java.src.pattern"/>
+    	</javac>
+  	</target>
 
-  <property name="release.dir" value="${base.dir}/release"/>
-  <property name="tmp.dir" value="${base.dir}/.tmp"/>
-
-  <path id="build.classpath">
-    <fileset dir="${lib.dir}" includes="*.jar" excludes="jruby.jar"/>
-  </path>
-
-  <patternset id="java.src.pattern">
-    <include name="**/*.java"/>
-    <exclude unless="bsf.present" name="org/jruby/javasupport/bsf/**/*.java"/>
-    <exclude unless="oro.present" name="**/ORORegexpAdapter.java"/>
-    <exclude unless="jdk1.4+" name="**/JDKRegexpAdapter.java"/>
-    <exclude unless="jdk1.4+" name="**/XmlAstMarshal.java"/>
-    <exclude unless="jdk1.4+" name="**/AstPersistenceDelegates.java"/>
-    <exclude unless="gnuregexp.present" name="**/GNURegexpAdapter.java"/>
-  </patternset>
-
-  <patternset id="rubyclass.src.pattern">
-    <include name="**/*.xml"/>
-  </patternset>
-
-  <patternset id="ruby.src.pattern">
-    <include name="**/*.rb"/>
-  </patternset>
-
-  <patternset id="other.src.pattern">
-    <include name="**/*.properties"/>
-  </patternset>
-
-  <target name="init" description="initialize the build">
-    <xmlproperty file="build-config.xml" keepRoot="false" collapseAttributes="true"/>
-    <tstamp>
-      <format property="build.date" pattern="yyyy-MM-dd"/>
-    </tstamp>
-    <property name="version.ruby" value="${version.ruby.major}.${version.ruby.minor}"/>
-  </target>
-
-  <target name="check-for-optional-packages"
-          description="check if specific libs and versions are avaiable"
-          depends="init">
-    <available property="jdk1.4+"
-               classname="java.lang.CharSequence"/>
-    <available property="bsf.present"
-               classname="org.apache.bsf.BSFManager"
-               classpathref="build.classpath"/>
-    <available property="junit.present"
-               classname="junit.framework.TestCase"
-               classpathref="build.classpath"/>
-    <available property="oro.present"
-               classname="org.apache.oro.text.regex.Perl5Pattern"
-               classpathref="build.classpath"/>
-    <available property="gnuregexp.present"
-               classname="gnu.regexp.RE"
-	       classpathref="build.classpath"/>
-  </target>
-
-  <target name="compile" description="compile the src directory" depends="init,check-for-optional-packages">
-    <mkdir dir="${tmp.dir}/src"/>
- 
-    <copy todir="${tmp.dir}/src">
-      <fileset dir="${src.dir}">
-        <patternset refid="java.src.pattern"/>
-        <patternset refid="other.src.pattern"/>
-      </fileset>
-      <filterchain>
-        <expandproperties/>
-      </filterchain>
-    </copy>
-
-    <!-- Need to compile to compile methodGenerate task before rest of source
-         so that java files generated by this task can be compiled with the
-         rest of the source -->
-    <javac destdir="${tmp.dir}/src" debug="true">
-      <src path="${tmp.dir}/src/"/>
-      <include name="org/jruby/util/ant/methodgenerator/**"/>
-      <classpath refid="build.classpath"/>
-    </javac>
-    
-    <taskdef name="jruby-methodGenerate" classname="org.jruby.util.ant.methodgenerator.JRubyMethodGenerator">
-      <classpath path="${tmp.dir}/src"/>
-    </taskdef>
-
-    <jruby-methodGenerate destdir="${tmp.dir}/src">
-      <fileset dir="${src.dir}">
-        <patternset refid="rubyclass.src.pattern"/>
-      </fileset>
-    </jruby-methodGenerate>
-
-    <javac destdir="${tmp.dir}/src" debug="true">
-      <classpath refid="build.classpath"/>
-      <src path="${tmp.dir}/src"/>
-      <patternset refid="java.src.pattern"/>
-    </javac>
-
-    <taskdef name="jruby-serialize" classname="org.jruby.util.ant.JRubySerialize">
-      <classpath path="${tmp.dir}/src"/>
-    </taskdef>
-
-    <jruby-serialize destdir="${tmp.dir}/src">
-      <fileset dir="${src.dir}">
-        <patternset refid="ruby.src.pattern"/>
-      </fileset>
-    </jruby-serialize>
-  </target>
-
-  <target name="create-jar" description="create the jruby.jar" depends="compile">
-    <jar destfile="${lib.dir}/jruby.jar">
-      <fileset dir="${tmp.dir}/src">
-        <include name="**/*.class"/>
-	    <include name="**/*.properties"/>
-	    <include name="**/*.rb.ast.ser"/>
-      </fileset>
-      <manifest>
-        <attribute name="Built-By" value="${user.name}"/>
-        <attribute name="Main-Class" value="org.jruby.Main"/>
-      </manifest>
-    </jar>
-  </target>
+  	<target name="create-test-jar" depends="compile-test" 
+		description="Create a jar file containing just the tests.">
+    	<jar destfile="${test.dir}/test.jar">
+      		<fileset dir="${test.classes.dir}" includes="**/*.class"/>
+      		<fileset dir="${test.dir}" includes="org/**/*.rb"/>
+      		<manifest>
+        		<attribute name="Built-By" value="${user.name}"/>
+      		</manifest>
+    	</jar>
+  	</target>
   
-  <target name="compile-test" description="compile the test directory" depends="create-jar">
-    <mkdir dir="${tmp.dir}/test"/>
- 
-    <copy todir="${tmp.dir}/test">
-      <fileset dir="${test.dir}">
-        <patternset refid="java.src.pattern"/>
-      </fileset>
-      <filterchain>
-        <expandproperties/>
-      </filterchain>
-    </copy>
+  	<target name="test" depends="create-test-jar"
+		description="runs junit tests">
+    	<junit fork="yes" haltonfailure="false" dir="${basedir}">
+      		<classpath>
+        		<path refid="build.classpath"/>
+        		<pathelement path="${lib.dir}/jruby.jar"/>
+        		<pathelement path="${test.dir}/test.jar"/>
+      		</classpath>
+      		<sysproperty key="jruby.base" value="${basedir}"/>
+      		<sysproperty key="jruby.home" value="${basedir}"/>
+      		<sysproperty key="jruby.lib" value="${lib.dir}"/>
 
-    <javac destdir="${tmp.dir}/test" debug="true">
-      <classpath>
-        <path refid="build.classpath"/>
-        <pathelement path="${lib.dir}/jruby.jar"/>
-      </classpath>
-      <src path="${tmp.dir}/test"/>
-      <patternset refid="java.src.pattern"/>
-    </javac>
-  </target>
+      		<formatter type="xml"/>
+      		<formatter type="brief" usefile="false"/>
 
-  <target name="create-test-jar" description="create the test.jar" depends="compile-test">
-    <jar destfile="${test.dir}/test.jar">
-      <fileset dir="${tmp.dir}/test">
-        <include name="**/*.class"/>
-      </fileset>
-      <fileset dir="${test.dir}">
-        <include name="org/**/*.rb"/>
-      </fileset>
-      <manifest>
-        <attribute name="Built-By" value="${user.name}"/>
-      </manifest>
-    </jar>
-  </target>
+      		<test name="org.jruby.test.MainTestSuite" todir="${test.results.dir}"/>
+    	</junit>
+
+    	<junitreport todir="${test.results.dir}">
+      		<fileset dir="${test.results.dir}" includes="TEST-*.xml"/>
+      		<report format="frames" todir="${html.test.results.dir}"/>
+    	</junitreport>
+  	</target>
   
-  <target name="test" description="runs junit tests" depends="create-test-jar">
-    <mkdir dir="${test.dir}/report"/>
-    <mkdir dir="${tmp.dir}/test-results"/>
-    <junit fork="yes" haltonfailure="yes" dir="${base.dir}">
-      <classpath>
-        <path refid="build.classpath"/>
-        <pathelement path="${lib.dir}/jruby.jar"/>
-        <pathelement path="${test.dir}/test.jar"/>
-      </classpath>
-      <sysproperty key="jruby.base" value="${base.dir}"/>
-      <sysproperty key="jruby.home" value="${base.dir}"/>
-      <sysproperty key="jruby.lib" value="${lib.dir}"/>
-      <formatter type="xml"/>
-      <formatter type="brief" usefile="false"/>
-      <test name="org.jruby.test.MainTestSuite" todir="${tmp.dir}/test-results"/>
-    </junit>
-  </target>
-
-  <target name="test-report" description="creates a html test report" depends="test">
-    <junitreport todir="${tmp.dir}/test-results">
-      <fileset dir="${tmp.dir}/test-results">
-        <include name="TEST-*.xml"/>
-      </fileset>
-      <report format="noframes" todir="${test.dir}/report"/>
-    </junitreport>
-  </target>
+  	<target name="create-apidocs" depends="prepare" 
+		description="Creates the Java API docs">
+    	<javadoc destdir="${api.docs.dir}" author="true" version="true" use="true" windowtitle="JRuby API">
+      		<fileset dir="${src.dir}"/>
+      		<fileset dir="${test.dir}"/>
+      		<doctitle><![CDATA[<h1>JRuby</h1>]]></doctitle>
+      		<bottom><![CDATA[<i>Copyright &#169; 2002 Jan Arne Petersen. All Rights Reserved.</i>]]></bottom>
+    	</javadoc>
+  	</target>
   
-  <target name="create-apidocs" description="creates the java api doc" depends="init">
-    <javadoc destdir="${apidocs.dir}" author="true" version="true" use="true" windowtitle="JRuby API">
-      <fileset dir="${src.dir}"/>
-      <fileset dir="${test.dir}"/>
-      <doctitle><![CDATA[<h1>JRuby</h1>]]></doctitle>
-      <bottom><![CDATA[<i>Copyright &#169; 2002 Jan Arne Petersen. All Rights Reserved.</i>]]></bottom>
-    </javadoc>
-  </target>
-  
-  <target name="clean-tmp" description="clean the ${tmp.dir} dir without the eclipse stuff" depends="init">
-    <delete>
-      <fileset dir="${tmp.dir}" excludes="eclipse-src/**"/>
-    </delete>
-  </target>
-
-  <target name="clean-ast.ser" description="clean the ast.ser files" depends="init">
-     <delete>
-       <fileset dir="${tmp.dir}" includes="**/*.ast.ser"/>
-     </delete>
-  </target>
-
-  <target name="clean" description="clean almost everything" depends="clean-tmp,clean-ast.ser">
-      <delete file="${test.dir}/test.jar" quiet="true"/>
-      <delete file="${lib.dir}/jruby.jar" quiet="true"/>
-  </target>
-
-
-  <target name="create-doxygen-docs" description="creates documentation with doxygen">
-        <taskdef name="doxygen" classname="org.doxygen.tools.DoxygenTask"
-            classpath="./lib/doxygen_ant.jar" />
-            
-        <mkdir dir="${docs.dir}" />            
-        <doxygen outputDirectory="${docs.dir}" 
-                input="${src.dir}" 
-                recursive="yes"
-                generateLatex="false"
-                projectName="Ant - Doxygen Test Docs" 
-                projectNumber = "1.0" 
-                generateTreeview  = "yes"
-                sourceBrowser="yes"
-                referencedByRelation="yes"
-         />      
-   </target>
-
+  	<target name="clean" depends="init"
+		description="clean almost everything">
+		<delete dir="${build.dir}"/>
+      	<delete file="${test.dir}/test.jar" quiet="true"/>
+      	<delete file="${lib.dir}/jruby.jar" quiet="true"/>
+		<delete dir="${api.docs.dir}"/>
+  	</target>
 </project>
