@@ -47,6 +47,28 @@ module JavaUtilities
       setup_proxy_class(java_class, proxy_class)
     end
 
+    def proxy_classes
+      unless defined? @proxy_classes
+        @proxy_classes = {}
+      end
+      @proxy_classes
+    end
+
+    def new_proxy_class(java_class_name)
+      proxy_classes = JavaUtilities.proxy_classes
+
+      if proxy_classes.has_key?(java_class_name)
+        return proxy_classes[java_class_name]
+      end
+
+      java_class = Java::JavaClass.for_name(java_class_name)
+      proxy_class = Class.new
+      proxy_class.extend(JavaProxy)
+      proxy_class.class_eval("@java_class = java_class")
+      proxy_classes[java_class_name] = proxy_class
+      setup_proxy_class(java_class, proxy_class)
+    end
+
     def setup_proxy_class(java_class, proxy_class)
       # FIXME: take types into consideration, like the old javasupport,
       #        and do the searching long before call-time.
@@ -71,6 +93,10 @@ module JavaUtilities
         grouped_methods.each {|name, methods|
           if methods.length == 1
             m = methods.first
+            return_type = m.return_type
+            unless return_type.nil?
+              m.proxy_class = JavaUtilities.new_proxy_class(return_type)
+            end
             define_method(m.name) {|*args|
               args = JavaProxy.convert_arguments(args)
               JavaUtilities.convert_result(m.invoke(self, *args))
@@ -82,6 +108,11 @@ module JavaUtilities
                 # just one method with this length
                 define_method(name) {|*args|
                   m = methods_by_arity[args.length].first
+                  return_type = m.return_type
+                  unless return_type.nil?
+                    # FIXME: don't need to set this *every* time...
+                    m.proxy_class = JavaUtilities.new_proxy_class(return_type)
+                  end
                   args = convert_arguments(args)
                   JavaUtilities.convert_result(m.invoke(self, *args))
                 }
@@ -108,6 +139,10 @@ module JavaUtilities
                                "args = JavaProxy.convert_arguments(args);" +
                                "methods = @class_methods['" + name + "'];" +
                                "method = methods.first;" +
+                               "return_type = method.return_type;" +
+                               "unless return_type.nil?;" +
+                               "method.proxy_class = JavaUtilities.new_proxy_class(return_type);" +
+                               "end;" +
                                "JavaUtilities.convert_result(method.invoke_static(*args));" +
                                "end")
       }

@@ -124,7 +124,8 @@ if defined? Java
   test_equal(string_class.to_s, result.java_type)
 
   # Control over return types and values
-  test_equal("java.lang.String", method.result_type)
+  test_equal("java.lang.String", method.return_type)
+  test_equal(nil, string_class.java_method("notifyAll").return_type)
   test_equal(JavaObject, method.proxy_class)
   test_equal(JavaObject,
              method.invoke_static(Java.primitive_to_java(101)).type)

@@ -53,7 +53,7 @@ public class JavaMethodClass extends JavaCallable implements IndexCallable {
     private static final int ARGUMENT_TYPES = 7;
     private static final int INSPECT = 8;
     private static final int STATIC_P = 9;
-    private static final int RESULT_TYPE = 10;
+    private static final int RETURN_TYPE = 10;
     private static final int PROXY_CLASS = 11;
     private static final int SET_PROXY_CLASS = 12;
 
@@ -69,7 +69,7 @@ public class JavaMethodClass extends JavaCallable implements IndexCallable {
         javaMethodClass.defineMethod("argument_types", IndexedCallback.create(ARGUMENT_TYPES, 0));
         javaMethodClass.defineMethod("inspect", IndexedCallback.create(INSPECT, 0));
         javaMethodClass.defineMethod("static?", IndexedCallback.create(STATIC_P, 0));
-        javaMethodClass.defineMethod("result_type", IndexedCallback.create(RESULT_TYPE, 0));
+        javaMethodClass.defineMethod("return_type", IndexedCallback.create(RETURN_TYPE, 0));
         javaMethodClass.defineMethod("proxy_class", IndexedCallback.create(PROXY_CLASS, 0));
         javaMethodClass.defineMethod("proxy_class=", IndexedCallback.create(SET_PROXY_CLASS, 1));
 
@@ -135,8 +135,12 @@ public class JavaMethodClass extends JavaCallable implements IndexCallable {
         return invokeWithExceptionHandling(null, arguments);
     }
 
-    public IRubyObject result_type() {
-        return RubyString.newString(getRuntime(), method.getReturnType().getName());
+    public IRubyObject return_type() {
+        String result = method.getReturnType().getName();
+        if (result.equals("void")) {
+            return getRuntime().getNil();
+        }
+        return RubyString.newString(getRuntime(), result);
     }
 
     public RubyClass proxy_class() {
@@ -210,8 +214,8 @@ public class JavaMethodClass extends JavaCallable implements IndexCallable {
                 return inspect();
             case STATIC_P :
                 return static_p();
-            case RESULT_TYPE :
-                return result_type();
+            case RETURN_TYPE :
+                return return_type();
             case PROXY_CLASS :
                 return proxy_class();
             case SET_PROXY_CLASS :

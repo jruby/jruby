@@ -36,8 +36,12 @@ if defined? Java
     h = HashMap.new
     test_equal(HashMap, h.type)
     h.put("a", 1)
-#    iter = h.entrySet.iterator
-#    inner_instance_entry = iter.next
-#    test_equal("a", inner_instance_entry.getKey)
+    iter = h.entrySet.iterator
+    test_equal("java.util.Iterator", iter.type.class_eval("@java_class.name"))
+    inner_instance_entry = iter.next
+    #FIXME: Need to downcast to MapEntry before the test below works...
+    #test_equal("a", inner_instance_entry.getKey)
   end
 end
+
+test_print_report
