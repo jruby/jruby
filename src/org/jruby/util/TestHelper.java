@@ -93,13 +93,25 @@ public class TestHelper {
         }
     }
 
-    public static IRubyObject loadAndCall(IRubyObject x, String name, byte[] javaClass, String methodName)
+    /**
+     * Used by JVM bytecode compiler tests to run compiled code
+     */
+    public static IRubyObject loadAndCall(IRubyObject dummy, String name, byte[] javaClass, String methodName)
             throws NoSuchMethodException, IllegalAccessException, InvocationTargetException
     {
         Loader loader = new Loader();
         Class c = loader.loadClass(name, javaClass);
         Method method = c.getMethod(methodName, new Class[] { Ruby.class, IRubyObject.class });
-        return (IRubyObject) method.invoke(null, new Object[] { x.getRuntime(), null });
+        try {
+            return (IRubyObject) method.invoke(null,
+                                               new Object[] { dummy.getRuntime(), null });
+        } catch (InvocationTargetException e) {
+            if (e.getCause() instanceof RuntimeException) {
+                throw (RuntimeException) e.getCause();
+            } else {
+                throw e;
+            }
+        }
     }
 
     private static class Loader extends ClassLoader {

@@ -176,6 +176,28 @@ module JRuby
         end
       end
 
+      class PushArray
+        def initialize(initial_size)
+          @size = initial_size
+        end
+
+        def emit_jvm_bytecode(methodgen, factory)
+          list = methodgen.getInstructionList
+          list.append(BCEL::ALOAD.new(RUNTIME_INDEX))
+          list.append(BCEL::PUSH.new(methodgen.getConstantPool, @size))
+          list.append(BCEL::I2L.new)
+          args_array = BCEL::Type[].new(2)
+          args_array[0] = BCEL::ObjectType.new("org.jruby.Ruby")
+          args_array[1] = BCEL::Type::LONG
+
+          list.append(factory.createInvoke("org.jruby.RubyArray",
+                                           "newArray",
+                                           BCEL::ObjectType.new("org.jruby.RubyArray"),
+                                           args_array,
+                                           BCEL::Constants::INVOKESTATIC))
+        end
+      end
+
       class IfFalse
         attr_writer :target
 

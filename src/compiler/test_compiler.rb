@@ -109,5 +109,6 @@ test_compiled(3,
               "if true; 1 + 2; else; 'hello'; end")
 test_compiled("hello",
               "if false; 1 + 2; else; 'hello'; end")
+test_compiled(3, "[1,2,3,4][2]")
 
 test_print_report

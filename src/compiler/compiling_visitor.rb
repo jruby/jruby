@@ -158,6 +158,15 @@ module JRuby
         @bytecodes << PushBoolean.new(true)
       end
 
+      def visitArrayNode(node)
+        @bytecodes << PushArray.new(node.size)
+        iter = node.iterator
+        while iter.hasNext
+          emit_bytecodes(iter.next)
+          @bytecodes << Call.new('<<', 1, :normal)
+        end
+      end
+
     end
 
     # Since we can't subclass Java interfaces properly we have
