@@ -58,27 +58,10 @@ public final class Iter {
     }
 
     public boolean isBlockGiven() {
-        return ! isNot();
+        return !isNot();
     }
 
-    /**
-     * @see Object#equals(Object)
-     */
-    public final boolean equals(final Object obj) {
-        return this == obj;
-    }
-
-    /**
-     * @see Object#hashCode()
-     */
-    public final int hashCode() {
-        return debug.hashCode();
-    }
-
-    /**
-     * @see Object#toString()
-     */
-    public final String toString() {
+    public String toString() {
         return debug;
     }
 }
