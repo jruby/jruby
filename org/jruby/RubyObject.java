@@ -47,17 +47,10 @@ import org.jruby.exceptions.TypeError;
 
 import org.jruby.internal.runtime.methods.EvaluateMethod;
 import org.jruby.runtime.marshal.MarshalStream;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.CallType;
-import org.jruby.runtime.Callback;
-import org.jruby.runtime.CallbackFactory;
 
-import org.jruby.runtime.Frame;
-import org.jruby.runtime.ICallable;
-import org.jruby.runtime.Iter;
+import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
-import org.jruby.util.IdUtil;
 import org.jruby.util.PrintfFormat;
 import org.jruby.util.RubyHashMap;
 import org.jruby.util.RubyMap;
@@ -914,16 +907,9 @@ public class RubyObject implements Cloneable, IRubyObject {
             description = "false";
         }
 
-        String format = "Undefined method '%s' for %s%s%s";
-        if (runtime.getLastCallStatus().isPrivate()) {
-            format = "private method '%s' called for %s%s%s";
-        } else if (runtime.getLastCallStatus().isProtected()) {
-            format = "protected method '%s' called for %s%s%s";
-        } else if (runtime.getLastCallStatus().isVariable()) {
-            if (IdUtil.isLocal(name)) {
-                format = "Undefined local variable or method '%s' for %s%s%s";
-            }
-        }
+        LastCallStatus lastCallStatus = runtime.getLastCallStatus();
+
+        String format = lastCallStatus.errorMessageFormat(name);
 
         String msg =
             new PrintfFormat(format).sprintf(

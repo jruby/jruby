@@ -1,5 +1,7 @@
 package org.jruby.runtime;
 
+import org.jruby.util.IdUtil;
+
 /**
  * 
  * @author jpetersen
@@ -16,18 +18,6 @@ public class LastCallStatus {
     public LastCallStatus() {
     }
 
-    public boolean isPrivate() {
-        return status == PRIVATE;
-    }
-
-    public boolean isProtected() {
-        return status == PROTECTED;
-    }
-
-    public boolean isVariable() {
-        return status == VARIABLE;
-    }
-
     public void setNormal() {
         status = NORMAL;
     }
@@ -42,5 +32,19 @@ public class LastCallStatus {
 
     public void setVariable() {
         status = VARIABLE;
+    }
+
+    public String errorMessageFormat(String name) {
+        String format = "Undefined method '%s' for %s%s%s";
+        if (status == PRIVATE) {
+            format = "private method '%s' called for %s%s%s";
+        } else if (status == PROTECTED) {
+            format = "protected method '%s' called for %s%s%s";
+        } else if (status == VARIABLE) {
+            if (IdUtil.isLocal(name)) {
+                format = "Undefined local variable or method '%s' for %s%s%s";
+            }
+        }
+        return format;
     }
 }
