@@ -53,6 +53,9 @@ public class JavaSupport {
     }
 
     public void handleNativeException(Exception exception) {
+        if (exception instanceof RaiseException) {
+            throw (RaiseException) exception;
+        }
         Class excptnClass = exception.getClass();
         RubyProc handler = (RubyProc)exceptionHandlers.get(excptnClass.getName());
         while (handler == null &&

@@ -31,9 +31,10 @@ release.
     * Bytecode generation
 
 * Java support
-    * Loading classes with colliding names.
-    * Loading external libraries written in Java.
+    - Loading classes with colliding names
+    * Loading external libraries written in Java
     * Predictable way of dispatching on null
+    * Subclassing Java classes
 
 * Thread support
     * Implement Mutex, ConditionVariable and Queue as native Java libs
