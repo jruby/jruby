@@ -646,22 +646,23 @@ public class RubyModule extends RubyObject {
     }
 
     public Visibility getMethodVisibility(String name) {
-        CacheEntry entry = getMethodBody(name);
+        CacheEntry entry = getMethodBodyCached(name);
         return entry.getVisibility();
     }
 
-    protected CacheEntry getMethodBody(String name) {
+    protected CacheEntry getMethodBodyCached(String name) {
+        CacheEntry result = getRuntime().getMethodCache().getEntry(this, name);
+        if (result != null) {
+            return result;
+        }
         name = name.intern();
-
         ICallable method = searchMethod(name);
-
         if (method.isUndefined()) {
             CacheEntry undefinedEntry = CacheEntry.createUndefined(name, this);
             getRuntime().getMethodCache().saveEntry(this, name, undefinedEntry);
             return undefinedEntry;
         }
-
-        CacheEntry result = new CacheEntry(name, this);
+        result = new CacheEntry(name, this);
         method.initializeCacheEntry(result);
         getRuntime().getMethodCache().saveEntry(this, name, result);
         return result;
@@ -674,11 +675,7 @@ public class RubyModule extends RubyObject {
         if (args == null) {
             args = IRubyObject.NULL_ARRAY;
         }
-
-        CacheEntry entry = getRuntime().getMethodCache().getEntry(this, name);
-        if (entry == null) {
-            entry = getMethodBody(name);
-        }
+        CacheEntry entry = getMethodBodyCached(name);
 
         final LastCallStatus lastCallStatus = runtime.getLastCallStatus();
         if (! entry.isDefined()) {
@@ -976,7 +973,7 @@ public class RubyModule extends RubyObject {
         CacheEntry entry = runtime.getMethodCache().getEntry(this, name);
 
         if (entry == null) {
-            entry = getMethodBody(name);
+            entry = getMethodBodyCached(name);
         }
 
         if (entry.isDefined()) {
@@ -994,7 +991,7 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject newMethod(IRubyObject receiver, String name, boolean bound) {
-        CacheEntry ent = getMethodBody(name);
+        CacheEntry ent = getMethodBodyCached(name);
         if (! ent.isDefined()) {
             // printUndef();
             return getRuntime().getNil();
@@ -1002,7 +999,7 @@ public class RubyModule extends RubyObject {
 
         while (ent.getMethod() instanceof EvaluateMethod
             && ((EvaluateMethod) ent.getMethod()).getNode() instanceof ZSuperNode) {
-            ent = ent.getOrigin().getSuperClass().getMethodBody(ent.getOriginalName());
+            ent = ent.getOrigin().getSuperClass().getMethodBodyCached(ent.getOriginalName());
             if (! ent.isDefined()) {
                 // printUndef();
                 return getRuntime().getNil();
