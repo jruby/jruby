@@ -130,7 +130,7 @@ public class RubyException extends RubyObject {
 
     public RubyString to_s() {
         if (message.isNil()) {
-            return getRubyClass().getClassPath();
+            return RubyString.newString(getRuby(), getRubyClass().getClassPath());
         } else {
             message.setTaint(isTaint());
             return (RubyString) message.funcall("to_s");
@@ -147,11 +147,11 @@ public class RubyException extends RubyObject {
         RubyString exception = RubyString.stringValue(this);
 
         if (exception.getValue().length() == 0) {
-            return rubyClass.getClassPath();
+            return RubyString.newString(getRuby(), rubyClass.getClassPath());
         } else {
             StringBuffer sb = new StringBuffer();
             sb.append("#<");
-            sb.append(rubyClass.getClassPath().getValue());
+            sb.append(rubyClass.getClassPath());
             sb.append(": ");
             sb.append(exception.getValue());
             sb.append(">");

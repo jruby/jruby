@@ -396,7 +396,7 @@ public class RubyStruct extends RubyObject {
     public void marshalTo(MarshalStream output) throws java.io.IOException {
         output.write('S');
 
-        String className = getRubyClass().getClassname().toId();
+        String className = getRubyClass().getClassname();
         if (className == null) {
             throw new ArgumentError(ruby, "can't dump anonymous class");
         }

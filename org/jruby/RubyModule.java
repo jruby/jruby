@@ -48,7 +48,7 @@ public class RubyModule extends RubyObject {
     private RubyClass superClass;
 
     private String classId;
-    private RubyString classPath;
+    private String classPath;
 
     // The methods.
     private RubyMap methods = new RubyHashMap();
@@ -218,9 +218,7 @@ public class RubyModule extends RubyObject {
     /** classname
      *
      */
-    public RubyString getClassname() {
-        RubyString path = null;
-
+    public String getClassname() {
         RubyModule module = this;
         while (module.isIncluded() || module.isSingleton()) {
             module = module.getSuperClass();
@@ -230,31 +228,22 @@ public class RubyModule extends RubyObject {
             module = getRuby().getClasses().getObjectClass();
         }
 
-        path = classPath;
-        if (path == null) {
-            if (classId != null) {
-                path = RubyString.newString(getRuby(), classId);
-                // todo: convert from symbol to string
-                classPath = path;
+        if (classPath == null && classId != null) {
+                classPath = classId;
                 classId = null;
-            }
         }
 
-        if (path == null) {
+        if (classPath == null) {
             return module.findClassPath();
         }
 
-        /*if (!(path instanceof RubyString)) {
-            throw new RubyBugException("class path is not set properly");
-        }*/
-
-        return path;
+        return classPath;
     }
 
     /** findclasspath
      *
      */
-    public RubyString findClassPath() {
+    public String findClassPath() {
         FindClassPathResult arg = new FindClassPathResult();
         arg.klass = this;
         arg.track = getRuby().getClasses().getObjectClass();
@@ -272,7 +261,7 @@ public class RubyModule extends RubyObject {
             classPath = arg.path;
             return arg.path;
         }
-        return RubyString.nilString(getRuby());
+        return null;
     }
 
     /** include_class_new
@@ -289,25 +278,20 @@ public class RubyModule extends RubyObject {
     /** rb_set_class_path
      *
      */
-    public void setClassPath(RubyModule under, String name) {
-        RubyString value = null;
-
-        if (under == getRuby().getClasses().getObjectClass()) {
-            value = RubyString.newString(getRuby(), name);
+    public void setClassPath(RubyModule outer, String name) {
+        if (outer == getRuby().getClasses().getObjectClass()) {
+            classPath = name;
         } else {
-            value = (RubyString) under.getClassPath().dup();
-            value.cat("::");
-            value.cat(name);
+            classPath = outer.getClassPath();
+            classPath += "::"+ name;
         }
-
-        classPath = value;
     }
 
     /** rb_class_path
      *
      */
-    public RubyString getClassPath() {
-        RubyString path = getClassname();
+    public String getClassPath() {
+        String path = getClassname();
 
         if (path != null) {
             return path;
@@ -318,7 +302,7 @@ public class RubyModule extends RubyObject {
             s = "Class";
         }
 
-        return RubyString.newString(getRuby(), "<" + s + " 01x" + Integer.toHexString(System.identityHashCode(this)) + ">");
+        return "<" + s + " 01x" + Integer.toHexString(System.identityHashCode(this)) + ">";
         // 0 = pointer
     }
 
@@ -439,7 +423,7 @@ public class RubyModule extends RubyObject {
 
         /* Uninitialized constant */
         if (this != getRuby().getClasses().getObjectClass()) {
-            throw new NameError(getRuby(), "uninitialized constant " + name + " at " + getClassPath().getValue());
+            throw new NameError(getRuby(), "uninitialized constant " + name + " at " + getClassPath());
         } else {
             throw new NameError(getRuby(), "uninitialized constant " + name);
         }
@@ -950,7 +934,7 @@ public class RubyModule extends RubyObject {
             return "FalseClass";
         }
 
-        return ((RubyString) getClassPath()).getValue();
+        return getClassPath();
     }
 
     /** rb_define_const
@@ -1204,11 +1188,11 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyString name() {
-        RubyString path = getClassname();
+        String path = getClassname();
         if (path != null) {
-            return (RubyString) path.dup();
+            return RubyString.newString(ruby, path);
         }
-        return RubyString.newString(getRuby(), "");
+        return RubyString.newString(ruby, "");
     }
 
     /** rb_mod_class_variables
@@ -1315,7 +1299,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyString to_s() {
-        return (RubyString) getClassPath().dup();
+        return RubyString.newString(ruby, getClassPath());
     }
 
     /** rb_mod_eqq
@@ -1835,7 +1819,7 @@ public class RubyModule extends RubyObject {
     private static class FindClassPathResult {
         public String name;
         public RubyModule klass;
-        public RubyString path;
+        public String path;
         public RubyObject track;
         public FindClassPathResult prev;
     }
@@ -1850,18 +1834,17 @@ public class RubyModule extends RubyObject {
             RubyObject value = (RubyObject) _value;
             FindClassPathResult res = (FindClassPathResult) _res;
 
-            RubyString path = null;
+            String path = null;
 
             if (!IdUtil.isConstant(key)) {
                 return RubyMapMethod.CONTINUE;
             }
 
             if (res.path != null) {
-                path = (RubyString) res.path.dup();
-                path.cat("::");
-                path.cat(key);
+                path = res.path;
+                path += "::" + key;
             } else {
-                path = RubyString.newString(getRuby(), key);
+                path = key;
             }
 
             if (value == res.klass) {

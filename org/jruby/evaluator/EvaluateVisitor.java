@@ -475,6 +475,35 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitColon2Node(Colon2Node)
      */
     public void visitColon2Node(Colon2Node iVisited) {
+        // Java package support hack
+        Colon2Node node = iVisited;
+        ArrayList packageList = new ArrayList(10);
+        while (node.getLeftNode() instanceof Colon2Node) {
+            node = (Colon2Node)node.getLeftNode();
+            packageList.add(node.getName().toLowerCase());
+        }
+        if (node.getLeftNode() instanceof ConstNode) {
+            StringBuffer packageName = new StringBuffer();
+            packageName.append(((ConstNode)node.getLeftNode()).getName().toLowerCase());
+            ListIterator iter = packageList.listIterator(packageList.size());
+            while (iter.hasPrevious()) {
+                packageName.append('.').append(iter.previous());
+            }
+            packageName.append('.');
+            try {
+                String javaName = packageName.append(iVisited.getName()).toString();
+                Class javaClass = ruby.getJavaSupport().loadJavaClass(javaName);
+                result = ruby.getJavaSupport().loadClass(javaClass, null);
+                return;
+            } catch (NameError excptn) {
+            }
+            String javaName = packageName.append(iVisited.getName().toLowerCase()).toString();
+            if (Package.getPackage(javaName) != null) {
+                // create JavaPackage module.
+                // return;
+            }
+        }         
+        // Java package support hack end;
         eval(iVisited.getLeftNode());
         if (result instanceof RubyModule) {
             result = ((RubyModule) result).getConstant(iVisited.getName());

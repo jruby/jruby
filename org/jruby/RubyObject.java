@@ -995,7 +995,7 @@ public class RubyObject implements Cloneable {
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {
         output.write('o');
-        RubySymbol classname = getRubyClass().getClassname().intern();
+        RubySymbol classname = RubySymbol.newSymbol(ruby,  getRubyClass().getClassname());
         output.dumpObject(classname);
 
         if (getInstanceVariables() == null) {
