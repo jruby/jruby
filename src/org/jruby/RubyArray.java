@@ -3,7 +3,7 @@
  * Created on 04. Juli 2001, 22:53
  *
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Copyright (C) 2002-2003 Thomas E Enebo
+ * Copyright (C) 2002-2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
@@ -69,6 +69,10 @@ public class RubyArray extends RubyObject {
         return new RubyArray(ruby, null) {
             public boolean isNil() {
                 return true;
+            }
+            
+            public int getLength() {
+                return 0;
             }
         };
     }
@@ -1193,7 +1197,7 @@ public class RubyArray extends RubyObject {
      *
      */
     public IRubyObject op_diff(IRubyObject other) {
-        ArrayList ary1 = uniq(list);
+        ArrayList ary1 = (ArrayList) list.clone();
         ArrayList ary2 = arrayValue(other).getList();
         int len2 = ary2.size();
         for (int i = ary1.size() - 1; i >= 0; i--) {
@@ -1254,7 +1258,7 @@ public class RubyArray extends RubyObject {
      */
     public IRubyObject sort_bang() {
         if (getLength() <= 1) {
-            return getRuntime().getNil();
+            return this;
         }
         modify();
         setTmpLock(true);
