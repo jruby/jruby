@@ -338,13 +338,6 @@ public final class Ruby {
         return newModule;
     }
 
-    /** rb_define_global_function
-     *
-     */
-    public void defineGlobalFunction(String name, Callback method) {
-        getClasses().getKernelModule().defineModuleFunction(name, method);
-    }
-
     /** Getter for property securityLevel.
      * @return Value of property securityLevel.
      */

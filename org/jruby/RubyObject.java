@@ -254,14 +254,11 @@ public class RubyObject implements Cloneable, IRubyObject {
         objectClass.defineMethod("to_s", CallbackFactory.getMethod(RubyObject.class, "to_s"));
         objectClass.defineMethod("type", CallbackFactory.getMethod(RubyObject.class, "type"));
         objectClass.defineMethod("untaint", CallbackFactory.getMethod(RubyObject.class, "untaint"));
+        objectClass.defineMethod("method_missing", CallbackFactory.getOptMethod(RubyObject.class, "method_missing", RubyObject.class));
 
         objectClass.defineAlias("===", "==");
         objectClass.defineAlias("class", "type");
         objectClass.defineAlias("equal?", "==");
-
-        Ruby ruby = objectClass.getRuby();
-
-        ruby.defineGlobalFunction("method_missing", CallbackFactory.getOptMethod(RubyObject.class, "method_missing", RubyObject.class));
     }
 
     // Some helper functions:

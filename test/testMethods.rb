@@ -23,3 +23,10 @@ rescue ArgumentError => boom
 end
 
 
+class MethodTestingOne
+  def method_missing(name, *args)
+    [name, args]
+  end
+end
+mt1 = MethodTestingOne.new
+test_equal([:hello, [1, 2]], mt1.hello(1, 2))
