@@ -26,14 +26,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Frame;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.exceptions.NotImplementedError;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.ThreadError;
-import org.jruby.util.Asserts;
 
 import java.util.Iterator;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -149,28 +148,27 @@ public class RubyThread extends RubyObject {
         return startThread(recv, args, false);
     }
 
-    protected static RubyThread startThread(final IRubyObject recv, final IRubyObject[] args, boolean callInit) {
-        if (! recv.getRuntime().isBlockGiven()) {
-            throw new ThreadError(recv.getRuntime(), "must be called with a block");
+    private static RubyThread startThread(final IRubyObject recv, final IRubyObject[] args, boolean callInit) {
+        final Ruby runtime = recv.getRuntime();
+        if (! runtime.isBlockGiven()) {
+            throw new ThreadError(runtime, "must be called with a block");
         }
-        final RubyThread result = new RubyThread(recv.getRuntime(), (RubyClass) recv);
+        final RubyThread result = new RubyThread(runtime, (RubyClass) recv);
         if (callInit) {
             result.callInit(args);
         }
 
-        final RubyProc proc = RubyProc.newProc(recv.getRuntime(), recv.getRuntime().getClasses().getProcClass());
+        final RubyProc proc = RubyProc.newProc(runtime, runtime.getClasses().getProcClass());
 
-        final Frame currentFrame = recv.getRuntime().getCurrentFrame();
-        final Block currentBlock = recv.getRuntime().getBlockStack().getCurrent();
+        final Frame currentFrame = runtime.getCurrentFrame();
+        final Block currentBlock = runtime.getBlockStack().getCurrent();
 
-        //result.jvmThread = new Thread(result.new RubyThreadRunner(ruby, args));
         result.jvmThread = new Thread(new Runnable() {
             public void run() {
-                recv.getRuntime().getFrameStack().push(currentFrame);
-                recv.getRuntime().getBlockStack().setCurrent(currentBlock);
-
-                recv.getRuntime().getCurrentContext().setCurrentThread(result);
-
+                ThreadContext context = runtime.getCurrentContext();
+                context.getFrameStack().push(currentFrame);
+                context.getBlockStack().setCurrent(currentBlock);
+                context.setCurrentThread(result);
                 proc.call(args);
             }
         });
@@ -287,57 +285,6 @@ public class RubyThread extends RubyObject {
 
     public void raise(RubyException exc) {
         throw new NotImplementedError();
-    }
-
-    /**
-     * Description of the Class
-     *
-     * @author Jason Voegele (jason@jvoegele.com)
-     */
-    protected class RubyThreadRunner implements Runnable {
-        private IRubyObject[] args;
-        private Ruby ruby;
-
-        /**
-         *Constructor for the RubyThreadRunner object
-         *
-         * @param ruby Description of the Parameter
-         * @param args Description of the Parameter
-         */
-        public RubyThreadRunner(Ruby ruby, IRubyObject[] args) {
-            this.ruby = ruby;
-            this.args = args;
-        }
-
-        /**
-         * Main processing method for the RubyThreadRunner object
-         */
-        public void run() {
-            try {
-                if (ruby == null) {
-                    throw new RuntimeException("ruby is null!");
-                }
-                if (ruby.isBlockGiven()) {
-                    System.out.println("THE BLOCK HAS PROPOGATED!!!");
-                    ruby.yield(RubyArray.newArray(ruby, new ArrayList(Arrays.asList(args))));
-                } else {
-                    System.out.println("THE BLOCK HAS NOT PROPOGATED :(");
-                }
-            } catch (Throwable t) {
-                // TODO: Should abort_on_exception behavior be implemented here
-                // or in the interpreter itself?
-                /*
-                 *  if (RubyThread.abort_on_exception(ruby, RubyThread.this).isTrue()) {
-                 *  }
-                 *  else if (RubyThread.this.abort_on_exception().isTrue()) {
-                 *  }
-                 *  else {
-                 *  }
-                 */
-                // TODO: Temporary (hack) solution
-                throw new RuntimeException(t.toString());
-            }
-        }
     }
 }
 
