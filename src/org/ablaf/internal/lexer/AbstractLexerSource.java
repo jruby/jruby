@@ -109,6 +109,7 @@ public abstract class AbstractLexerSource implements ILexerSource {
             if (result == '\n') {
                 line--;
             }
+            lastRead = result;
             return;
         }
     }

@@ -85,4 +85,6 @@ test_equal(3, 1.id)
 test_equal(5, 2.id)
 test_equal(9, 4.id)
 
+test_equal(1.id, 1.__id__) # Testing lexer's handling of numbers here
+
 test_exception(NameError) { Integer.new }
