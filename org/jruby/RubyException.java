@@ -59,9 +59,8 @@ public class RubyException extends RubyObject {
     public static RubyClass createExceptionClass(Ruby ruby) {
         RubyClass exceptionClass = ruby.defineClass("Exception", ruby.getClasses().getObjectClass());
 
-        exceptionClass.defineSingletonMethod(
-            "exception",
-            CallbackFactory.getOptSingletonMethod(RubyException.class, "newInstance"));
+        exceptionClass.defineSingletonMethod("exception", CallbackFactory.getOptSingletonMethod(RubyException.class, "newInstance"));
+        exceptionClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyException.class, "newInstance"));
 
         exceptionClass.defineMethod("initialize", CallbackFactory.getOptMethod(RubyException.class, "initialize"));
         exceptionClass.defineMethod("exception", CallbackFactory.getOptMethod(RubyException.class, "exception"));
