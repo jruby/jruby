@@ -1,6 +1,8 @@
 # Import Java packages
-Java.import "java.awt.event"
-Java.import "javax.swing"
+Java::import "java.awt.event"
+Java::import "javax.swing"
+
+extend ActionListener
 
 # Create a frame with the title "HelloWorldSwing"
 frame = JFrame.new "HelloWorldSwing"
@@ -9,9 +11,10 @@ frame = JFrame.new "HelloWorldSwing"
 button = JButton.new "Klick Me!"
 
 # Add an action to the button
-button.addActionListener ActionListener.actionPerformed { |evt| 
+button.addActionListener actionPerformed { |evt| 
   JOptionPane.showMessageDialog NIL, 
-    "<html>Hello from JRuby.<br>The button was: <i>#{evt.actionCommand}</i>"
+  "<html>Hello from JRuby.<br>The button was: <i>#{evt.actionCommand}</i>"
+
 }
 
 # Add the button to the frame

@@ -1,5 +1,12 @@
 <changelog>
 	<release version="0.3.1">
+                <change type="api" description="Refactorize RubyGlobalEntry. Move some methods to Ruby." author="jpetersen" date="10  Jan  2002 17:40:31 +0100"/>
+		<change type="api" description="Refactorize RubyMethodCacheEntry. Rename RubyMethodCacheEntry to CacheEntry, add RubyMethodCache." author="jpetersen" date="10  Jan  2002 17:40:31 +0100"/>
+		<change type="update" description="Improve Java suppport." author="jpetersen" date="10  Jan  2002 17:40:31 +0100"/>
+		<change type="new" description="Implement security features." author="jpetersen" date="10  Jan  2002 17:40:31 +0100"/>
+		<change type="new" description="Add $SAFE variable." author="jpetersen" date="10  Jan  2002 17:40:31 +0100"/>
+		<change type="new" description="Add Regexp adapter for ORO (Patch #500315)." author="Takashi Okamoto" date="08  Jan  2002 22:17:52 +0100"/>
+		<change type="bug" description="#496915" author="benoit" date="07  Jan  2002 21:17:12 +0100"/>
 		<change type="new" description="Add $stdin, $stdout global variables." author="jpetersen" date="26  Dec  2001 17:33:00 +0100"/>
 		<change type="new" description="Add methods new, initialize, write and << to IOClass." author="jpetersen" date="26  Dec  2001 17:33:00 +0100"/>
 		<change type="new" description="Start to implement IO class, add IOError and EOFError." author="jpetersen" date="25  Dec  2001 23:43:19 +0100"/>
