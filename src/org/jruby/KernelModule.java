@@ -442,6 +442,10 @@ public class KernelModule {
         return trace_func;
     }
 
+    public static IRubyObject singleton_method_added(IRubyObject recv, IRubyObject symbolId) {
+        return recv.getRuntime().getNil();
+    }
+
     public static RubyProc proc(IRubyObject recv) {
         return RubyProc.newProc(recv.getRuntime());
     }
