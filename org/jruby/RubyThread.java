@@ -30,6 +30,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.exceptions.NotImplementedError;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.ThreadError;
+import org.jruby.exceptions.RaiseException;
 
 import java.util.Iterator;
 import java.util.ArrayList;
@@ -52,10 +53,10 @@ public class RubyThread extends RubyObject {
 
     protected static boolean static_abort_on_exception;
 
-    /** Underlying JVM thread */
     private Thread jvmThread;
     private Map threadLocalVariables = new HashMap();
     private boolean abortOnException;
+    private RaiseException exitingException = null;
 
     public static RubyClass createThreadClass(Ruby ruby) {
         RubyClass threadClass = ruby.defineClass("Thread", ruby.getClasses().getObjectClass());
@@ -177,7 +178,11 @@ public class RubyThread extends RubyObject {
                 context.setCurrentThread(result);
 
                 // Call the thread's code
-                proc.call(args);
+                try {
+                    proc.call(args);
+                } catch (RaiseException e) {
+                    result.exitingException = e;
+                }
             }
         });
 
@@ -274,6 +279,9 @@ public class RubyThread extends RubyObject {
         } catch (InterruptedException e) {
             // FIXME: output warning
         }
+        if (exitingException != null) {
+            throw exitingException;
+        }
         return this;
     }
 
@@ -298,6 +306,8 @@ public class RubyThread extends RubyObject {
     public IRubyObject status() {
         if (jvmThread.isAlive()) {
             return RubyString.newString(getRuntime(), "run");
+        } else if (exitingException != null) {
+            return getRuntime().getNil();
         } else {
             return RubyBoolean.newBoolean(getRuntime(), false);
         }

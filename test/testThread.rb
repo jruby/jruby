@@ -35,3 +35,15 @@ t = Thread.new {
   v = Thread.current.status
 }
 test_equal("run", v)
+
+e = nil
+t = Thread.new {
+  raise "hello"
+}
+begin
+  t.join
+rescue RuntimeError => error
+  e = error
+end
+test_ok(! e.nil?)
+test_equal(nil, t.status)
