@@ -2,6 +2,7 @@
 $testnum=0
 $ntest=0
 $failed = []
+$curtestOK=true
 
 def test_check(what)
   printf "\n%s :", what
@@ -21,6 +22,7 @@ def test_ok(cond)
 	#$failed+=1 
     $failed.push(sprintf("not ok %s %d -- %s\n", $what, $testnum, where))
 	print "F"
+	$curtestOK=false
   end
 end
 
@@ -32,11 +34,16 @@ end
 
 def test_load(test)
   begin
+	$curtestOK=true
 	load(test)
   rescue Exception => boom
 	puts 'KO'
 	$failed.push(sprintf("exception raised %s %d -- \n\tException: %s\n\t%s", $what, $testnum, boom.to_s, boom.backtrace.join "\n\t"))
   else
-	puts 'OK'
+	if $curtestOK
+		puts 'OK'
+	else
+		puts 'KO'
+	end
   end
 end

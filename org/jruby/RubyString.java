@@ -770,7 +770,10 @@ public class RubyString extends RubyObject {
     }
 
     private RubyObject index(RubyObject[] args, boolean reverse) {
+		//FIXME may be a problem with pos when doing reverse searches
         int pos = 0;
+		if (reverse)
+			pos = getValue().length();
         if (argCount(args, 1, 2) == 2) {
             pos = RubyNumeric.fix2int(args[1]);
         }
@@ -792,10 +795,10 @@ public class RubyString extends RubyObject {
             }
         } else if (args[0] instanceof RubyString) {
             String sub = ((RubyString) args[0]).getValue();
-            pos = reverse ? getValue().lastIndexOf(sub) : getValue().indexOf(sub);
+            pos = reverse ? getValue().lastIndexOf(sub, pos) : getValue().indexOf(sub, pos);
         } else if (args[0] instanceof RubyFixnum) {
             char c = (char) ((RubyFixnum) args[0]).getLongValue();
-            pos = reverse ? getValue().lastIndexOf(c) : getValue().indexOf(c);
+            pos = reverse ? getValue().lastIndexOf(c,pos) : getValue().indexOf(c,pos);
         } else {
             throw new RubyArgumentException(getRuby(), "wrong type of argument");
         }
