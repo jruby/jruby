@@ -155,10 +155,6 @@ public class RubyBignum extends RubyInteger {
         return new RubyBignum(runtime, value);
     }
 
-    public RubyBignum newBignum(BigInteger value) {
-        return newBignum(runtime, value);
-    }
-
     public RubyNumeric op_mod(RubyNumeric other) {
         if (other instanceof RubyFloat) {
             return RubyFloat.newFloat(getRuntime(), getDoubleValue()).modulo(other);
@@ -254,11 +250,11 @@ public class RubyBignum extends RubyInteger {
     }
 
     public RubyInteger op_or(RubyNumeric other) {
-        return newBignum(value.or(bigIntValue(other)));
+        return new RubyBignum(runtime, value.or(bigIntValue(other)));
     }
 
     public RubyInteger op_xor(RubyNumeric other) {
-        return newBignum(value.xor(bigIntValue(other)));
+        return new RubyBignum(runtime, value.xor(bigIntValue(other)));
     }
 
     public RubyFixnum aref(RubyNumeric pos) {

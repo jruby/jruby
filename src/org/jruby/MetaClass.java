@@ -26,7 +26,7 @@ import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
 
-public class MetaClass extends RubyClass implements IMetaClass {
+public class MetaClass extends RubyClass {
     public RubyClass type;
 
     public MetaClass(Ruby runtime, RubyClass type) {

@@ -37,12 +37,7 @@ import org.jruby.Ruby;
  * @author  jpetersen
  */
 public class SecurityError extends RaiseException {
-
-    /**
-     * Constructs an <code>RubyTypeException</code> with the specified detail message.
-     * @param msg the detail message.
-     */
-    public SecurityError(Ruby ruby, String msg) {
-        super(ruby, ruby.getExceptions().getSecurityError(),  msg);
+    public SecurityError(Ruby runtime, String msg) {
+        super(runtime, runtime.getExceptions().getSecurityError(),  msg, true);
     }
 }

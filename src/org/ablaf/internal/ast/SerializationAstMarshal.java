@@ -41,9 +41,6 @@ import java.io.OutputStream;
  * @version $Revision$
  */
 public class SerializationAstMarshal implements IAstMarshal {
-    public SerializationAstMarshal() {
-    }
-
     /**
      * @see org.ablaf.ast.IAstMarshal#openEncoder(OutputStream)
      */

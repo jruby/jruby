@@ -38,13 +38,8 @@ import org.jruby.Ruby;
  * @version $Revision$
  */
 public class RegexpError extends RaiseException {
-
-    /**
-     * Constructs an <code>RubyRegexpException</code> with the specified detail message.
-     * @param msg the detail message.
-     */
     public RegexpError(Ruby runtime, String msg) {
-        super(runtime, runtime.getExceptions().getRegexpError(), msg);
+        super(runtime, runtime.getExceptions().getRegexpError(), msg, true);
     }
 }
 

@@ -249,14 +249,15 @@ public class RubyObject implements Cloneable, IRubyObject {
 
     // Some helper functions:
 
-    public int argCount(IRubyObject[] args, int min, int max) {
-        int len = args.length;
-        if (len < min || (max > -1 && len > max)) {
-            throw new ArgumentError(
-                getRuntime(),
-                "Wrong # of arguments for method. " + args.length + " is not in Range " + min + ".." + max);
+    public int checkArgumentCount(IRubyObject[] args, int min, int max) {
+        int length = args.length;
+        if (length < min) {
+            throw new ArgumentError(runtime, "wrong number of arguments (" + args.length + " for " + min + ")");
         }
-        return len;
+        if (max > -1 && length > max) {
+            throw new ArgumentError(runtime, "wrong number of arguments (" + args.length + " for " + max + ")");
+        }
+        return length;
     }
 
     public boolean isKindOf(RubyModule type) {
@@ -443,7 +444,7 @@ public class RubyObject implements Cloneable, IRubyObject {
             if (raise) {
                 throw new TypeError(
                     runtime,
-                    "Failed to convert " + getMetaClass().getName() + " into " + targetType + ".");
+                    "cannot convert " + getMetaClass().getName() + " into " + targetType);
                 // FIXME nil, true and false instead of NilClass, TrueClass, FalseClass;
             } 
 
@@ -636,7 +637,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      * @return true if this responds to the given method
      */
     public RubyBoolean respond_to(IRubyObject[] args) {
-        argCount(args, 1, 2);
+        checkArgumentCount(args, 1, 2);
 
         String name = args[0].asSymbol();
         boolean includePrivate = args.length > 1 ? args[1].isTrue() : false;
@@ -825,7 +826,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public IRubyObject methods(IRubyObject[] args) {
-    	argCount(args, 0, 1);
+    	checkArgumentCount(args, 0, 1);
     	
     	if (args.length == 0) {
     		args = new IRubyObject[] { getRuntime().getTrue() };

@@ -37,12 +37,7 @@ import org.jruby.Ruby;
  * @author  jpetersen
  */
 public class SystemCallError extends RaiseException {
-
-    /**
-     * Constructs an <code>RubyTypeException</code> with the specified detail message.
-     * @param msg the detail message.
-     */
     public SystemCallError(Ruby runtime, String msg) {
-        super(runtime, runtime.getExceptions().getSystemCallError(), msg);
+        super(runtime, runtime.getExceptions().getSystemCallError(), msg, true);
     }
 }

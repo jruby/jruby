@@ -34,15 +34,9 @@ import org.jruby.Ruby;
 /**
  *
  * @author  Benoit Cerrina
- * @version $Revision$
  */
 public class LoadError extends RaiseException {
-
-    /**
-     * Constructs an <code>LoadError</code> with the specified detail message.
-     * @param msg the detail message.
-     */
     public LoadError(Ruby runtime, String msg) {
-        super(runtime, runtime.getExceptions().getLoadError(), msg);
+        super(runtime, runtime.getExceptions().getLoadError(), msg, true);
     }
 }

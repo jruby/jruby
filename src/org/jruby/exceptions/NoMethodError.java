@@ -29,8 +29,8 @@ import org.jruby.Ruby;
 /**
  * @author enebo
  */
-public class NoMethodError extends NameError {
+public class NoMethodError extends RaiseException {
     public NoMethodError(Ruby runtime, String msg) {
-        super(runtime, runtime.getExceptions().getNoMethodError(), msg);
+        super(runtime, runtime.getExceptions().getNoMethodError(), msg, true);
     }
 }

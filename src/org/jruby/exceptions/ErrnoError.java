@@ -17,15 +17,12 @@ import org.jruby.RubyClass;
  */
 public class ErrnoError extends RaiseException {
     public ErrnoError(Ruby runtime, RubyClass errnoClass, String message) {
-        
-        super(runtime, errnoClass, message);
+        super(runtime, errnoClass, message, true);
     }
     
-    public static ErrnoError getErrnoError(Ruby runtime, String errno, 
-            String message) {
-        RubyClass errnoClass = 
-            (RubyClass) runtime.getModule("Errno").getConstant(errno);
-        
+    public static ErrnoError getErrnoError(Ruby runtime, String errno, String message) {
+        RubyClass errnoClass = (RubyClass) runtime.getModule("Errno").getConstant(errno);
+
         return new ErrnoError(runtime, errnoClass, message); 
     }
 }

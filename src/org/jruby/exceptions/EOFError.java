@@ -39,6 +39,6 @@ import org.jruby.Ruby;
 public class EOFError extends RaiseException {
 
     public EOFError(Ruby ruby) {
-        super(ruby, ruby.getExceptions().getEOFError(), "End of file reached");
+        super(ruby, ruby.getExceptions().getEOFError(), "End of file reached", true);
     }
 }

@@ -158,17 +158,12 @@ public final class Ruby {
     /**
      * Returns a default instance of the JRuby runtime.
      *
-     * @param regexpEngineName The regexp engine you want to use.
      * @return the JRuby runtime
      */
-    public static Ruby getDefaultInstance(String regexpEngineName) {
+    public static Ruby getDefaultInstance() {
         Ruby runtime = new Ruby();
         runtime.init();
         return runtime;
-    }
-
-    public static Ruby getDefaultInstance() {
-        return getDefaultInstance(null);
     }
 
     /**
@@ -356,10 +351,11 @@ public final class Ruby {
                 } catch (BreakJump bExcptn) {
                     IRubyObject breakValue = bExcptn.getBreakValue();
                     
-                    return breakValue == null ? this.getNil() : breakValue;
+                    return breakValue == null ? getNil() : breakValue;
                 } catch (ReturnJump rExcptn) {
                     return rExcptn.getReturnValue();
                 } catch (RetryJump rExcptn) {
+                    // Execute iterateMethod again.
                 }
             }
         } finally {
@@ -670,7 +666,7 @@ public final class Ruby {
         if (!backtrace.isNil()) {
             IRubyObject[] elements = backtrace.toJavaArray();
 
-            for (int i = 0; i < elements.length; i++) {
+            for (int i = 1; i < elements.length; i++) {
                 if (elements[i] instanceof RubyString) {
                     getErrorStream().print("\tfrom " + elements[i] + '\n');
                 }

@@ -75,10 +75,10 @@ public class RubyMatchData extends RubyObject {
         return matchDataClass;
     }
 
-    public RubyArray subseq(long beg, long len) {
+    public IRubyObject subseq(long beg, long len) {
     	// Subsequence begins at a valid index and a positive length
         if (beg < 0 || beg > getSize() || len < 0) {
-            return RubyArray.nilArray(getRuntime());
+            runtime.getNil();
         }
 
         if (beg + len > getSize()) {
@@ -133,7 +133,7 @@ public class RubyMatchData extends RubyObject {
      *
      */
     public IRubyObject aref(IRubyObject[] args) {
-        int argc = argCount(args, 1, 2);
+        int argc = checkArgumentCount(args, 1, 2);
         if (argc == 2) {
             long beg = RubyNumeric.fix2long(args[0]);
             long len = RubyNumeric.fix2long(args[1]);
@@ -222,7 +222,11 @@ public class RubyMatchData extends RubyObject {
      *
      */
     public RubyArray to_a() {
-        return subseq(0, begin.length);
+        RubyArray arr = RubyArray.newArray(getRuntime(), begin.length);
+        for (long i = 0; i < begin.length; i++) {
+            arr.append(group(i));
+        }
+        return arr;
     }
 
     /** match_to_s

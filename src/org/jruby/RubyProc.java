@@ -32,6 +32,7 @@
 package org.jruby;
 
 import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.LocalJumpError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ReturnJump;
 import org.jruby.runtime.Block;
@@ -124,8 +125,7 @@ public class RubyProc extends RubyObject {
         			throw e;
 	        }
         	
-		  	throw new RaiseException(getRuntime(), 
-		  			getRuntime().getExceptions().getLocalJumpError(), "unexpected return");
+		  	throw new LocalJumpError(runtime, "unexpected return");
         } finally {
             context.setWrapper(oldWrapper);
         }

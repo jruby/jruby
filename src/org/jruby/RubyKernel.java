@@ -488,12 +488,14 @@ public class RubyKernel {
     }
 
     public static IRubyObject raise(IRubyObject recv, IRubyObject[] args) {
+        // FIXME  special case in ruby
+        // recv.checkArgumentCount(args, 0, 2); 
         Ruby runtime = recv.getRuntime();
         switch (args.length) {
         case 0 :
             IRubyObject defaultException = runtime.getGlobalVariables().get("$!");
             if (defaultException.isNil()) {
-                throw new RaiseException(runtime, runtime.getExceptions().getRuntimeError(), "");
+                throw new RaiseException(runtime, runtime.getExceptions().getRuntimeError(), "", false);
             }
             throw new RaiseException((RubyException) defaultException);
         case 1 :
@@ -509,7 +511,7 @@ public class RubyKernel {
             RubyException excptn = RubyException.newException(runtime, (RubyClass)args[0], string.getValue()); 
             throw new RaiseException(excptn);
         default :
-            throw new ArgumentError(runtime, "wrong # of arguments");
+            throw new ArgumentError(runtime, "wrong number of arguments");
         }
     }
 
@@ -562,7 +564,7 @@ public class RubyKernel {
             throw new ArgumentError(recv.getRuntime(), "negative level(" + level + ')');
         }
 
-        return RaiseException.createBacktrace(recv.getRuntime(), level);
+        return RaiseException.createBacktrace(recv.getRuntime(), level, false);
     }
 
     public static IRubyObject rbCatch(IRubyObject recv, IRubyObject tag) {

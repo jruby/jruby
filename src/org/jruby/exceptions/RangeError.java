@@ -43,6 +43,6 @@ public class RangeError extends RaiseException {
      * @param msg the detail message.
      */
     public RangeError(Ruby runtime, String msg) {
-        super(runtime, runtime.getExceptions().getRangeError(), msg);
+        super(runtime, runtime.getExceptions().getRangeError(), msg, true);
     }
 }

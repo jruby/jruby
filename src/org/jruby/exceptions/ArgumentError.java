@@ -42,7 +42,7 @@ public class ArgumentError extends RaiseException {
      * @param msg the detail message.
      */
     public ArgumentError(Ruby runtime, String msg) {
-        super(runtime, runtime.getExceptions().getArgumentError(), msg);
+        super(runtime, runtime.getExceptions().getArgumentError(), msg, true);
     }
 
     public ArgumentError(Ruby runtime, int got, int expected) {

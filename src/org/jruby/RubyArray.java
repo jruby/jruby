@@ -67,18 +67,6 @@ public class RubyArray extends RubyObject {
         this.list = list;
     }
 
-    public static RubyArray nilArray(Ruby runtime) {
-        return new RubyArray(runtime, null) {
-            public boolean isNil() {
-                return true;
-            }
-            
-            public int getLength() {
-                return 0;
-            }
-        };
-    }
-
     /** Getter for property list.
      * @return Value of property list.
      */
@@ -612,9 +600,11 @@ public class RubyArray extends RubyObject {
 
     /** rb_ary_initialize
      *
+     * @param args
+     * @return
      */
     public IRubyObject initialize(IRubyObject[] args) {
-        int argc = argCount(args, 0, 2);
+        int argc = checkArgumentCount(args, 0, 2);
         RubyArray arrayInitializer = null;
         long len = 0;
         if (argc != 0) {
@@ -656,10 +646,12 @@ public class RubyArray extends RubyObject {
     }
 
     /** rb_ary_aref
-     *
+     * 
+     * @param args
+     * @return
      */
     public IRubyObject aref(IRubyObject[] args) {
-        int argc = argCount(args, 1, 2);
+        int argc = checkArgumentCount(args, 1, 2);
         if (argc == 2) {
             long beg = RubyNumeric.fix2long(args[0]);
             long len = RubyNumeric.fix2long(args[1]);
@@ -688,7 +680,7 @@ public class RubyArray extends RubyObject {
      *
      */
     public IRubyObject aset(IRubyObject[] args) {
-        int argc = argCount(args, 2, 3);
+        int argc = checkArgumentCount(args, 2, 3);
         if (argc == 3) {
             long beg = RubyNumeric.fix2long(args[0]);
             long len = RubyNumeric.fix2long(args[1]);
@@ -758,7 +750,7 @@ public class RubyArray extends RubyObject {
     		return getLength() == 0 ? getRuntime().getNil() : entry(0);
     	}
     	
-    	argCount(args, 0, 1);
+    	checkArgumentCount(args, 0, 1);
     	
     	// TODO: See if enough integer-only conversions to make this
     	// convenience function (which could replace RubyNumeric#fix2long).
@@ -792,7 +784,7 @@ public class RubyArray extends RubyObject {
     		case 0:
     			return length == 0 ? runtime.getNil() : entry(length - 1);
     		case 1:
-    			sublistSize = RubyFixnum.fix2int(args[0]);
+    			sublistSize = RubyNumeric.fix2int(args[0]);
     			if (sublistSize == 0) {
     				return RubyArray.newArray(runtime);
     			}
@@ -877,7 +869,7 @@ public class RubyArray extends RubyObject {
      *
      */
     public RubyString join(IRubyObject[] args) {
-        int argc = argCount(args, 0, 1);
+        int argc = checkArgumentCount(args, 0, 1);
         IRubyObject sep = (argc == 1) ? args[0] : getRuntime().getGlobalVariables().get("$,");
         return join(sep.isNil() ? RubyString.newString(getRuntime(), "") : RubyString.stringValue(sep));
     }
@@ -995,7 +987,7 @@ public class RubyArray extends RubyObject {
      *
      */
     public IRubyObject fill(IRubyObject[] args) {
-        int argc = argCount(args, 1, 3);
+        int argc = checkArgumentCount(args, 1, 3);
         int beg = 0;
         int len = getLength();
         switch (argc) {
@@ -1076,9 +1068,9 @@ public class RubyArray extends RubyObject {
     /** rb_ary_reverse_bang
      *
      */
-    public RubyArray reverse_bang() {
+    public IRubyObject reverse_bang() {
         if (list.size() <= 1) {
-            return nilArray(runtime);
+            return runtime.getNil();
         }
         modify();
         Collections.reverse(list);
@@ -1208,7 +1200,7 @@ public class RubyArray extends RubyObject {
      *
      */
     public IRubyObject slice_bang(IRubyObject[] args) {
-        int argc = argCount(args, 1, 2);
+        int argc = checkArgumentCount(args, 1, 2);
         IRubyObject result = aref(args);
         if (argc == 2) {
             long beg = RubyNumeric.fix2long(args[0]);

@@ -241,7 +241,7 @@ public interface IRubyObject {
      * @param i1
      * @return int
      */
-    int argCount(IRubyObject[] args, int i, int i1);
+    int checkArgumentCount(IRubyObject[] args, int i, int i1);
 
     /**
      * Method rbClone.

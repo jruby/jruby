@@ -38,6 +38,6 @@ import org.jruby.Ruby;
  */
 public class FrozenError extends RaiseException {
 	public FrozenError(Ruby runtime, String objectType) {
-        super(runtime, runtime.getExceptions().getTypeError(), "can't modify frozen " + objectType);
+        super(runtime, runtime.getExceptions().getTypeError(), "can't modify frozen " + objectType, true);
     }
 }

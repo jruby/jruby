@@ -36,6 +36,8 @@ import org.jruby.RubyString;
 import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.FrameStack;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.Asserts;
 
 /**
  *
@@ -46,12 +48,12 @@ public class RaiseException extends JumpException {
     private RubyException exception;
 
     public RaiseException(RubyException actException) {
-        setException(actException);
+        setException(actException, false);
     }
 
-    public RaiseException(Ruby runtime, RubyClass excptnClass, String msg) {
+    public RaiseException(Ruby runtime, RubyClass excptnClass, String msg, boolean nativeException) {
 		super(msg);
-        setException(RubyException.newException(runtime, excptnClass, msg));
+        setException(RubyException.newException(runtime, excptnClass, msg), nativeException);
     }
 
     public RaiseException(Ruby runtime, String excptnClassName, String msg) {
@@ -60,44 +62,49 @@ public class RaiseException extends JumpException {
         if (excptnClass == null) {
             System.err.println(excptnClassName);
         }
-        setException(RubyException.newException(runtime, excptnClass, msg));
-    }
-
-    public Throwable fillInStackTrace() {
-        return originalFillInStackTrace();
+        setException(RubyException.newException(runtime, excptnClass, msg), false);
     }
 
     /** 
      * Create an Array with backtrace information.
+     * @param runtime
+     * @param level
+     * @param nativeException
+     * @return an Array with the backtrace 
      */
-    public static RubyArray createBacktrace(Ruby runtime, int level) {
+    public static IRubyObject createBacktrace(Ruby runtime, int level, boolean nativeException) {
         RubyArray backtrace = RubyArray.newArray(runtime);
         FrameStack stack = runtime.getFrameStack();
         int traceSize = stack.size() - level - 1;
         
         if (traceSize <= 0) {
-        	return RubyArray.nilArray(runtime);
+        	return backtrace;
+        }
+        
+        if (nativeException) {
+            // assert level == 0;
+            addBackTraceElement(backtrace, (Frame) stack.elementAt(stack.size() - 1), null);
         }
         
         for (int i = traceSize; i > 0; i--) {
-        	addBackTraceElement(backtrace, (Frame) stack.elementAt(i), 
-        			(Frame) stack.elementAt(i-1));
+        	addBackTraceElement(backtrace, (Frame) stack.elementAt(i), (Frame) stack.elementAt(i-1));
         }
 
         return backtrace;
     }
 
-	private static void addBackTraceElement(RubyArray backtrace, Frame frame, 
-			Frame previousFrame) {
+	private static void addBackTraceElement(RubyArray backtrace, Frame frame, Frame previousFrame) {
         StringBuffer sb = new StringBuffer(100);
         SourcePosition position = frame.getPosition();
 
         sb.append(position.getFile()).append(':').append(position.getLine());
-        
+
         if (previousFrame != null && previousFrame.getLastFunc() != null) {
             sb.append(":in `").append(previousFrame.getLastFunc()).append('\'');
+        } else if (previousFrame == null && frame.getLastFunc() != null) {
+            sb.append(":in `").append(frame.getLastFunc()).append('\'');
         }
-        
+
         backtrace.append(RubyString.newString(backtrace.getRuntime(), sb.toString()));
 	}
 
@@ -113,7 +120,7 @@ public class RaiseException extends JumpException {
      * Sets the exception
      * @param newException The exception to set
      */
-    protected void setException(RubyException newException) {
+    protected void setException(RubyException newException, boolean nativeException) {
         Ruby runtime = newException.getRuntime();
 
         if (runtime.getTraceFunction() != null) {
@@ -134,7 +141,8 @@ public class RaiseException extends JumpException {
         runtime.stackTraces++;
 
         if (newException.callMethod("backtrace").isNil() && runtime.getSourceFile() != null) {
-            newException.callMethod("set_backtrace", createBacktrace(runtime, 1));
+            IRubyObject backtrace = createBacktrace(runtime, 0, nativeException);
+            newException.callMethod("set_backtrace", backtrace);
         }
 
         runtime.stackTraces--;

@@ -10,9 +10,8 @@ import org.jruby.RubyFixnum;
  * @version $Revision$
  */
 public class SystemExit extends RaiseException {
-
     public SystemExit(Ruby runtime, int status) {
-        super(RubyException.newException(runtime, runtime.getExceptions().getSystemExit(), ""));
+        super(runtime, runtime.getExceptions().getSystemExit(), "", true);
         getException().setInstanceVariable("status", RubyFixnum.newFixnum(runtime, status));
     }
 }

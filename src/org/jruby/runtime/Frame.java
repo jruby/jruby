@@ -155,4 +155,18 @@ public class Frame {
         }
         return new Frame(self, newArgs, lastFunc, lastClass, position, iter);
     }
+
+    /* (non-Javadoc)
+     * @see java.lang.Object#toString()
+     */
+    public String toString() {
+        StringBuffer sb = new StringBuffer(50);
+        sb.append(position != null ? position.toString() : "-1");
+        sb.append(':');
+        if (lastFunc != null) {
+            sb.append("in ");
+            sb.append(lastFunc);
+        }
+        return sb.toString();
+    }
 }

@@ -823,7 +823,7 @@ public class RubyString extends RubyObject {
 		if (reverse) {
 			pos = getValue().length();
 		}
-		if (argCount(args, 1, 2) == 2) {
+		if (checkArgumentCount(args, 1, 2) == 2) {
 			pos = RubyNumeric.fix2int(args[1]);
 		}
 		if (pos < 0) {
@@ -892,7 +892,7 @@ public class RubyString extends RubyObject {
 	 *
 	 */
 	public IRubyObject aref(IRubyObject[] args) {
-	    if (argCount(args, 1, 2) == 2) {
+	    if (checkArgumentCount(args, 1, 2) == 2) {
 	        return substr(RubyNumeric.fix2int(args[0]),
 	                	  RubyNumeric.fix2int(args[1]));
 	    }
@@ -930,7 +930,7 @@ public class RubyString extends RubyObject {
 	public IRubyObject aset(IRubyObject[] args) {
 		testFrozen("class");
 		int strLen = getValue().length();
-		if (argCount(args, 2, 3) == 3) {
+		if (checkArgumentCount(args, 2, 3) == 3) {
 			RubyString repl = stringValue(args[2]);
 			int beg = RubyNumeric.fix2int(args[0]);
 			int len = RubyNumeric.fix2int(args[1]);
@@ -989,7 +989,7 @@ public class RubyString extends RubyObject {
 	 *
 	 */
 	public IRubyObject slice_bang(IRubyObject[] args) {
-		int argc = argCount(args, 1, 2);
+		int argc = checkArgumentCount(args, 1, 2);
 		IRubyObject[] newArgs = new IRubyObject[argc + 1];
 		newArgs[0] = args[0];
 		if (argc > 1) {
@@ -1442,7 +1442,7 @@ public class RubyString extends RubyObject {
 	 *
 	 */
 	public IRubyObject count(IRubyObject[] args) {
-		int argc = argCount(args, 1, -1);
+		int argc = checkArgumentCount(args, 1, -1);
 		String[] specs = new String[argc];
 		for (int i = 0; i < argc; i++) {
 			specs[i] = stringValue(args[i]).getValue();
@@ -1459,7 +1459,7 @@ public class RubyString extends RubyObject {
 	}
 
 	private String getDelete(IRubyObject[] args) {
-		int argc = argCount(args, 1, -1);
+		int argc = checkArgumentCount(args, 1, -1);
 		String[] specs = new String[argc];
 		for (int i = 0; i < argc; i++) {
 			specs[i] = stringValue(args[i]).getValue();
@@ -1633,7 +1633,7 @@ public class RubyString extends RubyObject {
 			return this;
 		}
 		String sep;
-		if (argCount(args, 0, 1) == 1) {
+		if (checkArgumentCount(args, 0, 1) == 1) {
 			sep = RubyRegexp.quote(stringValue(args[0]).getValue());
 		} else {
 			sep = RubyRegexp.quote(getRuntime().getGlobalVariables().get("$/").asSymbol());

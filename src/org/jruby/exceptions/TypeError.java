@@ -38,13 +38,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author  jpetersen
  */
 public class TypeError extends RaiseException {
-
-    /**
-     * Constructs an <code>RubyTypeException</code> with the specified detail message.
-     * @param msg the detail message.
-     */
     public TypeError(Ruby runtime, String msg) {
-        super(runtime, runtime.getExceptions().getTypeError(), msg);
+        super(runtime, runtime.getExceptions().getTypeError(), msg, true);
     }
 
     public TypeError(Ruby runtime, IRubyObject receivedObject, RubyClass expectedType) {

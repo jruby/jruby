@@ -43,7 +43,7 @@ public class IOError extends RaiseException {
      * @param msg the detail message.
      */
     public IOError(Ruby runtime, String msg) {
-        super(runtime, runtime.getExceptions().getIOError(), msg);
+        super(runtime, runtime.getExceptions().getIOError(), msg, true);
     }
 
     public static RuntimeException fromException(Ruby runtime, java.io.IOException exception) {

@@ -111,9 +111,9 @@ public class RubyException extends RubyObject {
         return this;
     }
 
-    public RubyArray backtrace() {
+    public IRubyObject backtrace() {
         if (backtrace == null) {
-            return RubyArray.nilArray(runtime);
+            return runtime.getNil();
         }
         return backtrace;
     }

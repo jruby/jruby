@@ -39,6 +39,7 @@ import org.jruby.ast.util.ListNodeUtil;
 import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.LocalJumpError;
 import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.NextJump;
 import org.jruby.exceptions.RaiseException;
@@ -188,7 +189,7 @@ public class ThreadContext {
 
     public IRubyObject yield(IRubyObject value, IRubyObject self, RubyModule klass, boolean yieldProc, boolean aValue) {
         if (! isBlockGiven()) {
-            throw new RaiseException(runtime, runtime.getExceptions().getLocalJumpError(), "yield called out of block");
+            throw new LocalJumpError(runtime, "yield called out of block");
         }
 
         pushDynamicVars();

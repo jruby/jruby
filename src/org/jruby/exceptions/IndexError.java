@@ -43,7 +43,7 @@ public class IndexError extends RaiseException {
      * @param msg the detail message.
      */
     public IndexError(Ruby runtime, String msg) {
-        super(runtime, runtime.getExceptions().getIndexError(), msg);
+        super(runtime, runtime.getExceptions().getIndexError(), msg, true);
     }
 }
 

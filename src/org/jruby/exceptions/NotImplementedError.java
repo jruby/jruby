@@ -44,6 +44,6 @@ public class NotImplementedError extends RaiseException {
     }
 
     public NotImplementedError(Ruby runtime, String message) {
-        super(runtime, runtime.getExceptions().getNotImplementedError(), message);
+        super(runtime, runtime.getExceptions().getNotImplementedError(), message, true);
     }
 }

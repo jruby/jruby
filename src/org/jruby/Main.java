@@ -104,7 +104,7 @@ public class Main {
     }
 
     private static void runInterpreter(Reader reader, String filename) {
-        Ruby runtime = Ruby.getDefaultInstance(commandline.sRegexpAdapter);
+        Ruby runtime = Ruby.getDefaultInstance();
         try {
             initializeRuntime(runtime, filename);
             Node parsedScript = getParsedScript(runtime, reader, filename);

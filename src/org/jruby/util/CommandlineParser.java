@@ -40,7 +40,6 @@ import java.util.List;
 public class CommandlineParser {
     private final String[] arguments;
 
-    public String sRegexpAdapter;
     private ArrayList loadPaths = new ArrayList();
     private StringBuffer inlineScript = new StringBuffer();
     public String scriptFileName = null;
@@ -103,9 +102,6 @@ public class CommandlineParser {
                 case 'b' :
                     isBenchmarking = true;
                     break;
-                case 'R' :
-                    sRegexpAdapter = grabValue(" -R must be followed by an expression to evaluate");
-                    break FOR;
                 case 'p' :
                     assumePrinting = true;
                     assumeLoop = true;

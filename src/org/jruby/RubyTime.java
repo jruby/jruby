@@ -157,7 +157,7 @@ public class RubyTime extends RubyObject {
     }
 
     public static RubyTime new_at(IRubyObject receiver, IRubyObject[] args) {
-        int len = receiver.argCount(args, 1, 2);
+        int len = receiver.checkArgumentCount(args, 1, 2);
 
         RubyTime time = new RubyTime(receiver.getRuntime(), (RubyClass) receiver);
         time.cal = Calendar.getInstance();
@@ -201,7 +201,7 @@ public class RubyTime extends RubyObject {
                 args[0],
             };
         } else {
-            len = type.argCount(args, 1, 7);
+            len = type.checkArgumentCount(args, 1, 7);
         }
 
         int year = RubyNumeric.fix2int(args[0]);

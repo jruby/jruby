@@ -145,8 +145,9 @@ public class RubyClass extends RubyModule {
         // Don't do anything, because a class cannot attached to an object.
     }
 
-    /** 
-     *
+    /**
+     * @return
+     * 
      */
     public MetaClass newSingletonClass() {
         MetaClass newClass = new MetaClass(getRuntime(), this);
@@ -159,7 +160,8 @@ public class RubyClass extends RubyModule {
     }
 
     /** Create a new subclass of this class.
-     * 
+     * @return the new sublass
+     * @throws TypeError if this is class `Class'
      * @mri rb_class_new
      */
     protected RubyClass subclass() {

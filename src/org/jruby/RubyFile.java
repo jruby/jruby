@@ -266,27 +266,28 @@ public class RubyFile extends RubyIO {
     }
 
     public static IRubyObject expand_path(IRubyObject recv, IRubyObject[] args) {
-        if (args.length <= 0) {
-        }
-        
+        int length = recv.checkArgumentCount(args, 1, 2);
+
         String relativePath = RubyString.stringValue(args[0]).getValue();
-        String cwd = args.length == 2 ?
-           args[1].isNil() ? System.getProperty("user.dir") :
-           RubyString.stringValue(args[1]).getValue() :
-           System.getProperty("user.dir");
-                                      
-           // Something wrong we don't know the cwd...
-           if (cwd == null) {
-               return recv.getRuntime().getNil();
-           }
-                                      
-           File expandedPath = new File(cwd, relativePath);
-                                      
-           try {
-               return RubyString.newString(recv.getRuntime(), expandedPath.getCanonicalPath());
-           } catch (IOException e) {}
-           
-           return RubyString.newString(recv.getRuntime(), expandedPath.getAbsolutePath());
+        String cwd = System.getProperty("user.dir");
+        if (length == 2 && !args[1].isNil()) {
+            cwd = RubyString.stringValue(args[1]).getValue();
+        }
+
+        // Something wrong we don't know the cwd...
+        if (cwd == null) {
+            return recv.getRuntime().getNil();
+        }
+
+        File path = new File(cwd, relativePath);
+
+        String extractedPath;
+        try {
+            extractedPath = path.getCanonicalPath();
+        } catch (IOException e) {
+            extractedPath = path.getAbsolutePath();
+        }
+        return RubyString.newString(recv.getRuntime(), extractedPath);
     }
     
 	public static RubyString dirname(IRubyObject recv, RubyString filename) {

@@ -390,10 +390,4 @@ public class RubyDir extends RubyObject {
         }
         return result;
     }
-
-
-    public boolean matches(String str, String pattern) {
-        return false;
-    }
-
 }

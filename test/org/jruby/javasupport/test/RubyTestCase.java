@@ -37,7 +37,7 @@ public class RubyTestCase extends TestCase {
         out.close();
 
         String filePath = f.getAbsolutePath();
-        Ruby runtime = Ruby.getDefaultInstance("JDK");
+        Ruby runtime = Ruby.getDefaultInstance();
         initRuby(runtime);
         RubyKernel.require(runtime.getTopSelf(), new RubyString(runtime, filePath));
         f.delete();

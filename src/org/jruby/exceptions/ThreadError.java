@@ -25,8 +25,7 @@ package org.jruby.exceptions;
 import org.jruby.Ruby;
 
 public class ThreadError extends RaiseException {
-
     public ThreadError(Ruby runtime, String message) {
-        super(runtime, runtime.getExceptions().getThreadError(), message);
+        super(runtime, runtime.getExceptions().getThreadError(), message, true);
     }
 }
