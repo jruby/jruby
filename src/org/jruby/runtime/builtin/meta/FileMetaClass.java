@@ -12,6 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2005 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -96,6 +97,7 @@ public class FileMetaClass extends IOMetaClass {
         defineSingletonMethod("rename", Arity.twoArguments());
 		defineSingletonMethod("split", Arity.singleArgument());
         defineSingletonMethod("stat", Arity.singleArgument(), "lstat");
+        defineSingletonMethod("symlink?", Arity.singleArgument(), "symlink_p");
 		defineSingletonMethod("truncate", Arity.twoArguments());
         defineSingletonMethod("unlink", Arity.optional());
 		
@@ -280,6 +282,11 @@ public class FileMetaClass extends IOMetaClass {
     	
     	return filename.getRuntime().newArray(dirname(filename),
     		basename(new IRubyObject[] { filename }));
+    }
+    
+    public IRubyObject symlink_p(IRubyObject arg1) {
+    	// FIXME if possible, make this return something real (Java's lack of support for symlinks notwithstanding)
+    	return getRuntime().getFalse();
     }
 
     // Can we produce IOError which bypasses a close?
