@@ -33,6 +33,9 @@ class JavaCompiler
                                   BCEL::Constants::ACC_PUBLIC,
                                   JavaLang::JString[].new(0))
     code.jvm_compile(classgen, "__ruby_main")
+
+    generate_java_main(classgen)
+
     classgen.getJavaClass.dump(class_name + ".rbjvm")
   end
 end

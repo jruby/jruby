@@ -371,6 +371,21 @@ module JRuby
         emit_bytecodes(node.getValueNode)
         @bytecodes << AssignConstant.new(node.getName)
       end
+
+      def visitAndNode(node)
+        emit_bytecodes(node.getFirstNode)
+        @bytecodes << Dup.new
+        end_label = Label.new
+        @bytecodes << IfFalse.new(end_label)
+        @bytecodes << Pop.new
+        emit_bytecodes(node.getSecondNode)
+        @bytecodes << end_label
+      end
+
+      def visitReturnNode(node)
+        emit_bytecodes(node.getValueNode)
+        @bytecodes << Return.new
+      end
     end
 
     # Since we can't subclass Java interfaces properly we have

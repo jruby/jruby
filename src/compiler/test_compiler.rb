@@ -111,6 +111,9 @@ def test_compiled_type(expected_type, source)
 end
 
 
+test_compiled(false, "false and nil")
+test_compiled(nil, "true and nil")
+test_compiled(34, "12 and 34")
 
 test_compiled(nil, "class CL_1; end")
 #test_compiled_type(Class, "class CL_2; end; CL_2")

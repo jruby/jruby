@@ -509,6 +509,14 @@ module JRuby
         end
       end
 
+      class Return < Instruction
+        def emit_jvm_bytecode(generator)
+          # FIXME: instead throw new ReturnJump(value) ..?
+#          generator.append(ARETURN.new)
+          generator.append(BCEL::ARETURN.new)
+        end
+      end
+
       class Goto < Instruction
         attr_writer :target
 
@@ -539,6 +547,18 @@ module JRuby
         def emit_jvm_bytecode(generator)
           @handle = generator.append(BCEL::NOP.new)
           @listeners.each {|l| l.setTarget(@handle) }
+        end
+      end
+
+      class Dup < Instruction
+        def emit_jvm_bytecode(generator)
+          generator.append(BCEL::DUP.new)
+        end
+      end
+
+      class Pop < Instruction
+        def emit_jvm_bytecode(generator)
+          generator.append(BCEL::POP.new)
         end
       end
 
