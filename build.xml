@@ -1,18 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Thanks to Benoit Cerrina <b.cerrina@wanadoo.fr> for this buildfile. --><project basedir="." default="all" name="JRuby">
 
-    <!--<property name="build.compiler" value="jikes"/>-->
+    <property name="build.dir" value="/home/jpetersen/development/jruby-build"/>
+    <property name="bsf.jar" value="/home/jpetersen/development/bsf/lib/bsf.jar"/>
+    
+    <!--<property name="build.compiler" value="jikes"/-->
     <property name="build.compiler" value="modern"/>
     <!--<property name="build.compiler" value="classic"/>-->
 
     <property name="build.compiler.fulldepend" value="on"/>
     <!--<property name="build.compiler.emacs" value="on"/>-->
 
-    <property name="version" value="0.2.1"/>
-    <property name="version.file" value="0_2_1"/>
+    <property name="version" value="0.2.2"/>
+    <property name="version.file" value="0_2_2"/>
     <property name="javadoc.title" value="JRuby"/>
 
-    <property name="build.dir" value="build"/>
     <property name="build.dest" value="${build.dir}/classes"/>
     <property name="build.docs" value="${build.dir}/docs"/>
     <property name="build.tars.base" value="${build.dir}/tars"/>
@@ -22,7 +24,7 @@
 
     <target name="check_for_optional_packages">
         <available classname="java.lang.CharSequence" property="jdk1.4+"/>
-        <available file="lib/bsf.jar" property="bsf"/>
+        <available file="${bsf.jar}" property="bsf"/>
     </target>
 
     <target depends="check_for_optional_packages" name="compile">
@@ -32,7 +34,7 @@
             <exclude name="**/JDKRegexpAdapter.java" unless="jdk1.4+"/>
             <exclude name="org/jruby/javasupport/bsf/**/*.java" unless="bsf"/>
             <classpath>
-                <path path="lib/bsf.jar"/>
+                <path path="${bsf.jar}"/>
             </classpath>
         </javac>
         <copy todir="${build.dest}">
