@@ -82,3 +82,11 @@ module B
 end
  
 test_exception(NameError) {B::Failure.bar}
+
+E = Hash.new
+class << E
+  def a() "A" end
+end
+test_equal("A", E.a)
+test_exception(NoMethodError) { Hash.new.a }
+test_exception(NoMethodError) { Object.new.a }

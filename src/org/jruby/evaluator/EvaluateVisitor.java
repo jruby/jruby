@@ -686,12 +686,14 @@ public final class EvaluateVisitor implements NodeVisitor {
         }
 
         MetaClass singletonClass = null;
+        /*
         // if defining in a singleton, pop it and use visitDefs-style definition below
-        if (runtime.getRubyClass().isSingleton()) {
-        	singletonClass = (MetaClass)threadContext.popClass();
+        if (containingClass.isSingleton()) {
+        	singletonClass = (MetaClass) threadContext.popClass();
         	containingClass = threadContext.getRubyClass();
         }
-        
+        */
+
         DefaultMethod newMethod = new DefaultMethod(iVisited.getBodyNode(),
                                                     (ArgsNode) iVisited.getArgsNode(),
                                                     visibility,
