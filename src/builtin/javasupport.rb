@@ -98,18 +98,21 @@ END
     @proxy_classes[class_id]
   end
 
+  def JavaUtilities.get_java_class(name)
+    begin
+      return Java::JavaClass.for_name(name)
+    rescue NameError
+      return nil
+    end
+  end
+  
   def JavaUtilities.create_proxy_class(constant, java_class, mod)
     mod.const_set(constant.to_s, get_proxy_class(java_class))
   end
 
   def JavaUtilities.wrap(java_object, return_type)
     real_type = java_object.java_class
-
-    if real_type.public?
-      java_class = real_type
-    else
-      java_class = return_type
-    end
+    java_class = real_type.public? ? real_type : return_type
 
     proxy_class = get_proxy_class(java_class)
     proxy = proxy_class.new_proxy
@@ -120,17 +123,9 @@ END
       # If the instance is private, but implements public interfaces
       # then we want the methods on those available.
 
-      interfaces = real_type.interfaces.collect 
-
-      public_interfaces =
-	interfaces.select {|interface| interface.public? }
-
-      interface_proxies = public_interfaces.collect {|interface|
-	get_proxy_class(interface)
-      }
-      interface_proxies.each {|interface_proxy|
-	proxy.extend(interface_proxy)
-      }
+      public_interfaces = real_type.interfaces.select { |interface| interface.public? }
+      interface_proxies = public_interfaces.collect { |interface| get_proxy_class(interface) }
+      interface_proxies.each { |interface_proxy| proxy.extend(interface_proxy) }
     end
 
     proxy
@@ -146,8 +141,8 @@ END
       # derived classes too, otherwise their constructors
       # won't work.
       def inherited(subclass)
-	java_class = @java_class
-	subclass.class_eval("@java_class = java_class")
+        java_class = @java_class
+        subclass.class_eval("@java_class = java_class")
       end
     end
 
@@ -509,17 +504,15 @@ class Module
       return
     end
     @included_packages = [package_name]
+    @java_aliases = {} unless @java_aliases
 
     def self.const_missing(constant)
-      if defined? @java_aliases and @java_aliases.has_key?(constant)
-        real_name = @java_aliases[constant]
-      else
-        real_name = constant
-      end
+      real_name = @java_aliases[constant]
+      real_name = constant unless real_name
 
       java_class = nil
       return super unless @included_packages.detect {|package|
-          java_class = get_java_class(package + '.' + real_name.to_s)
+          java_class = JavaUtilities.get_java_class(package + '.' + real_name.to_s)
       }
       
       JavaUtilities.create_proxy_class(constant, java_class, self)
@@ -527,17 +520,24 @@ class Module
   end
 
   def java_alias(new_id, old_id)
-    unless defined? @java_aliases
-      @java_aliases = {}
-    end
     @java_aliases[new_id] = old_id
   end
+end
 
-  def get_java_class(name)
-    begin
-      return Java::JavaClass.for_name(name)
-    rescue NameError
-      return nil
+class Object
+  def include_class(include_class)
+    class_names = include_class.to_a
+
+    class_names.each do |full_class_name|
+      package_name, class_name = full_class_name.match(/((.*)\.)?([^\.]*)/)[2,3]
+
+      if block_given?
+        constant = yield(package_name, class_name)
+      else
+        constant = class_name
+      end
+
+      eval("#{constant} = JavaUtilities.get_proxy_class(\"#{full_class_name}\")")
     end
   end
 end
