@@ -27,7 +27,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
-import org.jruby.runtime.methods.IMethod;
+import org.jruby.runtime.ICallable;
 
 /**
  *
@@ -40,10 +40,10 @@ public class CacheEntry {
     private RubyModule recvClass;   /* receiver's class */
     private RubyModule origin;      /* where method defined  */
 
-    private IMethod method;
+    private ICallable method;
     private int noex;
 
-    public CacheEntry(String name, String originalName, RubyModule recvClass, RubyModule origin, IMethod method, int noex) {
+    public CacheEntry(String name, String originalName, RubyModule recvClass, RubyModule origin, ICallable method, int noex) {
         this.name = name;
         this.originalName = originalName;
         
@@ -79,14 +79,14 @@ public class CacheEntry {
     /** Getter for property method.
      * @return Value of property method.
      */
-    public IMethod getMethod() {
+    public ICallable getMethod() {
         return method;
     }
     
     /** Setter for property method.
      * @param method New value of property method.
      */
-    public void setMethod(IMethod method) {
+    public void setMethod(ICallable method) {
         this.method = method;
     }
     

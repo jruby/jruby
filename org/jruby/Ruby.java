@@ -470,7 +470,7 @@ public final class Ruby {
             value = RubyArray.newArray(this, 0);
         }
 
-        IMethod method = actBlock.getMethod();
+        ICallable method = actBlock.getMethod();
 
         if (method == null) {
             return getNil();
@@ -509,7 +509,7 @@ public final class Ruby {
         try {
             while (true) {
                 try {
-                    return method.execute(this, self, null, args, false);
+                    return method.call(this, self, null, args, false);
                 } catch (RedoJump rExcptn) {
                 }
             }

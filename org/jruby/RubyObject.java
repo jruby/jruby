@@ -711,7 +711,7 @@ public class RubyObject implements Cloneable {
             return ruby.getTrue();
         }
         //Get from instance
-        IMethod method = getRubyClass().searchMethod(name);
+        ICallable method = getRubyClass().searchMethod(name);
         if (method != null) {
             return ruby.getTrue();
         }
@@ -924,9 +924,9 @@ public class RubyObject implements Cloneable {
             type.getMethods().foreach(new RubyMapMethod() {
                 public int execute(Object key, Object value, Object arg) {
                     RubyString name = RubyString.newString(getRuby(), (String) key);
-                    if ((((IMethod) value).getNoex() & (Constants.NOEX_PRIVATE | Constants.NOEX_PROTECTED)) == 0) {
+                    if ((((ICallable) value).getNoex() & (Constants.NOEX_PRIVATE | Constants.NOEX_PROTECTED)) == 0) {
                         if (! ((RubyArray) arg).includes(name)) {
-                            if (((IMethod) value) == null) {
+                            if (((ICallable) value) == null) {
                                 ((RubyArray) arg).append(getRuby().getNil());
                             }
                             ((RubyArray) arg).append(name);

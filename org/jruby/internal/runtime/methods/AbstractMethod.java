@@ -1,14 +1,14 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
-import org.jruby.runtime.methods.IMethod;
+import org.jruby.runtime.ICallable;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public abstract class AbstractMethod implements IMethod {
+public abstract class AbstractMethod implements ICallable {
     private RubyModule implementationClass;
     private int noex;
 

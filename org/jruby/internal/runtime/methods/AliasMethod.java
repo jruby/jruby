@@ -27,7 +27,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.*;
-import org.jruby.runtime.methods.IMethod;
+import org.jruby.runtime.ICallable;
 
 /**
  *
@@ -35,11 +35,11 @@ import org.jruby.runtime.methods.IMethod;
  * @version $Revision$
  */
 public class AliasMethod extends AbstractMethod {
-    private IMethod oldMethod;
+    private ICallable oldMethod;
     private String oldName;
     private RubyModule origin;
     
-    public AliasMethod(IMethod oldMethod, String oldName, RubyModule origin, int noex) {
+    public AliasMethod(ICallable oldMethod, String oldName, RubyModule origin, int noex) {
         this.oldMethod = oldMethod;
         this.oldName = oldName;
         this.origin = origin;
@@ -51,15 +51,15 @@ public class AliasMethod extends AbstractMethod {
      * @see IMethod#execute(Ruby, RubyObject, String, RubyObject[], boolean)
      * @fixme name or oldName ?
      */
-    public RubyObject execute(Ruby ruby, RubyObject receiver, String name, RubyObject[] args, boolean noSuper) {
-        return oldMethod.execute(ruby, receiver, name, args, noSuper);
+    public RubyObject call(Ruby ruby, RubyObject receiver, String name, RubyObject[] args, boolean noSuper) {
+        return oldMethod.call(ruby, receiver, name, args, noSuper);
     }
 
     /**
      * Gets the oldMethod.
      * @return Returns a IMethod
      */
-    public IMethod getOldMethod() {
+    public ICallable getOldMethod() {
         return oldMethod;
     }
 
@@ -67,7 +67,7 @@ public class AliasMethod extends AbstractMethod {
      * Sets the oldMethod.
      * @param oldMethod The oldMethod to set
      */
-    public void setOldMethod(IMethod oldMethod) {
+    public void setOldMethod(ICallable oldMethod) {
         this.oldMethod = oldMethod;
     }
 

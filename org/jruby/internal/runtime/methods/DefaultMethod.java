@@ -30,7 +30,7 @@ public final class DefaultMethod extends AbstractMethod {
     /**
      * @see IMethod#execute(Ruby, RubyObject, String, RubyObject[], boolean)
      */
-    final public RubyObject execute(final Ruby ruby, final RubyObject receiver, final String name, RubyObject[] args, final boolean noSuper) {
+    final public RubyObject call(final Ruby ruby, final RubyObject receiver, final String name, RubyObject[] args, final boolean noSuper) {
 
         ruby.getScope().push();
 

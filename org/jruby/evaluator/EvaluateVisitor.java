@@ -41,7 +41,6 @@ import org.jruby.exceptions.*;
 import org.jruby.internal.runtime.methods.*;
 import org.jruby.parser.*;
 import org.jruby.runtime.*;
-import org.jruby.runtime.methods.IMethod;
 import org.jruby.util.Asserts;
 
 // TODO this visitor often leads to very deep stacks.  If it happens to be a
@@ -618,7 +617,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         //}
         // ruby_class.setFrozen(true);
 
-        IMethod method = rubyClass.searchMethod(iVisited.getName());
+        ICallable method = rubyClass.searchMethod(iVisited.getName());
         // RubyObject origin = body.getOrigin();
 
         // if (body != null){
@@ -685,7 +684,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         }
         RubyClass rubyClass = receiver.getSingletonClass();
 
-        IMethod method = (IMethod) rubyClass.getMethods().get(iVisited.getName());
+        ICallable method = (ICallable) rubyClass.getMethods().get(iVisited.getName());
         if (method != null) {
             if (ruby.getSafeLevel() >= 4) {
                 throw new RubySecurityException(ruby, "Redefining method prohibited.");

@@ -44,7 +44,7 @@ public class CallbackMethod extends AbstractMethod {
     /**
      * @see IMethod#execute(Ruby, RubyObject, String, RubyObject[], boolean)
      */
-    public RubyObject execute(Ruby ruby, RubyObject receiver, String name, RubyObject[] args, boolean noSuper) {
+    public RubyObject call(Ruby ruby, RubyObject receiver, String name, RubyObject[] args, boolean noSuper) {
         if (ruby.getRuntime().getTraceFunction() != null) {
             String file = ruby.getFrameStack().getPrevious().getFile();
             int line = ruby.getFrameStack().getPrevious().getLine();

@@ -24,7 +24,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-package org.jruby.runtime.methods;
+package org.jruby.runtime;
 
 import org.jruby.*;
 
@@ -33,12 +33,12 @@ import org.jruby.*;
  * @author  jpetersen
  * @version $Revision$
  */
-public interface IMethod {
+public interface ICallable {
     public RubyModule getImplementationClass();
     public void setImplementationClass(RubyModule implClass);
     
     public int getNoex();
     public void setNoex(int noex);
 
-    public RubyObject execute(Ruby ruby, RubyObject receiver, String name, RubyObject[] args, boolean noSuper);
+    public RubyObject call(Ruby ruby, RubyObject receiver, String name, RubyObject[] args, boolean noSuper);
 }

@@ -129,7 +129,7 @@ public class RubyClass extends RubyModule {
         while (iter.hasNext()) {
             Map.Entry entry = (Map.Entry) iter.next();
             
-            IMethod value = (IMethod)entry.getValue();
+            ICallable value = (ICallable)entry.getValue();
             
             clone.getMethods().put(entry.getKey(), value);
         }      

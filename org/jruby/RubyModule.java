@@ -503,7 +503,7 @@ public class RubyModule extends RubyObject {
     /** rb_add_method
      *
      */
-    public void addMethod(String name, IMethod method, int noex) {
+    public void addMethod(String name, ICallable method, int noex) {
         if (this == getRuby().getClasses().getObjectClass()) {
             getRuby().secure(4);
         }
@@ -579,7 +579,7 @@ public class RubyModule extends RubyObject {
             /*rb_warn("undefining `%s' may cause serious problem",
                      rb_id2name( id ) );*/
         }
-        IMethod method = searchMethod(name);
+        ICallable method = searchMethod(name);
         if (method == null) {
             String s0 = " class";
             RubyModule c = this;
@@ -662,8 +662,8 @@ public class RubyModule extends RubyObject {
     /** search_method
      *
      */
-    public IMethod searchMethod(String name) {
-        IMethod method = (IMethod) getMethods().get(name);
+    public ICallable searchMethod(String name) {
+        ICallable method = (ICallable) getMethods().get(name);
         if (method == null) {
             if (getSuperClass() != null) {
                 return getSuperClass().searchMethod(name);
@@ -686,7 +686,7 @@ public class RubyModule extends RubyObject {
     protected GetMethodBodyResult getMethodBody(String name, int noex) {
         GetMethodBodyResult result = new GetMethodBodyResult(this, name, noex);
 
-        IMethod method = searchMethod(name);
+        ICallable method = searchMethod(name);
 
         if (method == null) {
             // System.out.println("Cant find method \"" + name + "\" in class " + toName());
@@ -736,7 +736,7 @@ public class RubyModule extends RubyObject {
         CacheEntry ent = getRuby().getMethodCache().getEntry(this, name);
 
         RubyModule klass = this;
-        IMethod method;
+        ICallable method;
 
         if (ent != null) {
             if (ent.getMethod() == null) {
@@ -790,7 +790,7 @@ public class RubyModule extends RubyObject {
     /** rb_call0
      *
      */
-    public final RubyObject call0(final RubyObject recv, final String name, final RubyObject[] args, final IMethod method, final boolean noSuper) {
+    public final RubyObject call0(final RubyObject recv, final String name, final RubyObject[] args, final ICallable method, final boolean noSuper) {
         // ...
         ruby.getIterStack().push(ruby.getActIter().isPre() ? Iter.ITER_CUR :
                                                              Iter.ITER_NOT);
@@ -802,7 +802,7 @@ public class RubyModule extends RubyObject {
         ruby.getActFrame().setArgs(args);
 
         try {
-            return method.execute(ruby, recv, name, args, noSuper);
+            return method.call(ruby, recv, name, args, noSuper);
         } finally {
             ruby.getFrameStack().pop();
             ruby.getIterStack().pop();
@@ -823,7 +823,7 @@ public class RubyModule extends RubyObject {
             getRuby().secure(4);
         }
 
-        IMethod method = searchMethod(oldName);
+        ICallable method = searchMethod(oldName);
 
         RubyModule origin = null;
 
@@ -1059,7 +1059,7 @@ public class RubyModule extends RubyObject {
             getRuby().secure(4);
         }
 
-        IMethod method = searchMethod(name);
+        ICallable method = searchMethod(name);
 
         if (method == null && isModule()) {
             method = getRuby().getClasses().getObjectClass().searchMethod(name);
@@ -1225,7 +1225,7 @@ public class RubyModule extends RubyObject {
             // clone.setMethods(new RubyHashMap());
             getMethods().foreach(new RubyMapMethod() {
                 public int execute(Object key, Object value, Object arg) {
-                    IMethod method = (IMethod) value;
+                    ICallable method = (ICallable) value;
 
                     ((RubyMap) arg).put(key, method);
 
@@ -1509,7 +1509,7 @@ public class RubyModule extends RubyObject {
             public int execute(Object key, Object value, Object arg) {
                 // cast args
                 String id = (String) key;
-                IMethod method = (IMethod) value;
+                ICallable method = (ICallable) value;
                 RubyArray ary = (RubyArray) arg;
 
                 if ((method.getNoex() & noex) == 0) {
@@ -1690,7 +1690,7 @@ public class RubyModule extends RubyObject {
 
             for (int i = 0; i < args.length; i++) {
                 String name = args[i].toId();
-                IMethod method = searchMethod(name);
+                ICallable method = searchMethod(name);
                 if (method == null) {
                     throw new RubyBugException("undefined method '" + name + "'; can't happen");
                 }
@@ -1828,7 +1828,7 @@ public class RubyModule extends RubyObject {
     }
 
     public static class GetMethodBodyResult {
-        private IMethod method;
+        private ICallable method;
         private RubyModule recvClass;
         private String id;
         private int noex;
@@ -1881,7 +1881,7 @@ public class RubyModule extends RubyObject {
          * Gets the method.
          * @return Returns a IMethod
          */
-        public IMethod getMethod() {
+        public ICallable getMethod() {
             return method;
         }
 
@@ -1889,7 +1889,7 @@ public class RubyModule extends RubyObject {
          * Sets the method.
          * @param method The method to set
          */
-        public void setMethod(IMethod method) {
+        public void setMethod(ICallable method) {
             this.method = method;
         }
 

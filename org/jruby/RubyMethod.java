@@ -46,7 +46,7 @@ public class RubyMethod extends RubyObject {
     private RubyClass receiverClass;
     private RubyObject receiver;
     private String methodId;
-    private IMethod method;
+    private ICallable method;
     private RubyClass originalClass;
     private String originalId;
 
@@ -201,7 +201,7 @@ public class RubyMethod extends RubyObject {
      * Gets the method.
      * @return Returns a IMethod
      */
-    public IMethod getMethod() {
+    public ICallable getMethod() {
         return method;
     }
 
@@ -209,7 +209,7 @@ public class RubyMethod extends RubyObject {
      * Sets the method.
      * @param method The method to set
      */
-    public void setMethod(IMethod method) {
+    public void setMethod(ICallable method) {
         this.method = method;
     }
 

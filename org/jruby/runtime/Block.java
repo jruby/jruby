@@ -39,7 +39,7 @@ import org.jruby.util.collections.*;
  */
 public class Block implements StackElement {
     private INode var;
-    private IMethod method;
+    private ICallable method;
     private RubyObject self;
     private Frame frame;
     private Scope scope;
@@ -52,7 +52,7 @@ public class Block implements StackElement {
 
     public Block(
         INode var,
-        IMethod method,
+        ICallable method,
         RubyObject self,
         Frame frame,
         Scope scope,
@@ -221,7 +221,7 @@ public class Block implements StackElement {
      * Gets the method.
      * @return Returns a IMethod
      */
-    public IMethod getMethod() {
+    public ICallable getMethod() {
         return method;
     }
 
@@ -229,7 +229,7 @@ public class Block implements StackElement {
      * Sets the method.
      * @param method The method to set
      */
-    public void setMethod(IMethod method) {
+    public void setMethod(ICallable method) {
         this.method = method;
     }
 
