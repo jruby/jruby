@@ -41,6 +41,7 @@ public class BlockNode extends NODE implements ExpandNode, node_type {
     }
     
     public NODE expand(RubyObject self) {
+        /* Future NODE evaluating.
         NODE node = this;
         
         while (node.nd_next() != null) {
@@ -48,5 +49,7 @@ public class BlockNode extends NODE implements ExpandNode, node_type {
             node = node.nd_next();
         }
         return node.nd_head();
+        */
+        return null;
     }
 }

@@ -353,7 +353,7 @@ public final class RubyOriginalMethods {
     }
 
     public VALUE rb_module_s_new(VALUE klass) {
-        return RubyModule.m_newModule(ruby, (RubyClass)klass);
+        return RubyModule.m_new(ruby, (RubyObject)klass);
     }
 
     public VALUE rb_class_s_new(VALUE[] argv) {
@@ -373,7 +373,7 @@ public final class RubyOriginalMethods {
     }
 
     public VALUE rb_mod_attr(VALUE[] argv, VALUE klass) {
-        return ((RubyModule)klass).m_attr((RubySymbol)argv[0], argv.length > 1 ? (RubyBoolean)argv[1] : ruby.getFalse());
+        return ((RubyModule)klass).m_attr((RubySymbol)argv[0], (RubyObject[])argv);
     }
 
     public VALUE rb_mod_attr_reader(VALUE[] argv, VALUE klass) {
@@ -524,8 +524,7 @@ public final class RubyOriginalMethods {
     };
 
     public VALUE rb_ary_initialize(VALUE[] argv, VALUE ary) {
-        return ((RubyArray)ary).m_initialize(argv.length > 0 ? (RubyFixnum)argv[0] : null, 
-                                               argv.length > 1 ? (RubyObject)argv[1] : null);
+        return ((RubyArray)ary).m_initialize((RubyObject[])argv);
     }
 
     public VALUE rb_ary_s_create(VALUE[] argv, VALUE klass) {

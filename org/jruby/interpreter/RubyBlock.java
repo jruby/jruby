@@ -95,7 +95,7 @@ public class RubyBlock {
         scope = ruby.rubyScope;
         prev = oldBlock;
         iter = ruby.getInterpreter().getRubyIter().getIter();
-        vmode = ruby.getInterpreter().getScope_vmode();
+        vmode = ruby.getInterpreter().getActMethodScope();
         flags = BLOCK_D_SCOPE;
         dynamicVars = ruby.getInterpreter().getDynamicVars();
     }
