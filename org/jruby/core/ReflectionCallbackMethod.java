@@ -62,7 +62,7 @@ public class ReflectionCallbackMethod implements RubyCallbackMethod {
     }
     
     public ReflectionCallbackMethod(Class klass, String methodName, boolean restArgs) {
-        this(klass, methodName, (Class[])null, restArgs, false);
+        this(klass, methodName, restArgs ? new Class[]{ RubyObject[].class } : (Class[])null, restArgs, false);
     }
     
     public ReflectionCallbackMethod(Class klass, String methodName, Class args, boolean restArgs) {
@@ -74,7 +74,7 @@ public class ReflectionCallbackMethod implements RubyCallbackMethod {
     }
     
     public ReflectionCallbackMethod(Class klass, String methodName, boolean restArgs, boolean staticMethod) {
-        this(klass, methodName, (Class[])null, restArgs, staticMethod);
+        this(klass, methodName, restArgs ? new Class[]{ RubyObject[].class } : (Class[])null, restArgs, staticMethod);
     }
 
     public ReflectionCallbackMethod(Class klass, String methodName, Class args, boolean restArgs, boolean staticMethod) {
@@ -113,21 +113,17 @@ public class ReflectionCallbackMethod implements RubyCallbackMethod {
         return method;
     }
     
-    protected void testArgsCount(Ruby ruby, RubyObject[] methodArgs) {
-        if (args.length == 0) {
-            if (methodArgs.length > 0) {
-                throw new RubyArgumentException(ruby, getExceptedArgsString(methodArgs));
-            }
-        } else if (restArgs) {
-            if (methodArgs.length < (args.length - 1)) {
-                throw new RubyArgumentException(ruby, getExceptedArgsString(methodArgs));
-            }
-        } else {
-            if (methodArgs.length != args.length) {
-                throw new RubyArgumentException(ruby, getExceptedArgsString(methodArgs));
-            }
-        }
-    }
+	protected void testArgsCount(Ruby ruby, RubyObject[] methodArgs) {
+		if (restArgs) {
+			if (methodArgs.length < (args.length -1)) {
+				throw new RubyArgumentException(ruby, getExceptedArgsString(methodArgs));
+			}
+		} else {
+			if (methodArgs.length != args.length) {
+				throw new RubyArgumentException(ruby, getExceptedArgsString(methodArgs));
+			}
+		}
+	}
     
     protected String getExceptedArgsString(RubyObject[] methodArgs) {
         StringBuffer sb = new StringBuffer();
@@ -198,10 +194,11 @@ public class ReflectionCallbackMethod implements RubyCallbackMethod {
         try {
             return (RubyObject)getMethod().invoke(staticMethod ? null : recv, methodArgs);
         } catch (InvocationTargetException itExcptn) {
-            if (itExcptn.getCause() instanceof RaiseException) {
-            	throw (RaiseException)itExcptn.getCause();
+            if (itExcptn.getTargetException() instanceof RaiseException) {
+            	throw (RaiseException)itExcptn.getTargetException();
             } else {
-            	throw new RaiseException(ruby, "RuntimeError", itExcptn.getMessage());
+            	itExcptn.getTargetException().printStackTrace();
+            	return ruby.getNil();
             }
         } catch  (IllegalAccessException iaExcptn) {
         	throw new RaiseException(ruby, "RuntimeError", iaExcptn.getMessage());

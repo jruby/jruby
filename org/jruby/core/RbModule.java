@@ -79,9 +79,11 @@ public class RbModule {
         moduleClass.definePrivateMethod("protected", getMethod("m_protected", true));
         moduleClass.definePrivateMethod("private", getMethod("m_private", true));
         moduleClass.definePrivateMethod("module_function", getMethod("m_module_function", true));
-    /*rb_define_method(rb_cModule, "method_defined?", rb_mod_method_defined, 1);
-    rb_define_method(rb_cModule, "public_class_method", rb_mod_public_method, -1);
-    rb_define_method(rb_cModule, "private_class_method", rb_mod_private_method, -1);
+        
+        moduleClass.defineMethod("method_defined?", getMethod("m_method_defined", RubyObject.class, false));
+        moduleClass.defineMethod("public_class_method", getMethod("m_public_class_method", true));
+        moduleClass.defineMethod("private_class_method", getMethod("m_private_class_method", true));
+    /*
     rb_define_method(rb_cModule, "module_eval", rb_mod_module_eval, -1);
     rb_define_method(rb_cModule, "class_eval", rb_mod_module_eval, -1);
 

@@ -41,7 +41,7 @@ import org.jruby.exceptions.*;
  * @author  jpetersen
  * @version 
  */
-public class RBKernel {
+public class RbKernel {
     public static RubyModule createKernelModule(Ruby ruby) {
         RubyModule kernelModule = ruby.defineModule("Kernel");
         
@@ -60,6 +60,8 @@ public class RBKernel {
         kernelModule.defineModuleFunction("singleton_method_added", getDummyMethod());
         kernelModule.defineMethod("raise", getKernelMethod("m_raise"));
         
+        kernelModule.defineMethod("method", getObjectMethod("m_method", RubyObject.class));
+        
         return kernelModule;
     }
     
@@ -72,15 +74,19 @@ public class RBKernel {
     }
     
     public static RubyCallbackMethod getKernelMethod(String methodName) {
-        return new ReflectionCallbackMethod(RBKernel.class, methodName, RubyObject[].class, true, true);
+        return new ReflectionCallbackMethod(RbKernel.class, methodName, RubyObject[].class, true, true);
     }
     
     public static RubyCallbackMethod getKernelMethod(String methodName, Class arg1) {
-        return new ReflectionCallbackMethod(RBKernel.class, methodName, arg1, false, true);
+        return new ReflectionCallbackMethod(RbKernel.class, methodName, arg1, false, true);
     }
     
     public static RubyCallbackMethod getObjectMethod(String methodName) {
         return new ReflectionCallbackMethod(RubyObject.class, methodName);
+    }
+    
+    public static RubyCallbackMethod getObjectMethod(String methodName, Class arg1) {
+        return new ReflectionCallbackMethod(RubyObject.class, methodName, arg1);
     }
     
     public static RubyObject m_puts(Ruby ruby, RubyObject recv, RubyObject args[]) {
