@@ -168,27 +168,12 @@ public class Frame {
         this.self = self;
     }
 
-    /** Getter for property tmp.
-     * @return Value of property tmp.
-     */
-    public Frame getTmp() {
-        return tmp;
-    }
-
-    /** Setter for property tmp.
-     * @param tmp New value of property tmp.
-     */
-    public void setTmp(Frame tmp) {
-        this.tmp = tmp;
-    }
-
     /**
      * pushes a copy of this frame in the tmp stack.
      * 
      **/
     public void tmpPush() {
         Frame tmpFrame = new Frame(self, args, lastFunc, lastClass, namespace, tmp, position, iter);
-
         tmp = tmpFrame;
     }
 

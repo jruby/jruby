@@ -1495,9 +1495,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      *
      */
     private void evalClassDefinitionBody(ScopeNode iVisited, RubyModule type) {
-        /* String file = ruby.getSourceFile();
-           int line = ruby.getSourceLine(); */
-
         threadContext.getCurrentFrame().tmpPush();
         runtime.pushClass(type);
         threadContext.getScopeStack().push(iVisited.getLocalNames());

@@ -6,6 +6,7 @@
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Anders Bengtsson <ndrsbngtssn@yahoo.se>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -54,7 +55,6 @@ import org.ablaf.ast.INode;
 public class Main {
     private static CommandlineParser commandline;
     private static boolean hasPrintedUsage = false;
-
 
     public static void main(String args[]) {
         commandline = new CommandlineParser(args);
