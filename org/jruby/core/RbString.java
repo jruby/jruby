@@ -107,17 +107,17 @@ public class RbString {
 
     rb_define_method(rb_cString, "ljust", rb_str_ljust, 1);
     rb_define_method(rb_cString, "rjust", rb_str_rjust, 1);
-    rb_define_method(rb_cString, "center", rb_str_center, 1);
+    rb_define_method(rb_cString, "center", rb_str_center, 1);*/
 
-    rb_define_method(rb_cString, "sub", rb_str_sub, -1);
-    rb_define_method(rb_cString, "gsub", rb_str_gsub, -1);
-    rb_define_method(rb_cString, "chop", rb_str_chop, 0);
+        stringClass.defineMethod("sub", getMethod("m_sub", true));
+        stringClass.defineMethod("gsub", getMethod("m_gsub", true));
+    /*rb_define_method(rb_cString, "chop", rb_str_chop, 0);
     rb_define_method(rb_cString, "chomp", rb_str_chomp, -1);
-    rb_define_method(rb_cString, "strip", rb_str_strip, 0);
+    rb_define_method(rb_cString, "strip", rb_str_strip, 0);*/
 
-    rb_define_method(rb_cString, "sub!", rb_str_sub_bang, -1);
-    rb_define_method(rb_cString, "gsub!", rb_str_gsub_bang, -1);
-    rb_define_method(rb_cString, "strip!", rb_str_strip_bang, 0);
+        stringClass.defineMethod("sub!", getMethod("m_sub_bang", true));
+        stringClass.defineMethod("gsub!", getMethod("m_gsub_bang", true));
+    /*rb_define_method(rb_cString, "strip!", rb_str_strip_bang, 0);
     rb_define_method(rb_cString, "chop!", rb_str_chop_bang, 0);
     rb_define_method(rb_cString, "chomp!", rb_str_chomp_bang, -1);
 
