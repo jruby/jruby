@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -28,6 +29,9 @@ package org.jruby.lexer.yacc;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
+
+import org.jruby.common.IErrors;
+import org.jruby.common.IRubyErrorHandler;
 
 /**
  * This class is what feeds the lexer.  It is primarily a wrapper around a
@@ -188,5 +192,196 @@ public class LexerSource {
      */
     public static LexerSource getSource(String name, Reader content) {
         return new LexerSource(name, content);
+    }
+
+    public String readLine() {
+        StringBuffer sb = new StringBuffer(80);
+        for (char c = read(); c != '\n' && c != '\0'; c = read()) {
+            sb.append(c);
+        }
+        return sb.toString();
+    }
+
+    public void unreadMany(CharSequence buffer) {
+    	int length = buffer.length();
+        for (int i = length - 1; i >= 0; i--) {
+            unread(buffer.charAt(i));
+        }
+    }
+
+    public boolean matchString(String match, boolean indent) {
+        int length = match.length();
+        StringBuffer buffer = new StringBuffer(length + 20);
+        
+        if (indent) {
+        	char c;
+        	while ((c = read()) != '\0') {
+        		if (!Character.isWhitespace(c)) {
+        			unread(c);
+        			break;
+        		}
+            	buffer.append(c);
+        	}
+        }
+        
+        for (int i = 0; i < length; i++) {
+            char c = read();
+            buffer.append(c);
+            if (match.charAt(i) != c) {
+                unreadMany(buffer);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean wasBeginOfLine() {
+        return getColumn() == 1;
+    }
+
+    public char readEscape(IRubyErrorHandler errorHandler) {
+        char c = read();
+
+        switch (c) {
+            case '\\' : // backslash
+                return c;
+            case 'n' : // newline
+                return '\n';
+            case 't' : // horizontal tab
+                return '\t';
+            case 'r' : // carriage return
+                return '\r';
+            case 'f' : // form feed
+                return '\f';
+            case 'v' : // vertical tab
+                return '\u0013';
+            case 'a' : // alarm(bell)
+                return '\u0007';
+            case 'e' : // escape
+                return '\u0033';
+            case '0' : case '1' : case '2' : case '3' : // octal constant
+            case '4' : case '5' : case '6' : case '7' :
+                unread(c);
+                return (char) scanOct(3);
+            case 'x' : // hex constant
+            	int offset = getColumn();
+            	char hexValue = (char) scanHex(2);
+            	
+            	// No hex value after the 'x'.
+            	if (offset == getColumn()) {
+            	    errorHandler.handleError(IErrors.ERROR, getPosition(), "Invalid escape character syntax");
+                    return '\0';
+            	}
+                return hexValue;
+            case 'b' : // backspace
+                return '\010';
+            case 's' : // space
+                return ' ';
+            case 'M' :
+                if ((c = read()) != '-') {
+                    unread(c);
+                    errorHandler.handleError(IErrors.ERROR, getPosition(), "Invalid escape character syntax");
+                } else if ((c = read()) == '\\') {
+                    return (char) (readEscape(errorHandler) | 0x80);
+                } else if (c == '\0') {
+                    errorHandler.handleError(IErrors.ERROR, getPosition(), "Invalid escape character syntax");
+                } 
+                return (char) ((c & 0xff) | 0x80);
+            case 'C' :
+                if ((c = read()) != '-') {
+                    unread(c);
+                    errorHandler.handleError(IErrors.ERROR, getPosition(), "Invalid escape character syntax");
+                }
+            case 'c' :
+                if ((c = read()) == '\\') {
+                    c = readEscape(errorHandler);
+                } else if (c == '?') {
+                    return '\u0177';
+                } else if (c == '\0') {
+                    errorHandler.handleError(IErrors.ERROR, getPosition(), "Invalid escape character syntax");
+                }
+                return (char) (c & 0x9f);
+            case '\0' :
+                errorHandler.handleError(IErrors.ERROR, getPosition(), "Invalid escape character syntax");
+            default :
+                return c;
+        }
+    }
+
+    private int scanHex(int count) {
+    	int value = 0;
+
+    	for (int i = 0; i < count; i++) {
+    		char c = read();
+
+    		if (!RubyYaccLexer.isHexChar(c)) {
+        		unread(c);
+    			break;
+    		}
+
+    		value <<= 4;
+    		value |= Integer.parseInt(""+c, 16) & 15;
+    	}
+
+    	return value;
+    }
+
+    private int scanOct(int count) {
+    	int value = 0;
+
+    	for (int i = 0; i < count; i++) {
+    		char c = read();
+
+    		if (!RubyYaccLexer.isOctChar(c)) {
+        		unread(c);
+    			break;
+    		}
+
+    		value <<= 3;
+    		value |= Integer.parseInt(""+c, 8);
+    	}
+
+    	return value;
+    }
+
+    /**
+     * Get character ahead of current position by offset positions.
+     * 
+     * @param offset is location past current position to get char at
+     * @return character index positions ahead of source location or EOF
+     */
+    public char getCharAt(int offset) {
+    	StringBuffer buffer = new StringBuffer(offset);
+    
+    	// read next offset chars
+        for (int i = 0; i < offset; i++) {
+            buffer.append(read());
+        }
+        
+        int length = buffer.length();
+        
+        // Whoops not enough chars left EOF!
+        if (length == 0){
+        	return '\0';
+        }
+        
+        // Push chars back now that we found it
+        for (int i = 0; i < length; i++) {
+            unread(buffer.charAt(i));
+        }
+        
+        return buffer.charAt(length - 1);
+    }
+
+    public String toString() {
+        StringBuffer buffer = new StringBuffer(20);
+        for (int i = 0; i < 20; i++) {
+            buffer.append(read());
+        }
+        for (int i = 0; i < 20; i++) {
+            unread(buffer.charAt(buffer.length() - i - 1));
+        }
+        buffer.append(" ...");
+        return buffer.toString();
     }
 }

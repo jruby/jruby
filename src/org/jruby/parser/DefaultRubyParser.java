@@ -116,6 +116,7 @@ import org.jruby.lexer.yacc.LexState;
 import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.RubyYaccLexer;
 import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.StrTerm;
 import org.jruby.runtime.Visibility;
 import org.jruby.util.IdUtil;
 
@@ -2507,7 +2508,7 @@ case 393:
 case 394:
 					// line 1608 "DefaultRubyParser.y"
   {
-                      yyVal = lexer.strTerm();
+                      yyVal = lexer.getStrTerm();
 		      lexer.setStrTerm(null);
 		      lexer.setState(LexState.EXPR_BEG);
 		  }
@@ -2515,14 +2516,14 @@ case 394:
 case 395:
 					// line 1612 "DefaultRubyParser.y"
   {
-		      lexer.setStrTerm(((Node)yyVals[-1+yyTop]));
+		      lexer.setStrTerm(((StrTerm)yyVals[-1+yyTop]));
 		      yyVal = new EvStrNode(getPosition(), ((Node)yyVals[0+yyTop]));
 		  }
   break;
 case 396:
 					// line 1616 "DefaultRubyParser.y"
   {
-		      yyVal = lexer.strTerm();
+		      yyVal = lexer.getStrTerm();
 		      lexer.setStrTerm(null);
 		      lexer.setState(LexState.EXPR_BEG);
 		  }
@@ -2530,7 +2531,7 @@ case 396:
 case 397:
 					// line 1620 "DefaultRubyParser.y"
   {
-		      lexer.setStrTerm(((Node)yyVals[-2+yyTop]));
+		      lexer.setStrTerm(((StrTerm)yyVals[-2+yyTop]));
 		      Node node = ((Node)yyVals[-1+yyTop]);
 
 		      if (node instanceof NewlineNode) {
@@ -3521,4 +3522,4 @@ case 494:
         return lexer.getPosition();
     }
 }
-					// line 7957 "-"
+					// line 7877 "-"

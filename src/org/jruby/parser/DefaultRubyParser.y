@@ -116,6 +116,7 @@ import org.jruby.lexer.yacc.LexState;
 import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.RubyYaccLexer;
 import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.StrTerm;
 import org.jruby.runtime.Visibility;
 import org.jruby.util.IdUtil;
 
@@ -1606,19 +1607,19 @@ string_content	: tSTRING_CONTENT {
                      $$ = new StrNode(getPosition(), $<String>$);
                   }
 		| tSTRING_DVAR {
-                      $$ = lexer.strTerm();
+              $$ = lexer.getStrTerm();
 		      lexer.setStrTerm(null);
 		      lexer.setState(LexState.EXPR_BEG);
 		  } string_dvar {
-		      lexer.setStrTerm($2);
+		      lexer.setStrTerm($<StrTerm>2);
 		      $$ = new EvStrNode(getPosition(), $3);
 		  }
 		| tSTRING_DBEG {
-		      $$ = lexer.strTerm();
+		      $$ = lexer.getStrTerm();
 		      lexer.setStrTerm(null);
 		      lexer.setState(LexState.EXPR_BEG);
 		  } compstmt '}' {
-		      lexer.setStrTerm($2);
+		      lexer.setStrTerm($<StrTerm>2);
 		      Node node = $3;
 
 		      if (node instanceof NewlineNode) {
