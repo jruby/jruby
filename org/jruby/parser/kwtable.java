@@ -29,8 +29,6 @@
  */
 package org.jruby.parser;
 
-import org.jruby.original.*;
-
 public class kwtable implements Token, LexState {
 
     String name;

@@ -31,7 +31,6 @@ package org.jruby.parser;
 
 import org.jruby.*;
 import org.jruby.nodes.*;
-import org.jruby.original.*;
 import org.jruby.runtime.*;
 import org.jruby.util.*;
 
