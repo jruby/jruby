@@ -13,6 +13,7 @@
  *
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 Charles O Nutter
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -52,9 +53,20 @@ public class RbConfig implements Library {
         setConfig(configHash, "MINOR", versionParts[1]);
         setConfig(configHash, "TEENY", versionParts[2]);
 
-        setConfig(configHash, "bindir", new File(System.getProperty("jruby.home"), "bin").getAbsolutePath());
+        setConfig(configHash, "bindir", new File(System.getProperty("jruby.home") + "bin").getAbsolutePath());
         setConfig(configHash, "RUBY_INSTALL_NAME", System.getProperty("jruby.script"));
+        setConfig(configHash, "ruby_install_name", System.getProperty("jruby.script"));
         setConfig(configHash, "SHELL", System.getProperty("jruby.shell"));
+        setConfig(configHash, "prefix", new File(System.getProperty("jruby.home")).getAbsolutePath());
+        setConfig(configHash, "libdir", new File(System.getProperty("jruby.home"), "lib").getAbsolutePath());
+        setConfig(configHash, "rubylibdir", new File(System.getProperty("jruby.home"), "lib/ruby/1.8").getAbsolutePath());
+        setConfig(configHash, "sitedir", new File(System.getProperty("jruby.home"), "lib/ruby/site_ruby").getAbsolutePath());
+        setConfig(configHash, "sitelibdir", new File(System.getProperty("jruby.home"), "lib/ruby/site_ruby/1.8").getAbsolutePath());
+        setConfig(configHash, "sitearchdir", new File(System.getProperty("jruby.home"), "lib/ruby/site_ruby/1.8/java").getAbsolutePath());
+        setConfig(configHash, "configure_args", "");
+        setConfig(configHash, "datadir", new File(System.getProperty("jruby.home"), "share").getAbsolutePath());
+        setConfig(configHash, "mandir", new File(System.getProperty("jruby.home"), "man").getAbsolutePath());
+        setConfig(configHash, "sysconfdir", new File(System.getProperty("jruby.home"), "etc").getAbsolutePath());
         
         if (isWindows()) {
         	setConfig(configHash, "EXEEXT", ".exe");
