@@ -1,9 +1,5 @@
 /*
- * IParser.java
- * Created on 05.02.2002, 23:46:35
- * 
- * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>. All rights
- * reserved.
+ * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions

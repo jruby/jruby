@@ -29,6 +29,7 @@ package org.jruby.parser;
 
 import org.ablaf.ast.INode;
 import org.ablaf.parser.IParser;
+import org.ablaf.parser.IParserPool;
 import org.ablaf.lexer.ILexerSource;
 import org.ablaf.lexer.LexerFactory;
 import org.jruby.Ruby;
@@ -40,10 +41,11 @@ import java.io.StringReader;
 
 public class Parser {
     private final Ruby runtime;
-    private IParser internalParser = new DefaultRubyParser();
+    private final IParserPool pool;
 
     public Parser(Ruby ruby) {
         this.runtime = ruby;
+        this.pool = RubyParserPool.getInstance();
     }
 
     public INode parse(String file, String content) {
@@ -62,10 +64,18 @@ public class Parser {
 
     private INode parse(String file, Reader content, RubyParserConfiguration config) {
         config.setLocalVariables(runtime.getScope().getLocalNames());
-        internalParser.setErrorHandler(runtime.getErrorHandler());
-        internalParser.init(config);
-        ILexerSource lexerSource = LexerFactory.getInstance().getSource(file, content);
-        IRubyParserResult result = (IRubyParserResult) internalParser.parse(lexerSource);
+        
+        IParser parser = null;
+        IRubyParserResult result = null;
+        try {
+            parser = pool.borrowParser();
+            parser.setErrorHandler(runtime.getErrorHandler());
+            parser.init(config);
+            ILexerSource lexerSource = LexerFactory.getInstance().getSource(file, content);
+            result = (IRubyParserResult) parser.parse(lexerSource);
+        } finally {
+            pool.returnParser(parser);
+        }
 
         if (hasNewLocalVariables(result)) {
             runtime.getScope().setLocalNames(new ArrayList(result.getLocalVariables()));
