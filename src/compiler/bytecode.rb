@@ -31,6 +31,8 @@ module JRuby
 
       IRUBYOBJECT_TYPE =
         BCEL::ObjectType.new("org.jruby.runtime.builtin.IRubyObject")
+      RUBY_TYPE =
+        BCEL::ObjectType.new("org.jruby.Ruby")
 
       class AssignLocal
         attr_reader :index
@@ -50,13 +52,13 @@ module JRuby
         def emit_jvm_bytecode(methodgen, factory)
           list = methodgen.getInstructionList
 
-          list.append(BCEL::ALOAD.new(RUNTIME_INDEX))
+          push_runtime(methodgen)
 
           list.append(BCEL::PUSH.new(methodgen.getConstantPool, @value))
           list.append(BCEL::I2L.new())
 
           arg_types = BCEL::Type[].new(2)
-          arg_types[0] = BCEL::ObjectType.new("org.jruby.Ruby")
+          arg_types[0] = RUBY_TYPE
           arg_types[1] = BCEL::Type::LONG
           list.append(factory.createInvoke("org.jruby.RubyFixnum",
                                            "newFixnum",
@@ -94,20 +96,25 @@ module JRuby
         end
       end
 
-      def pushScopeStack(methodgen, factory)
+      def push_runtime(methodgen)
         list = methodgen.getInstructionList
         list.append(BCEL::ALOAD.new(RUNTIME_INDEX))
-        list.append(factory.createInvoke("org.jruby.Ruby",
+      end
+
+      def push_scope_stack(methodgen, factory)
+        list = methodgen.getInstructionList
+        push_runtime(methodgen)
+        list.append(factory.createInvoke(RUBY_TYPE.getClassName,
                                          "getScope",
                                          BCEL::ObjectType.new("org.jruby.runtime.ScopeStack"),
                                          BCEL::Type[].new(0),
                                          BCEL::Constants::INVOKEVIRTUAL))
       end
 
-      def pushFrameStack(methodgen, factory)
+      def push_frame_stack(methodgen, factory)
         list = methodgen.getInstructionList
-        list.append(BCEL::ALOAD.new(RUNTIME_INDEX))
-        list.append(factory.createInvoke("org.jruby.Ruby",
+        push_runtime(methodgen)
+        list.append(factory.createInvoke(RUBY_TYPE.getClassName,
                                          "getFrameStack",
                                          BCEL::ObjectType.new("org.jruby.runtime.FrameStack"),
                                          BCEL::Type[].new(0),
@@ -164,7 +171,7 @@ module JRuby
           arg_types = BCEL::Type[].new(2)
           arg_types[0] = BCEL::Type::STRING
           arg_types[1] = BCEL::ArrayType.new(IRUBYOBJECT_TYPE, 1)
-          list.append(factory.createInvoke("org.jruby.runtime.builtin.IRubyObject",
+          list.append(factory.createInvoke(IRUBYOBJECT_TYPE.getClassName,
                                            "callMethod",
                                            IRUBYOBJECT_TYPE,
                                            arg_types,
@@ -181,15 +188,36 @@ module JRuby
 
         def emit_jvm_bytecode(methodgen, factory)
           list = methodgen.getInstructionList
-          list.append(BCEL::ALOAD.new(RUNTIME_INDEX))
+          push_runtime(methodgen)
           list.append(BCEL::PUSH.new(factory.getConstantPool, @value))
 
           arg_types = BCEL::Type[].new(2)
-          arg_types[0] = BCEL::ObjectType.new("org.jruby.Ruby")
+          arg_types[0] = RUBY_TYPE
           arg_types[1] = BCEL::Type::STRING
           list.append(factory.createInvoke("org.jruby.RubyString",
                                            "newString",
                                            BCEL::ObjectType.new("org.jruby.RubyString"),
+                                           arg_types,
+                                           BCEL::Constants::INVOKESTATIC))
+        end
+      end
+
+      class PushSymbol
+        def initialize(name)
+          @name = name
+        end
+
+        def emit_jvm_bytecode(methodgen, factory)
+          list = methodgen.getInstructionList
+          push_runtime(methodgen)
+          list.append(BCEL::PUSH.new(factory.getConstantPool, @name))
+
+          arg_types = BCEL::Type[].new(2)
+          arg_types[0] = RUBY_TYPE
+          arg_types[1] = BCEL::Type::STRING
+          list.append(factory.createInvoke("org.jruby.RubySymbol",
+                                           "newSymbol",
+                                           BCEL::ObjectType.new("org.jruby.RubySymbol"),
                                            arg_types,
                                            BCEL::Constants::INVOKESTATIC))
         end
@@ -202,8 +230,8 @@ module JRuby
       class PushNil
         def emit_jvm_bytecode(methodgen, factory)
           list = methodgen.getInstructionList
-          list.append(BCEL::ALOAD.new(RUNTIME_INDEX))
-          list.append(factory.createInvoke("org.jruby.Ruby",
+          push_runtime(methodgen)
+          list.append(factory.createInvoke(RUBY_TYPE.getClassName,
                                            "getNil",
                                            IRUBYOBJECT_TYPE,
                                            BCEL::Type[].new(0),
@@ -219,13 +247,13 @@ module JRuby
         def emit_jvm_bytecode(methodgen, factory)
           list = methodgen.getInstructionList
 
-          list.append(BCEL::ALOAD.new(RUNTIME_INDEX))
+          push_runtime(methodgen)
           if @value
             methodname = "getTrue"
           else
             methodname = "getFalse"
           end
-          list.append(factory.createInvoke("org.jruby.Ruby",
+          list.append(factory.createInvoke(RUBY_TYPE.getClassName,
                                            methodname,
                                            BCEL::ObjectType.new("org.jruby.RubyBoolean"),
                                            BCEL::Type[].new(0),
@@ -240,13 +268,13 @@ module JRuby
 
         def emit_jvm_bytecode(methodgen, factory)
           list = methodgen.getInstructionList
-          list.append(BCEL::ALOAD.new(RUNTIME_INDEX))
+          push_runtime(methodgen)
           list.append(BCEL::PUSH.new(methodgen.getConstantPool, @size))
           list.append(BCEL::I2L.new)
-          args_array = BCEL::Type[].new(2)
-          args_array[0] = BCEL::ObjectType.new("org.jruby.Ruby")
-          args_array[1] = BCEL::Type::LONG
 
+          args_array = BCEL::Type[].new(2)
+          args_array[0] = RUBY_TYPE
+          args_array[1] = BCEL::Type::LONG
           list.append(factory.createInvoke("org.jruby.RubyArray",
                                            "newArray",
                                            BCEL::ObjectType.new("org.jruby.RubyArray"),
@@ -289,7 +317,7 @@ module JRuby
           list = methodgen.getInstructionList
 
           # runtime.getFrameStack().pushCopy()
-          pushFrameStack(methodgen, factory)
+          push_frame_stack(methodgen, factory)
           list.append(factory.createInvoke("org.jruby.runtime.FrameStack",
                                            "pushCopy",
                                            BCEL::Type::VOID,
@@ -297,7 +325,7 @@ module JRuby
                                            BCEL::Constants::INVOKEVIRTUAL))
 
           # runtime.getScopeStack().push(localnames)
-          pushScopeStack(methodgen, factory)
+          push_scope_stack(methodgen, factory)
           # FIXME: store this array instead of creating it on the fly!
           list.append(BCEL::PUSH.new(methodgen.getConstantPool,
                                      @local_names.size))
@@ -329,7 +357,7 @@ module JRuby
       class RestoreScope
         def emit_jvm_bytecode(methodgen, factory)
           # getScopeStack.pop()
-          pushScopeStack(methodgen, factory)
+          push_scope_stack(methodgen, factory)
           list = methodgen.getInstructionList
           list.append(factory.createInvoke("org.jruby.runtime.ScopeStack",
                                            "pop",
@@ -337,7 +365,7 @@ module JRuby
                                            BCEL::Type[].new(0),
                                            BCEL::Constants::INVOKEVIRTUAL))
           # getFrameStack.pop()
-          pushFrameStack(methodgen, factory)
+          push_frame_stack(methodgen, factory)
           list.append(factory.createInvoke("org.jruby.runtime.FrameStack",
                                            "pop",
                                            BCEL::ObjectType.new("java.lang.Object"),
@@ -354,22 +382,21 @@ module JRuby
         def emit_jvm_bytecode(methodgen, factory)
           list = methodgen.getInstructionList
 
-          # Insert 'runtime' before the two range arguments
+          # Inserting 'runtime' before the two range arguments
 
           # Stack: ..., begin, end
-          list.append(BCEL::ALOAD.new(RUNTIME_INDEX))
+          push_runtime(methodgen)
           # Stack: ..., begin, end, runtime
           list.append(BCEL::DUP_X2.new)
           # Stack: ..., runtime, begin, end, runtime
           list.append(BCEL::POP.new)
           # Stack: ..., runtime, begin, end
-
           list.append(BCEL::PUSH.new(methodgen.getConstantPool,
                                      @exclusive))
           # Stack: ..., runtime, begin, end, isexclusive
 
           arg_types = BCEL::Type[].new(4)
-          arg_types[0] = BCEL::ObjectType.new("org.jruby.Ruby")
+          arg_types[0] = RUBY_TYPE
           arg_types[1] = IRUBYOBJECT_TYPE
           arg_types[2] = IRUBYOBJECT_TYPE
           arg_types[3] = BCEL::Type::BOOLEAN

@@ -210,6 +210,10 @@ module JRuby
         emit_bytecodes(node.getEndNode)
         @bytecodes << CreateRange.new(node.isExclusive)
       end
+
+      def visitSymbolNode(node)
+        @bytecodes << PushSymbol.new(node.getName)
+      end
     end
 
     # Since we can't subclass Java interfaces properly we have
