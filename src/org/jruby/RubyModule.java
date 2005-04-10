@@ -495,6 +495,12 @@ public class RubyModule extends RubyObject {
         if (constant != null) {
              return constant;
         }
+
+    	for (RubyModule p = getSuperClass(); p != null; p = p.getSuperClass()) {
+    	    constant = p.getConstantAt(name);
+    	    if (constant != null)
+    	        return constant;
+    	}
         
         return callMethod("const_missing", RubySymbol.newSymbol(getRuntime(), name));
     }
@@ -505,12 +511,6 @@ public class RubyModule extends RubyObject {
     	if (constant != null) {
     		return constant;
     	} 
-
-    	for (RubyModule p = getSuperClass(); p != null; p = p.getSuperClass()) {
-    	    constant = p.getConstantAt(name);
-    	    if (constant != null)
-    	        return constant;
-    	}
     	
     	if (this == getRuntime().getClasses().getObjectClass()) {
     		return getConstant(name, false);

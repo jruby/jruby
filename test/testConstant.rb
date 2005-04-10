@@ -65,3 +65,39 @@ module Z1
     end
   end
 end
+
+# Should not cause collision
+module Out
+  Argument = "foo"
+end
+
+class Switch
+  include Out
+  class Argument < self
+  end
+end
+
+# Should cause TypeError
+# TODO: Figure out why test_exception(TypeError) {} is not working for this...
+hack_pass = 0
+begin
+  class AAAA
+    FOO = "foo"
+    class FOO < self
+    end
+  end
+rescue TypeError
+  hack_pass = 1
+end
+
+test_ok(1, hack_pass)
+
+# Should not cause collision
+class Out2
+  NoArgument = "foo"
+
+  class Switch
+    class NoArgument < self
+    end
+  end
+end
