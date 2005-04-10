@@ -53,7 +53,7 @@ public class RbConfig implements Library {
         setConfig(configHash, "MINOR", versionParts[1]);
         setConfig(configHash, "TEENY", versionParts[2]);
 
-        setConfig(configHash, "bindir", new File(System.getProperty("jruby.home") + "bin").getAbsolutePath());
+        setConfig(configHash, "bindir", new File(System.getProperty("jruby.home"), "bin").getAbsolutePath());
         setConfig(configHash, "RUBY_INSTALL_NAME", System.getProperty("jruby.script"));
         setConfig(configHash, "ruby_install_name", System.getProperty("jruby.script"));
         setConfig(configHash, "SHELL", System.getProperty("jruby.shell"));
