@@ -1,15 +1,14 @@
-JRuby -  Ruby interpreter for Java
-==================================
+JRuby -  A Java implementation of the Ruby language
 
-Authors: Jan Arne Petersen <japetersen@web.de>, 
-         Stefan Matthias Aust <sma@3plus4.de>,
-         Alan Moore <alan_moore@gmx.net>,
-         Benoit Cerrina <b.cerrina@wanadoo.fr>,
-         Ed Sinjiashvili <slorcim@users.sourceforge.net>
-         Chad Fowler <chadfowler@chadfowler.com>
-         Anders Bengtsson <ndrsbngtssn@yahoo.se>
-         Jason Voegele <jason@jvoegele.com>
-         Thomas E Enebo <enebo@acm.org>
+Authors: Stefan Matthias Aust, Anders Bengtsson, Geert Bevin,
+ Piergiuliano Bossi, Johannes Brodwall, Rocky Burt, Paul Butcher,
+ Benoit Cerrina, Wyss Clemens, David Corbin, Thomas E Enebo, Robert Feldt,
+ Russ Freeman, Chad Fowler, Joey Gibson, Kiel Hodges, Xandy Johnson,
+ Kelvin Liu, Alan Moore, Akinori Musha, Charles Nutter, Takashi Okamoto
+ Jan Arne Petersen, Tobias Reif, David Saff, Ed Sinjiashvili, Daiki Ueno
+ Matthias Veit, Jason Voegele, Sergey Yevtushenko, Robert Yokota
+
+Project Contact: Thomas E Enebo <enebo@acm.org>
 
 We also use some code created by Yukihiro Matsumoto <matz@netlab.co.jp>.
 
@@ -17,7 +16,8 @@ JRuby is the effort to recreate the Ruby (http://www.ruby-lang.org) interpreter
 in Java.
 
 The Java version is be tightly integrated with Java to allow both to script
-any Java class and to embed the interpreter into any Java application.
+any Java class and to embed the interpreter into any Java application. 
+See the 'docs' directory for more information.
 
 
 Run
@@ -27,8 +27,9 @@ Run
 
 interprets the file 'rubyfile.rb'.
 
-You can also use the utility scripts 'jruby.sh', 'jruby.rb' or 'jruby.bat'
-to run the interpreter.
+Some globals depend on particular java properties to be set, so you
+may need to use on the utility scripts: 'jruby.sh', 'jruby.rb' or 'jruby.bat'
+to execute JRuby.
 
 
 Compiling from source
@@ -36,15 +37,20 @@ Compiling from source
 
 You will need:
 
-* JDK 1.4 (earlier versions may work, but are not tested).
+* JDK 1.4
 * Apache Ant (http://jakarta.apache.org/ant/).
 
 To compile, just type:
 
     ant
 
-If everything goes well, you will find the file jruby.jar in the
-lib/ directory.
+This will create a jruby.jar file in the projects 'lib' directory.
+
+
+Testing
+=======
+
+See 'docs/README.testing' for more information
 
 
 More Information
@@ -56,6 +62,3 @@ License
 =======
 
 Read the COPYING file.
-
-This product includes software developed by the
-Apache Software Foundation (http://www.apache.org/).
