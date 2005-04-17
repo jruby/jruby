@@ -166,8 +166,6 @@ public class JavaUtil {
             return runtime.newString(object.toString());
         } else if (IRubyObject.class.isAssignableFrom(javaClass)) {
             return (IRubyObject) object;
-        } else if (object instanceof RubyProxy) {
-            return ((RubyProxy) object).getRubyObject();
         } else {
             return JavaObject.wrap(runtime, object);
         }

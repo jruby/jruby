@@ -219,25 +219,22 @@ END
     end
 
     def create_interface_constructor(java_class, proxy_class)
-      class << proxy_class
-        def new
-	  Java.new_proxy_instance(@java_class) {
-	    |proxy, method, *java_args|
-	    java_args.collect! { |arg|
-	      Java.java_to_primitive(arg)
-	    }
-	    args = []
-	    java_args.each_with_index { |arg, idx|
-	      if arg.kind_of?(JavaObject)
-    		arg = JavaUtilities.wrap(arg, method.argument_types[idx])
-          end
-	      args[idx] = arg
-	    }
-	    result = proxy.__send__(method.name, *args)
-	    result = result.java_object if result.kind_of?(JavaProxy)
-	    Java.primitive_to_java(result)
-	  }
-	end
+      proxy_class.class_eval do
+        def initialize
+          self.java_object = Java.new_proxy_instance(self.class.java_class) { |proxy, method, *java_args|
+            java_args.collect! { |arg| Java.java_to_primitive(arg) }
+            args = []
+            java_args.each_with_index { |arg, idx|
+              if arg.kind_of?(JavaObject)
+    	        arg = JavaUtilities.wrap(arg, method.argument_types[idx])
+              end
+              args[idx] = arg
+            }
+            result = self.__send__(method.name, *args)
+            result = result.java_object if result.kind_of?(JavaProxy)
+            Java.primitive_to_java(result)
+          }
+        end
       end
     end
 
