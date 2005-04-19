@@ -35,6 +35,7 @@ package org.jruby.evaluator;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Stack;
 
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
@@ -171,7 +172,6 @@ import org.jruby.runtime.Iter;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.collections.ArrayStack;
 
 // TODO this visitor often leads to very deep stacks.  If it happens to be a
 // real problem, the trampoline method of tail call elimination could be used.
@@ -715,7 +715,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         DefaultMethod newMethod = new DefaultMethod(iVisited.getBodyNode(),
                                                     (ArgsNode) iVisited.getArgsNode(),
                                                     visibility,
-													(ArrayStack)threadContext.getClassStack().clone());
+													(Stack)threadContext.getClassStack().clone());
         
         iVisited.getBodyNode().accept(new CreateJumpTargetVisitor(newMethod));
         
@@ -769,7 +769,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         DefaultMethod newMethod = new DefaultMethod(iVisited.getBodyNode(),
                                                     (ArgsNode) iVisited.getArgsNode(),
                                                     Visibility.PUBLIC,
-													(ArrayStack)threadContext.getClassStack().clone());
+													(Stack)threadContext.getClassStack().clone());
 
         iVisited.getBodyNode().accept(new CreateJumpTargetVisitor(newMethod));
 

@@ -102,7 +102,7 @@ public class Java {
         } else if (object instanceof RubyBoolean) {
             javaObject = Boolean.valueOf(object.isTrue());
         } else if (object instanceof RubyArray) {
-        	List tmpList = (List) ((RubyArray) object).getList(); 
+        	List tmpList = ((RubyArray) object).getList(); 
         	ArrayList newList = new ArrayList();
         	
         	for (Iterator iter = tmpList.iterator(); iter.hasNext();) {
@@ -110,7 +110,7 @@ public class Java {
         	}
         	javaObject = newList;
         } else if (object instanceof RubyHash) {
-        	Map tmpMap = (Map) ((RubyHash) object).getValueMap();
+        	Map tmpMap = ((RubyHash) object).getValueMap();
         	HashMap newHash = new HashMap();
         	
         	for (Iterator iter = tmpMap.keySet().iterator(); iter.hasNext();) {

@@ -32,6 +32,8 @@
 package org.jruby.internal.runtime.methods;
 
 import java.util.Iterator;
+import java.util.Stack;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyProc;
@@ -48,7 +50,6 @@ import org.jruby.runtime.ICallable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.collections.ArrayStack;
 
 /**
  *
@@ -58,9 +59,9 @@ import org.jruby.util.collections.ArrayStack;
 public final class DefaultMethod extends AbstractMethod {
     private ScopeNode body;
     private ArgsNode argsNode;
-    private ArrayStack moduleStack;
+    private Stack moduleStack;
 
-    public DefaultMethod(ScopeNode body, ArgsNode argsNode, Visibility visibility, ArrayStack moduleStack) {
+    public DefaultMethod(ScopeNode body, ArgsNode argsNode, Visibility visibility, Stack moduleStack) {
         super(visibility);
         this.body = body;
         this.argsNode = argsNode;
@@ -86,7 +87,7 @@ public final class DefaultMethod extends AbstractMethod {
 
         context.pushDynamicVars();
 
-        ArrayStack oldStack = context.getClassStack();
+        Stack oldStack = context.getClassStack();
         // replace class stack with appropriate execution scope
         context.setClassStack(moduleStack);
 

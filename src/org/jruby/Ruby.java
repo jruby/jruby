@@ -45,6 +45,7 @@ import java.io.StringReader;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Random;
+import java.util.Stack;
 
 import org.jruby.ast.Node;
 import org.jruby.common.RubyWarnings;
@@ -82,7 +83,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.load.ILoadService;
 import org.jruby.runtime.load.LoadServiceFactory;
-import org.jruby.util.collections.ArrayStack;
 
 /**
  * The jruby runtime.
@@ -143,7 +143,7 @@ public final class Ruby {
 
     // Contains a list of all blocks (as Procs) that should be called when
     // the runtime environment exits.
-    private ArrayStack atExitBlocks = new ArrayStack();
+    private Stack atExitBlocks = new Stack();
 
     /**
      * Create and initialize a new jruby Runtime.
@@ -457,7 +457,7 @@ public final class Ruby {
         return javaSupport;
     }
 
-    public ArrayStack getIterStack() {
+    public Stack getIterStack() {
         return getCurrentContext().getIterStack();
     }
 

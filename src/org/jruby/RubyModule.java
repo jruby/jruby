@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Stack;
 import java.util.TreeMap;
 
 import org.jruby.ast.AttrSetNode;
@@ -66,7 +67,6 @@ import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.IdUtil;
-import org.jruby.util.collections.ArrayStack;
 
 /**
  *
@@ -337,7 +337,7 @@ public class RubyModule extends RubyObject {
         }
 
         // look for constants in module stack
-        ArrayStack moduleStack = (ArrayStack)getRuntime().getCurrentContext().getClassStack().clone();
+        Stack moduleStack = (Stack)getRuntime().getCurrentContext().getClassStack().clone();
         for (RubyModule p = (RubyModule)moduleStack.peek(); !moduleStack.empty(); p = (RubyModule)moduleStack.pop()) {
         	var = p.getInstanceVariable(name);
             if (var != null) {

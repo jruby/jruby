@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Stack;
 
 import org.jruby.IncludedModuleWrapper;
 import org.jruby.Ruby;
@@ -55,7 +56,6 @@ import org.jruby.exceptions.NextJump;
 import org.jruby.exceptions.RedoJump;
 import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.collections.ArrayStack;
 
 /**
  * @author jpetersen
@@ -65,14 +65,14 @@ public class ThreadContext {
     private final Ruby runtime;
 
     private BlockStack blockStack;
-    private ArrayStack dynamicVarsStack;
+    private Stack dynamicVarsStack;
 
     private RubyThread thread;
 
-    private ArrayStack classStack;
+    private Stack classStack;
     private ScopeStack scopeStack;
     private FrameStack frameStack;
-    private ArrayStack iterStack;
+    private Stack iterStack;
 
     private RubyModule wrapper;
 
@@ -85,11 +85,11 @@ public class ThreadContext {
         this.runtime = runtime;
 
         this.blockStack = new BlockStack();
-        this.dynamicVarsStack = new ArrayStack();
-        this.classStack = new ArrayStack();
+        this.dynamicVarsStack = new Stack();
+        this.classStack = new Stack();
         this.scopeStack = new ScopeStack(runtime);
         this.frameStack = new FrameStack(this);
-        this.iterStack = new ArrayStack();
+        this.iterStack = new Stack();
 
         pushDynamicVars();
     }
@@ -134,15 +134,15 @@ public class ThreadContext {
         return frameStack;
     }
 
-    public ArrayStack getIterStack() {
+    public Stack getIterStack() {
         return iterStack;
     }
     
-    public ArrayStack getClassStack() {
+    public Stack getClassStack() {
     	return classStack;
     }
 
-    public void setClassStack(ArrayStack classStack) {
+    public void setClassStack(Stack classStack) {
     	this.classStack = classStack;
     }
 
