@@ -525,8 +525,9 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitClassNode(ClassNode iVisited) {
         RubyClass superClass = getSuperClassFromNode(iVisited.getSuperNode());
-        String name = iVisited.getClassName();
-        RubyModule enclosingClass = threadContext.getRubyClass();
+        Node classNameNode = iVisited.getCPath();
+        String name = ((INameNode) classNameNode).getName();
+        RubyModule enclosingClass = getEnclosingModule(classNameNode);
         RubyClass rubyClass = enclosingClass.defineOrGetClassUnder(name, superClass);
 
         if (threadContext.getWrapper() != null) {
@@ -1040,16 +1041,19 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitModuleNode(ModuleNode)
      */
     public void visitModuleNode(ModuleNode iVisited) {
-        RubyModule enclosingModule = threadContext.getRubyClass();
+        Node classNameNode = iVisited.getCPath();
+        String name = ((INameNode) classNameNode).getName();
+        RubyModule enclosingModule = getEnclosingModule(classNameNode);
+
         if (enclosingModule == null) {
             throw new TypeError(runtime, "no outer class/module");
         }
 
         RubyModule module;
         if (enclosingModule == runtime.getClasses().getObjectClass()) {
-            module = runtime.getOrCreateModule(iVisited.getName());
+            module = runtime.getOrCreateModule(name);
         } else {
-            module = enclosingModule.defineModuleUnder(iVisited.getName());
+            module = enclosingModule.defineModuleUnder(name);
         }
         evalClassDefinitionBody(iVisited.getBodyNode(), module);
     }
@@ -1682,4 +1686,21 @@ public final class EvaluateVisitor implements NodeVisitor {
         return ArgsUtil.arrayify(eval(node));
     }
 
+    private RubyModule getEnclosingModule(Node node) {
+        RubyModule enclosingModule = null;
+        
+        if (node instanceof Colon2Node) {
+        	eval(((Colon2Node) node).getLeftNode());
+        	
+        	if (result != null && !result.isNil()) {
+        		enclosingModule = (RubyModule) result;
+        	}
+        } 
+        
+        if (enclosingModule == null) {
+        	enclosingModule = threadContext.getRubyClass();
+        }
+
+        return enclosingModule;
+    }
 }

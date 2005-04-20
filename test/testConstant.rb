@@ -101,3 +101,17 @@ class Out2
     end
   end
 end
+
+module OutA
+end
+
+class OutA::InA
+  def ok; "ok"; end
+end
+
+module OutA::InB
+  OK = "ok"
+end
+
+test_ok("ok", OutA::InA.new.ok)
+test_ok("ok", OutA::InB::OK)

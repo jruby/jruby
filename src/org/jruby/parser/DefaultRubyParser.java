@@ -2035,7 +2035,7 @@ case 306:
 case 307:
 					// line 1271 "DefaultRubyParser.jy"
   {
-  yyVal = new ClassNode(getPosition(), ((Colon2Node)yyVals[-4+yyTop]).getName(), new ScopeNode(support.getLocalNames().getNames(), ((Node)yyVals[-1+yyTop])), ((Node)yyVals[-3+yyTop]));
+  yyVal = new ClassNode(getPosition(), ((Colon2Node)yyVals[-4+yyTop]), new ScopeNode(support.getLocalNames().getNames(), ((Node)yyVals[-1+yyTop])), ((Node)yyVals[-3+yyTop]));
                     /* $<Node>$.setLine($<Integer>4.intValue());*/
                     support.getLocalNames().pop();
                     support.setClassNest(support.getClassNest() - 1);
@@ -2081,7 +2081,7 @@ case 311:
 case 312:
 					// line 1301 "DefaultRubyParser.jy"
   {
-  yyVal = new ModuleNode(getPosition(), ((Colon2Node)yyVals[-3+yyTop]).getName(), new ScopeNode(support.getLocalNames().getNames(), ((Node)yyVals[-1+yyTop])));
+  yyVal = new ModuleNode(getPosition(), ((Colon2Node)yyVals[-3+yyTop]), new ScopeNode(support.getLocalNames().getNames(), ((Node)yyVals[-1+yyTop])));
                     /* $<Node>$.setLine($<Integer>3.intValue());*/
                     support.getLocalNames().pop();
                     support.setClassNest(support.getClassNest() - 1);

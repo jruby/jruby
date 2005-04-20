@@ -1269,7 +1269,7 @@ primary       : literal
                     // $$ = new Integer(ruby.getSourceLine());
                 } bodystmt 
 		  kEND {
-  $$ = new ClassNode(getPosition(), $2.getName(), new ScopeNode(support.getLocalNames().getNames(), $5), $3);
+  $$ = new ClassNode(getPosition(), $2, new ScopeNode(support.getLocalNames().getNames(), $5), $3);
                     // $<Node>$.setLine($<Integer>4.intValue());
                     support.getLocalNames().pop();
                     support.setClassNest(support.getClassNest() - 1);
@@ -1299,7 +1299,7 @@ primary       : literal
                     // $$ = new Integer(ruby.getSourceLine());
                 } bodystmt 
                   kEND {
-  $$ = new ModuleNode(getPosition(), $2.getName(), new ScopeNode(support.getLocalNames().getNames(), $4));
+  $$ = new ModuleNode(getPosition(), $2, new ScopeNode(support.getLocalNames().getNames(), $4));
                     // $<Node>$.setLine($<Integer>3.intValue());
                     support.getLocalNames().pop();
                     support.setClassNest(support.getClassNest() - 1);

@@ -41,12 +41,12 @@ import org.jruby.lexer.yacc.SourcePosition;
 public class ModuleNode extends Node {
     static final long serialVersionUID = 4938115602547834310L;
 
-    private final String name;
+    private final Node cpath;
     private final ScopeNode bodyNode;
 
-    public ModuleNode(SourcePosition position, String name, ScopeNode bodyNode) {
+    public ModuleNode(SourcePosition position, Node cpath, ScopeNode bodyNode) {
         super(position);
-        this.name = name;
+        this.cpath = cpath;
         this.bodyNode = bodyNode;
     }
 
@@ -68,9 +68,9 @@ public class ModuleNode extends Node {
 
     /**
      * Gets the name.
-     * @return Returns a String
+     * @return Representation of the module path+name
      */
-    public String getName() {
-        return name;
+    public Node getCPath() {
+        return cpath;
     }
 }
