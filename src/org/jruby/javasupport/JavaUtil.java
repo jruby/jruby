@@ -141,6 +141,10 @@ public class JavaUtil {
         if (object == null) {
             return runtime.getNil();
         }
+        
+        if (object instanceof IRubyObject) {
+        	return (IRubyObject) object;
+        }
 
         if (javaClass.isPrimitive()) {
             String cName = javaClass.getName();

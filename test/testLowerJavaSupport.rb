@@ -183,7 +183,7 @@ if defined? Java
   test_ok(Java.primitive_to_java("hello").kind_of?(JavaObject))
   test_equal("java.lang.String", Java.primitive_to_java("hello").java_type)
   # TODO: We want to actually find out if it is kind_of? java.util.List
-  test_equal("java.util.ArrayList", Java.primitive_to_java([1,2,3]).java_type)
+  #test_equal("java.util.ArrayList", Java.primitive_to_java([1,2,3]).java_type)
 
   # Putting and getting objects back
   integer_zero = Java.primitive_to_java(0)

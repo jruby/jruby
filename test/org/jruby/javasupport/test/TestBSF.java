@@ -31,14 +31,17 @@
 package org.jruby.javasupport.test;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.bsf.BSFException;
 import org.apache.bsf.BSFManager;
 
 public class TestBSF extends RubyTestCase {
-    private static final String RUBY_SCRIPT = "require 'java'; include_class 'org.jruby.javasupport.test.SimpleInterface'; class Foo < SimpleInterface; def getList; [1,2,3]; end; def getMap; {'A'=>1, 'B' =>2}; end; end";
+    private static final String RUBY_SCRIPT = "SimpleInterfaceImpl.rb";
 
     BSFManager manager = null;
     
@@ -51,7 +54,7 @@ public class TestBSF extends RubyTestCase {
     	    BSFManager.registerScriptingEngine("ruby", "org.jruby.javasupport.bsf.JRubyEngine", new String[] { "rb" });
     	    
     	    manager = new BSFManager();
-    	    manager.exec("ruby", "(java)", 1, 1, RUBY_SCRIPT);
+    	    manager.exec("ruby", "(java)", 1, 1, loadScript(RUBY_SCRIPT));
     	} catch (BSFException e) {
             fail("Unable to initialize BSF: " + e);
     	}
@@ -63,7 +66,7 @@ public class TestBSF extends RubyTestCase {
     
     public void testList() {
 		try {
-			SimpleInterface si = (SimpleInterface) manager.eval("ruby", "(java)", 1, 1, "Foo.new");
+			SimpleInterface si = (SimpleInterface) manager.eval("ruby", "(java)", 1, 1, "SimpleInterfaceImpl.new");
 			
 			for (Iterator e = si.getList().iterator(); e.hasNext(); ) {
 				assertTrue(e.next().getClass() == Long.class);
@@ -75,7 +78,7 @@ public class TestBSF extends RubyTestCase {
     
     public void testMap() {
 		try {
-			SimpleInterface si = (SimpleInterface) manager.eval("ruby", "(java)", 1, 1, "Foo.new");
+			SimpleInterface si = (SimpleInterface) manager.eval("ruby", "(java)", 1, 1, "SimpleInterfaceImpl.new");
 			Map map = si.getMap();
 			
 			for (Iterator e = map.keySet().iterator(); e.hasNext(); ) {
@@ -87,6 +90,109 @@ public class TestBSF extends RubyTestCase {
 		} catch (BSFException e) {
 			fail("Problem evaluating List Test: " + e);
 		}
+    }
+
+    public void testModifyList() {
+		try {
+			SimpleInterface si = (SimpleInterface) manager.eval("ruby", "(java)", 1, 1, "MODIFY_LIST = SimpleInterfaceImpl.new");
+			List list = si.getList();
+
+			list.set(1, "FOO");
+			Boolean answer = (Boolean) manager.eval("ruby", "(java)", 1, 1, "[1, 'FOO', 3] == MODIFY_LIST.getList");
+			assertTrue(answer.booleanValue());
+			
+			list.add(new Long(4));
+			answer = (Boolean) manager.eval("ruby", "(java)", 1, 1, "[1, 'FOO', 3, 4] == MODIFY_LIST.getList");
+			assertTrue(answer.booleanValue());
+			
+			list.add(1, new Integer(2));
+			answer = (Boolean) manager.eval("ruby", "(java)", 1, 1, "[1, 2, 'FOO', 3, 4] == MODIFY_LIST.getList");
+			assertTrue(answer.booleanValue());
+			
+			list.remove("FOO");
+			answer = (Boolean) manager.eval("ruby", "(java)", 1, 1, "[1, 2, 3, 4] == MODIFY_LIST.getList");
+			assertTrue(answer.booleanValue());
+			
+			assertTrue(list.contains(new Long(3)));
+			assertTrue(list.indexOf(new Long(3)) == 2);
+			assertTrue(list.lastIndexOf(new Long(3)) == 2);
+			
+			Object[] array = list.toArray();
+			
+			assertTrue(array.length == 4);
+			assertTrue(((Long) array[2]).longValue() == 3);
+			
+			List subList = list.subList(0, 2);
+			assertTrue(subList.size() == 3);
+			
+			//subList.clear();
+			// Sublist is supposed to share same backing store as list...TODO in RubyArray.
+			//assertTrue(list.size() == 1);
+		} catch (BSFException e) {
+			fail("Problem evaluating List Test: " + e);
+		}
+    }
+    
+    public void testEmptyList() {
+		try {
+			SimpleInterface si = (SimpleInterface) manager.eval("ruby", "(java)", 1, 1, "EMPTY_LIST = SimpleInterfaceImpl.new");
+			List list = si.getEmptyList();
+			
+			assertTrue(list.size() == 0);
+		} catch (BSFException e) {
+			fail("Problem evaluating List Test: " + e);
+		}
+    }
+    
+    public void testNilList() {
+		try {
+			SimpleInterface si = (SimpleInterface) manager.eval("ruby", "(java)", 1, 1, "EMPTY_LIST = SimpleInterfaceImpl.new");
+			List list = si.getNilList();
+			
+			assertTrue(list == null);
+			
+			si.setNilList(null);
+			
+			assertTrue(si.isNilListNil());
+		} catch (BSFException e) {
+			fail("Problem evaluating List Test: " + e);
+		}
+    }
+
+    public void testNestedList() {
+		try {
+			SimpleInterface si = (SimpleInterface) manager.eval("ruby", "(java)", 1, 1, "NESTED_LIST = SimpleInterfaceImpl.new");
+			List list = si.getNestedList();
+			
+			assertTrue(list.size() == 3);
+			List list2 = (List) list.get(0);
+			
+			assertTrue(list2.size() == 2);
+			assertTrue(list2.indexOf(new Long(1)) == 0);
+
+			si.modifyNestedList();
+			assertTrue("FOO".equals((String) list.get(0)));
+			
+		} catch (BSFException e) {
+			fail("Problem evaluating List Test: " + e);
+		}
+    }
+
+    private String loadScript(String fileName) {
+        try {
+            Reader in = new InputStreamReader(getClass().getResourceAsStream(fileName));
+            StringBuffer result = new StringBuffer();
+            int length;
+            char[] buf = new char[8096];
+            while ((length = in.read(buf, 0, buf.length)) >= 0) {
+            	result.append(buf, 0, length);
+            }
+            in.close();
+
+            return result.toString();
+        } catch (Exception ex) {}
+        
+        return null;
     }
 
 }

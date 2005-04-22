@@ -33,14 +33,11 @@ package org.jruby.javasupport;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
@@ -101,16 +98,8 @@ public class Java {
             javaObject = ((RubyString) object).getValue();
         } else if (object instanceof RubyBoolean) {
             javaObject = Boolean.valueOf(object.isTrue());
-        } else if (object instanceof RubyArray) {
-        	List tmpList = ((RubyArray) object).getList(); 
-        	ArrayList newList = new ArrayList();
-        	
-        	for (Iterator iter = tmpList.iterator(); iter.hasNext();) {
-        		newList.add(JavaUtil.convertArgument(primitive_to_java(recv, (IRubyObject) iter.next()), Object.class));
-        	}
-        	javaObject = newList;
         } else if (object instanceof RubyHash) {
-        	Map tmpMap = ((RubyHash) object).getValueMap();
+        	Map tmpMap = (Map) ((RubyHash) object).getValueMap();
         	HashMap newHash = new HashMap();
         	
         	for (Iterator iter = tmpMap.keySet().iterator(); iter.hasNext();) {

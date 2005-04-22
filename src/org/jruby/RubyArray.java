@@ -34,16 +34,20 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Set;
 
 import org.jruby.exceptions.IndexError;
 import org.jruby.exceptions.SecurityError;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -55,7 +59,7 @@ import org.jruby.util.collections.IdentitySet;
  *
  * @author  jpetersen
  */
-public class RubyArray extends RubyObject {
+public class RubyArray extends RubyObject implements List {
     private List list;
     private boolean tmpLock;
 
@@ -161,7 +165,7 @@ public class RubyArray extends RubyObject {
         arrayClass.defineMethod("delete_if", callbackFactory.getMethod("delete_if"));
         arrayClass.defineMethod("reject!", callbackFactory.getMethod("reject_bang"));
         arrayClass.defineMethod("replace", callbackFactory.getMethod("replace", IRubyObject.class));
-        arrayClass.defineMethod("clear", callbackFactory.getMethod("clear"));
+        arrayClass.defineMethod("clear", callbackFactory.getMethod("rb_clear"));
         arrayClass.defineMethod("fill", callbackFactory.getOptMethod("fill"));
         arrayClass.defineMethod("include?", callbackFactory.getMethod("include_p", IRubyObject.class));
         arrayClass.defineMethod("<=>", callbackFactory.getMethod("op_cmp", IRubyObject.class));
@@ -979,7 +983,7 @@ public class RubyArray extends RubyObject {
     /** rb_ary_clear
      *
      */
-    public IRubyObject clear() {
+    public IRubyObject rb_clear() {
         modify();
         list.clear();
         return this;
@@ -1446,7 +1450,7 @@ public class RubyArray extends RubyObject {
         return this;
     }
 
-    public void marshalTo(MarshalStream output) throws java.io.IOException {
+    public void marshalTo(MarshalStream output) throws IOException {
         output.write('[');
         output.dumpInt(getList().size());
         for (Iterator iter = getList().iterator(); iter.hasNext(); ) {
@@ -1454,7 +1458,7 @@ public class RubyArray extends RubyObject {
         }
     }
 
-    public static RubyArray unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
+    public static RubyArray unmarshalFrom(UnmarshalStream input) throws IOException {
         RubyArray result = input.getRuntime().newArray();
         input.registerLinkTarget(result);
         int size = input.unmarshalInt();
@@ -1496,4 +1500,221 @@ public class RubyArray extends RubyObject {
             return RubyNumeric.fix2int(obj1.callMethod("<=>", obj2));
         }
     }
+
+
+    public Class getJavaClass() {
+        return List.class;
+    }
+    
+    // Satisfy java.util.List interface (for Java integration)
+    
+	public int size() {
+		return list.size();
+	}
+
+	public boolean isEmpty() {
+		return list.isEmpty();
+	}
+
+	public boolean contains(Object element) {
+		return list.contains(JavaUtil.convertJavaToRuby(getRuntime(), element));
+	}
+
+	public Iterator iterator() {
+		return new ConversionIterator(list.iterator());
+	}
+
+	public Object[] toArray() {
+		Object[] array = new Object[getLength()];
+		Iterator iter = iterator();
+		
+		for (int i = 0; iter.hasNext(); i++) {
+			array[i] = iter.next();
+		}
+
+		return array;
+	}
+
+	public Object[] toArray(Object[] arg0) {
+		// TODO: Implement
+		return null;
+	}
+
+	public boolean add(Object element) {
+		return list.add(JavaUtil.convertJavaToRuby(getRuntime(), element));
+	}
+
+	public boolean remove(Object element) {
+		return list.remove(JavaUtil.convertJavaToRuby(getRuntime(), element));
+	}
+
+	public boolean containsAll(Collection c) {
+		for (Iterator iter = c.iterator(); iter.hasNext();) {
+			if (indexOf(iter.next()) == -1) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	public boolean addAll(Collection c) {
+		for (Iterator iter = c.iterator(); iter.hasNext(); ) {
+			add(iter.next());
+		}
+
+		return !c.isEmpty();
+	}
+
+	public boolean addAll(int index, Collection c) {
+		Iterator iter = c.iterator();
+		for (int i = index; iter.hasNext(); i++) {
+			add(i, iter.next());
+		}
+
+		return !c.isEmpty();
+	}
+
+	public boolean removeAll(Collection c) {
+		boolean changed = false;
+		
+		for (Iterator iter = c.iterator(); iter.hasNext();) {
+			if (remove(iter.next())) {
+				changed = true;
+			}
+		}
+
+		return changed;
+	}
+
+	public boolean retainAll(Collection c) {
+		boolean listChanged = false;
+		
+		for (Iterator iter = iterator(); iter.hasNext();) {
+			Object element = iter.next();
+			if (!c.contains(element)) {
+				remove(element);
+				listChanged = true;
+			}
+		}
+
+		return listChanged;
+	}
+
+	public Object get(int index) {
+		return JavaUtil.convertRubyToJava((IRubyObject) list.get(index), Object.class);
+	}
+
+	public Object set(int index, Object element) {
+		return list.set(index, JavaUtil.convertJavaToRuby(getRuntime(), element));
+	}
+
+	public void add(int index, Object element) {
+		list.add(index, JavaUtil.convertJavaToRuby(getRuntime(), element));
+	}
+
+	public Object remove(int index) {
+		return JavaUtil.convertRubyToJava((IRubyObject) list.remove(index), Object.class);
+	}
+
+	public int indexOf(Object element) {
+		return list.indexOf(JavaUtil.convertJavaToRuby(getRuntime(), element));
+	}
+
+	public int lastIndexOf(Object element) {
+		return list.lastIndexOf(JavaUtil.convertJavaToRuby(getRuntime(), element));
+	}
+
+	public ListIterator listIterator() {
+		return new ConversionListIterator(list.listIterator());
+	}
+
+	public ListIterator listIterator(int index) {
+		return new ConversionListIterator(list.listIterator(index));
+	}
+
+	// TODO: list.subList(from, to).clear() is supposed to clear the sublist from the list.
+	// How can we support this operation?
+	public List subList(int fromIndex, int toIndex) {
+		if (fromIndex < 0 || toIndex > size() || fromIndex > toIndex) {
+			throw new IndexOutOfBoundsException();
+
+		}
+		IRubyObject subList = subseq(fromIndex, toIndex - fromIndex + 1);
+		
+		return subList.isNil() ? null : (List) subList;  
+	}
+
+	public void clear() {
+		list.clear();
+	}
+
+	/*
+	 * Iterator that converts each ruby "primitive" to its Java counterpart.
+	 */
+	class ConversionIterator implements Iterator {
+		private Iterator iterator;
+
+		public ConversionIterator(Iterator iterator) {
+			this.iterator = iterator;
+		}
+
+		public boolean hasNext() {
+			return iterator.hasNext();
+		}
+
+		public Object next() {
+			IRubyObject element = (IRubyObject) iterator.next();
+			
+			return JavaUtil.convertRubyToJava(element, Object.class); 
+		}
+
+		public void remove() {
+			iterator.remove();
+		}
+	}
+	
+	class ConversionListIterator implements ListIterator {
+		private ListIterator iterator;
+
+		public ConversionListIterator(ListIterator iterator) {
+			this.iterator = iterator;
+		}
+
+		public boolean hasNext() {
+			return iterator.hasNext();
+		}
+
+		public Object next() {
+			return JavaUtil.convertRubyToJava((IRubyObject) iterator.next(), Object.class);
+		}
+
+		public boolean hasPrevious() {
+			return iterator.hasPrevious();
+		}
+
+		public Object previous() {
+			return JavaUtil.convertRubyToJava((IRubyObject) iterator.previous(), Object.class);
+		}
+
+		public int nextIndex() {
+			return iterator.nextIndex();
+		}
+
+		public int previousIndex() {
+			return iterator.previousIndex();
+		}
+
+		public void remove() {
+			iterator.remove();
+		}
+
+		public void set(Object arg0) {
+			// TODO Auto-generated method stub
+		}
+
+		public void add(Object arg0) {
+			// TODO Auto-generated method stub
+		}
+	}
 }
