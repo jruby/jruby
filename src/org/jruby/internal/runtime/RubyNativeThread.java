@@ -73,6 +73,7 @@ public class RubyNativeThread extends Thread {
         // Call the thread's code
         try {
             proc.call(arguments);
+            rubyThread.cleanTerminate();
         } catch (ThreadKill tk) {
             // notify any killer waiting on our thread that we're going bye-bye
             synchronized (rubyThread.killLock) {

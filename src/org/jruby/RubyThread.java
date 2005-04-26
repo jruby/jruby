@@ -201,13 +201,21 @@ public class RubyThread extends RubyObject {
         return rubyThread;
     }
     
+    public void cleanTerminate() {
+    	try {
+    		isStopped = true;
+    		waitIfCriticalized();
+    	} catch (InterruptedException ie) {
+    		// ignore
+    	}
+    }
+    
 	public void criticalize(AtomicSpinlock lock) {
 		synchronized (criticalLock) {
 			criticalized = true;
-			
 			// if already stopped, don't increment spinlock
 			// it will either decriticalize before waking or criticalize when it wakes
-			if (!isStopped) {
+			if (!isStopped && threadImpl.isAlive()) {
 				spinlock = lock;
 				spinlock.increment();
 			}
