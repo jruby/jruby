@@ -48,6 +48,7 @@ import java.util.Set;
 import org.jruby.exceptions.IndexError;
 import org.jruby.exceptions.SecurityError;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.javasupport.util.ConversionIterator;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -1649,31 +1650,6 @@ public class RubyArray extends RubyObject implements List {
 		list.clear();
 	}
 
-	/*
-	 * Iterator that converts each ruby "primitive" to its Java counterpart.
-	 */
-	class ConversionIterator implements Iterator {
-		private Iterator iterator;
-
-		public ConversionIterator(Iterator iterator) {
-			this.iterator = iterator;
-		}
-
-		public boolean hasNext() {
-			return iterator.hasNext();
-		}
-
-		public Object next() {
-			IRubyObject element = (IRubyObject) iterator.next();
-			
-			return JavaUtil.convertRubyToJava(element, Object.class); 
-		}
-
-		public void remove() {
-			iterator.remove();
-		}
-	}
-	
 	class ConversionListIterator implements ListIterator {
 		private ListIterator iterator;
 

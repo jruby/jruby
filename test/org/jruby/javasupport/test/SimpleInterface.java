@@ -9,10 +9,16 @@ public interface SimpleInterface {
 	public List getNestedList();
 	public List getNilList();
 	public Map getMap();
+	public Map getEmptyMap();
+	public Map getNestedMap();
+	public Map getNilMap();
+	public Map getMixedMap();
 	
 	public void setNilList(List list);
+	public void setNilMap(Map map);
 	
 	public boolean isNilListNil();
+	public boolean isNilMapNil();
 	
 	public void modifyNestedList();
 }

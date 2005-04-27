@@ -33,6 +33,7 @@ package org.jruby.javasupport.test;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -76,22 +77,6 @@ public class TestBSF extends RubyTestCase {
 		}
     }
     
-    public void testMap() {
-		try {
-			SimpleInterface si = (SimpleInterface) manager.eval("ruby", "(java)", 1, 1, "SimpleInterfaceImpl.new");
-			Map map = si.getMap();
-			
-			for (Iterator e = map.keySet().iterator(); e.hasNext(); ) {
-				Object key = e.next();
-				Object value = map.get(key);
-				assertTrue(key.getClass() == String.class);
-				assertTrue(value.getClass() == Long.class);
-			}	
-		} catch (BSFException e) {
-			fail("Problem evaluating List Test: " + e);
-		}
-    }
-
     public void testModifyList() {
 		try {
 			SimpleInterface si = (SimpleInterface) manager.eval("ruby", "(java)", 1, 1, "MODIFY_LIST = SimpleInterfaceImpl.new");
@@ -177,6 +162,94 @@ public class TestBSF extends RubyTestCase {
 			fail("Problem evaluating List Test: " + e);
 		}
     }
+
+    public void testMap() {
+		try {
+			SimpleInterface si = (SimpleInterface) manager.eval("ruby", "(java)", 1, 1, "SimpleInterfaceImpl.new");
+			Map map = si.getMap();
+			
+			for (Iterator e = map.keySet().iterator(); e.hasNext(); ) {
+				Object key = e.next();
+				Object value = map.get(key);
+				assertTrue(key.getClass() == String.class);
+				assertTrue(value.getClass() == Long.class);
+			}	
+		} catch (BSFException e) {
+			fail("Problem evaluating List Test: " + e);
+		}
+    }
+
+    public void testModifyMap() {
+		try {
+			SimpleInterface si = (SimpleInterface) manager.eval("ruby", "(java)", 1, 1, "MODIFY_MAP = SimpleInterfaceImpl.new");
+			Map map = si.getMap();
+
+			for (Iterator e = map.keySet().iterator(); e.hasNext(); ) {
+				Object key = e.next();
+				Object value = map.get(key);
+				assertTrue(key.getClass() == String.class);
+				assertTrue(value.getClass() == Long.class);
+				
+				map.put(key, new Long(((Long) value).longValue() + 1));
+			}
+			
+			Boolean answer = (Boolean) manager.eval("ruby", "(java)", 1, 1, "{'A'=> 2, 'B' => 3} == MODIFY_MAP.getMap");
+			assertTrue(answer.booleanValue());
+			
+			assertTrue(map.size() == 2);
+			
+			Long value = (Long) map.get("B");
+			assertTrue(value.longValue() == 3);
+			
+			map.remove("B");
+			assertTrue(map.size() == 1);
+			assertTrue(map.containsKey("A"));
+			assertTrue(map.containsValue(new Long(2)));
+			assertTrue(!map.isEmpty());
+			
+			map.put("C", new Long(4));
+			assertTrue(map.containsKey("C"));
+			
+			HashMap newMap = new HashMap();
+			newMap.put("D", "E");
+			map.putAll(newMap);
+			
+			assertTrue(map.size() == 3);
+			
+			map.clear();
+			assertTrue(map.size() == 0);
+		} catch (BSFException e) {
+			fail("Problem evaluating List Test: " + e);
+		}
+    }
+	
+    public void testEmptyMap() {
+		try {
+			SimpleInterface si = (SimpleInterface) manager.eval("ruby", "(java)", 1, 1, "EMPTY_MAP = SimpleInterfaceImpl.new");
+			Map map = si.getEmptyMap();
+			
+			assertTrue(map.size() == 0);
+			assertTrue(map.isEmpty());
+		} catch (BSFException e) {
+			fail("Problem evaluating List Test: " + e);
+		}
+    }
+    
+    public void testNilMap() {
+		try {
+			SimpleInterface si = (SimpleInterface) manager.eval("ruby", "(java)", 1, 1, "SimpleInterfaceImpl.new");
+			Map map = si.getNilMap();
+			
+			assertTrue(map == null);
+			
+			si.setNilMap(null);
+			
+			assertTrue(si.isNilMapNil());
+		} catch (BSFException e) {
+			fail("Problem evaluating List Test: " + e);
+		}
+    }
+
 
     private String loadScript(String fileName) {
         try {

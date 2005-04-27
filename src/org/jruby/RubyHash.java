@@ -34,11 +34,15 @@
 package org.jruby;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 import org.jruby.exceptions.SecurityError;
+import org.jruby.javasupport.JavaUtil;
+import org.jruby.javasupport.util.ConversionIterator;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -49,7 +53,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
  * @author  jpetersen
  * @version $Revision$
  */
-public class RubyHash extends RubyObject {
+public class RubyHash extends RubyObject implements Map {
     private Map valueMap;
     
     // Value returned by various functions if no such hash element exists
@@ -168,9 +172,10 @@ public class RubyHash extends RubyObject {
 		hashClass.defineMethod("default=", callbackFactory.getMethod("setDefaultValue", IRubyObject.class));
         hashClass.defineMethod("index", callbackFactory.getMethod("index", IRubyObject.class));
         hashClass.defineMethod("indexes", callbackFactory.getOptMethod("indices"));
+		hashClass.defineAlias("indices", "indexes");
         hashClass.defineMethod("indices", callbackFactory.getOptMethod("indices"));
-        hashClass.defineMethod("size", callbackFactory.getMethod("size"));
-        hashClass.defineMethod("length", callbackFactory.getMethod("size"));
+        hashClass.defineMethod("size", callbackFactory.getMethod("rb_size"));
+		hashClass.defineAlias("length", "size");
         hashClass.defineMethod("empty?", callbackFactory.getMethod("empty_p"));
 		hashClass.defineMethod("each", callbackFactory.getMethod("each"));
 		hashClass.defineMethod("each_pair", callbackFactory.getMethod("each"));
@@ -178,14 +183,14 @@ public class RubyHash extends RubyObject {
 		hashClass.defineMethod("each_key", callbackFactory.getMethod("each_key"));
 		hashClass.defineMethod("sort", callbackFactory.getMethod("sort"));
 		hashClass.defineMethod("keys", callbackFactory.getMethod("keys"));
-		hashClass.defineMethod("values", callbackFactory.getMethod("values"));
+		hashClass.defineMethod("values", callbackFactory.getMethod("rb_values"));
 
 		hashClass.defineMethod("shift", callbackFactory.getMethod("shift"));
 		hashClass.defineMethod("delete", callbackFactory.getMethod("delete", IRubyObject.class));
 		hashClass.defineMethod("delete_if", callbackFactory.getMethod("delete_if"));
 		hashClass.defineMethod("reject", callbackFactory.getMethod("reject"));
 		hashClass.defineMethod("reject!", callbackFactory.getMethod("reject_bang"));
-		hashClass.defineMethod("clear", callbackFactory.getMethod("clear"));
+		hashClass.defineMethod("clear", callbackFactory.getMethod("rb_clear"));
 		hashClass.defineMethod("invert", callbackFactory.getMethod("invert"));
         hashClass.defineMethod("update", callbackFactory.getMethod("update", IRubyObject.class));
         hashClass.defineMethod("replace", callbackFactory.getMethod("replace", IRubyObject.class));
@@ -288,7 +293,7 @@ public class RubyHash extends RubyObject {
         return getRuntime().newString(sb.toString());
     }
 
-    public RubyFixnum size() {
+    public RubyFixnum rb_size() {
         return getRuntime().newFixnum(length());
     }
 
@@ -451,7 +456,7 @@ public class RubyHash extends RubyObject {
         return getRuntime().newArray(new ArrayList(valueMap.keySet()));
     }
 
-    public RubyArray values() {
+    public RubyArray rb_values() {
         return getRuntime().newArray(new ArrayList(valueMap.values()));
     }
 
@@ -523,7 +528,7 @@ public class RubyHash extends RubyObject {
 		return isModified ? this : nilHash(getRuntime()); 
 	}
 
-	public RubyHash clear() {
+	public RubyHash rb_clear() {
 		modify();
 		valueMap.clear();
 		return this;
@@ -593,4 +598,169 @@ public class RubyHash extends RubyObject {
         }
         return result;
     }
+
+    public Class getJavaClass() {
+        return Set.class;
+    }
+	
+    // Satisfy java.util.Set interface (for Java integration)
+
+	public boolean isEmpty() {
+		return valueMap.isEmpty();
+	}
+
+	public boolean containsKey(Object key) {
+		return keySet().contains(key);
+	}
+
+	public boolean containsValue(Object value) {
+		IRubyObject element = JavaUtil.convertJavaToRuby(getRuntime(), value);
+		
+		for (Iterator iter = valueMap.values().iterator(); iter.hasNext(); ) {
+			if (iter.next().equals(element)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public Object get(Object key) {
+		return JavaUtil.convertRubyToJava((IRubyObject) valueMap.get(JavaUtil.convertJavaToRuby(getRuntime(), key)));
+	}
+
+	public Object put(Object key, Object value) {
+		return valueMap.put(JavaUtil.convertJavaToRuby(getRuntime(), key),
+				JavaUtil.convertJavaToRuby(getRuntime(), value));
+	}
+
+	public Object remove(Object key) {
+		return valueMap.remove(JavaUtil.convertJavaToRuby(getRuntime(), key));
+	}
+
+	public void putAll(Map map) {
+		for (Iterator iter = map.keySet().iterator(); iter.hasNext();) {
+			Object key = iter.next();
+			
+			put(key, map.get(key));
+		}
+	}
+
+	public Set keySet() {
+		return new ConversionSet(valueMap.keySet());
+	}
+
+	public Set entrySet() {
+		// TODO: Set.Entry must be wrapped appropriately...?
+		return new ConversionSet(valueMap.entrySet());
+	}
+
+	public int size() {
+		return valueMap.size();
+	}
+
+	public Collection values() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public void clear() {
+		valueMap.clear();
+	}
+	
+	class ConversionSet implements Set {
+		private Set set;
+
+		public ConversionSet(Set set) {
+			this.set = set;
+		}
+
+		public int size() {
+			return set.size();
+		}
+
+		public boolean isEmpty() {
+			return set.isEmpty();
+		}
+
+		public boolean contains(Object element) {
+			return set.contains(JavaUtil.convertJavaToRuby(getRuntime(), element));
+		}
+
+		public Iterator iterator() {
+			return new ConversionIterator(set.iterator());
+		}
+
+		public Object[] toArray() {
+			Object[] array = new Object[size()];
+			Iterator iter = iterator();
+			
+			for (int i = 0; iter.hasNext(); i++) {
+				array[i] = iter.next();
+			}
+
+			return array;
+		}
+
+		public Object[] toArray(Object[] arg0) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		public boolean add(Object element) {
+			return set.add(JavaUtil.convertJavaToRuby(getRuntime(), element));
+		}
+
+		public boolean remove(Object element) {
+			return set.remove(JavaUtil.convertJavaToRuby(getRuntime(), element));
+		}
+
+		public boolean containsAll(Collection c) {
+			for (Iterator iter = c.iterator(); iter.hasNext();) {
+				if (!contains(iter.next())) {
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		public boolean addAll(Collection c) {
+			for (Iterator iter = c.iterator(); iter.hasNext(); ) {
+				add(iter.next());
+			}
+
+			return !c.isEmpty();
+		}
+
+		public boolean retainAll(Collection c) {
+			boolean listChanged = false;
+			
+			for (Iterator iter = iterator(); iter.hasNext();) {
+				Object element = iter.next();
+				if (!c.contains(element)) {
+					remove(element);
+					listChanged = true;
+				}
+			}
+
+			return listChanged;
+		}
+
+		public boolean removeAll(Collection c) {
+			boolean changed = false;
+			
+			for (Iterator iter = c.iterator(); iter.hasNext();) {
+				if (remove(iter.next())) {
+					changed = true;
+				}
+			}
+
+			return changed;
+		}
+
+		public void clear() {
+			set.clear();
+		}
+		
+	}
 }
