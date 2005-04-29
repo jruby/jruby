@@ -53,7 +53,15 @@ public class MetaClass extends RubyClass {
         setInstanceVariable("__attached__", object);
     }
     
-    public RubyClass getRealClass() {
+	public String getName() {
+		return "#<Class:" + getInstanceVariable("__attached__").toString() + ">";
+	}
+	
+	/**
+	 * If an object uses an anonymous class 'class << obj', then this grabs the original 
+	 * metaclass and not the one that get injected as a result of 'class << obj'.
+	 */
+	public RubyClass getRealClass() {
         return getSuperClass().getRealClass();
     }
     

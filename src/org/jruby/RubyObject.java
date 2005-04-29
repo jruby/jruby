@@ -909,7 +909,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public RubyString to_s() {
-        String cname = getMetaClass().getName();
+        String cname = getMetaClass().getRealClass().getName();
         RubyString str = getRuntime().newString("");
         /* 6:tags 16:addr 1:eos */
         str.setValue("#<" + cname + ":0x" + Integer.toHexString(System.identityHashCode(this)) + ">");

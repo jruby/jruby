@@ -221,7 +221,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (classId == null) {
-            return "<" + (isClass() ? "Class" : "Module") + " 01x" + 
+            return "#<" + (isClass() ? "Class" : "Module") + ":01x" + 
             Integer.toHexString(System.identityHashCode(this)) + ">";
         }
         
