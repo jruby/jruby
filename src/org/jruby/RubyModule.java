@@ -110,19 +110,14 @@ public class RubyModule extends RubyObject {
         }
     }
     
-    public void setParentModule(RubyModule parentModule) {
-    	this.parentModule = parentModule;
-    }
-
     /** Getter for property superClass.
      * @return Value of property superClass.
      */
     public RubyClass getSuperClass() {
-        return this.superClass;
+        return superClass;
     }
 
-    // FIXME protected should be enough
-    public void setSuperClass(RubyClass superClass) {
+    private void setSuperClass(RubyClass superClass) {
         this.superClass = superClass;
     }
 
