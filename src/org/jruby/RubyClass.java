@@ -34,7 +34,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -159,8 +158,8 @@ public class RubyClass extends RubyModule {
         // Don't do anything, because a class cannot attached to an object.
     }*/
 
-    public MetaClass newSingletonClass() {
-        MetaClass newClass = new MetaClass(getRuntime(), this);
+    public MetaClass newSingletonClass(RubyModule parentModule) {
+        MetaClass newClass = new MetaClass(getRuntime(), this, parentModule);
         newClass.infectBy(this);
         return newClass;
     }
@@ -208,7 +207,7 @@ public class RubyClass extends RubyModule {
 
         RubyClass newClass = superClass.subclass();
 
-        newClass.makeMetaClass(superClass.getMetaClass());
+        newClass.makeMetaClass(superClass.getMetaClass(), runtime.getCurrentContext().getRubyClass());
 
         // call "initialize" method
         newClass.callInit(args);
@@ -287,7 +286,7 @@ public class RubyClass extends RubyModule {
         Ruby runtime = getRuntime();
         RubyClass newClass = new RubyClass(runtime, runtime.getClasses().getClassClass(), this, parentModule, name);
 
-        newClass.makeMetaClass(getMetaClass());
+        newClass.makeMetaClass(getMetaClass(), newClass);
         newClass.inheritedBy(this);
 
         runtime.getClasses().putClass(name, newClass, parentModule);

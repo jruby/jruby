@@ -115,9 +115,12 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      * @since Ruby 1.6.7
      */
-    public MetaClass makeMetaClass(RubyClass type) {
-        MetaClass metaClass = type.newSingletonClass();
-        setMetaClass(metaClass);
+    public MetaClass makeMetaClass(RubyClass type, RubyModule parentModule) {
+        MetaClass metaClass = type.newSingletonClass(parentModule);
+		
+		if (!isNil()) {
+			setMetaClass(metaClass);
+		}
         metaClass.attachToObject(this);
         return metaClass;
     }
@@ -258,38 +261,21 @@ public class RubyObject implements Cloneable, IRubyObject {
         return getMetaClass().ancestors().includes(type);
     }
 
-    /** SPECIAL_SINGLETON(x,c)
-     *
-     */
-    private MetaClass getNilSingletonClass() {
-        RubyClass rubyClass = getMetaClass();
-
-        if (!rubyClass.isSingleton()) {
-            MetaClass singleton = rubyClass.newSingletonClass();
-            singleton.attachToObject(this);
-            return singleton;
-        }
-
-        return (MetaClass)rubyClass;
-    }
-
     /** rb_singleton_class
      *
      */
     public MetaClass getSingletonClass() {
-        if (isNil()) {
-            return getNilSingletonClass();
-        }
-
         RubyClass type = getMetaClass();
         if (!type.isSingleton()) { 
-            type = makeMetaClass(getMetaClass());
+            type = makeMetaClass(type, getRuntime().getCurrentContext().getRubyClass());
         }
 
         assert type instanceof MetaClass; 
 
-        type.setTaint(isTaint());
-        type.setFrozen(isFrozen());
+		if (!isNil()) {
+			type.setTaint(isTaint());
+			type.setFrozen(isFrozen());
+		}
 
         return (MetaClass)type;
     }

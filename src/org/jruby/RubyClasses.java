@@ -229,9 +229,9 @@ public class RubyClasses {
         moduleClass = defineBootClass("Module", objectClass);
         classClass = defineBootClass("Class", moduleClass);
 
-        RubyClass metaClass = objectClass.makeMetaClass(classClass);
-        metaClass = moduleClass.makeMetaClass(metaClass);
-        metaClass = classClass.makeMetaClass(metaClass);
+        RubyClass metaClass = objectClass.makeMetaClass(classClass, runtime.getCurrentContext().getRubyClass());
+        metaClass = moduleClass.makeMetaClass(metaClass, runtime.getCurrentContext().getRubyClass());
+        metaClass = classClass.makeMetaClass(metaClass, runtime.getCurrentContext().getRubyClass());
 
         kernelModule = RubyKernel.createKernelModule(runtime);
         objectClass.includeModule(kernelModule);

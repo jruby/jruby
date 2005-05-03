@@ -1,13 +1,41 @@
 require 'test/minirunit'
 test_check "Test Constant Scoping:"
 
+C1 = 1
+
 module A
+  C2 = 2
+
   module B
     class C
+      C3 = 3
+
       def foo
 	"ABC"
       end
+
+      i1 = Class.new
+      
+      class << i1
+	test_equal(3, C3)
+      end
     end
+  end
+
+  class << self
+    test_equal(1, C1)
+    test_equal(2, C2)
+  end
+end
+
+class D < A::B::C
+  test_equal(3, C3)
+end
+
+module A
+  module B
+    test_equal(1, C1)
+    test_equal(2, C2)
   end
 end
 

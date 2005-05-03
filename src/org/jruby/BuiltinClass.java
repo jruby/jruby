@@ -64,7 +64,7 @@ public abstract class BuiltinClass extends RubyClass {
 
         this.builtinClass = builtinClass;
 
-        makeMetaClass(superClass.getMetaClass());
+        makeMetaClass(superClass.getMetaClass(), superClass.getRuntime().getCurrentContext().getRubyClass());
         inheritedBy(superClass);
 
         getRuntime().getClasses().putClass(name, this, parentModule);
