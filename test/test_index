@@ -31,6 +31,7 @@ testHash.rb
 testSymbol.rb
 testPackUnpack.rb
 testRandom.rb
+testRuntimeCallbacks.rb
 testStruct.rb
 testGC.rb
 testLowerJavaSupport.rb

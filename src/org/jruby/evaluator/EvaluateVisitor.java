@@ -704,15 +704,6 @@ public final class EvaluateVisitor implements NodeVisitor {
             visibility = iVisited.getVisibility();
         }
 
-        MetaClass singletonClass = null;
-        /*
-        // if defining in a singleton, pop it and use visitDefs-style definition below
-        if (containingClass.isSingleton()) {
-        	singletonClass = (MetaClass) threadContext.popClass();
-        	containingClass = threadContext.getRubyClass();
-        }
-        */
-
         DefaultMethod newMethod = new DefaultMethod(iVisited.getBodyNode(),
                                                     (ArgsNode) iVisited.getArgsNode(),
                                                     visibility,
@@ -726,12 +717,10 @@ public final class EvaluateVisitor implements NodeVisitor {
             containingClass.getSingletonClass().addMethod(name, new WrapperCallable(newMethod, Visibility.PUBLIC));
             containingClass.callMethod("singleton_method_added", runtime.newSymbol(name));
         }
-        
-        if (singletonClass != null) {
-        	threadContext.pushClass(singletonClass);
-        	singletonClass.addMethod(iVisited.getName(), newMethod);
-        	// FIXME: need to call someone's singleton_method_added (receiver is lost at this point)!
-        	//.callMethod("singleton_method_added", runtime.toSymbol(iVisited.getName()));
+
+		// 'class << self' and 'class << obj' uses defn as opposed to defs
+        if (containingClass.isSingleton()) {
+			((MetaClass)containingClass).getAttachedObject().callMethod("singleton_method_added", runtime.newSymbol(iVisited.getName()));
         } else {
         	containingClass.callMethod("method_added", runtime.newSymbol(name));
         }
