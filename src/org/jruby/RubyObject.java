@@ -574,6 +574,9 @@ public class RubyObject implements Cloneable, IRubyObject {
 
     public IRubyObject eval(IRubyObject src, IRubyObject scope, String file, int line) {
         ThreadContext threadContext = getRuntime().getCurrentContext();
+		RubyModule oldParent = threadContext.setRubyClass(this instanceof RubyModule ? 
+				(RubyModule) this : this.getType());
+
         SourcePosition savedPosition = threadContext.getPosition();
         Iter iter = threadContext.getCurrentFrame().getIter();
         if (file == null) {
@@ -594,6 +597,7 @@ public class RubyObject implements Cloneable, IRubyObject {
                 threadContext.getCurrentFrame().setIter(iter);
             }
             threadContext.setPosition(savedPosition);
+			threadContext.setRubyClass(oldParent);
         }
         return result;
     }
@@ -837,8 +841,12 @@ public class RubyObject implements Cloneable, IRubyObject {
     		args = new IRubyObject[] { getRuntime().getTrue() };
     	}
 
-        return getMetaClass().public_instance_methods(args);
+        return getMetaClass().instance_methods(args);
     }
+	
+	public IRubyObject public_methods() {
+        return getMetaClass().public_instance_methods(new IRubyObject[] { getRuntime().getTrue()});
+	}
 
     /** rb_obj_protected_methods
      *
@@ -1057,7 +1065,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         //module.defineMethod("method_missing", callbackFactory.getOptMethod(RubyObject.class, "method_missing"));
         module.defineMethod("private_methods", callbackFactory.getMethod("private_methods"));
         module.defineMethod("protected_methods", callbackFactory.getMethod("protected_methods"));
-        module.defineMethod("public_methods", callbackFactory.getMethod("methods"));
+        module.defineMethod("public_methods", callbackFactory.getMethod("public_methods"));
         module.defineMethod("respond_to?", callbackFactory.getOptMethod("respond_to"));
         Callback send = callbackFactory.getOptMethod("send");
         module.defineMethod("send", send);

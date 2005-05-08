@@ -69,7 +69,14 @@ public class ThreadContext {
 
     private RubyThread thread;
 
-    private Stack classStack;
+	// Location of where we are executing from.
+	private RubyModule parentModule = null;
+	
+	// Last Location we executed from.  This exists because when we push new location for a module
+	// function like Module#nesting, parentModule gets set to Module instead of where it was called
+	// from.  lastParentModule will contain that information.
+	private RubyModule lastParentModule = null;
+	
     private ScopeStack scopeStack;
     private FrameStack frameStack;
     private Stack iterStack;
@@ -86,7 +93,6 @@ public class ThreadContext {
 
         this.blockStack = new BlockStack();
         this.dynamicVarsStack = new Stack();
-        this.classStack = new Stack();
         this.scopeStack = new ScopeStack(runtime);
         this.frameStack = new FrameStack(this);
         this.iterStack = new Stack();
@@ -138,14 +144,6 @@ public class ThreadContext {
         return iterStack;
     }
     
-    public Stack getClassStack() {
-    	return classStack;
-    }
-
-    public void setClassStack(Stack classStack) {
-    	this.classStack = classStack;
-    }
-
     public Frame getCurrentFrame() {
         return (Frame) getFrameStack().peek();
     }
@@ -215,71 +213,72 @@ public class ThreadContext {
 
         dynamicVarsStack.push(currentBlock.getDynamicVariables());
 
-        pushClass((klass != null) ? klass : currentBlock.getKlass());
-
-        if (klass == null) {
-            self = currentBlock.getSelf();
-        }
-        
-        Node blockVar = currentBlock.getVar();
-        if (blockVar != null) {
-            if (blockVar instanceof ZeroArgNode) {
-                // Better not have arguments for a no-arg block.
-                if (yieldProc && arrayLength(value) != 0) { 
-                    throw runtime.newArgumentError("wrong # of arguments(" + 
-                            ((RubyArray)value).getLength() + "for 0)");
-                }
-            } else if (blockVar instanceof MultipleAsgnNode) {
-                if (!aValue) {
-                    value = sValueToMRHS(value, ((MultipleAsgnNode)blockVar).getHeadNode());
-                }
-
-                value = mAssign(self, (MultipleAsgnNode)blockVar, (RubyArray)value, yieldProc);
-            } else {
-                if (aValue) {
-                    int length = arrayLength(value);
-                    
-                    if (length == 0) {
-                        value = runtime.getNil();
-                    } else if (length == 1) {
-                        value = ((RubyArray)value).first(null);
-                    } else {
-                        // XXXEnebo - Should be warning not error.
-                        //throw runtime.newArgumentError("wrong # of arguments(" + 
-                        //        length + "for 1)");
-                    }
-                } else if (value == null) { 
-                    // XXXEnebo - Should be warning not error.
-                    //throw runtime.newArgumentError("wrong # of arguments(0 for 1)");
-                }
-
-                new AssignmentVisitor(runtime, self).assign(blockVar, value, yieldProc); 
-            }
-        }
-
-        ICallable method = currentBlock.getMethod();
-
-        if (method == null) {
-            return runtime.getNil();
-        }
-
-        getIterStack().push(currentBlock.getIter());
-        
-        IRubyObject[] args = ArgsUtil.arrayify(value);
+        RubyModule oldParent = setRubyClass((klass != null) ? klass : currentBlock.getKlass()); 
 
         try {
-            while (true) {
-                try {
-                    return method.call(runtime, self, null, args, false);
-                } catch (RedoJump rExcptn) {
+            if (klass == null) {
+                self = currentBlock.getSelf();
+            }
+        
+            Node blockVar = currentBlock.getVar();
+            if (blockVar != null) {
+                if (blockVar instanceof ZeroArgNode) {
+                    // Better not have arguments for a no-arg block.
+                    if (yieldProc && arrayLength(value) != 0) { 
+                        throw runtime.newArgumentError("wrong # of arguments(" + 
+                                ((RubyArray)value).getLength() + "for 0)");
+                    }
+                } else if (blockVar instanceof MultipleAsgnNode) {
+                    if (!aValue) {
+                        value = sValueToMRHS(value, ((MultipleAsgnNode)blockVar).getHeadNode());
+                    }
+
+                    value = mAssign(self, (MultipleAsgnNode)blockVar, (RubyArray)value, yieldProc);
+                } else {
+                    if (aValue) {
+                        int length = arrayLength(value);
+                    
+                        if (length == 0) {
+                            value = runtime.getNil();
+                        } else if (length == 1) {
+                            value = ((RubyArray)value).first(null);
+                        } else {
+                            // XXXEnebo - Should be warning not error.
+                            //throw runtime.newArgumentError("wrong # of arguments(" + 
+                            //        length + "for 1)");
+                        }
+                    } else if (value == null) { 
+                        // XXXEnebo - Should be warning not error.
+                        //throw runtime.newArgumentError("wrong # of arguments(0 for 1)");
+                    }
+
+                    new AssignmentVisitor(runtime, self).assign(blockVar, value, yieldProc); 
                 }
             }
-        } catch (NextJump nExcptn) {
-            IRubyObject nextValue = nExcptn.getNextValue();
-            return nextValue == null ? runtime.getNil() : nextValue;
+
+            ICallable method = currentBlock.getMethod();
+
+            if (method == null) {
+                return runtime.getNil();
+            }
+
+            getIterStack().push(currentBlock.getIter());
+        
+            IRubyObject[] args = ArgsUtil.arrayify(value);
+
+            try {
+                while (true) {
+                    try {
+                        return method.call(runtime, self, null, args, false);
+                    } catch (RedoJump rExcptn) {}
+                }
+            } catch (NextJump nExcptn) {
+                IRubyObject nextValue = nExcptn.getNextValue();
+                return nextValue == null ? runtime.getNil() : nextValue;
+            } finally {
+                getIterStack().pop();
+            }
         } finally {
-            getIterStack().pop();
-            popClass();
             dynamicVarsStack.pop();
 
             getBlockStack().setCurrent(currentBlock);
@@ -287,6 +286,7 @@ public class ThreadContext {
 
             getScopeStack().setTop(oldScope);
             dynamicVarsStack.pop();
+			setRubyClass(oldParent);
         }
     }
     
@@ -355,24 +355,26 @@ public class ThreadContext {
         getThread().pollThreadEvents();
     }
 
-    public void pushClass(RubyModule newClass) {
-        classStack.push(newClass);
-    }
-
-    public RubyModule popClass() {
-        return (RubyModule)classStack.pop();
-    }
-
+	public RubyModule setRubyClass(RubyModule currentModule) {
+		lastParentModule = this.parentModule;
+		this.parentModule = currentModule;
+		
+		return lastParentModule;
+	}
+	
+	public RubyModule getLastRubyClass() {
+		return lastParentModule;
+	}
+	
     public RubyModule getRubyClass() {
-        if (classStack.empty()) {
+        if (parentModule == null) {
             return null;
         }
 
-        RubyModule rubyClass = (RubyModule) classStack.peek();
-        if (rubyClass.isIncluded()) {
-            return ((IncludedModuleWrapper) rubyClass).getDelegate();
+        if (parentModule.isIncluded()) {
+            return ((IncludedModuleWrapper) parentModule).getDelegate();
         }
-        return rubyClass;
+        return parentModule;
     }
 
     public RubyModule getWrapper() {

@@ -38,6 +38,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import org.jruby.Ruby;
+import org.jruby.RubyModule;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -135,14 +136,14 @@ public class TestHelper {
         Class c = loader.loadClass(name, javaClass);
         Method method = c.getMethod(methodName, new Class[] { Ruby.class, IRubyObject.class });
         Ruby runtime = self.getRuntime();
+		RubyModule oldParent = runtime.getCurrentContext().setRubyClass(self.getType());
+		
         try {
-
-            runtime.getCurrentContext().pushClass(self.getType());
             return (IRubyObject) method.invoke(null, new Object[] { runtime, self });
         } catch (InvocationTargetException e) {
             throw unrollException(e);
         } finally {
-            runtime.getCurrentContext().popClass();
+            runtime.getCurrentContext().setRubyClass(oldParent);
         }
     }
 

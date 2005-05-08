@@ -32,10 +32,10 @@
 package org.jruby.internal.runtime.methods;
 
 import java.util.Iterator;
-import java.util.Stack;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ListNode;
@@ -59,13 +59,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 public final class DefaultMethod extends AbstractMethod {
     private ScopeNode body;
     private ArgsNode argsNode;
-    private Stack moduleStack;
+    private RubyModule parent;
 
-    public DefaultMethod(ScopeNode body, ArgsNode argsNode, Visibility visibility, Stack moduleStack) {
+    public DefaultMethod(ScopeNode body, ArgsNode argsNode, Visibility visibility, RubyModule parent) {
         super(visibility);
         this.body = body;
         this.argsNode = argsNode;
-        this.moduleStack = moduleStack;
+		this.parent = parent;
     }
 
     /**
@@ -87,9 +87,7 @@ public final class DefaultMethod extends AbstractMethod {
 
         context.pushDynamicVars();
 
-        Stack oldStack = context.getClassStack();
-        // replace class stack with appropriate execution scope
-        context.setClassStack(moduleStack);
+        RubyModule oldParent = context.setRubyClass(parent); 
 
         try {
             if (argsNode != null) {
@@ -112,8 +110,7 @@ public final class DefaultMethod extends AbstractMethod {
             }
             throw rj;
         } finally {
-        	// restore class stack
-            context.setClassStack(oldStack);
+            context.setRubyClass(oldParent);
             context.popDynamicVars();
             context.getScopeStack().pop();
             traceReturn(runtime, receiver, name);
@@ -240,6 +237,6 @@ public final class DefaultMethod extends AbstractMethod {
     }
     
     public ICallable dup() {
-        return new DefaultMethod(body, argsNode, getVisibility(), moduleStack);
+        return new DefaultMethod(body, argsNode, getVisibility(), parent);
     }	
 }

@@ -381,7 +381,7 @@ public final class Ruby {
 
         topSelf = TopSelfFactory.createTopSelf(this);
 
-        getCurrentContext().pushClass(getClasses().getObjectClass());
+        getCurrentContext().setRubyClass(getClasses().getObjectClass());
         getCurrentFrame().setSelf(topSelf);
 
         classes.initBuiltinClasses();
@@ -701,15 +701,16 @@ public final class Ruby {
         context.pushDynamicVars();
 
         RubyModule wrapper = context.getWrapper();
+		RubyModule oldParent;
 
         if (!wrap) {
             secure(4); /* should alter global state */
-            context.pushClass(getClasses().getObjectClass());
+            oldParent = context.setRubyClass(getClasses().getObjectClass());
             context.setWrapper(null);
         } else {
             /* load in anonymous module as toplevel */
             context.setWrapper(RubyModule.newModule(this, null));
-            context.pushClass(context.getWrapper());
+            oldParent = context.setRubyClass(context.getWrapper());
             self = getTopSelf().rbClone();
             self.extendObject(context.getRubyClass());
         }
@@ -732,7 +733,7 @@ public final class Ruby {
             context.getCurrentFrame().setLastFunc(last_func);
             context.getScopeStack().pop();
             context.getFrameStack().pop();
-            context.popClass();
+            context.setRubyClass(oldParent);
             context.popDynamicVars();
             context.setWrapper(wrapper);
         }
@@ -746,15 +747,16 @@ public final class Ruby {
         context.pushDynamicVars();
 
         RubyModule wrapper = context.getWrapper();
+		RubyModule oldParent;
 
         if (!wrap) {
             secure(4); /* should alter global state */
-            context.pushClass(getClasses().getObjectClass());
+            oldParent = context.setRubyClass(getClasses().getObjectClass());
             context.setWrapper(null);
         } else {
             /* load in anonymous module as toplevel */
             context.setWrapper(RubyModule.newModule(this, null));
-            context.pushClass(context.getWrapper());
+            oldParent = context.setRubyClass(context.getWrapper());
             self = getTopSelf().rbClone();
             self.extendObject(context.getRubyClass());
         }
@@ -777,7 +779,7 @@ public final class Ruby {
             context.getCurrentFrame().setLastFunc(last_func);
             context.getScopeStack().pop();
             context.getFrameStack().pop();
-            context.popClass();
+            context.setRubyClass(oldParent);
             context.popDynamicVars();
             context.setWrapper(wrapper);
         }

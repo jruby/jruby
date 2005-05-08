@@ -38,7 +38,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Stack;
 import java.util.TreeMap;
 
 import org.jruby.ast.AttrSetNode;
@@ -80,8 +79,7 @@ public class RubyModule extends RubyObject {
     // superClass may be null.
     private RubyClass superClass;
     
-    // Containing class...It is guaranteed to never be null.  And will always
-    // end up at RubyObject if you follow it up.
+    // Containing class...The parent of Object is null. Object should always be last in chain.
     private RubyModule parentModule;
 
     // ClassId is the name of the class/module sans where it is located.
@@ -97,16 +95,12 @@ public class RubyModule extends RubyObject {
         
         this.superClass = superClass;
         this.parentModule = parentModule;
-        this.classId = name;
+		
+        setBaseName(name);
 
         // If no parent is passed in, it is safe to assume Object.
         if (this.parentModule == null) {
             this.parentModule = runtime.getClasses().getObjectClass();
-
-            // We are constructing object itself...Set its parent to itself.
-            if (this.parentModule == null) {
-                this.parentModule = this;
-            }
         }
     }
     
@@ -215,17 +209,16 @@ public class RubyModule extends RubyObject {
             module = module.getSuperClass();
         }
 
-        if (classId == null) {
+        if (getBaseName() == null) {
             return "#<" + (isClass() ? "Class" : "Module") + ":01x" + 
             Integer.toHexString(System.identityHashCode(this)) + ">";
         }
         
-        StringBuffer result = new StringBuffer(classId);
+        StringBuffer result = new StringBuffer(getBaseName());
         RubyClass objectClass = getRuntime().getClasses().getObjectClass();
         
-        for (RubyModule current = this.parentModule; current != objectClass && current != this; current = current.parentModule) {
-            assert current != null;
-            result.insert(0, "::").insert(0, current.classId);
+        for (RubyModule p = this.parentModule; p != null && p != objectClass; p = p.parentModule) {
+            result.insert(0, "::").insert(0, p.getBaseName());
         }
 
         return result.toString();
@@ -310,46 +303,31 @@ public class RubyModule extends RubyObject {
     	}
     	
     	// First look for constants in module hierachy
-    	for (RubyModule p = this; p != p.parentModule; p = p.parentModule) {
+    	for (RubyModule p = this; p != null; p = p.parentModule) {
             IRubyObject var = p.getInstanceVariable(name);
             if (var != null) {
                 return var;
             }
         }
 
-    	// Above loop does not check top of module hierchy
-        IRubyObject var = getRuntime().getClasses().getObjectClass().getInstanceVariable(name);
-        if (var != null) {
-        	return var;
-        }
-
         // Second look for constants in the inheritance hierachy
         for (RubyModule p = this; p != null; p = p.getSuperClass()) {
-        	var = p.getInstanceVariable(name);
+        	IRubyObject var = p.getInstanceVariable(name);
             if (var != null) {
                 return var;
             }
         }
 
-        // look for constants in module stack
-        Stack moduleStack = (Stack)getRuntime().getCurrentContext().getClassStack().clone();
-        for (RubyModule p = (RubyModule)moduleStack.peek(); !moduleStack.empty(); p = (RubyModule)moduleStack.pop()) {
-        	var = p.getInstanceVariable(name);
-            if (var != null) {
-                return var;
-            }
-        }        	
-
         // Lastly look for constants in top constant
-        var = getRuntime().getTopConstant(name);
+        IRubyObject var = getRuntime().getTopConstant(name);
         if (var != null) {
         	return var;
         }
         
         if (invokeConstMissing) {
-        	return callMethod("const_missing", 
-        			RubySymbol.newSymbol(getRuntime(), name));
+        	return callMethod("const_missing", RubySymbol.newSymbol(getRuntime(), name));
         }
+		
         return null;
     }
 
@@ -477,13 +455,6 @@ public class RubyModule extends RubyObject {
         defineSingletonMethod(name, method);
     }
 
-    /** rb_define_alias
-     *
-     */
-    public void defineAlias(String newName, String oldName) {
-        aliasMethod(newName, oldName);
-    }
-
     public IRubyObject getConstantAtOrConstantMissing(String name) {
         IRubyObject constant = getConstantAt(name);
 
@@ -492,10 +463,11 @@ public class RubyModule extends RubyObject {
         }
 
     	for (RubyModule p = getSuperClass(); p != null; p = p.getSuperClass()) {
-    	    constant = p.getConstantAt(name);
-    	    if (constant != null)
-    	        return constant;
-    	}
+            constant = p.getConstantAt(name);
+            if (constant != null) {
+                return constant;
+            }
+        }
         
         return callMethod("const_missing", RubySymbol.newSymbol(getRuntime(), name));
     }
@@ -655,8 +627,9 @@ public class RubyModule extends RubyObject {
         ICallable method,
         boolean noSuper) {
         ThreadContext context = getRuntime().getCurrentContext();
-        context.getIterStack().push(context.getCurrentIter().isPre() ? Iter.ITER_CUR : Iter.ITER_NOT);
+		RubyModule oldParent = context.setRubyClass(parentModule);
 
+		context.getIterStack().push(context.getCurrentIter().isPre() ? Iter.ITER_CUR : Iter.ITER_NOT);
         context.getFrameStack().push();
         context.getCurrentFrame().setLastFunc(name);
         context.getCurrentFrame().setLastClass(noSuper ? null : this);
@@ -668,13 +641,14 @@ public class RubyModule extends RubyObject {
         } finally {
             context.getFrameStack().pop();
             context.getIterStack().pop();
+			context.setRubyClass(oldParent);
         }
     }
 
     /** rb_alias
      *
      */
-    public void aliasMethod(String name, String oldName) {
+    public void defineAlias(String name, String oldName) {
         testFrozen("module");
         if (oldName.equals(name)) {
             return;
@@ -958,8 +932,7 @@ public class RubyModule extends RubyObject {
 
     public IRubyObject executeUnder(Callback method, IRubyObject[] args) {
         ThreadContext threadContext = getRuntime().getCurrentContext();
-
-        threadContext.pushClass(this);
+		RubyModule oldParent = threadContext.setRubyClass(this);
 
         Frame frame = threadContext.getCurrentFrame();
         threadContext.getFrameStack().push();
@@ -971,7 +944,7 @@ public class RubyModule extends RubyObject {
             return method.execute(this, args);
         } finally {
             threadContext.getFrameStack().pop();
-            threadContext.popClass();
+			threadContext.setRubyClass(oldParent);
         }
     }
 
@@ -982,6 +955,7 @@ public class RubyModule extends RubyObject {
     }
 
     public static RubyModule newModule(Ruby runtime, String name, RubyModule parentModule) {
+		// TODO: No superclass set.
         return new RubyModule(runtime, runtime.getClasses().getModuleClass(), null, parentModule, name);
     }
     
@@ -1029,7 +1003,7 @@ public class RubyModule extends RubyObject {
     }
     
     protected IRubyObject doClone() {
-    	return RubyModule.newModule(getRuntime(), classId, parentModule);
+    	return RubyModule.newModule(getRuntime(), getBaseName(), parentModule);
     }
 
     /** rb_mod_dup
@@ -1176,7 +1150,7 @@ public class RubyModule extends RubyObject {
      */
     public static RubyArray nesting(IRubyObject recv) {
         RubyModule objectClass = recv.getRuntime().getClasses().getObjectClass();
-        RubyModule recvModule = recv.getRuntime().getCurrentContext().getRubyClass();
+		RubyModule recvModule = recv.getRuntime().getCurrentContext().getLastRubyClass();
         RubyArray result = recv.getRuntime().newArray();
         
         for (RubyModule current = recvModule; current != objectClass;
@@ -1275,24 +1249,23 @@ public class RubyModule extends RubyObject {
 
     private RubyArray instance_methods(IRubyObject[] args, final Visibility visibility) {
         boolean includeSuper = args.length > 0 ? args[0].isTrue() : true;
+		RubyModule objectClass = getRuntime().getClasses().getObjectClass();
         RubyArray ary = getRuntime().newArray();
 
         for (RubyModule p = this; p != null; p = p.getSuperClass()) {
-            for (Iterator iter = p.getMethods().entrySet().iterator();
-            	iter.hasNext();) {
+            for (Iterator iter = p.getMethods().entrySet().iterator(); iter.hasNext();) {
                 Map.Entry entry = (Map.Entry) iter.next();
                 ICallable method = (ICallable) entry.getValue();
 
-                if (method.getVisibility().is(visibility) &&
-                        !method.isUndefined()) {
-                    RubyString name = getRuntime().newString(
-                    	(String) entry.getKey());
+                if (method.getVisibility().is(visibility) && !method.isUndefined()) {
+                    RubyString name = getRuntime().newString((String) entry.getKey());
 
                     if (!ary.includes(name)) {
-                    	ary.append(name);
+                        ary.append(name);
                     }
                 } 
             }
+				
             if (!includeSuper) {
                 break;
             }
@@ -1519,7 +1492,7 @@ public class RubyModule extends RubyObject {
     }
 
     public RubyModule alias_method(IRubyObject newId, IRubyObject oldId) {
-        aliasMethod(newId.asSymbol(), oldId.asSymbol());
+        defineAlias(newId.asSymbol(), oldId.asSymbol());
         return this;
     }
 

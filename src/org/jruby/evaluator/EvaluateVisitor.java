@@ -35,7 +35,6 @@ package org.jruby.evaluator;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Stack;
 
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
@@ -237,7 +236,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             throw new TypeError(runtime, "no class to make alias");
         }
 
-        threadContext.getRubyClass().aliasMethod(iVisited.getNewName(), iVisited.getOldName());
+        threadContext.getRubyClass().defineAlias(iVisited.getNewName(), iVisited.getOldName());
         threadContext.getRubyClass().callMethod("method_added", runtime.newSymbol(iVisited.getNewName()));
     }
 
@@ -707,7 +706,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         DefaultMethod newMethod = new DefaultMethod(iVisited.getBodyNode(),
                                                     (ArgsNode) iVisited.getArgsNode(),
                                                     visibility,
-													(Stack)threadContext.getClassStack().clone());
+													threadContext.getRubyClass());
         
         iVisited.getBodyNode().accept(new CreateJumpTargetVisitor(newMethod));
         
@@ -759,7 +758,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         DefaultMethod newMethod = new DefaultMethod(iVisited.getBodyNode(),
                                                     (ArgsNode) iVisited.getArgsNode(),
                                                     Visibility.PUBLIC,
-													(Stack)threadContext.getClassStack().clone());
+													threadContext.getRubyClass());
 
         iVisited.getBodyNode().accept(new CreateJumpTargetVisitor(newMethod));
 
@@ -1553,8 +1552,8 @@ public final class EvaluateVisitor implements NodeVisitor {
      *
      */
     private void evalClassDefinitionBody(ScopeNode iVisited, RubyModule type) {
+		RubyModule oldParent = threadContext.setRubyClass(type); 
         threadContext.getFrameStack().pushCopy();
-        threadContext.pushClass(type);
         threadContext.getScopeStack().push(iVisited.getLocalNames());
         threadContext.pushDynamicVars();
 
@@ -1572,7 +1571,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
             threadContext.popDynamicVars();
             threadContext.getScopeStack().pop();
-            threadContext.popClass();
+            threadContext.setRubyClass(oldParent);
             threadContext.getFrameStack().pop();
 
             if (isTrace()) {

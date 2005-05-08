@@ -11,13 +11,19 @@ module A
       C3 = 3
 
       def foo
-	"ABC"
+        "ABC"
       end
 
-      i1 = Class.new
+      i1 = ""
       
       class << i1
-	test_equal(3, C3)
+        test_equal(3, C3)
+      end
+      
+      i2 = Class.new
+      
+      class << i2
+        test_equal(3, C3)
       end
     end
   end

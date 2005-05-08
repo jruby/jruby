@@ -207,7 +207,7 @@ public class RubyClass extends RubyModule {
 
         RubyClass newClass = superClass.subclass();
 
-        newClass.makeMetaClass(superClass.getMetaClass(), runtime.getCurrentContext().getRubyClass());
+        newClass.makeMetaClass(superClass.getMetaClass(), runtime.getCurrentContext().getLastRubyClass());
 
         // call "initialize" method
         newClass.callInit(args);
