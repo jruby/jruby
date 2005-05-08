@@ -90,6 +90,8 @@ public class RubyRange extends RubyObject {
 
         result.defineMethod("to_a", callbackFactory.getMethod("to_a"));
         result.defineMethod("include?", callbackFactory.getMethod("include_p", IRubyObject.class));
+		// We override Enumerable#member? since ranges in 1.8.1 are continuous.
+		result.defineAlias("member?", "include?");
 
         return result;
     }
