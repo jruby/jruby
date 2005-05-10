@@ -13,7 +13,7 @@
  *
  * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
@@ -36,37 +36,32 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * 
- * @author jpetersen, sma
- * @version $Revision$
- */
 public class Glob {
-	private final String cwd;
-    private final String pattern;
-    private final boolean patternEndsWithPathDelimeter;
-    private final boolean patternIsRelative;
+    private final List patterns;
+	// TODO: If '{' or '}' is just a literal this is broken.
+	private static final Pattern BRACE_PATTERN = Pattern.compile("(.*)\\{([^\\{\\}]*)\\}(.*)");
 
-    /**
-     * Constructor for Glob.
-     */
     public Glob(String cwd, String pattern) {
-    	this.cwd = canonicalize(cwd);
-    	
-        // Java File will strip trailing path delimeter.
-        // Make a boolean for this special case (how about multiple slashes?)
-    	this.patternEndsWithPathDelimeter = pattern.endsWith("/") || pattern.endsWith("\\");
+		List expansion = new ArrayList();
+		expansion.add(pattern);
+
+		// We pre-expand the pattern list into multiple patterns (see GlobPattern for more info).
+        expansion = splitPatternBraces(expansion);
+		
+		cwd = canonicalize(cwd);
         
-    	if (new File(pattern).isAbsolute()) {
-    		this.patternIsRelative = false;
-    		this.pattern = canonicalize(pattern);
-       	} else {
-       		// pattern is relative, but we need to consider cwd; add cwd but remember it's relative so we chop it off later
-       		this.patternIsRelative = true;
-       		this.pattern = canonicalize(new File(cwd, pattern).getAbsolutePath());
-       	}
+		int size = expansion.size();
+		patterns = new ArrayList(size); 
+		for (int i = 0; i < size; i++) {
+			String newPattern = (String) expansion.get(i);
+			
+			patterns.add(i, new GlobPattern(cwd, newPattern));
+		}
     }
     
     private static String canonicalize(String path) {
@@ -76,68 +71,74 @@ public class Glob {
     		return path;
     	}
     }
-    
-    /**
-     * Splits path into components, leaves out empty components.
-     */
-    private String[] splitPattern() {
-        ArrayList dirs = new ArrayList();
-        int i = 0;
-        while (true) {
-        	int j = pattern.indexOf(File.separatorChar, i);
-        	if (j == -1) {
-        		if (i < pattern.length()) {
-        			dirs.add(pattern.substring(i));
-        		}
-        		break;
-        	}
-        	if (i < j) {
-        		dirs.add(pattern.substring(i, j));
-        		i = j + 1;
-        	} else if (i == j) {
-                if (i == 0) {
-                    dirs.add("");
-                }
-                i = j + 1;
-            }
-        }
-        return (String[]) dirs.toArray(new String[dirs.size()]);
-    }
+	
+	private static List splitPatternBraces(List dirs) {
+		// Remove current dir and add all expanded to bottom of list.
+		// Our test condition is dynamic (dirs.size() each iteration), so this is ok. 
+        for (int i = 0; i < dirs.size(); i++) {
+            String fragment = (String) dirs.get(i);
+	        Matcher matcher = BRACE_PATTERN.matcher(fragment);
 
+			// Found a set of braces
+			if (matcher.find()) {
+				dirs.remove(i);
+				String beforeBrace = matcher.group(1);
+				String[] subElementList = matcher.group(2).split(",");
+				String afterBrace = matcher.group(3);
+
+				for (int j = 0; j < subElementList.length; j++) {
+					dirs.add(beforeBrace + subElementList[j] + afterBrace);
+				}
+			}
+        }
+		
+		return dirs;
+	}
+	
     /**
      * Get file objects for glob; made private to prevent it being used directly in the future
      */
-    private File[] getFiles() {
-        String[] dirs = splitPattern();
-        File root = new File(dirs[0]);
-        int idx = 1;
-        if (glob2Regexp(dirs[0]) != null) {
-            root = new File(".");
-            idx = 0;
-        }
-        for (int size = dirs.length; idx < size; idx++) {
-            if (glob2Regexp(dirs[idx]) == null) {
-                root = new File(root, dirs[idx]);
-            } else {
-                break;
-            }
-        }
-        if (idx == dirs.length) {
-            return new File[] {root};
-        }
-        ArrayList matchingFiles = new ArrayList();
-        matchingFiles.add(root);
-        for (int length = dirs.length; idx < length; idx++) {
-            ArrayList currentMatchingFiles = new ArrayList();
-            for (int i = 0, size = matchingFiles.size(); i < size; i++) {
-                boolean isDirectory = idx + 1 != length;
-                String pattern = dirs[idx];
-                File parent = (File) matchingFiles.get(i);
-                currentMatchingFiles.addAll(getMatchingFiles(parent, pattern, isDirectory));
-            }
-            matchingFiles = currentMatchingFiles;
-        }
-        return (File[])matchingFiles.toArray(new File[matchingFiles.size()]);
+    private void getFiles() {
+		for (Iterator iter = patterns.iterator(); iter.hasNext();) {
+			GlobPattern globPattern = (GlobPattern) iter.next();
+	        String[] dirs = globPattern.getPattern().split(File.separator);
+        	File root = new File(dirs[0]);
+        	int idx = 1;
+        	if (glob2Regexp(dirs[0]) != null) {
+            	root = new File(".");
+            	idx = 0;
+        	}
+        	for (int size = dirs.length; idx < size; idx++) {
+            	if (glob2Regexp(dirs[idx]) == null) {
+                	root = new File(root, dirs[idx]);
+            	} else {
+	                break;
+    	        }
+	        }
+	    	ArrayList matchingFiles = new ArrayList();
+
+			if (idx == dirs.length) {
+				if (root.exists()) {
+	        		matchingFiles.add(root);
+				}
+
+				globPattern.setMatchedFiles(matchingFiles);
+				continue;
+        	}
+			
+        	matchingFiles.add(root);
+        	for (int length = dirs.length; idx < length; idx++) {
+            	ArrayList currentMatchingFiles = new ArrayList();
+            	for (int i = 0, size = matchingFiles.size(); i < size; i++) {
+                	boolean isDirectory = idx + 1 != length;
+                	String pattern = dirs[idx];
+                	File parent = (File) matchingFiles.get(i);
+                	currentMatchingFiles.addAll(getMatchingFiles(parent, pattern, isDirectory));
+            	}
+            	matchingFiles = currentMatchingFiles;
+        	}
+			globPattern.setMatchedFiles(matchingFiles);
+		}
     }
     
     private static Collection getMatchingFiles(final File parent, final String pattern, final boolean isDirectory) {
@@ -169,23 +170,16 @@ public class Glob {
     }
     
     public String[] getNames() {
-        File[] files = getFiles();
-        String[] names = new String[files.length];
-        int offset = cwd.endsWith(File.separator) ? 0 : 1;
-        for (int i = 0, size = files.length; i < size; i++) {
-        	String path = files[i].getPath();
-        	if (patternIsRelative && path.startsWith(cwd)) {
-        		// chop off cwd when returning results
-        		names[i] = path.substring(cwd.length() + offset);
-        	} else {
-        		names[i] = path;
-        	}
-        	if (patternEndsWithPathDelimeter) {
-        		names[i] += "/";
-        	}
-        	names[i] = names[i].replace('\\', '/');
-        }
-        return names;
+        getFiles();
+		
+		ArrayList allMatchedNames = new ArrayList();
+		for (Iterator iter = patterns.iterator(); iter.hasNext();) {
+			GlobPattern pattern = (GlobPattern) iter.next();
+			
+			allMatchedNames.addAll(pattern.getMatchedFiles());
+		}
+		
+        return (String[]) allMatchedNames.toArray(new String[allMatchedNames.size()]);
     }
     
     /**
@@ -193,7 +187,6 @@ public class Glob {
      * <pre>*         =&gt; .*
      * ?         =&gt; .
      * [...]     =&gt; [...]
-     * {...,...} =&gt; (...|...) (no subexpression)
      * . + ( )   =&gt; \. \+ \( \)</pre>
      */
     private static String glob2Regexp(String s) {
@@ -228,18 +221,7 @@ public class Glob {
 	    			t.append(c);
 	    			mode = 1;
 	    			break;
-	    		case '{':
-	    			pattern = true;
-	    			t.append('(');
-	    			mode = 2;
-	    			break;
-	    		case '.':
-	    		case '(':
-	    		case ')':
-	    		case '+':
-	    		case '|':
-	    		case '^':
-	    		case '$':
+	    		case '.': case '(': case ')': case '+': case '|': case '^': case '$':
 	    			t.append('\\');
 	    			// fall through
 	    		default:
@@ -252,32 +234,79 @@ public class Glob {
     				mode = 0;
     			}
     			break;
-    		case 2: //inside {}
-    			switch (c) {
-    			case ',':
-    				t.append('|');
-    				break;
-    			case '}':
-    				t.append(')');
-    				mode = 0;
-    				break;
-    			case '.':
-	    		case '(':
-	    		case ')':
-	    		case '+':
-	    		case '|':
-	    		case '^':
-	    		case '$':
-	    			t.append('\\');
-	    			// fall through
-	    		default:
-	    			t.append(c);
-    			}
-    			break;
     		default:
     			throw new Error();//illegal state
     		}
     	}
     	return pattern ? t.toString() : null;
     }
+	
+	/*
+	 * Glob breaks up a glob expression into multiple glob patterns.  This is needed when dealing
+	 * with glob patterns like '{/home,foo}/enebo/*.rb' or '/home/enebo/{foo,bar/}'  So for every
+	 * embedded '{}' pair we create a new glob pattern and then determine whether that pattern
+	 * ends with a delimeter or is an absolute pattern.  Pathological globs could lead to many
+	 * many patterns (e.g. '{a{b,{d,e},{g,h}}}') where each nested set of curlies will double the
+	 * amount of patterns.
+	 * 
+	 * Glob and GlobPattern do a lot of list copying and transforming.  This could be done better.
+	 */
+	private class GlobPattern {
+		private String pattern;
+		private String cwd;
+		private boolean endsWithDelimeter;
+		private boolean patternIsRelative;
+		private ArrayList files = null;
+		
+		public GlobPattern(String cwd, String pattern) {
+	    	this.cwd = cwd;
+			
+	        // Java File will strip trailing path delimeter.
+	        // Make a boolean for this special case (how about multiple slashes?)
+	    	this.endsWithDelimeter = pattern.endsWith("/") || pattern.endsWith("\\");
+			
+	    	if (new File(pattern).isAbsolute()) {
+    			this.patternIsRelative = false;
+    			this.pattern = canonicalize(pattern);
+	       	} else {
+    	   		// pattern is relative, but we need to consider cwd; add cwd but remember it's relative so we chop it off later
+       			this.patternIsRelative = true;
+       			this.pattern = canonicalize(new File(cwd, pattern).getAbsolutePath());
+	       	}
+		}
+
+		public ArrayList getMatchedFiles() {
+			ArrayList fileNames = new ArrayList();
+			int size = files.size();
+			int offset = cwd.endsWith(File.separator) ? 0 : 1;
+			
+	        for (int i = 0; i < size; i++) {
+				String path = ((File) files.get(i)).getPath();
+				String name;
+
+	        	if (patternIsRelative && path.startsWith(cwd)) {
+	        		// chop off cwd when returning results
+	        		name = path.substring(cwd.length() + offset);
+	        	} else {
+	        		name = path;
+	        	}
+	        	if (endsWithDelimeter) {
+	        		name += "/";
+	        	}
+
+				
+				fileNames.add(name.replace('\\', '/'));
+	        }
+			
+	        return fileNames;
+		}
+
+		public void setMatchedFiles(ArrayList files) {
+            this.files = files;			
+		}
+
+		public String getPattern() {
+			return pattern;
+		}
+	}
 }
