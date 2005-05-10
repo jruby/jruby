@@ -74,7 +74,7 @@ public class RubyDir extends RubyObject {
         dirClass.defineSingletonMethod("entries", callbackFactory.getSingletonMethod("entries", RubyString.class));
         dirClass.defineSingletonMethod("[]", callbackFactory.getSingletonMethod("glob", RubyString.class));
         // dirClass.defineAlias("[]", "glob");
-        dirClass.defineSingletonMethod("chdir", callbackFactory.getSingletonMethod("chdir", RubyString.class));
+        dirClass.defineSingletonMethod("chdir", callbackFactory.getOptSingletonMethod("chdir"));
         dirClass.defineSingletonMethod("chroot", callbackFactory.getSingletonMethod("chroot", RubyString.class));
         //dirClass.defineSingletonMethod("delete", callbackFactory.getSingletonMethod(RubyDir.class, "delete", RubyString.class));
         dirClass.defineSingletonMethod("foreach", callbackFactory.getSingletonMethod("foreach", RubyString.class));
@@ -175,8 +175,11 @@ public class RubyDir extends RubyObject {
     }
 
     /** Changes the current directory to <code>path</code> */
-    public static IRubyObject chdir(IRubyObject recv, RubyString path) {
-        File dir = getDir(recv.getRuntime(), path.toString());
+    public static IRubyObject chdir(IRubyObject recv, IRubyObject[] args) {
+        recv.checkArgumentCount(args, 0, 1);
+        RubyString path = args.length == 1 ? 
+            (RubyString) args[0].convertToString() : getHomeDirectoryPath(recv); 
+        File dir = getDir(recv.getRuntime(), path.toString(), true);
         String realPath = null;
         String oldCwd = System.getProperty("user.dir");
     
@@ -216,7 +219,7 @@ public class RubyDir extends RubyObject {
      * be empty.
      */
     public static IRubyObject rmdir(IRubyObject recv, RubyString path) {
-        File directory = new File(path.toString());
+        File directory = getDir(recv.getRuntime(), path.toString(), true);
         
         if (!directory.delete()) {
             throw new SystemCallError(recv.getRuntime(), "No such directory");
@@ -260,10 +263,7 @@ public class RubyDir extends RubyObject {
         args[0].checkSafeString();
         String path = args[0].toString();
 
-        File newDir = new File(path);
-        if (newDir.exists()) {
-            throw new IOError(recv.getRuntime(), path + " already exists");
-        }
+        File newDir = getDir(recv.getRuntime(), path, false);
 
         return newDir.mkdir() ? RubyFixnum.zero(recv.getRuntime()) :
             RubyFixnum.one(recv.getRuntime());
@@ -357,14 +357,26 @@ public class RubyDir extends RubyObject {
      * <code>path</code> is not a directory, throws <code>IOError</code>.
      *
      * @param   path path for which to return the <code>File</code> object.
+     * @param   mustExist is true the directory must exist.  If false it must not.
      * @throws  IOError if <code>path</code> is not a directory.
      */
-    protected static File getDir(Ruby runtime, String path) {
+    protected static File getDir(Ruby runtime, String path, boolean mustExist) {
         File result = new File(path);
+		
+        // For some reason Java 1.5.x will print correct absolute path on a created file, 
+        // but it will still operate on an old user.dir when performing any action.
+        // This could even happen with older Java runtimes?
+        try {
+			result = result.getCanonicalFile();
+        } catch (IOException e) {
+            result = result.getAbsoluteFile();
+        }
 
-        if (!result.isDirectory()) {
-            throw ErrnoError.getErrnoError(runtime, "ENOENT", 
-					   path + " is not a directory");
+		boolean isDirectory = result.isDirectory();
+        if (mustExist && !isDirectory) {
+            throw ErrnoError.getErrnoError(runtime, "ENOENT", path + " is not a directory");
+        } else if (!mustExist && isDirectory) {
+            throw ErrnoError.getErrnoError(runtime, "EEXIST", "File exists - " + path); 
         }
 
         return result;
@@ -400,4 +412,19 @@ public class RubyDir extends RubyObject {
         }
         return result;
     }
+	
+	public static RubyString getHomeDirectoryPath(IRubyObject recv) {
+		RubyHash hash = (RubyHash) recv.getRuntime().getClasses().getObjectClass().getConstant("ENV");
+		IRubyObject home = hash.aref(recv.getRuntime().newString("HOME"));
+		
+		if (home == null || home.isNil()) {
+			home = hash.aref(recv.getRuntime().newString("LOGDIR"));
+		}
+		
+		if (home == null || home.isNil()) {
+			throw recv.getRuntime().newArgumentError("HOME/LOGDIR not set");
+		}
+		
+		return (RubyString) home;
+	}
 }

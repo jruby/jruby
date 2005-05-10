@@ -34,6 +34,7 @@ import java.io.IOException;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyDir;
 import org.jruby.RubyFile;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
@@ -193,6 +194,11 @@ public class FileMetaClass extends IOMetaClass {
     public IRubyObject expand_path(IRubyObject[] args) {
         int length = checkArgumentCount(args, 1, 2);
         String relativePath = RubyString.stringValue(args[0]).getValue();
+		
+		if (relativePath.length() >= 1 && relativePath.charAt(0) == '~') {
+			relativePath = RubyDir.getHomeDirectoryPath(this).getValue() + 
+                relativePath.substring(1);
+		}
 
         if (new File(relativePath).isAbsolute()) {
             return getRuntime().newString(relativePath);

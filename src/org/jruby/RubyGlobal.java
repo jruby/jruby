@@ -32,6 +32,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.util.HashMap;
+
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.ReadonlyGlobalVariable;
@@ -57,6 +59,12 @@ public class RubyGlobal {
         runtime.defineGlobalConstant("VERSION", version);
         runtime.defineGlobalConstant("RELEASE_DATE", release);
         runtime.defineGlobalConstant("PLATFORM", platform);
+		
+		// TODO: ENV Not really a RubyHash (but close) 
+		// TODO: ENV Should not copy system properties, but should reference them instead
+        HashMap envs = new HashMap();
+		envs.put(runtime.newString("HOME"), runtime.newString(System.getProperty("user.home")));
+        runtime.defineGlobalConstant("ENV", RubyHash.newHash(runtime, envs, null));
 
         runtime.defineVariable(new StringGlobalVariable(runtime, "$KCODE", runtime.newString("UTF8")));
         runtime.defineVariable(new StringGlobalVariable(runtime, "$/", runtime.newString("\n")));
