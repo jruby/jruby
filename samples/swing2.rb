@@ -8,14 +8,12 @@ include_class ["JButton", "JFrame", "JLabel", "JOptionPane"].map {|e| "javax.swi
 frame = JFrame.new("Hello Swing")
 button = JButton.new("Klick Me!")
 
-# Add an action to the button
-action = ActionListener.new
-class << action
+class ClickAction < ActionListener
   def actionPerformed(evt)
     JOptionPane.showMessageDialog(nil, "<html>Hello from <b><u>JRuby</u></b>.<br> Button '#{evt.getActionCommand()}' clicked.")
   end
 end
-button.addActionListener(action)
+button.addActionListener(ClickAction.new)
 
 # Add the button to the frame
 frame.getContentPane().add(button)
