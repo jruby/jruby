@@ -15,7 +15,7 @@
  * Copyright (C) 2001-2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 David Corbin <dcorbin@users.sourceforge.net>
  * 
@@ -98,6 +98,10 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 	
     private Pattern pattern;
     private Code code;
+	
+	// lastTarget and matcher currently only used by searchAgain
+	private String lastTarget = null;
+	private Matcher matcher = null;
 
     public RubyRegexp(Ruby runtime) {
         super(runtime, runtime.getClass("Regexp"));
@@ -380,6 +384,31 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     
     public IRubyObject search2(String str) {
     	return match(str, 0);
+    }
+	
+    public int searchAgain(String target) {
+        if (matcher == null || !target.equals(lastTarget)) {
+			matcher = pattern.matcher(target);
+			lastTarget = target;
+        }
+			
+	    if (!matcher.find()) {
+			return -1;
+        }
+		
+		int count = matcher.groupCount() + 1;
+        int[] begin = new int[count];
+        int[] end = new int[count];
+        for (int i = 0; i < count; i++) {
+            begin[i] = matcher.start(i);
+            end[i] = matcher.end(i);
+        }
+		
+		RubyMatchData match = new RubyMatchData(getRuntime(), target, begin, end);
+
+		getRuntime().getScope().setBackref(match);
+            
+		return match.matchStartPosition(); 
     }
     
     private IRubyObject match(String target, int startPos) {

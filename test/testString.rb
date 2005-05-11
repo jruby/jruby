@@ -22,6 +22,8 @@ test_equal(["1", "x", "a", "2", "x", "a", "3"], "1xta2xta3".split(/(x)t(.)/))
 test_equal(["foo"], "foo".split("whatever", 1))
 test_equal(["", "a", "b", "c"], "/a/b/c".split("/"))
 test_equal(["a", "b", "c"], "abc".split(//))
+test_equal(["/home", "/jruby"], "/home/jruby".split(%r<(?=/)>))
+test_equal(["///home", "///jruby"], "///home///jruby".split(%r<(?=///)>))
 
 
 test_equal("hihihi", "hi" * 3)

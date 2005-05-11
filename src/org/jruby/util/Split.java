@@ -13,7 +13,7 @@
  *
  * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * 
@@ -79,19 +79,24 @@ public class Split {
             result.add(splitee);
             return;
         }
-        int pos = 0;
+        int last = 0;
 		int beg = 0;
 		int hits = 0;
 		int len = splitee.length();
         RubyString rubySplitee = runtime.newString(splitee);
-		while ((beg = pattern.search(rubySplitee, pos)) > -1) {
+		while ((beg = pattern.searchAgain(splitee)) > -1) {
 			hits++;
 			RubyMatchData matchData = (RubyMatchData) runtime.getBackref();
 			int end = matchData.matchEndPosition();
 
+			// Skip first positive lookahead match
+			if (beg == 0 && beg == end) {
+				continue;
+			}
+
 			// Whitespace splits are supposed to ignore leading whitespace
 			if (beg != 0 || !isWhitespace) {
-			    addResult(substring(splitee, pos, (beg == pos && end == beg) ? 1 : beg - pos));
+			    addResult(substring(splitee, last, (beg == last && end == beg) ? 1 : beg - last));
 			    // Add to list any /(.)/ matched.
 			    long extraPatterns = matchData.getSize();
 			    for (int i = 1; i < extraPatterns; i++) {
@@ -99,19 +104,21 @@ public class Split {
 			    }
 			}
 
-			pos = (end == beg) ? beg + 1 : end;
+			last = end;
+			
 			if (hits + 1 == limit) {
 				break;
 			}
 		}
 		if (hits == 0) {
 			addResult(splitee);
-		} else if (pos <= len) {
-			addResult(substring(splitee, pos, len - pos));
+		} else if (last <= len) {
+			addResult(substring(splitee, last, len - last));
 		}
 		if (limit == 0 && result.size() > 0) {
-			while (((String) result.get(result.size() - 1)).length() == 0) {
-				result.remove(result.size() - 1);
+			for (int size = result.size() - 1; 
+			    size >= 0 && ((String) result.get(size)).length() == 0; size--) { 
+				result.remove(size);
 			}
 		}
     }
