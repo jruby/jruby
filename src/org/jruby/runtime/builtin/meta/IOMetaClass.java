@@ -72,6 +72,7 @@ public class IOMetaClass extends BuiltinClass {
         // on this.  This would allow things like cgi.rb to work properly.
 
         defineSingletonMethod("foreach", Arity.optional());
+		defineSingletonMethod("read", Arity.optional());
         defineSingletonMethod("readlines", Arity.optional());
         defineSingletonMethod("popen", Arity.optional());
 
@@ -155,6 +156,30 @@ public class IOMetaClass extends BuiltinClass {
         }
         
         return getRuntime().getNil();
+    }
+	
+    public IRubyObject read(IRubyObject[] args) {
+        checkArgumentCount(args, 1, 3);
+        IRubyObject[] fileArguments = new IRubyObject[] {args[0]};
+        RubyIO file = (RubyIO) RubyKernel.open(this, fileArguments);
+        IRubyObject[] readArguments;
+		
+        if (args.length >= 2) {
+            readArguments = new IRubyObject[] {args[1].convertToType("Fixnum", "to_int", true)};
+        } else {
+            readArguments = new IRubyObject[] {};
+        }
+		
+        try {
+
+            if (args.length == 3) {
+                file.seek(new IRubyObject[] {args[2].convertToType("Fixnum", "to_int", true)});				
+            }
+			
+			return file.read(readArguments);
+        } finally {
+            file.close();
+        }
     }
 
     public RubyArray readlines(IRubyObject[] args) {
