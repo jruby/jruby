@@ -49,7 +49,6 @@ import org.jruby.ast.StarNode;
 import org.jruby.ast.ZeroArgNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.evaluator.AssignmentVisitor;
-import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.exceptions.LocalJumpError;
 import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.NextJump;
@@ -126,10 +125,6 @@ public class ThreadContext {
 
     public void setThread(RubyThread thread) {
         this.thread = thread;
-    }
-
-    public IRubyObject eval(Node node) {
-        return EvaluateVisitor.createVisitor(runtime.getTopSelf()).eval(node);
     }
 
     public ScopeStack getScopeStack() {
