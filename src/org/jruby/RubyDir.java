@@ -413,6 +413,18 @@ public class RubyDir extends RubyObject {
         return result;
     }
 	
+	/*
+	 * Poor mans find home directory.  I am not sure how windows ruby behaves with '~foo', but
+	 * this mostly will work on any unix/linux/cygwin system.  When someone wants to extend this
+	 * to include the windows way, we should consider moving this to an external ruby file.
+	 */
+	public static IRubyObject getHomeDirectoryPath(IRubyObject recv, String user) {
+		// TODO: Having a return where I set user inside readlines created a JumpException.  It seems that
+		// evalScript should catch that and return?
+		return recv.getRuntime().evalScript("File.open('/etc/passwd') do |f| f.readlines.each do" +
+				"|l| f = l.split(':'); return f[5] if f[0] == '" + user + "'; end; end; nil");
+	}
+	
 	public static RubyString getHomeDirectoryPath(IRubyObject recv) {
 		RubyHash hash = (RubyHash) recv.getRuntime().getClasses().getObjectClass().getConstant("ENV");
 		IRubyObject home = hash.aref(recv.getRuntime().newString("HOME"));

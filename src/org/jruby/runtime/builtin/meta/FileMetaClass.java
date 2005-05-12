@@ -192,12 +192,40 @@ public class FileMetaClass extends IOMetaClass {
 	}
     
     public IRubyObject expand_path(IRubyObject[] args) {
-        int length = checkArgumentCount(args, 1, 2);
+        checkArgumentCount(args, 1, 2);
         String relativePath = RubyString.stringValue(args[0]).getValue();
+		int pathLength = relativePath.length();
 		
-		if (relativePath.length() >= 1 && relativePath.charAt(0) == '~') {
-			relativePath = RubyDir.getHomeDirectoryPath(this).getValue() + 
-                relativePath.substring(1);
+		if (pathLength >= 1 && relativePath.charAt(0) == '~') {
+			// Enebo : Should ~frogger\\foo work (it doesnt in linux ruby)?
+			int userEnd = relativePath.indexOf('/');
+			
+			if (userEnd == -1) {
+				if (pathLength == 1) { 
+	                // Single '~' as whole path to expand
+					relativePath = RubyDir.getHomeDirectoryPath(this).getValue();
+				} else {
+					// No directory delimeter.  Rest of string is username
+					userEnd = pathLength;
+				}
+			}
+			
+			if (userEnd == 1) {
+				// '~/...' as path to expand 
+				relativePath = RubyDir.getHomeDirectoryPath(this).getValue() + 
+               	    relativePath.substring(1);
+			} else if (userEnd > 1){
+				// '~user/...' as path to expand
+				String user = relativePath.substring(1, userEnd);
+				IRubyObject dir = RubyDir.getHomeDirectoryPath(this, user);
+					
+				if (dir.isNil()) {
+					throw getRuntime().newArgumentError("user " + user + " does not exist");
+				} else {
+					relativePath = "" + dir + 
+					    (pathLength == userEnd ? "" : relativePath.substring(userEnd));
+				}
+			}
 		}
 
         if (new File(relativePath).isAbsolute()) {
@@ -205,7 +233,7 @@ public class FileMetaClass extends IOMetaClass {
         }
 
         String cwd = System.getProperty("user.dir");
-        if (length == 2 && !args[1].isNil()) {
+        if (args.length == 2 && !args[1].isNil()) {
             cwd = RubyString.stringValue(args[1]).getValue();
         }
 
