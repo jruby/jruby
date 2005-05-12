@@ -71,6 +71,10 @@ public class TestKernel extends TestRubyBase {
         assertEquals("hello", eval("printf(\"%s\", \"hello\")"));
         assertEquals("", eval("printf(\"%s\", nil)"));
     }
+	
+	public void testReturn() throws Exception {
+		assertEquals("returned", runtime.evalScript("return 'returned'").toString());
+	}
 
     public void testExit() throws Exception {
         verifyExit(RubyFixnum.zero(runtime),   "true");

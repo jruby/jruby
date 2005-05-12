@@ -49,6 +49,7 @@ import java.util.Stack;
 
 import org.jruby.ast.Node;
 import org.jruby.common.RubyWarnings;
+import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.BreakJump;
 import org.jruby.exceptions.IOError;
@@ -177,7 +178,11 @@ public final class Ruby {
     }
 
     public IRubyObject eval(Node node) {
-        return getCurrentContext().eval(node);
+        try {
+	        return EvaluateVisitor.createVisitor(getTopSelf()).eval(node);
+        } catch (ReturnJump e) {
+            return e.getReturnValue();
+		}
     }
 
     public RubyClasses getClasses() {
@@ -729,6 +734,8 @@ public final class Ruby {
         try {
         	Node node = parse(source, scriptName);
             self.eval(node);
+        } catch (ReturnJump e) {
+			// Make sure this does not bubble out to java caller.
         } finally {
             context.getCurrentFrame().setLastFunc(last_func);
             context.getScopeStack().pop();
@@ -774,7 +781,8 @@ public final class Ruby {
 
         try {
             self.eval(node);
-
+        } catch (ReturnJump e) {
+			// Make sure this does not bubble out to java caller.
         } finally {
             context.getCurrentFrame().setLastFunc(last_func);
             context.getScopeStack().pop();
