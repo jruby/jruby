@@ -31,6 +31,7 @@
 package org.jruby;
 
 import java.io.File;
+import java.io.IOException;
 
 import org.jruby.exceptions.ErrnoError;
 import org.jruby.runtime.CallbackFactory;
@@ -67,24 +68,21 @@ public class RubyFileTest {
     }
     
     public static RubyBoolean directory_p(IRubyObject recv, RubyString filename) {
-        return recv.getRuntime().newBoolean(
-                new File(filename.getValue()).isDirectory());
+        return recv.getRuntime().newBoolean(newFile(filename).isDirectory());
     }
     
     public static IRubyObject exist_p(IRubyObject recv, RubyString filename) {
-        return recv.getRuntime().newBoolean(
-                new File(filename.getValue()).exists());
+        return recv.getRuntime().newBoolean(newFile(filename).exists());
     }
 
     // We do both readable and readable_real through the same method because
     // in our java process effective and real userid will always be the same.
     public static RubyBoolean readable_p(IRubyObject recv, RubyString filename) {
-        return filename.getRuntime().newBoolean(
-                new File(filename.getValue()).canRead());
+        return filename.getRuntime().newBoolean(newFile(filename).canRead());
     }
     
     public static IRubyObject size(IRubyObject recv, RubyString filename) {
-        File file = new File(filename.getValue());
+        File file = newFile(filename);
         
         if (!file.exists()) {
             throw ErrnoError.getErrnoError(recv.getRuntime(), "ENOENT",
@@ -96,21 +94,30 @@ public class RubyFileTest {
     // We do both writable and writable_real through the same method because
     // in our java process effective and real userid will always be the same.
     public static RubyBoolean writable_p(IRubyObject recv, RubyString filename) {
-        return filename.getRuntime().newBoolean(
-                new File(filename.getValue()).canWrite());
+        return filename.getRuntime().newBoolean(newFile(filename).canWrite());
     }
     
     public static RubyBoolean zero_p(IRubyObject recv, RubyString filename) {
-        File file = new File(filename.getValue());
-        return filename.getRuntime().newBoolean(
-                file.exists() && file.length() == 0L);
-                
+        File file = newFile(filename);
+		
+        return filename.getRuntime().newBoolean(file.exists() && file.length() == 0L);
     }
 
     public static RubyBoolean file_p(IRubyObject recv, RubyString filename) {
-        File file = new File(filename.getValue());
+        File file = newFile(filename);
+		
         return filename.getRuntime().newBoolean(file.isFile());
-                
     }
     
+	private static File newFile(RubyString path) {
+		File file = new File(path.getValue());
+		
+		try {
+			file = file.getCanonicalFile();
+		} catch (IOException e) {
+			file = file.getAbsoluteFile();
+		}
+		
+		return file;
+	}
 }
