@@ -38,7 +38,7 @@ public final class Constants {
     public static final String PLATFORM = "java";
 
     public static final int MARSHAL_MAJOR = 4;
-    public static final int MARSHAL_MINOR = 10;
+    public static final int MARSHAL_MINOR = 8;
     
     public static String RUBY_MAJOR_VERSION;
     public static String RUBY_VERSION;
