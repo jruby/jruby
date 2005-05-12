@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
@@ -59,7 +59,7 @@ public class IOHandlerSeekable extends IOHandler {
         
         this.path = path;
         this.modes = modes;
-        File theFile = new File(path);
+        File theFile = new File(path).getAbsoluteFile();
 
         if (theFile.exists()) {
             if (modes.shouldTruncate()) {
@@ -75,8 +75,15 @@ public class IOHandlerSeekable extends IOHandler {
             }
         }
 
+		// Do not open as 'rw' if we don't need to since a file with permissions for read-only
+		// will barf if opened 'rw'.
+		String javaMode = "r";
+		if (modes.isWriteable()) {
+			javaMode += "w";
+		}
+		
         // We always open this rw since we can only open it r or rw.
-        file = new RandomAccessFile(theFile, "rw");
+        file = new RandomAccessFile(theFile, javaMode);
         isOpen = true;
         
         if (modes.isAppendable()) {
