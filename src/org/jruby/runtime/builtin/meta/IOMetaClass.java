@@ -77,6 +77,7 @@ public class IOMetaClass extends BuiltinClass {
         defineSingletonMethod("popen", Arity.optional());
 
         defineMethod("<<", Arity.singleArgument(), "addString");
+		defineMethod("binmode", Arity.noArguments());
         defineMethod("clone", Arity.noArguments(), "clone_IO");
         defineMethod("close", Arity.noArguments());
         defineMethod("closed?", Arity.noArguments(), "closed");

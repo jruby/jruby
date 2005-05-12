@@ -366,6 +366,11 @@ public class RubyIO extends RubyObject {
         
         return this;
     }
+	
+	// This appears to be some windows-only mode.  On a java platform this is a no-op
+	public IRubyObject binmode() {
+		return this;
+	}
 
     public IRubyObject syswrite(IRubyObject obj) {
         return getRuntime().newFixnum(handler.syswrite(obj.toString()));
