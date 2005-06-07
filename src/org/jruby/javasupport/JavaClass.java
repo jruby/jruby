@@ -78,6 +78,10 @@ public class JavaClass extends JavaObject {
                 callbackFactory.getSingletonMethod("for_name", IRubyObject.class));
         result.defineMethod("public?", 
                 callbackFactory.getMethod("public_p"));
+        result.defineMethod("protected?", 
+                callbackFactory.getMethod("protected_p"));
+        result.defineMethod("private?", 
+                callbackFactory.getMethod("private_p"));
         result.defineMethod("final?", 
                 callbackFactory.getMethod("final_p"));
         result.defineMethod("interface?", 
@@ -146,6 +150,14 @@ public class JavaClass extends JavaObject {
 
     public RubyBoolean public_p() {
         return getRuntime().newBoolean(Modifier.isPublic(javaClass().getModifiers()));
+    }
+
+    public RubyBoolean protected_p() {
+        return getRuntime().newBoolean(Modifier.isProtected(javaClass().getModifiers()));
+    }
+
+    public RubyBoolean private_p() {
+        return getRuntime().newBoolean(Modifier.isPrivate(javaClass().getModifiers()));
     }
 
 	Class javaClass() {
