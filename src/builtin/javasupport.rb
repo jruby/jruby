@@ -119,11 +119,45 @@ END
   def JavaUtilities.create_proxy_class(constant, java_class, mod)
     mod.const_set(constant.to_s, get_proxy_class(java_class))
   end
+  
+  def JavaUtilities.access(java_type)
+    if java_type.public?
+      "public"
+    elsif java_type.protected?
+      "protected"
+    else
+      "private"
+    end
+  end
+  
+  def JavaUtilities.print_class(java_type, indent="")
+     while (!java_type.nil? && java_type.name != "java.lang.Class")
+        puts "#{indent}Name:  #{java_type.name}, access: #{ JavaUtilities.access(java_type) }  Interfaces: "
+        java_type.interfaces.each { |i| print_class(i, "  #{indent}") }
+        puts "#{indent}SuperClass: "
+        print_class(java_type.superclass, "  #{indent}")
+        java_type = java_type.superclass
+     end
+  end
+  
+  # We could have a private class which implements more than one interface.
+  # I am working on a new way of creating proxies and I am not sure this will be there in that
+  # version.  This heuristic works with all the standard java libraries we use.
+  def JavaUtilities.narrowest_type(java_type)
+    # We want narrowest java class as wrapped type (e.g. Foo.clone should wrap a Foo if public)
+    # Also note this will not be an endless loop since we will always reach Object
+    while (!java_type.public?) do
+      java_type.interfaces.each {|i| return i if i.public? }
+      java_type = java_type.superclass
+    end
+    
+    java_type
+  end
 
-  def JavaUtilities.wrap(java_object, return_type)
+  def JavaUtilities.wrap(java_object)
     real_type = java_object.java_class
-    java_class = real_type.public? ? real_type : return_type
-
+    java_class = JavaUtilities.narrowest_type(real_type)
+    
     proxy_class = get_proxy_class(java_class)
     proxy = proxy_class.new_proxy
     proxy.java_class = java_class
@@ -178,287 +212,258 @@ END
     return proxy_class
   end
 
-  class << self
-    def create_class_constructor(java_class, proxy_class)
-      class << proxy_class
-        def new(*args)
-          constructors =
-            @java_class.constructors.select {|c| c.arity == args.length }
-          if constructors.empty?
-            raise NameError.new("wrong # of arguments for constructor")
-          end
-          args = JavaProxy.convert_arguments(args)
-          constructor = JavaUtilities.matching_method(constructors, args)
-          java_object = constructor.new_instance(*args)
-          result = new_proxy
-          result.java_class = @java_class
-          result.java_object = java_object
-          result
+  def JavaUtilities.create_class_constructor(java_class, proxy_class)
+    class << proxy_class
+      def new(*args)
+        constructors = @java_class.constructors.select {|c| c.arity == args.length }
+        if constructors.empty?
+          raise NameError.new("wrong # of arguments for constructor")
         end
+        args = JavaProxy.convert_arguments(args)
+        constructor = JavaUtilities.matching_method(constructors, args)
+        java_object = constructor.new_instance(*args)
+        result = new_proxy
+        result.java_class = @java_class
+        result.java_object = java_object
+        result
       end
     end
-
-    def create_array_class_constructor(java_class, proxy_class)
-      class << proxy_class
-        def new(size)
-          java_object = java_class.component_type.new_array(size)
-          result = new_proxy
-          result.java_class = @java_class
-          result.java_object = java_object
-          result
-        end
+  end
+  
+  def JavaUtilities.create_array_class_constructor(java_class, proxy_class)
+    class << proxy_class
+      def new(size)
+        java_object = java_class.component_type.new_array(size)
+        result = new_proxy
+        result.java_class = @java_class
+        result.java_object = java_object
+        result
       end
     end
+  end
 
-    def create_array_type_accessor(java_class, proxy_class)
-      class << proxy_class
-        def []
-          JavaUtilities.get_proxy_class(java_class.array_class)
-        end
+  def JavaUtilities.create_array_type_accessor(java_class, proxy_class)
+    class << proxy_class
+      def []
+        JavaUtilities.get_proxy_class(java_class.array_class)
       end
     end
+  end
 
-    def create_interface_constructor(java_class, proxy_class)
-      proxy_class.class_eval do
-        def initialize
-          self.java_object = Java.new_proxy_instance(self.class.java_class) { |proxy, method, *java_args|
-            java_args.collect! { |arg| Java.java_to_primitive(arg) }
-            args = []
-            java_args.each_with_index { |arg, idx|
-              if arg.kind_of?(JavaObject)
-    	        arg = JavaUtilities.wrap(arg, method.argument_types[idx])
-              end
-              args[idx] = arg
-            }
-            result = self.__send__(method.name, *args)
-            result = result.java_object if result.kind_of?(JavaProxy)
-            Java.primitive_to_java(result)
+  def JavaUtilities.create_interface_constructor(java_class, proxy_class)
+    proxy_class.class_eval do
+      def initialize
+        self.java_object = Java.new_proxy_instance(self.class.java_class) { |proxy, method, *java_args|
+          java_args.collect! { |arg| Java.java_to_primitive(arg) }
+          args = []
+          java_args.each_with_index { |arg, idx|
+            arg = JavaUtilities.wrap(arg) if arg.kind_of?(JavaObject)
+            args[idx] = arg
           }
+          result = self.__send__(method.name, *args)
+          result = result.java_object if result.kind_of?(JavaProxy)
+          Java.primitive_to_java(result)
+        }
+      end
+    end
+  end
+
+  def JavaUtilities.setup_array_methods(java_class, proxy_class)
+    def proxy_class.create_array_methods(java_class)
+      include Enumerable
+      define_method(:[]) {|index|
+        value = java_object[index]
+        value = Java.java_to_primitive(value)
+        value = JavaUtilities.wrap(value) if value.kind_of?(JavaObject)
+        value
+      }
+      define_method(:[]=) {|index, value|
+        value = JavaProxy.convert_arguments([value]).first
+        java_object[index] = value
+        value
+      }
+      define_method(:length) {| |
+        java_object.length
+      }
+      class_eval(<<END
+        def each()
+          block = Proc.new
+          for index in 0...java_object.length
+            value = self[index]
+            block.call(value)
+          end
         end
-      end
-    end
-
-    def setup_array_methods(java_class, proxy_class)
-      def proxy_class.create_array_methods(java_class)
-        include Enumerable
-        define_method(:[]) {|index|
-          value = java_object[index]
-          value = Java.java_to_primitive(value)
-          if value.kind_of?(JavaObject)
-            value = JavaUtilities.wrap(value, java_class.component_type)
-          end
-          value
-        }
-        define_method(:[]=) {|index, value|
-          value = JavaProxy.convert_arguments([value]).first
-          java_object[index] = value
-          value
-        }
-        define_method(:length) {| |
-          java_object.length
-        }
-        class_eval(<<END
-          def each()
-            block = Proc.new
-            for index in 0...java_object.length
-              value = self[index]
-              block.call(value)
-            end
-          end
 END
-          )
-      end
-      proxy_class.create_array_methods(java_class)
+        )
     end
+    proxy_class.create_array_methods(java_class)
+  end
 
-    def setup_instance_methods(java_class, proxy_class)
-      # TODO: Default and Block Comparator should only get defined once
-      def proxy_class.create_instance_methods(java_class)
-        java_class.java_instance_methods.select { |m| 
-          m.public? 
-        }.group_by { |m| 
-          m.name 
-        }.each { |name, methods|
-          # Define literal java method (e.g. getFoo())
-          define_method(name) do |*args|
-            args = convert_arguments(args)
-            m = JavaUtilities.matching_method(methods.find_all {|m|
-              m.arity == args.length}, args)
-            result = m.invoke(self.java_object, *args)
-            result = Java.java_to_primitive(result)
-            if result.kind_of?(JavaObject)
-              result = JavaUtilities.wrap(result, m.return_type)
-            end
-            result
-	      end
-	    }
-      end
-      proxy_class.create_instance_methods(java_class)
+  def JavaUtilities.setup_instance_methods(java_class, proxy_class)
+    # TODO: Default and Block Comparator should only get defined once
+    def proxy_class.create_instance_methods(java_class)
+      java_class.java_instance_methods.select { |m| 
+        m.public? 
+      }.group_by { |m| 
+        m.name 
+      }.each { |name, methods|
+        # Define literal java method (e.g. getFoo())
+        define_method(name) do |*args|
+          args = convert_arguments(args)
+          m = JavaUtilities.matching_method(methods.find_all {|m|
+            m.arity == args.length}, args)
+          result = m.invoke(self.java_object, *args)
+          result = Java.java_to_primitive(result)
+          result = JavaUtilities.wrap(result) if result.kind_of?(JavaObject)
+          result
+        end
+	  }
     end
+    proxy_class.create_instance_methods(java_class)
+  end
 
-    def matching_method(methods, args)
-      # Only one method to match
-      return methods.first if methods.length == 1
+  def JavaUtilities.matching_method(methods, args)
+    # Only one method to match
+    return methods.first if methods.length == 1
 
-      arg_types = args.collect {|a| a.java_class }
+    arg_types = args.collect {|a| a.java_class }
 
-      exact_match = methods.detect {|m|
-        m.argument_types == arg_types
+    exact_match = methods.detect {|m|
+      m.argument_types == arg_types
+    }
+    return exact_match unless exact_match.nil?
+    compatible_match = methods.detect {|m|
+      types = m.argument_types
+      match = true
+      0.upto(types.length - 1) {|i|
+        unless types[i].assignable_from?(arg_types[i])
+          match = false
+        end
       }
-      return exact_match unless exact_match.nil?
-      compatible_match = methods.detect {|m|
-        types = m.argument_types
-        match = true
-        0.upto(types.length - 1) {|i|
-          unless types[i].assignable_from?(arg_types[i])
-            match = false
-          end
-        }
-        match
-      }
-      return compatible_match unless compatible_match.nil?
+      match
+    }
+    return compatible_match unless compatible_match.nil?
 
-      if methods.first.kind_of?(JavaConstructor)
-        raise NameError.new("no constructor with arguments matching " +
-                            arg_types.inspect)
+    if methods.first.kind_of?(JavaConstructor)
+      raise NameError.new("no constructor with arguments matching " +
+                          arg_types.inspect)
+    else
+      raise NameError.new("no method '" + methods.first.name +
+                          "' with argument types matching " +
+                          arg_types.inspect)
+    end
+  end
+
+  def JavaUtilities.create_single_class_method(proxy_class, name, method)
+    proxy_class.class_eval("def self." + name + "(*args);" + <<-END
+        args = JavaProxy.convert_arguments(args)
+        method = @class_methods['#{name}'].first
+        return_type = method.return_type
+        result = Java.java_to_primitive(method.invoke_static(*args))
+        result = JavaUtilities.wrap(result) if result.kind_of?(JavaObject)
+        result
+      end
+    END
+    )
+  end
+
+  def JavaUtilities.create_matched_class_methods(proxy_class, name, methods)
+    proxy_class.class_eval("def self." + name + "(*args);" + <<-END
+        methods = @class_methods['#{name}']
+        args = JavaProxy.convert_arguments(args)
+        m = JavaUtilities.matching_method(methods.find_all {|m| m.arity == args.length }, args)
+        result = m.invoke_static(*args)
+        result = Java.java_to_primitive(result)
+        result = JavaUtilities.wrap(result) if result.kind_of?(JavaObject)
+        result
+      end
+    END
+    )
+  end
+
+  def JavaUtilities.setup_class_methods(java_class, proxy_class)
+    public_methods = java_class.java_class_methods.select {|m| m.public? }
+    grouped_methods = public_methods.group_by {|m| m.name }
+    proxy_class.class_eval("@class_methods = grouped_methods")
+    # FIXME: error handling, arity awareness, ...
+    grouped_methods.each {|name, methods|
+      if methods.length == 1
+        create_single_class_method(proxy_class, name, methods.first)
       else
-        raise NameError.new("no method '" + methods.first.name +
-                            "' with argument types matching " +
-                            arg_types.inspect)
+        create_matched_class_methods(proxy_class, name, methods)
       end
-    end
+    }
+  end
 
-
-    def create_single_class_method(proxy_class, name, method)
-      proxy_class.class_eval("def self." + name + "(*args);" +
-                             <<END
-                                 args = JavaProxy.convert_arguments(args)
-                                 methods = @class_methods['#{name}']
-                                 method = methods.first
-                                 return_type = method.return_type
-                                 result = Java.java_to_primitive(method.invoke_static(*args))
-                                 if result.kind_of?(JavaObject)
-                                   result = JavaUtilities.wrap(result, method.return_type)
-                                 end
-                                 result
-                                 end
-END
-                             )
-    end
-
-    def create_matched_class_methods(proxy_class, name, methods)
-      proxy_class.class_eval("def self." + name + "(*args);" +
-                             <<END
-            methods = @class_methods['#{name}']
-            args = JavaProxy.convert_arguments(args)
-            m = JavaUtilities.matching_method(methods.find_all {|m|
-	            m.arity == args.length
-                  }, args)
-            result = m.invoke_static(*args)
-            result = Java.java_to_primitive(result)
-            if result.kind_of?(JavaObject)
-              result = JavaUtilities.wrap(result, m.return_type)
-            end
-            result
-          end
-END
-                             )
-    end
-
-    def setup_class_methods(java_class, proxy_class)
-      public_methods =
-        java_class.java_class_methods.select {|m| m.public? }
-      grouped_methods = public_methods.group_by {|m| m.name }
-      proxy_class.class_eval("@class_methods = grouped_methods")
-      # FIXME: error handling, arity awareness, ...
-      grouped_methods.each {|name, methods|
-        if methods.length == 1
-          create_single_class_method(proxy_class, name, methods.first)
-        else
-          create_matched_class_methods(proxy_class, name, methods)
-        end
-      }
-    end
-
-    def setup_attributes(java_class, proxy_class)
-      def proxy_class.create_attribute_methods(java_class)
-        fields = java_class.fields.collect {|name| java_class.field(name) }
-        instance_methods = 
-	  java_class.java_instance_methods.collect {|m| m.name}
-	attrs = fields.select {|field| field.public? && !field.static? }
-
-	attrs.each do |attr|
-	  # Do not add any constants that has same-name method
-	  next if instance_methods.detect {|m| m == attr.name }
-
-	  define_method(attr.name) do |*args|
-	    result = Java.java_to_primitive(attr.value(@java_object))
-	    if result.kind_of?(JavaObject)
-	      result = JavaUtilities.wrap(result, result.java_class)
-	    end
-	    result
-	  end
-
-	  next if attr.final?
-
-	  define_method("#{attr.name}=") do |*args|
-            args = JavaProxy.convert_arguments(args)
-	    result = Java.java_to_primitive(attr.set_value(@java_object, 
-							   args.first))
-	    if result.kind_of?(JavaObject)
-	      result = JavaUtilities.wrap(result, result.java_class)
-	    end
-	    result
-	  end
-	end
-      end
-      proxy_class.create_attribute_methods(java_class)
-    end
-
-    def setup_constants(java_class, proxy_class)
+  def JavaUtilities.setup_attributes(java_class, proxy_class)
+    def proxy_class.create_attribute_methods(java_class)
       fields = java_class.fields.collect {|name| java_class.field(name) }
-      constants = fields.select {|field|
-        field.static? and field.final? and JavaUtilities.valid_constant_name?(field.name)
-      }
-      constants.each {|constant|
-        value = Java.java_to_primitive(constant.static_value)
-        proxy_class.const_set(constant.name, value)
-      }
-      naughty_constants = fields.select {|field|
-        field.static? and field.final? and !JavaUtilities.valid_constant_name?(field.name)
-      }
+      instance_methods = java_class.java_instance_methods.collect {|m| m.name}
+      attrs = fields.select {|field| field.public? && !field.static? }
 
-      class_methods = java_class.java_class_methods.collect { |m| m.name }
+      attrs.each do |attr|
+	    # Do not add any constants that has same-name method
+	    next if instance_methods.detect {|m| m == attr.name }
 
-      naughty_constants.each do |constant|
-	# Do not add any constants that has same-name class method
-	next if class_methods.detect {|m| m == constant.name }
+	    define_method(attr.name) do |*args|
+	      result = Java.java_to_primitive(attr.value(@java_object))
+	      result = JavaUtilities.wrap(result) if result.kind_of?(JavaObject)
+	      result
+	    end
 
-        proxy_class.class_eval(<<END
-	  def self.#{constant.name}(*args)
-	    result = @java_class.field('#{constant.name}').static_value
-            result = Java.java_to_primitive(result)
-            if result.kind_of?(JavaObject)
-               result = JavaUtilities.wrap(result, result.java_class)
-            end
-            result
-          end
-END
-        );
-      end
+	    next if attr.final?
+
+	    define_method("#{attr.name}=") do |*args|
+          args = JavaProxy.convert_arguments(args)
+	      result = Java.java_to_primitive(attr.set_value(@java_object, args.first))
+	      result = JavaUtilities.wrap(result) if result.kind_of?(JavaObject)
+	      result
+	    end
+	  end
     end
+    proxy_class.create_attribute_methods(java_class)
+  end
 
-    def setup_inner_classes(java_class, proxy_class)
-      def proxy_class.const_missing(constant)
-        inner_class = nil
-        begin
-          inner_class =
-            Java::JavaClass.for_name(@java_class.name + '$' + constant.to_s)
-        rescue NameError
-          return super
+  def JavaUtilities.setup_constants(java_class, proxy_class)
+    fields = java_class.fields.collect {|name| java_class.field(name) }
+    constants = fields.select {|field|
+      field.static? and field.final? and JavaUtilities.valid_constant_name?(field.name)
+    }
+    constants.each {|constant|
+      value = Java.java_to_primitive(constant.static_value)
+      proxy_class.const_set(constant.name, value)
+    }
+    naughty_constants = fields.select {|field|
+      field.static? and field.final? and !JavaUtilities.valid_constant_name?(field.name)
+    }
+
+    class_methods = java_class.java_class_methods.collect { |m| m.name }
+
+    naughty_constants.each do |constant|
+      # Do not add any constants that has same-name class method
+      next if class_methods.detect {|m| m == constant.name }
+
+      proxy_class.class_eval(<<-END
+	    def self.#{constant.name}(*args)
+	      result = @java_class.field('#{constant.name}').static_value
+          result = Java.java_to_primitive(result)
+          result = JavaUtilities.wrap(result) if result.kind_of?(JavaObject)
+          result
         end
-        JavaUtilities.create_proxy_class(constant, inner_class, self)
+      END
+      );
+    end
+  end
+
+  def JavaUtilities.setup_inner_classes(java_class, proxy_class)
+    def proxy_class.const_missing(constant)
+      inner_class = nil
+      begin
+        inner_class = Java::JavaClass.for_name(@java_class.name + '$' + constant.to_s)
+      rescue NameError
+        return super
       end
+      JavaUtilities.create_proxy_class(constant, inner_class, self)
     end
   end
 end
