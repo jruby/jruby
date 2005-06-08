@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.jruby.ast.YieldNode;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -215,7 +216,11 @@ public class RubyClass extends RubyModule {
         // call "inherited" method of the superclass
         newClass.inheritedBy(superClass);
 
-        return newClass;
+		if (runtime.getCurrentContext().isBlockGiven()) {
+			runtime.yield(null, newClass, newClass, false);
+		}
+
+		return newClass;
     }
 
     /** Return the real super class of this class.

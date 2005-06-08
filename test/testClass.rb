@@ -123,3 +123,16 @@ end
 test_equal(1, C.get_var1)
 test_equal(1, C.other_get_var1)
 test_equal(2, C.get_var2)
+
+a = Class.new do
+ def method_missing(name, *args) 
+   self.class.send(:define_method, name) do |*a|
+     "#{name}"
+   end
+   send(name)
+ end
+end
+
+b = a.new
+
+test_equal("foo", b.foo)
