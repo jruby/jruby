@@ -6,8 +6,9 @@ module Digest
     include_class 'java.lang.String'
     include_class 'java.math.BigInteger'
     
-  	def initialize
+  	def initialize(content=nil)
   	  @md = MessageDigest.getInstance(digest_name)
+	  update(content) unless content.nil?
   	end
   	
   	def <<(content)
@@ -17,25 +18,25 @@ module Digest
 	alias_method :update, :<<
 
 	def digest
-	  @md.digest.to_a.pack('c*')
+	  @md.clone.digest.to_a.pack('c*')
 	end
 	    
     def hexdigest
-	  digest = BigInteger.new(1, @md.digest).toString(16)
+	  digest = BigInteger.new(1, @md.clone.digest).toString(16)
 	  
 	  ("0" * (hex_digits - digest.size)) << digest
     end
-    
+
+	def ==(other)
+	  hexdigest == other.hexdigest
+	end    
+
   	def Base.digest(content)
-  	  md = new
-  	  md.update(content)
-  	  md.digest
+  	  new(content).digest
   	end
   	
   	def Base.hexdigest(content)
-  	  md = new
-  	  md.update(content)
-  	  md.hexdigest
+  	  new(content).hexdigest
   	end
   end
 end
