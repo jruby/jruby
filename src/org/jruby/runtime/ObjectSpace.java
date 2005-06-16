@@ -34,6 +34,7 @@ import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -47,7 +48,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author Anders
  */
 public class ObjectSpace {
-    private Set references = new HashSet();
+    private Set references = Collections.synchronizedSet(new HashSet());
     private ReferenceQueue deadReferences = new ReferenceQueue();
 
     public void add(IRubyObject object) {
@@ -74,8 +75,11 @@ public class ObjectSpace {
 
         public ObjectSpaceIterator(RubyModule rubyClass) {
             this.rubyClass = rubyClass;
-            this.iterator = new ArrayList(references).iterator();
-            prefetch();
+			
+            synchronized(references) {
+                iterator = new ArrayList(references).iterator();
+                prefetch();
+            }
         }
 
         public Object next() {

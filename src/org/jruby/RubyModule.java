@@ -35,6 +35,7 @@
 package org.jruby;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -88,7 +89,7 @@ public class RubyModule extends RubyObject {
 
     private Map methods = new HashMap();
 
-    private Map methodCache = new TreeMap();
+    private Map methodCache = Collections.synchronizedMap(new TreeMap());
 
     protected RubyModule(Ruby runtime, RubyClass metaClass, RubyClass superClass, RubyModule parentModule, String name) {
         super(runtime, metaClass);
