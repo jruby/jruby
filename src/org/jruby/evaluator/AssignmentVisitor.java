@@ -148,7 +148,7 @@ public class AssignmentVisitor extends AbstractVisitor {
      * @see AbstractVisitor#visitLocalAsgnNode(LocalAsgnNode)
      */
     public void visitLocalAsgnNode(LocalAsgnNode iVisited) {
-        threadContext.getScopeStack().setValue(iVisited.getCount(), value);
+        runtime.getCurrentScope().setValue(iVisited.getCount(), value);
     }
 
     /**

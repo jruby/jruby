@@ -29,11 +29,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import java.util.Arrays;
-import java.util.List;
-
-import org.jruby.Ruby;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.AbstractStack;
 import org.jruby.util.collections.StackElement;
 
@@ -43,94 +38,7 @@ import org.jruby.util.collections.StackElement;
  * @version $Revision$
  */
 public class ScopeStack extends AbstractStack {
-    private Ruby runtime;
-
-    public ScopeStack(Ruby runtime) {
-        this.runtime = runtime;
-    }
-
-    public void push(String[] localNames) {
-        push(Arrays.asList(localNames));
-    }
-
-    public void push(List localNames) {
-        push();
-        resetLocalVariables(localNames);
-    }
-
-    public void push(StackElement newElement) {
-        if (current() != null) {
-            //current().setVisibility(ruby.getCurrentVisibility());
-        }
-        super.push(newElement);
-        //ruby.setCurrentVisibility(Visibility.PUBLIC);
-    }
-
-    public void push() {
-        this.push(new Scope(runtime));
-    }
-
-    public StackElement pop() {
-        Scope result = (Scope) super.pop();
-        //ruby.setCurrentVisibility(result.getVisibility());
-        return result;
-    }
-    
     public void setTop(StackElement newElement) {
         top = newElement;
     }
-
-    public Scope current() {
-        return (Scope) top;
-    }
-
-    public IRubyObject getSuperObject() {
-        return current().getSuperObject();
-    }
-
-    public void setSuperObject(IRubyObject superObject) {
-        current().setSuperObject(superObject);
-    }
-
-    public List getLocalNames() {
-        return current().getLocalNames();
-    }
-
-    public void resetLocalVariables(List localNames) {
-        current().resetLocalVariables(localNames);
-    }
-
-    public void addLocalVariables(List localNames) {
-        current().addLocalVariables(localNames);
-    }
-
-    public boolean hasLocalVariables() {
-        return current().hasLocalVariables();
-    }
-
-    public IRubyObject getValue(int count) {
-        return current().getValue(count);
-    }
-
-    public void setValue(int count, IRubyObject value) {
-        current().setValue(count, value);
-    }
-
-    public IRubyObject getLastLine() {
-        return current().getLastLine();
-    }
-
-    public void setLastLine(IRubyObject value) {
-        current().setLastLine(value);
-    }
-
-    public IRubyObject getBackref() {
-        return current().getBackref();
-    }
-
-    public void setBackref(IRubyObject match) {
-        current().setBackref(match);
-    }
-
-
 }

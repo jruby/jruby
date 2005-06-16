@@ -92,7 +92,7 @@ public class ThreadContext {
 
         this.blockStack = new BlockStack();
         this.dynamicVarsStack = new Stack();
-        this.scopeStack = new ScopeStack(runtime);
+        this.scopeStack = new ScopeStack();
         this.frameStack = new FrameStack(this);
         this.iterStack = new Stack();
 
@@ -148,7 +148,7 @@ public class ThreadContext {
     }
 
     public Scope currentScope() {
-        return getScopeStack().current();
+        return (Scope) scopeStack.peek();
     }
 
     public SourcePosition getPosition() {
@@ -164,14 +164,14 @@ public class ThreadContext {
     }
 
     public IRubyObject getBackref() {
-        if (getScopeStack().hasLocalVariables()) {
-            return getScopeStack().getValue(1);
+        if (currentScope().hasLocalVariables()) {
+            return currentScope().getValue(1);
         }
         return runtime.getNil();
     }
 
     public Visibility getCurrentVisibility() {
-        return getScopeStack().current().getVisibility();
+        return currentScope().getVisibility();
     }
 
     public IRubyObject callSuper(IRubyObject[] args) {
@@ -197,11 +197,11 @@ public class ThreadContext {
         }
 
         pushDynamicVars();
-        Block currentBlock = getBlockStack().getCurrent();
+        Block currentBlock = (Block) getBlockStack().peek();
 
         getFrameStack().push(currentBlock.getFrame());
 
-        Scope oldScope = (Scope) getScopeStack().getTop();
+        Scope oldScope = (Scope) getScopeStack().peek();
         getScopeStack().setTop(currentBlock.getScope());
 
         getBlockStack().pop();
@@ -387,7 +387,7 @@ public class ThreadContext {
     }
     
     public Block beginCallArgs() {
-        Block currentBlock = getBlockStack().getCurrent();
+        Block currentBlock = (Block) getBlockStack().peek();
 
         if (getCurrentIter().isPre()) {
             getBlockStack().pop();

@@ -376,7 +376,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
         // If nothing match then nil will be returned
         IRubyObject result = match(str, pos);
-        getRuntime().getScope().setBackref(result);
+        getRuntime().getCurrentScope().setBackref(result);
 
         // If nothing match then -1 will be returned
         return result instanceof RubyMatchData ? ((RubyMatchData) result).matchStartPosition() : -1;
@@ -406,7 +406,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 		
 		RubyMatchData match = new RubyMatchData(getRuntime(), target, begin, end);
 
-		getRuntime().getScope().setBackref(match);
+		getRuntime().getCurrentScope().setBackref(match);
             
 		return match.matchStartPosition(); 
     }

@@ -45,7 +45,13 @@ public class BlockNamesElement implements StackElement {
 
     private List blockNames;
 
-    /**
+	public BlockNamesElement() {}
+	
+    public BlockNamesElement(List names) {
+		setNames(names);
+	}
+
+	/**
      * @see StackElement#getNext()
      */
     public StackElement getNext() {

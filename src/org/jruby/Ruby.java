@@ -65,6 +65,7 @@ import org.jruby.internal.runtime.methods.IterateMethod;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.parser.Parser;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockStack;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.DynamicVariableSet;
@@ -77,7 +78,6 @@ import org.jruby.runtime.LastCallStatus;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.RubyExceptions;
 import org.jruby.runtime.Scope;
-import org.jruby.runtime.ScopeStack;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -328,10 +328,6 @@ public final class Ruby {
         return getCurrentContext().yield(value, self, klass, false, checkArguments);
     }
 
-    private Scope currentScope() {
-        return getScope().current();
-    }
-
     /** Getter for property rubyTopSelf.
      * @return Value of property rubyTopSelf.
      */
@@ -344,7 +340,7 @@ public final class Ruby {
      */
     public IRubyObject iterate(Callback iterateMethod, IRubyObject data1, Callback blockMethod, IRubyObject data2) {
         getIterStack().push(Iter.ITER_PRE);
-        getBlockStack().push(null, new IterateMethod(blockMethod, data2), getTopSelf());
+        getBlockStack().push(Block.createBlock(null, new IterateMethod(blockMethod, data2), getTopSelf()));
 
         try {
             while (true) {
@@ -372,7 +368,7 @@ public final class Ruby {
     private void init() {
         getIterStack().push(Iter.ITER_NOT);
         getFrameStack().push();
-        getScope().push();
+        getCurrentContext().getScopeStack().push(new Scope(this));
 
         setCurrentVisibility(Visibility.PRIVATE);
 
@@ -392,12 +388,12 @@ public final class Ruby {
         classes.initBuiltinClasses();
     }
 
-    /** Getter for property rubyScope.
-     * @return Value of property rubyScope.
-     */
-    public ScopeStack getScope() {
-        return getCurrentContext().getScopeStack();
-    }
+	/**
+	 * Get top-most (current) scope (local vars) in the current thread context.
+	 */
+	public Scope getCurrentScope() {
+		return getCurrentContext().currentScope();
+	}
 
     /** Getter for property sourceFile.
      * @return Value of property sourceFile.
@@ -471,11 +467,11 @@ public final class Ruby {
     }
 
     public Visibility getCurrentVisibility() {
-        return currentScope().getVisibility();
+        return getCurrentScope().getVisibility();
     }
 
     public void setCurrentVisibility(Visibility visibility) {
-        currentScope().setVisibility(visibility);
+        getCurrentScope().setVisibility(visibility);
     }
 
     /** Getter for property wrapper.
@@ -523,15 +519,15 @@ public final class Ruby {
     }
 
     public IRubyObject getLastline() {
-        return getScope().getLastLine();
+        return getCurrentScope().getLastLine();
     }
 
     public void setLastline(IRubyObject value) {
-        getScope().setLastLine(value);
+        getCurrentScope().setLastLine(value);
     }
 
     public IRubyObject getBackref() {
-        return getScope().getBackref();
+        return getCurrentScope().getBackref();
     }
 
     public Parser getParser() {
@@ -726,7 +722,7 @@ public final class Ruby {
         context.getCurrentFrame().setLastFunc(null);
         context.getCurrentFrame().setLastClass(null);
         context.getCurrentFrame().setSelf(self);
-        context.getScopeStack().push();
+        context.getScopeStack().push(new Scope(this));
 
         /* default visibility is private at loading toplevel */
         setCurrentVisibility(Visibility.PRIVATE);
@@ -774,7 +770,7 @@ public final class Ruby {
         context.getCurrentFrame().setLastFunc(null);
         context.getCurrentFrame().setLastClass(null);
         context.getCurrentFrame().setSelf(self);
-        context.getScopeStack().push();
+        context.getScopeStack().push(new Scope(this));
 
         /* default visibility is private at loading toplevel */
         setCurrentVisibility(Visibility.PRIVATE);

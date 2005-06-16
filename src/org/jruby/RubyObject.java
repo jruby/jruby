@@ -508,7 +508,7 @@ public class RubyObject implements Cloneable, IRubyObject {
 		IRubyObject file = args.length > 1 ? args[1] : getRuntime().newString("(eval)");
 		IRubyObject line = args.length > 2 ? args[2] : RubyFixnum.one(getRuntime());
 
-		Scope currentScope = getRuntime().getScope().current();
+		Scope currentScope = getRuntime().getCurrentScope();
 		Visibility savedVisibility = currentScope.getVisibility();
 		currentScope.setVisibility(Visibility.PUBLIC);
 		try {
@@ -549,7 +549,7 @@ public class RubyObject implements Cloneable, IRubyObject {
             public IRubyObject execute(IRubyObject self, IRubyObject[] args) {
                 ThreadContext context = getRuntime().getCurrentContext();
 
-                Block block = context.getBlockStack().getCurrent();
+                Block block = (Block) context.getBlockStack().peek();
                 Visibility savedVisibility = block.getVisibility();
 
                 block.setVisibility(Visibility.PUBLIC);

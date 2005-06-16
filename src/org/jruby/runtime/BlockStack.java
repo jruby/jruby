@@ -29,8 +29,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.ast.Node;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.AbstractStack;
 
 /**
@@ -39,14 +37,6 @@ import org.jruby.util.collections.AbstractStack;
  * @version $Revision$
  */
 public class BlockStack extends AbstractStack {
-    public void push(Node varNode, ICallable method, IRubyObject self) {
-        push(Block.createBlock(varNode, method, self));
-    }
-
-    public Block getCurrent() {
-        return (Block) getTop();
-    }
-
     public void setCurrent(Block block) {
         top = block;
     }

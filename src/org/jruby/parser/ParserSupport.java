@@ -35,6 +35,7 @@ package org.jruby.parser;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Stack;
 
 import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsCatNode;
@@ -101,8 +102,8 @@ import org.jruby.util.IdUtil;
  */
 public class ParserSupport {
     // Parser states:
-    private LocalNamesStack localNames;
-    private BlockNamesStack blockNames;
+    private Stack localNamesStack;
+    private BlockNamesStack blockNamesStack;
 
     private int inSingle;
     private boolean inDef;
@@ -116,8 +117,8 @@ public class ParserSupport {
     private RubyParserResult result;
 
     public void reset() {
-        localNames = new LocalNamesStack();
-        blockNames = new BlockNamesStack(localNames);
+        localNamesStack = new Stack();
+        blockNamesStack = new BlockNamesStack(localNamesStack);
 
         inSingle = 0;
         inDef = false;
@@ -178,10 +179,13 @@ public class ParserSupport {
         	return NEW_LIT(INT2FIX(ruby_sourceline));
             }*/
         else if (IdUtil.isLocal(id)) {
-            if (blockNames.isInBlock() && blockNames.isDefined(id)) {
+            BlockNamesElement blockNames = (BlockNamesElement) blockNamesStack.peek();
+			LocalNamesElement localNames = (LocalNamesElement) localNamesStack.peek();
+			
+            if (localNames.isInBlock() && blockNames.isDefined(id)) {
                 return new DVarNode(position, id);
-            } else if (getLocalNames().isLocalRegistered(id)) {
-                return new LocalVarNode(position, getLocalNames().getLocalIndex(id));
+            } else if (localNames.isLocalRegistered(id)) {
+                return new LocalVarNode(position, localNames.getLocalIndex(id));
             }
             return new VCallNode(position, id); // RubyMethod call without arguments.
         } else if (IdUtil.isGlobal(id)) {
@@ -222,10 +226,12 @@ public class ParserSupport {
                 /*
                  * if (rb_dvar_curr(id)) { return NEW_DASGN_CURR(id, value); } else
                  */
-                if (blockNames.isDefined(name)) {
+				BlockNamesElement blockNames = (BlockNamesElement) blockNamesStack.peek();
+				LocalNamesElement localNames = (LocalNamesElement) localNamesStack.peek();
+                if (blockNames != null && blockNames.isDefined(name)) {
                     return new DAsgnNode(position, name, value);
-                } else if (getLocalNames().isLocalRegistered(name) || !blockNames.isInBlock()) {
-                    return new LocalAsgnNode(position, name, getLocalNames().getLocalIndex(name),
+                } else if (localNames.isLocalRegistered(name) || !localNames.isInBlock()) {
+                    return new LocalAsgnNode(position, name, localNames.getLocalIndex(name),
                             value);
                 } else {
                     blockNames.add(name);
@@ -301,7 +307,7 @@ public class ParserSupport {
     }
 
     public Node getMatchNode(Node firstNode, Node secondNode) {
-        getLocalNames().ensureLocalRegistered("~");
+        ((LocalNamesElement) localNamesStack.peek()).ensureLocalRegistered("~");
 
         if (firstNode instanceof DRegexpNode || firstNode instanceof RegexpNode) {
             return new Match2Node(firstNode.getPosition(), firstNode, secondNode);
@@ -418,8 +424,9 @@ public class ParserSupport {
         checkAssignmentInCondition(node);
 
         if (node instanceof DRegexpNode) {
-            getLocalNames().ensureLocalRegistered("_");
-            getLocalNames().ensureLocalRegistered("~");
+			LocalNamesElement localNames = (LocalNamesElement) localNamesStack.peek();
+            localNames.ensureLocalRegistered("_");
+            localNames.ensureLocalRegistered("~");
             return new Match2Node(node.getPosition(), node, new GlobalVarNode(node.getPosition(), "$_"));
         } else if (node instanceof DotNode) {
             return new FlipNode(
@@ -427,12 +434,13 @@ public class ParserSupport {
                     getFlipConditionNode(((DotNode) node).getBeginNode()),
                     getFlipConditionNode(((DotNode) node).getEndNode()),
                     ((DotNode) node).isExclusive(),
-					localNames.registerLocal(null));
+					((LocalNamesElement) localNamesStack.peek()).registerLocal(null));
         } else if (node instanceof RegexpNode) {
             return new MatchNode(node.getPosition(), node);
         } else if (node instanceof StrNode) {
-            getLocalNames().ensureLocalRegistered("_");
-            getLocalNames().ensureLocalRegistered("~");
+			LocalNamesElement localNames = (LocalNamesElement) localNamesStack.peek();
+            localNames.ensureLocalRegistered("_");
+            localNames.ensureLocalRegistered("~");
             return new MatchNode(node.getPosition(), new RegexpNode(node.getPosition(), ((StrNode) node).getValue(), 0));
         } 
 
@@ -524,15 +532,16 @@ public class ParserSupport {
     *  Description of the RubyMethod
     */
     public void initTopLocalVariables() {
-        localNames.push();
+        localNamesStack.push(new LocalNamesElement());
 
         List names = configuration.getLocalVariables();
         if (names != null && names.size() > 0) {
+			LocalNamesElement localNames = (LocalNamesElement) localNamesStack.peek();
             localNames.setNames(new ArrayList(names));
         }
 
         if (configuration.getBlockVariables() != null) {
-            blockNames.push(configuration.getBlockVariables());
+            blockNamesStack.push(new BlockNamesElement(configuration.getBlockVariables()));
         }
     }
 
@@ -540,10 +549,12 @@ public class ParserSupport {
      *  Description of the RubyMethod
      */
     public void updateTopLocalVariables() {
+		LocalNamesElement localNames = (LocalNamesElement) localNamesStack.peek();
         result.setLocalVariables(localNames.getNames().size() > 0 ? localNames.getNames() : null);
-        result.setBlockVariables(blockNames.isInBlock() ? blockNames.getNames() : null);
+        result.setBlockVariables(localNames.isInBlock() ? 
+            ((BlockNamesElement) blockNamesStack.peek()).getNames() : null);
 
-        localNames.pop();
+        localNamesStack.pop();
     }
 
     /** Getter for property inSingle.
@@ -612,15 +623,15 @@ public class ParserSupport {
      * @return Returns a BlockNamesStack
      */
     public BlockNamesStack getBlockNames() {
-        return blockNames;
+        return blockNamesStack;
     }
 
     /**
      * Gets the localNames.
      * @return Returns a LocalNamesStack
      */
-    public LocalNamesStack getLocalNames() {
-        return localNames;
+    public Stack getLocalNames() {
+        return localNamesStack;
     }
 
     /**

@@ -583,13 +583,13 @@ case 20:
                     if (support.isInDef() || support.isInSingle()) {
                         yyerror("BEGIN in method");
                     }
-                    support.getLocalNames().push();
+                    support.getLocalNames().push(new LocalNamesElement());
                 }
   break;
 case 21:
 					// line 410 "DefaultRubyParser.jy"
   {
-                    support.getResult().addBeginNode(new ScopeNode(support.getLocalNames().getNames(), ((Node)yyVals[-1+yyTop])));
+                    support.getResult().addBeginNode(new ScopeNode(((LocalNamesElement) support.getLocalNames().peek()).getNames(), ((Node)yyVals[-1+yyTop])));
                     support.getLocalNames().pop();
                     yyVal = null; /*XXX 0;*/
                 }
@@ -772,7 +772,7 @@ case 49:
 case 50:
 					// line 535 "DefaultRubyParser.jy"
   {
-                      support.getBlockNames().push();
+                      support.getBlockNames().push(new BlockNamesElement());
 		  }
   break;
 case 51:
@@ -2028,14 +2028,14 @@ case 306:
                         yyerror("class definition in method body");
                     }
                     support.setClassNest(support.getClassNest() + 1);
-                    support.getLocalNames().push();
+                    support.getLocalNames().push(new LocalNamesElement());
                     /* $$ = new Integer(ruby.getSourceLine());*/
                 }
   break;
 case 307:
 					// line 1271 "DefaultRubyParser.jy"
   {
-  yyVal = new ClassNode(getPosition(), ((Colon2Node)yyVals[-4+yyTop]), new ScopeNode(support.getLocalNames().getNames(), ((Node)yyVals[-1+yyTop])), ((Node)yyVals[-3+yyTop]));
+  yyVal = new ClassNode(getPosition(), ((Colon2Node)yyVals[-4+yyTop]), new ScopeNode(((LocalNamesElement) support.getLocalNames().peek()).getNames(), ((Node)yyVals[-1+yyTop])), ((Node)yyVals[-3+yyTop]));
                     /* $<Node>$.setLine($<Integer>4.intValue());*/
                     support.getLocalNames().pop();
                     support.setClassNest(support.getClassNest() - 1);
@@ -2054,13 +2054,13 @@ case 309:
                     yyVal = new Integer(support.getInSingle());
                     support.setInSingle(0);
                     support.setClassNest(support.getClassNest() + 1);
-                    support.getLocalNames().push();
+                    support.getLocalNames().push(new LocalNamesElement());
                 }
   break;
 case 310:
 					// line 1286 "DefaultRubyParser.jy"
   {
-                    yyVal = new SClassNode(getPosition(), ((Node)yyVals[-5+yyTop]), new ScopeNode(support.getLocalNames().getNames(), ((Node)yyVals[-1+yyTop])));
+                    yyVal = new SClassNode(getPosition(), ((Node)yyVals[-5+yyTop]), new ScopeNode(((LocalNamesElement) support.getLocalNames().peek()).getNames(), ((Node)yyVals[-1+yyTop])));
                     support.getLocalNames().pop();
                     support.setClassNest(support.getClassNest() - 1);
                     support.setInDef(((Boolean)yyVals[-4+yyTop]).booleanValue());
@@ -2074,14 +2074,14 @@ case 311:
                         yyerror("module definition in method body");
                     }
                     support.setClassNest(support.getClassNest() + 1);
-                    support.getLocalNames().push();
+                    support.getLocalNames().push(new LocalNamesElement());
                     /* $$ = new Integer(ruby.getSourceLine());*/
                 }
   break;
 case 312:
 					// line 1301 "DefaultRubyParser.jy"
   {
-  yyVal = new ModuleNode(getPosition(), ((Colon2Node)yyVals[-3+yyTop]), new ScopeNode(support.getLocalNames().getNames(), ((Node)yyVals[-1+yyTop])));
+  yyVal = new ModuleNode(getPosition(), ((Colon2Node)yyVals[-3+yyTop]), new ScopeNode(((LocalNamesElement) support.getLocalNames().peek()).getNames(), ((Node)yyVals[-1+yyTop])));
                     /* $<Node>$.setLine($<Integer>3.intValue());*/
                     support.getLocalNames().pop();
                     support.setClassNest(support.getClassNest() - 1);
@@ -2094,7 +2094,7 @@ case 313:
 			$<id>$ = cur_mid;
 			cur_mid = $2; */
                     support.setInDef(true);
-                    support.getLocalNames().push();
+                    support.getLocalNames().push(new LocalNamesElement());
                 }
   break;
 case 314:
@@ -2103,7 +2103,7 @@ case 314:
 		      /* was in old jruby grammar support.getClassNest() !=0 || IdUtil.isAttrSet($2) ? Visibility.PUBLIC : Visibility.PRIVATE); */
                     /* NOEX_PRIVATE for toplevel */
                     yyVal = new DefnNode(getPosition(), ((String)yyVals[-4+yyTop]), ((Node)yyVals[-2+yyTop]),
-		                      new ScopeNode(support.getLocalNames().getNames(), ((Node)yyVals[-1+yyTop])), Visibility.PRIVATE);
+		                      new ScopeNode(((LocalNamesElement) support.getLocalNames().peek()).getNames(), ((Node)yyVals[-1+yyTop])), Visibility.PRIVATE);
                     /* $<Node>$.setPosFrom($4);*/
                     support.getLocalNames().pop();
                     support.setInDef(false);
@@ -2120,14 +2120,14 @@ case 316:
 					// line 1327 "DefaultRubyParser.jy"
   {
                     support.setInSingle(support.getInSingle() + 1);
-                    support.getLocalNames().push();
+                    support.getLocalNames().push(new LocalNamesElement());
                     lexer.setState(LexState.EXPR_END); /* force for args */
                 }
   break;
 case 317:
 					// line 1333 "DefaultRubyParser.jy"
   {
-                    yyVal = new DefsNode(getPosition(), ((Node)yyVals[-7+yyTop]), ((String)yyVals[-4+yyTop]), ((Node)yyVals[-2+yyTop]), new ScopeNode(support.getLocalNames().getNames(), ((Node)yyVals[-1+yyTop])));
+                    yyVal = new DefsNode(getPosition(), ((Node)yyVals[-7+yyTop]), ((String)yyVals[-4+yyTop]), ((Node)yyVals[-2+yyTop]), new ScopeNode(((LocalNamesElement) support.getLocalNames().peek()).getNames(), ((Node)yyVals[-1+yyTop])));
                     /* $<Node>$.setPosFrom($2);*/
                     support.getLocalNames().pop();
                     support.setInSingle(support.getInSingle() - 1);
@@ -2201,7 +2201,7 @@ case 339:
 case 340:
 					// line 1392 "DefaultRubyParser.jy"
   {
-                    support.getBlockNames().push();
+                    support.getBlockNames().push(new BlockNamesElement());
 		}
   break;
 case 341:
@@ -2272,7 +2272,7 @@ case 350:
 case 351:
 					// line 1433 "DefaultRubyParser.jy"
   {
-                    support.getBlockNames().push();
+                    support.getBlockNames().push(new BlockNamesElement());
 		}
   break;
 case 352:
@@ -2285,7 +2285,7 @@ case 352:
 case 353:
 					// line 1439 "DefaultRubyParser.jy"
   {
-                    support.getBlockNames().push();
+                    support.getBlockNames().push(new BlockNamesElement());
 		}
   break;
 case 354:
@@ -2820,10 +2820,10 @@ case 445:
   {
                     if (!IdUtil.isLocal(((String)yyVals[0+yyTop]))) {
                         yyerror("formal argument must be local variable");
-                    } else if (support.getLocalNames().isLocalRegistered(((String)yyVals[0+yyTop]))) {
+                    } else if (((LocalNamesElement) support.getLocalNames().peek()).isLocalRegistered(((String)yyVals[0+yyTop]))) {
                         yyerror("duplicate argument name");
                     }
-                    support.getLocalNames().getLocalIndex(((String)yyVals[0+yyTop]));
+                    ((LocalNamesElement) support.getLocalNames().peek()).getLocalIndex(((String)yyVals[0+yyTop]));
                     yyVal = new Integer(1);
                 }
   break;
@@ -2838,10 +2838,10 @@ case 448:
   {
                     if (!IdUtil.isLocal(((String)yyVals[-2+yyTop]))) {
                         yyerror("formal argument must be local variable");
-                    } else if (support.getLocalNames().isLocalRegistered(((String)yyVals[-2+yyTop]))) {
+                    } else if (((LocalNamesElement) support.getLocalNames().peek()).isLocalRegistered(((String)yyVals[-2+yyTop]))) {
                         yyerror("duplicate optional argument name");
                     }
-		    support.getLocalNames().getLocalIndex(((String)yyVals[-2+yyTop]));
+		    ((LocalNamesElement) support.getLocalNames().peek()).getLocalIndex(((String)yyVals[-2+yyTop]));
                     yyVal = support.assignable(getPosition(), ((String)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
                 }
   break;
@@ -2862,10 +2862,10 @@ case 453:
   {
                     if (!IdUtil.isLocal(((String)yyVals[0+yyTop]))) {
                         yyerror("rest argument must be local variable");
-                    } else if (support.getLocalNames().isLocalRegistered(((String)yyVals[0+yyTop]))) {
+                    } else if (((LocalNamesElement) support.getLocalNames().peek()).isLocalRegistered(((String)yyVals[0+yyTop]))) {
                         yyerror("duplicate rest argument name");
                     }
-                    yyVal = new Integer(support.getLocalNames().getLocalIndex(((String)yyVals[0+yyTop])));
+                    yyVal = new Integer(((LocalNamesElement) support.getLocalNames().peek()).getLocalIndex(((String)yyVals[0+yyTop])));
                 }
   break;
 case 454:
@@ -2879,10 +2879,10 @@ case 457:
   {
                     if (!IdUtil.isLocal(((String)yyVals[0+yyTop]))) {
                         yyerror("block argument must be local variable");
-                    } else if (support.getLocalNames().isLocalRegistered(((String)yyVals[0+yyTop]))) {
+                    } else if (((LocalNamesElement) support.getLocalNames().peek()).isLocalRegistered(((String)yyVals[0+yyTop]))) {
                         yyerror("duplicate block argument name");
                     }
-                    yyVal = new BlockArgNode(getPosition(), support.getLocalNames().getLocalIndex(((String)yyVals[0+yyTop])));
+                    yyVal = new BlockArgNode(getPosition(), ((LocalNamesElement) support.getLocalNames().peek()).getLocalIndex(((String)yyVals[0+yyTop])));
                 }
   break;
 case 458:

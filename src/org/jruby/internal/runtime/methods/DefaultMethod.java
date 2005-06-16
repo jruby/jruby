@@ -47,6 +47,7 @@ import org.jruby.exceptions.ReturnJump;
 import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ICallable;
+import org.jruby.runtime.Scope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -79,10 +80,10 @@ public final class DefaultMethod extends AbstractMethod {
             optionalBlockArg = runtime.newProc();
         }
 
-        context.getScopeStack().push();
+        context.getScopeStack().push(new Scope(runtime));
 
         if (body.getLocalNames() != null) {
-            context.getScopeStack().resetLocalVariables(body.getLocalNames());
+            context.currentScope().resetLocalVariables(body.getLocalNames());
         }
 
         context.pushDynamicVars();
@@ -95,7 +96,7 @@ public final class DefaultMethod extends AbstractMethod {
             }
 
             if (optionalBlockArg != null) {
-                context.getScopeStack().setValue(argsNode.getBlockArgNode().getCount(), optionalBlockArg);
+                runtime.getCurrentScope().setValue(argsNode.getBlockArgNode().getCount(), optionalBlockArg);
             }
             
             getArity().checkArity(runtime, args);
@@ -136,10 +137,11 @@ public final class DefaultMethod extends AbstractMethod {
             runtime.getCurrentFrame().setArgs(args);
         }
 
-        if (runtime.getScope().hasLocalVariables()) {
+		Scope scope = runtime.getCurrentScope();
+        if (scope.hasLocalVariables()) {
             if (expectedArgsCount > 0) {
                 for (int i = 0; i < expectedArgsCount; i++) {
-                    runtime.getScope().setValue(i + 2, args[i]);
+                    scope.setValue(i + 2, args[i]);
                 }
             }
 
@@ -163,7 +165,7 @@ public final class DefaultMethod extends AbstractMethod {
                 for (int i = expectedArgsCount; i < args.length; i++) {
                     array.append(args[i]);
                 }
-                runtime.getScope().setValue(argsNode.getRestArg(), array);
+                scope.setValue(argsNode.getRestArg(), array);
             }
         }
     }

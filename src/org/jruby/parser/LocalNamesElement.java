@@ -33,32 +33,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.jruby.util.collections.StackElement;
-
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class LocalNamesElement implements StackElement {
-    private LocalNamesElement next;
-
+public class LocalNamesElement {
     private List localNames;
     private int blockLevel;
-
-    /**
-     * @see StackElement#getNext()
-     */
-    public StackElement getNext() {
-        return next;
-    }
-
-    /**
-     * @see StackElement#setNext(StackElement)
-     */
-    public void setNext(StackElement newNext) {
-        this.next = (LocalNamesElement) newNext;
-    }
 
     /**
      * Returns true if there was already an assignment to a local
@@ -139,7 +121,7 @@ public class LocalNamesElement implements StackElement {
      * Gets the localNames.
      * @return Returns a List
      */
-    public List getLocalNames() {
+    public List getNames() {
         return localNames != null ? localNames : Collections.EMPTY_LIST;
     }
 
@@ -147,7 +129,7 @@ public class LocalNamesElement implements StackElement {
      * Sets the localNames.
      * @param localNames The localNames to set
      */
-    public void setLocalNames(List localNames) {
+    public void setNames(List localNames) {
         this.localNames = localNames;
     }
 

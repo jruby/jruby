@@ -68,7 +68,7 @@ public class RubyProc extends RubyObject {
 
         RubyProc newProc = new RubyProc(runtime, runtime.getClasses().getProcClass());
 
-        newProc.block = runtime.getBlockStack().getCurrent().cloneBlock();
+        newProc.block = ((Block) runtime.getBlockStack().peek()).cloneBlock();
         newProc.wrapper = runtime.getWrapper();
         newProc.block.setIter(newProc.block.getNext() != null ? Iter.ITER_PRE : Iter.ITER_NOT);
         newProc.block.isLambda = isLambda;

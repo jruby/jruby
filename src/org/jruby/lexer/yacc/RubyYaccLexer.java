@@ -37,6 +37,8 @@ import java.math.BigInteger;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.NthRefNode;
 import org.jruby.common.RubyWarnings;
+import org.jruby.parser.BlockNamesElement;
+import org.jruby.parser.LocalNamesElement;
 import org.jruby.parser.ParserSupport;
 import org.jruby.parser.Token;
 import org.jruby.util.IdUtil;
@@ -1385,9 +1387,9 @@ public class RubyYaccLexer {
             // Lame: parsing logic made it into lexer in ruby...So we
             // are emulating
             if (IdUtil.isLocal((String)yaccValue) &&
-                ((parserSupport.getBlockNames().isInBlock() && 
-                  parserSupport.getBlockNames().isDefined((String) yaccValue)) ||
-                  parserSupport.getLocalNames().isLocalRegistered((String) yaccValue))) {
+                ((((LocalNamesElement) parserSupport.getLocalNames().peek()).isInBlock() && 
+                ((BlockNamesElement) parserSupport.getBlockNames().peek()).isDefined((String) yaccValue)) ||
+				((LocalNamesElement) parserSupport.getLocalNames().peek()).isLocalRegistered((String) yaccValue))) {
                 lex_state = LexState.EXPR_END;
             }
 

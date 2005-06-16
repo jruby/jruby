@@ -39,13 +39,16 @@ import java.util.EmptyStackException;
 public abstract class AbstractStack {
     protected StackElement top = null;
     
-    public StackElement getTop() {
-        return top;
-    }
+	// TODO: Finish making AbstractStack behave by java.util.Stack contract in order to kill it
+	public Object peek() {
+		return top;
+	}
 
-    public void push(StackElement newElement) {
+    public Object push(StackElement newElement) {
         newElement.setNext(top);
         top = newElement;
+		
+		return newElement;
     }
 
     public StackElement pop() {

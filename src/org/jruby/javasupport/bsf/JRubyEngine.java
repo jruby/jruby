@@ -51,6 +51,7 @@ import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.IAccessor;
+import org.jruby.runtime.Scope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -68,7 +69,7 @@ public class JRubyEngine extends BSFEngineImpl {
             // add a new method conext
             threadContext.getFrameStack().push();
             threadContext.pushDynamicVars();
-            threadContext.getScopeStack().push(paramNames);
+            threadContext.getScopeStack().push(new Scope(runtime, paramNames));
 
             // set global variables
             for (int i = 0, size = args.size(); i < size; i++) {

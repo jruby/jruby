@@ -95,7 +95,7 @@ public class Block implements StackElement {
     public IRubyObject call(IRubyObject[] args, IRubyObject replacementSelf) {
         Ruby runtime = self.getRuntime();
         ThreadContext context = runtime.getCurrentContext();
-        Block oldBlock = context.getBlockStack().getCurrent();
+        Block oldBlock = (Block) context.getBlockStack().peek();
         Block newBlock = this.cloneBlock();
         if (replacementSelf != null) {
             newBlock.self = replacementSelf;

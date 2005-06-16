@@ -406,9 +406,9 @@ stmt          : kALIAS fitem {
                     if (support.isInDef() || support.isInSingle()) {
                         yyerror("BEGIN in method");
                     }
-                    support.getLocalNames().push();
+                    support.getLocalNames().push(new LocalNamesElement());
                 } '{' compstmt '}' {
-                    support.getResult().addBeginNode(new ScopeNode(support.getLocalNames().getNames(), $4));
+                    support.getResult().addBeginNode(new ScopeNode(((LocalNamesElement) support.getLocalNames().peek()).getNames(), $4));
                     support.getLocalNames().pop();
                     $$ = null; //XXX 0;
                 }
@@ -533,7 +533,7 @@ block_command : block_call
                 }
 
 cmd_brace_block	: tLBRACE_ARG {
-                      support.getBlockNames().push();
+                      support.getBlockNames().push(new BlockNamesElement());
 		  } opt_block_var compstmt '}' {
                       $$ = new IterNode(getPosition(), $3, $4, null);
                       support.getBlockNames().pop();
@@ -1265,11 +1265,11 @@ primary       : literal
                         yyerror("class definition in method body");
                     }
                     support.setClassNest(support.getClassNest() + 1);
-                    support.getLocalNames().push();
+                    support.getLocalNames().push(new LocalNamesElement());
                     // $$ = new Integer(ruby.getSourceLine());
                 } bodystmt 
 		  kEND {
-  $$ = new ClassNode(getPosition(), $2, new ScopeNode(support.getLocalNames().getNames(), $5), $3);
+  $$ = new ClassNode(getPosition(), $2, new ScopeNode(((LocalNamesElement) support.getLocalNames().peek()).getNames(), $5), $3);
                     // $<Node>$.setLine($<Integer>4.intValue());
                     support.getLocalNames().pop();
                     support.setClassNest(support.getClassNest() - 1);
@@ -1281,10 +1281,10 @@ primary       : literal
                     $$ = new Integer(support.getInSingle());
                     support.setInSingle(0);
                     support.setClassNest(support.getClassNest() + 1);
-                    support.getLocalNames().push();
+                    support.getLocalNames().push(new LocalNamesElement());
                 } bodystmt 
                   kEND {
-                    $$ = new SClassNode(getPosition(), $3, new ScopeNode(support.getLocalNames().getNames(), $7));
+                    $$ = new SClassNode(getPosition(), $3, new ScopeNode(((LocalNamesElement) support.getLocalNames().peek()).getNames(), $7));
                     support.getLocalNames().pop();
                     support.setClassNest(support.getClassNest() - 1);
                     support.setInDef($<Boolean>4.booleanValue());
@@ -1295,11 +1295,11 @@ primary       : literal
                         yyerror("module definition in method body");
                     }
                     support.setClassNest(support.getClassNest() + 1);
-                    support.getLocalNames().push();
+                    support.getLocalNames().push(new LocalNamesElement());
                     // $$ = new Integer(ruby.getSourceLine());
                 } bodystmt 
                   kEND {
-  $$ = new ModuleNode(getPosition(), $2, new ScopeNode(support.getLocalNames().getNames(), $4));
+  $$ = new ModuleNode(getPosition(), $2, new ScopeNode(((LocalNamesElement) support.getLocalNames().peek()).getNames(), $4));
                     // $<Node>$.setLine($<Integer>3.intValue());
                     support.getLocalNames().pop();
                     support.setClassNest(support.getClassNest() - 1);
@@ -1309,14 +1309,14 @@ primary       : literal
 			$<id>$ = cur_mid;
 			cur_mid = $2; */
                     support.setInDef(true);
-                    support.getLocalNames().push();
+                    support.getLocalNames().push(new LocalNamesElement());
                 } f_arglist 
                   bodystmt 
                   kEND {
 		      /* was in old jruby grammar support.getClassNest() !=0 || IdUtil.isAttrSet($2) ? Visibility.PUBLIC : Visibility.PRIVATE); */
                     /* NOEX_PRIVATE for toplevel */
                     $$ = new DefnNode(getPosition(), $2, $4,
-		                      new ScopeNode(support.getLocalNames().getNames(), $5), Visibility.PRIVATE);
+		                      new ScopeNode(((LocalNamesElement) support.getLocalNames().peek()).getNames(), $5), Visibility.PRIVATE);
                     // $<Node>$.setPosFrom($4);
                     support.getLocalNames().pop();
                     support.setInDef(false);
@@ -1326,12 +1326,12 @@ primary       : literal
                     lexer.setState(LexState.EXPR_FNAME);
                 } fname {
                     support.setInSingle(support.getInSingle() + 1);
-                    support.getLocalNames().push();
+                    support.getLocalNames().push(new LocalNamesElement());
                     lexer.setState(LexState.EXPR_END); /* force for args */
                 } f_arglist 
 		  bodystmt 
                   kEND {
-                    $$ = new DefsNode(getPosition(), $2, $5, $7, new ScopeNode(support.getLocalNames().getNames(), $8));
+                    $$ = new DefsNode(getPosition(), $2, $5, $7, new ScopeNode(((LocalNamesElement) support.getLocalNames().peek()).getNames(), $8));
                     // $<Node>$.setPosFrom($2);
                     support.getLocalNames().pop();
                     support.setInSingle(support.getInSingle() - 1);
@@ -1390,7 +1390,7 @@ opt_block_var : none
                 }
 
 do_block      : kDO_BLOCK {
-                    support.getBlockNames().push();
+                    support.getBlockNames().push(new BlockNamesElement());
 		} opt_block_var compstmt 
 		  kEND {
                     $$ = new IterNode(getPosition(), $3, $4, null);
@@ -1431,13 +1431,13 @@ method_call   : operation paren_args {
                 }
 
 brace_block   : '{' {
-                    support.getBlockNames().push();
+                    support.getBlockNames().push(new BlockNamesElement());
 		} opt_block_var compstmt '}' {
                     $$ = new IterNode(getPosition(), $3, $4, null);
                     support.getBlockNames().pop();
                 }
               | kDO {
-                    support.getBlockNames().push();
+                    support.getBlockNames().push(new BlockNamesElement());
 		} opt_block_var compstmt kEND {
                     $$ = new IterNode(getPosition(), $3, $4, null);
                     support.getBlockNames().pop();
@@ -1807,10 +1807,10 @@ f_norm_arg    : tCONSTANT {
               | tIDENTIFIER {
                     if (!IdUtil.isLocal($1)) {
                         yyerror("formal argument must be local variable");
-                    } else if (support.getLocalNames().isLocalRegistered($1)) {
+                    } else if (((LocalNamesElement) support.getLocalNames().peek()).isLocalRegistered($1)) {
                         yyerror("duplicate argument name");
                     }
-                    support.getLocalNames().getLocalIndex($1);
+                    ((LocalNamesElement) support.getLocalNames().peek()).getLocalIndex($1);
                     $$ = new Integer(1);
                 }
 
@@ -1822,10 +1822,10 @@ f_arg         : f_norm_arg
 f_opt         : tIDENTIFIER '=' arg_value {
                     if (!IdUtil.isLocal($1)) {
                         yyerror("formal argument must be local variable");
-                    } else if (support.getLocalNames().isLocalRegistered($1)) {
+                    } else if (((LocalNamesElement) support.getLocalNames().peek()).isLocalRegistered($1)) {
                         yyerror("duplicate optional argument name");
                     }
-		    support.getLocalNames().getLocalIndex($1);
+		    ((LocalNamesElement) support.getLocalNames().peek()).getLocalIndex($1);
                     $$ = support.assignable(getPosition(), $1, $3);
                 }
 
@@ -1842,10 +1842,10 @@ restarg_mark	: '*'
 f_rest_arg    : restarg_mark tIDENTIFIER {
                     if (!IdUtil.isLocal($2)) {
                         yyerror("rest argument must be local variable");
-                    } else if (support.getLocalNames().isLocalRegistered($2)) {
+                    } else if (((LocalNamesElement) support.getLocalNames().peek()).isLocalRegistered($2)) {
                         yyerror("duplicate rest argument name");
                     }
-                    $$ = new Integer(support.getLocalNames().getLocalIndex($2));
+                    $$ = new Integer(((LocalNamesElement) support.getLocalNames().peek()).getLocalIndex($2));
                 }
               | restarg_mark {
                     $$ = new Integer(-2);
@@ -1857,10 +1857,10 @@ blkarg_mark	: '&'
 f_block_arg   : blkarg_mark tIDENTIFIER {
                     if (!IdUtil.isLocal($2)) {
                         yyerror("block argument must be local variable");
-                    } else if (support.getLocalNames().isLocalRegistered($2)) {
+                    } else if (((LocalNamesElement) support.getLocalNames().peek()).isLocalRegistered($2)) {
                         yyerror("duplicate block argument name");
                     }
-                    $$ = new BlockArgNode(getPosition(), support.getLocalNames().getLocalIndex($2));
+                    $$ = new BlockArgNode(getPosition(), ((LocalNamesElement) support.getLocalNames().peek()).getLocalIndex($2));
                 }
 
 opt_f_block_arg: ',' f_block_arg {

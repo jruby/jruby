@@ -69,6 +69,12 @@ public class Scope implements StackElement {
     public Scope(Ruby runtime) {
         this.rubyNil = runtime.getNil();
     }
+	
+	public Scope(Ruby runtime, List names) {
+		this(runtime);
+		
+		resetLocalVariables(names);
+	}
 
     public StackElement getNext() {
         return next;
@@ -95,7 +101,7 @@ public class Scope implements StackElement {
      * Gets the localNames.
      * @return Returns a NameList
      */
-    List getLocalNames() {
+    public List getLocalNames() {
         return localNames;
     }
 

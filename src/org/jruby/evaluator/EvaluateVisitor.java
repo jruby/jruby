@@ -168,6 +168,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
+import org.jruby.runtime.Scope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -360,7 +361,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             throw new TypeError(runtime, "wrong argument type " + block.getMetaClass().getName() + " (expected Proc)");
         }
 
-        Block oldBlock = threadContext.getBlockStack().getCurrent();
+        Block oldBlock = (Block) threadContext.getBlockStack().peek();
         threadContext.getBlockStack().push(((RubyProc) block).getBlock());
 
         threadContext.getIterStack().push(Iter.ITER_PRE);
@@ -824,28 +825,28 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitFlipNode(FlipNode iVisited) {
         if (iVisited.isExclusive()) {
-            if (! threadContext.getScopeStack().getValue(iVisited.getCount()).isTrue()) {
+            if (! runtime.getCurrentScope().getValue(iVisited.getCount()).isTrue()) {
                 //Benoit: I don't understand why the result is inversed
                 result = eval(iVisited.getBeginNode()).isTrue() ? runtime.getFalse() : runtime.getTrue();
-                threadContext.getScopeStack().setValue(iVisited.getCount(), result);
+                runtime.getCurrentScope().setValue(iVisited.getCount(), result);
             } else {
                 if (eval(iVisited.getEndNode()).isTrue()) {
-                    threadContext.getScopeStack().setValue(iVisited.getCount(), runtime.getFalse());
+                    runtime.getCurrentScope().setValue(iVisited.getCount(), runtime.getFalse());
                 }
                 result = runtime.getTrue();
             }
         } else {
-            if (! threadContext.getScopeStack().getValue(iVisited.getCount()).isTrue()) {
+            if (! runtime.getCurrentScope().getValue(iVisited.getCount()).isTrue()) {
                 if (eval(iVisited.getBeginNode()).isTrue()) {
                     //Benoit: I don't understand why the result is inversed
-                    threadContext.getScopeStack().setValue(iVisited.getCount(), eval(iVisited.getEndNode()).isTrue() ? runtime.getFalse() : runtime.getTrue());
+                    runtime.getCurrentScope().setValue(iVisited.getCount(), eval(iVisited.getEndNode()).isTrue() ? runtime.getFalse() : runtime.getTrue());
                     result = runtime.getTrue();
                 } else {
                     result = runtime.getFalse();
                 }
             } else {
                 if (eval(iVisited.getEndNode()).isTrue()) {
-                    runtime.getScope().setValue(iVisited.getCount(), runtime.getFalse());
+                    runtime.getCurrentScope().setValue(iVisited.getCount(), runtime.getFalse());
                 }
                 result = runtime.getTrue();
             }
@@ -856,7 +857,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitForNode(ForNode)
      */
     public void visitForNode(ForNode iVisited) {
-    	threadContext.getBlockStack().push(iVisited.getVarNode(), new EvaluateMethod(iVisited.getBodyNode(), iVisited.getVarNode()), self);
+    	threadContext.getBlockStack().push(Block.createBlock(iVisited.getVarNode(), new EvaluateMethod(iVisited.getBodyNode(), iVisited.getVarNode()), self));
         threadContext.getIterStack().push(Iter.ITER_PRE);
 
         try {
@@ -956,7 +957,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitIterNode(IterNode)
      */
     public void visitIterNode(IterNode iVisited) {
-    	threadContext.getBlockStack().push(iVisited.getVarNode(), new EvaluateMethod(iVisited.getBodyNode(), iVisited.getVarNode()), self);
+    	threadContext.getBlockStack().push(Block.createBlock(iVisited.getVarNode(), new EvaluateMethod(iVisited.getBodyNode(), iVisited.getVarNode()), self));
         threadContext.getIterStack().push(Iter.ITER_PRE);
         try {
             while (true) {
@@ -981,14 +982,14 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitLocalAsgnNode(LocalAsgnNode iVisited) {
         eval(iVisited.getValueNode());
-        threadContext.getScopeStack().setValue(iVisited.getCount(), result);
+        runtime.getCurrentScope().setValue(iVisited.getCount(), result);
     }
 
     /**
      * @see NodeVisitor#visitLocalVarNode(LocalVarNode)
      */
     public void visitLocalVarNode(LocalVarNode iVisited) {
-        result = threadContext.getScopeStack().getValue(iVisited.getCount());
+        result = runtime.getCurrentScope().getValue(iVisited.getCount());
     }
 
     /**
@@ -1322,7 +1323,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitScopeNode(ScopeNode iVisited) {
         threadContext.getFrameStack().pushCopy();
-        threadContext.getScopeStack().push(iVisited.getLocalNames());
+        threadContext.getScopeStack().push(new Scope(runtime, iVisited.getLocalNames()));
         try {
             eval(iVisited.getBodyNode());
         } finally {
@@ -1554,7 +1555,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     private void evalClassDefinitionBody(ScopeNode iVisited, RubyModule type) {
 		RubyModule oldParent = threadContext.setRubyClass(type); 
         threadContext.getFrameStack().pushCopy();
-        threadContext.getScopeStack().push(iVisited.getLocalNames());
+        threadContext.getScopeStack().push(new Scope(runtime, iVisited.getLocalNames()));
         threadContext.pushDynamicVars();
 
         IRubyObject oldSelf = self;

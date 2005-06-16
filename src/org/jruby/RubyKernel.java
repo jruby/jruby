@@ -49,7 +49,6 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.SystemExit;
 import org.jruby.exceptions.ThreadError;
 import org.jruby.exceptions.ThrowJump;
-import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.LastCallStatus;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -461,10 +460,11 @@ public class RubyKernel {
         final Ruby runtime = recv.getRuntime();
         RubyArray localVariables = runtime.newArray();
 
-        if (runtime.getScope().getLocalNames() != null) {
-            for (int i = 2; i < runtime.getScope().getLocalNames().size(); i++) {
-                if (runtime.getScope().getLocalNames().get(i) != null) {
-                    localVariables.append(runtime.newString((String) runtime.getScope().getLocalNames().get(i)));
+        if (runtime.getCurrentScope().getLocalNames() != null) {
+            for (int i = 2; i < runtime.getCurrentScope().getLocalNames().size(); i++) {
+				String variableName = (String) runtime.getCurrentScope().getLocalNames().get(i);
+                if (variableName != null) {
+                    localVariables.append(runtime.newString(variableName));
                 }
             }
         }
