@@ -13,7 +13,7 @@
  *
  * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -34,7 +34,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.jruby.ast.YieldNode;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -288,7 +287,6 @@ public class RubyClass extends RubyModule {
     }
 
     public RubyClass newSubClass(String name, RubyModule parentModule) {
-        Ruby runtime = getRuntime();
         RubyClass newClass = new RubyClass(runtime, runtime.getClasses().getClassClass(), this, parentModule, name);
 
         newClass.makeMetaClass(getMetaClass(), newClass);
