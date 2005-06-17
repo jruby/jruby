@@ -62,10 +62,6 @@ public class Frame {
         this.iter = iter;
     }
 
-    public Frame(Frame frame) {
-        this(frame.self, frame.args, frame.lastFunc, frame.lastClass, frame.position, frame.iter);
-    }
-
     /** Getter for property args.
      * @return Value of property args.
      */
