@@ -149,17 +149,21 @@ public class ParserSupport {
     }
 
     public Node appendPrintToBlock(Node block) {
-        return appendToBlock(block, new FCallNode(null, "print", new ArrayNode(block.getPosition()).add(new GlobalVarNode(block.getPosition(), "$_"))));
+    	SourcePosition position = block.getPosition();
+        return appendToBlock(block, new FCallNode(position, "print", 
+            new ArrayNode(position).add(new GlobalVarNode(position, "$_"))));
     }
 
     public Node appendWhileLoopToBlock(Node block, boolean chop, boolean split) {
+    	SourcePosition position = block.getPosition();
         if (split) {
-            block = appendToBlock(new GlobalAsgnNode(null, "$F", new CallNode(null, new GlobalVarNode(null, "$_"), "split", null)), block);
+            block = appendToBlock(new GlobalAsgnNode(position, "$F", 
+                new CallNode(position, new GlobalVarNode(position, "$_"), "split", null)), block);
         }
         if (chop) {
-            block = appendToBlock(new CallNode(null, new GlobalVarNode(null, "$_"), "chop!", null), block);
+            block = appendToBlock(new CallNode(position, new GlobalVarNode(position, "$_"), "chop!", null), block);
         }
-        return new OptNNode(null, block);
+        return new OptNNode(position, block);
     }
     
     /// TODO: We make self,nil,true,false twice....
@@ -345,7 +349,7 @@ public class ParserSupport {
         if (lhs == null) {
             return null;
         }
-        Node result = lhs;
+        Node newNode = lhs;
 
         checkExpression(rhs);
         if (lhs instanceof AssignableNode) {
@@ -356,15 +360,15 @@ public class ParserSupport {
 
 			if (lArgs == null) {
 				lArgs = new ArrayNode(lhs.getPosition());
-				result = new CallNode(lCallLHS.getPosition(), lCallLHS.getReceiverNode(), lCallLHS.getName(), lArgs);
+				newNode = new CallNode(lCallLHS.getPosition(), lCallLHS.getReceiverNode(), lCallLHS.getName(), lArgs);
 			} else if (!(lArgs instanceof ListNode)) {
 				lArgs = new ArrayNode(lhs.getPosition()).add(lArgs);
-				result = new CallNode(lCallLHS.getPosition(), lCallLHS.getReceiverNode(), lCallLHS.getName(), lArgs);
+				newNode = new CallNode(lCallLHS.getPosition(), lCallLHS.getReceiverNode(), lCallLHS.getName(), lArgs);
 			}
             ((ListNode)lArgs).add(rhs);
         }
         
-        return result;
+        return newNode;
     }
     
     public Node ret_args(Node node, SourcePosition position) {
@@ -424,10 +428,11 @@ public class ParserSupport {
         checkAssignmentInCondition(node);
 
         if (node instanceof DRegexpNode) {
+            SourcePosition position = node.getPosition();
 			LocalNamesElement localNames = (LocalNamesElement) localNamesStack.peek();
             localNames.ensureLocalRegistered("_");
             localNames.ensureLocalRegistered("~");
-            return new Match2Node(node.getPosition(), node, new GlobalVarNode(node.getPosition(), "$_"));
+            return new Match2Node(position, node, new GlobalVarNode(position, "$_"));
         } else if (node instanceof DotNode) {
             return new FlipNode(
                     node.getPosition(),
@@ -438,10 +443,11 @@ public class ParserSupport {
         } else if (node instanceof RegexpNode) {
             return new MatchNode(node.getPosition(), node);
         } else if (node instanceof StrNode) {
+            SourcePosition position = node.getPosition();
 			LocalNamesElement localNames = (LocalNamesElement) localNamesStack.peek();
             localNames.ensureLocalRegistered("_");
             localNames.ensureLocalRegistered("~");
-            return new MatchNode(node.getPosition(), new RegexpNode(node.getPosition(), ((StrNode) node).getValue(), 0));
+            return new MatchNode(position, new RegexpNode(position, ((StrNode) node).getValue(), 0));
         } 
 
         return node;

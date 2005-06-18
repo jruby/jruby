@@ -68,7 +68,6 @@ import org.jruby.parser.Parser;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockStack;
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.DynamicVariableSet;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.FrameStack;
 import org.jruby.runtime.GlobalVariable;
@@ -345,7 +344,7 @@ public final class Ruby {
         try {
             while (true) {
                 try {
-                    return iterateMethod.execute(data1, null);
+                    return iterateMethod.execute(data1, IRubyObject.NULL_ARRAY);
                 } catch (BreakJump bExcptn) {
                     IRubyObject breakValue = bExcptn.getBreakValue();
                     
@@ -367,7 +366,7 @@ public final class Ruby {
      */
     private void init() {
         getIterStack().push(Iter.ITER_NOT);
-        getFrameStack().push();
+        Frame frame = (Frame) getFrameStack().push(new Frame(getCurrentContext()));
         getCurrentContext().getScopeStack().push(new Scope(this));
 
         setCurrentVisibility(Visibility.PRIVATE);
@@ -383,7 +382,7 @@ public final class Ruby {
         topSelf = TopSelfFactory.createTopSelf(this);
 
         getCurrentContext().setRubyClass(getClasses().getObjectClass());
-        getCurrentFrame().setSelf(topSelf);
+        frame.setSelf(topSelf);
 
         classes.initBuiltinClasses();
     }
@@ -433,13 +432,6 @@ public final class Ruby {
      */
     public void setVerbose(IRubyObject verbose) {
         this.verbose = verbose;
-    }
-
-    /** Getter for property dynamicVars.
-     * @return Value of property dynamicVars.
-     */
-    public DynamicVariableSet getDynamicVars() {
-        return getCurrentContext().getCurrentDynamicVars();
     }
 
     public RubyModule getRubyClass() {
@@ -554,10 +546,6 @@ public final class Ruby {
         getCurrentContext().setPosition(position);
     }
 
-    public List getDynamicNames() {
-        return getDynamicVars().names();
-    }
-
     /**
      * Returns the lastCallStatus.
      * @return LastCallStatus
@@ -614,7 +602,7 @@ public final class Ruby {
         } else if (backtrace.getLength() == 0) {
             printErrorPos();
         } else {
-            IRubyObject mesg = backtrace.first(null);
+            IRubyObject mesg = backtrace.first(IRubyObject.NULL_ARRAY);
 
             if (mesg.isNil()) {
                 printErrorPos();
@@ -716,12 +704,7 @@ public final class Ruby {
             self.extendObject(context.getRubyClass());
         }
 
-        String last_func = context.getCurrentFrame().getLastFunc();
-
-        context.getFrameStack().push();
-        context.getCurrentFrame().setLastFunc(null);
-        context.getCurrentFrame().setLastClass(null);
-        context.getCurrentFrame().setSelf(self);
+        context.getFrameStack().push(new Frame(context, self, IRubyObject.NULL_ARRAY, null, null));
         context.getScopeStack().push(new Scope(this));
 
         /* default visibility is private at loading toplevel */
@@ -733,7 +716,6 @@ public final class Ruby {
         } catch (ReturnJump e) {
 			// Make sure this does not bubble out to java caller.
         } finally {
-            context.getCurrentFrame().setLastFunc(last_func);
             context.getScopeStack().pop();
             context.getFrameStack().pop();
             context.setRubyClass(oldParent);
@@ -764,12 +746,7 @@ public final class Ruby {
             self.extendObject(context.getRubyClass());
         }
 
-        String last_func = getCurrentFrame().getLastFunc();
-
-        context.getFrameStack().push();
-        context.getCurrentFrame().setLastFunc(null);
-        context.getCurrentFrame().setLastClass(null);
-        context.getCurrentFrame().setSelf(self);
+        context.getFrameStack().push(new Frame(context, self, IRubyObject.NULL_ARRAY, null, null));
         context.getScopeStack().push(new Scope(this));
 
         /* default visibility is private at loading toplevel */
@@ -780,7 +757,6 @@ public final class Ruby {
         } catch (ReturnJump e) {
 			// Make sure this does not bubble out to java caller.
         } finally {
-            context.getCurrentFrame().setLastFunc(last_func);
             context.getScopeStack().pop();
             context.getFrameStack().pop();
             context.setRubyClass(oldParent);
@@ -829,8 +805,7 @@ public final class Ruby {
             if (type == null) {
 				type = getFalse();
 			}
-            getFrameStack().push();
-            getCurrentFrame().setIter(Iter.ITER_NOT);
+            getFrameStack().push(new Frame(getCurrentContext(), Iter.ITER_NOT));
 
             try {
                 traceFunction
@@ -887,7 +862,7 @@ public final class Ruby {
         while (!atExitBlocks.empty()) {
             RubyProc proc = (RubyProc) atExitBlocks.pop();
             
-            proc.call(null);
+            proc.call(IRubyObject.NULL_ARRAY);
         }
     }
     

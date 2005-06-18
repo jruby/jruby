@@ -266,7 +266,7 @@ public class RubyArray extends RubyObject implements List {
     	try {
     		return entry(index.getLongValue(), true);
     	} catch (IndexError e) {
-    		if (args != null && args.length > 0) {
+    		if (args.length > 0) {
     			return args[0];
     		} else if (getRuntime().isBlockGiven()) {
     			return getRuntime().yield(index);
@@ -277,10 +277,9 @@ public class RubyArray extends RubyObject implements List {
     }
     
     public IRubyObject insert(RubyNumeric index, IRubyObject[] args) {
-    	// ruby does not bother to bounds check index, if no elements are
-    	// to be added.
-    	if (args == null || args.length == 0) {
-    		return this;
+    	// ruby does not bother to bounds check index, if no elements are to be added.
+    	if (args.length == 0) {
+    	    return this;
     	}
     	
     	// too negative of an offset will throw an IndexError
@@ -755,11 +754,11 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public IRubyObject first(IRubyObject[] args) {
-    	if (args == null || args.length == 0) {
+    	checkArgumentCount(args, 0, 1);
+
+    	if (args.length == 0) {
     		return getLength() == 0 ? getRuntime().getNil() : entry(0);
     	}
-    	
-    	checkArgumentCount(args, 0, 1);
     	
     	// TODO: See if enough integer-only conversions to make this
     	// convenience function (which could replace RubyNumeric#fix2long).

@@ -36,7 +36,6 @@ import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArrayNode;
-import org.jruby.ast.AttrSetNode;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BeginNode;
 import org.jruby.ast.BignumNode;
@@ -140,7 +139,6 @@ public interface NodeVisitor {
     public void visitArgsNode(ArgsNode iVisited);
     public void visitArgsCatNode(ArgsCatNode iVisited);
     public void visitArrayNode(ArrayNode iVisited);
-    public void visitAttrSetNode(AttrSetNode iVisited);
     public void visitBackRefNode(BackRefNode iVisited);
     public void visitBeginNode(BeginNode iVisited);
     public void visitBignumNode(BignumNode iVisited);

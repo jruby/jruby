@@ -35,7 +35,7 @@ public class HeredocTerm extends StrTerm {
 	private final int func;
 	private final String lastLine;
     
-    public HeredocTerm(SourcePosition position, String eos, int func, String lastLine) {
+    public HeredocTerm(String eos, int func, String lastLine) {
         this.eos = eos;
         this.func = func;
         this.lastLine = lastLine;
@@ -99,7 +99,7 @@ public class HeredocTerm extends StrTerm {
             src.unread(c);
 
             do {
-                if ((c = new StringTerm(src.getPosition(), func, '\n', '\0').parseStringIntoBuffer(src, buffer)) == RubyYaccLexer.EOF) {
+                if ((c = new StringTerm(func, '\n', '\0').parseStringIntoBuffer(src, buffer)) == RubyYaccLexer.EOF) {
                     throw new SyntaxException(src.getPosition(), "can't find string \"" + eos + "\" anywhere before EOF");
                 }
                 if (c != '\n') {
@@ -118,7 +118,7 @@ public class HeredocTerm extends StrTerm {
         }
 
         src.unreadMany(lastLine);
-        lexer.setStrTerm(new StringTerm(src.getPosition(), -1, '\0', '\0'));
+        lexer.setStrTerm(new StringTerm(-1, '\0', '\0'));
         lexer.yaccValue = str.toString();
         return Token.tSTRING_CONTENT;
     }

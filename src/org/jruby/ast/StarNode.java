@@ -32,6 +32,7 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /** Represents a star in a multiple assignent.
  * only used in an instanceof check, this node is never visited.
@@ -45,8 +46,8 @@ public class StarNode extends Node {
     /**
      * Constructor for StarNode.
      */
-    public StarNode() {
-        super();
+    public StarNode(SourcePosition position) {
+        super(position);
     }
 
     /**

@@ -14,7 +14,7 @@
  * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -32,6 +32,7 @@ package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.runtime.Arity;
 
 /**
  *
@@ -73,4 +74,15 @@ public class MultipleAsgnNode extends AssignableNode {
     public ListNode getHeadNode() {
         return headNode;
     }
+	
+    /**
+     * Number of arguments is dependent on headNodes size
+     */
+	public Arity getArity() {
+		if (argsNode != null) {
+			return Arity.required(headNode == null ? 0 : headNode.size());
+		}
+		
+		return Arity.fixed(headNode.size()); 
+	}
 }

@@ -35,7 +35,6 @@ import java.util.Iterator;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ast.ArrayNode;
-import org.jruby.ast.AttrSetNode;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.CallNode;
 import org.jruby.ast.ClassVarAsgnNode;
@@ -243,12 +242,6 @@ public class DefinedVisitor extends AbstractVisitor {
         if (threadContext.isBlockGiven()) {
             definition = "yield";
         }
-    }
-    /**
-     * @see AbstractVisitor#visitAttrSetNode(AttrSetNode)
-     */
-    public void visitAttrSetNode(AttrSetNode iVisited) {
-        definition = "assignment";
     }
 
     /**

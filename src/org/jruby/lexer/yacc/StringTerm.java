@@ -42,7 +42,7 @@ public class StringTerm extends StrTerm {
     /* nested string level */
     private int nest;
 
-    public StringTerm(SourcePosition position, int func, char term, char paren) {
+    public StringTerm(int func, char term, char paren) {
         this.func = func;
         this.term = term;
         this.paren = paren;

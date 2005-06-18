@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -36,14 +36,10 @@ import java.util.List;
 import org.jruby.lexer.yacc.SourcePosition;
 
 /**
- * @author enebo
+ * All Nodes which have a list representation inherit this.
  */
 public abstract class ListNode extends Node {
     private List list = null;
-
-	public ListNode() { 
-		super(); 
-	}
 
 	public ListNode(SourcePosition position) {
 		super(position);

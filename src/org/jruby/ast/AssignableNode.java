@@ -13,7 +13,7 @@
  *
  * Copyright (C) 2001-2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -29,18 +29,15 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import org.jruby.ast.types.IArityNode;
 import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.runtime.Arity;
 
 /**
- * @author enebo
- *
- * To change the template for this generated type comment go to
- * Window - Preferences - Java - Code Generation - Code and Comments
+ * Base class of any node which can be assigned to.
  */
-public abstract class AssignableNode extends Node {
+public abstract class AssignableNode extends Node implements IArityNode {
     private Node valueNode;
-
-	public AssignableNode() { super(); }
 
 	public AssignableNode(SourcePosition position) {
 		super(position);
@@ -60,5 +57,12 @@ public abstract class AssignableNode extends Node {
      */
     public void setValueNode(Node valueNode) {
         this.valueNode = valueNode;
+    }
+    
+    /**
+	 * Almost all assignables are only assigned a single value.
+     */
+    public Arity getArity() {
+    	return Arity.singleArgument();
     }
 }

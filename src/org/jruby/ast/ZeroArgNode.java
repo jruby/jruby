@@ -14,7 +14,7 @@
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -31,7 +31,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import org.jruby.ast.types.IArityNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.runtime.Arity;
 
 /** Represents a zero arg in a block.
  * this is never visited and is used only in an instanceof check
@@ -43,15 +46,11 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class ZeroArgNode extends Node {
+public class ZeroArgNode extends Node implements IArityNode {
     static final long serialVersionUID = 6596791950608957025L;
 
-
-    /**
-     * Constructor for ZeroArgNode.
-     */
-    public ZeroArgNode() {
-        super();
+    public ZeroArgNode(SourcePosition position) {
+        super(position);
     }
 
     /**
@@ -59,4 +58,11 @@ public class ZeroArgNode extends Node {
      */
     public void accept(NodeVisitor visitor) {
     }
+	
+	/**
+     * Zero arguments...
+     */
+	public Arity getArity() {
+		return Arity.noArguments();
+	}
 }

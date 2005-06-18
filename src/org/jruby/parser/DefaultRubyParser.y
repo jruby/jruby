@@ -408,7 +408,7 @@ stmt          : kALIAS fitem {
                     }
                     support.getLocalNames().push(new LocalNamesElement());
                 } '{' compstmt '}' {
-                    support.getResult().addBeginNode(new ScopeNode(((LocalNamesElement) support.getLocalNames().peek()).getNames(), $4));
+                    support.getResult().addBeginNode(new ScopeNode(getPosition(), ((LocalNamesElement) support.getLocalNames().peek()).getNames(), $4));
                     support.getLocalNames().pop();
                     $$ = null; //XXX 0;
                 }
@@ -605,13 +605,13 @@ mlhs_basic    : mlhs_head {
                     $$ = new MultipleAsgnNode(getPosition(), $1, $3);
                 }
               | mlhs_head tSTAR {
-                    $$ = new MultipleAsgnNode(getPosition(), $1, new StarNode());
+                    $$ = new MultipleAsgnNode(getPosition(), $1, new StarNode(getPosition()));
                 }
               | tSTAR mlhs_node {
                     $$ = new MultipleAsgnNode(getPosition(), null, $2);
                 }
               | tSTAR {
-                    $$ = new MultipleAsgnNode(getPosition(), null, new StarNode());
+                    $$ = new MultipleAsgnNode(getPosition(), null, new StarNode(getPosition()));
                 }
 
 mlhs_item     : mlhs_node
@@ -979,7 +979,7 @@ aref_args     : none
                     $$ = support.arg_concat(getPosition(), $1, $4);
                 }
               | assocs trailer {
-                    $$ = new ArrayNode(getPosition()).add(new HashNode($1));
+                    $$ = new ArrayNode(getPosition()).add(new HashNode(getPosition(), $1));
                 }
               | tSTAR arg opt_nl {
                     support.checkExpression($2);
@@ -1016,20 +1016,20 @@ call_args     : command {
                     $$ = support.arg_blk_pass((Node)$$, $5);
                 }
               | assocs opt_block_arg {
-                    $$ = new ArrayNode(getPosition()).add(new HashNode($1));
+                    $$ = new ArrayNode(getPosition()).add(new HashNode(getPosition(), $1));
                     $$ = support.arg_blk_pass((Node)$$, $2);
                 }
               | assocs ',' tSTAR arg_value opt_block_arg {
-                    $$ = support.arg_concat(getPosition(), new ArrayNode(getPosition()).add(new HashNode($1)), $4);
+                    $$ = support.arg_concat(getPosition(), new ArrayNode(getPosition()).add(new HashNode(getPosition(), $1)), $4);
                     $$ = support.arg_blk_pass((Node)$$, $5);
                 }
               | args ',' assocs opt_block_arg {
-                    $$ = $1.add(new HashNode($3));
+                    $$ = $1.add(new HashNode(getPosition(), $3));
                     $$ = support.arg_blk_pass((Node)$$, $4);
                 }
               | args ',' assocs ',' tSTAR arg opt_block_arg {
                     support.checkExpression($6);
-		    $$ = support.arg_concat(getPosition(), $1.add(new HashNode($3)), $6);
+		    $$ = support.arg_concat(getPosition(), $1.add(new HashNode(getPosition(), $3)), $6);
                     $$ = support.arg_blk_pass((Node)$$, $7);
                 }
               | tSTAR arg_value opt_block_arg {
@@ -1049,31 +1049,31 @@ call_args2	: arg_value ',' args opt_block_arg {
                       $$ = support.arg_blk_pass((Node)$$, $5);
 		  }
 		| arg_value ',' args ',' tSTAR arg_value opt_block_arg {
-                      $$ = support.arg_concat(getPosition(), support.list_concat(new ArrayNode(getPosition()).add($1), new HashNode($3)), $6);
+                      $$ = support.arg_concat(getPosition(), support.list_concat(new ArrayNode(getPosition()).add($1), new HashNode(getPosition(), $3)), $6);
                       $$ = support.arg_blk_pass((Node)$$, $7);
 		  }
 		| assocs opt_block_arg {
-                      $$ = new ArrayNode(getPosition()).add(new HashNode($1));
+                      $$ = new ArrayNode(getPosition()).add(new HashNode(getPosition(), $1));
                       $$ = support.arg_blk_pass((Node)$$, $2);
 		  }
 		| assocs ',' tSTAR arg_value opt_block_arg {
-                      $$ = support.arg_concat(getPosition(), new ArrayNode(getPosition()).add(new HashNode($1)), $4);
+                      $$ = support.arg_concat(getPosition(), new ArrayNode(getPosition()).add(new HashNode(getPosition(), $1)), $4);
                       $$ = support.arg_blk_pass((Node)$$, $5);
 		  }
 		| arg_value ',' assocs opt_block_arg {
-                      $$ = new ArrayNode(getPosition()).add($1).add(new HashNode($3));
+                      $$ = new ArrayNode(getPosition()).add($1).add(new HashNode(getPosition(), $3));
                       $$ = support.arg_blk_pass((Node)$$, $4);
 		  }
 		| arg_value ',' args ',' assocs opt_block_arg {
-                      $$ = support.list_concat(new ArrayNode(getPosition()).add($1), $3).add(new HashNode($5));
+                      $$ = support.list_concat(new ArrayNode(getPosition()).add($1), $3).add(new HashNode(getPosition(), $5));
                       $$ = support.arg_blk_pass((Node)$$, $6);
 		  }
 		| arg_value ',' assocs ',' tSTAR arg_value opt_block_arg {
-                      $$ = support.arg_concat(getPosition(), new ArrayNode(getPosition()).add($1).add(new HashNode($3)), $6);
+                      $$ = support.arg_concat(getPosition(), new ArrayNode(getPosition()).add($1).add(new HashNode(getPosition(), $3)), $6);
                       $$ = support.arg_blk_pass((Node)$$, $7);
 		  }
 		| arg_value ',' args ',' assocs ',' tSTAR arg_value opt_block_arg {
-                      $$ = support.arg_concat(getPosition(), support.list_concat(new ArrayNode(getPosition()).add($1), $3).add(new HashNode($5)), $8);
+                      $$ = support.arg_concat(getPosition(), support.list_concat(new ArrayNode(getPosition()).add($1), $3).add(new HashNode(getPosition(), $5)), $8);
                       $$ = support.arg_blk_pass((Node)$$, $9);
 		  }
 		| tSTAR arg_value opt_block_arg {
@@ -1269,7 +1269,7 @@ primary       : literal
                     // $$ = new Integer(ruby.getSourceLine());
                 } bodystmt 
 		  kEND {
-  $$ = new ClassNode(getPosition(), $2, new ScopeNode(((LocalNamesElement) support.getLocalNames().peek()).getNames(), $5), $3);
+  $$ = new ClassNode(getPosition(), $2, new ScopeNode(getPosition(), ((LocalNamesElement) support.getLocalNames().peek()).getNames(), $5), $3);
                     // $<Node>$.setLine($<Integer>4.intValue());
                     support.getLocalNames().pop();
                     support.setClassNest(support.getClassNest() - 1);
@@ -1284,7 +1284,7 @@ primary       : literal
                     support.getLocalNames().push(new LocalNamesElement());
                 } bodystmt 
                   kEND {
-                    $$ = new SClassNode(getPosition(), $3, new ScopeNode(((LocalNamesElement) support.getLocalNames().peek()).getNames(), $7));
+                    $$ = new SClassNode(getPosition(), $3, new ScopeNode(getPosition(), ((LocalNamesElement) support.getLocalNames().peek()).getNames(), $7));
                     support.getLocalNames().pop();
                     support.setClassNest(support.getClassNest() - 1);
                     support.setInDef($<Boolean>4.booleanValue());
@@ -1299,7 +1299,7 @@ primary       : literal
                     // $$ = new Integer(ruby.getSourceLine());
                 } bodystmt 
                   kEND {
-  $$ = new ModuleNode(getPosition(), $2, new ScopeNode(((LocalNamesElement) support.getLocalNames().peek()).getNames(), $4));
+  $$ = new ModuleNode(getPosition(), $2, new ScopeNode(getPosition(), ((LocalNamesElement) support.getLocalNames().peek()).getNames(), $4));
                     // $<Node>$.setLine($<Integer>3.intValue());
                     support.getLocalNames().pop();
                     support.setClassNest(support.getClassNest() - 1);
@@ -1316,7 +1316,7 @@ primary       : literal
 		      /* was in old jruby grammar support.getClassNest() !=0 || IdUtil.isAttrSet($2) ? Visibility.PUBLIC : Visibility.PRIVATE); */
                     /* NOEX_PRIVATE for toplevel */
                     $$ = new DefnNode(getPosition(), $2, $4,
-		                      new ScopeNode(((LocalNamesElement) support.getLocalNames().peek()).getNames(), $5), Visibility.PRIVATE);
+		                      new ScopeNode(getPosition(), ((LocalNamesElement) support.getLocalNames().peek()).getNames(), $5), Visibility.PRIVATE);
                     // $<Node>$.setPosFrom($4);
                     support.getLocalNames().pop();
                     support.setInDef(false);
@@ -1331,7 +1331,7 @@ primary       : literal
                 } f_arglist 
 		  bodystmt 
                   kEND {
-                    $$ = new DefsNode(getPosition(), $2, $5, $7, new ScopeNode(((LocalNamesElement) support.getLocalNames().peek()).getNames(), $8));
+                    $$ = new DefsNode(getPosition(), $2, $5, $7, new ScopeNode(getPosition(), ((LocalNamesElement) support.getLocalNames().peek()).getNames(), $8));
                     // $<Node>$.setPosFrom($2);
                     support.getLocalNames().pop();
                     support.setInSingle(support.getInSingle() - 1);
@@ -1380,10 +1380,10 @@ block_var     : lhs
 
 opt_block_var : none
               | '|' /* none */ '|' {
-                    $$ = new ZeroArgNode();
+                    $$ = new ZeroArgNode(getPosition());
                 }
               | tOROP {
-                    $$ = new ZeroArgNode();
+                    $$ = new ZeroArgNode(getPosition());
 		}
               | '|' block_var '|' {
                     $$ = $2;
@@ -1489,7 +1489,7 @@ opt_ensure    : kENSURE compstmt {
                     if ($2 != null) {
                         $$ = $2;
                     } else {
-                        $$ = new NilNode(null);
+                        $$ = new NilNode(getPosition());
                     }
                 }
               | none
@@ -1872,7 +1872,7 @@ opt_f_block_arg: ',' f_block_arg {
 
 singleton     : var_ref {
                     if ($1 instanceof SelfNode) {
-                        $$ = new SelfNode(null);
+                        $$ = new SelfNode(getPosition());
                     } else {
 			support.checkExpression($1);
 			$$ = $1;

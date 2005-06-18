@@ -32,6 +32,7 @@
 package org.jruby;
 
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -104,9 +105,7 @@ public class RubyMethod extends RubyObject {
      * 
      */
     public IRubyObject call(IRubyObject[] args) {
-        if (args == null) {
-            args = IRubyObject.NULL_ARRAY;
-        }
+    	assert args != null;
 
         if (args.length != method.getArity().getValue()) {
         	throw getRuntime().newArgumentError("");
@@ -146,13 +145,15 @@ public class RubyMethod extends RubyObject {
      *
      */
     public static IRubyObject mproc(IRubyObject recv) {
+    	Ruby runtime = recv.getRuntime();
+    	
         try {
-            recv.getRuntime().getIterStack().push(Iter.ITER_CUR);
-            recv.getRuntime().getFrameStack().push();
+            runtime.getIterStack().push(Iter.ITER_CUR);
+            runtime.getFrameStack().push(new Frame(runtime.getCurrentContext()));
             return RubyKernel.proc(recv);
         } finally {
-            recv.getRuntime().getFrameStack().pop();
-            recv.getRuntime().getIterStack().pop();
+            runtime.getFrameStack().pop();
+            runtime.getIterStack().pop();
         }
     }
 

@@ -35,7 +35,6 @@ import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArrayNode;
-import org.jruby.ast.AttrSetNode;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BeginNode;
 import org.jruby.ast.BignumNode;
@@ -166,10 +165,6 @@ public abstract class AbstractVisitor implements NodeVisitor {
     }
 
     public void visitArrayNode(ArrayNode iVisited) {
-        visitNode(iVisited);
-    }
-
-    public void visitAttrSetNode(AttrSetNode iVisited) {
         visitNode(iVisited);
     }
 

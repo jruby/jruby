@@ -14,7 +14,7 @@
  * Copyright (C) 2001-2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2001-2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -30,15 +30,15 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import org.jruby.ast.types.IArityNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.runtime.Arity;
 
 /**
- * a call to super in a method.
- * @author  jpetersen
- * @version $Revision$
+ * a call to 'super(...)' in a method.
  */
-public class ZSuperNode extends Node {
+public class ZSuperNode extends Node implements IArityNode {
     static final long serialVersionUID = 6109129030317216863L;
 
     public ZSuperNode(SourcePosition position) {
@@ -52,4 +52,11 @@ public class ZSuperNode extends Node {
     public void accept(NodeVisitor iVisitor) {
         iVisitor.visitZSuperNode(this);
     }
+	
+	/**
+	 * 'super' can take any number of arguments.
+	 */
+	public Arity getArity() {
+		return Arity.optional();
+	}
 }

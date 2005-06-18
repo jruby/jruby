@@ -91,6 +91,8 @@ public class RubyProc extends RubyObject {
     }
 
     public IRubyObject call(IRubyObject[] args, IRubyObject self) {
+    	assert args != null;
+    	
         ThreadContext context = getRuntime().getCurrentContext();
         RubyModule oldWrapper = context.getWrapper();
         context.setWrapper(wrapper);

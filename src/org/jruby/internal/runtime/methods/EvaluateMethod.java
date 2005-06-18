@@ -13,7 +13,7 @@
  *
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -30,14 +30,8 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
-import org.jruby.ast.AttrSetNode;
-import org.jruby.ast.DAsgnNode;
-import org.jruby.ast.GlobalAsgnNode;
-import org.jruby.ast.InstVarNode;
-import org.jruby.ast.LocalAsgnNode;
-import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
-import org.jruby.ast.ZeroArgNode;
+import org.jruby.ast.types.IArityNode;
 import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ICallable;
@@ -53,11 +47,7 @@ public class EvaluateMethod extends AbstractMethod {
     private final Node node;
     private final Arity arity;
 
-    public EvaluateMethod(Node node, Visibility visibility) {
-    	this(node, visibility, arityOf(node)); // for compatibility
-    }
-    
-    public EvaluateMethod(Node node, Visibility visibility, Arity arity) {
+    private EvaluateMethod(Node node, Visibility visibility, Arity arity) {
         super(visibility);
         this.node = node;
         this.arity = arity;
@@ -79,35 +69,17 @@ public class EvaluateMethod extends AbstractMethod {
     	return arity;
     }
     
-    private static Arity arityOf(Node node) {
-        if (node instanceof AttrSetNode) {
-            return Arity.singleArgument();
-        } else if (node instanceof InstVarNode) {
-            return Arity.noArguments();
-        } else {
+    private static Arity procArityOf(Node node) {
+        if (node == null) {
             return Arity.optional();
-        }
-    }
-    
-    private static Arity procArityOf(Node node) { //FIXME make all args a commmon type, then refactor 
-    	if (node == null) {
-    		return Arity.optional();
-    	} else if (node instanceof ZeroArgNode) {
-    		return Arity.noArguments();
-    	} else if (node instanceof DAsgnNode || node instanceof LocalAsgnNode || node instanceof GlobalAsgnNode) {
-    		return Arity.singleArgument();
-    	} else if (node instanceof MultipleAsgnNode) {
-    		MultipleAsgnNode n = (MultipleAsgnNode) node;
-    		if (n.getArgsNode() != null) {
-    			return Arity.required(n.getHeadNode() == null ? 0 : n.getHeadNode().size());
-    		}
-    		return Arity.fixed(n.getHeadNode().size());
-    	} else {
-    		throw new Error("unexpected type " + node.getClass());
-    	}
+        } else if (node instanceof IArityNode) {
+            return ((IArityNode) node).getArity();
+        } 
+
+        throw new Error("unexpected type " + node.getClass());
     }
     
     public ICallable dup() {
-        return new EvaluateMethod(node, getVisibility());
+        return new EvaluateMethod(node, getVisibility(), arity);
     }
 }

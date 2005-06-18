@@ -174,6 +174,16 @@ public class ThreadContext {
         return currentScope().getVisibility();
     }
 
+	public IRubyObject callSuper() {
+		Frame frame = getCurrentFrame();
+		
+        if (frame.getLastClass() == null) {
+            throw new NameError(runtime, "superclass method '" + frame.getLastFunc() + "' disabled");
+        }
+
+        return callSuper(frame.getArgs());
+	}
+	
     public IRubyObject callSuper(IRubyObject[] args) {
     	Frame frame = getCurrentFrame();
     	
@@ -181,13 +191,13 @@ public class ThreadContext {
             throw new NameError(runtime,
                 "superclass method '" + frame.getLastFunc() + "' must be enabled by enableSuper().");
         }
-        getIterStack().push(getCurrentIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
+        iterStack.push(getCurrentIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
         try {
             RubyClass superClass = frame.getLastClass().getSuperClass();
             return superClass.call(frame.getSelf(), frame.getLastFunc(),
                                    args, CallType.SUPER);
         } finally {
-            getIterStack().pop();
+            iterStack.pop();
         }
     }
 
@@ -196,15 +206,12 @@ public class ThreadContext {
             throw new LocalJumpError(runtime, "yield called out of block");
         }
 
-        pushDynamicVars();
-        Block currentBlock = (Block) getBlockStack().peek();
+        Block currentBlock = (Block) blockStack.pop();
 
-        getFrameStack().push(currentBlock.getFrame());
+        frameStack.push(currentBlock.getFrame());
 
-        Scope oldScope = (Scope) getScopeStack().peek();
-        getScopeStack().setTop(currentBlock.getScope());
-
-        getBlockStack().pop();
+        Scope oldScope = (Scope) scopeStack.peek();
+        scopeStack.setTop(currentBlock.getScope());
 
         dynamicVarsStack.push(currentBlock.getDynamicVariables());
 
@@ -236,7 +243,7 @@ public class ThreadContext {
                         if (length == 0) {
                             value = runtime.getNil();
                         } else if (length == 1) {
-                            value = ((RubyArray)value).first(null);
+                            value = ((RubyArray)value).first(IRubyObject.NULL_ARRAY);
                         } else {
                             // XXXEnebo - Should be warning not error.
                             //throw runtime.newArgumentError("wrong # of arguments(" + 
@@ -251,36 +258,25 @@ public class ThreadContext {
                 }
             }
 
-            ICallable method = currentBlock.getMethod();
-
-            if (method == null) {
-                return runtime.getNil();
-            }
-
-            getIterStack().push(currentBlock.getIter());
-        
             IRubyObject[] args = ArgsUtil.arrayify(value);
 
-            try {
-                while (true) {
-                    try {
-                        return method.call(runtime, self, null, args, false);
-                    } catch (RedoJump rExcptn) {}
-                }
-            } catch (NextJump nExcptn) {
-                IRubyObject nextValue = nExcptn.getNextValue();
-                return nextValue == null ? runtime.getNil() : nextValue;
-            } finally {
-                getIterStack().pop();
+            iterStack.push(currentBlock.getIter());
+            	
+            while (true) {
+                try {
+                    return currentBlock.getMethod().call(runtime, self, null, args, false);
+                } catch (RedoJump rExcptn) {}
             }
+        } catch (NextJump nExcptn) {
+            IRubyObject nextValue = nExcptn.getNextValue();
+            return nextValue == null ? runtime.getNil() : nextValue;
         } finally {
+            iterStack.pop();
             dynamicVarsStack.pop();
-
-            getBlockStack().setCurrent(currentBlock);
-            getFrameStack().pop();
-
-            getScopeStack().setTop(oldScope);
-            dynamicVarsStack.pop();
+            frameStack.pop();
+            
+            blockStack.push(currentBlock);
+            scopeStack.setTop(oldScope);
 			setRubyClass(oldParent);
         }
     }
@@ -387,18 +383,18 @@ public class ThreadContext {
     }
     
     public Block beginCallArgs() {
-        Block currentBlock = (Block) getBlockStack().peek();
+        Block currentBlock = (Block) blockStack.peek();
 
         if (getCurrentIter().isPre()) {
-            getBlockStack().pop();
+            blockStack.pop();
         }
-        getIterStack().push(Iter.ITER_NOT);
+        iterStack.push(Iter.ITER_NOT);
         return currentBlock;
     }
 
     public void endCallArgs(Block currentBlock) {
-        getBlockStack().setCurrent(currentBlock);
-        getIterStack().pop();
+        blockStack.setCurrent(currentBlock);
+        iterStack.pop();
     }
 
 

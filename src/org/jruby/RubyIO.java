@@ -238,7 +238,7 @@ public class RubyIO extends RubyObject {
     }
     
     public IRubyObject reopen(IRubyObject[] args) {
-    	if (args == null || args.length < 1) {
+    	if (args.length < 1) {
             throw getRuntime().newArgumentError("wrong number of arguments");
     	}
     	
@@ -533,7 +533,7 @@ public class RubyIO extends RubyObject {
     // This was a getOpt with one mandatory arg, but it did not work
     // so I am parsing it for now.
     public RubyFixnum seek(IRubyObject[] args) {
-        if (args == null || args.length == 0) {
+        if (args.length == 0) {
             throw getRuntime().newArgumentError("wrong number of arguments");
         }
         

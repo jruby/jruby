@@ -38,7 +38,6 @@ import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArrayNode;
-import org.jruby.ast.AttrSetNode;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BeginNode;
 import org.jruby.ast.BignumNode;
@@ -186,10 +185,6 @@ public class DefaultIteratorVisitor implements NodeVisitor {
             ((Node) iterator.next()).accept(this);
         }
 
-    }
-
-    public void visitAttrSetNode(AttrSetNode iVisited) {
-        iVisited.accept(_Payload);
     }
 
     public void visitBackRefNode(BackRefNode iVisited) {

@@ -56,7 +56,6 @@ import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArrayNode;
-import org.jruby.ast.AttrSetNode;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BeginNode;
 import org.jruby.ast.BignumNode;
@@ -207,10 +206,10 @@ public final class EvaluateVisitor implements NodeVisitor {
         return runtime.getTraceFunction() != null;
     }
 
-    private void callTraceFunction(String event, IRubyObject self) {
+    private void callTraceFunction(String event, IRubyObject zelf) {
         String name = threadContext.getCurrentFrame().getLastFunc();
         RubyModule type = threadContext.getCurrentFrame().getLastClass();
-        runtime.callTraceFunction(event, threadContext.getPosition(), self, name, type);
+        runtime.callTraceFunction(event, threadContext.getPosition(), zelf, name, type);
     }
 
     public IRubyObject eval(Node node) {
@@ -280,17 +279,6 @@ public final class EvaluateVisitor implements NodeVisitor {
         }
         
         result = runtime.newArray(list);
-    }
-
-    /**
-     * @see NodeVisitor#visitAttrSetNode(AttrSetNode)
-     */
-    public void visitAttrSetNode(AttrSetNode iVisited) {
-        if (runtime.getCurrentFrame().getArgs().length != 1) {
-            throw runtime.newArgumentError("wrong # of arguments(" + threadContext.getCurrentFrame().getArgs().length + "for 1)");
-        }
-
-        result = self.setInstanceVariable(iVisited.getAttributeName(), threadContext.getCurrentFrame().getArgs()[0]);
     }
 
     /**
@@ -441,7 +429,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     public void visitCallNode(CallNode iVisited) {
         Block tmpBlock = threadContext.beginCallArgs();
         IRubyObject receiver = null;
-        IRubyObject[] args = null;
+        IRubyObject[] args;
         try {
             receiver = eval(iVisited.getReceiverNode());
             args = setupArgs(runtime, threadContext, iVisited.getArgsNode());
@@ -541,9 +529,9 @@ public final class EvaluateVisitor implements NodeVisitor {
         if (superNode == null) {
             return null;
         }
-        RubyClass result;
+        RubyClass superClazz;
         try {
-            result = (RubyClass) eval(superNode);
+            superClazz = (RubyClass) eval(superNode);
         } catch (Exception e) {
             if (superNode instanceof INameNode) {
                 String name = ((INameNode) superNode).getName();
@@ -552,10 +540,10 @@ public final class EvaluateVisitor implements NodeVisitor {
             }
 			throw new TypeError(runtime, "superclass undefined");
         }
-        if (result instanceof MetaClass) {
+        if (superClazz instanceof MetaClass) {
             throw new TypeError(runtime, "can't make subclass of virtual class");
         }
-        return result;
+        return superClazz;
     }
 
     /**
@@ -1051,13 +1039,12 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitNewlineNode(NewlineNode)
      */
     public void visitNewlineNode(NewlineNode iVisited) {
-        final SourcePosition position = iVisited.getPosition();
-        if (position != null) {
-            threadContext.setPosition(position);
-            if (isTrace()) {
-                callTraceFunction("line", self);
-            }
+        threadContext.setPosition(iVisited.getPosition());
+        
+        if (isTrace()) {
+           callTraceFunction("line", self);
         }
+        
         eval(iVisited.getNextNode());
     }
 
@@ -1507,11 +1494,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitZSuperNode(ZSuperNode)
      */
     public void visitZSuperNode(ZSuperNode iVisited) {
-        if (threadContext.getCurrentFrame().getLastClass() == null) {
-            throw new NameError(runtime, "superclass method '" + runtime.getCurrentFrame().getLastFunc() + "' disabled");
-        }
-        IRubyObject[] args = threadContext.getCurrentFrame().getArgs();
-        result = threadContext.callSuper(args);
+        result = threadContext.callSuper();
     }
 
     /**
@@ -1633,7 +1616,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         
         RubyArray array = (RubyArray) value;
         
-        return array.getLength() == 1 ? array.first(null) : array;
+        return array.getLength() == 1 ? array.first(IRubyObject.NULL_ARRAY) : array;
     }
 
     /* HACK: .... */

@@ -56,8 +56,7 @@ public class Block implements StackElement {
     private Block next;
 
     public static Block createBlock(Node var, ICallable method, IRubyObject self) {
-        Ruby runtime = self.getRuntime();
-        ThreadContext context = runtime.getCurrentContext();
+        ThreadContext context = self.getRuntime().getCurrentContext();
         return new Block(var,
                          method,
                          self,
@@ -77,6 +76,8 @@ public class Block implements StackElement {
         RubyModule klass,
         Iter iter,
         DynamicVariableSet dynamicVars) {
+    	
+        assert method != null;
 
         this.var = var;
         this.method = method;
@@ -88,26 +89,23 @@ public class Block implements StackElement {
         this.dynamicVariables = dynamicVars;
     }
 
-    public IRubyObject call(IRubyObject[] args) {
-        return call(args, null);
-    }
-
     public IRubyObject call(IRubyObject[] args, IRubyObject replacementSelf) {
         Ruby runtime = self.getRuntime();
         ThreadContext context = runtime.getCurrentContext();
-        Block oldBlock = (Block) context.getBlockStack().peek();
+        BlockStack blockStack = context.getBlockStack();
+        Block oldBlock = (Block) blockStack.peek();
         Block newBlock = this.cloneBlock();
         if (replacementSelf != null) {
             newBlock.self = replacementSelf;
         }
-        context.getBlockStack().setCurrent(newBlock);
+        blockStack.setCurrent(newBlock);
         context.getIterStack().push(Iter.ITER_CUR);
         context.getCurrentFrame().setIter(Iter.ITER_CUR);
         try {
-            return runtime.yield(args != null ? runtime.newArray(args) : null, null, null, true);
+            return context.yield(runtime.newArray(args), null, null, false, true);
         } finally {
             context.getIterStack().pop();
-            context.getBlockStack().setCurrent(oldBlock);
+            blockStack.setCurrent(oldBlock);
         }
     }
 

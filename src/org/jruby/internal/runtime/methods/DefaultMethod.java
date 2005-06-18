@@ -48,6 +48,7 @@ import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Scope;
+import org.jruby.runtime.ScopeStack;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -67,23 +68,28 @@ public final class DefaultMethod extends AbstractMethod {
         this.body = body;
         this.argsNode = argsNode;
 		this.parent = parent;
+		
+		assert body != null;
+		assert argsNode != null;
     }
 
     /**
      * @see AbstractMethod#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
      */
     public IRubyObject call(Ruby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
-        ThreadContext context = runtime.getCurrentContext();
+    	assert args != null;
 
+        ThreadContext context = runtime.getCurrentContext();
         RubyProc optionalBlockArg = null;
+        
         if (argsNode.getBlockArgNode() != null && context.isBlockGiven()) {
             optionalBlockArg = runtime.newProc();
         }
 
-        context.getScopeStack().push(new Scope(runtime));
-
+		ScopeStack scopeStack = context.getScopeStack();
+        Scope scope = (Scope) scopeStack.push(new Scope(runtime));
         if (body.getLocalNames() != null) {
-            context.currentScope().resetLocalVariables(body.getLocalNames());
+            scope.resetLocalVariables(body.getLocalNames());
         }
 
         context.pushDynamicVars();
@@ -91,12 +97,10 @@ public final class DefaultMethod extends AbstractMethod {
         RubyModule oldParent = context.setRubyClass(parent); 
 
         try {
-            if (argsNode != null) {
-                prepareArguments(runtime, receiver, args);
-            }
+            prepareArguments(runtime, scope, receiver, args);
 
             if (optionalBlockArg != null) {
-                runtime.getCurrentScope().setValue(argsNode.getBlockArgNode().getCount(), optionalBlockArg);
+                scope.setValue(argsNode.getBlockArgNode().getCount(), optionalBlockArg);
             }
             
             getArity().checkArity(runtime, args);
@@ -113,16 +117,12 @@ public final class DefaultMethod extends AbstractMethod {
         } finally {
             context.setRubyClass(oldParent);
             context.popDynamicVars();
-            context.getScopeStack().pop();
+            scopeStack.pop();
             traceReturn(runtime, receiver, name);
         }
     }
 
-    private void prepareArguments(Ruby runtime, IRubyObject receiver, IRubyObject[] args) {
-        if (args == null) {
-            args = IRubyObject.NULL_ARRAY;
-        }
-
+    private void prepareArguments(Ruby runtime, Scope scope, IRubyObject receiver, IRubyObject[] args) {
         int expectedArgsCount = argsNode.getArgsCount();
         if (expectedArgsCount > args.length) {
             throw runtime.newArgumentError("Wrong # of arguments(" + args.length + " for " + expectedArgsCount + ")");
@@ -137,7 +137,6 @@ public final class DefaultMethod extends AbstractMethod {
             runtime.getCurrentFrame().setArgs(args);
         }
 
-		Scope scope = runtime.getCurrentScope();
         if (scope.hasLocalVariables()) {
             if (expectedArgsCount > 0) {
                 for (int i = 0; i < expectedArgsCount; i++) {
@@ -176,9 +175,6 @@ public final class DefaultMethod extends AbstractMethod {
         }
 
         SourcePosition position = runtime.getFrameStack().getPrevious().getPosition();
-        if (position == null) {
-            position = runtime.getPosition();
-        }
         runtime.callTraceFunction("return", position, receiver, name, getImplementationClass()); // XXX
     }
 
@@ -186,56 +182,25 @@ public final class DefaultMethod extends AbstractMethod {
         if (runtime.getTraceFunction() == null) {
             return;
         }
-        //a lot of complication to try to get a line number and a file name
-        //without a NullPointerException
-        SourcePosition lPosition = null;
-        if (body != null) {
-            if (body.getBodyNode() != null) {
-                if(body.getBodyNode().getPosition() != null) {
-                    lPosition = body.getBodyNode().getPosition();
-                }
-            } else {
-                if (body.getPosition() != null) {
-                    lPosition = body.getPosition();
-                }
-            }
-        } else {
-            if (argsNode != null) {
-                lPosition = argsNode.getPosition();
-            }
-        }
-        if (lPosition == null) {
-           lPosition = runtime.getPosition();
-        }
-        runtime.callTraceFunction("call", lPosition, receiver, name, getImplementationClass()); // XXX
-    }
 
-    /**
-     * Gets the argsNode.
-     * @return Returns a ArgsNode
-     */
-    public ArgsNode getArgsNode() {
-        return argsNode;
+		SourcePosition position = body.getBodyNode() != null ? 
+            body.getBodyNode().getPosition() : body.getPosition();  
+
+		runtime.callTraceFunction("call", position, receiver, name, getImplementationClass()); // XXX
     }
 
     public Arity getArity() {
-        ArgsNode args = getArgsNode();
-        
-        if (args == null) {
-            return Arity.noArguments();
-        }
-        
         // TODO: Make special arity-related values use mnemonic
         // -2 means (*) signature to method def
-        if (args.getRestArg() == -2) {
+        if (argsNode.getRestArg() == -2) {
         	return Arity.optional();
         } 
 
-        int argsCount = args.getArgsCount();
-        if (args.getOptArgs() != null || args.getRestArg() >= 0) {
-            return Arity.required(argsCount);
+        if (argsNode.getOptArgs() != null || argsNode.getRestArg() >= 0) {
+            return Arity.required(argsNode.getArgsCount());
         }
-        return Arity.createArity(argsCount);
+
+        return Arity.createArity(argsNode.getArgsCount());
     }
     
     public ICallable dup() {

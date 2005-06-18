@@ -44,11 +44,11 @@ public class RubyWarnings {
     }
 
     public void warn(SourcePosition position, String message) {
+    	assert position != null;
+    	
         StringBuffer buffer = new StringBuffer(100);
-        if (position != null) {
-            buffer.append(position.getFile()).append(':');
-            buffer.append(position.getLine()).append(' ');
-        }
+
+        buffer.append(position.getFile()).append(':').append(position.getLine()).append(' ');
         buffer.append("warning: ").append(message).append('\n');
         IRubyObject errorStream = runtime.getGlobalVariables().get("$stderr");
         errorStream.callMethod("write", runtime.newString(buffer.toString()));

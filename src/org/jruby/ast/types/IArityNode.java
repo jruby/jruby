@@ -11,10 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2001-2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2001-2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
- * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2005 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -28,39 +25,15 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.ast;
+package org.jruby.ast.types;
 
-import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+// TODO: Bleeding runtime into parser.  Arity may be should be in parser (to keep bleeding oneway)
+import org.jruby.runtime.Arity;
 
 /**
- *
- * @author  jpetersen
- * @version $Revision$
+ * Any node which implements has an associated arity
+ * 
  */
-public class AttrSetNode extends Node {
-    static final long serialVersionUID = 3891623889734854578L;
-
-    private final String attributeName;
-
-    public AttrSetNode(SourcePosition position, String attributeName) {
-        super(position);
-        this.attributeName = attributeName;
-    }
-
-    /**
-     * Accept for the visitor pattern.
-     * @param iVisitor the visitor
-     **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitAttrSetNode(this);
-    }
-
-    /**
-     * Gets the attributeName.
-     * @return Returns a String
-     */
-    public String getAttributeName() {
-        return attributeName;
-    }
+public interface IArityNode {
+	public Arity getArity();
 }

@@ -14,7 +14,7 @@
  * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -40,20 +40,29 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  */
 public class Frame {
-    private IRubyObject self = null;
-    private IRubyObject[] args = null;
-    private String lastFunc = null;
-    private RubyModule lastClass = null;
+    private IRubyObject self;
+    private IRubyObject[] args;
+    private String lastFunc;
+    private RubyModule lastClass;
     private final SourcePosition position;
-    private Iter iter = Iter.ITER_NOT;
+    private Iter iter;
 
-    public Frame(IRubyObject self,
-                 IRubyObject[] args,
-                 String lastFunc,
-                 RubyModule lastClass,
-                 SourcePosition position,
-                 Iter iter)
-    {
+    public Frame(ThreadContext threadContext, Iter iter) {
+        this(null, IRubyObject.NULL_ARRAY, null, null, threadContext.getPosition(), 
+             threadContext.getCurrentIter());    	
+    }
+    
+    public Frame(ThreadContext threadContext) {
+    	this(threadContext, threadContext.getCurrentIter());
+    }
+
+    public Frame(ThreadContext threadContext, IRubyObject self, IRubyObject[] args, 
+    		String lastFunc, RubyModule lastClass) {
+    	this(self, args, lastFunc, lastClass, threadContext.getPosition(), threadContext.getCurrentIter());
+    }
+
+    public Frame(IRubyObject self, IRubyObject[] args, String lastFunc,
+                 RubyModule lastClass, SourcePosition position, Iter iter) {
         this.self = self;
         this.args = args;
         this.lastFunc = lastFunc;
@@ -108,25 +117,11 @@ public class Frame {
         return lastClass;
     }
 
-    /** Setter for property lastClass.
-     * @param lastClass New value of property lastClass.
-     */
-    public void setLastClass(RubyModule lastClass) {
-        this.lastClass = lastClass;
-    }
-
     /** Getter for property lastFunc.
      * @return Value of property lastFunc.
      */
     public String getLastFunc() {
         return lastFunc;
-    }
-
-    /** Setter for property lastFunc.
-     * @param lastFunc New value of property lastFunc.
-     */
-    public void setLastFunc(String lastFunc) {
-        this.lastFunc = lastFunc;
     }
 
     /** Getter for property self.
@@ -144,13 +139,14 @@ public class Frame {
     }
 
     public Frame duplicate() {
-        final IRubyObject[] newArgs;
-        if (args != null) {
+        IRubyObject[] newArgs;
+        if (args.length != 0) {
             newArgs = new IRubyObject[args.length];
             System.arraycopy(args, 0, newArgs, 0, args.length);
         } else {
-            newArgs = null;
+        	newArgs = args;
         }
+
         return new Frame(self, newArgs, lastFunc, lastClass, position, iter);
     }
 

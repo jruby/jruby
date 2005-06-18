@@ -281,35 +281,35 @@ public class RubyYaccLexer {
 
         switch (c) {
         case 'Q':
-            lex_strterm = new StringTerm(src.getPosition(), str_dquote, term, paren);
+            lex_strterm = new StringTerm(str_dquote, term, paren);
             return Token.tSTRING_BEG;
 
         case 'q':
-            lex_strterm = new StringTerm(src.getPosition(), str_squote, term, paren);
+            lex_strterm = new StringTerm(str_squote, term, paren);
             return Token.tSTRING_BEG;
 
         case 'W':
-            lex_strterm = new StringTerm(src.getPosition(), str_dquote | STR_FUNC_QWORDS, term, paren);
+            lex_strterm = new StringTerm(str_dquote | STR_FUNC_QWORDS, term, paren);
             do {c = src.read();} while (Character.isWhitespace(c));
             src.unread(c);
             return Token.tWORDS_BEG;
 
         case 'w':
-            lex_strterm = new StringTerm(src.getPosition(), str_squote | STR_FUNC_QWORDS, term, paren);
+            lex_strterm = new StringTerm(str_squote | STR_FUNC_QWORDS, term, paren);
             do {c = src.read();} while (Character.isWhitespace(c));
             src.unread(c);
             return Token.tQWORDS_BEG;
 
         case 'x':
-            lex_strterm = new StringTerm(src.getPosition(), str_xquote, term, paren);
+            lex_strterm = new StringTerm(str_xquote, term, paren);
             return Token.tXSTRING_BEG;
 
         case 'r':
-            lex_strterm = new StringTerm(src.getPosition(), str_regexp, term, paren);
+            lex_strterm = new StringTerm(str_regexp, term, paren);
             return Token.tREGEXP_BEG;
 
         case 's':
-            lex_strterm = new StringTerm(src.getPosition(), str_ssym, term, paren);
+            lex_strterm = new StringTerm(str_ssym, term, paren);
             lex_state = LexState.EXPR_FNAME;
             return Token.tSYMBEG;
 
@@ -364,7 +364,7 @@ public class RubyYaccLexer {
 
         String line = src.readLine() + '\n';
         String tok = tokenBuffer.toString();
-        lex_strterm = new HeredocTerm(src.getPosition(), tok, func, line);
+        lex_strterm = new HeredocTerm(tok, func, line);
 
         return term == '`' ? Token.tXSTRING_BEG : Token.tSTRING_BEG;
     }
@@ -723,7 +723,7 @@ public class RubyYaccLexer {
                 return '>';
 
             case '"':
-                lex_strterm = new StringTerm(src.getPosition(), str_dquote, '"', '\0');
+                lex_strterm = new StringTerm(str_dquote, '"', '\0');
                 return Token.tSTRING_BEG;
 
             case '`':
@@ -739,11 +739,11 @@ public class RubyYaccLexer {
                     }
                     return c;
                 }
-                lex_strterm = new StringTerm(src.getPosition(), str_xquote, '`', '\0');
+                lex_strterm = new StringTerm(str_xquote, '`', '\0');
                 return Token.tXSTRING_BEG;
 
             case '\'':
-                lex_strterm = new StringTerm(src.getPosition(), str_squote, '\'', '\0');
+                lex_strterm = new StringTerm(str_squote, '\'', '\0');
                 return Token.tSTRING_BEG;
 
             case '?':
@@ -978,10 +978,10 @@ public class RubyYaccLexer {
                 }
                 switch (c) {
                 case '\'':
-                    lex_strterm = new StringTerm(src.getPosition(), str_ssym, c, '\0');
+                    lex_strterm = new StringTerm(str_ssym, c, '\0');
                     break;
                 case '"':
-                    lex_strterm = new StringTerm(src.getPosition(), str_dsym, c, '\0');
+                    lex_strterm = new StringTerm(str_dsym, c, '\0');
                     break;
                 default:
                     src.unread(c);
@@ -993,7 +993,7 @@ public class RubyYaccLexer {
             case '/':
                 if (lex_state == LexState.EXPR_BEG || 
                     lex_state == LexState.EXPR_MID) {
-                    lex_strterm = new StringTerm(src.getPosition(), str_regexp, '/', '\0');
+                    lex_strterm = new StringTerm(str_regexp, '/', '\0');
                     return Token.tREGEXP_BEG;
                 }
                 
@@ -1006,7 +1006,7 @@ public class RubyYaccLexer {
                 if (lex_state.isArgument() && spaceSeen) {
                     if (!Character.isWhitespace(c)) {
                         arg_ambiguous();
-                        lex_strterm = new StringTerm(src.getPosition(), str_regexp, '/', '\0');
+                        lex_strterm = new StringTerm(str_regexp, '/', '\0');
                         return Token.tREGEXP_BEG;
                     }
                 }

@@ -247,14 +247,13 @@ public class RubyObject implements Cloneable, IRubyObject {
     // Some helper functions:
 
     public int checkArgumentCount(IRubyObject[] args, int min, int max) {
-        int length = args.length;
-        if (length < min) {
+        if (args.length < min) {
             throw getRuntime().newArgumentError("wrong number of arguments (" + args.length + " for " + min + ")");
         }
-        if (max > -1 && length > max) {
+        if (max > -1 && args.length > max) {
             throw getRuntime().newArgumentError("wrong number of arguments (" + args.length + " for " + max + ")");
         }
-        return length;
+        return args.length;
     }
 
     public boolean isKindOf(RubyModule type) {

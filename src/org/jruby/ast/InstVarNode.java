@@ -30,15 +30,15 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import org.jruby.ast.types.IArityNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.runtime.Arity;
 
-/** Represents an instance variable access.
- *
- * @author  jpetersen
- * @version $Revision$
+/** 
+ * Represents an instance variable accessor.
  */
-public class InstVarNode extends Node {
+public class InstVarNode extends Node implements IArityNode {
     static final long serialVersionUID = 6839063763576230282L;
 
     private final String name;
@@ -56,6 +56,13 @@ public class InstVarNode extends Node {
         iVisitor.visitInstVarNode(this);
     }
 
+	/**
+	 * A variable accessor takes no arguments.
+	 */
+	public Arity getArity() {
+		return Arity.noArguments();
+	}
+	
     /**
      * Gets the name.
      * @return Returns a String

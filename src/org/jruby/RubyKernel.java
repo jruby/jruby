@@ -469,7 +469,7 @@ public class RubyKernel {
             }
         }
 
-        Iterator dynamicNames = runtime.getDynamicNames().iterator();
+        Iterator dynamicNames = runtime.getCurrentContext().getCurrentDynamicVars().names().iterator();
         while (dynamicNames.hasNext()) {
             String name = (String) dynamicNames.next();
             localVariables.append(runtime.newString(name));

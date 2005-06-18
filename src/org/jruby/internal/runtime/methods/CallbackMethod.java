@@ -53,11 +53,10 @@ public class CallbackMethod extends AbstractMethod {
     }
 
     public IRubyObject call(Ruby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+    	assert args != null;
+    	
         if (runtime.getTraceFunction() != null) {
             SourcePosition position = runtime.getFrameStack().getPrevious().getPosition();
-            if (position == null) {
-                position = runtime.getPosition();
-            }
 
             runtime.callTraceFunction("c-call", position, receiver, name, getImplementationClass()); // XXX
             try {

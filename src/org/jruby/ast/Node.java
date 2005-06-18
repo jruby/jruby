@@ -46,14 +46,6 @@ public abstract class Node implements Serializable {
 
     private SourcePosition position;
 
-	/**
-	 * constructor without a position.
-	 * This should only be used in node constructor where no good position can be computed
-	 **/
- 	public Node() {
- 		this(null);
-    }
-
     public Node(SourcePosition position) {
         this.position = position;
     }

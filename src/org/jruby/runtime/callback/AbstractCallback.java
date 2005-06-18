@@ -166,18 +166,13 @@ public abstract class AbstractCallback implements Callback {
      * Calls a wrapped Ruby method for the specified receiver with the specified arguments.
      */
     public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
-        if (new_style) {
-            assert recv != null;
-            assert args != null;
-
-            arity.checkArity(recv.getRuntime(), args);
-            if (arity.isFixed()) {
-                return invokeMethod(recv, args);
-            }
-            return invokeMethod(recv, new Object[]{args});
-        }
-        args = (args != null) ? args : IRubyObject.NULL_ARRAY;
         arity.checkArity(recv.getRuntime(), args);
+
+        if (new_style) {
+            return arity.isFixed() ? 
+                invokeMethod(recv, args) : invokeMethod(recv, new Object[]{args}); 
+        }
+
         return invokeMethod(recv, args);
     }
 

@@ -49,6 +49,7 @@ import org.jruby.exceptions.ThrowJump;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.Scope;
@@ -67,13 +68,13 @@ public class JRubyEngine extends BSFEngineImpl {
         ThreadContext threadContext = runtime.getCurrentContext();
         try {
             // add a new method conext
-            threadContext.getFrameStack().push();
+            threadContext.getFrameStack().push(new Frame(threadContext));
             threadContext.pushDynamicVars();
-            threadContext.getScopeStack().push(new Scope(runtime, paramNames));
+            Scope scope = (Scope) threadContext.getScopeStack().push(new Scope(runtime, paramNames));
 
             // set global variables
             for (int i = 0, size = args.size(); i < size; i++) {
-                threadContext.currentScope().setValue(i, convertToRuby(args.get(i)));
+                scope.setValue(i, convertToRuby(args.get(i)));
             }
 
             runtime.setPosition(file, line);
