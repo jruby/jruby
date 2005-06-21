@@ -223,7 +223,7 @@ public class RubyArray extends RubyObject implements List {
     	}
     	
     	for (int i = 1; i < args.length; i++) {
-    		list.add((int) (offset + i), args[i]);
+    		list.add((int) (offset + i - 1), args[i]);
     	}
     	
     	return this;
