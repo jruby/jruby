@@ -73,6 +73,10 @@ public class RubyFloat extends RubyNumeric {
     public long getLongValue() {
         return (long) value;
     }
+    
+    public RubyFloat convertToFloat() {
+    	return this;
+    }
 
     public static RubyClass createFloatClass(Ruby runtime) {
         RubyClass result = runtime.defineClass("Float", runtime.getClasses().getNumericClass());

@@ -16,7 +16,7 @@
  * Copyright (C) 2001-2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2002-2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2002-2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
@@ -49,23 +49,22 @@ import org.jruby.exceptions.IndexError;
 import org.jruby.exceptions.SecurityError;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.ConversionIterator;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.meta.ArrayMetaClass;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.Pack;
 import org.jruby.util.collections.IdentitySet;
 
 /**
- *
- * @author  jpetersen
+ * The implementation of the built-in class Array in Ruby.
  */
 public class RubyArray extends RubyObject implements List {
     private List list;
     private boolean tmpLock;
 
 	private RubyArray(Ruby runtime, List list) {
-		super(runtime, runtime.getClass("Array"));
+		super(runtime, runtime.getClasses().getArrayClass());
         this.list = list;
     }
 
@@ -78,6 +77,10 @@ public class RubyArray extends RubyObject implements List {
 
     public IRubyObject[] toJavaArray() {
         return (IRubyObject[])list.toArray(new IRubyObject[getLength()]);
+    }
+    
+    public RubyArray convertToArray() {
+    	return this;
     }
 
     /** Getter for property tmpLock.
@@ -105,95 +108,6 @@ public class RubyArray extends RubyObject implements List {
             }
         }
         return false;
-    }
-
-    public static RubyClass createArrayClass(Ruby runtime) {
-        RubyClass arrayClass = runtime.defineClass("Array", runtime.getClasses().getObjectClass());
-        arrayClass.includeModule(runtime.getModule("Enumerable"));
-
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyArray.class);
-
-        arrayClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
-        arrayClass.defineSingletonMethod("[]", callbackFactory.getOptSingletonMethod("create"));
-        arrayClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
-
-        arrayClass.defineMethod("inspect", callbackFactory.getMethod("inspect"));
-        arrayClass.defineMethod("to_s", callbackFactory.getMethod("to_s"));
-        arrayClass.defineMethod("to_a", callbackFactory.getSelfMethod(0));
-        arrayClass.defineMethod("to_ary", callbackFactory.getSelfMethod(0));
-        arrayClass.defineMethod("frozen?", callbackFactory.getMethod("frozen"));
-        arrayClass.defineMethod("==", callbackFactory.getMethod("array_op_equal", IRubyObject.class));
-        arrayClass.defineMethod("eql?", callbackFactory.getMethod("eql", IRubyObject.class));
-        arrayClass.defineMethod("===", callbackFactory.getMethod("array_op_equal", IRubyObject.class));
-        arrayClass.defineMethod("hash", callbackFactory.getMethod("hash"));
-        arrayClass.defineMethod("[]", callbackFactory.getOptMethod("aref"));
-        arrayClass.defineMethod("[]=", callbackFactory.getOptMethod("aset"));
-        arrayClass.defineMethod("at", callbackFactory.getMethod("at", IRubyObject.class));
-        arrayClass.defineMethod("fetch", callbackFactory.getOptMethod("fetch", RubyNumeric.class));
-        arrayClass.defineMethod("first", callbackFactory.getOptMethod("first"));
-        arrayClass.defineMethod("insert", callbackFactory.getOptMethod("insert", RubyNumeric.class));
-        arrayClass.defineMethod("last", callbackFactory.getOptMethod("last"));
-        arrayClass.defineMethod("concat", callbackFactory.getMethod("concat", IRubyObject.class));
-        arrayClass.defineMethod("<<", callbackFactory.getMethod("append", IRubyObject.class));
-        arrayClass.defineMethod("push", callbackFactory.getOptMethod("push"));
-        arrayClass.defineMethod("pop", callbackFactory.getMethod("pop"));
-        arrayClass.defineMethod("shift", callbackFactory.getMethod("shift"));
-        arrayClass.defineMethod("unshift", callbackFactory.getOptMethod("unshift"));
-        arrayClass.defineMethod("each", callbackFactory.getMethod("each"));
-        arrayClass.defineMethod("each_index", callbackFactory.getMethod("each_index"));
-        arrayClass.defineMethod("reverse_each", callbackFactory.getMethod("reverse_each"));
-        arrayClass.defineMethod("length", callbackFactory.getMethod("length"));
-        arrayClass.defineMethod("size", callbackFactory.getMethod("length"));
-        arrayClass.defineMethod("empty?", callbackFactory.getMethod("empty_p"));
-        arrayClass.defineMethod("index", callbackFactory.getMethod("index", IRubyObject.class));
-        arrayClass.defineMethod("rindex", callbackFactory.getMethod("rindex", IRubyObject.class));
-        arrayClass.defineMethod("indexes", callbackFactory.getOptMethod("indices"));
-        arrayClass.defineMethod("indices", callbackFactory.getOptMethod("indices"));
-        arrayClass.defineMethod("clone", callbackFactory.getMethod("rbClone"));
-        arrayClass.defineMethod("join", callbackFactory.getOptMethod("join"));
-        arrayClass.defineMethod("reverse", callbackFactory.getMethod("reverse"));
-        arrayClass.defineMethod("reverse!", callbackFactory.getMethod("reverse_bang"));
-        arrayClass.defineMethod("sort", callbackFactory.getMethod("sort"));
-        arrayClass.defineMethod("sort!", callbackFactory.getMethod("sort_bang"));
-        arrayClass.defineMethod("transpose", callbackFactory.getMethod("transpose"));
-        arrayClass.defineMethod("values_at", callbackFactory.getOptMethod("values_at"));
-        arrayClass.defineMethod("collect", callbackFactory.getMethod("collect"));
-        arrayClass.defineMethod("collect!", callbackFactory.getMethod("collect_bang"));
-        arrayClass.defineMethod("map!", callbackFactory.getMethod("collect_bang"));
-        arrayClass.defineMethod("filter", callbackFactory.getMethod("collect_bang"));
-        arrayClass.defineMethod("delete", callbackFactory.getMethod("delete", IRubyObject.class));
-        arrayClass.defineMethod("delete_at", callbackFactory.getMethod("delete_at", IRubyObject.class));
-        arrayClass.defineMethod("delete_if", callbackFactory.getMethod("delete_if"));
-        arrayClass.defineMethod("reject!", callbackFactory.getMethod("reject_bang"));
-        arrayClass.defineMethod("replace", callbackFactory.getMethod("replace", IRubyObject.class));
-        arrayClass.defineMethod("clear", callbackFactory.getMethod("rb_clear"));
-        arrayClass.defineMethod("fill", callbackFactory.getOptMethod("fill"));
-        arrayClass.defineMethod("include?", callbackFactory.getMethod("include_p", IRubyObject.class));
-        arrayClass.defineMethod("<=>", callbackFactory.getMethod("op_cmp", IRubyObject.class));
-
-        arrayClass.defineMethod("slice", callbackFactory.getOptMethod("aref"));
-        arrayClass.defineMethod("slice!", callbackFactory.getOptMethod("slice_bang"));
-
-        arrayClass.defineMethod("assoc", callbackFactory.getMethod("assoc", IRubyObject.class));
-        arrayClass.defineMethod("rassoc", callbackFactory.getMethod("rassoc", IRubyObject.class));
-
-        arrayClass.defineMethod("+", callbackFactory.getMethod("op_plus", IRubyObject.class));
-        arrayClass.defineMethod("*", callbackFactory.getMethod("op_times", IRubyObject.class));
-
-        arrayClass.defineMethod("-", callbackFactory.getMethod("op_diff", IRubyObject.class));
-        arrayClass.defineMethod("&", callbackFactory.getMethod("op_and", IRubyObject.class));
-        arrayClass.defineMethod("|", callbackFactory.getMethod("op_or", IRubyObject.class));
-
-        arrayClass.defineMethod("uniq", callbackFactory.getMethod("uniq"));
-        arrayClass.defineMethod("uniq!", callbackFactory.getMethod("uniq_bang"));
-        arrayClass.defineMethod("compact", callbackFactory.getMethod("compact"));
-        arrayClass.defineMethod("compact!", callbackFactory.getMethod("compact_bang"));
-        arrayClass.defineMethod("flatten", callbackFactory.getMethod("flatten"));
-        arrayClass.defineMethod("flatten!", callbackFactory.getMethod("flatten_bang"));
-        arrayClass.defineMethod("nitems", callbackFactory.getMethod("nitems"));
-        arrayClass.defineMethod("pack", callbackFactory.getMethod("pack", IRubyObject.class));
-
-        return arrayClass;
     }
 
     public RubyFixnum hash() {
@@ -263,12 +177,15 @@ public class RubyArray extends RubyObject implements List {
         return (IRubyObject) list.get((int) offset);
     }
     
-    public IRubyObject fetch(RubyNumeric index, IRubyObject[] args) {
+    public IRubyObject fetch(IRubyObject[] args) {
+    	checkArgumentCount(args, 1, 2);
+
+    	RubyInteger index = args[0].convertToInteger();
     	try {
     		return entry(index.getLongValue(), true);
     	} catch (IndexError e) {
-    		if (args.length > 0) {
-    			return args[0];
+    		if (args.length > 1) {
+    			return args[1];
     		} else if (getRuntime().isBlockGiven()) {
     			return getRuntime().yield(index);
     		}
@@ -277,14 +194,15 @@ public class RubyArray extends RubyObject implements List {
     	}
     }
     
-    public IRubyObject insert(RubyNumeric index, IRubyObject[] args) {
+    public IRubyObject insert(IRubyObject[] args) {
+    	checkArgumentCount(args, 1, -1);
     	// ruby does not bother to bounds check index, if no elements are to be added.
-    	if (args.length == 0) {
+    	if (args.length == 1) {
     	    return this;
     	}
     	
     	// too negative of an offset will throw an IndexError
-    	long offset = index.getLongValue();
+    	long offset = args[0].convertToInteger().getLongValue();
     	if (offset < 0 && getLength() + offset < 0) {
     		throw getRuntime().newIndexError("index " + 
     				(getLength() + offset) + " out of array");
@@ -304,7 +222,7 @@ public class RubyArray extends RubyObject implements List {
     		offset += getLength() + 1;
     	}
     	
-    	for (int i = 0; i < args.length; i++) {
+    	for (int i = 1; i < args.length; i++) {
     		list.add((int) (offset + i), args[i]);
     	}
     	
@@ -424,21 +342,6 @@ public class RubyArray extends RubyObject implements List {
         }
     }
 
-    /** to_ary
-     *
-     */
-    public static RubyArray arrayValue(IRubyObject other) {
-        if (other instanceof RubyArray) {
-            return (RubyArray) other;
-        } 
-        
-        try {
-            return (RubyArray) other.convertType(RubyArray.class, "Array", "to_ary");
-        } catch (Exception ex) {
-            throw other.getRuntime().newArgumentError("can't convert arg to Array: " + ex.getMessage());
-        }
-    }
-
     private boolean flatten(List array) {
         return flatten(array, new IdentitySet());
     }
@@ -512,25 +415,6 @@ public class RubyArray extends RubyObject implements List {
             list.add(args[i]);
         }
         return new RubyArray(runtime, list);
-    }
-
-    /** rb_ary_s_new
-     *
-     */
-    public static RubyArray newInstance(IRubyObject recv, IRubyObject[] args) {
-        RubyArray array = recv.getRuntime().newArray();
-        array.setMetaClass((RubyClass) recv);
-        array.callInit(args);
-        return array;
-    }
-
-    /** rb_ary_s_create
-     *
-     */
-    public static RubyArray create(IRubyObject recv, IRubyObject[] args) {
-        RubyArray array = recv.getRuntime().newArray(args);
-        array.setMetaClass((RubyClass) recv);
-        return array;
     }
 
     /** rb_ary_length
@@ -719,7 +603,7 @@ public class RubyArray extends RubyObject implements List {
      */
     public RubyArray concat(IRubyObject obj) {
         modify();
-        RubyArray other = arrayValue(obj);
+        RubyArray other = obj.convertToArray();
         list.addAll(other.getList());
         infectBy(other);
         return this;
@@ -1066,14 +950,14 @@ public class RubyArray extends RubyObject implements List {
         return getRuntime().getNil();
     }
 
-    public RubyArray indices(IRubyObject[] args) {
+    public IRubyObject indices(IRubyObject[] args) {
         IRubyObject[] result = new IRubyObject[args.length];
         boolean taint = false;
         for (int i = 0; i < args.length; i++) {
             result[i] = entry(RubyNumeric.fix2int(args[i]));
             taint |= result[i].isTaint();
         }
-        RubyArray ary = create(getMetaClass(), result);
+        IRubyObject ary = ((ArrayMetaClass) getMetaClass()).create(result);
         ary.setTaint(taint);
         return ary;
     }
@@ -1190,7 +1074,7 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public IRubyObject replace(IRubyObject other) {
-        replace(0, getLength(), arrayValue(other));
+        replace(0, getLength(), other.convertToArray());
         return this;
     }
 
@@ -1198,7 +1082,7 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public IRubyObject op_cmp(IRubyObject other) {
-        RubyArray ary = arrayValue(other);
+        RubyArray ary = other.convertToArray();
         int otherLen = ary.getLength();
         int len = getLength();
 
@@ -1300,7 +1184,7 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public IRubyObject op_plus(IRubyObject other) {
-        List otherList = arrayValue(other).getList();
+        List otherList = other.convertToArray().getList();
         List newList = new ArrayList(getLength() + otherList.size());
         newList.addAll(list);
         newList.addAll(otherList);
@@ -1366,7 +1250,7 @@ public class RubyArray extends RubyObject implements List {
      */
     public IRubyObject op_diff(IRubyObject other) {
         List ary1 = new ArrayList(list);
-        List ary2 = arrayValue(other).getList();
+        List ary2 = other.convertToArray().getList();
         int len2 = ary2.size();
         for (int i = ary1.size() - 1; i >= 0; i--) {
             IRubyObject obj = (IRubyObject) ary1.get(i);
@@ -1392,7 +1276,7 @@ public class RubyArray extends RubyObject implements List {
     	}
         List ary1 = uniq(list);
         int len1 = ary1.size();
-        List ary2 = arrayValue(other).getList();
+        List ary2 = other.convertToArray().getList();
         int len2 = ary2.size();
         ArrayList ary3 = new ArrayList(len1);
         for (int i = 0; i < len1; i++) {
@@ -1412,10 +1296,11 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public IRubyObject op_or(IRubyObject other) {
-        List ary1 = new ArrayList(list);
-        List ary2 = arrayValue(other).getList();
-        ary1.addAll(ary2);
-        return new RubyArray(getRuntime(), uniq(ary1));
+        List newArray = new ArrayList(list);
+        
+        newArray.addAll(other.convertToArray().getList());
+        
+        return new RubyArray(getRuntime(), uniq(newArray));
     }
 
     /** rb_ary_sort

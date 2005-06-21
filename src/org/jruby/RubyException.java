@@ -118,7 +118,8 @@ public class RubyException extends RubyObject {
     }
 
     public RubyArray set_backtrace(IRubyObject obj) {
-        backtrace = RubyArray.arrayValue(obj);
+        backtrace = obj.convertToArray();
+        
         return backtrace;
     }
 

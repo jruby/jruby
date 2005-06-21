@@ -36,6 +36,7 @@ import java.util.Map;
 
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFloat;
 import org.jruby.RubyInteger;
@@ -191,6 +192,7 @@ public interface IRubyObject {
     /**
      * Methods which perform to_xxx if the object has such a method
      */
+    RubyArray convertToArray();
     RubyFloat convertToFloat();
     RubyInteger convertToInteger();
     RubyString convertToString();

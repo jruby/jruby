@@ -436,6 +436,10 @@ public class RubyObject implements Cloneable, IRubyObject {
         return callMethod(convertMethod);
     }
 
+    public RubyArray convertToArray() {
+        return (RubyArray) convertToType("Array", "to_ary", true);
+    }
+
     public RubyFloat convertToFloat() {
         return (RubyFloat) convertToType("Float", "to_f", true);
     }

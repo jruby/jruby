@@ -57,18 +57,18 @@ public class ProcMetaClass extends ObjectMetaClass {
 	}
 
 	protected IRubyObject allocateObject() {
-        RubyProc newProc = getRuntime().newProc();
+        RubyProc instance = getRuntime().newProc();
         
-		newProc.setMetaClass(this);
+		instance.setMetaClass(this);
 		
-		return newProc;
+		return instance;
 	}
 
     public IRubyObject newInstance(IRubyObject[] args) {
-        RubyProc proc = getRuntime().newProc();
+        RubyProc instance = getRuntime().newProc();
         
-        proc.callInit(args);
+        instance.callInit(args);
        
-        return proc;
+        return instance;
     }
 }

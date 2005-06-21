@@ -43,7 +43,6 @@ import java.util.Set;
 import org.jruby.exceptions.SecurityError;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.ConversionIterator;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -101,6 +100,10 @@ public class RubyHash extends RubyObject implements Map {
         return defaultValue;
     }
 
+    public void setDefaultProc(RubyProc newProc) {
+    	defaultProc = newProc;
+    }
+    
     public Map getValueMap() {
         return valueMap;
     }
@@ -146,68 +149,6 @@ public class RubyHash extends RubyObject implements Map {
 		return new ArrayList(valueMap.entrySet()).iterator();		//in general we either want to modify the map or make sure we don't when we use this, so skip the copy
 	}
 
-    public static RubyClass createHashClass(Ruby runtime) {
-        RubyClass hashClass = runtime.defineClass("Hash", runtime.getClasses().getObjectClass());
-        hashClass.includeModule(runtime.getClasses().getEnumerableModule());
-
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyHash.class);
-
-        hashClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
-        hashClass.defineSingletonMethod("[]", callbackFactory.getOptSingletonMethod("create"));
-        hashClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
-		hashClass.defineMethod("clone", callbackFactory.getMethod("rbClone"));
-        hashClass.defineMethod("default_proc", callbackFactory.getMethod("default_proc")); 
-        hashClass.defineMethod("rehash", callbackFactory.getMethod("rehash"));
-        hashClass.defineMethod("to_hash", callbackFactory.getMethod("to_hash"));
-        hashClass.defineMethod("to_a", callbackFactory.getMethod("to_a"));
-        hashClass.defineMethod("to_s", callbackFactory.getMethod("to_s"));
-        hashClass.defineMethod("inspect", callbackFactory.getMethod("inspect"));
-
-        hashClass.defineMethod("==", callbackFactory.getMethod("equal", IRubyObject.class));
-        hashClass.defineMethod("[]", callbackFactory.getMethod("aref", IRubyObject.class));
-        hashClass.defineMethod("fetch", callbackFactory.getOptMethod("fetch"));
-        hashClass.defineMethod("[]=", callbackFactory.getMethod("aset", IRubyObject.class, IRubyObject.class));
-        hashClass.defineMethod("store", callbackFactory.getMethod("aset", IRubyObject.class, IRubyObject.class));
-		hashClass.defineMethod("default", callbackFactory.getMethod("getDefaultValue"));
-		hashClass.defineMethod("default=", callbackFactory.getMethod("setDefaultValue", IRubyObject.class));
-        hashClass.defineMethod("index", callbackFactory.getMethod("index", IRubyObject.class));
-        hashClass.defineMethod("indexes", callbackFactory.getOptMethod("indices"));
-		hashClass.defineAlias("indices", "indexes");
-        hashClass.defineMethod("indices", callbackFactory.getOptMethod("indices"));
-        hashClass.defineMethod("size", callbackFactory.getMethod("rb_size"));
-		hashClass.defineAlias("length", "size");
-        hashClass.defineMethod("empty?", callbackFactory.getMethod("empty_p"));
-		hashClass.defineMethod("each", callbackFactory.getMethod("each"));
-		hashClass.defineMethod("each_pair", callbackFactory.getMethod("each"));
-		hashClass.defineMethod("each_value", callbackFactory.getMethod("each_value"));
-		hashClass.defineMethod("each_key", callbackFactory.getMethod("each_key"));
-		hashClass.defineMethod("sort", callbackFactory.getMethod("sort"));
-		hashClass.defineMethod("keys", callbackFactory.getMethod("keys"));
-		hashClass.defineMethod("values", callbackFactory.getMethod("rb_values"));
-
-		hashClass.defineMethod("shift", callbackFactory.getMethod("shift"));
-		hashClass.defineMethod("delete", callbackFactory.getMethod("delete", IRubyObject.class));
-		hashClass.defineMethod("delete_if", callbackFactory.getMethod("delete_if"));
-		hashClass.defineMethod("reject", callbackFactory.getMethod("reject"));
-		hashClass.defineMethod("reject!", callbackFactory.getMethod("reject_bang"));
-		hashClass.defineMethod("clear", callbackFactory.getMethod("rb_clear"));
-		hashClass.defineMethod("invert", callbackFactory.getMethod("invert"));
-        hashClass.defineMethod("update", callbackFactory.getMethod("update", IRubyObject.class));
-        hashClass.defineMethod("replace", callbackFactory.getMethod("replace", IRubyObject.class));
-        hashClass.defineMethod("include?", callbackFactory.getMethod("has_key", IRubyObject.class));
-        hashClass.defineMethod("member?", callbackFactory.getMethod("has_key", IRubyObject.class));
-        hashClass.defineMethod("has_key?", callbackFactory.getMethod("has_key", IRubyObject.class));
-        hashClass.defineMethod("has_value?", callbackFactory.getMethod("has_value", IRubyObject.class));
-        hashClass.defineMethod("key?", callbackFactory.getMethod("has_key", IRubyObject.class));
-        hashClass.defineMethod("value?", callbackFactory.getMethod("has_value", IRubyObject.class));
-        hashClass.defineMethod("values_at", callbackFactory.getOptMethod("values_at"));
-
-        hashClass.defineMethod("merge", callbackFactory.getMethod("merge", IRubyObject.class));
-        hashClass.defineAlias("merge!", "update");
-        
-        return hashClass;
-    }
-
     /** rb_hash_modify
      *
      */
@@ -231,33 +172,6 @@ public class RubyHash extends RubyObject implements Map {
 	public static RubyHash newHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
 		return new RubyHash(runtime, valueMap, defaultValue);
 	}
-
-    public static RubyHash newInstance(IRubyObject recv, IRubyObject[] args) {
-        RubyHash hash = new RubyHash(recv.getRuntime());
-
-        // A block to represent 'default' value for unknown values
-        if (recv.getRuntime().isBlockGiven()) {
-        	hash.defaultProc = recv.getRuntime().newProc();
-        }
-        
-        hash.setMetaClass((RubyClass) recv);
-        hash.callInit(args);
-        return hash;
-    }
-
-    public static RubyHash create(IRubyObject recv, IRubyObject[] args) {
-        RubyHash hash = new RubyHash(recv.getRuntime());
-        if (args.length == 1) {
-            hash.setValueMap(new HashMap(((RubyHash) args[0]).getValueMap()));
-        } else if (args.length % 2 != 0) {
-            throw recv.getRuntime().newArgumentError("odd number of args for Hash");
-        } else {
-            for (int i = 0; i < args.length; i += 2) {
-                hash.aset(args[i], args[i + 1]);
-            }
-        }
-        return hash;
-    }
 
     public IRubyObject initialize(IRubyObject[] args) {
         if (args.length > 0) {

@@ -45,8 +45,10 @@ import org.jruby.javasupport.JavaArray;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.meta.ArrayMetaClass;
 import org.jruby.runtime.builtin.meta.FileMetaClass;
 import org.jruby.runtime.builtin.meta.FixnumMetaClass;
+import org.jruby.runtime.builtin.meta.HashMetaClass;
 import org.jruby.runtime.builtin.meta.IOMetaClass;
 import org.jruby.runtime.builtin.meta.IntegerMetaClass;
 import org.jruby.runtime.builtin.meta.NumericMetaClass;
@@ -337,7 +339,7 @@ public class RubyClasses {
      */
     public RubyClass getHashClass() {
         if (hashClass == null) {
-            hashClass = RubyHash.createHashClass(runtime);
+            hashClass = new HashMetaClass(runtime);
         }
         return hashClass;
     }
@@ -665,7 +667,7 @@ public class RubyClasses {
      */
     public RubyClass getArrayClass() {
         if (arrayClass == null) {
-            arrayClass = RubyArray.createArrayClass(runtime);
+            arrayClass = new ArrayMetaClass(runtime);
         }
         return arrayClass;
     }
