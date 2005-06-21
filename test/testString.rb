@@ -28,6 +28,12 @@ test_equal(["///home", "///jruby"], "///home///jruby".split(%r<(?=///)>))
 
 test_equal("hihihi", "hi" * 3)
 
+# To test protocol conversion
+class IntClass
+  def initialize(num); @num = num; end
+  def to_int; @num; end; 
+end
+
 s = "foobar"
 s["foo"] = "baz"
 test_equal("bazbar", s)
@@ -41,6 +47,7 @@ test_equal("123abc", "123ABC".capitalize)
 s ="hello"
 s.capitalize!
 test_equal("Hello", s)
+test_equal(101, s[IntClass.new(1)])
 test_equal(nil, s.capitalize!)
 s = "123ABC"
 s.capitalize!
