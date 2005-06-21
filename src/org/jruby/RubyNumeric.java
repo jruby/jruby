@@ -35,59 +35,38 @@ package org.jruby;
 import java.math.BigInteger;
 
 import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.Arity;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callback.ReflectionCallback;
 
 /**
- *
- * @author  jpetersen
- * @version $Revision$
+ * Base class for all numerical types in ruby.
  */
-public abstract class RubyNumeric extends RubyObject {
+// TODO: Numeric.new works in Ruby and it does here too.  However trying to use
+//   that instance in a numeric operation should generate an ArgumentError. Doing
+//   this seems so pathological I do not see the need to fix this now.
+public class RubyNumeric extends RubyObject {
 
-    public RubyNumeric(Ruby runtime, RubyClass rubyClass) {
-        super(runtime, rubyClass);
+    public RubyNumeric(Ruby runtime, RubyClass metaClass) {
+        super(runtime, metaClass);
     }
 
-    public abstract double getDoubleValue();
-    public abstract long getLongValue();
+    // The implementations of these are all bonus (see TODO above)  I was going
+    // to throw an error from these, but it appears to be the wrong place to
+    // do it.
+    public double getDoubleValue() { return 0; }
+    public long getLongValue() { return 0; }
+    public RubyNumeric multiplyWith(RubyInteger value) { return value; }
+    public RubyNumeric multiplyWith(RubyFloat value) { return value; }
+    public RubyNumeric multiplyWith(RubyBignum value) { return value; }
 
     public long getTruncatedLongValue() {
         return getLongValue();
     }
-
-    public static RubyClass createNumericClass(Ruby runtime) {
-        RubyClass result = runtime.defineClass("Numeric", runtime.getClasses().getObjectClass());
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyNumeric.class);
-
-        result.includeModule(runtime.getClasses().getComparableModule());
-
-        result.defineMethod("+@", callbackFactory.getMethod("op_uplus"));
-        result.defineMethod("-@", callbackFactory.getMethod("op_uminus"));
-        result.defineMethod("<=>", callbackFactory.getMethod("cmp", IRubyObject.class));
-        result.defineMethod("==", callbackFactory.getMethod("equal", IRubyObject.class));
-        result.defineMethod("equal?", callbackFactory.getMethod("veryEqual", IRubyObject.class));
-        result.defineMethod("===", callbackFactory.getMethod("equal", IRubyObject.class));
-        result.defineMethod("abs", callbackFactory.getMethod("abs"));
-        result.defineMethod("ceil", callbackFactory.getMethod("ceil"));
-        result.defineMethod("coerce", new ReflectionCallback(RubyNumeric.class, "coerce", Arity.fixed(1)));
-        result.defineMethod("clone", callbackFactory.getMethod("rbClone"));
-        result.defineMethod("divmod", callbackFactory.getMethod("divmod", RubyNumeric.class));
-        result.defineMethod("eql?", callbackFactory.getMethod("eql", IRubyObject.class));
-        result.defineMethod("floor", callbackFactory.getMethod("floor"));
-        result.defineMethod("integer?", callbackFactory.getMethod("int_p"));
-        result.defineMethod("modulo", callbackFactory.getMethod("modulo", RubyNumeric.class));
-        result.defineMethod("nonzero?", callbackFactory.getMethod("nonzero_p"));
-        result.defineMethod("remainder", callbackFactory.getMethod("remainder", RubyNumeric.class));
-        result.defineMethod("round", callbackFactory.getMethod("round"));
-        result.defineMethod("truncate", callbackFactory.getMethod("truncate"));
-        result.defineMethod("zero?", callbackFactory.getMethod("zero_p"));
-        
-        return result;
+    
+    public static RubyNumeric newNumeric(Ruby runtime) {
+    	return new RubyNumeric(runtime, runtime.getClasses().getNumericClass());
     }
 
+    // TODO: Find all consumers and convert to correct conversion protocol
     public static long num2long(IRubyObject arg) {
         if (arg instanceof RubyNumeric) {
             return ((RubyNumeric) arg).getLongValue();
@@ -108,13 +87,6 @@ public abstract class RubyNumeric extends RubyObject {
             throw arg.getRuntime().newTypeError("argument value is too big to convert to int");
         }
         return (int) val;
-    }
-
-    public static final RubyNumeric numericValue(IRubyObject arg) {
-        if (!(arg instanceof RubyNumeric)) {
-            throw arg.getRuntime().newTypeError("argument not numeric");
-        }
-        return (RubyNumeric) arg;
     }
 
     /**
@@ -261,6 +233,10 @@ public abstract class RubyNumeric extends RubyObject {
 
         return args[0].callMethod(method, args[1]);
     }
+    
+    public RubyNumeric asNumeric() {
+    	return this;
+    }
 
     /** num_coerce
      *
@@ -293,14 +269,14 @@ public abstract class RubyNumeric extends RubyObject {
     /** num_uplus
      *
      */
-    public RubyNumeric op_uplus() {
+    public IRubyObject op_uplus() {
         return this;
     }
 
     /** num_uminus
      *
      */
-    public RubyNumeric op_uminus() {
+    public IRubyObject op_uminus() {
         RubyNumeric[] coerce = getCoerce(RubyFixnum.zero(getRuntime()));
 
         return (RubyNumeric) coerce[1].callMethod("-", coerce[0]);
@@ -311,50 +287,58 @@ public abstract class RubyNumeric extends RubyObject {
     		return getRuntime().getNil();
     	}
     	
-        return getRuntime().newFixnum( 
-        		compareValue((RubyNumeric) other));
+        return getRuntime().newFixnum(compareValue((RubyNumeric) other));
     }
 
-    /** num_divmod
-     *
-     */
-    public RubyArray divmod(RubyNumeric other) {
-        RubyNumeric div = (RubyNumeric) callMethod("/", other);
-        if (div instanceof RubyFloat) {
-            double d = Math.floor(((RubyFloat) div).getValue());
-            if (((RubyFloat) div).getValue() > d) {
-                div = RubyFloat.newFloat(getRuntime(), d);
+    public IRubyObject divmod(IRubyObject other) {
+    	if (other instanceof RubyNumeric) {
+    	    RubyNumeric denominator = (RubyNumeric) other;
+            RubyNumeric div = (RubyNumeric) callMethod("/", denominator);
+            if (div instanceof RubyFloat) {
+                double d = Math.floor(((RubyFloat) div).getValue());
+                if (((RubyFloat) div).getValue() > d) {
+                    div = RubyFloat.newFloat(getRuntime(), d);
+                }
             }
-        }
+            
+            return getRuntime().newArray(div, modulo(denominator));
+    	}
 
-        return getRuntime().newArray(div, modulo(other));
+    	return callCoerced("divmod", other);
     }
 
     /** num_modulo
      *
      */
-    public RubyNumeric modulo(RubyNumeric other) {
-        return (RubyNumeric) callMethod("%", other);
+    public IRubyObject modulo(IRubyObject other) {
+    	if (other instanceof RubyNumeric) {
+            return (RubyNumeric) callMethod("%", (RubyNumeric) other);
+    	}
+    	
+    	return callCoerced("modulo", other);
     }
 
     /** num_remainder
      *
      */
-    public RubyNumeric remainder(RubyNumeric other) {
-        RubyNumeric mod = modulo(other);
-        final RubyNumeric zero = RubyFixnum.zero(getRuntime());
+    public IRubyObject remainder(IRubyObject other) {
+    	if (other instanceof RubyNumeric) {
+            IRubyObject mod = modulo(other);
+            final RubyNumeric zero = RubyFixnum.zero(getRuntime());
 
-        if (callMethod("<", zero).isTrue() && other.callMethod(">", zero).isTrue() || 
-            callMethod(">", zero).isTrue() && other.callMethod("<", zero).isTrue()) {
+            if (callMethod("<", zero).isTrue() && other.callMethod(">", zero).isTrue() || 
+                callMethod(">", zero).isTrue() && other.callMethod("<", zero).isTrue()) {
 
-            return (RubyNumeric) mod.callMethod("-", other);
-        }
+                return (RubyNumeric) mod.callMethod("-", (RubyNumeric) other);
+            }
 
-        return mod;
+            return mod;
+    	}
+    	
+    	return callCoerced("remainder", other);
     }
 
     protected int compareValue(RubyNumeric other) {
-        System.out.println("ALLYOURBASE"); //TODO this can't be correct --sma
         return -1;
     }
     
@@ -461,13 +445,7 @@ public abstract class RubyNumeric extends RubyObject {
         return multiplyWith((RubyInteger) value);
     }
 
-    public abstract RubyNumeric multiplyWith(RubyInteger value);
-
-    public abstract RubyNumeric multiplyWith(RubyFloat value);
-
-    public abstract RubyNumeric multiplyWith(RubyBignum value);
-
-    public IRubyObject convertToFloat() {
+    public RubyFloat convertToFloat() {
         return getRuntime().newFloat(getDoubleValue());
     }
 }

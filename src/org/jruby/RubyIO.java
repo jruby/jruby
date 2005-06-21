@@ -541,7 +541,7 @@ public class RubyIO extends RubyObject {
         int type = IOHandler.SEEK_SET;
         
         if (args.length > 1) {
-            type = RubyNumeric.fix2int(RubyNumeric.numericValue(args[1]));
+            type = RubyNumeric.fix2int(args[1].convertToInteger());
         }
         
         handler.seek(offset, type);

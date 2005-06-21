@@ -46,7 +46,11 @@ import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.meta.FileMetaClass;
+import org.jruby.runtime.builtin.meta.FixnumMetaClass;
 import org.jruby.runtime.builtin.meta.IOMetaClass;
+import org.jruby.runtime.builtin.meta.IntegerMetaClass;
+import org.jruby.runtime.builtin.meta.NumericMetaClass;
+import org.jruby.runtime.builtin.meta.ObjectMetaClass;
 import org.jruby.runtime.builtin.meta.ProcMetaClass;
 import org.jruby.runtime.builtin.meta.StringMetaClass;
 import org.jruby.runtime.load.IAutoloadMethod;
@@ -225,9 +229,12 @@ public class RubyClasses {
      *   + All metaclasses are instances of the class `Class'.
      */
     public void initCoreClasses() {
-        objectClass = defineBootClass("Object", null);
+        objectClass = new ObjectMetaClass(runtime);
+        topLevelClasses.put("Object", objectClass);
         moduleClass = defineBootClass("Module", objectClass);
         classClass = defineBootClass("Class", moduleClass);
+        //classClass = new ClassMetaClass(runtime, moduleClass);
+        //topLevelClasses.put("Class", classClass);
 
         RubyClass metaClass = objectClass.makeMetaClass(classClass, runtime.getCurrentContext().getRubyClass());
         metaClass = moduleClass.makeMetaClass(metaClass, runtime.getCurrentContext().getRubyClass());
@@ -240,7 +247,7 @@ public class RubyClasses {
         objectClass.definePrivateMethod("initialize", callbackFactory.getNilMethod(-1));
         classClass.definePrivateMethod("inherited", callbackFactory.getNilMethod(1));
 
-        RubyObject.createObjectClass(objectClass);
+        //RubyObject.createObjectClass(objectClass);
 
         RubyClass.createClassClass(classClass);
         RubyModule.createModuleClass(moduleClass);
@@ -254,8 +261,8 @@ public class RubyClasses {
         threadClass = RubyThread.createThreadClass(runtime);
 
         runtime.getLoadService().addAutoload("UnboundMethod", new IAutoloadMethod() {
-            public IRubyObject load(Ruby runtime, String name) {
-                return RubyUnboundMethod.defineUnboundMethodClass(runtime);
+            public IRubyObject load(Ruby ruby, String name) {
+                return RubyUnboundMethod.defineUnboundMethodClass(ruby);
             }
         });
         
@@ -522,7 +529,7 @@ public class RubyClasses {
      */
     public RubyClass getFixnumClass() {
         if (fixnumClass == null) {
-            fixnumClass = RubyFixnum.createFixnumClass(runtime);
+            fixnumClass = new FixnumMetaClass(runtime);
         }
         return fixnumClass;
     }
@@ -600,7 +607,7 @@ public class RubyClasses {
      */
     public RubyClass getIntegerClass() {
         if (integerClass == null) {
-            integerClass = RubyInteger.createIntegerClass(runtime);
+            integerClass = new IntegerMetaClass(runtime);
         }
         return integerClass;
     }
@@ -749,7 +756,7 @@ public class RubyClasses {
      */
     public RubyClass getNumericClass() {
         if (numericClass == null) {
-            numericClass = RubyNumeric.createNumericClass(runtime);
+            numericClass = new NumericMetaClass(runtime);
         }
         return numericClass;
     }

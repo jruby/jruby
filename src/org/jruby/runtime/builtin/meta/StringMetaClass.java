@@ -12,6 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2005 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -27,16 +28,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.builtin.meta;
 
-import org.jruby.BuiltinClass;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class StringMetaClass extends BuiltinClass {
+public class StringMetaClass extends ObjectMetaClass {
     public StringMetaClass(Ruby runtime) {
         super("String", RubyString.class, runtime.getClasses().getObjectClass());
     }
@@ -45,139 +44,98 @@ public class StringMetaClass extends BuiltinClass {
         super(name, RubyString.class, superClass, parentModule);
     }
 
-    /* FIXME Not needed because of the new allocObject method.
-     * This is an example for the definition of singleton methods.
-     *
-
-	public RubyString rb_new(IRubyObject[] args) {
-		RubyString newString = getRuntime().newString("");
-		newString.setMetaClass(this);
-		newString.callInit(args);
-		return newString;
-	}
-
-	 */
-	
     protected void initializeClass() {
         includeModule(getRuntime().getClasses().getComparableModule());
         includeModule(getRuntime().getClasses().getEnumerableModule());
 
-        /* FIXME Not needed because of the new allocObject method.
-         * This is an example for the definition of singleton methods.
-
-        defineSingletonMethod("new", Arity.optional(), "rb_new");
-
-         */
-
-        // FIXME Arity.optional() should be Arity.range(0, 1)
+        defineMethod("<=>", Arity.singleArgument(), "op_cmp");
+        defineMethod("==", Arity.singleArgument(), "equal");
+        defineMethod("===", Arity.singleArgument(), "veryEqual");
+        defineMethod("+", Arity.singleArgument(), "op_plus");
+        defineMethod("*", Arity.singleArgument(), "op_mul");
+        defineMethod("%", Arity.singleArgument(), "format");
+        defineMethod("[]", Arity.optional(), "aref");
+        defineMethod("[]=", Arity.optional(), "aset");
+        defineMethod("=~", Arity.singleArgument(), "match");
+        defineMethod("~", Arity.noArguments(), "match2");
+        defineMethod("capitalize", Arity.noArguments());
+        defineMethod("capitalize!", Arity.noArguments(), "capitalize_bang");
+        defineMethod("casecmp", Arity.singleArgument());
+        defineMethod("center", Arity.singleArgument());
+        defineMethod("chop", Arity.noArguments());
+        defineMethod("chop!", Arity.noArguments(), "chop_bang");
+        defineMethod("chomp", Arity.optional());
+        defineMethod("chomp!", Arity.optional(), "chomp_bang");
+        defineMethod("clone", Arity.noArguments(), "rbClone");
+        defineMethod("concat", Arity.singleArgument());
+        defineMethod("count", Arity.optional());
+        defineMethod("delete", Arity.optional());
+        defineMethod("delete!", Arity.optional(), "delete_bang");
+        defineMethod("downcase", Arity.noArguments());
+        defineMethod("downcase!", Arity.noArguments(), "downcase_bang");
+        defineMethod("dump", Arity.noArguments());
+        defineMethod("dup", Arity.noArguments());
+        defineMethod("each_line", Arity.optional());
+        defineMethod("each_byte", Arity.noArguments());
+        defineMethod("empty?", Arity.noArguments(), "empty");
+        defineMethod("gsub", Arity.optional());
+        defineMethod("gsub!", Arity.optional(), "gsub_bang");
+        defineMethod("hash", Arity.noArguments());
+        defineMethod("hex", Arity.noArguments());
+        defineMethod("include?", Arity.singleArgument(), "include");
+        defineMethod("index", Arity.optional());
         defineMethod("initialize", Arity.optional(), "initialize");
-        defineMethod("initialize_copy", Arity.fixed(1), "replace");
+        defineMethod("initialize_copy", Arity.singleArgument(), "replace");
+        defineMethod("inspect", Arity.noArguments());
+        defineMethod("length", Arity.noArguments());
+        defineMethod("ljust", Arity.singleArgument());
+        defineMethod("lstrip", Arity.noArguments());
+        defineMethod("lstrip!", Arity.noArguments(), "lstrip_bang");
+        defineMethod("match", Arity.singleArgument(), "match3");
+        defineMethod("oct", Arity.noArguments());
+        defineMethod("replace", Arity.singleArgument());
+        defineMethod("reverse", Arity.noArguments());
+        defineMethod("reverse!", Arity.noArguments(), "reverse_bang");
+        defineMethod("rindex", Arity.optional());
+        defineMethod("rjust", Arity.singleArgument());
+        defineMethod("rstrip", Arity.noArguments());
+        defineMethod("rstrip!", Arity.noArguments(), "rstrip_bang");
+        defineMethod("scan", Arity.singleArgument());
+        defineMethod("slice!", Arity.optional(), "slice_bang");
+        defineMethod("split", Arity.optional());
+        defineMethod("strip", Arity.noArguments());
+        defineMethod("strip!", Arity.noArguments(), "strip_bang");
+        defineMethod("succ", Arity.noArguments());
+        defineMethod("succ!", Arity.noArguments(), "succ_bang");
+        defineMethod("squeeze", Arity.optional());
+        defineMethod("squeeze!", Arity.optional(), "squeeze_bang");
+        defineMethod("sub", Arity.optional());
+        defineMethod("sub!", Arity.optional(), "sub_bang");
+        defineMethod("sum", Arity.optional());
+        defineMethod("swapcase", Arity.noArguments());
+        defineMethod("swapcase!", Arity.noArguments(), "swapcase_bang");
+        defineMethod("to_f", Arity.noArguments());
+        defineMethod("to_i", Arity.noArguments());
+        defineSelfMethod("to_s", Arity.noArguments());
+        defineSelfMethod("to_str", Arity.noArguments());
+        defineMethod("to_sym", Arity.noArguments());
+        defineMethod("tr", Arity.twoArguments());
+        defineMethod("tr!", Arity.twoArguments(), "tr_bang");
+        defineMethod("tr_s", Arity.twoArguments());
+        defineMethod("tr_s!", Arity.twoArguments(), "tr_s_bang");
+        defineMethod("unpack", Arity.singleArgument());
+        defineMethod("upcase", Arity.noArguments());
+        defineMethod("upcase!", Arity.noArguments(), "upcase_bang");
+        defineMethod("upto", Arity.singleArgument());
 
-        // FIXME replace with new definition code like above
-        CallbackFactory callbackFactory = getRuntime().callbackFactory(RubyString.class);
-
-        defineMethod("clone", callbackFactory.getMethod("rbClone"));
-        defineMethod("dup", callbackFactory.getMethod("dup"));
-
-        defineMethod("<=>", callbackFactory.getMethod("op_cmp", IRubyObject.class));
-        defineMethod("casecmp", callbackFactory.getMethod("casecmp", IRubyObject.class));
-        defineMethod("==", callbackFactory.getMethod("equal", IRubyObject.class));
-        defineMethod("===", callbackFactory.getMethod("veryEqual", IRubyObject.class));
-        defineMethod("eql?", callbackFactory.getMethod("equal", IRubyObject.class));
-        defineMethod("hash", callbackFactory.getMethod("hash"));
-
-        defineMethod("+", callbackFactory.getMethod("op_plus", IRubyObject.class));
-        defineMethod("*", callbackFactory.getMethod("op_mul", IRubyObject.class));
-        defineMethod("%", callbackFactory.getMethod("format", IRubyObject.class));
-        defineMethod("[]", callbackFactory.getOptMethod("aref"));
-        defineMethod("[]=", callbackFactory.getOptMethod("aset"));
-        defineMethod("length", callbackFactory.getMethod("length"));
-        defineMethod("size", callbackFactory.getMethod("length"));
-        defineMethod("empty?", callbackFactory.getMethod("empty"));
-        defineMethod("=~", callbackFactory.getMethod("match", IRubyObject.class));
-        defineMethod("~", callbackFactory.getMethod("match2"));
-        defineMethod("match", callbackFactory.getMethod("match3", IRubyObject.class));
-        defineMethod("succ", callbackFactory.getMethod("succ"));
-        defineMethod("succ!", callbackFactory.getMethod("succ_bang"));
-        defineMethod("next", callbackFactory.getMethod("succ"));
-        defineMethod("next!", callbackFactory.getMethod("succ_bang"));
-        defineMethod("upto", callbackFactory.getMethod("upto", IRubyObject.class));
-        defineMethod("index", callbackFactory.getOptMethod("index"));
-        defineMethod("rindex", callbackFactory.getOptMethod("rindex"));
-        defineMethod("replace", callbackFactory.getMethod("replace", IRubyObject.class));
-
-        defineMethod("to_i", callbackFactory.getMethod("to_i"));
-        defineMethod("to_f", callbackFactory.getMethod("to_f"));
-
-        defineMethod("to_s", callbackFactory.getSelfMethod(0));
-        defineMethod("to_str", callbackFactory.getSelfMethod(0));
-        defineMethod("to_sym", callbackFactory.getMethod("to_sym"));
+        defineAlias("<<", "concat");
+        defineAlias("each", "each_line");
+        defineAlias("eql?", "==");
         defineAlias("intern", "to_sym");
-        defineMethod("inspect", callbackFactory.getMethod("inspect"));
-        defineMethod("dump", callbackFactory.getMethod("dump"));
-
-        defineMethod("upcase", callbackFactory.getMethod("upcase"));
-        defineMethod("downcase", callbackFactory.getMethod("downcase"));
-        defineMethod("capitalize", callbackFactory.getMethod("capitalize"));
-        defineMethod("swapcase", callbackFactory.getMethod("swapcase"));
-
-        defineMethod("upcase!", callbackFactory.getMethod("upcase_bang"));
-        defineMethod("downcase!", callbackFactory.getMethod("downcase_bang"));
-        defineMethod("capitalize!", callbackFactory.getMethod("capitalize_bang"));
-        defineMethod("swapcase!", callbackFactory.getMethod("swapcase_bang"));
-
-        defineMethod("hex", callbackFactory.getMethod("hex"));
-        defineMethod("oct", callbackFactory.getMethod("oct"));
-        defineMethod("split", callbackFactory.getOptMethod("split"));
-        defineMethod("reverse", callbackFactory.getMethod("reverse"));
-        defineMethod("reverse!", callbackFactory.getMethod("reverse_bang"));
-        defineMethod("concat", callbackFactory.getMethod("concat", IRubyObject.class));
-        defineMethod("<<", callbackFactory.getMethod("concat", IRubyObject.class));
-
-        defineMethod("include?", callbackFactory.getMethod("include", IRubyObject.class));
-
-        defineMethod("scan", callbackFactory.getMethod("scan", IRubyObject.class));
-
-        defineMethod("ljust", callbackFactory.getMethod("ljust", IRubyObject.class));
-        defineMethod("rjust", callbackFactory.getMethod("rjust", IRubyObject.class));
-        defineMethod("center", callbackFactory.getMethod("center", IRubyObject.class));
-
-        defineMethod("sub", callbackFactory.getOptMethod("sub"));
-        defineMethod("gsub", callbackFactory.getOptMethod("gsub"));
-        defineMethod("chop", callbackFactory.getMethod("chop"));
-        defineMethod("chomp", callbackFactory.getOptMethod("chomp"));
-        defineMethod("strip", callbackFactory.getMethod("strip"));
-        defineMethod("lstrip", callbackFactory.getMethod("lstrip"));
-        defineMethod("rstrip", callbackFactory.getMethod("rstrip"));
-
-        defineMethod("sub!", callbackFactory.getOptMethod("sub_bang"));
-        defineMethod("gsub!", callbackFactory.getOptMethod("gsub_bang"));
-        defineMethod("chop!", callbackFactory.getMethod("chop_bang"));
-        defineMethod("chomp!", callbackFactory.getOptMethod("chomp_bang"));
-        defineMethod("strip!", callbackFactory.getMethod("strip_bang"));
-        defineMethod("lstrip!", callbackFactory.getMethod("lstrip_bang"));
-        defineMethod("rstrip!", callbackFactory.getMethod("rstrip_bang"));
-
-        defineMethod("tr", callbackFactory.getMethod("tr", RubyString.class, RubyString.class));
-        defineMethod("tr_s", callbackFactory.getMethod("tr_s", RubyString.class, RubyString.class));
-        defineMethod("delete", callbackFactory.getOptMethod("delete"));
-        defineMethod("squeeze", callbackFactory.getOptMethod("squeeze"));
-        defineMethod("count", callbackFactory.getOptMethod("count"));
-
-        defineMethod("tr!", callbackFactory.getMethod("tr_bang", RubyString.class, RubyString.class));
-        defineMethod("tr_s!", callbackFactory.getMethod("tr_s_bang", RubyString.class, RubyString.class));
-        defineMethod("delete!", callbackFactory.getOptMethod("delete_bang"));
-        defineMethod("squeeze!", callbackFactory.getOptMethod("squeeze_bang"));
-
-        defineMethod("each_line", callbackFactory.getOptMethod("each_line"));
-        defineMethod("each", callbackFactory.getOptMethod("each_line"));
-        defineMethod("each_byte", callbackFactory.getMethod("each_byte"));
-        defineMethod("sum", callbackFactory.getOptMethod("sum"));
-
-        defineMethod("slice", callbackFactory.getOptMethod("aref"));
-        defineMethod("slice!", callbackFactory.getOptMethod("slice_bang"));
-
-        defineMethod("unpack", callbackFactory.getMethod("unpack", IRubyObject.class));
+        defineAlias("next", "succ");
+        defineAlias("next!", "succ!");
+        defineAlias("size", "length");
+        defineAlias("slice", "[]");
     }
 
     public RubyClass newSubClass(String name, RubyModule parentModule) {

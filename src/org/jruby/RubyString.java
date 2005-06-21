@@ -143,9 +143,9 @@ public class RubyString extends RubyObject {
 	 *
 	 */
 	public int cmp(RubyString other) {
-	    int value = getValue().compareTo(other.getValue());
+	    int cmp = getValue().compareTo(other.getValue());
 
-		return value < 0 ? -1 : value > 0 ? 1 : 0; 
+		return cmp < 0 ? -1 : cmp > 0 ? 1 : 0; 
 	}
 
 	/** rb_to_id
@@ -789,7 +789,7 @@ public class RubyString extends RubyObject {
 	        return begLen == null ? getRuntime().getNil() :
 	        	substr((int) begLen[0], (int) begLen[1]);
 	    }
-	    int idx = (int) RubyNumeric.num2long(args[0]);
+	    int idx = (int) args[0].convertToInteger().getLongValue();
 	    if (idx < 0) {
 	        idx += getValue().length();
 	    }
@@ -1193,7 +1193,6 @@ public class RubyString extends RubyObject {
 	}
 
 	public IRubyObject lstrip() {
-		String value = getValue();
 		int length = value.length();
 		int i = 0;
 		
@@ -1218,7 +1217,6 @@ public class RubyString extends RubyObject {
 	}
 
 	public IRubyObject rstrip() {
-		String value = getValue();
 		int i = value.length() - 1;
 		
 		for (; i >= 0; i--) {
@@ -1420,8 +1418,8 @@ public class RubyString extends RubyObject {
 		return this;
 	}
 
-	private String tr(RubyString search, RubyString replace, boolean squeeze) {
-		String srchSpec = search.getValue();
+	private String tr(IRubyObject search, IRubyObject replace, boolean squeeze) {
+		String srchSpec = search.convertToString().getValue();
 		String srch = expandTemplate(srchSpec, true);
 		if (srchSpec.startsWith("^")) {
 			StringBuffer sbuf = new StringBuffer(256);
@@ -1433,7 +1431,7 @@ public class RubyString extends RubyObject {
 			}
 			srch = sbuf.toString();
 		}
-		String repl = expandTemplate(replace.getValue(), false);
+		String repl = expandTemplate(replace.convertToString().getValue(), false);
 
 		int strLen = getValue().length();
 		if (strLen == 0 || srch.length() == 0) {
@@ -1463,14 +1461,14 @@ public class RubyString extends RubyObject {
 	/** rb_str_tr
 	 *
 	 */
-	public IRubyObject tr(RubyString search, RubyString replace) {
+	public IRubyObject tr(IRubyObject search, IRubyObject replace) {
 		return newString(tr(search, replace, false)).infectBy(this);
 	}
 
 	/** rb_str_tr_bang
 	 *
 	 */
-	public IRubyObject tr_bang(RubyString search, RubyString replace) {
+	public IRubyObject tr_bang(IRubyObject search, IRubyObject replace) {
 		String newStr = tr(search, replace, false);
 		if (newStr.equals(getValue())) {
 			return getRuntime().getNil();
@@ -1482,14 +1480,14 @@ public class RubyString extends RubyObject {
 	/** rb_str_tr_s
 	 *
 	 */
-	public IRubyObject tr_s(RubyString search, RubyString replace) {
+	public IRubyObject tr_s(IRubyObject search, IRubyObject replace) {
 		return newString(tr(search, replace, true)).infectBy(this);
 	}
 
 	/** rb_str_tr_s_bang
 	 *
 	 */
-	public IRubyObject tr_s_bang(RubyString search, RubyString replace) {
+	public IRubyObject tr_s_bang(IRubyObject search, IRubyObject replace) {
 		String newStr = tr(search, replace, true);
 		if (newStr.equals(getValue())) {
 			return getRuntime().getNil();

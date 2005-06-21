@@ -31,7 +31,6 @@ package org.jruby.runtime.builtin.meta;
 
 import java.io.IOException;
 
-import org.jruby.BuiltinClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -45,7 +44,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOHandler;
 
-public class IOMetaClass extends BuiltinClass {
+public class IOMetaClass extends ObjectMetaClass {
 
     public IOMetaClass(Ruby runtime) {
         this("IO", RubyIO.class, runtime.getClasses().getObjectClass());

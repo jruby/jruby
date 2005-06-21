@@ -27,14 +27,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.builtin.meta;
 
-import org.jruby.BuiltinClass;
 import org.jruby.Ruby;
 import org.jruby.RubyBasicSocket;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class BasicSocketMetaClass extends BuiltinClass {
+public class BasicSocketMetaClass extends ObjectMetaClass {
 
     public BasicSocketMetaClass(Ruby runtime) {
         super("BasicSocket", RubyBasicSocket.class, 

@@ -38,6 +38,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.nio.channels.FileChannel;
 
 import org.jruby.exceptions.IOError;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -52,6 +53,11 @@ import org.jruby.util.IOModes;
  * @version $Revision$
  **/
 public class RubyFile extends RubyIO {
+	public static final int LOCK_SH = 1;
+	public static final int LOCK_EX = 2;
+	public static final int LOCK_NB = 4;
+	public static final int LOCK_UN = 8;
+	
     protected String path;
     
 	public RubyFile(Ruby runtime, RubyClass type) {
@@ -101,6 +107,24 @@ public class RubyFile extends RubyIO {
             throw IOError.fromException(getRuntime(), e);
         }
     }
+	
+	/* TODO: Implement flock()...
+    public IRubyObject flock(IRubyObject lockingConstant) {
+        FileChannel fileChanel = handler.getFileChannel();
+        int lockMode = (int) ((RubyFixnum) lockingConstant.convertToType("Fixnum", "to_int", 
+            true)).getLongValue();
+
+		switch(lockMode) {
+		case LOCK_UN:
+		case LOCK_EX:
+		case LOCK_EX | LOCK_NB:
+		case LOCK_SH:
+		case LOCK_SH | LOCK_NB:
+		default:	
+		}
+		
+		return getRuntime().getFalse();
+	}*/
 
 	public IRubyObject initialize(IRubyObject[] args) {
 	    if (args.length == 0) {
@@ -124,6 +148,10 @@ public class RubyFile extends RubyIO {
 	        // getRuby().getRuntime().warn("File::new does not take block; use File::open instead");
 	    }
 	    return this;
+	}
+	
+	public RubyString path() {
+		return getRuntime().newString(path);
 	}
 	
     public IRubyObject truncate(IRubyObject arg) {

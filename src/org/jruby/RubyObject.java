@@ -53,7 +53,6 @@ import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.FrameStack;
 import org.jruby.runtime.ICallable;
@@ -64,7 +63,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
-import org.jruby.runtime.callback.ReflectionCallback;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.util.PrintfFormat;
 
@@ -116,13 +114,13 @@ public class RubyObject implements Cloneable, IRubyObject {
      * @since Ruby 1.6.7
      */
     public MetaClass makeMetaClass(RubyClass type, RubyModule parentModule) {
-        MetaClass metaClass = type.newSingletonClass(parentModule);
+        MetaClass newMetaClass = type.newSingletonClass(parentModule);
 		
 		if (!isNil()) {
-			setMetaClass(metaClass);
+			setMetaClass(newMetaClass);
 		}
-        metaClass.attachToObject(this);
-        return metaClass;
+        newMetaClass.attachToObject(this);
+        return newMetaClass;
     }
 
     public boolean singletonMethodsAllowed() {
@@ -438,12 +436,16 @@ public class RubyObject implements Cloneable, IRubyObject {
         return callMethod(convertMethod);
     }
 
-    public IRubyObject convertToString() {
-        return convertToType("String", "to_str", true);
+    public RubyFloat convertToFloat() {
+        return (RubyFloat) convertToType("Float", "to_f", true);
+    }
+    
+    public RubyInteger convertToInteger() {
+        return (RubyInteger) convertToType("Integer", "to_int", true);
     }
 
-    public IRubyObject convertToFloat() {
-        return convertToType("Float", "to_f", true);
+    public RubyString convertToString() {
+        return (RubyString) convertToType("String", "to_str", true);
     }
 
     /** rb_convert_type
@@ -527,14 +529,13 @@ public class RubyObject implements Cloneable, IRubyObject {
         */
         return under.executeUnder(new Callback() {
             public IRubyObject execute(IRubyObject self, IRubyObject[] args) {
-                IRubyObject under = args[0];
-                IRubyObject src = args[1];
-                IRubyObject file = args[2];
-                IRubyObject line = args[3];
-                return under.eval(src,
+                IRubyObject source = args[1];
+                IRubyObject filename = args[2];
+                IRubyObject lineNumber = args[3];
+                return args[0].eval(source,
                                   self.getRuntime().getNil(),
-                                  ((RubyString) file).getValue(),
-                                  RubyNumeric.fix2int(line));
+                                  ((RubyString) filename).getValue(),
+                                  RubyNumeric.fix2int(lineNumber));
             }
 
             public Arity getArity() {
@@ -1024,55 +1025,5 @@ public class RubyObject implements Cloneable, IRubyObject {
      */
     public RubyClass getType() {
         return type();
-    }
-
-    public static void createObjectClass(RubyClass module) {
-        CallbackFactory callbackFactory = module.getRuntime().callbackFactory(RubyObject.class);
-
-        Callback equal = callbackFactory.getMethod("equal", IRubyObject.class);
-        module.defineMethod("==", equal);
-        module.defineMethod("===", equal);
-        module.defineMethod("to_s", callbackFactory.getMethod("to_s"));
-        module.defineMethod("nil?", callbackFactory.getFalseMethod(0));
-        module.defineMethod("to_a", callbackFactory.getMethod("to_a"));
-        module.defineMethod("hash", callbackFactory.getMethod("hash"));
-        module.defineMethod("id", callbackFactory.getMethod("id"));
-        module.defineMethod("__id__", callbackFactory.getMethod("id"));
-        module.defineAlias("object_id", "__id__");
-        module.defineMethod("is_a?", callbackFactory.getMethod("kind_of", IRubyObject.class));
-        module.defineMethod("kind_of?", callbackFactory.getMethod("kind_of", IRubyObject.class));
-        module.defineMethod("dup", callbackFactory.getMethod("dup"));
-        module.defineMethod("eql?", equal);
-        module.defineMethod("equal?", callbackFactory.getMethod("same", IRubyObject.class));
-        module.defineMethod("type", callbackFactory.getMethod("type_deprecated"));
-        module.defineMethod("class", callbackFactory.getMethod("type"));
-        module.defineMethod("inspect", callbackFactory.getMethod("inspect"));
-        module.defineMethod("=~", callbackFactory.getFalseMethod(1));
-        module.defineMethod("clone", callbackFactory.getMethod("rbClone"));
-        module.defineMethod("display", callbackFactory.getOptMethod("display"));
-        module.defineMethod("extend", callbackFactory.getOptMethod("extend"));
-        module.defineMethod("freeze", callbackFactory.getMethod("freeze"));
-        module.defineMethod("frozen?", callbackFactory.getMethod("frozen"));
-        module.defineMethod("initialize_copy", new ReflectionCallback(RubyObject.class, "initialize_copy", Arity.fixed(1)));
-        module.defineMethod("instance_eval", callbackFactory.getOptMethod("instance_eval"));
-        module.defineMethod("instance_of?", callbackFactory.getMethod("instance_of", IRubyObject.class));
-        module.defineMethod("instance_variables", callbackFactory.getMethod("instance_variables"));
-        module.defineMethod("instance_variable_get", callbackFactory.getMethod("instance_variable_get", IRubyObject.class));
-        module.defineMethod("instance_variable_set", callbackFactory.getMethod("instance_variable_set", IRubyObject.class, IRubyObject.class));
-        module.defineMethod("method", callbackFactory.getMethod("method", IRubyObject.class));
-        module.defineMethod("methods", callbackFactory.getOptMethod("methods"));
-        //module.defineMethod("method_missing", callbackFactory.getOptMethod(RubyObject.class, "method_missing"));
-        module.defineMethod("private_methods", callbackFactory.getMethod("private_methods"));
-        module.defineMethod("protected_methods", callbackFactory.getMethod("protected_methods"));
-        module.defineMethod("public_methods", callbackFactory.getMethod("public_methods"));
-        module.defineMethod("respond_to?", callbackFactory.getOptMethod("respond_to"));
-        Callback send = callbackFactory.getOptMethod("send");
-        module.defineMethod("send", send);
-        module.defineMethod("__send__", send);
-        module.defineMethod("singleton_methods", callbackFactory.getMethod("singleton_methods"));
-        module.defineMethod("taint", callbackFactory.getMethod("taint"));
-        module.defineMethod("tainted?", callbackFactory.getMethod("tainted"));
-        module.defineMethod("untaint", callbackFactory.getMethod("untaint"));
-
     }
 }

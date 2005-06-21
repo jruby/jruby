@@ -11,10 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
- * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -28,114 +25,67 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.runtime.callback;
+package org.jruby.internal.runtime.methods;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 
+import org.jruby.Ruby;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ICallable;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- * A wrapper for <code>java.lang.reflect.Method</code> objects which implement Ruby methods.
- */
-public class ReflectionCallback implements Callback {
+public class ReflectedMethod extends AbstractMethod {
     private Method method;
     private Class type;
     private String methodName;
-    private Class[] argumentTypes;
-    private boolean isRestArgs;
     private Arity arity;
-    private boolean isStaticMethod;
     
-    public ReflectionCallback(Class type, String methodName, Class[] argumentTypes,
-            boolean isRestArgs, boolean isStaticMethod, Arity arity) {
-        this.type = type;
+    public ReflectedMethod(Class type, String methodName, Arity arity, Visibility visibility) {
+    	super(visibility);
+    	this.type = type;
     	this.methodName = methodName;
-    	this.argumentTypes = argumentTypes;
-        this.isRestArgs = isRestArgs;
-        this.isStaticMethod = isStaticMethod;
     	this.arity = arity;
     	
         assert type != null;
         assert methodName != null;
         assert arity != null;
-        
-        loadMethod();
-    }
-    
-    private void loadMethod() {
-    	Class[] args;
-    	
-        if (isStaticMethod) {
-            Class[] types = new Class[argumentTypes.length + 1];
-            System.arraycopy(argumentTypes, 0, types, 1, argumentTypes.length);
-            types[0] = IRubyObject.class;
-            args = types;
+
+        Class[] parameterTypes;
+        if (arity.isFixed()) {
+            parameterTypes = new Class[arity.getValue()];
+            Arrays.fill(parameterTypes, IRubyObject.class);
         } else {
-        	args = argumentTypes;
+            parameterTypes = new Class[1];
+            parameterTypes[0] = IRubyObject[].class;
+        }
+        try {
+            method = type.getMethod(methodName, parameterTypes);
+        } catch (NoSuchMethodException e) {
+            assert false : e;
+        } catch (SecurityException e) {
+            assert false : e;
         }
         
-        try {
-            method = type.getMethod(methodName, args);
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException("NoSuchMethodException: Cannot get method \"" + methodName
-                    + "\" in class \"" + type.getName() + "\" by Reflection.");
-        } catch (SecurityException e) {
-            throw new RuntimeException("SecurityException: Cannot get method \"" + methodName
-                    + "\" in class \"" + type.getName() + "\" by Reflection.");
-        }
+        assert method != null;
     }
     
-    /**
-     * Returns an object array that collects all rest arguments in its own object array which
-     * is then put into the last slot of the first object array.  That is, assuming that this
-     * callback expects one required argument and any number of rest arguments, an input of
-     * <code>[1, 2, 3]</code> is transformed into <code>[1, [2, 3]]</code>.  
-     */
-    protected final Object[] packageRestArgumentsForReflection(final Object[] originalArgs) {
-        IRubyObject[] restArray = new IRubyObject[originalArgs.length - (argumentTypes.length - 1)];
-        Object[] result = new Object[argumentTypes.length];
-        try {
-            System.arraycopy(originalArgs, argumentTypes.length - 1, restArray, 0, originalArgs.length - (argumentTypes.length - 1));
-        } catch (ArrayIndexOutOfBoundsException e) {
-            assert false : e;
-        	return null;
-        }
-        System.arraycopy(originalArgs, 0, result, 0, argumentTypes.length - 1);
-        result[argumentTypes.length - 1] = restArray;
-        return result;
-    }
-
-    /**
-     * Invokes the Ruby method. Actually, this methods delegates to an internal version
-     * that may throw the usual Java reflection exceptions.  Ruby exceptions are rethrown, 
-     * other exceptions throw an AssertError and abort the execution of the Ruby program.
-     * They should never happen.
-     */
-	/**
-     * Calls a wrapped Ruby method for the specified receiver with the specified arguments.
-     */
-    public IRubyObject execute(IRubyObject recv, IRubyObject[] oargs) {
-        arity.checkArity(recv.getRuntime(), oargs);
-
-        Object[] methodArgs = oargs;
+	public IRubyObject call(Ruby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+        arity.checkArity(runtime, args);
         
-    	if (isRestArgs) {
-    		methodArgs = packageRestArgumentsForReflection(methodArgs);
-    	}
+        assert receiver != null;
+        assert args != null;
+        assert method != null;
+        
+        Object[] methodArgs = !arity.isFixed() ? new Object[]{args} : args; 
+
         try {
-            if (isStaticMethod) {
-                Object[] args = new Object[methodArgs.length + 1];
-                System.arraycopy(methodArgs, 0, args, 1, methodArgs.length);
-                args[0] = recv;
-                recv = null;
-                methodArgs = args;
-            }
-            return (IRubyObject) method.invoke(recv, methodArgs);
+            return (IRubyObject) method.invoke(receiver, methodArgs);
         } catch (InvocationTargetException e) {
             if (e.getTargetException() instanceof RaiseException) {
                 throw (RaiseException) e.getTargetException();
@@ -145,8 +95,8 @@ public class ReflectionCallback implements Callback {
             	// allow it to bubble up
             	throw (ThreadKill) e.getTargetException();
             } else if (e.getTargetException() instanceof Exception) {
-                recv.getRuntime().getJavaSupport().handleNativeException(e.getTargetException());
-                return recv.getRuntime().getNil();
+                runtime.getJavaSupport().handleNativeException(e.getTargetException());
+                return runtime.getNil();
             } else {
                 throw (Error) e.getTargetException();
             }
@@ -155,7 +105,7 @@ public class ReflectionCallback implements Callback {
             message.append(e.getMessage());
             message.append(':');
             message.append(" methodName=").append(methodName);
-            message.append(" recv=").append(recv.toString());
+            message.append(" recv=").append(receiver.toString());
             message.append(" type=").append(type.getName());
             message.append(" methodArgs=[");
             for (int i = 0; i < methodArgs.length; i++) {
@@ -181,12 +131,18 @@ public class ReflectionCallback implements Callback {
             assert false : e;
             return null;
         }
-    }
+	}
 
-    /**
-     * Returns the arity of the wrapped Ruby method.
-     */
-    public Arity getArity() {
-        return arity;
-    }
+	public ICallable dup() {
+		ReflectedMethod newMethod = new ReflectedMethod(type, methodName, arity, getVisibility());
+		
+		newMethod.method = method;
+		
+		return newMethod;
+	}
+
+	// TODO:  Perhaps abstract method should contain this and all other Methods should pass in decent value
+	public Arity getArity() {
+		return arity;
+	}
 }

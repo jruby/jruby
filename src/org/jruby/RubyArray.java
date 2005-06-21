@@ -224,7 +224,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_store
      *
      */
-    private void store(long index, IRubyObject value) {
+    private IRubyObject store(long index, IRubyObject value) {
         modify();
         if (index < 0) {
             index += getLength();
@@ -234,6 +234,7 @@ public class RubyArray extends RubyObject implements List {
         }
         autoExpand(index + 1);
         list.set((int) index, value);
+        return value;
     }
 
     public IRubyObject entry(long offset) {
@@ -674,7 +675,7 @@ public class RubyArray extends RubyObject implements List {
 
             return begLen == null ? newArray(getRuntime()) : subseq(begLen[0], begLen[1]);
         }
-        return entry(RubyNumeric.num2long(args[0]));
+        return entry(args[0].convertToInteger().getLongValue());
     }
 
     /** rb_ary_aset
@@ -683,14 +684,10 @@ public class RubyArray extends RubyObject implements List {
     public IRubyObject aset(IRubyObject[] args) {
         int argc = checkArgumentCount(args, 2, 3);
         if (argc == 3) {
-            long beg = RubyNumeric.fix2long(args[0]);
-            long len = RubyNumeric.fix2long(args[1]);
+            long beg = args[0].convertToInteger().getLongValue();
+            long len = args[1].convertToInteger().getLongValue();
             replace(beg, len, args[2]);
             return args[2];
-        }
-        if (args[0] instanceof RubyFixnum) {
-            store(RubyNumeric.fix2long(args[0]), args[1]);
-            return args[1];
         }
         if (args[0] instanceof RubyRange) {
             long[] begLen = ((RubyRange) args[0]).getBeginLength(getLength(), false, true);
@@ -700,8 +697,7 @@ public class RubyArray extends RubyObject implements List {
         if (args[0] instanceof RubyBignum) {
             throw getRuntime().newIndexError("Index too large");
         }
-        store(RubyNumeric.num2long(args[0]), args[1]);
-        return args[1];
+        return store(args[0].convertToInteger().getLongValue(), args[1]);
     }
 
     /** rb_ary_at
@@ -1158,7 +1154,7 @@ public class RubyArray extends RubyObject implements List {
      */
     public IRubyObject delete_at(IRubyObject obj) {
         modify();
-        int pos = (int) RubyNumeric.num2long(obj);
+        int pos = (int) obj.convertToInteger().getLongValue();
         int len = getLength();
         if (pos >= len) {
             return getRuntime().getNil();
@@ -1319,7 +1315,7 @@ public class RubyArray extends RubyObject implements List {
             return join((RubyString) arg);
         }
 
-        int len = (int) RubyNumeric.num2long(arg);
+        int len = (int) arg.convertToInteger().getLongValue();
         if (len < 0) {
             throw getRuntime().newArgumentError("negative argument");
         }

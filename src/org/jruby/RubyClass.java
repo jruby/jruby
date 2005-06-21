@@ -272,7 +272,7 @@ public class RubyClass extends RubyModule {
      * "Object#clone" and Object#dup" to create new object instances.
      * </p>
      * <p>
-     * Builtin meta classes (subclasses of {@link BuiltinClass}) have to override this method to
+     * Builtin meta classes (subclasses of {@link ObjectMetaClass}) have to override this method to
      * create instances of the corresponding subclass of RubyObject.
      * </p>
      * <p>

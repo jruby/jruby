@@ -78,6 +78,12 @@ public class FileMetaClass extends IOMetaClass {
         setConstant("TRUNC", runtime.newFixnum(IOModes.TRUNC));
         setConstant("APPEND", runtime.newFixnum(IOModes.APPEND));
         setConstant("NONBLOCK", runtime.newFixnum(IOModes.NONBLOCK));
+		
+		// Create constants for flock
+		setConstant("LOCK_SH", runtime.newFixnum(RubyFile.LOCK_SH));
+		setConstant("LOCK_EX", runtime.newFixnum(RubyFile.LOCK_EX));
+		setConstant("LOCK_NB", runtime.newFixnum(RubyFile.LOCK_NB));
+		setConstant("LOCK_UN", runtime.newFixnum(RubyFile.LOCK_UN));
 
         // TODO Singleton methods: atime, blockdev?, chardev?, chown, ctime, directory? 
         // TODO Singleton methods: executable?, executable_real?, extname, fnmatch, fnmatch?
@@ -102,9 +108,10 @@ public class FileMetaClass extends IOMetaClass {
 		defineSingletonMethod("truncate", Arity.twoArguments());
         defineSingletonMethod("unlink", Arity.optional());
 		
-        // TODO: Define instance methods: atime, chmod, chown, ctime, flock, lchmod, lchown
-        // TODO: Define instance methods: lstat, mtime, path
+        // TODO: Define instance methods: atime, chmod, chown, ctime, lchmod, lchown, lstat, mtime
+		//defineMethod("flock", Arity.singleArgument());
 		defineMethod("initialize", Arity.optional());
+		defineMethod("path", Arity.noArguments());
 		defineMethod("truncate", Arity.singleArgument());
     }
 
@@ -270,7 +277,7 @@ public class FileMetaClass extends IOMetaClass {
 	}
 	
 	public IRubyObject open(IRubyObject[] args, boolean tryToYield) {
-        int count = checkArgumentCount(args, 1, -1);
+        checkArgumentCount(args, 1, -1);
         Ruby runtime = getRuntime();
         
         RubyString pathString = RubyString.stringValue(args[0]);

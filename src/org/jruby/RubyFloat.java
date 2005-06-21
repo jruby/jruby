@@ -78,12 +78,12 @@ public class RubyFloat extends RubyNumeric {
         RubyClass result = runtime.defineClass("Float", runtime.getClasses().getNumericClass());
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyFloat.class);
         
-        result.defineMethod("+", callbackFactory.getMethod("op_plus", RubyNumeric.class));
-        result.defineMethod("-", callbackFactory.getMethod("op_minus", RubyNumeric.class));
+        result.defineMethod("+", callbackFactory.getMethod("op_plus", IRubyObject.class));
+        result.defineMethod("-", callbackFactory.getMethod("op_minus", IRubyObject.class));
         result.defineMethod("*", callbackFactory.getMethod("op_mul", IRubyObject.class));
-        result.defineMethod("/", callbackFactory.getMethod("op_div", RubyNumeric.class));
-        result.defineMethod("%", callbackFactory.getMethod("op_mod", RubyNumeric.class));
-        result.defineMethod("**", callbackFactory.getMethod("op_pow", RubyNumeric.class));
+        result.defineMethod("/", callbackFactory.getMethod("op_div", IRubyObject.class));
+        result.defineMethod("%", callbackFactory.getMethod("op_mod", IRubyObject.class));
+        result.defineMethod("**", callbackFactory.getMethod("op_pow", IRubyObject.class));
         result.defineMethod("ceil", callbackFactory.getMethod("ceil"));
         result.defineMethod("finite?", callbackFactory.getMethod("finite_p"));
         result.defineMethod("floor", callbackFactory.getMethod("floor"));
@@ -92,6 +92,7 @@ public class RubyFloat extends RubyNumeric {
         result.defineMethod("nan?", callbackFactory.getMethod("nan_p"));
         result.defineMethod("round", callbackFactory.getMethod("round"));
         result.defineMethod("to_i", callbackFactory.getMethod("to_i"));
+        result.defineAlias("to_int", "to_i");
         result.defineMethod("to_f", callbackFactory.getMethod("to_f"));
         result.defineMethod("to_s", callbackFactory.getMethod("to_s"));
         result.defineMethod("truncate", callbackFactory.getMethod("truncate"));
@@ -149,7 +150,6 @@ public class RubyFloat extends RubyNumeric {
     }
 
     public RubyInteger round() {
-        double value = getDoubleValue();
         double decimal = value % 1;
         double round = Math.round(value);
 
@@ -165,36 +165,13 @@ public class RubyFloat extends RubyNumeric {
     }
 
     public RubyInteger truncate() {
-        if (getDoubleValue() > 0.0) {
+        if (value > 0.0) {
             return floor();
-        } else if (getDoubleValue() < 0.0) {
+        } else if (value < 0.0) {
             return ceil();
         } else {
             return RubyFixnum.zero(getRuntime());
         }
-    }
-
-    public RubyNumeric op_uminus() {
-        return RubyFloat.newFloat(getRuntime(), -value);
-    }
-
-    public RubyNumeric op_plus(RubyNumeric other) {
-        return RubyFloat.newFloat(getRuntime(), getDoubleValue() + other.getDoubleValue());
-    }
-
-    public RubyNumeric op_minus(RubyNumeric other) {
-        return RubyFloat.newFloat(getRuntime(), getDoubleValue() - other.getDoubleValue());
-    }
-
-    // TODO: Coercion messages needed for all ops...Does this sink Anders
-    // dispatching optimization?
-    public RubyNumeric op_mul(IRubyObject other) {
-    	if ((other instanceof RubyNumeric) == false) {
-    		throw getRuntime().newTypeError(other.getMetaClass().getName() +
-    			" can't be coerced into Float");
-    	}
-    	
-        return ((RubyNumeric) other).multiplyWith(this);
     }
 
     public RubyNumeric multiplyWith(RubyNumeric other) {
@@ -213,26 +190,71 @@ public class RubyFloat extends RubyNumeric {
         return other.multiplyWith(this);
     }
     
-    public RubyNumeric op_div(RubyNumeric other) {
-        return RubyFloat.newFloat(getRuntime(), getDoubleValue() / other.getDoubleValue());
+    public IRubyObject op_div(IRubyObject other) {
+    	if (other instanceof RubyNumeric) {
+            return RubyFloat.newFloat(getRuntime(), 
+                getDoubleValue() / ((RubyNumeric) other).getDoubleValue());
+    	}
+    	
+    	return callCoerced("/", other);
     }
 
-    public RubyNumeric op_mod(RubyNumeric other) {
-        // Modelled after c ruby implementation (java /,% not same as ruby)
-        double x = getDoubleValue();
-        double y = other.getDoubleValue();
-        double mod = x % y;
+    public IRubyObject op_mod(IRubyObject other) {
+    	if (other instanceof RubyNumeric) {
+            // Modelled after c ruby implementation (java /,% not same as ruby)
+            double x = getDoubleValue();
+            double y = ((RubyNumeric) other).getDoubleValue();
+            double mod = x % y;
 
-        if (mod < 0 && y > 0 || mod > 0 && y < 0) {
-            mod += y;
-        }
+            if (mod < 0 && y > 0 || mod > 0 && y < 0) {
+                mod += y;
+            }
 
-        return RubyFloat.newFloat(getRuntime(), mod);
+            return RubyFloat.newFloat(getRuntime(), mod);
+    	}
+    	
+    	return callCoerced("%", other);
     }
 
-    public RubyNumeric op_pow(RubyNumeric other) {
-        return RubyFloat.newFloat(getRuntime(), 
-                Math.pow(getDoubleValue(), other.getDoubleValue()));
+    public IRubyObject op_minus(IRubyObject other) {
+    	if (other instanceof RubyNumeric) {
+            return RubyFloat.newFloat(getRuntime(), 
+                getDoubleValue() - ((RubyNumeric) other).getDoubleValue());
+    	}
+
+    	return callCoerced("-", other);
+    }
+
+    // TODO: Anders double-dispatch here does not seem like it has much benefit when we need
+    // to dynamically check to see if we need to coerce first.
+    public IRubyObject op_mul(IRubyObject other) {
+    	if (other instanceof RubyNumeric) {
+            return ((RubyNumeric) other).multiplyWith(this);
+    	}
+    	
+    	return callCoerced("*", other);
+    }
+
+    public IRubyObject op_plus(IRubyObject other) {
+    	if (other instanceof RubyNumeric) {
+            return RubyFloat.newFloat(getRuntime(),
+                getDoubleValue() + ((RubyNumeric) other).getDoubleValue());
+    	}
+    	
+    	return callCoerced("+", other);
+    }
+
+    public IRubyObject op_pow(IRubyObject other) {
+    	if (other instanceof RubyNumeric) {
+            return RubyFloat.newFloat(getRuntime(), 
+                Math.pow(getDoubleValue(), ((RubyNumeric) other).getDoubleValue()));
+    	}
+    	
+    	return callCoerced("**", other);
+    }
+
+    public IRubyObject op_uminus() {
+        return RubyFloat.newFloat(getRuntime(), -value);
     }
 
     public RubyString to_s() {
@@ -281,7 +303,7 @@ public class RubyFloat extends RubyNumeric {
 	public void marshalTo(MarshalStream output) throws java.io.IOException {
 		output.write('f');
 		String strValue = this.toString();
-		double value = getValue();
+
 		if (Double.isInfinite(value)) {
 			strValue = value < 0 ? "-inf" : "inf";
 		} else if (Double.isNaN(value)) {

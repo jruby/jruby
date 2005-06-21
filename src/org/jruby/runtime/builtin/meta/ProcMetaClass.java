@@ -27,7 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.builtin.meta;
 
-import org.jruby.BuiltinClass;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -35,7 +34,7 @@ import org.jruby.RubyProc;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class ProcMetaClass extends BuiltinClass {
+public class ProcMetaClass extends ObjectMetaClass {
     public ProcMetaClass(Ruby runtime) {
         super("Proc", RubyProc.class, runtime.getClasses().getObjectClass());
     }

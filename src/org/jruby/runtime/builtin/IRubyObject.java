@@ -37,6 +37,8 @@ import java.util.Map;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyFloat;
+import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.ast.Node;
@@ -187,6 +189,13 @@ public interface IRubyObject {
     String asSymbol();
 
     /**
+     * Methods which perform to_xxx if the object has such a method
+     */
+    RubyFloat convertToFloat();
+    RubyInteger convertToInteger();
+    RubyString convertToString();
+
+    /**
      * RubyMethod convertToType.
      * @param string
      * @param string1
@@ -194,9 +203,7 @@ public interface IRubyObject {
      */
     IRubyObject convertToType(String string, String string1, boolean b);
 
-    IRubyObject convertToString();
 
-    IRubyObject convertToFloat();
 
     /**
      * RubyMethod setTaint.

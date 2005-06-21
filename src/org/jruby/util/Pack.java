@@ -74,7 +74,7 @@ public class Pack {
                 return RubyFloat.newFloat(runtime, decodeFloatLittleEndian(enc));
             }
             public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
-                float f = o == runtime.getNil() ? 0 : (float) RubyNumeric.numericValue(o).getDoubleValue();
+                float f = o == runtime.getNil() ? 0 : (float) o.convertToFloat().getDoubleValue();
                 encodeFloatLittleEndian(result, f);
             }});
         Converter tmp = new Converter(4) {
@@ -82,7 +82,7 @@ public class Pack {
                 return RubyFloat.newFloat(runtime, decodeFloatBigEndian(enc));
             }
             public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
-                float f = o == runtime.getNil() ? 0 : (float) RubyNumeric.numericValue(o).getDoubleValue();
+                float f = o == runtime.getNil() ? 0 : (float) o.convertToFloat().getDoubleValue();
                 encodeFloatBigEndian(result, f);
             }
         };
@@ -94,7 +94,7 @@ public class Pack {
                 return RubyFloat.newFloat(runtime, decodeDoubleLittleEndian(enc));
             }
             public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
-                double d = o == runtime.getNil() ? 0 : RubyNumeric.numericValue(o).getDoubleValue();
+                double d = o == runtime.getNil() ? 0 : o.convertToFloat().getDoubleValue();
                 encodeDoubleLittleEndian(result, d);
             }});
         tmp = new Converter(8) {
@@ -102,7 +102,7 @@ public class Pack {
                 return RubyFloat.newFloat(runtime, decodeDoubleBigEndian(enc));
             }
             public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
-                double d = o == runtime.getNil() ? 0 : RubyNumeric.numericValue(o).getDoubleValue();
+                double d = o == runtime.getNil() ? 0 : o.convertToFloat().getDoubleValue();
                 encodeDoubleBigEndian(result, d);
             }
         }; 

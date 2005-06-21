@@ -33,7 +33,6 @@
 package org.jruby;
 
 import org.jruby.exceptions.RangeError;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /** Implementation of the Integer class.
@@ -45,26 +44,9 @@ public abstract class RubyInteger extends RubyNumeric {
     public RubyInteger(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
     }
-
-    public static RubyClass createIntegerClass(Ruby runtime) {
-        RubyClass result = runtime.defineClass("Integer", runtime.getClasses().getNumericClass());
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyInteger.class);
-        
-        result.includeModule(runtime.getClasses().getEnumerableModule());
-        
-        result.defineMethod("chr", callbackFactory.getMethod("chr"));
-        result.defineMethod("downto", callbackFactory.getMethod("downto", RubyNumeric.class));
-        result.defineMethod("integer?", callbackFactory.getMethod("int_p"));
-        result.defineMethod("next", callbackFactory.getMethod("next"));
-        result.defineMethod("step", callbackFactory.getMethod("step", RubyNumeric.class, RubyNumeric.class));
-        result.defineMethod("succ", callbackFactory.getMethod("next"));
-        result.defineMethod("times", callbackFactory.getMethod("times"));
-        result.defineMethod("upto", callbackFactory.getMethod("upto", RubyNumeric.class));
-        
-        result.getMetaClass().undefineMethod("new");
-        result.defineSingletonMethod("induced_from", callbackFactory.getSingletonMethod("induced_from", IRubyObject.class));
-        
-        return result;
+    
+    public RubyInteger convertToInteger() {
+    	return this;
     }
 
     // conversion
@@ -74,21 +56,6 @@ public abstract class RubyInteger extends RubyNumeric {
 
     // Integer methods
 
-    public static RubyInteger induced_from(IRubyObject recv, 
-					   IRubyObject number) {
-        if (number instanceof RubyFixnum) {
-            return (RubyFixnum) number;
-        } else if (number instanceof RubyFloat) {
-            return ((RubyFloat) number).to_i();
-        } else if (number instanceof RubyBignum) {
-            return recv.getRuntime().newFixnum(
-					((RubyBignum) number).getLongValue());
-        } else {
-            throw recv.getRuntime().newTypeError("failed to convert " + 
-				number.getMetaClass() + " into Integer");
-        }
-    }
-
     public RubyString chr() {
         if (getLongValue() < 0 || getLongValue() > 0xff) {
             throw new RangeError(getRuntime(), this.toString() + " out of char range");
@@ -96,7 +63,9 @@ public abstract class RubyInteger extends RubyNumeric {
         return getRuntime().newString(new String(new char[] {(char) getLongValue()}));
     }
 
-    public IRubyObject downto(RubyNumeric to) {
+    // TODO: Make callCoerced work in block context...then fix downto, step, and upto.
+    public IRubyObject downto(IRubyObject to) {
+    	RubyNumeric test = (RubyNumeric) to;
         RubyNumeric i = this;
         while (true) {
             if (i.callMethod("<", to).isTrue()) {
@@ -112,9 +81,10 @@ public abstract class RubyInteger extends RubyNumeric {
         return getRuntime().getTrue();
     }
 
-    public IRubyObject step(RubyNumeric to, RubyNumeric step) {
+    public IRubyObject step(IRubyObject to, IRubyObject step) {
+    	RubyNumeric test = (RubyNumeric) to;
         RubyNumeric i = this;
-        if (step.getLongValue() == 0) {
+        if (((RubyNumeric) step).getLongValue() == 0) {
             throw getRuntime().newArgumentError("step cannot be 0");
         }
 
@@ -124,7 +94,7 @@ public abstract class RubyInteger extends RubyNumeric {
         }
 
         while (true) {
-            if (i.callMethod(cmp, to).isTrue()) {
+            if (i.callMethod(cmp, test).isTrue()) {
                 break;
             }
             getRuntime().yield(i);
@@ -149,10 +119,11 @@ public abstract class RubyInteger extends RubyNumeric {
         return callMethod("+", RubyFixnum.one(getRuntime()));
     }
 
-    public IRubyObject upto(RubyNumeric to) {
+    public IRubyObject upto(IRubyObject to) {
+    	RubyNumeric test = (RubyNumeric) to;
         RubyNumeric i = this;
         while (true) {
-            if (i.callMethod(">", to).isTrue()) {
+            if (i.callMethod(">", test).isTrue()) {
                 break;
             }
             getRuntime().yield(i);
