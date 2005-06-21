@@ -52,3 +52,22 @@ test_exception(ArgumentError) {
 #arr = []
 #test_equal([1,2], arr.push(1, 2))
 #test_exception(ArgumentError) { arr.push() }
+
+# To test protocol conversion
+class IntClass
+  def initialize(num); @num = num; end
+  def to_int; @num; end; 
+end
+
+arr = [1, 2, 3]
+
+index = IntClass.new(1)
+arr[index] = 4
+test_equal(4, arr[index])
+eindex = IntClass.new(2)
+arr[index, eindex] = 5
+test_equal([1,5], arr)
+arr.delete_at(index)
+test_equal([1], arr)
+arr = arr * eindex
+test_equal([1, 1], arr)
