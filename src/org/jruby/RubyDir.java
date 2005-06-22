@@ -119,7 +119,8 @@ public class RubyDir extends RubyObject {
     public IRubyObject initialize(RubyString path) {
         path.checkSafeString();
 
-        dir = new File(path.getValue());
+// TODO: Consolidate this absolute file nonsense
+        dir = new File(path.getValue()).getAbsoluteFile();
         if (!dir.isDirectory()) {
             dir = null;
             throw ErrnoError.getErrnoError(getRuntime(), "ENOENT", path.getValue() + " is not a directory");
