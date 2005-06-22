@@ -47,6 +47,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  */
 public class JavaObject extends RubyObject {
+    private static Object NULL_LOCK = new Object();
     private final Object value;
 
     protected JavaObject(Ruby runtime, RubyClass rubyClass, Object value) {
@@ -58,19 +59,25 @@ public class JavaObject extends RubyObject {
         this(runtime, runtime.getClasses().getJavaObjectClass(), value);
     }
 
-    public static synchronized JavaObject wrap(Ruby runtime, Object value) {
-        JavaObject wrapper = runtime.getJavaSupport().getJavaObjectFromCache(value);
-        if (wrapper == null) {
-            if (value != null && value.getClass().isArray()) {
-                wrapper = new JavaArray(runtime, value);
-            } else if (value != null && value.getClass().equals(Class.class)) {
-                wrapper = JavaClass.get(runtime, (Class)value);
-            } else {
-                wrapper = new JavaObject(runtime, value);
+    public static JavaObject wrap(Ruby runtime, Object value) {
+        Object lock = value == null ? NULL_LOCK : value;
+        
+        synchronized (lock) {
+            JavaObject wrapper = runtime.getJavaSupport().getJavaObjectFromCache(value);
+            if (wrapper == null) {
+            	if (value == null) {
+            		wrapper = new JavaObject(runtime, value);
+            	} else if (value.getClass().isArray()) {
+                	wrapper = new JavaArray(runtime, value);
+                } else if (value.getClass().equals(Class.class)) {
+                	wrapper = JavaClass.get(runtime, (Class)value);
+                } else {
+                	wrapper = new JavaObject(runtime, value);
+                }
+                runtime.getJavaSupport().putJavaObjectIntoCache(wrapper);
             }
-            runtime.getJavaSupport().putJavaObjectIntoCache(wrapper);
+            return wrapper;
         }
-        return wrapper;
     }
 
     public Class getJavaClass() {

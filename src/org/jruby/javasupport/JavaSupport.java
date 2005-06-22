@@ -34,6 +34,7 @@ package org.jruby.javasupport;
 import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -51,7 +52,7 @@ public class JavaSupport {
 
     private ClassLoader javaClassLoader = this.getClass().getClassLoader();
 
-    private WeakHashMap instanceCache = new WeakHashMap(100);
+    private Map instanceCache = Collections.synchronizedMap(new WeakHashMap(100));
 
     public JavaSupport(Ruby ruby) {
         this.runtime = ruby;
