@@ -25,7 +25,7 @@
 # * the provisions above, a recipient may use your version of this file under
 # * the terms of any one of the CPL, the GPL or the LGPL.
 # ***** END LICENSE BLOCK *****/
-require 'java'
+require "java"
 
 class IPSocket < BasicSocket
 end
@@ -57,7 +57,7 @@ class TCPServer < TCPSocket
 
   def initialize(hostname, port) 
       addr = nil
-      addr = INetAddress.getByName hostname if hostname
+      addr = InetAddress.getByName hostname if hostname
       @javaServerSocket = ServerSocket.new(port, 10, addr)
   end
   
