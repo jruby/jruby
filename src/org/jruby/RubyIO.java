@@ -335,7 +335,7 @@ public class RubyIO extends RubyObject {
         String mode = null;
         
         if (count > 1) {
-            mode = ((RubyString)args[1].convertToString()).getValue();
+            mode = args[1].convertToString().getValue();
         }
 
         // See if we already have this descriptor open.

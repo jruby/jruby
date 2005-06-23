@@ -2374,7 +2374,7 @@ case 373:
 case 374:
 					// line 1515 "DefaultRubyParser.jy"
   {
-                    yyVal = support.literal_concat(getPosition(), null, ((Node)yyVals[0+yyTop]));
+                    yyVal = support.literal_concat(getPosition(), null, yyVals[0+yyTop]);
 		}
   break;
 case 375:

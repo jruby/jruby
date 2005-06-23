@@ -272,7 +272,7 @@ public class RubyFixnum extends RubyInteger {
             if (other instanceof RubyBignum ||
                 (value < 0 && otherValue < 0 && (result > 0 || result < -MAX)) || 
                 (value > 0 && otherValue > 0 && (result < 0 || result > MAX))) {
-                return RubyBignum.newBignum(getRuntime(), value).op_plus((RubyFixnum)other);
+                return RubyBignum.newBignum(getRuntime(), value).op_plus(other);
             }
             return newFixnum(result);
         }

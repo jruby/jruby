@@ -38,8 +38,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
-import java.nio.channels.FileChannel;
-
 import org.jruby.exceptions.IOError;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOHandlerSeekable;

@@ -10,7 +10,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 //import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.builtin.IRubyObject;
 
 public class ClassMetaClass extends ObjectMetaClass {
     public ClassMetaClass(Ruby runtime, RubyClass superClass) {

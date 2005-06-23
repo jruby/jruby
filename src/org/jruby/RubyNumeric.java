@@ -312,7 +312,7 @@ public class RubyNumeric extends RubyObject {
      */
     public IRubyObject modulo(IRubyObject other) {
     	if (other instanceof RubyNumeric) {
-            return (RubyNumeric) callMethod("%", (RubyNumeric) other);
+            return (RubyNumeric) callMethod("%", other);
     	}
     	
     	return callCoerced("modulo", other);
@@ -329,7 +329,7 @@ public class RubyNumeric extends RubyObject {
             if (callMethod("<", zero).isTrue() && other.callMethod(">", zero).isTrue() || 
                 callMethod(">", zero).isTrue() && other.callMethod("<", zero).isTrue()) {
 
-                return (RubyNumeric) mod.callMethod("-", (RubyNumeric) other);
+                return (RubyNumeric) mod.callMethod("-", other);
             }
 
             return mod;

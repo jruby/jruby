@@ -156,7 +156,7 @@ public class TestBSF extends RubyTestCase {
 			assertTrue(list2.indexOf(new Long(1)) == 0);
 
 			si.modifyNestedList();
-			assertTrue("FOO".equals((String) list.get(0)));
+			assertTrue("FOO".equals(list.get(0)));
 			
 		} catch (BSFException e) {
 			fail("Problem evaluating List Test: " + e);
