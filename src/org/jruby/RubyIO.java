@@ -724,7 +724,7 @@ public class RubyIO extends RubyObject {
     public IRubyObject read(IRubyObject[] args) {
         String buf = args.length > 0 ? handler.read(RubyNumeric.fix2int(args[0])) : handler.getsEntireStream();
 
-        return buf == null ? getRuntime().newString("") : getRuntime().newString(buf);
+        return buf == null ? getRuntime().getNil() : getRuntime().newString(buf);
     }
 
     /** Read a byte. On EOF throw EOFError.
