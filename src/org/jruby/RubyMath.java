@@ -45,16 +45,16 @@ public class RubyMath {
         result.defineConstant("E", RubyFloat.newFloat(runtime, Math.E));
         result.defineConstant("PI", RubyFloat.newFloat(runtime, Math.PI));
 
-        result.defineSingletonMethod("atan2", callbackFactory.getSingletonMethod("atan2", RubyNumeric.class, RubyNumeric.class));
-        result.defineSingletonMethod("cos", callbackFactory.getSingletonMethod("cos", RubyNumeric.class));
-        result.defineSingletonMethod("exp", callbackFactory.getSingletonMethod("exp", RubyNumeric.class));
-        result.defineSingletonMethod("frexp", callbackFactory.getSingletonMethod("frexp", RubyNumeric.class));
-        result.defineSingletonMethod("ldexp", callbackFactory.getSingletonMethod("ldexp", RubyNumeric.class, RubyNumeric.class));
-        result.defineSingletonMethod("log", callbackFactory.getSingletonMethod("log", RubyNumeric.class));
-        result.defineSingletonMethod("log10", callbackFactory.getSingletonMethod("log10", RubyNumeric.class));
-        result.defineSingletonMethod("sin", callbackFactory.getSingletonMethod("sin", RubyNumeric.class));
-        result.defineSingletonMethod("sqrt", callbackFactory.getSingletonMethod("sqrt", RubyNumeric.class));
-        result.defineSingletonMethod("tan", callbackFactory.getSingletonMethod("tan", RubyNumeric.class));
+        result.defineModuleFunction("atan2", callbackFactory.getSingletonMethod("atan2", RubyNumeric.class, RubyNumeric.class));
+        result.defineModuleFunction("cos", callbackFactory.getSingletonMethod("cos", RubyNumeric.class));
+        result.defineModuleFunction("exp", callbackFactory.getSingletonMethod("exp", RubyNumeric.class));
+        result.defineModuleFunction("frexp", callbackFactory.getSingletonMethod("frexp", RubyNumeric.class));
+        result.defineModuleFunction("ldexp", callbackFactory.getSingletonMethod("ldexp", RubyNumeric.class, RubyNumeric.class));
+        result.defineModuleFunction("log", callbackFactory.getSingletonMethod("log", RubyNumeric.class));
+        result.defineModuleFunction("log10", callbackFactory.getSingletonMethod("log10", RubyNumeric.class));
+        result.defineModuleFunction("sin", callbackFactory.getSingletonMethod("sin", RubyNumeric.class));
+        result.defineModuleFunction("sqrt", callbackFactory.getSingletonMethod("sqrt", RubyNumeric.class));
+        result.defineModuleFunction("tan", callbackFactory.getSingletonMethod("tan", RubyNumeric.class));
         
         return result;
     }
