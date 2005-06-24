@@ -121,7 +121,7 @@ public class RubyKernel {
         module.defineModuleFunction("scan", callbackFactory.getSingletonMethod("scan", IRubyObject.class));
         // TODO: Implement Kernel#select
         module.defineModuleFunction("set_trace_func", callbackFactory.getSingletonMethod("set_trace_func", IRubyObject.class));
-        module.defineModuleFunction("sleep", callbackFactory.getSingletonMethod("sleep", RubyNumeric.class));
+        module.defineModuleFunction("sleep", callbackFactory.getSingletonMethod("sleep", IRubyObject.class));
         module.defineModuleFunction("split", callbackFactory.getOptSingletonMethod("split"));
         module.defineAlias("sprintf", "format");
         module.defineModuleFunction("srand", callbackFactory.getOptSingletonMethod("srand"));
@@ -406,8 +406,8 @@ public class RubyKernel {
         return getLastlineString(recv.getRuntime()).scan(pattern);
     }
 
-    public static IRubyObject sleep(IRubyObject recv, RubyNumeric seconds) {
-    	long milliseconds = (long) (seconds.getDoubleValue() * 1000);
+    public static IRubyObject sleep(IRubyObject recv, IRubyObject seconds) {
+    	long milliseconds = (long) (seconds.convertToFloat().getDoubleValue() * 1000);
     	long startTime = System.currentTimeMillis();
     	
     	RubyThread rubyThread = recv.getRuntime().getThreadService().getCurrentContext().getThread();
