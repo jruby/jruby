@@ -241,7 +241,7 @@ public class LoadService implements ILoadService {
                 } 
 
                	// Load from local filesystem
-                File current = new File(entry, name);
+                File current = new File(entry, name).getAbsoluteFile();
                 if (current.exists() && current.isFile()) {
                 	return current.toURL();
                 }

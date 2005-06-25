@@ -667,9 +667,11 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     /**
-    	* hashCode() is just a wrapper around Ruby's hash() method, so that
-    	* Ruby objects can be used in Java collections.
-    */
+     * hashCode() is just a wrapper around Ruby's hash() method, so that
+     * Ruby objects can be used in Java collections.  We can add back hashCode
+     * to subclasses that we know will have the same hash value.
+     */
+    // TODO: Consider making some standard library call System.identityHashCode directly
     public final int hashCode() {
         return RubyNumeric.fix2int(callMethod("hash"));
     }

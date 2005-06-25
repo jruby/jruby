@@ -38,7 +38,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -54,7 +53,7 @@ public class RubySymbol extends RubyObject {
     private final int id;
 
     private RubySymbol(Ruby runtime, String symbol) {
-        super(runtime, runtime.getClass("Symbol"));
+        super(runtime, runtime.getClasses().getSymbolClass());
         this.symbol = symbol;
 
         lastId++;
@@ -67,39 +66,6 @@ public class RubySymbol extends RubyObject {
      */
     public String asSymbol() {
         return symbol;
-    }
-
-    public static RubyClass createSymbolClass(Ruby runtime) {
-		RubyClass symbolClass = runtime.defineClass("Symbol", runtime.getClasses().getObjectClass());
-    	
-		CallbackFactory callbackFactory = runtime.callbackFactory(RubySymbol.class);
-        
-		symbolClass.defineMethod("to_i",
-			callbackFactory.getMethod("to_i"));
-		symbolClass.defineMethod("to_int", 
-			callbackFactory.getMethod("to_i"));
-		symbolClass.defineMethod("to_s", 
-			callbackFactory.getMethod("to_s"));
-		symbolClass.defineMethod("id2name", 
-			callbackFactory.getMethod("to_s"));
-		symbolClass.defineMethod("==", 
-			callbackFactory.getMethod("equal", IRubyObject.class));
-		symbolClass.defineMethod("hash", 
-			callbackFactory.getMethod("hash"));
-		symbolClass.defineMethod("inspect", 
-			callbackFactory.getMethod("inspect"));
-		symbolClass.defineMethod("clone", 
-			callbackFactory.getMethod("rbClone"));
-		symbolClass.defineMethod("dup", 
-			callbackFactory.getMethod("rbClone"));
-		symbolClass.defineMethod("freeze", 
-			callbackFactory.getMethod("freeze"));
-		symbolClass.defineMethod("taint", 
-			callbackFactory.getMethod("taint"));
-		
-		symbolClass.getMetaClass().undefineMethod("new");
-		
-		return symbolClass;
     }
 
     public boolean isImmediate() {
@@ -159,6 +125,8 @@ public class RubySymbol extends RubyObject {
         return getRuntime().newFixnum(symbol.hashCode());
     }
 
+    // TODO: Should all immediate classes be subclassed so that clone etc...can inherit 
+    // immediate behavior like this.
     public IRubyObject rbClone() {
         throw getRuntime().newTypeError("can't clone Symbol");
     }

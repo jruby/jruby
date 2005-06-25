@@ -8,21 +8,22 @@ package org.jruby.runtime.builtin.meta;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-//import org.jruby.RubyModule;
+import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 
+// Note: This code is not currently live.  It will be hooked up
+// some time around 0.8.3 development cycle.
 public class ClassMetaClass extends ObjectMetaClass {
     public ClassMetaClass(Ruby runtime, RubyClass superClass) {
-    	super(runtime, superClass, null, null, "Class", RubyClass.class);
+    	super(runtime, null, superClass, runtime.getClasses().getObjectClass(), "Class", RubyClass.class);
     }
 
-    /*
 	public ClassMetaClass(String name, RubyClass superClass, RubyModule parentModule) {
 		super(name, RubyClass.class, superClass, parentModule);
-	}*/
-
-	protected void initializeClass() {
-        defineMethod("new", Arity.noArguments(), "newInstance");
+	}
+	
+	public void initializeClass() {
+        defineMethod("new", Arity.optional(), "newInstance");
         defineMethod("superclass", Arity.noArguments(), "superclass");
 
         defineSingletonMethod("new", Arity.optional(), "newClass");
@@ -37,7 +38,7 @@ public class ClassMetaClass extends ObjectMetaClass {
 	}
 
 	protected IRubyObject allocateObject() {
-        RubyClass instance = getRuntime().newClass();
+        RubyClass instance = (RubyClass) newClass(IRubyObject.NULL_ARRAY);
         
 		instance.setMetaClass(this);
 		
@@ -45,24 +46,22 @@ public class ClassMetaClass extends ObjectMetaClass {
 	}
 
     public IRubyObject newInstance(IRubyObject[] args) {
-        RubyClass instance = getRuntime().newClass();
-        
-        instance.callInit(args);
-       
-        return instance;
-    }*/
+        return newClass(IRubyObject.NULL_ARRAY);
+    }
     
-	/*    public IRubyObject newClass(IRubyObject[] args) {
-	    final Ruby runtime = getRuntime();
+	public IRubyObject newClass(IRubyObject[] args) {
+	    Ruby runtime = getRuntime();
 
-        RubyClass superClass = runtime.getClasses().getObjectClass();
+        RubyClass superClass;
         if (args.length > 0) {
             if (args[0] instanceof RubyClass) {
                 superClass = (RubyClass) args[0];
             } else {
                 throw runtime.newTypeError(
-                    "wrong argument type " + superClass.getType().getName() + " (expected Class)");
+                    "wrong argument type " + args[0].getType().getName() + " (expected Class)");
             }
+        } else {
+        	 superClass = runtime.getClasses().getObjectClass();
         }
 
         RubyClass newClass = superClass.subclass();
@@ -82,7 +81,7 @@ public class ClassMetaClass extends ObjectMetaClass {
         return newClass;
     }
     
-    public IRubyObject inherited() {
+    public IRubyObject inherited(IRubyObject ignore) {
     	return getRuntime().getNil();
     }*/
 }

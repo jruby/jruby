@@ -77,11 +77,6 @@ public class FixnumMetaClass extends IntegerMetaClass {
         return new FixnumMetaClass(name, this, parentModule);
 	}
 
-	// Not directly allocated?
-	protected IRubyObject allocateObject() {
-        return null;
-	}
-	
     public RubyInteger induced_from(IRubyObject number) {
     	// TODO: Remove once asNumeric in RubyObject tries to convert
         if (number instanceof RubySymbol) {

@@ -51,10 +51,12 @@ import org.jruby.runtime.builtin.meta.FixnumMetaClass;
 import org.jruby.runtime.builtin.meta.HashMetaClass;
 import org.jruby.runtime.builtin.meta.IOMetaClass;
 import org.jruby.runtime.builtin.meta.IntegerMetaClass;
+import org.jruby.runtime.builtin.meta.ModuleMetaClass;
 import org.jruby.runtime.builtin.meta.NumericMetaClass;
 import org.jruby.runtime.builtin.meta.ObjectMetaClass;
 import org.jruby.runtime.builtin.meta.ProcMetaClass;
 import org.jruby.runtime.builtin.meta.StringMetaClass;
+import org.jruby.runtime.builtin.meta.SymbolMetaClass;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.util.BuiltinScript;
 
@@ -233,15 +235,16 @@ public class RubyClasses {
     public void initCoreClasses() {
         objectClass = new ObjectMetaClass(runtime);
         topLevelClasses.put("Object", objectClass);
-        moduleClass = defineBootClass("Module", objectClass);
+        moduleClass = new ModuleMetaClass(runtime, objectClass);
+        topLevelClasses.put("Module", moduleClass);
         classClass = defineBootClass("Class", moduleClass);
-        //classClass = new ClassMetaClass(runtime, moduleClass);
-        //topLevelClasses.put("Class", classClass);
 
         RubyClass metaClass = objectClass.makeMetaClass(classClass, runtime.getCurrentContext().getRubyClass());
         metaClass = moduleClass.makeMetaClass(metaClass, runtime.getCurrentContext().getRubyClass());
         metaClass = classClass.makeMetaClass(metaClass, runtime.getCurrentContext().getRubyClass());
 
+        ((ObjectMetaClass) moduleClass).initializeBootstrapClass();
+        
         kernelModule = RubyKernel.createKernelModule(runtime);
         objectClass.includeModule(kernelModule);
 
@@ -249,19 +252,26 @@ public class RubyClasses {
         objectClass.definePrivateMethod("initialize", callbackFactory.getNilMethod(-1));
         classClass.definePrivateMethod("inherited", callbackFactory.getNilMethod(1));
 
-        //RubyObject.createObjectClass(objectClass);
-
         RubyClass.createClassClass(classClass);
-        RubyModule.createModuleClass(moduleClass);
 
+        // Pre-create the core classes we know we will get referenced by starting up the runtime.
         nilClass = RubyNil.createNilClass(runtime);
-
         falseClass = RubyBoolean.createFalseClass(runtime);
         trueClass = RubyBoolean.createTrueClass(runtime);
-
+        comparableModule = RubyComparable.createComparable(runtime);
+        enumerableModule = runtime.defineModule("Enumerable"); // Impl: src/builtin/enumerable.rb
+        stringClass = new StringMetaClass(runtime);
+        symbolClass = new SymbolMetaClass(runtime);
         threadGroupClass = RubyThreadGroup.createThreadGroupClass(runtime);
         threadClass = RubyThread.createThreadClass(runtime);
-
+        exceptionClass = RubyException.createExceptionClass(runtime);
+        numericClass = new NumericMetaClass(runtime);
+        integerClass = new IntegerMetaClass(runtime);        
+        fixnumClass = new FixnumMetaClass(runtime);
+        hashClass = new HashMetaClass(runtime);
+        ioClass = new IOMetaClass(runtime);
+        arrayClass = new ArrayMetaClass(runtime);
+        
         runtime.getLoadService().addAutoload("UnboundMethod", new IAutoloadMethod() {
             public IRubyObject load(Ruby ruby, String name) {
                 return RubyUnboundMethod.defineUnboundMethodClass(ruby);
@@ -326,9 +336,6 @@ public class RubyClasses {
      * @return The Comparable module.
      */
     public RubyModule getComparableModule() {
-        if (comparableModule == null) {
-            comparableModule = RubyComparable.createComparable(runtime);
-        }
         return comparableModule;
     }
 
@@ -338,9 +345,6 @@ public class RubyClasses {
      * @return The Hash class.
      */
     public RubyClass getHashClass() {
-        if (hashClass == null) {
-            hashClass = new HashMetaClass(runtime);
-        }
         return hashClass;
     }
 
@@ -374,9 +378,6 @@ public class RubyClasses {
      * @return The IO class.
      */
     public RubyClass getIoClass() {
-        if (ioClass == null) {
-            ioClass = new IOMetaClass(runtime);
-        }
         return ioClass;
     }
 
@@ -440,9 +441,6 @@ public class RubyClasses {
      * @return The Symbol class.
      */
     public RubyClass getSymbolClass() {
-        if (symbolClass == null) {
-            symbolClass = RubySymbol.createSymbolClass(runtime);
-        }
         return symbolClass;
     }
 
@@ -530,9 +528,6 @@ public class RubyClasses {
      * @return The Fixnum class.
      */
     public RubyClass getFixnumClass() {
-        if (fixnumClass == null) {
-            fixnumClass = new FixnumMetaClass(runtime);
-        }
         return fixnumClass;
     }
 
@@ -575,9 +570,6 @@ public class RubyClasses {
      * @return The Exception class.
      */
     public RubyClass getExceptionClass() {
-        if (exceptionClass == null) {
-            exceptionClass = RubyException.createExceptionClass(runtime);
-        }
         return exceptionClass;
     }
 
@@ -587,9 +579,6 @@ public class RubyClasses {
      * @return The String class.
      */
     public RubyClass getStringClass() {
-        if (stringClass == null) {
-            stringClass = new StringMetaClass(runtime);
-        }
         return stringClass;
     }
 
@@ -608,9 +597,6 @@ public class RubyClasses {
      * @return The Integer class.
      */
     public RubyClass getIntegerClass() {
-        if (integerClass == null) {
-            integerClass = new IntegerMetaClass(runtime);
-        }
         return integerClass;
     }
 
@@ -666,9 +652,6 @@ public class RubyClasses {
      * @return The Array class.
      */
     public RubyClass getArrayClass() {
-        if (arrayClass == null) {
-            arrayClass = new ArrayMetaClass(runtime);
-        }
         return arrayClass;
     }
 
@@ -678,9 +661,6 @@ public class RubyClasses {
      * @return The Enumerable module.
      */
     public RubyModule getEnumerableModule() {
-        if (enumerableModule == null) {
-            enumerableModule = RubyEnumerable.createEnumerableModule(runtime);
-        }
         return enumerableModule;
     }
 
@@ -757,9 +737,6 @@ public class RubyClasses {
      * @return The Numeric class.
      */
     public RubyClass getNumericClass() {
-        if (numericClass == null) {
-            numericClass = new NumericMetaClass(runtime);
-        }
         return numericClass;
     }
 

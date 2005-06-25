@@ -48,7 +48,11 @@ public class ObjectMetaClass extends RubyClass {
     
     // Only for creating ObjectMetaClass directly
     public ObjectMetaClass(Ruby runtime) {
-    	this(runtime, runtime.getClasses().getClassClass(), null, null, "Object", RubyObject.class);
+    	super(runtime, runtime.getClasses().getClassClass(), null, null, "Object");
+    	
+    	this.builtinClass = RubyObject.class;
+    	
+    	initializeClass();
     }
     
     // Only for other core modules/classes
@@ -57,8 +61,6 @@ public class ObjectMetaClass extends RubyClass {
     	super(runtime, metaClass, superClass, parentClass, name);
     	
     	this.builtinClass = builtinClass;
-    	
-    	initializeClass();
     }
     
     protected ObjectMetaClass(String name, Class builtinClass, RubyClass superClass) {
@@ -87,6 +89,17 @@ public class ObjectMetaClass extends RubyClass {
         if (init) {
             initializeClass();
         }
+    }
+    
+    /**
+     * Only intended to be called by ModuleMetaClass and ClassMetaClass.  Seems like a waste to
+     * subclass over this and there seems little risk of programmer error.  We cannot define
+     * methods for there two classes since there is a circular dependency between them and
+     * ObjectMetaClass.  We defer initialization until after construction and meta classes
+     * are made.
+     */
+    public void initializeBootstrapClass() {
+    	initializeClass();
     }
 
     protected void initializeClass() {
@@ -169,6 +182,14 @@ public class ObjectMetaClass extends RubyClass {
         addMethod(name, new ReflectedMethod(builtinClass, java_name, arity, visibility));
     }
 
+    public void definePrivateMethod(String name, Arity arity) {
+    	addMethod(name, new ReflectedMethod(builtinClass, name, arity, Visibility.PRIVATE));	
+    }
+
+    public void definePrivateMethod(String name, Arity arity, String java_name) {
+    	addMethod(name, new ReflectedMethod(builtinClass, java_name, arity, Visibility.PRIVATE));	
+    }
+    
     public void defineSingletonMethod(String name, Arity arity) {
     	defineSingletonMethod(name, arity, name);
     }

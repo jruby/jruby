@@ -54,7 +54,6 @@ import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.internal.runtime.methods.WrapperCallable;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
@@ -113,6 +112,10 @@ public class RubyModule extends RubyObject {
     private void setSuperClass(RubyClass superClass) {
         this.superClass = superClass;
     }
+    
+    public RubyModule getParent() {
+    	return parentModule;
+    }
 
     public Map getMethods() {
         return methods;
@@ -133,64 +136,7 @@ public class RubyModule extends RubyObject {
     public boolean isIncluded() {
         return false;
     }
-
-    public static void createModuleClass(RubyClass moduleClass) {
-        CallbackFactory callbackFactory = moduleClass.getRuntime().callbackFactory(RubyModule.class);
-        Callback module_eval = callbackFactory.getOptMethod("module_eval");
-        
-        moduleClass.defineMethod("===", callbackFactory.getMethod("op_eqq", IRubyObject.class));
-        moduleClass.defineMethod("<=>", callbackFactory.getMethod("op_cmp", IRubyObject.class));
-        moduleClass.defineMethod("<", callbackFactory.getMethod("op_lt", IRubyObject.class));
-        moduleClass.defineMethod("<=", callbackFactory.getMethod("op_le", IRubyObject.class));
-        moduleClass.defineMethod(">", callbackFactory.getMethod("op_gt", IRubyObject.class));
-        moduleClass.defineMethod(">=", callbackFactory.getMethod("op_ge", IRubyObject.class));
-        moduleClass.defineMethod("ancestors", callbackFactory.getMethod("ancestors"));
-        moduleClass.defineMethod("class_eval", module_eval);
-        moduleClass.defineMethod("class_variables", callbackFactory.getMethod("class_variables"));
-        moduleClass.defineMethod("clone", callbackFactory.getMethod("rbClone"));
-        moduleClass.defineMethod("const_defined?", callbackFactory.getMethod("const_defined", IRubyObject.class));
-        moduleClass.defineMethod("const_get", callbackFactory.getMethod("const_get", IRubyObject.class));
-        moduleClass.defineMethod("const_missing", callbackFactory.getMethod("const_missing", IRubyObject.class));
-        moduleClass.defineMethod("const_set", callbackFactory.getMethod("const_set", IRubyObject.class, IRubyObject.class));
-        moduleClass.defineMethod("constants", callbackFactory.getMethod("constants"));
-        moduleClass.defineMethod("dup", callbackFactory.getMethod("dup"));
-        moduleClass.defineMethod("included_modules", callbackFactory.getMethod("included_modules"));
-        moduleClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
-        moduleClass.defineMethod("instance_method", callbackFactory.getMethod("instance_method", IRubyObject.class));
-        moduleClass.defineMethod("instance_methods", callbackFactory.getOptMethod("instance_methods"));
-        moduleClass.defineMethod("method_defined?", callbackFactory.getMethod("method_defined", IRubyObject.class));
-        moduleClass.defineMethod("module_eval", module_eval);
-        moduleClass.defineMethod("name", callbackFactory.getMethod("name"));
-        moduleClass.defineMethod("private_class_method", callbackFactory.getOptMethod("private_class_method"));
-        moduleClass.defineMethod("private_instance_methods", callbackFactory.getOptMethod("private_instance_methods"));
-        moduleClass.defineMethod("protected_instance_methods", callbackFactory.getOptMethod("protected_instance_methods"));
-        moduleClass.defineMethod("public_class_method", callbackFactory.getOptMethod("public_class_method"));
-        moduleClass.defineMethod("public_instance_methods", callbackFactory.getOptMethod("public_instance_methods"));
-        moduleClass.defineMethod("to_s",  callbackFactory.getMethod("to_s"));
-
-        moduleClass.definePrivateMethod("alias_method", callbackFactory.getMethod("alias_method", IRubyObject.class, IRubyObject.class));
-        moduleClass.definePrivateMethod("append_features", callbackFactory.getMethod("append_features", RubyModule.class));
-        moduleClass.definePrivateMethod("attr", callbackFactory.getOptMethod("attr", IRubyObject.class));
-        moduleClass.definePrivateMethod("attr_reader", callbackFactory.getOptMethod("attr_reader"));
-        moduleClass.definePrivateMethod("attr_writer", callbackFactory.getOptMethod("attr_writer"));
-        moduleClass.definePrivateMethod("attr_accessor", callbackFactory.getOptMethod("attr_accessor"));
-        moduleClass.definePrivateMethod("define_method", callbackFactory.getOptMethod("define_method"));
-        moduleClass.definePrivateMethod("extend_object", callbackFactory.getMethod("extend_object", IRubyObject.class));
-        moduleClass.definePrivateMethod("include", callbackFactory.getOptMethod("include"));
-        moduleClass.definePrivateMethod("method_added", callbackFactory.getNilMethod(1));
-        moduleClass.definePrivateMethod("module_function", callbackFactory.getOptMethod("module_function"));
-        moduleClass.definePrivateMethod("public", callbackFactory.getOptMethod("rbPublic"));
-        moduleClass.definePrivateMethod("protected", callbackFactory.getOptMethod("rbProtected"));
-        moduleClass.definePrivateMethod("private", callbackFactory.getOptMethod("rbPrivate"));
-        moduleClass.definePrivateMethod("remove_class_variable", callbackFactory.getMethod("remove_class_variable", IRubyObject.class));
-        moduleClass.definePrivateMethod("remove_const", callbackFactory.getMethod("remove_const", IRubyObject.class));
-        moduleClass.definePrivateMethod("remove_method", callbackFactory.getMethod("remove_method", IRubyObject.class));
-        moduleClass.definePrivateMethod("undef_method", callbackFactory.getMethod("undef_method", IRubyObject.class));
-
-        moduleClass.defineSingletonMethod("new", callbackFactory.getSingletonMethod("newModule"));
-        moduleClass.defineSingletonMethod("nesting", callbackFactory.getSingletonMethod("nesting"));
-    }
-
+ 
     public String getBaseName() {
         return classId;
     }
@@ -1151,41 +1097,14 @@ public class RubyModule extends RubyObject {
         return getRuntime().getNil();
     }
 
-    public static RubyModule newModule(IRubyObject recv) {
-        RubyModule mod = RubyModule.newModule(recv.getRuntime(), null);
-        mod.setMetaClass((RubyClass) recv);
-        recv.getRuntime().getClasses().getModuleClass().callInit(IRubyObject.NULL_ARRAY);
-        return mod;
-    }
-
-    /** Return an array of nested modules or classes.
-     *
-     * rb_mod_nesting
-     *
-     */
-    public static RubyArray nesting(IRubyObject recv) {
-        RubyModule objectClass = recv.getRuntime().getClasses().getObjectClass();
-		RubyModule recvModule = recv.getRuntime().getCurrentContext().getLastRubyClass();
-        RubyArray result = recv.getRuntime().newArray();
-        
-        for (RubyModule current = recvModule; current != objectClass;
-        	current = current.parentModule) {
-            result.append(current);
-        }
-        
-        return result;
-    }
-
     /** rb_mod_attr
      *
      */
-    public IRubyObject attr(IRubyObject symbol, IRubyObject[] args) {
-        boolean writeable = false;
-        if (args.length > 0) {
-            writeable = args[0].isTrue();
-        }
-
-        addAccessor(symbol.asSymbol(), true, writeable);
+    public IRubyObject attr(IRubyObject[] args) {
+    	checkArgumentCount(args, 1, 2);
+        boolean writeable = args.length > 1 ? args[1].isTrue() : false;
+        
+        addAccessor(args[0].asSymbol(), true, writeable);
 
         return getRuntime().getNil();
     }
@@ -1407,8 +1326,9 @@ public class RubyModule extends RubyObject {
     /** rb_mod_append_features
      *
      */
-    public RubyModule append_features(RubyModule module) {
-        module.includeModule(this);
+    // TODO: Proper argument check (conversion?)
+    public RubyModule append_features(IRubyObject module) {
+        ((RubyModule) module).includeModule(this);
         return this;
     }
 
@@ -1489,6 +1409,10 @@ public class RubyModule extends RubyObject {
             }
         }
         return this;
+    }
+    
+    public IRubyObject method_added(IRubyObject nothing) {
+    	return getRuntime().getNil();
     }
 
     public RubyBoolean method_defined(IRubyObject symbol) {
