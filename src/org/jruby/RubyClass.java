@@ -195,14 +195,16 @@ public class RubyClass extends RubyModule {
     public static RubyClass newClass(IRubyObject recv, IRubyObject[] args) {
         final Ruby runtime = recv.getRuntime();
 
-        RubyClass superClass = runtime.getClasses().getObjectClass();
+        RubyClass superClass;
         if (args.length > 0) {
             if (args[0] instanceof RubyClass) {
                 superClass = (RubyClass) args[0];
             } else {
                 throw runtime.newTypeError(
-                    "wrong argument type " + superClass.getType().getName() + " (expected Class)");
+                    "wrong argument type " + args[0].getType().getName() + " (expected Class)");
             }
+        } else {
+            superClass = runtime.getClasses().getObjectClass();
         }
 
         RubyClass newClass = superClass.subclass();
