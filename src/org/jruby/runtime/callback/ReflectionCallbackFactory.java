@@ -74,19 +74,11 @@ public class ReflectionCallbackFactory extends CallbackFactory {
             Arity.fixed(2));
     }
 
-    public Callback getOptSingletonMethod(String method, Class arg1) {
-        return new ReflectionCallback(type, method, new Class[] { arg1, IRubyObject[].class }, true, true, Arity.optional());
-    }
-    
     public Callback getOptSingletonMethod(String method) {
         return new ReflectionCallback(type, method, new Class[] { IRubyObject[].class }, true, true, Arity.optional());
     }
 
     public Callback getOptMethod(String method) {
         return new ReflectionCallback(type, method, new Class[] { IRubyObject[].class }, true, false, Arity.optional());
-    }
-
-    public Callback getOptMethod(String method, Class arg1) {
-        return new ReflectionCallback(type, method, new Class[] { arg1, IRubyObject[].class }, true, false, Arity.optional());
     }
 }

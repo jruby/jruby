@@ -13,6 +13,7 @@
  *
  * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Copyright (C) 2005 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -42,8 +43,13 @@ public abstract class AbstractMethod implements ICallable {
     private RubyModule implementationClass;
     private Visibility visibility;
     
-    protected AbstractMethod(Visibility visibility) {
+    protected AbstractMethod(RubyModule implementationClass, Visibility visibility) {
+    	this.implementationClass = implementationClass;
         this.visibility = visibility;
+    }
+    
+    public String getOriginalName() {
+    	return null;
     }
     
     public RubyModule getImplementationClass() {
@@ -68,12 +74,5 @@ public abstract class AbstractMethod implements ICallable {
 
     public Arity getArity() {
         return Arity.optional();
-    }
-
-    public void initializeCacheEntry(CacheEntry cacheEntry) {
-        cacheEntry.setVisibility(getVisibility());
-        cacheEntry.setOrigin(getImplementationClass());
-        cacheEntry.setMethod(this);
-        cacheEntry.setRecvClass(getImplementationClass());
     }
 }

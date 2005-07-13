@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -29,6 +29,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
+import org.jruby.RubyModule;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -45,8 +46,8 @@ public class WrapperCallable extends AbstractMethod {
      * Constructor for WrapperCallable.
      * @param visibility
      */
-    public WrapperCallable(ICallable callable, Visibility visibility) {
-        super(visibility);
+    public WrapperCallable(RubyModule implementationClass, ICallable callable, Visibility visibility) {
+        super(implementationClass, visibility);
         this.callable = callable;
     }
 
@@ -58,6 +59,6 @@ public class WrapperCallable extends AbstractMethod {
     }
     
     public ICallable dup() {
-        return new WrapperCallable(callable, getVisibility());
+        return new WrapperCallable(getImplementationClass(), callable, getVisibility());
     }
 }

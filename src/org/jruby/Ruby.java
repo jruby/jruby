@@ -67,6 +67,7 @@ import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.parser.Parser;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockStack;
+import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.FrameStack;
@@ -92,6 +93,7 @@ import org.jruby.runtime.load.LoadServiceFactory;
  * @since   0.1
  */
 public final class Ruby {
+	private CacheMap cacheMap = new CacheMap();
     private ThreadService threadService = new ThreadService(this);
 
     public int stackTraces = 0;
@@ -157,6 +159,17 @@ public final class Ruby {
         
         javaSupport = new JavaSupport(this);
     }
+    
+    /**
+     * Retrieve mappings of cached methods to where they have been cached.  When a cached
+     * method needs to be invalidated this map can be used to remove all places it has been
+     * cached.
+     * 
+     * @return the mappings of where cached methods have been stored
+     */
+	public CacheMap getCacheMap() {
+		return cacheMap;
+	}
 
     /**
      * Returns a default instance of the JRuby runtime.

@@ -13,7 +13,7 @@
  *
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -30,6 +30,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
+import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Visibility;
@@ -47,8 +48,8 @@ public class ProcMethod extends AbstractMethod {
      * Constructor for ProcMethod.
      * @param visibility
      */
-    public ProcMethod(RubyProc proc, Visibility visibility) {
-        super(visibility);
+    public ProcMethod(RubyModule implementationClass, RubyProc proc, Visibility visibility) {
+        super(implementationClass, visibility);
         this.proc = proc;
     }
 
@@ -61,6 +62,6 @@ public class ProcMethod extends AbstractMethod {
     }
     
     public ICallable dup() {
-        return new ProcMethod(proc, getVisibility());
+        return new ProcMethod(getImplementationClass(), proc, getVisibility());
     }
 }

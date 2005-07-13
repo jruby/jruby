@@ -692,7 +692,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             visibility = iVisited.getVisibility();
         }
 
-        DefaultMethod newMethod = new DefaultMethod(iVisited.getBodyNode(),
+        DefaultMethod newMethod = new DefaultMethod(containingClass, iVisited.getBodyNode(),
                                                     (ArgsNode) iVisited.getArgsNode(),
                                                     visibility,
 													threadContext.getRubyClass());
@@ -702,7 +702,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         containingClass.addMethod(name, newMethod);
 
         if (threadContext.getCurrentVisibility().isModuleFunction()) {
-            containingClass.getSingletonClass().addMethod(name, new WrapperCallable(newMethod, Visibility.PUBLIC));
+            containingClass.getSingletonClass().addMethod(name, new WrapperCallable(containingClass.getSingletonClass(), newMethod, Visibility.PUBLIC));
             containingClass.callMethod("singleton_method_added", runtime.newSymbol(name));
         }
 
@@ -744,7 +744,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             }
         }
 
-        DefaultMethod newMethod = new DefaultMethod(iVisited.getBodyNode(),
+        DefaultMethod newMethod = new DefaultMethod(rubyClass, iVisited.getBodyNode(),
                                                     (ArgsNode) iVisited.getArgsNode(),
                                                     Visibility.PUBLIC,
 													threadContext.getRubyClass());
@@ -1288,10 +1288,6 @@ public final class EvaluateVisitor implements NodeVisitor {
         } else {
             if (runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
                 throw new SecurityError(runtime, "Insecure: can't extend object.");
-            }
-
-            if (receiver.getMetaClass() instanceof MetaClass) {
-                RubyModule.clearMethodCache(runtime);
             }
 
             singletonClass = receiver.getSingletonClass();

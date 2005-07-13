@@ -31,7 +31,6 @@ package org.jruby.runtime;
 
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
-import org.jruby.internal.runtime.methods.CacheEntry;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -39,7 +38,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author  jpetersen
  * @version $Revision$
  */
+// TODO: Consider making this be an interface that will have immutable concrete implementations
 public interface ICallable {
+	String getOriginalName();
     RubyModule getImplementationClass();
     void setImplementationClass(RubyModule implClass);
     
@@ -52,6 +53,5 @@ public interface ICallable {
 
     Arity getArity();
 
-    void initializeCacheEntry(CacheEntry cacheEntry);
     ICallable dup();
 }

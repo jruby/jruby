@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -30,6 +30,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
+import org.jruby.RubyModule;
 import org.jruby.RubyUnboundMethod;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Visibility;
@@ -47,8 +48,8 @@ public class MethodMethod extends AbstractMethod {
      * Constructor for MethodMethod.
      * @param visibility
      */
-    public MethodMethod(RubyUnboundMethod method, Visibility visibility) {
-        super(visibility);
+    public MethodMethod(RubyModule implementationClass, RubyUnboundMethod method, Visibility visibility) {
+        super(implementationClass, visibility);
         this.method = method;
     }
 
@@ -60,6 +61,6 @@ public class MethodMethod extends AbstractMethod {
     }
     
     public ICallable dup() {
-        return new MethodMethod(method, getVisibility());
+        return new MethodMethod(getImplementationClass(), method, getVisibility());
     }
 }

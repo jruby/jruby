@@ -108,3 +108,35 @@ end
 class C3 < C2
   define_method( 'methodName2', instance_method(:methodName))
 end
+
+############### test caching system when including a module
+
+class D1
+  def foo; "foo"; end
+end
+
+class D2 < D1
+  def bar; foo; end
+end
+
+class D3 < D2
+  def bar; foo; end
+end
+
+# Call methods once to force D1.foo to cache
+b = D2.new
+b.bar
+c = D3.new
+c.bar
+
+module Foo
+  def foo; "fooFoo"; end
+end
+
+class D2
+  include Foo
+end
+
+test_equal("fooFoo", b.bar)
+test_equal("fooFoo", c.bar)
+ 

@@ -13,7 +13,7 @@
  *
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -31,7 +31,6 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
-import org.jruby.RubyModule;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -43,52 +42,28 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class AliasMethod extends AbstractMethod {
     private ICallable oldMethod;
     private String oldName;
-    private RubyModule origin;
 
-    public AliasMethod(ICallable oldMethod, String oldName) {
-        super(oldMethod.getVisibility());
-        if (oldMethod instanceof AliasMethod) {
-            initializeFrom((AliasMethod) oldMethod);
-        } else {
-            this.oldName = oldName;
-            this.origin = oldMethod.getImplementationClass();
-            this.oldMethod = oldMethod;
-        }
-    }
-
-    private void initializeFrom(AliasMethod otherAlias) {
-        this.oldName = otherAlias.getOldName();
-        this.origin = otherAlias.getOrigin();
-        this.oldMethod = otherAlias.getOldMethod();
-    }
-
-    /**
-     * @fixme name or oldName ?
+    /*
+     * This code used to try and optimize the case of when oldMethod is an aliasMethod.
+     * This seems a little overkill.  I would rather assert for this case an fix it during
+     * deveopment.
      */
-    public IRubyObject call(Ruby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
-        return oldMethod.call(runtime, receiver, name, args, noSuper);
-    }
+    public AliasMethod(ICallable oldMethod, String oldName) {
+        super(oldMethod.getImplementationClass(), oldMethod.getVisibility());
+        assert !(oldMethod instanceof AliasMethod);
 
-    public ICallable getOldMethod() {
-        return oldMethod;
-    }
-
-    public String getOldName() {
-        return oldName;
-    }
-
-    public RubyModule getOrigin() {
-        return origin;
-    }
-
-    public void initializeCacheEntry(CacheEntry cacheEntry) {
-        cacheEntry.setVisibility(getVisibility());
-        cacheEntry.setOrigin(getOrigin());
-        cacheEntry.setOriginalName(getOldName());
-        cacheEntry.setMethod(getOldMethod());
-        cacheEntry.setRecvClass(getOrigin());
+        this.oldName = oldName;
+        this.oldMethod = oldMethod;
     }
     
+    public String getOriginalName() {
+    	return oldName;
+    }
+
+    public IRubyObject call(Ruby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+        return oldMethod.call(runtime, receiver, oldName, args, noSuper);
+    }
+
     public ICallable dup() {
         return new AliasMethod(oldMethod, oldName);
     }

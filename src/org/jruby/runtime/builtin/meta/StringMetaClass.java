@@ -116,8 +116,8 @@ public class StringMetaClass extends ObjectMetaClass {
         defineMethod("swapcase!", Arity.noArguments(), "swapcase_bang");
         defineMethod("to_f", Arity.noArguments());
         defineMethod("to_i", Arity.noArguments());
-        defineSelfMethod("to_s", Arity.noArguments());
-        defineSelfMethod("to_str", Arity.noArguments());
+        defineMethod("to_s", Arity.noArguments());
+        defineMethod("to_str", Arity.noArguments());
         defineMethod("to_sym", Arity.noArguments());
         defineMethod("tr", Arity.twoArguments());
         defineMethod("tr!", Arity.twoArguments(), "tr_bang");

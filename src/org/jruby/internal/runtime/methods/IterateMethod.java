@@ -13,7 +13,7 @@
  *
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -45,7 +45,7 @@ public class IterateMethod extends AbstractMethod {
     private IRubyObject data;
 
     public IterateMethod(Callback callback, IRubyObject data) {
-        super(null);
+        super(null, null);
         this.callback = callback;
         this.data = data;
     }

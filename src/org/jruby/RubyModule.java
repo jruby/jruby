@@ -35,19 +35,14 @@
 package org.jruby;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.TreeMap;
 
-import org.jruby.ast.ZSuperNode;
 import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.SecurityError;
 import org.jruby.internal.runtime.methods.AliasMethod;
-import org.jruby.internal.runtime.methods.CacheEntry;
 import org.jruby.internal.runtime.methods.CallbackMethod;
-import org.jruby.internal.runtime.methods.EvaluateMethod;
 import org.jruby.internal.runtime.methods.MethodMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
@@ -84,9 +79,10 @@ public class RubyModule extends RubyObject {
     // If it is null, then it an anonymous class.
     private String classId;
 
+    // All methods and all CACHED methods for the module.  The cached methods will be removed
+    // when appropriate (e.g. when method is removed by source class or a new method is added
+    // with same name by one of its subclasses).
     private Map methods = new HashMap();
-
-    private Map methodCache = Collections.synchronizedMap(new TreeMap());
 
     protected RubyModule(Ruby runtime, RubyClass metaClass, RubyClass superClass, RubyModule parentModule, String name) {
         super(runtime, metaClass);
@@ -133,6 +129,9 @@ public class RubyModule extends RubyObject {
         return false;
     }
 
+    /**
+     * Is this module one that in an included one (e.g. an IncludedModuleWrapper). 
+     */
     public boolean isIncluded() {
         return false;
     }
@@ -237,11 +236,6 @@ public class RubyModule extends RubyObject {
     }
     
     public IRubyObject getConstant(String name, boolean invokeConstMissing) {
-    	// special case code for "NIL"
-    	if (name.equals("NIL")) {
-    		return getRuntime().getNil();
-    	}
-    	
     	// First look for constants in module hierachy
     	for (RubyModule p = this; p != null; p = p.parentModule) {
             IRubyObject var = p.getInstanceVariable(name);
@@ -283,7 +277,7 @@ public class RubyModule extends RubyObject {
     /** 
      * Include a new module in this module or class.
      */
-    public void includeModule(IRubyObject arg) {
+    public synchronized void includeModule(IRubyObject arg) {
         testFrozen("module");
         if (!isTaint()) {
             getRuntime().secure(4);
@@ -304,6 +298,13 @@ public class RubyModule extends RubyObject {
         	}
         }
         
+        // Invalidate cache for all methods in the new included module in case a base class method
+        // of the same name has already been cached.
+        for (Iterator iter = moduleMethods.keySet().iterator(); iter.hasNext();) {
+        	String methodName = (String) iter.next();
+            getRuntime().getCacheMap().remove(methodName, searchMethod(methodName));
+        }
+        
         // Include new module
         setSuperClass(module.newIncludeClass(getSuperClass()));
         
@@ -312,38 +313,17 @@ public class RubyModule extends RubyObject {
         	p = p.getSuperClass()) {
         	includeModule(p);
         }
-
-        clearMethodCache();
-    }
-
-    /** rb_add_method
-     *
-     */
-    public void addMethod(String name, ICallable method) {
-        if (this == getRuntime().getClasses().getObjectClass()) {
-            getRuntime().secure(4);
-        }
-
-        if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
-            throw new SecurityError(getRuntime(), "Insecure: can't define method");
-        }
-        testFrozen("class/module");
-
-        // Clear cache for any instance methods
-        methodCache.remove(name);
-        getMethods().put(name, method);
-        clearMethodCache(name);
     }
 
     public void defineMethod(String name, Callback method) {
         Visibility visibility = name.equals("initialize") ? 
         		Visibility.PRIVATE : Visibility.PUBLIC;
 
-        addMethod(name, new CallbackMethod(method, visibility));
+        addMethod(name, new CallbackMethod(this, method, visibility));
     }
 
     public void definePrivateMethod(String name, Callback method) {
-        addMethod(name, new CallbackMethod(method, Visibility.PRIVATE));
+        addMethod(name, new CallbackMethod(this, method, Visibility.PRIVATE));
     }
 
     public void undefineMethod(String name) {
@@ -387,6 +367,92 @@ public class RubyModule extends RubyObject {
         addMethod(name, UndefinedMethod.getInstance());
     }
 
+    private void addCachedMethod(String name, ICallable method) {
+        getMethods().put(name, method);
+        getRuntime().getCacheMap().add(method, this);
+    }
+    
+    // TODO: Consider a better way of synchronizing 
+    public void addMethod(String name, ICallable method) {
+        if (this == getRuntime().getClasses().getObjectClass()) {
+            getRuntime().secure(4);
+        }
+
+        if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
+            throw new SecurityError(getRuntime(), "Insecure: can't define method");
+        }
+        testFrozen("class/module");
+
+        // We can safely reference methods here instead of doing getMethods() since if we
+        // are adding we are not using a IncludedModuleWrapper.
+        synchronized(methods) {
+            // If we add a method which already is cached in this class, then we should update the 
+            // cachemap so it stays up to date.
+            ICallable existingMethod = (ICallable) methods.remove(name);
+            if (existingMethod != null) {
+    	        getRuntime().getCacheMap().remove(name, existingMethod);
+            }
+
+            methods.put(name, method);
+        }
+    }
+
+    public void removeCachedMethod(String name) {
+    	getMethods().remove(name);
+    }
+
+    public void removeMethod(String name) {
+        if (this == getRuntime().getClasses().getObjectClass()) {
+            getRuntime().secure(4);
+        }
+        if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
+            throw new SecurityError(getRuntime(), "Insecure: can't remove method");
+        }
+        testFrozen("class/module");
+
+        // We can safely reference methods here instead of doing getMethods() since if we
+        // are adding we are not using a IncludedModuleWrapper.
+        synchronized(methods) {
+            ICallable method = (ICallable) methods.remove(name);
+            if (method == null) {
+                throw new NameError(getRuntime(), "method '" + name + "' not defined in " + getName());
+            }
+        
+            getRuntime().getCacheMap().remove(name, method);
+        }
+    }
+    
+    public ICallable searchMethod(String name) {
+    	ICallable method;
+    	synchronized(methods) {
+    	    // See if current class has method or if it has been cached here already
+            method = (ICallable) getMethods().get(name);
+            if (method != null) {
+                return method;
+            }
+    	}
+        
+        // See if superClass(es) can find it
+    	method = superClass == null ? 
+    	    UndefinedMethod.getInstance() : superClass.searchMethodInner(name);
+
+    	addCachedMethod(name, method);
+    	
+    	return method;
+    }
+    
+    protected ICallable searchMethodInner(String name) {
+    	synchronized(methods) {
+    	    ICallable method = (ICallable) getMethods().get(name);
+    	    if (method != null) {
+    		    return method;
+    	    }
+    	}
+
+    	return superClass == null ? 
+    	    UndefinedMethod.getInstance() : superClass.searchMethodInner(name); 
+    }
+    
     /** rb_define_module_function
      *
      */
@@ -425,105 +491,25 @@ public class RubyModule extends RubyObject {
     	return null;
     }
 
-    /** search_method
-     *
-     */
-    public ICallable searchMethod(String name) {
-        ICallable method = (ICallable) getMethods().get(name);
-        if (method != null) {
-            method.setImplementationClass(this);
-            return method;
-        }
-        
-        if (getSuperClass() == null) {
-        	return UndefinedMethod.getInstance();
-        }
-        
-        return getSuperClass().searchMethod(name);
-    }
-
-    public Visibility getMethodVisibility(String name) {
-        return getMethodBodyCached(name).getVisibility();
-    }
-
-    protected CacheEntry getMethodBodyCached(String name) {
-        CacheEntry result = (CacheEntry) methodCache.get(name);
-        if (result != null) {
-            return result;
-        }
-        name = name.intern();
-        ICallable method = searchMethod(name);
-        if (method.isUndefined()) {
-            CacheEntry undefinedEntry = CacheEntry.createUndefined(name, this);
-            methodCache.put(name, undefinedEntry);
-            return undefinedEntry;
-        }
-        result = new CacheEntry(name, this);
-        method.initializeCacheEntry(result);
-        // Be careful not to store cache entries that contain classes from super classes of singleton classes
-        // because they cannot be cleared in addMethod() and would therefore keep old method definition alive.
-        if (result.getOrigin() == this || !(this instanceof MetaClass)) {
-        	methodCache.put(name, result);
-        }
-        return result;
-    }
-
-    public static void clearMethodCache(Ruby runtime) {
-        Iterator iter = runtime.getClasses().getTopLevelClassMap().values().iterator();
-        while (iter.hasNext()) {
-            ((RubyModule) iter.next()).methodCache.clear();
-        }
-        
-        iter = runtime.getClasses().getNonTopLevelClassMap().values().iterator();
-        while (iter.hasNext()) {
-            ((RubyModule) iter.next()).methodCache.clear();
-        }
-    }
-
-    public static void clearMethodCache(Ruby runtime, String methodName) {
-        Iterator iter = runtime.getClasses().getTopLevelClassMap().values().iterator();
-        while (iter.hasNext()) {
-            RubyModule module = (RubyModule) iter.next();
-            module.methodCache.remove(methodName);
-        }
-        
-        iter = runtime.getClasses().getNonTopLevelClassMap().values().iterator();
-        while (iter.hasNext()) {
-            RubyModule module = (RubyModule) iter.next();
-            module.methodCache.remove(methodName);
-        }
-    }
-
-    private void clearMethodCache() {
-        clearMethodCache(getRuntime());
-    }
-
-    private void clearMethodCache(String methodName) {
-        clearMethodCache(getRuntime(), methodName);
-    }
-
     /** rb_call
      *
      */
     public final IRubyObject call(IRubyObject recv, String name, IRubyObject[] args, CallType callType) {
     	assert args != null;
 
-    	CacheEntry entry = getMethodBodyCached(name);
+        ICallable method = searchMethod(name);
 
-        if (! entry.isDefined()) {
+        if (method.isUndefined()) {
             callType.registerCallStatus(getRuntime().getLastCallStatus(), name);
             return callMethodMissing(recv, name, args);
         }
-
-        name = entry.getOriginalName();
-        ICallable method = entry.getMethod();
 
         if (!name.equals("method_missing")) {
             if (method.getVisibility().isPrivate() && callType.isNormal()) {
                 getRuntime().getLastCallStatus().setPrivate();
                 return callMethodMissing(recv, name, args);
             } else if (method.getVisibility().isProtected()) {
-                RubyModule defined = entry.getOrigin();
+                RubyModule defined = method.getImplementationClass();
                 while (defined.isIncluded()) {
                     defined = defined.getMetaClass();
                 }
@@ -533,8 +519,13 @@ public class RubyModule extends RubyObject {
                 }
             }
         }
+        
+        String originalName = method.getOriginalName();
+        if (originalName != null) {
+        	name = originalName;
+        }
 
-        return entry.getOrigin().call0(recv, name, args, method, false);
+        return method.getImplementationClass().call0(recv, name, args, method, false);
     }
 
     private IRubyObject callMethodMissing(IRubyObject receiver, String name, IRubyObject[] args) {
@@ -578,7 +569,7 @@ public class RubyModule extends RubyObject {
     /** rb_alias
      *
      */
-    public void defineAlias(String name, String oldName) {
+    public synchronized void defineAlias(String name, String oldName) {
         testFrozen("module");
         if (oldName.equals(name)) {
             return;
@@ -591,34 +582,14 @@ public class RubyModule extends RubyObject {
             if (isModule()) {
                 method = getRuntime().getClasses().getObjectClass().searchMethod(oldName);
             }
+            
             if (method.isUndefined()) {
-                throw new NameError(getRuntime(),
-                                    "undefined method '" + name + "' for " +
-                                    (isModule() ? "module" : "class") + " '" +
-                                    getName() + "'");
+                throw new NameError(getRuntime(), "undefined method `" + oldName + "' for " +
+                    (isModule() ? "module" : "class") + " `" + getName() + "'");
             }
         }
+        getRuntime().getCacheMap().remove(name, searchMethod(name));
         getMethods().put(name, new AliasMethod(method, oldName));
-        clearMethodCache(name);
-    }
-
-    /** remove_method
-     *
-     */
-    public void removeMethod(String name) {
-        if (this == getRuntime().getClasses().getObjectClass()) {
-            getRuntime().secure(4);
-        }
-        if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
-            throw new SecurityError(getRuntime(), "Insecure: can't remove method");
-        }
-        testFrozen("class/module");
-
-        if (getMethods().remove(name) == null) {
-            throw new NameError(getRuntime(), "method '" + name + "' not defined in " + getName());
-        }
-
-        clearMethodCache(name);
     }
 
     public RubyClass defineOrGetClassUnder(String name, RubyClass superClazz) {
@@ -782,14 +753,9 @@ public class RubyModule extends RubyObject {
 
         ICallable method = searchMethod(name);
 
-        if (method.isUndefined() && isModule()) {
-            method = getRuntime().getClasses().getObjectClass().searchMethod(name);
-        }
-
         if (method.isUndefined()) {
-            throw new NameError(
-                getRuntime(),
-                "undefined method '" + name + "' for " + (isModule() ? "module" : "class") + " '" + getName() + "'");
+            throw new NameError(getRuntime(), "undefined method '" + name + "' for " + 
+                                (isModule() ? "module" : "class") + " '" + getName() + "'");
         }
 
         if (method.getVisibility() != visibility) {
@@ -797,7 +763,7 @@ public class RubyModule extends RubyObject {
                 method.setVisibility(visibility);
             } else {
                 final ThreadContext context = getRuntime().getCurrentContext();
-                addMethod(name, new CallbackMethod(new Callback() {
+                addMethod(name, new CallbackMethod(this, new Callback() {
 	                public IRubyObject execute(IRubyObject self, IRubyObject[] args) {
 				        return context.callSuper(context.getCurrentFrame().getArgs());
 	                }
@@ -815,41 +781,29 @@ public class RubyModule extends RubyObject {
      *
      */
     public boolean isMethodBound(String name, boolean checkVisibility) {
-        CacheEntry entry = (CacheEntry) methodCache.get(name);
-        if (entry == null) {
-            entry = getMethodBodyCached(name);
-        }
-        if (entry.isDefined()) {
-            return !(checkVisibility && entry.getVisibility().isPrivate());
+        ICallable method = searchMethod(name);
+        if (!method.isUndefined()) {
+            return !(checkVisibility && method.getVisibility().isPrivate());
         }
         return false;
     }
 
     public IRubyObject newMethod(IRubyObject receiver, String name, boolean bound) {
-        CacheEntry ent = getMethodBodyCached(name);
-        if (! ent.isDefined()) {
+        ICallable method = searchMethod(name);
+        if (method.isUndefined()) {
             throw new NameError(getRuntime(), "undefined method `" + name + 
                 "' for class `" + this.getName() + "'");
         }
 
-        while (ent.getMethod() instanceof EvaluateMethod
-            && ((EvaluateMethod) ent.getMethod()).getNode() instanceof ZSuperNode) {
-            ent = ent.getOrigin().getSuperClass().getMethodBodyCached(ent.getOriginalName());
-            if (! ent.isDefined()) {
-                // printUndef();
-                return getRuntime().getNil();
-            }
-        }
-
-        RubyMethod method = null;
+        RubyMethod newMethod = null;
         if (bound) {
-            method = RubyMethod.newMethod(ent.getOrigin(), ent.getOriginalName(), this, name, ent.getMethod(), receiver);
+            newMethod = RubyMethod.newMethod(method.getImplementationClass(), name, this, name, method, receiver);
         } else {
-            method = RubyUnboundMethod.newUnboundMethod(ent.getOrigin(), ent.getOriginalName(), this, name, ent.getMethod());
+            newMethod = RubyUnboundMethod.newUnboundMethod(method.getImplementationClass(), name, this, name, method);
         }
-        method.infectBy(this);
+        newMethod.infectBy(this);
 
-        return method;
+        return newMethod;
     }
 
     // What is argument 1 for in this method?
@@ -869,13 +823,13 @@ public class RubyModule extends RubyObject {
         
         if (args.length == 1) {
             body = getRuntime().newProc();
-            newMethod = new ProcMethod((RubyProc)body, visibility);
+            newMethod = new ProcMethod(this, (RubyProc)body, visibility);
         } else if (args[1].isKindOf(getRuntime().getClasses().getMethodClass())) {
             body = args[1];
-            newMethod = new MethodMethod(((RubyMethod)body).unbind(), visibility);
+            newMethod = new MethodMethod(this, ((RubyMethod)body).unbind(), visibility);
         } else if (args[1].isKindOf(getRuntime().getClasses().getProcClass())) {
             body = args[1];
-            newMethod = new ProcMethod((RubyProc)body, visibility);
+            newMethod = new ProcMethod(this, (RubyProc)body, visibility);
         } else {
             throw getRuntime().newTypeError("wrong argument type " + args[0].getType().getName() + " (expected Proc/RubyMethod)");
         }
@@ -884,7 +838,7 @@ public class RubyModule extends RubyObject {
 
         RubySymbol symbol = RubySymbol.newSymbol(getRuntime(), name);
         if (getRuntime().getCurrentVisibility().isModuleFunction()) {
-            getSingletonClass().addMethod(name, new WrapperCallable(newMethod, Visibility.PUBLIC));
+            getSingletonClass().addMethod(name, new WrapperCallable(getSingletonClass(), newMethod, Visibility.PUBLIC));
             callMethod("singleton_method_added", symbol);
         }
 
@@ -916,7 +870,9 @@ public class RubyModule extends RubyObject {
     }
 
     public static RubyModule newModule(Ruby runtime, String name, RubyModule parentModule) {
-		// TODO: No superclass set.
+        // Modules do not directly define Object as their superClass even though in theory they
+    	// should.  The C version of Ruby may also do this (special checks in rb_alias for Module
+    	// makes me think this).
         return new RubyModule(runtime, runtime.getClasses().getModuleClass(), null, parentModule, name);
     }
     
@@ -951,15 +907,25 @@ public class RubyModule extends RubyObject {
      *
      */
     public IRubyObject rbClone() {
-        RubyModule clone = (RubyModule) super.rbClone();
-        Map cloneMethods = clone.getMethods();
-        
-        for (Iterator iter = getMethods().entrySet().iterator(); 
-        	 iter.hasNext();) {
-        	Map.Entry e = (Map.Entry) iter.next();
+        return cloneMethods((RubyModule) super.rbClone());
+    }
+    
+    protected IRubyObject cloneMethods(RubyModule clone) {
+    	RubyModule realType = isIncluded() ? ((IncludedModuleWrapper) this).getDelegate() : this;
+        for (Iterator iter = getMethods().entrySet().iterator(); iter.hasNext(); ) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            ICallable method = (ICallable) entry.getValue();
 
-        	cloneMethods.put(e.getKey(), ((ICallable) e.getValue()).dup()); 
+            // Do not clone cached methods
+            if (method.getImplementationClass() == realType) {            
+                // A cloned method now belongs to a new class.  Set it.
+                // TODO: Make ICallable immutable
+                ICallable clonedMethod = method.dup();
+                clonedMethod.setImplementationClass(clone);
+                clone.getMethods().put(entry.getKey(), clonedMethod);
+            }
         }
+        
         return clone;
     }
     
@@ -1185,12 +1151,14 @@ public class RubyModule extends RubyObject {
         boolean includeSuper = args.length > 0 ? args[0].isTrue() : true;
         RubyArray ary = getRuntime().newArray();
 
-        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
-            for (Iterator iter = p.getMethods().entrySet().iterator(); iter.hasNext();) {
+        for (RubyModule type = this; type != null; type = type.getSuperClass()) {
+        	RubyModule realType = type.isIncluded() ? ((IncludedModuleWrapper) type).getDelegate() : type;
+            for (Iterator iter = type.getMethods().entrySet().iterator(); iter.hasNext();) {
                 Map.Entry entry = (Map.Entry) iter.next();
                 ICallable method = (ICallable) entry.getValue();
 
-                if (method.getVisibility().is(visibility) && !method.isUndefined()) {
+                if (method.getImplementationClass() == realType && 
+                    method.getVisibility().is(visibility) && !method.isUndefined()) {
                     RubyString name = getRuntime().newString((String) entry.getKey());
 
                     if (!ary.includes(name)) {
@@ -1404,7 +1372,7 @@ public class RubyModule extends RubyObject {
                 String name = args[i].asSymbol();
                 ICallable method = searchMethod(name);
                 assert !method.isUndefined() : "undefined method '" + name + "'";
-                getSingletonClass().addMethod(name, new WrapperCallable(method, Visibility.PUBLIC));
+                getSingletonClass().addMethod(name, new WrapperCallable(getSingletonClass(), method, Visibility.PUBLIC));
                 callMethod("singleton_method_added", RubySymbol.newSymbol(getRuntime(), name));
             }
         }

@@ -63,8 +63,9 @@ public final class DefaultMethod extends AbstractMethod {
     private ArgsNode argsNode;
     private RubyModule parent;
 
-    public DefaultMethod(ScopeNode body, ArgsNode argsNode, Visibility visibility, RubyModule parent) {
-        super(visibility);
+    public DefaultMethod(RubyModule implementationClass, ScopeNode body, ArgsNode argsNode, 
+        Visibility visibility, RubyModule parent) {
+        super(implementationClass, visibility);
         this.body = body;
         this.argsNode = argsNode;
 		this.parent = parent;
@@ -204,6 +205,6 @@ public final class DefaultMethod extends AbstractMethod {
     }
     
     public ICallable dup() {
-        return new DefaultMethod(body, argsNode, getVisibility(), parent);
+        return new DefaultMethod(getImplementationClass(), body, argsNode, getVisibility(), parent);
     }	
 }

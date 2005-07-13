@@ -41,14 +41,12 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.jruby.ast.Node;
-import org.jruby.ast.ZSuperNode;
 import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.exceptions.BreakJump;
 import org.jruby.exceptions.FrozenError;
 import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.NoMethodError;
 import org.jruby.exceptions.SecurityError;
-import org.jruby.internal.runtime.methods.EvaluateMethod;
 import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -171,6 +169,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      * 
      */
     public RubyClass getMetaClass() {
+    	// TODO: Can we assert MetaClass on metaClass here?  This should simplify some callers
         if (isNil()) {
             return getRuntime().getClass("NilClass");
         }
@@ -594,8 +593,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         }
         IRubyObject result = getRuntime().getNil();
         try {
-            Node node = getRuntime().parse(src.toString(), file);
-            result = eval(node);
+            result = eval(getRuntime().parse(src.toString(), file));
         } finally {
             if (scope.isNil()) {
                 threadContext.getCurrentFrame().setIter(iter);
@@ -832,11 +830,6 @@ public class RubyObject implements Cloneable, IRubyObject {
         return getRuntime().newBoolean(isKindOf((RubyModule)type));
     }
 
-    // For cglib....why does it need this though?
-    public IRubyObject methods() {
-    	return methods(new IRubyObject[] { getRuntime().getTrue() });
-    }
-    
     /** rb_obj_methods
      *
      */
@@ -850,8 +843,8 @@ public class RubyObject implements Cloneable, IRubyObject {
         return getMetaClass().instance_methods(args);
     }
 	
-	public IRubyObject public_methods() {
-        return getMetaClass().public_instance_methods(new IRubyObject[] { getRuntime().getTrue()});
+	public IRubyObject public_methods(IRubyObject[] args) {
+        return getMetaClass().public_instance_methods(args);
 	}
 
     /** rb_obj_protected_methods
@@ -871,32 +864,28 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** rb_obj_singleton_methods
      *
      */
+    // TODO: This is almost RubyModule#instance_methods on the metaClass.  Perhaps refactor.
     public RubyArray singleton_methods() {
         RubyArray result = getRuntime().newArray();
-        RubyClass type = getMetaClass();
-        while (type != null && type instanceof MetaClass) {
-            Iterator iter = type.getMethods().entrySet().iterator();
-            while (iter.hasNext()) {
+        
+        for (RubyClass type = getMetaClass(); type != null && type instanceof MetaClass; 
+             type = type.getSuperClass()) { 
+        	for (Iterator iter = type.getMethods().entrySet().iterator(); iter.hasNext(); ) {
                 Map.Entry entry = (Map.Entry) iter.next();
-                String key = (String) entry.getKey();
-                ICallable value = (ICallable) entry.getValue();
-                RubyString name = getRuntime().newString(key);
-                if (value.getVisibility().isPublic()) {
-                    if (! result.includes(name)) {
-                        if (value == null) {
-                            result.append(getRuntime().getNil());
-                        }
-                        result.append(name);
-                    }
-                } else if (
-                        value instanceof EvaluateMethod && ((EvaluateMethod) value).getNode() instanceof ZSuperNode) {
-                    result.append(getRuntime().getNil());
-                    result.append(name);
+                ICallable method = (ICallable) entry.getValue();
+
+                // We do not want to capture cached methods
+                if (method.getImplementationClass() != type) {
+                	continue;
+                }
+                
+                RubyString methodName = getRuntime().newString((String) entry.getKey());
+                if (method.getVisibility().isPublic() && ! result.includes(methodName)) {
+                    result.append(methodName);
                 }
             }
-            type = type.getSuperClass();
         }
-        result.compact_bang();
+
         return result;
     }
 
@@ -933,6 +922,13 @@ public class RubyObject implements Cloneable, IRubyObject {
             args[i].callMethod("extend_object", this);
         }
         return this;
+    }
+    
+    public IRubyObject inherited(IRubyObject arg) {
+    	return getRuntime().getNil();
+    }
+    public IRubyObject initialize(IRubyObject[] args) {
+    	return getRuntime().getNil();
     }
 
     public IRubyObject method_missing(IRubyObject[] args) {
@@ -1001,6 +997,14 @@ public class RubyObject implements Cloneable, IRubyObject {
         } finally {
             getRuntime().getIterStack().pop();
         }
+    }
+    
+    public IRubyObject nil_p() {
+    	return getRuntime().getFalse();
+    }
+    
+    public IRubyObject match(IRubyObject arg) {
+    	return getRuntime().getFalse();
     }
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {

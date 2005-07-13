@@ -64,10 +64,10 @@ public class RubyNil extends RubyObject {
         nilClass.defineMethod("&", callbackFactory.getSingletonMethod("op_and", IRubyObject.class));
         nilClass.defineMethod("|", callbackFactory.getSingletonMethod("op_or", IRubyObject.class));
         nilClass.defineMethod("^", callbackFactory.getSingletonMethod("op_xor", IRubyObject.class));
-        nilClass.defineMethod("nil?", callbackFactory.getTrueMethod(0));
+        nilClass.defineMethod("nil?", callbackFactory.getMethod("nil_p"));
         nilClass.defineMethod("id", callbackFactory.getSingletonMethod("id"));
-        nilClass.defineMethod("taint", callbackFactory.getSelfMethod(0));
-        nilClass.defineMethod("freeze", callbackFactory.getSelfMethod(0));
+        nilClass.defineMethod("taint", callbackFactory.getMethod("taint"));
+        nilClass.defineMethod("freeze", callbackFactory.getMethod("freeze"));
 
         nilClass.getMetaClass().undefineMethod("new");
         
@@ -160,5 +160,17 @@ public class RubyNil extends RubyObject {
 
 	public boolean isTrue() {
 		return false;
+	}
+	
+	public IRubyObject freeze() {
+		return this;
+	}
+	
+	public IRubyObject nil_p() {
+		return getRuntime().getTrue();
+	}
+	
+	public IRubyObject taint() {
+		return this;
 	}
 }

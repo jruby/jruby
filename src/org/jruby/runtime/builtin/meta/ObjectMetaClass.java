@@ -36,7 +36,6 @@ import org.jruby.internal.runtime.methods.ReflectedMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callback.Callback;
 
 /**
  * <p>
@@ -106,7 +105,7 @@ public class ObjectMetaClass extends RubyClass {
         defineMethod("==", Arity.singleArgument(), "equal");
         defineAlias("===", "==");
         defineMethod("to_s", Arity.noArguments());
-        defineFalseMethod("nil?", Arity.noArguments());
+        defineMethod("nil?", Arity.noArguments(), "nil_p");
         defineMethod("to_a", Arity.noArguments());
         defineMethod("hash", Arity.noArguments());
         defineMethod("id", Arity.noArguments());
@@ -120,7 +119,7 @@ public class ObjectMetaClass extends RubyClass {
         defineMethod("type", Arity.noArguments(), "type_deprecated");
         defineMethod("class", Arity.noArguments(), "type");
         defineMethod("inspect", Arity.noArguments());
-        defineFalseMethod("=~", Arity.singleArgument());
+        defineMethod("=~", Arity.singleArgument(), "match");
         defineMethod("clone", Arity.noArguments(), "rbClone");
         defineMethod("display", Arity.optional(), "display");
         defineMethod("extend", Arity.optional(), "extend");
@@ -134,10 +133,10 @@ public class ObjectMetaClass extends RubyClass {
         defineMethod("instance_variable_set", Arity.twoArguments());
         defineMethod("method", Arity.singleArgument(), "method");
         defineMethod("methods", Arity.optional());
-        //defineMethod("method_missing", callbackFactory.getOptMethod(RubyObject.class, "method_missing"));
+        defineMethod("method_missing", Arity.optional());
         defineMethod("private_methods", Arity.noArguments());
         defineMethod("protected_methods", Arity.noArguments());
-        defineMethod("public_methods", Arity.noArguments());
+        defineMethod("public_methods", Arity.optional());
         defineMethod("respond_to?", Arity.optional(), "respond_to");
         defineMethod("send", Arity.optional());
         defineAlias("__send__", "send");
@@ -145,6 +144,9 @@ public class ObjectMetaClass extends RubyClass {
         defineMethod("taint", Arity.noArguments());
         defineMethod("tainted?", Arity.noArguments(), "tainted");
         defineMethod("untaint", Arity.noArguments());
+        
+        definePrivateMethod("initialize", Arity.optional());
+        definePrivateMethod("inherited", Arity.singleArgument());
 	}
 
 	protected IRubyObject allocateObject() {
@@ -159,19 +161,6 @@ public class ObjectMetaClass extends RubyClass {
     	defineMethod(name, arity, name);
     }
 
-    // TODO: Look to eliminate this (like add a false method to IRubyObject so we don't need it).
-    public void defineFalseMethod(String name, final Arity arity) {
-        defineMethod(name, new Callback() {
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
-                return recv.getRuntime().getFalse();
-            }
-
-            public Arity getArity() {
-                return arity;
-            }
-        });
-    }
-
     public void defineMethod(String name, Arity arity, String java_name) {
         assert name != null;
         assert arity != null;
@@ -179,34 +168,21 @@ public class ObjectMetaClass extends RubyClass {
         
         Visibility visibility = name.equals("initialize") ? Visibility.PRIVATE : Visibility.PUBLIC;
 
-        addMethod(name, new ReflectedMethod(builtinClass, java_name, arity, visibility));
+        addMethod(name, new ReflectedMethod(this, builtinClass, java_name, arity, visibility));
     }
 
     public void definePrivateMethod(String name, Arity arity) {
-    	addMethod(name, new ReflectedMethod(builtinClass, name, arity, Visibility.PRIVATE));	
+    	addMethod(name, new ReflectedMethod(this, builtinClass, name, arity, Visibility.PRIVATE));	
     }
 
     public void definePrivateMethod(String name, Arity arity, String java_name) {
-    	addMethod(name, new ReflectedMethod(builtinClass, java_name, arity, Visibility.PRIVATE));	
+    	addMethod(name, new ReflectedMethod(this, builtinClass, java_name, arity, Visibility.PRIVATE));	
     }
     
     public void defineSingletonMethod(String name, Arity arity) {
     	defineSingletonMethod(name, arity, name);
     }
     
-    // TODO: Look to eliminate this (like add a self method to IRubyObject so we don't need it).
-    public void defineSelfMethod(String name, final Arity arity) {
-    	defineMethod(name, new Callback() {
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
-                return recv;
-            }
-
-            public Arity getArity() {
-                return arity;
-            }
-        });
-    }
-
     public void defineSingletonMethod(String name, Arity arity, String java_name) {
         assert name != null;
         assert arity != null;
@@ -214,6 +190,6 @@ public class ObjectMetaClass extends RubyClass {
 
         Visibility visibility = name.equals("initialize") ? Visibility.PRIVATE : Visibility.PUBLIC;
 
-        getSingletonClass().addMethod(name, new ReflectedMethod(getClass(), java_name, arity, visibility));
+        getSingletonClass().addMethod(name, new ReflectedMethod(this, getClass(), java_name, arity, visibility));
     }
 }

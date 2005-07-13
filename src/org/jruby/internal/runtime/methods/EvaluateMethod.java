@@ -48,7 +48,7 @@ public class EvaluateMethod extends AbstractMethod {
     private final Arity arity;
 
     private EvaluateMethod(Node node, Visibility visibility, Arity arity) {
-        super(visibility);
+        super(null, visibility);
         this.node = node;
         this.arity = arity;
     }

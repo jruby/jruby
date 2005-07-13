@@ -214,6 +214,10 @@ public class RubyString extends RubyObject {
 	public RubyString to_s() {
 		return this;
 	}
+	
+	public IRubyObject to_str() {
+		return this;
+	}
 
 	/** rb_str_replace_m
 	 *

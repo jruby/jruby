@@ -780,6 +780,10 @@ public class RubyArray extends RubyObject implements List {
     public RubyArray to_a() {
         return this;
     }
+    
+    public IRubyObject to_ary() {
+    	return this;
+    }
 
     /** rb_ary_equal
      *

@@ -14,7 +14,7 @@
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -32,6 +32,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
+import org.jruby.RubyModule;
 import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ICallable;
@@ -47,8 +48,8 @@ import org.jruby.runtime.callback.Callback;
 public class CallbackMethod extends AbstractMethod {
     private Callback callback;
 
-    public CallbackMethod(Callback callback, Visibility visibility) {
-        super(visibility);
+    public CallbackMethod(RubyModule implementationClass, Callback callback, Visibility visibility) {
+        super(implementationClass, visibility);
         this.callback = callback;
     }
 
@@ -77,6 +78,6 @@ public class CallbackMethod extends AbstractMethod {
     }
     
     public ICallable dup() {
-        return new CallbackMethod(callback, getVisibility());
+        return new CallbackMethod(getImplementationClass(), callback, getVisibility());
     }
 }

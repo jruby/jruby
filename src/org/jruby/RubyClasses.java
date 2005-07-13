@@ -43,7 +43,6 @@ import java.util.Map;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaArray;
 import org.jruby.javasupport.JavaObject;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.meta.ArrayMetaClass;
 import org.jruby.runtime.builtin.meta.FileMetaClass;
@@ -248,14 +247,14 @@ public class RubyClasses {
         kernelModule = RubyKernel.createKernelModule(runtime);
         objectClass.includeModule(kernelModule);
 
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyClasses.class);
-        objectClass.definePrivateMethod("initialize", callbackFactory.getNilMethod(-1));
-        classClass.definePrivateMethod("inherited", callbackFactory.getNilMethod(1));
-
         RubyClass.createClassClass(classClass);
 
-        // Pre-create the core classes we know we will get referenced by starting up the runtime.
         nilClass = RubyNil.createNilClass(runtime);
+
+        // We cannot define this constant until nil itself was made
+        objectClass.defineConstant("NIL", runtime.getNil());
+        
+        // Pre-create the core classes we know we will get referenced by starting up the runtime.
         falseClass = RubyBoolean.createFalseClass(runtime);
         trueClass = RubyBoolean.createTrueClass(runtime);
         comparableModule = RubyComparable.createComparable(runtime);

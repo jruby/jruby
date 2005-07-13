@@ -32,6 +32,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 
 import org.jruby.Ruby;
+import org.jruby.RubyModule;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
@@ -46,8 +47,9 @@ public class ReflectedMethod extends AbstractMethod {
     private String methodName;
     private Arity arity;
     
-    public ReflectedMethod(Class type, String methodName, Arity arity, Visibility visibility) {
-    	super(visibility);
+    public ReflectedMethod(RubyModule implementationClass, Class type, String methodName, 
+        Arity arity, Visibility visibility) {
+    	super(implementationClass, visibility);
     	this.type = type;
     	this.methodName = methodName;
     	this.arity = arity;
@@ -134,7 +136,8 @@ public class ReflectedMethod extends AbstractMethod {
 	}
 
 	public ICallable dup() {
-		ReflectedMethod newMethod = new ReflectedMethod(type, methodName, arity, getVisibility());
+		ReflectedMethod newMethod = 
+		    new ReflectedMethod(getImplementationClass(), type, methodName, arity, getVisibility());
 		
 		newMethod.method = method;
 		

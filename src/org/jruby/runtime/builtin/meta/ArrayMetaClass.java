@@ -104,8 +104,8 @@ public class ArrayMetaClass extends ObjectMetaClass {
         defineMethod("sort!", Arity.noArguments(), "sort_bang");
         defineMethod("slice", Arity.optional(), "aref");
         defineMethod("slice!", Arity.optional(), "slice_bang");
-        defineSelfMethod("to_a", Arity.noArguments());
-        defineSelfMethod("to_ary", Arity.noArguments());
+        defineMethod("to_a", Arity.noArguments());
+        defineMethod("to_ary", Arity.noArguments());
         defineMethod("to_s", Arity.noArguments());
         defineMethod("transpose", Arity.noArguments());
         defineMethod("uniq", Arity.noArguments());

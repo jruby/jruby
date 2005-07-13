@@ -31,7 +31,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.callback.ReflectionCallbackFactory;
 
@@ -93,14 +92,6 @@ public abstract class CallbackFactory {
     public abstract Callback getBlockMethod(String method);
 
     /**
-     * gets a singleton (class) method with 1 mandatory argument and some optional arguments.
-     * @param method name of the method
-     * @param arg1 the class of the only mandatory argument for this method
-     * @return a CallBack object corresponding to the appropriate method
-     **/
-    public abstract Callback getOptSingletonMethod(String method, Class arg1);
-
-    /**
     * gets a singleton (class) method with no mandatory argument and some optional arguments.
      * @param method name of the method
     * @return a CallBack object corresponding to the appropriate method
@@ -114,81 +105,7 @@ public abstract class CallbackFactory {
     **/
     public abstract Callback getOptMethod(String method);
 
-    /**
-    * gets an instance method with 1 mandatory argument and some optional arguments.
-     * @param method name of the method
-     * @param arg1 the class of the only mandatory argument for this method
-    * @return a CallBack object corresponding to the appropriate method
-    **/
-    public abstract Callback getOptMethod(String method, Class arg1);
-
-    public Callback getFalseMethod(final int arity) {
-        return new Callback() {
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
-                return recv.getRuntime().getFalse();
-            }
-
-            public Arity getArity() {
-                return Arity.createArity(arity);
-            }
-        };
-    }
-
-    public Callback getTrueMethod(final int arity) {
-        return new Callback() {
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
-                return recv.getRuntime().getTrue();
-            }
-
-            public Arity getArity() {
-                return Arity.createArity(arity);
-            }
-        };
-    }
-
-    public Callback getNilMethod(final int arity) {
-        return new Callback() {
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
-                return recv.getRuntime().getNil();
-            }
-
-            public Arity getArity() {
-                return Arity.createArity(arity);
-            }
-        };
-    }
-
-    public Callback getSelfMethod(final int arity) {
-        return new Callback() {
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
-                return recv;
-            }
-
-            public Arity getArity() {
-                return Arity.createArity(arity);
-            }
-        };
-    }
-
     public static CallbackFactory createFactory(Class type) {
-        /* Removed cglib for now
-        try {
-            // Check if we have CGLIB support compiled in.
-            Class factoryClass = Class.forName("org.jruby.runtime.callback.CglibCallbackFactory");
-            // Check if CGLIB is available.
-            Class.forName("net.sf.cglib.reflect.FastClass");
-            try {
-                return (CallbackFactory) factoryClass.newInstance();
-            } catch (InstantiationException e) {
-                throw new RuntimeException(e);
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
-            }
-        } catch (ClassNotFoundException e) {
-            return new ReflectionCallbackFactory();
-        }
-        */
-        
         return new ReflectionCallbackFactory(type);
     }
 }

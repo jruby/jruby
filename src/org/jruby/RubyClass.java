@@ -31,11 +31,8 @@
 package org.jruby;
 
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.ICallable;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -93,8 +90,12 @@ public class RubyClass extends RubyModule {
         classClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod("newClass"));
         classClass.defineMethod("new", callbackFactory.getOptMethod("newInstance"));
         classClass.defineMethod("superclass", callbackFactory.getMethod("superclass"));
-        classClass.defineSingletonMethod("inherited", callbackFactory.getNilMethod(1));
+        classClass.defineSingletonMethod("inherited", callbackFactory.getSingletonMethod("inherited", IRubyObject.class));
         classClass.undefineMethod("module_function");
+    }
+    
+    public static IRubyObject inherited(IRubyObject recv, IRubyObject arg) {
+    	return recv.getRuntime().getNil();
     }
 
     /** Invokes if  a class is inherited from an other  class.
@@ -123,20 +124,7 @@ public class RubyClass extends RubyModule {
         clone.initCopy(this);
         clone.setInstanceVariables(new HashMap(getInstanceVariables()));
 
-        Iterator iter = getMethods().entrySet().iterator();
-        while (iter.hasNext()) {
-            Map.Entry entry = (Map.Entry) iter.next();
-
-            ICallable value = ((ICallable) entry.getValue()).dup();
-
-            clone.getMethods().put(entry.getKey(), value);
-        }
-
-        //clone.setMethods();
-
-        // st_foreach(RCLASS(klass)->m_tbl, clone_method, clone->m_tbl);
-
-        return clone;
+        return (RubyClass) cloneMethods(clone);
     }
 
     public boolean isSingleton() {
@@ -152,11 +140,6 @@ public class RubyClass extends RubyModule {
     public RubyClass getRealClass() {
         return this;
     }
-
-    /*public void attachToObject(IRubyObject object) {
-        assert false : "A Class cannot be attached to an object (You need a MetaClass).";
-        // Don't do anything, because a class cannot attached to an object.
-    }*/
 
     public MetaClass newSingletonClass(RubyModule parentModule) {
         MetaClass newClass = new MetaClass(getRuntime(), this, parentModule);

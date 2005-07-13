@@ -33,6 +33,7 @@ package org.jruby.evaluator;
 import java.util.Iterator;
 
 import org.jruby.Ruby;
+import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.BackRefNode;
@@ -68,6 +69,7 @@ import org.jruby.ast.YieldNode;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.ast.visitor.AbstractVisitor;
 import org.jruby.exceptions.JumpException;
+import org.jruby.runtime.ICallable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -153,11 +155,12 @@ public class DefinedVisitor extends AbstractVisitor {
         if (getDefinition(iVisited.getReceiverNode()) != null) {
             try {
                 IRubyObject receiver = EvaluateVisitor.createVisitor(self).eval(iVisited.getReceiverNode());
+                RubyClass metaClass = receiver.getMetaClass();
+                ICallable method = metaClass.searchMethod(iVisited.getName());
+                Visibility visibility = method.getVisibility();
 
-                Visibility visibility = receiver.getMetaClass().getMethodVisibility(iVisited.getName());
-
-                if (!visibility.isPrivate() && (!visibility.isProtected() || self.isKindOf(receiver.getMetaClass().getRealClass()))) {
-                    if (receiver.getMetaClass().isMethodBound(iVisited.getName(), false)) {
+                if (!visibility.isPrivate() && (!visibility.isProtected() || self.isKindOf(metaClass.getRealClass()))) {
+                    if (metaClass.isMethodBound(iVisited.getName(), false)) {
                         definition = getArgumentDefinition(iVisited.getArgsNode(), "method");
                         return;
                     }
