@@ -71,11 +71,6 @@ JavaUtilities.add_proxy_extender JavaInterfaceExtender.new('java.util.List') {
 
       self
     end
-    def construct()
-      include_class 'java.util.ArrayList'
-
-      ArrayList.new
-    end
     def _wrap_yield(*args)
       p = yield(*args)
       p p

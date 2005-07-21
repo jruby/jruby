@@ -13,8 +13,9 @@
 #
 # Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
 # Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
-# Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+# Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
 # Copyright (C) 2004 David Corbin <dcorbin@users.sourceforge.net>
+# Copyright (C) 2005 Jason Foreman <jforeman@hark.org>
 # 
 # Alternatively, the contents of this file may be used under the terms of
 # either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -32,6 +33,8 @@
 module JavaProxy
   attr :java_class, true
   attr :java_object, true
+
+  @method_extenders = []
 
   def ==(rhs)
     return @java_object == rhs
@@ -52,18 +55,79 @@ module JavaProxy
   def hash()
     @java_object.hash()
   end
-
+  
+  def JavaProxy.add_method_extender(extender)
+    @method_extenders << extender
+  end
+  
   def JavaProxy.convert_arguments(arguments)
-    arguments.collect {|v|
-      if v.respond_to?('java_object')
-	    v = v.java_object
-      end
+    arguments.collect do |v|
+      v = v.java_object if v.respond_to? :java_object
       Java.primitive_to_java(v)
-    }
+    end
   end
 
   def convert_arguments(arguments)
     JavaProxy.convert_arguments(arguments)
+  end
+	
+  alias_method :old_respond_to?, :respond_to?
+  
+  # Does 'method' respond to an existing method or one which will come into existence the
+  # first time it is referenced?
+  def respond_to?(method, include_priv=false)
+    old_respond_to?(method, include_priv) || !find_java_methods(method.to_s).empty?
+  end
+  
+  def create_method(java_methods)
+    name = java_methods.keys.first
+    meths = java_methods[name]
+    self.class.send(:define_method, name) { |*args|
+      args = convert_arguments(args)
+      m = JavaUtilities.matching_method(meths.find_all {|m| m.arity == args.length}, args)
+      result = Java.java_to_primitive(m.invoke(self.java_object, *args))
+      result = JavaUtilities.wrap(result) if result.kind_of?(JavaObject)
+      result
+    }
+    JavaProxy.extend_method(self.class, name, meths)
+    name
+  end
+
+  # Lazily create a java method or defer to default method_missing behavior
+  def method_missing(name, *args)
+    method = find_java_methods(name.to_s)
+    return super(name, *args) if method.empty?
+    self.send(self.create_method(method), *args)
+  end
+
+  private
+
+  def JavaProxy.extend_method(proxy_class, name, method)
+    @method_extenders.each { |x| x.extend_method(proxy_class, name, method) }
+  end
+
+  # Find all java methods matching name (or its java beans inflected forms) and return them
+  # as a Hash (or an empty one if no matches are found).
+  def find_java_methods(name)
+    names = inflect_method_name(name)
+    @java_class.java_instance_methods.select {|m| names.include?(m.name) }.group_by {|m| m.name }
+  end
+
+  def inflect_method_name(name)
+    names = [name]
+    
+    # getters and setters called by proper name
+    return names if name =~ /^([gs]et[A-Z]|[^a-zA-Z])/
+   
+    sub_name = name.split(/(\?|=)/).first.sub!(/^./) { |c| c.upcase }
+		
+    if name =~ /=$/      # setter method name: foo= -> setFoo
+      names << 'set' + sub_name 
+    elsif name =~ /\?$/  # getter method name: foo? -> isFoo
+      names << 'is' + sub_name
+    else                 # ordinary method name: foo -> getFoo, isFoo
+      names << 'get' + sub_name << 'is' + sub_name
+    end
   end
 end
 
@@ -72,7 +136,7 @@ module JavaUtilities
   @proxy_classes = {}
   @proxy_extenders = []
   
-  def JavaUtilities.add_proxy_extender extender
+ def JavaUtilities.add_proxy_extender extender
     @proxy_extenders << extender
   end
   
@@ -162,16 +226,6 @@ END
     proxy = proxy_class.new_proxy
     proxy.java_class = java_class
     proxy.java_object = java_object
-
-    unless real_type.public?
-      # If the instance is private, but implements public interfaces
-      # then we want the methods on those available.
-
-      public_interfaces = real_type.interfaces.select { |interface| interface.public? }
-      interface_proxies = public_interfaces.collect { |interface| get_proxy_class(interface) }
-      interface_proxies.each { |interface_proxy| proxy.extend(interface_proxy) }
-    end
-
     proxy
   end
 
@@ -203,7 +257,6 @@ END
     if java_class.array?
       setup_array_methods(java_class, proxy_class)
     else
-      setup_instance_methods(java_class, proxy_class)
       setup_attributes(java_class, proxy_class)
       setup_class_methods(java_class, proxy_class)
       setup_constants(java_class, proxy_class)
@@ -297,29 +350,6 @@ END
         )
     end
     proxy_class.create_array_methods(java_class)
-  end
-
-  def JavaUtilities.setup_instance_methods(java_class, proxy_class)
-    # TODO: Default and Block Comparator should only get defined once
-    def proxy_class.create_instance_methods(java_class)
-      java_class.java_instance_methods.select { |m| 
-        m.public? 
-      }.group_by { |m| 
-        m.name 
-      }.each { |name, methods|
-        # Define literal java method (e.g. getFoo())
-        define_method(name) do |*args|
-          args = convert_arguments(args)
-          m = JavaUtilities.matching_method(methods.find_all {|m|
-            m.arity == args.length}, args)
-          result = m.invoke(self.java_object, *args)
-          result = Java.java_to_primitive(result)
-          result = JavaUtilities.wrap(result) if result.kind_of?(JavaObject)
-          result
-        end
-	  }
-    end
-    proxy_class.create_instance_methods(java_class)
   end
 
   def JavaUtilities.matching_method(methods, args)
@@ -540,7 +570,6 @@ class JavaInterfaceExtender
     end
   end
 end
-
 
 require 'builtin/java/beans'
 require 'builtin/java/exceptions'
