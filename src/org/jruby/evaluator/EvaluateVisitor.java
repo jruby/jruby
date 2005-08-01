@@ -45,7 +45,6 @@ import org.jruby.RubyException;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyKernel;
-import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.RubyRange;
@@ -323,8 +322,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitBlockNode(BlockNode)
      */
     public void visitBlockNode(BlockNode iVisited) {
-        Iterator iter = iVisited.iterator();
-        while (iter.hasNext()) {
+        for (Iterator iter = iVisited.iterator(); iter.hasNext(); ) {
             eval((Node) iter.next());
         }
     }
@@ -333,9 +331,9 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitBlockPassNode(BlockPassNode)
      */
     public void visitBlockPassNode(BlockPassNode iVisited) {
-        IRubyObject block = eval(iVisited.getBodyNode());
+        IRubyObject proc = eval(iVisited.getBodyNode());
 
-        if (block.isNil()) {
+        if (proc.isNil()) {
             threadContext.getIterStack().push(Iter.ITER_NOT);
             try {
                 eval(iVisited.getIterNode());
@@ -343,23 +341,47 @@ public final class EvaluateVisitor implements NodeVisitor {
             } finally {
                 threadContext.getIterStack().pop();
             }
-        } else if (block instanceof RubyMethod) {
-            block = ((RubyMethod)block).to_proc();
-        } else if (!(block instanceof RubyProc)) {
-            throw new TypeError(runtime, "wrong argument type " + block.getMetaClass().getName() + " (expected Proc)");
+        }
+        
+        // If not already a proc then we should try and make it one.
+        if (!(proc instanceof RubyProc)) {
+        	proc = proc.convertToType("Proc", "to_proc", false);
+        	
+        	if (!(proc instanceof RubyProc)) {
+                throw new TypeError(runtime, "wrong argument type " + proc.getMetaClass().getName() + " (expected Proc)");
+        	}
         }
 
-        Block oldBlock = (Block) threadContext.getBlockStack().peek();
-        threadContext.getBlockStack().push(((RubyProc) block).getBlock());
+        // TODO: Add safety check for taintedness
+        
+        Block block = (Block) threadContext.getBlockStack().peek();
+        if (block != null) {
+            IRubyObject blockObject = block.getBlockObject();
+            // The current block is already associated with the proc.  No need to create new
+            // block for it.  Just eval!
+            if (blockObject != null && blockObject == proc) {
+        	    try {
+            	    threadContext.getIterStack().push(Iter.ITER_PRE);
+            	    eval(iVisited.getIterNode());
+            	    return;
+        	    } finally {
+                    threadContext.getIterStack().pop();
+        	    }
+            }
+        }
 
+        threadContext.getBlockStack().push(((RubyProc) proc).getBlock());
         threadContext.getIterStack().push(Iter.ITER_PRE);
-        threadContext.getCurrentFrame().setIter(Iter.ITER_PRE);
+        
+        if (threadContext.getCurrentFrame().getIter() == Iter.ITER_NOT) {
+            threadContext.getCurrentFrame().setIter(Iter.ITER_PRE);
+        }
 
         try {
             eval(iVisited.getIterNode());
         } finally {
             threadContext.getIterStack().pop();
-            threadContext.getBlockStack().setCurrent(oldBlock);
+            threadContext.getBlockStack().pop();
         }
     }
 
@@ -791,7 +813,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitFCallNode(FCallNode iVisited) {
         Block tmpBlock = threadContext.beginCallArgs();
-        IRubyObject[] args = null;
+        IRubyObject[] args;
         try {
             args = setupArgs(runtime, threadContext, iVisited.getArgsNode());
         } finally {
@@ -945,14 +967,17 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitIterNode(IterNode)
      */
     public void visitIterNode(IterNode iVisited) {
-    	threadContext.getBlockStack().push(Block.createBlock(iVisited.getVarNode(), new EvaluateMethod(iVisited.getBodyNode(), iVisited.getVarNode()), self));
-        threadContext.getIterStack().push(Iter.ITER_PRE);
+    	threadContext.getBlockStack().push(Block.createBlock(iVisited.getVarNode(), 
+    	    new EvaluateMethod(iVisited.getBodyNode(), iVisited.getVarNode()), self));
         try {
             while (true) {
                 try {
+                    threadContext.getIterStack().push(Iter.ITER_PRE);
                     result = eval(iVisited.getIterNode());
                     return;
                 } catch (RetryJump rExcptn) {
+                } finally {
+                    threadContext.getIterStack().pop();
                 }
             }
         } catch (BreakJump bExcptn) {
@@ -960,7 +985,6 @@ public final class EvaluateVisitor implements NodeVisitor {
 
             result = breakValue == null ? runtime.getNil() : breakValue;
         } finally {
-            threadContext.getIterStack().pop();
             threadContext.getBlockStack().pop();
         }
     }

@@ -194,6 +194,7 @@ public class ThreadContext {
         iterStack.push(getCurrentIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
         try {
             RubyClass superClass = frame.getLastClass().getSuperClass();
+
             return superClass.call(frame.getSelf(), frame.getLastFunc(),
                                    args, CallType.SUPER);
         } finally {
@@ -339,7 +340,7 @@ public class ThreadContext {
     }
     
     public boolean isBlockGiven() {
-        return getCurrentFrame().isBlockGiven();
+        return getCurrentFrame().isBlockGiven() && blockStack.peek() != null;
     }
 
     public void pollThreadEvents() {
@@ -396,6 +397,4 @@ public class ThreadContext {
         blockStack.setCurrent(currentBlock);
         iterStack.pop();
     }
-
-
 }

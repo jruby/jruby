@@ -23,8 +23,10 @@ JavaUtilities.add_proxy_extender JavaInterfaceExtender.new('java.lang.Comparable
 JavaUtilities.add_proxy_extender JavaInterfaceExtender.new('java.util.List') {
     include Enumerable
 
-    def each(&block)
-      0.upto(size-1) { |index| block.call(get(index)) }
+    def each
+# TODO: With 'def each(&block)' the following line will not work.
+#      0.upto(size-1) { |index| block.call(get(index)) }
+      0.upto(size-1) { |index| yield(get(index)) }
     end
     def <<(a); add(a); end
     def sort()

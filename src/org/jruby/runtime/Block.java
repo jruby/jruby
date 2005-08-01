@@ -51,6 +51,7 @@ public class Block implements StackElement {
     private RubyModule klass;
     private Iter iter;
     private DynamicVariableSet dynamicVariables;
+    private IRubyObject blockObject = null;
     public boolean isLambda = false;
 
     private Block next;
@@ -146,6 +147,14 @@ public class Block implements StackElement {
     public void setNext(StackElement newNext) {
         assert this != newNext;
         this.next = (Block) newNext;
+    }
+    
+    public IRubyObject getBlockObject() {
+    	return blockObject;
+    }
+    
+    public void setBlockObject(IRubyObject blockObject) {
+    	this.blockObject = blockObject;
     }
 
     /**

@@ -198,12 +198,13 @@ public interface IRubyObject {
     RubyString convertToString();
 
     /**
-     * RubyMethod convertToType.
-     * @param string
-     * @param string1
-     * @param b
+     * Converts this object to type 'targetType' using 'convertMethod' method.
+     * 
+     * @param targetType is the type we are trying to convert to
+     * @param convertMethod is the method to be called to try and convert to targeType
+     * @param raiseOnError will throw an Error if conversion does not work
      */
-    IRubyObject convertToType(String string, String string1, boolean b);
+    IRubyObject convertToType(String targetType, String convertMethod, boolean raiseOnError);
 
 
 

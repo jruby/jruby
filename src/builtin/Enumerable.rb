@@ -35,15 +35,9 @@
 # also implement a meaningful <=> operator, as these methods rely on an
 # ordering between members of the collection.
 module Enumerable
-  def construct(*args)
-  	[*args]
-  end
-  
   def to_a
-    result = construct
-    each do |item|
-      result << item
-    end
+    result = []
+    each { |item| result << item }
     result
   end
   alias entries to_a
@@ -53,25 +47,19 @@ module Enumerable
   end
 
   def sort_by
-    result = construct
-    each do |item|
-      result << [yield(item), item]
-    end
-    result.sort! do |a, b|
-      a.first <=> b.first
-    end
-    result.collect do |item|
-      item.last
-    end
+    result = []
+    each { |item| result << [yield(item), item] }
+    result.sort! { |a, b| a.first <=> b.first }
+    result.collect { |item| item.last }
   end
 
   def grep (pattern)
-    result = construct
+    result = []
     each do |item|
       if block_given? then
-	result << yield(item) if pattern === item
+        result << yield(item) if pattern === item
       else
-	result << item if pattern === item
+        result << item if pattern === item
       end
     end
     result
@@ -85,27 +73,21 @@ module Enumerable
   alias find detect
 
   def select
-    result = construct
-    each do |item|
-      result << item if yield(item)
-    end
+    result = []
+    each { |item| result << item if yield(item) }
     result
   end
   alias find_all select
 
   def reject
-    result = construct
-    each do |item|
-      result << item unless yield(item)
-    end
+    result = []
+    each { |item| result << item unless yield(item) }
     result
   end
 
   def collect
-    result = construct
-    each do |item|
-      result << yield(item)
-    end
+    result = []
+    each { |item| result << yield(item) }
     result
   end
   alias map collect
@@ -131,10 +113,8 @@ module Enumerable
   end
 
   def partition
-    result = construct(construct, construct)
-    each do |item|
-      result[yield(item) ? 0 : 1] << item
-    end
+    result = [[], []]
+    each { |item| result[yield(item) ? 0 : 1] << item }
     result
   end
 
@@ -197,10 +177,10 @@ module Enumerable
   end
 
   def zip(*args)
-    zip = construct
+    zip = []
     i = 0
     each do |elem|
-      array = construct(elem)
+      array = [elem]
       args.each do |a| 
         array << a[i]
       end

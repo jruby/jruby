@@ -65,7 +65,7 @@ public class ProcMetaClass extends ObjectMetaClass {
 	}
 
     public IRubyObject newInstance(IRubyObject[] args) {
-        RubyProc instance = getRuntime().newProc();
+        RubyProc instance = RubyProc.newProc(getRuntime(), false);
         
         instance.callInit(args);
        

@@ -32,6 +32,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.exceptions.BreakJump;
 import org.jruby.exceptions.LocalJumpError;
 import org.jruby.exceptions.ReturnJump;
 import org.jruby.runtime.Block;
@@ -65,13 +66,24 @@ public class RubyProc extends RubyObject {
         if (!runtime.isBlockGiven() && !runtime.isFBlockGiven()) {
             throw runtime.newArgumentError("tried to create Proc object without a block");
         }
+        
+        if (isLambda && !runtime.isBlockGiven()) {
+        	// TODO: warn "tried to create Proc object without a block"
+        }
+        
+        Block block = (Block) runtime.getBlockStack().peek();
+        
+        if (!isLambda && block.getBlockObject() instanceof RubyProc) {
+        	return (RubyProc) block.getBlockObject();
+        }
 
         RubyProc newProc = new RubyProc(runtime, runtime.getClasses().getProcClass());
 
-        newProc.block = ((Block) runtime.getBlockStack().peek()).cloneBlock();
+        newProc.block = block.cloneBlock();
         newProc.wrapper = runtime.getWrapper();
         newProc.block.setIter(newProc.block.getNext() != null ? Iter.ITER_PRE : Iter.ITER_NOT);
         newProc.block.isLambda = isLambda;
+        block.setBlockObject(newProc);
 
         return newProc;
     }
@@ -102,6 +114,11 @@ public class RubyProc extends RubyObject {
         	}
         	
         	return block.call(args, self);
+        } catch (BreakJump rj) {
+            if (block.isLambda) {
+                return rj.getBreakValue();
+            } 
+	        throw new LocalJumpError(getRuntime(), "unexpected return");
         } catch (ReturnJump rj) {
         	Object target = rj.getTarget();
 
