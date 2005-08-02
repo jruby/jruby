@@ -195,6 +195,10 @@ public class ThreadContext {
         try {
             RubyClass superClass = frame.getLastClass().getSuperClass();
 
+            // Modules do not directly inherit Object so we have hacks like this
+            if (superClass == null) {
+            	superClass = runtime.getClasses().getObjectClass();
+            }
             return superClass.call(frame.getSelf(), frame.getLastFunc(),
                                    args, CallType.SUPER);
         } finally {
