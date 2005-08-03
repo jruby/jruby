@@ -206,30 +206,24 @@ public class RubyNumeric extends RubyObject {
      *
      */
     
-    protected IRubyObject[] getCoerced(IRubyObject other, boolean raiseException) {
+    protected IRubyObject[] getCoerced(IRubyObject other) {
         IRubyObject result;
+        
         try {
             result = other.callMethod("coerce", this);
         } catch (RaiseException e) {
-            if (raiseException) {
-                throw getRuntime().newTypeError(other.getMetaClass().getName() + " can't be coerced into " + getMetaClass().getName());                
-            }
-            return null;
+            throw getRuntime().newTypeError(other.getMetaClass().getName() + " can't be coerced into " + getMetaClass().getName());                
         }
+        
         if (!(result instanceof RubyArray) || ((RubyArray)result).getLength() != 2) {
-            if (raiseException) {
-                throw getRuntime().newTypeError("coerce must return [x, y]");
-            }
-            return null;
+            throw getRuntime().newTypeError("coerce must return [x, y]");
         }
+        
         return ((RubyArray)result).toJavaArray();
     }
 
     protected IRubyObject callCoerced(String method, IRubyObject other) {
-        IRubyObject[] args = getCoerced(other, true);
-
-        assert args != null;
-        assert args.length == 2;
+        IRubyObject[] args = getCoerced(other);
 
         return args[0].callMethod(method, args[1]);
     }
@@ -247,16 +241,6 @@ public class RubyNumeric extends RubyObject {
         } 
 
         return getRuntime().newArray(other.convertToFloat(), convertToFloat());
-    }
-
-    /**
-     * !!!
-     */
-    public RubyNumeric[] getCoerce(RubyNumeric other) {
-        if (getMetaClass() == other.getMetaClass()) {
-            return new RubyNumeric[] { this, other };
-        }
-		return new RubyNumeric[] { RubyFloat.newFloat(getRuntime(), getDoubleValue()), RubyFloat.newFloat(getRuntime(), other.getDoubleValue())};
     }
 
     /** num_clone
@@ -277,9 +261,9 @@ public class RubyNumeric extends RubyObject {
      *
      */
     public IRubyObject op_uminus() {
-        RubyNumeric[] coerce = getCoerce(RubyFixnum.zero(getRuntime()));
+        RubyArray coerce = (RubyArray) coerce(RubyFixnum.zero(getRuntime()));
 
-        return (RubyNumeric) coerce[1].callMethod("-", coerce[0]);
+        return (RubyNumeric) coerce.entry(0).callMethod("-", coerce.entry(1));
     }
     
     public IRubyObject cmp(IRubyObject other) {
