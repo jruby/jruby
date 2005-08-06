@@ -261,6 +261,9 @@ public class DefaultIteratorVisitor implements NodeVisitor {
     }
 
     public void visitColon2Node(Colon2Node iVisited) {
+    	if (iVisited.getLeftNode() != null) {
+    		iVisited.getLeftNode().accept(this);
+    	}
         iVisited.accept(_Payload);
     }
 
