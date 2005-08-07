@@ -77,7 +77,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
     }
 
     private void handleUselessWarn(Node node, String useless) {
-        warnings.warn(node.getPosition(), "Useless use of " + useless + "in void context.");
+        warnings.warn(node.getPosition(), "Useless use of " + useless + " in void context.");
     }
 
     /**
