@@ -64,6 +64,11 @@ public class LastCallStatus {
     public void setVariable() {
         status = VARIABLE;
     }
+    
+    // TODO: LastCallStatus should become an enumerated type with equality checks against constants
+    public boolean isVariable() {
+    	return status == VARIABLE;
+    }
 
     public Ruby getRuntime() {
         return runtime;

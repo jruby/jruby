@@ -936,28 +936,16 @@ public class RubyObject implements Cloneable, IRubyObject {
         }
 
         String name = args[0].asSymbol();
-
         String description = callMethod("inspect").toString();
         boolean noClass = description.charAt(0) == '#';
-        if (isNil()) {
-            noClass = true;
-            description = "nil";
-        } else if (this == getRuntime().getTrue()) {
-            noClass = true;
-            description = "true";
-        } else if (this == getRuntime().getFalse()) {
-            noClass = true;
-            description = "false";
-        }
-
         LastCallStatus lastCallStatus = getRuntime().getLastCallStatus();
-
         String format = lastCallStatus.errorMessageFormat(name);
+        String msg = new PrintfFormat(format).sprintf(new Object[] { name, description, 
+            noClass ? "" : ":", noClass ? "" : getType().getName()});
 
-        String msg =
-            new PrintfFormat(format).sprintf(
-                new Object[] { name, description, noClass ? "" : ":", noClass ? "" : getType().getName()});
-
+        if (lastCallStatus.isVariable()) {
+        	throw new NameError(getRuntime(), msg);
+        }
         throw new NoMethodError(getRuntime(), msg);
     }
 
