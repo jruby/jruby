@@ -82,7 +82,7 @@ public class LastCallStatus {
             format = "protected method '%s' called for %s%s%s";
         } else if (status == VARIABLE) {
             if (IdUtil.isLocal(name)) {
-                format = "Undefined local variable or method '%s' for %s%s%s";
+                format = "undefined local variable or method '%s' for %s%s%s";
             }
         }
         return format;
