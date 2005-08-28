@@ -45,8 +45,7 @@ public class AliasMethod extends AbstractMethod {
 
     /*
      * This code used to try and optimize the case of when oldMethod is an aliasMethod.
-     * This seems a little overkill.  I would rather assert for this case an fix it during
-     * deveopment.
+     * This seems a little overkill.
      */
     public AliasMethod(ICallable oldMethod, String oldName) {
         super(oldMethod.getImplementationClass(), oldMethod.getVisibility());
