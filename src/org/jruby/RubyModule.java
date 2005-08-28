@@ -374,8 +374,12 @@ public class RubyModule extends RubyObject {
     }
 
     private void addCachedMethod(String name, ICallable method) {
-        getMethods().put(name, method);
-        getRuntime().getCacheMap().add(method, this);
+        // Included modules modify the original 'included' modules class.  Since multiple
+    	// classes can include the same module, we cannot cache in the original included module.
+        if (!isIncluded()) {
+            getMethods().put(name, method);
+            getRuntime().getCacheMap().add(method, this);
+        }
     }
     
     // TODO: Consider a better way of synchronizing 

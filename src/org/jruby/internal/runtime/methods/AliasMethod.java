@@ -50,7 +50,6 @@ public class AliasMethod extends AbstractMethod {
      */
     public AliasMethod(ICallable oldMethod, String oldName) {
         super(oldMethod.getImplementationClass(), oldMethod.getVisibility());
-        assert !(oldMethod instanceof AliasMethod);
 
         this.oldName = oldName;
         this.oldMethod = oldMethod;
