@@ -178,9 +178,9 @@ if defined? Java
   java_string = random_class.java_method(:toString).invoke(random)
   test_equal("java.lang.String", java_string.java_type)
   test_ok(Java.java_to_primitive(java_string).kind_of?(String))
-  test_ok(Java.java_to_primitive(random).kind_of?(JavaObject))
+  test_ok(Java.java_to_primitive(random).kind_of?(Java::JavaObject))
   test_ok(Java.primitive_to_java(random) == random)
-  test_ok(Java.primitive_to_java("hello").kind_of?(JavaObject))
+  test_ok(Java.primitive_to_java("hello").kind_of?(Java::JavaObject))
   test_equal("java.lang.String", Java.primitive_to_java("hello").java_type)
   # TODO: We want to actually find out if it is kind_of? java.util.List
   #test_equal("java.util.ArrayList", Java.primitive_to_java([1,2,3]).java_type)
@@ -210,7 +210,7 @@ if defined? Java
   # Control over return types and values
   test_equal("java.lang.String", method.return_type.name)
   test_equal(nil, string_class.java_method("notifyAll").return_type)
-  test_equal(JavaObject,
+  test_equal(Java::JavaObject,
   method.invoke_static(Java.primitive_to_java(101)).class)
 
   # Not arrays
@@ -248,7 +248,7 @@ if defined? Java
 
     $callback_invoked = true
   end
-  test_ok(action_listener_instance.instance_of?(JavaObject))
+  test_ok(action_listener_instance.instance_of?(Java::JavaObject))
   instance_class = action_listener_instance.java_class
   proxy_class = Java::JavaClass.for_name("java.lang.reflect.Proxy")
   test_ok(instance_class < action_listener_class)

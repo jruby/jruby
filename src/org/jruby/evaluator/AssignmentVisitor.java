@@ -66,9 +66,9 @@ public class AssignmentVisitor extends AbstractVisitor {
         this.threadContext = runtime.getCurrentContext();
     }
 
-    public IRubyObject assign(Node node, IRubyObject value, boolean check) {
-        this.value = value;
-        this.check = check;
+    public IRubyObject assign(Node node, IRubyObject aValue, boolean aCheck) {
+        this.value = aValue;
+        this.check = aCheck;
 
         acceptNode(node);
 

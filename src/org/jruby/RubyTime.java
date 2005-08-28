@@ -61,11 +61,11 @@ public class RubyTime extends RubyObject {
     }
 
     public static RubyClass createTimeClass(Ruby runtime) {
-		RubyClass rubyTimeClass = runtime.defineClass("Time", runtime.getClasses().getObjectClass());
+		RubyClass rubyTimeClass = runtime.defineClass("Time", runtime.getObject());
     	
 		CallbackFactory callbackFactory = runtime.callbackFactory(RubyTime.class);
 		
-		rubyTimeClass.includeModule(runtime.getClasses().getComparableModule());
+		rubyTimeClass.includeModule(runtime.getModule("Comparable"));
         
 		rubyTimeClass.defineSingletonMethod("new", 
 			callbackFactory.getSingletonMethod("s_new"));

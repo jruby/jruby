@@ -159,7 +159,7 @@ public class Main {
         runtime.setVerbose(runtime.newBoolean(commandline.verbose));
 
         defineGlobalVERBOSE(runtime);
-        runtime.getClasses().getObjectClass().setConstant("$VERBOSE", 
+        runtime.getObject().setConstant("$VERBOSE", 
         		commandline.verbose ? runtime.getTrue() : runtime.getNil());
         runtime.defineGlobalConstant("ARGV", argumentArray);
 

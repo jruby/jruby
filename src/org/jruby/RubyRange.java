@@ -53,26 +53,25 @@ public class RubyRange extends RubyObject {
         super(runtime, runtime.getClass("Range"));
     }
 
-    public void init(IRubyObject begin, IRubyObject end, RubyBoolean isExclusive) {
-        if (!(begin instanceof RubyFixnum && end instanceof RubyFixnum)) {
+    public void init(IRubyObject aBegin, IRubyObject aEnd, RubyBoolean aIsExclusive) {
+        if (!(aBegin instanceof RubyFixnum && aEnd instanceof RubyFixnum)) {
             try {
-                begin.callMethod("<=>", end);
+                aBegin.callMethod("<=>", aEnd);
             } catch (RaiseException rExcptn) {
                 throw getRuntime().newArgumentError("bad value for range");
             }
         }
 
-        this.begin = begin;
-        this.end = end;
-        this.isExclusive = isExclusive.isTrue();
+        this.begin = aBegin;
+        this.end = aEnd;
+        this.isExclusive = aIsExclusive.isTrue();
     }
 
     public static RubyClass createRangeClass(Ruby runtime) {
-        RubyClass result = runtime.defineClass("Range", 
-                runtime.getClasses().getObjectClass());
+        RubyClass result = runtime.defineClass("Range", runtime.getObject());
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyRange.class);
         
-        result.includeModule(runtime.getClasses().getEnumerableModule());
+        result.includeModule(runtime.getModule("Enumerable"));
 
         result.defineMethod("==", callbackFactory.getMethod("equal", IRubyObject.class));
         result.defineMethod("===", callbackFactory.getMethod("op_eqq", IRubyObject.class));
@@ -290,7 +289,7 @@ public class RubyRange extends RubyObject {
             }
         } else if (begin instanceof RubyString) {
             ((RubyString) begin).upto(end, isExclusive);
-        } else if (begin.isKindOf(getRuntime().getClasses().getNumericClass())) {
+        } else if (begin.isKindOf(getRuntime().getClass("Numeric"))) {
             if (!isExclusive) {
                 end = end.callMethod("+", RubyFixnum.one(getRuntime()));
             }

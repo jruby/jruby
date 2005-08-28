@@ -39,7 +39,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class IntegerMetaClass extends NumericMetaClass {
 	public IntegerMetaClass(Ruby runtime) {
-        super("Integer", RubyInteger.class, runtime.getClasses().getNumericClass());
+        super("Integer", RubyInteger.class, runtime.getClass("Numeric"));
 	}
 	
 	public IntegerMetaClass(String name, RubyClass superClass, RubyModule parentModule) {
@@ -55,7 +55,7 @@ public class IntegerMetaClass extends NumericMetaClass {
     }
     
 	protected void initializeClass() {
-        includeModule(getRuntime().getClasses().getEnumerableModule());
+        includeModule(getRuntime().getModule("Enumerable"));
         
         defineMethod("chr", Arity.noArguments());
         defineMethod("downto",  Arity.singleArgument());

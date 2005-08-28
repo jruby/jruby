@@ -30,7 +30,6 @@ package org.jruby.runtime.load;
 import java.io.IOException;
 
 import org.jruby.Ruby;
-import org.jruby.RubyClasses;
 import org.jruby.runtime.builtin.meta.BasicSocketMetaClass;
 import org.jruby.util.BuiltinScript;
 
@@ -38,8 +37,7 @@ import org.jruby.util.BuiltinScript;
 public class SocketLibrary implements Library {
 
     public void load(Ruby runtime) throws IOException {
-        RubyClasses rubyClasses = runtime.getClasses();
-        rubyClasses.putClass("BasicSocket", new BasicSocketMetaClass(runtime), rubyClasses.getObjectClass());
+        new BasicSocketMetaClass(runtime);
         new BuiltinScript("socket").load(runtime);
     }
 

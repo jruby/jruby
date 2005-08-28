@@ -85,7 +85,7 @@ public class RubyBignum extends RubyInteger {
     }
 
     public static RubyClass createBignumClass(Ruby runtime) {
-        RubyClass result = runtime.defineClass("Bignum", runtime.getClasses().getIntegerClass());
+        RubyClass result = runtime.defineClass("Bignum", runtime.getClass("Integer"));
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyBignum.class);
         
         result.defineMethod("~", callbackFactory.getMethod("op_invert"));

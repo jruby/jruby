@@ -37,7 +37,7 @@ public class BasicSocketMetaClass extends ObjectMetaClass {
 
     public BasicSocketMetaClass(Ruby runtime) {
         super("BasicSocket", RubyBasicSocket.class, 
-                runtime.getClasses().getIoClass()); 
+                runtime.getClass("IO")); 
     }
 
     protected IRubyObject allocateObject() {

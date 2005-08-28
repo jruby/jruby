@@ -44,7 +44,7 @@ public class TestRubyObject extends TestCase {
 
     public void setUp() {
         runtime = Ruby.getDefaultInstance();
-        rubyObject = new RubyObject(runtime, runtime.getClasses().getObjectClass());
+        rubyObject = new RubyObject(runtime, runtime.getObject());
     }
 
     public void testNil() {
@@ -88,7 +88,7 @@ public class TestRubyObject extends TestCase {
     }
 
     public void test_kind_of() {
-        assertTrue(rubyObject.isKindOf(runtime.getClasses().getObjectClass()));
+        assertTrue(rubyObject.isKindOf(runtime.getObject()));
         // assertTrue(rubyObject.kind_of(ruby.getClasses().getStringClass()).isFalse());
     }
 }

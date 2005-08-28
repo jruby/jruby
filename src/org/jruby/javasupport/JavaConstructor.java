@@ -49,7 +49,7 @@ public class JavaConstructor extends JavaCallable {
 
     public static RubyClass createJavaConstructorClass(Ruby runtime, RubyModule javaModule) {
         RubyClass result =
-                javaModule.defineClassUnder("JavaConstructor", runtime.getClasses().getObjectClass());
+                javaModule.defineClassUnder("JavaConstructor", runtime.getObject());
         CallbackFactory callbackFactory = runtime.callbackFactory(JavaConstructor.class);
 
         JavaCallable.registerRubyMethods(runtime, result, JavaConstructor.class);
@@ -66,7 +66,7 @@ public class JavaConstructor extends JavaCallable {
     }
 
     public JavaConstructor(Ruby runtime, Constructor constructor) {
-        super(runtime, (RubyClass) runtime.getClasses().getClassFromPath("Java::JavaConstructor"));
+        super(runtime, runtime.getModule("Java").getClass("JavaConstructor"));
         this.constructor = constructor;
     }
 

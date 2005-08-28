@@ -36,7 +36,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class ArrayMetaClass extends ObjectMetaClass {
     public ArrayMetaClass(Ruby runtime) {
-        super("Array", RubyArray.class, runtime.getClasses().getObjectClass());
+        super("Array", RubyArray.class, runtime.getObject());
     }
     
 	public ArrayMetaClass(String name, RubyClass superClass, RubyModule parentModule) {

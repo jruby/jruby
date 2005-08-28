@@ -38,7 +38,6 @@ import java.io.OutputStream;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyInteger;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.Constants;
@@ -121,8 +120,7 @@ public class MarshalStream extends FilterOutputStream {
         out.write('u');
         dumpObject(RubySymbol.newSymbol(runtime, value.getMetaClass().getName()));
 
-        RubyInteger depth = runtime.newFixnum(depthLimit);
-        RubyString marshaled = (RubyString) value.callMethod("_dump", depth);
+        RubyString marshaled = (RubyString) value.callMethod("_dump", runtime.newFixnum(depthLimit)); 
         dumpString(marshaled.getValue());
     }
 

@@ -94,7 +94,7 @@ public class RubyModule extends RubyObject {
 
         // If no parent is passed in, it is safe to assume Object.
         if (this.parentModule == null) {
-            this.parentModule = runtime.getClasses().getObjectClass();
+            this.parentModule = runtime.getObject();
         }
     }
     
@@ -159,7 +159,7 @@ public class RubyModule extends RubyObject {
         }
         
         StringBuffer result = new StringBuffer(getBaseName());
-        RubyClass objectClass = getRuntime().getClasses().getObjectClass();
+        RubyClass objectClass = getRuntime().getObject();
         
         for (RubyModule p = this.parentModule; p != null && p != objectClass; p = p.parentModule) {
             result.insert(0, "::").insert(0, p.getBaseName());
@@ -252,22 +252,28 @@ public class RubyModule extends RubyObject {
             }
         }
 
-        // Lastly look for constants in top constant
-        IRubyObject var = getRuntime().getTopConstant(name);
-        if (var != null) {
-        	return var;
-        }
-        
         if (invokeConstMissing) {
         	return callMethod("const_missing", RubySymbol.newSymbol(getRuntime(), name));
         }
 		
         return null;
     }
+    
+    /**
+     * Finds a class that is within the current module (or class).
+     * 
+     * @param name to be found in this module (or class)
+     * @return the class or null if no such class
+     */
+    public RubyClass getClass(String name) {
+    	IRubyObject module = getConstant(name, false);
+    	
+    	return  (module instanceof RubyClass) ? (RubyClass) module : null;
+    }
 
     public IRubyObject const_missing(IRubyObject name) {
         /* Uninitialized constant */
-        if (this != getRuntime().getClasses().getObjectClass()) {
+        if (this != getRuntime().getObject()) {
             throw new NameError(getRuntime(), "uninitialized constant " + name.asSymbol() + " at " + getName());
         } 
 
@@ -335,7 +341,7 @@ public class RubyModule extends RubyObject {
      */
     public void undef(String name) {
         Ruby runtime = getRuntime();
-        if (this == runtime.getClasses().getObjectClass()) {
+        if (this == runtime.getObject()) {
             runtime.secure(4);
         }
         if (runtime.getSafeLevel() >= 4 && !isTaint()) {
@@ -374,7 +380,7 @@ public class RubyModule extends RubyObject {
     
     // TODO: Consider a better way of synchronizing 
     public void addMethod(String name, ICallable method) {
-        if (this == getRuntime().getClasses().getObjectClass()) {
+        if (this == getRuntime().getObject()) {
             getRuntime().secure(4);
         }
 
@@ -402,7 +408,7 @@ public class RubyModule extends RubyObject {
     }
 
     public void removeMethod(String name) {
-        if (this == getRuntime().getClasses().getObjectClass()) {
+        if (this == getRuntime().getObject()) {
             getRuntime().secure(4);
         }
         if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
@@ -485,7 +491,7 @@ public class RubyModule extends RubyObject {
     		return constant;
     	} 
     	
-    	if (this == getRuntime().getClasses().getObjectClass()) {
+    	if (this == getRuntime().getObject()) {
     		return getConstant(name, false);
     	}
     	return null;
@@ -574,13 +580,13 @@ public class RubyModule extends RubyObject {
         if (oldName.equals(name)) {
             return;
         }
-        if (this == getRuntime().getClasses().getObjectClass()) {
+        if (this == getRuntime().getObject()) {
             getRuntime().secure(4);
         }
         ICallable method = searchMethod(oldName);
         if (method.isUndefined()) {
             if (isModule()) {
-                method = getRuntime().getClasses().getObjectClass().searchMethod(oldName);
+                method = getRuntime().getObject().searchMethod(oldName);
             }
             
             if (method.isUndefined()) {
@@ -648,7 +654,7 @@ public class RubyModule extends RubyObject {
     public void defineConstant(String name, IRubyObject value) {
         assert value != null;
 
-        if (this == getRuntime().getClasses().getClassClass()) {
+        if (this == getRuntime().getClass("Class")) {
             getRuntime().secure(4);
         }
 
@@ -747,7 +753,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public void exportMethod(String name, Visibility visibility) {
-        if (this == getRuntime().getClasses().getObjectClass()) {
+        if (this == getRuntime().getObject()) {
             getRuntime().secure(4);
         }
 
@@ -824,10 +830,10 @@ public class RubyModule extends RubyObject {
         if (args.length == 1) {
             body = getRuntime().newProc();
             newMethod = new ProcMethod(this, (RubyProc)body, visibility);
-        } else if (args[1].isKindOf(getRuntime().getClasses().getMethodClass())) {
+        } else if (args[1].isKindOf(getRuntime().getClass("Method"))) {
             body = args[1];
             newMethod = new MethodMethod(this, ((RubyMethod)body).unbind(), visibility);
-        } else if (args[1].isKindOf(getRuntime().getClasses().getProcClass())) {
+        } else if (args[1].isKindOf(getRuntime().getClass("Proc"))) {
             body = args[1];
             newMethod = new ProcMethod(this, (RubyProc)body, visibility);
         } else {
@@ -873,7 +879,7 @@ public class RubyModule extends RubyObject {
         // Modules do not directly define Object as their superClass even though in theory they
     	// should.  The C version of Ruby may also do this (special checks in rb_alias for Module
     	// makes me think this).
-        return new RubyModule(runtime, runtime.getClasses().getModuleClass(), null, parentModule, name);
+        return new RubyModule(runtime, runtime.getClass("Module"), null, parentModule, name);
     }
     
     /** rb_mod_name
@@ -1206,17 +1212,9 @@ public class RubyModule extends RubyObject {
      */
     public RubyArray constants() {
         ArrayList constantNames = new ArrayList();
-        RubyModule objectClass = getRuntime().getClasses().getObjectClass();
+        RubyModule objectClass = getRuntime().getObject();
         
-        if (getRuntime().getClasses().getModuleClass() == this) {
-            for (Iterator iter = getRuntime().getClasses().nameIterator(); 
-            	iter.hasNext();) {
-                String name = (String) iter.next();
-                if (IdUtil.isConstant(name)) {
-                    constantNames.add(getRuntime().newString(name));
-                }
-            }
-            
+        if (getRuntime().getClass("Module") == this) {
             for (Iterator vars = objectClass.instanceVariableNames(); 
             	vars.hasNext();) {
                 String name = (String) vars.next();
@@ -1225,6 +1223,15 @@ public class RubyModule extends RubyObject {
                 }
             }
             
+            return getRuntime().newArray(constantNames);
+        } else if (getRuntime().getObject() == this) {
+            for (Iterator vars = instanceVariableNames(); vars.hasNext();) {
+                String name = (String) vars.next();
+                if (IdUtil.isConstant(name)) {
+                    constantNames.add(getRuntime().newString(name));
+                }
+            }
+
             return getRuntime().newArray(constantNames);
         }
 
@@ -1424,7 +1431,7 @@ public class RubyModule extends RubyObject {
     public static RubyModule unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         String name = input.unmarshalString();
         Ruby runtime = input.getRuntime();
-        RubyModule result = runtime.getClasses().getClassFromPath(name);
+        RubyModule result = runtime.getClassFromPath(name);
         if (result == null) {
             throw new NameError(runtime, "uninitialized constant " + name);
         }

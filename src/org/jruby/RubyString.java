@@ -54,7 +54,7 @@ public class RubyString extends RubyObject {
 	private String value;
 	
 	public RubyString(Ruby runtime, String value) {
-		this(runtime, runtime.getClasses().getStringClass(), value);
+		this(runtime, runtime.getClass("String"), value);
 	}
 
 	public RubyString(Ruby runtime, RubyClass rubyClass, String value) {

@@ -64,8 +64,8 @@ public class RubyBoolean extends RubyObject {
 
 	public RubyClass getMetaClass() {
 		return value
-			? getRuntime().getClasses().getTrueClass()
-			: getRuntime().getClasses().getFalseClass();
+			? getRuntime().getClass("TrueClass")
+			: getRuntime().getClass("FalseClass");
 	}
 
 	public boolean isTrue() {
@@ -77,7 +77,7 @@ public class RubyBoolean extends RubyObject {
 	}
 
 	public static RubyClass createFalseClass(Ruby runtime) {
-		RubyClass falseClass = runtime.defineClass("FalseClass", runtime.getClasses().getObjectClass());
+		RubyClass falseClass = runtime.defineClass("FalseClass", runtime.getObject());
 
 		falseClass.defineMethod("type", runtime.callbackFactory(RubyBoolean.class).getMethod("type"));
 
@@ -87,7 +87,7 @@ public class RubyBoolean extends RubyObject {
 	}
 
 	public static RubyClass createTrueClass(Ruby runtime) {
-		RubyClass trueClass = runtime.defineClass("TrueClass", runtime.getClasses().getObjectClass());
+		RubyClass trueClass = runtime.defineClass("TrueClass", runtime.getObject());
 
 		trueClass.defineMethod("type", runtime.callbackFactory(RubyBoolean.class).getMethod("type"));
 

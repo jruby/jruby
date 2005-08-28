@@ -107,25 +107,25 @@ public class Scope implements StackElement {
 
     /**
      * Sets the localNames.
-     * @param localNames The localNames to set
+     * @param someLocalNames The localNames to set
      */
-    public void resetLocalVariables(List localNames) {
-        if (localNames == null || localNames.isEmpty()) {
+    public void resetLocalVariables(List someLocalNames) {
+        if (someLocalNames == null || someLocalNames.isEmpty()) {
             this.localNames = null;
             this.localValues = null;
         } else {
-            this.localNames = localNames;
-            this.localValues = new ArrayList(Collections.nCopies(localNames.size(), rubyNil));
+            this.localNames = someLocalNames;
+            this.localValues = new ArrayList(Collections.nCopies(someLocalNames.size(), rubyNil));
         }
     }
 
-    public void addLocalVariables(List localNames) {
+    public void addLocalVariables(List someLocalNames) {
         if (this.localNames == null || this.localNames.isEmpty()) {
-            this.localNames = new ArrayList(localNames.size());
-            this.localValues = new ArrayList(localNames.size());
+            this.localNames = new ArrayList(someLocalNames.size());
+            this.localValues = new ArrayList(someLocalNames.size());
         }
-        this.localNames.addAll(localNames);
-        this.localValues.addAll(Collections.nCopies(localNames.size(), rubyNil));
+        this.localNames.addAll(someLocalNames);
+        this.localValues.addAll(Collections.nCopies(someLocalNames.size(), rubyNil));
     }
 
     public List getLocalValues() {

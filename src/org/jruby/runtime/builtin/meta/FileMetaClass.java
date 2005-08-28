@@ -36,6 +36,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyDir;
 import org.jruby.RubyFile;
+import org.jruby.RubyFileStat;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
@@ -46,7 +47,7 @@ import org.jruby.util.IOModes;
 
 public class FileMetaClass extends IOMetaClass {
     public FileMetaClass(Ruby runtime) {
-        super("File", RubyFile.class, runtime.getClasses().getIoClass());
+        super("File", RubyFile.class, runtime.getClass("IO"));
     }
 
     public FileMetaClass(String name, RubyClass superClass, RubyModule parentModule) {
@@ -91,7 +92,7 @@ public class FileMetaClass extends IOMetaClass {
         // TODO Singleton methods: pipe?, readlink, setgid?, setuid?, size?, socket?, 
         // TODO Singleton methods: stat, sticky?, symlink, symlink?, umask, utime
 
-        extendObject(runtime.getClasses().getFileTestModule());
+        extendObject(runtime.getModule("FileTest"));
         
 		defineSingletonMethod("basename", Arity.optional());
         defineSingletonMethod("chmod", Arity.twoArguments());
@@ -113,6 +114,8 @@ public class FileMetaClass extends IOMetaClass {
 		defineMethod("initialize", Arity.optional());
 		defineMethod("path", Arity.noArguments());
 		defineMethod("truncate", Arity.singleArgument());
+		
+        RubyFileStat.createFileStatClass(runtime);
     }
 
 	public RubyClass newSubClass(String name, RubyModule parentModule) {

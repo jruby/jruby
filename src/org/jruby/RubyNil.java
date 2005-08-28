@@ -52,7 +52,7 @@ public class RubyNil extends RubyObject {
 	}
 	
     public static RubyClass createNilClass(Ruby runtime) {
-        RubyClass nilClass = runtime.defineClass("NilClass", runtime.getClasses().getObjectClass());
+        RubyClass nilClass = runtime.defineClass("NilClass", runtime.getObject());
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyNil.class);
         nilClass.defineMethod("type", callbackFactory.getSingletonMethod("type"));
         nilClass.defineMethod("to_i", callbackFactory.getSingletonMethod("to_i"));

@@ -154,7 +154,7 @@ public class RubyKernel {
              */
             public IRubyObject load(Ruby runtime, String name) {
                 loadService.require(file.toString());
-                return runtime.getClasses().getObjectClass().getConstant(name);
+                return runtime.getObject().getConstant(name);
             }
         });
         return recv;
@@ -219,7 +219,7 @@ public class RubyKernel {
         	}
         } 
 
-        return ((FileMetaClass) recv.getRuntime().getClasses().getFileClass()).open(args);
+        return ((FileMetaClass) recv.getRuntime().getClass("File")).open(args);
     }
 
     public static IRubyObject gets(IRubyObject recv, IRubyObject[] args) {
@@ -517,14 +517,14 @@ public class RubyKernel {
             }
             throw new RaiseException(RubyException.newInstance(runtime.getExceptions().getRuntimeError(), args));
         case 2 :
-            if (args[0] == runtime.getClasses().getExceptionClass()) {
+            if (args[0] == runtime.getClass("Exception")) {
                 throw new RaiseException((RubyException) args[0].callMethod("exception", args[1]));
             }
             string = (RubyString) args[1];
             excptn = RubyException.newException(runtime, (RubyClass)args[0], string.getValue()); 
             throw new RaiseException(excptn);
         case 3:
-            if (args[0] == runtime.getClasses().getExceptionClass()) {
+            if (args[0] == runtime.getClass("Exception")) {
                 throw new RaiseException((RubyException) args[0].callMethod("exception", args[1]));
             }
             string = (RubyString) args[1];

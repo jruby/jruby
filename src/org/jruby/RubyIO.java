@@ -133,16 +133,16 @@ public class RubyIO extends RubyObject {
      * constructors (since it would be less error prone to forget there).
      * However, reopen() makes doing this a little funky. 
      */
-    public void registerIOHandler(IOHandler handler) {
-        getRuntime().ioHandlers.put(new Integer(handler.getFileno()), new WeakReference(handler));
+    public void registerIOHandler(IOHandler newHandler) {
+        getRuntime().ioHandlers.put(new Integer(newHandler.getFileno()), new WeakReference(newHandler));
     }
     
-    public void unregisterIOHandler(int fileno) {
-        getRuntime().ioHandlers.remove(new Integer(fileno));
+    public void unregisterIOHandler(int aFileno) {
+        getRuntime().ioHandlers.remove(new Integer(aFileno));
     }
     
-    public IOHandler getIOHandlerByFileno(int fileno) {
-        return (IOHandler) ((WeakReference) getRuntime().ioHandlers.get(new Integer(fileno))).get();
+    public IOHandler getIOHandlerByFileno(int aFileno) {
+        return (IOHandler) ((WeakReference) getRuntime().ioHandlers.get(new Integer(aFileno))).get();
     }
     
     protected static int fileno = 2;
@@ -160,7 +160,7 @@ public class RubyIO extends RubyObject {
     }
 
     public RubyIO(Ruby runtime, OutputStream outputStream) {
-        super(runtime, runtime.getClasses().getIoClass());
+        super(runtime, runtime.getClass("IO"));
         
         // We only want IO objects with valid streams (better to error now). 
         if (outputStream == null) {
@@ -174,7 +174,7 @@ public class RubyIO extends RubyObject {
     }
     
     public RubyIO(Ruby runtime, Process process) {
-    	super(runtime, runtime.getClasses().getIoClass());
+    	super(runtime, runtime.getClass("IO"));
 
         modes = new IOModes(runtime, "w+");
 
@@ -185,7 +185,7 @@ public class RubyIO extends RubyObject {
     }
     
     public RubyIO(Ruby runtime, int descriptor) {
-        super(runtime, runtime.getClasses().getIoClass());
+        super(runtime, runtime.getClass("IO"));
 
         handler = new IOHandlerUnseekable(runtime, descriptor);
         modes = handler.getModes();
@@ -242,7 +242,7 @@ public class RubyIO extends RubyObject {
             throw getRuntime().newArgumentError("wrong number of arguments");
     	}
     	
-        if (args[0].isKindOf(getRuntime().getClasses().getIoClass())) {
+        if (args[0].isKindOf(getRuntime().getClass("IO"))) {
             RubyIO ios = (RubyIO) args[0];
 
             int keepFileno = handler.getFileno();
@@ -265,13 +265,12 @@ public class RubyIO extends RubyObject {
 
             // Update fileno list with our new handler
             registerIOHandler(handler);
-        } else if (args[0].isKindOf(getRuntime().getClasses().getStringClass())) {
+        } else if (args[0].isKindOf(getRuntime().getClass("String"))) {
             String path = ((RubyString) args[0]).getValue();
             String mode = "r";
             if (args.length > 1) {
-                if (!args[1].isKindOf(getRuntime().getClasses().getStringClass())) {
-                    throw getRuntime().newTypeError(args[1], 
-                            getRuntime().getClasses().getStringClass());
+                if (!args[1].isKindOf(getRuntime().getClass("String"))) {
+                    throw getRuntime().newTypeError(args[1], getRuntime().getClass("String"));
                 }
                     
                 mode = ((RubyString) args[1]).getValue();
@@ -331,7 +330,7 @@ public class RubyIO extends RubyObject {
 
     public IRubyObject initialize(IRubyObject[] args) {
         int count = checkArgumentCount(args, 1, 2);
-        int fileno = RubyNumeric.fix2int(args[0]);
+        int newFileno = RubyNumeric.fix2int(args[0]);
         String mode = null;
         
         if (count > 1) {
@@ -341,13 +340,13 @@ public class RubyIO extends RubyObject {
         // See if we already have this descriptor open.
         // If so then we can mostly share the handler (keep open
         // file, but possibly change the mode).
-        IOHandler existingIOHandler = getIOHandlerByFileno(fileno);
+        IOHandler existingIOHandler = getIOHandlerByFileno(newFileno);
         
         if (existingIOHandler == null) {
             if (mode == null) {
                 mode = "r";
             }
-            handler = new IOHandlerUnseekable(getRuntime(), fileno, mode);
+            handler = new IOHandlerUnseekable(getRuntime(), newFileno, mode);
             modes = new IOModes(getRuntime(), mode);
             
             registerIOHandler(handler);
@@ -506,7 +505,7 @@ public class RubyIO extends RubyObject {
     public IRubyObject putc(IRubyObject object) {
         int c;
         
-        if (object.isKindOf(getRuntime().getClasses().getStringClass())) {
+        if (object.isKindOf(getRuntime().getClass("String"))) {
             String value = ((RubyString) object).toString();
             
             if (value.length() > 0) {
@@ -515,7 +514,7 @@ public class RubyIO extends RubyObject {
                 throw getRuntime().newTypeError(
                         "Cannot convert String to Integer");
             }
-        } else if (object.isKindOf(getRuntime().getClasses().getFixnumClass())){
+        } else if (object.isKindOf(getRuntime().getClass("Fixnum"))){
             c = RubyNumeric.fix2int(object);
         } else { // What case will this work for?
             c = RubyNumeric.fix2int(object.callMethod("to_i"));
@@ -770,10 +769,10 @@ public class RubyIO extends RubyObject {
     public RubyArray readlines(IRubyObject[] args) {
         IRubyObject[] separatorArgument;
         if (args.length > 0) {
-            if (!args[0].isKindOf(getRuntime().getClasses().getNilClass()) &&
-                !args[0].isKindOf(getRuntime().getClasses().getStringClass())) {
+            if (!args[0].isKindOf(getRuntime().getClass("NilClass")) &&
+                !args[0].isKindOf(getRuntime().getClass("String"))) {
                 throw getRuntime().newTypeError(args[0], 
-                        getRuntime().getClasses().getStringClass());
+                        getRuntime().getClass("String"));
             } 
             separatorArgument = new IRubyObject[] { args[0] };
         } else {

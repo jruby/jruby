@@ -34,7 +34,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class MetaClass extends RubyClass {
 
     public MetaClass(Ruby runtime, RubyClass superClass, RubyModule parentModule) {
-        super(runtime, runtime.getClasses().getClassClass(), superClass, parentModule, null);
+        super(runtime, runtime.getClass("Class"), superClass, parentModule, null);
     }
  
     public boolean isSingleton() {

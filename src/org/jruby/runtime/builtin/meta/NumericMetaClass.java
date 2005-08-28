@@ -36,7 +36,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class NumericMetaClass extends ObjectMetaClass {
 	public NumericMetaClass(Ruby runtime) {
-        super("Numeric", RubyNumeric.class, runtime.getClasses().getObjectClass());
+        super("Numeric", RubyNumeric.class, runtime.getObject());
     }
 	    
 	public NumericMetaClass(String name, RubyClass superClass, RubyModule parentModule) {
@@ -52,7 +52,7 @@ public class NumericMetaClass extends ObjectMetaClass {
     }
     
     protected void initializeClass() {
-        includeModule(getRuntime().getClasses().getComparableModule());
+        includeModule(getRuntime().getModule("Comparable"));
 
         defineMethod("+@", Arity.noArguments(), "op_uplus");
         defineMethod("-@", Arity.noArguments(), "op_uminus");

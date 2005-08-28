@@ -41,7 +41,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class RubyUnboundMethod extends RubyMethod {
     protected RubyUnboundMethod(Ruby runtime) {
-        super(runtime, runtime.getClasses().getUnboundMethodClass());
+        super(runtime, runtime.getClass("UnboundMethod"));
     }
 
     public static RubyUnboundMethod newUnboundMethod(
@@ -63,7 +63,7 @@ public class RubyUnboundMethod extends RubyMethod {
 
     public static RubyClass defineUnboundMethodClass(Ruby runtime) {
         RubyClass newClass = 
-        	runtime.defineClass("UnboundMethod", runtime.getClasses().getMethodClass());
+        	runtime.defineClass("UnboundMethod", runtime.getClass("Method"));
 
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyUnboundMethod.class);
         newClass.defineMethod("[]", callbackFactory.getOptMethod("call"));
@@ -89,19 +89,19 @@ public class RubyUnboundMethod extends RubyMethod {
         return this;
     }
 
-    public RubyMethod bind(IRubyObject receiver) {
-        RubyClass receiverClass = receiver.getMetaClass();
+    public RubyMethod bind(IRubyObject aReceiver) {
+        RubyClass receiverClass = aReceiver.getMetaClass();
         if (originModule != receiverClass) {
             if (originModule instanceof MetaClass) {
                 throw getRuntime().newTypeError("singleton method called for a different object");
             } else if (receiverClass instanceof MetaClass && receiverClass.getMethods().containsKey(originName)) {
                 throw getRuntime().newTypeError("method `" + originName + "' overridden");
             } else if (
-                !(originModule.isModule() ? receiver.isKindOf(originModule) : receiver.getType() == originModule)) {
+                !(originModule.isModule() ? aReceiver.isKindOf(originModule) : aReceiver.getType() == originModule)) {
                 // FIX replace type() == ... with isInstanceOf(...)
                 throw getRuntime().newTypeError("bind argument must be an instance of " + originModule.getName());
             }
         }
-        return RubyMethod.newMethod(implementationModule, methodName, receiverClass, originName, method, receiver);
+        return RubyMethod.newMethod(implementationModule, methodName, receiverClass, originName, method, aReceiver);
     }
 }

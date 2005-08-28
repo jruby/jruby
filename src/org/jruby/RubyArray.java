@@ -64,7 +64,7 @@ public class RubyArray extends RubyObject implements List {
     private boolean tmpLock;
 
 	private RubyArray(Ruby runtime, List list) {
-		super(runtime, runtime.getClasses().getArrayClass());
+		super(runtime, runtime.getClass("Array"));
         this.list = list;
     }
 
@@ -1272,7 +1272,7 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public IRubyObject op_and(IRubyObject other) {
-    	RubyClass arrayClass = getRuntime().getClasses().getArrayClass();
+    	RubyClass arrayClass = getRuntime().getClass("Array");
     	
     	// & only works with array types
     	if (!other.isKindOf(arrayClass)) {

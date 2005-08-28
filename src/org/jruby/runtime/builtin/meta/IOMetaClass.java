@@ -47,7 +47,7 @@ import org.jruby.util.IOHandler;
 public class IOMetaClass extends ObjectMetaClass {
 
     public IOMetaClass(Ruby runtime) {
-        this("IO", RubyIO.class, runtime.getClasses().getObjectClass());
+        this("IO", RubyIO.class, runtime.getObject());
     }
 
     public IOMetaClass(String name, RubyClass superClass, RubyModule parentModule) {
@@ -63,7 +63,7 @@ public class IOMetaClass extends ObjectMetaClass {
     }
 
     protected void initializeClass() {
-        includeModule(getRuntime().getClasses().getEnumerableModule());
+        includeModule(getRuntime().getModule("Enumerable"));
 
         // TODO: Implement tty? and isatty.  We have no real capability to 
         // determine this from java, but if we could set tty status, then
@@ -138,7 +138,7 @@ public class IOMetaClass extends ObjectMetaClass {
         int count = checkArgumentCount(args, 1, -1);
         IRubyObject filename = args[0].convertToString();
         filename.checkSafeString();
-        RubyIO io = (RubyIO) ((FileMetaClass) getRuntime().getClasses().getFileClass()).open(new IRubyObject[] { filename }, false);
+        RubyIO io = (RubyIO) ((FileMetaClass) getRuntime().getClass("File")).open(new IRubyObject[] { filename }, false);
 
         if (!io.isNil() && io.isOpen()) {
         	try {

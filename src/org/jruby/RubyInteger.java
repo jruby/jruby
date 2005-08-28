@@ -65,7 +65,6 @@ public abstract class RubyInteger extends RubyNumeric {
 
     // TODO: Make callCoerced work in block context...then fix downto, step, and upto.
     public IRubyObject downto(IRubyObject to) {
-    	RubyNumeric test = (RubyNumeric) to;
         RubyNumeric i = this;
         while (true) {
             if (i.callMethod("<", to).isTrue()) {

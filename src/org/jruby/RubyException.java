@@ -61,7 +61,7 @@ public class RubyException extends RubyObject {
     }
 
     public static RubyClass createExceptionClass(Ruby runtime) {
-		RubyClass exceptionClass = runtime.defineClass("Exception", runtime.getClasses().getObjectClass());
+		RubyClass exceptionClass = runtime.defineClass("Exception", runtime.getObject());
     	
 		CallbackFactory callbackFactory = runtime.callbackFactory(RubyException.class);
         

@@ -54,7 +54,7 @@ public class RubyFixnum extends RubyInteger {
     }
 
     public RubyFixnum(Ruby runtime, long value) {
-        super(runtime, runtime.getClasses().getFixnumClass());
+        super(runtime, runtime.getClass("Fixnum"));
         this.value = value;
     }
     

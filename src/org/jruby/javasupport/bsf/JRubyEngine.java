@@ -114,7 +114,7 @@ public class JRubyEngine extends BSFEngineImpl {
             IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(runtime, args);
 
             // Create Ruby proxies for any input arguments that are not primitives.
-            IRubyObject javaUtilities = runtime.getClasses().getObjectClass().getConstant("JavaUtilities");
+            IRubyObject javaUtilities = runtime.getObject().getConstant("JavaUtilities");
             for (int i = 0; i < rubyArgs.length; i++) {
                 IRubyObject obj = rubyArgs[i];
 
@@ -138,10 +138,8 @@ public class JRubyEngine extends BSFEngineImpl {
         IRubyObject result = JavaUtil.convertJavaToRuby(runtime, value);
         if (result instanceof JavaObject) {
             runtime.getLoadService().require("java");
-            result =
-                runtime.getClasses().getObjectClass().getConstant("JavaUtilities").callMethod(
-                    "wrap",
-                    new IRubyObject[] { result, runtime.newString(value.getClass().getName())});
+            result = runtime.getObject().getConstant("JavaUtilities").callMethod("wrap",
+                new IRubyObject[] { result, runtime.newString(value.getClass().getName())});
         }
         return result;
     }
@@ -156,24 +154,24 @@ public class JRubyEngine extends BSFEngineImpl {
         return JavaUtil.convertArgument(value, type);
     }
 
-    public void initialize(BSFManager mgr, String lang, Vector declaredBeans) throws BSFException {
-        super.initialize(mgr, lang, declaredBeans);
+    public void initialize(BSFManager manager, String language, Vector someDeclaredBeans) throws BSFException {
+        super.initialize(manager, language, someDeclaredBeans);
 
         runtime = Ruby.getDefaultInstance();
-        runtime.getLoadService().init(getClassPath(mgr));
+        runtime.getLoadService().init(getClassPath(manager));
 
-        for (int i = 0, size = declaredBeans.size(); i < size; i++) {
-            BSFDeclaredBean bean = (BSFDeclaredBean) declaredBeans.elementAt(i);
+        for (int i = 0, size = someDeclaredBeans.size(); i < size; i++) {
+            BSFDeclaredBean bean = (BSFDeclaredBean) someDeclaredBeans.elementAt(i);
             runtime.getGlobalVariables().define(
                 GlobalVariable.variableName(bean.name),
                 new BeanGlobalVariable(runtime, bean));
         }
 
-        runtime.getGlobalVariables().defineReadonly("$bsf", new FunctionsGlobalVariable(runtime, new BSFFunctions(mgr, this)));
+        runtime.getGlobalVariables().defineReadonly("$bsf", new FunctionsGlobalVariable(runtime, new BSFFunctions(manager, this)));
     }
     
-    private List getClassPath(BSFManager mgr) {
-    	return Arrays.asList(mgr.getClassPath().split(System.getProperty("path.separator")));
+    private List getClassPath(BSFManager manager) {
+    	return Arrays.asList(manager.getClassPath().split(System.getProperty("path.separator")));
     }
 
     public void declareBean(BSFDeclaredBean bean) throws BSFException {
@@ -221,10 +219,8 @@ public class JRubyEngine extends BSFEngineImpl {
             IRubyObject result = JavaUtil.convertJavaToRuby(runtime, bean.bean, bean.type);
             if (result instanceof JavaObject) {
                 runtime.getLoadService().require("java");
-                result =
-                    runtime.getClasses().getObjectClass().getConstant("JavaUtilities").callMethod(
-                        "wrap",
-                        new IRubyObject[] { result, runtime.newString(bean.type.getName())});
+                result = runtime.getObject().getConstant("JavaUtilities").callMethod("wrap",
+                    new IRubyObject[] { result, runtime.newString(bean.type.getName())});
             }
             return result;
         }
@@ -254,10 +250,8 @@ public class JRubyEngine extends BSFEngineImpl {
             IRubyObject result = JavaUtil.convertJavaToRuby(runtime, functions, BSFFunctions.class);
             if (result instanceof JavaObject) {
                 runtime.getLoadService().require("java");
-                result =
-                    runtime.getClasses().getObjectClass().getConstant("JavaUtilities").callMethod(
-                        "wrap",
-                        new IRubyObject[] { result, runtime.newString(BSFFunctions.class.getName())});
+                result = runtime.getObject().getConstant("JavaUtilities").callMethod("wrap",
+                    new IRubyObject[] { result, runtime.newString(BSFFunctions.class.getName())});
             }
             return result;
         }

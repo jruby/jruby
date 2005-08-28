@@ -82,8 +82,7 @@ public class RubyThread extends RubyObject {
     public Object killLock = new Object();
     
     public static RubyClass createThreadClass(Ruby runtime) {
-        RubyClass threadClass = runtime.defineClass("Thread", 
-                runtime.getClasses().getObjectClass());
+        RubyClass threadClass = runtime.defineClass("Thread", runtime.getObject());
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyThread.class);
 
         threadClass.defineMethod("[]", 
@@ -259,7 +258,7 @@ public class RubyThread extends RubyObject {
 
     private void pollReceivedExceptions() {
         if (receivedException != null) {
-            RubyModule kernelModule = getRuntime().getClasses().getKernelModule();
+            RubyModule kernelModule = getRuntime().getModule("Kernel");
             kernelModule.callMethod("raise", receivedException);
         }
     }

@@ -63,7 +63,7 @@ public class RubyDir extends RubyObject {
     }
 
     public static RubyClass createDirClass(Ruby runtime) {
-        RubyClass dirClass = runtime.defineClass("Dir", runtime.getClasses().getObjectClass());
+        RubyClass dirClass = runtime.defineClass("Dir", runtime.getObject());
 
         dirClass.includeModule(runtime.getModule("Enumerable"));
 
@@ -116,14 +116,14 @@ public class RubyDir extends RubyObject {
      * <code>Dir</code> object returned, so a new <code>Dir</code> instance
      * must be created to reflect changes to the underlying file system.
      */
-    public IRubyObject initialize(RubyString path) {
-        path.checkSafeString();
+    public IRubyObject initialize(RubyString newPath) {
+        newPath.checkSafeString();
 
 // TODO: Consolidate this absolute file nonsense
-        dir = new File(path.getValue()).getAbsoluteFile();
+        dir = new File(newPath.getValue()).getAbsoluteFile();
         if (!dir.isDirectory()) {
             dir = null;
-            throw ErrnoError.getErrnoError(getRuntime(), "ENOENT", path.getValue() + " is not a directory");
+            throw ErrnoError.getErrnoError(getRuntime(), "ENOENT", newPath.getValue() + " is not a directory");
         }
 		List snapshotList = new ArrayList();
 		snapshotList.add(".");
@@ -277,7 +277,7 @@ public class RubyDir extends RubyObject {
      */
     public static IRubyObject open(IRubyObject recv, RubyString path) {
         RubyDir directory = 
-            (RubyDir) newInstance(recv.getRuntime().getClasses().getDirClass(),
+            (RubyDir) newInstance(recv.getRuntime().getClass("Dir"),
                     new IRubyObject[] { path });
 
         if (recv.getRuntime().isBlockGiven()) {
@@ -327,8 +327,8 @@ public class RubyDir extends RubyObject {
      * Moves to a position <code>d</code>.  <code>pos</code> must be a value
      * returned by <code>tell</code> or 0.
      */
-    public IRubyObject seek(RubyFixnum pos) {
-        this.pos = (int) pos.getLongValue();
+    public IRubyObject seek(RubyFixnum newPos) {
+        this.pos = (int) newPos.getLongValue();
         return this;
     }
 
@@ -427,7 +427,7 @@ public class RubyDir extends RubyObject {
 	}
 	
 	public static RubyString getHomeDirectoryPath(IRubyObject recv) {
-		RubyHash hash = (RubyHash) recv.getRuntime().getClasses().getObjectClass().getConstant("ENV");
+		RubyHash hash = (RubyHash) recv.getRuntime().getObject().getConstant("ENV");
 		IRubyObject home = hash.aref(recv.getRuntime().newString("HOME"));
 		
 		if (home == null || home.isNil()) {

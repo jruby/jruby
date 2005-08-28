@@ -54,7 +54,7 @@ public class RubyMatchData extends RubyObject {
     }
 
     public static RubyClass createMatchDataClass(Ruby runtime) {
-        RubyClass matchDataClass = runtime.defineClass("MatchData", runtime.getClasses().getObjectClass());
+        RubyClass matchDataClass = runtime.defineClass("MatchData", runtime.getObject());
         runtime.defineGlobalConstant("MatchingData", matchDataClass);
 
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyMatchData.class);

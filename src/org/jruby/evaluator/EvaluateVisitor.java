@@ -578,7 +578,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         // rule in grammar (it is convenient to think of them as the same thing
         // at a grammar level even though evaluation is).
         if (node == null) {
-            result = runtime.getClasses().getObjectClass().getConstant(iVisited.getName());
+            result = runtime.getObject().getConstant(iVisited.getName());
         } else {
             eval(iVisited.getLeftNode());
             if (result instanceof RubyModule) {
@@ -593,11 +593,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitColon3Node(Colon3Node)
      */
     public void visitColon3Node(Colon3Node iVisited) {
-        result = runtime.getClasses().getClass(iVisited.getName());
-        
-        if (result == null) {
-        	result = runtime.getClasses().getObjectClass().getConstant(iVisited.getName());
-        }
+        result = runtime.getObject().getConstant(iVisited.getName());
     }
 
     /**
@@ -703,14 +699,14 @@ public final class EvaluateVisitor implements NodeVisitor {
         }
 
         String name = iVisited.getName();
-        if (containingClass == runtime.getClasses().getObjectClass() && name.equals("initialize")) {
+        if (containingClass == runtime.getObject() && name.equals("initialize")) {
             runtime.getWarnings().warn("redefining Object#initialize may cause infinite loop");
         }
 
         Visibility visibility = threadContext.getCurrentVisibility();
         if (name.equals("initialize") || visibility.isModuleFunction()) {
             visibility = Visibility.PRIVATE;
-        } else if (visibility.isPublic() && containingClass == runtime.getClasses().getObjectClass()) {
+        } else if (visibility.isPublic() && containingClass == runtime.getObject()) {
             visibility = iVisited.getVisibility();
         }
 
@@ -1051,7 +1047,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         }
 
         RubyModule module;
-        if (enclosingModule == runtime.getClasses().getObjectClass()) {
+        if (enclosingModule == runtime.getObject()) {
             module = runtime.getOrCreateModule(name);
         } else {
             module = enclosingModule.defineModuleUnder(name);
@@ -1304,11 +1300,11 @@ public final class EvaluateVisitor implements NodeVisitor {
         RubyClass singletonClass;
 
         if (receiver.isNil()) {
-            singletonClass = runtime.getClasses().getNilClass();
+            singletonClass = runtime.getClass("NilClass");
         } else if (receiver == runtime.getTrue()) {
-            singletonClass = runtime.getClasses().getTrueClass();
+            singletonClass = runtime.getClass("True");
         } else if (receiver == runtime.getFalse()) {
-            singletonClass = runtime.getClasses().getFalseClass();
+            singletonClass = runtime.getClass("False");
         } else {
             if (runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
                 throw new SecurityError(runtime, "Insecure: can't extend object.");
@@ -1599,7 +1595,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         }
 
         for (int i = 0; i < args.length; i++) {
-            if (! args[i].isKindOf(runtime.getClasses().getModuleClass())) {
+            if (! args[i].isKindOf(runtime.getClass("Module"))) {
                 throw new TypeError(runtime, "class or module required for rescue clause");
             }
             if (args[i].callMethod("===", currentException).isTrue())

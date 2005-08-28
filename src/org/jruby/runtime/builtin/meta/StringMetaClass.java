@@ -37,7 +37,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class StringMetaClass extends ObjectMetaClass {
     public StringMetaClass(Ruby runtime) {
-        super("String", RubyString.class, runtime.getClasses().getObjectClass());
+        super("String", RubyString.class, runtime.getObject());
     }
 
     private StringMetaClass(String name, RubyClass superClass, RubyModule parentModule) {
@@ -45,8 +45,8 @@ public class StringMetaClass extends ObjectMetaClass {
     }
 
     protected void initializeClass() {
-        includeModule(getRuntime().getClasses().getComparableModule());
-        includeModule(getRuntime().getClasses().getEnumerableModule());
+        includeModule(getRuntime().getModule("Comparable"));
+        includeModule(getRuntime().getModule("Enumerable"));
 
         defineMethod("<=>", Arity.singleArgument(), "op_cmp");
         defineMethod("==", Arity.singleArgument(), "equal");

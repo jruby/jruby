@@ -14,7 +14,7 @@ import org.jruby.runtime.Arity;
 
 public class SymbolMetaClass extends ObjectMetaClass {
     public SymbolMetaClass(Ruby runtime) {
-        super("Symbol", RubySymbol.class, runtime.getClasses().getObjectClass());
+        super("Symbol", RubySymbol.class, runtime.getObject());
     }
     
 	public SymbolMetaClass(String name, RubyClass superClass, RubyModule parentModule) {

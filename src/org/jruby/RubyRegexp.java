@@ -108,7 +108,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     }
 
     public static RubyClass createRegexpClass(Ruby runtime) {
-        RubyClass regexpClass = runtime.defineClass("Regexp", runtime.getClasses().getObjectClass());
+        RubyClass regexpClass = runtime.defineClass("Regexp", runtime.getObject());
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyRegexp.class);
         
         regexpClass.defineConstant("IGNORECASE", runtime.newFixnum(RE_OPTION_IGNORECASE));
@@ -415,14 +415,14 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     	if (target.length() == 0) {
     		target = "\n";
     	}
-    	Matcher matcher = pattern.matcher(target);
-        if (matcher.find(startPos)) {
-            int count = matcher.groupCount() + 1;
+    	Matcher aMatcher = pattern.matcher(target);
+        if (aMatcher.find(startPos)) {
+            int count = aMatcher.groupCount() + 1;
             int[] begin = new int[count];
             int[] end = new int[count];
             for (int i = 0; i < count; i++) {
-                begin[i] = matcher.start(i);
-                end[i] = matcher.end(i);
+                begin[i] = aMatcher.start(i);
+                end[i] = aMatcher.end(i);
             }
             return new RubyMatchData(getRuntime(), target, begin, end);
         }

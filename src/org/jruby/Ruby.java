@@ -62,6 +62,7 @@ import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.internal.runtime.methods.IterateMethod;
+import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.parser.Parser;
@@ -81,9 +82,23 @@ import org.jruby.runtime.Scope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.meta.ArrayMetaClass;
+import org.jruby.runtime.builtin.meta.FileMetaClass;
+import org.jruby.runtime.builtin.meta.FixnumMetaClass;
+import org.jruby.runtime.builtin.meta.HashMetaClass;
+import org.jruby.runtime.builtin.meta.IOMetaClass;
+import org.jruby.runtime.builtin.meta.IntegerMetaClass;
+import org.jruby.runtime.builtin.meta.ModuleMetaClass;
+import org.jruby.runtime.builtin.meta.NumericMetaClass;
+import org.jruby.runtime.builtin.meta.ObjectMetaClass;
+import org.jruby.runtime.builtin.meta.ProcMetaClass;
+import org.jruby.runtime.builtin.meta.StringMetaClass;
+import org.jruby.runtime.builtin.meta.SymbolMetaClass;
 import org.jruby.runtime.callback.Callback;
+import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.load.ILoadService;
 import org.jruby.runtime.load.LoadServiceFactory;
+import org.jruby.util.BuiltinScript;
 
 /**
  * The jruby runtime.
@@ -123,9 +138,9 @@ public final class Ruby {
     private IRubyObject nilObject;
     private RubyBoolean trueObject;
     private RubyBoolean falseObject;
+    private RubyClass objectClass;
 
     // Default classes
-    private RubyClasses classes;
     private RubyExceptions exceptions;
 
     private IRubyObject topSelf;
@@ -197,8 +212,8 @@ public final class Ruby {
 		}
     }
 
-    public RubyClasses getClasses() {
-        return classes;
+    public RubyClass getObject() {
+    	return objectClass;
     }
 
     /** Returns the "true" instance from the instance pool.
@@ -223,7 +238,7 @@ public final class Ruby {
     }
 
     public RubyModule getModule(String name) {
-        return classes.getClass(name);
+        return (RubyModule) objectClass.getConstant(name, false);
     }
 
     /** Returns a class from the instance pool.
@@ -233,7 +248,7 @@ public final class Ruby {
      */
     public RubyClass getClass(String name) {
         try {
-            return (RubyClass) getModule(name); 
+            return objectClass.getClass(name);
         } catch (ClassCastException e) {
             throw newTypeError(name + " is not a Class");
         }
@@ -245,12 +260,12 @@ public final class Ruby {
      *
      */
     public RubyClass defineClass(String name, RubyClass superClass) {
-        return defineClassUnder(name, superClass, getClasses().getObjectClass());
+        return defineClassUnder(name, superClass, objectClass);
     }
     
     public RubyClass defineClassUnder(String name, RubyClass superClass, RubyModule parentModule) {
         if (superClass == null) {
-            superClass = getClasses().getObjectClass();
+            superClass = objectClass;
         }
 
         return superClass.newSubClass(name, parentModule);
@@ -260,13 +275,13 @@ public final class Ruby {
      *
      */
     public RubyModule defineModule(String name) {
-        return defineModuleUnder(name, getClasses().getObjectClass());
+        return defineModuleUnder(name, objectClass);
     }
     
     public RubyModule defineModuleUnder(String name, RubyModule parentModule) {
         RubyModule newModule = RubyModule.newModule(this, name, parentModule);
 
-        getClasses().putClass(name, newModule, parentModule);
+        parentModule.setConstant(name, newModule);
         
         return newModule;
     }
@@ -317,7 +332,7 @@ public final class Ruby {
      *
      */
     public void defineGlobalConstant(String name, IRubyObject value) {
-        getClasses().getObjectClass().defineConstant(name, value);
+        objectClass.defineConstant(name, value);
     }
 
     public IRubyObject getTopConstant(String name) {
@@ -384,8 +399,7 @@ public final class Ruby {
 
         setCurrentVisibility(Visibility.PRIVATE);
 
-        classes = new RubyClasses(this);
-        classes.initCoreClasses();
+        initCoreClasses();
 
         RubyGlobal.createGlobals(this);
 
@@ -394,10 +408,87 @@ public final class Ruby {
 
         topSelf = TopSelfFactory.createTopSelf(this);
 
-        getCurrentContext().setRubyClass(getClasses().getObjectClass());
+        getCurrentContext().setRubyClass(objectClass);
         frame.setSelf(topSelf);
 
-        classes.initBuiltinClasses();
+        initBuiltinClasses();
+    }
+    
+    public void initCoreClasses() {
+        objectClass = new ObjectMetaClass(this);
+        objectClass.setConstant("Object", objectClass);
+        RubyClass moduleClass = new ModuleMetaClass(this, objectClass);
+        objectClass.setConstant("Module", moduleClass);
+        RubyClass classClass = new RubyClass(this, null /* Would be Class if it could */, moduleClass, null, "Class");
+        objectClass.setConstant("Class", classClass);
+
+        RubyClass metaClass = objectClass.makeMetaClass(classClass, getCurrentContext().getRubyClass());
+        metaClass = moduleClass.makeMetaClass(metaClass, getCurrentContext().getRubyClass());
+        metaClass = classClass.makeMetaClass(metaClass, getCurrentContext().getRubyClass());
+
+        ((ObjectMetaClass) moduleClass).initializeBootstrapClass();
+        
+        objectClass.includeModule(RubyKernel.createKernelModule(this));
+
+        RubyClass.createClassClass(classClass);
+
+        RubyNil.createNilClass(this);
+
+        // We cannot define this constant until nil itself was made
+        objectClass.defineConstant("NIL", getNil());
+        
+        // Pre-create the core classes we know we will get referenced by starting up the runtime.
+        RubyBoolean.createFalseClass(this);
+        RubyBoolean.createTrueClass(this);
+        RubyComparable.createComparable(this);
+        defineModule("Enumerable"); // Impl: src/builtin/enumerable.rb
+        new StringMetaClass(this);
+        new SymbolMetaClass(this);
+        RubyThreadGroup.createThreadGroupClass(this);
+        RubyThread.createThreadClass(this);
+        RubyException.createExceptionClass(this);
+        new NumericMetaClass(this);
+        new IntegerMetaClass(this);        
+        new FixnumMetaClass(this);
+        new HashMetaClass(this);
+        new IOMetaClass(this);
+        new ArrayMetaClass(this);
+        Java.createJavaModule(this);
+        RubyStruct.createStructClass(this);
+        RubyFloat.createFloatClass(this);
+        RubyBignum.createBignumClass(this);
+        RubyMath.createMathModule(this); // depends on all numeric types
+        RubyRegexp.createRegexpClass(this);
+        RubyRange.createRangeClass(this);
+        RubyObjectSpace.createObjectSpaceModule(this);
+        RubyGC.createGCModule(this);
+        new ProcMetaClass(this);
+        RubyMethod.createMethodClass(this);
+        RubyMatchData.createMatchDataClass(this);
+        RubyMarshal.createMarshalModule(this);
+        RubyDir.createDirClass(this);
+        RubyFileTest.createFileTestModule(this);
+        new FileMetaClass(this); // depends on IO, FileTest
+        RubyPrecision.createPrecisionModule(this);
+        RubyProcess.createProcessModule(this);
+        RubyTime.createTimeClass(this);
+        RubyUnboundMethod.defineUnboundMethodClass(this);
+
+        getLoadService().addAutoload("UnboundMethod", new IAutoloadMethod() {
+            public IRubyObject load(Ruby ruby, String name) {
+                return RubyUnboundMethod.defineUnboundMethodClass(ruby);
+            }
+        });
+    }
+
+    public void initBuiltinClasses() {
+    	try {
+	        new BuiltinScript("FalseClass").load(this);
+	        new BuiltinScript("TrueClass").load(this);
+	        new BuiltinScript("Enumerable").load(this);
+    	} catch (IOException e) {
+    		throw new Error("builtin scripts are missing", e);
+    	}
     }
 
 	/**
@@ -591,6 +682,17 @@ public final class Ruby {
         return new PrintStream(((RubyIO) getGlobalVariables().get("$stdout")).getOutStream());
     }
 
+    public RubyModule getClassFromPath(String path) {
+        if (path.charAt(0) == '#') {
+            throw newArgumentError("can't retrieve anonymous class " + path);
+        }
+        IRubyObject type = evalScript(path);
+        if (!(type instanceof RubyModule)) {
+            throw newTypeError("class path " + path + " does not point class");
+        }
+        return (RubyModule) type;
+    }
+    
     private static final int TRACE_HEAD = 8;
     private static final int TRACE_TAIL = 5;
     private static final int TRACE_MAX = TRACE_HEAD + TRACE_TAIL + 5;
@@ -707,7 +809,7 @@ public final class Ruby {
 
         if (!wrap) {
             secure(4); /* should alter global state */
-            oldParent = context.setRubyClass(getClasses().getObjectClass());
+            oldParent = context.setRubyClass(objectClass);
             context.setWrapper(null);
         } else {
             /* load in anonymous module as toplevel */
@@ -749,7 +851,7 @@ public final class Ruby {
 
         if (!wrap) {
             secure(4); /* should alter global state */
-            oldParent = context.setRubyClass(getClasses().getObjectClass());
+            oldParent = context.setRubyClass(objectClass);
             context.setWrapper(null);
         } else {
             /* load in anonymous module as toplevel */

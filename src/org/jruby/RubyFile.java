@@ -86,19 +86,19 @@ public class RubyFile extends RubyIO {
 	}
 	
 	private RubyFile(Ruby runtime, String path, InputStream in) {
-		super(runtime, runtime.getClasses().getFileClass());
+		super(runtime, runtime.getClass("File"));
 		this.path = path;
 		this.handler = new IOHandlerUnseekable(runtime, in, null);
 		this.modes = handler.getModes();
 		registerIOHandler(handler);
 	}
     
-    public void openInternal(String path, IOModes modes) {
-        this.path = path;
-        this.modes = modes;
+    public void openInternal(String newPath, IOModes newModes) {
+        this.path = newPath;
+        this.modes = newModes;
 
         try {
-            handler = new IOHandlerSeekable(getRuntime(), path, modes);
+            handler = new IOHandlerSeekable(getRuntime(), newPath, newModes);
             
             registerIOHandler(handler);
         } catch (IOException e) {

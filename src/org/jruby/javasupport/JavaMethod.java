@@ -53,7 +53,7 @@ public class JavaMethod extends JavaCallable {
 
     public static RubyClass createJavaMethodClass(Ruby runtime, RubyModule javaModule) {
         RubyClass result = 
-            javaModule.defineClassUnder("JavaMethod", runtime.getClasses().getObjectClass());
+            javaModule.defineClassUnder("JavaMethod", runtime.getObject());
         CallbackFactory callbackFactory = runtime.callbackFactory(JavaMethod.class);
 
         JavaAccessibleObject.registerRubyMethods(runtime, result);
@@ -83,7 +83,7 @@ public class JavaMethod extends JavaCallable {
     }
 
     public JavaMethod(Ruby runtime, Method method) {
-        super(runtime, (RubyClass) runtime.getClasses().getClassFromPath("Java::JavaMethod"));
+        super(runtime, (RubyClass) runtime.getModule("Java").getClass("JavaMethod"));
         this.method = method;
     }
 

@@ -53,7 +53,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class JavaClass extends JavaObject {
 
     private JavaClass(Ruby runtime, Class javaClass) {
-        super(runtime, (RubyClass) runtime.getClasses().getClassFromPath("Java::JavaClass"), javaClass);
+        super(runtime, (RubyClass) runtime.getModule("Java").getClass("JavaClass"), javaClass);
     }
     
     public static JavaClass get(Ruby runtime, Class klass) {
@@ -66,11 +66,11 @@ public class JavaClass extends JavaObject {
     }
 
     public static RubyClass createJavaClassClass(Ruby runtime, RubyModule javaModule) {
-        RubyClass result = javaModule.defineClassUnder("JavaClass", runtime.getClasses().getJavaObjectClass()); 
+        RubyClass result = javaModule.defineClassUnder("JavaClass", runtime.getClass("JavaObject")); 
 
     	CallbackFactory callbackFactory = runtime.callbackFactory(JavaClass.class);
         
-        result.includeModule(runtime.getClasses().getComparableModule());
+        result.includeModule(runtime.getModule("Comparable"));
         
         JavaObject.registerRubyMethods(runtime, result);
         
@@ -306,7 +306,7 @@ public class JavaClass extends JavaObject {
 
     public JavaObject new_array(IRubyObject lengthArgument) {
         if (! (lengthArgument instanceof RubyInteger)) {
-            throw getRuntime().newTypeError(lengthArgument, getRuntime().getClasses().getIntegerClass());
+            throw getRuntime().newTypeError(lengthArgument, getRuntime().getClass("Integer"));
         }
         int length = (int) ((RubyInteger) lengthArgument).getLongValue();
         return new JavaArray(getRuntime(), Array.newInstance(javaClass(), length));

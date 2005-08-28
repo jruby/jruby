@@ -48,8 +48,7 @@ public class RubyThreadGroup extends RubyObject {
     private boolean enclosed = false;
 
     public static RubyClass createThreadGroupClass(Ruby runtime) {
-        RubyClass threadGroupClass = runtime.defineClass("ThreadGroup", 
-                runtime.getClasses().getObjectClass());
+        RubyClass threadGroupClass = runtime.defineClass("ThreadGroup", runtime.getObject());
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyThreadGroup.class);
         
         threadGroupClass.defineMethod("add",

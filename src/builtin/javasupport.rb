@@ -86,7 +86,7 @@ module JavaProxy
       args = convert_arguments(args)
       m = JavaUtilities.matching_method(meths.find_all {|m| m.arity == args.length}, args)
       result = Java.java_to_primitive(m.invoke(self.java_object, *args))
-      result = JavaUtilities.wrap(result) if result.kind_of?(JavaObject)
+      result = JavaUtilities.wrap(result) if result.kind_of?(Java::JavaObject)
       result
     }
     JavaProxy.extend_method(self.class, name, meths)
@@ -310,7 +310,7 @@ END
           java_args.collect! { |arg| Java.java_to_primitive(arg) }
           args = []
           java_args.each_with_index { |arg, idx|
-            arg = JavaUtilities.wrap(arg) if arg.kind_of?(JavaObject)
+            arg = JavaUtilities.wrap(arg) if arg.kind_of?(Java::JavaObject)
             args[idx] = arg
           }
           result = self.__send__(method.name, *args)
@@ -327,7 +327,7 @@ END
       define_method(:[]) {|index|
         value = java_object[index]
         value = Java.java_to_primitive(value)
-        value = JavaUtilities.wrap(value) if value.kind_of?(JavaObject)
+        value = JavaUtilities.wrap(value) if value.kind_of?(Java::JavaObject)
         value
       }
       define_method(:[]=) {|index, value|
@@ -390,7 +390,7 @@ END
         method = @class_methods['#{name}'].first
         return_type = method.return_type
         result = Java.java_to_primitive(method.invoke_static(*args))
-        result = JavaUtilities.wrap(result) if result.kind_of?(JavaObject)
+        result = JavaUtilities.wrap(result) if result.kind_of?(Java::JavaObject)
         result
       end
     END
@@ -404,7 +404,7 @@ END
         m = JavaUtilities.matching_method(methods.find_all {|m| m.arity == args.length }, args)
         result = m.invoke_static(*args)
         result = Java.java_to_primitive(result)
-        result = JavaUtilities.wrap(result) if result.kind_of?(JavaObject)
+        result = JavaUtilities.wrap(result) if result.kind_of?(Java::JavaObject)
         result
       end
     END
@@ -437,7 +437,7 @@ END
 
 	    define_method(attr.name) do |*args|
 	      result = Java.java_to_primitive(attr.value(@java_object))
-	      result = JavaUtilities.wrap(result) if result.kind_of?(JavaObject)
+	      result = JavaUtilities.wrap(result) if result.kind_of?(Java::JavaObject)
 	      result
 	    end
 
@@ -446,7 +446,7 @@ END
 	    define_method("#{attr.name}=") do |*args|
           args = JavaProxy.convert_arguments(args)
 	      result = Java.java_to_primitive(attr.set_value(@java_object, args.first))
-	      result = JavaUtilities.wrap(result) if result.kind_of?(JavaObject)
+	      result = JavaUtilities.wrap(result) if result.kind_of?(Java::JavaObject)
 	      result
 	    end
 	  end
@@ -477,7 +477,7 @@ END
 	    def self.#{constant.name}(*args)
 	      result = @java_class.field('#{constant.name}').static_value
           result = Java.java_to_primitive(result)
-          result = JavaUtilities.wrap(result) if result.kind_of?(JavaObject)
+          result = JavaUtilities.wrap(result) if result.kind_of?(Java::JavaObject)
           result
         end
       END

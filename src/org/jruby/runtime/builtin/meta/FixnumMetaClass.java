@@ -38,7 +38,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class FixnumMetaClass extends IntegerMetaClass {
 	public FixnumMetaClass(Ruby runtime) {
-	       super("Fixnum", RubyFixnum.class, runtime.getClasses().getIntegerClass());
+	       super("Fixnum", RubyFixnum.class, runtime.getClass("Integer"));
 	}
 	
 	public FixnumMetaClass(String name, RubyClass superClass, RubyModule parentModule) {
@@ -83,7 +83,7 @@ public class FixnumMetaClass extends IntegerMetaClass {
             return (RubyInteger) number.callMethod("to_i");
         } 
 
-        return ((IntegerMetaClass) getRuntime().getClasses().getIntegerClass()).induced_from(number);
+        return ((IntegerMetaClass) getRuntime().getClass("Integer")).induced_from(number);
     }
 
 

@@ -47,7 +47,7 @@ public class ObjectMetaClass extends RubyClass {
     
     // Only for creating ObjectMetaClass directly
     public ObjectMetaClass(Ruby runtime) {
-    	super(runtime, runtime.getClasses().getClassClass(), null, null, "Object");
+    	super(runtime, null /*Would be Class if it existed yet */, null, null, "Object");
     	
     	this.builtinClass = RubyObject.class;
     	
@@ -63,7 +63,7 @@ public class ObjectMetaClass extends RubyClass {
     }
     
     protected ObjectMetaClass(String name, Class builtinClass, RubyClass superClass) {
-        this(name, builtinClass, superClass, superClass.getRuntime().getClasses().getObjectClass(), true);
+        this(name, builtinClass, superClass, superClass.getRuntime().getClass("Object"), true);
     }
 
     protected ObjectMetaClass(String name, Class builtinClass, RubyClass superClass, RubyModule parentModule) {
@@ -71,7 +71,7 @@ public class ObjectMetaClass extends RubyClass {
     }
 
     protected ObjectMetaClass(String name, Class builtinClass, RubyClass superClass, RubyModule parentModule, boolean init) {
-        super(superClass.getRuntime(), superClass.getRuntime().getClasses().getClassClass(), superClass, parentModule, name);
+        super(superClass.getRuntime(), superClass.getRuntime().getClass("Class"), superClass, parentModule, name);
 
         assert name != null;
         assert builtinClass != null;
@@ -83,7 +83,7 @@ public class ObjectMetaClass extends RubyClass {
         makeMetaClass(superClass.getMetaClass(), superClass.getRuntime().getCurrentContext().getRubyClass());
         inheritedBy(superClass);
 
-        getRuntime().getClasses().putClass(name, this, parentModule);
+        parentModule.setConstant(name, this);
 
         if (init) {
             initializeClass();

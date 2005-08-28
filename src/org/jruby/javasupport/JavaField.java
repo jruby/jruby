@@ -48,8 +48,7 @@ public class JavaField extends JavaAccessibleObject {
     private Field field;
 
     public static RubyClass createJavaFieldClass(Ruby runtime, RubyModule javaModule) {
-        RubyClass result = javaModule.defineClassUnder("JavaField", 
-            runtime.getClasses().getObjectClass());
+        RubyClass result = javaModule.defineClassUnder("JavaField", runtime.getObject());
         CallbackFactory callbackFactory = runtime.callbackFactory(JavaField.class);
 
         JavaAccessibleObject.registerRubyMethods(runtime, result);
@@ -74,7 +73,7 @@ public class JavaField extends JavaAccessibleObject {
     }
 
     public JavaField(Ruby runtime, Field field) {
-        super(runtime, (RubyClass) runtime.getClasses().getClassFromPath("Java::JavaField"));
+        super(runtime, (RubyClass) runtime.getModule("Java").getClass("JavaField"));
         this.field = field;
     }
 

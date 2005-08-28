@@ -49,7 +49,7 @@ public class RubyClass extends RubyModule {
      * @mri rb_boot_class
      */
     protected RubyClass(RubyClass superClass) {
-        super(superClass.getRuntime(), superClass.getRuntime().getClasses().getClassClass(), superClass, null, null);
+        super(superClass.getRuntime(), superClass.getRuntime().getClass("Class"), superClass, null, null);
 
         infectBy(superClass);
         this.runtime = superClass.getRuntime();
@@ -107,7 +107,7 @@ public class RubyClass extends RubyModule {
      */
     public void inheritedBy(RubyClass superType) {
         if (superType == null) {
-            superType = getRuntime().getClasses().getObjectClass();
+            superType = getRuntime().getObject();
         }
         superType.callMethod("inherited", this);
     }
@@ -134,7 +134,7 @@ public class RubyClass extends RubyModule {
     public RubyClass getMetaClass() {
         RubyClass type = super.getMetaClass();
 
-        return type != null ? type : getRuntime().getClasses().getClassClass();
+        return type != null ? type : getRuntime().getClass("Class");
     }
 
     public RubyClass getRealClass() {
@@ -148,7 +148,7 @@ public class RubyClass extends RubyModule {
     }
 
     public static RubyClass newClass(Ruby runtime, RubyClass superClass, RubyModule parentClass, String name) {
-        return new RubyClass(runtime, runtime.getClasses().getClassClass(), superClass, parentClass, name);
+        return new RubyClass(runtime, runtime.getClass("Class"), superClass, parentClass, name);
     }
 
     /** Create a new subclass of this class.
@@ -157,7 +157,7 @@ public class RubyClass extends RubyModule {
      * @mri rb_class_new
      */
     protected RubyClass subclass() {
-        if (this == getRuntime().getClasses().getClassClass()) {
+        if (this == getRuntime().getClass("Class")) {
             throw getRuntime().newTypeError("can't make subclass of Class");
         }
         return new RubyClass(this);
@@ -187,7 +187,7 @@ public class RubyClass extends RubyModule {
                     "wrong argument type " + args[0].getType().getName() + " (expected Class)");
             }
         } else {
-            superClass = runtime.getClasses().getObjectClass();
+            superClass = runtime.getObject();
         }
 
         RubyClass newClass = superClass.subclass();
@@ -272,12 +272,12 @@ public class RubyClass extends RubyModule {
     }
 
     public RubyClass newSubClass(String name, RubyModule parentModule) {
-        RubyClass newClass = new RubyClass(runtime, runtime.getClasses().getClassClass(), this, parentModule, name);
+        RubyClass newClass = new RubyClass(runtime, runtime.getClass("Class"), this, parentModule, name);
 
         newClass.makeMetaClass(getMetaClass(), newClass);
         newClass.inheritedBy(this);
 
-        runtime.getClasses().putClass(name, newClass, parentModule);
+        parentModule.setConstant(name, newClass);
 
         return newClass;
     }

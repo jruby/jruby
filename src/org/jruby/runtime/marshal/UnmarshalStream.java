@@ -207,7 +207,7 @@ public class UnmarshalStream extends FilterInputStream {
 
         // ... FIXME: handle if class doesn't exist ...
 
-        RubyClass type = (RubyClass) runtime.getClasses().getClassFromPath(className.asSymbol());
+        RubyClass type = (RubyClass) runtime.getClassFromPath(className.asSymbol());
 
         assert type != null : "type shouldn't be null.";
 

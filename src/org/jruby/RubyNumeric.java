@@ -63,7 +63,7 @@ public class RubyNumeric extends RubyObject {
     }
     
     public static RubyNumeric newNumeric(Ruby runtime) {
-    	return new RubyNumeric(runtime, runtime.getClasses().getNumericClass());
+    	return new RubyNumeric(runtime, runtime.getClass("Numeric"));
     }
 
     // TODO: Find all consumers and convert to correct conversion protocol

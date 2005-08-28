@@ -56,7 +56,7 @@ public class JavaObject extends RubyObject {
     }
 
     protected JavaObject(Ruby runtime, Object value) {
-        this(runtime, runtime.getClasses().getJavaObjectClass(), value);
+        this(runtime, runtime.getModule("Java").getClass("JavaObject"), value);
     }
 
     public static JavaObject wrap(Ruby runtime, Object value) {
@@ -89,9 +89,9 @@ public class JavaObject extends RubyObject {
     }
 
     public static RubyClass createJavaObjectClass(Ruby runtime) {
-        RubyClass result = 
-            runtime.defineClass("JavaObject", runtime.getClasses().getObjectClass());
-        registerRubyMethods(runtime, result);
+    	RubyClass result = runtime.getModule("Java").defineClassUnder("JavaObject", runtime.getObject());
+
+    	registerRubyMethods(runtime, result);
 
         result.getMetaClass().undefineMethod("new");
 
@@ -182,7 +182,7 @@ public class JavaObject extends RubyObject {
         throw getRuntime().newTypeError("not a java array");
     }
 
-    public IRubyObject aset(IRubyObject index, IRubyObject value) {
+    public IRubyObject aset(IRubyObject index, IRubyObject someValue) {
         throw getRuntime().newTypeError("not a java array");
     }
     

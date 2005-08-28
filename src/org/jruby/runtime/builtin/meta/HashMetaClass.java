@@ -17,7 +17,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class HashMetaClass extends ObjectMetaClass {
     public HashMetaClass(Ruby runtime) {
-        super("Hash", RubyHash.class, runtime.getClasses().getObjectClass());
+        super("Hash", RubyHash.class, runtime.getObject());
     }
     
 	public HashMetaClass(String name, RubyClass superClass, RubyModule parentModule) {
@@ -25,7 +25,7 @@ public class HashMetaClass extends ObjectMetaClass {
 	}
 
 	protected void initializeClass() {
-        includeModule(getRuntime().getClasses().getEnumerableModule());
+        includeModule(getRuntime().getModule("Enumerable"));
 
         defineMethod("==", Arity.singleArgument(), "equal");
         defineMethod("[]", Arity.singleArgument(), "aref");

@@ -15,7 +15,7 @@ import org.jruby.runtime.Arity;
 // some time around 0.8.3 development cycle.
 public class ClassMetaClass extends ObjectMetaClass {
     public ClassMetaClass(Ruby runtime, RubyClass superClass) {
-    	super(runtime, null, superClass, runtime.getClasses().getObjectClass(), "Class", RubyClass.class);
+    	super(runtime, null, superClass, runtime.getObject(), "Class", RubyClass.class);
     }
 
 	public ClassMetaClass(String name, RubyClass superClass, RubyModule parentModule) {

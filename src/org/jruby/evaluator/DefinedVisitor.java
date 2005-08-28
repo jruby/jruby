@@ -345,7 +345,7 @@ public class DefinedVisitor extends AbstractVisitor {
      * @see AbstractVisitor#visitConstNode(ConstNode)
      */
     public void visitConstNode(ConstNode iVisited) {
-        if (runtime.getClasses().getModuleClass().getConstant(iVisited.getName(), false) != null) {
+        if (runtime.getClass("Module").getConstant(iVisited.getName(), false) != null) {
             definition = "constant";
         }
     }

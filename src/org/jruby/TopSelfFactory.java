@@ -49,7 +49,7 @@ public final class TopSelfFactory {
     }
     
     public static IRubyObject createTopSelf(final Ruby runtime) {
-        IRubyObject topSelf = new RubyObject(runtime, runtime.getClasses().getObjectClass());
+        IRubyObject topSelf = new RubyObject(runtime, runtime.getObject());
         
         topSelf.defineSingletonMethod("to_s", new Callback() {
             /**
@@ -73,7 +73,7 @@ public final class TopSelfFactory {
              */
             public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
                 runtime.secure(4);
-                return runtime.getClasses().getObjectClass().include(args);
+                return runtime.getObject().include(args);
             }
 
             /**
@@ -89,7 +89,7 @@ public final class TopSelfFactory {
              * @see org.jruby.runtime.callback.Callback#execute(IRubyObject, IRubyObject[])
              */
             public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
-                return runtime.getClasses().getObjectClass().rbPublic(args);
+                return runtime.getObject().rbPublic(args);
             }
 
             /**
@@ -105,7 +105,7 @@ public final class TopSelfFactory {
              * @see org.jruby.runtime.callback.Callback#execute(IRubyObject, IRubyObject[])
              */
             public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
-                return runtime.getClasses().getObjectClass().rbPrivate(args);
+                return runtime.getObject().rbPrivate(args);
             }
 
             /**

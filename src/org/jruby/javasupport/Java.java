@@ -54,6 +54,8 @@ public class Java {
         javaModule.defineModuleFunction("java_to_primitive", callbackFactory.getSingletonMethod("java_to_primitive", IRubyObject.class));
         javaModule.defineModuleFunction("new_proxy_instance", callbackFactory.getOptSingletonMethod("new_proxy_instance"));
 
+        JavaObject.createJavaObjectClass(runtime);
+        JavaArray.createJavaArrayClass(runtime);
         JavaClass.createJavaClassClass(runtime, javaModule);
         JavaMethod.createJavaMethodClass(runtime, javaModule);
         JavaConstructor.createJavaConstructorClass(runtime, javaModule);
@@ -124,20 +126,20 @@ public class Java {
         }
 
         return JavaObject.wrap(recv.getRuntime(), Proxy.newProxyInstance(recv.getRuntime().getJavaSupport().getJavaClassLoader(), interfaces, new InvocationHandler() {
-            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+            public Object invoke(Object proxy, Method method, Object[] nargs) throws Throwable {
                 if (method.getName().equals("toString") && method.getParameterTypes().length == 0) {
                     return proxy.getClass().getName();
                 } else if (method.getName().equals("hashCode") && method.getParameterTypes().length == 0) {
                     return new Integer(proxy.getClass().hashCode());
                 } else if (method.getName().equals("equals") && method.getParameterTypes().length == 1 && method.getParameterTypes()[0].equals(Object.class)) {
-                    return Boolean.valueOf(proxy == args[0]);
+                    return Boolean.valueOf(proxy == nargs[0]);
                 }
-                int length = args == null ? 0 : args.length;
+                int length = nargs == null ? 0 : nargs.length;
                 IRubyObject[] rubyArgs = new IRubyObject[length + 2];
                 rubyArgs[0] = JavaObject.wrap(recv.getRuntime(), proxy);
                 rubyArgs[1] = new JavaMethod(recv.getRuntime(), method);
                 for (int i = 0; i < length; i++) {
-                    rubyArgs[i + 2] = JavaObject.wrap(recv.getRuntime(), args[i]);
+                    rubyArgs[i + 2] = JavaObject.wrap(recv.getRuntime(), nargs[i]);
                 }
                 return JavaUtil.convertArgument(proc.call(rubyArgs), method.getReturnType());
             }

@@ -47,8 +47,8 @@ public class RubyFileStat extends RubyObject {
     private static final int WRITE = 444;
 
     public static RubyClass createFileStatClass(Ruby runtime) {
-        RubyClass fileStatClass = runtime.getClasses().getFileClass().defineClassUnder("Stat", 
-        		runtime.getClasses().getObjectClass());
+        RubyClass fileStatClass = runtime.getClass("File").defineClassUnder("Stat", 
+        		runtime.getObject());
     	
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyFileStat.class);
 
@@ -63,7 +63,7 @@ public class RubyFileStat extends RubyObject {
     }
 
     protected RubyFileStat(Ruby runtime, File file) {
-        super(runtime, runtime.getClasses().getFileStatClass());
+        super(runtime, runtime.getClass("File").getClass("Stat"));
 		// In some versions of java changing user.dir will not get reflected in newly constructed
 		// files.  Getting the absolutefile does seem to hack around this...
         this.file = file.getAbsoluteFile();

@@ -58,7 +58,7 @@ public class RubyStruct extends RubyObject {
     }
 
     public static RubyClass createStructClass(Ruby runtime) {
-        RubyClass structClass = runtime.defineClass("Struct", runtime.getClasses().getObjectClass());
+        RubyClass structClass = runtime.defineClass("Struct", runtime.getObject());
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyStruct.class);
         structClass.includeModule(runtime.getModule("Enumerable"));
 
@@ -86,7 +86,7 @@ public class RubyStruct extends RubyObject {
     }
 
     private static IRubyObject getInstanceVariable(RubyClass type, String name) {
-        RubyClass structClass = type.getRuntime().getClasses().getStructClass();
+        RubyClass structClass = type.getRuntime().getClass("Struct");
 
         while (type != null && type != structClass) {
         	IRubyObject variable = type.getInstanceVariable(name);
@@ -435,6 +435,6 @@ public class RubyStruct extends RubyObject {
     private static RubyClass pathToClass(Ruby runtime, String path) {
         // FIXME: Throw the right ArgumentError's if the class is missing
         // or if it's a module.
-        return (RubyClass) runtime.getClasses().getClassFromPath(path);
+        return (RubyClass) runtime.getClassFromPath(path);
     }
 }

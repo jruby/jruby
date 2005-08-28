@@ -36,7 +36,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class ProcMetaClass extends ObjectMetaClass {
     public ProcMetaClass(Ruby runtime) {
-        super("Proc", RubyProc.class, runtime.getClasses().getObjectClass());
+        super("Proc", RubyProc.class, runtime.getObject());
     }
     
 	public ProcMetaClass(String name, RubyClass superClass, RubyModule parentModule) {

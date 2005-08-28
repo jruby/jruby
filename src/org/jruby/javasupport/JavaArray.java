@@ -41,14 +41,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class JavaArray extends JavaObject {
 
     public JavaArray(Ruby runtime, Object array) {
-        super(runtime, runtime.getClasses().getJavaArrayClass(), array);
+        super(runtime, runtime.getModule("Java").getClass("JavaArray"), array);
         assert array.getClass().isArray();
     }
 
     public static RubyClass createJavaArrayClass(Ruby runtime) {
-        RubyClass javaArrayClass =
-                runtime.defineClass("JavaArray", runtime.getClasses().getJavaObjectClass());
-        return javaArrayClass;
+        return runtime.getModule("Java").defineClassUnder("JavaArray", 
+            runtime.getModule("Java").getClass("JavaObject"));
     }
 
     public RubyFixnum length() {
@@ -61,7 +60,7 @@ public class JavaArray extends JavaObject {
 
     public IRubyObject aref(IRubyObject index) {
         if (! (index instanceof RubyInteger)) {
-            throw getRuntime().newTypeError(index, getRuntime().getClasses().getIntegerClass());
+            throw getRuntime().newTypeError(index, getRuntime().getClass("Integer"));
         }
         int intIndex = (int) ((RubyInteger) index).getLongValue();
         if (intIndex < 0 || intIndex >= getLength()) {
@@ -78,7 +77,7 @@ public class JavaArray extends JavaObject {
 
     public IRubyObject aset(IRubyObject index, IRubyObject value) {
          if (! (index instanceof RubyInteger)) {
-            throw getRuntime().newTypeError(index, getRuntime().getClasses().getIntegerClass());
+            throw getRuntime().newTypeError(index, getRuntime().getClass("Integer"));
         }
         int intIndex = (int) ((RubyInteger) index).getLongValue();
         if (! (value instanceof JavaObject)) {

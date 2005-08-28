@@ -71,12 +71,12 @@ public class TestObjectSpace extends TestCase {
         storedFixnums.add(o2);
         storedFixnums.add(o3);
 
-        Iterator strings = os.iterator(runtime.getClasses().getStringClass());
+        Iterator strings = os.iterator(runtime.getClass("String"));
         assertTrue(strings.hasNext());
         assertSame(o4, strings.next());
         assertTrue(! strings.hasNext());
 
-        Iterator numerics = os.iterator(runtime.getClasses().getNumericClass());
+        Iterator numerics = os.iterator(runtime.getClass("Numeric"));
         for (int i = 0; i < 3; i++) {
             assertTrue(numerics.hasNext());
             Object item = numerics.next();

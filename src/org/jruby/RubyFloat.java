@@ -79,7 +79,7 @@ public class RubyFloat extends RubyNumeric {
     }
 
     public static RubyClass createFloatClass(Ruby runtime) {
-        RubyClass result = runtime.defineClass("Float", runtime.getClasses().getNumericClass());
+        RubyClass result = runtime.defineClass("Float", runtime.getClass("Numeric"));
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyFloat.class);
         
         result.defineMethod("+", callbackFactory.getMethod("op_plus", IRubyObject.class));

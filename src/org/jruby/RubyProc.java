@@ -77,7 +77,7 @@ public class RubyProc extends RubyObject {
         	return (RubyProc) block.getBlockObject();
         }
 
-        RubyProc newProc = new RubyProc(runtime, runtime.getClasses().getProcClass());
+        RubyProc newProc = new RubyProc(runtime, runtime.getClass("Proc"));
 
         newProc.block = block.cloneBlock();
         newProc.wrapper = runtime.getWrapper();
@@ -90,7 +90,7 @@ public class RubyProc extends RubyObject {
     
     protected IRubyObject doClone() {
     	RubyProc newProc = 
-    		new RubyProc(getRuntime(), getRuntime().getClasses().getProcClass());
+    		new RubyProc(getRuntime(), getRuntime().getClass("Proc"));
     	
     	newProc.block = getBlock();
     	newProc.wrapper = getWrapper();

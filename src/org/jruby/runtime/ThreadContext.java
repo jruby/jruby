@@ -197,7 +197,7 @@ public class ThreadContext {
 
             // Modules do not directly inherit Object so we have hacks like this
             if (superClass == null) {
-            	superClass = runtime.getClasses().getObjectClass();
+            	superClass = runtime.getObject();
             }
             return superClass.call(frame.getSelf(), frame.getLastFunc(),
                                    args, CallType.SUPER);

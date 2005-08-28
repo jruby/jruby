@@ -61,7 +61,7 @@ public class RubyObjectSpace {
     public static IRubyObject each_object(IRubyObject recv, IRubyObject[] args) {
         RubyModule rubyClass;
         if (args.length == 0) {
-            rubyClass = recv.getRuntime().getClasses().getObjectClass();
+            rubyClass = recv.getRuntime().getObject();
         } else {
             rubyClass = (RubyModule) args[0];
         }
