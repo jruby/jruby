@@ -29,7 +29,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.util;
+package org.jruby.test;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -43,13 +43,18 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Helper class, used for testing calls to java from ruby code.
- *
- * @author  Benoit Cerrina
- * @version $Revision$
  **/
 public class TestHelper {
 	private String privateField = "pfValue";
     public String localVariable1;
+
+    // Function not used...but it gets rid of unused warnings in Eclipse (we do call those methods
+    // from Ruby so they are not really unused).
+    public static void removeWarningsFromEclipse() {
+    	TestHelper helper = new TestHelper("A");
+    	helper.privateMethod();
+    	TestHelper.staticPrivateMethod();
+    }
 
     private TestHelper(String x) {
         privateField = x;
@@ -122,7 +127,7 @@ public class TestHelper {
     
     public static Class loadAlternateClass() throws ClassNotFoundException {
         AlternateLoader loader = new AlternateLoader();
-        Class klass = loader.loadClass("org.jruby.util.TestHelper");
+        Class klass = loader.loadClass("org.jruby.test.TestHelper");
         return klass;
     }
     
@@ -200,7 +205,7 @@ public class TestHelper {
             }
         }
         public Class loadClass(String name) throws ClassNotFoundException {
-            if (name.equals("org.jruby.util.TestHelper"))
+            if (name.equals("org.jruby.test.TestHelper"))
                 return findModClass(name);
             return super.loadClass(name);
         }
@@ -209,7 +214,7 @@ public class TestHelper {
             try {
                 String fileName = name.replaceAll("\\.", "/");
                 fileName += ".class";
-                File file = new File("build/classes/jruby", fileName);
+                File file = new File("build/classes/test", fileName);
                 byte[] bytes = new byte[(int) file.length()];
                 stream = new FileInputStream(file);
                 stream.read(bytes);
@@ -229,6 +234,6 @@ public class TestHelper {
     }
 
     private static class TestHelperException extends RuntimeException {
-        
+		private static final long serialVersionUID = 3649034127816624007L;
     }
 }

@@ -101,7 +101,7 @@ if defined? Java
   }
 
   # private fields
-  TestHelper = JavaUtilities.get_proxy_class('org.jruby.util.TestHelper')
+  TestHelper = JavaUtilities.get_proxy_class('org.jruby.test.TestHelper')
   test_ok(TestHelper.java_class.declared_fields.find {|field| field == 'privateField' })
   privateField = TestHelper.java_class.declared_field('privateField')
   test_equal('privateField', privateField.name)

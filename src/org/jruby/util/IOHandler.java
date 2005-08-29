@@ -355,7 +355,7 @@ public abstract class IOHandler {
      */
     public abstract long pos();
     
-    protected abstract void resetByModes(IOModes modes);
+    protected abstract void resetByModes(IOModes newModes);
     public abstract void rewind();
     
     /**

@@ -42,13 +42,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
-/**
- *
- * @author  jpetersen
- * @version $Revision$
- */
 public class RubyDateFormat extends DateFormat {
-    private List compiledPattern;
+	private static final long serialVersionUID = -250429218019023997L;
+
+	private List compiledPattern;
 
     private DateFormatSymbols formatSymbols;
 

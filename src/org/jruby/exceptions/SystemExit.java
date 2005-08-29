@@ -31,14 +31,11 @@ package org.jruby.exceptions;
 
 import org.jruby.Ruby;
 
-/**
- * 
- * @author jpetersen
- * @version $Revision$
- */
 public class SystemExit extends RaiseException {
-    public SystemExit(Ruby runtime, int status) {
-        super(runtime, runtime.getExceptions().getSystemExit(), "", true);
+	private static final long serialVersionUID = -1945542993899586417L;
+
+	public SystemExit(Ruby runtime, int status) {
+        super(runtime, runtime.getClass("SystemExit"), "", true);
         getException().setInstanceVariable("status", runtime.newFixnum(status));
     }
 }

@@ -31,12 +31,10 @@ package org.jruby.exceptions;
 
 import org.jruby.Ruby;
 
-/**
- *
- * @author  Benoit Cerrina
- */
 public class LoadError extends RaiseException {
-    public LoadError(Ruby runtime, String msg) {
-        super(runtime, runtime.getExceptions().getLoadError(), msg, true);
+	private static final long serialVersionUID = -3474662761127502595L;
+
+	public LoadError(Ruby runtime, String msg) {
+        super(runtime, runtime.getClass("LoadError"), msg, true);
     }
 }

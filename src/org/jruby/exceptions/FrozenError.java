@@ -31,12 +31,11 @@ package org.jruby.exceptions;
 
 import org.jruby.Ruby;
 
-/**
- *
- * @author  jpetersen
- */
 public class FrozenError extends RaiseException {
+	private static final long serialVersionUID = 4951155166766794709L;
+
 	public FrozenError(Ruby runtime, String objectType) {
-        super(runtime, runtime.getExceptions().getTypeError(), "can't modify frozen " + objectType, true);
+		// TODO: Should frozen error have its own distinct class?  If not should more share?
+        super(runtime, runtime.getClass("TypeError"), "can't modify frozen " + objectType, true);
     }
 }

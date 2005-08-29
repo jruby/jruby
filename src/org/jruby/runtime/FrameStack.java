@@ -32,13 +32,10 @@ package org.jruby.runtime;
 
 import java.util.Stack;
 
-/**
- *
- * @author  jpetersen
- * @version $Revision$
- */
 public class FrameStack extends Stack {
-    private final ThreadContext threadContext;
+	private static final long serialVersionUID = -6987408591353718921L;
+	
+	private final ThreadContext threadContext;
 
     public FrameStack(ThreadContext threadContext) {
         this.threadContext = threadContext;

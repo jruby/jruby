@@ -83,7 +83,6 @@ public class Split {
 		int beg = 0;
 		int hits = 0;
 		int len = splitee.length();
-        RubyString rubySplitee = runtime.newString(splitee);
 		while ((beg = pattern.searchAgain(splitee)) > -1) {
 			hits++;
 			RubyMatchData matchData = (RubyMatchData) runtime.getBackref();

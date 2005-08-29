@@ -77,7 +77,6 @@ import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.LastCallStatus;
 import org.jruby.runtime.ObjectSpace;
-import org.jruby.runtime.RubyExceptions;
 import org.jruby.runtime.Scope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -134,17 +133,14 @@ public final class Ruby {
     */
     private int safeLevel = 0;
 
-    // Default objects
+    // Default classes/objects
     private IRubyObject nilObject;
     private RubyBoolean trueObject;
     private RubyBoolean falseObject;
     private RubyClass objectClass;
-
-    // Default classes
-    private RubyExceptions exceptions;
-
+    private RubyClass systemCallError = null;
+    private RubyModule errnoModule = null;
     private IRubyObject topSelf;
-
     private IRubyObject verbose;
 
     // Java support
@@ -403,9 +399,6 @@ public final class Ruby {
 
         RubyGlobal.createGlobals(this);
 
-        exceptions = new RubyExceptions(this);
-        exceptions.initDefaultExceptionClasses();
-
         topSelf = TopSelfFactory.createTopSelf(this);
 
         getCurrentContext().setRubyClass(objectClass);
@@ -414,7 +407,7 @@ public final class Ruby {
         initBuiltinClasses();
     }
     
-    public void initCoreClasses() {
+    private void initCoreClasses() {
         objectClass = new ObjectMetaClass(this);
         objectClass.setConstant("Object", objectClass);
         RubyClass moduleClass = new ModuleMetaClass(this, objectClass);
@@ -473,6 +466,36 @@ public final class Ruby {
         RubyProcess.createProcessModule(this);
         RubyTime.createTimeClass(this);
         RubyUnboundMethod.defineUnboundMethodClass(this);
+        RubyClass exceptionClass = getClass("Exception");
+        RubyClass standardError = defineClass("StandardError", exceptionClass);
+        RubyClass runtimeError = defineClass("RuntimeError", standardError);
+        RubyClass ioError = defineClass("IOError", standardError);
+        RubyClass scriptError = defineClass("ScriptError", exceptionClass);
+        RubyClass nameError = defineClass("NameError", scriptError);
+        defineClass("SystemExit", exceptionClass);
+        defineClass("Fatal", exceptionClass);
+        defineClass("Interrupt", exceptionClass);
+        defineClass("SignalException", exceptionClass);
+        defineClass("TypeError", standardError);
+        defineClass("ArgumentError", standardError);
+        defineClass("IndexError", standardError);
+        defineClass("RangeError", standardError);
+        defineClass("SyntaxError", scriptError);
+        defineClass("LoadError", scriptError);
+        defineClass("NotImplementedError", scriptError);
+        defineClass("NoMethodError", nameError);
+        defineClass("SecurityError", standardError);
+        defineClass("NoMemError", exceptionClass);
+        defineClass("RegexpError", standardError);
+        defineClass("EOFError", ioError);
+        defineClass("LocalJumpError", standardError);
+        defineClass("ThreadError", standardError);
+        defineClass("SystemStackError", exceptionClass);
+        NativeException.createClass(this, runtimeError);
+        systemCallError = defineClass("SystemCallError", standardError);
+        errnoModule = defineModule("Errno");
+        
+        initErrnoErrors();
 
         getLoadService().addAutoload("UnboundMethod", new IAutoloadMethod() {
             public IRubyObject load(Ruby ruby, String name) {
@@ -481,7 +504,7 @@ public final class Ruby {
         });
     }
 
-    public void initBuiltinClasses() {
+    private void initBuiltinClasses() {
     	try {
 	        new BuiltinScript("FalseClass").load(this);
 	        new BuiltinScript("TrueClass").load(this);
@@ -490,7 +513,64 @@ public final class Ruby {
     		throw new Error("builtin scripts are missing", e);
     	}
     }
+    
+    /**
+     * Create module Errno's Variables.  We have this method since Errno does not have it's 
+     * own java class.
+     */
+    private void initErrnoErrors() {
+        createSysErr(IErrno.ENOTEMPTY, "ENOTEMPTY");   
+        createSysErr(IErrno.ERANGE, "ERANGE");      
+        createSysErr(IErrno.ESPIPE, "ESPIPE");      
+        createSysErr(IErrno.ENFILE, "ENFILE");      
+        createSysErr(IErrno.EXDEV, "EXDEV");       
+        createSysErr(IErrno.ENOMEM, "ENOMEM");      
+        createSysErr(IErrno.E2BIG, "E2BIG");       
+        createSysErr(IErrno.ENOENT, "ENOENT");      
+        createSysErr(IErrno.ENOSYS, "ENOSYS");      
+        createSysErr(IErrno.EDOM, "EDOM");        
+        createSysErr(IErrno.ENOSPC, "ENOSPC");      
+        createSysErr(IErrno.EINVAL, "EINVAL");      
+        createSysErr(IErrno.EEXIST, "EEXIST");      
+        createSysErr(IErrno.EAGAIN, "EAGAIN");      
+        createSysErr(IErrno.ENXIO, "ENXIO");       
+        createSysErr(IErrno.EILSEQ, "EILSEQ");      
+        createSysErr(IErrno.ENOLCK, "ENOLCK");      
+        createSysErr(IErrno.EPIPE, "EPIPE");       
+        createSysErr(IErrno.EFBIG, "EFBIG");       
+        createSysErr(IErrno.EISDIR, "EISDIR");      
+        createSysErr(IErrno.EBUSY, "EBUSY");       
+        createSysErr(IErrno.ECHILD, "ECHILD");      
+        createSysErr(IErrno.EIO, "EIO");         
+        createSysErr(IErrno.EPERM, "EPERM");       
+        createSysErr(IErrno.EDEADLOCK, "EDEADLOCK");   
+        createSysErr(IErrno.ENAMETOOLONG, "ENAMETOOLONG");
+        createSysErr(IErrno.EMLINK, "EMLINK");      
+        createSysErr(IErrno.ENOTTY, "ENOTTY");      
+        createSysErr(IErrno.ENOTDIR, "ENOTDIR");     
+        createSysErr(IErrno.EFAULT, "EFAULT");      
+        createSysErr(IErrno.EBADF, "EBADF");       
+        createSysErr(IErrno.EINTR, "EINTR");       
+        createSysErr(IErrno.EWOULDBLOCK, "EWOULDBLOCK"); 
+        createSysErr(IErrno.EDEADLK, "EDEADLK");     
+        createSysErr(IErrno.EROFS, "EROFS");       
+        createSysErr(IErrno.EMFILE, "EMFILE");      
+        createSysErr(IErrno.ENODEV, "ENODEV");      
+        createSysErr(IErrno.EACCES, "EACCES");      
+        createSysErr(IErrno.ENOEXEC, "ENOEXEC");             
+        createSysErr(IErrno.ESRCH, "ESRCH");       
+        createSysErr(IErrno.ECONNREFUSED, "ECONNREFUSED");
+    }
 
+    /**
+     * Creates a system error.
+     * @param i the error code (will probably use a java exception instead)
+     * @param name of the error to define.
+     **/
+    private void createSysErr(int i, String name) {
+        errnoModule.defineClassUnder(name, systemCallError).defineConstant("Errno", newFixnum(i));
+    }
+    
 	/**
 	 * Get top-most (current) scope (local vars) in the current thread context.
 	 */
@@ -575,14 +655,6 @@ public final class Ruby {
      */
     public RubyModule getWrapper() {
         return getCurrentContext().getWrapper();
-    }
-
-    /**
-     * Gets the exceptions
-     * @return Returns a RubyExceptions
-     */
-    public RubyExceptions getExceptions() {
-        return exceptions;
     }
 
     /** Defines a global variable
@@ -729,7 +801,7 @@ public final class Ruby {
         RubyClass type = excp.getMetaClass();
         String info = excp.toString();
 
-        if (type == getExceptions().getRuntimeError() && (info == null || info.length() == 0)) {
+        if (type == getClass("RuntimeError") && (info == null || info.length() == 0)) {
             getErrorStream().print(": unhandled exception\n");
         } else {
             String path = type.getName();

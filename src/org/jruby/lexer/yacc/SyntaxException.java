@@ -28,7 +28,9 @@
 package org.jruby.lexer.yacc;
 
 public class SyntaxException extends RuntimeException {
-    private SourcePosition position;
+	private static final long serialVersionUID = -2130930815167932274L;
+	
+	private SourcePosition position;
 
     public SyntaxException(SourcePosition position, String message) {
         super(message);

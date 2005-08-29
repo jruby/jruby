@@ -27,9 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.exceptions;
 
-/**
- * @author cnutter
- */
 public class ThreadKill extends RuntimeException {
-
+	private static final long serialVersionUID = -6885888060743175327L;
 }

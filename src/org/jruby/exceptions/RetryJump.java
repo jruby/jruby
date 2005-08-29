@@ -27,14 +27,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.exceptions;
 
-/** The RetryException is thrown if a 'retry' statement is interpreted.
- *
- * @author  jpetersen
- * @version $Revision$
+/** 
+ * The RetryException is thrown if a 'retry' statement is interpreted.
  */
 public class RetryJump extends JumpException {
+	private static final long serialVersionUID = -5229157087093448942L;
 
-    /** Creates new RetryException */
+	/** Creates new RetryException */
     public RetryJump() {
     }
 }

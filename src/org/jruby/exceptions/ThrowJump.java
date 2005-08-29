@@ -31,19 +31,16 @@ package org.jruby.exceptions;
 import org.jruby.RubyException;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/** Created by the global throw function.
- *
- * @author jpetersen
- * @version $Revision$
+/** 
+ * Created by the global throw function.
  */
 public class ThrowJump extends JumpException {
-    private String tag;
+	private static final long serialVersionUID = -3537728215732989531L;
+	
+	private String tag;
     private IRubyObject value;
     private RubyException nameError;
 
-    /**
-     * Constructor for ThrowJump.
-     */
     public ThrowJump(String tag, IRubyObject value) {
         super();
 

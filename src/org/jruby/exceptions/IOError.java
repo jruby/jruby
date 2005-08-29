@@ -31,18 +31,11 @@ package org.jruby.exceptions;
 
 import org.jruby.Ruby;
 
-/**
- *
- * @author  jpetersen
- */
 public class IOError extends RaiseException {
+	private static final long serialVersionUID = -5423169208912853386L;
 
-    /**
-     * Constructs an <code>RubyTypeException</code> with the specified detail message.
-     * @param msg the detail message.
-     */
-    public IOError(Ruby runtime, String msg) {
-        super(runtime, runtime.getExceptions().getIOError(), msg, true);
+	public IOError(Ruby runtime, String msg) {
+        super(runtime, runtime.getClass("IOError"), msg, true);
     }
 
     public static RuntimeException fromException(Ruby runtime, java.io.IOException exception) {

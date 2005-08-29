@@ -32,13 +32,11 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- * @author  jpetersen
- */
 public class TypeError extends RaiseException {
-    public TypeError(Ruby runtime, String msg) {
-        super(runtime, runtime.getExceptions().getTypeError(), msg, true);
+	private static final long serialVersionUID = -9054949564075013014L;
+
+	public TypeError(Ruby runtime, String msg) {
+        super(runtime, runtime.getClass("TypeError"), msg, true);
     }
 
     public TypeError(Ruby runtime, IRubyObject receivedObject, RubyClass expectedType) {

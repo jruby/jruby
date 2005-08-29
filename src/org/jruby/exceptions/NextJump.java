@@ -30,13 +30,13 @@ package org.jruby.exceptions;
 
 import org.jruby.runtime.builtin.IRubyObject;
 
-/** The NextJump is thrown if a 'next' statement is evaluated.
- *
- * @author  jpetersen
- * @version $Revision$
+/** 
+ * The NextJump is thrown if a 'next' statement is evaluated.
  */
 public class NextJump extends JumpException {
-    private IRubyObject nextValue;
+	private static final long serialVersionUID = 8618320410293153680L;
+	
+	private IRubyObject nextValue;
     
     /** Creates new NextJump */
     public NextJump() {

@@ -30,14 +30,11 @@ package org.jruby.exceptions;
 
 import org.jruby.Ruby;
 
-/**
- *
- * @author  jpetersen
- * @version $Revision$
- */
 public class RegexpError extends RaiseException {
-    public RegexpError(Ruby runtime, String msg) {
-        super(runtime, runtime.getExceptions().getRegexpError(), msg, true);
+	private static final long serialVersionUID = 6149327772435413882L;
+
+	public RegexpError(Ruby runtime, String msg) {
+        super(runtime, runtime.getClass("RegexpError"), msg, true);
     }
 }
 

@@ -30,14 +30,13 @@ package org.jruby.exceptions;
 
 import org.jruby.Ruby;
 
-/** End of file reached error.
- * 
- * @author jpetersen
- * @version $Revision$
+/** 
+ * End of file reached error.
  */
 public class EOFError extends RaiseException {
+	private static final long serialVersionUID = 4591596422885119344L;
 
-    public EOFError(Ruby ruby) {
-        super(ruby, ruby.getExceptions().getEOFError(), "End of file reached", true);
+	public EOFError(Ruby ruby) {
+        super(ruby, ruby.getClass("EOFError"), "End of file reached", true);
     }
 }

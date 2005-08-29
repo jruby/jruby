@@ -580,8 +580,9 @@ public class RubyThread extends RubyObject {
         if (abortOnException()) {
             // FIXME: printError explodes on some nullpointer
             //getRuntime().getRuntime().printError(exception.getException());
+        	// TODO: Doesn't SystemExit have its own method to make this less wordy..
             threadService.getMainThread().raise(RubyException.newException(getRuntime(),
-                                                                           getRuntime().getExceptions().getSystemExit(),
+                                                                           getRuntime().getClass("SystemExit"),
                                                                            ""));
         } else {
             exitingException = exception;

@@ -30,12 +30,10 @@ package org.jruby.exceptions;
 
 import org.jruby.Ruby;
 
-/**
- *
- * @author  jpetersen
- */
 public class SecurityError extends RaiseException {
-    public SecurityError(Ruby runtime, String msg) {
-        super(runtime, runtime.getExceptions().getSecurityError(),  msg, true);
+	private static final long serialVersionUID = -7961130070950770597L;
+
+	public SecurityError(Ruby runtime, String msg) {
+        super(runtime, runtime.getClass("SecurityError"),  msg, true);
     }
 }

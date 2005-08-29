@@ -46,13 +46,10 @@ import org.jruby.runtime.Frame;
 import org.jruby.runtime.FrameStack;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- * @author  jpetersen
- * @version $Revision$
- */
 public class RaiseException extends JumpException {
-    private RubyException exception;
+	private static final long serialVersionUID = -7612079169559973951L;
+	
+	private RubyException exception;
 
     public RaiseException(RubyException actException) {
         setException(actException, false);
@@ -69,15 +66,14 @@ public class RaiseException extends JumpException {
     }
 
     private static String buildMessage(Throwable exception) {
+	    StringBuffer sb = new StringBuffer();
 	    StringWriter stackTrace = new StringWriter();
 	    exception.printStackTrace(new PrintWriter(stackTrace));
 	
-	    StringBuffer sb = new StringBuffer();
-	    sb.append("Native Exception: '");
-	    sb.append(exception.getClass()).append("\'; Message: ");
-	    sb.append(exception.getMessage());
-	    sb.append("; StackTrace: ");
-	    sb.append(stackTrace.getBuffer().toString());
+	    sb.append("Native Exception: '").append(exception.getClass()).append("'; ");
+	    sb.append("Message: ").append(exception.getMessage()).append("; ");
+	    sb.append("StackTrace: ").append(stackTrace.getBuffer().toString());
+
 	    return sb.toString();
     }
 

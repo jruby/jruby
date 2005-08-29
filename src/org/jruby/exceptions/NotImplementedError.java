@@ -30,18 +30,12 @@ package org.jruby.exceptions;
 import org.jruby.Ruby;
 
 /**
- * .Exception indicating an unimplemented feature in JRuby.
- * 
- * @author  jvoegele
- * @version $Revision$
+ * Exception indicating an unimplemented feature in JRuby.
  */
 public class NotImplementedError extends RaiseException {
-
-    public NotImplementedError(Ruby runtime) {
-        this(runtime, "Not yet implemented");
-    }
+	private static final long serialVersionUID = -7751691934888516976L;
 
     public NotImplementedError(Ruby runtime, String message) {
-        super(runtime, runtime.getExceptions().getNotImplementedError(), message, true);
+        super(runtime, runtime.getClass("NotImplementedError"), message, true);
     }
 }

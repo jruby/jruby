@@ -31,17 +31,10 @@ package org.jruby.exceptions;
 
 import org.jruby.Ruby;
 
-/**
- *
- * @author  jpetersen
- */
 public class RangeError extends RaiseException {
+	private static final long serialVersionUID = -7860087013947578757L;
 
-    /**
-     * Constructs an <code>RubyTypeException</code> with the specified detail message.
-     * @param msg the detail message.
-     */
     public RangeError(Ruby runtime, String msg) {
-        super(runtime, runtime.getExceptions().getRangeError(), msg, true);
+        super(runtime, runtime.getClass("RangeError"), msg, true);
     }
 }

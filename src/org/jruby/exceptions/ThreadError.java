@@ -31,7 +31,9 @@ package org.jruby.exceptions;
 import org.jruby.Ruby;
 
 public class ThreadError extends RaiseException {
-    public ThreadError(Ruby runtime, String message) {
-        super(runtime, runtime.getExceptions().getThreadError(), message, true);
+	private static final long serialVersionUID = 6788455410223718143L;
+
+	public ThreadError(Ruby runtime, String message) {
+        super(runtime, runtime.getClass("ThreadError"), message, true);
     }
 }

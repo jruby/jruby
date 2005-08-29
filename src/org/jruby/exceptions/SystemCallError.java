@@ -31,12 +31,10 @@ package org.jruby.exceptions;
 
 import org.jruby.Ruby;
 
-/**
- *
- * @author  jpetersen
- */
 public class SystemCallError extends RaiseException {
-    public SystemCallError(Ruby runtime, String msg) {
-        super(runtime, runtime.getExceptions().getSystemCallError(), msg, true);
+	private static final long serialVersionUID = 1120814967462697476L;
+
+	public SystemCallError(Ruby runtime, String msg) {
+        super(runtime, runtime.getClass("SystemCallError"), msg, true);
     }
 }

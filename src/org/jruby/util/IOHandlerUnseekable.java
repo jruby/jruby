@@ -233,7 +233,7 @@ public class IOHandlerUnseekable extends IOHandler {
         throw ErrnoError.getErrnoError(getRuntime(), "ESPIPE", "Illegal seek");
     }
     
-    public void resetByModes(IOModes modes) {
+    public void resetByModes(IOModes newModes) {
     }
     
     /**

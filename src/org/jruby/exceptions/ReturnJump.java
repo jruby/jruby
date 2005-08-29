@@ -29,12 +29,13 @@ package org.jruby.exceptions;
 
 import org.jruby.runtime.builtin.IRubyObject;
 
-/** The ReturnException is thrown if a 'return' statement is interpreted.
- *
- * @author  jpetersen
+/** 
+ * The ReturnException is thrown if a 'return' statement is interpreted.
  */
 public class ReturnJump extends JumpException {
-    private IRubyObject returnValue;
+	private static final long serialVersionUID = 8409573523518866494L;
+	
+	private IRubyObject returnValue;
     private Object target;
 
     public ReturnJump(IRubyObject returnValue, Object target) {

@@ -6,7 +6,7 @@ if defined? Java
   require 'java'
 
   module TestJavaSupport
-    include_package "org.jruby.util"
+    include_class "org.jruby.test.TestHelper"
     include_package "java.util"
 
     java_alias :JArray, :ArrayList
@@ -46,7 +46,6 @@ if defined? Java
     test_ok(l1.compareTo(l2) > 0)
 
     # Dispatching on nil
-    include_package "org.jruby.util"
     sb = TestHelper.getInterfacedInstance()
     test_equal(nil , sb.dispatchObject(nil))
 
@@ -138,8 +137,8 @@ if defined? Java
     test_equal(1, l.foo)
 
     # test support of other class loaders 
-    test_helper_class = Java::JavaClass.for_name("org.jruby.util.TestHelper")
-    test_helper_class2 = Java::JavaClass.for_name("org.jruby.util.TestHelper")
+    test_helper_class = Java::JavaClass.for_name("org.jruby.test.TestHelper")
+    test_helper_class2 = Java::JavaClass.for_name("org.jruby.test.TestHelper")
     test_ok(test_helper_class.java_class == test_helper_class2.java_class, "Successive calls return the same class")
     method = test_helper_class.java_method('loadAlternateClass')
     alt_test_helper_class = method.invoke_static()

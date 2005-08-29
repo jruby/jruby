@@ -35,7 +35,9 @@ import org.jruby.Ruby;
  * @author  cnutter
  */
 public class SystemStackError extends RaiseException {
-    public SystemStackError(Ruby runtime, String msg) {
-        super(runtime, runtime.getExceptions().getSystemStackError(), msg, true);
+	private static final long serialVersionUID = -5292160009317829154L;
+
+	public SystemStackError(Ruby runtime, String msg) {
+        super(runtime, runtime.getClass("SystemStackError"), msg, true);
     }
 }

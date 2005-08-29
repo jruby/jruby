@@ -30,11 +30,10 @@ package org.jruby.exceptions;
 
 import org.jruby.Ruby;
 
-/**
- * @author enebo
- */
 public class NoMethodError extends RaiseException {
-    public NoMethodError(Ruby runtime, String msg) {
-        super(runtime, runtime.getExceptions().getNoMethodError(), msg, true);
+	private static final long serialVersionUID = -3238019045878660275L;
+
+	public NoMethodError(Ruby runtime, String msg) {
+        super(runtime, runtime.getClass("NoMethodError"), msg, true);
     }
 }

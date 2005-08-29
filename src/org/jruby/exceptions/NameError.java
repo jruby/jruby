@@ -33,12 +33,10 @@ package org.jruby.exceptions;
 
 import org.jruby.Ruby;
 
-/**
- *
- * @author  jpetersen
- */
 public class NameError extends RaiseException {
-    public NameError(Ruby runtime, String msg) {
-        super(runtime, runtime.getExceptions().getNameError(), msg, true);
+	private static final long serialVersionUID = 3012425008509432447L;
+
+	public NameError(Ruby runtime, String msg) {
+        super(runtime, runtime.getClass("NameError"), msg, true);
     }
 }

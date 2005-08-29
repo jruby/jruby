@@ -29,13 +29,11 @@ package org.jruby.exceptions;
 
 /**
  * The RedoJump is thrown if a 'redo' statement is evaluated.
- *
- * @author  jpetersen
- * @version $Revision$
  */
 public class RedoJump extends JumpException {
+	private static final long serialVersionUID = -5051660933838715407L;
 
-    /** Creates new RedoJump */
+	/** Creates new RedoJump */
     public RedoJump() {
     }
 }

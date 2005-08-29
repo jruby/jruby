@@ -30,18 +30,11 @@ package org.jruby.exceptions;
 
 import org.jruby.Ruby;
 
-/**
- *
- * @author  jpetersen
- * @version $Revision$
- */
 public class IndexError extends RaiseException {
-    /**
-     * Constructs an <code>RubyIndexException</code> with the specified detail message.
-     * @param msg the detail message.
-     */
-    public IndexError(Ruby runtime, String msg) {
-        super(runtime, runtime.getExceptions().getIndexError(), msg, true);
+	private static final long serialVersionUID = 3488248127062103988L;
+
+	public IndexError(Ruby runtime, String msg) {
+        super(runtime, runtime.getClass("IndexError"), msg, true);
     }
 }
 

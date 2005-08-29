@@ -1582,7 +1582,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
     private boolean isRescueHandled(RubyException currentException, ListNode exceptionNodes) {
         if (exceptionNodes == null) {
-            return currentException.isKindOf(runtime.getExceptions().getStandardError());
+            return currentException.isKindOf(runtime.getClass("StandardError"));
         }
 
         Block tmpBlock = threadContext.beginCallArgs();

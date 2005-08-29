@@ -64,10 +64,10 @@ if defined? Java
   end
   
   module JavaExceptions
-    include_class 'org.jruby.util.TestHelper' 
+    include_class 'org.jruby.test.TestHelper' 
     include_class 'java.lang.RuntimeException' 
     include_class 'java.lang.NullPointerException' 
-    include_class 'org.jruby.util.TestHelper$TestHelperException' do |p,c| "THException"; end
+    include_class 'org.jruby.test.TestHelper$TestHelperException' do |p,c| "THException"; end
     begin
       TestHelper.throwTestHelperException
     rescue THException => e

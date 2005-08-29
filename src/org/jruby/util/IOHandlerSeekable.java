@@ -189,10 +189,10 @@ public class IOHandlerSeekable extends IOHandler {
         }
     }
     
-    public void resetByModes(IOModes modes) {
-        if (modes.isAppendable()) {
+    public void resetByModes(IOModes newModes) {
+        if (newModes.isAppendable()) {
             seek(0L, SEEK_END);
-        } else if (modes.isWriteable()) {
+        } else if (newModes.isWriteable()) {
             rewind();
         }
     }

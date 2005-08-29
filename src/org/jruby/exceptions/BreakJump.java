@@ -30,13 +30,10 @@ package org.jruby.exceptions;
 
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- * @author  jpetersen
- * @version $Revision$
- */
 public class BreakJump extends JumpException {
-    private IRubyObject breakValue;
+	private static final long serialVersionUID = 5163473539461178631L;
+	
+	private IRubyObject breakValue;
     
     public BreakJump(IRubyObject breakValue) {
         this.breakValue = breakValue;

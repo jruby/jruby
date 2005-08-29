@@ -30,17 +30,11 @@ package org.jruby.exceptions;
 
 import org.jruby.Ruby;
 
-/**
- *
- * @author  jpetersen
- */
 public class ArgumentError extends RaiseException {
-    /**
-     * Constructs an <code>RubyTypeException</code> with the specified detail message.
-     * @param msg the detail message.
-     */
-    public ArgumentError(Ruby runtime, String msg) {
-        super(runtime, runtime.getExceptions().getArgumentError(), msg, true);
+	private static final long serialVersionUID = -5162297603526820564L;
+
+	public ArgumentError(Ruby runtime, String msg) {
+        super(runtime, runtime.getClass("ArgumentError"), msg, true);
     }
 
     public ArgumentError(Ruby runtime, int got, int expected) {

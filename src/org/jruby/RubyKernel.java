@@ -506,7 +506,7 @@ public class RubyKernel {
         case 0 :
             IRubyObject defaultException = runtime.getGlobalVariables().get("$!");
             if (defaultException.isNil()) {
-                throw new RaiseException(runtime, runtime.getExceptions().getRuntimeError(), "", false);
+                throw new RaiseException(runtime, runtime.getClass("RuntimeError"), "", false);
             }
             throw new RaiseException((RubyException) defaultException);
         case 1 :
@@ -515,7 +515,7 @@ public class RubyKernel {
             } else if (args[0] instanceof RubyClass) {
             	throw new RaiseException(RubyException.newInstance(args[0], new IRubyObject[0]));
             }
-            throw new RaiseException(RubyException.newInstance(runtime.getExceptions().getRuntimeError(), args));
+            throw new RaiseException(RubyException.newInstance(runtime.getClass("RuntimeError"), args));
         case 2 :
             if (args[0] == runtime.getClass("Exception")) {
                 throw new RaiseException((RubyException) args[0].callMethod("exception", args[1]));

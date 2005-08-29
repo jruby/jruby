@@ -30,7 +30,9 @@ package org.jruby.exceptions;
 import org.jruby.Ruby;
 
 public class SyntaxError extends RaiseException {
-    public SyntaxError(Ruby runtime, String message) {
-        super(runtime, runtime.getExceptions().getSyntaxError(), message, true);
+	private static final long serialVersionUID = -8564928246310818382L;
+
+	public SyntaxError(Ruby runtime, String message) {
+        super(runtime, runtime.getClass("SyntaxError"), message, true);
     }
 }
