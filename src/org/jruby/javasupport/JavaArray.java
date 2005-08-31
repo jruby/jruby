@@ -36,6 +36,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
+import org.jruby.RubyModule;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class JavaArray extends JavaObject {
@@ -45,9 +46,8 @@ public class JavaArray extends JavaObject {
         assert array.getClass().isArray();
     }
 
-    public static RubyClass createJavaArrayClass(Ruby runtime) {
-        return runtime.getModule("Java").defineClassUnder("JavaArray", 
-            runtime.getModule("Java").getClass("JavaObject"));
+    public static RubyClass createJavaArrayClass(Ruby runtime, RubyModule javaModule) {
+        return javaModule.defineClassUnder("JavaArray", javaModule.getClass("JavaObject"));
     }
 
     public RubyFixnum length() {

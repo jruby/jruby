@@ -54,8 +54,8 @@ public class Java {
         javaModule.defineModuleFunction("java_to_primitive", callbackFactory.getSingletonMethod("java_to_primitive", IRubyObject.class));
         javaModule.defineModuleFunction("new_proxy_instance", callbackFactory.getOptSingletonMethod("new_proxy_instance"));
 
-        JavaObject.createJavaObjectClass(runtime);
-        JavaArray.createJavaArrayClass(runtime);
+        JavaObject.createJavaObjectClass(runtime, javaModule);
+        JavaArray.createJavaArrayClass(runtime, javaModule);
         JavaClass.createJavaClassClass(runtime, javaModule);
         JavaMethod.createJavaMethodClass(runtime, javaModule);
         JavaConstructor.createJavaConstructorClass(runtime, javaModule);

@@ -54,6 +54,10 @@ public class JavaUtil {
         if (rubyObject == null || rubyObject.isNil()) {
             return null;
         }
+        
+        if (rubyObject.respondsTo("java_object")) {
+        	rubyObject = rubyObject.callMethod("java_object");
+        }
 
         if (rubyObject instanceof JavaObject) {
             return ((JavaObject) rubyObject).getValue();

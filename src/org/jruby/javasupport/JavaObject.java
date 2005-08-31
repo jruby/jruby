@@ -36,6 +36,7 @@ package org.jruby.javasupport;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.runtime.CallbackFactory;
@@ -88,8 +89,8 @@ public class JavaObject extends RubyObject {
         return value;
     }
 
-    public static RubyClass createJavaObjectClass(Ruby runtime) {
-    	RubyClass result = runtime.getModule("Java").defineClassUnder("JavaObject", runtime.getObject());
+    public static RubyClass createJavaObjectClass(Ruby runtime, RubyModule javaModule) {
+    	RubyClass result = javaModule.defineClassUnder("JavaObject", runtime.getObject());
 
     	registerRubyMethods(runtime, result);
 
