@@ -91,7 +91,9 @@ public class RubyRange extends RubyObject {
         result.defineMethod("include?", callbackFactory.getMethod("include_p", IRubyObject.class));
 		// We override Enumerable#member? since ranges in 1.8.1 are continuous.
 		result.defineAlias("member?", "include?");
-
+		
+		result.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
+        
         return result;
     }
 
@@ -162,6 +164,13 @@ public class RubyRange extends RubyObject {
     }
 
     // public Range methods
+    public static RubyRange newInstance(IRubyObject recv, IRubyObject[] args) {
+    	RubyRange range = new RubyRange(recv.getRuntime());
+    	
+    	range.initialize(args);
+    	
+    	return range;
+    }
 
     public static RubyRange newRange(Ruby runtime, IRubyObject begin, IRubyObject end, boolean isExclusive) {
         RubyRange range = new RubyRange(runtime);
