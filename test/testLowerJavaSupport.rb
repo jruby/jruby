@@ -110,17 +110,19 @@ if defined? Java
   privateField.accessible = true
   test_ok( privateField.accessible?)
 
-  #private constructors
+  #private constructors 
   cons = TestHelper.java_class.declared_constructors() 
+  con_private = cons.find {|con| con.arity == 1}
+
   test_ok(1,cons.length)
   test_ok(['java.lang.String'], cons[0].argument_types.collect{|arg_type| arg_type.name})
-  test_ok(! cons[0].public?)
-  test_ok(! cons[0].accessible?)
-  cons[0].accessible = true
-  test_ok(cons[0].accessible?)
+  test_ok(! con_private.public?)
+  test_ok(! con_private.accessible?)
+  con_private.accessible = true
+  test_ok(con_private.accessible?)
 
   con = TestHelper.java_class.declared_constructor('java.lang.String')
-  test_ok(cons[0],con)
+  test_ok(con_private,con)
 
   #private instance methods
   test_ok(TestHelper.java_class.declared_instance_methods.find {|method| method.name == 'privateMethod'})
@@ -130,7 +132,7 @@ if defined? Java
   privateMethod.accessible = true
   test_ok( privateMethod.accessible?)
 
-  helper = cons[0].new_instance(Java::primitive_to_java("X"))
+  helper = con_private.new_instance(Java::primitive_to_java("X"))
   test_equal('X', Java::java_to_primitive(privateMethod.invoke(helper)))
 
   #private static methods
