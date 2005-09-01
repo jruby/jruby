@@ -217,8 +217,8 @@ public class LoadService implements ILoadService {
                 	return current.toURL();
                 }
                 
-                // otherwise, try to load from classpath
-                URL loc = classLoader.getResource(name);
+                // otherwise, try to load from classpath (Note: Jar resources always uses '/')
+                URL loc = classLoader.getResource(name.replace('\\', '/'));
 
                 // Make sure this is not a directory or unavailable in some way
                 if (isRequireable(loc)) {
@@ -246,8 +246,8 @@ public class LoadService implements ILoadService {
                 	return current.toURL();
                 }
                 
-                // otherwise, try to load from classpath
-                URL loc = classLoader.getResource(entry + "/" + name);
+                // otherwise, try to load from classpath (Note: Jar resources always uses '/')
+                URL loc = classLoader.getResource(entry.replace('\\', '/') + "/" + name.replace('\\', '/'));
 
                 // Make sure this is not a directory or unavailable in some way
                 if (isRequireable(loc)) {
@@ -256,8 +256,8 @@ public class LoadService implements ILoadService {
             }
 
             // Try to load from classpath without prefix. "A/b.rb" will not load as 
-            // "./A/b.rb" in a jar file.
-            URL loc = classLoader.getResource(name);
+            // "./A/b.rb" in a jar file. (Note: Jar resources always uses '/')
+            URL loc = classLoader.getResource(name.replace('\\', '/'));
 
             return isRequireable(loc) ? loc : null;
         } catch (MalformedURLException e) {
