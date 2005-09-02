@@ -42,6 +42,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+// TODO: Literal escaping does not work because on windows (See bug #1280905)
 public class Glob {
     private final List patterns;
 	// TODO: If '{' or '}' is just a literal this is broken.
@@ -100,9 +101,16 @@ public class Glob {
      * Get file objects for glob; made private to prevent it being used directly in the future
      */
     private void getFiles() {
+    	String pathSplitter = File.separator;
+    	
+    	// Windows file delimeter needs to escape delimeter to prevent regex compilation error
+    	if (File.separator.equals("\\")) {
+    		pathSplitter = pathSplitter + File.separator;
+    	}
+    	
 		for (Iterator iter = patterns.iterator(); iter.hasNext();) {
 			GlobPattern globPattern = (GlobPattern) iter.next();
-	        String[] dirs = globPattern.getPattern().split(File.separator);
+	        String[] dirs = globPattern.getPattern().split(pathSplitter);
         	File root = new File(dirs[0]);
         	int idx = 1;
         	if (glob2Regexp(dirs[0]) != null) {
@@ -171,12 +179,13 @@ public class Glob {
     }
     
     public String[] getNames() {
-    	try {
-    		getFiles();
-    	} catch (PatternSyntaxException e) {
-    		// This can happen if someone does Dir.glob("{") or similiar.
-    		return new String[] {};
-    	}
+        try {
+            getFiles();
+        } catch (PatternSyntaxException e) {
+        	System.out.println("BAD PATTERN: " + e.getPattern());
+            // This can happen if someone does Dir.glob("{") or similiar.
+            return new String[] {};
+        }
 		
 		ArrayList allMatchedNames = new ArrayList();
 		for (Iterator iter = patterns.iterator(); iter.hasNext();) {
