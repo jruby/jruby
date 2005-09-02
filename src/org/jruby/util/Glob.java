@@ -40,6 +40,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 public class Glob {
     private final List patterns;
@@ -170,7 +171,12 @@ public class Glob {
     }
     
     public String[] getNames() {
-        getFiles();
+    	try {
+    		getFiles();
+    	} catch (PatternSyntaxException e) {
+    		// This can happen if someone does Dir.glob("{") or similiar.
+    		return new String[] {};
+    	}
 		
 		ArrayList allMatchedNames = new ArrayList();
 		for (Iterator iter = patterns.iterator(); iter.hasNext();) {

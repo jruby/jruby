@@ -40,3 +40,7 @@ test_equal(['.', '..', "file1", "file2"], files.sort)
 Dir.delete("./testDir_1")
 Dir.chdir(save_dir)
 
+# Dir#glob
+
+# Test unescaped special char that is meant to be used with another (i.e. bogus glob pattern)
+test_equal([], Dir.glob("{"))
