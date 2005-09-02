@@ -52,7 +52,8 @@ import org.jruby.util.Glob;
  * @version $Revision$
  */
 public class RubyDir extends RubyObject {
-    protected String    path;
+	// What we passed to the constructor for method 'path'
+    private RubyString    path;
     protected File      dir;
     private   String[]  snapshot;   // snapshot of contents of directory
     private   int       pos;        // current position in directory
@@ -92,10 +93,11 @@ public class RubyDir extends RubyObject {
         dirClass.defineMethod("close", callbackFactory.getMethod("close"));
         dirClass.defineMethod("each", callbackFactory.getMethod("each"));
         dirClass.defineMethod("entries", callbackFactory.getMethod("entries"));
+        dirClass.defineMethod("path", callbackFactory.getMethod("path"));
         dirClass.defineMethod("tell", callbackFactory.getMethod("tell"));
         dirClass.defineAlias("pos", "tell");
         dirClass.defineMethod("seek", callbackFactory.getMethod("seek", RubyFixnum.class));
-        dirClass.defineAlias("pos=", "seek");
+        dirClass.defineMethod("pos=", callbackFactory.getMethod("setPos", RubyFixnum.class));
         dirClass.defineMethod("read", callbackFactory.getMethod("read"));
         dirClass.defineMethod("rewind", callbackFactory.getMethod("rewind"));
 		dirClass.defineMethod("initialize", callbackFactory.getMethod("initialize", RubyString.class));
@@ -125,6 +127,7 @@ public class RubyDir extends RubyObject {
             dir = null;
             throw ErrnoError.getErrnoError(getRuntime(), "ENOENT", newPath.getValue() + " is not a directory");
         }
+        path = newPath;
 		List snapshotList = new ArrayList();
 		snapshotList.add(".");
 		snapshotList.add("..");
@@ -299,8 +302,8 @@ public class RubyDir extends RubyObject {
      * Closes the directory stream.
      */
     public IRubyObject close() {
-	// Make sure any read()s after close fail.
-	isOpen = false;
+        // Make sure any read()s after close fail.
+        isOpen = false;
 
         return getRuntime().getNil();
     }
@@ -328,8 +331,21 @@ public class RubyDir extends RubyObject {
      * returned by <code>tell</code> or 0.
      */
     public IRubyObject seek(RubyFixnum newPos) {
-        this.pos = (int) newPos.getLongValue();
+        setPos(newPos);
         return this;
+    }
+    
+    public IRubyObject setPos(RubyFixnum newPos) {
+        this.pos = (int) newPos.getLongValue();
+        return newPos;
+    }
+
+    public IRubyObject path() {
+        if (!isOpen) {
+            throw new IOError(getRuntime(), "closed directory");
+        }
+        
+        return path;
     }
 
     /** Returns the next entry from this directory. */
