@@ -70,7 +70,7 @@ public class IOModes {
     }
     
     public boolean isWriteable() {
-    	return (modes & RDWR) != 0 || (modes & WRONLY) != 0;
+    	return (modes & RDWR) != 0 || (modes & WRONLY) != 0 || (modes & CREAT) != 0;
     }
     
     public boolean isAppendable() {
