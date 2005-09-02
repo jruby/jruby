@@ -795,20 +795,6 @@ public class RubyIO extends RubyObject {
         return "RubyIO(" + modes + ", " + fileno + ")";
     }
     
-    // IO Object should always be closed by jruby internally or
-    // by a jruby script (their own fault if they forget).  If an IO 
-    // object gets GC'd and it has not been closed yet, then we should 
-    // clean up.
-    protected void finalize() throws Throwable {
-        try {
-            if (isOpen()) {
-                close();
-            }
-        } finally {
-            super.finalize();
-        }
-    }
-    
     protected void bindStreams(InputStream inputStream, OutputStream outputStream) {
         handler = new IOHandlerUnseekable(getRuntime(), inputStream, outputStream);
         registerIOHandler(handler);
