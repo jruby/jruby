@@ -75,9 +75,9 @@ public class JRubySerialize extends Task {
 
         for (int i = 0, size = fileSets.size(); i < size; i++) {
             FileSet fs = (FileSet) fileSets.get(i);
-            DirectoryScanner ds = fs.getDirectoryScanner(project);
+            DirectoryScanner ds = fs.getDirectoryScanner(getProject());
 
-            File dir = fs.getDir(project);
+            File dir = fs.getDir(getProject());
             String[] files = ds.getIncludedFiles();
 
             files = sfs.restrict(files, dir, destdir, mapper);
@@ -132,9 +132,9 @@ public class JRubySerialize extends Task {
      */
     public Mapper createMapper() throws BuildException {
         if (mapperElement != null) {
-            throw new BuildException("Cannot define more than one mapper", location);
+            throw new BuildException("Cannot define more than one mapper", getLocation());
         }
-        mapperElement = new Mapper(project);
+        mapperElement = new Mapper(getProject());
         return mapperElement;
     }
 }
