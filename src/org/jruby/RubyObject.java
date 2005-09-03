@@ -622,7 +622,7 @@ public class RubyObject implements Cloneable, IRubyObject {
 	public IRubyObject initialize_copy(IRubyObject original) {
 	    if (this != original) {
 	        checkFrozen();
-	        if (!getClass().equals(original.getClass()) || getMetaClass().getRealClass() != original.getMetaClass().getRealClass()) {
+	        if (!getClass().equals(original.getClass())) {
 	            throw getRuntime().newTypeError("initialize_copy should take same class object");
 	        }
 	    }
