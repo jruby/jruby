@@ -231,10 +231,10 @@ public class FileMetaClass extends IOMetaClass {
 					
 				if (dir.isNil()) {
 					throw getRuntime().newArgumentError("user " + user + " does not exist");
-				} else {
-					relativePath = "" + dir + 
-					    (pathLength == userEnd ? "" : relativePath.substring(userEnd));
-				}
+				} 
+				
+                relativePath = "" + dir + 
+                    (pathLength == userEnd ? "" : relativePath.substring(userEnd));
 			}
 		}
 
