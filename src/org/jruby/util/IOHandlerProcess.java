@@ -36,24 +36,17 @@ import java.io.OutputStream;
 
 import org.jruby.Ruby;
 import org.jruby.RubyIO;
-import org.jruby.exceptions.ErrnoError;
-import org.jruby.exceptions.IOError;
-import org.jruby.exceptions.SystemCallError;
 
-/**
- * @author enebo
- *
- */
 public class IOHandlerProcess extends IOHandler {
     protected InputStream input = null;
     protected OutputStream output = null;
     protected Process process = null;
 
-    public IOHandlerProcess(Ruby runtime, Process process, IOModes modes) {
+    public IOHandlerProcess(Ruby runtime, Process process, IOModes modes) throws IOException {
         super(runtime);
         
         if (process == null) {
-        	throw new IOError(runtime, "Null process");
+        	throw new IOException("Null process");
         }
         
         this.process = process;
@@ -66,50 +59,41 @@ public class IOHandlerProcess extends IOHandler {
         fileno = RubyIO.getNewFileno();
     }
     
-    public IOHandler cloneIOHandler() {
+    public IOHandler cloneIOHandler() throws IOException {
     	// may need to pass streams instead?
         return new IOHandlerProcess(getRuntime(), process, modes); 
     }
 
     /**
      * <p>Close IO handler resources.</p>
+     * @throws IOException 
+     * @throws BadDescriptorException 
      * 
      * @see org.jruby.util.IOHandler#close()
      */
-    public void close() {
+    public void close() throws IOException, BadDescriptorException {
         if (!isOpen()) {
-            throw ErrnoError.getErrnoError(getRuntime(), "EBADF", "Bad File Descriptor");
+        	throw new BadDescriptorException();
         }
         
         isOpen = false;
 
-        try {
-            input.close();
-        } catch (IOException e) {
-            throw IOError.fromException(getRuntime(), e);
-        }
-        
-        try {
-            output.close();
-        } catch (IOException e) {
-            throw IOError.fromException(getRuntime(), e);
-        }
+        input.close();
+        output.close();
         
         // TODO: to destroy or not destroy the process?
         process = null;
     }
 
     /**
+     * @throws IOException 
+     * @throws BadDescriptorException 
      * @see org.jruby.util.IOHandler#flush()
      */
-    public void flush() {
+    public void flush() throws IOException, BadDescriptorException {
         checkWriteable();
 
-        try {
-            output.flush();
-        } catch (IOException e) {
-            throw IOError.fromException(getRuntime(), e);
-        }
+        output.flush();
     }
     
     /**
@@ -127,21 +111,19 @@ public class IOHandlerProcess extends IOHandler {
     }
 
     /**
+     * @throws IOException 
+     * @throws BadDescriptorException 
      * @see org.jruby.util.IOHandler#isEOF()
      */
-    public boolean isEOF() {
+    public boolean isEOF() throws IOException, BadDescriptorException {
         checkReadable();
 
-        try {
-            int c = input.read();
-            if (c == -1) {
-                return true;
-            }
-            ungetc(c);
-            return false;
-        } catch (IOException e) {
-            throw IOError.fromException(getRuntime(), e);
+        int c = input.read();
+        if (c == -1) {
+            return true;
         }
+        ungetc(c);
+        return false;
     }
     
     /**
@@ -153,27 +135,30 @@ public class IOHandlerProcess extends IOHandler {
     }
     
     /**
+     * @throws PipeException 
      * @see org.jruby.util.IOHandler#pos()
      */
-    public long pos() {
-        throw ErrnoError.getErrnoError(getRuntime(), "ESPIPE", "Illegal seek");
+    public long pos() throws PipeException {
+        throw new IOHandler.PipeException();
     }
     
     public void resetByModes(IOModes newModes) {
     }
     
     /**
+     * @throws PipeException 
      * @see org.jruby.util.IOHandler#rewind()
      */
-    public void rewind() {
-        throw ErrnoError.getErrnoError(getRuntime(), "ESPIPE", "Illegal seek");
+    public void rewind() throws PipeException {
+        throw new IOHandler.PipeException();
     }
     
     /**
+     * @throws PipeException 
      * @see org.jruby.util.IOHandler#seek(long, int)
      */
-    public void seek(long offset, int type) {
-        throw ErrnoError.getErrnoError(getRuntime(), "ESPIPE", "Illegal seek");
+    public void seek(long offset, int type) throws PipeException {
+        throw new IOHandler.PipeException();
     }
     
     /**
@@ -191,9 +176,11 @@ public class IOHandlerProcess extends IOHandler {
     }
 
     /**
+     * @throws IOException 
+     * @throws BadDescriptorException 
      * @see org.jruby.util.IOHandler#syswrite(String buf)
      */
-    public int syswrite(String buf) {
+    public int syswrite(String buf) throws IOException, BadDescriptorException {
         getRuntime().secure(4);
         checkWriteable();
         
@@ -201,21 +188,17 @@ public class IOHandlerProcess extends IOHandler {
             return 0;
         }
         
-        try {
-            output.write(buf.getBytes());
+        output.write(buf.getBytes());
 
-            // Should syswrite sync?
-            if (isSync) {
-                sync();
-            }
-            
-            return buf.length();
-        } catch (IOException e) {
-            throw new SystemCallError(getRuntime(), e.toString());
+        // Should syswrite sync?
+        if (isSync) {
+            sync();
         }
+            
+        return buf.length();
     }
     
-    public void truncate(long newLength) throws IOException {
-        throw ErrnoError.getErrnoError(getRuntime(), "ESPIPE", "Illegal seek");
+    public void truncate(long newLength) throws IOException, PipeException {
+        throw new IOHandler.PipeException();
     }
 }

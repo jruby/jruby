@@ -32,15 +32,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.EOFException;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 
-import org.jruby.exceptions.EOFError;
-import org.jruby.exceptions.ErrnoError;
-import org.jruby.exceptions.IOError;
-import org.jruby.exceptions.SystemCallError;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOHandler;
 import org.jruby.util.IOHandlerProcess;
@@ -164,10 +162,14 @@ public class RubyIO extends RubyObject {
         
         // We only want IO objects with valid streams (better to error now). 
         if (outputStream == null) {
-            throw new IOError(runtime, "Opening invalid stream");
+            throw runtime.newIOError("Opening invalid stream");
         }
         
-        handler = new IOHandlerUnseekable(runtime, null, outputStream);
+        try {
+            handler = new IOHandlerUnseekable(runtime, null, outputStream);
+        } catch (IOException e) {
+            throw runtime.newIOError(e.getMessage());
+        }
         modes = handler.getModes();
         
         registerIOHandler(handler);
@@ -178,7 +180,11 @@ public class RubyIO extends RubyObject {
 
         modes = new IOModes(runtime, "w+");
 
-    	handler = new IOHandlerProcess(runtime, process, modes);
+        try {
+    	    handler = new IOHandlerProcess(runtime, process, modes);
+        } catch (IOException e) {
+            throw runtime.newIOError(e.getMessage());
+        }
     	modes = handler.getModes();
     	
     	registerIOHandler(handler);
@@ -187,7 +193,11 @@ public class RubyIO extends RubyObject {
     public RubyIO(Ruby runtime, int descriptor) {
         super(runtime, runtime.getClass("IO"));
 
-        handler = new IOHandlerUnseekable(runtime, descriptor);
+        try {
+            handler = new IOHandlerUnseekable(runtime, descriptor);
+        } catch (IOException e) {
+            throw runtime.newIOError(e.getMessage());
+        }
         modes = handler.getModes();
         
         registerIOHandler(handler);
@@ -206,7 +216,7 @@ public class RubyIO extends RubyObject {
      */
     protected void checkWriteable() {
         if (!isOpen() || !modes.isWriteable()) {
-            throw new IOError(getRuntime(), "not opened for writing");
+            throw getRuntime().newIOError("not opened for writing");
         }
     }
 
@@ -221,7 +231,7 @@ public class RubyIO extends RubyObject {
      */
     protected void checkReadable() {
         if (!isOpen() || !modes.isReadable()) {
-            throw new IOError(getRuntime(), "not opened for reading");            
+            throw getRuntime().newIOError("not opened for reading");            
         }
     }
     
@@ -249,7 +259,13 @@ public class RubyIO extends RubyObject {
             
             // close the old handler before it gets overwritten
             if (handler.isOpen()) {
-            	handler.close();
+                try {
+                    handler.close();
+                } catch (IOHandler.BadDescriptorException e) {
+                	throw getRuntime().newErrnoEBADFError();
+                } catch (IOException e) {
+                    throw getRuntime().newIOError(e.getMessage());
+                }
             }
 
             // When we reopen, we want our fileno to be preserved even
@@ -260,7 +276,17 @@ public class RubyIO extends RubyObject {
             // too implementation specific, I did not bother trying to get
             // these to agree (what scary code would depend on fileno generating
             // a particular way?)
-            handler = ios.handler.cloneIOHandler();
+            try {
+                handler = ios.handler.cloneIOHandler();
+            } catch (IOHandler.InvalidValueException e) {
+            	throw getRuntime().newErrnoEINVALError();
+            } catch (IOHandler.PipeException e) {
+            	throw getRuntime().newErrnoESPIPEError();
+            } catch (FileNotFoundException e) {
+            	throw getRuntime().newErrnoENOENTError();
+            } catch (IOException e) {
+                throw getRuntime().newIOError(e.getMessage());
+            }
             handler.setFileno(keepFileno);
 
             // Update fileno list with our new handler
@@ -284,8 +310,10 @@ public class RubyIO extends RubyObject {
                 handler = new IOHandlerSeekable(getRuntime(), path, modes);
                 
                 registerIOHandler(handler);
+            } catch (IOHandler.InvalidValueException e) {
+            	throw getRuntime().newErrnoEINVALError();
             } catch (IOException e) {
-                throw new IOError(getRuntime(), e.toString());
+                throw getRuntime().newIOError(e.toString());
             }
         }
         
@@ -314,16 +342,24 @@ public class RubyIO extends RubyObject {
             separator = IOHandler.PARAGRAPH_DELIMETER;
         }
 
-        String newLine = handler.gets(separator);
+        try {
+            String newLine = handler.gets(separator);
 
-		if (newLine != null) {
-		    lineNumber++;
-		    getRuntime().getGlobalVariables().set("$.", getRuntime().newFixnum(lineNumber));
-		    RubyString result = getRuntime().newString(newLine);
-		    result.taint();
-		    return result;
-		}
-        return getRuntime().getNil();
+		    if (newLine != null) {
+		        lineNumber++;
+		        getRuntime().getGlobalVariables().set("$.", getRuntime().newFixnum(lineNumber));
+		        RubyString result = getRuntime().newString(newLine);
+		        result.taint();
+		        
+		        return result;
+		    }
+		    
+            return getRuntime().getNil();
+        } catch (IOHandler.BadDescriptorException e) {
+            throw getRuntime().newErrnoEBADFError();
+        } catch (IOException e) {
+            throw getRuntime().newIOError(e.getMessage());
+        }
     }
 
     // IO class methods.
@@ -346,7 +382,12 @@ public class RubyIO extends RubyObject {
             if (mode == null) {
                 mode = "r";
             }
-            handler = new IOHandlerUnseekable(getRuntime(), newFileno, mode);
+            
+            try {
+                handler = new IOHandlerUnseekable(getRuntime(), newFileno, mode);
+            } catch (IOException e) {
+                throw getRuntime().newIOError(e.getMessage());
+            }
             modes = new IOModes(getRuntime(), mode);
             
             registerIOHandler(handler);
@@ -360,7 +401,13 @@ public class RubyIO extends RubyObject {
             	new IOModes(getRuntime(), mode);
 
             // Reset file based on modes.
-            handler.reset(modes);
+            try {
+                handler.reset(modes);
+            } catch (IOHandler.InvalidValueException e) {
+            	throw getRuntime().newErrnoEINVALError();
+            } catch (IOException e) {
+                throw getRuntime().newIOError(e.getMessage());
+            }
         }
         
         return this;
@@ -372,7 +419,13 @@ public class RubyIO extends RubyObject {
 	}
 
     public IRubyObject syswrite(IRubyObject obj) {
-        return getRuntime().newFixnum(handler.syswrite(obj.toString()));
+        try {
+            return getRuntime().newFixnum(handler.syswrite(obj.toString()));
+        } catch (IOHandler.BadDescriptorException e) {
+            throw getRuntime().newErrnoEBADFError();
+        } catch (IOException e) {
+            throw getRuntime().newSystemCallError(e.getMessage());
+        }
     }
     
     /** io_write
@@ -385,9 +438,9 @@ public class RubyIO extends RubyObject {
             int totalWritten = handler.write(obj.toString());
 
             return getRuntime().newFixnum(totalWritten);
-        } catch (IOError e) {
+        } catch (IOHandler.BadDescriptorException e) {
             return RubyFixnum.zero(getRuntime());
-        } catch (ErrnoError e) {
+        } catch (IOException e) {
             return RubyFixnum.zero(getRuntime());
         }
     }
@@ -453,17 +506,31 @@ public class RubyIO extends RubyObject {
     }
     
     public RubyFixnum pos() {
-        return getRuntime().newFixnum(handler.pos());
+        try {
+            return getRuntime().newFixnum(handler.pos());
+        } catch (IOHandler.PipeException e) {
+        	throw getRuntime().newErrnoESPIPEError();
+        } catch (IOException e) {
+            throw getRuntime().newIOError(e.getMessage());
+        }
     }
     
     public RubyFixnum pos_set(IRubyObject newPosition) {
         long offset = RubyNumeric.fix2long(newPosition);
 
         if (offset < 0) {
-            throw new SystemCallError(getRuntime(), "Negative seek offset");
+            throw getRuntime().newSystemCallError("Negative seek offset");
         }
         
-        handler.seek(offset, IOHandler.SEEK_SET);
+        try {
+            handler.seek(offset, IOHandler.SEEK_SET);
+        } catch (IOHandler.InvalidValueException e) {
+        	throw getRuntime().newErrnoEINVALError();
+        } catch (IOHandler.PipeException e) {
+        	throw getRuntime().newErrnoESPIPEError();
+        } catch (IOException e) {
+            throw getRuntime().newIOError(e.getMessage());
+        }
         
         return (RubyFixnum) newPosition;
     }
@@ -522,7 +589,9 @@ public class RubyIO extends RubyObject {
 
         try {
             handler.putc(c);
-        } catch (ErrnoError e) {
+        } catch (IOHandler.BadDescriptorException e) {
+            return RubyFixnum.zero(getRuntime());
+        } catch (IOException e) {
             return RubyFixnum.zero(getRuntime());
         }
         
@@ -543,13 +612,29 @@ public class RubyIO extends RubyObject {
             type = RubyNumeric.fix2int(args[1].convertToInteger());
         }
         
-        handler.seek(offset, type);
+        try {
+            handler.seek(offset, type);
+        } catch (IOHandler.InvalidValueException e) {
+        	throw getRuntime().newErrnoEINVALError();
+        } catch (IOHandler.PipeException e) {
+        	throw getRuntime().newErrnoESPIPEError();
+        } catch (IOException e) {
+            throw getRuntime().newIOError(e.getMessage());
+        }
         
         return RubyFixnum.zero(getRuntime());
     }
 
     public RubyFixnum rewind() {
-        handler.rewind();
+        try {
+		    handler.rewind();
+        } catch (IOHandler.InvalidValueException e) {
+        	throw getRuntime().newErrnoEINVALError();
+        } catch (IOHandler.PipeException e) {
+        	throw getRuntime().newErrnoESPIPEError();
+	    } catch (IOException e) {
+	        throw getRuntime().newIOError(e.getMessage());
+	    }
 
         // Must be back on first line on rewind.
         lineNumber = 0;
@@ -563,7 +648,7 @@ public class RubyIO extends RubyObject {
         try {
             handler.sync();
         } catch (IOException e) {
-            throw IOError.fromException(getRuntime(), e);
+            throw getRuntime().newIOError(e.getMessage());
         }
 
         return RubyFixnum.zero(getRuntime());
@@ -580,8 +665,14 @@ public class RubyIO extends RubyObject {
     }
 
     public RubyBoolean eof() {
-        boolean isEOF = handler.isEOF(); 
-        return isEOF ? getRuntime().getTrue() : getRuntime().getFalse();
+        try {
+            boolean isEOF = handler.isEOF(); 
+            return isEOF ? getRuntime().getTrue() : getRuntime().getFalse();
+        } catch (IOHandler.BadDescriptorException e) {
+            throw getRuntime().newErrnoEBADFError();
+        } catch (IOException e) {
+        	throw getRuntime().newIOError(e.getMessage());
+        }
     }
     
     public RubyIO clone_IO() {
@@ -621,7 +712,14 @@ public class RubyIO extends RubyObject {
      */
     public IRubyObject close() {
         isOpen = false;
-        handler.close();
+        
+        try {
+            handler.close();
+        } catch (IOHandler.BadDescriptorException e) {
+            throw getRuntime().newErrnoEBADFError();
+        } catch (IOException e) {
+            throw getRuntime().newIOError(e.getMessage());
+        }
         
         unregisterIOHandler(handler.getFileno());
         
@@ -633,7 +731,13 @@ public class RubyIO extends RubyObject {
      * @return The IO.
      */
     public RubyIO flush() {
-        handler.flush();
+        try { 
+            handler.flush();
+        } catch (IOHandler.BadDescriptorException e) {
+            throw getRuntime().newErrnoEBADFError();
+        } catch (IOException e) {
+            throw getRuntime().newIOError(e.getMessage());
+        }
 
         return this;
     }
@@ -684,7 +788,7 @@ public class RubyIO extends RubyObject {
         IRubyObject line = gets(args);
 
         if (line.isNil()) {
-            throw new EOFError(getRuntime());
+            throw getRuntime().newEOFError();
         }
         
         return line;
@@ -696,11 +800,15 @@ public class RubyIO extends RubyObject {
     public IRubyObject getc() {
         checkReadable();
         
-        int c = handler.getc();
+        try {
+            int c = handler.getc();
         
-        return c == -1 ? 
-            getRuntime().getNil() : // EOF
-        	getRuntime().newFixnum(c);
+            return c == -1 ? getRuntime().getNil() : getRuntime().newFixnum(c);
+        } catch (IOHandler.BadDescriptorException e) {
+            throw getRuntime().newErrnoEBADFError();
+        } catch (IOException e) {
+            throw getRuntime().newIOError(e.getMessage());
+        }
     }
     
     /** 
@@ -715,15 +823,36 @@ public class RubyIO extends RubyObject {
     }
     
     public IRubyObject sysread(IRubyObject number) {
-        String buf = handler.sysread(RubyNumeric.fix2int(number));
+        try {
+            String buf = handler.sysread(RubyNumeric.fix2int(number));
         
-        return getRuntime().newString(buf);
+            return getRuntime().newString(buf);
+        } catch (IOHandler.BadDescriptorException e) {
+            throw getRuntime().newErrnoEBADFError();
+        } catch (EOFException e) {
+    		throw getRuntime().newEOFError();
+    	} catch (IOException e) {
+    		// All errors to sysread should be SystemCallErrors, but on a closed stream
+    		// Ruby returns an IOError.  Java throws same exception for all errors so
+    		// we resort to this hack...
+    		if ("File not open".equals(e.getMessage())) {
+    			throw getRuntime().newIOError(e.getMessage());
+    		}
+    	    throw getRuntime().newSystemCallError(e.getMessage());
+    	}
     }
     
     public IRubyObject read(IRubyObject[] args) {
-        String buf = args.length > 0 ? handler.read(RubyNumeric.fix2int(args[0])) : handler.getsEntireStream();
+    	try {
+            String buf = args.length > 0 ? 
+                handler.read(RubyNumeric.fix2int(args[0])) : handler.getsEntireStream();
 
-        return buf == null ? getRuntime().getNil() : getRuntime().newString(buf);
+            return buf == null ? getRuntime().getNil() : getRuntime().newString(buf);
+        } catch (IOHandler.BadDescriptorException e) {
+            throw getRuntime().newErrnoEBADFError();
+        } catch (IOException e) {
+            throw getRuntime().newIOError(e.getMessage());
+        }
     }
 
     /** Read a byte. On EOF throw EOFError.
@@ -732,25 +861,37 @@ public class RubyIO extends RubyObject {
     public IRubyObject readchar() {
         checkReadable();
         
-        int c = handler.getc();
+        try {
+            int c = handler.getc();
         
-        if (c == -1) {
-            throw new EOFError(getRuntime());
+            if (c == -1) {
+                throw getRuntime().newEOFError();
+            }
+        
+            return getRuntime().newFixnum(c);
+        } catch (IOHandler.BadDescriptorException e) {
+            throw getRuntime().newErrnoEBADFError();
+        } catch (IOException e) {
+            throw getRuntime().newIOError(e.getMessage());
         }
-        
-        return getRuntime().newFixnum(c);
     }
 
     /** 
      * <p>Invoke a block for each byte.</p>
      */
     public IRubyObject each_byte() {
-        for (int c = handler.getc(); c != -1; c = handler.getc()) {
-            assert c < 256;
-            getRuntime().yield(getRuntime().newFixnum(c));
-        }
+    	try {
+            for (int c = handler.getc(); c != -1; c = handler.getc()) {
+                assert c < 256;
+                getRuntime().yield(getRuntime().newFixnum(c));
+            }
 
-        return getRuntime().getNil();
+            return getRuntime().getNil();
+        } catch (IOHandler.BadDescriptorException e) {
+            throw getRuntime().newErrnoEBADFError();
+    	} catch (IOException e) {
+    	    throw getRuntime().newIOError(e.getMessage());
+        }
     }
 
     /** 
@@ -796,7 +937,11 @@ public class RubyIO extends RubyObject {
     }
     
     protected void bindStreams(InputStream inputStream, OutputStream outputStream) {
-        handler = new IOHandlerUnseekable(getRuntime(), inputStream, outputStream);
+        try {
+            handler = new IOHandlerUnseekable(getRuntime(), inputStream, outputStream);
+    	} catch (IOException e) {
+            throw getRuntime().newIOError(e.getMessage());
+        }
         registerIOHandler(handler);
         modes = handler.getModes();
     }

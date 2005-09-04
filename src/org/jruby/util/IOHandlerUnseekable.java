@@ -39,9 +39,6 @@ import java.io.OutputStream;
 
 import org.jruby.Ruby;
 import org.jruby.RubyIO;
-import org.jruby.exceptions.ErrnoError;
-import org.jruby.exceptions.IOError;
-import org.jruby.exceptions.SystemCallError;
 
 /**
  * @author enebo
@@ -54,9 +51,10 @@ public class IOHandlerUnseekable extends IOHandler {
     /**
      * @param inStream
      * @param outStream
+     * @throws IOException 
      */
     public IOHandlerUnseekable(Ruby runtime, InputStream inStream, 
-                     OutputStream outStream) {
+                     OutputStream outStream) throws IOException {
         super(runtime);
         String mode = "";
         
@@ -83,7 +81,7 @@ public class IOHandlerUnseekable extends IOHandler {
         
 	        // Neither stream exists?
 	        if (!isOpen) {
-	            throw new IOError(runtime, "Opening nothing?");
+	            throw new IOException("Opening nothing?");
 	        }
 	        
 	        modes = new IOModes(runtime, mode);
@@ -91,7 +89,7 @@ public class IOHandlerUnseekable extends IOHandler {
         fileno = RubyIO.getNewFileno();
     }
     
-    public IOHandlerUnseekable(Ruby runtime, int fileno) {
+    public IOHandlerUnseekable(Ruby runtime, int fileno) throws IOException {
         super(runtime);
         
         switch (fileno) {
@@ -111,19 +109,19 @@ public class IOHandlerUnseekable extends IOHandler {
             isOpen = true;
             break;
         default:
-            throw new IOError(getRuntime(), "Bad file descriptor");
+            throw new IOException("Bad file descriptor");
         }
         
         this.fileno = fileno;
     }
     
-    public IOHandlerUnseekable(Ruby runtime, int fileno, String mode) {
+    public IOHandlerUnseekable(Ruby runtime, int fileno, String mode) throws IOException {
         super(runtime);
 
         modes = new IOModes(runtime, mode);
         
         if (fileno < 0 || fileno > 2) {
-            throw new IOError(getRuntime(), "Bad file descriptor");
+            throw new IOException("Bad file descriptor");
         }
         
         if (modes.isReadable()) {
@@ -140,50 +138,42 @@ public class IOHandlerUnseekable extends IOHandler {
         this.fileno = fileno;
     }
     
-    public IOHandler cloneIOHandler() {
+    public IOHandler cloneIOHandler() throws IOException {
         return new IOHandlerUnseekable(getRuntime(), input, output); 
     }
 
     /**
      * <p>Close IO handler resources.</p>
+     * @throws IOException 
+     * @throws BadDescriptorException 
      * 
      * @see org.jruby.util.IOHandler#close()
      */
-    public void close() {
+    public void close() throws IOException, BadDescriptorException {
         if (!isOpen()) {
-            throw ErrnoError.getErrnoError(getRuntime(), "EBADF", "Bad File Descriptor");
+        	throw new BadDescriptorException();
         }
         
         isOpen = false;
 
         if (modes.isReadable()) {
-            try {
-                input.close();
-            } catch (IOException e) {
-                throw IOError.fromException(getRuntime(), e);
-            }
+            input.close();
         }
         
         if (modes.isWriteable()) {
-            try {
-                output.close();
-            } catch (IOException e) {
-                throw IOError.fromException(getRuntime(), e);
-            }
+            output.close();
         }
     }
 
     /**
+     * @throws IOException 
+     * @throws BadDescriptorException 
      * @see org.jruby.util.IOHandler#flush()
      */
-    public void flush() {
+    public void flush() throws IOException, BadDescriptorException {
         checkWriteable();
 
-        try {
-            output.flush();
-        } catch (IOException e) {
-            throw IOError.fromException(getRuntime(), e);
-        }
+        output.flush();
     }
     
     /**
@@ -201,21 +191,19 @@ public class IOHandlerUnseekable extends IOHandler {
     }
 
     /**
+     * @throws IOException 
+     * @throws BadDescriptorException 
      * @see org.jruby.util.IOHandler#isEOF()
      */
-    public boolean isEOF() {
+    public boolean isEOF() throws IOException, BadDescriptorException {
         checkReadable();
 
-        try {
-            int c = input.read();
-            if (c == -1) {
-                return true;
-            }
-            ungetc(c);
-            return false;
-        } catch (IOException e) {
-            throw IOError.fromException(getRuntime(), e);
+        int c = input.read();
+        if (c == -1) {
+            return true;
         }
+        ungetc(c);
+        return false;
     }
     
     /**
@@ -227,27 +215,30 @@ public class IOHandlerUnseekable extends IOHandler {
     }
     
     /**
+     * @throws PipeException 
      * @see org.jruby.util.IOHandler#pos()
      */
-    public long pos() {
-        throw ErrnoError.getErrnoError(getRuntime(), "ESPIPE", "Illegal seek");
+    public long pos() throws PipeException {
+        throw new IOHandler.PipeException();
     }
     
     public void resetByModes(IOModes newModes) {
     }
     
     /**
+     * @throws PipeException 
      * @see org.jruby.util.IOHandler#rewind()
      */
-    public void rewind() {
-        throw ErrnoError.getErrnoError(getRuntime(), "ESPIPE", "Illegal seek");
+    public void rewind() throws PipeException {
+        throw new IOHandler.PipeException();
     }
     
     /**
+     * @throws PipeException 
      * @see org.jruby.util.IOHandler#seek(long, int)
      */
-    public void seek(long offset, int type) {
-        throw ErrnoError.getErrnoError(getRuntime(), "ESPIPE", "Illegal seek");
+    public void seek(long offset, int type) throws PipeException {
+        throw new IOHandler.PipeException();
     }
     
     /**
@@ -269,9 +260,11 @@ public class IOHandlerUnseekable extends IOHandler {
     }
 
     /**
+     * @throws IOException 
+     * @throws BadDescriptorException 
      * @see org.jruby.util.IOHandler#syswrite(String buf)
      */
-    public int syswrite(String buf) {
+    public int syswrite(String buf) throws IOException, BadDescriptorException {
         getRuntime().secure(4);
         checkWriteable();
         
@@ -279,21 +272,17 @@ public class IOHandlerUnseekable extends IOHandler {
             return 0;
         }
         
-        try {
-            output.write(buf.getBytes());
+        output.write(buf.getBytes());
 
-            // Should syswrite sync?
-            if (isSync) {
-                sync();
-            }
-            
-            return buf.length();
-        } catch (IOException e) {
-            throw new SystemCallError(getRuntime(), e.toString());
+        // Should syswrite sync?
+        if (isSync) {
+            sync();
         }
+            
+        return buf.length();
     }
     
-    public void truncate(long newLength) throws IOException {
-        throw ErrnoError.getErrnoError(getRuntime(), "ESPIPE", "Illegal seek");
+    public void truncate(long newLength) throws IOException, PipeException {
+        throw new IOHandler.PipeException();
     }
 }

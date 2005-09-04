@@ -38,11 +38,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
-import org.jruby.exceptions.IOError;
+
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.IOHandler;
 import org.jruby.util.IOHandlerSeekable;
 import org.jruby.util.IOHandlerUnseekable;
 import org.jruby.util.IOModes;
+import org.jruby.util.IOHandler.InvalidValueException;
 
 /**
  * Ruby File class equivalent in java.
@@ -71,7 +73,7 @@ public class RubyFile extends RubyIO {
 		try {
 			return new FileInputStream(path);
 		} catch (FileNotFoundException e) {
-            throw new IOError(runtime, e.getMessage());
+            throw runtime.newIOError(e.getMessage());
         }
 	}
     
@@ -86,11 +88,15 @@ public class RubyFile extends RubyIO {
 	}
 	
 	private RubyFile(Ruby runtime, String path, InputStream in) {
-		super(runtime, runtime.getClass("File"));
-		this.path = path;
-		this.handler = new IOHandlerUnseekable(runtime, in, null);
-		this.modes = handler.getModes();
-		registerIOHandler(handler);
+        super(runtime, runtime.getClass("File"));
+        this.path = path;
+		try {
+            this.handler = new IOHandlerUnseekable(runtime, in, null);
+        } catch (IOException e) {
+            throw runtime.newIOError(e.getMessage());  
+        }
+        this.modes = handler.getModes();
+        registerIOHandler(handler);
 	}
     
     public void openInternal(String newPath, IOModes newModes) {
@@ -101,9 +107,13 @@ public class RubyFile extends RubyIO {
             handler = new IOHandlerSeekable(getRuntime(), newPath, newModes);
             
             registerIOHandler(handler);
+        } catch (InvalidValueException e) {
+        	throw getRuntime().newErrnoEINVALError();
+        } catch (FileNotFoundException e) {
+        	throw getRuntime().newErrnoENOENTError();
         } catch (IOException e) {
-            throw IOError.fromException(getRuntime(), e);
-        }
+            throw getRuntime().newIOError(e.getMessage());
+		}
     }
 	
 	/* TODO: Implement flock()...
@@ -156,6 +166,8 @@ public class RubyFile extends RubyIO {
     	RubyFixnum newLength = (RubyFixnum) arg.convertToType("Fixnum", "to_int", true);
         try {
             handler.truncate(newLength.getLongValue());
+        } catch (IOHandler.PipeException e) {
+        	throw getRuntime().newErrnoESPIPEError();
         } catch (IOException e) {
             // Should we do anything?
         }

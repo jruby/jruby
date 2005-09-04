@@ -30,15 +30,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
 import org.jruby.Ruby;
-import org.jruby.exceptions.EOFError;
-import org.jruby.exceptions.ErrnoError;
-import org.jruby.exceptions.IOError;
-import org.jruby.exceptions.SystemCallError;
 
 /**
  */
@@ -88,31 +85,29 @@ public abstract class IOHandler {
         return modes.isWriteable();
     }
 
-    protected void checkOpen() {
+    protected void checkOpen() throws IOException {
         if (!isOpen) {
-            throw new IOError(getRuntime(), "not opened");
+            throw new IOException("not opened");
         }
     }
     
-    protected void checkReadable() {
+    protected void checkReadable() throws IOException, BadDescriptorException {
         if (!isOpen) {
-            throw ErrnoError.getErrnoError(getRuntime(), "EBADF",
-                    "Bad file descriptor");
+        	throw new BadDescriptorException();
         }
         
         if (!modes.isReadable()) {
-            throw new IOError(getRuntime(), "not opened for reading");
+            throw new IOException("not opened for reading");
         }
     }
 
-    protected void checkWriteable() {
+    protected void checkWriteable() throws IOException, BadDescriptorException {
         if (!isOpen) {
-            throw ErrnoError.getErrnoError(getRuntime(), "EBADF",
-            "Bad file descriptor");
+            throw new BadDescriptorException();
         }
         
         if (!modes.isWriteable()) {
-            throw new IOError(getRuntime(), "not opened for writing");
+            throw new IOException("not opened for writing");
         }
     }
 
@@ -132,7 +127,7 @@ public abstract class IOHandler {
         this.isSync = isSync;
     }
     
-    public String gets(String separatorString) {
+    public String gets(String separatorString) throws IOException, BadDescriptorException {
         checkReadable();
         
         if (separatorString == null) {
@@ -178,7 +173,7 @@ public abstract class IOHandler {
         return buffer.toString();
     }
     
-    public String getsEntireStream() {
+    public String getsEntireStream() throws IOException {
         StringBuffer result = new StringBuffer();
         int c;
         while ((c = read()) != -1) {
@@ -193,7 +188,7 @@ public abstract class IOHandler {
         return result.toString();
     }
     
-    public int read() {
+    public int read() throws IOException {
         try {
             if (ungotc >= 0) {
                 int c = ungotc;
@@ -202,16 +197,12 @@ public abstract class IOHandler {
             }
             
             return sysread();
-        } catch (SystemCallError e) {
-            throw new IOError(getRuntime(), e.getMessage());
-        } catch (EOFError e) {
+        } catch (EOFException e) {
             return -1;
-        } catch (IOException e) {
-            throw new IOError(getRuntime(), e.getMessage());
         }
     }
     
-    public int getc() {
+    public int getc() throws IOException, BadDescriptorException {
         checkReadable();
         
         int c = read();
@@ -226,7 +217,7 @@ public abstract class IOHandler {
     // this, but then the impl gets more involved since java io APIs based on
     // int (means we have to chunk up a long into a series of int ops).
     
-    public String read(int number) {
+    public String read(int number) throws IOException, BadDescriptorException {
         try {
             
             if (ungotc >= 0) {
@@ -237,9 +228,7 @@ public abstract class IOHandler {
             } 
 
             return sysread(number);
-        } catch (SystemCallError e) {
-            throw new IOError(getRuntime(), e.getMessage());
-        } catch (EOFError e) {
+        } catch (EOFException e) {
             return null;
         }
     }
@@ -251,25 +240,21 @@ public abstract class IOHandler {
         }
     }
     
-    public void putc(int c) {
+    public void putc(int c) throws IOException, BadDescriptorException {
         try {
             syswrite("" + (char) c);         // LAME
-        } catch (IOError e) {
+        } catch (IOException e) {
         }
     }
     
-    public void reset(IOModes subsetModes) {
+    public void reset(IOModes subsetModes) throws IOException, InvalidValueException {
         checkPermissionsSubsetOf(subsetModes);
         
         resetByModes(subsetModes);
     }
     
-    public int write(String string) {
-        try {
-            return syswrite(string);
-        } catch (SystemCallError e) {
-            throw new IOError(getRuntime(), e.getMessage());
-        }
+    public int write(String string) throws IOException, BadDescriptorException {
+        return syswrite(string);
     }
     
     private int sysread(StringBuffer buf, int length) throws IOException {
@@ -295,39 +280,35 @@ public abstract class IOHandler {
     }
 
     // Question: We should read bytes or chars?
-    public String sysread(int number) {
+    public String sysread(int number) throws IOException, BadDescriptorException {
         if (!isOpen()) {
-            throw new IOError(getRuntime(), "File not open");
+            throw new IOException("File not open");
         }
         checkReadable();
         
         StringBuffer buf = new StringBuffer();
         int position = 0;
         
-        try {
-            while (position < number) {
-                int s = sysread(buf, number - position);
+        while (position < number) {
+            int s = sysread(buf, number - position);
                 
-                if (s == -1) {
-                    if (position <= 0) {
-                        throw new EOFError(getRuntime());
-                    }
-                    break;
+            if (s == -1) {
+                if (position <= 0) {
+                    throw new EOFException();
                 }
-                
-                position += s;
+                break;
             }
-            
-            return buf.toString();
-        } catch (IOException e) {
-            throw new SystemCallError(getRuntime(), e.toString());
+                
+            position += s;
         }
+            
+        return buf.toString();
     }
     
     
-    public abstract IOHandler cloneIOHandler();
-    public abstract void close();
-    public abstract void flush();
+    public abstract IOHandler cloneIOHandler() throws IOException, PipeException, InvalidValueException;
+    public abstract void close() throws IOException, BadDescriptorException;
+    public abstract void flush() throws IOException, BadDescriptorException;
     public abstract InputStream getInputStream();
     public abstract OutputStream getOutputStream();
     
@@ -335,8 +316,10 @@ public abstract class IOHandler {
      * <p>Return true when at end of file (EOF).</p>
      * 
      * @return true if at EOF; false otherwise
+     * @throws IOException 
+     * @throws BadDescriptorException 
      */
-    public abstract boolean isEOF();
+    public abstract boolean isEOF() throws IOException, BadDescriptorException;
     
     /**
      * <p>Get the process ID associated with this handler.</p>
@@ -350,18 +333,22 @@ public abstract class IOHandler {
      * handler.</p>  
      * 
      * @return the current position in the file.
-     * @throws ErrnoError ESPIPE (illegal seek) when not a file
+     * @throws IOException 
+     * @throws PipeException ESPIPE (illegal seek) when not a file 
      * 
      */
-    public abstract long pos();
+    public abstract long pos() throws IOException, PipeException;
     
-    protected abstract void resetByModes(IOModes newModes);
-    public abstract void rewind();
+    protected abstract void resetByModes(IOModes newModes) throws IOException, InvalidValueException;
+    public abstract void rewind() throws IOException, PipeException, InvalidValueException;
     
     /**
      * <p>Perform a seek based on pos().  </p> 
+     * @throws IOException 
+     * @throws PipeException 
+     * @throws InvalidValueException 
      */
-    public abstract void seek(long offset, int type);
+    public abstract void seek(long offset, int type) throws IOException, PipeException, InvalidValueException;
     /**
      * <p>Flush and sync all writes to the filesystem.</p>
      * 
@@ -369,6 +356,16 @@ public abstract class IOHandler {
      */
     public abstract void sync() throws IOException; 
     public abstract int sysread() throws IOException;
-    public abstract int syswrite(String buf);
-    public abstract void truncate(long newLength) throws IOException;
+    public abstract int syswrite(String buf) throws IOException, BadDescriptorException;
+    public abstract void truncate(long newLength) throws IOException, PipeException;
+    
+    public class PipeException extends Exception {
+		private static final long serialVersionUID = 1L;
+    }
+    public class BadDescriptorException extends Exception {
+		private static final long serialVersionUID = 1L;
+    }
+    public class InvalidValueException extends Exception {
+		private static final long serialVersionUID = 1L;
+    }
 }

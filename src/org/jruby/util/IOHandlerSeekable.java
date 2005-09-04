@@ -33,6 +33,7 @@ package org.jruby.util;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -40,9 +41,6 @@ import java.io.RandomAccessFile;
 
 import org.jruby.Ruby;
 import org.jruby.RubyIO;
-import org.jruby.exceptions.ErrnoError;
-import org.jruby.exceptions.IOError;
-import org.jruby.exceptions.SystemCallError;
 
 /**
  * <p>This file implements a seekable IO file.</p>
@@ -54,7 +52,7 @@ public class IOHandlerSeekable extends IOHandler {
     protected String path;
     
     public IOHandlerSeekable(Ruby runtime, String path, IOModes modes) 
-    	throws IOException {
+    	throws IOException, InvalidValueException {
         super(runtime);
         
         this.path = path;
@@ -71,7 +69,7 @@ public class IOHandlerSeekable extends IOHandler {
             }
         } else {
             if (modes.isReadable() && !modes.isWriteable()) {
-                throw ErrnoError.getErrnoError(runtime, "ENOENT", "No such file");
+                throw new FileNotFoundException();
             }
         }
 
@@ -95,42 +93,37 @@ public class IOHandlerSeekable extends IOHandler {
         fileno = RubyIO.getNewFileno();
     }
     
-    public IOHandler cloneIOHandler() {
-        try {
-            IOHandler newHandler =
-                new IOHandlerSeekable(getRuntime(), path, modes); 
+    public IOHandler cloneIOHandler() throws IOException, PipeException, InvalidValueException {
+        IOHandler newHandler = new IOHandlerSeekable(getRuntime(), path, modes); 
             
-            newHandler.seek(pos(), SEEK_CUR);
+        newHandler.seek(pos(), SEEK_CUR);
             
-            return newHandler;
-        } catch (IOException e) {
-            throw new IOError(getRuntime(), e.toString());
-        }
+        return newHandler;
     }
     
     /**
      * <p>Close IO handler resources.</p>
+     * @throws IOException 
+     * @throws BadDescriptorException 
      * 
      * @see org.jruby.util.IOHandler#close()
      */
-    public void close() {
+    public void close() throws IOException, BadDescriptorException {
         if (!isOpen()) {
-            throw ErrnoError.getErrnoError(getRuntime(), "EBADF", "Bad File Descriptor");
+        	throw new BadDescriptorException();
         }
         
         isOpen = false;
 
-        try {
-            file.close();
-        } catch (IOException e) {
-            throw IOError.fromException(getRuntime(), e);
-        }
+        file.close();
     }
 
     /**
+     * @throws IOException 
+     * @throws BadDescriptorException 
      * @see org.jruby.util.IOHandler#flush()
      */
-    public void flush() {
+    public void flush() throws IOException, BadDescriptorException {
         checkWriteable();
 
         // No flushing a random access file.
@@ -151,21 +144,19 @@ public class IOHandlerSeekable extends IOHandler {
     }
     
     /**
+     * @throws IOException 
+     * @throws BadDescriptorException 
      * @see org.jruby.util.IOHandler#isEOF()
      */
-    public boolean isEOF() {
+    public boolean isEOF() throws IOException, BadDescriptorException {
         checkReadable();
 
-        try {
-            int c = file.read();
-            if (c == -1) {
-                return true;
-            }
-            file.seek(file.getFilePointer() - 1);
-            return false;
-        } catch (IOException e) {
-            throw IOError.fromException(getRuntime(), e);
+        int c = file.read();
+        if (c == -1) {
+            return true;
         }
+        file.seek(file.getFilePointer() - 1);
+        return false;
     }
     
     /**
@@ -177,19 +168,16 @@ public class IOHandlerSeekable extends IOHandler {
     }
     
     /**
+     * @throws IOException 
      * @see org.jruby.util.IOHandler#pos()
      */
-    public long pos() {
+    public long pos() throws IOException {
         checkOpen();
         
-        try {
-            return file.getFilePointer();
-        } catch (IOException e) {
-            throw IOError.fromException(getRuntime(), e);
-        }
+        return file.getFilePointer();
     }
     
-    public void resetByModes(IOModes newModes) {
+    public void resetByModes(IOModes newModes) throws IOException, InvalidValueException {
         if (newModes.isAppendable()) {
             seek(0L, SEEK_END);
         } else if (newModes.isWriteable()) {
@@ -198,18 +186,23 @@ public class IOHandlerSeekable extends IOHandler {
     }
 
     /**
+     * @throws IOException 
+     * @throws InvalidValueException 
      * @see org.jruby.util.IOHandler#rewind()
      */
-    public void rewind() {
+    public void rewind() throws IOException, InvalidValueException {
         seek(0, SEEK_SET);
     }
     
     /**
+     * @throws IOException 
+     * @throws InvalidValueException 
      * @see org.jruby.util.IOHandler#seek(long, int)
      */
-    public void seek(long offset, int type) {
+    public void seek(long offset, int type) throws IOException, InvalidValueException {
         checkOpen();
-        
+
+        // TODO:  This seems wrong...Invalid value should be for switch..not any IOError?
         try {
             switch (type) {
             case SEEK_SET:
@@ -223,7 +216,7 @@ public class IOHandlerSeekable extends IOHandler {
                 break;
             }
         } catch (IOException e) {
-            throw ErrnoError.getErrnoError(getRuntime(), "EINVAL", e.toString());
+        	throw new InvalidValueException();
         }
     }
 
@@ -243,9 +236,11 @@ public class IOHandlerSeekable extends IOHandler {
     }
     
     /**
+     * @throws IOException 
+     * @throws BadDescriptorException 
      * @see org.jruby.util.IOHandler#syswrite(String buf)
      */
-    public int syswrite(String buf) {
+    public int syswrite(String buf) throws IOException, BadDescriptorException {
         getRuntime().secure(4);
         checkWriteable();
         
@@ -254,17 +249,13 @@ public class IOHandlerSeekable extends IOHandler {
             return 0;
         }
         
-        try {
-            file.writeBytes(buf);
+        file.writeBytes(buf);
             
-            if (isSync()) {
-                sync();
-            }
-            
-            return buf.length();
-        } catch (IOException e) {
-            throw new SystemCallError(getRuntime(), e.toString());
+        if (isSync()) {
+            sync();
         }
+            
+        return buf.length();
     }
     
     public void truncate(long newLength) throws IOException {

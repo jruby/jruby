@@ -52,11 +52,14 @@ import org.jruby.common.RubyWarnings;
 import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.BreakJump;
+import org.jruby.exceptions.EOFError;
+import org.jruby.exceptions.ErrnoError;
 import org.jruby.exceptions.IOError;
 import org.jruby.exceptions.IndexError;
 import org.jruby.exceptions.RetryJump;
 import org.jruby.exceptions.ReturnJump;
 import org.jruby.exceptions.SecurityError;
+import org.jruby.exceptions.SystemCallError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ThreadService;
@@ -1119,12 +1122,40 @@ public final class Ruby {
     	return new ArgumentError(this, got, expected);
     }
     
+    public EOFError newEOFError() {
+    	return new EOFError(this);
+    }
+    
+    public ErrnoError newErrnoEBADFError() {
+    	return ErrnoError.getErrnoError(this, "EBADF", "Bad file descriptor");
+    }
+
+    public ErrnoError newErrnoEINVALError() {
+    	return ErrnoError.getErrnoError(this, "EINVAL", "Invalid file");
+    }
+
+    public ErrnoError newErrnoENOENTError() {
+    	return ErrnoError.getErrnoError(this, "ENOENT", "File not found");
+    }
+
+    public ErrnoError newErrnoESPIPEError() {
+    	return ErrnoError.getErrnoError(this, "ESPIPE", "Illegal seek");
+    }
+
     public IndexError newIndexError(String message) {
     	return new IndexError(this, message);
     }
     
+    public IOError newIOError(String message) {
+    	return new IOError(this, message);
+    }
+    
     public SecurityError newSecurityError(String message) {
     	return new SecurityError(this, message);
+    }
+    
+    public SystemCallError newSystemCallError(String message) {
+    	return new SystemCallError(this, message);
     }
 
     public TypeError newTypeError(String message) {
