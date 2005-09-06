@@ -14,7 +14,7 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
- * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -36,10 +36,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jruby.exceptions.ErrnoError;
-import org.jruby.exceptions.IOError;
-import org.jruby.exceptions.NotImplementedError;
-import org.jruby.exceptions.SystemCallError;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -125,7 +121,7 @@ public class RubyDir extends RubyObject {
         dir = new File(newPath.getValue()).getAbsoluteFile();
         if (!dir.isDirectory()) {
             dir = null;
-            throw ErrnoError.getErrnoError(getRuntime(), "ENOENT", newPath.getValue() + " is not a directory");
+            throw getRuntime().newErrnoENOENTError(newPath.getValue() + " is not a directory");
         }
         path = newPath;
 		List snapshotList = new ArrayList();
@@ -168,8 +164,7 @@ public class RubyDir extends RubyObject {
         File directory = new File(path.toString());
         
         if (!directory.isDirectory()) {
-            throw ErrnoError.getErrnoError(recv.getRuntime(), "ENOENT", 
-            	"No such directory");
+            throw recv.getRuntime().newErrnoENOENTError("No such directory");
         }
         List fileList = getContents(directory);
 		fileList.add(0,".");
@@ -215,7 +210,7 @@ public class RubyDir extends RubyObject {
      * on all platforms.
      */
     public static IRubyObject chroot(IRubyObject recv, RubyString path) {
-        throw new NotImplementedError(recv.getRuntime(), "chroot not implemented: chroot is non-portable and is not supported.");
+        throw recv.getRuntime().newNotImplementedError("chroot not implemented: chroot is non-portable and is not supported.");
     }
 
     /**
@@ -226,7 +221,7 @@ public class RubyDir extends RubyObject {
         File directory = getDir(recv.getRuntime(), path.toString(), true);
         
         if (!directory.delete()) {
-            throw new SystemCallError(recv.getRuntime(), "No such directory");
+            throw recv.getRuntime().newSystemCallError("No such directory");
         }
         
         return recv.getRuntime().newFixnum(0);
@@ -342,7 +337,7 @@ public class RubyDir extends RubyObject {
 
     public IRubyObject path() {
         if (!isOpen) {
-            throw new IOError(getRuntime(), "closed directory");
+            throw getRuntime().newIOError("closed directory");
         }
         
         return path;
@@ -351,7 +346,7 @@ public class RubyDir extends RubyObject {
     /** Returns the next entry from this directory. */
     public IRubyObject read() {
 	if (!isOpen) {
-	    throw new IOError(getRuntime(), "Directory already closed");
+	    throw getRuntime().newIOError("Directory already closed");
 	}
 
         if (pos >= snapshot.length) {
@@ -391,9 +386,9 @@ public class RubyDir extends RubyObject {
 
 		boolean isDirectory = result.isDirectory();
         if (mustExist && !isDirectory) {
-            throw ErrnoError.getErrnoError(runtime, "ENOENT", path + " is not a directory");
+            throw runtime.newErrnoENOENTError(path + " is not a directory");
         } else if (!mustExist && isDirectory) {
-            throw ErrnoError.getErrnoError(runtime, "EEXIST", "File exists - " + path); 
+            throw runtime.newErrnoEEXISTError("File exists - " + path); 
         }
 
         return result;

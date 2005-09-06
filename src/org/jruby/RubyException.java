@@ -17,7 +17,7 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002-2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Joey Gibson <joey@joeygibson.com>
- * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -34,7 +34,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.Frame;
+import org.jruby.runtime.FrameStack;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -166,4 +169,47 @@ public class RubyException extends RubyObject {
         sb.append(">");
         return getRuntime().newString(sb.toString());
     }
+
+	/** 
+	 * Create an Array with backtrace information.
+	 * @param runtime
+	 * @param level
+	 * @param nativeException
+	 * @return an Array with the backtrace 
+	 */
+	public static IRubyObject createBacktrace(Ruby runtime, int level, boolean nativeException) {
+	    RubyArray backtrace = runtime.newArray();
+	    FrameStack stack = runtime.getFrameStack();
+	    int traceSize = stack.size() - level - 1;
+	    
+	    if (traceSize <= 0) {
+	    	return backtrace;
+	    }
+	    
+	    if (nativeException) {
+	        // assert level == 0;
+	        addBackTraceElement(backtrace, (Frame) stack.elementAt(stack.size() - 1), null);
+	    }
+	    
+	    for (int i = traceSize; i > 0; i--) {
+	    	addBackTraceElement(backtrace, (Frame) stack.elementAt(i), (Frame) stack.elementAt(i-1));
+	    }
+	
+	    return backtrace;
+	}
+
+	private static void addBackTraceElement(RubyArray backtrace, Frame frame, Frame previousFrame) {
+	    StringBuffer sb = new StringBuffer(100);
+	    SourcePosition position = frame.getPosition();
+	
+	    sb.append(position.getFile()).append(':').append(position.getLine());
+	
+	    if (previousFrame != null && previousFrame.getLastFunc() != null) {
+	        sb.append(":in `").append(previousFrame.getLastFunc()).append('\'');
+	    } else if (previousFrame == null && frame.getLastFunc() != null) {
+	        sb.append(":in `").append(frame.getLastFunc()).append('\'');
+	    }
+	
+	    backtrace.append(backtrace.getRuntime().newString(sb.toString()));
+	}
 }

@@ -148,16 +148,11 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.exceptions.BreakJump;
-import org.jruby.exceptions.FrozenError;
-import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.NextJump;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.RedoJump;
 import org.jruby.exceptions.RetryJump;
 import org.jruby.exceptions.ReturnJump;
-import org.jruby.exceptions.SecurityError;
-import org.jruby.exceptions.SystemStackError;
-import org.jruby.exceptions.TypeError;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.EvaluateMethod;
 import org.jruby.internal.runtime.methods.WrapperCallable;
@@ -221,7 +216,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         		node.accept(this);
         	} catch (StackOverflowError soe) {
         		// TODO: perhaps a better place to catch this
-        		throw new SystemStackError(runtime, "stack level too deep");
+        		throw runtime.newSystemStackError("stack level too deep");
         	}
         }
         return result;
@@ -232,7 +227,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitAliasNode(AliasNode iVisited) {
         if (threadContext.getRubyClass() == null) {
-            throw new TypeError(runtime, "no class to make alias");
+            throw runtime.newTypeError("no class to make alias");
         }
 
         threadContext.getRubyClass().defineAlias(iVisited.getNewName(), iVisited.getOldName());
@@ -348,7 +343,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         	proc = proc.convertToType("Proc", "to_proc", false);
         	
         	if (!(proc instanceof RubyProc)) {
-                throw new TypeError(runtime, "wrong argument type " + proc.getMetaClass().getName() + " (expected Proc)");
+                throw runtime.newTypeError("wrong argument type " + proc.getMetaClass().getName() + " (expected Proc)");
         	}
         }
 
@@ -400,7 +395,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitConstDeclNode(ConstDeclNode iVisited) {
         if (threadContext.getRubyClass() == null) {
-            throw new TypeError(runtime, "no class/module to define constant");
+            throw runtime.newTypeError("no class/module to define constant");
         }
         
         threadContext.getRubyClass().setConstant(iVisited.getName(), 
@@ -420,7 +415,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitClassVarDeclNode(ClassVarDeclNode iVisited) {
         if (threadContext.getRubyClass() == null) {
-            throw new TypeError(runtime, "no class/module to define class variable");
+            throw runtime.newTypeError("no class/module to define class variable");
         }
         eval(iVisited.getValueNode());
         threadContext.getRubyClass().setClassVar(iVisited.getName(), result);
@@ -557,13 +552,13 @@ public final class EvaluateVisitor implements NodeVisitor {
         } catch (Exception e) {
             if (superNode instanceof INameNode) {
                 String name = ((INameNode) superNode).getName();
-                throw new TypeError(runtime,
+                throw runtime.newTypeError(
                                     "undefined superclass '" + name + "'");
             }
-			throw new TypeError(runtime, "superclass undefined");
+			throw runtime.newTypeError("superclass undefined");
         }
         if (superClazz instanceof MetaClass) {
-            throw new TypeError(runtime, "can't make subclass of virtual class");
+            throw runtime.newTypeError("can't make subclass of virtual class");
         }
         return superClazz;
     }
@@ -695,7 +690,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     public void visitDefnNode(DefnNode iVisited) {
         RubyModule containingClass = threadContext.getRubyClass();
         if (containingClass == null) {
-            throw new TypeError(runtime, "No class to add method.");
+            throw runtime.newTypeError("No class to add method.");
         }
 
         String name = iVisited.getName();
@@ -740,13 +735,13 @@ public final class EvaluateVisitor implements NodeVisitor {
         IRubyObject receiver = eval(iVisited.getReceiverNode());
 
         if (runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
-            throw new SecurityError(runtime, "Insecure; can't define singleton method.");
+            throw runtime.newSecurityError("Insecure; can't define singleton method.");
         }
         if (receiver.isFrozen()) {
-            throw new FrozenError(runtime, "object");
+            throw runtime.newFrozenError("object");
         }
         if (! receiver.singletonMethodsAllowed()) {
-            throw new TypeError(runtime,
+            throw runtime.newTypeError(
                                 "can't define singleton method \"" +
                                 iVisited.getName() +
                                 "\" for " +
@@ -758,7 +753,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         if (runtime.getSafeLevel() >= 4) {
             ICallable method = (ICallable) rubyClass.getMethods().get(iVisited.getName());
             if (method != null) {
-                throw new SecurityError(runtime, "Redefining method prohibited.");
+                throw runtime.newSecurityError("Redefining method prohibited.");
             }
         }
 
@@ -1043,7 +1038,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         RubyModule enclosingModule = getEnclosingModule(classNameNode);
 
         if (enclosingModule == null) {
-            throw new TypeError(runtime, "no outer class/module");
+            throw runtime.newTypeError("no outer class/module");
         }
 
         RubyModule module;
@@ -1307,7 +1302,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             singletonClass = runtime.getClass("False");
         } else {
             if (runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
-                throw new SecurityError(runtime, "Insecure: can't extend object.");
+                throw runtime.newSecurityError("Insecure: can't extend object.");
             }
 
             singletonClass = receiver.getSingletonClass();
@@ -1365,7 +1360,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitSuperNode(SuperNode iVisited) {
         if (threadContext.getCurrentFrame().getLastClass() == null) {
-            throw new NameError(runtime, "Superclass method '" + threadContext.getCurrentFrame().getLastFunc() + "' disabled.");
+            throw runtime.newNameError("Superclass method '" + threadContext.getCurrentFrame().getLastFunc() + "' disabled.");
         }
 
         Block tmpBlock = threadContext.beginCallArgs();
@@ -1398,7 +1393,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitUndefNode(UndefNode iVisited) {
         if (threadContext.getRubyClass() == null) {
-            throw new TypeError(runtime, "No class to undef method '" + iVisited.getName() + "'.");
+            throw runtime.newTypeError("No class to undef method '" + iVisited.getName() + "'.");
         }
         threadContext.getRubyClass().undef(iVisited.getName());
     }
@@ -1596,7 +1591,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
         for (int i = 0; i < args.length; i++) {
             if (! args[i].isKindOf(runtime.getClass("Module"))) {
-                throw new TypeError(runtime, "class or module required for rescue clause");
+                throw runtime.newTypeError("class or module required for rescue clause");
             }
             if (args[i].callMethod("===", currentException).isTrue())
                 return true;

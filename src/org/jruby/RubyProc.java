@@ -17,6 +17,7 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002-2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -33,7 +34,6 @@
 package org.jruby;
 
 import org.jruby.exceptions.BreakJump;
-import org.jruby.exceptions.LocalJumpError;
 import org.jruby.exceptions.ReturnJump;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Iter;
@@ -118,14 +118,14 @@ public class RubyProc extends RubyObject {
             if (block.isLambda) {
                 return rj.getBreakValue();
             } 
-	        throw new LocalJumpError(getRuntime(), "unexpected return");
+	        throw getRuntime().newLocalJumpError("unexpected return");
         } catch (ReturnJump rj) {
         	Object target = rj.getTarget();
 
             if (target == this || block.isLambda) {
                 return rj.getReturnValue();
             } else if (target == null) {
-            	throw new LocalJumpError(getRuntime(), "unexpected return");
+            	throw getRuntime().newLocalJumpError("unexpected return");
             }
             throw rj;
         } finally {

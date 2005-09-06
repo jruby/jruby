@@ -16,6 +16,7 @@
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -33,8 +34,6 @@ package org.jruby;
 
 import java.util.List;
 
-import org.jruby.exceptions.NameError;
-import org.jruby.exceptions.SecurityError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -108,7 +107,7 @@ public class RubyStruct extends RubyObject {
     	testFrozen("Struct is frozen");
 
         if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
-            throw new SecurityError(getRuntime(), "Insecure: can't modify struct");
+            throw getRuntime().newSecurityError("Insecure: can't modify struct");
         }
     }
 
@@ -125,7 +124,7 @@ public class RubyStruct extends RubyObject {
             }
         }
 
-        throw new NameError(getRuntime(), name + " is not struct member");
+        throw getRuntime().newNameError(name + " is not struct member");
     }
 
     private IRubyObject getByName(String name) {
@@ -139,7 +138,7 @@ public class RubyStruct extends RubyObject {
             }
         }
 
-        throw new NameError(getRuntime(), name + " is not struct member");
+        throw getRuntime().newNameError(name + " is not struct member");
     }
 
     // Struct methods
@@ -168,7 +167,7 @@ public class RubyStruct extends RubyObject {
             newStruct = new RubyClass((RubyClass) recv);
         } else {
             if (!IdUtil.isConstant(name)) {
-                throw new NameError(recv.getRuntime(), "identifier " + name + " needs to be constant");
+                throw recv.getRuntime().newNameError("identifier " + name + " needs to be constant");
             }
             newStruct = ((RubyClass) recv).defineClassUnder(name, (RubyClass) recv);
         }
@@ -263,7 +262,7 @@ public class RubyStruct extends RubyObject {
             }
         }
 
-        throw new NameError(getRuntime(), name + " is not struct member");
+        throw getRuntime().newNameError(name + " is not struct member");
     }
 
     public IRubyObject get() {
@@ -279,7 +278,7 @@ public class RubyStruct extends RubyObject {
             }
         }
 
-        throw new NameError(getRuntime(), name + " is not struct member");
+        throw getRuntime().newNameError(name + " is not struct member");
     }
 
     public IRubyObject rbClone() {
@@ -416,7 +415,7 @@ public class RubyStruct extends RubyObject {
         RubySymbol className = (RubySymbol) input.unmarshalObject();
         RubyClass rbClass = pathToClass(runtime, className.asSymbol());
         if (rbClass == null) {
-            throw new NameError(runtime, "uninitialized constant " + className);
+            throw runtime.newNameError("uninitialized constant " + className);
         }
 
         int size = input.unmarshalInt();

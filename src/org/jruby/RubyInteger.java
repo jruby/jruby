@@ -17,6 +17,7 @@
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2002-2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -32,7 +33,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import org.jruby.exceptions.RangeError;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /** Implementation of the Integer class.
@@ -58,7 +58,7 @@ public abstract class RubyInteger extends RubyNumeric {
 
     public RubyString chr() {
         if (getLongValue() < 0 || getLongValue() > 0xff) {
-            throw new RangeError(getRuntime(), this.toString() + " out of char range");
+            throw getRuntime().newRangeError(this.toString() + " out of char range");
         }
         return getRuntime().newString(new String(new char[] {(char) getLongValue()}));
     }

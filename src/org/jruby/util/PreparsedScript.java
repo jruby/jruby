@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -37,7 +37,6 @@ import org.ablaf.ast.IAstDecoder;
 import org.jruby.Ruby;
 import org.jruby.ast.Node;
 import org.jruby.ast.util.RubyAstMarshal;
-import org.jruby.exceptions.IOError;
 import org.jruby.runtime.load.Library;
 
 /**
@@ -59,7 +58,7 @@ public class PreparsedScript implements Library {
         try {
         	in = new BufferedInputStream(loc.openStream());
         } catch (IOException e) {
-            throw new IOError(runtime, "Resource not found: " + loc);
+            throw runtime.newIOError("Resource not found: " + loc);
         }
         IAstDecoder decoder = RubyAstMarshal.getInstance().openDecoder(in);
         try {

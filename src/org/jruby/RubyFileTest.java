@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
@@ -33,7 +33,6 @@ package org.jruby;
 import java.io.File;
 import java.io.IOException;
 
-import org.jruby.exceptions.ErrnoError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -85,8 +84,7 @@ public class RubyFileTest {
         File file = newFile(filename);
         
         if (!file.exists()) {
-            throw ErrnoError.getErrnoError(recv.getRuntime(), "ENOENT",
-                    "No such file: " + filename.getValue());
+            throw recv.getRuntime().newErrnoENOENTError("No such file: " + filename.getValue());
         }
         return filename.getRuntime().newFixnum(file.length());
     }

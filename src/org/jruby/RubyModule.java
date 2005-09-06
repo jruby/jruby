@@ -17,7 +17,7 @@
  * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
- * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -39,8 +39,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.jruby.exceptions.NameError;
-import org.jruby.exceptions.SecurityError;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.CallbackMethod;
 import org.jruby.internal.runtime.methods.MethodMethod;
@@ -209,7 +207,7 @@ public class RubyModule extends RubyObject {
             return variable == null ? getRuntime().getNil() : variable;
         }
         
-        throw new NameError(getRuntime(), "uninitialized class variable " + name + " in " + getName());
+        throw getRuntime().newNameError("uninitialized class variable " + name + " in " + getName());
     }
 
     /** rb_cvar_defined
@@ -274,10 +272,10 @@ public class RubyModule extends RubyObject {
     public IRubyObject const_missing(IRubyObject name) {
         /* Uninitialized constant */
         if (this != getRuntime().getObject()) {
-            throw new NameError(getRuntime(), "uninitialized constant " + name.asSymbol() + " at " + getName());
+            throw getRuntime().newNameError("uninitialized constant " + name.asSymbol() + " at " + getName());
         } 
 
-        throw new NameError(getRuntime(), "uninitialized constant " + name.asSymbol());
+        throw getRuntime().newNameError("uninitialized constant " + name.asSymbol());
     }
 
     /** 
@@ -368,7 +366,7 @@ public class RubyModule extends RubyObject {
                 s0 = " module";
             }
 
-            throw new NameError(runtime, "Undefined method " + name + " for" + s0 + " '" + c.getName() + "'");
+            throw getRuntime().newNameError("Undefined method " + name + " for" + s0 + " '" + c.getName() + "'");
         }
         addMethod(name, UndefinedMethod.getInstance());
     }
@@ -389,7 +387,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
-            throw new SecurityError(getRuntime(), "Insecure: can't define method");
+            throw getRuntime().newSecurityError("Insecure: can't define method");
         }
         testFrozen("class/module");
 
@@ -416,7 +414,7 @@ public class RubyModule extends RubyObject {
             getRuntime().secure(4);
         }
         if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
-            throw new SecurityError(getRuntime(), "Insecure: can't remove method");
+            throw getRuntime().newSecurityError("Insecure: can't remove method");
         }
         testFrozen("class/module");
 
@@ -425,7 +423,7 @@ public class RubyModule extends RubyObject {
         synchronized(methods) {
             ICallable method = (ICallable) methods.remove(name);
             if (method == null) {
-                throw new NameError(getRuntime(), "method '" + name + "' not defined in " + getName());
+                throw getRuntime().newNameError("method '" + name + "' not defined in " + getName());
             }
         
             getRuntime().getCacheMap().remove(name, method);
@@ -594,7 +592,7 @@ public class RubyModule extends RubyObject {
             }
             
             if (method.isUndefined()) {
-                throw new NameError(getRuntime(), "undefined method `" + oldName + "' for " +
+                throw getRuntime().newNameError("undefined method `" + oldName + "' for " +
                     (isModule() ? "module" : "class") + " `" + getName() + "'");
             }
         }
@@ -631,7 +629,7 @@ public class RubyModule extends RubyObject {
     	if (!(type instanceof RubyClass)) {
     		throw getRuntime().newTypeError(name + " is not a class.");
         } else if (((RubyClass) type).getSuperClass().getRealClass() != superClazz) {
-        	throw new NameError(getRuntime(), name + " is already defined.");
+        	throw getRuntime().newNameError(name + " is already defined.");
         } 
             
     	return (RubyClass) type;
@@ -663,7 +661,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (!IdUtil.isConstant(name)) {
-            throw new NameError(getRuntime(), "bad constant name " + name);
+            throw getRuntime().newNameError("bad constant name " + name);
         }
 
         setConstant(name, value);
@@ -674,11 +672,11 @@ public class RubyModule extends RubyObject {
      */
     public IRubyObject removeCvar(IRubyObject name) { // Wrong Parameter ?
         if (!IdUtil.isClassVariable(name.asSymbol())) {
-            throw new NameError(getRuntime(), "wrong class variable name " + name.asSymbol());
+            throw getRuntime().newNameError("wrong class variable name " + name.asSymbol());
         }
 
         if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
-            throw new SecurityError(getRuntime(), "Insecure: can't remove class variable");
+            throw getRuntime().newSecurityError("Insecure: can't remove class variable");
         }
         testFrozen("class/module");
 
@@ -689,10 +687,10 @@ public class RubyModule extends RubyObject {
         }
 
         if (isClassVarDefined(name.asSymbol())) {
-            throw new NameError(getRuntime(), "cannot remove " + name.asSymbol() + " for " + getName());
+            throw getRuntime().newNameError("cannot remove " + name.asSymbol() + " for " + getName());
         }
 
-        throw new NameError(getRuntime(), "class variable " + name.asSymbol() + " not defined for " + getName());
+        throw getRuntime().newNameError("class variable " + name.asSymbol() + " not defined for " + getName());
     }
 
     private void addAccessor(String name, boolean readable, boolean writeable) {
@@ -745,7 +743,7 @@ public class RubyModule extends RubyObject {
      */
     public void setMethodVisibility(IRubyObject[] methods, Visibility visibility) {
         if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
-            throw new SecurityError(getRuntime(), "Insecure: can't change method visibility");
+            throw getRuntime().newSecurityError("Insecure: can't change method visibility");
         }
 
         for (int i = 0; i < methods.length; i++) {
@@ -764,7 +762,7 @@ public class RubyModule extends RubyObject {
         ICallable method = searchMethod(name);
 
         if (method.isUndefined()) {
-            throw new NameError(getRuntime(), "undefined method '" + name + "' for " + 
+            throw getRuntime().newNameError("undefined method '" + name + "' for " + 
                                 (isModule() ? "module" : "class") + " '" + getName() + "'");
         }
 
@@ -801,7 +799,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject newMethod(IRubyObject receiver, String name, boolean bound) {
         ICallable method = searchMethod(name);
         if (method.isUndefined()) {
-            throw new NameError(getRuntime(), "undefined method `" + name + 
+            throw getRuntime().newNameError("undefined method `" + name + 
                 "' for class `" + this.getName() + "'");
         }
 
@@ -1125,7 +1123,7 @@ public class RubyModule extends RubyObject {
         String name = symbol.asSymbol();
 
         if (!IdUtil.isConstant(name)) {
-            throw new NameError(getRuntime(), "wrong constant name " + name);
+            throw getRuntime().newNameError("wrong constant name " + name);
         }
 
         return getConstant(name);
@@ -1138,7 +1136,7 @@ public class RubyModule extends RubyObject {
         String name = symbol.asSymbol();
 
         if (!IdUtil.isConstant(name)) {
-            throw new NameError(getRuntime(), "wrong constant name " + name);
+            throw getRuntime().newNameError("wrong constant name " + name);
         }
 
         return setConstant(name, value); 
@@ -1151,7 +1149,7 @@ public class RubyModule extends RubyObject {
         String name = symbol.asSymbol();
 
         if (!IdUtil.isConstant(name)) {
-            throw new NameError(getRuntime(), "wrong constant name " + name);
+            throw getRuntime().newNameError("wrong constant name " + name);
         }
 
         return getRuntime().newBoolean(getConstant(name, false) != null);
@@ -1262,10 +1260,10 @@ public class RubyModule extends RubyObject {
         String id = name.asSymbol();
 
         if (!IdUtil.isClassVariable(id)) {
-            throw new NameError(getRuntime(), "wrong class variable name " + id);
+            throw getRuntime().newNameError("wrong class variable name " + id);
         }
         if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
-            throw new SecurityError(getRuntime(), "Insecure: can't remove class variable");
+            throw getRuntime().newSecurityError("Insecure: can't remove class variable");
         }
         testFrozen("class/module");
 
@@ -1275,19 +1273,19 @@ public class RubyModule extends RubyObject {
         }
 
         if (isClassVarDefined(id)) {
-            throw new NameError(getRuntime(), "cannot remove " + id + " for " + getName());
+            throw getRuntime().newNameError("cannot remove " + id + " for " + getName());
         }
-        throw new NameError(getRuntime(), "class variable " + id + " not defined for " + getName());
+        throw getRuntime().newNameError("class variable " + id + " not defined for " + getName());
     }
     
     public IRubyObject remove_const(IRubyObject name) {
         String id = name.asSymbol();
 
         if (!IdUtil.isConstant(id)) {
-            throw new NameError(getRuntime(), "wrong constant name " + id);
+            throw getRuntime().newNameError("wrong constant name " + id);
         }
         if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
-            throw new SecurityError(getRuntime(), "Insecure: can't remove class variable");
+            throw getRuntime().newSecurityError("Insecure: can't remove class variable");
         }
         testFrozen("class/module");
 
@@ -1297,9 +1295,9 @@ public class RubyModule extends RubyObject {
         }
 
         if (isClassVarDefined(id)) {
-            throw new NameError(getRuntime(), "cannot remove " + id + " for " + getName());
+            throw getRuntime().newNameError("cannot remove " + id + " for " + getName());
         }
-        throw new NameError(getRuntime(), "constant " + id + " not defined for " + getName());
+        throw getRuntime().newNameError("constant " + id + " not defined for " + getName());
     }
     
     /** rb_mod_append_features
@@ -1332,7 +1330,7 @@ public class RubyModule extends RubyObject {
 
     private void setVisibility(IRubyObject[] args, Visibility visibility) {
         if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
-            throw new SecurityError(getRuntime(), "Insecure: can't change method visibility");
+            throw getRuntime().newSecurityError("Insecure: can't change method visibility");
         }
 
         if (args.length == 0) {
@@ -1371,7 +1369,7 @@ public class RubyModule extends RubyObject {
      */
     public RubyModule module_function(IRubyObject[] args) {
         if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
-            throw new SecurityError(getRuntime(), "Insecure: can't change method visibility");
+            throw getRuntime().newSecurityError("Insecure: can't change method visibility");
         }
 
         if (args.length == 0) {
@@ -1437,7 +1435,7 @@ public class RubyModule extends RubyObject {
         Ruby runtime = input.getRuntime();
         RubyModule result = runtime.getClassFromPath(name);
         if (result == null) {
-            throw new NameError(runtime, "uninitialized constant " + name);
+            throw runtime.newNameError("uninitialized constant " + name);
         }
         input.registerLinkTarget(result);
         return result;

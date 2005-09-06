@@ -13,6 +13,7 @@
  *
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -29,7 +30,6 @@
 package org.jruby.runtime;
 
 import org.jruby.Ruby;
-import org.jruby.exceptions.NameError;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ReadonlyGlobalVariable extends GlobalVariable {
@@ -39,6 +39,6 @@ public class ReadonlyGlobalVariable extends GlobalVariable {
     }
 
     public IRubyObject set(IRubyObject value) {
-        throw new NameError(runtime, name()+" is a read-only variable");
+        throw runtime.newNameError(name() + " is a read-only variable");
     }
 }

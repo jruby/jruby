@@ -14,6 +14,7 @@
  * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -37,9 +38,6 @@ import org.jruby.RubyClass;
 import org.jruby.RubyIO;
 import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
-import org.jruby.exceptions.IOError;
-import org.jruby.exceptions.NotImplementedError;
-import org.jruby.exceptions.ThreadError;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOHandler;
@@ -207,7 +205,7 @@ public class IOMetaClass extends ObjectMetaClass {
         if (args.length >= 2) {
             String mode = args[1].convertToString().toString();
             if (!mode.equals("r")) {
-                throw new NotImplementedError(runtime, "only 'r' currently supported");
+                throw runtime.newNotImplementedError("only 'r' currently supported");
             }
         }
     	
@@ -238,9 +236,9 @@ public class IOMetaClass extends ObjectMetaClass {
 		    }
 	    	return io;
     	} catch (IOException e) {
-            throw IOError.fromException(runtime, e);
+            throw runtime.newIOErrorFromException(e);
         } catch (InterruptedException e) {
-        	throw new ThreadError(runtime, "unexpected interrupt");
+        	throw runtime.newThreadError("unexpected interrupt");
         }
     }
 }

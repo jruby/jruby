@@ -16,6 +16,7 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -41,7 +42,6 @@ import java.util.WeakHashMap;
 
 import org.jruby.Ruby;
 import org.jruby.RubyProc;
-import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -66,7 +66,7 @@ public class JavaSupport {
             }
             return result;
         } catch (ClassNotFoundException cnfExcptn) {
-            throw new NameError(runtime, "cannot load Java class " + className);
+            throw runtime.newNameError("cannot load Java class " + className);
         }
     }
     

@@ -13,6 +13,7 @@
  *
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -27,8 +28,6 @@
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
-
-import org.jruby.exceptions.NameError;
 
 // FIXME replace with enum in Java 5.0
 public final class CallType {
@@ -51,7 +50,7 @@ public final class CallType {
 
     public void registerCallStatus(LastCallStatus lastCallStatus, String name) {
         if (this == SUPER) {
-            throw new NameError(lastCallStatus.getRuntime(), "super: no superclass method '" + name + "'");
+            throw lastCallStatus.getRuntime().newNameError("super: no superclass method '" + name + "'");
         } else if (this == VARIABLE) {
             lastCallStatus.setVariable();
         } else {

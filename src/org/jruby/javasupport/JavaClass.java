@@ -16,6 +16,7 @@
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2004 David Corbin <dcorbin@users.sourceforge.net>
+ * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -45,8 +46,6 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
-import org.jruby.exceptions.NameError;
-import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -276,7 +275,7 @@ public class JavaClass extends JavaObject {
             constructor = javaClass().getConstructor(parameterTypes);
             return new JavaConstructor(getRuntime(), constructor);
         } catch (NoSuchMethodException nsme) {
-            throw new NameError(getRuntime(), "no matching java constructor");
+            throw getRuntime().newNameError("no matching java constructor");
         }
     }
 
@@ -287,7 +286,7 @@ public class JavaClass extends JavaObject {
             constructor = javaClass().getDeclaredConstructor (parameterTypes);
             return new JavaConstructor(getRuntime(), constructor);
         } catch (NoSuchMethodException nsme) {
-            throw new NameError(getRuntime(), "no matching java constructor");
+            throw getRuntime().newNameError("no matching java constructor");
         }
     }
 
@@ -335,7 +334,7 @@ public class JavaClass extends JavaObject {
             Field field = javaClass().getField(stringName);
 			return new JavaField(getRuntime(),field);
         } catch (NoSuchFieldException nsfe) {
-            throw new NameError(getRuntime(), undefinedFieldMessage(stringName));
+            throw getRuntime().newNameError(undefinedFieldMessage(stringName));
         }
     }
 
@@ -345,7 +344,7 @@ public class JavaClass extends JavaObject {
             Field field = javaClass().getDeclaredField(stringName);
 			return new JavaField(getRuntime(),field);
         } catch (NoSuchFieldException nsfe) {
-            throw new NameError(getRuntime(), undefinedFieldMessage(stringName));
+            throw getRuntime().newNameError(undefinedFieldMessage(stringName));
         }
     }
 
@@ -404,7 +403,7 @@ public class JavaClass extends JavaObject {
 
     public JavaClass component_type() {
         if (! javaClass().isArray()) {
-            throw new TypeError(getRuntime(), "not a java array-class");
+            throw getRuntime().newTypeError("not a java array-class");
         }
         return JavaClass.get(getRuntime(), javaClass().getComponentType());
     }

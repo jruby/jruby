@@ -18,6 +18,7 @@
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Joey Gibson <joey@joeygibson.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -38,12 +39,8 @@ import java.io.StringWriter;
 
 import org.jruby.NativeException;
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
-import org.jruby.lexer.yacc.SourcePosition;
-import org.jruby.runtime.Frame;
-import org.jruby.runtime.FrameStack;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class RaiseException extends JumpException {
@@ -82,49 +79,6 @@ public class RaiseException extends JumpException {
         setException(nativeException, false);
     }
 
-    /** 
-     * Create an Array with backtrace information.
-     * @param runtime
-     * @param level
-     * @param nativeException
-     * @return an Array with the backtrace 
-     */
-    public static IRubyObject createBacktrace(Ruby runtime, int level, boolean nativeException) {
-        RubyArray backtrace = runtime.newArray();
-        FrameStack stack = runtime.getFrameStack();
-        int traceSize = stack.size() - level - 1;
-        
-        if (traceSize <= 0) {
-        	return backtrace;
-        }
-        
-        if (nativeException) {
-            // assert level == 0;
-            addBackTraceElement(backtrace, (Frame) stack.elementAt(stack.size() - 1), null);
-        }
-        
-        for (int i = traceSize; i > 0; i--) {
-        	addBackTraceElement(backtrace, (Frame) stack.elementAt(i), (Frame) stack.elementAt(i-1));
-        }
-
-        return backtrace;
-    }
-
-	private static void addBackTraceElement(RubyArray backtrace, Frame frame, Frame previousFrame) {
-        StringBuffer sb = new StringBuffer(100);
-        SourcePosition position = frame.getPosition();
-
-        sb.append(position.getFile()).append(':').append(position.getLine());
-
-        if (previousFrame != null && previousFrame.getLastFunc() != null) {
-            sb.append(":in `").append(previousFrame.getLastFunc()).append('\'');
-        } else if (previousFrame == null && frame.getLastFunc() != null) {
-            sb.append(":in `").append(frame.getLastFunc()).append('\'');
-        }
-
-        backtrace.append(backtrace.getRuntime().newString(sb.toString()));
-	}
-
     /**
      * Gets the exception
      * @return Returns a RubyException
@@ -158,7 +112,7 @@ public class RaiseException extends JumpException {
         runtime.stackTraces++;
 
         if (newException.callMethod("backtrace").isNil() && runtime.getSourceFile() != null) {
-            IRubyObject backtrace = createBacktrace(runtime, 0, nativeException);
+            IRubyObject backtrace = RubyException.createBacktrace(runtime, 0, nativeException);
             newException.callMethod("set_backtrace", backtrace);
         }
 

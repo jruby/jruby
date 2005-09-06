@@ -40,7 +40,6 @@ import org.jruby.RubyFileStat;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
-import org.jruby.exceptions.ErrnoError;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOModes;
@@ -313,8 +312,7 @@ public class FileMetaClass extends IOMetaClass {
         File oldFile = new File(oldNameString.getValue());
         
         if (!oldFile.exists()) {
-            throw ErrnoError.getErrnoError(getRuntime(), "ENOENT",
-                    "No such file: " + oldNameString.getValue());
+        	throw getRuntime().newErrnoENOENTError("No such file: " + oldNameString.getValue());
         }
         oldFile.renameTo(new File(newNameString.getValue()));
         
@@ -351,8 +349,7 @@ public class FileMetaClass extends IOMetaClass {
             filename.checkSafeString();
             File lToDelete = new File(filename.getValue());
             if (!lToDelete.exists()) {
-				throw ErrnoError.getErrnoError(getRuntime(), "ENOENT",
-                        " No such file or directory - \"" + filename.getValue() + "\"");
+				throw getRuntime().newErrnoENOENTError(" No such file or directory - \"" + filename.getValue() + "\"");
 			}
             if (!lToDelete.delete()) {
                 return getRuntime().getFalse();

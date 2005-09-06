@@ -15,7 +15,7 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
- * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -36,7 +36,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.ThreadError;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.internal.runtime.AtomicSpinlock;
 import org.jruby.internal.runtime.NativeThread;
@@ -188,7 +187,7 @@ public class RubyThread extends RubyObject {
     private static RubyThread startThread(final IRubyObject recv, final IRubyObject[] args, boolean callInit) {
         final Ruby runtime = recv.getRuntime();
         if (!runtime.isBlockGiven()) {
-            throw new ThreadError(runtime, "must be called with a block");
+            throw runtime.newThreadError("must be called with a block");
         }
         final RubyThread rubyThread = new RubyThread(runtime, (RubyClass) recv);
         if (callInit) {
@@ -357,7 +356,7 @@ public class RubyThread extends RubyObject {
 
     public RubyThread join() {
         if (isCurrent()) {
-            throw new ThreadError(getRuntime(), "thread tried to join itself");
+            throw getRuntime().newThreadError("thread tried to join itself");
         }
         ensureStarted();
         try {

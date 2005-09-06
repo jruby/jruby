@@ -17,7 +17,7 @@
  * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002-2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Kiel Hodges <jruby-devel@selfsosoft.com>
  * 
@@ -41,13 +41,8 @@ import java.io.InputStreamReader;
 import java.util.Iterator;
 
 import org.jruby.ast.util.ArgsUtil;
-import org.jruby.exceptions.EOFError;
-import org.jruby.exceptions.IOError;
-import org.jruby.exceptions.NoMethodError;
-import org.jruby.exceptions.NotImplementedError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.SystemExit;
-import org.jruby.exceptions.ThreadError;
 import org.jruby.exceptions.ThrowJump;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.LastCallStatus;
@@ -188,7 +183,7 @@ public class RubyKernel {
             new PrintfFormat(format).sprintf(
                 new Object[] { name, description, noClass ? "" : ":", noClass ? "" : recv.getType().getName()});
 
-        throw new NoMethodError(recv.getRuntime(), msg);
+        throw recv.getRuntime().newNoMethodError(msg);
     }
 
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args) {
@@ -215,7 +210,7 @@ public class RubyKernel {
 
                 return io;
         	} catch (IOException ioe) {
-        		throw new IOError(recv.getRuntime(), ioe.getMessage());
+        		throw recv.getRuntime().newIOErrorFromException(ioe);
         	}
         } 
 
@@ -300,7 +295,7 @@ public class RubyKernel {
         IRubyObject line = gets(recv, args);
 
         if (line.isNil()) {
-            throw new EOFError(recv.getRuntime());
+            throw recv.getRuntime().newEOFError();
         }
 
         return line;
@@ -583,7 +578,7 @@ public class RubyKernel {
             throw recv.getRuntime().newArgumentError("negative level(" + level + ')');
         }
 
-        return RaiseException.createBacktrace(recv.getRuntime(), level, false);
+        return RubyException.createBacktrace(recv.getRuntime(), level, false);
     }
 
     public static IRubyObject rbCatch(IRubyObject recv, IRubyObject tag) {
@@ -679,9 +674,9 @@ public class RubyKernel {
             
             return aProcess.waitFor();
         } catch (IOException e) {
-            throw IOError.fromException(runtime, e);
+            throw runtime.newIOErrorFromException(e);
         } catch (InterruptedException e) {
-            throw new ThreadError(runtime, "unexpected interrupt");
+            throw runtime.newThreadError("unexpected interrupt");
         }
     }
 
@@ -713,7 +708,7 @@ public class RubyKernel {
             ceil = integerCeil.getLongValue();
             ceil = Math.abs(ceil);
             if (ceil > Integer.MAX_VALUE) {
-                throw new NotImplementedError(recv.getRuntime(), "Random values larger than Integer.MAX_VALUE not supported");
+                throw recv.getRuntime().newNotImplementedError("Random values larger than Integer.MAX_VALUE not supported");
             }
         } else {
             throw recv.getRuntime().newArgumentError("wrong # of arguments(" + args.length + " for 1)");

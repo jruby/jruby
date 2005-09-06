@@ -17,7 +17,7 @@
  * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002-2005 Thomas E Enebo <enebo@acm.org>
- * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -45,8 +45,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
 
-import org.jruby.exceptions.IndexError;
-import org.jruby.exceptions.SecurityError;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.ConversionIterator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -123,7 +122,7 @@ public class RubyArray extends RubyObject implements List {
             throw getRuntime().newTypeError("can't modify array during sort");
         }
         if (isTaint() && getRuntime().getSafeLevel() >= 4) {
-            throw new SecurityError(getRuntime(), "Insecure: can't modify array");
+            throw getRuntime().newSecurityError("Insecure: can't modify array");
         }
     }
 
@@ -183,11 +182,14 @@ public class RubyArray extends RubyObject implements List {
     	RubyInteger index = args[0].convertToInteger();
     	try {
     		return entry(index.getLongValue(), true);
-    	} catch (IndexError e) {
-    		if (args.length > 1) {
-    			return args[1];
-    		} else if (getRuntime().isBlockGiven()) {
-    			return getRuntime().yield(index);
+    	} catch (RaiseException e) {
+    		// FIXME: use constant or method for IndexError lookup?
+    		if (e.getException().isKindOf(getRuntime().getClassFromPath("IndexError"))) {
+	    		if (args.length > 1) {
+	    			return args[1];
+	    		} else if (getRuntime().isBlockGiven()) {
+	    			return getRuntime().yield(index);
+	    		}
     		}
     		
     		throw e;

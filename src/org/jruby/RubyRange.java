@@ -19,6 +19,7 @@
  * Copyright (C) 2002-2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -35,7 +36,6 @@
 package org.jruby;
 
 import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.RangeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -126,7 +126,7 @@ public class RubyRange extends RubyObject {
             beginLong += limit;
             if (beginLong < 0) {
                 if (isStrict) {
-                    throw new RangeError(getRuntime(), inspect().toString() + " out of range.");
+                    throw getRuntime().newRangeError(inspect().toString() + " out of range.");
                 }
                 return null;
             }
@@ -134,7 +134,7 @@ public class RubyRange extends RubyObject {
 
         if (truncate && beginLong > limit) {
             if (isStrict) {
-                throw new RangeError(getRuntime(), inspect().toString() + " out of range.");
+                throw getRuntime().newRangeError(inspect().toString() + " out of range.");
             }
             return null;
         }
@@ -147,7 +147,7 @@ public class RubyRange extends RubyObject {
 			endLong += limit;
 			if (endLong < 0) {
 				if (isStrict) {
-					throw new RangeError(getRuntime(), inspect().toString() + " out of range.");
+					throw getRuntime().newRangeError(inspect().toString() + " out of range.");
 				}
 				return null;
 			}
@@ -155,7 +155,7 @@ public class RubyRange extends RubyObject {
 
         if (beginLong > endLong) {
             if (isStrict) {
-                throw new RangeError(getRuntime(), inspect().toString() + " out of range.");
+                throw getRuntime().newRangeError(inspect().toString() + " out of range.");
             }
 			return null;
         }

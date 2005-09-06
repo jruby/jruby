@@ -12,6 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -27,7 +28,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime;
 
-import org.jruby.exceptions.NameError;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -55,6 +55,6 @@ public class ReadonlyAccessor implements IAccessor {
     public IRubyObject setValue(IRubyObject newValue) {
         assert newValue != null;
 
-        throw new NameError(newValue.getRuntime(), name + " is a read-only variable");
+        throw newValue.getRuntime().newNameError(name + " is a read-only variable");
     }
 }

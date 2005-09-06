@@ -15,6 +15,7 @@
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -36,7 +37,6 @@ import java.util.Map;
 
 import org.jruby.Ruby;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.SecurityError;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -89,7 +89,7 @@ public class GlobalVariables {
         assert oldName.startsWith("$");
 
         if (runtime.getSafeLevel() >= 4) {
-            throw new SecurityError(runtime, "Insecure: can't alias global variable");
+            throw runtime.newSecurityError("Insecure: can't alias global variable");
         }
 
         GlobalVariable oldVariable = createIfNotDefined(oldName);
@@ -119,7 +119,7 @@ public class GlobalVariables {
         assert name.startsWith("$");
 
         if (runtime.getSafeLevel() >= 4) {
-            throw new SecurityError(runtime, "Insecure: can't change global variable value");
+            throw runtime.newSecurityError("Insecure: can't change global variable value");
         }
 
         GlobalVariable variable = createIfNotDefined(name);

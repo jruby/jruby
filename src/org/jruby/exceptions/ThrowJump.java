@@ -13,6 +13,7 @@
  *
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -46,7 +47,8 @@ public class ThrowJump extends JumpException {
 
         this.tag = tag;
         this.value = value;
-        this.nameError = new NameError(value.getRuntime(), "uncaught throw '" + tag + '\'').getException();
+        // FIXME: This looks screwy.
+        this.nameError = value.getRuntime().newNameError("uncaught throw '" + tag + '\'').getException();
     }
     
     public String getTag() {

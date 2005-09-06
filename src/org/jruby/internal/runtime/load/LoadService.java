@@ -14,7 +14,7 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
- * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -45,8 +45,6 @@ import java.util.jar.JarFile;
 
 import org.jruby.Ruby;
 import org.jruby.RubyString;
-import org.jruby.exceptions.IOError;
-import org.jruby.exceptions.LoadError;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.ExternalScript;
@@ -121,12 +119,12 @@ public class LoadService implements ILoadService {
             }
         }
         if (library == null) {
-            throw new LoadError(runtime, "No such file to load -- " + file);
+            throw runtime.newLoadError("No such file to load -- " + file);
         }
         try {
         	library.load(runtime);
         } catch (IOException e) {
-        	throw new LoadError(runtime, "IO error -- " + file);
+        	throw runtime.newLoadError("IO error -- " + file);
         }
     }
 
@@ -236,7 +234,7 @@ public class LoadService implements ILoadService {
                         }
                     } catch (FileNotFoundException ignored) {
                     } catch (IOException e) {
-                        throw IOError.fromException(runtime, e);
+                        throw runtime.newIOErrorFromException(e);
                     }
                 } 
 
@@ -261,7 +259,7 @@ public class LoadService implements ILoadService {
 
             return isRequireable(loc) ? loc : null;
         } catch (MalformedURLException e) {
-            throw new IOError(runtime, e.getMessage());
+            throw runtime.newIOErrorFromException(e);
         }
     }
     

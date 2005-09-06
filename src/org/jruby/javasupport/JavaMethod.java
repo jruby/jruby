@@ -19,6 +19,7 @@
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 David Corbin <dcorbin@users.sourceforge.net>
+ * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -44,7 +45,6 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
-import org.jruby.exceptions.NameError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -96,7 +96,7 @@ public class JavaMethod extends JavaCallable {
             Method method = javaClass.getMethod(methodName, argumentTypes);
             return create(runtime, method);
         } catch (NoSuchMethodException e) {
-            throw new NameError(runtime, "undefined method '" + methodName + "' for class '" + javaClass.getName() + "'");
+            throw runtime.newNameError("undefined method '" + methodName + "' for class '" + javaClass.getName() + "'");
         }
     }
 
@@ -105,7 +105,7 @@ public class JavaMethod extends JavaCallable {
             Method method = javaClass.getDeclaredMethod(methodName, argumentTypes);
             return create(runtime, method);
         } catch (NoSuchMethodException e) {
-            throw new NameError(runtime, "undefined method '" + methodName + "' for class '" + javaClass.getName() + "'");
+            throw runtime.newNameError("undefined method '" + methodName + "' for class '" + javaClass.getName() + "'");
         }
     }
 

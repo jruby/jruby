@@ -14,6 +14,7 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -37,7 +38,6 @@ import org.ablaf.ast.IAstDecoder;
 import org.jruby.Ruby;
 import org.jruby.ast.Node;
 import org.jruby.ast.util.RubyAstMarshal;
-import org.jruby.exceptions.IOError;
 import org.jruby.runtime.load.Library;
 
 /**
@@ -58,7 +58,7 @@ public class BuiltinScript implements Library {
         String resourceName = "/builtin/" + name + ".rb.ast.ser";
         InputStream in = getClass().getResourceAsStream(resourceName);
         if (in == null) {
-            throw new IOError(runtime, "Resource not found: " + resourceName);
+            throw runtime.newIOError("Resource not found: " + resourceName);
         }
         in = new BufferedInputStream(in);
         IAstDecoder decoder = RubyAstMarshal.getInstance().openDecoder(in);

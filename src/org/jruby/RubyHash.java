@@ -18,6 +18,7 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -40,7 +41,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import org.jruby.exceptions.SecurityError;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.ConversionIterator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -155,7 +155,7 @@ public class RubyHash extends RubyObject implements Map {
     public void modify() {
     	testFrozen("Hash");
         if (isTaint() && getRuntime().getSafeLevel() >= 4) {
-            throw new SecurityError(getRuntime(), "Insecure: can't modify hash");
+            throw getRuntime().newSecurityError("Insecure: can't modify hash");
         }
     }
 

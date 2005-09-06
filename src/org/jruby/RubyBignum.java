@@ -16,7 +16,7 @@
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002-2004 Thomas E Enebo <enebo@acm.org>
- * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -37,7 +37,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-import org.jruby.exceptions.RangeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -68,7 +67,7 @@ public class RubyBignum extends RubyInteger {
     public long getLongValue() {
         long result = getTruncatedLongValue();
         if (! BigInteger.valueOf(result).equals(value)) {
-            throw new RangeError(getRuntime(), "bignum too big to convert into 'int'");
+            throw getRuntime().newRangeError("bignum too big to convert into 'int'");
         }
         return result;
     }
@@ -215,7 +214,7 @@ public class RubyBignum extends RubyInteger {
     	if (other instanceof RubyNumeric) {
             long shift = ((RubyNumeric ) other).getLongValue();
             if (shift > Integer.MAX_VALUE || shift < Integer.MIN_VALUE) {
-			    throw new RangeError(getRuntime(), "bignum too big to convert into `int'");
+			    throw getRuntime().newRangeError("bignum too big to convert into `int'");
 		    }
             return new RubyBignum(getRuntime(), value.shiftLeft((int) shift));
     	}
@@ -288,7 +287,7 @@ public class RubyBignum extends RubyInteger {
     public IRubyObject op_rshift(IRubyObject other) {
         long shift = ((RubyNumeric ) other).getLongValue();
         if (shift > Integer.MAX_VALUE || shift < Integer.MIN_VALUE) {
-			throw new RangeError(getRuntime(), "bignum too big to convert into `int'");
+			throw getRuntime().newRangeError("bignum too big to convert into `int'");
 		} else if (other instanceof RubyNumeric) {
             return new RubyBignum(getRuntime(), value.shiftRight((int) shift));
 		}

@@ -17,7 +17,7 @@
  * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
- * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -50,17 +50,10 @@ import java.util.Stack;
 import org.jruby.ast.Node;
 import org.jruby.common.RubyWarnings;
 import org.jruby.evaluator.EvaluateVisitor;
-import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.BreakJump;
-import org.jruby.exceptions.EOFError;
-import org.jruby.exceptions.ErrnoError;
-import org.jruby.exceptions.IOError;
-import org.jruby.exceptions.IndexError;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.RetryJump;
 import org.jruby.exceptions.ReturnJump;
-import org.jruby.exceptions.SecurityError;
-import org.jruby.exceptions.SystemCallError;
-import org.jruby.exceptions.TypeError;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.internal.runtime.ValueAccessor;
@@ -296,7 +289,7 @@ public final class Ruby {
             module = (RubyModule) getRubyClass().setConstant(name, 
             		defineModule(name)); 
         } else if (getSafeLevel() >= 4) {
-        	throw new SecurityError(this, "Extending module prohibited.");
+        	throw newSecurityError("Extending module prohibited.");
         }
 
         if (getWrapper() != null) {
@@ -323,7 +316,7 @@ public final class Ruby {
 
     public void secure(int level) {
         if (level <= safeLevel) {
-            throw new SecurityError(this, "Insecure operation '" + getCurrentFrame().getLastFunc() + "' at level " + safeLevel);
+            throw newSecurityError("Insecure operation '" + getCurrentFrame().getLastFunc() + "' at level " + safeLevel);
         }
     }
 
@@ -968,7 +961,7 @@ public final class Ruby {
             loadScript(file.getPath(), source, wrap);
             source.close();
         } catch (IOException ioExcptn) {
-            throw IOError.fromException(this, ioExcptn);
+            throw newIOErrorFromException(ioExcptn);
         }
     }
 
@@ -1114,55 +1107,120 @@ public final class Ruby {
     	return RubySymbol.newSymbol(this, string);
     }
     
-    public ArgumentError newArgumentError(String message) {
-    	return new ArgumentError(this, message);
+    public RaiseException newArgumentError(String message) {
+    	return new RaiseException(this, getClass("ArgumentError"), message, true);
     }
     
-    public ArgumentError newArgumentError(int got, int expected) {
-    	return new ArgumentError(this, got, expected);
+    public RaiseException newArgumentError(int got, int expected) {
+    	return new RaiseException(this, getClass("ArgumentError"), "wrong # of arguments(" + got + " for " + expected, true);
     }
     
-    public EOFError newEOFError() {
-    	return new EOFError(this);
-    }
-    
-    public ErrnoError newErrnoEBADFError() {
-    	return ErrnoError.getErrnoError(this, "EBADF", "Bad file descriptor");
+    public RaiseException newErrnoEBADFError() {
+    	return new RaiseException(this, getModule("Errno").getClass("EBADF"), "Bad file descriptor", true);
     }
 
-    public ErrnoError newErrnoEINVALError() {
-    	return ErrnoError.getErrnoError(this, "EINVAL", "Invalid file");
+    public RaiseException newErrnoEINVALError() {
+    	return new RaiseException(this, getModule("Errno").getClass("EINVAL"), "Invalid file", true);
     }
 
-    public ErrnoError newErrnoENOENTError() {
-    	return ErrnoError.getErrnoError(this, "ENOENT", "File not found");
+    public RaiseException newErrnoENOENTError() {
+    	return new RaiseException(this, getModule("Errno").getClass("ENOENT"), "File not found", true);
     }
 
-    public ErrnoError newErrnoESPIPEError() {
-    	return ErrnoError.getErrnoError(this, "ESPIPE", "Illegal seek");
+    public RaiseException newErrnoESPIPEError() {
+    	return new RaiseException(this, getModule("Errno").getClass("ESPIPE"), "Illegal seek", true);
     }
 
-    public IndexError newIndexError(String message) {
-    	return new IndexError(this, message);
-    }
-    
-    public IOError newIOError(String message) {
-    	return new IOError(this, message);
-    }
-    
-    public SecurityError newSecurityError(String message) {
-    	return new SecurityError(this, message);
-    }
-    
-    public SystemCallError newSystemCallError(String message) {
-    	return new SystemCallError(this, message);
+    public RaiseException newErrnoEBADFError(String message) {
+    	return new RaiseException(this, getModule("Errno").getClass("EBADF"), message, true);
     }
 
-    public TypeError newTypeError(String message) {
-    	return new TypeError(this, message);
+    public RaiseException newErrnoEINVALError(String message) {
+    	return new RaiseException(this, getModule("Errno").getClass("EINVAL"), message, true);
+    }
+
+    public RaiseException newErrnoENOENTError(String message) {
+    	return new RaiseException(this, getModule("Errno").getClass("ENOENT"), message, true);
+    }
+
+    public RaiseException newErrnoESPIPEError(String message) {
+    	return new RaiseException(this, getModule("Errno").getClass("ESPIPE"), message, true);
+    }
+
+    public RaiseException newErrnoEEXISTError(String message) {
+    	return new RaiseException(this, getModule("Errno").getClass("EEXIST"), message, true);
+    }
+
+    public RaiseException newIndexError(String message) {
+    	return new RaiseException(this, getClass("IndexError"), message, true);
     }
     
-    public TypeError newTypeError(IRubyObject receivedObject, RubyClass expectedClass) {
-    	return new TypeError(this, receivedObject, expectedClass);
+    public RaiseException newSecurityError(String message) {
+    	return new RaiseException(this, getClass("SecurityError"), message, true);
+    }
+    
+    public RaiseException newSystemCallError(String message) {
+    	return new RaiseException(this, getClass("SystemCallError"), message, true);
+    }
+
+    public RaiseException newTypeError(String message) {
+    	return new RaiseException(this, getClass("TypeError"), message, true);
+    }
+    
+    public RaiseException newThreadError(String message) {
+    	return new RaiseException(this, getClass("ThreadError"), message, true);
+    }
+    
+    public RaiseException newSyntaxError(String message) {
+    	return new RaiseException(this, getClass("SyntaxError"), message, true);
+    }
+
+    public RaiseException newRangeError(String message) {
+    	return new RaiseException(this, getClass("RangeError"), message, true);
+    }
+
+    public RaiseException newNotImplementedError(String message) {
+    	return new RaiseException(this, getClass("NotImplementedError"), message, true);
+    }
+
+    public RaiseException newNoMethodError(String message) {
+    	return new RaiseException(this, getClass("NoMethodError"), message, true);
+    }
+
+    public RaiseException newNameError(String message) {
+    	return new RaiseException(this, getClass("NameError"), message, true);
+    }
+
+    public RaiseException newLocalJumpError(String message) {
+    	return new RaiseException(this, getClass("LocalJumpError"), message, true);
+    }
+
+    public RaiseException newLoadError(String message) {
+    	return new RaiseException(this, getClass("LoadError"), message, true);
+    }
+
+    public RaiseException newFrozenError(String objectType) {
+		// TODO: Should frozen error have its own distinct class?  If not should more share?
+    	return new RaiseException(this, getClass("TypeError"), "can't modify frozen " + objectType, true);
+    }
+
+    public RaiseException newSystemStackError(String message) {
+    	return new RaiseException(this, getClass("SystemStackError"), message, true);
+    }
+    
+    public RaiseException newIOError(String message) {
+    	return new RaiseException(this, getClass("IOError"), message, true);
+    }
+    
+    public RaiseException newIOErrorFromException(IOException ioe) {
+    	return new RaiseException(this, getClass("IOError"), ioe.getMessage(), true);
+    }
+    
+    public RaiseException newTypeError(IRubyObject receivedObject, RubyClass expectedType) {
+    	return new RaiseException(this, getClass("TypeError"), "wrong argument type " + receivedObject.getMetaClass() + " (expected " + expectedType, true);
+    }
+    
+    public RaiseException newEOFError() {
+    	return new RaiseException(this, getClass("EOFError"), "End of file reached", true);
     }
 }

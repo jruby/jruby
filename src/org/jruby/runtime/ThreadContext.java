@@ -14,7 +14,7 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
- * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -49,8 +49,6 @@ import org.jruby.ast.StarNode;
 import org.jruby.ast.ZeroArgNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.evaluator.AssignmentVisitor;
-import org.jruby.exceptions.LocalJumpError;
-import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.NextJump;
 import org.jruby.exceptions.RedoJump;
 import org.jruby.lexer.yacc.SourcePosition;
@@ -178,7 +176,7 @@ public class ThreadContext {
 		Frame frame = getCurrentFrame();
 		
         if (frame.getLastClass() == null) {
-            throw new NameError(runtime, "superclass method '" + frame.getLastFunc() + "' disabled");
+            throw runtime.newNameError("superclass method '" + frame.getLastFunc() + "' disabled");
         }
 
         return callSuper(frame.getArgs());
@@ -188,8 +186,7 @@ public class ThreadContext {
     	Frame frame = getCurrentFrame();
     	
         if (frame.getLastClass() == null) {
-            throw new NameError(runtime,
-                "superclass method '" + frame.getLastFunc() + "' must be enabled by enableSuper().");
+            throw runtime.newNameError("superclass method '" + frame.getLastFunc() + "' must be enabled by enableSuper().");
         }
         iterStack.push(getCurrentIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
         try {
@@ -208,7 +205,7 @@ public class ThreadContext {
 
     public IRubyObject yield(IRubyObject value, IRubyObject self, RubyModule klass, boolean yieldProc, boolean aValue) {
         if (! isBlockGiven()) {
-            throw new LocalJumpError(runtime, "yield called out of block");
+            throw runtime.newLocalJumpError("yield called out of block");
         }
 
         Block currentBlock = (Block) blockStack.pop();

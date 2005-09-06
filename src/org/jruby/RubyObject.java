@@ -17,7 +17,7 @@
  * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
- * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -43,10 +43,6 @@ import java.util.Map;
 import org.jruby.ast.Node;
 import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.exceptions.BreakJump;
-import org.jruby.exceptions.FrozenError;
-import org.jruby.exceptions.NameError;
-import org.jruby.exceptions.NoMethodError;
-import org.jruby.exceptions.SecurityError;
 import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -201,7 +197,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     */
    protected void testFrozen(String message) {
        if (isFrozen()) {
-           throw new FrozenError(getRuntime(), message);
+           throw getRuntime().newFrozenError(message);
        }
    }
 
@@ -326,7 +322,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     	String varName = var.asSymbol();
     	
     	if (!varName.startsWith("@")) {
-    		throw new NameError(getRuntime(), "`" + varName + "' is not allowable as an instance variable name");
+    		throw getRuntime().newNameError("`" + varName + "' is not allowable as an instance variable name");
     	}
     	
     	IRubyObject variable = getInstanceVariable(varName); 
@@ -346,7 +342,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     	String varName = var.asSymbol();
     	
     	if (!varName.startsWith("@")) {
-    		throw new NameError(getRuntime(), "`" + varName + "' is not allowable as an instance variable name");
+    		throw getRuntime().newNameError("`" + varName + "' is not allowable as an instance variable name");
     	}
     	
     	return setInstanceVariable(var.asSymbol(), value);
@@ -355,7 +351,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     public IRubyObject setInstanceVariable(String name, IRubyObject value,
             String taintError, String freezeError) {
         if (isTaint() && getRuntime().getSafeLevel() >= 4) {
-            throw new SecurityError(getRuntime(), taintError);
+            throw getRuntime().newSecurityError(taintError);
         }
         testFrozen(freezeError);
 
@@ -470,11 +466,9 @@ public class RubyObject implements Cloneable, IRubyObject {
     public void checkSafeString() {
         if (getRuntime().getSafeLevel() > 0 && isTaint()) {
             if (getRuntime().getCurrentFrame().getLastFunc() != null) {
-                throw new SecurityError(
-                    getRuntime(),
-                    "Insecure operation - " + getRuntime().getCurrentFrame().getLastFunc());
+                throw getRuntime().newSecurityError("Insecure operation - " + getRuntime().getCurrentFrame().getLastFunc());
             }
-            throw new SecurityError(getRuntime(), "Insecure operation: -r");
+            throw getRuntime().newSecurityError("Insecure operation: -r");
         }
         getRuntime().secure(4);
         if (!(this instanceof RubyString)) {
@@ -764,7 +758,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      */
     public IRubyObject freeze() {
         if (getRuntime().getSafeLevel() >= 4 && isTaint()) {
-            throw new SecurityError(getRuntime(), "Insecure: can't freeze object");
+            throw getRuntime().newSecurityError("Insecure: can't freeze object");
         }
         setFrozen(true);
         return this;
@@ -944,9 +938,9 @@ public class RubyObject implements Cloneable, IRubyObject {
             noClass ? "" : ":", noClass ? "" : getType().getName()});
 
         if (lastCallStatus.isVariable()) {
-        	throw new NameError(getRuntime(), msg);
+        	throw getRuntime().newNameError(msg);
         }
-        throw new NoMethodError(getRuntime(), msg);
+        throw getRuntime().newNoMethodError(msg);
     }
 
     /**

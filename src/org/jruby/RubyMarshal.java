@@ -15,7 +15,7 @@
  * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2003 Thomas E Enebo <enebo@acm.org>
- * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -38,7 +38,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.jruby.exceptions.IOError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -93,7 +92,7 @@ public class RubyMarshal {
 			return RubyString.newString(recv.getRuntime(), stringOutput.toByteArray());
 
         } catch (IOException ioe) {
-            throw IOError.fromException(recv.getRuntime(), ioe);
+            throw recv.getRuntime().newIOErrorFromException(ioe);
         }
 
     }
@@ -133,7 +132,7 @@ public class RubyMarshal {
             return input.unmarshalObject(proc);
 
         } catch (IOException ioe) {
-            throw IOError.fromException(recv.getRuntime(), ioe);
+            throw recv.getRuntime().newIOErrorFromException(ioe);
         }
     }
 

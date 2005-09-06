@@ -13,6 +13,7 @@
  *
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -35,7 +36,6 @@ import java.io.Reader;
 import java.net.URL;
 
 import org.jruby.Ruby;
-import org.jruby.exceptions.IOError;
 
 public class ExternalScript implements Library {
     private final URL url;
@@ -52,7 +52,7 @@ public class ExternalScript implements Library {
             runtime.loadScript(name, reader, false);
             reader.close();
         } catch (IOException ioe) {
-            throw IOError.fromException(runtime, ioe);
+            throw runtime.newIOErrorFromException(ioe);
         }
     }
 }

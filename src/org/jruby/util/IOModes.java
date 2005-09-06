@@ -13,6 +13,7 @@
  *
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -29,7 +30,6 @@
 package org.jruby.util;
 
 import org.jruby.Ruby;
-import org.jruby.exceptions.ErrnoError;
 
 /**
  * @author enebo
@@ -86,7 +86,7 @@ public class IOModes {
         if ((!superset.isReadable() && isReadable()) ||
             (!superset.isWriteable() && isWriteable()) ||
             !superset.isAppendable() && isAppendable()) {
-            throw ErrnoError.getErrnoError(runtime, "EINVAL", "bad permissions");
+            throw runtime.newErrnoEINVALError("bad permissions");
         }
     }
     

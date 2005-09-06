@@ -15,6 +15,7 @@
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -30,8 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import org.jruby.exceptions.NameError;
-import org.jruby.exceptions.NoMethodError;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -75,10 +75,14 @@ public class RubyComparable {
                 return recv.getRuntime().getTrue();
             }
             return (RubyNumeric.fix2int(recv.callMethod("<=>", other)) == 0) ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
-        } catch (NameError rnExcptn) {
-            return recv.getRuntime().getFalse();
-        } catch (NoMethodError rnExcptn) {
-            return recv.getRuntime().getFalse();
+        } catch (RaiseException rnExcptn) {
+        	// FIXME: heavy, find a better way to check
+        	if (rnExcptn.getException().isKindOf(recv.getRuntime().getClass("NoMethodError"))) {
+        		return recv.getRuntime().getFalse();
+        	} else if (rnExcptn.getException().isKindOf(recv.getRuntime().getClass("NameError"))) {
+        		return recv.getRuntime().getFalse();
+        	}
+        	throw rnExcptn;
         }
     }
 
