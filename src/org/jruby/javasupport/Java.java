@@ -15,6 +15,7 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2004 David Corbin <dcorbin@users.sourceforge.net>
+ * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -52,6 +53,8 @@ public class Java {
         javaModule.defineModuleFunction("define_exception_handler", callbackFactory.getOptSingletonMethod("define_exception_handler"));
         javaModule.defineModuleFunction("primitive_to_java", callbackFactory.getSingletonMethod("primitive_to_java", IRubyObject.class));
         javaModule.defineModuleFunction("java_to_primitive", callbackFactory.getSingletonMethod("java_to_primitive", IRubyObject.class));
+        javaModule.defineModuleFunction("java_to_ruby", callbackFactory.getSingletonMethod("java_to_ruby", IRubyObject.class));
+        javaModule.defineModuleFunction("ruby_to_java", callbackFactory.getSingletonMethod("ruby_to_java", IRubyObject.class));
         javaModule.defineModuleFunction("new_proxy_instance", callbackFactory.getOptSingletonMethod("new_proxy_instance"));
 
         JavaObject.createJavaObjectClass(runtime, javaModule);
@@ -102,10 +105,40 @@ public class Java {
         return JavaObject.wrap(runtime, javaObject);
     }
 
+    /**
+     * High-level object conversion utility function 'java_to_primitive' is the low-level version 
+     */
+    public static IRubyObject java_to_ruby(IRubyObject recv, IRubyObject object) {
+        if (object instanceof JavaObject) {
+        	IRubyObject value = JavaUtil.convertJavaToRuby(recv.getRuntime(), ((JavaObject) object).getValue());
+            
+        	if (value.isKindOf(recv.getRuntime().getModule("Java").getClass("JavaObject"))) {
+        		return recv.getRuntime().getModule("JavaUtilities").callMethod("wrap", value);
+        	}
+        	
+        	return value;
+        }
+
+		return object;
+    }
+
+    // TODO: Formalize conversion mechanisms between Java and Ruby
+    /**
+     * High-level object conversion utility function 'primitive_to_java' is the low-level version 
+     */
+    public static IRubyObject ruby_to_java(IRubyObject recv, IRubyObject object) {
+    	if (object.respondsTo("java_object")) {
+    		object = object.callMethod("java_object");
+    	}
+    	
+    	return primitive_to_java(recv, object);
+    }    
+
     public static IRubyObject java_to_primitive(IRubyObject recv, IRubyObject object) {
         if (object instanceof JavaObject) {
-            return JavaUtil.convertJavaToRuby(recv.getRuntime(), ((JavaObject) object).getValue());
+        	return JavaUtil.convertJavaToRuby(recv.getRuntime(), ((JavaObject) object).getValue());
         }
+
 		return object;
     }
 

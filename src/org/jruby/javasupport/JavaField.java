@@ -13,7 +13,7 @@
  *
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2004 David Corbin <dcorbin@users.sourceforge.net>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
@@ -68,6 +68,8 @@ public class JavaField extends JavaAccessibleObject {
             callbackFactory.getMethod("static_value"));
         result.defineMethod("name", 
             callbackFactory.getMethod("name"));
+        result.defineMethod("==", callbackFactory.getMethod("equal", IRubyObject.class));
+        result.defineAlias("===", "==");
 
         return result;
     }
@@ -79,6 +81,14 @@ public class JavaField extends JavaAccessibleObject {
 
     public RubyString value_type() {
         return getRuntime().newString(field.getType().getName());
+    }
+
+    public IRubyObject equal(IRubyObject other) {
+    	if (!(other instanceof JavaField)) {
+    		return getRuntime().getFalse();
+    	}
+    	
+        return getRuntime().newBoolean(field.equals(((JavaField) other).field));
     }
 
     public RubyBoolean public_p() {

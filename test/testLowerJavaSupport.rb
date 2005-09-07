@@ -73,14 +73,15 @@ if defined? Java
 
   # Instance variables
   rectangle_class = Java::JavaClass.for_name("java.awt.Rectangle")
-  test_ok(rectangle_class.fields.include?("x"))
-  test_ok(rectangle_class.fields.include?("y"))
-  field = rectangle_class.field(:x)
-  test_equal("int", field.value_type)
-  test_equal("x", field.name)
-  test_ok(field.public?)
-  test_ok(! field.static?)
-  test_ok(! field.final?)
+  x_field = rectangle_class.field(:x)
+  y_field = rectangle_class.field(:y)
+  test_ok(rectangle_class.fields.include?(x_field))
+  test_ok(rectangle_class.fields.include?(y_field))
+  test_equal("int", x_field.value_type)
+  test_equal("x", x_field.name)
+  test_ok(x_field.public?)
+  test_ok(! x_field.static?)
+  test_ok(! x_field.final?)
   
   integer_ten = Java.primitive_to_java(10)
   integer_two = Java.primitive_to_java(2)
@@ -89,20 +90,20 @@ if defined? Java
                                        integer_ten,
                                        integer_two,
                                        integer_two)
-  value = field.value(rectangle)
+  value = x_field.value(rectangle)
   test_equal("java.lang.Integer", value.java_type)
   test_equal(2, Java.java_to_primitive(value))
-  field.set_value(rectangle, integer_ten)
-  value = field.value(rectangle)
+  x_field.set_value(rectangle, integer_ten)
+  value = x_field.value(rectangle)
   test_equal("java.lang.Integer", value.java_type)
   test_equal(10, Java.java_to_primitive(value))
   test_exception(TypeError) {
-    field.set_value(rectangle, Java.primitive_to_java("hello"))
+    x_field.set_value(rectangle, Java.primitive_to_java("hello"))
   }
 
   # private fields
   TestHelper = JavaUtilities.get_proxy_class('org.jruby.test.TestHelper')
-  test_ok(TestHelper.java_class.declared_fields.find {|field| field == 'privateField' })
+  test_ok(TestHelper.java_class.declared_fields.find {|field| field.name == 'privateField' })
   privateField = TestHelper.java_class.declared_field('privateField')
   test_equal('privateField', privateField.name)
   test_ok(! privateField.public?)
@@ -146,8 +147,8 @@ if defined? Java
 
   # Class variables
   integer_class = Java::JavaClass.for_name("java.lang.Integer")
-  test_ok(integer_class.fields.include?("MAX_VALUE"))
   field = integer_class.field(:MAX_VALUE)
+  test_ok(integer_class.fields.include?(field))
   test_ok(field.final?)
   test_ok(field.static?)
   test_equal(2147483647, Java.java_to_primitive(field.static_value))
