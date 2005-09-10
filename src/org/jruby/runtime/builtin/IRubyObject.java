@@ -257,13 +257,15 @@ public interface IRubyObject {
     RubyString inspect();
 
     /**
-     * RubyMethod argCount.
-     * @param args
-     * @param i
-     * @param i1
-     * @return int
+     * Make sure the arguments fit the range specified by minimum and maximum.  On
+     * a failure, The Ruby runtime will generate an ArgumentError.
+     * 
+     * @param arguments to check
+     * @param minimum number of args
+     * @param maximum number of args (-1 for any number of args)
+     * @return the number of arguments in args
      */
-    int checkArgumentCount(IRubyObject[] args, int i, int i1);
+    int checkArgumentCount(IRubyObject[] arguments, int minimum, int maximum);
 
     /**
      * RubyMethod rbClone.
