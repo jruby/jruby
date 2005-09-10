@@ -398,11 +398,21 @@ public class ParserSupport {
         }
     }
 
+    /**
+     * Check all nodes but the last one in a BlockNode for useless (void context) statements.
+     * 
+     * @param blockNode to be checked.
+     */
     public void checkUselessStatements(BlockNode blockNode) {
         if (warnings.isVerbose()) {
-            Iterator iterator = blockNode.iterator();
-            while (iterator.hasNext()) {
-                checkUselessStatement((Node) iterator.next());
+            Node lastNode = blockNode.getLast();
+
+            for (Iterator iterator = blockNode.iterator(); iterator.hasNext(); ) {
+                Node currentNode = (Node) iterator.next();
+        		
+                if (lastNode != currentNode ) {
+                    checkUselessStatement(currentNode);
+                }
             }
         }
     }
