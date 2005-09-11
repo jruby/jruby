@@ -88,6 +88,7 @@ public class RubyClass extends RubyModule {
     public static void createClassClass(RubyClass classClass) {
         CallbackFactory callbackFactory = classClass.getRuntime().callbackFactory(RubyClass.class);
         classClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod("newClass"));
+        classClass.defineMethod("allocate", callbackFactory.getMethod("allocate"));
         classClass.defineMethod("new", callbackFactory.getOptMethod("newInstance"));
         classClass.defineMethod("superclass", callbackFactory.getMethod("superclass"));
         classClass.defineSingletonMethod("inherited", callbackFactory.getSingletonMethod("inherited", IRubyObject.class));
