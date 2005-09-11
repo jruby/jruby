@@ -110,25 +110,24 @@ public class Java {
      */
     public static IRubyObject java_to_ruby(IRubyObject recv, IRubyObject object) {
         if (object instanceof JavaObject) {
-        	IRubyObject value = JavaUtil.convertJavaToRuby(recv.getRuntime(), ((JavaObject) object).getValue());
-            
-        	if (value.isKindOf(recv.getRuntime().getModule("Java").getClass("JavaObject"))) {
-        		return recv.getRuntime().getModule("JavaUtilities").callMethod("wrap", value);
-        	}
-        	
-        	return value;
+        	object = JavaUtil.convertJavaToRuby(recv.getRuntime(), ((JavaObject) object).getValue());
         }
+
+        //if (object.isKindOf(recv.getRuntime().getModule("Java").getClass("JavaObject"))) {
+        if (object instanceof JavaObject) {
+    		return recv.getRuntime().getModule("JavaUtilities").callMethod("wrap", object);
+    	}
 
 		return object;
     }
 
     // TODO: Formalize conversion mechanisms between Java and Ruby
     /**
-     * High-level object conversion utility function 'primitive_to_java' is the low-level version 
+     * High-level object conversion utility. 
      */
-    public static IRubyObject ruby_to_java(IRubyObject recv, IRubyObject object) {
-    	if (object.respondsTo("java_object")) {
-    		object = object.callMethod("java_object");
+    public static IRubyObject ruby_to_java(final IRubyObject recv, IRubyObject object) {
+    	if (object.respondsTo("to_java_object")) {
+    		return object.callMethod("to_java_object");
     	}
     	
     	return primitive_to_java(recv, object);
@@ -143,13 +142,18 @@ public class Java {
     }
 
     public static IRubyObject new_proxy_instance(final IRubyObject recv, IRubyObject[] args) {
-        if (args.length < 1) {
-            throw recv.getRuntime().newArgumentError("wrong # of arguments(" + args.length + " for 1)");
-        }
+    	int size = recv.checkArgumentCount(args, 1, -1) - 1;
+    	final RubyProc proc;
 
-        final RubyProc proc = args[args.length - 1] instanceof RubyProc ? (RubyProc)args[args.length - 1] : recv.getRuntime().newProc();
-        int size = args[args.length - 1] instanceof RubyProc ? args.length - 1 : args.length;
+    	// Is there a supplied proc argument or do we assume a block was supplied
+    	if (args[size] instanceof RubyProc) {
+    		proc = (RubyProc) args[size];
+    	} else {
+    		proc = recv.getRuntime().newProc();
+    		size++;
+    	}
 
+    	// Create list of interfaces to proxy (and make sure they really are interfaces)
         Class[] interfaces = new Class[size];
         for (int i = 0; i < size; i++) {
             if (!(args[i] instanceof JavaClass) || !((JavaClass)args[i]).interface_p().isTrue()) {
@@ -160,11 +164,14 @@ public class Java {
 
         return JavaObject.wrap(recv.getRuntime(), Proxy.newProxyInstance(recv.getRuntime().getJavaSupport().getJavaClassLoader(), interfaces, new InvocationHandler() {
             public Object invoke(Object proxy, Method method, Object[] nargs) throws Throwable {
-                if (method.getName().equals("toString") && method.getParameterTypes().length == 0) {
+            	int methodArgsLength = method.getParameterTypes().length;
+            	String methodName = method.getName();
+            	
+                if (methodName.equals("toString") && methodArgsLength == 0) {
                     return proxy.getClass().getName();
-                } else if (method.getName().equals("hashCode") && method.getParameterTypes().length == 0) {
+                } else if (methodName.equals("hashCode") && methodArgsLength == 0) {
                     return new Integer(proxy.getClass().hashCode());
-                } else if (method.getName().equals("equals") && method.getParameterTypes().length == 1 && method.getParameterTypes()[0].equals(Object.class)) {
+                } else if (methodName.equals("equals") && methodArgsLength == 1 && method.getParameterTypes()[0].equals(Object.class)) {
                     return Boolean.valueOf(proxy == nargs[0]);
                 }
                 int length = nargs == null ? 0 : nargs.length;

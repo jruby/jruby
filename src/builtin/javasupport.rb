@@ -29,12 +29,40 @@
 # the terms of any one of the CPL, the GPL or the LGPL.
 ###### END LICENSE BLOCK ######
 
-module JavaProxy
-  attr :java_class, true
+class JavaProxy
+  class << self
+    attr :java_class, true
+
+    # Allocate a new instance for the provided java_object.  This is like a second 'new' to
+    # by-pass any 'initialize' methods we may have created for the proxy class (we already
+    # have the instance for the proxy...We don't want to re-create it).
+    def new_instance_for(java_object)
+      new_instance = allocate
+      new_instance.java_object = java_object
+      new_instance
+    end
+    
+    # Carry the Java class as a class variable on the derived classes too, otherwise 
+    # JavaProxy.java_class won't work.
+    def inherited(subclass)
+       subclass.java_class = self.java_class unless subclass.java_class
+       super
+    end
+
+    # If the proxy class itself is passed as a parameter this will be called by Java#ruby_to_java    
+    def to_java_object
+      self.java_class
+    end
+  end
+  
   attr :java_object, true
+  
+  def java_class
+    self.class.java_class
+  end
 
   def ==(rhs)
-    return java_object == rhs
+    java_object == rhs
   end
   
   def to_s
@@ -51,6 +79,10 @@ module JavaProxy
   
   def hash()
     java_object.hash()
+  end
+  
+  def to_java_object
+    java_object
   end
 end
 
@@ -77,13 +109,7 @@ module JavaUtilities
     class_id = java_class.id
 
     unless @proxy_classes[class_id]
-      proxy_class = Class.new
-      proxy_class.class_eval(<<END)
-        include(JavaProxy)
-        @java_class = java_class
-        @java_object = java_class
-END
-
+      proxy_class = Class.new(JavaProxy) { self.java_class = java_class }
       @proxy_classes[class_id] = proxy_class
 
       setup_proxy_class(proxy_class)
@@ -142,7 +168,7 @@ END
   def JavaUtilities.wrap(java_object)
     real_type = java_object.java_class
     java_class = JavaUtilities.narrowest_type(real_type)
-    proxy = get_proxy_class(java_class).new_proxy_instance(java_class, java_object)
+    proxy = get_proxy_class(java_class).new_instance_for(java_object)
 
     unless real_type.public?
       # If the instance is private, but implements public interfaces
@@ -159,27 +185,6 @@ END
   end
 
   def JavaUtilities.setup_proxy_class(proxy_class)
-    class << proxy_class
-      alias_method :new_proxy, :new
-      attr_reader :java_class
-      attr_reader :java_object
-      
-      def new_proxy_instance(java_class, java_object)
-        new_instance = new_proxy
-        new_instance.java_class = java_class
-        new_instance.java_object = java_object
-        new_instance
-      end
-
-      # Carry the Java class as an instance variable on the
-      # derived classes too, otherwise their constructors
-      # won't work.
-      def inherited(subclass)
-        java_class = @java_class
-        subclass.class_eval("@java_class = java_class")
-      end
-    end
-
     if proxy_class.java_class.interface?
       create_interface_constructor(proxy_class)
       create_array_type_accessor(proxy_class)
@@ -204,21 +209,21 @@ END
   end
 
   def JavaUtilities.create_class_constructor(proxy_class)
-    class << proxy_class
-      def new(*args)
-        constructors = @java_class.constructors.select {|c| c.arity == args.length }
+    proxy_class.class_eval do
+      def initialize(*args)
+        constructors = java_class.constructors.select {|c| c.arity == args.length }
         raise NameError.new("wrong # of arguments for constructor") if constructors.empty?
         args.collect! { |v| Java.ruby_to_java(v) }
         constructor = JavaUtilities.matching_method(constructors, args)
-        new_proxy_instance(java_class, constructor.new_instance(*args))
+        self.java_object = constructor.new_instance(*args)
       end
     end
   end
   
   def JavaUtilities.create_array_class_constructor(proxy_class)
-    class << proxy_class
-      def new(size)
-        new_proxy_instance(java_class, java_class.component_type.new_array(size))
+    proxy_class.class_eval do
+      def initialize(size)
+        self.java_object = (java_class.component_type.new_array(size))
       end
     end
   end
@@ -247,11 +252,7 @@ END
       include Enumerable
       def length(); java_object.length; end
       def [](index); Java.java_to_ruby(java_object[index]); end
-      def []=(index, value)
-        java_object[index] = Java.ruby_to_java(value)
-        # ENEBO: Is the following line needed?
-        java_object[index]
-      end
+      def []=(index, value); java_object[index] = Java.ruby_to_java(value); end
       def each()
         block = Proc.new
         for index in 0...java_object.length
