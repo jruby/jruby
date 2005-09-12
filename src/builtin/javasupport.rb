@@ -45,13 +45,134 @@ class JavaProxy
     # Carry the Java class as a class variable on the derived classes too, otherwise 
     # JavaProxy.java_class won't work.
     def inherited(subclass)
-       subclass.java_class = self.java_class unless subclass.java_class
-       super
+      subclass.java_class = self.java_class unless subclass.java_class
+      super
+    end
+    
+    def singleton_class
+      class << self; self; end 
     end
 
     # If the proxy class itself is passed as a parameter this will be called by Java#ruby_to_java    
     def to_java_object
       self.java_class
+    end
+
+    def []
+      JavaUtilities.get_proxy_class(java_class.array_class)
+    end
+    
+    def setup
+      unless java_class.array?
+        setup_instance_methods
+        setup_attributes
+        setup_class_methods
+        setup_constants
+        setup_inner_classes
+      end
+    end
+    
+    def setup_attributes
+      instance_methods = java_class.java_instance_methods.collect! {|m| m.name}
+      java_class.fields.select {|field| field.public? && !field.static? }.each do |attr|
+        name = attr.name
+      
+        # Do not add any constants that have the same name as an existing method
+        next if instance_methods.detect {|m| m == name }
+
+        class_eval do
+          define_method(name) do |*args| Java.java_to_ruby(attr.value(@java_object)); end
+        end
+
+        next if attr.final?
+
+        class_eval do
+          define_method("#{name}=") do |*args|
+            Java.java_to_ruby(attr.set_value(@java_object, Java.ruby_to_java(args.first)))
+          end
+        end
+      end
+    end
+
+    def setup_class_methods
+      java_class.java_class_methods.select { |m| m.public? }.group_by { |m| m.name 
+      }.each do |name, methods|
+        if methods.length == 1
+          method = methods.first
+          singleton_class.send(:define_method, name) do |*args|
+            args.collect! { |v| Java.ruby_to_java(v) }
+            Java.java_to_ruby(method.invoke_static(*args))
+          end
+        else
+          singleton_class.send(:define_method, name) do |*args|
+            args.collect! { |v| Java.ruby_to_java(v) }
+            method = JavaUtilities.matching_method(methods, args)
+            Java.java_to_ruby(method.invoke_static(*args))
+          end
+        end
+      end
+    end
+    
+    def setup_constants
+      fields = java_class.fields
+      constants = fields.select {|field|
+        field.static? and field.final? and JavaUtilities.valid_constant_name?(field.name)
+      }.each {|constant|
+        const_set(constant.name, Java.java_to_primitive(constant.static_value))
+      }
+      naughty_constants = fields.select {|field|
+        field.static? and field.final? and !JavaUtilities.valid_constant_name?(field.name)
+      }
+
+      class_methods = java_class.java_class_methods.collect! { |m| m.name }
+
+      naughty_constants.each do |constant|
+        name = constant.name
+        # Do not add any constants that has same-name class method
+        next if class_methods.detect {|m| m == name }
+
+        class_eval do
+          singleton_class.send(:define_method, name) do |*args|
+            Java.java_to_ruby(java_class.field(name).static_value)
+          end
+        end
+      end
+    end
+
+    def setup_inner_classes
+      def const_missing(constant)
+        inner_class = nil
+        begin
+          inner_class = Java::JavaClass.for_name(java_class.name + '$' + constant.to_s)
+        rescue NameError
+          return super
+        end
+        JavaUtilities.create_proxy_class(constant, inner_class, self)
+      end
+    end
+
+    def setup_instance_methods
+      java_class.java_instance_methods.select { |m| m.public? }.group_by { |m| m.name
+      }.each do |name, methods|
+        # We optimize for java methods which only have one method of the same name.
+        if methods.length == 1
+          method = methods.first
+          class_eval do
+            define_method(name) do |*args|
+              args.collect! { |v| Java.ruby_to_java(v) }
+              Java.java_to_ruby(method.invoke(self.java_object, *args))
+            end
+          end
+        else
+          class_eval do
+            define_method(name) do |*args|
+              args.collect! { |v| Java.ruby_to_java(v) }
+              method = JavaUtilities.matching_method(methods, args)
+              Java.java_to_ruby(method.invoke(self.java_object, *args))
+            end
+          end 
+        end
+	  end
     end
   end
   
@@ -86,6 +207,52 @@ class JavaProxy
   end
 end
 
+class ArrayJavaProxy < JavaProxy
+  include Enumerable
+
+  def initialize(size)
+    self.java_object = java_class.component_type.new_array(size)
+  end
+
+  def length()
+    java_object.length
+  end
+  
+  def [](index)
+    Java.java_to_ruby(java_object[index])
+  end
+  
+  def []=(index, value)
+    java_object[index] = Java.ruby_to_java(value)
+  end
+  
+  def each()
+    block = Proc.new
+    for index in 0...java_object.length
+      block.call(self[index])
+    end
+  end
+end
+
+class InterfaceJavaProxy < JavaProxy
+  def initialize
+    self.java_object = Java.new_proxy_instance(self.class.java_class) { |proxy, method, *args|
+      args.collect! { |arg| Java.java_to_ruby(arg) }
+      Java.ruby_to_java(send(method.name, *args))
+    }
+  end
+end
+
+class ConcreteJavaProxy < JavaProxy
+  def initialize(*args)
+    constructors = java_class.constructors.select {|c| c.arity == args.length }
+    raise NameError.new("wrong # of arguments for constructor") if constructors.empty?
+    args.collect! { |v| Java.ruby_to_java(v) }
+    constructor = JavaUtilities.matching_method(constructors, args)
+    self.java_object = constructor.new_instance(*args)
+  end
+end
+
 module JavaUtilities
   @proxy_classes = {}
   @proxy_extenders = []
@@ -109,10 +276,16 @@ module JavaUtilities
     class_id = java_class.id
 
     unless @proxy_classes[class_id]
-      proxy_class = Class.new(JavaProxy) { self.java_class = java_class }
+      if java_class.interface?
+        base_type = InterfaceJavaProxy
+      elsif java_class.array?
+        base_type = ArrayJavaProxy
+      else
+        base_type = ConcreteJavaProxy
+      end
+      
+      proxy_class = Class.new(base_type) { self.java_class = java_class; setup }
       @proxy_classes[class_id] = proxy_class
-
-      setup_proxy_class(proxy_class)
       extend_proxy(proxy_class)
     end
 
@@ -184,124 +357,6 @@ module JavaUtilities
     proxy
   end
 
-  def JavaUtilities.setup_proxy_class(proxy_class)
-    if proxy_class.java_class.interface?
-      create_interface_constructor(proxy_class)
-      create_array_type_accessor(proxy_class)
-    elsif proxy_class.java_class.array?
-      create_array_class_constructor(proxy_class)
-    else
-      create_class_constructor(proxy_class)
-      create_array_type_accessor(proxy_class)
-    end
-
-    if proxy_class.java_class.array?
-      setup_array_methods(proxy_class)
-    else
-      setup_instance_methods(proxy_class)
-      setup_attributes(proxy_class)
-      setup_class_methods(proxy_class)
-      setup_constants(proxy_class)
-      setup_inner_classes(proxy_class)
-    end
-    
-    proxy_class
-  end
-
-  def JavaUtilities.create_class_constructor(proxy_class)
-    proxy_class.class_eval do
-      def initialize(*args)
-        constructors = java_class.constructors.select {|c| c.arity == args.length }
-        raise NameError.new("wrong # of arguments for constructor") if constructors.empty?
-        args.collect! { |v| Java.ruby_to_java(v) }
-        constructor = JavaUtilities.matching_method(constructors, args)
-        self.java_object = constructor.new_instance(*args)
-      end
-    end
-  end
-  
-  def JavaUtilities.create_array_class_constructor(proxy_class)
-    proxy_class.class_eval do
-      def initialize(size)
-        self.java_object = (java_class.component_type.new_array(size))
-      end
-    end
-  end
-
-  def JavaUtilities.create_array_type_accessor(proxy_class)
-    class << proxy_class
-      def []
-        JavaUtilities.get_proxy_class(java_class.array_class)
-      end
-    end
-  end
-
-  def JavaUtilities.create_interface_constructor(proxy_class)
-    proxy_class.class_eval do
-      def initialize
-        self.java_object = Java.new_proxy_instance(self.class.java_class) { |proxy, method, *args|
-          args.collect! { |arg| Java.java_to_ruby(arg) }
-          Java.ruby_to_java(send(method.name, *args))
-        }
-      end
-    end
-  end
-
-  def JavaUtilities.setup_array_methods(proxy_class)
-	proxy_class.class_eval do
-      include Enumerable
-      def length(); java_object.length; end
-      def [](index); Java.java_to_ruby(java_object[index]); end
-      def []=(index, value); java_object[index] = Java.ruby_to_java(value); end
-      def each()
-        block = Proc.new
-        for index in 0...java_object.length
-          value = self[index]
-          block.call(value)
-        end
-      end
-    end
-  end
-
-  def JavaUtilities.setup_instance_methods(proxy_class)
-    proxy_class.java_class.java_instance_methods.select { |m| m.public? }.group_by { |m| m.name
-    }.each do |name, methods|
-      # We optimize for java methods which only have one method of the same name.
-      if methods.length == 1
-        method = methods.first
-        proxy_class.send(:define_method, name) do |*args|
-          args.collect! { |v| Java.ruby_to_java(v) }
-          Java.java_to_ruby(method.invoke(self.java_object, *args))
-        end
-      else
-        proxy_class.send(:define_method, name) do |*args|
-          args.collect! { |v| Java.ruby_to_java(v) }
-          method = JavaUtilities.matching_method(methods, args)
-          Java.java_to_ruby(method.invoke(self.java_object, *args))
-        end
-      end
-	end
-  end
-  
-  def JavaUtilities.setup_class_methods(proxy_class)
-    proxy_class.java_class.java_class_methods.select { |m| m.public? }.group_by { |m| m.name 
-    }.each do |name, methods|
-      if methods.length == 1
-        method = methods.first
-        proxy_class.class.send(:define_method, name) do |*args|
-          args.collect! { |v| Java.ruby_to_java(v) }
-          Java.java_to_ruby(method.invoke_static(*args))
-        end
-      else
-        proxy_class.class.send(:define_method, name) do |*args|
-          args.collect! { |v| Java.ruby_to_java(v) }
-          method = JavaUtilities.matching_method(methods, args)
-          Java.java_to_ruby(method.invoke_static(*args))
-        end
-      end
-    end
-  end
-
   def JavaUtilities.matching_method(methods, args)
     arg_types = args.collect {|a| a.java_class }
     methods.each do |method|
@@ -323,64 +378,6 @@ module JavaUtilities
     name = methods.first.kind_of?(Java::JavaConstructor) ? 
       "constructor" : "method '" + methods.first.name + "'"
     raise NameError.new("no " + name + " with arguments matching " + arg_types.inspect)
-  end
-
-  def JavaUtilities.setup_attributes(proxy_class)
-    instance_methods = proxy_class.java_class.java_instance_methods.collect! {|m| m.name}
-    proxy_class.java_class.fields.select {|field| field.public? && !field.static? }.each do |attr|
-      name = attr.name
-      
-      # Do not add any constants that have the same name as an existing method
-	  next if instance_methods.detect {|m| m == name }
-
-	  proxy_class.send(:define_method, name) do |*args|
-	    Java.java_to_ruby(attr.value(@java_object))
-	  end
-
-	  next if attr.final?
-
-	  proxy_class.send(:define_method, "#{name}=") do |*args|
-	    Java.java_to_ruby(attr.set_value(@java_object, Java.ruby_to_java(args.first)))
-	  end
-    end
-  end
-
-  def JavaUtilities.setup_constants(proxy_class)
-    java_class = proxy_class.java_class
-    fields = java_class.fields
-    constants = fields.select {|field|
-      field.static? and field.final? and JavaUtilities.valid_constant_name?(field.name)
-    }
-    constants.each {|constant|
-      proxy_class.const_set(constant.name, Java.java_to_primitive(constant.static_value))
-    }
-    naughty_constants = fields.select {|field|
-      field.static? and field.final? and !JavaUtilities.valid_constant_name?(field.name)
-    }
-
-    class_methods = java_class.java_class_methods.collect! { |m| m.name }
-
-    naughty_constants.each do |constant|
-      name = constant.name
-      # Do not add any constants that has same-name class method
-      next if class_methods.detect {|m| m == name }
-
-      proxy_class.class.send(:define_method, name) do |*args|
-        Java.java_to_ruby(java_class.field(name).static_value)
-      end
-    end
-  end
-
-  def JavaUtilities.setup_inner_classes(proxy_class)
-    def proxy_class.const_missing(constant)
-      inner_class = nil
-      begin
-        inner_class = Java::JavaClass.for_name(java_class.name + '$' + constant.to_s)
-      rescue NameError
-        return super
-      end
-      JavaUtilities.create_proxy_class(constant, inner_class, self)
-    end
   end
 end
 

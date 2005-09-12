@@ -165,4 +165,11 @@ if defined? Java
   a = JString.new  
   # High-level java should only deal with proxies and not low-level JavaClass
   test_ok(a.getClass().class != "Java::JavaClass")
+  
+  # We had a problem with accessing singleton class versus class earlier. Sanity check
+  # to make sure we are not writing class methods to the same place.
+  include_class 'org.jruby.test.AlphaSingleton'
+  include_class 'org.jruby.test.BetaSingleton'
+
+  test_no_exception { AlphaSingleton.getInstance.alpha }
 end
