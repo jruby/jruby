@@ -709,19 +709,19 @@ public class ParserSupport {
     public Node newEvStrNode(SourcePosition position, Node node) {
         Node head = node;
         while (true) {
-            if (node != null) {
-                if (node instanceof StrNode ||
-                    node instanceof DStrNode ||
-                    node instanceof EvStrNode) {
-                    return node;
-                }
-                
-                if (!(node instanceof NewlineNode)) {
-                    break;
-                }
-                
-                node = ((NewlineNode) node).getNextNode();
+            if (node == null) {
+                break;
             }
+            
+            if (node instanceof StrNode|| node instanceof DStrNode || node instanceof EvStrNode) {
+                return node;
+            }
+                
+            if (!(node instanceof NewlineNode)) {
+                break;
+            }
+                
+            node = ((NewlineNode) node).getNextNode();
         }
         
         return new EvStrNode(position, head);
