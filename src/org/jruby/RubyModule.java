@@ -444,7 +444,9 @@ public class RubyModule extends RubyObject {
     	method = superClass == null ? 
     	    UndefinedMethod.getInstance() : superClass.searchMethodInner(name);
 
-    	addCachedMethod(name, method);
+        if (method != UndefinedMethod.getInstance()) {
+    	   addCachedMethod(name, method);
+        }
     	
     	return method;
     }
