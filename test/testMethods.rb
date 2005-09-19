@@ -94,3 +94,10 @@ test_equal("y", TM_B.new.bar) # Tests SuperNode
 
 def no_arg_opt(*); end
 test_no_exception { no_arg_opt }
+
+class BadInspect
+  def inspect; nil; end
+end
+
+test_exception(NoMethodError) { BadInspect.new.hop }
+

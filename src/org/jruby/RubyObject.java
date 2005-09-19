@@ -931,7 +931,7 @@ public class RubyObject implements Cloneable, IRubyObject {
 
         String name = args[0].asSymbol();
         String description = callMethod("inspect").toString();
-        boolean noClass = description.charAt(0) == '#';
+        boolean noClass = description.length() > 0 && description.charAt(0) == '#';
         LastCallStatus lastCallStatus = getRuntime().getLastCallStatus();
         String format = lastCallStatus.errorMessageFormat(name);
         String msg = new PrintfFormat(format).sprintf(new Object[] { name, description, 
