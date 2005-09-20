@@ -139,4 +139,19 @@ end
 
 test_equal("fooFoo", b.bar)
 test_equal("fooFoo", c.bar)
+
+###### included
+$included = false
+module I1
+  def I1.included(m)
+    test_equal(I2, m)
+    $included = true
+  end
+end
+
+class I2
+  include I1
+end
+
+test_ok($included)
  

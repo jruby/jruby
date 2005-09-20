@@ -50,6 +50,7 @@ public class ModuleMetaClass extends ObjectMetaClass {
         defineMethod("const_set", Arity.twoArguments());
         defineMethod("constants", Arity.noArguments());
         defineMethod("dup", Arity.noArguments());
+        defineMethod("included", Arity.singleArgument());
         defineMethod("included_modules", Arity.noArguments());
         defineMethod("initialize", Arity.optional());
         defineMethod("instance_method", Arity.singleArgument());

@@ -317,6 +317,8 @@ public class RubyModule extends RubyObject {
         	p = p.getSuperClass()) {
         	includeModule(p);
         }
+        
+        module.callMethod("included", this);
     }
 
     public void defineMethod(String name, Callback method) {
@@ -1328,6 +1330,10 @@ public class RubyModule extends RubyObject {
         }
 
         return this;
+    }
+    
+    public IRubyObject included(IRubyObject other) {
+        return getRuntime().getNil();
     }
 
     private void setVisibility(IRubyObject[] args, Visibility visibility) {
