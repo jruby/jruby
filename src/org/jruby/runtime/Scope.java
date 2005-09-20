@@ -57,8 +57,6 @@ public class Scope implements StackElement {
 
     private IRubyObject rubyNil;
 
-    private IRubyObject superObject = null;
-
     private List localNames = null;
 	private List localValues = null;
 
@@ -84,19 +82,6 @@ public class Scope implements StackElement {
         next = (Scope)newNext;
     }
 
-    /** Getter for property superObject.
-     * @return Value of property superObject.
-     */
-    public IRubyObject getSuperObject() {
-        return superObject;
-    }
-
-    /** Setter for property superObject.
-     * @param superObject New value of property superObject.
-     */
-    public void setSuperObject(IRubyObject superObject) {
-        this.superObject = superObject;
-    }
     /**
      * Gets the localNames.
      * @return Returns a NameList
@@ -126,10 +111,6 @@ public class Scope implements StackElement {
         }
         this.localNames.addAll(someLocalNames);
         this.localValues.addAll(Collections.nCopies(someLocalNames.size(), rubyNil));
-    }
-
-    public List getLocalValues() {
-        return localValues;
     }
 
     public boolean hasLocalVariables() {
