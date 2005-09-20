@@ -1238,6 +1238,9 @@ public final class EvaluateVisitor implements NodeVisitor {
 
                 return;
             } catch (RaiseException raiseJump) {
+                // TODO: Rubicon TestKernel dies without this line.  A cursory glance implies we
+                // falsely set $! to nil and this sets it back to something valid.  This should 
+                // get fixed at the same time we address bug #1296484.
                 runtime.getGlobalVariables().set("$!", raiseJump.getException());
 
                 RescueBodyNode rescueNode = iVisited.getRescueNode();

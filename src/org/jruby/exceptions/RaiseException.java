@@ -93,6 +93,8 @@ public class RaiseException extends JumpException {
      */
     protected void setException(RubyException newException, boolean nativeException) {
         Ruby runtime = newException.getRuntime();
+        
+        runtime.getGlobalVariables().set("$!", newException);
 
         if (runtime.getTraceFunction() != null) {
             runtime.callTraceFunction(
