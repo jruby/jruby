@@ -14,7 +14,7 @@
  * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -119,9 +119,7 @@ public class JRubyEngine extends BSFEngineImpl {
                 IRubyObject obj = rubyArgs[i];
 
                 if (obj instanceof JavaObject) {
-                    rubyArgs[i] = javaUtilities.callMethod("wrap", new IRubyObject[] {
-                        obj, runtime.newString(obj.getClass().getName())
-                    });
+                    rubyArgs[i] = javaUtilities.callMethod("wrap", obj);
                 }
             }
 
@@ -137,21 +135,13 @@ public class JRubyEngine extends BSFEngineImpl {
     private IRubyObject convertToRuby(Object value) {
         IRubyObject result = JavaUtil.convertJavaToRuby(runtime, value);
         if (result instanceof JavaObject) {
-            runtime.getLoadService().require("java");
-            result = runtime.getObject().getConstant("JavaUtilities").callMethod("wrap",
-                new IRubyObject[] { result, runtime.newString(value.getClass().getName())});
+            return runtime.getModule("JavaUtilities").callMethod("wrap", result);
         }
         return result;
     }
 
     private Object convertToJava(IRubyObject value, Class type) {
-        runtime.getLoadService().require("java");
-        if (value.isKindOf(runtime.getModule("JavaProxy"))) {
-        	IRubyObject variable = value.getInstanceVariable("@java_object"); 
-            value = variable == null ? runtime.getNil() : variable;
-        }
-        value = Java.primitive_to_java(value, value);
-        return JavaUtil.convertArgument(value, type);
+        return JavaUtil.convertArgument(Java.ruby_to_java(runtime.getObject(), value), type);
     }
 
     public void initialize(BSFManager manager, String language, Vector someDeclaredBeans) throws BSFException {
@@ -159,6 +149,7 @@ public class JRubyEngine extends BSFEngineImpl {
 
         runtime = Ruby.getDefaultInstance();
         runtime.getLoadService().init(getClassPath(manager));
+        runtime.getLoadService().require("java");
 
         for (int i = 0, size = someDeclaredBeans.size(); i < size; i++) {
             BSFDeclaredBean bean = (BSFDeclaredBean) someDeclaredBeans.elementAt(i);
@@ -218,21 +209,13 @@ public class JRubyEngine extends BSFEngineImpl {
         public IRubyObject getValue() {
             IRubyObject result = JavaUtil.convertJavaToRuby(runtime, bean.bean, bean.type);
             if (result instanceof JavaObject) {
-                runtime.getLoadService().require("java");
-                result = runtime.getObject().getConstant("JavaUtilities").callMethod("wrap",
-                    new IRubyObject[] { result, runtime.newString(bean.type.getName())});
+                return runtime.getModule("JavaUtilities").callMethod("wrap", result);
             }
             return result;
         }
 
         public IRubyObject setValue(IRubyObject value) {
-            runtime.getLoadService().require("java");
-            if (value.isKindOf(runtime.getModule("JavaProxy"))) {
-            	IRubyObject variable = value.getInstanceVariable("@java_object"); 
-                value = variable == null ? runtime.getNil() : variable;
-            }
-            value = Java.primitive_to_java(value, value);
-            bean.bean = JavaUtil.convertArgument(value, bean.type);
+            bean.bean = JavaUtil.convertArgument(Java.ruby_to_java(runtime.getObject(), value), bean.type);
             return value;
         }
     }
@@ -249,9 +232,7 @@ public class JRubyEngine extends BSFEngineImpl {
         public IRubyObject getValue() {
             IRubyObject result = JavaUtil.convertJavaToRuby(runtime, functions, BSFFunctions.class);
             if (result instanceof JavaObject) {
-                runtime.getLoadService().require("java");
-                result = runtime.getObject().getConstant("JavaUtilities").callMethod("wrap",
-                    new IRubyObject[] { result, runtime.newString(BSFFunctions.class.getName())});
+                return runtime.getModule("JavaUtilities").callMethod("wrap", result);
             }
             return result;
         }
