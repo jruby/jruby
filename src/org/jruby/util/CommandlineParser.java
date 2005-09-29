@@ -120,17 +120,15 @@ public class CommandlineParser {
                     processLineEnds = true;
                     break;
                 case 'v' :
-                    showVersion = true;
                     verbose = true;
-                    shouldRunInterpreter = false;
+                    setShowVersion(true);
                     break;
                 case 'w' :
                     verbose = true;
                     break;
                 case '-' :
                     if (argument.equals("--version")) {
-                        showVersion = true;
-                        shouldRunInterpreter = false;
+                        setShowVersion(true);
                         break FOR;
                     }
                 default :
@@ -242,6 +240,11 @@ public class CommandlineParser {
 
     public boolean isShowVersion() {
         return showVersion;
+    }
+
+    protected void setShowVersion(boolean showVersion) {
+        this.showVersion = showVersion;
+        this.shouldRunInterpreter = false;
     }
 
     public String[] getScriptArguments() {
