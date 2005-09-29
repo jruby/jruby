@@ -66,7 +66,7 @@ public class Main {
     public static void main(String[] args) {
         commandline = new CommandlineParser(args);
 
-        if (commandline.showVersion) {
+        if (commandline.isShowVersion()) {
             showVersion();
         }
         if (! commandline.shouldRunInterpreter()) {
@@ -74,13 +74,13 @@ public class Main {
         }
 
         long now = -1;
-        if (commandline.isBenchmarking) {
+        if (commandline.isBenchmarking()) {
             now = System.currentTimeMillis();
         }
 
         int status = runInterpreter(commandline.getScriptSource(), commandline.displayedFileName());
 
-        if (commandline.isBenchmarking) {
+        if (commandline.isBenchmarking()) {
             System.out.println("Runtime: " + (System.currentTimeMillis() - now) + " ms");
         }
         
@@ -145,28 +145,28 @@ public class Main {
 
     private static Node getParsedScript(Ruby runtime, Reader reader, String filename) {
         Node result = runtime.parse(reader, filename);
-        if (commandline.assumePrinting) {
+        if (commandline.isAssumePrinting()) {
             result = new ParserSupport().appendPrintToBlock(result);
         }
-        if (commandline.assumeLoop) {
-            result = new ParserSupport().appendWhileLoopToBlock(result, commandline.processLineEnds, commandline.sDoSplit);
+        if (commandline.isAssumeLoop()) {
+            result = new ParserSupport().appendWhileLoopToBlock(result, commandline.isProcessLineEnds(), commandline.isSplit());
         }
         return result;
     }
 
     private static void initializeRuntime(final Ruby runtime, String filename) {
-        IRubyObject argumentArray = runtime.newArray(JavaUtil.convertJavaArrayToRuby(runtime, commandline.scriptArguments));
-        runtime.setVerbose(runtime.newBoolean(commandline.verbose));
+        IRubyObject argumentArray = runtime.newArray(JavaUtil.convertJavaArrayToRuby(runtime, commandline.getScriptArguments()));
+        runtime.setVerbose(runtime.newBoolean(commandline.isVerbose()));
 
         defineGlobalVERBOSE(runtime);
         runtime.getObject().setConstant("$VERBOSE", 
-        		commandline.verbose ? runtime.getTrue() : runtime.getNil());
+        		commandline.isVerbose() ? runtime.getTrue() : runtime.getNil());
         runtime.defineGlobalConstant("ARGV", argumentArray);
 
-        defineGlobal(runtime, "$-p", commandline.assumePrinting);
-        defineGlobal(runtime, "$-n", commandline.assumeLoop);
-        defineGlobal(runtime, "$-a", commandline.sDoSplit);
-        defineGlobal(runtime, "$-l", commandline.processLineEnds);
+        defineGlobal(runtime, "$-p", commandline.isAssumePrinting());
+        defineGlobal(runtime, "$-n", commandline.isAssumeLoop());
+        defineGlobal(runtime, "$-a", commandline.isSplit());
+        defineGlobal(runtime, "$-l", commandline.isProcessLineEnds());
         runtime.getGlobalVariables().defineReadonly("$*", new ValueAccessor(argumentArray));
         // TODO this is a fake cause we have no real process number in Java
         runtime.getGlobalVariables().defineReadonly("$$", new ValueAccessor(runtime.newFixnum(runtime.hashCode())));

@@ -46,16 +46,16 @@ public class CommandlineParser {
 
     private ArrayList loadPaths = new ArrayList();
     private StringBuffer inlineScript = new StringBuffer();
-    public String scriptFileName = null;
+    private String scriptFileName = null;
     private ArrayList requiredLibraries = new ArrayList();
-    public boolean isBenchmarking = false;
-    public boolean assumeLoop = false;
-    public boolean assumePrinting = false;
-    public boolean processLineEnds = false;
-    public boolean sDoSplit = false;
-    public boolean verbose = false;
-    public boolean showVersion = false;
-    public String[] scriptArguments = null;
+    private boolean benchmarking = false;
+    private boolean assumeLoop = false;
+    private boolean assumePrinting = false;
+    private boolean processLineEnds = false;
+    private boolean split = false;
+    private boolean verbose = false;
+    private boolean showVersion = false;
+    private String[] scriptArguments = null;
     private boolean shouldRunInterpreter = true;
 
     public int argumentIndex = 0;
@@ -73,13 +73,13 @@ public class CommandlineParser {
         }
         if (! hasInlineScript()) {
             if (argumentIndex < arguments.length) {
-                scriptFileName = arguments[argumentIndex]; //consume the file name
+                setScriptFileName(arguments[argumentIndex]); //consume the file name
                 argumentIndex++;
             }
         }
         // Remaining arguments are for the script itself
         scriptArguments = new String[arguments.length - argumentIndex];
-        System.arraycopy(arguments, argumentIndex, scriptArguments, 0, scriptArguments.length);
+        System.arraycopy(arguments, argumentIndex, getScriptArguments(), 0, getScriptArguments().length);
     }
 
     private static boolean isInterpreterArgument(String argument) {
@@ -104,7 +104,7 @@ public class CommandlineParser {
                     inlineScript.append('\n');
                     break FOR;
                 case 'b' :
-                    isBenchmarking = true;
+                    benchmarking = true;
                     break;
                 case 'p' :
                     assumePrinting = true;
@@ -114,7 +114,7 @@ public class CommandlineParser {
                     assumeLoop = true;
                     break;
                 case 'a' :
-                    sDoSplit = true;
+                    split = true;
                     break;
                 case 'l' :
                     processLineEnds = true;
@@ -122,6 +122,7 @@ public class CommandlineParser {
                 case 'v' :
                     showVersion = true;
                     verbose = true;
+                    shouldRunInterpreter = false;
                     break;
                 case 'w' :
                     verbose = true;
@@ -172,11 +173,11 @@ public class CommandlineParser {
     }
 
     public boolean shouldRunInterpreter() {
-        return shouldRunInterpreter;
+        return isShouldRunInterpreter();
     }
 
     private boolean isSourceFromStdin() {
-        return scriptFileName == null;
+        return getScriptFileName() == null;
     }
 
     public Reader getScriptSource() {
@@ -185,7 +186,7 @@ public class CommandlineParser {
         } else if (isSourceFromStdin()) {
             return new InputStreamReader(System.in);
         } else {
-            File file = new File(scriptFileName);
+            File file = new File(getScriptFileName());
             try {
                 return new BufferedReader(new FileReader(file));
             } catch (IOException e) {
@@ -203,7 +204,51 @@ public class CommandlineParser {
         } else if (isSourceFromStdin()) {
             return "-";
         } else {
-            return scriptFileName;
+            return getScriptFileName();
         }
+    }
+
+    private void setScriptFileName(String scriptFileName) {
+        this.scriptFileName = scriptFileName;
+    }
+
+    public String getScriptFileName() {
+        return scriptFileName;
+    }
+
+    public boolean isBenchmarking() {
+        return benchmarking;
+    }
+
+    public boolean isAssumeLoop() {
+        return assumeLoop;
+    }
+
+    public boolean isAssumePrinting() {
+        return assumePrinting;
+    }
+
+    public boolean isProcessLineEnds() {
+        return processLineEnds;
+    }
+
+    public boolean isSplit() {
+        return split;
+    }
+
+    public boolean isVerbose() {
+        return verbose;
+    }
+
+    public boolean isShowVersion() {
+        return showVersion;
+    }
+
+    public String[] getScriptArguments() {
+        return scriptArguments;
+    }
+
+    public boolean isShouldRunInterpreter() {
+        return shouldRunInterpreter;
     }
 }

@@ -38,18 +38,30 @@ public class TestCommandlineParser extends TestCase {
     public void testParsing() {
         CommandlineParser c = new CommandlineParser(new String[] { "-e", "hello", "-e", "world" });
         assertEquals("hello\nworld\n", c.inlineScript());
-        assertNull(c.scriptFileName);
+        assertNull(c.getScriptFileName());
         assertEquals("-e", c.displayedFileName());
 
         c = new CommandlineParser(new String[] { "--version" });
-        assertTrue(c.showVersion);
+        assertTrue(c.isShowVersion());
 
         c = new CommandlineParser(new String[] { "-n", "myfile.rb" });
-        assertTrue(c.assumeLoop);
-        assertEquals("myfile.rb", c.scriptFileName);
+        assertTrue(c.isAssumeLoop());
+        assertEquals("myfile.rb", c.getScriptFileName());
         assertEquals("myfile.rb", c.displayedFileName());
 
         c = new CommandlineParser(new String[0]);
         assertEquals("-", c.displayedFileName());
+    }
+
+    public void testPrintVersionDoesNotRunInterpreter() {
+        String[] args = new String[] { "-v" };
+        CommandlineParser parser = new CommandlineParser(args);
+        assertTrue(parser.isShowVersion());
+        assertFalse(parser.isShouldRunInterpreter());
+
+        args = new String[] { "--version" };
+        parser = new CommandlineParser(args);
+        assertTrue(parser.isShowVersion());
+        assertFalse(parser.isShouldRunInterpreter());
     }
 }
