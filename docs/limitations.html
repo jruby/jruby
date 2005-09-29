@@ -1,0 +1,87 @@
+<h1>JRuby Limitations</h1>
+
+<h2>Overview</h2>
+
+<p><em><b>Note:</b> This is a brand new document (as of 0.8.2 release).  It
+is a rough draft and will get filled in more as time permits.</em></p>
+
+<p>JRuby is an alternate implementation of the Ruby programming language.  It 
+is also an embedded language for the Java Virtual machine (JVM).  On both of 
+these fronts, we have a set of limitations that a user should be aware of.</p>
+
+<p>When we outline each limitation, we will note whether we think that the
+limitation is likely to go away and JRuby matures.  In some cases, we cannot
+implement features because the underlying JVM does not allow it.  In other
+cases, it is simply not implemented yet.</p>
+
+<h2>Ruby conformance Limitations</h2>
+
+<p>This section reflects known incompatibilities between Ruby and JRuby.
+It is by no means comprehensive.  It just reflects larger issues we are
+aware of.  The fact that Ruby does not have a language specification also
+makes having an exact delta between the two implementations impossible.</p>
+
+<ul>
+<li>Does not support continuations/bindings.</li>
+
+<p>These features are simply missing.  There is nothing which prevents them
+from existing short of programmer effort.</p>
+
+<li>Fine-grained timer.</li>
+
+<p>Benchmarking code depends on finer grained timings than the JVM supports.
+This may be solved in a future JVM as there is a JSR on this (which JSR?).</p>
+
+<li>Identical thread behavior</li>
+
+<p>Ruby uses green threads to implement the languages threading library.  JRuby
+uses Java threads to implement Thread and friends.  Without actually 
+implementing green threads ourselves, we will not have identical thread
+behavior.  Hopefully, any sane multi-threaded ruby script will work ok in
+spite of this</p>
+
+<li>Missing File operations</li>
+
+<p>The JVM is missing some file operations needed by File and friends in
+Ruby.  Some JSRs exist which may fix some of these and we could perhaps
+call external scripts to perform the rest.  This is an area we have not
+spent any time looking at.</p>
+
+</ul>
+
+<h2>Java Limitations</h2>
+
+<ul>
+
+<li>Cannot extend abstract classes</li>
+
+<p>Even though we can implement interfaces, we cannot extend abstract classes.
+This is for two reasons:</p>
+<ul>
+<li>Javas Proxy (which we use to pull in java classes) does not allow proxying an abstract class</li>
+<li>Java consumers cannot see what we are extending (see next item on list)</li>
+</ul>
+
+<p>This feature will work once we have a compiler</p>
+
+</p>
+
+<li>Extended Java Classes in Ruby will not be visible to Java consumers</li>
+
+<p>Consider the following code:</p>
+
+<pre class="code">
+include_class 'java.util.ArrayList'
+
+class MyList < ArrayList
+  def toString
+    "MYLIST"
+  end
+end
+</pre>
+
+<p>If we send an instance of MyList to a java object which calls toString
+on it; it will NOT call the toString we defined on it.  This will be fixed
+once we have a compiler.</p>
+
+</ul>
