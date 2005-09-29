@@ -1,5 +1,5 @@
 1. Make sure tests run at 100% ('ant test')
-2. Make sure samples run ('for i in samples/*.rb ; do ./bin/jruby.sh $i; done')
+2. Make sure samples run ('for i in samples/*.rb ; do echo $i; ./bin/jruby.sh $i; done')
 3. Update/commit new version in build-config.xml
 4. Tag the release in CVS ('cvs rtag ...')
 5. Make binary-release and source release ('ant dist' from clean sandbox) 
