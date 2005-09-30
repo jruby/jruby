@@ -31,24 +31,22 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents a 'break' statement.
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class BreakNode extends Node {
     static final long serialVersionUID = 1491046888629861035L;
 
     private final Node valueNode;
     
-    public BreakNode(SourcePosition position) {
+    public BreakNode(ISourcePosition position) {
         super(position);
         valueNode = null;
     }
     
-    public BreakNode(SourcePosition position, Node valueNode) {
+    public BreakNode(ISourcePosition position, Node valueNode) {
         super(position);
         this.valueNode = valueNode;
     }

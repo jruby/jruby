@@ -31,12 +31,10 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents an alias of a global variable.
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class VAliasNode extends Node {
     static final long serialVersionUID = 8647860367861922838L;
@@ -44,7 +42,7 @@ public class VAliasNode extends Node {
     private final String oldName;
     private final String newName;
 
-    public VAliasNode(SourcePosition position, String newName, String oldName) {
+    public VAliasNode(ISourcePosition position, String newName, String oldName) {
         super(position);
         this.oldName = oldName;
         this.newName = newName;

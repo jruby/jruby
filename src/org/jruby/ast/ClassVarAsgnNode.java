@@ -32,13 +32,11 @@ package org.jruby.ast;
 
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Class variable assignment node.
  * 
- * @author  jpetersen
- * @version $Revision$
  */
 public class ClassVarAsgnNode extends AssignableNode implements INameNode {
     static final long serialVersionUID = -2960487069128667341L;
@@ -49,7 +47,7 @@ public class ClassVarAsgnNode extends AssignableNode implements INameNode {
      * @param name id of the class variable to assign to
      * @param valueNode  Node used to compute the new value when the assignment is evaled
      */
-    public ClassVarAsgnNode(SourcePosition position, String name, Node valueNode) {
+    public ClassVarAsgnNode(ISourcePosition position, String name, Node valueNode) {
         super(position);
         this.name = name;
         

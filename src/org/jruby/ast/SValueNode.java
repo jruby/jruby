@@ -29,14 +29,14 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 public class SValueNode extends Node {
 	private static final long serialVersionUID = 3834587720830891576L;
 
 	private final Node node;
     
-    public SValueNode(SourcePosition position, Node node) {
+    public SValueNode(ISourcePosition position, Node node) {
         super(position);
         this.node = node;
     }

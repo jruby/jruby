@@ -33,7 +33,7 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * A structuring node (linked list of other nodes).
@@ -41,13 +41,11 @@ import org.jruby.lexer.yacc.SourcePosition;
  * Used in many places it is created throught the
  * {@link org.jruby.parser.ParserSupport#appendToBlock appendToBlock()} method
  * 
- * @author  jpetersen
- * @version $Revision$
  */
 public class BlockNode extends ListNode {
     static final long serialVersionUID = 6070308619613804520L;
     
-    public BlockNode(SourcePosition position) {
+    public BlockNode(ISourcePosition position) {
         super(position);
     }
 

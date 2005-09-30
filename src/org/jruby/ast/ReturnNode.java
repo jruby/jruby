@@ -31,12 +31,10 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents a return statement.
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class ReturnNode extends Node {
     static final long serialVersionUID = -6549592319167820636L;
@@ -44,7 +42,7 @@ public class ReturnNode extends Node {
     private final Node valueNode;
     private Object target;
 
-    public ReturnNode(SourcePosition position, Node valueNode) {
+    public ReturnNode(ISourcePosition position, Node valueNode) {
         super(position);
         this.valueNode = valueNode;
     }

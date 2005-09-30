@@ -32,17 +32,15 @@ package org.jruby.ast;
 
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class NilNode extends Node implements INameNode {
     static final long serialVersionUID = -8702073984472296708L;
 
-    public NilNode(SourcePosition position) {
+    public NilNode(ISourcePosition position) {
         super(position);
     }
 

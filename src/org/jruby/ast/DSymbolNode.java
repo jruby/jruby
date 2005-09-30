@@ -29,7 +29,7 @@
  package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Node representing symbol in a form like ':"3jane"'.
@@ -41,7 +41,7 @@ public class DSymbolNode extends Node {
 
 	private final DStrNode node;
 
-	public DSymbolNode(SourcePosition position, DStrNode node) {
+	public DSymbolNode(ISourcePosition position, DStrNode node) {
 		super(position);
 		this.node = node;
 	}

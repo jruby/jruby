@@ -28,27 +28,25 @@
 package org.jruby.common;
 
 import org.jruby.Ruby;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
  *
- * @author  jpetersen
- * @version $Revision$
  */
-public class RubyWarnings {
+public class RubyWarnings implements IRubyWarnings {
     private Ruby runtime;
 
     public RubyWarnings(Ruby runtime) {
         this.runtime = runtime;
     }
 
-    public void warn(SourcePosition position, String message) {
+    public void warn(ISourcePosition position, String message) {
     	assert position != null;
     	
         StringBuffer buffer = new StringBuffer(100);
 
-        buffer.append(position.getFile()).append(':').append(position.getLine()).append(' ');
+        buffer.append(position.getFile()).append(':').append(position.getEndLine()).append(' ');
         buffer.append("warning: ").append(message).append('\n');
         IRubyObject errorStream = runtime.getGlobalVariables().get("$stderr");
         errorStream.callMethod("write", runtime.newString(buffer.toString()));
@@ -66,7 +64,7 @@ public class RubyWarnings {
         warning(runtime.getPosition(), message);
     }
     
-    public void warning(SourcePosition position, String message) {
+    public void warning(ISourcePosition position, String message) {
         if (isVerbose()) {
             warn(position, message);
         }

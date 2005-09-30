@@ -32,19 +32,17 @@ package org.jruby.ast;
 
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents an integer literal.
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class FixnumNode extends Node implements ILiteralNode {
     static final long serialVersionUID = 2236565825959274729L;
 
     private final long value;
 
-    public FixnumNode(SourcePosition position, long value) {
+    public FixnumNode(ISourcePosition position, long value) {
         super(position);
         this.value = value;
     }

@@ -33,12 +33,10 @@ package org.jruby.ast;
 
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents an instance variable assignment.
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class InstAsgnNode extends AssignableNode implements INameNode {
     static final long serialVersionUID = 64498126883104604L;
@@ -50,7 +48,7 @@ public class InstAsgnNode extends AssignableNode implements INameNode {
      * @param name the name of the instance variable
      * @param valueNode the value of the variable
      **/
-    public InstAsgnNode(SourcePosition position, String name, Node valueNode) {
+    public InstAsgnNode(ISourcePosition position, String name, Node valueNode) {
         super(position);
         this.name = name;
         setValueNode(valueNode);

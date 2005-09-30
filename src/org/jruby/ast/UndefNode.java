@@ -31,19 +31,17 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents an undef statement.
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class UndefNode extends Node {
     static final long serialVersionUID = -8829084073375820727L;
 
     private final String name;
 
-    public UndefNode(SourcePosition position, String name) {
+    public UndefNode(ISourcePosition position, String name) {
         super(position);
         this.name = name;
     }

@@ -31,7 +31,7 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents a while stetement. This could be the both versions:
  * 
@@ -43,8 +43,6 @@ import org.jruby.lexer.yacc.SourcePosition;
  * 
  * &lt;body&gt; 'while' &lt;condition&gt;
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class WhileNode extends Node {
     static final long serialVersionUID = -5355364190446060873L;
@@ -53,11 +51,11 @@ public class WhileNode extends Node {
     private final Node bodyNode;
     private final boolean evaluateAtStart;
 
-    public WhileNode(SourcePosition position, Node conditionNode, Node bodyNode) {
+    public WhileNode(ISourcePosition position, Node conditionNode, Node bodyNode) {
 	this(position, conditionNode, bodyNode, true);
     }
 
-    public WhileNode(SourcePosition position, Node conditionNode, Node bodyNode,
+    public WhileNode(ISourcePosition position, Node conditionNode, Node bodyNode,
             boolean evalAtStart) {
         super(position);
         this.conditionNode = conditionNode;

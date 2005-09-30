@@ -156,7 +156,7 @@ import org.jruby.exceptions.ReturnJump;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.EvaluateMethod;
 import org.jruby.internal.runtime.methods.WrapperCallable;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ICallable;
@@ -170,8 +170,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 // real problem, the trampoline method of tail call elimination could be used.
 /**
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public final class EvaluateVisitor implements NodeVisitor {
     private Ruby runtime;
@@ -864,7 +862,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         try {
             while (true) {
                 try {
-                    SourcePosition position = threadContext.getPosition();
+                    ISourcePosition position = threadContext.getPosition();
                     Block tmpBlock = threadContext.beginCallArgs();
 
                     IRubyObject recv = null;
@@ -1652,7 +1650,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         }
 
         if (node instanceof ArrayNode) {
-        	SourcePosition position = context.getPosition();
+        	ISourcePosition position = context.getPosition();
             ArrayList list = new ArrayList(((ArrayNode) node).size());
             
             for (Iterator iter=((ArrayNode)node).iterator(); iter.hasNext();){

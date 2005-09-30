@@ -34,27 +34,33 @@ package org.jruby.ast;
 import java.io.Serializable;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.lexer.yacc.ISourcePositionHolder;
 
 /**
  *
- * @author  jpetersen
- * @version $Revision$
  */
-public abstract class Node implements Serializable {
+public abstract class Node implements ISourcePositionHolder, Serializable {
     static final long serialVersionUID = -5962822607672530224L;
 
-    private SourcePosition position;
+    private ISourcePosition position;
 
-    public Node(SourcePosition position) {
+    public Node(ISourcePosition position) {
         this.position = position;
     }
 
     /**
      * Location of this node within the source
      */
-    public SourcePosition getPosition() {
+    public ISourcePosition getPosition() {
         return position;
+    }
+    
+    /**
+     * Change position of this node 
+     */
+    public void setPosition(ISourcePosition position) {
+    	this.position = position;
     }
     
 	public abstract void accept(NodeVisitor visitor);

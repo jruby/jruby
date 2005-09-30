@@ -30,9 +30,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.lexer.yacc;
 
-import org.jruby.parser.Token;
+import org.jruby.parser.Tokens;
 
-public class Keyword implements Token {
+public class Keyword implements Tokens {
 	public String name;
     public int id0, id1;
     public LexState state;

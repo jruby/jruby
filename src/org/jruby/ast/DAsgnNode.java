@@ -32,19 +32,17 @@ package org.jruby.ast;
 
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * assignment to dynamic variable
- * @author  jpetersen
- * @version $Revision$
  */
 public class DAsgnNode extends AssignableNode implements INameNode {
     static final long serialVersionUID = 2396008643154044043L;
 
     private final String name;
 
-    public DAsgnNode(SourcePosition position, String name, Node valueNode) {
+    public DAsgnNode(ISourcePosition position, String name, Node valueNode) {
         super(position);
         this.name = name;
         setValueNode(valueNode);

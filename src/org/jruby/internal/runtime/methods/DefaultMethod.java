@@ -44,7 +44,7 @@ import org.jruby.ast.ScopeNode;
 import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.exceptions.ReturnJump;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Scope;
@@ -55,8 +55,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public final class DefaultMethod extends AbstractMethod {
     private ScopeNode body;
@@ -175,7 +173,7 @@ public final class DefaultMethod extends AbstractMethod {
             return;
         }
 
-        SourcePosition position = runtime.getFrameStack().getPrevious().getPosition();
+        ISourcePosition position = runtime.getFrameStack().getPrevious().getPosition();
         runtime.callTraceFunction("return", position, receiver, name, getImplementationClass()); // XXX
     }
 
@@ -184,7 +182,7 @@ public final class DefaultMethod extends AbstractMethod {
             return;
         }
 
-		SourcePosition position = body.getBodyNode() != null ? 
+		ISourcePosition position = body.getBodyNode() != null ? 
             body.getBodyNode().getPosition() : body.getPosition();  
 
 		runtime.callTraceFunction("call", position, receiver, name, getImplementationClass()); // XXX

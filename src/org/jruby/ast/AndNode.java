@@ -31,12 +31,9 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /** An AndNode represents a && operator.
- *
- * @author  jpetersen
- * @version $Revision$
  */
 public class AndNode extends Node {
     static final long serialVersionUID = 1716928209521564017L;
@@ -44,7 +41,7 @@ public class AndNode extends Node {
     private final Node firstNode;
     private final Node secondNode;
 
-    public AndNode(SourcePosition position, Node firstNode, Node secondNode) {
+    public AndNode(ISourcePosition position, Node firstNode, Node secondNode) {
         super(position);
         this.firstNode = firstNode;
         this.secondNode = secondNode;

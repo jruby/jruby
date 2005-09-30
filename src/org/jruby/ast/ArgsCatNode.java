@@ -31,7 +31,7 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 public class ArgsCatNode extends Node {
 	private static final long serialVersionUID = 3906082365066327860L;
@@ -39,7 +39,7 @@ public class ArgsCatNode extends Node {
 	private final Node firstNode;
     private final Node secondNode;
 
-    public ArgsCatNode(SourcePosition position, Node firstNode, Node secondNode) {
+    public ArgsCatNode(ISourcePosition position, Node firstNode, Node secondNode) {
         super(position);
         this.firstNode = firstNode;
         this.secondNode = secondNode;

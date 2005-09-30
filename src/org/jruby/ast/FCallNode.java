@@ -32,12 +32,10 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents a method call with self as receiver.
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class FCallNode extends Node {
     static final long serialVersionUID = 3590332973770104094L;
@@ -45,7 +43,7 @@ public class FCallNode extends Node {
     private final String name;
     private final Node argsNode;
 
-    public FCallNode(SourcePosition position, String name, Node argsNode) {
+    public FCallNode(ISourcePosition position, String name, Node argsNode) {
         super(position);
         this.name = name.intern();
         this.argsNode = argsNode;

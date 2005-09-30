@@ -31,7 +31,7 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 
 /**
@@ -45,7 +45,7 @@ public class MultipleAsgnNode extends AssignableNode {
     private final ListNode headNode;
     private final Node argsNode;
 
-    public MultipleAsgnNode(SourcePosition position, ListNode headNode, Node argsNode) {
+    public MultipleAsgnNode(ISourcePosition position, ListNode headNode, Node argsNode) {
         super(position);
         this.headNode = headNode;
         this.argsNode = argsNode;

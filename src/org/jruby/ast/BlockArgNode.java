@@ -31,7 +31,7 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *	a block argument.
@@ -40,15 +40,13 @@ import org.jruby.lexer.yacc.SourcePosition;
  *	
  *	<code>def tutu(a, b, &amp;c)</code>
  *	in this example c is a BlockArgNode
- * @author  jpetersen
- * @version $Revision$
  */
 public class BlockArgNode extends Node {
     static final long serialVersionUID = 8374824536805365398L;
 
     private final int count;
 
-    public BlockArgNode(SourcePosition position, int count) {
+    public BlockArgNode(ISourcePosition position, int count) {
         super(position);
         this.count = count;
     }

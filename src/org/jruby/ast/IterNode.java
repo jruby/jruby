@@ -31,13 +31,11 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *
  * @see ForNode
- * @author  jpetersen
- * @version $Revision$
  */
 public class IterNode extends Node {
     static final long serialVersionUID = -9181965000180892184L;
@@ -46,7 +44,7 @@ public class IterNode extends Node {
     private final Node bodyNode;
     private Node iterNode;
 
-    public IterNode(SourcePosition position, Node varNode, Node bodyNode, Node iterNode) {
+    public IterNode(ISourcePosition position, Node varNode, Node bodyNode, Node iterNode) {
         super(position);
         this.varNode = varNode;
         this.bodyNode = bodyNode;

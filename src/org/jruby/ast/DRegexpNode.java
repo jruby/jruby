@@ -33,14 +33,12 @@ package org.jruby.ast;
 
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *	Dynamic regexp node.
  *	a regexp is dynamic if it contains some expressions which will need to be evaluated
  *	everytime the regexp is used for a match
- * @author  jpetersen
- * @version $Revision$
  */
 public class DRegexpNode extends ListNode implements ILiteralNode {
     static final long serialVersionUID = 7307853378003210140L;
@@ -48,11 +46,11 @@ public class DRegexpNode extends ListNode implements ILiteralNode {
     private final int options;
     private final boolean once;
     
-    public DRegexpNode(SourcePosition position) {
+    public DRegexpNode(ISourcePosition position) {
         this(position, 0, false);
     }
 
-    public DRegexpNode(SourcePosition position, int options, boolean once) {
+    public DRegexpNode(ISourcePosition position, int options, boolean once) {
         super(position);
 
         this.options = options;

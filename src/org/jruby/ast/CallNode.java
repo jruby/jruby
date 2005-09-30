@@ -32,13 +32,11 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * A method or operator call.
  * 
- * @author  jpetersen
- * @version $Revision$
  */
 public final class CallNode extends Node {
     static final long serialVersionUID = -1993752395320088525L;
@@ -47,7 +45,7 @@ public final class CallNode extends Node {
     private final String name;
     private final Node argsNode;
 
-    public CallNode(SourcePosition position, Node receiverNode, String name, Node argsNode) {
+    public CallNode(ISourcePosition position, Node receiverNode, String name, Node argsNode) {
         super(position);
         this.receiverNode = receiverNode;
         this.name = name.intern();

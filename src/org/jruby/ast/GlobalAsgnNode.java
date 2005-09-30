@@ -34,20 +34,18 @@ package org.jruby.ast;
 
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Represents an assignment to a global variable.
  * 
- * @author  jpetersen
- * @version $Revision$
  */
 public class GlobalAsgnNode extends AssignableNode implements INameNode {
     static final long serialVersionUID = 2278414591762936906L;
 
     private final String name;
 
-    public GlobalAsgnNode(SourcePosition position, String name, Node valueNode) {
+    public GlobalAsgnNode(ISourcePosition position, String name, Node valueNode) {
         super(position);
 
         this.name = name;

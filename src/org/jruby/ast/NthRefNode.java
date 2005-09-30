@@ -31,19 +31,17 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents a $number variable.
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class NthRefNode extends Node {
     static final long serialVersionUID = -3301605695065934063L;
 
     private final int matchNumber;
 
-    public NthRefNode(SourcePosition position, int matchNumber) {
+    public NthRefNode(ISourcePosition position, int matchNumber) {
         super(position);
         this.matchNumber = matchNumber;
     }

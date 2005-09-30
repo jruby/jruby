@@ -31,7 +31,7 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *	Regexp backref.
@@ -46,9 +46,6 @@ import org.jruby.lexer.yacc.SourcePosition;
  *    
  *    - $' what follows the last successful match
  *
- *	
- * @author  jpetersen
- * @version $Revision$
  */
 public class BackRefNode extends Node {
     static final long serialVersionUID = 5321267679438359590L;
@@ -58,7 +55,7 @@ public class BackRefNode extends Node {
 	 **/
     private final char type;
 
-    public BackRefNode(SourcePosition position, char type) {
+    public BackRefNode(ISourcePosition position, char type) {
         super(position);
         this.type = type;
     }

@@ -31,7 +31,7 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * A Case statement.
@@ -39,8 +39,6 @@ import org.jruby.lexer.yacc.SourcePosition;
  * Represents a complete case statement, including the body with its
  * when statements.
  * 
- * @author  jpetersen
- * @version $Revision$
  */
 public class CaseNode extends Node {
     static final long serialVersionUID = -2824917272720800901L;
@@ -54,7 +52,7 @@ public class CaseNode extends Node {
 	 */
     private final Node caseBody;
     
-    public CaseNode(SourcePosition position, Node caseNode, Node caseBody) {
+    public CaseNode(ISourcePosition position, Node caseNode, Node caseBody) {
         super(position);
         this.caseNode = caseNode;
         this.caseBody = caseBody;

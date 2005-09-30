@@ -32,12 +32,10 @@ package org.jruby.ast;
 
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents a '::' constant access or method call.
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class Colon2Node extends Node implements INameNode {
     static final long serialVersionUID = -3250593470034657352L;
@@ -45,7 +43,7 @@ public class Colon2Node extends Node implements INameNode {
     private final Node leftNode;
     private final String name;
 
-    public Colon2Node(SourcePosition position, Node leftNode, String name) {
+    public Colon2Node(ISourcePosition position, Node leftNode, String name) {
         super(position);
         this.leftNode = leftNode;
         this.name = name;

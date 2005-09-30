@@ -58,8 +58,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 /** An implementation of a JRuby BSF implementation.
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class JRubyEngine extends BSFEngineImpl {
     private Ruby runtime;
@@ -77,7 +75,8 @@ public class JRubyEngine extends BSFEngineImpl {
                 scope.setValue(i, convertToRuby(args.get(i)));
             }
 
-            runtime.setPosition(file, line);
+        	// See eval todo about why this is commented out
+            //runtime.setPosition(file, line);
 
             Node node = runtime.getParser().parse(file, funcBody.toString());
             return convertToJava(runtime.getTopSelf().eval(node), Object.class);
@@ -90,7 +89,11 @@ public class JRubyEngine extends BSFEngineImpl {
 
     public Object eval(String file, int line, int col, Object expr) throws BSFException {
         try {
-            runtime.setPosition(file, line);
+        	// TODO: [Bug: 1309564] This next line never would have worked correctly as a LexerSource
+        	// would have thrown a parsing error with a name of "<script>" and a line
+        	// value of whatever line in the string it is in.  Find real way of returning
+        	// what is expected.
+            //runtime.setPosition(file, line);
             IRubyObject result = runtime.evalScript(expr.toString());
             return convertToJava(result, Object.class);
         } catch (Exception excptn) {
@@ -100,7 +103,8 @@ public class JRubyEngine extends BSFEngineImpl {
 
     public void exec(String file, int line, int col, Object expr) throws BSFException {
         try {
-            runtime.setPosition(file, line);
+        	// See eval todo about why this is commented out
+            //runtime.setPosition(file, line);
             runtime.evalScript(expr.toString());
         } catch (Exception excptn) {
             throw new BSFException(BSFException.REASON_EXECUTION_ERROR, "Exception", excptn);

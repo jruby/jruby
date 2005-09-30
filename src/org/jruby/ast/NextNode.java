@@ -31,24 +31,22 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents a 'next' statement.
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class NextNode extends Node {
     static final long serialVersionUID = -6688896555206419923L;
 
     private final Node valueNode;
     
-    public NextNode(SourcePosition position) {
+    public NextNode(ISourcePosition position) {
         super(position);
         valueNode = null;
     }
 
-    public NextNode(SourcePosition position, Node valueNode) {
+    public NextNode(ISourcePosition position, Node valueNode) {
         super(position);
         this.valueNode = valueNode;
     }

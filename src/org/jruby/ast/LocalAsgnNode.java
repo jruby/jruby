@@ -33,12 +33,10 @@ package org.jruby.ast;
 
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * local variable assignment node.
- * @author  jpetersen
- * @version $Revision$
  */
 public class LocalAsgnNode extends AssignableNode implements INameNode {
     static final long serialVersionUID = 1118108700098164006L;
@@ -46,7 +44,7 @@ public class LocalAsgnNode extends AssignableNode implements INameNode {
     private final int count;
     private final String name;
 
-    public LocalAsgnNode(SourcePosition position, String name, int count, Node valueNode) {
+    public LocalAsgnNode(ISourcePosition position, String name, int count, Node valueNode) {
         super(position);
         this.name = name;
         this.count = count;

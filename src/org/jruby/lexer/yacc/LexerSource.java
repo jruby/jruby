@@ -14,6 +14,7 @@
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 Zach Dennis <zdennis@mktec.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -44,6 +45,9 @@ import java.util.ArrayList;
  * @author enebo
  */
 public class LexerSource {
+	// Where we get new positions from.
+	private ISourcePositionFactory positionFactory;
+	
 	// Where we get our newest char's
     private final Reader reader;
     
@@ -64,6 +68,9 @@ public class LexerSource {
     
     // Column of source.  
     private int column = 0;
+    
+    // How many bytes into the source are we?
+    private int offset = 0;
 
     // Flag to let us now in next read after a newline that we should reset 
     // column
@@ -78,6 +85,13 @@ public class LexerSource {
     public LexerSource(String sourceName, Reader reader) {
         this.sourceName = sourceName;
         this.reader = reader;
+        this.positionFactory = new SourcePositionFactory();
+    }
+    
+    public LexerSource(String sourceName, Reader reader, ISourcePositionFactory factory) {
+        this.sourceName = sourceName;
+        this.reader = reader;
+        this.positionFactory = factory;
     }
 
     /**
@@ -94,6 +108,11 @@ public class LexerSource {
     		buf.deleteCharAt(length - 1);
     	} else {
     		c = wrappedRead();
+            
+            // EOF...Do not advance (offset/column)...Go straight to jail
+            if (c == 0) {
+                return c;
+            }
     	}
 
     	// Reset column back to zero on first read of a line (note it will be-
@@ -103,6 +122,7 @@ public class LexerSource {
     		column = 0;
     	}
     	
+    	offset++;
     	column++;
     	if (c == '\n') {
     		line++;
@@ -125,6 +145,8 @@ public class LexerSource {
      * @param c to be put back onto the source
      */
     public void unread(char c) {
+    	offset--;
+    	
     	if (c == '\n') {
     		line--;
     		column = ((Integer)lineWidths.get(line)).intValue();
@@ -143,6 +165,22 @@ public class LexerSource {
     }
     
     /**
+     * What file are we lexing?
+     * @return the files name
+     */
+    public String getFilename() {
+    	return sourceName;
+    }
+    
+    /**
+     * What line are we at?
+     * @return the line number 0...line_size-1
+     */
+    public int getLine() {
+    	return line;
+    }
+    
+    /**
      * Are we at beggining of line?
      * 
      * @return the column (0..x)
@@ -150,14 +188,36 @@ public class LexerSource {
     public int getColumn() {
     	return column;
     }
+    
+    /**
+     * The location of the last byte we read from the source.
+     * 
+     * @return current location of source
+     */
+    public int getOffset() {
+    	return (offset <= 0 ? 0 : offset);
+    }
 
     /**
      * Where is the reader within the source {filename,row}
      * 
      * @return the current position
      */
-    public SourcePosition getPosition() {
-    	return SourcePosition.getInstance(sourceName, line+1);
+    public ISourcePosition getPosition(ISourcePosition startPosition) {
+    	return positionFactory.getPosition(this, startPosition);
+    }
+    
+    /**
+     * Where is the reader within the source {filename,row}
+     * 
+     * @return the current position
+     */
+    public ISourcePosition getPosition() {
+    	return positionFactory.getPosition(this, null);
+    }
+    
+    public ISourcePosition getDummyPosition() {
+    	return positionFactory.getDummyPosition();
     }
 
     /**
@@ -168,16 +228,24 @@ public class LexerSource {
      */
     private char wrappedRead() {
         try {
-        	int c = reader.read();
+            int c = reader.read();
         	
-        	// If \r\n then just pass along \n (windows)
-        	// If \r[^\n] then pass along \n (MAC)
-        	if (c == '\r' && (c = reader.read()) != '\n') {
-				unread((char)c);
-				c = '\n';
-        	}
+            // If \r\n then just pass along \n (windows)
+            // If \r[^\n] then pass along \n (MAC)
+            if (c == '\r') {
+                if ((c = reader.read()) != '\n') {
+                    unread((char)c);
+                    c = '\n';
+                } else {
+                    // Position within source must reflect the actual offset and column.  Since
+                	// we ate an extra character here (this accounting is normally done in read
+                	// ), we should update position info.
+                    offset++;
+                    column++;
+                }
+            }
         	
-        	return c != -1 ? (char) c : '\0';
+            return c != -1 ? (char) c : '\0';
         } catch (IOException e) {
             return 0;
         }
@@ -269,7 +337,7 @@ public class LexerSource {
             	
             	// No hex value after the 'x'.
             	if (offset == getColumn()) {
-            	    throw new SyntaxException(getPosition(), "Invalid escape character syntax");
+            	    throw new SyntaxException(getPosition(null), "Invalid escape character syntax");
             	}
                 return hexValue;
             case 'b' : // backspace
@@ -278,16 +346,16 @@ public class LexerSource {
                 return ' ';
             case 'M' :
                 if ((c = read()) != '-') {
-                    throw new SyntaxException(getPosition(), "Invalid escape character syntax");
+                    throw new SyntaxException(getPosition(null), "Invalid escape character syntax");
                 } else if ((c = read()) == '\\') {
                     return (char) (readEscape() | 0x80);
                 } else if (c == '\0') {
-                    throw new SyntaxException(getPosition(), "Invalid escape character syntax");
+                    throw new SyntaxException(getPosition(null), "Invalid escape character syntax");
                 } 
                 return (char) ((c & 0xff) | 0x80);
             case 'C' :
                 if ((c = read()) != '-') {
-                    throw new SyntaxException(getPosition(), "Invalid escape character syntax");
+                    throw new SyntaxException(getPosition(null), "Invalid escape character syntax");
                 }
             case 'c' :
                 if ((c = read()) == '\\') {
@@ -295,11 +363,11 @@ public class LexerSource {
                 } else if (c == '?') {
                     return '\u0177';
                 } else if (c == '\0') {
-                    throw new SyntaxException(getPosition(), "Invalid escape character syntax");
+                    throw new SyntaxException(getPosition(null), "Invalid escape character syntax");
                 }
                 return (char) (c & 0x9f);
             case '\0' :
-                throw new SyntaxException(getPosition(), "Invalid escape character syntax");
+                throw new SyntaxException(getPosition(null), "Invalid escape character syntax");
             default :
                 return c;
         }

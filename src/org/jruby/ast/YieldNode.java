@@ -31,12 +31,10 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents a yield statement.
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class YieldNode extends Node {
     static final long serialVersionUID = -4136185449481135660L;
@@ -44,7 +42,7 @@ public class YieldNode extends Node {
     private final Node argsNode;
     private final boolean checkState;
 
-    public YieldNode(SourcePosition position, Node argsNode, boolean checkState) {
+    public YieldNode(ISourcePosition position, Node argsNode, boolean checkState) {
         super(position);
         this.argsNode = argsNode;
         this.checkState = checkState;

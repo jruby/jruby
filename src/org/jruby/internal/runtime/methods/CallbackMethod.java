@@ -33,7 +33,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Visibility;
@@ -41,9 +41,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 
 /**
- *
- * @author  jpetersen
- * @version $Revision$
  */
 public class CallbackMethod extends AbstractMethod {
     private Callback callback;
@@ -57,7 +54,7 @@ public class CallbackMethod extends AbstractMethod {
     	assert args != null;
     	
         if (runtime.getTraceFunction() != null) {
-            SourcePosition position = runtime.getFrameStack().getPrevious().getPosition();
+            ISourcePosition position = runtime.getFrameStack().getPrevious().getPosition();
 
             runtime.callTraceFunction("c-call", position, receiver, name, getImplementationClass()); // XXX
             try {

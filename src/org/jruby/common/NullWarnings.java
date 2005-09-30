@@ -27,35 +27,22 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.common;
 
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.SourcePosition;
 
 /**
- *
- * @author  jpetersen
- * @version $Revision$
+ * A Warnings implementation which silently ignores everything.
  */
-public class NullWarnings extends RubyWarnings {
-    public NullWarnings() {
-        super(null);
-    }
+public class NullWarnings implements IRubyWarnings {
 
     public boolean isVerbose() {
         return false;
     }
 
-    public void warn(SourcePosition position, String message) {
-        // don't do anything 
-    }
-
-    public void warn(String message) {
-        // don't do anything 
-    }
-
-    public void warning(SourcePosition position, String message) {
-        // don't do anything 
-    }
-
-    public void warning(String message) {
-        // don't do anything 
-    }
+    public void warn(SourcePosition position, String message) {}
+    public void warn(String message) {}
+    public void warning(SourcePosition position, String message) {}
+    public void warning(String message) {}
+    public void warn(ISourcePosition position, String message) {}
+    public void warning(ISourcePosition position, String message) {}
 }

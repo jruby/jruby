@@ -31,20 +31,18 @@
 package org.jruby.runtime;
 
 import org.jruby.RubyModule;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class Frame {
     private IRubyObject self;
     private IRubyObject[] args;
     private String lastFunc;
     private RubyModule lastClass;
-    private final SourcePosition position;
+    private final ISourcePosition position;
     private Iter iter;
 
     public Frame(ThreadContext threadContext, Iter iter) {
@@ -62,7 +60,7 @@ public class Frame {
     }
 
     public Frame(IRubyObject self, IRubyObject[] args, String lastFunc,
-                 RubyModule lastClass, SourcePosition position, Iter iter) {
+                 RubyModule lastClass, ISourcePosition position, Iter iter) {
         this.self = self;
         this.args = args;
         this.lastFunc = lastFunc;
@@ -88,7 +86,7 @@ public class Frame {
     /**
      * @return the frames current position
      */
-    public SourcePosition getPosition() {
+    public ISourcePosition getPosition() {
         return position;
     }
 

@@ -31,12 +31,10 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class Match2Node extends Node {
     static final long serialVersionUID = -5637326290741724784L;
@@ -44,7 +42,7 @@ public class Match2Node extends Node {
     private final Node receiverNode;
     private final Node valueNode;
 
-    public Match2Node(SourcePosition position, Node receiverNode, Node valueNode) {
+    public Match2Node(ISourcePosition position, Node receiverNode, Node valueNode) {
         super(position);
 
         this.receiverNode = receiverNode;

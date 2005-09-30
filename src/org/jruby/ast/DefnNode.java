@@ -32,14 +32,12 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Visibility;
 
 /**
  * method definition node.
  * 
- * @author  jpetersen
- * @version $Revision$
  */
 public class DefnNode extends Node {
     static final long serialVersionUID = -7634791007500033454L;
@@ -49,7 +47,7 @@ public class DefnNode extends Node {
     private final ScopeNode bodyNode;
     private final Visibility visibility;
     
-    public DefnNode(SourcePosition position, String name, Node argsNode, ScopeNode bodyNode, Visibility visibility) {
+    public DefnNode(ISourcePosition position, String name, Node argsNode, ScopeNode bodyNode, Visibility visibility) {
         super(position);
         
         this.name = name.intern();

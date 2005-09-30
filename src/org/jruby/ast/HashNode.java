@@ -31,21 +31,19 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * a Literal Hash.
  * this can represent either a {a=&amp;b, c=&amp;d} type expression or the list of default 
  * values in a method call.
- * @author  jpetersen
- * @version $Revision$
  */
 public class HashNode extends Node {
     static final long serialVersionUID = -7554050553303344025L;
 
     private final ListNode listNode;
     
-    public HashNode(SourcePosition position, ListNode listNode) {
+    public HashNode(ISourcePosition position, ListNode listNode) {
         super(position);
         this.listNode = listNode;
     }

@@ -90,15 +90,14 @@ import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.BreakStatementVisitor;
 import org.jruby.ast.visitor.ExpressionVisitor;
 import org.jruby.ast.visitor.UselessStatementVisitor;
-import org.jruby.common.RubyWarnings;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.common.IRubyWarnings;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.SyntaxException;
+import org.jruby.lexer.yacc.Token;
 import org.jruby.util.IdUtil;
 
-/** Ruby 1.8.1 compatible.
+/** 
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class ParserSupport {
     // Parser states:
@@ -111,7 +110,7 @@ public class ParserSupport {
 
     private int classNest;
 
-    private RubyWarnings warnings;
+    private IRubyWarnings warnings;
 
     private RubyParserConfiguration configuration;
     private RubyParserResult result;
@@ -129,14 +128,14 @@ public class ParserSupport {
 
 
     public String getOperatorName(int operatorName) {
-        if (operatorName >= Token.tUPLUS && operatorName <= Token.tCOLON2) {
-            return Token.operators[operatorName - Token.tUPLUS];
+        if (operatorName >= Tokens.tUPLUS && operatorName <= Tokens.tCOLON2) {
+            return Tokens.operators[operatorName - Tokens.tUPLUS];
         } 
 
         return String.valueOf((char) operatorName);
     }
     
-    public Node arg_concat(SourcePosition position, Node node1, Node node2) {
+    public Node arg_concat(ISourcePosition position, Node node1, Node node2) {
         return node2 == null ? node1 : new ArgsCatNode(position, node1, node2);
     }
 
@@ -149,13 +148,13 @@ public class ParserSupport {
     }
 
     public Node appendPrintToBlock(Node block) {
-    	SourcePosition position = block.getPosition();
+    	ISourcePosition position = block.getPosition();
         return appendToBlock(block, new FCallNode(position, "print", 
             new ArrayNode(position).add(new GlobalVarNode(position, "$_"))));
     }
 
     public Node appendWhileLoopToBlock(Node block, boolean chop, boolean split) {
-    	SourcePosition position = block.getPosition();
+    	ISourcePosition position = block.getPosition();
         if (split) {
             block = appendToBlock(new GlobalAsgnNode(position, "$F", 
                 new CallNode(position, new GlobalVarNode(position, "$_"), "split", null)), block);
@@ -167,7 +166,7 @@ public class ParserSupport {
     }
     
     /// TODO: We make self,nil,true,false twice....
-    public Node gettable(String id, SourcePosition position) {
+    public Node gettable(String id, ISourcePosition position) {
         if (id.equals("self")) {
             return new SelfNode(position);
         } else if (id.equals("nil")) {
@@ -207,7 +206,7 @@ public class ParserSupport {
     }
 
     
-    public Node assignable(SourcePosition position, Object id, Node value) {
+    public Node assignable(ISourcePosition position, Object id, Node value) {
         checkExpression(value);
         
         if (id instanceof SelfNode) {
@@ -224,7 +223,12 @@ public class ParserSupport {
          * else if (id == k__FILE__) { yyerror("Can't assign to __FILE__"); } else if (id ==
          * k__LINE__) { yyerror("Can't assign to __LINE__"); }
          */else {
-            String name = (String) id;
+	        String name = null;
+	        if (id instanceof Token) {
+	            name = (String) ((Token) id).getValue(); 
+	        } else if (id instanceof String) {
+	            name = (String) id;
+	        }
             if (IdUtil.isLocal(name)) {
                 // TODO: Add curried dvar?
                 /*
@@ -269,7 +273,7 @@ public class ParserSupport {
      *@param node
      *@return a NewlineNode or null if node is null.
      */
-    public Node newline_node(Node node, SourcePosition position) {
+    public Node newline_node(Node node, ISourcePosition position) {
         return node == null ? null : new NewlineNode(position, node); 
     }
 
@@ -371,7 +375,7 @@ public class ParserSupport {
         return newNode;
     }
     
-    public Node ret_args(Node node, SourcePosition position) {
+    public Node ret_args(Node node, ISourcePosition position) {
         if (node != null) {
             if (node instanceof BlockPassNode) {
                 throw new SyntaxException(position, "Dynamic constant assignment.");
@@ -438,7 +442,7 @@ public class ParserSupport {
         checkAssignmentInCondition(node);
 
         if (node instanceof DRegexpNode) {
-            SourcePosition position = node.getPosition();
+            ISourcePosition position = node.getPosition();
 			LocalNamesElement localNames = (LocalNamesElement) localNamesStack.peek();
             localNames.ensureLocalRegistered("_");
             localNames.ensureLocalRegistered("~");
@@ -453,7 +457,7 @@ public class ParserSupport {
         } else if (node instanceof RegexpNode) {
             return new MatchNode(node.getPosition(), node);
         } else if (node instanceof StrNode) {
-            SourcePosition position = node.getPosition();
+            ISourcePosition position = node.getPosition();
 			LocalNamesElement localNames = (LocalNamesElement) localNamesStack.peek();
             localNames.ensureLocalRegistered("_");
             localNames.ensureLocalRegistered("~");
@@ -528,7 +532,7 @@ public class ParserSupport {
         return new CallNode(receiverNode.getPosition(), receiverNode, name, args);
     }
 
-    public Node new_fcall(String name, Node args, SourcePosition iPosition) {
+    public Node new_fcall(String name, Node args, ISourcePosition iPosition) {
         if (args != null && args instanceof BlockPassNode) {
             ((BlockPassNode) args).setIterNode(new FCallNode(args.getPosition(), name, ((BlockPassNode) args).getArgsNode()));
             return args;
@@ -536,7 +540,7 @@ public class ParserSupport {
         return new FCallNode(iPosition, name, args);
     }
 
-    public Node new_super(Node args, SourcePosition iPosition) {
+    public Node new_super(Node args, ISourcePosition iPosition) {
         if (args != null && args instanceof BlockPassNode) {
             ((BlockPassNode) args).setIterNode(new SuperNode(args.getPosition(), ((BlockPassNode) args).getArgsNode()));
             return args;
@@ -682,11 +686,11 @@ public class ParserSupport {
         this.configuration = configuration;
     }
 
-    public void setWarnings(RubyWarnings warnings) {
+    public void setWarnings(IRubyWarnings warnings) {
         this.warnings = warnings;
     }
     
-    public Node literal_concat(SourcePosition position, Node head, 
+    public Node literal_concat(ISourcePosition position, Node head, 
             Object tail) {
         ListNode list;
         
@@ -706,7 +710,7 @@ public class ParserSupport {
         return list;
     }
     
-    public Node newEvStrNode(SourcePosition position, Node node) {
+    public Node newEvStrNode(ISourcePosition position, Node node) {
         Node head = node;
         while (true) {
             if (node == null) {
@@ -727,7 +731,7 @@ public class ParserSupport {
         return new EvStrNode(position, head);
     }
     
-    public Node new_yield(SourcePosition position, Node node) {
+    public Node new_yield(ISourcePosition position, Node node) {
         boolean state = true;
         
         if (node != null) {

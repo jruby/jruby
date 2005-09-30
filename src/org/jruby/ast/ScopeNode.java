@@ -35,7 +35,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Scope in the parse tree.
@@ -45,8 +45,6 @@ import org.jruby.lexer.yacc.SourcePosition;
  * or SClassNode.  It can also be created by evaling a DefnNode or DefsNode as
  * part of the call to copyNodeScope.
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class ScopeNode extends Node {
     static final long serialVersionUID = 3694868125861223886L;
@@ -54,7 +52,7 @@ public class ScopeNode extends Node {
     private final List localNames;
     private final Node bodyNode;
 
-    public ScopeNode(SourcePosition position, List table, Node bodyNode) {
+    public ScopeNode(ISourcePosition position, List table, Node bodyNode) {
         super(position);
         this.localNames =  table;
         this.bodyNode = bodyNode;

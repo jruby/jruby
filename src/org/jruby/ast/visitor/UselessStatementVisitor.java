@@ -32,9 +32,9 @@ package org.jruby.ast.visitor;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BignumNode;
 import org.jruby.ast.CallNode;
-import org.jruby.ast.ClassNode;
 import org.jruby.ast.ClassVarNode;
 import org.jruby.ast.Colon2Node;
+import org.jruby.ast.Colon3Node;
 import org.jruby.ast.ConstNode;
 import org.jruby.ast.DRegexpNode;
 import org.jruby.ast.DStrNode;
@@ -56,17 +56,15 @@ import org.jruby.ast.SelfNode;
 import org.jruby.ast.StrNode;
 import org.jruby.ast.SymbolNode;
 import org.jruby.ast.TrueNode;
-import org.jruby.common.RubyWarnings;
+import org.jruby.common.IRubyWarnings;
 
 /**
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class UselessStatementVisitor extends AbstractVisitor {
-    private RubyWarnings warnings;
+    private IRubyWarnings warnings;
     
-    public UselessStatementVisitor(RubyWarnings warnings) {
+    public UselessStatementVisitor(IRubyWarnings warnings) {
         this.warnings = warnings;
     }
 
@@ -209,9 +207,9 @@ public class UselessStatementVisitor extends AbstractVisitor {
     }
 
 	/**
-     * @see NodeVisitor#visitClassNode(ClassNode)
+     * @see NodeVisitor#visitColon3Node(Colon3Node)
      */
-    public void visitClassNode(ClassNode iVisited) {
+    public void visitColon3Node(Colon3Node iVisited) {
         handleUselessWarn(iVisited, "::");
     }
 

@@ -31,12 +31,10 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class OpAsgnOrNode extends Node {
     static final long serialVersionUID = -1503963105325984745L;
@@ -44,7 +42,7 @@ public class OpAsgnOrNode extends Node {
     private final Node firstNode;
     private final Node secondNode;
 
-    public OpAsgnOrNode(SourcePosition position, Node headNode, Node valueNode) {
+    public OpAsgnOrNode(ISourcePosition position, Node headNode, Node valueNode) {
         super(position);
         firstNode = headNode;
         secondNode = valueNode;

@@ -31,12 +31,10 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents a module definition.
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class ModuleNode extends Node {
     static final long serialVersionUID = 4938115602547834310L;
@@ -44,7 +42,7 @@ public class ModuleNode extends Node {
     private final Node cpath;
     private final ScopeNode bodyNode;
 
-    public ModuleNode(SourcePosition position, Node cpath, ScopeNode bodyNode) {
+    public ModuleNode(ISourcePosition position, Node cpath, ScopeNode bodyNode) {
         super(position);
         this.cpath = cpath;
         this.bodyNode = bodyNode;

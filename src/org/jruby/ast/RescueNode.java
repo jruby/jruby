@@ -32,12 +32,10 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class RescueNode extends Node {
     static final long serialVersionUID = -4757038578511808125L;
@@ -46,7 +44,7 @@ public class RescueNode extends Node {
     private final RescueBodyNode rescueNode;
     private final Node elseNode;
     
-    public RescueNode(SourcePosition position, Node bodyNode, RescueBodyNode rescueNode, Node elseNode) {
+    public RescueNode(ISourcePosition position, Node bodyNode, RescueBodyNode rescueNode, Node elseNode) {
         super(position);
         this.bodyNode = bodyNode;
         this.rescueNode = rescueNode;

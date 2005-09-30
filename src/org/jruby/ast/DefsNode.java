@@ -31,12 +31,10 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents a singleton method definition.
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class DefsNode extends Node {
     static final long serialVersionUID = -4472719020304670080L;
@@ -46,7 +44,7 @@ public class DefsNode extends Node {
     private final Node argsNode;
     private final ScopeNode bodyNode;
 
-    public DefsNode(SourcePosition position, Node receiverNode, String name, Node argsNode, ScopeNode bodyNode) {
+    public DefsNode(ISourcePosition position, Node receiverNode, String name, Node argsNode, ScopeNode bodyNode) {
         super(position);
         this.receiverNode = receiverNode;
         this.name = name;

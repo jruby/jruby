@@ -27,7 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.lexer.yacc;
 
-import org.jruby.parser.Token;
+import org.jruby.parser.Tokens;
 
 
 public class HeredocTerm extends StrTerm {
@@ -51,7 +51,7 @@ public class HeredocTerm extends StrTerm {
         }
         if (src.wasBeginOfLine() && src.matchString(eos + '\n', indent)) {
             src.unreadMany(lastLine);
-            return Token.tSTRING_END;
+            return Tokens.tSTRING_END;
         }
 
         if ((func & RubyYaccLexer.STR_FUNC_EXPAND) == 0) {
@@ -89,9 +89,9 @@ public class HeredocTerm extends StrTerm {
                 case '$':
                 case '@':
                     src.unread(c);
-                    return Token.tSTRING_DVAR;
+                    return Tokens.tSTRING_DVAR;
                 case '{':
-                    return Token.tSTRING_DBEG;
+                    return Tokens.tSTRING_DBEG;
                 }
                 buffer.append('#');
             }
@@ -104,7 +104,7 @@ public class HeredocTerm extends StrTerm {
                 }
                 if (c != '\n') {
                     lexer.yaccValue = buffer.toString();
-                    return Token.tSTRING_CONTENT;
+                    return Tokens.tSTRING_CONTENT;
                 }
                 buffer.append(src.read());
                 if ((c = src.read()) == RubyYaccLexer.EOF) {
@@ -120,6 +120,6 @@ public class HeredocTerm extends StrTerm {
         src.unreadMany(lastLine);
         lexer.setStrTerm(new StringTerm(-1, '\0', '\0'));
         lexer.yaccValue = str.toString();
-        return Token.tSTRING_CONTENT;
+        return Tokens.tSTRING_CONTENT;
     }
 }

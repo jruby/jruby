@@ -11,10 +11,8 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2001 Alan Moore <alan_moore@gmx.net>
- * Copyright (C) 2001-2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2001-2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -29,57 +27,17 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.ast;
+package org.jruby.common;
 
-import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
-/** Represents a range literal.
- *
+// FIXME: Document difference between warn and warning (or rename one better)
+/**
  */
-public class DotNode extends Node {
-    static final long serialVersionUID = 2763797850980107429L;
-
-    private final Node beginNode;
-    private final Node endNode;
-    private final boolean exclusive;
-
-    public DotNode(ISourcePosition position, Node beginNode, Node endNode, boolean exclusive) {
-        super(position);
-        this.beginNode = beginNode;
-        this.endNode = endNode;
-        this.exclusive = exclusive;
-    }
-
-    /**
-     * Accept for the visitor pattern.
-     * @param iVisitor the visitor
-     **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitDotNode(this);
-    }
-
-    /**
-     * Gets the beginNode.
-     * @return Returns a Node
-     */
-    public Node getBeginNode() {
-        return beginNode;
-    }
-
-    /**
-     * Gets the endNode.
-     * @return Returns a Node
-     */
-    public Node getEndNode() {
-        return endNode;
-    }
-
-    /**
-     * Gets the exclusive.
-     * @return Returns a boolean
-     */
-    public boolean isExclusive() {
-        return exclusive;
-    }
+public interface IRubyWarnings {
+    public abstract void warn(ISourcePosition position, String message);
+    public abstract boolean isVerbose();
+    public abstract void warn(String message);
+    public abstract void warning(String message);
+    public abstract void warning(ISourcePosition position, String message);
 }

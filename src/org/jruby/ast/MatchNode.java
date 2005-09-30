@@ -31,19 +31,17 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class MatchNode extends Node {
     static final long serialVersionUID = 9098121695708691474L;
 
     private final Node regexpNode;
 
-    public MatchNode(SourcePosition position, Node regexpNode) {
+    public MatchNode(ISourcePosition position, Node regexpNode) {
         super(position);
         this.regexpNode = regexpNode;
     }

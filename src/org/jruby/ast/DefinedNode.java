@@ -32,19 +32,17 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * a defined statement.
- * @author  jpetersen
- * @version $Revision$
  */
 public class DefinedNode extends Node {
     static final long serialVersionUID = -6942286690645861964L;
 
     private final Node expressionNode;
 
-    public DefinedNode(SourcePosition position, Node expressionNode) {
+    public DefinedNode(ISourcePosition position, Node expressionNode) {
         super(position);
         this.expressionNode = expressionNode;
     }

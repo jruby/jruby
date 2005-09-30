@@ -32,7 +32,7 @@ package org.jruby.ast;
 
 import org.jruby.ast.types.IArityNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 
 /** 
@@ -43,7 +43,7 @@ public class InstVarNode extends Node implements IArityNode {
 
     private final String name;
 
-    public InstVarNode(SourcePosition position, String name) {
+    public InstVarNode(ISourcePosition position, String name) {
         super(position);
         this.name = name;
     }

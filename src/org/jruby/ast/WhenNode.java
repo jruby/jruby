@@ -31,12 +31,10 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class WhenNode extends Node {
     static final long serialVersionUID = 9099987602002276708L;
@@ -45,7 +43,7 @@ public class WhenNode extends Node {
     private final Node bodyNode;
     private final Node nextCase;
 
-    public WhenNode(SourcePosition position, Node expressionNodes, Node bodyNode, Node nextCase) {
+    public WhenNode(ISourcePosition position, Node expressionNodes, Node bodyNode, Node nextCase) {
         super(position);
         this.expressionNodes = expressionNodes;
         this.bodyNode = bodyNode;

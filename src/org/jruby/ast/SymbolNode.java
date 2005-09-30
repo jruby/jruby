@@ -32,19 +32,17 @@ package org.jruby.ast;
 
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents a symbol (:symbol_name).
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class SymbolNode extends Node implements ILiteralNode {
     static final long serialVersionUID = 3168450881711346709L;
 
 	private final String name;
 
-	public SymbolNode(SourcePosition position, String name) {
+	public SymbolNode(ISourcePosition position, String name) {
 	    super(position);
 	    this.name = name;
 	}

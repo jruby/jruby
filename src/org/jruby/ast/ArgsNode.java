@@ -32,7 +32,7 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * arguments for a function.
@@ -71,7 +71,7 @@ public class ArgsNode extends Node {
      * @param argsCount number of regular arguments
      * @param blockArgNode An optional block argument (&amp;arg).
      **/
-    public ArgsNode(SourcePosition position, int argsCount, ListNode optArgs, int restArg, BlockArgNode blockArgNode) {
+    public ArgsNode(ISourcePosition position, int argsCount, ListNode optArgs, int restArg, BlockArgNode blockArgNode) {
         super(position);
 
         this.argsCount = argsCount;

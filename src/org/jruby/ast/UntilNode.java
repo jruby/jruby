@@ -31,12 +31,10 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents an until statement.
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class UntilNode extends Node {
     static final long serialVersionUID = -2929327250252365636L;
@@ -44,7 +42,7 @@ public class UntilNode extends Node {
     private final Node conditionNode;
     private final Node bodyNode;
 
-    public UntilNode(SourcePosition position, Node conditionNode, Node bodyNode) {
+    public UntilNode(ISourcePosition position, Node conditionNode, Node bodyNode) {
         super(position);
         this.conditionNode = conditionNode;
         this.bodyNode = bodyNode;

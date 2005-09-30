@@ -32,19 +32,17 @@ package org.jruby.ast;
 
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents a float literal.
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class FloatNode extends Node implements ILiteralNode {
     static final long serialVersionUID = -6358513813684285950L;
 
     private final double value;
     
-    public FloatNode(SourcePosition position, double value) {
+    public FloatNode(ISourcePosition position, double value) {
         super(position);
         this.value = value;
     }

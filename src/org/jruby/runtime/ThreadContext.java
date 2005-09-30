@@ -51,12 +51,11 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.exceptions.NextJump;
 import org.jruby.exceptions.RedoJump;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.lexer.yacc.SourcePositionFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * @author jpetersen
- * @version $Revision$
  */
 public class ThreadContext {
     private final Ruby runtime;
@@ -80,7 +79,7 @@ public class ThreadContext {
 
     private RubyModule wrapper;
 
-    private SourcePosition sourcePosition = SourcePosition.getInstance("", 0);
+    private ISourcePosition sourcePosition = new SourcePositionFactory().getDummyPosition();
 
     /**
      * Constructor for Context.
@@ -149,15 +148,11 @@ public class ThreadContext {
         return (Scope) scopeStack.peek();
     }
 
-    public SourcePosition getPosition() {
+    public ISourcePosition getPosition() {
         return sourcePosition;
     }
 
-    public void setPosition(String file, int line) {
-        setPosition(SourcePosition.getInstance(file, line));
-    }
-
-    public void setPosition(SourcePosition position) {
+    public void setPosition(ISourcePosition position) {
         sourcePosition = position;
     }
 

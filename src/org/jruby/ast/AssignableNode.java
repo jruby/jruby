@@ -30,7 +30,7 @@
 package org.jruby.ast;
 
 import org.jruby.ast.types.IArityNode;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 
 /**
@@ -39,7 +39,7 @@ import org.jruby.runtime.Arity;
 public abstract class AssignableNode extends Node implements IArityNode {
     private Node valueNode;
 
-	public AssignableNode(SourcePosition position) {
+	public AssignableNode(ISourcePosition position) {
 		super(position);
 	}
 

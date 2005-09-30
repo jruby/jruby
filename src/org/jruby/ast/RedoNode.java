@@ -31,17 +31,15 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class RedoNode extends Node {
     static final long serialVersionUID = -356433067591852187L;
 
-    public RedoNode(SourcePosition position) {
+    public RedoNode(ISourcePosition position) {
         super(position);
     }
 

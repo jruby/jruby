@@ -31,17 +31,15 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class PostExeNode extends Node {
     static final long serialVersionUID = -2851659895226590014L;
 
-    public PostExeNode(SourcePosition position) {
+    public PostExeNode(ISourcePosition position) {
         super(position);
     }
 

@@ -32,18 +32,16 @@ package org.jruby.ast;
 
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents a false literal.
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class FalseNode extends Node implements INameNode {
     static final long serialVersionUID = 8153681841075601779L;
 
 
-    public FalseNode(SourcePosition position) {
+    public FalseNode(ISourcePosition position) {
         super(position);
     }
 

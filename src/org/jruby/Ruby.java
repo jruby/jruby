@@ -60,7 +60,7 @@ import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.internal.runtime.methods.IterateMethod;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaSupport;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.Parser;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockStack;
@@ -97,10 +97,6 @@ import org.jruby.util.BuiltinScript;
 
 /**
  * The jruby runtime.
- *
- * @author  jpetersen
- * @version $Revision$
- * @since   0.1
  */
 public final class Ruby {
 	private CacheMap cacheMap = new CacheMap();
@@ -585,7 +581,7 @@ public final class Ruby {
      * @return Value of property sourceLine.
      */
     public int getSourceLine() {
-        return getPosition().getLine();
+        return getPosition().getEndLine();
     }
 
     /** Getter for property isVerbose.
@@ -706,15 +702,11 @@ public final class Ruby {
         return threadService.getCurrentContext();
     }
 
-    public SourcePosition getPosition() {
+    public ISourcePosition getPosition() {
         return getCurrentContext().getPosition();
     }
 
-    public void setPosition(String file, int line) {
-        getCurrentContext().setPosition(file, line);
-    }
-
-    public void setPosition(SourcePosition position) {
+    public void setPosition(ISourcePosition position) {
         getCurrentContext().setPosition(position);
     }
 
@@ -972,14 +964,14 @@ public final class Ruby {
      */
     public synchronized void callTraceFunction(
         String event,
-        SourcePosition position,
+        ISourcePosition position,
         IRubyObject self,
         String name,
         IRubyObject type) {
         if (!isWithinTrace && traceFunction != null) {
             isWithinTrace = true;
 
-            SourcePosition savePosition = getPosition();
+            ISourcePosition savePosition = getPosition();
             String file = position.getFile();
 
             if (file == null) {
@@ -995,7 +987,7 @@ public final class Ruby {
                     .call(new IRubyObject[] {
                         newString(event),
                         newString(file),
-                        newFixnum(position.getLine()),
+                        newFixnum(position.getEndLine()),
                         name != null ? RubySymbol.newSymbol(this, name) : getNil(),
                         self != null ? self: getNil(),
                         type });

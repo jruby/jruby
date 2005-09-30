@@ -31,12 +31,10 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *	an ensure statement.
- * @author  jpetersen
- * @version $Revision$
  */
 public class EnsureNode extends Node {
     static final long serialVersionUID = -409805241533215981L;
@@ -44,7 +42,7 @@ public class EnsureNode extends Node {
     private final Node bodyNode;
     private final Node ensureNode;
 
-    public EnsureNode(SourcePosition position, Node bodyNode, Node ensureNode) {
+    public EnsureNode(ISourcePosition position, Node bodyNode, Node ensureNode) {
         super(position);
         this.bodyNode = bodyNode;
         this.ensureNode = ensureNode;

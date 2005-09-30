@@ -32,23 +32,20 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents an #{} expression in a string. This Node is always a subnode
  * of a DStrNode, DXStrNode or a DRegexpNode.
  * 
  * Before this Node is evaluated it contains the code as a String (value). After
  * the first evaluation this String is parsed into the evaluatedNode Node.
- *
- * @author  jpetersen
- * @version $Revision$
  */
 public class EvStrNode extends Node {
     static final long serialVersionUID = 1681935012117120817L;
 
     private final Node body;
 
-    public EvStrNode(SourcePosition position, Node body) {
+    public EvStrNode(ISourcePosition position, Node body) {
         super(position);
         this.body = body;
     }

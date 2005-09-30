@@ -11,10 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2001-2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2001-2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
- * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2005 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -28,29 +25,18 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.ast;
-
-import org.jruby.ast.types.ILiteralNode;
-import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
+package org.jruby.lexer.yacc;
 
 /**
- * Dynamic backquote string.
- * backquote strings are eXecuted using the shell, hence the X 
- * or maybe the X is due to the %x general quote syntax
+ * This interface is the combination of two needs:
+ * 1) A Ruby interpreter position (for warnings and errors).
+ * 2) A IDE position (offsets for showing ranges of grammatical elements).
+ * 
  */
-public class DXStrNode extends ListNode implements ILiteralNode {
-    static final long serialVersionUID = 7165988969190553667L;
-
-    public DXStrNode(ISourcePosition position) {
-        super(position);
-    }
-
-    /**
-     * Accept for the visitor pattern.
-     * @param iVisitor the visitor
-     **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitDXStrNode(this);
-    }
+public interface ISourcePosition {
+	public String getFile();
+	public int getStartLine();
+	public int getEndLine();
+	public int getStartOffset();
+	public int getEndOffset();
 }

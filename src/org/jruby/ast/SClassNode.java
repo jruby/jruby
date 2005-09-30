@@ -31,7 +31,7 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Singleton class definition.
  * 
@@ -41,8 +41,6 @@ import org.jruby.lexer.yacc.SourcePosition;
  * end
  * </pre>
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class SClassNode extends Node {
     static final long serialVersionUID = -3706492163082062224L;
@@ -50,7 +48,7 @@ public class SClassNode extends Node {
     private final Node receiverNode;
     private final ScopeNode bodyNode;
 
-    public SClassNode(SourcePosition position, Node recvNode, ScopeNode bodyNode) {
+    public SClassNode(ISourcePosition position, Node recvNode, ScopeNode bodyNode) {
         super(position);
         this.receiverNode = recvNode;
         this.bodyNode = bodyNode;

@@ -32,7 +32,7 @@ package org.jruby.ast;
 
 import org.jruby.ast.types.IArityNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 
 /**
@@ -41,7 +41,7 @@ import org.jruby.runtime.Arity;
 public class ZSuperNode extends Node implements IArityNode {
     static final long serialVersionUID = 6109129030317216863L;
 
-    public ZSuperNode(SourcePosition position) {
+    public ZSuperNode(ISourcePosition position) {
         super(position);
     }
 

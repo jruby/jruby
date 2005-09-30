@@ -31,19 +31,17 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class OptNNode extends Node {
     static final long serialVersionUID = -742216664550880045L;
 
     private final Node bodyNode;
 
-    public OptNNode(SourcePosition position, Node bodyNode) {
+    public OptNNode(ISourcePosition position, Node bodyNode) {
         super(position);
         this.bodyNode = bodyNode;
     }

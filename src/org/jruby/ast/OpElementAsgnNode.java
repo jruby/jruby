@@ -31,7 +31,7 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents an operator assignment to an element.
  * 
@@ -42,8 +42,6 @@ import org.jruby.lexer.yacc.SourcePosition;
  * a[3] &&= true
  * </pre>
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class OpElementAsgnNode extends Node {
     static final long serialVersionUID = 1509701560452403776L;
@@ -53,7 +51,7 @@ public class OpElementAsgnNode extends Node {
     private final Node argsNode;
     private final Node valueNode;
 
-    public OpElementAsgnNode(SourcePosition position, Node receiverNode, String operatorName, Node argsNode, Node valueNode) {
+    public OpElementAsgnNode(ISourcePosition position, Node receiverNode, String operatorName, Node argsNode, Node valueNode) {
         super(position);
         this.receiverNode = receiverNode;
         this.operatorName = operatorName;

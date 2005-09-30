@@ -31,20 +31,18 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Access to a Dynamic variable.
  * Dynamic variable are those defined in a block.
- * @author  jpetersen
- * @version $Revision$
  */
 public class DVarNode extends Node {
     static final long serialVersionUID = -8479281167248673970L;
 
     private final String name;
 
-    public DVarNode(SourcePosition position, String name) {
+    public DVarNode(ISourcePosition position, String name) {
         super(position);
         this.name = name;
     }

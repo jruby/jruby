@@ -32,20 +32,18 @@ package org.jruby.ast;
 
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *
  * zero length list
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class ZArrayNode extends Node implements ILiteralNode {
     static final long serialVersionUID = -5004157166982016917L;
 
 
-    public ZArrayNode(SourcePosition position) {
+    public ZArrayNode(ISourcePosition position) {
         super(position);
     }
 

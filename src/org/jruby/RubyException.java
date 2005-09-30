@@ -34,7 +34,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.FrameStack;
@@ -200,9 +200,9 @@ public class RubyException extends RubyObject {
 
 	private static void addBackTraceElement(RubyArray backtrace, Frame frame, Frame previousFrame) {
 	    StringBuffer sb = new StringBuffer(100);
-	    SourcePosition position = frame.getPosition();
+	    ISourcePosition position = frame.getPosition();
 	
-	    sb.append(position.getFile()).append(':').append(position.getLine());
+	    sb.append(position.getFile()).append(':').append(position.getEndLine());
 	
 	    if (previousFrame != null && previousFrame.getLastFunc() != null) {
 	        sb.append(":in `").append(previousFrame.getLastFunc()).append('\'');

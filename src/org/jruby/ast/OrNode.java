@@ -31,12 +31,10 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class OrNode extends Node {
     static final long serialVersionUID = 2822549471181976227L;
@@ -44,7 +42,7 @@ public class OrNode extends Node {
     private final Node firstNode;
     private final Node secondNode;
 
-    public OrNode(SourcePosition position, Node firstNode, Node secondNode) {
+    public OrNode(ISourcePosition position, Node firstNode, Node secondNode) {
         super(position);
         this.firstNode = firstNode;
         this.secondNode = secondNode;

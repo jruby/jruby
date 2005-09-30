@@ -35,19 +35,17 @@ import java.math.BigInteger;
 
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents a big integer literal.
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class BignumNode extends Node implements ILiteralNode {
     static final long serialVersionUID = -8646636291868912747L;
 
     private final BigInteger value;
 
-    public BignumNode(SourcePosition position, BigInteger value) {
+    public BignumNode(ISourcePosition position, BigInteger value) {
         super(position);
         this.value = value;
     }

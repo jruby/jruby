@@ -31,20 +31,18 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Begin/End block.
  *  A Begin ... End block without rescue.
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class BeginNode extends Node {
     static final long serialVersionUID = 7295877486186461712L;
 
     private final Node bodyNode;
 
-    public BeginNode(SourcePosition position, Node bodyNode) {
+    public BeginNode(ISourcePosition position, Node bodyNode) {
         super(position);
         this.bodyNode = bodyNode;
     }

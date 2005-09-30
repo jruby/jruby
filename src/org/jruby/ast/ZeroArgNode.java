@@ -33,7 +33,7 @@ package org.jruby.ast;
 
 import org.jruby.ast.types.IArityNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 
 /** Represents a zero arg in a block.
@@ -49,7 +49,7 @@ import org.jruby.runtime.Arity;
 public class ZeroArgNode extends Node implements IArityNode {
     static final long serialVersionUID = 6596791950608957025L;
 
-    public ZeroArgNode(SourcePosition position) {
+    public ZeroArgNode(ISourcePosition position) {
         super(position);
     }
 

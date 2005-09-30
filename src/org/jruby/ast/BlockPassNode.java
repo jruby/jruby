@@ -31,14 +31,12 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Block passed explicitly as an argument in a method call.
  * A block passing argument in a method call (last argument prefixed by an ampersand).
  * 
- * @author  jpetersen
- * @version $Revision$
  */
 public class BlockPassNode extends Node {
     static final long serialVersionUID = 7201862349971094217L;
@@ -51,7 +49,7 @@ public class BlockPassNode extends Node {
      */
     private Node argsNode;
 
-    public BlockPassNode(SourcePosition position, Node bodyNode) {
+    public BlockPassNode(ISourcePosition position, Node bodyNode) {
         super(position);
         this.bodyNode = bodyNode;
     }

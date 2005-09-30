@@ -32,14 +32,12 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * a Range in a boolean expression.
  * named after a FlipFlop component in electronic I believe.
  * 
- * @author  jpetersen
- * @version $Revision$
  */
 public class FlipNode extends Node {
     static final long serialVersionUID = -4735579451657299802L;
@@ -49,7 +47,7 @@ public class FlipNode extends Node {
     private final boolean exclusive;
     private final int count;
     
-    public FlipNode(SourcePosition position, Node beginNode, Node endNode, boolean exclusive, int count) {
+    public FlipNode(ISourcePosition position, Node beginNode, Node endNode, boolean exclusive, int count) {
         super(position);
         this.beginNode = beginNode;
         this.endNode = endNode;

@@ -32,7 +32,7 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * A new (logical) source code line.
@@ -45,15 +45,13 @@ import org.jruby.lexer.yacc.SourcePosition;
  * This is normally a wrapper around another more significant node.
  * The parser generates such a node around each separate statement.  
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class NewlineNode extends Node {
     static final long serialVersionUID = -6180129177863553832L;
 
     private final Node nextNode;
 
-    public NewlineNode(SourcePosition position, Node nextNode) {
+    public NewlineNode(ISourcePosition position, Node nextNode) {
         super(position);
 
         this.nextNode = nextNode;

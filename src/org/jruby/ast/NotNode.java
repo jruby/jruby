@@ -31,19 +31,17 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class NotNode extends Node {
     static final long serialVersionUID = -9044821606260233871L;
 
     private final Node conditionNode;
 
-    public NotNode(SourcePosition position, Node conditionNode) {
+    public NotNode(ISourcePosition position, Node conditionNode) {
         super(position);
         this.conditionNode = conditionNode;
     }

@@ -36,12 +36,9 @@ import java.util.List;
 
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.Node;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
- *
- * @author  jpetersen
- * @version $Revision$
  */
 public class RubyParserResult {
     private final List beginNodes = new ArrayList();
@@ -134,7 +131,7 @@ public class RubyParserResult {
     	if (getAST() != null) {
     		n = new BlockNode(getAST().getPosition());
     	} else {
-    		SourcePosition p;
+    		ISourcePosition p;
     		if (!beginNodes.isEmpty()) {
     			p = ((Node) beginNodes.get(0)).getPosition();
     		} else {

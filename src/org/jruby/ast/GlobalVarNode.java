@@ -31,19 +31,17 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *	access to a global variable.
- * @author  jpetersen
- * @version $Revision$
  */
 public class GlobalVarNode extends Node {
     static final long serialVersionUID = -8913633094119740033L;
 
     private final String name;
 
-    public GlobalVarNode(SourcePosition position, String name) {
+    public GlobalVarNode(ISourcePosition position, String name) {
         super(position);
         this.name = name;
     }

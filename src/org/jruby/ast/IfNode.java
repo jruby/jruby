@@ -32,12 +32,10 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * an 'if' statement.
- * @author  jpetersen
- * @version $Revision$
  */
 public class IfNode extends Node {
     static final long serialVersionUID = -163780144332979551L;
@@ -46,7 +44,7 @@ public class IfNode extends Node {
     private final Node thenBody;
     private final Node elseBody;
 
-    public IfNode(SourcePosition position, Node condition, Node thenBody, Node elseBody) {
+    public IfNode(ISourcePosition position, Node condition, Node thenBody, Node elseBody) {
         super(position);
         this.condition = condition;
         this.thenBody = thenBody;

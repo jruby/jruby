@@ -31,12 +31,10 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class RescueBodyNode extends ListNode {
     static final long serialVersionUID = -6414517081810625663L;
@@ -45,7 +43,7 @@ public class RescueBodyNode extends ListNode {
     private final Node bodyNode;
     private final RescueBodyNode optRescueNode;
 
-    public RescueBodyNode(SourcePosition position, Node exceptionNodes, Node bodyNode, RescueBodyNode optRescueNode) {
+    public RescueBodyNode(ISourcePosition position, Node exceptionNodes, Node bodyNode, RescueBodyNode optRescueNode) {
         super(position);
         this.exceptionNodes = exceptionNodes;
         this.bodyNode = bodyNode;

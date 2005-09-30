@@ -32,20 +32,18 @@ package org.jruby.ast;
 
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Backtick string
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class XStrNode extends Node implements ILiteralNode {
     static final long serialVersionUID = 1371310021447439748L;
 
     private final String value;
 
-    public XStrNode(SourcePosition position, String value) {
+    public XStrNode(ISourcePosition position, String value) {
         super(position);
         this.value = value;
     }

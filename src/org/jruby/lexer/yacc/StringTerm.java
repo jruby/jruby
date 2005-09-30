@@ -29,7 +29,7 @@ package org.jruby.lexer.yacc;
 
 import org.jruby.ast.RegexpNode;
 import org.jruby.parser.ReOptions;
-import org.jruby.parser.Token;
+import org.jruby.parser.Tokens;
 
 public class StringTerm extends StrTerm {
     /* bit flags to indicate the string type */
@@ -55,7 +55,7 @@ public class StringTerm extends StrTerm {
         StringBuffer buffer = new StringBuffer(100);
 
         if (func == -1)
-            return Token.tSTRING_END;
+            return Tokens.tSTRING_END;
 
         c = src.read();
         if ((func & RubyYaccLexer.STR_FUNC_QWORDS) != 0
@@ -74,9 +74,9 @@ public class StringTerm extends StrTerm {
             if ((func & RubyYaccLexer.STR_FUNC_REGEXP) != 0) {
                 lexer.yaccValue = new RegexpNode(src.getPosition(),
                         buffer.toString(), parseRegexpFlags(src));
-                return Token.tREGEXP_END;
+                return Tokens.tREGEXP_END;
             }
-            return Token.tSTRING_END;
+            return Tokens.tSTRING_END;
         }
         if (space != 0) {
             src.unread(c);
@@ -88,9 +88,9 @@ public class StringTerm extends StrTerm {
             case '$':
             case '@':
                 src.unread(c);
-                return Token.tSTRING_DVAR;
+                return Tokens.tSTRING_DVAR;
             case '{':
-                return Token.tSTRING_DBEG;
+                return Tokens.tSTRING_DBEG;
             }
             buffer.append('#');
         }
@@ -100,7 +100,7 @@ public class StringTerm extends StrTerm {
         }
 
         lexer.yaccValue = buffer.toString();
-        return Token.tSTRING_CONTENT;
+        return Tokens.tSTRING_CONTENT;
     }
 
     private int parseRegexpFlags(final LexerSource src) {

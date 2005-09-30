@@ -32,20 +32,18 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * RubyMethod call without any arguments
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class VCallNode extends Node {
     static final long serialVersionUID = -7678578490000574578L;
 
     private final String methodName;
 
-    public VCallNode(SourcePosition position, String name) {
+    public VCallNode(ISourcePosition position, String name) {
         super(position);
         this.methodName = name;
     }

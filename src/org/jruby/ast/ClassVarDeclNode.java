@@ -33,20 +33,18 @@ package org.jruby.ast;
 
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Class variable declaration.
  * 
- * @author  jpetersen
- * @version $Revision$
  */
 public class ClassVarDeclNode extends AssignableNode implements INameNode {
     static final long serialVersionUID = -6227934966029974915L;
 
     private final String name;
 
-    public ClassVarDeclNode(SourcePosition position, String name, Node valueNode) {
+    public ClassVarDeclNode(ISourcePosition position, String name, Node valueNode) {
         super(position);
 
         this.name = name;

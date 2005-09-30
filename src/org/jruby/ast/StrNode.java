@@ -33,19 +33,17 @@ package org.jruby.ast;
 
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Representing a simple String literal.
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class StrNode extends Node implements ILiteralNode {
     static final long serialVersionUID = 4544779503072130759L;
 
     private final String value;
 
-    public StrNode(SourcePosition position, String value) {
+    public StrNode(ISourcePosition position, String value) {
         super(position);
         this.value = value;
     }

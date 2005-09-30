@@ -33,19 +33,17 @@ package org.jruby.ast;
 
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Represents an array. This could be an array literal, quoted words or
  * some args stuff.
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class ArrayNode extends ListNode implements ILiteralNode {
     static final long serialVersionUID = 6279246130032958596L;
 
-    public ArrayNode(SourcePosition position) {
+    public ArrayNode(ISourcePosition position) {
         super(position);
     }
 

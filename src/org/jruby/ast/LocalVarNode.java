@@ -31,19 +31,17 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class LocalVarNode extends Node {
     static final long serialVersionUID = 8562701804939317217L;
 
     private final int count;
 
-    public LocalVarNode(SourcePosition position, int count) {
+    public LocalVarNode(ISourcePosition position, int count) {
         super(position);
         this.count = count;
     }

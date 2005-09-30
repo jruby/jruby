@@ -29,7 +29,7 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 
 public class SplatNode extends Node {
@@ -37,7 +37,7 @@ public class SplatNode extends Node {
     
     private final Node node;
 
-    public SplatNode(SourcePosition position, Node node) {
+    public SplatNode(ISourcePosition position, Node node) {
         super(position);
         this.node = node;
     }

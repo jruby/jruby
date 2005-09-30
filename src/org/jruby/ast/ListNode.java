@@ -33,7 +33,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * All Nodes which have a list representation inherit this.
@@ -41,7 +41,7 @@ import org.jruby.lexer.yacc.SourcePosition;
 public abstract class ListNode extends Node {
     private List list = null;
 
-	public ListNode(SourcePosition position) {
+	public ListNode(ISourcePosition position) {
 		super(position);
 	}
 	

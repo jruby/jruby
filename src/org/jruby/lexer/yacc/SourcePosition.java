@@ -38,20 +38,19 @@ import java.io.Serializable;
  * error/warning information.  An IDE using this may need it though.  This is
  * trivially added if need be.
  * 
- * @author enebo
  */
-public class SourcePosition implements Serializable {
+public class SourcePosition implements ISourcePosition, Serializable {
     private static final long serialVersionUID = 3762529027281400377L;
-
-    // Often times many nodes share the same position (LexerSource has commentary
-    // on the weakness of this scheme).
-    private static SourcePosition lastPosition = new SourcePosition();
     
     // The file of the source
     private final String file;
     
     // The row of the source
-    private final int line;
+    private final int startLine;
+    private final int endLine;
+    
+    private final int startOffset;
+    private final int endOffset;
 
     /**
      * Creates a default source position - required for serialization.
@@ -64,14 +63,34 @@ public class SourcePosition implements Serializable {
      * Creates a new source position.
      * 
      * @param file location of the source (must not be null)
-     * @param line what line within the source
+     * @param endLine what line within the source
      */
-	public SourcePosition(String file, int line) {
+	public SourcePosition(String file, int endLine) {
 		if (file == null) { //otherwise equals() and getInstance() will fail
 			throw new NullPointerException();  
 		}
 		this.file = file;
-		this.line = line;
+		this.startLine = 0;
+		this.endLine = endLine;
+		this.startOffset = 0;
+		this.endOffset = 0;
+	}
+
+    /**
+     * Creates a new source position.
+     * 
+     * @param file location of the source (must not be null)
+     * @param line what line within the source
+     */
+	public SourcePosition(String file, int startLine, int endLine, int startOffset, int endOffset) {
+		if (file == null) { //otherwise equals() and getInstance() will fail
+			throw new NullPointerException();  
+		}
+		this.file = file;
+		this.startLine = startLine;
+		this.endLine = endLine;
+		this.startOffset = startOffset;
+		this.endOffset = endOffset;
 	}
 
 	/**
@@ -80,12 +99,19 @@ public class SourcePosition implements Serializable {
     public String getFile() {
         return file;
     }
+    
+    /**
+     * @return the line a token starts within the source
+     */
+    public int getStartLine() {
+    	return startLine;
+    }
 
     /**
      * @return the line within the source
      */
-    public int getLine() {
-        return line;
+    public int getEndLine() {
+        return endLine;
     }
 
     /**
@@ -102,44 +128,35 @@ public class SourcePosition implements Serializable {
         
         SourcePosition other = (SourcePosition) object;
 
-        return file.equals(other.file) && line == other.line;
+        return file.equals(other.file) && endLine == other.endLine;
     }
 
     /**
      * @return something we can use for identity in hashing, etc...
      */
     public int hashCode() {
-        return file.hashCode() ^ line;
+        return file.hashCode() ^ endLine;
     }
 
     /**
      * @return simple Object.toString() implementation
      */
     public String toString() {
-        return file + ":" + line;
+        return file + ":[" + startLine + "," + endLine + "]:[" + 
+            getStartOffset() + "," + getEndOffset() + "]";
     }
-
+    
     /**
-     * 
-     * Extra simple caching mechanism.  By calling this instead of direct
-     * instantiation, close grammatical elements will end up sharing the
-     * same instance of SourcePosition.  This scheme will not work properly
-     * in environment where multiple threads are parsing files.  The concept
-     * of caching should be moved into LexerSource.
-     * 
-     * @param file for SourcePosition desired
-     * @param line for SourcePosition desired
-     * @return the source position
+     * Not used in interpreter 
      */
-    public static SourcePosition getInstance(String file, int line) {
-        synchronized (SourcePosition.class) {
-        	if (lastPosition.line == line && lastPosition.file.equals(file)) {
-        		return lastPosition;
-            }
-
-            lastPosition = new SourcePosition(file, line);
-        
-            return lastPosition;
-        }
+    public int getStartOffset() {
+    	return startOffset;
+    }
+    
+    /**
+     * Not used in interpreter 
+     */
+    public int getEndOffset() {
+    	return endOffset;
     }
 }

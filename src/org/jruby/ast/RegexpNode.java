@@ -32,12 +32,10 @@ package org.jruby.ast;
 
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents a simple regular expression literal.
  *
- * @author  jpetersen
- * @version $Revision$
  */
 public class RegexpNode extends Node implements ILiteralNode {
     static final long serialVersionUID = -1566813018564622077L;
@@ -45,7 +43,7 @@ public class RegexpNode extends Node implements ILiteralNode {
     private final String value;
     private final int options;
     
-    public RegexpNode(SourcePosition position, String value, int options) {
+    public RegexpNode(ISourcePosition position, String value, int options) {
         super(position);
         
         this.value = value;

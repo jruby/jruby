@@ -31,7 +31,7 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Global scope node.
@@ -40,15 +40,13 @@ import org.jruby.lexer.yacc.SourcePosition;
  * when refering to a constant or method.  This is the same as a Colon2Node but with 
  * no leftNode which implicitly uses the Object class as a left node.
  * 
- * @author  jpetersen
- * @version $Revision$
  */
 public class Colon3Node extends Node {
     static final long serialVersionUID = 8860717109371016871L;
 
     private final String name;
 
-    public Colon3Node(SourcePosition position, String name) {
+    public Colon3Node(ISourcePosition position, String name) {
         super(position);
         this.name = name;
     }

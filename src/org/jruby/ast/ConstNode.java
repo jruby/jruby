@@ -32,20 +32,18 @@ package org.jruby.ast;
 
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * The access to a Constant.
  * 
- * @author  jpetersen
- * @version $Revision$
  */
 public class ConstNode extends Node implements INameNode {
     static final long serialVersionUID = -5190161028130457944L;
 
     private final String name;
     
-    public ConstNode(SourcePosition position, String name) {
+    public ConstNode(ISourcePosition position, String name) {
         super(position);
         this.name = name;
     }
