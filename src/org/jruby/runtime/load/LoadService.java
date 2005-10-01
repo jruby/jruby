@@ -29,7 +29,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.internal.runtime.load;
+package org.jruby.runtime.load;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -47,11 +47,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyString;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.load.ExternalScript;
-import org.jruby.runtime.load.IAutoloadMethod;
-import org.jruby.runtime.load.ILoadService;
-import org.jruby.runtime.load.JarredScript;
-import org.jruby.runtime.load.Library;
 import org.jruby.util.PreparsedScript;
 
 /**
@@ -59,7 +54,7 @@ import org.jruby.util.PreparsedScript;
  * @author jpetersen
  * @version $Revision$
  */
-public class LoadService implements ILoadService {
+public class LoadService {
     private static final String[] suffixes = { ".ast.ser", "", ".rb.ast.ser", ".rb", ".jar" };
 
     private final List loadPath = new ArrayList();

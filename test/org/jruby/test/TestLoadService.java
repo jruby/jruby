@@ -31,7 +31,7 @@ package org.jruby.test;
 import java.util.ArrayList;
 
 import org.jruby.Ruby;
-import org.jruby.internal.runtime.load.LoadService;
+import org.jruby.runtime.load.LoadService;
 
 
 public class TestLoadService extends TestRubyBase {

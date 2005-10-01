@@ -61,6 +61,8 @@ import org.jruby.internal.runtime.methods.IterateMethod;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.libraries.RbConfigLibrary;
+import org.jruby.libraries.SocketLibrary;
 import org.jruby.parser.Parser;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockStack;
@@ -91,8 +93,7 @@ import org.jruby.runtime.builtin.meta.StringMetaClass;
 import org.jruby.runtime.builtin.meta.SymbolMetaClass;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.load.IAutoloadMethod;
-import org.jruby.runtime.load.ILoadService;
-import org.jruby.runtime.load.LoadServiceFactory;
+import org.jruby.runtime.load.LoadService;
 import org.jruby.util.BuiltinScript;
 
 /**
@@ -142,7 +143,7 @@ public final class Ruby {
 
     private LastCallStatus lastCallStatus = new LastCallStatus(this);
 
-    private ILoadService loadService = LoadServiceFactory.createLoadService(this);
+    private LoadService loadService;
     private GlobalVariables globalVariables = new GlobalVariables(this);
     private RubyWarnings warnings = new RubyWarnings(this);
 
@@ -154,13 +155,7 @@ public final class Ruby {
      * Create and initialize a new jruby Runtime.
      */
     private Ruby() {
-        nilObject = new RubyNil(this);
-        trueObject = new RubyBoolean(this, true);
-        falseObject = new RubyBoolean(this, false);
-
-        verbose = falseObject;
-        
-        javaSupport = new JavaSupport(this);
+      init();
     }
     
     /**
@@ -180,9 +175,7 @@ public final class Ruby {
      * @return the JRuby runtime
      */
     public static Ruby getDefaultInstance() {
-        Ruby runtime = new Ruby();
-        runtime.init();
-        return runtime;
+        return new Ruby();
     }
 
     /**
@@ -380,7 +373,18 @@ public final class Ruby {
     /** ruby_init
      *
      */
+    // TODO: Figure out real dependencies between vars and reorder/refactor into better methods
     private void init() {
+        nilObject = new RubyNil(this);
+        trueObject = new RubyBoolean(this, true);
+        falseObject = new RubyBoolean(this, false);
+
+        verbose = falseObject;
+        
+        javaSupport = new JavaSupport(this);
+        
+        initLibraries();
+        
         getIterStack().push(Iter.ITER_NOT);
         Frame frame = (Frame) getFrameStack().push(new Frame(getCurrentContext()));
         getCurrentContext().getScopeStack().push(new Scope(this));
@@ -397,6 +401,13 @@ public final class Ruby {
         frame.setSelf(topSelf);
 
         initBuiltinClasses();
+    }
+    
+    private void initLibraries() {
+        loadService = new LoadService(this);
+        loadService.registerBuiltin("java", new BuiltinScript("javasupport"));
+        loadService.registerBuiltin("socket", new SocketLibrary());
+        loadService.registerBuiltin("rbconfig.rb", new RbConfigLibrary());
     }
     
     private void initCoreClasses() {
@@ -722,7 +733,7 @@ public final class Ruby {
      * Returns the loadService.
      * @return ILoadService
      */
-    public ILoadService getLoadService() {
+    public LoadService getLoadService() {
         return loadService;
     }
 

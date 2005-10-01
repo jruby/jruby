@@ -27,12 +27,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.libraries;
 
+import org.jruby.RubyMutex;
 import org.jruby.Ruby;
 import org.jruby.runtime.load.Library;
 
 public class ThreadLibrary implements Library {
 
     public void load(Ruby runtime) {
-        Mutex.createMutexClass(runtime);
+        RubyMutex.createMutexClass(runtime);
     }
 }

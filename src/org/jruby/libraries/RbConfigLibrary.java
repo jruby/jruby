@@ -37,7 +37,7 @@ import org.jruby.RubyModule;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.load.Library;
 
-public class RbConfig implements Library {
+public class RbConfigLibrary implements Library {
     /**
      * Just enough configuration settings (most don't make sense in Java) to run the rubytests
      * unit tests. The tests use <code>bindir</code>, <code>RUBY_INSTALL_NAME</code> and

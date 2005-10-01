@@ -49,7 +49,7 @@ import org.jruby.runtime.LastCallStatus;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.meta.FileMetaClass;
 import org.jruby.runtime.load.IAutoloadMethod;
-import org.jruby.runtime.load.ILoadService;
+import org.jruby.runtime.load.LoadService;
 import org.jruby.util.PrintfFormat;
 
 /**
@@ -142,7 +142,7 @@ public class RubyKernel {
     }
 
     public static IRubyObject autoload(IRubyObject recv, IRubyObject symbol, final IRubyObject file) {
-        final ILoadService loadService = recv.getRuntime().getLoadService();
+        final LoadService loadService = recv.getRuntime().getLoadService();
         loadService.addAutoload(symbol.asSymbol(), new IAutoloadMethod() {
             /**
              * @see org.jruby.runtime.load.IAutoloadMethod#load(Ruby, String)

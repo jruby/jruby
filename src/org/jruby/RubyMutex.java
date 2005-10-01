@@ -11,7 +11,10 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2005 David Corbin <dcorbin@users.sourceforge.net>
+ * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -25,20 +28,37 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.runtime.load;
+package org.jruby;
 
-import java.io.IOException;
+import org.jruby.runtime.CallbackFactory;
 
-import org.jruby.Ruby;
-import org.jruby.runtime.builtin.meta.BasicSocketMetaClass;
-import org.jruby.util.BuiltinScript;
+public class RubyMutex extends RubyObject {
+    private boolean isLocked = false;
 
-
-public class SocketLibrary implements Library {
-
-    public void load(Ruby runtime) throws IOException {
-        new BasicSocketMetaClass(runtime);
-        new BuiltinScript("socket").load(runtime);
+    public RubyMutex(Ruby runtime) {
+        super(runtime, runtime.getClass("Mutex"));
     }
 
+    public static void createMutexClass(Ruby runtime) {
+        RubyClass mutexClass =
+                runtime.defineClass("Mutex", runtime.getObject());
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyMutex.class);
+        mutexClass.defineMethod("lock", callbackFactory.getMethod("lock"));
+        mutexClass.defineMethod("unlock", callbackFactory.getMethod("unlock"));
+        mutexClass.defineMethod("locked?", callbackFactory.getMethod("locked_p"));
+    }
+
+    public RubyMutex lock() {
+        isLocked = true;
+        return this;
+    }
+
+    public RubyMutex unlock() {
+        isLocked = false;
+        return this;
+    }
+
+    public RubyBoolean locked_p() {
+        return getRuntime().newBoolean(isLocked);
+    }
 }
