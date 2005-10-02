@@ -32,7 +32,6 @@
 package org.jruby.ast;
 
 import java.io.Serializable;
-import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -65,5 +64,5 @@ public abstract class Node implements ISourcePositionHolder, Serializable {
     }
     
 	public abstract void accept(NodeVisitor visitor);
-	public abstract List childNodes();
+//	public abstract List childNodes();
 }

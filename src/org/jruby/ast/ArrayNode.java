@@ -31,8 +31,6 @@
 package org.jruby.ast;
 
 
-import java.util.List;
-
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
