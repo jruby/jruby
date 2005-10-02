@@ -28,17 +28,14 @@
 package org.jruby.runtime.builtin.meta;
 
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.builtin.IRubyObject;
 
 public class BignumMetaClass extends ObjectMetaClass {
     public BignumMetaClass(Ruby runtime) {
-        super("Bignum", RubyBignum.class, runtime.getObject());
+        super("Bignum", RubyBignum.class, runtime.getClass("Integer"));
     }
     
 	public BignumMetaClass(String name, RubyClass superClass, RubyModule parentModule) {
@@ -74,25 +71,4 @@ public class BignumMetaClass extends ObjectMetaClass {
 	public RubyClass newSubClass(String name, RubyModule parentModule) {
 		return new BignumMetaClass(name, this, parentModule);
 	}
-
-	protected IRubyObject allocateObject() {
-        RubyArray instance = getRuntime().newArray();
-        
-		instance.setMetaClass(this);
-		
-		return instance;
-	}
-
-    public IRubyObject newInstance(IRubyObject[] args) {
-        RubyArray instance = getRuntime().newArray();
-        
-        instance.setMetaClass(this);
-        instance.callInit(args);
-       
-        return instance;
-    }
-    
-    public IRubyObject create(IRubyObject[] args) {
-        return getRuntime().newArray(args);
-    }
 }
