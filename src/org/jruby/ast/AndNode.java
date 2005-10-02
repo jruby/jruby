@@ -30,8 +30,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.util.List;
+
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ListUtil;
 
 /** An AndNode represents a && operator.
  */
@@ -66,4 +69,9 @@ public class AndNode extends Node {
     public Node getFirstNode() {
         return firstNode;
     }
+    
+    public List childNodes() {
+        return ListUtil.create(firstNode, secondNode);
+    }
+
 }

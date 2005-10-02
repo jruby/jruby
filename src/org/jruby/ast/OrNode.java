@@ -30,8 +30,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.util.List;
+
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ListUtil;
 
 /**
  *
@@ -71,4 +74,9 @@ public class OrNode extends Node {
     public Node getSecondNode() {
         return secondNode;
     }
+
+    public List childNodes() {
+        return ListUtil.create(firstNode, secondNode);
+    }
+
 }

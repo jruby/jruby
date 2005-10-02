@@ -32,6 +32,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
@@ -81,4 +82,9 @@ public class ScopeNode extends Node {
     public List getLocalNames() {
         return localNames;
     }
+    
+    public List childNodes() {
+        return Collections.singletonList(bodyNode);
+    }
+
 }

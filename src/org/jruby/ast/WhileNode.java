@@ -30,8 +30,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.util.List;
+
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ListUtil;
 
 /** Represents a while stetement. This could be the both versions:
  * 
@@ -93,4 +96,9 @@ public class WhileNode extends Node {
     public boolean evaluateAtStart() {
         return evaluateAtStart;
     }
+
+    public List childNodes() {
+        return ListUtil.create(conditionNode, bodyNode);
+    }
+
 }

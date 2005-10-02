@@ -30,8 +30,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.util.List;
+
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ListUtil;
 
 /**
  * A Case statement.
@@ -83,4 +86,9 @@ public class CaseNode extends Node {
     public Node getFirstWhenNode() {
         return caseBody;
     }
+    
+    public List childNodes() {
+        return ListUtil.create(caseNode, caseBody);
+    }
+
 }

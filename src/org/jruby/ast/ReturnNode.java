@@ -30,6 +30,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.util.Collections;
+import java.util.List;
+
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
@@ -66,4 +69,9 @@ public class ReturnNode extends Node {
     public void setTarget(Object target) {
         this.target = target;
     }
+    
+    public List childNodes() {
+        return Collections.singletonList(valueNode);
+    }
+
 }

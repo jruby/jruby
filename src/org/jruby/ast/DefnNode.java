@@ -31,9 +31,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.util.List;
+
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Visibility;
+import org.jruby.util.ListUtil;
 
 /**
  * method definition node.
@@ -91,4 +94,9 @@ public class DefnNode extends Node {
     public Visibility getVisibility() {
         return visibility;
     }
+    
+    public List childNodes() {
+        return ListUtil.create(argsNode, bodyNode);
+    }
+
 }

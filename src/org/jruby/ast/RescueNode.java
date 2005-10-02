@@ -31,8 +31,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.util.List;
+
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ListUtil;
 
 /**
  *
@@ -82,4 +85,9 @@ public class RescueNode extends Node {
     public RescueBodyNode getRescueNode() {
         return rescueNode;
     }
+    
+    public List childNodes() {
+        return ListUtil.create(rescueNode, bodyNode, elseNode);
+    }
+
 }

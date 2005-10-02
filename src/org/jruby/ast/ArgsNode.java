@@ -31,8 +31,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.util.List;
+
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ListUtil;
 
 /**
  * arguments for a function.
@@ -119,4 +122,9 @@ public class ArgsNode extends Node {
     public BlockArgNode getBlockArgNode() {
         return blockArgNode;
     }
+    
+    public List childNodes() {
+        return ListUtil.create(optArgs, blockArgNode);
+    }
+
 }

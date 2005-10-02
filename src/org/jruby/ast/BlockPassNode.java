@@ -30,8 +30,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.util.List;
+
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ListUtil;
 
 /**
  * Block passed explicitly as an argument in a method call.
@@ -100,6 +103,10 @@ public class BlockPassNode extends Node {
      */
     public void setArgsNode(Node argsNode) {
         this.argsNode = argsNode;
+    }
+    
+    public List childNodes() {
+        return ListUtil.create(argsNode, iterNode, bodyNode);
     }
 
 }

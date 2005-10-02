@@ -30,6 +30,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.util.Collections;
+import java.util.List;
+
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
@@ -62,4 +65,9 @@ public class DVarNode extends Node {
     public String getName() {
         return name;
     }
+    
+    public List childNodes() {
+        return Collections.EMPTY_LIST;
+    }
+
 }

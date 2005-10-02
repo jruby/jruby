@@ -31,8 +31,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.util.List;
+
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ListUtil;
 
 /**
  * an 'if' statement.
@@ -82,4 +85,9 @@ public class IfNode extends Node {
     public Node getThenBody() {
         return thenBody;
     }
+    
+    public List childNodes() {
+        return ListUtil.create(condition, thenBody, elseBody);
+    }
+
 }

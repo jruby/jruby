@@ -30,6 +30,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.util.Collections;
+import java.util.List;
+
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
@@ -65,5 +68,9 @@ public class BreakNode extends Node {
      */
     public Node getValueNode() {
         return valueNode;
+    }
+    
+    public List childNodes() {
+        return Collections.singletonList(valueNode);
     }
 }

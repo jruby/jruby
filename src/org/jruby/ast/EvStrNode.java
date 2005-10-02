@@ -31,6 +31,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.util.Collections;
+import java.util.List;
+
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
@@ -65,4 +68,9 @@ public class EvStrNode extends Node {
     public Node getBody() {
         return body;
     }
+    
+    public List childNodes() {
+        return Collections.singletonList(body);
+    }
+
 }

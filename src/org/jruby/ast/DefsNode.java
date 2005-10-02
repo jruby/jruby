@@ -30,8 +30,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.util.List;
+
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ListUtil;
 
 /** Represents a singleton method definition.
  *
@@ -91,4 +94,9 @@ public class DefsNode extends Node {
     public Node getReceiverNode() {
         return receiverNode;
     }
+    
+    public List childNodes() {
+        return ListUtil.create(receiverNode, argsNode, bodyNode);
+    }
+
 }

@@ -30,6 +30,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.util.Collections;
+import java.util.List;
+
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
@@ -67,4 +70,9 @@ public class YieldNode extends Node {
     public boolean getCheckState() {
         return checkState;
     }
+
+    public List childNodes() {
+        return Collections.singletonList(argsNode);
+    }
+
 }

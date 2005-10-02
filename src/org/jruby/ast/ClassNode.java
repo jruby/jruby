@@ -30,8 +30,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.util.List;
+
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ListUtil;
 
 /**
  * A class statement.
@@ -85,4 +88,9 @@ public class ClassNode extends Node {
     public Node getSuperNode() {
         return superNode;
     }
+
+    public List childNodes() {
+        return ListUtil.create(cpath, bodyNode, superNode);
+    }
+
 }

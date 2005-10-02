@@ -32,6 +32,8 @@
 package org.jruby.ast;
 
 import java.math.BigInteger;
+import java.util.Collections;
+import java.util.List;
 
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
@@ -61,4 +63,9 @@ public class BignumNode extends Node implements ILiteralNode {
     public BigInteger getValue() {
         return value;
     }
+    
+    public List childNodes() {
+        return Collections.EMPTY_LIST;
+    }
+
 }
