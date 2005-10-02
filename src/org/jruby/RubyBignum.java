@@ -83,37 +83,6 @@ public class RubyBignum extends RubyInteger {
         return value;
     }
 
-    public static RubyClass createBignumClass(Ruby runtime) {
-        RubyClass result = runtime.defineClass("Bignum", runtime.getClass("Integer"));
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyBignum.class);
-        
-        result.defineMethod("~", callbackFactory.getMethod("op_invert"));
-        result.defineMethod("&", callbackFactory.getMethod("op_and", IRubyObject.class));
-        result.defineMethod("<<", callbackFactory.getMethod("op_lshift", IRubyObject.class));
-        result.defineMethod("%", callbackFactory.getMethod("op_mod", IRubyObject.class));
-        result.defineMethod("+", callbackFactory.getMethod("op_plus", IRubyObject.class));
-        result.defineMethod("*", callbackFactory.getMethod("op_mul", IRubyObject.class));
-        result.defineMethod("**", callbackFactory.getMethod("op_pow", IRubyObject.class));
-        result.defineMethod("-", callbackFactory.getMethod("op_minus", IRubyObject.class));
-        result.defineMethod("modulo", callbackFactory.getMethod("op_mod", IRubyObject.class));
-        result.defineMethod("/", callbackFactory.getMethod("op_div", IRubyObject.class));
-        result.defineMethod(">>", callbackFactory.getMethod("op_rshift", IRubyObject.class));
-        result.defineMethod("|", callbackFactory.getMethod("op_or", IRubyObject.class));
-        result.defineMethod("^", callbackFactory.getMethod("op_xor", IRubyObject.class));
-        result.defineMethod("-@", callbackFactory.getMethod("op_uminus"));
-        result.defineMethod("[]", callbackFactory.getMethod("aref", IRubyObject.class));
-        result.defineMethod("coerce", callbackFactory.getMethod("coerce", IRubyObject.class));
-        result.defineMethod("remainder", callbackFactory.getMethod("remainder", IRubyObject.class));
-        result.defineMethod("hash", callbackFactory.getMethod("hash"));
-        result.defineMethod("size", callbackFactory.getMethod("size"));
-        result.defineMethod("quo", callbackFactory.getMethod("quo", IRubyObject.class));
-        result.defineMethod("to_f", callbackFactory.getMethod("to_f"));
-        result.defineMethod("to_i", callbackFactory.getMethod("to_i"));
-        result.defineMethod("to_s", callbackFactory.getMethod("to_s"));
-        
-        return result;
-    }
-
     /* If the value will fit in a Fixnum, return one of those. */
     private static RubyInteger bigNorm(Ruby runtime, BigInteger bi) {
         if (bi.compareTo(LONG_MIN) < 0 || bi.compareTo(LONG_MAX) > 0) {

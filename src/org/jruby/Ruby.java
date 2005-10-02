@@ -80,6 +80,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.meta.ArrayMetaClass;
+import org.jruby.runtime.builtin.meta.BignumMetaClass;
 import org.jruby.runtime.builtin.meta.FileMetaClass;
 import org.jruby.runtime.builtin.meta.FixnumMetaClass;
 import org.jruby.runtime.builtin.meta.HashMetaClass;
@@ -452,7 +453,8 @@ public final class Ruby {
         Java.createJavaModule(this);
         RubyStruct.createStructClass(this);
         RubyFloat.createFloatClass(this);
-        RubyBignum.createBignumClass(this);
+        //RubyBignum.createBignumClass(this);
+        new BignumMetaClass(this);
         RubyMath.createMathModule(this); // depends on all numeric types
         RubyRegexp.createRegexpClass(this);
         RubyRange.createRangeClass(this);
