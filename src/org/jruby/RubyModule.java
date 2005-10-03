@@ -220,6 +220,8 @@ public class RubyModule extends RubyObject {
     public IRubyObject setConstant(String name, IRubyObject value) {
         IRubyObject result = setInstanceVariable(name, value, "Insecure: can't set constant", 
                 "class/module");
+        
+        // if adding a module under a constant name, set that module's basename to the constant name
         if (value instanceof RubyModule) {
             RubyModule module = (RubyModule)value;
             if (module.getBaseName() == null) {
