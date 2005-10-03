@@ -32,26 +32,22 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
-import org.jruby.internal.runtime.methods.ReflectedMethod;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * <p>
- * The main meta class for all other meta classes.
+ * The meta class for Object
  * </p>
  */
-public class ObjectMetaClass extends RubyClass {
-    private final Class builtinClass;
-    
+public class ObjectMetaClass extends AbstractMetaClass {
     // Only for creating ObjectMetaClass directly
     public ObjectMetaClass(Ruby runtime) {
     	super(runtime, null /*Would be Class if it existed yet */, null, null, "Object");
     	
     	this.builtinClass = RubyObject.class;
     	
-    	initializeClass();
+    	getMeta().initializeClass();
     }
     
     // Only for other core modules/classes
@@ -86,68 +82,63 @@ public class ObjectMetaClass extends RubyClass {
         parentModule.setConstant(name, this);
 
         if (init) {
-            initializeClass();
+            getMeta().initializeClass();
         }
     }
     
-    /**
-     * Only intended to be called by ModuleMetaClass and ClassMetaClass.  Seems like a waste to
-     * subclass over this and there seems little risk of programmer error.  We cannot define
-     * methods for there two classes since there is a circular dependency between them and
-     * ObjectMetaClass.  We defer initialization until after construction and meta classes
-     * are made.
-     */
-    public void initializeBootstrapClass() {
-    	initializeClass();
+    protected class ObjectMeta extends Meta {
+	    protected void initializeClass() {
+	        defineMethod("==", Arity.singleArgument(), "equal");
+	        defineAlias("===", "==");
+	        defineMethod("to_s", Arity.noArguments());
+	        defineMethod("nil?", Arity.noArguments(), "nil_p");
+	        defineMethod("to_a", Arity.noArguments());
+	        defineMethod("hash", Arity.noArguments());
+	        defineMethod("id", Arity.noArguments());
+	        defineAlias("__id__", "id");
+	        defineAlias("object_id", "id");
+	        defineMethod("is_a?", Arity.singleArgument(), "kind_of");
+	        defineAlias("kind_of?", "is_a?");
+	        defineMethod("dup", Arity.noArguments());
+	        defineAlias("eql?", "==");
+	        defineMethod("equal?", Arity.singleArgument(), "same");
+	        defineMethod("type", Arity.noArguments(), "type_deprecated");
+	        defineMethod("class", Arity.noArguments(), "type");
+	        defineMethod("inspect", Arity.noArguments());
+	        defineMethod("=~", Arity.singleArgument(), "match");
+	        defineMethod("clone", Arity.noArguments(), "rbClone");
+	        defineMethod("display", Arity.optional(), "display");
+	        defineMethod("extend", Arity.optional(), "extend");
+	        defineMethod("freeze", Arity.noArguments());
+	        defineMethod("frozen?", Arity.noArguments(), "frozen");
+	        defineMethod("initialize_copy", Arity.singleArgument(), "initialize_copy");
+	        defineMethod("instance_eval", Arity.optional());
+	        defineMethod("instance_of?", Arity.singleArgument(), "instance_of");
+	        defineMethod("instance_variables", Arity.noArguments());
+	        defineMethod("instance_variable_get", Arity.singleArgument());
+	        defineMethod("instance_variable_set", Arity.twoArguments());
+	        defineMethod("method", Arity.singleArgument(), "method");
+	        defineMethod("methods", Arity.optional());
+	        defineMethod("method_missing", Arity.optional());
+	        defineMethod("private_methods", Arity.noArguments());
+	        defineMethod("protected_methods", Arity.noArguments());
+	        defineMethod("public_methods", Arity.optional());
+	        defineMethod("respond_to?", Arity.optional(), "respond_to");
+	        defineMethod("send", Arity.optional());
+	        defineAlias("__send__", "send");
+	        defineMethod("singleton_methods", Arity.noArguments());
+	        defineMethod("taint", Arity.noArguments());
+	        defineMethod("tainted?", Arity.noArguments(), "tainted");
+	        defineMethod("untaint", Arity.noArguments());
+	        
+	        definePrivateMethod("initialize", Arity.optional());
+	        definePrivateMethod("inherited", Arity.singleArgument());
+		}
+    };
+    
+    protected Meta getMeta() {
+    	return new ObjectMeta();
     }
-
-    protected void initializeClass() {
-        defineMethod("==", Arity.singleArgument(), "equal");
-        defineAlias("===", "==");
-        defineMethod("to_s", Arity.noArguments());
-        defineMethod("nil?", Arity.noArguments(), "nil_p");
-        defineMethod("to_a", Arity.noArguments());
-        defineMethod("hash", Arity.noArguments());
-        defineMethod("id", Arity.noArguments());
-        defineAlias("__id__", "id");
-        defineAlias("object_id", "id");
-        defineMethod("is_a?", Arity.singleArgument(), "kind_of");
-        defineAlias("kind_of?", "is_a?");
-        defineMethod("dup", Arity.noArguments());
-        defineAlias("eql?", "==");
-        defineMethod("equal?", Arity.singleArgument(), "same");
-        defineMethod("type", Arity.noArguments(), "type_deprecated");
-        defineMethod("class", Arity.noArguments(), "type");
-        defineMethod("inspect", Arity.noArguments());
-        defineMethod("=~", Arity.singleArgument(), "match");
-        defineMethod("clone", Arity.noArguments(), "rbClone");
-        defineMethod("display", Arity.optional(), "display");
-        defineMethod("extend", Arity.optional(), "extend");
-        defineMethod("freeze", Arity.noArguments());
-        defineMethod("frozen?", Arity.noArguments(), "frozen");
-        defineMethod("initialize_copy", Arity.singleArgument(), "initialize_copy");
-        defineMethod("instance_eval", Arity.optional());
-        defineMethod("instance_of?", Arity.singleArgument(), "instance_of");
-        defineMethod("instance_variables", Arity.noArguments());
-        defineMethod("instance_variable_get", Arity.singleArgument());
-        defineMethod("instance_variable_set", Arity.twoArguments());
-        defineMethod("method", Arity.singleArgument(), "method");
-        defineMethod("methods", Arity.optional());
-        defineMethod("method_missing", Arity.optional());
-        defineMethod("private_methods", Arity.noArguments());
-        defineMethod("protected_methods", Arity.noArguments());
-        defineMethod("public_methods", Arity.optional());
-        defineMethod("respond_to?", Arity.optional(), "respond_to");
-        defineMethod("send", Arity.optional());
-        defineAlias("__send__", "send");
-        defineMethod("singleton_methods", Arity.noArguments());
-        defineMethod("taint", Arity.noArguments());
-        defineMethod("tainted?", Arity.noArguments(), "tainted");
-        defineMethod("untaint", Arity.noArguments());
-        
-        definePrivateMethod("initialize", Arity.optional());
-        definePrivateMethod("inherited", Arity.singleArgument());
-	}
 
 	protected IRubyObject allocateObject() {
         RubyObject instance = new RubyObject(getRuntime(), this);
@@ -157,39 +148,4 @@ public class ObjectMetaClass extends RubyClass {
 		return instance;
 	}
     
-    public void defineMethod(String name, Arity arity) {
-    	defineMethod(name, arity, name);
-    }
-
-    public void defineMethod(String name, Arity arity, String java_name) {
-        assert name != null;
-        assert arity != null;
-        assert java_name != null;
-        
-        Visibility visibility = name.equals("initialize") ? Visibility.PRIVATE : Visibility.PUBLIC;
-
-        addMethod(name, new ReflectedMethod(this, builtinClass, java_name, arity, visibility));
-    }
-
-    public void definePrivateMethod(String name, Arity arity) {
-    	addMethod(name, new ReflectedMethod(this, builtinClass, name, arity, Visibility.PRIVATE));	
-    }
-
-    public void definePrivateMethod(String name, Arity arity, String java_name) {
-    	addMethod(name, new ReflectedMethod(this, builtinClass, java_name, arity, Visibility.PRIVATE));	
-    }
-    
-    public void defineSingletonMethod(String name, Arity arity) {
-    	defineSingletonMethod(name, arity, name);
-    }
-    
-    public void defineSingletonMethod(String name, Arity arity, String java_name) {
-        assert name != null;
-        assert arity != null;
-        assert java_name != null;
-
-        Visibility visibility = name.equals("initialize") ? Visibility.PRIVATE : Visibility.PUBLIC;
-
-        getSingletonClass().addMethod(name, new ReflectedMethod(this, getClass(), java_name, arity, visibility));
-    }
 }

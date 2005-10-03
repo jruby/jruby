@@ -51,31 +51,37 @@ public class NumericMetaClass extends ObjectMetaClass {
     	super(name, clazz, superClass, parentModule);
     }
     
-    protected void initializeClass() {
-        includeModule(getRuntime().getModule("Comparable"));
-
-        defineMethod("+@", Arity.noArguments(), "op_uplus");
-        defineMethod("-@", Arity.noArguments(), "op_uminus");
-        defineMethod("<=>", Arity.singleArgument(), "cmp");
-        defineMethod("==", Arity.singleArgument(), "equal");
-        defineMethod("equal?", Arity.singleArgument(), "veryEqual");
-        defineMethod("===", Arity.singleArgument(), "equal");
-        defineMethod("abs", Arity.noArguments());
-        defineMethod("ceil", Arity.noArguments());
-        defineMethod("coerce", Arity.singleArgument());
-        defineMethod("clone", Arity.noArguments(), "rbClone");
-        defineMethod("divmod", Arity.singleArgument(), "divmod");
-        defineMethod("eql?", Arity.singleArgument(), "eql");
-        defineMethod("floor", Arity.noArguments());
-        defineMethod("integer?", Arity.noArguments(), "int_p");
-        defineMethod("modulo", Arity.singleArgument());
-        defineMethod("nonzero?", Arity.noArguments(), "nonzero_p");
-        defineMethod("remainder", Arity.singleArgument());
-        defineMethod("round", Arity.noArguments());
-        defineMethod("truncate", Arity.noArguments());
-        defineMethod("zero?", Arity.noArguments(), "zero_p");
-        
-        defineSingletonMethod("new", Arity.optional(), "newInstance"); 
+    protected class NumericMeta extends Meta {
+	    protected void initializeClass() {
+	        includeModule(getRuntime().getModule("Comparable"));
+	
+	        defineMethod("+@", Arity.noArguments(), "op_uplus");
+	        defineMethod("-@", Arity.noArguments(), "op_uminus");
+	        defineMethod("<=>", Arity.singleArgument(), "cmp");
+	        defineMethod("==", Arity.singleArgument(), "equal");
+	        defineMethod("equal?", Arity.singleArgument(), "veryEqual");
+	        defineMethod("===", Arity.singleArgument(), "equal");
+	        defineMethod("abs", Arity.noArguments());
+	        defineMethod("ceil", Arity.noArguments());
+	        defineMethod("coerce", Arity.singleArgument());
+	        defineMethod("clone", Arity.noArguments(), "rbClone");
+	        defineMethod("divmod", Arity.singleArgument(), "divmod");
+	        defineMethod("eql?", Arity.singleArgument(), "eql");
+	        defineMethod("floor", Arity.noArguments());
+	        defineMethod("integer?", Arity.noArguments(), "int_p");
+	        defineMethod("modulo", Arity.singleArgument());
+	        defineMethod("nonzero?", Arity.noArguments(), "nonzero_p");
+	        defineMethod("remainder", Arity.singleArgument());
+	        defineMethod("round", Arity.noArguments());
+	        defineMethod("truncate", Arity.noArguments());
+	        defineMethod("zero?", Arity.noArguments(), "zero_p");
+	        
+	        defineSingletonMethod("new", Arity.optional(), "newInstance"); 
+	    }
+    };
+    
+    protected Meta getMeta() {
+    	return new NumericMeta();
     }
 		
     public RubyClass newSubClass(String name, RubyModule parentModule) {

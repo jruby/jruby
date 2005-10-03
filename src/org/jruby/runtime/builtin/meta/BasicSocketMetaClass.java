@@ -44,7 +44,13 @@ public class BasicSocketMetaClass extends ObjectMetaClass {
 		return new RubyBasicSocket(getRuntime(), this);
     }
     
-    protected void initializeClass() {
+    protected class BasicSocketMeta extends Meta {
+    	protected void initializeClass() {
+    	}
+    };
+    
+    protected Meta getMeta() {
+    	return new BasicSocketMeta();
     }
 
     public RubyClass newSubClass(String name, RubyModule parentModule) {

@@ -21,20 +21,26 @@ public class SymbolMetaClass extends ObjectMetaClass {
 		super(name, RubySymbol.class, superClass, parentModule);
 	}
 
-	public void initializeClass() {
-        defineMethod("==", Arity.singleArgument(), "equal");
-        defineMethod("clone", Arity.noArguments(), "rbClone");
-        defineMethod("freeze", Arity.noArguments()); 
-        defineMethod("hash", Arity.noArguments()); 
-        defineMethod("inspect", Arity.noArguments());
-        defineMethod("taint", Arity.noArguments());
-        defineMethod("to_i", Arity.noArguments());
-        defineMethod("to_s", Arity.noArguments());
-        defineAlias("dup", "clone");
-        defineAlias("id2name", "to_s");
-        defineAlias("to_int", "to_i");
-			
-        getMetaClass().undefineMethod("new");
+	protected class SymbolMeta extends Meta {
+		public void initializeClass() {
+	        defineMethod("==", Arity.singleArgument(), "equal");
+	        defineMethod("clone", Arity.noArguments(), "rbClone");
+	        defineMethod("freeze", Arity.noArguments()); 
+	        defineMethod("hash", Arity.noArguments()); 
+	        defineMethod("inspect", Arity.noArguments());
+	        defineMethod("taint", Arity.noArguments());
+	        defineMethod("to_i", Arity.noArguments());
+	        defineMethod("to_s", Arity.noArguments());
+	        defineAlias("dup", "clone");
+	        defineAlias("id2name", "to_s");
+	        defineAlias("to_int", "to_i");
+				
+	        getMetaClass().undefineMethod("new");
+		}
+	};
+	
+	protected Meta getMeta() {
+		return new SymbolMeta();
 	}
 	
 	public RubyClass newSubClass(String name, RubyModule parentModule) {

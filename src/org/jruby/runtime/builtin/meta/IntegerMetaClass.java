@@ -54,21 +54,27 @@ public class IntegerMetaClass extends NumericMetaClass {
     	super(name, clazz, superClass, parentModule);
     }
     
-	protected void initializeClass() {
-        includeModule(getRuntime().getModule("Enumerable"));
-        
-        defineMethod("chr", Arity.noArguments());
-        defineMethod("downto",  Arity.singleArgument());
-        defineMethod("integer?", Arity.noArguments(), "int_p");
-        defineMethod("next",  Arity.noArguments());
-        defineMethod("step", Arity.twoArguments());
-        defineAlias("succ", "next");
-        defineMethod("times", Arity.noArguments());
-        defineMethod("upto", Arity.singleArgument());
-        
-        getSingletonClass().undefineMethod("new");
-        defineSingletonMethod("induced_from",  Arity.singleArgument());
-	}
+    protected class IntegerMeta extends Meta {
+		protected void initializeClass() {
+	        includeModule(getRuntime().getModule("Enumerable"));
+	        
+	        defineMethod("chr", Arity.noArguments());
+	        defineMethod("downto",  Arity.singleArgument());
+	        defineMethod("integer?", Arity.noArguments(), "int_p");
+	        defineMethod("next",  Arity.noArguments());
+	        defineMethod("step", Arity.twoArguments());
+	        defineAlias("succ", "next");
+	        defineMethod("times", Arity.noArguments());
+	        defineMethod("upto", Arity.singleArgument());
+	        
+	        getSingletonClass().undefineMethod("new");
+	        defineSingletonMethod("induced_from",  Arity.singleArgument());
+		}
+    };
+    
+    protected Meta getMeta() {
+    	return new IntegerMeta();
+    }
 
 	public RubyClass newSubClass(String name, RubyModule parentModule) {
         return new IntegerMetaClass(name, this, parentModule);

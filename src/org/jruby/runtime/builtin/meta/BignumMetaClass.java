@@ -42,30 +42,36 @@ public class BignumMetaClass extends ObjectMetaClass {
 		super(name, RubyBignum.class, superClass, parentModule);
 	}
 
-	protected void initializeClass() {
-        defineMethod("~", Arity.noArguments(), "op_invert");
-        defineMethod("&", Arity.singleArgument(), "op_and");
-        defineMethod("<<", Arity.singleArgument(), "op_lshift");
-        defineMethod("%", Arity.singleArgument(), "op_mod");
-        defineMethod("+", Arity.singleArgument(), "op_plus");
-        defineMethod("*", Arity.singleArgument(), "op_mul");
-        defineMethod("**", Arity.singleArgument(), "op_pow");
-        defineMethod("-", Arity.singleArgument(), "op_minus");
-        defineMethod("modulo", Arity.singleArgument(), "op_mod");
-        defineMethod("/", Arity.singleArgument(), "op_div");
-        defineMethod(">>", Arity.singleArgument(), "op_rshift");
-        defineMethod("|", Arity.singleArgument(), "op_or");
-        defineMethod("^", Arity.singleArgument(), "op_xor");
-        defineMethod("-@", Arity.noArguments(), "op_uminus");
-        defineMethod("[]", Arity.singleArgument(), "aref");
-        defineMethod("coerce", Arity.singleArgument(), "coerce");
-        defineMethod("remainder", Arity.singleArgument(), "remainder");
-        defineMethod("hash", Arity.noArguments(), "hash");
-        defineMethod("size", Arity.noArguments(), "size");
-        defineMethod("quo", Arity.singleArgument(), "quo");
-        defineMethod("to_f", Arity.noArguments(), "to_f");
-        defineMethod("to_i", Arity.noArguments(), "to_i");
-        defineMethod("to_s", Arity.noArguments(), "to_s");
+	protected class BignumMeta extends Meta {
+		protected void initializeClass() {
+	        defineMethod("~", Arity.noArguments(), "op_invert");
+	        defineMethod("&", Arity.singleArgument(), "op_and");
+	        defineMethod("<<", Arity.singleArgument(), "op_lshift");
+	        defineMethod("%", Arity.singleArgument(), "op_mod");
+	        defineMethod("+", Arity.singleArgument(), "op_plus");
+	        defineMethod("*", Arity.singleArgument(), "op_mul");
+	        defineMethod("**", Arity.singleArgument(), "op_pow");
+	        defineMethod("-", Arity.singleArgument(), "op_minus");
+	        defineMethod("modulo", Arity.singleArgument(), "op_mod");
+	        defineMethod("/", Arity.singleArgument(), "op_div");
+	        defineMethod(">>", Arity.singleArgument(), "op_rshift");
+	        defineMethod("|", Arity.singleArgument(), "op_or");
+	        defineMethod("^", Arity.singleArgument(), "op_xor");
+	        defineMethod("-@", Arity.noArguments(), "op_uminus");
+	        defineMethod("[]", Arity.singleArgument(), "aref");
+	        defineMethod("coerce", Arity.singleArgument(), "coerce");
+	        defineMethod("remainder", Arity.singleArgument(), "remainder");
+	        defineMethod("hash", Arity.noArguments(), "hash");
+	        defineMethod("size", Arity.noArguments(), "size");
+	        defineMethod("quo", Arity.singleArgument(), "quo");
+	        defineMethod("to_f", Arity.noArguments(), "to_f");
+	        defineMethod("to_i", Arity.noArguments(), "to_i");
+	        defineMethod("to_s", Arity.noArguments(), "to_s");
+		}
+	};
+	
+	protected Meta getMeta() {
+		return new BignumMeta();
 	}
 	
 	public RubyClass newSubClass(String name, RubyModule parentModule) {

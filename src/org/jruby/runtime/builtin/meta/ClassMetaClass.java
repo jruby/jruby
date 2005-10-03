@@ -22,14 +22,20 @@ public class ClassMetaClass extends ObjectMetaClass {
 		super(name, RubyClass.class, superClass, parentModule);
 	}
 	
-	public void initializeClass() {
-        defineMethod("new", Arity.optional(), "newInstance");
-        defineMethod("superclass", Arity.noArguments(), "superclass");
-
-        defineSingletonMethod("new", Arity.optional(), "newClass");
-        defineSingletonMethod("inherited", Arity.singleArgument());
-        
-        undefineMethod("module_function");
+	protected class ClassMeta extends Meta {
+		public void initializeClass() {
+	        defineMethod("new", Arity.optional(), "newInstance");
+	        defineMethod("superclass", Arity.noArguments(), "superclass");
+	
+	        defineSingletonMethod("new", Arity.optional(), "newClass");
+	        defineSingletonMethod("inherited", Arity.singleArgument());
+	        
+	        undefineMethod("module_function");
+		}
+	};
+	
+	protected Meta getMeta() {
+		return new ClassMeta();
 	}
 	
 	/*

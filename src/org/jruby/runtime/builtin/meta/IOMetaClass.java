@@ -60,65 +60,71 @@ public class IOMetaClass extends ObjectMetaClass {
     	super(name, clazz, superClass, parentModule);
     }
 
-    protected void initializeClass() {
-        includeModule(getRuntime().getModule("Enumerable"));
-
-        // TODO: Implement tty? and isatty.  We have no real capability to 
-        // determine this from java, but if we could set tty status, then
-        // we could invoke jruby differently to allow stdin to return true
-        // on this.  This would allow things like cgi.rb to work properly.
-
-        defineSingletonMethod("foreach", Arity.optional());
-		defineSingletonMethod("read", Arity.optional());
-        defineSingletonMethod("readlines", Arity.optional());
-        defineSingletonMethod("popen", Arity.optional());
-
-        defineMethod("<<", Arity.singleArgument(), "addString");
-		defineMethod("binmode", Arity.noArguments());
-        defineMethod("clone", Arity.noArguments(), "clone_IO");
-        defineMethod("close", Arity.noArguments());
-        defineMethod("closed?", Arity.noArguments(), "closed");
-        defineMethod("each", Arity.optional(), "each_line");
-        defineMethod("each_byte", Arity.noArguments());
-        defineMethod("each_line", Arity.optional());
-        defineMethod("eof", Arity.noArguments());
-        defineAlias("eof?", "eof");
-        defineMethod("fileno", Arity.noArguments());
-        defineMethod("flush", Arity.noArguments());
-        defineMethod("fsync", Arity.noArguments());
-        defineMethod("getc", Arity.noArguments());
-        defineMethod("gets", Arity.optional());
-        defineMethod("initialize", Arity.optional());
-        defineMethod("lineno", Arity.noArguments());
-        defineMethod("lineno=", Arity.singleArgument(), "lineno_set");
-        defineMethod("pid", Arity.noArguments());
-        defineMethod("pos", Arity.noArguments());
-        defineMethod("pos=", Arity.singleArgument(), "pos_set");
-        defineMethod("print", Arity.optional());
-        defineMethod("printf", Arity.optional());
-        defineMethod("putc", Arity.singleArgument());
-        defineMethod("puts", Arity.optional());
-        defineMethod("read", Arity.optional());
-        defineMethod("readchar", Arity.noArguments());
-        defineMethod("readline", Arity.optional());
-        defineMethod("readlines", Arity.optional());
-        defineMethod("reopen", Arity.optional());
-        defineMethod("rewind", Arity.noArguments());        
-        defineMethod("seek", Arity.optional());
-        defineMethod("sync", Arity.noArguments());
-        defineMethod("sync=", Arity.singleArgument(), "sync_set");
-        defineMethod("sysread", Arity.singleArgument());
-        defineMethod("syswrite", Arity.singleArgument());
-        defineAlias("tell", "pos");
-        defineAlias("to_i", "fileno");
-        defineMethod("to_io", Arity.noArguments());
-        defineMethod("ungetc", Arity.singleArgument());
-        defineMethod("write", Arity.singleArgument());
-        
-        // Constants for seek
-        setConstant("SEEK_SET", getRuntime().newFixnum(IOHandler.SEEK_SET));
-        setConstant("SEEK_CUR", getRuntime().newFixnum(IOHandler.SEEK_CUR));
-        setConstant("SEEK_END", getRuntime().newFixnum(IOHandler.SEEK_END));
+    protected class IOMeta extends Meta {
+	    protected void initializeClass() {
+	        includeModule(getRuntime().getModule("Enumerable"));
+	
+	        // TODO: Implement tty? and isatty.  We have no real capability to 
+	        // determine this from java, but if we could set tty status, then
+	        // we could invoke jruby differently to allow stdin to return true
+	        // on this.  This would allow things like cgi.rb to work properly.
+	
+	        defineSingletonMethod("foreach", Arity.optional());
+			defineSingletonMethod("read", Arity.optional());
+	        defineSingletonMethod("readlines", Arity.optional());
+	        defineSingletonMethod("popen", Arity.optional());
+	
+	        defineMethod("<<", Arity.singleArgument(), "addString");
+			defineMethod("binmode", Arity.noArguments());
+	        defineMethod("clone", Arity.noArguments(), "clone_IO");
+	        defineMethod("close", Arity.noArguments());
+	        defineMethod("closed?", Arity.noArguments(), "closed");
+	        defineMethod("each", Arity.optional(), "each_line");
+	        defineMethod("each_byte", Arity.noArguments());
+	        defineMethod("each_line", Arity.optional());
+	        defineMethod("eof", Arity.noArguments());
+	        defineAlias("eof?", "eof");
+	        defineMethod("fileno", Arity.noArguments());
+	        defineMethod("flush", Arity.noArguments());
+	        defineMethod("fsync", Arity.noArguments());
+	        defineMethod("getc", Arity.noArguments());
+	        defineMethod("gets", Arity.optional());
+	        defineMethod("initialize", Arity.optional());
+	        defineMethod("lineno", Arity.noArguments());
+	        defineMethod("lineno=", Arity.singleArgument(), "lineno_set");
+	        defineMethod("pid", Arity.noArguments());
+	        defineMethod("pos", Arity.noArguments());
+	        defineMethod("pos=", Arity.singleArgument(), "pos_set");
+	        defineMethod("print", Arity.optional());
+	        defineMethod("printf", Arity.optional());
+	        defineMethod("putc", Arity.singleArgument());
+	        defineMethod("puts", Arity.optional());
+	        defineMethod("read", Arity.optional());
+	        defineMethod("readchar", Arity.noArguments());
+	        defineMethod("readline", Arity.optional());
+	        defineMethod("readlines", Arity.optional());
+	        defineMethod("reopen", Arity.optional());
+	        defineMethod("rewind", Arity.noArguments());        
+	        defineMethod("seek", Arity.optional());
+	        defineMethod("sync", Arity.noArguments());
+	        defineMethod("sync=", Arity.singleArgument(), "sync_set");
+	        defineMethod("sysread", Arity.singleArgument());
+	        defineMethod("syswrite", Arity.singleArgument());
+	        defineAlias("tell", "pos");
+	        defineAlias("to_i", "fileno");
+	        defineMethod("to_io", Arity.noArguments());
+	        defineMethod("ungetc", Arity.singleArgument());
+	        defineMethod("write", Arity.singleArgument());
+	        
+	        // Constants for seek
+	        setConstant("SEEK_SET", getRuntime().newFixnum(IOHandler.SEEK_SET));
+	        setConstant("SEEK_CUR", getRuntime().newFixnum(IOHandler.SEEK_CUR));
+	        setConstant("SEEK_END", getRuntime().newFixnum(IOHandler.SEEK_END));
+	    }
+    };
+    
+    protected Meta getMeta() {
+    	return new IOMeta();
     }
 
     public RubyClass newSubClass(String name, RubyModule parentModule) {

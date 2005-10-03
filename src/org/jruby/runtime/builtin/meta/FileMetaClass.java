@@ -53,68 +53,74 @@ public class FileMetaClass extends IOMetaClass {
         super(name, RubyFile.class, superClass, parentModule);
     }
 
-	protected void initializeClass() {
-		Ruby runtime = getRuntime();
-        RubyString separator = runtime.newString(File.separator);
-        separator.freeze();
-        defineConstant("SEPARATOR", separator);
-        defineConstant("Separator", separator);
-
-        RubyString altSeparator = runtime.newString(File.separatorChar == '/' ? "\\" : "/");
-        altSeparator.freeze();
-        defineConstant("ALT_SEPARATOR", altSeparator);
-        
-        RubyString pathSeparator = runtime.newString(File.pathSeparator);
-        pathSeparator.freeze();
-        defineConstant("PATH_SEPARATOR", pathSeparator);
-        
-        // Create constants for open flags
-        setConstant("RDONLY", runtime.newFixnum(IOModes.RDONLY));
-        setConstant("WRONLY", runtime.newFixnum(IOModes.WRONLY));
-        setConstant("RDWR", runtime.newFixnum(IOModes.RDWR));
-        setConstant("CREAT", runtime.newFixnum(IOModes.CREAT));
-        setConstant("EXCL", runtime.newFixnum(IOModes.EXCL));
-        setConstant("NOCTTY", runtime.newFixnum(IOModes.NOCTTY));
-        setConstant("TRUNC", runtime.newFixnum(IOModes.TRUNC));
-        setConstant("APPEND", runtime.newFixnum(IOModes.APPEND));
-        setConstant("NONBLOCK", runtime.newFixnum(IOModes.NONBLOCK));
-		
-		// Create constants for flock
-		setConstant("LOCK_SH", runtime.newFixnum(RubyFile.LOCK_SH));
-		setConstant("LOCK_EX", runtime.newFixnum(RubyFile.LOCK_EX));
-		setConstant("LOCK_NB", runtime.newFixnum(RubyFile.LOCK_NB));
-		setConstant("LOCK_UN", runtime.newFixnum(RubyFile.LOCK_UN));
-
-        // TODO Singleton methods: atime, blockdev?, chardev?, chown, ctime, directory? 
-        // TODO Singleton methods: executable?, executable_real?, extname, fnmatch, fnmatch?
-        // TODO Singleton methods: ftype, grpowned?, lchmod, lchown, link, mtime, owned?
-        // TODO Singleton methods: pipe?, readlink, setgid?, setuid?, size?, socket?, 
-        // TODO Singleton methods: stat, sticky?, symlink, symlink?, umask, utime
-
-        extendObject(runtime.getModule("FileTest"));
-        
-		defineSingletonMethod("basename", Arity.optional());
-        defineSingletonMethod("chmod", Arity.twoArguments());
-        defineSingletonMethod("delete", Arity.optional(), "unlink");
-		defineSingletonMethod("dirname", Arity.singleArgument());
-        defineSingletonMethod("expand_path", Arity.optional());
-		defineSingletonMethod("join", Arity.optional());
-        defineSingletonMethod("lstat", Arity.singleArgument());
-        defineSingletonMethod("open", Arity.optional());
-        defineSingletonMethod("rename", Arity.twoArguments());
-		defineSingletonMethod("split", Arity.singleArgument());
-        defineSingletonMethod("stat", Arity.singleArgument(), "lstat");
-        defineSingletonMethod("symlink?", Arity.singleArgument(), "symlink_p");
-		defineSingletonMethod("truncate", Arity.twoArguments());
-        defineSingletonMethod("unlink", Arity.optional());
-		
-        // TODO: Define instance methods: atime, chmod, chown, ctime, lchmod, lchown, lstat, mtime
-		//defineMethod("flock", Arity.singleArgument());
-		defineMethod("initialize", Arity.optional());
-		defineMethod("path", Arity.noArguments());
-		defineMethod("truncate", Arity.singleArgument());
-		
-        RubyFileStat.createFileStatClass(runtime);
+    protected class FileMeta extends Meta {
+		protected void initializeClass() {
+			Ruby runtime = getRuntime();
+	        RubyString separator = runtime.newString(File.separator);
+	        separator.freeze();
+	        defineConstant("SEPARATOR", separator);
+	        defineConstant("Separator", separator);
+	
+	        RubyString altSeparator = runtime.newString(File.separatorChar == '/' ? "\\" : "/");
+	        altSeparator.freeze();
+	        defineConstant("ALT_SEPARATOR", altSeparator);
+	        
+	        RubyString pathSeparator = runtime.newString(File.pathSeparator);
+	        pathSeparator.freeze();
+	        defineConstant("PATH_SEPARATOR", pathSeparator);
+	        
+	        // Create constants for open flags
+	        setConstant("RDONLY", runtime.newFixnum(IOModes.RDONLY));
+	        setConstant("WRONLY", runtime.newFixnum(IOModes.WRONLY));
+	        setConstant("RDWR", runtime.newFixnum(IOModes.RDWR));
+	        setConstant("CREAT", runtime.newFixnum(IOModes.CREAT));
+	        setConstant("EXCL", runtime.newFixnum(IOModes.EXCL));
+	        setConstant("NOCTTY", runtime.newFixnum(IOModes.NOCTTY));
+	        setConstant("TRUNC", runtime.newFixnum(IOModes.TRUNC));
+	        setConstant("APPEND", runtime.newFixnum(IOModes.APPEND));
+	        setConstant("NONBLOCK", runtime.newFixnum(IOModes.NONBLOCK));
+			
+			// Create constants for flock
+			setConstant("LOCK_SH", runtime.newFixnum(RubyFile.LOCK_SH));
+			setConstant("LOCK_EX", runtime.newFixnum(RubyFile.LOCK_EX));
+			setConstant("LOCK_NB", runtime.newFixnum(RubyFile.LOCK_NB));
+			setConstant("LOCK_UN", runtime.newFixnum(RubyFile.LOCK_UN));
+	
+	        // TODO Singleton methods: atime, blockdev?, chardev?, chown, ctime, directory? 
+	        // TODO Singleton methods: executable?, executable_real?, extname, fnmatch, fnmatch?
+	        // TODO Singleton methods: ftype, grpowned?, lchmod, lchown, link, mtime, owned?
+	        // TODO Singleton methods: pipe?, readlink, setgid?, setuid?, size?, socket?, 
+	        // TODO Singleton methods: stat, sticky?, symlink, symlink?, umask, utime
+	
+	        extendObject(runtime.getModule("FileTest"));
+	        
+			defineSingletonMethod("basename", Arity.optional());
+	        defineSingletonMethod("chmod", Arity.twoArguments());
+	        defineSingletonMethod("delete", Arity.optional(), "unlink");
+			defineSingletonMethod("dirname", Arity.singleArgument());
+	        defineSingletonMethod("expand_path", Arity.optional());
+			defineSingletonMethod("join", Arity.optional());
+	        defineSingletonMethod("lstat", Arity.singleArgument());
+	        defineSingletonMethod("open", Arity.optional());
+	        defineSingletonMethod("rename", Arity.twoArguments());
+			defineSingletonMethod("split", Arity.singleArgument());
+	        defineSingletonMethod("stat", Arity.singleArgument(), "lstat");
+	        defineSingletonMethod("symlink?", Arity.singleArgument(), "symlink_p");
+			defineSingletonMethod("truncate", Arity.twoArguments());
+	        defineSingletonMethod("unlink", Arity.optional());
+			
+	        // TODO: Define instance methods: atime, chmod, chown, ctime, lchmod, lchown, lstat, mtime
+			//defineMethod("flock", Arity.singleArgument());
+			defineMethod("initialize", Arity.optional());
+			defineMethod("path", Arity.noArguments());
+			defineMethod("truncate", Arity.singleArgument());
+			
+	        RubyFileStat.createFileStatClass(runtime);
+	    }
+    };
+    
+    protected Meta getMeta() {
+    	return new FileMeta();
     }
 
 	public RubyClass newSubClass(String name, RubyModule parentModule) {

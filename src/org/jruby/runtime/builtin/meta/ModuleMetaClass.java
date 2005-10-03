@@ -34,60 +34,66 @@ public class ModuleMetaClass extends ObjectMetaClass {
 		super(name, builtinClass, superClass, parentModule);
 	}
 
-	public void initializeClass() {
-        defineMethod("===", Arity.singleArgument(), "op_eqq");
-        defineMethod("<=>", Arity.singleArgument(), "op_cmp");
-        defineMethod("<", Arity.singleArgument(), "op_lt");
-        defineMethod("<=", Arity.singleArgument(), "op_le");
-        defineMethod(">", Arity.singleArgument(), "op_gt");
-        defineMethod(">=", Arity.singleArgument(), "op_ge");
-        defineMethod("ancestors", Arity.noArguments());
-        defineMethod("class_variables", Arity.noArguments());
-        defineMethod("clone", Arity.noArguments(), "rbClone");
-        defineMethod("const_defined?", Arity.singleArgument(), "const_defined");
-        defineMethod("const_get", Arity.singleArgument(), "const_get");
-        defineMethod("const_missing", Arity.singleArgument());
-        defineMethod("const_set", Arity.twoArguments());
-        defineMethod("constants", Arity.noArguments());
-        defineMethod("dup", Arity.noArguments());
-        defineMethod("included", Arity.singleArgument());
-        defineMethod("included_modules", Arity.noArguments());
-        defineMethod("initialize", Arity.optional());
-        defineMethod("instance_method", Arity.singleArgument());
-        defineMethod("instance_methods", Arity.optional());
-        defineMethod("method_defined?", Arity.singleArgument(), "method_defined");
-        defineMethod("module_eval", Arity.optional());
-        defineMethod("name", Arity.noArguments());
-        defineMethod("private_class_method", Arity.optional());
-        defineMethod("private_instance_methods", Arity.optional());
-        defineMethod("protected_instance_methods", Arity.optional());
-        defineMethod("public_class_method", Arity.optional());
-        defineMethod("public_instance_methods", Arity.optional());
-        defineMethod("to_s",  Arity.noArguments());
-
-        defineAlias("class_eval", "module_eval");
-
-        definePrivateMethod("alias_method", Arity.twoArguments());
-        definePrivateMethod("append_features", Arity.singleArgument());
-        definePrivateMethod("attr", Arity.optional());
-        definePrivateMethod("attr_reader", Arity.optional());
-        definePrivateMethod("attr_writer", Arity.optional());
-        definePrivateMethod("attr_accessor", Arity.optional());
-        definePrivateMethod("define_method", Arity.optional());
-        definePrivateMethod("extend_object", Arity.singleArgument());
-        definePrivateMethod("include", Arity.optional());
-        definePrivateMethod("method_added", Arity.singleArgument());
-        definePrivateMethod("module_function", Arity.optional());
-        definePrivateMethod("public", Arity.optional(), "rbPublic");
-        definePrivateMethod("protected", Arity.optional(), "rbProtected");
-        definePrivateMethod("private", Arity.optional(), "rbPrivate");
-        definePrivateMethod("remove_class_variable", Arity.singleArgument());
-        definePrivateMethod("remove_const", Arity.singleArgument());
-        definePrivateMethod("remove_method", Arity.singleArgument());
-        definePrivateMethod("undef_method", Arity.singleArgument());
-
-        defineSingletonMethod("new", Arity.noArguments(), "newInstance");
-        defineSingletonMethod("nesting", Arity.noArguments());
+	protected class ModuleMeta extends Meta {
+		public void initializeClass() {
+	        defineMethod("===", Arity.singleArgument(), "op_eqq");
+	        defineMethod("<=>", Arity.singleArgument(), "op_cmp");
+	        defineMethod("<", Arity.singleArgument(), "op_lt");
+	        defineMethod("<=", Arity.singleArgument(), "op_le");
+	        defineMethod(">", Arity.singleArgument(), "op_gt");
+	        defineMethod(">=", Arity.singleArgument(), "op_ge");
+	        defineMethod("ancestors", Arity.noArguments());
+	        defineMethod("class_variables", Arity.noArguments());
+	        defineMethod("clone", Arity.noArguments(), "rbClone");
+	        defineMethod("const_defined?", Arity.singleArgument(), "const_defined");
+	        defineMethod("const_get", Arity.singleArgument(), "const_get");
+	        defineMethod("const_missing", Arity.singleArgument());
+	        defineMethod("const_set", Arity.twoArguments());
+	        defineMethod("constants", Arity.noArguments());
+	        defineMethod("dup", Arity.noArguments());
+	        defineMethod("included", Arity.singleArgument());
+	        defineMethod("included_modules", Arity.noArguments());
+	        defineMethod("initialize", Arity.optional());
+	        defineMethod("instance_method", Arity.singleArgument());
+	        defineMethod("instance_methods", Arity.optional());
+	        defineMethod("method_defined?", Arity.singleArgument(), "method_defined");
+	        defineMethod("module_eval", Arity.optional());
+	        defineMethod("name", Arity.noArguments());
+	        defineMethod("private_class_method", Arity.optional());
+	        defineMethod("private_instance_methods", Arity.optional());
+	        defineMethod("protected_instance_methods", Arity.optional());
+	        defineMethod("public_class_method", Arity.optional());
+	        defineMethod("public_instance_methods", Arity.optional());
+	        defineMethod("to_s",  Arity.noArguments());
+	
+	        defineAlias("class_eval", "module_eval");
+	
+	        definePrivateMethod("alias_method", Arity.twoArguments());
+	        definePrivateMethod("append_features", Arity.singleArgument());
+	        definePrivateMethod("attr", Arity.optional());
+	        definePrivateMethod("attr_reader", Arity.optional());
+	        definePrivateMethod("attr_writer", Arity.optional());
+	        definePrivateMethod("attr_accessor", Arity.optional());
+	        definePrivateMethod("define_method", Arity.optional());
+	        definePrivateMethod("extend_object", Arity.singleArgument());
+	        definePrivateMethod("include", Arity.optional());
+	        definePrivateMethod("method_added", Arity.singleArgument());
+	        definePrivateMethod("module_function", Arity.optional());
+	        definePrivateMethod("public", Arity.optional(), "rbPublic");
+	        definePrivateMethod("protected", Arity.optional(), "rbProtected");
+	        definePrivateMethod("private", Arity.optional(), "rbPrivate");
+	        definePrivateMethod("remove_class_variable", Arity.singleArgument());
+	        definePrivateMethod("remove_const", Arity.singleArgument());
+	        definePrivateMethod("remove_method", Arity.singleArgument());
+	        definePrivateMethod("undef_method", Arity.singleArgument());
+	
+	        defineSingletonMethod("new", Arity.noArguments(), "newInstance");
+	        defineSingletonMethod("nesting", Arity.noArguments());
+		}
+	};
+	
+	protected Meta getMeta() {
+		return new ModuleMeta();
 	}
 	
 	public RubyClass newSubClass(String name, RubyModule parentModule) {

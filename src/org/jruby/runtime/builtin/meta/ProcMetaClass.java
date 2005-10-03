@@ -43,13 +43,19 @@ public class ProcMetaClass extends ObjectMetaClass {
 		super(name, RubyProc.class, superClass, parentModule);
 	}
 
-	protected void initializeClass() {
-		defineMethod("arity", Arity.noArguments(), "arity");
-		defineMethod("call", Arity.optional(), "call");
-		defineAlias("[]", "call");
-		defineMethod("to_proc", Arity.noArguments(), "to_proc");
-
-        defineSingletonMethod("new", Arity.optional(), "newInstance"); 
+	protected class ProcMeta extends Meta {
+		protected void initializeClass() {
+			defineMethod("arity", Arity.noArguments(), "arity");
+			defineMethod("call", Arity.optional(), "call");
+			defineAlias("[]", "call");
+			defineMethod("to_proc", Arity.noArguments(), "to_proc");
+	
+	        defineSingletonMethod("new", Arity.optional(), "newInstance"); 
+		}
+	};
+	
+	protected Meta getMeta() {
+		return new ProcMeta();
 	}
 	
 	public RubyClass newSubClass(String name, RubyModule parentModule) {
