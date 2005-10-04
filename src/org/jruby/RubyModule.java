@@ -146,20 +146,18 @@ public class RubyModule extends RubyObject {
      *
      */
     public String getName() {
-        RubyModule module = this;
-        while (module.isIncluded() || module.isSingleton()) {
-            module = module.getSuperClass();
-        }
-
         if (getBaseName() == null) {
-            return "#<" + (isClass() ? "Class" : "Module") + ":01x" + 
-            Integer.toHexString(System.identityHashCode(this)) + ">";
+        	if (isClass()) {
+                return "#<" + "Class" + ":01x" + Integer.toHexString(System.identityHashCode(this)) + ">";
+        	} else {
+                return "#<" + "Module" + ":01x" + Integer.toHexString(System.identityHashCode(this)) + ">";
+        	}
         }
         
         StringBuffer result = new StringBuffer(getBaseName());
         RubyClass objectClass = getRuntime().getObject();
         
-        for (RubyModule p = this.parentModule; p != null && p != objectClass; p = p.parentModule) {
+        for (RubyModule p = this.getParent(); p != null && p != objectClass; p = p.getParent()) {
             result.insert(0, "::").insert(0, p.getBaseName());
         }
 
@@ -397,15 +395,15 @@ public class RubyModule extends RubyObject {
 
         // We can safely reference methods here instead of doing getMethods() since if we
         // are adding we are not using a IncludedModuleWrapper.
-        synchronized(methods) {
+        synchronized(getMethods()) {
             // If we add a method which already is cached in this class, then we should update the 
             // cachemap so it stays up to date.
-            ICallable existingMethod = (ICallable) methods.remove(name);
+            ICallable existingMethod = (ICallable) getMethods().remove(name);
             if (existingMethod != null) {
     	        getRuntime().getCacheMap().remove(name, existingMethod);
             }
 
-            methods.put(name, method);
+            getMethods().put(name, method);
         }
     }
 
@@ -424,8 +422,8 @@ public class RubyModule extends RubyObject {
 
         // We can safely reference methods here instead of doing getMethods() since if we
         // are adding we are not using a IncludedModuleWrapper.
-        synchronized(methods) {
-            ICallable method = (ICallable) methods.remove(name);
+        synchronized(getMethods()) {
+            ICallable method = (ICallable) getMethods().remove(name);
             if (method == null) {
                 throw getRuntime().newNameError("method '" + name + "' not defined in " + getName());
             }
@@ -439,7 +437,7 @@ public class RubyModule extends RubyObject {
     	RubyModule searchModule = this;
     	
     	while (searchModule != null) {
-	    	synchronized(searchModule.methods) {
+	    	synchronized(searchModule.getMethods()) {
 	    	    // See if current class has method or if it has been cached here already
 	            method = (ICallable) searchModule.getMethods().get(name);
 	            if (method != null) {
