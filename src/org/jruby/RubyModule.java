@@ -142,8 +142,12 @@ public class RubyModule extends RubyObject {
         classId = name;
     }
     
-    /** classname
-     *
+    /**
+     * Generate a fully-qualified class name or a #-style name for anonymous and singleton classes.
+     * 
+     * Ruby C equivalent = "classname"
+     * 
+     * @return The generated class name
      */
     public String getName() {
         if (getBaseName() == null) {
@@ -164,13 +168,23 @@ public class RubyModule extends RubyObject {
         return result.toString();
     }
 
-    /** include_class_new
-     *
+    /** 
+     * Create a wrapper to use for including the specified module into this one.
+     * 
+     * Ruby C equivalent = "include_class_new"
+     * 
+     * @return The module wrapper
      */
     public IncludedModuleWrapper newIncludeClass(RubyClass superClazz) {
         return new IncludedModuleWrapper(getRuntime(), superClazz, this);
     }
     
+    /**
+     * Search this and parent modules for the named variable.
+     * 
+     * @param name The variable to search for
+     * @return The module in which that variable is found, or null if not found
+     */
     private RubyModule getModuleWithInstanceVar(String name) {
         for (RubyModule p = this; p != null; p = p.getSuperClass()) {
             if (p.getInstanceVariable(name) != null) {
@@ -180,8 +194,13 @@ public class RubyModule extends RubyObject {
         return null;
     }
 
-    /** rb_cvar_set
-     *
+    /** 
+     * Set the named class variable to the given value, provided taint and freeze allow setting it.
+     * 
+     * Ruby C equivalent = "rb_cvar_set"
+     * 
+     * @param name The variable name to set
+     * @param value The value to set it to
      */
     public void setClassVar(String name, IRubyObject value) {
         RubyModule module = getModuleWithInstanceVar(name);
@@ -193,8 +212,13 @@ public class RubyModule extends RubyObject {
         module.setInstanceVariable(name, value, CVAR_TAINT_ERROR, CVAR_FREEZE_ERROR);
     }
 
-    /** rb_cvar_get
-     *
+    /**
+     * Retrieve the specified class variable, searching through this module, included modules, and supermodules.
+     * 
+     * Ruby C equivalent = "rb_cvar_get"
+     * 
+     * @param name The name of the variable to retrieve
+     * @return The variable's value, or throws NameError if not found
      */
     public IRubyObject getClassVar(String name) {
         RubyModule module = getModuleWithInstanceVar(name);
@@ -208,13 +232,27 @@ public class RubyModule extends RubyObject {
         throw getRuntime().newNameError("uninitialized class variable " + name + " in " + getName());
     }
 
-    /** rb_cvar_defined
-     *
+    /** 
+     * Is class var defined?
+     * 
+     * Ruby C equivalent = "rb_cvar_defined"
+     * 
+     * @param name The class var to determine "is defined?"
+     * @return true if true, false if false
      */
     public boolean isClassVarDefined(String name) {
         return getModuleWithInstanceVar(name) != null;
     }
 
+    /**
+     * Set the named constant on this module. Also, if the value provided is another Module and
+     * that module has not yet been named, assign it the specified name.
+     * 
+     * @param name The name to assign
+     * @param value The value to assign to it; if an unnamed Module, also set its basename to name
+     * @return The result of setting the variable.
+     * @see RubyObject#setInstanceVariable(String, IRubyObject, String, String)
+     */
     public IRubyObject setConstant(String name, IRubyObject value) {
         IRubyObject result = setInstanceVariable(name, value, "Insecure: can't set constant", 
                 "class/module");
@@ -229,10 +267,25 @@ public class RubyModule extends RubyObject {
         return result;
     }
 
+    /**
+     * Retrieve the named constant, invoking 'const_missing' should that be appropriate.
+     * 
+     * @param name The constant to retrieve
+     * @return The value for the constant, or null if not found
+     * @see RubyModule#getConstant(String, boolean)
+     */
     public IRubyObject getConstant(String name) {
     	return getConstant(name, true);
     }
     
+    /**
+     * Retrieve the named constant, invoking 'const_missing' if invokeConstMissing == true and
+     * it is appropriate to do so.
+     * 
+     * @param name The constant to retrieve
+     * @param invokeConstMissing Whether or not to invoke const_missing as appropriate
+     * @return The retrieved value, or null if not found
+     */
     public IRubyObject getConstant(String name, boolean invokeConstMissing) {
     	// First look for constants in module hierachy
     	for (RubyModule p = this; p != null; p = p.parentModule) {
@@ -269,6 +322,12 @@ public class RubyModule extends RubyObject {
     	return  (module instanceof RubyClass) ? (RubyClass) module : null;
     }
 
+    /**
+     * Base implementation of Module#const_missing, throws NameError for specific missing constant.
+     * 
+     * @param name The constant name which was found to be missing
+     * @return Nothing! Absolutely nothing! (though subclasses might choose to return something)
+     */
     public IRubyObject const_missing(IRubyObject name) {
         /* Uninitialized constant */
         if (this != getRuntime().getObject()) {
@@ -280,6 +339,8 @@ public class RubyModule extends RubyObject {
 
     /** 
      * Include a new module in this module or class.
+     * 
+     * @param arg The module to include
      */
     public synchronized void includeModule(IRubyObject arg) {
         testFrozen("module");
@@ -438,11 +499,10 @@ public class RubyModule extends RubyObject {
      * @return The method, or UndefinedMethod if not found
      */
     public ICallable searchMethod(String name) {
-    	ICallable method;
     	for (RubyModule searchModule = this; searchModule != null; searchModule = searchModule.getSuperClass()) {
 	    	synchronized(searchModule.methods) {
 	    	    // See if current class has method or if it has been cached here already
-	            method = (ICallable) searchModule.getMethods().get(name);
+	            ICallable method = (ICallable) searchModule.getMethods().get(name);
 	            if (method != null) {
 	            	if (searchModule != this) {
 	            		addCachedMethod(name, method);

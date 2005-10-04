@@ -13,6 +13,7 @@
  *
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -30,9 +31,17 @@ package org.jruby;
 
 import java.util.Map;
 
-/** This class represents an included module.
+/**
+ * This class is used to provide an intermediate superclass for modules and classes that include
+ * other modules. It inserts itself as the immediate superClass of the includer, but defers all
+ * module methods to the actual superclass. Multiple of these intermediate superclasses can be
+ * added for multiple included modules.
  * 
- * @author jpetersen
+ * This allows the normal superclass-based searches (searchMethod, getConstant, etc) to traverse
+ * the superclass ancestors as normal while the included modules do not actually show up in
+ * direct inheritance traversal.
+ * 
+ * @see org.jruby.RubyModule
  */
 public final class IncludedModuleWrapper extends RubyClass {
     private RubyModule delegate;
@@ -43,8 +52,11 @@ public final class IncludedModuleWrapper extends RubyClass {
         this.delegate = delegate;
     }
 
-    /** include_class_new
-     *
+    /**
+     * Overridden newIncludeClass implementation to allow attaching future includes to the correct module
+     * (i.e. the one to which this is attached)
+     * 
+     * @see org.jruby.RubyModule#newIncludeClass(RubyClass)
      */
     public IncludedModuleWrapper newIncludeClass(RubyClass superClass) {
         return new IncludedModuleWrapper(getRuntime(), superClass, getDelegate());
