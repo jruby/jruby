@@ -102,8 +102,8 @@ module Enumerable
     end
     each do |item|
       if first then
-	first = false
-	result = item
+        first = false
+        result = item
       else
         result = yield(result, item)
       end
