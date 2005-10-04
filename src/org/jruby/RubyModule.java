@@ -431,30 +431,29 @@ public class RubyModule extends RubyObject {
             getRuntime().getCacheMap().remove(name, method);
         }
     }
-    
+    /**
+     * Search through this module and supermodules for method definitions. Cache superclass definitions in this class.
+     * 
+     * @param name The name of the method to search for
+     * @return The method, or UndefinedMethod if not found
+     */
     public ICallable searchMethod(String name) {
-    	ICallable method = null;
-    	RubyModule searchModule = this;
-    	
-    	while (searchModule != null) {
-	    	synchronized(searchModule.getMethods()) {
+    	ICallable method;
+    	for (RubyModule searchModule = this; searchModule != null; searchModule = searchModule.getSuperClass()) {
+	    	synchronized(searchModule.methods) {
 	    	    // See if current class has method or if it has been cached here already
 	            method = (ICallable) searchModule.getMethods().get(name);
 	            if (method != null) {
-	                break;
+	            	if (searchModule != this) {
+	            		addCachedMethod(name, method);
+	            	}
+	            	
+	                return method;
 	            }
 	    	}
-	    	
-	    	searchModule = searchModule.getSuperClass();
     	}
-    	
-    	if (method == null) {
-    		method = UndefinedMethod.getInstance();
-    	} else {
-    		addCachedMethod(name, method);
-    	}
-    	
-    	return method;
+
+    	return UndefinedMethod.getInstance();
     }
     
     /** rb_define_module_function
