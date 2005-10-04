@@ -435,36 +435,28 @@ public class RubyModule extends RubyObject {
     }
     
     public ICallable searchMethod(String name) {
-    	ICallable method;
-    	synchronized(methods) {
-    	    // See if current class has method or if it has been cached here already
-            method = (ICallable) getMethods().get(name);
-            if (method != null) {
-                return method;
-            }
+    	ICallable method = null;
+    	RubyModule searchModule = this;
+    	
+    	while (searchModule != null) {
+	    	synchronized(searchModule.methods) {
+	    	    // See if current class has method or if it has been cached here already
+	            method = (ICallable) searchModule.getMethods().get(name);
+	            if (method != null) {
+	                break;
+	            }
+	    	}
+	    	
+	    	searchModule = searchModule.getSuperClass();
     	}
-        
-        // See if superClass(es) can find it
-    	method = superClass == null ? 
-    	    UndefinedMethod.getInstance() : superClass.searchMethodInner(name);
-
-        if (method != UndefinedMethod.getInstance()) {
-    	   addCachedMethod(name, method);
-        }
+    	
+    	if (method == null) {
+    		method = UndefinedMethod.getInstance();
+    	} else {
+    		addCachedMethod(name, method);
+    	}
     	
     	return method;
-    }
-    
-    protected ICallable searchMethodInner(String name) {
-    	synchronized(methods) {
-    	    ICallable method = (ICallable) getMethods().get(name);
-    	    if (method != null) {
-    		    return method;
-    	    }
-    	}
-
-    	return superClass == null ? 
-    	    UndefinedMethod.getInstance() : superClass.searchMethodInner(name); 
     }
     
     /** rb_define_module_function
