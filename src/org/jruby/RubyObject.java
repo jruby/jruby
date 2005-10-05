@@ -35,7 +35,6 @@
 package org.jruby;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -70,7 +69,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     private RubyClass metaClass;
 
     // The instance variables of this object.
-    private Map instanceVariables;
+    protected Map instanceVariables;
 
     // The two properties frozen and taint
     private boolean frozen;
@@ -146,13 +145,18 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public IRubyObject removeInstanceVariable(String name) {
-        if (getInstanceVariables() == null) {
-            return null;
-        }
         return (IRubyObject) getInstanceVariables().remove(name);
     }
 
     public Map getInstanceVariables() {
+    	// TODO: double checking may or may not be safe enough here
+    	if (instanceVariables == null) {
+	    	synchronized (this) {
+	    		if (instanceVariables == null) {
+	    			instanceVariables = new HashMap();
+	    		}
+	    	}
+    	}
         return instanceVariables;
     }
 
@@ -284,9 +288,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         assert original != null;
         assert !isFrozen() : "frozen object (" + getMetaClass().getName() + ") allocated";
 
-        if (original.getInstanceVariables() != null) {
-            setInstanceVariables(new HashMap(original.getInstanceVariables()));
-        }
+        setInstanceVariables(new HashMap(original.getInstanceVariables()));
 
         callMethod("initialize_copy", original);        
     }
@@ -332,9 +334,6 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public IRubyObject getInstanceVariable(String name) {
-    	if (getInstanceVariables() == null) {
-    		return null;
-    	}
         return (IRubyObject) getInstanceVariables().get(name);
     }
     
@@ -355,9 +354,6 @@ public class RubyObject implements Cloneable, IRubyObject {
         }
         testFrozen(freezeError);
 
-        if (getInstanceVariables() == null) {
-            setInstanceVariables(new HashMap());
-        }
         getInstanceVariables().put(name, value);
 
         return value;
@@ -372,9 +368,6 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public Iterator instanceVariableNames() {
-        if (getInstanceVariables() == null) {
-            return Collections.EMPTY_LIST.iterator();
-        }
         return getInstanceVariables().keySet().iterator();
     }
 
@@ -993,24 +986,21 @@ public class RubyObject implements Cloneable, IRubyObject {
         RubySymbol classname = RubySymbol.newSymbol(getRuntime(), getMetaClass().getName());
         output.dumpObject(classname);
 
-        if (getInstanceVariables() == null) {
-            output.dumpInt(0);
-        } else {
-            output.dumpInt(getInstanceVariables().size());
-            
-            for (Iterator iter = instanceVariableNames(); iter.hasNext();) {
-                String name = (String) iter.next();
-                IRubyObject value = getInstanceVariable(name);
+        output.dumpInt(getInstanceVariables().size());
+        
+        for (Iterator iter = instanceVariableNames(); iter.hasNext();) {
+            String name = (String) iter.next();
+            IRubyObject value = getInstanceVariable(name);
 
-                // Between getting name and retrieving value the instance variable could have been
-                // removed
-                if (value != null) {
-                	output.dumpObject(RubySymbol.newSymbol(getRuntime(), name));
-                	output.dumpObject(value);
-                }
+            // Between getting name and retrieving value the instance variable could have been
+            // removed
+            if (value != null) {
+            	output.dumpObject(RubySymbol.newSymbol(getRuntime(), name));
+            	output.dumpObject(value);
             }
         }
     }
+    
     /**
      * @see org.jruby.runtime.builtin.IRubyObject#getType()
      */

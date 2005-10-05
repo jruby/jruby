@@ -62,19 +62,11 @@ public class RubyString extends RubyObject {
 
         assert value != null;
 
-		this.value = value;
+		this.setValue(value);
 	}
 
 	public Class getJavaClass() {
 		return String.class;
-	}
-
-	public String getValue() {
-		return value;
-	}
-
-	public void setValue(String newValue) {
-        value = newValue;
 	}
 
 	public String toString() {
@@ -100,7 +92,7 @@ public class RubyString extends RubyObject {
 	}
 
 	public byte[] toByteArray() {
-		return stringToBytes(value);
+		return stringToBytes(getValue());
 	}
 
 	public static boolean isDigit(char c) {
@@ -1197,48 +1189,48 @@ public class RubyString extends RubyObject {
 	}
 
 	public IRubyObject lstrip() {
-		int length = value.length();
+		int length = getValue().length();
 		int i = 0;
 		
 		for (; i < length; i++) {
-			if (!Character.isWhitespace(value.charAt(i))) {
+			if (!Character.isWhitespace(getValue().charAt(i))) {
 				break;
 			}
 		}
 		
-		return newString(value.substring(i));
+		return newString(getValue().substring(i));
 	}
 	
 	public IRubyObject lstrip_bang() {
 		RubyString newValue = (RubyString) lstrip();
 		
-		if (newValue.getValue().equals(value)) {
+		if (newValue.getValue().equals(getValue())) {
 			return getRuntime().getNil();
 		}
-		value = newValue.getValue();
+		setValue(newValue.getValue());
 		
 		return this;
 	}
 
 	public IRubyObject rstrip() {
-		int i = value.length() - 1;
+		int i = getValue().length() - 1;
 		
 		for (; i >= 0; i--) {
-			if (!Character.isWhitespace(value.charAt(i))) {
+			if (!Character.isWhitespace(getValue().charAt(i))) {
 				break;
 			}
 		}
 		
-		return newString(value.substring(0, i + 1));
+		return newString(getValue().substring(0, i + 1));
 	}
 
 	public IRubyObject rstrip_bang() {
 		RubyString newValue = (RubyString) rstrip();
 		
-		if (newValue.getValue().equals(value)) {
+		if (newValue.getValue().equals(getValue())) {
 			return getRuntime().getNil();
 		}
-		value = newValue.getValue();
+		setValue(newValue.getValue());
 		
 		return this;
 	}
@@ -1559,7 +1551,7 @@ public class RubyString extends RubyObject {
         }
 
         int result = 0;
-        char[] characters = value.toCharArray();
+        char[] characters = getValue().toCharArray();
         for (int i = 0; i < characters.length; i++) {
             result += characters[i];
         }
@@ -1581,6 +1573,24 @@ public class RubyString extends RubyObject {
      * @see org.jruby.util.Pack#unpack
      */
     public RubyArray unpack(IRubyObject obj) {
-        return Pack.unpack(this.value, stringValue(obj));
+        return Pack.unpack(this.getValue(), stringValue(obj));
     }
+
+    /**
+     * Mutator for internal string representation.
+     * 
+     * @param value The new java.lang.String this RubyString should encapsulate
+     */
+	public void setValue(String value) {
+		this.value = value;
+	}
+
+	/**
+	 * Accessor for internal string representation.
+	 * 
+	 * @return The java.lang.String this RubyString encapsulates.
+	 */
+	public String getValue() {
+		return value;
+	}
 }
