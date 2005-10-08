@@ -77,7 +77,7 @@ public class RubySymbol extends RubyObject {
     }
 
     public static String getSymbol(Ruby runtime, long id) {
-        RubySymbol result = runtime.symbolTable.lookup(id);
+        RubySymbol result = runtime.getSymbolTable().lookup(id);
         if (result != null) {
             return result.symbol;
         }
@@ -94,10 +94,10 @@ public class RubySymbol extends RubyObject {
             // Locked to prevent the creation of multiple instances of
             // the same symbol. Most code depends on them being unique.
 
-            result = runtime.symbolTable.lookup(name);
+            result = runtime.getSymbolTable().lookup(name);
             if (result == null) {
                 result = new RubySymbol(runtime, name);
-                runtime.symbolTable.store(result);
+                runtime.getSymbolTable().store(result);
             }
         }
         return result;

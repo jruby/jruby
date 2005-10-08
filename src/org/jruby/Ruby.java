@@ -104,16 +104,16 @@ public final class Ruby {
 	private CacheMap cacheMap = new CacheMap();
     private ThreadService threadService = new ThreadService(this);
 
-    public int stackTraces = 0;
+    private int stackTraces = 0;
 
-    public ObjectSpace objectSpace = new ObjectSpace();
+    private ObjectSpace objectSpace = new ObjectSpace();
 
-    public final RubyFixnum[] fixnumCache = new RubyFixnum[256];
-    public final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable();
-    public Hashtable ioHandlers = new Hashtable();
-    public long randomSeed = 0;
-    public long randomSeedSequence = 0;
-    public Random random = new Random();
+    private final RubyFixnum[] fixnumCache = new RubyFixnum[256];
+    private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable();
+    private Hashtable ioHandlers = new Hashtable();
+    private long randomSeed = 0;
+    private long randomSeedSequence = 0;
+    private Random random = new Random();
 
     private RubyProc traceFunction;
     private boolean isWithinTrace = false;
@@ -1228,4 +1228,44 @@ public final class Ruby {
     public RaiseException newEOFError() {
     	return new RaiseException(this, getClass("EOFError"), "End of file reached", true);
     }
+
+	public RubySymbol.SymbolTable getSymbolTable() {
+		return symbolTable;
+	}
+
+	public void setStackTraces(int stackTraces) {
+		this.stackTraces = stackTraces;
+	}
+
+	public int getStackTraces() {
+		return stackTraces;
+	}
+
+	public void setRandomSeed(long randomSeed) {
+		this.randomSeed = randomSeed;
+	}
+
+	public long getRandomSeed() {
+		return randomSeed;
+	}
+
+	public Random getRandom() {
+		return random;
+	}
+
+	public ObjectSpace getObjectSpace() {
+		return objectSpace;
+	}
+
+	public Hashtable getIoHandlers() {
+		return ioHandlers;
+	}
+
+	public RubyFixnum[] getFixnumCache() {
+		return fixnumCache;
+	}
+
+	public long incrementRandomSeedSequence() {
+		return randomSeedSequence++;
+	}
 }

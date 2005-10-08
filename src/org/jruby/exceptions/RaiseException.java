@@ -107,17 +107,17 @@ public class RaiseException extends JumpException {
 
         this.exception = newException;
 
-        if (runtime.stackTraces > 5) {
+        if (runtime.getStackTraces() > 5) {
             return;
         }
 
-        runtime.stackTraces++;
+        runtime.setStackTraces(runtime.getStackTraces() + 1);
 
         if (newException.callMethod("backtrace").isNil() && runtime.getSourceFile() != null) {
             IRubyObject backtrace = RubyException.createBacktrace(runtime, 0, nativeException);
             newException.callMethod("set_backtrace", backtrace);
         }
 
-        runtime.stackTraces--;
+        runtime.setStackTraces(runtime.getStackTraces() - 1);
     }
 }

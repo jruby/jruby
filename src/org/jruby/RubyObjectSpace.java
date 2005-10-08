@@ -66,7 +66,7 @@ public class RubyObjectSpace {
             rubyClass = (RubyModule) args[0];
         }
         int count = 0;
-        Iterator iter = recv.getRuntime().objectSpace.iterator(rubyClass);
+        Iterator iter = recv.getRuntime().getObjectSpace().iterator(rubyClass);
         while (iter.hasNext()) {
             count++;
             recv.getRuntime().yield((IRubyObject) iter.next());

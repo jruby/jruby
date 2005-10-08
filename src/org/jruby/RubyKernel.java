@@ -682,20 +682,20 @@ public class RubyKernel {
 
     public static RubyInteger srand(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
-        long oldRandomSeed = runtime.randomSeed;
+        long oldRandomSeed = runtime.getRandomSeed();
 
         if (args.length > 0) {
             RubyInteger integerSeed = 
             	(RubyInteger) args[0].convertToType("Integer", "to_i", true);
-            runtime.randomSeed = integerSeed.getLongValue();
+            runtime.setRandomSeed(integerSeed.getLongValue());
         } else {
         	// Not sure how well this works, but it works much better than
         	// just currentTimeMillis by itself.
-            runtime.randomSeed = System.currentTimeMillis() ^
-			  recv.hashCode() ^ runtime.randomSeedSequence++ ^
-			  runtime.random.nextInt(Math.abs((int)runtime.randomSeed));
+            runtime.setRandomSeed(System.currentTimeMillis() ^
+			  recv.hashCode() ^ runtime.incrementRandomSeedSequence() ^
+			  runtime.getRandom().nextInt(Math.abs((int)runtime.getRandomSeed())));
         }
-        runtime.random.setSeed(runtime.randomSeed);
+        runtime.getRandom().setSeed(runtime.getRandomSeed());
         return runtime.newFixnum(oldRandomSeed);
     }
 
@@ -715,10 +715,10 @@ public class RubyKernel {
         }
 
         if (ceil == 0) {
-            double result = recv.getRuntime().random.nextDouble();
+            double result = recv.getRuntime().getRandom().nextDouble();
             return RubyFloat.newFloat(recv.getRuntime(), result);
         }
-		return recv.getRuntime().newFixnum(recv.getRuntime().random.nextInt((int) ceil));
+		return recv.getRuntime().newFixnum(recv.getRuntime().getRandom().nextInt((int) ceil));
     }
 
     public static RubyBoolean system(IRubyObject recv, IRubyObject[] args) {

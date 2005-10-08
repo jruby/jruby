@@ -132,15 +132,15 @@ public class RubyIO extends RubyObject {
      * However, reopen() makes doing this a little funky. 
      */
     public void registerIOHandler(IOHandler newHandler) {
-        getRuntime().ioHandlers.put(new Integer(newHandler.getFileno()), new WeakReference(newHandler));
+        getRuntime().getIoHandlers().put(new Integer(newHandler.getFileno()), new WeakReference(newHandler));
     }
     
     public void unregisterIOHandler(int aFileno) {
-        getRuntime().ioHandlers.remove(new Integer(aFileno));
+        getRuntime().getIoHandlers().remove(new Integer(aFileno));
     }
     
     public IOHandler getIOHandlerByFileno(int aFileno) {
-        return (IOHandler) ((WeakReference) getRuntime().ioHandlers.get(new Integer(aFileno))).get();
+        return (IOHandler) ((WeakReference) getRuntime().getIoHandlers().get(new Integer(aFileno))).get();
     }
     
     protected static int fileno = 2;

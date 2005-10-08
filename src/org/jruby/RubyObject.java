@@ -86,7 +86,7 @@ public class RubyObject implements Cloneable, IRubyObject {
 
         // Do not store any immediate objects into objectspace.
         if (useObjectSpace && !isImmediate()) {
-            runtime.objectSpace.add(this);
+            runtime.getObjectSpace().add(this);
         }
 
         // FIXME are there objects who shouldn't be tainted?

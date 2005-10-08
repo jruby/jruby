@@ -106,11 +106,11 @@ public class RubyFixnum extends RubyInteger {
 
     public static RubyFixnum newFixnum(Ruby runtime, long value) {
         RubyFixnum fixnum;
-        if (value >= 0 && value < runtime.fixnumCache.length) {
-            fixnum = runtime.fixnumCache[(int) value];
+        if (value >= 0 && value < runtime.getFixnumCache().length) {
+            fixnum = runtime.getFixnumCache()[(int) value];
             if (fixnum == null) {
                 fixnum = new RubyFixnum(runtime, value);
-                runtime.fixnumCache[(int) value] = fixnum;
+                runtime.getFixnumCache()[(int) value] = fixnum;
             }
         } else {
             fixnum = new RubyFixnum(runtime, value);
