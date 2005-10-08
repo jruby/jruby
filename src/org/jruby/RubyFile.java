@@ -60,16 +60,16 @@ public class RubyFile extends RubyIO {
 	
     protected String path;
     
-	public RubyFile(Ruby runtime, RubyClass type) {
+	public RubyFile(IRuby runtime, RubyClass type) {
 	    super(runtime, type);
 	}
 
-	public RubyFile(Ruby runtime, String path) {
+	public RubyFile(IRuby runtime, String path) {
 		this(runtime, path, open(runtime, path));
     }
 
 	// use static function because constructor call must be first statement in above constructor 
-	private static InputStream open(Ruby runtime, String path) {
+	private static InputStream open(IRuby runtime, String path) {
 		try {
 			return new FileInputStream(path);
 		} catch (FileNotFoundException e) {
@@ -79,7 +79,7 @@ public class RubyFile extends RubyIO {
     
 	// XXX This constructor is a hack to implement the __END__ syntax.
 	//     Converting a reader back into an InputStream doesn't generally work.
-	public RubyFile(Ruby runtime, String path, final Reader reader) {
+	public RubyFile(IRuby runtime, String path, final Reader reader) {
 		this(runtime, path, new InputStream() {
 			public int read() throws IOException {
 				return reader.read();
@@ -87,7 +87,7 @@ public class RubyFile extends RubyIO {
 		});
 	}
 	
-	private RubyFile(Ruby runtime, String path, InputStream in) {
+	private RubyFile(IRuby runtime, String path, InputStream in) {
         super(runtime, runtime.getClass("File"));
         this.path = path;
 		try {

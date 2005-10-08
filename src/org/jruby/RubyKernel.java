@@ -59,7 +59,7 @@ import org.jruby.util.PrintfFormat;
  * @version $Revision$
  */
 public class RubyKernel {
-    public static RubyModule createKernelModule(Ruby runtime) {
+    public static RubyModule createKernelModule(IRuby runtime) {
         RubyModule module = runtime.defineModule("Kernel");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyKernel.class);
 
@@ -145,9 +145,9 @@ public class RubyKernel {
         final LoadService loadService = recv.getRuntime().getLoadService();
         loadService.addAutoload(symbol.asSymbol(), new IAutoloadMethod() {
             /**
-             * @see org.jruby.runtime.load.IAutoloadMethod#load(Ruby, String)
+             * @see org.jruby.runtime.load.IAutoloadMethod#load(IRuby, String)
              */
-            public IRubyObject load(Ruby runtime, String name) {
+            public IRubyObject load(IRuby runtime, String name) {
                 loadService.require(file.toString());
                 return runtime.getObject().getConstant(name);
             }
@@ -321,7 +321,7 @@ public class RubyKernel {
      * @throws TypeError if $_ is not a String or nil.
      * @return value of $_ as String.
      */
-    private static RubyString getLastlineString(Ruby runtime) {
+    private static RubyString getLastlineString(IRuby runtime) {
         IRubyObject line = runtime.getLastline();
 
         if (line.isNil()) {
@@ -452,7 +452,7 @@ public class RubyKernel {
      *
      */
     public static RubyArray local_variables(IRubyObject recv) {
-        final Ruby runtime = recv.getRuntime();
+        final IRuby runtime = recv.getRuntime();
         RubyArray localVariables = runtime.newArray();
 
         if (runtime.getCurrentScope().getLocalNames() != null) {
@@ -493,7 +493,7 @@ public class RubyKernel {
     public static IRubyObject raise(IRubyObject recv, IRubyObject[] args) {
         // FIXME  special case in ruby
         // recv.checkArgumentCount(args, 0, 2); 
-        Ruby runtime = recv.getRuntime();
+        IRuby runtime = recv.getRuntime();
         RubyString string = null;
         RubyException excptn = null;
         
@@ -552,7 +552,7 @@ public class RubyKernel {
     }
 
     public static IRubyObject eval(IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = recv.getRuntime();
+        IRuby runtime = recv.getRuntime();
         RubyString src = (RubyString) args[0];
         IRubyObject scope = args.length > 1 ? args[1] : runtime.getNil();
         String file = args.length > 2 ? args[2].toString() : "(eval)";
@@ -625,14 +625,14 @@ public class RubyKernel {
 
     public static IRubyObject backquote(IRubyObject recv, IRubyObject aString) {
         StringBuffer output = new StringBuffer();
-        Ruby runtime = recv.getRuntime();
+        IRuby runtime = recv.getRuntime();
         runtime.getGlobalVariables().set("$?", runtime.newFixnum(
             runInShell(runtime, aString.toString(), output)));
         
         return recv.getRuntime().newString(output.toString());
     }
 
-    private static int runInShell(Ruby runtime, String command, StringBuffer output) {
+    private static int runInShell(IRuby runtime, String command, StringBuffer output) {
         try {
             String shell = System.getProperty("jruby.shell");
             Process aProcess;
@@ -681,7 +681,7 @@ public class RubyKernel {
     }
 
     public static RubyInteger srand(IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = recv.getRuntime();
+        IRuby runtime = recv.getRuntime();
         long oldRandomSeed = runtime.getRandomSeed();
 
         if (args.length > 0) {
@@ -722,7 +722,7 @@ public class RubyKernel {
     }
 
     public static RubyBoolean system(IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = recv.getRuntime();
+        IRuby runtime = recv.getRuntime();
         if (args.length > 1) {
             throw runtime.newArgumentError("more arguments not yet supported");
         }

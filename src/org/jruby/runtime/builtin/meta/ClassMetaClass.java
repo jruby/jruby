@@ -6,7 +6,7 @@
  */
 package org.jruby.runtime.builtin.meta;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
@@ -14,7 +14,7 @@ import org.jruby.runtime.Arity;
 // Note: This code is not currently live.  It will be hooked up
 // some time around 0.8.3 development cycle.
 public class ClassMetaClass extends ObjectMetaClass {
-    public ClassMetaClass(Ruby runtime, RubyClass superClass) {
+    public ClassMetaClass(IRuby runtime, RubyClass superClass) {
     	super(runtime, null, superClass, runtime.getObject(), "Class", RubyClass.class);
     }
 

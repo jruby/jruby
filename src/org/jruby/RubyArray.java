@@ -62,7 +62,7 @@ public class RubyArray extends RubyObject implements List {
     private List list;
     private boolean tmpLock;
 
-	private RubyArray(Ruby runtime, List list) {
+	private RubyArray(IRuby runtime, List list) {
 		super(runtime, runtime.getClass("Array"));
         this.list = list;
     }
@@ -373,14 +373,14 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_new2
      *
      */
-    public static final RubyArray newArray(final Ruby runtime, final long len) {
+    public static final RubyArray newArray(final IRuby runtime, final long len) {
         return new RubyArray(runtime, new ArrayList((int) len));
     }
 
     /** rb_ary_new
      *
      */
-    public static final RubyArray newArray(final Ruby runtime) {
+    public static final RubyArray newArray(final IRuby runtime) {
         /* Ruby arrays default to holding 16 elements, so we create an
          * ArrayList of the same size if we're not told otherwise
          */
@@ -391,7 +391,7 @@ public class RubyArray extends RubyObject implements List {
     /**
      *
      */
-    public static RubyArray newArray(Ruby runtime, IRubyObject obj) {
+    public static RubyArray newArray(IRuby runtime, IRubyObject obj) {
         ArrayList list = new ArrayList(1);
         list.add(obj);
         return new RubyArray(runtime, list);
@@ -400,18 +400,18 @@ public class RubyArray extends RubyObject implements List {
     /** rb_assoc_new
      *
      */
-    public static RubyArray newArray(Ruby runtime, IRubyObject car, IRubyObject cdr) {
+    public static RubyArray newArray(IRuby runtime, IRubyObject car, IRubyObject cdr) {
         ArrayList list = new ArrayList(2);
         list.add(car);
         list.add(cdr);
         return new RubyArray(runtime, list);
     }
 
-    public static final RubyArray newArray(final Ruby runtime, final List list) {
+    public static final RubyArray newArray(final IRuby runtime, final List list) {
         return new RubyArray(runtime, list);
     }
 
-    public static RubyArray newArray(Ruby runtime, IRubyObject[] args) {
+    public static RubyArray newArray(IRuby runtime, IRubyObject[] args) {
         final ArrayList list = new ArrayList(args.length);
         for (int i = 0; i < args.length; i++) {
             list.add(args[i]);
@@ -885,7 +885,7 @@ public class RubyArray extends RubyObject implements List {
         IRubyObject filObj;
         IRubyObject begObj;
         IRubyObject lenObj;
-        Ruby runtime = getRuntime();
+        IRuby runtime = getRuntime();
         if (runtime.isBlockGiven()) {
         	argc = checkArgumentCount(args, 0, 2);
         	filObj = null;

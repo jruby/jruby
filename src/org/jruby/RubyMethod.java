@@ -55,14 +55,14 @@ public class RubyMethod extends RubyObject {
     protected ICallable method;
     protected IRubyObject receiver;
 
-    protected RubyMethod(Ruby runtime, RubyClass rubyClass) {
+    protected RubyMethod(IRuby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
     }
 
     /** Create the RubyMethod class and add it to the Ruby runtime.
      * 
      */
-    public static RubyClass createMethodClass(Ruby runtime) {
+    public static RubyClass createMethodClass(IRuby runtime) {
 		RubyClass methodClass = runtime.defineClass("Method", runtime.getObject());
     	
 		CallbackFactory callbackFactory = runtime.callbackFactory(RubyMethod.class);
@@ -88,7 +88,7 @@ public class RubyMethod extends RubyObject {
         String originName,
         ICallable method,
         IRubyObject receiver) {
-        Ruby runtime = implementationModule.getRuntime();
+        IRuby runtime = implementationModule.getRuntime();
         RubyMethod newMethod = new RubyMethod(runtime, runtime.getClass("Method"));
 
         newMethod.implementationModule = implementationModule;
@@ -145,7 +145,7 @@ public class RubyMethod extends RubyObject {
      *
      */
     public static IRubyObject mproc(IRubyObject recv) {
-    	Ruby runtime = recv.getRuntime();
+    	IRuby runtime = recv.getRuntime();
     	
         try {
             runtime.getIterStack().push(Iter.ITER_CUR);

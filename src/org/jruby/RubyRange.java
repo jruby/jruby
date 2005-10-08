@@ -49,7 +49,7 @@ public class RubyRange extends RubyObject {
     private IRubyObject end;
     private boolean isExclusive;
 
-    public RubyRange(Ruby runtime) {
+    public RubyRange(IRuby runtime) {
         super(runtime, runtime.getClass("Range"));
     }
 
@@ -67,7 +67,7 @@ public class RubyRange extends RubyObject {
         this.isExclusive = aIsExclusive.isTrue();
     }
 
-    public static RubyClass createRangeClass(Ruby runtime) {
+    public static RubyClass createRangeClass(IRuby runtime) {
         RubyClass result = runtime.defineClass("Range", runtime.getObject());
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyRange.class);
         
@@ -172,7 +172,7 @@ public class RubyRange extends RubyObject {
     	return range;
     }
 
-    public static RubyRange newRange(Ruby runtime, IRubyObject begin, IRubyObject end, boolean isExclusive) {
+    public static RubyRange newRange(IRuby runtime, IRubyObject begin, IRubyObject end, boolean isExclusive) {
         RubyRange range = new RubyRange(runtime);
         range.init(begin, end, isExclusive ? runtime.getTrue() : runtime.getFalse());
         return range;

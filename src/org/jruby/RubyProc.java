@@ -48,7 +48,7 @@ public class RubyProc extends RubyObject {
     private Block block = null;
     private RubyModule wrapper = null;
 
-    public RubyProc(Ruby runtime, RubyClass rubyClass) {
+    public RubyProc(IRuby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
     }
 
@@ -62,7 +62,7 @@ public class RubyProc extends RubyObject {
 
     // Proc class
 
-    public static RubyProc newProc(Ruby runtime, boolean isLambda) {
+    public static RubyProc newProc(IRuby runtime, boolean isLambda) {
         if (!runtime.isBlockGiven() && !runtime.isFBlockGiven()) {
             throw runtime.newArgumentError("tried to create Proc object without a block");
         }

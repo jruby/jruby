@@ -6,14 +6,14 @@
  */
 package org.jruby.runtime.builtin.meta;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.Arity;
 
 public class SymbolMetaClass extends ObjectMetaClass {
-    public SymbolMetaClass(Ruby runtime) {
+    public SymbolMetaClass(IRuby runtime) {
         super("Symbol", RubySymbol.class, runtime.getObject());
     }
     

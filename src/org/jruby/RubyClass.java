@@ -43,7 +43,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
  */
 public class RubyClass extends RubyModule {
 	
-	private final Ruby runtime;
+	private final IRuby runtime;
 
     /**
      * @mri rb_boot_class
@@ -55,17 +55,17 @@ public class RubyClass extends RubyModule {
         this.runtime = superClass.getRuntime();
     }
 
-    protected RubyClass(Ruby runtime, RubyClass superClass) {
+    protected RubyClass(IRuby runtime, RubyClass superClass) {
         super(runtime, null, superClass, null, null);
         this.runtime = runtime;
     }
 
-    protected RubyClass(Ruby runtime, RubyClass metaClass, RubyClass superClass) {
+    protected RubyClass(IRuby runtime, RubyClass metaClass, RubyClass superClass) {
         super(runtime, metaClass, superClass, null, null);
         this.runtime = runtime;
     }
     
-    protected RubyClass(Ruby runtime, RubyClass metaClass, RubyClass superClass, RubyModule parentModule, String name) {
+    protected RubyClass(IRuby runtime, RubyClass metaClass, RubyClass superClass, RubyModule parentModule, String name) {
         super(runtime, metaClass, superClass, parentModule, name);
         this.runtime = runtime;
     }
@@ -73,7 +73,7 @@ public class RubyClass extends RubyModule {
     /* (non-Javadoc)
 	 * @see org.jruby.RubyObject#getRuntime()
 	 */
-	public Ruby getRuntime() {
+	public IRuby getRuntime() {
 		return runtime;
 	}
 
@@ -148,7 +148,7 @@ public class RubyClass extends RubyModule {
         return newClass;
     }
 
-    public static RubyClass newClass(Ruby runtime, RubyClass superClass, RubyModule parentClass, String name) {
+    public static RubyClass newClass(IRuby runtime, RubyClass superClass, RubyModule parentClass, String name) {
         return new RubyClass(runtime, runtime.getClass("Class"), superClass, parentClass, name);
     }
 
@@ -177,7 +177,7 @@ public class RubyClass extends RubyModule {
      *
      */
     public static RubyClass newClass(IRubyObject recv, IRubyObject[] args) {
-        final Ruby runtime = recv.getRuntime();
+        final IRuby runtime = recv.getRuntime();
 
         RubyClass superClass;
         if (args.length > 0) {

@@ -30,9 +30,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.test;
 
-import org.jruby.Ruby;
-
 import java.util.ArrayList;
+
+import org.jruby.Ruby;
 
 /**
  * Unit test for the ruby class.

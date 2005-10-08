@@ -29,21 +29,23 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.test;
 
-import junit.framework.TestCase;
-import org.jruby.Ruby;
-import org.jruby.runtime.ObjectSpace;
-import org.jruby.runtime.builtin.IRubyObject;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
+import junit.framework.TestCase;
+
+import org.jruby.IRuby;
+import org.jruby.Ruby;
+import org.jruby.runtime.ObjectSpace;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
 * @author Anders
 */
 public class TestObjectSpace extends TestCase {
 
-    private Ruby runtime;
+    private IRuby runtime;
 
     public TestObjectSpace(String name) {
         super(name);

@@ -55,11 +55,11 @@ public class RubyDir extends RubyObject {
     private   int       pos;        // current position in directory
     private boolean isOpen = true;
 
-    public RubyDir(Ruby runtime, RubyClass type) {
+    public RubyDir(IRuby runtime, RubyClass type) {
         super(runtime, type);
     }
 
-    public static RubyClass createDirClass(Ruby runtime) {
+    public static RubyClass createDirClass(IRuby runtime) {
         RubyClass dirClass = runtime.defineClass("Dir", runtime.getObject());
 
         dirClass.includeModule(runtime.getModule("Enumerable"));
@@ -372,7 +372,7 @@ public class RubyDir extends RubyObject {
      * @param   mustExist is true the directory must exist.  If false it must not.
      * @throws  IOError if <code>path</code> is not a directory.
      */
-    protected static File getDir(Ruby runtime, String path, boolean mustExist) {
+    protected static File getDir(IRuby runtime, String path, boolean mustExist) {
         File result = new File(path);
 		
         // For some reason Java 1.5.x will print correct absolute path on a created file, 
@@ -416,7 +416,7 @@ public class RubyDir extends RubyObject {
      * Returns the contents of the specified <code>directory</code> as an
      * <code>ArrayList</code> containing the names of the files as Ruby Strings.
      */
-    protected static List getContents(File directory, Ruby runtime) {
+    protected static List getContents(File directory, IRuby runtime) {
         List result = new ArrayList();
         String[] contents = directory.list();
         for (int i=0; i<contents.length; i++) {

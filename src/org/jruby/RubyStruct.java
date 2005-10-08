@@ -52,11 +52,11 @@ public class RubyStruct extends RubyObject {
      * @param runtime
      * @param rubyClass
      */
-    public RubyStruct(Ruby runtime, RubyClass rubyClass) {
+    public RubyStruct(IRuby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
     }
 
-    public static RubyClass createStructClass(Ruby runtime) {
+    public static RubyClass createStructClass(IRuby runtime) {
         RubyClass structClass = runtime.defineClass("Struct", runtime.getObject());
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyStruct.class);
         structClass.includeModule(runtime.getModule("Enumerable"));
@@ -410,7 +410,7 @@ public class RubyStruct extends RubyObject {
     }
 
     public static RubyStruct unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-        Ruby runtime = input.getRuntime();
+        IRuby runtime = input.getRuntime();
 
         RubySymbol className = (RubySymbol) input.unmarshalObject();
         RubyClass rbClass = pathToClass(runtime, className.asSymbol());
@@ -431,7 +431,7 @@ public class RubyStruct extends RubyObject {
         return result;
     }
 
-    private static RubyClass pathToClass(Ruby runtime, String path) {
+    private static RubyClass pathToClass(IRuby runtime, String path) {
         // FIXME: Throw the right ArgumentError's if the class is missing
         // or if it's a module.
         return (RubyClass) runtime.getClassFromPath(path);

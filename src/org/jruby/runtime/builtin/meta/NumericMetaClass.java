@@ -27,7 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.builtin.meta;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
@@ -35,7 +35,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class NumericMetaClass extends ObjectMetaClass {
-	public NumericMetaClass(Ruby runtime) {
+	public NumericMetaClass(IRuby runtime) {
         super("Numeric", RubyNumeric.class, runtime.getObject());
     }
 	    

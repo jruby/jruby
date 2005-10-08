@@ -41,7 +41,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  */
 public class RubyComparable {
-    public static RubyModule createComparable(Ruby runtime) {
+    public static RubyModule createComparable(IRuby runtime) {
         RubyModule comparableModule = runtime.defineModule("Comparable");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyComparable.class);
         comparableModule.defineMethod(

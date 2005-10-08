@@ -35,7 +35,7 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
@@ -50,12 +50,12 @@ import org.jruby.runtime.builtin.IRubyObject;
  * $Revision$
  */
 public class MarshalStream extends FilterOutputStream {
-    private final Ruby runtime;
+    private final IRuby runtime;
     private final int depthLimit;
     private int depth = 0;
     private MarshalCache cache;
 
-    public MarshalStream(Ruby runtime, OutputStream out, int depthLimit) throws IOException {
+    public MarshalStream(IRuby runtime, OutputStream out, int depthLimit) throws IOException {
         super(out);
 
         this.runtime = runtime;

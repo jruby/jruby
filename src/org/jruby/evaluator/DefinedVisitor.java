@@ -32,7 +32,7 @@ package org.jruby.evaluator;
 
 import java.util.Iterator;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.ast.ArrayNode;
@@ -80,13 +80,13 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  */
 public class DefinedVisitor extends AbstractVisitor {
-    private Ruby runtime;
+    private IRuby runtime;
     private IRubyObject self;
     private ThreadContext threadContext;
 
     private String definition;
 
-    public DefinedVisitor(Ruby runtime, IRubyObject self) {
+    public DefinedVisitor(IRuby runtime, IRubyObject self) {
         this.runtime = runtime;
         this.self = self;
         this.threadContext = runtime.getCurrentContext();

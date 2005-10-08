@@ -43,7 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.jar.JarFile;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyString;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -63,9 +63,9 @@ public class LoadService {
 
     private final Map autoloadMap = new HashMap();
 
-    private final Ruby runtime;
+    private final IRuby runtime;
     
-    public LoadService(Ruby runtime) {
+    public LoadService(IRuby runtime) {
         this.runtime = runtime;
     }
 

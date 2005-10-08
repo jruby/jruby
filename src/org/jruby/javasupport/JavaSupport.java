@@ -40,13 +40,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyProc;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class JavaSupport {
-    private Ruby runtime;
+    private IRuby runtime;
 
     private Map exceptionHandlers = new HashMap();
 
@@ -54,7 +54,7 @@ public class JavaSupport {
 
     private Map instanceCache = Collections.synchronizedMap(new WeakHashMap(100));
 
-    public JavaSupport(Ruby ruby) {
+    public JavaSupport(IRuby ruby) {
         this.runtime = ruby;
     }
 

@@ -29,14 +29,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.test;
 
+import java.util.ArrayList;
+
 import junit.framework.TestCase;
+
+import org.jruby.IRuby;
 import org.jruby.Ruby;
 import org.jruby.RubySymbol;
 
-import java.util.ArrayList;
-
 public class TestRubySymbol extends TestCase {
-    private Ruby runtime;
+    private IRuby runtime;
 
     public TestRubySymbol(String name) {
 	super(name);

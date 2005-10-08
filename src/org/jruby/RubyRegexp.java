@@ -67,7 +67,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 			this.kcode = kcode;
 		}
 
-		public static Code create(Ruby runtime, String lang) {
+		public static Code create(IRuby runtime, String lang) {
 			if (lang == null) {
 				return NIL;
 			} else if (lang.charAt(0) == 'n' || lang.charAt(0) == 'N') {
@@ -81,7 +81,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 			return NIL;
 		}
 
-		public IRubyObject kcode(Ruby runtime) {
+		public IRubyObject kcode(IRuby runtime) {
 			if (kcode == null) {
 				return runtime.getNil();
 			}
@@ -103,11 +103,11 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 	private String lastTarget = null;
 	private Matcher matcher = null;
 
-    public RubyRegexp(Ruby runtime) {
+    public RubyRegexp(IRuby runtime) {
         super(runtime, runtime.getClass("Regexp"));
     }
 
-    public static RubyClass createRegexpClass(Ruby runtime) {
+    public static RubyClass createRegexpClass(IRuby runtime) {
         RubyClass regexpClass = runtime.defineClass("Regexp", runtime.getObject());
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyRegexp.class);
         
@@ -191,7 +191,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         return newRegexp(str.getRuntime(), str.getValue(), options, lang);
     }
     
-    public static RubyRegexp newRegexp(Ruby runtime, String str, int options, String kcode) {
+    public static RubyRegexp newRegexp(IRuby runtime, String str, int options, String kcode) {
         RubyRegexp re = new RubyRegexp(runtime);
         re.code = Code.create(runtime, kcode);
         re.initialize(str, options);

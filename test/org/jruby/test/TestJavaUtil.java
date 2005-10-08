@@ -30,6 +30,8 @@
 package org.jruby.test;
 
 import junit.framework.TestCase;
+
+import org.jruby.IRuby;
 import org.jruby.Ruby;
 import org.jruby.javasupport.JavaUtil;
 
@@ -38,7 +40,7 @@ import org.jruby.javasupport.JavaUtil;
  * @version $Revision$
  */
 public class TestJavaUtil extends TestCase {
-    private Ruby runtime;
+    private IRuby runtime;
 
     public TestJavaUtil(String name) {
         super(name);

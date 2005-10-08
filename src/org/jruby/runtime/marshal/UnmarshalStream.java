@@ -35,7 +35,7 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
@@ -56,10 +56,10 @@ import org.jruby.runtime.builtin.IRubyObject;
  * $Revision$
  */
 public class UnmarshalStream extends FilterInputStream {
-    protected final Ruby runtime;
+    protected final IRuby runtime;
     private UnmarshalCache cache;
 
-    public UnmarshalStream(Ruby runtime, InputStream in) throws IOException {
+    public UnmarshalStream(IRuby runtime, InputStream in) throws IOException {
         super(in);
         this.runtime = runtime;
         this.cache = new UnmarshalCache(runtime);
@@ -146,7 +146,7 @@ public class UnmarshalStream extends FilterInputStream {
     }
 
 
-    public Ruby getRuntime() {
+    public IRuby getRuntime() {
         return runtime;
     }
 

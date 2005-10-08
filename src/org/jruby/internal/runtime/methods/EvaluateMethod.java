@@ -29,7 +29,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.ast.Node;
 import org.jruby.ast.types.IArityNode;
 import org.jruby.evaluator.EvaluateVisitor;
@@ -57,7 +57,7 @@ public class EvaluateMethod extends AbstractMethod {
     	this(node, null, procArityOf(vars));
     }
 
-    public IRubyObject call(Ruby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject call(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
         return EvaluateVisitor.createVisitor(receiver).eval(node);
     }
 

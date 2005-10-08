@@ -31,19 +31,21 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.test;
 
+import java.util.ArrayList;
+
 import junit.framework.TestCase;
+
+import org.jruby.IRuby;
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyNil;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.ArrayList;
-
 /**
 * @author chadfowler
 */
 public class TestRubyNil extends TestCase {
-    private Ruby runtime;
+    private IRuby runtime;
     private IRubyObject rubyNil;
 
     public TestRubyNil(String name) {

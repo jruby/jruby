@@ -28,7 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -38,14 +38,14 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  */
 public class UndefinedAccessor implements IAccessor {
-    private final Ruby runtime;
+    private final IRuby runtime;
     private final GlobalVariable globalVariable;
     private final String notInitializedWarning;
 
     /**
      * Constructor for UndefinedAccessor.
      */
-    public UndefinedAccessor(Ruby runtime, GlobalVariable globalVariable, String name) {
+    public UndefinedAccessor(IRuby runtime, GlobalVariable globalVariable, String name) {
         assert runtime != null;
         assert globalVariable != null;
         assert name != null;

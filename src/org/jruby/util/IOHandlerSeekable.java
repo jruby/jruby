@@ -40,7 +40,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyIO;
 
 /**
@@ -52,7 +52,7 @@ public class IOHandlerSeekable extends IOHandler {
     protected RandomAccessFile file;
     protected String path;
     
-    public IOHandlerSeekable(Ruby runtime, String path, IOModes modes) 
+    public IOHandlerSeekable(IRuby runtime, String path, IOModes modes) 
     	throws IOException, InvalidValueException {
         super(runtime);
         

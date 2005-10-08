@@ -47,7 +47,7 @@ public class RubyThreadGroup extends RubyObject {
     private Map rubyThreadList = new HashMap();
     private boolean enclosed = false;
 
-    public static RubyClass createThreadGroupClass(Ruby runtime) {
+    public static RubyClass createThreadGroupClass(IRuby runtime) {
         RubyClass threadGroupClass = runtime.defineClass("ThreadGroup", runtime.getObject());
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyThreadGroup.class);
         
@@ -108,7 +108,7 @@ public class RubyThreadGroup extends RubyObject {
     	return getRuntime().newArray((IRubyObject[])rubyThreadList.values().toArray(new IRubyObject[rubyThreadList.size()]));
     }
 
-    private RubyThreadGroup(Ruby runtime, RubyClass type) {
+    private RubyThreadGroup(IRuby runtime, RubyClass type) {
         super(runtime, type);
     }
 

@@ -28,7 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.builtin.meta;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -42,7 +42,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class ObjectMetaClass extends AbstractMetaClass {
     // Only for creating ObjectMetaClass directly
-    public ObjectMetaClass(Ruby runtime) {
+    public ObjectMetaClass(IRuby runtime) {
     	super(runtime, null /*Would be Class if it existed yet */, null, null, "Object");
     	
     	this.builtinClass = RubyObject.class;
@@ -51,7 +51,7 @@ public class ObjectMetaClass extends AbstractMetaClass {
     }
     
     // Only for other core modules/classes
-    protected ObjectMetaClass(Ruby runtime, RubyClass metaClass, RubyClass superClass, 
+    protected ObjectMetaClass(IRuby runtime, RubyClass metaClass, RubyClass superClass, 
         RubyModule parentClass, String name, Class builtinClass) {
     	super(runtime, metaClass, superClass, parentClass, name);
     	

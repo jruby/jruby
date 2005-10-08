@@ -28,7 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.builtin.meta;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
@@ -36,7 +36,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class StringMetaClass extends ObjectMetaClass {
-    public StringMetaClass(Ruby runtime) {
+    public StringMetaClass(IRuby runtime) {
         super("String", RubyString.class, runtime.getObject());
     }
 

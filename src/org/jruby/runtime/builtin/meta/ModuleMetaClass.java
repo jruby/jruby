@@ -6,7 +6,7 @@
  */
 package org.jruby.runtime.builtin.meta;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -14,11 +14,11 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ModuleMetaClass extends ObjectMetaClass {
-	public ModuleMetaClass(Ruby runtime, RubyClass superClass) {
+	public ModuleMetaClass(IRuby runtime, RubyClass superClass) {
 		super(runtime, null, superClass, runtime.getObject(), "Module", RubyModule.class);
 	}
 
-    public ModuleMetaClass(Ruby runtime) {
+    public ModuleMetaClass(IRuby runtime) {
         super("Module", RubyModule.class, runtime.getObject());
     }
     
@@ -131,7 +131,7 @@ public class ModuleMetaClass extends ObjectMetaClass {
     * Return an array of nested modules or classes.
     */
    public RubyArray nesting() {
-	   Ruby runtime = getRuntime();
+	   IRuby runtime = getRuntime();
        RubyModule object = runtime.getObject();
 	   RubyModule receiver = runtime.getCurrentContext().getLastRubyClass();
        RubyArray result = runtime.newArray();

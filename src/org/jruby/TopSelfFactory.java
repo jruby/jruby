@@ -48,7 +48,7 @@ public final class TopSelfFactory {
         super();
     }
     
-    public static IRubyObject createTopSelf(final Ruby runtime) {
+    public static IRubyObject createTopSelf(final IRuby runtime) {
         IRubyObject topSelf = new RubyObject(runtime, runtime.getObject());
         
         topSelf.defineSingletonMethod("to_s", new Callback() {

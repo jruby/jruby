@@ -36,7 +36,7 @@ import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -47,7 +47,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class JavaField extends JavaAccessibleObject {
     private Field field;
 
-    public static RubyClass createJavaFieldClass(Ruby runtime, RubyModule javaModule) {
+    public static RubyClass createJavaFieldClass(IRuby runtime, RubyModule javaModule) {
         RubyClass result = javaModule.defineClassUnder("JavaField", runtime.getObject());
         CallbackFactory callbackFactory = runtime.callbackFactory(JavaField.class);
 
@@ -74,7 +74,7 @@ public class JavaField extends JavaAccessibleObject {
         return result;
     }
 
-    public JavaField(Ruby runtime, Field field) {
+    public JavaField(IRuby runtime, Field field) {
         super(runtime, (RubyClass) runtime.getModule("Java").getClass("JavaField"));
         this.field = field;
     }

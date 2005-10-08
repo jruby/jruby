@@ -29,12 +29,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ReadonlyGlobalVariable extends GlobalVariable {
 
-    public ReadonlyGlobalVariable(Ruby runtime, String name, IRubyObject value) {
+    public ReadonlyGlobalVariable(IRuby runtime, String name, IRubyObject value) {
         super(runtime, name, value);
     }
 

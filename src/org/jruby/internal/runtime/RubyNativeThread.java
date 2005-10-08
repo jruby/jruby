@@ -28,7 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyProc;
 import org.jruby.RubyThread;
 import org.jruby.RubyThreadGroup;
@@ -40,7 +40,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class RubyNativeThread extends Thread {
-	private Ruby runtime;
+	private IRuby runtime;
     private Frame currentFrame;
     private Block currentBlock;
     private RubyProc proc;

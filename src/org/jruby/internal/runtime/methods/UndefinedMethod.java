@@ -28,7 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -50,9 +50,9 @@ public class UndefinedMethod extends AbstractMethod {
     }
 
     /**
-     * @see org.jruby.runtime.ICallable#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
+     * @see org.jruby.runtime.ICallable#call(IRuby, IRubyObject, String, IRubyObject[], boolean)
      */
-    public IRubyObject call(Ruby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject call(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
         throw new UnsupportedOperationException();
     }
 

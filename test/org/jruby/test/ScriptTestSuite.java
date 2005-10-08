@@ -30,18 +30,20 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.test;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import org.jruby.Ruby;
-import org.jruby.RubyString;
-import org.jruby.runtime.builtin.IRubyObject;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+
+import org.jruby.IRuby;
+import org.jruby.Ruby;
+import org.jruby.RubyString;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author Anders
@@ -82,7 +84,7 @@ public class ScriptTestSuite extends TestSuite {
             
             // Ensure we have a new interpreter for each test. Previous we were using the
             //  same interpreter which caused problems as soon as one test failed.
-            Ruby runtime = setupInterpreter();
+            IRuby runtime = setupInterpreter();
             
             suite.addTest(new ScriptTest(runtime, line));
         }
@@ -90,8 +92,8 @@ public class ScriptTestSuite extends TestSuite {
         return suite;
     }
 
-    private static Ruby setupInterpreter() {
-        Ruby runtime = Ruby.getDefaultInstance();
+    private static IRuby setupInterpreter() {
+        IRuby runtime = Ruby.getDefaultInstance();
         
         runtime.getLoadService().init(new ArrayList());
         
@@ -114,10 +116,10 @@ public class ScriptTestSuite extends TestSuite {
 
 
     private static class ScriptTest extends TestCase {
-        private final Ruby runtime;
+        private final IRuby runtime;
         private final String filename;
 
-        public ScriptTest(Ruby runtime, String filename) {
+        public ScriptTest(IRuby runtime, String filename) {
             super(filename);
             this.runtime = runtime;
             this.filename = filename;

@@ -35,7 +35,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyIO;
 
 public class IOHandlerProcess extends IOHandler {
@@ -43,7 +43,7 @@ public class IOHandlerProcess extends IOHandler {
     protected OutputStream output = null;
     protected Process process = null;
 
-    public IOHandlerProcess(Ruby runtime, Process process, IOModes modes) throws IOException {
+    public IOHandlerProcess(IRuby runtime, Process process, IOModes modes) throws IOException {
         super(runtime);
         
         if (process == null) {

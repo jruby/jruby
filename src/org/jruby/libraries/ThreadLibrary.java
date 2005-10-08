@@ -28,12 +28,12 @@
 package org.jruby.libraries;
 
 import org.jruby.RubyMutex;
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.runtime.load.Library;
 
 public class ThreadLibrary implements Library {
 
-    public void load(Ruby runtime) {
+    public void load(IRuby runtime) {
         RubyMutex.createMutexClass(runtime);
     }
 }

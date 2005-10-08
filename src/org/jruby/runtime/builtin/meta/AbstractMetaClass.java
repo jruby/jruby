@@ -27,7 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.builtin.meta;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.ReflectedMethod;
@@ -188,7 +188,7 @@ public abstract class AbstractMetaClass extends RubyClass {
 	protected Class builtinClass;
 
 	// Only for other core modules/classes
-	protected AbstractMetaClass(Ruby runtime, RubyClass metaClass,
+	protected AbstractMetaClass(IRuby runtime, RubyClass metaClass,
 			RubyClass superClass, RubyModule parentClass, String name,
 			Class builtinClass) {
 		super(runtime, metaClass, superClass, parentClass, name);
@@ -229,7 +229,7 @@ public abstract class AbstractMetaClass extends RubyClass {
 		}
 	}
 
-	public AbstractMetaClass(Ruby runtime, RubyClass metaClass, RubyClass superClass,
+	public AbstractMetaClass(IRuby runtime, RubyClass metaClass, RubyClass superClass,
 			RubyModule parentModule, String name) {
 		super(runtime, metaClass, superClass, parentModule, name);
 	}

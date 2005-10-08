@@ -31,7 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
@@ -50,7 +50,7 @@ public class CallbackMethod extends AbstractMethod {
         this.callback = callback;
     }
 
-    public IRubyObject call(Ruby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject call(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
     	assert args != null;
     	
         if (runtime.getTraceFunction() != null) {

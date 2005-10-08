@@ -27,7 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.builtin.meta;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -35,7 +35,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ArrayMetaClass extends ObjectMetaClass {
-    public ArrayMetaClass(Ruby runtime) {
+    public ArrayMetaClass(IRuby runtime) {
         super("Array", RubyArray.class, runtime.getObject());
     }
     

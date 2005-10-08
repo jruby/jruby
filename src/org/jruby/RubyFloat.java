@@ -46,11 +46,11 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 public class RubyFloat extends RubyNumeric {
     private final double value;
 
-    public RubyFloat(Ruby runtime) {
+    public RubyFloat(IRuby runtime) {
         this(runtime, 0.0);
     }
 
-    public RubyFloat(Ruby runtime, double value) {
+    public RubyFloat(IRuby runtime, double value) {
         super(runtime, runtime.getClass("Float"));
         this.value = value;
     }
@@ -78,7 +78,7 @@ public class RubyFloat extends RubyNumeric {
     	return this;
     }
 
-    public static RubyClass createFloatClass(Ruby runtime) {
+    public static RubyClass createFloatClass(IRuby runtime) {
         RubyClass result = runtime.defineClass("Float", runtime.getClass("Numeric"));
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyFloat.class);
         
@@ -117,7 +117,7 @@ public class RubyFloat extends RubyNumeric {
 
     // Float methods (flo_*)
 
-    public static RubyFloat newFloat(Ruby runtime, double value) {
+    public static RubyFloat newFloat(IRuby runtime, double value) {
         return new RubyFloat(runtime, value);
     }
 

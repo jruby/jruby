@@ -80,7 +80,7 @@ public class RubyThread extends RubyObject {
     private volatile boolean killed = false;
     public Object killLock = new Object();
     
-    public static RubyClass createThreadClass(Ruby runtime) {
+    public static RubyClass createThreadClass(IRuby runtime) {
         RubyClass threadClass = runtime.defineClass("Thread", runtime.getObject());
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyThread.class);
 
@@ -185,7 +185,7 @@ public class RubyThread extends RubyObject {
     }
 
     private static RubyThread startThread(final IRubyObject recv, final IRubyObject[] args, boolean callInit) {
-        final Ruby runtime = recv.getRuntime();
+        final IRuby runtime = recv.getRuntime();
         if (!runtime.isBlockGiven()) {
             throw runtime.newThreadError("must be called with a block");
         }
@@ -272,7 +272,7 @@ public class RubyThread extends RubyObject {
     	dieIfKilled();
     }
 
-    private RubyThread(Ruby runtime, RubyClass type) {
+    private RubyThread(IRuby runtime, RubyClass type) {
         super(runtime, type);
         this.threadService = runtime.getThreadService();
         // set to default thread group

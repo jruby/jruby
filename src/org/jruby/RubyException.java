@@ -50,11 +50,11 @@ public class RubyException extends RubyObject {
     private RubyArray backtrace;
     public IRubyObject message;
 
-    protected RubyException(Ruby runtime, RubyClass rubyClass) {
+    protected RubyException(IRuby runtime, RubyClass rubyClass) {
         this(runtime, rubyClass, null);
     }
 
-    protected RubyException(Ruby runtime, RubyClass rubyClass, String message) {
+    protected RubyException(IRuby runtime, RubyClass rubyClass, String message) {
         super(runtime, rubyClass);
         if (message == null) {
             this.message = runtime.getNil();
@@ -63,7 +63,7 @@ public class RubyException extends RubyObject {
         }
     }
 
-    public static RubyClass createExceptionClass(Ruby runtime) {
+    public static RubyClass createExceptionClass(IRuby runtime) {
 		RubyClass exceptionClass = runtime.defineClass("Exception", runtime.getObject());
     	
 		CallbackFactory callbackFactory = runtime.callbackFactory(RubyException.class);
@@ -92,7 +92,7 @@ public class RubyException extends RubyObject {
 		return exceptionClass;
     }
 
-    public static RubyException newException(Ruby runtime, RubyClass excptnClass, String msg) {
+    public static RubyException newException(IRuby runtime, RubyClass excptnClass, String msg) {
         return new RubyException(runtime, excptnClass, msg);
     }
 
@@ -177,7 +177,7 @@ public class RubyException extends RubyObject {
 	 * @param nativeException
 	 * @return an Array with the backtrace 
 	 */
-	public static IRubyObject createBacktrace(Ruby runtime, int level, boolean nativeException) {
+	public static IRubyObject createBacktrace(IRuby runtime, int level, boolean nativeException) {
 	    RubyArray backtrace = runtime.newArray();
 	    FrameStack stack = runtime.getFrameStack();
 	    int traceSize = stack.size() - level - 1;

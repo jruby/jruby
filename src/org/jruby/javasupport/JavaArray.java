@@ -32,7 +32,7 @@ package org.jruby.javasupport;
 
 import java.lang.reflect.Array;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
@@ -41,12 +41,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class JavaArray extends JavaObject {
 
-    public JavaArray(Ruby runtime, Object array) {
+    public JavaArray(IRuby runtime, Object array) {
         super(runtime, runtime.getModule("Java").getClass("JavaArray"), array);
         assert array.getClass().isArray();
     }
 
-    public static RubyClass createJavaArrayClass(Ruby runtime, RubyModule javaModule) {
+    public static RubyClass createJavaArrayClass(IRuby runtime, RubyModule javaModule) {
         return javaModule.defineClassUnder("JavaArray", javaModule.getClass("JavaObject"));
     }
 

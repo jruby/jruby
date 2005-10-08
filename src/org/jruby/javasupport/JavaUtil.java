@@ -32,7 +32,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyFloat;
 import org.jruby.RubyNumeric;
@@ -126,7 +126,7 @@ public class JavaUtil {
         }
     }
 
-    public static IRubyObject[] convertJavaArrayToRuby(Ruby runtime, Object[] objects) {
+    public static IRubyObject[] convertJavaArrayToRuby(IRuby runtime, Object[] objects) {
         IRubyObject[] rubyObjects = new IRubyObject[objects.length];
         for (int i = 0; i < objects.length; i++) {
             rubyObjects[i] = convertJavaToRuby(runtime, objects[i]);
@@ -134,14 +134,14 @@ public class JavaUtil {
         return rubyObjects;
     }
 
-    public static IRubyObject convertJavaToRuby(Ruby runtime, Object object) {
+    public static IRubyObject convertJavaToRuby(IRuby runtime, Object object) {
         if (object == null) {
             return runtime.getNil();
         }
         return convertJavaToRuby(runtime, object, object.getClass());
     }
 
-    public static IRubyObject convertJavaToRuby(Ruby runtime, Object object, Class javaClass) {
+    public static IRubyObject convertJavaToRuby(IRuby runtime, Object object, Class javaClass) {
         if (object == null) {
             return runtime.getNil();
         }

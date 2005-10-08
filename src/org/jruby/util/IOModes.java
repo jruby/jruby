@@ -29,7 +29,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 
 /**
  * @author enebo
@@ -46,19 +46,19 @@ public class IOModes {
     public static final int APPEND = 1024;
     public static final int NONBLOCK = 2048;
     
-    private Ruby runtime;
+    private IRuby runtime;
     private int modes;
     
-    public IOModes(Ruby runtime) {
+    public IOModes(IRuby runtime) {
     	modes = 0;
         this.runtime = runtime;
     }
     
-    public IOModes(Ruby runtime, String modesString) {
+    public IOModes(IRuby runtime, String modesString) {
     	this(runtime, convertModesStringToModesInt(runtime, modesString));
     }
     
-    public IOModes(Ruby runtime, long modes) {
+    public IOModes(IRuby runtime, long modes) {
     	// TODO: Ruby does not seem to care about invalid numeric mode values
     	// I am not sure if ruby overflows here also...
         this.modes = (int)modes;
@@ -95,7 +95,7 @@ public class IOModes {
         return ""+modes;
     }
     
-    public static int convertModesStringToModesInt(Ruby runtime, 
+    public static int convertModesStringToModesInt(IRuby runtime, 
     		String modesString) {
     	int modes = 0;
     	

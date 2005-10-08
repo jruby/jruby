@@ -34,7 +34,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.StackElement;
 
@@ -64,11 +64,11 @@ public class Scope implements StackElement {
 
     private Scope next = null;
 
-    public Scope(Ruby runtime) {
+    public Scope(IRuby runtime) {
         this.rubyNil = runtime.getNil();
     }
 	
-	public Scope(Ruby runtime, List names) {
+	public Scope(IRuby runtime, List names) {
 		this(runtime);
 		
 		resetLocalVariables(names);

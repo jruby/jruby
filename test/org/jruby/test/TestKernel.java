@@ -31,12 +31,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.test;
 
+import java.util.ArrayList;
+
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyObject;
 import org.jruby.exceptions.SystemExit;
-
-import java.util.ArrayList;
 
 /**
  * Unit test for the kernel class.

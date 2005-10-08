@@ -29,18 +29,18 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyThread;
 import org.jruby.runtime.ThreadContext;
 
 public class ThreadService {
-    private Ruby runtime;
+    private IRuby runtime;
     private ThreadContext mainContext = new ThreadContext(runtime);
     private ThreadContextLocal localContext = new ThreadContextLocal(mainContext);
     private ThreadGroup rubyThreadGroup;
     private volatile boolean critical;
 
-    public ThreadService(Ruby runtime) {
+    public ThreadService(IRuby runtime) {
         this.runtime = runtime;
         this.mainContext = new ThreadContext(runtime);
         this.localContext = new ThreadContextLocal(mainContext);

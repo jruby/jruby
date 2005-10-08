@@ -64,22 +64,22 @@ public class RubyHash extends RubyObject implements Map {
 
     private boolean isRehashing = false;
 
-    public RubyHash(Ruby runtime) {
+    public RubyHash(IRuby runtime) {
         this(runtime, runtime.getNil());
     }
 
-    public RubyHash(Ruby runtime, IRubyObject defaultValue) {
+    public RubyHash(IRuby runtime, IRubyObject defaultValue) {
         this(runtime, new HashMap(), defaultValue);
     }
 
-    public RubyHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
+    public RubyHash(IRuby runtime, Map valueMap, IRubyObject defaultValue) {
         super(runtime, runtime.getClass("Hash"));
         this.valueMap = new HashMap(valueMap);
         this.defaultValue = defaultValue;
         this.defaultProc = runtime.getNil();
     }
 
-    public static RubyHash nilHash(Ruby runtime) {
+    public static RubyHash nilHash(IRuby runtime) {
         return new RubyHash(runtime) {
             public boolean isNil() {
                 return true;
@@ -165,11 +165,11 @@ public class RubyHash extends RubyObject implements Map {
 
     // Hash methods
 
-    public static RubyHash newHash(Ruby runtime) {
+    public static RubyHash newHash(IRuby runtime) {
     	return new RubyHash(runtime);
     }
 
-	public static RubyHash newHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
+	public static RubyHash newHash(IRuby runtime, Map valueMap, IRubyObject defaultValue) {
 		return new RubyHash(runtime, valueMap, defaultValue);
 	}
 

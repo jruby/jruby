@@ -8,7 +8,7 @@ package org.jruby.runtime.builtin.meta;
 
 import java.util.HashMap;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
@@ -16,7 +16,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class HashMetaClass extends ObjectMetaClass {
-    public HashMetaClass(Ruby runtime) {
+    public HashMetaClass(IRuby runtime) {
         super("Hash", RubyHash.class, runtime.getObject());
     }
     
@@ -98,7 +98,7 @@ public class HashMetaClass extends ObjectMetaClass {
 	}
 
     public IRubyObject newInstance(IRubyObject[] args) {
-    	Ruby runtime = getRuntime();
+    	IRuby runtime = getRuntime();
         RubyHash hash = new RubyHash(runtime);
 
         // A block to represent 'default' value for unknown values

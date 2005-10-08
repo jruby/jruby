@@ -27,7 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.common;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -35,9 +35,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  */
 public class RubyWarnings implements IRubyWarnings {
-    private Ruby runtime;
+    private IRuby runtime;
 
-    public RubyWarnings(Ruby runtime) {
+    public RubyWarnings(IRuby runtime) {
         this.runtime = runtime;
     }
 

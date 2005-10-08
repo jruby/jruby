@@ -56,11 +56,11 @@ public class RubyTime extends RubyObject {
     private static RubyDateFormat rubyDateFormat = new RubyDateFormat("-", Locale.US);
     private static SimpleDateFormat simpleDateFormat = new SimpleDateFormat("-", Locale.US);
 
-    private RubyTime(Ruby runtime, RubyClass rubyClass) {
+    private RubyTime(IRuby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
     }
 
-    public static RubyClass createTimeClass(Ruby runtime) {
+    public static RubyClass createTimeClass(IRuby runtime) {
 		RubyClass rubyTimeClass = runtime.defineClass("Time", runtime.getObject());
     	
 		CallbackFactory callbackFactory = runtime.callbackFactory(RubyTime.class);

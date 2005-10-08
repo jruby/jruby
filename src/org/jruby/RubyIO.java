@@ -153,11 +153,11 @@ public class RubyIO extends RubyObject {
 
     // This should only be called by this and RubyFile.
     // It allows this object to be created without a IOHandler.
-    public RubyIO(Ruby runtime, RubyClass type) {
+    public RubyIO(IRuby runtime, RubyClass type) {
         super(runtime, type);
     }
 
-    public RubyIO(Ruby runtime, OutputStream outputStream) {
+    public RubyIO(IRuby runtime, OutputStream outputStream) {
         super(runtime, runtime.getClass("IO"));
         
         // We only want IO objects with valid streams (better to error now). 
@@ -175,7 +175,7 @@ public class RubyIO extends RubyObject {
         registerIOHandler(handler);
     }
     
-    public RubyIO(Ruby runtime, Process process) {
+    public RubyIO(IRuby runtime, Process process) {
     	super(runtime, runtime.getClass("IO"));
 
         modes = new IOModes(runtime, "w+");
@@ -190,7 +190,7 @@ public class RubyIO extends RubyObject {
     	registerIOHandler(handler);
     }
     
-    public RubyIO(Ruby runtime, int descriptor) {
+    public RubyIO(IRuby runtime, int descriptor) {
         super(runtime, runtime.getClass("IO"));
 
         try {
@@ -207,7 +207,7 @@ public class RubyIO extends RubyObject {
      * <p>Open a file descriptor, unless it is already open, then return
      * it.</p> 
      */
-    public static IRubyObject fdOpen(Ruby runtime, int descriptor) {
+    public static IRubyObject fdOpen(IRuby runtime, int descriptor) {
         return new RubyIO(runtime, descriptor);
     }
 

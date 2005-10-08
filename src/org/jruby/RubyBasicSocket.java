@@ -36,7 +36,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class RubyBasicSocket extends RubyIO {
 
-    public RubyBasicSocket(Ruby runtime, RubyClass type) {
+    public RubyBasicSocket(IRuby runtime, RubyClass type) {
         super(runtime, type);
     }
     

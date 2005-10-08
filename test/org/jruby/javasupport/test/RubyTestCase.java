@@ -31,18 +31,20 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport.test;
 
-import junit.framework.TestCase;
-import org.jruby.RubyKernel;
-import org.jruby.Ruby;
-import org.jruby.RubyString;
-import org.jruby.javasupport.JavaUtil;
-import org.jruby.runtime.builtin.IRubyObject;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+
+import junit.framework.TestCase;
+
+import org.jruby.IRuby;
+import org.jruby.Ruby;
+import org.jruby.RubyKernel;
+import org.jruby.RubyString;
+import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class RubyTestCase extends TestCase {
     private static final IRubyObject[] EMPTY_ARRAY = IRubyObject.NULL_ARRAY;
@@ -51,7 +53,7 @@ public class RubyTestCase extends TestCase {
         super(name);
     }
 
-    protected Ruby createRuby(URL url) throws IOException {
+    protected IRuby createRuby(URL url) throws IOException {
         if (url == null) {
             throw new NullPointerException("url was null");
         }
@@ -68,7 +70,7 @@ public class RubyTestCase extends TestCase {
         out.close();
 
         String filePath = f.getAbsolutePath();
-        Ruby runtime = Ruby.getDefaultInstance();
+        IRuby runtime = Ruby.getDefaultInstance();
         initRuby(runtime);
         RubyKernel.require(runtime.getTopSelf(), new RubyString(runtime, filePath));
         f.delete();
@@ -76,7 +78,7 @@ public class RubyTestCase extends TestCase {
     }
 
     // Is there something built into JRuby to do this?
-    protected void initRuby(Ruby runtime) {
+    protected void initRuby(IRuby runtime) {
         IRubyObject empty =
             JavaUtil.convertJavaToRuby(
                 runtime,

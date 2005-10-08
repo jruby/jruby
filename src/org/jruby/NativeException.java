@@ -37,12 +37,12 @@ public class NativeException extends RubyException {
     private final Throwable cause;
     public static final String CLASS_NAME = "NativeException";
 
-    public NativeException(Ruby runtime, RubyClass rubyClass, Throwable cause) {
+    public NativeException(IRuby runtime, RubyClass rubyClass, Throwable cause) {
         super(runtime, rubyClass, cause.getClass().getName()+": "+cause.getMessage());
         this.cause = cause;
     }
     
-    public static RubyClass createClass(Ruby runtime, RubyClass baseClass) {
+    public static RubyClass createClass(IRuby runtime, RubyClass baseClass) {
     	RubyClass exceptionClass = runtime.defineClass(CLASS_NAME, baseClass);
     	
 		CallbackFactory callbackFactory = runtime.callbackFactory(NativeException.class);

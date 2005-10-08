@@ -27,7 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.builtin.meta;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
@@ -37,7 +37,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class FixnumMetaClass extends IntegerMetaClass {
-	public FixnumMetaClass(Ruby runtime) {
+	public FixnumMetaClass(IRuby runtime) {
 		super("Fixnum", RubyFixnum.class, runtime.getClass("Integer"));
 	}
 	

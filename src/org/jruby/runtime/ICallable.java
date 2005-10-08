@@ -29,7 +29,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -49,7 +49,7 @@ public interface ICallable {
 
     boolean isUndefined();
 
-    IRubyObject call(Ruby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper);
+    IRubyObject call(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper);
 
     Arity getArity();
 

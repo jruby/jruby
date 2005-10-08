@@ -29,7 +29,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.test; 
  
-import org.jruby.Ruby; 
+import org.jruby.Ruby;
  
 public class TestRubyCollect extends TestRubyBase { 
 	public TestRubyCollect(String name) { 

@@ -29,6 +29,7 @@
 package org.jruby.test;
 
 import junit.framework.TestCase;
+
 import org.jruby.util.CommandlineParser;
 
 public class TestCommandlineParser extends TestCase {

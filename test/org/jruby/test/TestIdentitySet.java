@@ -29,6 +29,7 @@
 package org.jruby.test;
 
 import junit.framework.TestCase;
+
 import org.jruby.util.collections.IdentitySet;
 
 public class TestIdentitySet extends TestCase {

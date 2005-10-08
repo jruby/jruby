@@ -40,7 +40,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class RubyPrecision {
     
-    public static RubyModule createPrecisionModule(Ruby runtime) {
+    public static RubyModule createPrecisionModule(IRuby runtime) {
         RubyModule precisionModule = runtime.defineModule("Precision");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyPrecision.class);
         precisionModule.defineSingletonMethod("append_features", callbackFactory.getSingletonMethod("append_features", IRubyObject.class));

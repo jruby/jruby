@@ -31,7 +31,7 @@ package org.jruby.internal.runtime;
 
 import java.util.ArrayList;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyProc;
 import org.jruby.runtime.IAccessor;
 
@@ -49,7 +49,7 @@ public final class GlobalVariable {
         this.accessor = accessor;
     }
     
-    public static GlobalVariable newUndefined(Ruby runtime, String name) {
+    public static GlobalVariable newUndefined(IRuby runtime, String name) {
         GlobalVariable variable = new GlobalVariable(null);
         variable.setAccessor(new UndefinedAccessor(runtime, variable, name));
         return variable;

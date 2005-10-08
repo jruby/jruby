@@ -35,7 +35,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import org.jruby.MetaClass;
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFloat;
@@ -143,7 +143,7 @@ public interface IRubyObject {
     /**
      * RubyMethod getRuntime.
      */
-    Ruby getRuntime();
+    IRuby getRuntime();
 
     /**
      * RubyMethod getJavaClass.

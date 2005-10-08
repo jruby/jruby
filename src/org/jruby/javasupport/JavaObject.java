@@ -33,7 +33,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
@@ -51,16 +51,16 @@ public class JavaObject extends RubyObject {
     private static Object NULL_LOCK = new Object();
     private final Object value;
 
-    protected JavaObject(Ruby runtime, RubyClass rubyClass, Object value) {
+    protected JavaObject(IRuby runtime, RubyClass rubyClass, Object value) {
         super(runtime, rubyClass);
         this.value = value;
     }
 
-    protected JavaObject(Ruby runtime, Object value) {
+    protected JavaObject(IRuby runtime, Object value) {
         this(runtime, runtime.getModule("Java").getClass("JavaObject"), value);
     }
 
-    public static JavaObject wrap(Ruby runtime, Object value) {
+    public static JavaObject wrap(IRuby runtime, Object value) {
         Object lock = value == null ? NULL_LOCK : value;
         
         synchronized (lock) {
@@ -89,7 +89,7 @@ public class JavaObject extends RubyObject {
         return value;
     }
 
-    public static RubyClass createJavaObjectClass(Ruby runtime, RubyModule javaModule) {
+    public static RubyClass createJavaObjectClass(IRuby runtime, RubyModule javaModule) {
     	RubyClass result = javaModule.defineClassUnder("JavaObject", runtime.getObject());
 
     	registerRubyMethods(runtime, result);
@@ -99,7 +99,7 @@ public class JavaObject extends RubyObject {
         return result;
     }
 
-	protected static void registerRubyMethods(Ruby runtime, RubyClass result) {
+	protected static void registerRubyMethods(IRuby runtime, RubyClass result) {
 		CallbackFactory callbackFactory = runtime.callbackFactory(JavaObject.class);
 
         result.defineMethod("to_s", 

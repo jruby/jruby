@@ -32,7 +32,7 @@ package org.jruby.javasupport;
 
 import java.lang.reflect.Modifier;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
@@ -42,7 +42,7 @@ import org.jruby.runtime.CallbackFactory;
 
 public abstract class JavaCallable extends JavaAccessibleObject {
 
-    public JavaCallable(Ruby runtime, RubyClass rubyClass) {
+    public JavaCallable(IRuby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
     }
 
@@ -87,7 +87,7 @@ public abstract class JavaCallable extends JavaAccessibleObject {
     }
 
 
-    public static void registerRubyMethods(Ruby runtime, RubyClass result, Class klass) {
+    public static void registerRubyMethods(IRuby runtime, RubyClass result, Class klass) {
         registerRubyMethods(runtime, result);
         
         CallbackFactory callbackFactory = runtime.callbackFactory(klass);

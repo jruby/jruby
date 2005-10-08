@@ -37,7 +37,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import org.jruby.MetaClass;
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
@@ -172,13 +172,13 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  */
 public final class EvaluateVisitor implements NodeVisitor {
-    private Ruby runtime;
+    private IRuby runtime;
     private ThreadContext threadContext;
 
     private IRubyObject self;
     private IRubyObject result;
 
-    public EvaluateVisitor(Ruby runtime, IRubyObject self) {
+    public EvaluateVisitor(IRuby runtime, IRubyObject self) {
         this.runtime = runtime;
         this.threadContext = runtime.getCurrentContext();
         this.self = self;
@@ -1644,7 +1644,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         return (RubyArray) newValue;
     }
     
-    private IRubyObject[] setupArgs(Ruby runtime, ThreadContext context, Node node) {
+    private IRubyObject[] setupArgs(IRuby runtime, ThreadContext context, Node node) {
         if (node == null) {
             return IRubyObject.NULL_ARRAY;
         }

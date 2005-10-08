@@ -40,7 +40,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  */
 public class RubyUnboundMethod extends RubyMethod {
-    protected RubyUnboundMethod(Ruby runtime) {
+    protected RubyUnboundMethod(IRuby runtime) {
         super(runtime, runtime.getClass("UnboundMethod"));
     }
 
@@ -61,7 +61,7 @@ public class RubyUnboundMethod extends RubyMethod {
         return newMethod;
     }
 
-    public static RubyClass defineUnboundMethodClass(Ruby runtime) {
+    public static RubyClass defineUnboundMethodClass(IRuby runtime) {
         RubyClass newClass = 
         	runtime.defineClass("UnboundMethod", runtime.getClass("Method"));
 

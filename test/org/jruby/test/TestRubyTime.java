@@ -33,20 +33,22 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.test;
 
+import java.util.Date;
+
 import junit.framework.TestCase;
+
+import org.jruby.IRuby;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyTime;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import java.util.Date;
 
 /**
  * 
  * @author chadfowler
  */
 public class TestRubyTime extends TestCase {
-    private Ruby runtime;
+    private IRuby runtime;
     private RubyClass rubyTime;
     private RubyTime nineTeenSeventy;
 

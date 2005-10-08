@@ -30,19 +30,20 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.test;
 
-import junit.framework.TestCase;
-import org.jruby.Ruby;
-import org.jruby.RubyIO;
-
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.StringReader;
+
+import junit.framework.TestCase;
+
+import org.jruby.IRuby;
+import org.jruby.RubyIO;
 
 /**
  * @author Benoit
  */
 public class TestRubyBase extends TestCase {
-    protected Ruby runtime;
+    protected IRuby runtime;
     private PrintStream out;
 
     public TestRubyBase() {

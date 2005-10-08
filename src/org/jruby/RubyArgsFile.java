@@ -35,7 +35,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class RubyArgsFile extends RubyObject {
 
-    public RubyArgsFile(Ruby runtime) {
+    public RubyArgsFile(IRuby runtime) {
         super(runtime, runtime.getObject());
     }
 

@@ -35,11 +35,11 @@ import org.jruby.runtime.CallbackFactory;
 public class RubyMutex extends RubyObject {
     private boolean isLocked = false;
 
-    public RubyMutex(Ruby runtime) {
+    public RubyMutex(IRuby runtime) {
         super(runtime, runtime.getClass("Mutex"));
     }
 
-    public static void createMutexClass(Ruby runtime) {
+    public static void createMutexClass(IRuby runtime) {
         RubyClass mutexClass =
                 runtime.defineClass("Mutex", runtime.getObject());
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyMutex.class);

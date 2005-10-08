@@ -29,7 +29,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.evaluator;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.ast.CallNode;
 import org.jruby.ast.ClassVarAsgnNode;
@@ -52,7 +52,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  */
 public class AssignmentVisitor extends AbstractVisitor {
-    private Ruby runtime;
+    private IRuby runtime;
     private ThreadContext threadContext;
     private IRubyObject self;
 
@@ -60,7 +60,7 @@ public class AssignmentVisitor extends AbstractVisitor {
     private boolean check;
     private IRubyObject result;
 
-    public AssignmentVisitor(Ruby runtime, IRubyObject self) {
+    public AssignmentVisitor(IRuby runtime, IRubyObject self) {
         this.runtime = runtime;
         this.self = self;
         this.threadContext = runtime.getCurrentContext();

@@ -53,11 +53,11 @@ public class RubyString extends RubyObject {
 
 	private String value;
 	
-	public RubyString(Ruby runtime, String value) {
+	public RubyString(IRuby runtime, String value) {
 		this(runtime, runtime.getClass("String"), value);
 	}
 
-	public RubyString(Ruby runtime, RubyClass rubyClass, String value) {
+	public RubyString(IRuby runtime, RubyClass rubyClass, String value) {
 		super(runtime, rubyClass);
 
         assert value != null;
@@ -166,11 +166,11 @@ public class RubyString extends RubyObject {
 	/** rb_str_new2
 	 *
 	 */
-	public static RubyString newString(Ruby runtime, String str) {
+	public static RubyString newString(IRuby runtime, String str) {
 		return new RubyString(runtime, str);
 	}
 
-	public static RubyString newString(Ruby runtime, byte[] bytes) {
+	public static RubyString newString(IRuby runtime, byte[] bytes) {
 		return runtime.newString(bytesToString(bytes));
 	}
 

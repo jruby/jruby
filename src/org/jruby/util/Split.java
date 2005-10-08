@@ -35,7 +35,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyNumeric;
@@ -48,13 +48,13 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class Split {
     private boolean isWhitespace = false;
-    private Ruby runtime;
+    private IRuby runtime;
     private int limit = 0;
     private RubyRegexp pattern;
     private String splitee;
     private List result = new ArrayList();
 
-    public Split(Ruby runtime, String splitee, IRubyObject[] args) {
+    public Split(IRuby runtime, String splitee, IRubyObject[] args) {
         if (args.length > 2) {
             throw runtime.newArgumentError(args.length, 2);
         }

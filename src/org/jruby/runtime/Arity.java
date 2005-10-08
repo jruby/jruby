@@ -32,7 +32,7 @@ package org.jruby.runtime;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -89,7 +89,7 @@ public final class Arity {
         return value;
     }
 
-    public void checkArity(Ruby runtime, IRubyObject[] args) {
+    public void checkArity(IRuby runtime, IRubyObject[] args) {
         if (isFixed()) {
             if (args.length != required()) {
                 throw runtime.newArgumentError("wrong number of arguments(" + args.length + " for " + required() + ")");

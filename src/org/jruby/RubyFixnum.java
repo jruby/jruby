@@ -49,11 +49,11 @@ public class RubyFixnum extends RubyInteger {
     public static final long MIN = -1 * MAX - 1;
     private static final long MAX_MARSHAL_FIXNUM = (1L << 30) - 1;
 
-    public RubyFixnum(Ruby runtime) {
+    public RubyFixnum(IRuby runtime) {
         this(runtime, 0);
     }
 
-    public RubyFixnum(Ruby runtime, long value) {
+    public RubyFixnum(IRuby runtime, long value) {
         super(runtime, runtime.getClass("Fixnum"));
         this.value = value;
     }
@@ -74,15 +74,15 @@ public class RubyFixnum extends RubyInteger {
         return value;
     }
 
-    public static RubyFixnum zero(Ruby runtime) {
+    public static RubyFixnum zero(IRuby runtime) {
         return runtime.newFixnum(0);
     }
 
-    public static RubyFixnum one(Ruby runtime) {
+    public static RubyFixnum one(IRuby runtime) {
         return runtime.newFixnum(1);
     }
 
-    public static RubyFixnum minus_one(Ruby runtime) {
+    public static RubyFixnum minus_one(IRuby runtime) {
         return runtime.newFixnum(-1);
     }
 
@@ -104,7 +104,7 @@ public class RubyFixnum extends RubyInteger {
 
     // Methods of the Fixnum Class (fix_*):
 
-    public static RubyFixnum newFixnum(Ruby runtime, long value) {
+    public static RubyFixnum newFixnum(IRuby runtime, long value) {
         RubyFixnum fixnum;
         if (value >= 0 && value < runtime.getFixnumCache().length) {
             fixnum = runtime.getFixnumCache()[(int) value];

@@ -34,7 +34,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.List;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyFile;
 import org.jruby.ast.Node;
 import org.jruby.lexer.yacc.LexerSource;
@@ -44,9 +44,9 @@ import org.jruby.lexer.yacc.SyntaxException;
  * Serves as a simple facade for all the parsing magic.
  */
 public class Parser {
-    private final Ruby runtime;
+    private final IRuby runtime;
 
-    public Parser(Ruby runtime) {
+    public Parser(IRuby runtime) {
         this.runtime = runtime;
     }
 

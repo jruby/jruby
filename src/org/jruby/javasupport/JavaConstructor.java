@@ -38,7 +38,7 @@ import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.runtime.CallbackFactory;
@@ -47,7 +47,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class JavaConstructor extends JavaCallable {
     private Constructor constructor;
 
-    public static RubyClass createJavaConstructorClass(Ruby runtime, RubyModule javaModule) {
+    public static RubyClass createJavaConstructorClass(IRuby runtime, RubyModule javaModule) {
         RubyClass result =
                 javaModule.defineClassUnder("JavaConstructor", runtime.getObject());
         CallbackFactory callbackFactory = runtime.callbackFactory(JavaConstructor.class);
@@ -65,7 +65,7 @@ public class JavaConstructor extends JavaCallable {
         return result;
     }
 
-    public JavaConstructor(Ruby runtime, Constructor constructor) {
+    public JavaConstructor(IRuby runtime, Constructor constructor) {
         super(runtime, runtime.getModule("Java").getClass("JavaConstructor"));
         this.constructor = constructor;
     }

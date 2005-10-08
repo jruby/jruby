@@ -41,7 +41,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  */
 public abstract class RubyInteger extends RubyNumeric { 
-    public RubyInteger(Ruby runtime, RubyClass rubyClass) {
+    public RubyInteger(IRuby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
     }
     

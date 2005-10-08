@@ -37,7 +37,7 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class RubyFileTest {
-    public static RubyModule createFileTestModule(Ruby runtime) {
+    public static RubyModule createFileTestModule(IRuby runtime) {
         RubyModule fileTestModule = runtime.defineModule("FileTest");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyFileTest.class);
 

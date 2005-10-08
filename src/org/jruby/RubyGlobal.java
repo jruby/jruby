@@ -45,7 +45,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  */
 public class RubyGlobal {
-    public static void createGlobals(Ruby runtime) {
+    public static void createGlobals(IRuby runtime) {
 
         // Version information:
         IRubyObject version = runtime.newString(Constants.RUBY_VERSION).freeze();
@@ -110,7 +110,7 @@ public class RubyGlobal {
     // Accessor methods.
 
     private static class LineNumberGlobalVariable extends GlobalVariable {
-        public LineNumberGlobalVariable(Ruby runtime, String name, RubyFixnum value) {
+        public LineNumberGlobalVariable(IRuby runtime, String name, RubyFixnum value) {
             super(runtime, name, value);
         }
 
@@ -121,7 +121,7 @@ public class RubyGlobal {
     }
 
     private static class ErrorInfoGlobalVariable extends GlobalVariable {
-        public ErrorInfoGlobalVariable(Ruby runtime, String name, IRubyObject value) {
+        public ErrorInfoGlobalVariable(IRuby runtime, String name, IRubyObject value) {
             super(runtime, name, value);
         }
 
@@ -135,7 +135,7 @@ public class RubyGlobal {
 
     // FIXME: move out of this class!
     public static class StringGlobalVariable extends GlobalVariable {
-        public StringGlobalVariable(Ruby runtime, String name, IRubyObject value) {
+        public StringGlobalVariable(IRuby runtime, String name, IRubyObject value) {
             super(runtime, name, value);
         }
 
@@ -148,7 +148,7 @@ public class RubyGlobal {
     }
 
     private static class SafeGlobalVariable extends GlobalVariable {
-        public SafeGlobalVariable(Ruby runtime, String name) {
+        public SafeGlobalVariable(IRuby runtime, String name) {
             super(runtime, name, null);
         }
 
@@ -169,7 +169,7 @@ public class RubyGlobal {
     }
 
     private static class BacktraceGlobalVariable extends GlobalVariable {
-        public BacktraceGlobalVariable(Ruby runtime, String name) {
+        public BacktraceGlobalVariable(IRuby runtime, String name) {
             super(runtime, name, null);
         }
 
@@ -188,7 +188,7 @@ public class RubyGlobal {
     }
 
     private static class LastlineGlobalVariable extends GlobalVariable {
-        public LastlineGlobalVariable(Ruby runtime, String name) {
+        public LastlineGlobalVariable(IRuby runtime, String name) {
             super(runtime, name, null);
         }
 
@@ -203,7 +203,7 @@ public class RubyGlobal {
     }
 
     private static class InputGlobalVariable extends GlobalVariable {
-        public InputGlobalVariable(Ruby runtime, String name, IRubyObject value) {
+        public InputGlobalVariable(IRuby runtime, String name, IRubyObject value) {
             super(runtime, name, value);
         }
 
@@ -219,7 +219,7 @@ public class RubyGlobal {
     }
 
     private static class OutputGlobalVariable extends GlobalVariable {
-        public OutputGlobalVariable(Ruby runtime, String name, IRubyObject value) {
+        public OutputGlobalVariable(IRuby runtime, String name, IRubyObject value) {
             super(runtime, name, value);
         }
 
@@ -239,7 +239,7 @@ public class RubyGlobal {
     }
     
     private static class LoadPath extends ReadonlyGlobalVariable {
-        public LoadPath(Ruby runtime, String name) {
+        public LoadPath(IRuby runtime, String name) {
             super(runtime, name, null);
         }
         
@@ -252,7 +252,7 @@ public class RubyGlobal {
     }
 
     private static class LoadedFeatures extends ReadonlyGlobalVariable {
-        public LoadedFeatures(Ruby runtime, String name) {
+        public LoadedFeatures(IRuby runtime, String name) {
             super(runtime, name, null);
         }
         

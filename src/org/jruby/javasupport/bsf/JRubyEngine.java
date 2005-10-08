@@ -40,6 +40,7 @@ import org.apache.bsf.BSFException;
 import org.apache.bsf.BSFManager;
 import org.apache.bsf.util.BSFEngineImpl;
 import org.apache.bsf.util.BSFFunctions;
+import org.jruby.IRuby;
 import org.jruby.Ruby;
 import org.jruby.ast.Node;
 import org.jruby.exceptions.BreakJump;
@@ -60,7 +61,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  */
 public class JRubyEngine extends BSFEngineImpl {
-    private Ruby runtime;
+    private IRuby runtime;
 
     public Object apply(String file, int line, int col, Object funcBody, Vector paramNames, Vector args) {
         ThreadContext threadContext = runtime.getCurrentContext();
@@ -189,7 +190,7 @@ public class JRubyEngine extends BSFEngineImpl {
      *
      * @param exception An Exception thrown by JRuby
      */
-    private static void printException(Ruby runtime, Exception exception) {
+    private static void printException(IRuby runtime, Exception exception) {
         if (exception instanceof RaiseException) {
             runtime.printError(((RaiseException) exception).getException());
         } else if (exception instanceof ThrowJump) {
@@ -202,10 +203,10 @@ public class JRubyEngine extends BSFEngineImpl {
     }
 
     private static class BeanGlobalVariable implements IAccessor {
-        private Ruby runtime;
+        private IRuby runtime;
         private BSFDeclaredBean bean;
 
-        public BeanGlobalVariable(Ruby runtime, BSFDeclaredBean bean) {
+        public BeanGlobalVariable(IRuby runtime, BSFDeclaredBean bean) {
             this.runtime = runtime;
             this.bean = bean;
         }
@@ -225,10 +226,10 @@ public class JRubyEngine extends BSFEngineImpl {
     }
 
     private static class FunctionsGlobalVariable implements IAccessor {
-        private Ruby runtime;
+        private IRuby runtime;
         private BSFFunctions functions;
 
-        public FunctionsGlobalVariable(Ruby runtime, BSFFunctions functions) {
+        public FunctionsGlobalVariable(IRuby runtime, BSFFunctions functions) {
             this.runtime = runtime;
             this.functions = functions;
         }

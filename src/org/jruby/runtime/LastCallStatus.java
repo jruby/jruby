@@ -28,7 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.util.IdUtil;
 
 /**
@@ -42,10 +42,10 @@ public class LastCallStatus {
     private static final Object PROTECTED = new Object();
     private static final Object VARIABLE = new Object();
 
-    private final Ruby runtime;
+    private final IRuby runtime;
     private Object status = NORMAL;
 
-    public LastCallStatus(Ruby runtime) {
+    public LastCallStatus(IRuby runtime) {
         this.runtime = runtime;
     }
 
@@ -70,7 +70,7 @@ public class LastCallStatus {
     	return status == VARIABLE;
     }
 
-    public Ruby getRuntime() {
+    public IRuby getRuntime() {
         return runtime;
     }
 

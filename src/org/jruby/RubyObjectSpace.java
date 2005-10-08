@@ -41,7 +41,7 @@ public class RubyObjectSpace {
     /** Create the ObjectSpace module and add it to the Ruby runtime.
      * 
      */
-    public static RubyModule createObjectSpaceModule(Ruby runtime) {
+    public static RubyModule createObjectSpaceModule(IRuby runtime) {
         RubyModule objectSpaceModule = runtime.defineModule("ObjectSpace");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyObjectSpace.class);
         objectSpaceModule.defineModuleFunction("each_object", callbackFactory.getOptSingletonMethod("each_object"));

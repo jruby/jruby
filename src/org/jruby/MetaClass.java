@@ -33,7 +33,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class MetaClass extends RubyClass {
 
-    public MetaClass(Ruby runtime, RubyClass superClass, RubyModule parentModule) {
+    public MetaClass(IRuby runtime, RubyClass superClass, RubyModule parentModule) {
         super(runtime, runtime.getClass("Class"), superClass, parentModule, null);
     }
  

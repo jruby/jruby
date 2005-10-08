@@ -100,7 +100,7 @@ import org.jruby.util.BuiltinScript;
 /**
  * The jruby runtime.
  */
-public final class Ruby {
+public final class Ruby implements IRuby {
 	private CacheMap cacheMap = new CacheMap();
     private ThreadService threadService = new ThreadService(this);
 
@@ -175,7 +175,7 @@ public final class Ruby {
      *
      * @return the JRuby runtime
      */
-    public static Ruby getDefaultInstance() {
+    public static IRuby getDefaultInstance() {
         return new Ruby();
     }
 
@@ -503,7 +503,7 @@ public final class Ruby {
         initErrnoErrors();
 
         getLoadService().addAutoload("UnboundMethod", new IAutoloadMethod() {
-            public IRubyObject load(Ruby ruby, String name) {
+            public IRubyObject load(IRuby ruby, String name) {
                 return RubyUnboundMethod.defineUnboundMethodClass(ruby);
             }
         });

@@ -33,7 +33,7 @@ package org.jruby.internal.runtime.methods;
 
 import java.util.Iterator;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
@@ -73,9 +73,9 @@ public final class DefaultMethod extends AbstractMethod {
     }
 
     /**
-     * @see AbstractMethod#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
+     * @see AbstractMethod#call(IRuby, IRubyObject, String, IRubyObject[], boolean)
      */
-    public IRubyObject call(Ruby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject call(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
     	assert args != null;
 
         ThreadContext context = runtime.getCurrentContext();
@@ -121,7 +121,7 @@ public final class DefaultMethod extends AbstractMethod {
         }
     }
 
-    private void prepareArguments(Ruby runtime, Scope scope, IRubyObject receiver, IRubyObject[] args) {
+    private void prepareArguments(IRuby runtime, Scope scope, IRubyObject receiver, IRubyObject[] args) {
         int expectedArgsCount = argsNode.getArgsCount();
         if (expectedArgsCount > args.length) {
             throw runtime.newArgumentError("Wrong # of arguments(" + args.length + " for " + expectedArgsCount + ")");
@@ -168,7 +168,7 @@ public final class DefaultMethod extends AbstractMethod {
         }
     }
 
-    private void traceReturn(Ruby runtime, IRubyObject receiver, String name) {
+    private void traceReturn(IRuby runtime, IRubyObject receiver, String name) {
         if (runtime.getTraceFunction() == null) {
             return;
         }
@@ -177,7 +177,7 @@ public final class DefaultMethod extends AbstractMethod {
         runtime.callTraceFunction("return", position, receiver, name, getImplementationClass()); // XXX
     }
 
-    private void traceCall(Ruby runtime, IRubyObject receiver, String name) {
+    private void traceCall(IRuby runtime, IRubyObject receiver, String name) {
         if (runtime.getTraceFunction() == null) {
             return;
         }

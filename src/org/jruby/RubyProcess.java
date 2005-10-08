@@ -36,7 +36,7 @@ package org.jruby;
  */
 public class RubyProcess {
 
-    public static RubyModule createProcessModule(Ruby runtime) {
+    public static RubyModule createProcessModule(IRuby runtime) {
         RubyModule module = runtime.defineModule("Process");
 
         return module;

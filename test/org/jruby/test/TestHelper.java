@@ -37,7 +37,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -139,8 +139,8 @@ public class TestHelper {
     {
         Loader loader = new Loader();
         Class c = loader.loadClass(name, javaClass);
-        Method method = c.getMethod(methodName, new Class[] { Ruby.class, IRubyObject.class });
-        Ruby runtime = self.getRuntime();
+        Method method = c.getMethod(methodName, new Class[] { IRuby.class, IRubyObject.class });
+        IRuby runtime = self.getRuntime();
 		RubyModule oldParent = runtime.getCurrentContext().setRubyClass(self.getType());
 		
         try {

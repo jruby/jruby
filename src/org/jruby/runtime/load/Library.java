@@ -30,9 +30,9 @@ package org.jruby.runtime.load;
 
 import java.io.IOException;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 
 public interface Library {
 
-    void load(Ruby runtime) throws IOException;
+    void load(IRuby runtime) throws IOException;
 }

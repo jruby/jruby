@@ -38,7 +38,7 @@ public class RubyMath {
     /** Create the Math module and add it to the Ruby runtime.
      * 
      */
-    public static RubyModule createMathModule(Ruby runtime) {
+    public static RubyModule createMathModule(IRuby runtime) {
         RubyModule result = runtime.defineModule("Math");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyMath.class);
         

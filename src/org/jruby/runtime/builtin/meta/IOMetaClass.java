@@ -32,7 +32,7 @@ package org.jruby.runtime.builtin.meta;
 
 import java.io.IOException;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyIO;
@@ -44,7 +44,7 @@ import org.jruby.util.IOHandler;
 
 public class IOMetaClass extends ObjectMetaClass {
 
-    public IOMetaClass(Ruby runtime) {
+    public IOMetaClass(IRuby runtime) {
         this("IO", RubyIO.class, runtime.getObject());
     }
 
@@ -201,7 +201,7 @@ public class IOMetaClass extends ObjectMetaClass {
     
     //XXX Hacked incomplete popen implementation to make
     public IRubyObject popen(IRubyObject[] args) {
-    	Ruby runtime = getRuntime();
+    	IRuby runtime = getRuntime();
     	checkArgumentCount(args, 1, 2);
     	IRubyObject cmdObj = args[0].convertToString();
     	cmdObj.checkSafeString();

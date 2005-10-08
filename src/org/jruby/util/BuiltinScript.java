@@ -35,7 +35,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.ablaf.ast.IAstDecoder;
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.ast.Node;
 import org.jruby.ast.util.RubyAstMarshal;
 import org.jruby.runtime.load.Library;
@@ -50,11 +50,11 @@ public class BuiltinScript implements Library {
         this.name = name;
     }
 
-    public void load(Ruby runtime) throws IOException {
+    public void load(IRuby runtime) throws IOException {
         runtime.loadNode("jruby builtin", getNode(runtime), false);
     }
 
-    private Node getNode(Ruby runtime) throws IOException {
+    private Node getNode(IRuby runtime) throws IOException {
         String resourceName = "/builtin/" + name + ".rb.ast.ser";
         InputStream in = getClass().getResourceAsStream(resourceName);
         if (in == null) {

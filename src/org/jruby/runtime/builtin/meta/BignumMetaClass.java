@@ -27,14 +27,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.builtin.meta;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 
 public class BignumMetaClass extends ObjectMetaClass {
-    public BignumMetaClass(Ruby runtime) {
+    public BignumMetaClass(IRuby runtime) {
         super("Bignum", RubyBignum.class, runtime.getClass("Integer"));
     }
     

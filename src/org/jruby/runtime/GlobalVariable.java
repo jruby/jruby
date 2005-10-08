@@ -31,11 +31,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class GlobalVariable {
-    protected final Ruby runtime;
+    protected final IRuby runtime;
 
     private final String name;
     private IRubyObject value;
@@ -44,7 +44,7 @@ public class GlobalVariable {
         return "$" + name;
     }
 
-    public GlobalVariable(Ruby runtime, String name, IRubyObject value) {
+    public GlobalVariable(IRuby runtime, String name, IRubyObject value) {
         assert name.startsWith("$");
 
         this.runtime = runtime;

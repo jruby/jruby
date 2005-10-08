@@ -30,7 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -58,7 +58,7 @@ public class AliasMethod extends AbstractMethod {
     	return oldName;
     }
 
-    public IRubyObject call(Ruby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject call(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
         return oldMethod.call(runtime, receiver, oldName, args, noSuper);
     }
 

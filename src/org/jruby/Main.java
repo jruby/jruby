@@ -114,7 +114,7 @@ public class Main {
     }
 
     private static int runInterpreter(Reader reader, String filename) {
-        Ruby runtime = Ruby.getDefaultInstance();
+        IRuby runtime = Ruby.getDefaultInstance();
 
         try {
         	runInterpreter(runtime, reader, filename);
@@ -133,7 +133,7 @@ public class Main {
         }
     }
     
-    private static void runInterpreter(Ruby runtime, Reader reader, String filename) {
+    private static void runInterpreter(IRuby runtime, Reader reader, String filename) {
     	try {
     		initializeRuntime(runtime, filename);
     		Node parsedScript = getParsedScript(runtime, reader, filename);
@@ -144,7 +144,7 @@ public class Main {
     	}
     }
 
-    private static Node getParsedScript(Ruby runtime, Reader reader, String filename) {
+    private static Node getParsedScript(IRuby runtime, Reader reader, String filename) {
         Node result = runtime.parse(reader, filename);
         if (commandline.isAssumePrinting()) {
             result = new ParserSupport().appendPrintToBlock(result);
@@ -155,7 +155,7 @@ public class Main {
         return result;
     }
 
-    private static void initializeRuntime(final Ruby runtime, String filename) {
+    private static void initializeRuntime(final IRuby runtime, String filename) {
         IRubyObject argumentArray = runtime.newArray(JavaUtil.convertJavaArrayToRuby(runtime, commandline.getScriptArguments()));
         runtime.setVerbose(runtime.newBoolean(commandline.isVerbose()));
 
@@ -180,7 +180,7 @@ public class Main {
         }
     }
 
-    private static void defineGlobalVERBOSE(final Ruby runtime) {
+    private static void defineGlobalVERBOSE(final IRuby runtime) {
         // $VERBOSE can be true, false, or nil.  Any non-false-nil value will get stored as true  
         runtime.getGlobalVariables().define("$VERBOSE", new IAccessor() {
             public IRubyObject getValue() {
@@ -199,7 +199,7 @@ public class Main {
         });
     }
 
-    private static void defineGlobal(Ruby runtime, String name, boolean value) {
+    private static void defineGlobal(IRuby runtime, String name, boolean value) {
         runtime.getGlobalVariables().defineReadonly(name, new ValueAccessor(value ? runtime.getTrue() : runtime.getNil()));
     }
 

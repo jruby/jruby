@@ -45,7 +45,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 //   this seems so pathological I do not see the need to fix this now.
 public class RubyNumeric extends RubyObject {
 
-    public RubyNumeric(Ruby runtime, RubyClass metaClass) {
+    public RubyNumeric(IRuby runtime, RubyClass metaClass) {
         super(runtime, metaClass);
     }
 
@@ -62,7 +62,7 @@ public class RubyNumeric extends RubyObject {
         return getLongValue();
     }
     
-    public static RubyNumeric newNumeric(Ruby runtime) {
+    public static RubyNumeric newNumeric(IRuby runtime) {
     	return new RubyNumeric(runtime, runtime.getClass("Numeric"));
     }
 
@@ -112,7 +112,7 @@ public class RubyNumeric extends RubyObject {
      *          the result of the conversion, which will be zero if the 
      *          conversion failed.
      */
-    public static RubyInteger str2inum(Ruby runtime, RubyString str, int base) {
+    public static RubyInteger str2inum(IRuby runtime, RubyString str, int base) {
         StringBuffer sbuf = new StringBuffer(str.getValue().trim());
         if (sbuf.length() == 0) {
             return RubyFixnum.zero(runtime);
@@ -181,7 +181,7 @@ public class RubyNumeric extends RubyObject {
      * @return  a RubyFloat representing the result of the conversion, which
      *          will be 0.0 if the conversion failed.
      */
-    public static RubyFloat str2fnum(Ruby runtime, RubyString arg) {
+    public static RubyFloat str2fnum(IRuby runtime, RubyString arg) {
         String str = arg.getValue().trim();
         double d = 0.0;
         int pos = str.length();

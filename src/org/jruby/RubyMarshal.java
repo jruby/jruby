@@ -51,7 +51,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
  */
 public class RubyMarshal {
 
-    public static RubyModule createMarshalModule(Ruby runtime) {
+    public static RubyModule createMarshalModule(IRuby runtime) {
         RubyModule module = runtime.defineModule("Marshal");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyMarshal.class);
 

@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Stack;
 
 import org.jruby.IncludedModuleWrapper;
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -58,7 +58,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  */
 public class ThreadContext {
-    private final Ruby runtime;
+    private final IRuby runtime;
 
     private BlockStack blockStack;
     private Stack dynamicVarsStack;
@@ -84,7 +84,7 @@ public class ThreadContext {
     /**
      * Constructor for Context.
      */
-    public ThreadContext(Ruby runtime) {
+    public ThreadContext(IRuby runtime) {
         this.runtime = runtime;
 
         this.blockStack = new BlockStack();

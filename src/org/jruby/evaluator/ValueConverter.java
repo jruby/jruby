@@ -28,7 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.evaluator;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -38,9 +38,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  */
 public final class ValueConverter {
-    private Ruby runtime;
+    private IRuby runtime;
 
-    public ValueConverter(Ruby runtime) {
+    public ValueConverter(IRuby runtime) {
         this.runtime = runtime;
     }
 

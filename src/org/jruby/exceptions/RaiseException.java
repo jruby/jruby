@@ -38,7 +38,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 import org.jruby.NativeException;
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -52,12 +52,12 @@ public class RaiseException extends JumpException {
         setException(actException, false);
     }
 
-    public RaiseException(Ruby runtime, RubyClass excptnClass, String msg, boolean nativeException) {
+    public RaiseException(IRuby runtime, RubyClass excptnClass, String msg, boolean nativeException) {
 		super(msg);
         setException(RubyException.newException(runtime, excptnClass, msg), nativeException);
     }
     
-    public static RaiseException createNativeRaiseException(Ruby runtime, Throwable cause) {
+    public static RaiseException createNativeRaiseException(IRuby runtime, Throwable cause) {
         NativeException nativeException = new NativeException(runtime, runtime.getClass(NativeException.CLASS_NAME), cause);
         return new RaiseException(cause, nativeException);
     }
@@ -92,7 +92,7 @@ public class RaiseException extends JumpException {
      * @param newException The exception to set
      */
     protected void setException(RubyException newException, boolean nativeException) {
-        Ruby runtime = newException.getRuntime();
+        IRuby runtime = newException.getRuntime();
         
         runtime.getGlobalVariables().set("$!", newException);
 

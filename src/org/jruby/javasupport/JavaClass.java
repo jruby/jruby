@@ -38,7 +38,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
@@ -51,11 +51,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class JavaClass extends JavaObject {
 
-    private JavaClass(Ruby runtime, Class javaClass) {
+    private JavaClass(IRuby runtime, Class javaClass) {
         super(runtime, (RubyClass) runtime.getModule("Java").getClass("JavaClass"), javaClass);
     }
     
-    public static JavaClass get(Ruby runtime, Class klass) {
+    public static JavaClass get(IRuby runtime, Class klass) {
         JavaClass javaClass = runtime.getJavaSupport().getJavaClassFromCache(klass);
         if (javaClass == null) {
             javaClass = new JavaClass(runtime, klass);
@@ -64,7 +64,7 @@ public class JavaClass extends JavaObject {
         return javaClass;
     }
 
-    public static RubyClass createJavaClassClass(Ruby runtime, RubyModule javaModule) {
+    public static RubyClass createJavaClassClass(IRuby runtime, RubyModule javaModule) {
         RubyClass result = javaModule.defineClassUnder("JavaClass", javaModule.getClass("JavaObject")); 
 
     	CallbackFactory callbackFactory = runtime.callbackFactory(JavaClass.class);

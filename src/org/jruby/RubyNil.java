@@ -40,18 +40,18 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author  jpetersen
  */
 public class RubyNil extends RubyObject {
-	private final Ruby runtime;
+	private final IRuby runtime;
 	
-	public RubyNil(Ruby runtime) {
+	public RubyNil(IRuby runtime) {
 		super(runtime, null);
 		this.runtime = runtime;
 	}
 	
-	public Ruby getRuntime() {
+	public IRuby getRuntime() {
 		return runtime;
 	}
 	
-    public static RubyClass createNilClass(Ruby runtime) {
+    public static RubyClass createNilClass(IRuby runtime) {
         RubyClass nilClass = runtime.defineClass("NilClass", runtime.getObject());
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyNil.class);
         nilClass.defineMethod("type", callbackFactory.getSingletonMethod("type"));

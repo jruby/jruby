@@ -36,7 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 
 /**
  */
@@ -49,7 +49,7 @@ public abstract class IOHandler {
     // The 100% solution is not really worth the extra code.
     public static final String PARAGRAPH_DELIMETER = "PARAGRPH_DELIM_MRK_ER";
     
-    private Ruby runtime;
+    private IRuby runtime;
     protected IOModes modes;
     protected int fileno;
     protected boolean isOpen = false;
@@ -58,7 +58,7 @@ public abstract class IOHandler {
     // Last char to be 'ungot'.  <0 indicates nothing waiting to be re-got  
     private int ungotc = -1;
     
-    protected IOHandler(Ruby runtime) {
+    protected IOHandler(IRuby runtime) {
         this.runtime = runtime;
     }
 
@@ -70,7 +70,7 @@ public abstract class IOHandler {
         this.fileno = fileno;
     }
 
-    protected Ruby getRuntime() {
+    protected IRuby getRuntime() {
         return runtime;
     }
     

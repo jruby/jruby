@@ -35,7 +35,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URL;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 
 public class ExternalScript implements Library {
     private final URL url;
@@ -46,7 +46,7 @@ public class ExternalScript implements Library {
         this.name = name;
     }
 
-    public void load(Ruby runtime) {
+    public void load(IRuby runtime) {
         try {
             Reader reader = new BufferedReader(new InputStreamReader(url.openStream()));
             runtime.loadScript(name, reader, false);

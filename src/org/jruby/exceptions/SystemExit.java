@@ -29,12 +29,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.exceptions;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 
 public class SystemExit extends RaiseException {
 	private static final long serialVersionUID = -1945542993899586417L;
 
-	public SystemExit(Ruby runtime, int status) {
+	public SystemExit(IRuby runtime, int status) {
         super(runtime, runtime.getClass("SystemExit"), "", true);
         getException().setInstanceVariable("status", runtime.newFixnum(status));
     }

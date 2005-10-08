@@ -54,7 +54,7 @@ public class RubyBignum extends RubyInteger {
 
     private final BigInteger value;
 
-    public RubyBignum(Ruby runtime, BigInteger value) {
+    public RubyBignum(IRuby runtime, BigInteger value) {
         super(runtime, runtime.getClass("Bignum"));
         this.value = value;
     }
@@ -83,7 +83,7 @@ public class RubyBignum extends RubyInteger {
     }
 
     /* If the value will fit in a Fixnum, return one of those. */
-    private static RubyInteger bigNorm(Ruby runtime, BigInteger bi) {
+    private static RubyInteger bigNorm(IRuby runtime, BigInteger bi) {
         if (bi.compareTo(LONG_MIN) < 0 || bi.compareTo(LONG_MAX) > 0) {
             return newBignum(runtime, bi);
         }
@@ -112,15 +112,15 @@ public class RubyBignum extends RubyInteger {
 
     // Bignum methods
 
-    public static RubyBignum newBignum(Ruby runtime, long value) {
+    public static RubyBignum newBignum(IRuby runtime, long value) {
         return newBignum(runtime, BigInteger.valueOf(value));
     }
 
-    public static RubyBignum newBignum(Ruby runtime, double value) {
+    public static RubyBignum newBignum(IRuby runtime, double value) {
         return newBignum(runtime, new BigDecimal(value).toBigInteger());
     }
 
-    public static RubyBignum newBignum(Ruby runtime, BigInteger value) {
+    public static RubyBignum newBignum(IRuby runtime, BigInteger value) {
         return new RubyBignum(runtime, value);
     }
 

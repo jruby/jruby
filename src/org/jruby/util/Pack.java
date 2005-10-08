@@ -34,7 +34,7 @@ package org.jruby.util;
 import java.util.HashMap;
 import java.util.List;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyFloat;
 import org.jruby.RubyNumeric;
@@ -60,28 +60,28 @@ public class Pack {
     static {
         // short, little-endian (network)
         converters.put(new Character('v'), new Converter(2) { 
-            public IRubyObject decode(Ruby runtime, PtrList enc) {
+            public IRubyObject decode(IRuby runtime, PtrList enc) {
                 return runtime.newFixnum(
                         decodeShortUnsignedLittleEndian(enc));
             }
-            public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
+            public void encode(IRuby runtime, IRubyObject o, StringBuffer result){
             	int s = o == runtime.getNil() ? 0 : (int) (RubyNumeric.num2long(o) & 0xffff);
            		encodeShortLittleEndian(result, s);
            	}});
     	// single precision, little-endian
         converters.put(new Character('e'), new Converter(4) { 
-            public IRubyObject decode(Ruby runtime, PtrList enc) {
+            public IRubyObject decode(IRuby runtime, PtrList enc) {
                 return RubyFloat.newFloat(runtime, decodeFloatLittleEndian(enc));
             }
-            public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
+            public void encode(IRuby runtime, IRubyObject o, StringBuffer result){
                 float f = o == runtime.getNil() ? 0 : (float) o.convertToFloat().getDoubleValue();
                 encodeFloatLittleEndian(result, f);
             }});
         Converter tmp = new Converter(4) {
-            public IRubyObject decode(Ruby runtime, PtrList enc) {
+            public IRubyObject decode(IRuby runtime, PtrList enc) {
                 return RubyFloat.newFloat(runtime, decodeFloatBigEndian(enc));
             }
-            public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
+            public void encode(IRuby runtime, IRubyObject o, StringBuffer result){
                 float f = o == runtime.getNil() ? 0 : (float) o.convertToFloat().getDoubleValue();
                 encodeFloatBigEndian(result, f);
             }
@@ -90,18 +90,18 @@ public class Pack {
         converters.put(new Character('g'), tmp); // single precision, native
         // double precision, little-endian
         converters.put(new Character('E'), new Converter(8) { 
-            public IRubyObject decode(Ruby runtime, PtrList enc) {
+            public IRubyObject decode(IRuby runtime, PtrList enc) {
                 return RubyFloat.newFloat(runtime, decodeDoubleLittleEndian(enc));
             }
-            public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
+            public void encode(IRuby runtime, IRubyObject o, StringBuffer result){
                 double d = o == runtime.getNil() ? 0 : o.convertToFloat().getDoubleValue();
                 encodeDoubleLittleEndian(result, d);
             }});
         tmp = new Converter(8) {
-            public IRubyObject decode(Ruby runtime, PtrList enc) {
+            public IRubyObject decode(IRuby runtime, PtrList enc) {
                 return RubyFloat.newFloat(runtime, decodeDoubleBigEndian(enc));
             }
-            public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
+            public void encode(IRuby runtime, IRubyObject o, StringBuffer result){
                 double d = o == runtime.getNil() ? 0 : o.convertToFloat().getDoubleValue();
                 encodeDoubleBigEndian(result, d);
             }
@@ -109,19 +109,19 @@ public class Pack {
         converters.put(new Character('d'), tmp); // double precision native
         converters.put(new Character('G'), tmp); // double precision bigendian 
         converters.put(new Character('s'), new Converter(2) { // signed short
-            public IRubyObject decode(Ruby runtime, PtrList enc) {
+            public IRubyObject decode(IRuby runtime, PtrList enc) {
                 return runtime.newFixnum(decodeShortBigEndian(enc));
             }
-            public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
+            public void encode(IRuby runtime, IRubyObject o, StringBuffer result){
                 int s = o == runtime.getNil() ? 0 : (int) (RubyNumeric.num2long(o) & 0xffff);
                 encodeShortBigEndian(result, s);
             }});
         tmp = new Converter(2) {
-            public IRubyObject decode(Ruby runtime, PtrList enc) {
+            public IRubyObject decode(IRuby runtime, PtrList enc) {
                 return runtime.newFixnum(
                         decodeShortUnsignedBigEndian(enc));
             }
-            public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
+            public void encode(IRuby runtime, IRubyObject o, StringBuffer result){
                 int s = o == runtime.getNil() ? 0 : (int) (RubyNumeric.num2long(o) & 0xffff);
                 encodeShortBigEndian(result, s);
             }
@@ -129,38 +129,38 @@ public class Pack {
         converters.put(new Character('S'), tmp); // unsigned short
         converters.put(new Character('n'), tmp); // short network
         converters.put(new Character('c'), new Converter(1) { // signed char
-            public IRubyObject decode(Ruby runtime, PtrList enc) {
+            public IRubyObject decode(IRuby runtime, PtrList enc) {
                 int c = enc.nextChar();
                 return runtime.newFixnum(c > (char) 127 ? c-256 : c);
             }	
-            public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
+            public void encode(IRuby runtime, IRubyObject o, StringBuffer result){
                 char c = o == runtime.getNil() ? 0 : (char) (RubyNumeric.num2long(o) & 0xff);
                 result.append(c);
             }});
         converters.put(new Character('C'), new Converter(1) { // unsigned char
-            public IRubyObject decode(Ruby runtime, PtrList enc) {
+            public IRubyObject decode(IRuby runtime, PtrList enc) {
                 return runtime.newFixnum(enc.nextChar());
             }
-            public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
+            public void encode(IRuby runtime, IRubyObject o, StringBuffer result){
                 char c = o == runtime.getNil() ? 0 : (char) (RubyNumeric.num2long(o) & 0xff);
                 result.append(c);
             }});
         // long, little-endian 
         converters.put(new Character('V'), new Converter(4) { 
-            public IRubyObject decode(Ruby runtime, PtrList enc) {
+            public IRubyObject decode(IRuby runtime, PtrList enc) {
                 return runtime.newFixnum(
                         decodeIntUnsignedLittleEndian(enc));
             }
-            public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
+            public void encode(IRuby runtime, IRubyObject o, StringBuffer result){
                 int s = o == runtime.getNil() ? 0 : (int) RubyNumeric.num2long(o);
                 encodeIntLittleEndian(result, s);
             }});
         tmp = new Converter(4) {
-            public IRubyObject decode(Ruby runtime, PtrList enc) {
+            public IRubyObject decode(IRuby runtime, PtrList enc) {
                 return runtime.newFixnum(
                         decodeIntUnsignedBigEndian(enc));
             }
-            public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
+            public void encode(IRuby runtime, IRubyObject o, StringBuffer result){
                 int s = o == runtime.getNil() ? 0 : (int) RubyNumeric.num2long(o);
                 encodeIntBigEndian(result, s);
             }
@@ -169,10 +169,10 @@ public class Pack {
         converters.put(new Character('L'), tmp); // unsigned long (bugs?)
         converters.put(new Character('N'), tmp); // long, network
         tmp = new Converter(4) {
-            public IRubyObject decode(Ruby runtime, PtrList enc) {
+            public IRubyObject decode(IRuby runtime, PtrList enc) {
                 return runtime.newFixnum(decodeIntBigEndian(enc));
             }
-            public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
+            public void encode(IRuby runtime, IRubyObject o, StringBuffer result){
                 int s = (o == runtime.getNil() ? 0 : 
                     (int) (RubyNumeric.num2long(o)));
                 encodeIntBigEndian(result, s);
@@ -191,7 +191,7 @@ public class Pack {
      * @param iType the type of encoding required (this is the same type as used by the pack method)
      * @return the io2Append buffer
      **/
-    private static StringBuffer encodes(Ruby runtime, StringBuffer io2Append, String i2Encode, int iLength, char iType) {
+    private static StringBuffer encodes(IRuby runtime, StringBuffer io2Append, String i2Encode, int iLength, char iType) {
         iLength = iLength < i2Encode.length() ? iLength : i2Encode.length();
         io2Append.ensureCapacity(iLength * 4 / 3 + 6);
         int i = 0;
@@ -294,7 +294,7 @@ public class Pack {
     }
 
     private static String convert2String(IRubyObject l2Conv) {
-        Ruby runtime = l2Conv.getRuntime();
+        IRuby runtime = l2Conv.getRuntime();
         if (l2Conv.getMetaClass() != runtime.getClass("String")) {
             l2Conv = l2Conv.convertToType("String", "to_s", true); //we may need a false here, not sure
         }
@@ -538,7 +538,7 @@ public class Pack {
      **/
     public static RubyArray unpack(String encodedString, 
             RubyString formatString) {
-        Ruby runtime = formatString.getRuntime();
+        IRuby runtime = formatString.getRuntime();
         RubyArray result = runtime.newArray();
         PtrList format = new PtrList(formatString.getValue());
         PtrList encode = new PtrList(encodedString);
@@ -752,7 +752,7 @@ public class Pack {
         return result;
     }
     
-    public static void decode(Ruby runtime, PtrList encode, int occurrences, 
+    public static void decode(IRuby runtime, PtrList encode, int occurrences, 
             RubyArray result, Converter converter) {
         int lPadLength = 0;
     	
@@ -769,7 +769,7 @@ public class Pack {
             result.append(runtime.getNil());
     }
    
-    public static int encode(Ruby runtime, int occurrences, StringBuffer result, 
+    public static int encode(IRuby runtime, int occurrences, StringBuffer result, 
             List list, int index, Converter converter) {
         int listSize = list.size();
 
@@ -793,8 +793,8 @@ public class Pack {
     		this.size = size;
     	}
     	
-    	public abstract IRubyObject decode(Ruby runtime, PtrList format);
-    	public abstract void encode(Ruby runtime, IRubyObject from, 
+    	public abstract IRubyObject decode(IRuby runtime, PtrList format);
+    	public abstract void encode(IRuby runtime, IRubyObject from, 
     	        StringBuffer result);
     }
  
@@ -1125,7 +1125,7 @@ public class Pack {
      * @see RubyString#unpack
      **/
     public static RubyString pack(List list, RubyString formatString) {
-        Ruby runtime = formatString.getRuntime();
+        IRuby runtime = formatString.getRuntime();
         PtrList format = new PtrList(formatString.getValue());
         StringBuffer result = new StringBuffer();
         int listSize = list.size();

@@ -82,7 +82,7 @@ public class RubyModule extends RubyObject {
     // with same name by one of its subclasses).
     private Map methods = new HashMap();
 
-    protected RubyModule(Ruby runtime, RubyClass metaClass, RubyClass superClass, RubyModule parentModule, String name) {
+    protected RubyModule(IRuby runtime, RubyClass metaClass, RubyClass superClass, RubyModule parentModule, String name) {
         super(runtime, metaClass);
         
         this.superClass = superClass;
@@ -401,7 +401,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public void undef(String name) {
-        Ruby runtime = getRuntime();
+        IRuby runtime = getRuntime();
         if (this == runtime.getObject()) {
             runtime.secure(4);
         }
@@ -593,7 +593,7 @@ public class RubyModule extends RubyObject {
     }
 
     private IRubyObject callMethodMissing(IRubyObject receiver, String name, IRubyObject[] args) {
-    	Ruby runtime = getRuntime();
+    	IRuby runtime = getRuntime();
         if (name == "method_missing") {
             runtime.getFrameStack().push(new Frame(runtime.getCurrentContext()));
             try {
@@ -758,7 +758,7 @@ public class RubyModule extends RubyObject {
             // FIXME warning
         }
         final String variableName = "@" + name;
-		final Ruby runtime = getRuntime();
+		final IRuby runtime = getRuntime();
         if (readable) {
             defineMethod(name, new Callback() {
                 public IRubyObject execute(IRubyObject self, IRubyObject[] args) {
@@ -929,11 +929,11 @@ public class RubyModule extends RubyObject {
 
     // Methods of the Module Class (rb_mod_*):
 
-    public static RubyModule newModule(Ruby runtime, String name) {
+    public static RubyModule newModule(IRuby runtime, String name) {
         return newModule(runtime, name, null);
     }
 
-    public static RubyModule newModule(Ruby runtime, String name, RubyModule parentModule) {
+    public static RubyModule newModule(IRuby runtime, String name, RubyModule parentModule) {
         // Modules do not directly define Object as their superClass even though in theory they
     	// should.  The C version of Ruby may also do this (special checks in rb_alias for Module
     	// makes me think this).
@@ -1492,7 +1492,7 @@ public class RubyModule extends RubyObject {
 
     public static RubyModule unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         String name = input.unmarshalString();
-        Ruby runtime = input.getRuntime();
+        IRuby runtime = input.getRuntime();
         RubyModule result = runtime.getClassFromPath(name);
         if (result == null) {
             throw runtime.newNameError("uninitialized constant " + name);

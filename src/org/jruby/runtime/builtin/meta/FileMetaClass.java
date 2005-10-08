@@ -31,7 +31,7 @@ package org.jruby.runtime.builtin.meta;
 import java.io.File;
 import java.io.IOException;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyDir;
@@ -45,7 +45,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOModes;
 
 public class FileMetaClass extends IOMetaClass {
-    public FileMetaClass(Ruby runtime) {
+    public FileMetaClass(IRuby runtime) {
         super("File", RubyFile.class, runtime.getClass("IO"));
     }
 
@@ -55,7 +55,7 @@ public class FileMetaClass extends IOMetaClass {
 
     protected class FileMeta extends Meta {
 		protected void initializeClass() {
-			Ruby runtime = getRuntime();
+			IRuby runtime = getRuntime();
 	        RubyString separator = runtime.newString(File.separator);
 	        separator.freeze();
 	        defineConstant("SEPARATOR", separator);
@@ -286,7 +286,7 @@ public class FileMetaClass extends IOMetaClass {
 	
 	public IRubyObject open(IRubyObject[] args, boolean tryToYield) {
         checkArgumentCount(args, 1, -1);
-        Ruby runtime = getRuntime();
+        IRuby runtime = getRuntime();
         
         RubyString pathString = RubyString.stringValue(args[0]);
 	    pathString.checkSafeString();

@@ -31,7 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.ast.Node;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -91,7 +91,7 @@ public class Block implements StackElement {
     }
 
     public IRubyObject call(IRubyObject[] args, IRubyObject replacementSelf) {
-        Ruby runtime = self.getRuntime();
+        IRuby runtime = self.getRuntime();
         ThreadContext context = runtime.getCurrentContext();
         BlockStack blockStack = context.getBlockStack();
         Block oldBlock = (Block) blockStack.peek();

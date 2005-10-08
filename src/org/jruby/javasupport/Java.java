@@ -35,7 +35,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
-import org.jruby.Ruby;
+import org.jruby.IRuby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
@@ -47,7 +47,7 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class Java {
-    public static RubyModule createJavaModule(Ruby runtime) {
+    public static RubyModule createJavaModule(IRuby runtime) {
         RubyModule javaModule = runtime.defineModule("Java");
         CallbackFactory callbackFactory = runtime.callbackFactory(Java.class);
         javaModule.defineModuleFunction("define_exception_handler", callbackFactory.getOptSingletonMethod("define_exception_handler"));
@@ -85,7 +85,7 @@ public class Java {
         if (object instanceof JavaObject) {
             return object;
         }
-        Ruby runtime = recv.getRuntime();
+        IRuby runtime = recv.getRuntime();
         Object javaObject;
         if (object.isNil()) {
             javaObject = null;
