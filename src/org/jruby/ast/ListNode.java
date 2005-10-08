@@ -85,4 +85,8 @@ public abstract class ListNode extends Node {
     	}
     	return b.toString();
     }
+    
+    public List childNodes() {
+    	return list;
+    }
 }

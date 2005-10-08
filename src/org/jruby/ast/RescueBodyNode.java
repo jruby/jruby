@@ -30,13 +30,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.util.List;
+
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ListUtil;
 
 /**
  *
  */
-public class RescueBodyNode extends ListNode {
+public class RescueBodyNode extends Node {
     static final long serialVersionUID = -6414517081810625663L;
 
     private final Node exceptionNodes;
@@ -79,5 +82,12 @@ public class RescueBodyNode extends ListNode {
      */
     public Node getExceptionNodes() {
         return exceptionNodes;
+    }
+    
+    public List childNodes() {
+    	if (optRescueNode != null)
+    		return ListUtil.create(exceptionNodes, bodyNode, optRescueNode);
+    	return ListUtil.create(exceptionNodes, bodyNode);
+    	
     }
 }
