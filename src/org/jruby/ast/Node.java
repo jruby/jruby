@@ -90,4 +90,15 @@ public abstract class Node implements ISourcePositionHolder, Serializable {
         Node.addNode(node3, list);
         return list;
     }
+    
+    public String toString() {
+        return getNodeName() + "[]";
+    }
+
+    protected String getNodeName() {
+        String name = getClass().getName();
+        int i = name.lastIndexOf('.');
+        String nodeType = name.substring(i + 1);
+        return nodeType;
+    }
 }

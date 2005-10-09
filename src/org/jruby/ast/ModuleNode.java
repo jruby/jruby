@@ -38,7 +38,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /** Represents a module definition.
  *
  */
-public class ModuleNode extends Node {
+public class ModuleNode extends Node implements IScopingNode {
     static final long serialVersionUID = 4938115602547834310L;
 
     private final Colon2Node cpath;

@@ -78,5 +78,12 @@ public class Colon2Node extends Node implements INameNode {
     public List childNodes() {
         return Node.createList(leftNode);
     }
-
+    
+    public String toString() {
+        String result = "Colon2Node [";
+        if (leftNode != null)
+            result += leftNode;
+        result += name;
+        return result+"]";
+    }
 }

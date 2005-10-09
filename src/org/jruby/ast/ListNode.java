@@ -39,6 +39,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * All Nodes which have a list representation inherit this.
  */
 public abstract class ListNode extends Node {
+    private static final long serialVersionUID = 1L;
+    
     private List list = null;
 
 	public ListNode(ISourcePosition position) {

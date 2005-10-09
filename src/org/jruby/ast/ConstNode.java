@@ -70,5 +70,9 @@ public class ConstNode extends Node implements INameNode {
     public List childNodes() {
         return Collections.EMPTY_LIST;
     }
+    
+    public String toString() {
+        return "ConstNode [" + name + "]";
+    }
 
 }

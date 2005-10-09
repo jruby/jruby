@@ -43,7 +43,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * node, the SClassNode
  * 
  */
-public class ClassNode extends Node {
+public class ClassNode extends Node implements IScopingNode {
     static final long serialVersionUID = -1369424045737867587L;
 
     private final Colon2Node cpath;
@@ -90,6 +90,10 @@ public class ClassNode extends Node {
 
     public List childNodes() {
         return Node.createList(cpath, bodyNode, superNode);
+    }
+    
+    public String toString() {
+        return "ClassNode [" + cpath + "]";
     }
 
 }
