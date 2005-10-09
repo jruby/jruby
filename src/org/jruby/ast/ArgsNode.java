@@ -35,7 +35,6 @@ import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ListUtil;
 
 /**
  * arguments for a function.
@@ -124,7 +123,7 @@ public class ArgsNode extends Node {
     }
     
     public List childNodes() {
-        return ListUtil.create(optArgs, blockArgNode);
+        return Node.createList(optArgs, blockArgNode);
     }
 
 }

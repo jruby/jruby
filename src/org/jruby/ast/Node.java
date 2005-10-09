@@ -32,6 +32,7 @@
 package org.jruby.ast;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
@@ -66,4 +67,27 @@ public abstract class Node implements ISourcePositionHolder, Serializable {
     
 	public abstract void accept(NodeVisitor visitor);
 	public abstract List childNodes();
+
+    static void addNode(Node node, List list) {
+        if (node != null)
+            list.add(node);
+    }
+
+    protected static List createList(Node node) {
+        List list = new ArrayList();
+        Node.addNode(node, list);
+        return list;
+    }
+
+    protected  static List createList(Node node1, Node node2) {
+        List list = createList(node1);
+        Node.addNode(node2, list);
+        return list;
+    }
+
+    protected  static List createList(Node node1, Node node2, Node node3) {
+        List list = createList(node1, node2);
+        Node.addNode(node3, list);
+        return list;
+    }
 }

@@ -30,7 +30,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import java.util.Collections;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
@@ -72,7 +71,7 @@ public class YieldNode extends Node {
     }
 
     public List childNodes() {
-        return Collections.singletonList(argsNode);
+        return createList(argsNode);
     }
 
 }

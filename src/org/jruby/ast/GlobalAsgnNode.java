@@ -32,7 +32,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import java.util.Collections;
 import java.util.List;
 
 import org.jruby.ast.types.INameNode;
@@ -72,7 +71,7 @@ public class GlobalAsgnNode extends AssignableNode implements INameNode {
     }
     
     public List childNodes() {
-        return Collections.singletonList(getValueNode());
+        return createList(getValueNode());
     }
 
 }

@@ -34,7 +34,6 @@ import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ListUtil;
 
 /** Represents an until statement.
  *
@@ -76,7 +75,7 @@ public class UntilNode extends Node {
     }
 
     public List childNodes() {
-        return ListUtil.create(conditionNode, bodyNode);
+        return Node.createList(conditionNode, bodyNode);
     }
 
 }

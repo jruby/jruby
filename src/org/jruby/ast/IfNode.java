@@ -35,7 +35,6 @@ import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ListUtil;
 
 /**
  * an 'if' statement.
@@ -87,7 +86,7 @@ public class IfNode extends Node {
     }
     
     public List childNodes() {
-        return ListUtil.create(condition, thenBody, elseBody);
+        return Node.createList(condition, thenBody, elseBody);
     }
 
 }

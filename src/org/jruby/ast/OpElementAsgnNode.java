@@ -34,7 +34,6 @@ import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ListUtil;
 
 /** Represents an operator assignment to an element.
  * 
@@ -103,6 +102,6 @@ public class OpElementAsgnNode extends Node {
     }
 
     public List childNodes() {
-        return ListUtil.create(receiverNode, argsNode, valueNode);
+        return Node.createList(receiverNode, argsNode, valueNode);
     }
 }

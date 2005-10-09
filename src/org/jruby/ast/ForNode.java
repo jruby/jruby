@@ -34,7 +34,6 @@ import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ListUtil;
 
 /**
  * a For statement.
@@ -94,7 +93,7 @@ public class ForNode extends Node {
     }
     
     public List childNodes() {
-        return ListUtil.create(varNode, iterNode, bodyNode);
+        return Node.createList(varNode, iterNode, bodyNode);
     }
 
 }

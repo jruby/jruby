@@ -35,7 +35,6 @@ import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
-import org.jruby.util.ListUtil;
 
 /**
  *
@@ -90,7 +89,7 @@ public class MultipleAsgnNode extends AssignableNode {
 	}
     
     public List childNodes() {
-        return ListUtil.create(headNode, argsNode, getValueNode());
+        return Node.createList(headNode, argsNode, getValueNode());
     }
 
 }

@@ -34,7 +34,6 @@ import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ListUtil;
 
 /**
  *
@@ -76,7 +75,7 @@ public class OrNode extends Node {
     }
 
     public List childNodes() {
-        return ListUtil.create(firstNode, secondNode);
+        return Node.createList(firstNode, secondNode);
     }
 
 }

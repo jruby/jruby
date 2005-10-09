@@ -34,7 +34,6 @@ import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ListUtil;
 
 /** Represents a module definition.
  *
@@ -42,10 +41,10 @@ import org.jruby.util.ListUtil;
 public class ModuleNode extends Node {
     static final long serialVersionUID = 4938115602547834310L;
 
-    private final Node cpath;
+    private final Colon2Node cpath;
     private final ScopeNode bodyNode;
 
-    public ModuleNode(ISourcePosition position, Node cpath, ScopeNode bodyNode) {
+    public ModuleNode(ISourcePosition position, Colon2Node cpath, ScopeNode bodyNode) {
         super(position);
         this.cpath = cpath;
         this.bodyNode = bodyNode;
@@ -71,12 +70,16 @@ public class ModuleNode extends Node {
      * Gets the name.
      * @return Representation of the module path+name
      */
-    public Node getCPath() {
+    public Colon2Node getCPath() {
         return cpath;
     }
     
     public List childNodes() {
-        return ListUtil.create(cpath, bodyNode);
+        return Node.createList(cpath, bodyNode);
+    }
+
+    public String getName() { 
+        return ""; // DSC what did this used to be?
     }
 
 }

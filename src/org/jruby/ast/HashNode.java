@@ -30,7 +30,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import java.util.Collections;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
@@ -68,7 +67,7 @@ public class HashNode extends Node {
     }
     
     public List childNodes() {
-        return Collections.singletonList(listNode);
+        return createList(listNode);
     }
 
 }

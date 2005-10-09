@@ -35,7 +35,6 @@ import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ListUtil;
 
 /** Represents a range literal.
  *
@@ -87,7 +86,7 @@ public class DotNode extends Node {
     }
     
     public List childNodes() {
-        return ListUtil.create(beginNode, endNode);
+        return Node.createList(beginNode, endNode);
     }
 
 }

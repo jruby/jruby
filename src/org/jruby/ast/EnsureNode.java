@@ -34,7 +34,6 @@ import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ListUtil;
 
 /**
  *	an ensure statement.
@@ -76,6 +75,6 @@ public class EnsureNode extends Node {
     }
     
     public List childNodes() {
-        return ListUtil.create(bodyNode, ensureNode);
+        return Node.createList(bodyNode, ensureNode);
     }
 }

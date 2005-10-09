@@ -35,7 +35,6 @@ import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ListUtil;
 
 /**
  *
@@ -87,7 +86,7 @@ public class RescueNode extends Node {
     }
     
     public List childNodes() {
-        return ListUtil.create(rescueNode, bodyNode, elseNode);
+        return Node.createList(rescueNode, bodyNode, elseNode);
     }
 
 }

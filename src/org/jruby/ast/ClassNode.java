@@ -34,7 +34,6 @@ import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ListUtil;
 
 /**
  * A class statement.
@@ -47,11 +46,11 @@ import org.jruby.util.ListUtil;
 public class ClassNode extends Node {
     static final long serialVersionUID = -1369424045737867587L;
 
-    private final Node cpath;
+    private final Colon2Node cpath;
     private final ScopeNode bodyNode;
     private final Node superNode;
     
-    public ClassNode(ISourcePosition position, Node cpath, ScopeNode bodyNode, Node superNode) {
+    public ClassNode(ISourcePosition position, Colon2Node cpath, ScopeNode bodyNode, Node superNode) {
         super(position);
         this.cpath = cpath;
         this.bodyNode = bodyNode;
@@ -77,7 +76,7 @@ public class ClassNode extends Node {
      * Gets the className.
      * @return Returns representation of class path+name
      */
-    public Node getCPath() {
+    public Colon2Node getCPath() {
         return cpath;
     }
 
@@ -90,7 +89,7 @@ public class ClassNode extends Node {
     }
 
     public List childNodes() {
-        return ListUtil.create(cpath, bodyNode, superNode);
+        return Node.createList(cpath, bodyNode, superNode);
     }
 
 }

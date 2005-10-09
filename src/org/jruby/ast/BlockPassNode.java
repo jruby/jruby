@@ -34,7 +34,6 @@ import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ListUtil;
 
 /**
  * Block passed explicitly as an argument in a method call.
@@ -106,7 +105,7 @@ public class BlockPassNode extends Node {
     }
     
     public List childNodes() {
-        return ListUtil.create(argsNode, iterNode, bodyNode);
+        return Node.createList(argsNode, iterNode, bodyNode);
     }
 
 }

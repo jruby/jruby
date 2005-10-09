@@ -34,7 +34,6 @@ import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ListUtil;
 
 /**
  *
@@ -84,6 +83,6 @@ public class WhenNode extends Node {
     }
 
     public List childNodes() {
-        return ListUtil.create(expressionNodes, bodyNode, nextCase);
+        return Node.createList(expressionNodes, bodyNode, nextCase);
     }
 }

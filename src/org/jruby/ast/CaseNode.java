@@ -34,7 +34,6 @@ import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ListUtil;
 
 /**
  * A Case statement.
@@ -88,7 +87,7 @@ public class CaseNode extends Node {
     }
     
     public List childNodes() {
-        return ListUtil.create(caseNode, caseBody);
+        return Node.createList(caseNode, caseBody);
     }
 
 }

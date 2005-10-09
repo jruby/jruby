@@ -34,7 +34,6 @@ import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ListUtil;
 
 /** Singleton class definition.
  * 
@@ -82,6 +81,6 @@ public class SClassNode extends Node {
     }
     
     public List childNodes() {
-        return ListUtil.create(receiverNode, bodyNode);
+        return Node.createList(receiverNode, bodyNode);
     }
 }
