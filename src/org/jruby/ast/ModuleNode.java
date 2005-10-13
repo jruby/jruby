@@ -77,9 +77,4 @@ public class ModuleNode extends Node implements IScopingNode {
     public List childNodes() {
         return Node.createList(cpath, bodyNode);
     }
-
-    public String getName() { 
-        return ""; // DSC what did this used to be?
-    }
-
 }
