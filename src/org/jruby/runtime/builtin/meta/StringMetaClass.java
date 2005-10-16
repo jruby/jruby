@@ -49,12 +49,18 @@ public class StringMetaClass extends ObjectMetaClass {
 	        includeModule(getRuntime().getModule("Comparable"));
 	        includeModule(getRuntime().getModule("Enumerable"));
 	
-	        defineMethod("<=>", Arity.singleArgument(), "op_cmp");
-	        defineMethod("==", Arity.singleArgument(), "equal");
-	        defineMethod("===", Arity.singleArgument(), "veryEqual");
-	        defineMethod("+", Arity.singleArgument(), "op_plus");
-	        defineMethod("*", Arity.singleArgument(), "op_mul");
-	        defineMethod("%", Arity.singleArgument(), "format");
+	        //defineMethod("<=>", Arity.singleArgument(), "op_cmp");
+            addMethod("<=>", RubyString.op_cmp);
+	        //defineMethod("==", Arity.singleArgument(), "equal");
+            addMethod("==", RubyString.equal);
+	        //defineMethod("===", Arity.singleArgument(), "veryEqual");
+            addMethod("===", RubyString.veryEqual);
+	        //defineMethod("+", Arity.singleArgument(), "op_plus");
+            addMethod("+", RubyString.op_plus);
+	        //defineMethod("*", Arity.singleArgument(), "op_mul");
+            addMethod("*", RubyString.op_mul);
+	        //defineMethod("%", Arity.singleArgument(), "format");
+            addMethod("%", RubyString.format);
 	        defineMethod("[]", Arity.optional(), "aref");
 	        defineMethod("[]=", Arity.optional(), "aset");
 	        defineMethod("=~", Arity.singleArgument(), "match");
@@ -81,7 +87,8 @@ public class StringMetaClass extends ObjectMetaClass {
 	        defineMethod("empty?", Arity.noArguments(), "empty");
 	        defineMethod("gsub", Arity.optional());
 	        defineMethod("gsub!", Arity.optional(), "gsub_bang");
-	        defineMethod("hash", Arity.noArguments());
+	        //defineMethod("hash", Arity.noArguments());
+            addMethod("hash", RubyString.hash);
 	        defineMethod("hex", Arity.noArguments());
 	        defineMethod("include?", Arity.singleArgument(), "include");
 	        defineMethod("index", Arity.optional());
@@ -117,7 +124,8 @@ public class StringMetaClass extends ObjectMetaClass {
 	        defineMethod("swapcase!", Arity.noArguments(), "swapcase_bang");
 	        defineMethod("to_f", Arity.noArguments());
 	        defineMethod("to_i", Arity.noArguments());
-	        defineMethod("to_s", Arity.noArguments());
+	        //defineMethod("to_s", Arity.noArguments());
+            addMethod("to_s", RubyString.to_s);
 	        defineMethod("to_str", Arity.noArguments());
 	        defineMethod("to_sym", Arity.noArguments());
 	        defineMethod("tr", Arity.twoArguments());

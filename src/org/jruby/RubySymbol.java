@@ -38,6 +38,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.jruby.internal.runtime.methods.DirectInvocationMethod;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.ICallable;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -52,6 +56,26 @@ public class RubySymbol extends RubyObject {
     private final String symbol;
     private final int id;
 
+    public static abstract class SymbolMethod extends DirectInvocationMethod {
+        public SymbolMethod(Arity arity, Visibility visibility) {
+            super(arity, visibility);
+        }
+        
+        public IRubyObject call(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+            RubySymbol s = (RubySymbol)receiver;
+            
+            return invoke(s, args);
+        }
+        
+        public abstract IRubyObject invoke(RubySymbol target, IRubyObject[] args);
+
+        public ICallable dup() {
+            // TODO Auto-generated method stub
+            return null;
+        }
+        
+    };
+    
     private RubySymbol(IRuby runtime, String symbol) {
         super(runtime, runtime.getClass("Symbol"));
         this.symbol = symbol;
@@ -115,11 +139,15 @@ public class RubySymbol extends RubyObject {
         return getRuntime().newString(symbol);
     }
 
-    public IRubyObject equal(IRubyObject other) {
-        // Symbol table ensures only one instance for every name,
-        // so object identity is enough to compare symbols.
-        return getRuntime().newBoolean(this == other);
-    }
+    public static SymbolMethod equal = new SymbolMethod(Arity.singleArgument(), Visibility.PUBLIC) {
+        public IRubyObject invoke(RubySymbol target, IRubyObject[] args) {
+            IRubyObject other = args[0];
+            
+            // Symbol table ensures only one instance for every name,
+            // so object identity is enough to compare symbols.
+            return target.getRuntime().newBoolean(target == other);
+        }
+    };
 
     public RubyFixnum hash() {
         return getRuntime().newFixnum(symbol.hashCode());

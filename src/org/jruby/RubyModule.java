@@ -559,6 +559,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public final IRubyObject call(IRubyObject recv, String name, IRubyObject[] args, CallType callType) {
+        //System.err.println("Called " + recv.getType().getName() + "." + name);
     	assert args != null;
 
         ICallable method = searchMethod(name);
@@ -589,7 +590,13 @@ public class RubyModule extends RubyObject {
         	name = originalName;
         }
 
-        return method.getImplementationClass().call0(recv, name, args, method, false);
+        RubyModule implementationClass = method.getImplementationClass();
+        
+        if (implementationClass != null) {
+            return method.getImplementationClass().call0(recv, name, args, method, false);
+        } else {
+            return method.call(getRuntime(), recv, name, args, false);
+        }
     }
 
     private IRubyObject callMethodMissing(IRubyObject receiver, String name, IRubyObject[] args) {

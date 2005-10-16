@@ -487,7 +487,7 @@ public class RubyKernel {
         RubyArray newArgs = recv.getRuntime().newArray(args);
         newArgs.shift();
 
-        return str.format(newArgs);
+        return str.callMethod("%", newArgs);
     }
 
     public static IRubyObject raise(IRubyObject recv, IRubyObject[] args) {

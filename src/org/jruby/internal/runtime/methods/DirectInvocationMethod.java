@@ -11,8 +11,6 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2005 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -29,54 +27,25 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
-import org.jruby.RubyModule;
+import org.jruby.IRuby;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- * @author  jpetersen
- * @version $Revision$
- */
-public abstract class AbstractMethod implements ICallable {
-    private RubyModule implementationClass;
-    private Visibility visibility;
+public abstract class DirectInvocationMethod extends AbstractMethod {
+    private Arity arity;
     
-    protected AbstractMethod(RubyModule implementationClass, Visibility visibility) {
-        this.implementationClass = implementationClass;
-        this.visibility = visibility;
+    public DirectInvocationMethod(Arity arity, Visibility visibility) {
+    	super(visibility);
+    	this.arity = arity;
+    	
+        assert arity != null;
     }
     
-    protected AbstractMethod(Visibility visibility) {
-        this.visibility = visibility;
-    }
-    
-    public String getOriginalName() {
-    	return null;
-    }
-    
-    public RubyModule getImplementationClass() {
-        return implementationClass;
-    }
+	public abstract IRubyObject call(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper);
 
-    public void setImplementationClass(RubyModule implClass) {
-        implementationClass = implClass;
-    }
-
-    public Visibility getVisibility() {
-        return visibility;
-    }
-
-    public void setVisibility(Visibility visibility) {
-        this.visibility = visibility;
-    }
-
-    public boolean isUndefined() {
-        return false;
-    }
-
-    public Arity getArity() {
-        return Arity.optional();
-    }
+	// TODO:  Perhaps abstract method should contain this and all other Methods should pass in decent value
+	public Arity getArity() {
+		return arity;
+	}
 }

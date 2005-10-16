@@ -23,7 +23,8 @@ public class SymbolMetaClass extends ObjectMetaClass {
 
 	protected class SymbolMeta extends Meta {
 		public void initializeClass() {
-	        defineMethod("==", Arity.singleArgument(), "equal");
+	        //defineMethod("==", Arity.singleArgument(), "equal");
+            addMethod("==", RubySymbol.equal);
 	        defineMethod("clone", Arity.noArguments(), "rbClone");
 	        defineMethod("freeze", Arity.noArguments()); 
 	        defineMethod("hash", Arity.noArguments()); 

@@ -747,7 +747,7 @@ public class RubyArray extends RubyObject implements List {
             } else if (!(tmp instanceof RubyString)) {
                 tmp = RubyString.objAsString(tmp);
             }
-            str.append(sep.op_plus(tmp));
+            str.append(sep.callMethod("+", tmp));
         }
         str.setTaint(taint);
         return str;
@@ -1381,7 +1381,7 @@ public class RubyArray extends RubyObject implements List {
             }
 
             if (o1 instanceof RubyString && o2 instanceof RubyString) {
-                return RubyNumeric.fix2int(((RubyString) o1).op_cmp((IRubyObject) o2));
+                return RubyNumeric.fix2int(((RubyString)o1).callMethod("<=>", (RubyString)o2));
             }
 
             return RubyNumeric.fix2int(obj1.callMethod("<=>", obj2));
