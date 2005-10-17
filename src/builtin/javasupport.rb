@@ -257,12 +257,12 @@ module JavaUtilities
   @proxy_classes = {}
   @proxy_extenders = []
   
-  def JavaUtilities.add_proxy_extender extender
+  def JavaUtilities.add_proxy_extender(extender)
     @proxy_extenders << extender
   end
   
-  def JavaUtilities.extend_proxy(proxy_class)
-    @proxy_extenders.each {|e| e.extend_proxy(proxy_class)}
+  def JavaUtilities.extend_proxy(java_class_name, &block)
+	add_proxy_extender JavaInterfaceExtender.new(java_class_name, &block)
   end
 
   def JavaUtilities.valid_constant_name?(name)
@@ -286,7 +286,7 @@ module JavaUtilities
       
       proxy_class = Class.new(base_type) { self.java_class = java_class; setup }
       @proxy_classes[class_id] = proxy_class
-      extend_proxy(proxy_class)
+      @proxy_extenders.each {|e| e.extend_proxy(proxy_class)}
     end
 
     @proxy_classes[class_id]

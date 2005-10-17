@@ -100,6 +100,30 @@ MyModule::JavaInteger.new(123) # -> a java.lang.Integer
 </pre>
 </div>
 
+<h2>Class: JavaUtilities</h2>
+
+<h3>class methods</h3>
+
+<div class="method">
+<a name="extend_proxy"><pre class="method-title">
+extend_proxy( string_interface/class_name, &block )
+</pre></a>
+
+<p><b>extend_proxy</b> allows any class which implements or extends the 
+provided class/interface to gain additional ruby behavior.  For example:</p>
+
+<pre class="code">
+JavaUtilities.extend_proxy('java.lang.Comparable') {
+  include Comparable
+  def <=>(a)
+    compareTo(a)
+  end
+}
+</pre>
+
+<p>The above code allows any Java class implementing java.lang.Comparable to
+become a class capable of being used by anything expecting a Ruby Comparable.</p>
+
 <h2>Ruby Methods in all Java Classes/Objects</h2>
 
 <p>The Java classes made available through include_package or include_class have 
