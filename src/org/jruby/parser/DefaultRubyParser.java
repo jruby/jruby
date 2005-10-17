@@ -780,7 +780,7 @@ public class DefaultRubyParser {
       @see #yyerror(java.lang.String, java.lang.String[])
     */
   public void yyerror (String message) {
-    yyerror(message, null);
+    yyerror(message, null, null);
   }
 
   /** (syntax) error message.
@@ -788,13 +788,15 @@ public class DefaultRubyParser {
       @param message text to be displayed.
       @param expected list of acceptable tokens, if available.
     */
-  public void yyerror (String message, String[] expected) {
+  public void yyerror (String message, String[] expected, String found) {
     StringBuffer text = new StringBuffer(message);
+
     if (expected != null && expected.length > 0) {
       text.append(", expecting");
-      for (int n = 0; n < expected.length; ++ n)
-        text.append(" ").append(expected[n]);
-      text.append("\n");
+      for (int n = 0; n < expected.length; ++ n) {
+        text.append("\t").append(expected[n]);
+      }
+      text.append(" but found " + found + " instead\n");
     }
 
     throw new SyntaxException(getPosition(null), text.toString());
@@ -908,7 +910,7 @@ public class DefaultRubyParser {
             switch (yyErrorFlag) {
   
             case 0:
-              yyerror("syntax error", yyExpecting(yyState));
+              yyerror("syntax error", yyExpecting(yyState), yyNames[yyToken]);
   
             case 1: case 2:
               yyErrorFlag = 3;
@@ -3519,7 +3521,7 @@ case 494:
   {  yyVal = null;
 		  }
   break;
-					// line 7887 "-"
+					// line 7889 "-"
         }
         yyTop -= yyLen[yyN];
         yyState = yyStates[yyTop];
@@ -3585,4 +3587,4 @@ case 494:
 	return lexer.getPosition(null);
     }
 }
-					// line 7958 "-"
+					// line 7960 "-"
