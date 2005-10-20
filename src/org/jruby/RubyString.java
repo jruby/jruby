@@ -38,6 +38,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.meta.StringMetaClass;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.Pack;
@@ -280,8 +281,7 @@ public class RubyString extends RubyObject {
 			getRuntime().newString(
 					stringValue(other).getValue().toLowerCase());
 
-        // FIXME: shouldn't this dispatch via call?
-		return thisLCString.callMethod("<=>", lcString);
+        return ((StringMetaClass)thisLCString.getMetaClass()).op_cmp.call(getRuntime(), thisLCString, "<=>", new IRubyObject[] {lcString}, false);
 	}
     
 	/** rb_str_match

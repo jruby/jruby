@@ -50,6 +50,7 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.ConversionIterator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.meta.ArrayMetaClass;
+import org.jruby.runtime.builtin.meta.StringMetaClass;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.Pack;
@@ -747,7 +748,7 @@ public class RubyArray extends RubyObject implements List {
             } else if (!(tmp instanceof RubyString)) {
                 tmp = RubyString.objAsString(tmp);
             }
-            str.append(sep.callMethod("+", tmp));
+            str.append(((StringMetaClass)sep.getMetaClass()).op_plus.call(getRuntime(), sep, "+", new IRubyObject[] {tmp}, false));
         }
         str.setTaint(taint);
         return str;
@@ -1381,7 +1382,9 @@ public class RubyArray extends RubyObject implements List {
             }
 
             if (o1 instanceof RubyString && o2 instanceof RubyString) {
-                return RubyNumeric.fix2int(((RubyString)o1).callMethod("<=>", (RubyString)o2));
+                StringMetaClass stringMC = (StringMetaClass)((RubyObject)o1).getMetaClass();
+                return RubyNumeric.fix2int(
+                        stringMC.op_cmp.call(stringMC.getRuntime(), (RubyString)o1, "<=>", new IRubyObject[] {(RubyString)o2}, false));
             }
 
             return RubyNumeric.fix2int(obj1.callMethod("<=>", obj2));

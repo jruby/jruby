@@ -48,6 +48,7 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.LastCallStatus;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.meta.FileMetaClass;
+import org.jruby.runtime.builtin.meta.StringMetaClass;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.util.PrintfFormat;
@@ -487,7 +488,7 @@ public class RubyKernel {
         RubyArray newArgs = recv.getRuntime().newArray(args);
         newArgs.shift();
 
-        return str.callMethod("%", newArgs);
+        return ((StringMetaClass)str.getMetaClass()).format.call(recv.getRuntime(), str, "%", new IRubyObject[] {newArgs}, false);
     }
 
     public static IRubyObject raise(IRubyObject recv, IRubyObject[] args) {
