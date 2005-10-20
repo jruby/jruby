@@ -28,6 +28,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.IRuby;
+import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -35,14 +36,14 @@ import org.jruby.runtime.builtin.IRubyObject;
 public abstract class DirectInvocationMethod extends AbstractMethod {
     private Arity arity;
     
-    public DirectInvocationMethod(Arity arity, Visibility visibility) {
-    	super(visibility);
+    public DirectInvocationMethod(RubyModule implementationClass, Arity arity, Visibility visibility) {
+    	super(implementationClass, visibility);
     	this.arity = arity;
     	
         assert arity != null;
     }
     
-	public abstract IRubyObject call(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper);
+	public abstract IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper);
 
 	// TODO:  Perhaps abstract method should contain this and all other Methods should pass in decent value
 	public Arity getArity() {

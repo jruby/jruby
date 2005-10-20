@@ -214,6 +214,8 @@ public class ThreadContext {
 
         RubyModule oldParent = setRubyClass((klass != null) ? klass : currentBlock.getKlass()); 
 
+        iterStack.push(currentBlock.getIter());
+            
         try {
             if (klass == null) {
                 self = currentBlock.getSelf();
@@ -257,8 +259,6 @@ public class ThreadContext {
 
             IRubyObject[] args = ArgsUtil.arrayify(value);
 
-            iterStack.push(currentBlock.getIter());
-            	
             while (true) {
                 try {
                     return currentBlock.getMethod().call(runtime, self, null, args, false);

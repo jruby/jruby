@@ -11,9 +11,10 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -30,38 +31,30 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.IRuby;
-import org.jruby.RubyModule;
-import org.jruby.RubyProc;
 import org.jruby.runtime.ICallable;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callback.Callback;
 
 /**
- * 
- * @author jpetersen
+ *
+ * @author  jpetersen
  * @version $Revision$
  */
-public class ProcMethod extends AbstractMethod {
-    private RubyProc proc;
+public class IterateCallable extends AbstractCallable {
+    private Callback callback;
+    private IRubyObject data;
 
-    /**
-     * Constructor for ProcMethod.
-     * @param visibility
-     */
-    public ProcMethod(RubyModule implementationClass, RubyProc proc, Visibility visibility) {
-        super(implementationClass, visibility);
-        this.proc = proc;
+    public IterateCallable(Callback callback, IRubyObject data) {
+        super(null, null);
+        this.callback = callback;
+        this.data = data;
     }
 
-    /**
-     * @see org.jruby.runtime.ICallable#call(IRuby, IRubyObject, String, IRubyObject[], boolean)
-     */
     public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
-        IRubyObject self = receiver;
-        return proc.call(args, self);
+        return callback.execute(args[0], new IRubyObject[] { data, receiver });
     }
     
     public ICallable dup() {
-        return new ProcMethod(getImplementationClass(), proc, getVisibility());
-    }
+        return new IterateCallable(callback, data);
+    }       
 }

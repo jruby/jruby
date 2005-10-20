@@ -32,11 +32,7 @@ package org.jruby;
 
 import java.util.HashMap;
 
-import org.jruby.internal.runtime.methods.DirectInvocationMethod;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.ICallable;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.meta.ObjectMetaClass;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -50,26 +46,6 @@ public class RubyClass extends RubyModule {
 	
 	private final IRuby runtime;
 
-    public static abstract class ClassMethod extends DirectInvocationMethod {
-        public ClassMethod(Arity arity, Visibility visibility) {
-            super(arity, visibility);
-        }
-        
-        public IRubyObject call(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
-            RubyClass s = (RubyClass)receiver;
-            
-            return invoke(s, args);
-        }
-        
-        public abstract IRubyObject invoke(RubyClass target, IRubyObject[] args);
-
-        public ICallable dup() {
-            // TODO Auto-generated method stub
-            return null;
-        }
-        
-    };
-    
     /**
      * @mri rb_boot_class
      */
@@ -116,16 +92,13 @@ public class RubyClass extends RubyModule {
         classClass.defineMethod("allocate", callbackFactory.getMethod("allocate"));
         classClass.defineMethod("new", callbackFactory.getOptMethod("newInstance"));
         classClass.defineMethod("superclass", callbackFactory.getMethod("superclass"));
-        //classClass.defineSingletonMethod("inherited", callbackFactory.getSingletonMethod("inherited", IRubyObject.class));
-        classClass.getSingletonClass().addMethod("inherited", RubyClass.inherited);
+        classClass.defineSingletonMethod("inherited", callbackFactory.getSingletonMethod("inherited", IRubyObject.class));
         classClass.undefineMethod("module_function");
     }
     
-    public static ClassMethod inherited = new ClassMethod(Arity.singleArgument(), Visibility.PUBLIC) {
-        public IRubyObject invoke(RubyClass target, IRubyObject[] args) {
-            return target.getRuntime().getNil();
-        }
-    };
+    public static IRubyObject inherited(IRubyObject recv, IRubyObject arg) {
+        return recv.getRuntime().getNil();
+    }
 
     /** Invokes if  a class is inherited from an other  class.
      * 

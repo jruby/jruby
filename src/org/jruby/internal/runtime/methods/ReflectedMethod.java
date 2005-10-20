@@ -77,7 +77,7 @@ public class ReflectedMethod extends AbstractMethod {
         assert method != null;
     }
     
-	public IRubyObject call(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+	public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
         arity.checkArity(runtime, args);
         
         assert receiver != null;

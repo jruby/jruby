@@ -73,9 +73,9 @@ public final class DefaultMethod extends AbstractMethod {
     }
 
     /**
-     * @see AbstractMethod#call(IRuby, IRubyObject, String, IRubyObject[], boolean)
+     * @see AbstractCallable#call(IRuby, IRubyObject, String, IRubyObject[], boolean)
      */
-    public IRubyObject call(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
     	assert args != null;
 
         ThreadContext context = runtime.getCurrentContext();

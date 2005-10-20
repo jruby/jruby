@@ -11,9 +11,9 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
+ * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2005 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -30,9 +30,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.IRuby;
-import org.jruby.ast.Node;
-import org.jruby.ast.types.IArityNode;
-import org.jruby.evaluator.EvaluateVisitor;
+import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Visibility;
@@ -43,43 +41,54 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author  jpetersen
  * @version $Revision$
  */
-public class EvaluateMethod extends AbstractMethod {
-    private final Node node;
-    private final Arity arity;
-
-    private EvaluateMethod(Node node, Visibility visibility, Arity arity) {
-        super(null, visibility);
-        this.node = node;
-        this.arity = arity;
+public abstract class AbstractCallable implements ICallable {
+    protected RubyModule implementationClass;
+    protected Visibility visibility;
+    
+    protected AbstractCallable(RubyModule implementationClass, Visibility visibility) {
+        this.implementationClass = implementationClass;
+        this.visibility = visibility;
     }
-
-    public EvaluateMethod(Node node, Node vars) {
-    	this(node, null, procArityOf(vars));
+    
+    protected AbstractCallable(Visibility visibility) {
+        this.visibility = visibility;
     }
-
+    
+    /**
+     * The base behavior is to do no scope/frame manipulation at all, depending on the caller. Methods (via
+     * AbstractMethod) add their own behavior for scoping/framing, and non-methods (Evaluate/IterateCallable)
+     * are only invoked from within ThreadContext.yield. Eventually TC.yield scoping/framing may be moved into
+     * superclass of the two non-methods.
+     */
     public IRubyObject call(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
-        return EvaluateVisitor.createVisitor(receiver).eval(node);
+        return internalCall(runtime, receiver, name, args, noSuper);
+    }
+    
+    public String getOriginalName() {
+    	return null;
+    }
+    
+    public RubyModule getImplementationClass() {
+        return implementationClass;
     }
 
-    public Node getNode() {
-        return node;
+    public void setImplementationClass(RubyModule implClass) {
+        implementationClass = implClass;
+    }
+
+    public Visibility getVisibility() {
+        return visibility;
+    }
+
+    public void setVisibility(Visibility visibility) {
+        this.visibility = visibility;
+    }
+
+    public boolean isUndefined() {
+        return false;
     }
 
     public Arity getArity() {
-    	return arity;
-    }
-    
-    private static Arity procArityOf(Node node) {
-        if (node == null) {
-            return Arity.optional();
-        } else if (node instanceof IArityNode) {
-            return ((IArityNode) node).getArity();
-        } 
-
-        throw new Error("unexpected type " + node.getClass());
-    }
-    
-    public ICallable dup() {
-        return new EvaluateMethod(node, getVisibility(), arity);
+        return Arity.optional();
     }
 }

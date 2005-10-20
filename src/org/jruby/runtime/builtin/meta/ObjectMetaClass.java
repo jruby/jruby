@@ -46,8 +46,6 @@ public class ObjectMetaClass extends AbstractMetaClass {
     	super(runtime, null /*Would be Class if it existed yet */, null, null, "Object");
     	
     	this.builtinClass = RubyObject.class;
-    	
-    	getMeta().initializeClass();
     }
     
     // Only for other core modules/classes
@@ -59,14 +57,10 @@ public class ObjectMetaClass extends AbstractMetaClass {
     }
     
     protected ObjectMetaClass(String name, Class builtinClass, RubyClass superClass) {
-        this(name, builtinClass, superClass, superClass.getRuntime().getClass("Object"), true);
+        this(name, builtinClass, superClass, superClass.getRuntime().getClass("Object"));
     }
 
     protected ObjectMetaClass(String name, Class builtinClass, RubyClass superClass, RubyModule parentModule) {
-        this(name, builtinClass, superClass, parentModule, false);
-    }
-
-    protected ObjectMetaClass(String name, Class builtinClass, RubyClass superClass, RubyModule parentModule, boolean init) {
         super(superClass.getRuntime(), superClass.getRuntime().getClass("Class"), superClass, parentModule, name);
 
         assert name != null;
@@ -80,10 +74,6 @@ public class ObjectMetaClass extends AbstractMetaClass {
         inheritedBy(superClass);
 
         parentModule.setConstant(name, this);
-
-        if (init) {
-            getMeta().initializeClass();
-        }
     }
     
     protected class ObjectMeta extends Meta {
@@ -147,5 +137,9 @@ public class ObjectMetaClass extends AbstractMetaClass {
 		
 		return instance;
 	}
+    
+    public void initializeClass() {
+        getMeta().initializeClass();
+    }
     
 }

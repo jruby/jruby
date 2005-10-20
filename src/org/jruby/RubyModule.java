@@ -49,7 +49,6 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ICallable;
-import org.jruby.runtime.Iter;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -71,7 +70,7 @@ public class RubyModule extends RubyObject {
     private RubyClass superClass;
     
     // Containing class...The parent of Object is null. Object should always be last in chain.
-    private RubyModule parentModule;
+    public RubyModule parentModule;
 
     // ClassId is the name of the class/module sans where it is located.
     // If it is null, then it an anonymous class.
@@ -559,8 +558,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public final IRubyObject call(IRubyObject recv, String name, IRubyObject[] args, CallType callType) {
-        //System.err.println("Called " + recv.getType().getName() + "." + name);
-    	assert args != null;
+        assert args != null;
 
         ICallable method = searchMethod(name);
 
@@ -590,13 +588,7 @@ public class RubyModule extends RubyObject {
         	name = originalName;
         }
 
-        RubyModule implementationClass = method.getImplementationClass();
-        
-        if (implementationClass != null) {
-            return method.getImplementationClass().call0(recv, name, args, method, false);
-        } else {
-            return method.call(getRuntime(), recv, name, args, false);
-        }
+        return method.call(getRuntime(), recv, name, args, false);
     }
 
     private IRubyObject callMethodMissing(IRubyObject receiver, String name, IRubyObject[] args) {
@@ -615,26 +607,6 @@ public class RubyModule extends RubyObject {
         newArgs[0] = RubySymbol.newSymbol(runtime, name);
 
         return receiver.callMethod("method_missing", newArgs);
-    }
-
-    /** rb_call0
-     *
-     */
-    public final IRubyObject call0(IRubyObject recv, String name, IRubyObject[] args,
-        ICallable method, boolean noSuper) {
-        ThreadContext context = getRuntime().getCurrentContext();
-		RubyModule oldParent = context.setRubyClass(parentModule);
-
-		context.getIterStack().push(context.getCurrentIter().isPre() ? Iter.ITER_CUR : Iter.ITER_NOT);
-        context.getFrameStack().push(new Frame(context, recv, args, name, noSuper ? null : this));
-
-        try {
-            return method.call(getRuntime(), recv, name, args, noSuper);
-        } finally {
-            context.getFrameStack().pop();
-            context.getIterStack().pop();
-			context.setRubyClass(oldParent);
-        }
     }
 
     /** rb_alias

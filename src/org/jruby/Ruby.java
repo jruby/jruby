@@ -57,7 +57,7 @@ import org.jruby.exceptions.ReturnJump;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.internal.runtime.ValueAccessor;
-import org.jruby.internal.runtime.methods.IterateMethod;
+import org.jruby.internal.runtime.methods.IterateCallable;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -349,7 +349,7 @@ public final class Ruby implements IRuby {
      */
     public IRubyObject iterate(Callback iterateMethod, IRubyObject data1, Callback blockMethod, IRubyObject data2) {
         getIterStack().push(Iter.ITER_PRE);
-        getBlockStack().push(Block.createBlock(null, new IterateMethod(blockMethod, data2), getTopSelf()));
+        getBlockStack().push(Block.createBlock(null, new IterateCallable(blockMethod, data2), getTopSelf()));
 
         try {
             while (true) {
@@ -412,7 +412,10 @@ public final class Ruby implements IRuby {
     }
     
     private void initCoreClasses() {
-        objectClass = new ObjectMetaClass(this);
+        ObjectMetaClass objectMetaClass = new ObjectMetaClass(this);
+        objectMetaClass.initializeClass();
+        
+        objectClass = objectMetaClass;
         objectClass.setConstant("Object", objectClass);
         RubyClass moduleClass = new ModuleMetaClass(this, objectClass);
         objectClass.setConstant("Module", moduleClass);
@@ -439,34 +442,41 @@ public final class Ruby implements IRuby {
         RubyBoolean.createTrueClass(this);
         RubyComparable.createComparable(this);
         defineModule("Enumerable"); // Impl: src/builtin/enumerable.rb
-        new StringMetaClass(this);
-        new SymbolMetaClass(this);
+        new StringMetaClass(this).initializeClass();
+        new SymbolMetaClass(this).initializeClass();
         RubyThreadGroup.createThreadGroupClass(this);
         RubyThread.createThreadClass(this);
         RubyException.createExceptionClass(this);
-        new NumericMetaClass(this);
-        new IntegerMetaClass(this);        
-        new FixnumMetaClass(this);
-        new HashMetaClass(this);
-        new IOMetaClass(this);
-        new ArrayMetaClass(this);
+        
+        new NumericMetaClass(this).initializeClass();
+        new IntegerMetaClass(this).initializeClass();        
+        new FixnumMetaClass(this).initializeClass();
+        new HashMetaClass(this).initializeClass();
+        new IOMetaClass(this).initializeClass();
+        new ArrayMetaClass(this).initializeClass();
+        
         Java.createJavaModule(this);
         RubyStruct.createStructClass(this);
         RubyFloat.createFloatClass(this);
-        //RubyBignum.createBignumClass(this);
-        new BignumMetaClass(this);
+        
+        new BignumMetaClass(this).initializeClass();
+        
         RubyMath.createMathModule(this); // depends on all numeric types
         RubyRegexp.createRegexpClass(this);
         RubyRange.createRangeClass(this);
         RubyObjectSpace.createObjectSpaceModule(this);
         RubyGC.createGCModule(this);
-        new ProcMetaClass(this);
+        
+        new ProcMetaClass(this).initializeClass();
+        
         RubyMethod.createMethodClass(this);
         RubyMatchData.createMatchDataClass(this);
         RubyMarshal.createMarshalModule(this);
         RubyDir.createDirClass(this);
         RubyFileTest.createFileTestModule(this);
-        new FileMetaClass(this); // depends on IO, FileTest
+        
+        new FileMetaClass(this).initializeClass(); // depends on IO, FileTest
+        
         RubyPrecision.createPrecisionModule(this);
         RubyProcess.createProcessModule(this);
         RubyTime.createTimeClass(this);

@@ -58,8 +58,8 @@ public class AliasMethod extends AbstractMethod {
     	return oldName;
     }
 
-    public IRubyObject call(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
-        return oldMethod.call(runtime, receiver, oldName, args, noSuper);
+    public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+        return oldMethod.internalCall(runtime, receiver, oldName, args, noSuper);
     }
 
     public ICallable dup() {

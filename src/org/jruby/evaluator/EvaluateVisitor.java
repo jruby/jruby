@@ -154,7 +154,7 @@ import org.jruby.exceptions.RedoJump;
 import org.jruby.exceptions.RetryJump;
 import org.jruby.exceptions.ReturnJump;
 import org.jruby.internal.runtime.methods.DefaultMethod;
-import org.jruby.internal.runtime.methods.EvaluateMethod;
+import org.jruby.internal.runtime.methods.EvaluateCallable;
 import org.jruby.internal.runtime.methods.WrapperCallable;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
@@ -856,7 +856,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitForNode(ForNode)
      */
     public void visitForNode(ForNode iVisited) {
-    	threadContext.getBlockStack().push(Block.createBlock(iVisited.getVarNode(), new EvaluateMethod(iVisited.getBodyNode(), iVisited.getVarNode()), self));
+    	threadContext.getBlockStack().push(Block.createBlock(iVisited.getVarNode(), new EvaluateCallable(iVisited.getBodyNode(), iVisited.getVarNode()), self));
         threadContext.getIterStack().push(Iter.ITER_PRE);
 
         try {
@@ -957,7 +957,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitIterNode(IterNode iVisited) {
     	threadContext.getBlockStack().push(Block.createBlock(iVisited.getVarNode(), 
-    	    new EvaluateMethod(iVisited.getBodyNode(), iVisited.getVarNode()), self));
+    	    new EvaluateCallable(iVisited.getBodyNode(), iVisited.getVarNode()), self));
         try {
             while (true) {
                 try {

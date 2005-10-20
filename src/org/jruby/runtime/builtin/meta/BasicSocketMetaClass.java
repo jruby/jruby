@@ -54,6 +54,9 @@ public class BasicSocketMetaClass extends ObjectMetaClass {
     }
 
     public RubyClass newSubClass(String name, RubyModule parentModule) {
-		return new BasicSocketMetaClass(getRuntime());
+		BasicSocketMetaClass basicSocketMetaClass = new BasicSocketMetaClass(getRuntime());
+        basicSocketMetaClass.initializeClass();
+        
+        return basicSocketMetaClass;
     }
 }

@@ -39,7 +39,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author jpetersen
  * @version $Revision$
  */
-public class WrapperCallable extends AbstractMethod {
+public class WrapperCallable extends AbstractCallable {
     private ICallable callable;
 
     /**
@@ -54,7 +54,7 @@ public class WrapperCallable extends AbstractMethod {
     /**
      * @see org.jruby.runtime.ICallable#call(IRuby, IRubyObject, String, IRubyObject[], boolean)
      */
-    public IRubyObject call(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
         return callable.call(runtime, receiver, name, args, noSuper);
     }
     

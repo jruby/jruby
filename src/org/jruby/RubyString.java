@@ -33,10 +33,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.util.Locale;
-
 import org.jruby.internal.runtime.methods.DirectInvocationMethod;
-import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Visibility;
@@ -58,11 +55,11 @@ public class RubyString extends RubyObject {
 	private String value;
 	
     public static abstract class StringMethod extends DirectInvocationMethod {
-        public StringMethod(Arity arity, Visibility visibility) {
-            super(arity, visibility);
+        public StringMethod(RubyModule implementationClass, Arity arity, Visibility visibility) {
+            super(implementationClass, arity, visibility);
         }
         
-        public IRubyObject call(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+        public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
             RubyString s = (RubyString)receiver;
             
             return invoke(s, args);
@@ -143,12 +140,6 @@ public class RubyString extends RubyObject {
 		return c >= 0x20 && c <= 0x7E;
 	}
 
-    public static StringMethod hash = new StringMethod(Arity.noArguments(), Visibility.PUBLIC) {
-        public IRubyObject invoke(RubyString target, IRubyObject[] args) {
-            return target.getRuntime().newFixnum(target.getValue().hashCode());
-        }
-    };
-    
     public RubyFixnum hash() {
         return getRuntime().newFixnum(getValue().hashCode());
     }
@@ -230,12 +221,6 @@ public class RubyString extends RubyObject {
 		return this;
 	}
 
-    public static StringMethod to_s = new StringMethod(Arity.noArguments(), Visibility.PUBLIC) {
-        public IRubyObject invoke(RubyString target, IRubyObject[] args) {
-            return target;
-        }
-	};
-	
 	public IRubyObject to_str() {
 		return this;
 	}
@@ -288,13 +273,6 @@ public class RubyString extends RubyObject {
 	    return this;
 	}
 
-    public static StringMethod op_cmp = new StringMethod(Arity.singleArgument(), Visibility.PUBLIC) {
-        public IRubyObject invoke(RubyString target, IRubyObject[] args) {
-            IRubyObject other = args[0];
-            return target.getRuntime().newFixnum(target.cmp(stringValue(other)));
-        }
-	};
-
 	public IRubyObject casecmp(IRubyObject other) {
 		RubyString thisLCString = 
 			getRuntime().newString(getValue().toLowerCase());
@@ -306,30 +284,6 @@ public class RubyString extends RubyObject {
 		return thisLCString.callMethod("<=>", lcString);
 	}
     
-    public static StringMethod equal = new StringMethod(Arity.singleArgument(), Visibility.PUBLIC) {
-        public IRubyObject invoke(RubyString target, IRubyObject[] args) {
-            IRubyObject other = args[0];
-            
-    		if (other == target) {
-    			return target.getRuntime().getTrue();
-    		} else if (!(other instanceof RubyString)) {
-    			return target.getRuntime().getNil();
-    		}
-    		/* use Java implementation if both different String instances */
-    		return target.getRuntime().newBoolean(
-    				target.getValue().equals(((RubyString) other).getValue()));
-        }
-    };
-	
-    public static StringMethod veryEqual = new StringMethod(Arity.singleArgument(), Visibility.PUBLIC) {
-        public IRubyObject invoke(RubyString target, IRubyObject[] args) {
-            IRubyObject other = args[0];
-    		IRubyObject truth = target.callMethod("==", other);
-            
-    		return truth == target.getRuntime().getNil() ? target.getRuntime().getFalse() : truth;
-        }
-	};
-
 	/** rb_str_match
 	 *
 	 */
@@ -526,42 +480,6 @@ public class RubyString extends RubyObject {
 
 		return getRuntime().newString(sb.toString());
 	}
-
-    public static StringMethod op_plus = new StringMethod(Arity.singleArgument(), Visibility.PUBLIC) {
-        public IRubyObject invoke(RubyString target, IRubyObject[] args) {
-            IRubyObject other = args[0];
-    		RubyString str = stringValue(other);
-    		
-    		return (RubyString) target.newString(target.getValue() + str.getValue()).infectBy(str);
-        }
-	};
-
-    public static StringMethod op_mul = new StringMethod(Arity.singleArgument(), Visibility.PUBLIC) {
-        public IRubyObject invoke(RubyString target, IRubyObject[] args) {
-            IRubyObject other = args[0];
-            
-    		RubyInteger otherInteger =
-                    (RubyInteger) other.convertType(RubyInteger.class, "Integer", "to_i");
-            long len = otherInteger.getLongValue();
-    
-    		if (len < 0) {
-    			throw target.getRuntime().newArgumentError("negative argument");
-    		}
-    
-    		if (len > 0 && Long.MAX_VALUE / len < target.getValue().length()) {
-    			throw target.getRuntime().newArgumentError("argument too big");
-    		}
-    		StringBuffer sb = new StringBuffer((int) (target.getValue().length() * len));
-    
-    		for (int i = 0; i < len; i++) {
-    			sb.append(target.getValue());
-    		}
-    
-    		RubyString newString = target.newString(sb.toString());
-    		newString.setTaint(target.isTaint());
-    		return newString;
-        }
-	};
 
 	/** rb_str_length
 	 *
@@ -910,21 +828,6 @@ public class RubyString extends RubyObject {
 		aset(newArgs);
 		return result;
 	}
-
-    public static StringMethod format = new StringMethod(Arity.singleArgument(), Visibility.PUBLIC) {
-        public IRubyObject invoke(RubyString target, IRubyObject[] args) {
-            IRubyObject arg = args[0];
-            
-    		if (arg instanceof RubyArray) {
-    			Object[] args2 = new Object[((RubyArray) arg).getLength()];
-    			for (int i = 0; i < args2.length; i++) {
-    				args2[i] = JavaUtil.convertRubyToJava(((RubyArray) arg).entry(i));
-    			}
-    			return target.getRuntime().newString(new PrintfFormat(Locale.US, target.getValue()).sprintf(args2));
-    		}
-    		return target.getRuntime().newString(new PrintfFormat(Locale.US, target.getValue()).sprintf(JavaUtil.convertRubyToJava(arg)));
-        }
-	};
 
 	/** rb_str_succ
 	 *

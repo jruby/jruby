@@ -113,7 +113,7 @@ public class RubyMethod extends RubyObject {
         
         getRuntime().getIterStack().push(getRuntime().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
         try {
-            return implementationModule.call0(receiver, methodName, args, method, false);
+            return method.call(getRuntime(), receiver, methodName, args, false);
         } finally {
             getRuntime().getIterStack().pop();
         }

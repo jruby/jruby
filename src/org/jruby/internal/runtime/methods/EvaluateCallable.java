@@ -11,10 +11,9 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
+ * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
- * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -31,30 +30,56 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.IRuby;
+import org.jruby.ast.Node;
+import org.jruby.ast.types.IArityNode;
+import org.jruby.evaluator.EvaluateVisitor;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ICallable;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callback.Callback;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class IterateMethod extends AbstractMethod {
-    private Callback callback;
-    private IRubyObject data;
+public class EvaluateCallable extends AbstractCallable {
+    private final Node node;
+    private final Arity arity;
 
-    public IterateMethod(Callback callback, IRubyObject data) {
-        super(null, null);
-        this.callback = callback;
-        this.data = data;
+    private EvaluateCallable(Node node, Visibility visibility, Arity arity) {
+        super(null, visibility);
+        this.node = node;
+        this.arity = arity;
     }
 
-    public IRubyObject call(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
-        return callback.execute(args[0], new IRubyObject[] { data, receiver });
+    public EvaluateCallable(Node node, Node vars) {
+    	this(node, null, procArityOf(vars));
+    }
+    
+    public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+        return EvaluateVisitor.createVisitor(receiver).eval(node);
+    }
+
+    public Node getNode() {
+        return node;
+    }
+
+    public Arity getArity() {
+    	return arity;
+    }
+    
+    private static Arity procArityOf(Node node) {
+        if (node == null) {
+            return Arity.optional();
+        } else if (node instanceof IArityNode) {
+            return ((IArityNode) node).getArity();
+        } 
+
+        throw new Error("unexpected type " + node.getClass());
     }
     
     public ICallable dup() {
-        return new IterateMethod(callback, data);
-    }       
+        return new EvaluateCallable(node, getVisibility(), arity);
+    }
 }

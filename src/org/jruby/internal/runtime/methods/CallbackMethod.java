@@ -50,7 +50,7 @@ public class CallbackMethod extends AbstractMethod {
         this.callback = callback;
     }
 
-    public IRubyObject call(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
     	assert args != null;
     	
         if (runtime.getTraceFunction() != null) {

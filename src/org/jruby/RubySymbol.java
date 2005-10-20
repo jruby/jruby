@@ -57,11 +57,11 @@ public class RubySymbol extends RubyObject {
     private final int id;
 
     public static abstract class SymbolMethod extends DirectInvocationMethod {
-        public SymbolMethod(Arity arity, Visibility visibility) {
-            super(arity, visibility);
+        public SymbolMethod(RubyModule implementationClass, Arity arity, Visibility visibility) {
+            super(implementationClass, arity, visibility);
         }
         
-        public IRubyObject call(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+        public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
             RubySymbol s = (RubySymbol)receiver;
             
             return invoke(s, args);
@@ -138,16 +138,6 @@ public class RubySymbol extends RubyObject {
     public RubyString to_s() {
         return getRuntime().newString(symbol);
     }
-
-    public static SymbolMethod equal = new SymbolMethod(Arity.singleArgument(), Visibility.PUBLIC) {
-        public IRubyObject invoke(RubySymbol target, IRubyObject[] args) {
-            IRubyObject other = args[0];
-            
-            // Symbol table ensures only one instance for every name,
-            // so object identity is enough to compare symbols.
-            return target.getRuntime().newBoolean(target == other);
-        }
-    };
 
     public RubyFixnum hash() {
         return getRuntime().newFixnum(symbol.hashCode());

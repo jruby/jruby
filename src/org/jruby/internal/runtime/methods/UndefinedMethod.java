@@ -49,11 +49,15 @@ public class UndefinedMethod extends AbstractMethod {
         super(null, visibility);
     }
 
+    public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+        throw new UnsupportedOperationException();
+    }
+
     /**
-     * @see org.jruby.runtime.ICallable#call(IRuby, IRubyObject, String, IRubyObject[], boolean)
+     * If UndefinedMethod gets invoked, don't do the usual method scoping/framing. It should never be invoked.
      */
     public IRubyObject call(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
-        throw new UnsupportedOperationException();
+        return internalCall(runtime, receiver, name, args, noSuper);
     }
 
     public boolean isUndefined() {

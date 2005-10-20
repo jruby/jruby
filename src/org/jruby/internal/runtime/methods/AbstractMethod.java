@@ -29,54 +29,37 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
+import org.jruby.IRuby;
 import org.jruby.RubyModule;
-import org.jruby.runtime.Arity;
-import org.jruby.runtime.ICallable;
+import org.jruby.runtime.Frame;
+import org.jruby.runtime.Iter;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public abstract class AbstractMethod implements ICallable {
-    private RubyModule implementationClass;
-    private Visibility visibility;
-    
+public abstract class AbstractMethod extends AbstractCallable {
     protected AbstractMethod(RubyModule implementationClass, Visibility visibility) {
-        this.implementationClass = implementationClass;
-        this.visibility = visibility;
-    }
-    
-    protected AbstractMethod(Visibility visibility) {
-        this.visibility = visibility;
-    }
-    
-    public String getOriginalName() {
-    	return null;
-    }
-    
-    public RubyModule getImplementationClass() {
-        return implementationClass;
+        super(implementationClass, visibility);
     }
 
-    public void setImplementationClass(RubyModule implClass) {
-        implementationClass = implClass;
-    }
+    public IRubyObject call(IRuby runtime, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+        ThreadContext context = runtime.getCurrentContext();
+        RubyModule oldParent = context.setRubyClass(implementationClass.parentModule);
 
-    public Visibility getVisibility() {
-        return visibility;
-    }
+        context.getIterStack().push(context.getCurrentIter().isPre() ? Iter.ITER_CUR : Iter.ITER_NOT);
+        context.getFrameStack().push(new Frame(context, recv, args, name, noSuper ? null : implementationClass));
 
-    public void setVisibility(Visibility visibility) {
-        this.visibility = visibility;
-    }
-
-    public boolean isUndefined() {
-        return false;
-    }
-
-    public Arity getArity() {
-        return Arity.optional();
+        try {
+            return internalCall(runtime, recv, name, args, noSuper);
+        } finally {
+            context.getFrameStack().pop();
+            context.getIterStack().pop();
+            context.setRubyClass(oldParent);
+        }
     }
 }

@@ -38,7 +38,7 @@ import org.jruby.util.BuiltinScript;
 public class SocketLibrary implements Library {
 
     public void load(IRuby runtime) throws IOException {
-        new BasicSocketMetaClass(runtime);
+        new BasicSocketMetaClass(runtime).initializeClass();
         new BuiltinScript("socket").load(runtime);
     }
 

@@ -50,6 +50,7 @@ public interface ICallable {
     boolean isUndefined();
 
     IRubyObject call(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper);
+    IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper);
 
     Arity getArity();
 

@@ -10,7 +10,10 @@ import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
+import org.jruby.RubySymbol.SymbolMethod;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Visibility;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class SymbolMetaClass extends ObjectMetaClass {
     public SymbolMetaClass(IRuby runtime) {
@@ -21,10 +24,20 @@ public class SymbolMetaClass extends ObjectMetaClass {
 		super(name, RubySymbol.class, superClass, parentModule);
 	}
 
+    public SymbolMethod equal = new SymbolMethod(this, Arity.singleArgument(), Visibility.PUBLIC) {
+        public IRubyObject invoke(RubySymbol self, IRubyObject[] args) {
+            IRubyObject other = args[0];
+            
+            // Symbol table ensures only one instance for every name,
+            // so object identity is enough to compare symbols.
+            return self.getRuntime().newBoolean(self == other);
+        }
+    };
+
 	protected class SymbolMeta extends Meta {
 		public void initializeClass() {
-	        //defineMethod("==", Arity.singleArgument(), "equal");
-            addMethod("==", RubySymbol.equal);
+            addMethod("==", equal);
+            
 	        defineMethod("clone", Arity.noArguments(), "rbClone");
 	        defineMethod("freeze", Arity.noArguments()); 
 	        defineMethod("hash", Arity.noArguments()); 

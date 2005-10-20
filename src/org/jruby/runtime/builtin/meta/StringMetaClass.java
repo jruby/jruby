@@ -28,12 +28,20 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.builtin.meta;
 
+import java.util.Locale;
+
 import org.jruby.IRuby;
+import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
+import org.jruby.RubyString.StringMethod;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.PrintfFormat;
 
 public class StringMetaClass extends ObjectMetaClass {
     public StringMetaClass(IRuby runtime) {
@@ -44,23 +52,114 @@ public class StringMetaClass extends ObjectMetaClass {
         super(name, RubyString.class, superClass, parentModule);
     }
 
+    public StringMethod hash = new StringMethod(this, Arity.noArguments(), Visibility.PUBLIC) {
+        public IRubyObject invoke(RubyString self, IRubyObject[] args) {
+            return self.getRuntime().newFixnum(self.getValue().hashCode());
+        }
+    };
+    
+    public StringMethod to_s = new StringMethod(this, Arity.noArguments(), Visibility.PUBLIC) {
+        public IRubyObject invoke(RubyString self, IRubyObject[] args) {
+            return self;
+        }
+    };
+    
+    public StringMethod op_cmp = new StringMethod(this, Arity.singleArgument(), Visibility.PUBLIC) {
+        public IRubyObject invoke(RubyString self, IRubyObject[] args) {
+            IRubyObject other = args[0];
+            return self.getRuntime().newFixnum(self.cmp(RubyString.stringValue(other)));
+        }
+    };
+
+    public StringMethod equal = new StringMethod(this, Arity.singleArgument(), Visibility.PUBLIC) {
+        public IRubyObject invoke(RubyString self, IRubyObject[] args) {
+            IRubyObject other = args[0];
+            
+            if (other == self) {
+                return self.getRuntime().getTrue();
+            } else if (!(other instanceof RubyString)) {
+                return self.getRuntime().getNil();
+            }
+            /* use Java implementation if both different String instances */
+            return self.getRuntime().newBoolean(
+                    self.getValue().equals(((RubyString) other).getValue()));
+        }
+    };
+    
+    public StringMethod veryEqual = new StringMethod(this, Arity.singleArgument(), Visibility.PUBLIC) {
+        public IRubyObject invoke(RubyString self, IRubyObject[] args) {
+            IRubyObject other = args[0];
+            IRubyObject truth = self.callMethod("==", other);
+            
+            return truth == self.getRuntime().getNil() ? self.getRuntime().getFalse() : truth;
+        }
+    };
+
+    public StringMethod op_plus = new StringMethod(this, Arity.singleArgument(), Visibility.PUBLIC) {
+        public IRubyObject invoke(RubyString self, IRubyObject[] args) {
+            IRubyObject other = args[0];
+            RubyString str = RubyString.stringValue(other);
+            
+            return (RubyString) self.newString(self.getValue() + str.getValue()).infectBy(str);
+        }
+    };
+
+    public StringMethod op_mul = new StringMethod(this, Arity.singleArgument(), Visibility.PUBLIC) {
+        public IRubyObject invoke(RubyString self, IRubyObject[] args) {
+            IRubyObject other = args[0];
+            
+            RubyInteger otherInteger =
+                    (RubyInteger) other.convertType(RubyInteger.class, "Integer", "to_i");
+            long len = otherInteger.getLongValue();
+    
+            if (len < 0) {
+                throw self.getRuntime().newArgumentError("negative argument");
+            }
+    
+            if (len > 0 && Long.MAX_VALUE / len < self.getValue().length()) {
+                throw self.getRuntime().newArgumentError("argument too big");
+            }
+            StringBuffer sb = new StringBuffer((int) (self.getValue().length() * len));
+    
+            for (int i = 0; i < len; i++) {
+                sb.append(self.getValue());
+            }
+    
+            RubyString newString = self.newString(sb.toString());
+            newString.setTaint(self.isTaint());
+            return newString;
+        }
+    };
+
+    public StringMethod format = new StringMethod(this, Arity.singleArgument(), Visibility.PUBLIC) {
+        public IRubyObject invoke(RubyString self, IRubyObject[] args) {
+            IRubyObject arg = args[0];
+            
+            if (arg instanceof RubyArray) {
+                Object[] args2 = new Object[((RubyArray) arg).getLength()];
+                for (int i = 0; i < args2.length; i++) {
+                    args2[i] = JavaUtil.convertRubyToJava(((RubyArray) arg).entry(i));
+                }
+                return self.getRuntime().newString(new PrintfFormat(Locale.US, self.getValue()).sprintf(args2));
+            }
+            return self.getRuntime().newString(new PrintfFormat(Locale.US, self.getValue()).sprintf(JavaUtil.convertRubyToJava(arg)));
+        }
+    };
+
     protected class StringMeta extends Meta {
 	    protected void initializeClass() {
 	        includeModule(getRuntime().getModule("Comparable"));
 	        includeModule(getRuntime().getModule("Enumerable"));
 	
-	        //defineMethod("<=>", Arity.singleArgument(), "op_cmp");
-            addMethod("<=>", RubyString.op_cmp);
-	        //defineMethod("==", Arity.singleArgument(), "equal");
-            addMethod("==", RubyString.equal);
-	        //defineMethod("===", Arity.singleArgument(), "veryEqual");
-            addMethod("===", RubyString.veryEqual);
-	        //defineMethod("+", Arity.singleArgument(), "op_plus");
-            addMethod("+", RubyString.op_plus);
-	        //defineMethod("*", Arity.singleArgument(), "op_mul");
-            addMethod("*", RubyString.op_mul);
-	        //defineMethod("%", Arity.singleArgument(), "format");
-            addMethod("%", RubyString.format);
+            addMethod("<=>", op_cmp);
+            addMethod("==", equal);
+            addMethod("===", veryEqual);
+            addMethod("+", op_plus);
+            addMethod("*", op_mul);
+            addMethod("%", format);
+            addMethod("hash", hash);
+            addMethod("to_s", to_s);
+            
 	        defineMethod("[]", Arity.optional(), "aref");
 	        defineMethod("[]=", Arity.optional(), "aset");
 	        defineMethod("=~", Arity.singleArgument(), "match");
@@ -87,8 +186,6 @@ public class StringMetaClass extends ObjectMetaClass {
 	        defineMethod("empty?", Arity.noArguments(), "empty");
 	        defineMethod("gsub", Arity.optional());
 	        defineMethod("gsub!", Arity.optional(), "gsub_bang");
-	        //defineMethod("hash", Arity.noArguments());
-            addMethod("hash", RubyString.hash);
 	        defineMethod("hex", Arity.noArguments());
 	        defineMethod("include?", Arity.singleArgument(), "include");
 	        defineMethod("index", Arity.optional());
@@ -124,8 +221,6 @@ public class StringMetaClass extends ObjectMetaClass {
 	        defineMethod("swapcase!", Arity.noArguments(), "swapcase_bang");
 	        defineMethod("to_f", Arity.noArguments());
 	        defineMethod("to_i", Arity.noArguments());
-	        //defineMethod("to_s", Arity.noArguments());
-            addMethod("to_s", RubyString.to_s);
 	        defineMethod("to_str", Arity.noArguments());
 	        defineMethod("to_sym", Arity.noArguments());
 	        defineMethod("tr", Arity.twoArguments());
