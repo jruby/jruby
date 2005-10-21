@@ -34,10 +34,13 @@ import java.util.Collections;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents a $number variable.
  *
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class NthRefNode extends Node {
     static final long serialVersionUID = -3301605695065934063L;
@@ -53,8 +56,8 @@ public class NthRefNode extends Node {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitNthRefNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitNthRefNode(this);
     }
 
     /**

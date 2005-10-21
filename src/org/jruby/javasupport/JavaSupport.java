@@ -106,7 +106,9 @@ public class JavaSupport {
     }
 
     private RaiseException createRaiseException(Throwable exception) {
-        return RaiseException.createNativeRaiseException(runtime, exception);
+        RaiseException re = RaiseException.createNativeRaiseException(runtime, exception);
+        
+        return re;
     }
 
     private static Class primitiveClass(String name) {

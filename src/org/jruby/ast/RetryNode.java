@@ -34,10 +34,13 @@ import java.util.Collections;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents a 'retry' statement.
  *
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class RetryNode extends Node {
     static final long serialVersionUID = 4648280998968560181L;
@@ -50,8 +53,8 @@ public class RetryNode extends Node {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitRetryNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitRetryNode(this);
     }
     
     public List childNodes() {

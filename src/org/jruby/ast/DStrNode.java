@@ -33,11 +33,14 @@ package org.jruby.ast;
 
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * a Dynamic String node.
  * A string which contains some dynamic elements which needs to be evaluated (introduced by #).
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class DStrNode extends ListNode implements ILiteralNode {
     static final long serialVersionUID = -1488812415812799395L;
@@ -50,7 +53,7 @@ public class DStrNode extends ListNode implements ILiteralNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitDStrNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitDStrNode(this);
     }
 }

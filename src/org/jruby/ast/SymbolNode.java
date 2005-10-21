@@ -35,10 +35,13 @@ import java.util.List;
 
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents a symbol (:symbol_name).
  *
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class SymbolNode extends Node implements ILiteralNode {
     static final long serialVersionUID = 3168450881711346709L;
@@ -50,8 +53,8 @@ public class SymbolNode extends Node implements ILiteralNode {
 	    this.name = name;
 	}
 
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitSymbolNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitSymbolNode(this);
     }
 
     /**

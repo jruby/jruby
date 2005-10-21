@@ -35,10 +35,13 @@ import java.util.List;
 
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class NilNode extends Node implements INameNode {
     static final long serialVersionUID = -8702073984472296708L;
@@ -51,8 +54,8 @@ public class NilNode extends Node implements INameNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitNilNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitNilNode(this);
     }
     
     /**

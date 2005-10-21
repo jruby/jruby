@@ -30,7 +30,6 @@ import org.jruby.runtime.Scope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.load.LoadService;
 
 public interface IRuby {
@@ -130,12 +129,6 @@ public interface IRuby {
 	 * @return Value of property rubyTopSelf.
 	 */
 	public IRubyObject getTopSelf();
-
-	/** rb_iterate
-	 *
-	 */
-	public IRubyObject iterate(Callback iterateMethod, IRubyObject data1,
-			Callback blockMethod, IRubyObject data2);
 
 	/**
 	 * Get top-most (current) scope (local vars) in the current thread context.
@@ -326,64 +319,65 @@ public interface IRuby {
 
 	public RubySymbol newSymbol(String string);
 
-	public RaiseException newArgumentError(String message);
+    public RaiseException newArgumentError(String message);
+    
+    public RaiseException newArgumentError(int got, int expected);
+    
+    public RaiseException newErrnoEBADFError();
 
-	public RaiseException newArgumentError(int got, int expected);
+    public RaiseException newErrnoEINVALError();
 
-	public RaiseException newErrnoEBADFError();
+    public RaiseException newErrnoENOENTError();
 
-	public RaiseException newErrnoEINVALError();
+    public RaiseException newErrnoESPIPEError();
 
-	public RaiseException newErrnoENOENTError();
+    public RaiseException newErrnoEBADFError(String message);
 
-	public RaiseException newErrnoESPIPEError();
+    public RaiseException newErrnoEINVALError(String message);
 
-	public RaiseException newErrnoEBADFError(String message);
+    public RaiseException newErrnoENOENTError(String message);
 
-	public RaiseException newErrnoEINVALError(String message);
+    public RaiseException newErrnoESPIPEError(String message);
 
-	public RaiseException newErrnoENOENTError(String message);
+    public RaiseException newErrnoEEXISTError(String message);
 
-	public RaiseException newErrnoESPIPEError(String message);
+    public RaiseException newIndexError(String message);
+    
+    public RaiseException newSecurityError(String message);
+    
+    public RaiseException newSystemCallError(String message);
 
-	public RaiseException newErrnoEEXISTError(String message);
+    public RaiseException newTypeError(String message);
+    
+    public RaiseException newThreadError(String message);
+    
+    public RaiseException newSyntaxError(String message);
 
-	public RaiseException newIndexError(String message);
+    public RaiseException newRangeError(String message);
 
-	public RaiseException newSecurityError(String message);
+    public RaiseException newNotImplementedError(String message);
 
-	public RaiseException newSystemCallError(String message);
+    public RaiseException newNoMethodError(String message);
 
-	public RaiseException newTypeError(String message);
+    public RaiseException newNameError(String message);
 
-	public RaiseException newThreadError(String message);
+    public RaiseException newLocalJumpError(String message);
 
-	public RaiseException newSyntaxError(String message);
+    public RaiseException newLoadError(String message);
 
-	public RaiseException newRangeError(String message);
+    public RaiseException newFrozenError(String objectType);
 
-	public RaiseException newNotImplementedError(String message);
-
-	public RaiseException newNoMethodError(String message);
-
-	public RaiseException newNameError(String message);
-
-	public RaiseException newLocalJumpError(String message);
-
-	public RaiseException newLoadError(String message);
-
-	public RaiseException newFrozenError(String objectType);
-
-	public RaiseException newSystemStackError(String message);
-
-	public RaiseException newIOError(String message);
-
-	public RaiseException newIOErrorFromException(IOException ioe);
-
-	public RaiseException newTypeError(IRubyObject receivedObject,
-			RubyClass expectedType);
-
-	public RaiseException newEOFError();
+    public RaiseException newSystemStackError(String message);
+    
+    public RaiseException newSystemExit(int status);
+    
+    public RaiseException newIOError(String message);
+    
+    public RaiseException newIOErrorFromException(IOException ioe);
+    
+    public RaiseException newTypeError(IRubyObject receivedObject, RubyClass expectedType);
+    
+    public RaiseException newEOFError();
 
 	public RubySymbol.SymbolTable getSymbolTable();
 

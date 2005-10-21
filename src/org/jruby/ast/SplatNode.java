@@ -31,6 +31,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 
@@ -44,8 +45,8 @@ public class SplatNode extends Node {
         this.node = node;
     }
 
-    public void accept(NodeVisitor visitor) {
-        visitor.visitSplatNode(this);
+    public SingleNodeVisitor accept(NodeVisitor visitor) {
+        return visitor.visitSplatNode(this);
     }
     
     public Node getValue() {

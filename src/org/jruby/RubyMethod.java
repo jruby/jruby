@@ -31,6 +31,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.exceptions.JumpException;
+import org.jruby.internal.runtime.methods.IterateCallable;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ICallable;
@@ -132,11 +135,32 @@ public class RubyMethod extends RubyObject {
      */
     public IRubyObject to_proc() {
     	CallbackFactory f = getRuntime().callbackFactory(RubyMethod.class);
-        return getRuntime().iterate(
-            f.getSingletonMethod("mproc"),
-            getRuntime().getNil(),
-            f.getBlockMethod("bmcall"),
-            this);
+		IRuby r = getRuntime();
+        r.getIterStack().push(Iter.ITER_PRE);
+		r.getBlockStack().push(Block.createBlock(null, new IterateCallable(f.getBlockMethod("bmcall"), this), r.getTopSelf()));
+		
+		try {
+		    while (true) {
+		        try {
+		            return f.getSingletonMethod("mproc").execute(getRuntime().getNil(), IRubyObject.NULL_ARRAY);
+		        } catch (JumpException je) {
+		        	if (je.getJumpType() == JumpException.JumpType.BreakJump) {
+		                IRubyObject breakValue = (IRubyObject)je.getPrimaryData();
+		                
+		                return breakValue == null ? r.getNil() : breakValue;
+		        	} else if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
+		        		return (IRubyObject)je.getPrimaryData();
+		        	} else if (je.getJumpType() == JumpException.JumpType.RetryJump) {
+		        		// Execute iterateMethod again.
+		        	} else {
+		        		throw je;
+		        	}
+		        }
+		    }
+		} finally {
+		    r.getIterStack().pop();
+		    r.getBlockStack().pop();
+		}
     }
 
     /** Create a Proc object which is called like a ruby method.

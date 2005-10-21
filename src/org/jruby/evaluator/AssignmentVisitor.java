@@ -47,8 +47,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- *
- * @author  jpetersen
+ * 
+ * @author jpetersen
  * @version $Revision$
  */
 public class AssignmentVisitor extends AbstractVisitor {
@@ -75,89 +75,104 @@ public class AssignmentVisitor extends AbstractVisitor {
         return result;
     }
 
-    /**
-     * @see AbstractVisitor#visitNode(Node)
-     */
-    protected void visitNode(Node iVisited) {
-        assert false;
-    }
+	/**
+	 * @see AbstractVisitor#visitNode(Node)
+	 */
+	protected SingleNodeVisitor visitNode(Node iVisited) {
+		assert false;
+		return null;
+	}
 
-    /**
-     * @see AbstractVisitor#visitCallNode(CallNode)
-     */
-    public void visitCallNode(CallNode iVisited) {
-        EvaluateVisitor evaluator = EvaluateVisitor.createVisitor(self);
+	/**
+	 * @see AbstractVisitor#visitCallNode(CallNode)
+	 */
+	public SingleNodeVisitor visitCallNode(CallNode iVisited) {
+		EvaluateVisitor evaluator = EvaluateVisitor.createVisitor();
 
-        IRubyObject receiver = evaluator.eval(iVisited.getReceiverNode());
+		IRubyObject receiver = evaluator.eval(self.getRuntime(), self, iVisited
+				.getReceiverNode());
 
         if (iVisited.getArgsNode() == null) { // attribute set.
             receiver.getMetaClass().call(receiver, iVisited.getName(), new IRubyObject[] {value}, CallType.NORMAL);
         } else { // element set
-            RubyArray args = (RubyArray) evaluator.eval(iVisited.getArgsNode());
+            RubyArray args = (RubyArray) evaluator.eval(self.getRuntime(),
+                    self, iVisited.getArgsNode());
             args.append(value);
             receiver.getMetaClass().call(receiver, iVisited.getName(), args.toJavaArray(), CallType.NORMAL);
         }
-    }
-
-    /**
-     * @see AbstractVisitor#visitClassVarAsgnNode(ClassVarAsgnNode)
-     */
-    public void visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
-        threadContext.getRubyClass().setClassVar(iVisited.getName(), value);
-    }
-
-    /**
-     * @see AbstractVisitor#visitClassVarDeclNode(ClassVarDeclNode)
-     */
-    public void visitClassVarDeclNode(ClassVarDeclNode iVisited) {
-        if (runtime.getVerbose().isTrue() && threadContext.getRubyClass().isSingleton()) {
-            runtime.getWarnings().warn(iVisited.getPosition(), "Declaring singleton class variable.");
-        }
-        threadContext.getRubyClass().setClassVar(iVisited.getName(), value);
-    }
-
-    /**
-     * @see AbstractVisitor#visitConstDeclNode(ConstDeclNode)
-     */
-    public void visitConstDeclNode(ConstDeclNode iVisited) {
-        threadContext.getRubyClass().defineConstant(iVisited.getName(), value);
-    }
-
-    /**
-     * @see AbstractVisitor#visitDAsgnNode(DAsgnNode)
-     */
-    public void visitDAsgnNode(DAsgnNode iVisited) {
-        threadContext.getCurrentDynamicVars().set(iVisited.getName(), value);
-    }
-
-    /**
-     * @see AbstractVisitor#visitGlobalAsgnNode(GlobalAsgnNode)
-     */
-    public void visitGlobalAsgnNode(GlobalAsgnNode iVisited) {
-        runtime.getGlobalVariables().set(iVisited.getName(), value);
-    }
-
-    /**
-     * @see AbstractVisitor#visitInstAsgnNode(InstAsgnNode)
-     */
-    public void visitInstAsgnNode(InstAsgnNode iVisited) {
-        self.setInstanceVariable(iVisited.getName(), value);
-    }
-
-    /**
-     * @see AbstractVisitor#visitLocalAsgnNode(LocalAsgnNode)
-     */
-    public void visitLocalAsgnNode(LocalAsgnNode iVisited) {
-        runtime.getCurrentScope().setValue(iVisited.getCount(), value);
-    }
-
-    /**
-     * @see AbstractVisitor#visitMultipleAsgnNode(MultipleAsgnNode)
-     */
-    public void visitMultipleAsgnNode(MultipleAsgnNode iVisited) {
-	if (!(value instanceof RubyArray)) {
-	    value = RubyArray.newArray(runtime, value);
+		return null;
 	}
-        result = threadContext.mAssign(self, iVisited, (RubyArray)value, check);
-    }
+
+	/**
+	 * @see AbstractVisitor#visitClassVarAsgnNode(ClassVarAsgnNode)
+	 */
+	public SingleNodeVisitor visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
+		threadContext.getRubyClass().setClassVar(iVisited.getName(), value);
+		return null;
+	}
+
+	/**
+	 * @see AbstractVisitor#visitClassVarDeclNode(ClassVarDeclNode)
+	 */
+	public SingleNodeVisitor visitClassVarDeclNode(ClassVarDeclNode iVisited) {
+		if (runtime.getVerbose().isTrue()
+				&& threadContext.getRubyClass().isSingleton()) {
+			runtime.getWarnings().warn(iVisited.getPosition(),
+					"Declaring singleton class variable.");
+		}
+		threadContext.getRubyClass().setClassVar(iVisited.getName(), value);
+		return null;
+	}
+
+	/**
+	 * @see AbstractVisitor#visitConstDeclNode(ConstDeclNode)
+	 */
+	public SingleNodeVisitor visitConstDeclNode(ConstDeclNode iVisited) {
+		threadContext.getRubyClass().defineConstant(iVisited.getName(), value);
+		return null;
+	}
+
+	/**
+	 * @see AbstractVisitor#visitDAsgnNode(DAsgnNode)
+	 */
+	public SingleNodeVisitor visitDAsgnNode(DAsgnNode iVisited) {
+		threadContext.getCurrentDynamicVars().set(iVisited.getName(), value);
+		return null;
+	}
+
+	/**
+	 * @see AbstractVisitor#visitGlobalAsgnNode(GlobalAsgnNode)
+	 */
+	public SingleNodeVisitor visitGlobalAsgnNode(GlobalAsgnNode iVisited) {
+		runtime.getGlobalVariables().set(iVisited.getName(), value);
+		return null;
+	}
+
+	/**
+	 * @see AbstractVisitor#visitInstAsgnNode(InstAsgnNode)
+	 */
+	public SingleNodeVisitor visitInstAsgnNode(InstAsgnNode iVisited) {
+		self.setInstanceVariable(iVisited.getName(), value);
+		return null;
+	}
+
+	/**
+	 * @see AbstractVisitor#visitLocalAsgnNode(LocalAsgnNode)
+	 */
+	public SingleNodeVisitor visitLocalAsgnNode(LocalAsgnNode iVisited) {
+		runtime.getCurrentScope().setValue(iVisited.getCount(), value);
+		return null;
+	}
+
+	/**
+	 * @see AbstractVisitor#visitMultipleAsgnNode(MultipleAsgnNode)
+	 */
+	public SingleNodeVisitor visitMultipleAsgnNode(MultipleAsgnNode iVisited) {
+		if (!(value instanceof RubyArray)) {
+			value = RubyArray.newArray(runtime, value);
+		}
+		result = threadContext
+				.mAssign(self, iVisited, (RubyArray) value, check);
+		return null;
+	}
 }

@@ -33,6 +33,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents a while stetement. This could be the both versions:
@@ -45,6 +46,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * 
  * &lt;body&gt; 'while' &lt;condition&gt;
  *
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class WhileNode extends Node {
     static final long serialVersionUID = -5355364190446060873L;
@@ -69,8 +72,8 @@ public class WhileNode extends Node {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitWhileNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitWhileNode(this);
     }
     /**
      * Gets the bodyNode.

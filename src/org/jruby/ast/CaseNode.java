@@ -33,6 +33,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
@@ -41,6 +42,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * Represents a complete case statement, including the body with its
  * when statements.
  * 
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class CaseNode extends Node {
     static final long serialVersionUID = -2824917272720800901L;
@@ -64,8 +67,8 @@ public class CaseNode extends Node {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitCaseNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitCaseNode(this);
     }
 
     /**

@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
@@ -43,6 +44,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * when refering to a constant or method.  This is the same as a Colon2Node but with 
  * no leftNode which implicitly uses the Object class as a left node.
  * 
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class Colon3Node extends Node {
     static final long serialVersionUID = 8860717109371016871L;
@@ -58,8 +61,8 @@ public class Colon3Node extends Node {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitColon3Node(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitColon3Node(this);
     }
 
     /**

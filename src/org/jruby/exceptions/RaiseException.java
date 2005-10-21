@@ -49,12 +49,13 @@ public class RaiseException extends JumpException {
 	private RubyException exception;
 
     public RaiseException(RubyException actException) {
+    	super(JumpType.RaiseJump);
         setException(actException, false);
     }
 
     public RaiseException(IRuby runtime, RubyClass excptnClass, String msg, boolean nativeException) {
-		super(msg);
-        setException(RubyException.newException(runtime, excptnClass, msg), nativeException);
+		super(msg, JumpType.RaiseJump);
+        setException(new RubyException(runtime, excptnClass, msg), nativeException);
     }
     
     public static RaiseException createNativeRaiseException(IRuby runtime, Throwable cause) {
@@ -75,7 +76,7 @@ public class RaiseException extends JumpException {
     }
 
     public RaiseException(Throwable cause, NativeException nativeException) {
-        super(buildMessage(cause), cause);
+        super(buildMessage(cause), cause, JumpType.RaiseJump);
         setException(nativeException, false);
     }
 

@@ -281,7 +281,7 @@ public class RubyString extends RubyObject {
 			getRuntime().newString(
 					stringValue(other).getValue().toLowerCase());
 
-        return ((StringMetaClass)thisLCString.getMetaClass()).op_cmp.call(getRuntime(), thisLCString, "<=>", new IRubyObject[] {lcString}, false);
+		return ((StringMetaClass)thisLCString.getMetaClass()).op_cmp.call(getRuntime(), thisLCString, "<=>", new IRubyObject[] {lcString}, false);
 	}
     
 	/** rb_str_match

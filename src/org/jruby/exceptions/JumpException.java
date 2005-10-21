@@ -13,6 +13,7 @@
  *
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -35,27 +36,52 @@ package org.jruby.exceptions;
  * @author jpetersen
  * @version $Revision$
  */
-public abstract class JumpException extends RuntimeException {
+public class JumpException extends RuntimeException {
+	public static final class JumpType {
+		public static final JumpType BreakJump = new JumpType(0);
+		public static final JumpType NextJump = new JumpType(1);
+		public static final JumpType RedoJump = new JumpType(2);
+		public static final JumpType RetryJump = new JumpType(3);
+		public static final JumpType ReturnJump = new JumpType(4);
+		public static final JumpType ThrowJump = new JumpType(5);
+		public static final JumpType RaiseJump = new JumpType(6);
+		
+		private final int typeId;
+		private JumpType(int typeId) {
+			this.typeId = typeId;
+		}
+		public int getTypeId() {
+			return typeId;
+		}
+	}
+	
+	private JumpType jumpType;
+	private Object primaryData;
+	private Object secondaryData;
+	private Object tertiaryData;
 
     /**
      * Constructor for JumpException.
      */
-    public JumpException() {
+    public JumpException(JumpType jumpType) {
         super();
+        this.jumpType = jumpType;
     }
 
     /**
      * Constructor for JumpException.
      * @param msg
      */
-    public JumpException(String msg) {
+    public JumpException(String msg, JumpType jumpType) {
         super(msg);
+        this.jumpType = jumpType;
     }
 
-    public JumpException(String msg, Throwable cause) {
+    public JumpException(String msg, Throwable cause, JumpType jumpType) {
         super(msg, cause);
+        this.jumpType = jumpType;
     }
-
+    
     /** This method don't do anything for performance reasons.
      * 
      * @see Throwable#fillInStackTrace()
@@ -67,4 +93,50 @@ public abstract class JumpException extends RuntimeException {
     protected Throwable originalFillInStackTrace() {
         return super.fillInStackTrace();
     }
+    
+    public JumpType getJumpType() {
+    	return jumpType;
+    }
+    
+	/**
+	 * @return Returns the data.
+	 */
+	public Object getPrimaryData() {
+		return primaryData;
+	}
+	
+	/**
+	 * @param data The data to set.
+	 */
+	public void setPrimaryData(Object data) {
+		this.primaryData = data;
+	}
+	
+	/**
+	 * @return Returns the secondaryData.
+	 */
+	public Object getSecondaryData() {
+		return secondaryData;
+	}
+	
+	/**
+	 * @param secondaryData The secondaryData to set.
+	 */
+	public void setSecondaryData(Object secondaryData) {
+		this.secondaryData = secondaryData;
+	}
+	
+	/**
+	 * @return Returns the tertiaryData.
+	 */
+	public Object getTertiaryData() {
+		return tertiaryData;
+	}
+	
+	/**
+	 * @param tertiaryData The tertiaryData to set.
+	 */
+	public void setTertiaryData(Object tertiaryData) {
+		this.tertiaryData = tertiaryData;
+	}
 }

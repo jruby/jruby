@@ -32,9 +32,9 @@ package org.jruby.ast.visitor;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BignumNode;
 import org.jruby.ast.CallNode;
+import org.jruby.ast.ClassNode;
 import org.jruby.ast.ClassVarNode;
 import org.jruby.ast.Colon2Node;
-import org.jruby.ast.Colon3Node;
 import org.jruby.ast.ConstNode;
 import org.jruby.ast.DRegexpNode;
 import org.jruby.ast.DStrNode;
@@ -57,213 +57,247 @@ import org.jruby.ast.StrNode;
 import org.jruby.ast.SymbolNode;
 import org.jruby.ast.TrueNode;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.common.RubyWarnings;
+import org.jruby.evaluator.SingleNodeVisitor;
 
 /**
- *
+ * 
+ * @author jpetersen
+ * @version $Revision$
  */
 public class UselessStatementVisitor extends AbstractVisitor {
-    private IRubyWarnings warnings;
-    
-    public UselessStatementVisitor(IRubyWarnings warnings) {
-        this.warnings = warnings;
-    }
+	private IRubyWarnings warnings;
 
-    /**
-     * @see AbstractVisitor#visitNode(Node)
-     */
-    protected void visitNode(Node iVisited) {
-    }
-
-    private void handleUselessWarn(Node node, String useless) {
-        warnings.warn(node.getPosition(), "Useless use of " + useless + " in void context.");
-    }
-
-    /**
-     * @see NodeVisitor#visitCallNode(CallNode)
-     */
-    public void visitCallNode(CallNode iVisited) {
-        String name = iVisited.getName().intern();
-
-        if (name == "+"  || name == "-"  || name == "*"   ||
-            name == "/"  || name == "%"  || name == "**"  ||
-            name == "+@" || name == "-@" || name == "|"   ||
-            name == "^"  || name == "&"  || name == "<=>" ||
-            name == ">"  || name == ">=" || name == "<"   ||
-            name == "<=" || name == "==" || name == "!=") {
-
-            handleUselessWarn(iVisited, name);
-        }
-    }
-    /**
-     * @see NodeVisitor#visitBackRefNode(BackRefNode)
-     */
-    public void visitBackRefNode(BackRefNode iVisited) {
-        handleUselessWarn(iVisited, "a variable");
-    }
-
-    /**
-     * @see NodeVisitor#visitDVarNode(DVarNode)
-     */
-    public void visitDVarNode(DVarNode iVisited) {
-        handleUselessWarn(iVisited, "a variable");
-    }
-
-    /**
-     * @see NodeVisitor#visitGlobalVarNode(GlobalVarNode)
-     */
-    public void visitGlobalVarNode(GlobalVarNode iVisited) {
-        handleUselessWarn(iVisited, "a variable");
-    }
-
-    /**
-     * @see NodeVisitor#visitLocalVarNode(LocalVarNode)
-     */
-    public void visitLocalVarNode(LocalVarNode iVisited) {
-        handleUselessWarn(iVisited, "a variable");
-    }
-
-    /**
-     * @see NodeVisitor#visitNthRefNode(NthRefNode)
-     */
-    public void visitNthRefNode(NthRefNode iVisited) {
-        handleUselessWarn(iVisited, "a variable");
-    }
-
-    /**
-     * @see NodeVisitor#visitClassVarNode(ClassVarNode)
-     */
-    public void visitClassVarNode(ClassVarNode iVisited) {
-        handleUselessWarn(iVisited, "a variable");
-    }
-
-    /**
-     * @see NodeVisitor#visitInstVarNode(InstVarNode)
-     */
-    public void visitInstVarNode(InstVarNode iVisited) {
-        handleUselessWarn(iVisited, "a variable");
-    }
-
-    /**
-     * @see NodeVisitor#visitConstNode(ConstNode)
-     */
-    public void visitConstNode(ConstNode iVisited) {
-        handleUselessWarn(iVisited, "a constant");
-    }
-
-    /**
-     * @see NodeVisitor#visitBignumNode(BignumNode)
-     */
-    public void visitBignumNode(BignumNode iVisited) {
-        handleUselessWarn(iVisited, "a literal");
-    }
-
-    /**
-     * @see NodeVisitor#visitDRegxNode(DRegexpNode)
-     */
-    public void visitDRegxNode(DRegexpNode iVisited) {
-        handleUselessWarn(iVisited, "a literal");
-    }
-
-    /**
-     * @see NodeVisitor#visitDStrNode(DStrNode)
-     */
-    public void visitDStrNode(DStrNode iVisited) {
-        handleUselessWarn(iVisited, "a literal");
-    }
-
-    /**
-     * @see NodeVisitor#visitFixnumNode(FixnumNode)
-     */
-    public void visitFixnumNode(FixnumNode iVisited) {
-        handleUselessWarn(iVisited, "a literal");
-    }
-
-    /**
-     * @see NodeVisitor#visitFloatNode(FloatNode)
-     */
-    public void visitFloatNode(FloatNode iVisited) {
-        handleUselessWarn(iVisited, "a literal");
-    }
-
-    /**
-     * @see NodeVisitor#visitRegexpNode(RegexpNode)
-     */
-    public void visitRegexpNode(RegexpNode iVisited) {
-        handleUselessWarn(iVisited, "a literal");
-    }
-
-    /**
-     * @see NodeVisitor#visitStrNode(StrNode)
-     */
-    public void visitStrNode(StrNode iVisited) {
-        handleUselessWarn(iVisited, "a literal");
-    }
-
-    /**
-     * @see NodeVisitor#visitSymbolNode(SymbolNode)
-     */
-    public void visitSymbolNode(SymbolNode iVisited) {
-        handleUselessWarn(iVisited, "a literal");
-    }
+	public UselessStatementVisitor(IRubyWarnings warnings) {
+		this.warnings = warnings;
+	}
 
 	/**
-     * @see NodeVisitor#visitColon3Node(Colon3Node)
-     */
-    public void visitColon3Node(Colon3Node iVisited) {
-        handleUselessWarn(iVisited, "::");
-    }
+	 * @see AbstractVisitor#visitNode(Node)
+	 */
+	protected SingleNodeVisitor visitNode(Node iVisited) {
+		return null;
+	}
 
-    /**
-     * @see NodeVisitor#visitColon2Node(Colon2Node)
-     */
-    public void visitColon2Node(Colon2Node iVisited) {
-        handleUselessWarn(iVisited, "::");
-    }
+	private void handleUselessWarn(Node node, String useless) {
+		warnings.warn(node.getPosition(), "Useless use of " + useless
+				+ " in void context.");
+	}
 
-    /**
-     * @see NodeVisitor#visitDotNode(DotNode)
-     */
-    public void visitDotNode(DotNode iVisited) {
-        handleUselessWarn(iVisited, iVisited.isExclusive() ? "..." : "..");
-    }
-    /**
-     * @see NodeVisitor#visitDefinedNode(DefinedNode)
-     */
-    public void visitDefinedNode(DefinedNode iVisited) {
-        handleUselessWarn(iVisited, "defined?");
-    }
+	/**
+	 * @see NodeVisitor#visitCallNode(CallNode)
+	 */
+	public SingleNodeVisitor visitCallNode(CallNode iVisited) {
+		String name = iVisited.getName().intern();
 
-    /**
-     * @see NodeVisitor#visitFalseNode(FalseNode)
-     */
-    public void visitFalseNode(FalseNode iVisited) {
-        handleUselessWarn(iVisited, "false");
-    }
+		if (name == "+" || name == "-" || name == "*" || name == "/"
+				|| name == "%" || name == "**" || name == "+@" || name == "-@"
+				|| name == "|" || name == "^" || name == "&" || name == "<=>"
+				|| name == ">" || name == ">=" || name == "<" || name == "<="
+				|| name == "==" || name == "!=") {
 
-    /**
-     * @see NodeVisitor#visitNilNode(NilNode)
-     */
-    public void visitNilNode(NilNode iVisited) {
-        handleUselessWarn(iVisited, "nil");
-    }
+			handleUselessWarn(iVisited, name);
+		}
+		return null;
+	}
 
-    /**
-     * @see NodeVisitor#visitSelfNode(SelfNode)
-     */
-    public void visitSelfNode(SelfNode iVisited) {
-        handleUselessWarn(iVisited, "self");
-    }
+	/**
+	 * @see NodeVisitor#visitBackRefNode(BackRefNode)
+	 */
+	public SingleNodeVisitor visitBackRefNode(BackRefNode iVisited) {
+		handleUselessWarn(iVisited, "a variable");
+		return null;
+	}
 
-    /**
-     * @see NodeVisitor#visitTrueNode(TrueNode)
-     */
-    public void visitTrueNode(TrueNode iVisited) {
-        handleUselessWarn(iVisited, "true");
-    }
-    /**
-     * @see NodeVisitor#visitNewlineNode(NewlineNode)
-     */
-    public void visitNewlineNode(NewlineNode iVisited) {
-        acceptNode(iVisited.getNextNode());
-    }
+	/**
+	 * @see NodeVisitor#visitDVarNode(DVarNode)
+	 */
+	public SingleNodeVisitor visitDVarNode(DVarNode iVisited) {
+		handleUselessWarn(iVisited, "a variable");
+		return null;
+	}
+
+	/**
+	 * @see NodeVisitor#visitGlobalVarNode(GlobalVarNode)
+	 */
+	public SingleNodeVisitor visitGlobalVarNode(GlobalVarNode iVisited) {
+		handleUselessWarn(iVisited, "a variable");
+		return null;
+	}
+
+	/**
+	 * @see NodeVisitor#visitLocalVarNode(LocalVarNode)
+	 */
+	public SingleNodeVisitor visitLocalVarNode(LocalVarNode iVisited) {
+		handleUselessWarn(iVisited, "a variable");
+		return null;
+	}
+
+	/**
+	 * @see NodeVisitor#visitNthRefNode(NthRefNode)
+	 */
+	public SingleNodeVisitor visitNthRefNode(NthRefNode iVisited) {
+		handleUselessWarn(iVisited, "a variable");
+		return null;
+	}
+
+	/**
+	 * @see NodeVisitor#visitClassVarNode(ClassVarNode)
+	 */
+	public SingleNodeVisitor visitClassVarNode(ClassVarNode iVisited) {
+		handleUselessWarn(iVisited, "a variable");
+		return null;
+	}
+
+	/**
+	 * @see NodeVisitor#visitInstVarNode(InstVarNode)
+	 */
+	public SingleNodeVisitor visitInstVarNode(InstVarNode iVisited) {
+		handleUselessWarn(iVisited, "a variable");
+		return null;
+	}
+
+	/**
+	 * @see NodeVisitor#visitConstNode(ConstNode)
+	 */
+	public SingleNodeVisitor visitConstNode(ConstNode iVisited) {
+		handleUselessWarn(iVisited, "a constant");
+		return null;
+	}
+
+	/**
+	 * @see NodeVisitor#visitBignumNode(BignumNode)
+	 */
+	public SingleNodeVisitor visitBignumNode(BignumNode iVisited) {
+		handleUselessWarn(iVisited, "a literal");
+		return null;
+	}
+
+	/**
+	 * @see NodeVisitor#visitDRegxNode(DRegexpNode)
+	 */
+	public SingleNodeVisitor visitDRegxNode(DRegexpNode iVisited) {
+		handleUselessWarn(iVisited, "a literal");
+		return null;
+	}
+
+	/**
+	 * @see NodeVisitor#visitDStrNode(DStrNode)
+	 */
+	public SingleNodeVisitor visitDStrNode(DStrNode iVisited) {
+		handleUselessWarn(iVisited, "a literal");
+		return null;
+	}
+
+	/**
+	 * @see NodeVisitor#visitFixnumNode(FixnumNode)
+	 */
+	public SingleNodeVisitor visitFixnumNode(FixnumNode iVisited) {
+		handleUselessWarn(iVisited, "a literal");
+		return null;
+	}
+
+	/**
+	 * @see NodeVisitor#visitFloatNode(FloatNode)
+	 */
+	public SingleNodeVisitor visitFloatNode(FloatNode iVisited) {
+		handleUselessWarn(iVisited, "a literal");
+		return null;
+	}
+
+	/**
+	 * @see NodeVisitor#visitRegexpNode(RegexpNode)
+	 */
+	public SingleNodeVisitor visitRegexpNode(RegexpNode iVisited) {
+		handleUselessWarn(iVisited, "a literal");
+		return null;
+	}
+
+	/**
+	 * @see NodeVisitor#visitStrNode(StrNode)
+	 */
+	public SingleNodeVisitor visitStrNode(StrNode iVisited) {
+		handleUselessWarn(iVisited, "a literal");
+		return null;
+	}
+
+	/**
+	 * @see NodeVisitor#visitSymbolNode(SymbolNode)
+	 */
+	public SingleNodeVisitor visitSymbolNode(SymbolNode iVisited) {
+		handleUselessWarn(iVisited, "a literal");
+		return null;
+	}
+
+	/**
+	 * @see NodeVisitor#visitClassNode(ClassNode)
+	 */
+	public SingleNodeVisitor visitClassNode(ClassNode iVisited) {
+		handleUselessWarn(iVisited, "::");
+		return null;
+	}
+
+	/**
+	 * @see NodeVisitor#visitColon2Node(Colon2Node)
+	 */
+	public SingleNodeVisitor visitColon2Node(Colon2Node iVisited) {
+		handleUselessWarn(iVisited, "::");
+		return null;
+	}
+
+	/**
+	 * @see NodeVisitor#visitDotNode(DotNode)
+	 */
+	public SingleNodeVisitor visitDotNode(DotNode iVisited) {
+		handleUselessWarn(iVisited, iVisited.isExclusive() ? "..." : "..");
+		return null;
+	}
+
+	/**
+	 * @see NodeVisitor#visitDefinedNode(DefinedNode)
+	 */
+	public SingleNodeVisitor visitDefinedNode(DefinedNode iVisited) {
+		handleUselessWarn(iVisited, "defined?");
+		return null;
+	}
+
+	/**
+	 * @see NodeVisitor#visitFalseNode(FalseNode)
+	 */
+	public SingleNodeVisitor visitFalseNode(FalseNode iVisited) {
+		handleUselessWarn(iVisited, "false");
+		return null;
+	}
+
+	/**
+	 * @see NodeVisitor#visitNilNode(NilNode)
+	 */
+	public SingleNodeVisitor visitNilNode(NilNode iVisited) {
+		handleUselessWarn(iVisited, "nil");
+		return null;
+	}
+
+	/**
+	 * @see NodeVisitor#visitSelfNode(SelfNode)
+	 */
+	public SingleNodeVisitor visitSelfNode(SelfNode iVisited) {
+		handleUselessWarn(iVisited, "self");
+		return null;
+	}
+
+	/**
+	 * @see NodeVisitor#visitTrueNode(TrueNode)
+	 */
+	public SingleNodeVisitor visitTrueNode(TrueNode iVisited) {
+		handleUselessWarn(iVisited, "true");
+		return null;
+	}
+
+	/**
+	 * @see NodeVisitor#visitNewlineNode(NewlineNode)
+	 */
+	public SingleNodeVisitor visitNewlineNode(NewlineNode iVisited) {
+		acceptNode(iVisited.getNextNode());
+		return null;
+	}
 }

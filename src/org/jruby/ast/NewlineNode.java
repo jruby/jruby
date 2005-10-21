@@ -34,6 +34,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
@@ -47,6 +48,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * This is normally a wrapper around another more significant node.
  * The parser generates such a node around each separate statement.  
  *
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class NewlineNode extends Node {
     static final long serialVersionUID = -6180129177863553832L;
@@ -64,8 +67,8 @@ public class NewlineNode extends Node {
      * accepts the visitor
      * @param iVisitor the visitor to accept
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitNewlineNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitNewlineNode(this);
     }
 
     /**

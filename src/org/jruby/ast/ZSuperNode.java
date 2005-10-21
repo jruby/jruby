@@ -35,6 +35,7 @@ import java.util.List;
 
 import org.jruby.ast.types.IArityNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 
@@ -52,8 +53,8 @@ public class ZSuperNode extends Node implements IArityNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitZSuperNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitZSuperNode(this);
     }
 	
 	/**

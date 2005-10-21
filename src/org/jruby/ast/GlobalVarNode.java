@@ -34,10 +34,13 @@ import java.util.Collections;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *	access to a global variable.
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class GlobalVarNode extends Node {
     static final long serialVersionUID = -8913633094119740033L;
@@ -53,8 +56,8 @@ public class GlobalVarNode extends Node {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitGlobalVarNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitGlobalVarNode(this);
     }
 
     /**

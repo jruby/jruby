@@ -76,10 +76,10 @@ public class RubyComparable {
             }
             return (RubyNumeric.fix2int(recv.callMethod("<=>", other)) == 0) ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
         } catch (RaiseException rnExcptn) {
-        	// FIXME: heavy, find a better way to check
-        	if (rnExcptn.getException().isKindOf(recv.getRuntime().getClass("NoMethodError"))) {
+        	RubyException raisedException = rnExcptn.getException();
+        	if (raisedException.isKindOf(recv.getRuntime().getClass("NoMethodError"))) {
         		return recv.getRuntime().getFalse();
-        	} else if (rnExcptn.getException().isKindOf(recv.getRuntime().getClass("NameError"))) {
+        	} else if (raisedException.isKindOf(recv.getRuntime().getClass("NameError"))) {
         		return recv.getRuntime().getFalse();
         	}
         	throw rnExcptn;

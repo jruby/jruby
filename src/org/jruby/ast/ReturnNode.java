@@ -33,10 +33,13 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents a return statement.
  *
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class ReturnNode extends Node {
     static final long serialVersionUID = -6549592319167820636L;
@@ -53,8 +56,8 @@ public class ReturnNode extends Node {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitReturnNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitReturnNode(this);
     }
 
     public Node getValueNode() {

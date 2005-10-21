@@ -14,8 +14,9 @@
  * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -42,11 +43,10 @@ import org.apache.bsf.util.BSFEngineImpl;
 import org.apache.bsf.util.BSFFunctions;
 import org.jruby.IRuby;
 import org.jruby.Ruby;
+import org.jruby.RubyException;
 import org.jruby.ast.Node;
-import org.jruby.exceptions.BreakJump;
+import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.ReturnJump;
-import org.jruby.exceptions.ThrowJump;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
@@ -59,6 +59,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 /** An implementation of a JRuby BSF implementation.
  *
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class JRubyEngine extends BSFEngineImpl {
     private IRuby runtime;
@@ -191,15 +193,18 @@ public class JRubyEngine extends BSFEngineImpl {
      * @param exception An Exception thrown by JRuby
      */
     private static void printException(IRuby runtime, Exception exception) {
-        if (exception instanceof RaiseException) {
-            runtime.printError(((RaiseException) exception).getException());
-        } else if (exception instanceof ThrowJump) {
-            runtime.printError(((ThrowJump) exception).getNameError());
-        } else if (exception instanceof BreakJump) {
-            runtime.getErrorStream().println("break without block.");
-        } else if (exception instanceof ReturnJump) {
-            runtime.getErrorStream().println("return without block.");
-        }
+    	if (exception instanceof JumpException) {
+	    	JumpException je = (JumpException)exception;
+	    	if (je.getJumpType() == JumpException.JumpType.RaiseJump) {
+	            runtime.printError(((RaiseException)je).getException());
+	    	} else if (je.getJumpType() == JumpException.JumpType.ThrowJump) {
+	            runtime.printError((RubyException)je.getTertiaryData());
+	    	} else if (je.getJumpType() == JumpException.JumpType.BreakJump) {
+	            runtime.getErrorStream().println("break without block.");
+	        } else if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
+	            runtime.getErrorStream().println("return without block.");
+	        }
+    	}
     }
 
     private static class BeanGlobalVariable implements IAccessor {

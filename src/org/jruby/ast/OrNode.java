@@ -33,12 +33,15 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *
+ * @author  jpetersen
+ * @version $Revision$
  */
-public class OrNode extends Node {
+public class OrNode extends Node implements BinaryOperatorNode {
     static final long serialVersionUID = 2822549471181976227L;
 
     private final Node firstNode;
@@ -54,8 +57,8 @@ public class OrNode extends Node {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitOrNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitOrNode(this);
     }
 
     /**

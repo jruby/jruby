@@ -34,11 +34,14 @@ import java.util.Collections;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Access to a Dynamic variable.
  * Dynamic variable are those defined in a block.
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class DVarNode extends Node {
     static final long serialVersionUID = -8479281167248673970L;
@@ -54,8 +57,8 @@ public class DVarNode extends Node {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitDVarNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitDVarNode(this);
     }
 
     /**

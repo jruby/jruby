@@ -43,7 +43,7 @@ import org.jruby.ast.Node;
 import org.jruby.ast.ScopeNode;
 import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.evaluator.EvaluateVisitor;
-import org.jruby.exceptions.ReturnJump;
+import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ICallable;
@@ -107,12 +107,13 @@ public final class DefaultMethod extends AbstractMethod {
             traceCall(runtime, receiver, name);
 
             return receiver.eval(body.getBodyNode());
-
-        } catch (ReturnJump rj) {
-            if (rj.getTarget() == this) {
-                return rj.getReturnValue();
-            }
-            throw rj;
+        } catch (JumpException je) {
+        	if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
+	            if (je.getPrimaryData() == this) {
+	                return (IRubyObject)je.getSecondaryData();
+	            }
+        	}
+       		throw je;
         } finally {
             context.setRubyClass(oldParent);
             context.popDynamicVars();
@@ -154,7 +155,7 @@ public final class DefaultMethod extends AbstractMethod {
 
                 // assign the default values.
                 while (iter.hasNext()) {
-                    EvaluateVisitor.createVisitor(receiver).eval((Node)iter.next());
+                    EvaluateVisitor.createVisitor().eval(receiver.getRuntime(), receiver, (Node)iter.next());
                 }
             }
 

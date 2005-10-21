@@ -34,6 +34,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents an #{} expression in a string. This Node is always a subnode
@@ -41,6 +42,9 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * 
  * Before this Node is evaluated it contains the code as a String (value). After
  * the first evaluation this String is parsed into the evaluatedNode Node.
+ *
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class EvStrNode extends Node {
     static final long serialVersionUID = 1681935012117120817L;
@@ -56,8 +60,8 @@ public class EvStrNode extends Node {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitEvStrNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitEvStrNode(this);
     }
 
     /**

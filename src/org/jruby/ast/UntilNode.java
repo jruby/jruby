@@ -33,10 +33,13 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents an until statement.
  *
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class UntilNode extends Node {
     static final long serialVersionUID = -2929327250252365636L;
@@ -54,8 +57,8 @@ public class UntilNode extends Node {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitUntilNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitUntilNode(this);
     }
 
     /**

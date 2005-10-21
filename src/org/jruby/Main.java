@@ -16,7 +16,7 @@
  * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
- * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Kiel Hodges <jruby-devel@selfsosoft.com>
  * Copyright (C) 2005 Jason Voegele <jason@jvoegele.com>
@@ -39,9 +39,8 @@ import java.io.Reader;
 import java.util.Iterator;
 
 import org.jruby.ast.Node;
+import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.SystemExit;
-import org.jruby.exceptions.ThrowJump;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.ParserSupport;
@@ -119,17 +118,24 @@ public class Main {
         try {
         	runInterpreter(runtime, reader, filename);
         	return 0;
-        	
-        } catch (SystemExit e) {
-        	RubyFixnum status = (RubyFixnum)e.getException().getInstanceVariable("status");
-        	
-        	return RubyNumeric.fix2int(status);
-        } catch (RaiseException rExcptn) {
-            runtime.printError(rExcptn.getException());
-            return 1;
-        } catch (ThrowJump throwJump) {
-            runtime.printError(throwJump.getNameError());
-            return 1;
+        } catch (JumpException je) {
+        	if (je.getJumpType() == JumpException.JumpType.RaiseJump) {
+        		RubyException raisedException = ((RaiseException)je).getException();
+        		
+        		if (raisedException.isKindOf(runtime.getClass("SystemExit"))) {
+                	RubyFixnum status = (RubyFixnum)raisedException.getInstanceVariable("status");
+                	
+                	return RubyNumeric.fix2int(status);
+        		} else {
+		            runtime.printError(raisedException);
+		            return 1;
+        		}
+        	} else if (je.getJumpType() == JumpException.JumpType.ThrowJump) {
+	            runtime.printError((RubyException)je.getTertiaryData());
+	            return 1;
+        	} else {
+        		throw je;
+        	}
         }
     }
     

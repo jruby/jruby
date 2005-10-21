@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
@@ -49,6 +50,9 @@ import org.jruby.lexer.yacc.ISourcePosition;
  *    
  *    - $' what follows the last successful match
  *
+ *	
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class BackRefNode extends Node {
     static final long serialVersionUID = 5321267679438359590L;
@@ -67,8 +71,8 @@ public class BackRefNode extends Node {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitBackRefNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitBackRefNode(this);
     }
 
     /**

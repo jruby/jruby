@@ -34,11 +34,14 @@ import java.util.List;
 
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Class variable assignment node.
  * 
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class ClassVarAsgnNode extends AssignableNode implements INameNode {
     static final long serialVersionUID = -2960487069128667341L;
@@ -60,8 +63,8 @@ public class ClassVarAsgnNode extends AssignableNode implements INameNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitClassVarAsgnNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitClassVarAsgnNode(this);
     }
 
     /**

@@ -34,10 +34,13 @@ import java.util.Collections;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class RedoNode extends Node {
     static final long serialVersionUID = -356433067591852187L;
@@ -50,8 +53,8 @@ public class RedoNode extends Node {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitRedoNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitRedoNode(this);
     }
     
     public List childNodes() {

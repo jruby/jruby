@@ -50,14 +50,11 @@ import java.util.Stack;
 import org.jruby.ast.Node;
 import org.jruby.common.RubyWarnings;
 import org.jruby.evaluator.EvaluateVisitor;
-import org.jruby.exceptions.BreakJump;
+import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.RetryJump;
-import org.jruby.exceptions.ReturnJump;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.internal.runtime.ValueAccessor;
-import org.jruby.internal.runtime.methods.IterateCallable;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -92,7 +89,6 @@ import org.jruby.runtime.builtin.meta.ObjectMetaClass;
 import org.jruby.runtime.builtin.meta.ProcMetaClass;
 import org.jruby.runtime.builtin.meta.StringMetaClass;
 import org.jruby.runtime.builtin.meta.SymbolMetaClass;
-import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.util.BuiltinScript;
@@ -188,9 +184,14 @@ public final class Ruby implements IRuby {
 
     public IRubyObject eval(Node node) {
         try {
-	        return EvaluateVisitor.createVisitor(getTopSelf()).eval(node);
-        } catch (ReturnJump e) {
-            return e.getReturnValue();
+        	IRubyObject topSelf = getTopSelf();
+	        return EvaluateVisitor.createVisitor().eval(topSelf.getRuntime(), topSelf, node);
+        } catch (JumpException je) {
+        	if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
+	            return (IRubyObject)je.getSecondaryData();
+        	} else {
+        		throw je;
+        	}
 		}
     }
 
@@ -342,33 +343,6 @@ public final class Ruby implements IRuby {
      */
     public IRubyObject getTopSelf() {
         return topSelf;
-    }
-
-    /** rb_iterate
-     *
-     */
-    public IRubyObject iterate(Callback iterateMethod, IRubyObject data1, Callback blockMethod, IRubyObject data2) {
-        getIterStack().push(Iter.ITER_PRE);
-        getBlockStack().push(Block.createBlock(null, new IterateCallable(blockMethod, data2), getTopSelf()));
-
-        try {
-            while (true) {
-                try {
-                    return iterateMethod.execute(data1, IRubyObject.NULL_ARRAY);
-                } catch (BreakJump bExcptn) {
-                    IRubyObject breakValue = bExcptn.getBreakValue();
-                    
-                    return breakValue == null ? getNil() : breakValue;
-                } catch (ReturnJump rExcptn) {
-                    return rExcptn.getReturnValue();
-                } catch (RetryJump rExcptn) {
-                    // Execute iterateMethod again.
-                }
-            }
-        } finally {
-            getIterStack().pop();
-            getBlockStack().pop();
-        }
     }
 
     /** ruby_init
@@ -911,8 +885,12 @@ public final class Ruby implements IRuby {
         try {
         	Node node = parse(source, scriptName);
             self.eval(node);
-        } catch (ReturnJump e) {
-			// Make sure this does not bubble out to java caller.
+        } catch (JumpException je) {
+        	if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
+        		// Make sure this does not bubble out to java caller.
+        	} else {
+        		throw je;
+        	}
         } finally {
             context.getScopeStack().pop();
             context.getFrameStack().pop();
@@ -952,8 +930,12 @@ public final class Ruby implements IRuby {
 
         try {
             self.eval(node);
-        } catch (ReturnJump e) {
-			// Make sure this does not bubble out to java caller.
+        } catch (JumpException je) {
+        	if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
+        		// Make sure this does not bubble out to java caller.
+        	} else {
+        		throw je;
+        	}
         } finally {
             context.getScopeStack().pop();
             context.getFrameStack().pop();
@@ -1123,121 +1105,139 @@ public final class Ruby implements IRuby {
     }
     
     public RaiseException newArgumentError(String message) {
-    	return new RaiseException(this, getClass("ArgumentError"), message, true);
+    	return newRaiseException(getClass("ArgumentError"), message);
     }
     
     public RaiseException newArgumentError(int got, int expected) {
-    	return new RaiseException(this, getClass("ArgumentError"), "wrong # of arguments(" + got + " for " + expected, true);
+    	return newRaiseException(getClass("ArgumentError"), "wrong # of arguments(" + got + " for " + expected);
     }
     
     public RaiseException newErrnoEBADFError() {
-    	return new RaiseException(this, getModule("Errno").getClass("EBADF"), "Bad file descriptor", true);
+    	return newRaiseException(getModule("Errno").getClass("EBADF"), "Bad file descriptor");
     }
 
     public RaiseException newErrnoEINVALError() {
-    	return new RaiseException(this, getModule("Errno").getClass("EINVAL"), "Invalid file", true);
+    	return newRaiseException(getModule("Errno").getClass("EINVAL"), "Invalid file");
     }
 
     public RaiseException newErrnoENOENTError() {
-    	return new RaiseException(this, getModule("Errno").getClass("ENOENT"), "File not found", true);
+    	return newRaiseException(getModule("Errno").getClass("ENOENT"), "File not found");
     }
 
     public RaiseException newErrnoESPIPEError() {
-    	return new RaiseException(this, getModule("Errno").getClass("ESPIPE"), "Illegal seek", true);
+    	return newRaiseException(getModule("Errno").getClass("ESPIPE"), "Illegal seek");
     }
 
     public RaiseException newErrnoEBADFError(String message) {
-    	return new RaiseException(this, getModule("Errno").getClass("EBADF"), message, true);
+    	return newRaiseException(getModule("Errno").getClass("EBADF"), message);
     }
 
     public RaiseException newErrnoEINVALError(String message) {
-    	return new RaiseException(this, getModule("Errno").getClass("EINVAL"), message, true);
+    	return newRaiseException(getModule("Errno").getClass("EINVAL"), message);
     }
 
     public RaiseException newErrnoENOENTError(String message) {
-    	return new RaiseException(this, getModule("Errno").getClass("ENOENT"), message, true);
+    	return newRaiseException(getModule("Errno").getClass("ENOENT"), message);
     }
 
     public RaiseException newErrnoESPIPEError(String message) {
-    	return new RaiseException(this, getModule("Errno").getClass("ESPIPE"), message, true);
+    	return newRaiseException(getModule("Errno").getClass("ESPIPE"), message);
     }
 
     public RaiseException newErrnoEEXISTError(String message) {
-    	return new RaiseException(this, getModule("Errno").getClass("EEXIST"), message, true);
+    	return newRaiseException(getModule("Errno").getClass("EEXIST"), message);
     }
 
     public RaiseException newIndexError(String message) {
-    	return new RaiseException(this, getClass("IndexError"), message, true);
+    	return newRaiseException(getClass("IndexError"), message);
     }
     
     public RaiseException newSecurityError(String message) {
-    	return new RaiseException(this, getClass("SecurityError"), message, true);
+    	return newRaiseException(getClass("SecurityError"), message);
     }
     
     public RaiseException newSystemCallError(String message) {
-    	return new RaiseException(this, getClass("SystemCallError"), message, true);
+    	return newRaiseException(getClass("SystemCallError"), message);
     }
 
     public RaiseException newTypeError(String message) {
-    	return new RaiseException(this, getClass("TypeError"), message, true);
+    	return newRaiseException(getClass("TypeError"), message);
     }
     
     public RaiseException newThreadError(String message) {
-    	return new RaiseException(this, getClass("ThreadError"), message, true);
+    	return newRaiseException(getClass("ThreadError"), message);
     }
     
     public RaiseException newSyntaxError(String message) {
-    	return new RaiseException(this, getClass("SyntaxError"), message, true);
+    	return newRaiseException(getClass("SyntaxError"), message);
     }
 
     public RaiseException newRangeError(String message) {
-    	return new RaiseException(this, getClass("RangeError"), message, true);
+    	return newRaiseException(getClass("RangeError"), message);
     }
 
     public RaiseException newNotImplementedError(String message) {
-    	return new RaiseException(this, getClass("NotImplementedError"), message, true);
+    	return newRaiseException(getClass("NotImplementedError"), message);
     }
 
     public RaiseException newNoMethodError(String message) {
-    	return new RaiseException(this, getClass("NoMethodError"), message, true);
+    	return newRaiseException(getClass("NoMethodError"), message);
     }
 
     public RaiseException newNameError(String message) {
-    	return new RaiseException(this, getClass("NameError"), message, true);
+    	return newRaiseException(getClass("NameError"), message);
     }
 
     public RaiseException newLocalJumpError(String message) {
-    	return new RaiseException(this, getClass("LocalJumpError"), message, true);
+    	return newRaiseException(getClass("LocalJumpError"), message);
     }
 
     public RaiseException newLoadError(String message) {
-    	return new RaiseException(this, getClass("LoadError"), message, true);
+    	return newRaiseException(getClass("LoadError"), message);
     }
 
     public RaiseException newFrozenError(String objectType) {
 		// TODO: Should frozen error have its own distinct class?  If not should more share?
-    	return new RaiseException(this, getClass("TypeError"), "can't modify frozen " + objectType, true);
+    	return newRaiseException(getClass("TypeError"), "can't modify frozen " + objectType);
     }
 
     public RaiseException newSystemStackError(String message) {
-    	return new RaiseException(this, getClass("SystemStackError"), message, true);
+    	return newRaiseException(getClass("SystemStackError"), message);
     }
     
-    public RaiseException newIOError(String message) {
-    	return new RaiseException(this, getClass("IOError"), message, true);
+    public RaiseException newSystemExit(int status) {
+    	RaiseException re = newRaiseException(getClass("SystemExit"), "");
+    	re.getException().setInstanceVariable("status", newFixnum(status));
+    	
+    	return re;
+    }
+    
+	public RaiseException newIOError(String message) {
+		return newRaiseException(getClass("IOError"), message);
     }
     
     public RaiseException newIOErrorFromException(IOException ioe) {
-    	return new RaiseException(this, getClass("IOError"), ioe.getMessage(), true);
+    	return newRaiseException(getClass("IOError"), ioe.getMessage());
     }
     
     public RaiseException newTypeError(IRubyObject receivedObject, RubyClass expectedType) {
-    	return new RaiseException(this, getClass("TypeError"), "wrong argument type " + receivedObject.getMetaClass() + " (expected " + expectedType, true);
+    	return newRaiseException(getClass("TypeError"), "wrong argument type " + receivedObject.getMetaClass() + " (expected " + expectedType);
     }
     
     public RaiseException newEOFError() {
-    	return new RaiseException(this, getClass("EOFError"), "End of file reached", true);
+    	return newRaiseException(getClass("EOFError"), "End of file reached");
     }
+    
+    /**
+	 * @param exceptionClass
+	 * @param message
+	 * @return
+	 */
+	private RaiseException newRaiseException(RubyClass exceptionClass, String message) {
+		RaiseException re = new RaiseException(this, exceptionClass, message, true);
+		return re;
+	}
+
 
 	public RubySymbol.SymbolTable getSymbolTable() {
 		return symbolTable;

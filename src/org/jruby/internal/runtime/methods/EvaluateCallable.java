@@ -58,7 +58,7 @@ public class EvaluateCallable extends AbstractCallable {
     }
     
     public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
-        return EvaluateVisitor.createVisitor(receiver).eval(node);
+        return EvaluateVisitor.createVisitor().eval(runtime, receiver, node);
     }
 
     public Node getNode() {

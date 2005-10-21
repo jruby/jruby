@@ -33,6 +33,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
@@ -42,6 +43,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * This node is for a regular class definition, Singleton classes get their own
  * node, the SClassNode
  * 
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class ClassNode extends Node implements IScopingNode {
     static final long serialVersionUID = -1369424045737867587L;
@@ -61,8 +64,8 @@ public class ClassNode extends Node implements IScopingNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitClassNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitClassNode(this);
     }
     /**
      * Gets the bodyNode.

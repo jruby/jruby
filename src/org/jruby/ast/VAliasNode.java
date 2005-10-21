@@ -34,10 +34,13 @@ import java.util.Collections;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents an alias of a global variable.
  *
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class VAliasNode extends Node {
     static final long serialVersionUID = 8647860367861922838L;
@@ -55,8 +58,8 @@ public class VAliasNode extends Node {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitVAliasNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitVAliasNode(this);
     }
 
     /**

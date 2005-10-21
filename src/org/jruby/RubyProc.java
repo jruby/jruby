@@ -33,8 +33,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import org.jruby.exceptions.BreakJump;
-import org.jruby.exceptions.ReturnJump;
+import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.ThreadContext;
@@ -114,20 +113,24 @@ public class RubyProc extends RubyObject {
         	}
         	
         	return block.call(args, self);
-        } catch (BreakJump rj) {
-            if (block.isLambda) {
-                return rj.getBreakValue();
-            } 
-	        throw getRuntime().newLocalJumpError("unexpected return");
-        } catch (ReturnJump rj) {
-        	Object target = rj.getTarget();
-
-            if (target == this || block.isLambda) {
-                return rj.getReturnValue();
-            } else if (target == null) {
-            	throw getRuntime().newLocalJumpError("unexpected return");
-            }
-            throw rj;
+        } catch (JumpException je) {
+        	if (je.getJumpType() == JumpException.JumpType.BreakJump) {
+        		if (block.isLambda) {
+	                return (IRubyObject)je.getPrimaryData();
+	            } 
+		        throw getRuntime().newLocalJumpError("unexpected return");
+        	} else if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
+        		Object target = je.getPrimaryData();
+	
+	            if (target == this || block.isLambda) {
+	                return (IRubyObject)je.getSecondaryData();
+	            } else if (target == null) {
+	            	throw getRuntime().newLocalJumpError("unexpected return");
+	            }
+	            throw je;
+        	} else {
+        		throw je;
+        	}
         } finally {
             context.setWrapper(oldWrapper);
         }

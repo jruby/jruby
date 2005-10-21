@@ -35,10 +35,13 @@ import java.util.List;
 
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class TrueNode extends Node implements INameNode {
     static final long serialVersionUID = -8198252481133454778L;
@@ -52,8 +55,8 @@ public class TrueNode extends Node implements INameNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitTrueNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitTrueNode(this);
     }
     
     /**

@@ -31,6 +31,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 public class SValueNode extends Node {
@@ -43,8 +44,8 @@ public class SValueNode extends Node {
         this.node = node;
     }
 
-    public void accept(NodeVisitor visitor) {
-        visitor.visitSValueNode(this);
+    public SingleNodeVisitor accept(NodeVisitor visitor) {
+        return visitor.visitSValueNode(this);
     }
     
     public Node getValue() {

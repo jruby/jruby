@@ -34,11 +34,14 @@ import java.util.Collections;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /** An AliasNode represents an alias statement.
  * ast node for the 
  * <code>alias newName oldName</code>
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class AliasNode extends Node {
     static final long serialVersionUID = -498707070925086399L;
@@ -56,8 +59,8 @@ public class AliasNode extends Node {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitAliasNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitAliasNode(this);
     }
 
     /**

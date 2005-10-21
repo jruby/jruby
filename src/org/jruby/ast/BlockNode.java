@@ -33,6 +33,7 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
@@ -41,6 +42,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * Used in many places it is created throught the
  * {@link org.jruby.parser.ParserSupport#appendToBlock appendToBlock()} method
  * 
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class BlockNode extends ListNode {
     static final long serialVersionUID = 6070308619613804520L;
@@ -54,7 +57,7 @@ public class BlockNode extends ListNode {
      * accepts the visitor
      * @param iVisitor the visitor to accept
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitBlockNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitBlockNode(this);
     }
 }

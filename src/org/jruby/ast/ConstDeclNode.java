@@ -34,11 +34,14 @@ import java.util.List;
 
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Declaration (and assignment) of a Constant.
  * 
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class ConstDeclNode extends AssignableNode implements INameNode {
     static final long serialVersionUID = -6260931203887158208L;
@@ -55,8 +58,8 @@ public class ConstDeclNode extends AssignableNode implements INameNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitConstDeclNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitConstDeclNode(this);
     }
 
     /**

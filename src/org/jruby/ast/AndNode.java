@@ -33,11 +33,15 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /** An AndNode represents a && operator.
+ *
+ * @author  jpetersen
+ * @version $Revision$
  */
-public class AndNode extends Node {
+public class AndNode extends Node implements BinaryOperatorNode {
     static final long serialVersionUID = 1716928209521564017L;
 
     private final Node firstNode;
@@ -49,8 +53,8 @@ public class AndNode extends Node {
         this.secondNode = secondNode;
     }
 
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitAndNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitAndNode(this);
     }
 
     /**

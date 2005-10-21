@@ -33,12 +33,15 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * a Literal Hash.
  * this can represent either a {a=&amp;b, c=&amp;d} type expression or the list of default 
  * values in a method call.
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class HashNode extends Node {
     static final long serialVersionUID = -7554050553303344025L;
@@ -54,8 +57,8 @@ public class HashNode extends Node {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitHashNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitHashNode(this);
     }
 
     /**

@@ -14,7 +14,7 @@
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 David Corbin <dcorbin@users.sourceforge.net>
@@ -35,9 +35,11 @@ package org.jruby.evaluator;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
 
-import org.jruby.MetaClass;
 import org.jruby.IRuby;
+import org.jruby.MetaClass;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
@@ -58,6 +60,7 @@ import org.jruby.ast.ArrayNode;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BeginNode;
 import org.jruby.ast.BignumNode;
+import org.jruby.ast.BinaryOperatorNode;
 import org.jruby.ast.BlockArgNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.BlockPassNode;
@@ -147,12 +150,8 @@ import org.jruby.ast.ZSuperNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.exceptions.BreakJump;
-import org.jruby.exceptions.NextJump;
+import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.RedoJump;
-import org.jruby.exceptions.RetryJump;
-import org.jruby.exceptions.ReturnJump;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.EvaluateCallable;
 import org.jruby.internal.runtime.methods.WrapperCallable;
@@ -172,20 +171,10 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  */
 public final class EvaluateVisitor implements NodeVisitor {
-    private IRuby runtime;
-    private ThreadContext threadContext;
-
-    private IRubyObject self;
-    private IRubyObject result;
-
-    public EvaluateVisitor(IRuby runtime, IRubyObject self) {
-        this.runtime = runtime;
-        this.threadContext = runtime.getCurrentContext();
-        this.self = self;
-    }
-
-    public static EvaluateVisitor createVisitor(IRubyObject self) {
-        return new EvaluateVisitor(self.getRuntime(), self);
+	private static final EvaluateVisitor evaluator = new EvaluateVisitor();
+	
+    public static EvaluateVisitor createVisitor() {
+        return evaluator;
     }
 
     /**
@@ -194,1413 +183,2469 @@ public final class EvaluateVisitor implements NodeVisitor {
      * test if a trace function is avaiable.
      *
      */
-    private boolean isTrace() {
-        return runtime.getTraceFunction() != null;
+    private static boolean isTrace(EvaluationState state) {
+        return state.getRuntime().getTraceFunction() != null;
     }
 
-    private void callTraceFunction(String event, IRubyObject zelf) {
-        String name = threadContext.getCurrentFrame().getLastFunc();
-        RubyModule type = threadContext.getCurrentFrame().getLastClass();
-        runtime.callTraceFunction(event, threadContext.getPosition(), zelf, name, type);
+    private static void callTraceFunction(EvaluationState state, String event, IRubyObject zelf) {
+        String name = state.getThreadContext().getCurrentFrame().getLastFunc();
+        RubyModule type = state.getThreadContext().getCurrentFrame().getLastClass();
+        state.getRuntime().callTraceFunction(event, state.getThreadContext().getPosition(), zelf, name, type);
     }
 
-    public IRubyObject eval(Node node) {
-        // FIXME: Poll from somewhere else in the code?
-        threadContext.pollThreadEvents();
-
-        result = runtime.getNil();
+    public IRubyObject eval(IRuby runtime, IRubyObject self, Node node) {
+    	// new evaluation cycle gets new state; eval() is only called externally
+    	EvaluationState state = new EvaluationState();
+    	
+    	state.setRuntime(runtime);
+    	state.setSelf(self);
+    	state.setThreadContext(runtime.getCurrentContext());
+    	state.setResult(runtime.getNil());
+    	state.setEvaluator(this);
+    	
+    	return internalEval(state, node);
+    }
+    
+    public IRubyObject internalEval(EvaluationState state, Node node) {
+        state.clearResult();
+        
         if (node != null) {
         	try {
-        		node.accept(this);
+        		// for each call to internalEval, push down new stacks (to isolate eval runs that still want to be logically separate
+                state.pushCurrentNodeStacks();
+                
+                state.addNodeAndVisitor(node);
+        		
+        		while (!state.getCurrentNodeStack().isEmpty()) {
+        	        // FIXME: Poll from somewhere else in the code? This polls per-node, perhaps per newline?
+        	        state.getThreadContext().pollThreadEvents();
+        	        
+        	        // invoke the topmost code against the topmost node
+        	        state.callNextVisitor();
+        		}
         	} catch (StackOverflowError soe) {
-        		// TODO: perhaps a better place to catch this
-        		throw runtime.newSystemStackError("stack level too deep");
+        		// TODO: perhaps a better place to catch this (although it will go away)
+        		throw state.getRuntime().newSystemStackError("stack level too deep");
+        	} finally {
+        		state.popCurrentNodeStacks();
         	}
         }
-        return result;
+        
+        return state.getResult();
     }
+    
+    // Collapsing further needs method calls
+    private static class AliasNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		AliasNode iVisited = (AliasNode)node;
+            if (state.getThreadContext().getRubyClass() == null) {
+            	throw state.getRuntime().newTypeError("no class to make alias");
+            }
+
+            state.getThreadContext().getRubyClass().defineAlias(iVisited.getNewName(), iVisited.getOldName());
+            state.getThreadContext().getRubyClass().callMethod("method_added", state.getRuntime().newSymbol(iVisited.getNewName()));
+    	}
+    }
+    private static final AliasNodeVisitor aliasNodeVisitor = new AliasNodeVisitor();
+    
+    // And nodes are collapsed completely
+    private static class AndNodeImplVisitor implements SingleNodeVisitor {
+		public void visit(EvaluationState state, Node node) {
+			if (state.getResult().isTrue()) {
+				state.addNodeAndVisitor(((BinaryOperatorNode)node).getSecondNode());
+			}
+		}
+    }
+    private static final AndNodeImplVisitor andNodeImplVisitor = new AndNodeImplVisitor();
+    private static class AndNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		BinaryOperatorNode iVisited = (BinaryOperatorNode)node;
+    		
+    		// add in reverse order
+    		state.addNodeAndVisitor((Node)iVisited, andNodeImplVisitor);
+    		state.addNodeAndVisitor((Node)iVisited.getFirstNode());
+    	}
+    }
+    // used also for OpAsgnAndNode
+    private static final AndNodeVisitor andNodeVisitor = new AndNodeVisitor();
+    
+    // Collapsing will require multiple results to be collected between visitors
+    private static class ArgsCatNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		ArgsCatNode iVisited = (ArgsCatNode)node;
+            IRubyObject args = state.getEvaluator().internalEval(state, iVisited.getFirstNode());
+            IRubyObject secondArgs = splatValue(state, state.getEvaluator().internalEval(state, iVisited.getSecondNode()));
+            RubyArray list = args instanceof RubyArray ? (RubyArray) args :
+                state.getRuntime().newArray(args);
+            
+            state.setResult(list.concat(secondArgs)); 
+    	}
+    }
+    private static final ArgsCatNodeVisitor argsCatNodeVisitor = new ArgsCatNodeVisitor();
+    
+    // Collapsing requires carrying a list through all visits (or adding array code to eval())
+    private static class ArrayNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		ArrayNode iVisited = (ArrayNode)node;
+            ArrayList list = new ArrayList(iVisited.size());
+
+            for (Iterator iterator = iVisited.iterator(); iterator.hasNext();) {
+                list.add(state.getEvaluator().internalEval(state, (Node) iterator.next()));
+            }
+            
+            state.setResult(state.getRuntime().newArray(list));
+    	}
+    }
+    private static final ArrayNodeVisitor arrayNodeVisitor = new ArrayNodeVisitor();
+    
+    // Collapsing requires a way to break out method calls
+    private static class BackRefNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		BackRefNode iVisited = (BackRefNode)node;
+            IRubyObject backref = state.getThreadContext().getBackref();
+            switch (iVisited.getType()) {
+    	        case '~' :
+    	            state.setResult(backref);
+    	            break;
+            	case '&' :
+                    state.setResult(RubyRegexp.last_match(backref));
+                    break;
+                case '`' :
+                    state.setResult(RubyRegexp.match_pre(backref));
+                    break;
+                case '\'' :
+                    state.setResult(RubyRegexp.match_post(backref));
+                    break;
+                case '+' :
+                    state.setResult(RubyRegexp.match_last(backref));
+                    break;
+            }
+    	}
+    }
+    private static final BackRefNodeVisitor backRefNodeVisitor = new BackRefNodeVisitor();
+    
+    // Collapsed
+    private static class BeginNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		BeginNode iVisited = (BeginNode)node;
+    		state.addNodeAndVisitor(iVisited.getBodyNode());
+    	}
+    }
+    private static final BeginNodeVisitor beginNodeVisitor = new BeginNodeVisitor();
+
+    // Collapsed
+    private static class BlockNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		BlockNode iVisited = (BlockNode)node;
+            for (ListIterator iter = iVisited.reverseIterator(); iter.hasPrevious(); ) {
+                state.addNodeAndVisitor((Node)iter.previous());
+            }
+    	}
+    }
+    private static final BlockNodeVisitor blockNodeVisitor = new BlockNodeVisitor();
+    
+    // Big; collapsing will require multiple visitors
+    private static class BlockPassNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		BlockPassNode iVisited = (BlockPassNode)node;
+            IRubyObject proc = state.getEvaluator().internalEval(state, iVisited.getBodyNode());
+
+            if (proc.isNil()) {
+                state.getThreadContext().getIterStack().push(Iter.ITER_NOT);
+                try {
+                    state.getEvaluator().internalEval(state, iVisited.getIterNode());
+                    return;
+                } finally {
+                    state.getThreadContext().getIterStack().pop();
+                }
+            }
+            
+            // If not already a proc then we should try and make it one.
+            if (!(proc instanceof RubyProc)) {
+            	proc = proc.convertToType("Proc", "to_proc", false);
+            	
+            	if (!(proc instanceof RubyProc)) {
+                    throw state.getRuntime().newTypeError("wrong argument type " + proc.getMetaClass().getName() + " (expected Proc)");
+            	}
+            }
+
+            // TODO: Add safety check for taintedness
+            
+            Block block = (Block) state.getThreadContext().getBlockStack().peek();
+            if (block != null) {
+                IRubyObject blockObject = block.getBlockObject();
+                // The current block is already associated with the proc.  No need to create new
+                // block for it.  Just eval!
+                if (blockObject != null && blockObject == proc) {
+            	    try {
+                	    state.getThreadContext().getIterStack().push(Iter.ITER_PRE);
+                	    state.getEvaluator().internalEval(state, iVisited.getIterNode());
+                	    return;
+            	    } finally {
+                        state.getThreadContext().getIterStack().pop();
+            	    }
+                }
+            }
+
+            state.getThreadContext().getBlockStack().push(((RubyProc) proc).getBlock());
+            state.getThreadContext().getIterStack().push(Iter.ITER_PRE);
+            
+            if (state.getThreadContext().getCurrentFrame().getIter() == Iter.ITER_NOT) {
+                state.getThreadContext().getCurrentFrame().setIter(Iter.ITER_PRE);
+            }
+
+            try {
+                state.getEvaluator().internalEval(state, iVisited.getIterNode());
+            } finally {
+                state.getThreadContext().getIterStack().pop();
+                state.getThreadContext().getBlockStack().pop();
+            }
+    	}
+    }
+    private static final BlockPassNodeVisitor blockPassNodeVisitor = new BlockPassNodeVisitor();
+    
+    // Not collapsed, will require exception handling
+    private static class BreakNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		BreakNode iVisited = (BreakNode)node;
+    		
+            JumpException je = new JumpException(JumpException.JumpType.BreakJump);
+            if (iVisited.getValueNode() != null) {
+                je.setPrimaryData(state.getEvaluator().internalEval(state, iVisited.getValueNode()));
+            } else {
+            	je.setPrimaryData(state.getRuntime().getNil());
+            }
+            throw je;
+    	}
+    }
+    private static final BreakNodeVisitor breakNodeVisitor = new BreakNodeVisitor();
+    
+    // Collapsed, other than exception handling
+    private static class ConstDeclNodeVisitor1 implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		ConstDeclNode iVisited = (ConstDeclNode)node;
+            if (state.getThreadContext().getRubyClass() == null) {
+            	// TODO: wire into new exception handling mechanism
+                throw state.getRuntime().newTypeError("no class/module to define constant");
+            }
+            state.clearResult();
+    		state.addNodeAndVisitor(node, constDeclNodeVisitor2);
+            state.addNodeAndVisitor(iVisited.getValueNode());
+    	}
+    }
+    private static final ConstDeclNodeVisitor1 constDeclNodeVisitor1 = new ConstDeclNodeVisitor1();
+    private static class ConstDeclNodeVisitor2 implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		ConstDeclNode iVisited = (ConstDeclNode)node;
+    		state.getThreadContext().getRubyClass().setConstant(iVisited.getName(), state.getResult());
+    	}
+    }
+    private static final ConstDeclNodeVisitor2 constDeclNodeVisitor2 = new ConstDeclNodeVisitor2();
+    private static class ConstDeclNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		ConstDeclNode iVisited = (ConstDeclNode)node;
+            state.addNodeAndVisitor(node, constDeclNodeVisitor1);
+    	}
+    }
+    private static final ConstDeclNodeVisitor constDeclNodeVisitor = new ConstDeclNodeVisitor();
+    
+    // Collapsed
+    private static class ClassVarAsgnNodeVisitor1 implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		ClassVarAsgnNode iVisited = (ClassVarAsgnNode)node;
+            state.getThreadContext().getRubyClass().setClassVar(iVisited.getName(), state.getResult());
+    	}
+    }
+    private static final ClassVarAsgnNodeVisitor1 classVarAsgnNodeVisitor1 = new ClassVarAsgnNodeVisitor1();
+    private static class ClassVarAsgnNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		ClassVarAsgnNode iVisited = (ClassVarAsgnNode)node;
+    		state.addNodeAndVisitor(node, classVarAsgnNodeVisitor1);
+            state.addNodeAndVisitor(iVisited.getValueNode());
+    	}
+    }
+    private static final ClassVarAsgnNodeVisitor classVarAsgnNodeVisitor = new ClassVarAsgnNodeVisitor();
+    
+    // Collapsed
+    private static class ClassVarDeclNodeVisitor1 implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		ClassVarDeclNode iVisited = (ClassVarDeclNode)node;
+            if (state.getThreadContext().getRubyClass() == null) {
+                throw state.getRuntime().newTypeError("no class/module to define class variable");
+            }
+            state.addNodeAndVisitor(node, classVarDeclNodeVisitor2);
+            state.addNodeAndVisitor(iVisited.getValueNode());
+    	}
+    }
+    private static final ClassVarDeclNodeVisitor1 classVarDeclNodeVisitor1 = new ClassVarDeclNodeVisitor1();
+    private static class ClassVarDeclNodeVisitor2 implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		ClassVarDeclNode iVisited = (ClassVarDeclNode)node;
+            state.getThreadContext().getRubyClass().setClassVar(iVisited.getName(), state.getResult());
+    	}
+    }
+    private static final ClassVarDeclNodeVisitor2 classVarDeclNodeVisitor2 = new ClassVarDeclNodeVisitor2();
+    private static class ClassVarDeclNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		state.clearResult();
+    		state.addNodeAndVisitor(node, classVarDeclNodeVisitor1);
+    	}
+    }
+    private static final ClassVarDeclNodeVisitor classVarDeclNodeVisitor = new ClassVarDeclNodeVisitor();
+    
+    // Not collapsed, but maybe nothing to be done?
+    private static class ClassVarNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		ClassVarNode iVisited = (ClassVarNode)node;
+        	RubyModule rubyClass = state.getThreadContext().getRubyClass();
+        	
+            if (rubyClass == null) {
+                state.setResult(state.getSelf().getMetaClass().getClassVar(iVisited.getName()));
+            } else if (! rubyClass.isSingleton()) {
+            	state.setResult(rubyClass.getClassVar(iVisited.getName()));
+            } else {
+                RubyModule module = (RubyModule) rubyClass.getInstanceVariable("__attached__");
+                	
+                if (module != null) {
+                    state.setResult(module.getClassVar(iVisited.getName()));
+                }
+            }
+    	}
+    }
+    private static final ClassVarNodeVisitor classVarNodeVisitor = new ClassVarNodeVisitor();
+    
+    // Not collapsed; probably will depend on exception handling
+    private static class CallNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		CallNode iVisited = (CallNode)node;
+            Block tmpBlock = state.getThreadContext().beginCallArgs();
+            IRubyObject receiver = null;
+            IRubyObject[] args;
+            try {
+                receiver = state.getEvaluator().internalEval(state, iVisited.getReceiverNode());
+                args = setupArgs(state, state.getRuntime(), state.getThreadContext(), iVisited.getArgsNode());
+            } finally {
+            	state.getThreadContext().endCallArgs(tmpBlock);
+            }
+            assert receiver.getMetaClass() != null : receiver.getClass().getName();
+            
+            state.setResult(receiver.getMetaClass().call(receiver, iVisited.getName(), args, CallType.NORMAL));
+    	}
+    }
+    private static final CallNodeVisitor callNodeVisitor = new CallNodeVisitor();
+    
+    // Not collapsed; it's a big'un, will take some work
+    private static class CaseNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		CaseNode iVisited = (CaseNode)node;
+            IRubyObject expression = null;
+            if (iVisited.getCaseNode() != null) {
+                expression = state.getEvaluator().internalEval(state, iVisited.getCaseNode());
+            }
+            
+            Node firstWhenNode = iVisited.getFirstWhenNode();
+            while (firstWhenNode != null) {
+                if (!(firstWhenNode instanceof WhenNode)) {
+                    state.getEvaluator().internalEval(state, firstWhenNode);
+                    break;
+                }
+
+                WhenNode whenNode = (WhenNode) firstWhenNode;
+
+                if (whenNode.getExpressionNodes() instanceof ArrayNode) {
+    		        for (Iterator iter = ((ArrayNode) whenNode.getExpressionNodes()).iterator(); iter.hasNext(); ) {
+    		            Node tag = (Node) iter.next();
+
+                        state.getThreadContext().setPosition(tag.getPosition());
+                        if (isTrace(state)) {
+                            callTraceFunction(state, "line", state.getSelf());
+                        }
+
+                        // Ruby grammar has nested whens in a case body because of
+                        // productions case_body and when_args.
+                	    if (tag instanceof WhenNode) {
+                		    RubyArray expressions = (RubyArray) state.getEvaluator().internalEval(state, ((WhenNode) tag).getExpressionNodes());
+                        
+                            for (int j = 0; j < expressions.getLength(); j++) {
+                        	    IRubyObject condition = expressions.entry(j);
+                        	
+                                if ((expression != null && 
+                            	    condition.callMethod("===", expression).isTrue()) || 
+    							    (expression == null && condition.isTrue())) {
+                                     state.getEvaluator().internalEval(state, ((WhenNode) firstWhenNode).getBodyNode());
+                                     return;
+                                }
+                            }
+                            continue;
+                	    }
+
+                        state.getEvaluator().internalEval(state, tag);
+                        
+                        if ((expression != null && state.getResult().callMethod("===", expression).isTrue()) ||
+                            (expression == null && state.getResult().isTrue())) {
+                            state.getEvaluator().internalEval(state, whenNode.getBodyNode());
+                            return;
+                        }
+                    }
+    	        } else {
+                    state.getEvaluator().internalEval(state, whenNode.getExpressionNodes());
+
+                    if ((expression != null && state.getResult().callMethod("===", expression).isTrue())
+                        || (expression == null && state.getResult().isTrue())) {
+                        state.getEvaluator().internalEval(state, ((WhenNode) firstWhenNode).getBodyNode());
+                        return;
+                    }
+                }
+                
+                firstWhenNode = whenNode.getNextCase();
+            }
+    	}
+    }
+    private static final CaseNodeVisitor caseNodeVisitor = new CaseNodeVisitor();
+    
+    // Not collapsed; another big one
+    private static class ClassNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		ClassNode iVisited = (ClassNode)node;
+            RubyClass superClass = getSuperClassFromNode(state, iVisited.getSuperNode());
+            Node classNameNode = iVisited.getCPath();
+            String name = ((INameNode) classNameNode).getName();
+            RubyModule enclosingClass = getEnclosingModule(state, classNameNode);
+            RubyClass rubyClass = enclosingClass.defineOrGetClassUnder(name, superClass);
+
+            if (state.getThreadContext().getWrapper() != null) {
+                rubyClass.extendObject(state.getThreadContext().getWrapper());
+                rubyClass.includeModule(state.getThreadContext().getWrapper());
+            }
+            evalClassDefinitionBody(state, iVisited.getBodyNode(), rubyClass);
+    	}
+    	
+    	private RubyClass getSuperClassFromNode(EvaluationState state, Node superNode) {
+            if (superNode == null) {
+                return null;
+            }
+            RubyClass superClazz;
+            try {
+                superClazz = (RubyClass) state.getEvaluator().internalEval(state, superNode);
+            } catch (Exception e) {
+                if (superNode instanceof INameNode) {
+                    String name = ((INameNode) superNode).getName();
+                    throw state.getRuntime().newTypeError("undefined superclass '" + name + "'");
+                }
+    			throw state.getRuntime().newTypeError("superclass undefined");
+            }
+            if (superClazz instanceof MetaClass) {
+                throw state.getRuntime().newTypeError("can't make subclass of virtual class");
+            }
+            return superClazz;
+        }
+    }
+    private static final ClassNodeVisitor classNodeVisitor = new ClassNodeVisitor();
+    
+    // Collapsed, other than a method call
+    private static class Colon2NodeVisitor1 implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		Colon2Node iVisited = (Colon2Node)node;
+            if (state.getResult() instanceof RubyModule) {
+                state.setResult(((RubyModule) state.getResult()).getConstantAtOrConstantMissing(iVisited.getName()));
+            } else {
+                state.setResult(state.getResult().callMethod(iVisited.getName()));
+            }
+    	}
+    }
+    private static final Colon2NodeVisitor1 colon2NodeVisitor1 = new Colon2NodeVisitor1();
+    private static class Colon2NodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		Colon2Node iVisited = (Colon2Node)node;
+            Node leftNode = iVisited.getLeftNode();
+
+            // TODO: Made this more colon3 friendly because of cpath production
+            // rule in grammar (it is convenient to think of them as the same thing
+            // at a grammar level even though evaluation is).
+            if (leftNode == null) {
+                state.setResult(state.getRuntime().getObject().getConstant(iVisited.getName()));
+            } else {
+            	state.clearResult();
+            	state.addNodeAndVisitor(node, colon2NodeVisitor1);
+                state.addNodeAndVisitor(iVisited.getLeftNode());
+            }
+    	}
+    }
+    private static final Colon2NodeVisitor colon2NodeVisitor = new Colon2NodeVisitor();
+
+    // No collapsing to do (depending on getConstant())
+    private static class Colon3NodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		Colon3Node iVisited = (Colon3Node)node;
+            state.setResult(state.getRuntime().getObject().getConstant(iVisited.getName()));
+    	}
+    }
+    private static final Colon3NodeVisitor colon3NodeVisitor = new Colon3NodeVisitor();
+    
+    // No collapsing to do (depending on getConstant())
+    private static class ConstNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		ConstNode iVisited = (ConstNode)node;
+            state.setResult(state.getThreadContext().getRubyClass().getConstant(iVisited.getName()));
+    	}
+    }
+    private static final ConstNodeVisitor constNodeVisitor = new ConstNodeVisitor();
+    
+    // Collapsed
+    private static class DAsgnNodeVisitor1 implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		DAsgnNode iVisited = (DAsgnNode)node;
+            state.getThreadContext().getCurrentDynamicVars().set(iVisited.getName(), state.getResult());
+    	}
+    }
+    private static final DAsgnNodeVisitor1 dAsgnNodeVisitor1 = new DAsgnNodeVisitor1();
+    private static class DAsgnNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		DAsgnNode iVisited = (DAsgnNode)node;
+    		state.clearResult();
+    		state.addNodeAndVisitor(node, dAsgnNodeVisitor1);
+            state.addNodeAndVisitor(iVisited.getValueNode());
+    	}
+    }
+    private static final DAsgnNodeVisitor dAsgnNodeVisitor = new DAsgnNodeVisitor();
+    
+    // Not collapsed; requires carrying a StringBuffer across visitors
+    private static class DRegexpNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		DRegexpNode iVisited = (DRegexpNode)node;
+            StringBuffer sb = new StringBuffer();
+
+            Iterator iterator = iVisited.iterator();
+            while (iterator.hasNext()) {
+                Node iterNode = (Node) iterator.next();
+                sb.append(state.getEvaluator().internalEval(state, iterNode));
+            }
+
+            state.setResult(RubyRegexp.newRegexp(state.getRuntime(), sb.toString(), iVisited.getOptions(), null));
+    	}
+    }
+    private static final DRegexpNodeVisitor dRegexpNodeVisitor = new DRegexpNodeVisitor();
+    
+    // Not collapsed; requires carrying a StringBuffer across visitors
+    private static class DStrNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		DStrNode iVisited = (DStrNode)node;
+            StringBuffer sb = new StringBuffer();
+
+            Iterator iterator = iVisited.iterator();
+            while (iterator.hasNext()) {
+                Node iterNode = (Node) iterator.next();
+                sb.append(state.getEvaluator().internalEval(state, iterNode));
+            }
+
+            state.setResult(state.getRuntime().newString(sb.toString()));
+    	}
+    }
+    private static final DStrNodeVisitor dStrNodeVisitor = new DStrNodeVisitor();
+    
+    // Not collapsed; requires carrying a StringBuffer across visitors
+    private static class DSymbolNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		DSymbolNode iVisited = (DSymbolNode)node;
+            StringBuffer sb = new StringBuffer();
+
+            for (Iterator iterator = iVisited.getNode().iterator(); 
+            	iterator.hasNext();) {
+                Node iterNode = (Node) iterator.next();
+                sb.append(state.getEvaluator().internalEval(state, iterNode));
+            }
+
+            state.setResult(state.getRuntime().newSymbol(sb.toString()));
+    	}
+    }
+    private static final DSymbolNodeVisitor dSymbolNodeVisitor = new DSymbolNodeVisitor();
+
+    // Maybe nothing to do
+    private static class DVarNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		DVarNode iVisited = (DVarNode)node;
+            state.setResult(state.getThreadContext().getDynamicValue(iVisited.getName()));
+    	}
+    }
+    private static final DVarNodeVisitor dVarNodeVisitor = new DVarNodeVisitor();
+    
+    // Not collapsed; requires carrying a StringBuffer across visitors
+    private static class DXStrNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		DXStrNode iVisited = (DXStrNode)node;
+            StringBuffer sb = new StringBuffer();
+
+            Iterator iterator = iVisited.iterator();
+            while (iterator.hasNext()) {
+                Node iterNode = (Node) iterator.next();
+                sb.append(state.getEvaluator().internalEval(state, iterNode));
+            }
+
+            state.setResult(state.getSelf().callMethod("`", state.getRuntime().newString(sb.toString())));
+    	}
+    }
+    private static final DXStrNodeVisitor dXStrNodeVisitor = new DXStrNodeVisitor();
+    
+    // Not collapsed; calls out to DefinedVisitor
+    private static class DefinedNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		DefinedNode iVisited = (DefinedNode)node;
+            String def = new DefinedVisitor(state.getRuntime(), state.getSelf()).getDefinition(iVisited.getExpressionNode());
+            if (def != null) {
+                state.setResult(state.getRuntime().newString(def));
+            }
+    	}
+    }
+    private static final DefinedNodeVisitor definedNodeVisitor = new DefinedNodeVisitor();
+    
+    // Not collapsed; big
+    private static class DefnNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		DefnNode iVisited = (DefnNode)node;
+            RubyModule containingClass = state.getThreadContext().getRubyClass();
+            if (containingClass == null) {
+                throw state.getRuntime().newTypeError("No class to add method.");
+            }
+
+            String name = iVisited.getName();
+            if (containingClass == state.getRuntime().getObject() && name.equals("initialize")) {
+                state.getRuntime().getWarnings().warn("redefining Object#initialize may cause infinite loop");
+            }
+
+            Visibility visibility = state.getThreadContext().getCurrentVisibility();
+            if (name.equals("initialize") || visibility.isModuleFunction()) {
+                visibility = Visibility.PRIVATE;
+            } else if (visibility.isPublic() && containingClass == state.getRuntime().getObject()) {
+                visibility = iVisited.getVisibility();
+            }
+
+            DefaultMethod newMethod = new DefaultMethod(containingClass, iVisited.getBodyNode(),
+                                                        (ArgsNode) iVisited.getArgsNode(),
+                                                        visibility,
+    													state.getThreadContext().getRubyClass());
+            
+            iVisited.getBodyNode().accept(new CreateJumpTargetVisitor(newMethod));
+            
+            containingClass.addMethod(name, newMethod);
+
+            if (state.getThreadContext().getCurrentVisibility().isModuleFunction()) {
+                containingClass.getSingletonClass().addMethod(name, new WrapperCallable(containingClass.getSingletonClass(), newMethod, Visibility.PUBLIC));
+                containingClass.callMethod("singleton_method_added", state.getRuntime().newSymbol(name));
+            }
+
+    		// 'class << state.self' and 'class << obj' uses defn as opposed to defs
+            if (containingClass.isSingleton()) {
+    			((MetaClass)containingClass).getAttachedObject().callMethod("singleton_method_added", state.getRuntime().newSymbol(iVisited.getName()));
+            } else {
+            	containingClass.callMethod("method_added", state.getRuntime().newSymbol(name));
+            }
+    	}
+    }
+    private static final DefnNodeVisitor defnNodeVisitor = new DefnNodeVisitor();
+
+    // Not collapsed; big
+    private static class DefsNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		DefsNode iVisited = (DefsNode)node;
+            IRubyObject receiver = state.getEvaluator().internalEval(state, iVisited.getReceiverNode());
+
+            if (state.getRuntime().getSafeLevel() >= 4 && !receiver.isTaint()) {
+                throw state.getRuntime().newSecurityError("Insecure; can't define singleton method.");
+            }
+            if (receiver.isFrozen()) {
+                throw state.getRuntime().newFrozenError("object");
+            }
+            if (! receiver.singletonMethodsAllowed()) {
+                throw state.getRuntime().newTypeError("can't define singleton method \"" +
+                                    iVisited.getName() +
+                                    "\" for " +
+                                    receiver.getType());
+            }
+
+            RubyClass rubyClass = receiver.getSingletonClass();
+
+            if (state.getRuntime().getSafeLevel() >= 4) {
+                ICallable method = (ICallable) rubyClass.getMethods().get(iVisited.getName());
+                if (method != null) {
+                    throw state.getRuntime().newSecurityError("Redefining method prohibited.");
+                }
+            }
+
+            DefaultMethod newMethod = new DefaultMethod(rubyClass, iVisited.getBodyNode(),
+                                                        (ArgsNode) iVisited.getArgsNode(),
+                                                        Visibility.PUBLIC,
+    													state.getThreadContext().getRubyClass());
+
+            iVisited.getBodyNode().accept(new CreateJumpTargetVisitor(newMethod));
+
+            rubyClass.addMethod(iVisited.getName(), newMethod);
+            receiver.callMethod("singleton_method_added", state.getRuntime().newSymbol(iVisited.getName()));
+
+            state.clearResult();
+    	}
+    }
+    private static final DefsNodeVisitor defsNodeVisitor = new DefsNodeVisitor();
+    
+    // Not collapsed; requires carrying two results
+    private static class DotNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		DotNode iVisited = (DotNode)node;
+            state.setResult(RubyRange.newRange(state.getRuntime(), state.getEvaluator().internalEval(state, iVisited.getBeginNode()), state.getEvaluator().internalEval(state, iVisited.getEndNode()), iVisited.isExclusive()));
+    	}
+    }
+    private static final DotNodeVisitor dotNodeVisitor = new DotNodeVisitor();
+    
+    // Not collapsed; needs exception handling
+    private static class EnsureNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		EnsureNode iVisited = (EnsureNode)node;
+            try {
+                state.setResult(state.getEvaluator().internalEval(state, iVisited.getBodyNode()));
+            } finally {
+                if (iVisited.getEnsureNode() != null) {
+                    IRubyObject oldresult = state.getResult();
+                    state.getEvaluator().internalEval(state, iVisited.getEnsureNode());
+                    state.setResult(oldresult);
+                }
+            }
+    	}
+    }
+    private static final EnsureNodeVisitor ensureNodeVisitor = new EnsureNodeVisitor();
+    
+    // Collapsed
+    private static class EvStrNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		EvStrNode iVisited = (EvStrNode)node;
+    		state.clearResult();
+    		state.addNodeAndVisitor(iVisited.getBody());
+    	}
+    }
+    private static final EvStrNodeVisitor evStrNodeVisitor = new EvStrNodeVisitor();
+    
+    // Not collapsed; function call and needs exception handling
+    private static class FCallNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		FCallNode iVisited = (FCallNode)node;
+            Block tmpBlock = state.getThreadContext().beginCallArgs();
+            IRubyObject[] args;
+            try {
+                args = setupArgs(state, state.getRuntime(), state.getThreadContext(), iVisited.getArgsNode());
+            } finally {
+            	state.getThreadContext().endCallArgs(tmpBlock);
+            }
+
+            state.setResult(state.getSelf().getMetaClass().call(state.getSelf(), iVisited.getName(), args, CallType.FUNCTIONAL));
+    	}
+    }
+    private static final FCallNodeVisitor fCallNodeVisitor = new FCallNodeVisitor();
+    
+    // Nothing to do
+    private static class FalseNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+            state.setResult(state.getRuntime().getFalse());
+    	}
+    }
+    private static final FalseNodeVisitor falseNodeVisitor = new FalseNodeVisitor();
+    
+    // Not collapsed; I do not understand this.
+    private static class FlipNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		FlipNode iVisited = (FlipNode)node;
+            if (iVisited.isExclusive()) {
+                if (! state.getRuntime().getCurrentScope().getValue(iVisited.getCount()).isTrue()) {
+                    //Benoit: I don't understand why the state.result is inversed
+                    state.setResult(state.getEvaluator().internalEval(state, iVisited.getBeginNode()).isTrue() ? state.getRuntime().getFalse() : state.getRuntime().getTrue());
+                    state.getRuntime().getCurrentScope().setValue(iVisited.getCount(), state.getResult());
+                } else {
+                    if (state.getEvaluator().internalEval(state, iVisited.getEndNode()).isTrue()) {
+                        state.getRuntime().getCurrentScope().setValue(iVisited.getCount(), state.getRuntime().getFalse());
+                    }
+                    state.setResult(state.getRuntime().getTrue());
+                }
+            } else {
+                if (! state.getRuntime().getCurrentScope().getValue(iVisited.getCount()).isTrue()) {
+                    if (state.getEvaluator().internalEval(state, iVisited.getBeginNode()).isTrue()) {
+                        //Benoit: I don't understand why the state.result is inversed
+                        state.getRuntime().getCurrentScope().setValue(iVisited.getCount(), state.getEvaluator().internalEval(state, iVisited.getEndNode()).isTrue() ? state.getRuntime().getFalse() : state.getRuntime().getTrue());
+                        state.setResult(state.getRuntime().getTrue());
+                    } else {
+                        state.setResult(state.getRuntime().getFalse());
+                    }
+                } else {
+                    if (state.getEvaluator().internalEval(state, iVisited.getEndNode()).isTrue()) {
+                        state.getRuntime().getCurrentScope().setValue(iVisited.getCount(), state.getRuntime().getFalse());
+                    }
+                    state.setResult(state.getRuntime().getTrue());
+                }
+            }
+    	}
+    }
+    private static final FlipNodeVisitor flipNodeVisitor = new FlipNodeVisitor();
+    
+    // Not collapsed; big and copious use of flow-control exceptions
+    private static class ForNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		ForNode iVisited = (ForNode)node;
+        	state.getThreadContext().getBlockStack().push(Block.createBlock(iVisited.getVarNode(), new EvaluateCallable(iVisited.getBodyNode(), iVisited.getVarNode()), state.getSelf()));
+            state.getThreadContext().getIterStack().push(Iter.ITER_PRE);
+
+            try {
+                while (true) {
+                    try {
+                        ISourcePosition position = state.getThreadContext().getPosition();
+                        Block tmpBlock = state.getThreadContext().beginCallArgs();
+
+                        IRubyObject recv = null;
+                        try {
+                            recv = state.getEvaluator().internalEval(state, iVisited.getIterNode());
+                        } finally {
+                            state.getThreadContext().setPosition(position);
+                            state.getThreadContext().endCallArgs(tmpBlock);
+                        }
+                        state.setResult(recv.getMetaClass().call(recv, "each", IRubyObject.NULL_ARRAY, CallType.NORMAL));
+                        return;
+                    } catch (JumpException je) {
+                    	if (je.getJumpType() == JumpException.JumpType.RetryJump) {
+                    		// do nothing, allow loop to retry
+                    	} else {
+                    		throw je;
+                    	}
+                    }
+                }
+            } catch (JumpException je) {
+            	if (je.getJumpType() == JumpException.JumpType.BreakJump) {
+	                IRubyObject breakValue = (IRubyObject)je.getPrimaryData();
+	                
+	                state.setResult(breakValue == null ? state.getRuntime().getNil() : breakValue);
+            	} else {
+            		throw je;
+            	}
+            } finally {
+                state.getThreadContext().getIterStack().pop();
+                state.getThreadContext().getBlockStack().pop();
+            }
+    	}
+    }
+    private static final ForNodeVisitor forNodeVisitor = new ForNodeVisitor();
+    
+    // Collapsed
+    private static class GlobalAsgnNodeVisitor1 implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		GlobalAsgnNode iVisited = (GlobalAsgnNode)node;
+            state.getRuntime().getGlobalVariables().set(iVisited.getName(), state.getResult());
+    	}
+    }
+    private static final GlobalAsgnNodeVisitor1 globalAsgnNodeVisitor1 = new GlobalAsgnNodeVisitor1();
+    private static class GlobalAsgnNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		GlobalAsgnNode iVisited = (GlobalAsgnNode)node;
+    		state.clearResult();
+    		state.addNodeAndVisitor(node, globalAsgnNodeVisitor1);
+            state.addNodeAndVisitor(iVisited.getValueNode());
+    	}
+    }
+    private static final GlobalAsgnNodeVisitor globalAsgnNodeVisitor = new GlobalAsgnNodeVisitor();
+    
+    // Nothing to do
+    private static class GlobalVarNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		GlobalVarNode iVisited = (GlobalVarNode)node;
+            state.setResult(state.getRuntime().getGlobalVariables().get(iVisited.getName()));
+    	}
+    }
+    private static final GlobalVarNodeVisitor globalVarNodeVisitor = new GlobalVarNodeVisitor();
+    
+    // Not collapsed; requires carrying a hash across visits and has method calls
+    private static class HashNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		HashNode iVisited = (HashNode)node;
+            RubyHash hash = RubyHash.newHash(state.getRuntime());
+
+            if (iVisited.getListNode() != null) {
+                Iterator iterator = iVisited.getListNode().iterator();
+                while (iterator.hasNext()) {
+                    IRubyObject key = state.getEvaluator().internalEval(state, (Node) iterator.next());
+                    if (iterator.hasNext()) {
+                        hash.aset(key, state.getEvaluator().internalEval(state, (Node) iterator.next()));
+                    } else {
+                        // XXX
+                        throw new RuntimeException("[BUG] odd number list for Hash");
+                        // XXX
+                    }
+                }
+            }
+            state.setResult(hash);
+    	}
+    }
+    private static final HashNodeVisitor hashNodeVisitor = new HashNodeVisitor();
+    
+    // Collapsed
+    private static class InstAsgnNodeVisitor1 implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		InstAsgnNode iVisited = (InstAsgnNode)node;
+            state.getSelf().setInstanceVariable(iVisited.getName(), state.getResult());
+    	}
+    }
+    private static final InstAsgnNodeVisitor1 instAsgnNodeVisitor1 = new InstAsgnNodeVisitor1();
+    private static class InstAsgnNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		InstAsgnNode iVisited = (InstAsgnNode)node;
+    		state.clearResult();
+    		state.addNodeAndVisitor(node, instAsgnNodeVisitor1);
+            state.addNodeAndVisitor(iVisited.getValueNode());
+    	}
+    }
+    private static final InstAsgnNodeVisitor instAsgnNodeVisitor = new InstAsgnNodeVisitor();
+    
+    // Nothing to do
+    private static class InstVarNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		InstVarNode iVisited = (InstVarNode)node;
+        	IRubyObject variable = state.getSelf().getInstanceVariable(iVisited.getName());
+        	
+            state.setResult(variable == null ? state.getRuntime().getNil() : variable);
+    	}
+    }
+    private static final InstVarNodeVisitor instVarNodeVisitor = new InstVarNodeVisitor();
+    
+    // Collapsed
+    private static class IfNodeImplVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		IfNode iVisited = (IfNode)node;
+    		IRubyObject result = state.getResult();
+    		
+    		// Must set to nil; ifs or logical statements without then/else return nil
+    		state.clearResult();
+    		
+    		if (result.isTrue()) {
+    			if (iVisited.getThenBody() != null) {
+    				state.addNodeAndVisitor(iVisited.getThenBody());
+    			}
+            } else {
+            	if (iVisited.getElseBody() != null) {
+            		state.addNodeAndVisitor(iVisited.getElseBody());
+            	}
+            }
+    	}
+    }
+    private static final IfNodeImplVisitor ifNodeImplVisitor = new IfNodeImplVisitor();
+    private static class IfNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		IfNode iVisited = (IfNode)node;
+    		// add in reverse order
+    		state.addNodeAndVisitor(iVisited, ifNodeImplVisitor);
+    		state.addNodeAndVisitor(iVisited.getCondition());
+       	}
+    }
+    private static final IfNodeVisitor ifNodeVisitor = new IfNodeVisitor();
+    
+    // Not collapsed, depends on exception handling and function calls
+    private static class IterNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		IterNode iVisited = (IterNode)node;
+        	state.getThreadContext().getBlockStack().push(Block.createBlock(iVisited.getVarNode(), 
+            	    new EvaluateCallable(iVisited.getBodyNode(), iVisited.getVarNode()), state.getSelf()));
+                try {
+                    while (true) {
+                        try {
+                            state.getThreadContext().getIterStack().push(Iter.ITER_PRE);
+                            state.setResult(state.getEvaluator().internalEval(state, iVisited.getIterNode()));
+                            return;
+                        } catch (JumpException je) {
+                        	if (je.getJumpType() == JumpException.JumpType.RetryJump) {
+                        		// allow loop to retry
+                        	} else {
+                        		throw je;
+                        	}
+                        } finally {
+                            state.getThreadContext().getIterStack().pop();
+                        }
+                    }
+                } catch (JumpException je) {
+                	if (je.getJumpType() == JumpException.JumpType.BreakJump) {
+	                    IRubyObject breakValue = (IRubyObject)je.getPrimaryData();
+	
+	                    state.setResult(breakValue == null ? state.getRuntime().getNil() : breakValue);
+                	} else {
+                		throw je;
+                	}
+                } finally {
+                    state.getThreadContext().getBlockStack().pop();
+                }
+    	}
+    }
+    private static final IterNodeVisitor iterNodeVisitor = new IterNodeVisitor();
+    
+    // Collapsed
+    private static class LocalAsgnNodeVisitor1 implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		LocalAsgnNode iVisited = (LocalAsgnNode)node;
+            state.getRuntime().getCurrentScope().setValue(iVisited.getCount(), state.getResult());
+    	}
+    }
+    private static final LocalAsgnNodeVisitor1 localAsgnNodeVisitor1 = new LocalAsgnNodeVisitor1();
+    private static class LocalAsgnNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		LocalAsgnNode iVisited = (LocalAsgnNode)node;
+    		state.clearResult();
+    		state.addNodeAndVisitor(node, localAsgnNodeVisitor1);
+            state.addNodeAndVisitor(iVisited.getValueNode());
+    	}
+    }
+    private static final LocalAsgnNodeVisitor localAsgnNodeVisitor = new LocalAsgnNodeVisitor();
+    
+    // Nothing to do assuming getValue() isn't recursing
+    private static class LocalVarNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		LocalVarNode iVisited = (LocalVarNode)node;
+            state.setResult(state.getRuntime().getCurrentScope().getValue(iVisited.getCount()));
+    	}
+    }
+    private static final LocalVarNodeVisitor localVarNodeVisitor = new LocalVarNodeVisitor();
+    
+    // Not collapsed, calls out to AssignmentVisitor
+    private static class MultipleAsgnNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		MultipleAsgnNode iVisited = (MultipleAsgnNode)node;
+            state.setResult(new AssignmentVisitor(state.getRuntime(), state.getSelf()).assign(iVisited, state.getEvaluator().internalEval(state, iVisited.getValueNode()), false));
+    	}
+    }
+    private static final MultipleAsgnNodeVisitor multipleAsgnNodeVisitor = new MultipleAsgnNodeVisitor(); 
+    
+    // Not collapsed; requires carrying multiple results
+    private static class Match2NodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		Match2Node iVisited = (Match2Node)node;
+            state.setResult(((RubyRegexp) state.getEvaluator().internalEval(state, iVisited.getReceiverNode())).match(state.getEvaluator().internalEval(state, iVisited.getValueNode())));
+    	}
+    }
+    private static final Match2NodeVisitor match2NodeVisitor = new Match2NodeVisitor();
+    
+    // Not collapsed; requires carrying multiple results
+    private static class Match3NodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		Match3Node iVisited = (Match3Node)node;
+            IRubyObject receiver = state.getEvaluator().internalEval(state, iVisited.getReceiverNode());
+            IRubyObject value = state.getEvaluator().internalEval(state, iVisited.getValueNode());
+            if (value instanceof RubyString) {
+                state.setResult(((RubyRegexp) receiver).match(value));
+            } else {
+                state.setResult(value.callMethod("=~", receiver));
+            }
+    	}
+    }
+    private static final Match3NodeVisitor match3NodeVisitor = new Match3NodeVisitor();
+    
+    // Collapsed
+    private static class MatchNodeVisitor1 implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		MatchNode iVisited = (MatchNode)node;
+            state.setResult(((RubyRegexp) state.getResult()).match2());
+    	}
+    }
+    private static final MatchNodeVisitor1 matchNodeVisitor1 = new MatchNodeVisitor1();
+    private static class MatchNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		MatchNode iVisited = (MatchNode)node;
+    		state.clearResult();
+    		state.addNodeAndVisitor(node, matchNodeVisitor1);
+            state.addNodeAndVisitor(iVisited.getRegexpNode());
+    	}
+    }
+    private static final MatchNodeVisitor matchNodeVisitor = new MatchNodeVisitor();
+    
+    // Not collapsed; exceptions
+    private static class ModuleNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		ModuleNode iVisited = (ModuleNode)node;
+            Node classNameNode = iVisited.getCPath();
+            String name = ((INameNode) classNameNode).getName();
+            RubyModule enclosingModule = getEnclosingModule(state, classNameNode);
+
+            if (enclosingModule == null) {
+                throw state.getRuntime().newTypeError("no outer class/module");
+            }
+
+            RubyModule module;
+            if (enclosingModule == state.getRuntime().getObject()) {
+                module = state.getRuntime().getOrCreateModule(name);
+            } else {
+                module = enclosingModule.defineModuleUnder(name);
+            }
+            evalClassDefinitionBody(state, iVisited.getBodyNode(), module);
+    	}
+    }
+    private static final ModuleNodeVisitor moduleNodeVisitor = new ModuleNodeVisitor();
+    
+    // Collapsed
+    private static class NewlineNodeTraceVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		NewlineNode iVisited = (NewlineNode)node;
+    		
+    		// something in here is used to build up ruby stack trace...
+            state.getThreadContext().setPosition(iVisited.getPosition());
+            
+            if (isTrace(state)) {
+               callTraceFunction(state, "line", state.getSelf());
+            }
+    	}
+    }
+    private static final NewlineNodeTraceVisitor newlineNodeTraceVisitor = new NewlineNodeTraceVisitor();
+    private static class NewlineNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		List l = new ArrayList();
+    		while (node instanceof NewlineNode) {
+    			l.add(0, node);
+    			node = ((NewlineNode)node).getNextNode();
+    		}
+    		state.addNodeAndVisitor(node);
+    		
+    		for (Iterator i = l.iterator(); i.hasNext();) {
+    			state.addNodeAndVisitor((Node)i.next(), newlineNodeTraceVisitor);
+    		}
+
+	        // FIXME: Poll from somewhere else in the code?
+	        state.getThreadContext().pollThreadEvents();
+	        
+    		// Newlines flush result (result from previous line is not available in next line...perhaps makes sense)
+            state.clearResult();
+    	}
+    }
+    private static final NewlineNodeVisitor newlineNodeVisitor = new NewlineNodeVisitor();
+    
+    // Not collapsed, exceptions
+    private static class NextNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		NextNode iVisited = (NextNode)node;
+    		JumpException je = new JumpException(JumpException.JumpType.NextJump);
+            if (iVisited.getValueNode() != null) {
+                je.setPrimaryData(state.getEvaluator().internalEval(state, iVisited.getValueNode()));
+            }
+            throw je;
+    	}
+    }
+    private static final NextNodeVisitor nextNodeVisitor = new NextNodeVisitor();
+    
+    // Nothing to do
+    private static class NoopVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    	}
+    }
+    private static final NoopVisitor noopVisitor = new NoopVisitor();
+    
+    // Collapsed
+    private static class NotNodeVisitor1 implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		NotNode iVisited = (NotNode)node;
+            state.setResult(state.getResult().isTrue() ? state.getRuntime().getFalse() : state.getRuntime().getTrue());
+    	}
+    }
+    private static final NotNodeVisitor1 notNodeVisitor1 = new NotNodeVisitor1();    
+    private static class NotNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		NotNode iVisited = (NotNode)node;
+    		state.clearResult();
+    		state.addNodeAndVisitor(node, notNodeVisitor1);
+            state.addNodeAndVisitor(iVisited.getConditionNode());
+    	}
+    }
+    private static final NotNodeVisitor notNodeVisitor = new NotNodeVisitor();
+    
+    // Not collapsed, method call
+    private static class NthRefNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		NthRefNode iVisited = (NthRefNode)node;
+            state.setResult(RubyRegexp.nth_match(iVisited.getMatchNumber(), state.getThreadContext().getBackref()));
+    	}
+    }
+    private static final NthRefNodeVisitor nthRefNodeVisitor = new NthRefNodeVisitor();
+    
+    // Not collapsed, multiple evals to resolve
+    private static class OpElementAsgnNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		OpElementAsgnNode iVisited = (OpElementAsgnNode)node;
+            IRubyObject receiver = state.getEvaluator().internalEval(state, iVisited.getReceiverNode());
+
+            IRubyObject[] args = setupArgs(state, state.getRuntime(), state.getThreadContext(), iVisited.getArgsNode());
+
+            IRubyObject firstValue = receiver.callMethod("[]", args);
+
+            if (iVisited.getOperatorName().equals("||")) {
+                if (firstValue.isTrue()) {
+                    state.setResult(firstValue);
+                    return;
+                }
+    			firstValue = state.getEvaluator().internalEval(state, iVisited.getValueNode());
+            } else if (iVisited.getOperatorName().equals("&&")) {
+                if (!firstValue.isTrue()) {
+                    state.setResult(firstValue);
+                    return;
+                }
+    			firstValue = state.getEvaluator().internalEval(state, iVisited.getValueNode());
+            } else {
+                firstValue = firstValue.callMethod(iVisited.getOperatorName(), state.getEvaluator().internalEval(state, iVisited.getValueNode()));
+            }
+
+            IRubyObject[] expandedArgs = new IRubyObject[args.length + 1];
+            System.arraycopy(args, 0, expandedArgs, 0, args.length);
+            expandedArgs[expandedArgs.length - 1] = firstValue;
+            state.setResult(receiver.callMethod("[]=", expandedArgs));
+    	}
+    }
+    private static final OpElementAsgnNodeVisitor opElementAsgnNodeVisitor = new OpElementAsgnNodeVisitor();
+    
+    // Not collapsed, multiple evals to resolve
+    private static class OpAsgnNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		OpAsgnNode iVisited = (OpAsgnNode)node;
+            IRubyObject receiver = state.getEvaluator().internalEval(state, iVisited.getReceiverNode());
+            IRubyObject value = receiver.callMethod(iVisited.getVariableName());
+
+            if (iVisited.getOperatorName().equals("||")) {
+                if (value.isTrue()) {
+                    state.setResult(value);
+                    return;
+                }
+    			value = state.getEvaluator().internalEval(state, iVisited.getValueNode());
+            } else if (iVisited.getOperatorName().equals("&&")) {
+                if (!value.isTrue()) {
+                    state.setResult(value);
+                    return;
+                }
+    			value = state.getEvaluator().internalEval(state, iVisited.getValueNode());
+            } else {
+                value = value.callMethod(iVisited.getOperatorName(), state.getEvaluator().internalEval(state, iVisited.getValueNode()));
+            }
+
+            receiver.callMethod(iVisited.getVariableName() + "=", value);
+
+            state.setResult(value);
+    	}
+    }
+    private static final OpAsgnNodeVisitor opAsgnNodeVisitor = new OpAsgnNodeVisitor();
+    
+    // Not collapsed, exceptions
+    private static class OptNNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		OptNNode iVisited = (OptNNode)node;
+            while (RubyKernel.gets(state.getRuntime().getTopSelf(), IRubyObject.NULL_ARRAY).isTrue()) {
+                while (true) { // Used for the 'redo' command
+                    try {
+                        state.getEvaluator().internalEval(state, iVisited.getBodyNode());
+                        break;
+                    } catch (JumpException je) {
+                    	if (je.getJumpType() == JumpException.JumpType.RedoJump) {
+                    		// When a 'redo' is reached eval body of loop again.
+                    		continue;
+                    	} else if (je.getJumpType() == JumpException.JumpType.NextJump) {
+                    		// When a 'next' is reached ceck condition of loop again.
+                    		break;
+                    	} else if (je.getJumpType() == JumpException.JumpType.BreakJump) {
+	                        // When a 'break' is reached leave loop.
+	                        return;
+                    	} else {
+                    		throw je;
+                    	}
+                    }
+                }
+            }
+    	}
+    }
+    private static final OptNNodeVisitor optNNodeVisitor = new OptNNodeVisitor();
+    
+    // Collapsed
+    private static class OrNodeImplVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		BinaryOperatorNode iVisited = (BinaryOperatorNode)node;
+            if (!state.getResult().isTrue()) {
+                state.addNodeAndVisitor(iVisited.getSecondNode());
+            }
+    	}
+    }
+    private static final OrNodeImplVisitor orNodeImplVisitor = new OrNodeImplVisitor();
+    private static class OrNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		BinaryOperatorNode iVisited = (BinaryOperatorNode)node;
+    		state.clearResult();
+    		state.addNodeAndVisitor(node, orNodeImplVisitor);
+    		state.addNodeAndVisitor(iVisited.getFirstNode());	
+    	}
+    }
+    private static final OrNodeVisitor orNodeVisitor = new OrNodeVisitor();
+    
+    // Not collapsed, pure exception stuff
+    private static class RedoNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+            throw new JumpException(JumpException.JumpType.RedoJump);
+    	}
+    }
+    private static final RedoNodeVisitor redoNodeVisitor = new RedoNodeVisitor();
+    
+    // Not collapsed; had some trouble with it
+    private static class RescueBodyNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		RescueBodyNode iVisited = (RescueBodyNode)node;
+            state.getEvaluator().internalEval(state, iVisited.getBodyNode());
+    	}
+    }
+    private static final RescueBodyNodeVisitor rescueBodyNodeVisitor = new RescueBodyNodeVisitor();
+    
+    // Not collapsed, obviously heavy ties to exception handling
+    private static class RescueNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		RescueNode iVisited = (RescueNode)node;
+            RescuedBlock : while (true) {
+                try {
+                    // Execute rescue block
+                    state.getEvaluator().internalEval(state, iVisited.getBodyNode());
+
+                    // If no exception is thrown execute else block
+                    if (iVisited.getElseNode() != null) {
+                        state.getEvaluator().internalEval(state, iVisited.getElseNode());
+                    }
+
+                    return;
+                } catch (RaiseException raiseJump) {
+                	RubyException raisedException = raiseJump.getException();
+                    // TODO: Rubicon TestKernel dies without this line.  A cursory glance implies we
+                    // falsely set $! to nil and this sets it back to something valid.  This should 
+                    // get fixed at the same time we address bug #1296484.
+                    state.getRuntime().getGlobalVariables().set("$!", raisedException);
+
+                    RescueBodyNode rescueNode = iVisited.getRescueNode();
+
+                    while (rescueNode != null) {
+                        Node  exceptionNodes = rescueNode.getExceptionNodes();
+                        ListNode exceptionNodesList;
+                        
+                        if (exceptionNodes instanceof SplatNode) {                    
+                            exceptionNodesList = (ListNode) state.getEvaluator().internalEval(state, exceptionNodes);
+                        } else {
+                            exceptionNodesList = (ListNode) exceptionNodes;
+                        }
+                        
+                        if (isRescueHandled(state, raisedException, exceptionNodesList)) {
+                            try {
+                                state.getEvaluator().internalEval(state, rescueNode);
+                                return;
+                            } catch (JumpException je) {
+                            	if (je.getJumpType() == JumpException.JumpType.RetryJump) {
+                            		// should be handled in the finally block below
+	                                //state.runtime.getGlobalVariables().set("$!", state.runtime.getNil());
+	                                //state.threadContext.setRaisedException(null);
+	                                continue RescuedBlock;
+                            	} else {
+                            		throw je;
+                            	}
+                            }
+                        }
+                        
+                        rescueNode = rescueNode.getOptRescueNode();
+                    }
+
+                    // no takers; bubble up
+                    throw raiseJump;
+                } finally {
+                	// clear exception when handled or retried
+                    state.getRuntime().getGlobalVariables().set("$!", state.getRuntime().getNil());
+                }
+            }
+    	}
+    	
+        private boolean isRescueHandled(EvaluationState state, RubyException currentException, ListNode exceptionNodes) {
+            if (exceptionNodes == null) {
+                return currentException.isKindOf(state.getRuntime().getClass("StandardError"));
+            }
+
+            Block tmpBlock = state.getThreadContext().beginCallArgs();
+
+            IRubyObject[] args = null;
+            try {
+                args = setupArgs(state, state.getRuntime(), state.getThreadContext(), exceptionNodes);
+            } finally {
+            	state.getThreadContext().endCallArgs(tmpBlock);
+            }
+
+            for (int i = 0; i < args.length; i++) {
+                if (! args[i].isKindOf(state.getRuntime().getClass("Module"))) {
+                    throw state.getRuntime().newTypeError("class or module required for rescue clause");
+                }
+                if (args[i].callMethod("===", currentException).isTrue())
+                    return true;
+            }
+            return false;
+        }
+    }
+    private static final RescueNodeVisitor rescueNodeVisitor = new RescueNodeVisitor();
+    
+    // Not collapsed, pure exception stuff
+    private static class RetryNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		
+    		// XXX: this should all change or go away with the new mechanism of recording "points" in the stack to return to
+    		while (!state.getCurrentNodeStack().isEmpty()) {
+    			// perhaps replace by having visitors register/listen for events
+        		if (state.getCurrentNodeVisitorStack().peek() instanceof WantsRetry) {
+        			state.popCurrentNodeAndVisitor();
+        			return; // Allow eval to continue at node following "WantsReturn"
+        		}
+        		state.popCurrentNodeAndVisitor();
+    		}
+    		
+    		// TODO remove once eval is 100% iterative
+    		// nobody wants return and queue is empty...rethrow
+    		JumpException je = new JumpException(JumpException.JumpType.RetryJump);
+    		
+    		throw je;
+    	}
+    }
+    private static final RetryNodeVisitor retryNodeVisitor = new RetryNodeVisitor();
+    
+    // Not collapsed, flow-control exceptions
+    private static class ReturnNodeVisitor1 implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		ReturnNode iVisited = (ReturnNode)node;
+    		
+    		// reduce node stack to nearest return point
+    		// TODO: if multiple return points in a row, tail-call optimize?
+    		state.returnToNearestReturnPoint();
+    		
+    		if (state.getCurrentNodeStack().isEmpty()) {
+        		// TODO remove once eval is 100% iterative
+        		// nobody wants return and queue is empty...rethrow
+        		JumpException je = new JumpException(JumpException.JumpType.ReturnJump);
+        		
+        		je.setPrimaryData(iVisited.getTarget());
+        		je.setSecondaryData(state.getResult());
+        		
+        		throw je;
+    		}
+    	}
+    }
+    private static final ReturnNodeVisitor1 returnNodeVisitor1 = new ReturnNodeVisitor1();
+    // Not collapsed, flow-control exceptions
+    private static class ReturnNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		ReturnNode iVisited = (ReturnNode)node;
+    		
+    		state.addNodeAndVisitor(node, returnNodeVisitor1);
+    		if (iVisited.getValueNode() != null) {
+    			state.addNodeAndVisitor(iVisited.getValueNode());
+    		}
+    		
+    		state.clearResult();
+    	}
+    }
+    private static final ReturnNodeVisitor returnNodeVisitor = new ReturnNodeVisitor();
+    
+    // Not collapsed, evalClassBody will take some work
+    private static class SClassNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		SClassNode iVisited = (SClassNode)node;
+            IRubyObject receiver = state.getEvaluator().internalEval(state, iVisited.getReceiverNode());
+
+            RubyClass singletonClass;
+
+            if (receiver.isNil()) {
+                singletonClass = state.getRuntime().getClass("NilClass");
+            } else if (receiver == state.getRuntime().getTrue()) {
+                singletonClass = state.getRuntime().getClass("True");
+            } else if (receiver == state.getRuntime().getFalse()) {
+                singletonClass = state.getRuntime().getClass("False");
+            } else {
+                if (state.getRuntime().getSafeLevel() >= 4 && !receiver.isTaint()) {
+                    throw state.getRuntime().newSecurityError("Insecure: can't extend object.");
+                }
+
+                singletonClass = receiver.getSingletonClass();
+            }
+
+            if (state.getThreadContext().getWrapper() != null) {
+                singletonClass.extendObject(state.getThreadContext().getWrapper());
+                singletonClass.includeModule(state.getThreadContext().getWrapper());
+            }
+
+            evalClassDefinitionBody(state, iVisited.getBodyNode(), singletonClass);
+    	}
+    }
+    private static final SClassNodeVisitor sClassNodeVisitor = new SClassNodeVisitor();
+    
+    // Not collapsed, exception handling needed
+    private static class ScopeNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		ScopeNode iVisited = (ScopeNode)node;
+            state.getThreadContext().getFrameStack().pushCopy();
+            state.getThreadContext().getScopeStack().push(new Scope(state.getRuntime(), iVisited.getLocalNames()));
+            try {
+                state.getEvaluator().internalEval(state, iVisited.getBodyNode());
+            } finally {
+                state.getThreadContext().getScopeStack().pop();
+                state.getThreadContext().getFrameStack().pop();
+            }
+    	}
+    }
+    private static final ScopeNodeVisitor scopeNodeVisitor = new ScopeNodeVisitor();
+    
+    // Nothing to do
+    private static class SelfNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+            state.setResult(state.getSelf());
+    	}
+    }
+    private static final SelfNodeVisitor selfNodeVisitor = new SelfNodeVisitor();
+    
+    // Collapsed
+    private static class SplatNodeVisitor1 implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		SplatNode iVisited = (SplatNode)node;
+            state.setResult(splatValue(state, state.getResult()));
+    	}
+    }
+    private static final SplatNodeVisitor1 splatNodeVisitor1 = new SplatNodeVisitor1();
+    private static class SplatNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		SplatNode iVisited = (SplatNode)node;
+    		state.clearResult();
+    		state.addNodeAndVisitor(node, splatNodeVisitor1);
+            state.addNodeAndVisitor(iVisited.getValue());
+    	}
+    }
+    private static final SplatNodeVisitor splatNodeVisitor = new SplatNodeVisitor();
+    
+    // Nothing to do, other than concerns about newString recursing
+    private static class StrNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		StrNode iVisited = (StrNode)node;
+            state.setResult(state.getRuntime().newString(iVisited.getValue()));
+    	}
+    }
+    private static final StrNodeVisitor strNodeVisitor = new StrNodeVisitor();
+    
+    // Collapsed
+    private static class SValueNodeVisitor1 implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		SValueNode iVisited = (SValueNode)node;
+            state.setResult(aValueSplat(state, state.getResult()));
+    	}
+    }
+    private static final SValueNodeVisitor1 sValueNodeVisitor1 = new SValueNodeVisitor1();
+    private static class SValueNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		SValueNode iVisited = (SValueNode)node;
+    		state.clearResult();
+    		state.addNodeAndVisitor(node, sValueNodeVisitor1);
+            state.addNodeAndVisitor(iVisited.getValue());
+    	}
+    }
+    private static final SValueNodeVisitor sValueNodeVisitor = new SValueNodeVisitor();
+    
+    // Not collapsed, exceptions
+    private static class SuperNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		SuperNode iVisited = (SuperNode)node;
+            if (state.getThreadContext().getCurrentFrame().getLastClass() == null) {
+                throw state.getRuntime().newNameError("Superclass method '" + state.getThreadContext().getCurrentFrame().getLastFunc() + "' disabled.");
+            }
+
+            Block tmpBlock = state.getThreadContext().beginCallArgs();
+
+            IRubyObject[] args = null;
+            try {
+                args = setupArgs(state, state.getRuntime(), state.getThreadContext(), iVisited.getArgsNode());
+            } finally {
+            	state.getThreadContext().endCallArgs(tmpBlock);
+            }
+            state.setResult(state.getThreadContext().callSuper(args));
+    	}
+    }
+    private static final SuperNodeVisitor superNodeVisitor = new SuperNodeVisitor();
+    
+    // Collapsed
+    private static class ToAryNodeVisitor1 implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		ToAryNode iVisited = (ToAryNode)node;
+            state.setResult(aryToAry(state, state.getResult()));
+    	}
+    }
+    private static final ToAryNodeVisitor1 toAryNodeVisitor1 = new ToAryNodeVisitor1();
+    private static class ToAryNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		ToAryNode iVisited = (ToAryNode)node;
+    		state.clearResult();
+    		state.addNodeAndVisitor(node, toAryNodeVisitor1);
+            state.addNodeAndVisitor(iVisited.getValue());
+    	}
+    }
+    private static final ToAryNodeVisitor toAryNodeVisitor = new ToAryNodeVisitor();
+
+    // Nothing to do
+    private static class TrueNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+            state.setResult(state.getRuntime().getTrue());
+    	}
+    }
+    private static final TrueNodeVisitor trueNodeVisitor = new TrueNodeVisitor();
+    
+    // Probably nothing to do
+    private static class UndefNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		UndefNode iVisited = (UndefNode)node;
+            if (state.getThreadContext().getRubyClass() == null) {
+                throw state.getRuntime().newTypeError("No class to undef method '" + iVisited.getName() + "'.");
+            }
+            state.getThreadContext().getRubyClass().undef(iVisited.getName());
+    	}
+    }
+    private static final UndefNodeVisitor undefNodeVisitor = new UndefNodeVisitor();
+    
+    // Not collapsed, exception handling like crazy
+    private static class UntilNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		UntilNode iVisited = (UntilNode)node;
+            while (!state.getEvaluator().internalEval(state, iVisited.getConditionNode()).isTrue()) {
+                while (true) { // Used for the 'redo' command
+                    try {
+                        state.getEvaluator().internalEval(state, iVisited.getBodyNode());
+                        break;
+                    } catch (JumpException je) {
+                    	if (je.getJumpType() == JumpException.JumpType.RedoJump) {
+                    		// When a 'redo' is reached eval body of loop again.
+                    		continue;
+                    	} else if (je.getJumpType() == JumpException.JumpType.NextJump) {
+                    		// When a 'next' is reached ceck condition of loop again.
+                    		break;
+                    	} else if (je.getJumpType() == JumpException.JumpType.BreakJump) {
+	                        // When a 'break' is reached leave loop.
+	                        return;
+                    	} else {
+                    		throw je;
+                    	}
+                    }
+                }
+            }
+    	}
+    }
+    private static final UntilNodeVisitor untilNodeVisitor = new UntilNodeVisitor();
+    
+    // Nothing to do, but examine aliasing side effects
+    private static class VAliasNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		VAliasNode iVisited = (VAliasNode)node;
+            state.getRuntime().getGlobalVariables().alias(iVisited.getNewName(), iVisited.getOldName());
+    	}
+    }
+    private static final VAliasNodeVisitor vAliasNodeVisitor = new VAliasNodeVisitor();
+    
+    // Not collapsed, method call
+    private static class VCallNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		VCallNode iVisited = (VCallNode)node;
+            state.setResult(state.getSelf().getMetaClass().call(state.getSelf(), iVisited.getMethodName(), IRubyObject.NULL_ARRAY, CallType.VARIABLE));
+    	}
+    }
+    private static final VCallNodeVisitor vCallNodeVisitor = new VCallNodeVisitor();
+    
+    // Not collapsed, complicated with exceptions
+    private static class WhileNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		WhileNode iVisited = (WhileNode)node;
+            // while do...Initial condition not met do not enter block
+            if (iVisited.evaluateAtStart() && 
+                state.getEvaluator().internalEval(state, iVisited.getConditionNode()).isTrue() == false) {
+                return;
+            }
+            
+            do {
+                while (true) { // Used for the 'redo' command
+                    try {
+                        state.getEvaluator().internalEval(state, iVisited.getBodyNode());
+                        break;
+                    } catch (JumpException je) {
+                    	if (je.getJumpType() == JumpException.JumpType.RedoJump) {
+                    		// When a 'redo' is reached eval body of loop again.
+                    		continue;
+                    	} else if (je.getJumpType() == JumpException.JumpType.NextJump) {
+                    		// When a 'next' is reached ceck condition of loop again.
+                    		break;
+                    	} else if (je.getJumpType() == JumpException.JumpType.BreakJump) {
+	                        // When a 'break' is reached leave loop.
+	                        return;
+                    	} else {
+                    		throw je;
+                    	}
+                    }
+                }
+            } while (state.getEvaluator().internalEval(state, iVisited.getConditionNode()).isTrue());
+    	}
+    }
+    private static final WhileNodeVisitor whileNodeVisitor = new WhileNodeVisitor();
+    
+    // Not collapsed, method call
+    private static class XStrNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		XStrNode iVisited = (XStrNode)node;
+            state.setResult(state.getSelf().callMethod("`", state.getRuntime().newString(iVisited.getValue())));
+    	}
+    }
+    private static final XStrNodeVisitor xStrNodeVisitor = new XStrNodeVisitor();
+    
+    // Not collapsed, yield is like a method call, needs research
+    private static class YieldNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		YieldNode iVisited = (YieldNode)node;
+            state.getEvaluator().internalEval(state, iVisited.getArgsNode());
+
+        	// Special Hack...We cannot tell between no args and a nil one.
+        	// Change it back to null for now until a better solution is 
+        	// found
+        	// TODO: Find better way of differing...
+        	if (iVisited.getArgsNode() == null) {
+        	    state.setResult(null);
+        	}
+                
+            state.setResult(state.getThreadContext().yield(state.getResult(), null, null, false, iVisited.getCheckState()));
+    	}
+    }
+    private static final YieldNodeVisitor yieldNodeVisitor = new YieldNodeVisitor();
+    
+    // Nothing to do, other than array creation side effects?
+    private static class ZArrayNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+            state.setResult(state.getRuntime().newArray());
+    	}
+    }
+    private static final ZArrayNodeVisitor zArrayNodeVisitor = new ZArrayNodeVisitor();
+    
+    // Not collapsed, is this a call?
+    private static class ZSuperNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+            state.setResult(state.getThreadContext().callSuper());
+    	}
+    }
+    private static final ZSuperNodeVisitor zSuperNodeVisitor = new ZSuperNodeVisitor();
+    
+    // Nothing to do, other than side effects
+    private static class BignumNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		BignumNode iVisited = (BignumNode)node;
+            state.setResult(RubyBignum.newBignum(state.getRuntime(), iVisited.getValue()));
+    	}
+    }
+    private static final BignumNodeVisitor bignumNodeVisitor = new BignumNodeVisitor();
+    
+//  Nothing to do, other than side effects
+    private static class FixnumNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		FixnumNode iVisited = (FixnumNode)node;
+            state.setResult(state.getRuntime().newFixnum(iVisited.getValue()));
+    	}
+    }
+    private static final FixnumNodeVisitor fixnumNodeVisitor = new FixnumNodeVisitor();
+    
+//  Nothing to do, other than side effects
+    private static class FloatNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		FloatNode iVisited = (FloatNode)node;
+            state.setResult(RubyFloat.newFloat(state.getRuntime(), iVisited.getValue()));
+    	}
+    }
+    private static final FloatNodeVisitor floatNodeVisitor = new FloatNodeVisitor();
+    
+//  Nothing to do, other than side effects
+    private static class RegexpNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		RegexpNode iVisited = (RegexpNode)node;
+            state.setResult(RubyRegexp.newRegexp(state.getRuntime().newString(iVisited.getValue()), iVisited.getOptions(), null));
+    	}
+    }
+    private static final RegexpNodeVisitor regexpNodeVisitor = new RegexpNodeVisitor();
+    
+//  Nothing to do, other than side effects
+    private static class SymbolNodeVisitor implements SingleNodeVisitor {
+    	public void visit(EvaluationState state, Node node) {
+    		SymbolNode iVisited = (SymbolNode)node;
+            state.setResult(state.getRuntime().newSymbol(iVisited.getName()));
+    	}
+    }
+    private static final SymbolNodeVisitor symbolNodeVisitor = new SymbolNodeVisitor();
 
     /**
      * @see NodeVisitor#visitAliasNode(AliasNode)
      */
-    public void visitAliasNode(AliasNode iVisited) {
-        if (threadContext.getRubyClass() == null) {
-            throw runtime.newTypeError("no class to make alias");
-        }
-
-        threadContext.getRubyClass().defineAlias(iVisited.getNewName(), iVisited.getOldName());
-        threadContext.getRubyClass().callMethod("method_added", runtime.newSymbol(iVisited.getNewName()));
+    public SingleNodeVisitor visitAliasNode(AliasNode iVisited) {
+    	return aliasNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitAndNode(AndNode)
      */
-    public void visitAndNode(AndNode iVisited) {
-        if (eval(iVisited.getFirstNode()).isTrue()) {
-            eval(iVisited.getSecondNode());
-        }
+    public SingleNodeVisitor visitAndNode(AndNode iVisited) {
+    	return andNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitArgsNode(ArgsNode)
      */
-    public void visitArgsNode(ArgsNode iVisited) {
+    public SingleNodeVisitor visitArgsNode(ArgsNode iVisited) {
         assert false;
+        return null;
     }
 
     /**
      * @see NodeVisitor#visitArgsCatNode(ArgsCatNode)
      */
-    public void visitArgsCatNode(ArgsCatNode iVisited) {
-        IRubyObject args = eval(iVisited.getFirstNode());
-        IRubyObject secondArgs = splatValue(eval(iVisited.getSecondNode()));
-        RubyArray list = args instanceof RubyArray ? (RubyArray) args :
-            runtime.newArray(args);
-        
-        result = list.concat(secondArgs); 
+    public SingleNodeVisitor visitArgsCatNode(ArgsCatNode iVisited) {
+    	return argsCatNodeVisitor;
     }
-
+    
     /**
      * @see NodeVisitor#visitArrayNode(ArrayNode)
      */
-    public void visitArrayNode(ArrayNode iVisited) {
-        ArrayList list = new ArrayList(iVisited.size());
-
-        for (Iterator iterator = iVisited.iterator(); iterator.hasNext();) {
-            list.add(eval((Node) iterator.next()));
-        }
-        
-        result = runtime.newArray(list);
+    public SingleNodeVisitor visitArrayNode(ArrayNode iVisited) {
+    	return arrayNodeVisitor;
     }
-
+    
     /**
      * @see NodeVisitor#visitBackRefNode(BackRefNode)
      */
-    public void visitBackRefNode(BackRefNode iVisited) {
-        IRubyObject backref = threadContext.getBackref();
-        switch (iVisited.getType()) {
-	        case '~' :
-	            result = backref;
-	            break;
-        	case '&' :
-                result = RubyRegexp.last_match(backref);
-                break;
-            case '`' :
-                result = RubyRegexp.match_pre(backref);
-                break;
-            case '\'' :
-                result = RubyRegexp.match_post(backref);
-                break;
-            case '+' :
-                result = RubyRegexp.match_last(backref);
-                break;
-        }
+    public SingleNodeVisitor visitBackRefNode(BackRefNode iVisited) {
+    	return backRefNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitBeginNode(BeginNode)
      */
-    public void visitBeginNode(BeginNode iVisited) {
-        eval(iVisited.getBodyNode());
+    public SingleNodeVisitor visitBeginNode(BeginNode iVisited) {
+    	return beginNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitBlockArgNode(BlockArgNode)
      */
-    public void visitBlockArgNode(BlockArgNode iVisited) {
+    public SingleNodeVisitor visitBlockArgNode(BlockArgNode iVisited) {
         assert false;
+        return null;
     }
-
+    
     /**
      * @see NodeVisitor#visitBlockNode(BlockNode)
      */
-    public void visitBlockNode(BlockNode iVisited) {
-        for (Iterator iter = iVisited.iterator(); iter.hasNext(); ) {
-            eval((Node) iter.next());
-        }
+    public SingleNodeVisitor visitBlockNode(BlockNode iVisited) {
+    	return blockNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitBlockPassNode(BlockPassNode)
      */
-    public void visitBlockPassNode(BlockPassNode iVisited) {
-        IRubyObject proc = eval(iVisited.getBodyNode());
-
-        if (proc.isNil()) {
-            threadContext.getIterStack().push(Iter.ITER_NOT);
-            try {
-                eval(iVisited.getIterNode());
-                return;
-            } finally {
-                threadContext.getIterStack().pop();
-            }
-        }
-        
-        // If not already a proc then we should try and make it one.
-        if (!(proc instanceof RubyProc)) {
-        	proc = proc.convertToType("Proc", "to_proc", false);
-        	
-        	if (!(proc instanceof RubyProc)) {
-                throw runtime.newTypeError("wrong argument type " + proc.getMetaClass().getName() + " (expected Proc)");
-        	}
-        }
-
-        // TODO: Add safety check for taintedness
-        
-        Block block = (Block) threadContext.getBlockStack().peek();
-        if (block != null) {
-            IRubyObject blockObject = block.getBlockObject();
-            // The current block is already associated with the proc.  No need to create new
-            // block for it.  Just eval!
-            if (blockObject != null && blockObject == proc) {
-        	    try {
-            	    threadContext.getIterStack().push(Iter.ITER_PRE);
-            	    eval(iVisited.getIterNode());
-            	    return;
-        	    } finally {
-                    threadContext.getIterStack().pop();
-        	    }
-            }
-        }
-
-        threadContext.getBlockStack().push(((RubyProc) proc).getBlock());
-        threadContext.getIterStack().push(Iter.ITER_PRE);
-        
-        if (threadContext.getCurrentFrame().getIter() == Iter.ITER_NOT) {
-            threadContext.getCurrentFrame().setIter(Iter.ITER_PRE);
-        }
-
-        try {
-            eval(iVisited.getIterNode());
-        } finally {
-            threadContext.getIterStack().pop();
-            threadContext.getBlockStack().pop();
-        }
+    public SingleNodeVisitor visitBlockPassNode(BlockPassNode iVisited) {
+    	return blockPassNodeVisitor;
     }
-
+    
     /**
      * @see NodeVisitor#visitBreakNode(BreakNode)
      */
-    public void visitBreakNode(BreakNode iVisited) {
-        if (iVisited.getValueNode() != null) {
-            throw new BreakJump(eval(iVisited.getValueNode()));
-        }
-        throw new BreakJump(runtime.getNil());
+    public SingleNodeVisitor visitBreakNode(BreakNode iVisited) {
+    	return breakNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitConstDeclNode(ConstDeclNode)
      */
-    public void visitConstDeclNode(ConstDeclNode iVisited) {
-        if (threadContext.getRubyClass() == null) {
-            throw runtime.newTypeError("no class/module to define constant");
-        }
-        
-        threadContext.getRubyClass().setConstant(iVisited.getName(), 
-        		eval(iVisited.getValueNode()));
+    public SingleNodeVisitor visitConstDeclNode(ConstDeclNode iVisited) {
+    	return constDeclNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitClassVarAsgnNode(ClassVarAsgnNode)
      */
-    public void visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
-        eval(iVisited.getValueNode());
-        threadContext.getRubyClass().setClassVar(iVisited.getName(), result);
+    public SingleNodeVisitor visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
+    	return classVarAsgnNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitClassVarDeclNode(ClassVarDeclNode)
      */
-    public void visitClassVarDeclNode(ClassVarDeclNode iVisited) {
-        if (threadContext.getRubyClass() == null) {
-            throw runtime.newTypeError("no class/module to define class variable");
-        }
-        eval(iVisited.getValueNode());
-        threadContext.getRubyClass().setClassVar(iVisited.getName(), result);
+    public SingleNodeVisitor visitClassVarDeclNode(ClassVarDeclNode iVisited) {
+    	return classVarDeclNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitClassVarNode(ClassVarNode)
      */
-    public void visitClassVarNode(ClassVarNode iVisited) {
-    	RubyModule rubyClass = threadContext.getRubyClass();
-    	
-        if (rubyClass == null) {
-            result = self.getMetaClass().getClassVar(iVisited.getName());
-        } else if (! rubyClass.isSingleton()) {
-        	result = rubyClass.getClassVar(iVisited.getName());
-        } else {
-            RubyModule module = (RubyModule) rubyClass.getInstanceVariable("__attached__");
-            	
-            if (module != null) {
-                result = module.getClassVar(iVisited.getName());
-            }
-        }
+    public SingleNodeVisitor visitClassVarNode(ClassVarNode iVisited) {
+    	return classVarNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitCallNode(CallNode)
      */
-    public void visitCallNode(CallNode iVisited) {
-        Block tmpBlock = threadContext.beginCallArgs();
-        IRubyObject receiver = null;
-        IRubyObject[] args;
-        try {
-            receiver = eval(iVisited.getReceiverNode());
-            args = setupArgs(runtime, threadContext, iVisited.getArgsNode());
-        } finally {
-        	threadContext.endCallArgs(tmpBlock);
-        }
-        assert receiver.getMetaClass() != null : receiver.getClass().getName();
-        
-        result = receiver.getMetaClass().call(receiver, iVisited.getName(), args, CallType.NORMAL);
+    public SingleNodeVisitor visitCallNode(CallNode iVisited) {
+    	return callNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitCaseNode(CaseNode)
      */
-    public void visitCaseNode(CaseNode iVisited) {
-        IRubyObject expression = null;
-        if (iVisited.getCaseNode() != null) {
-            expression = eval(iVisited.getCaseNode());
-        }
-        
-        Node node = iVisited.getFirstWhenNode();
-        while (node != null) {
-            if (!(node instanceof WhenNode)) {
-                eval(node);
-                break;
-            }
-
-            WhenNode whenNode = (WhenNode) node;
-
-            if (whenNode.getExpressionNodes() instanceof ArrayNode) {
-		        for (Iterator iter = ((ArrayNode) whenNode.getExpressionNodes()).iterator(); iter.hasNext(); ) {
-		            Node tag = (Node) iter.next();
-
-                    threadContext.setPosition(tag.getPosition());
-                    if (isTrace()) {
-                        callTraceFunction("line", self);
-                    }
-
-                    // Ruby grammar has nested whens in a case body because of
-                    // productions case_body and when_args.
-            	    if (tag instanceof WhenNode) {
-            		    RubyArray expressions = (RubyArray) eval(((WhenNode) tag).getExpressionNodes());
-                    
-                        for (int j = 0; j < expressions.getLength(); j++) {
-                    	    IRubyObject condition = expressions.entry(j);
-                    	
-                            if ((expression != null && 
-                        	    condition.callMethod("===", expression).isTrue()) || 
-							    (expression == null && condition.isTrue())) {
-                                 eval(((WhenNode) node).getBodyNode());
-                                 return;
-                            }
-                        }
-                        continue;
-            	    }
-
-                    eval(tag);
-                    
-                    if ((expression != null && result.callMethod("===", expression).isTrue()) ||
-                        (expression == null && result.isTrue())) {
-                        eval(whenNode.getBodyNode());
-                        return;
-                    }
-                }
-	        } else {
-                eval(whenNode.getExpressionNodes());
-
-                if ((expression != null && result.callMethod("===", expression).isTrue())
-                    || (expression == null && result.isTrue())) {
-                    eval(((WhenNode) node).getBodyNode());
-                    return;
-                }
-            }
-            
-            node = whenNode.getNextCase();
-        }
+    public SingleNodeVisitor visitCaseNode(CaseNode iVisited) {
+    	return caseNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitClassNode(ClassNode)
      */
-    public void visitClassNode(ClassNode iVisited) {
-        RubyClass superClass = getSuperClassFromNode(iVisited.getSuperNode());
-        Node classNameNode = iVisited.getCPath();
-        String name = ((INameNode) classNameNode).getName();
-        RubyModule enclosingClass = getEnclosingModule(classNameNode);
-        RubyClass rubyClass = enclosingClass.defineOrGetClassUnder(name, superClass);
-
-        if (threadContext.getWrapper() != null) {
-            rubyClass.extendObject(threadContext.getWrapper());
-            rubyClass.includeModule(threadContext.getWrapper());
-        }
-        evalClassDefinitionBody(iVisited.getBodyNode(), rubyClass);
-    }
-
-    private RubyClass getSuperClassFromNode(Node superNode) {
-        if (superNode == null) {
-            return null;
-        }
-        RubyClass superClazz;
-        try {
-            superClazz = (RubyClass) eval(superNode);
-        } catch (Exception e) {
-            if (superNode instanceof INameNode) {
-                String name = ((INameNode) superNode).getName();
-                throw runtime.newTypeError(
-                                    "undefined superclass '" + name + "'");
-            }
-			throw runtime.newTypeError("superclass undefined");
-        }
-        if (superClazz instanceof MetaClass) {
-            throw runtime.newTypeError("can't make subclass of virtual class");
-        }
-        return superClazz;
+    public SingleNodeVisitor visitClassNode(ClassNode iVisited) {
+    	return classNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitColon2Node(Colon2Node)
      */
-    public void visitColon2Node(Colon2Node iVisited) {
-        Node node = iVisited.getLeftNode();
-
-        // TODO: Made this more colon3 friendly because of cpath production
-        // rule in grammar (it is convenient to think of them as the same thing
-        // at a grammar level even though evaluation is).
-        if (node == null) {
-            result = runtime.getObject().getConstant(iVisited.getName());
-        } else {
-            eval(iVisited.getLeftNode());
-            if (result instanceof RubyModule) {
-                result = ((RubyModule) result).getConstantAtOrConstantMissing(iVisited.getName());
-            } else {
-                result = result.callMethod(iVisited.getName());
-            }
-        }
+    public SingleNodeVisitor visitColon2Node(Colon2Node iVisited) {
+    	return colon2NodeVisitor;
     }
-
+    
     /**
      * @see NodeVisitor#visitColon3Node(Colon3Node)
      */
-    public void visitColon3Node(Colon3Node iVisited) {
-        result = runtime.getObject().getConstant(iVisited.getName());
+    public SingleNodeVisitor visitColon3Node(Colon3Node iVisited) {
+    	return colon3NodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitConstNode(ConstNode)
      */
-    public void visitConstNode(ConstNode iVisited) {
-        result = threadContext.getRubyClass().getConstant(iVisited.getName());
+    public SingleNodeVisitor visitConstNode(ConstNode iVisited) {
+    	return constNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitDAsgnNode(DAsgnNode)
      */
-    public void visitDAsgnNode(DAsgnNode iVisited) {
-        eval(iVisited.getValueNode());
-        threadContext.getCurrentDynamicVars().set(iVisited.getName(), result);
+    public SingleNodeVisitor visitDAsgnNode(DAsgnNode iVisited) {
+    	return dAsgnNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitDRegxNode(DRegexpNode)
      */
-    public void visitDRegxNode(DRegexpNode iVisited) {
-        StringBuffer sb = new StringBuffer();
-
-        Iterator iterator = iVisited.iterator();
-        while (iterator.hasNext()) {
-            Node node = (Node) iterator.next();
-            sb.append(eval(node));
-        }
-
-        result = RubyRegexp.newRegexp(runtime, sb.toString(), iVisited.getOptions(), null);
+    public SingleNodeVisitor visitDRegxNode(DRegexpNode iVisited) {
+    	return dRegexpNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitDStrNode(DStrNode)
      */
-    public final void visitDStrNode(final DStrNode iVisited) {
-        final StringBuffer sb = new StringBuffer();
-
-        final Iterator iterator = iVisited.iterator();
-        while (iterator.hasNext()) {
-            Node node = (Node) iterator.next();
-            sb.append(eval(node));
-        }
-
-        result = runtime.newString(sb.toString());
+    public SingleNodeVisitor visitDStrNode(DStrNode iVisited) {
+    	return dStrNodeVisitor;
     }
     
     /**
      * @see NodeVisitor#visitSymbolNode(SymbolNode)
      */
-    public void visitDSymbolNode(DSymbolNode iVisited) {
-        StringBuffer sb = new StringBuffer();
-
-        for (Iterator iterator = iVisited.getNode().iterator(); 
-        	iterator.hasNext();) {
-            Node node = (Node) iterator.next();
-            sb.append(eval(node));
-        }
-
-        result = runtime.newSymbol(sb.toString());
+    public SingleNodeVisitor visitDSymbolNode(DSymbolNode iVisited) {
+    	return dSymbolNodeVisitor;
     }
-
 
     /**
      * @see NodeVisitor#visitDVarNode(DVarNode)
      */
-    public void visitDVarNode(DVarNode iVisited) {
-        result = threadContext.getDynamicValue(iVisited.getName());
+    public SingleNodeVisitor visitDVarNode(DVarNode iVisited) {
+    	return dVarNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitDXStrNode(DXStrNode)
      */
-    public void visitDXStrNode(DXStrNode iVisited) {
-        StringBuffer sb = new StringBuffer();
-
-        Iterator iterator = iVisited.iterator();
-        while (iterator.hasNext()) {
-            Node node = (Node) iterator.next();
-            sb.append(eval(node));
-        }
-
-        result = self.callMethod("`", runtime.newString(sb.toString()));
+    public SingleNodeVisitor visitDXStrNode(DXStrNode iVisited) {
+    	return dXStrNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitDefinedNode(DefinedNode)
      */
-    public void visitDefinedNode(DefinedNode iVisited) {
-        String def = new DefinedVisitor(runtime, self).getDefinition(iVisited.getExpressionNode());
-        if (def != null) {
-            result = runtime.newString(def);
-        }
+    public SingleNodeVisitor visitDefinedNode(DefinedNode iVisited) {
+    	return definedNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitDefnNode(DefnNode)
      */
-    public void visitDefnNode(DefnNode iVisited) {
-        RubyModule containingClass = threadContext.getRubyClass();
-        if (containingClass == null) {
-            throw runtime.newTypeError("No class to add method.");
-        }
-
-        String name = iVisited.getName();
-        if (containingClass == runtime.getObject() && name.equals("initialize")) {
-            runtime.getWarnings().warn("redefining Object#initialize may cause infinite loop");
-        }
-
-        Visibility visibility = threadContext.getCurrentVisibility();
-        if (name.equals("initialize") || visibility.isModuleFunction()) {
-            visibility = Visibility.PRIVATE;
-        } else if (visibility.isPublic() && containingClass == runtime.getObject()) {
-            visibility = iVisited.getVisibility();
-        }
-
-        DefaultMethod newMethod = new DefaultMethod(containingClass, iVisited.getBodyNode(),
-                                                    (ArgsNode) iVisited.getArgsNode(),
-                                                    visibility,
-													threadContext.getRubyClass());
-        
-        iVisited.getBodyNode().accept(new CreateJumpTargetVisitor(newMethod));
-        
-        containingClass.addMethod(name, newMethod);
-
-        if (threadContext.getCurrentVisibility().isModuleFunction()) {
-            containingClass.getSingletonClass().addMethod(name, new WrapperCallable(containingClass.getSingletonClass(), newMethod, Visibility.PUBLIC));
-            containingClass.callMethod("singleton_method_added", runtime.newSymbol(name));
-        }
-
-		// 'class << self' and 'class << obj' uses defn as opposed to defs
-        if (containingClass.isSingleton()) {
-			((MetaClass)containingClass).getAttachedObject().callMethod("singleton_method_added", runtime.newSymbol(iVisited.getName()));
-        } else {
-        	containingClass.callMethod("method_added", runtime.newSymbol(name));
-        }
+    public SingleNodeVisitor visitDefnNode(DefnNode iVisited) {
+    	return defnNodeVisitor;
     }
-
 
     /**
      * @see NodeVisitor#visitDefsNode(DefsNode)
      */
-    public void visitDefsNode(DefsNode iVisited) {
-        IRubyObject receiver = eval(iVisited.getReceiverNode());
-
-        if (runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
-            throw runtime.newSecurityError("Insecure; can't define singleton method.");
-        }
-        if (receiver.isFrozen()) {
-            throw runtime.newFrozenError("object");
-        }
-        if (! receiver.singletonMethodsAllowed()) {
-            throw runtime.newTypeError(
-                                "can't define singleton method \"" +
-                                iVisited.getName() +
-                                "\" for " +
-                                receiver.getType());
-        }
-
-        RubyClass rubyClass = receiver.getSingletonClass();
-
-        if (runtime.getSafeLevel() >= 4) {
-            ICallable method = (ICallable) rubyClass.getMethods().get(iVisited.getName());
-            if (method != null) {
-                throw runtime.newSecurityError("Redefining method prohibited.");
-            }
-        }
-
-        DefaultMethod newMethod = new DefaultMethod(rubyClass, iVisited.getBodyNode(),
-                                                    (ArgsNode) iVisited.getArgsNode(),
-                                                    Visibility.PUBLIC,
-													threadContext.getRubyClass());
-
-        iVisited.getBodyNode().accept(new CreateJumpTargetVisitor(newMethod));
-
-        rubyClass.addMethod(iVisited.getName(), newMethod);
-        receiver.callMethod("singleton_method_added", runtime.newSymbol(iVisited.getName()));
-
-        result = runtime.getNil();
+    public SingleNodeVisitor visitDefsNode(DefsNode iVisited) {
+    	return defsNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitDotNode(DotNode)
      */
-    public void visitDotNode(DotNode iVisited) {
-        result = RubyRange.newRange(runtime, eval(iVisited.getBeginNode()), eval(iVisited.getEndNode()), iVisited.isExclusive());
+    public SingleNodeVisitor visitDotNode(DotNode iVisited) {
+    	return dotNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitEnsureNode(EnsureNode)
      */
-    public void visitEnsureNode(EnsureNode iVisited) {
-        try {
-            result = eval(iVisited.getBodyNode());
-        } finally {
-            if (iVisited.getEnsureNode() != null) {
-                IRubyObject oldResult = result;
-                eval(iVisited.getEnsureNode());
-                result = oldResult;
-            }
-        }
+    public SingleNodeVisitor visitEnsureNode(EnsureNode iVisited) {
+    	return ensureNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitEvStrNode(EvStrNode)
      */
-    public final void visitEvStrNode(final EvStrNode iVisited) {
-        eval(iVisited.getBody());
+    public final SingleNodeVisitor visitEvStrNode(final EvStrNode iVisited) {
+    	return evStrNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitFCallNode(FCallNode)
      */
-    public void visitFCallNode(FCallNode iVisited) {
-        Block tmpBlock = threadContext.beginCallArgs();
-        IRubyObject[] args;
-        try {
-            args = setupArgs(runtime, threadContext, iVisited.getArgsNode());
-        } finally {
-        	threadContext.endCallArgs(tmpBlock);
-        }
-
-        result = self.getMetaClass().call(self, iVisited.getName(), args, CallType.FUNCTIONAL);
+    public SingleNodeVisitor visitFCallNode(FCallNode iVisited) {
+    	return fCallNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitFalseNode(FalseNode)
      */
-    public void visitFalseNode(FalseNode iVisited) {
-        result = runtime.getFalse();
+    public SingleNodeVisitor visitFalseNode(FalseNode iVisited) {
+    	return falseNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitFlipNode(FlipNode)
      */
-    public void visitFlipNode(FlipNode iVisited) {
-        if (iVisited.isExclusive()) {
-            if (! runtime.getCurrentScope().getValue(iVisited.getCount()).isTrue()) {
-                //Benoit: I don't understand why the result is inversed
-                result = eval(iVisited.getBeginNode()).isTrue() ? runtime.getFalse() : runtime.getTrue();
-                runtime.getCurrentScope().setValue(iVisited.getCount(), result);
-            } else {
-                if (eval(iVisited.getEndNode()).isTrue()) {
-                    runtime.getCurrentScope().setValue(iVisited.getCount(), runtime.getFalse());
-                }
-                result = runtime.getTrue();
-            }
-        } else {
-            if (! runtime.getCurrentScope().getValue(iVisited.getCount()).isTrue()) {
-                if (eval(iVisited.getBeginNode()).isTrue()) {
-                    //Benoit: I don't understand why the result is inversed
-                    runtime.getCurrentScope().setValue(iVisited.getCount(), eval(iVisited.getEndNode()).isTrue() ? runtime.getFalse() : runtime.getTrue());
-                    result = runtime.getTrue();
-                } else {
-                    result = runtime.getFalse();
-                }
-            } else {
-                if (eval(iVisited.getEndNode()).isTrue()) {
-                    runtime.getCurrentScope().setValue(iVisited.getCount(), runtime.getFalse());
-                }
-                result = runtime.getTrue();
-            }
-        }
+    public SingleNodeVisitor visitFlipNode(FlipNode iVisited) {
+    	return flipNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitForNode(ForNode)
      */
-    public void visitForNode(ForNode iVisited) {
-    	threadContext.getBlockStack().push(Block.createBlock(iVisited.getVarNode(), new EvaluateCallable(iVisited.getBodyNode(), iVisited.getVarNode()), self));
-        threadContext.getIterStack().push(Iter.ITER_PRE);
-
-        try {
-            while (true) {
-                try {
-                    ISourcePosition position = threadContext.getPosition();
-                    Block tmpBlock = threadContext.beginCallArgs();
-
-                    IRubyObject recv = null;
-                    try {
-                        recv = eval(iVisited.getIterNode());
-                    } finally {
-                        threadContext.setPosition(position);
-                        threadContext.endCallArgs(tmpBlock);
-                    }
-                    result = recv.getMetaClass().call(recv, "each", IRubyObject.NULL_ARRAY, CallType.NORMAL);
-                    return;
-                } catch (RetryJump retry) {
-                }
-            }
-        } catch (BreakJump bExcptn) {
-            IRubyObject breakValue = bExcptn.getBreakValue();
-            
-            result = breakValue == null ? runtime.getNil() : breakValue;
-        } finally {
-            threadContext.getIterStack().pop();
-            threadContext.getBlockStack().pop();
-        }
+    public SingleNodeVisitor visitForNode(ForNode iVisited) {
+    	return forNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitGlobalAsgnNode(GlobalAsgnNode)
      */
-    public void visitGlobalAsgnNode(GlobalAsgnNode iVisited) {
-        eval(iVisited.getValueNode());
-        runtime.getGlobalVariables().set(iVisited.getName(), result);
+    public SingleNodeVisitor visitGlobalAsgnNode(GlobalAsgnNode iVisited) {
+    	return globalAsgnNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitGlobalVarNode(GlobalVarNode)
      */
-    public void visitGlobalVarNode(GlobalVarNode iVisited) {
-        result = runtime.getGlobalVariables().get(iVisited.getName());
+    public SingleNodeVisitor visitGlobalVarNode(GlobalVarNode iVisited) {
+    	return globalVarNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitHashNode(HashNode)
      */
-    public void visitHashNode(HashNode iVisited) {
-        RubyHash hash = RubyHash.newHash(runtime);
-
-        if (iVisited.getListNode() != null) {
-            Iterator iterator = iVisited.getListNode().iterator();
-            while (iterator.hasNext()) {
-                IRubyObject key = eval((Node) iterator.next());
-                if (iterator.hasNext()) {
-                    hash.aset(key, eval((Node) iterator.next()));
-                } else {
-                    // XXX
-                    throw new RuntimeException("[BUG] odd number list for Hash");
-                    // XXX
-                }
-            }
-        }
-        result = hash;
+    public SingleNodeVisitor visitHashNode(HashNode iVisited) {
+    	return hashNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitInstAsgnNode(InstAsgnNode)
      */
-    public void visitInstAsgnNode(InstAsgnNode iVisited) {
-        eval(iVisited.getValueNode());
-        self.setInstanceVariable(iVisited.getName(), result);
+    public SingleNodeVisitor visitInstAsgnNode(InstAsgnNode iVisited) {
+    	return instAsgnNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitInstVarNode(InstVarNode)
      */
-    public void visitInstVarNode(InstVarNode iVisited) {
-    	IRubyObject variable = self.getInstanceVariable(iVisited.getName());
-    	
-        result = variable == null ? runtime.getNil() : variable;
+    public SingleNodeVisitor visitInstVarNode(InstVarNode iVisited) {
+    	return instVarNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitIfNode(IfNode)
      */
-    public void visitIfNode(IfNode iVisited) {
-        if (eval(iVisited.getCondition()).isTrue()) {
-            eval(iVisited.getThenBody());
-        } else {
-            eval(iVisited.getElseBody());
-        }
+    public SingleNodeVisitor visitIfNode(IfNode iVisited) {
+    	return ifNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitIterNode(IterNode)
      */
-    public void visitIterNode(IterNode iVisited) {
-    	threadContext.getBlockStack().push(Block.createBlock(iVisited.getVarNode(), 
-    	    new EvaluateCallable(iVisited.getBodyNode(), iVisited.getVarNode()), self));
-        try {
-            while (true) {
-                try {
-                    threadContext.getIterStack().push(Iter.ITER_PRE);
-                    result = eval(iVisited.getIterNode());
-                    return;
-                } catch (RetryJump rExcptn) {
-                } finally {
-                    threadContext.getIterStack().pop();
-                }
-            }
-        } catch (BreakJump bExcptn) {
-            IRubyObject breakValue = bExcptn.getBreakValue();
-
-            result = breakValue == null ? runtime.getNil() : breakValue;
-        } finally {
-            threadContext.getBlockStack().pop();
-        }
+    public SingleNodeVisitor visitIterNode(IterNode iVisited) {
+    	return iterNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitLocalAsgnNode(LocalAsgnNode)
      */
-    public void visitLocalAsgnNode(LocalAsgnNode iVisited) {
-        eval(iVisited.getValueNode());
-        runtime.getCurrentScope().setValue(iVisited.getCount(), result);
+    public SingleNodeVisitor visitLocalAsgnNode(LocalAsgnNode iVisited) {
+    	return localAsgnNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitLocalVarNode(LocalVarNode)
      */
-    public void visitLocalVarNode(LocalVarNode iVisited) {
-        result = runtime.getCurrentScope().getValue(iVisited.getCount());
+    public SingleNodeVisitor visitLocalVarNode(LocalVarNode iVisited) {
+    	return localVarNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitMultipleAsgnNode(MultipleAsgnNode)
      */
-    public void visitMultipleAsgnNode(MultipleAsgnNode iVisited) {
-        result = new AssignmentVisitor(runtime, self).assign(iVisited, eval(iVisited.getValueNode()), false);
+    public SingleNodeVisitor visitMultipleAsgnNode(MultipleAsgnNode iVisited) {
+    	return multipleAsgnNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitMatch2Node(Match2Node)
      */
-    public void visitMatch2Node(Match2Node iVisited) {
-        result = ((RubyRegexp) eval(iVisited.getReceiverNode())).match(eval(iVisited.getValueNode()));
+    public SingleNodeVisitor visitMatch2Node(Match2Node iVisited) {
+    	return match2NodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitMatch3Node(Match3Node)
      */
-    public void visitMatch3Node(Match3Node iVisited) {
-        IRubyObject receiver = eval(iVisited.getReceiverNode());
-        IRubyObject value = eval(iVisited.getValueNode());
-        if (value instanceof RubyString) {
-            result = ((RubyRegexp) receiver).match(value);
-        } else {
-            result = value.callMethod("=~", receiver);
-        }
+    public SingleNodeVisitor visitMatch3Node(Match3Node iVisited) {
+    	return match3NodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitMatchNode(MatchNode)
      */
-    public void visitMatchNode(MatchNode iVisited) {
-        result = ((RubyRegexp) eval(iVisited.getRegexpNode())).match2();
+    public SingleNodeVisitor visitMatchNode(MatchNode iVisited) {
+    	return matchNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitModuleNode(ModuleNode)
      */
-    public void visitModuleNode(ModuleNode iVisited) {
-        Node classNameNode = iVisited.getCPath();
-        String name = ((INameNode) classNameNode).getName();
-        RubyModule enclosingModule = getEnclosingModule(classNameNode);
-
-        if (enclosingModule == null) {
-            throw runtime.newTypeError("no outer class/module");
-        }
-
-        RubyModule module;
-        if (enclosingModule == runtime.getObject()) {
-            module = runtime.getOrCreateModule(name);
-        } else {
-            module = enclosingModule.defineModuleUnder(name);
-        }
-        evalClassDefinitionBody(iVisited.getBodyNode(), module);
+    public SingleNodeVisitor visitModuleNode(ModuleNode iVisited) {
+    	return moduleNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitNewlineNode(NewlineNode)
      */
-    public void visitNewlineNode(NewlineNode iVisited) {
-        threadContext.setPosition(iVisited.getPosition());
-        
-        if (isTrace()) {
-           callTraceFunction("line", self);
-        }
-        
-        eval(iVisited.getNextNode());
+    public SingleNodeVisitor visitNewlineNode(NewlineNode iVisited) {
+    	return newlineNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitNextNode(NextNode)
      */
-    public void visitNextNode(NextNode iVisited) {
-        if (iVisited.getValueNode() != null) {
-            throw new NextJump(eval(iVisited.getValueNode()));
-        }
-        throw new NextJump();
+    public SingleNodeVisitor visitNextNode(NextNode iVisited) {
+    	return nextNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitNilNode(NilNode)
      */
-    public void visitNilNode(NilNode iVisited) {
+    public SingleNodeVisitor visitNilNode(NilNode iVisited) {
+    	return noopVisitor;
     }
 
     /**
      * @see NodeVisitor#visitNotNode(NotNode)
      */
-    public void visitNotNode(NotNode iVisited) {
-        result = eval(iVisited.getConditionNode()).isTrue() ? runtime.getFalse() : runtime.getTrue();
+    public SingleNodeVisitor visitNotNode(NotNode iVisited) {
+    	return notNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitNthRefNode(NthRefNode)
      */
-    public void visitNthRefNode(NthRefNode iVisited) {
-        result = RubyRegexp.nth_match(iVisited.getMatchNumber(), threadContext.getBackref());
+    public SingleNodeVisitor visitNthRefNode(NthRefNode iVisited) {
+    	return nthRefNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitOpElementAsgnNode(OpElementAsgnNode)
      */
-    public void visitOpElementAsgnNode(OpElementAsgnNode iVisited) {
-        IRubyObject receiver = eval(iVisited.getReceiverNode());
-
-        IRubyObject[] args = setupArgs(runtime, threadContext, iVisited.getArgsNode());
-
-        IRubyObject firstValue = receiver.callMethod("[]", args);
-
-        if (iVisited.getOperatorName().equals("||")) {
-            if (firstValue.isTrue()) {
-                result = firstValue;
-                return;
-            }
-			firstValue = eval(iVisited.getValueNode());
-        } else if (iVisited.getOperatorName().equals("&&")) {
-            if (!firstValue.isTrue()) {
-                result = firstValue;
-                return;
-            }
-			firstValue = eval(iVisited.getValueNode());
-        } else {
-            firstValue = firstValue.callMethod(iVisited.getOperatorName(), eval(iVisited.getValueNode()));
-        }
-
-        IRubyObject[] expandedArgs = new IRubyObject[args.length + 1];
-        System.arraycopy(args, 0, expandedArgs, 0, args.length);
-        expandedArgs[expandedArgs.length - 1] = firstValue;
-        result = receiver.callMethod("[]=", expandedArgs);
+    public SingleNodeVisitor visitOpElementAsgnNode(OpElementAsgnNode iVisited) {
+    	return opElementAsgnNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitOpAsgnNode(OpAsgnNode)
      */
-    public void visitOpAsgnNode(OpAsgnNode iVisited) {
-        IRubyObject receiver = eval(iVisited.getReceiverNode());
-        IRubyObject value = receiver.callMethod(iVisited.getVariableName());
-
-        if (iVisited.getOperatorName().equals("||")) {
-            if (value.isTrue()) {
-                result = value;
-                return;
-            }
-			value = eval(iVisited.getValueNode());
-        } else if (iVisited.getOperatorName().equals("&&")) {
-            if (!value.isTrue()) {
-                result = value;
-                return;
-            }
-			value = eval(iVisited.getValueNode());
-        } else {
-            value = value.callMethod(iVisited.getOperatorName(), eval(iVisited.getValueNode()));
-        }
-
-        receiver.callMethod(iVisited.getVariableName() + "=", value);
-
-        result = value;
+    public SingleNodeVisitor visitOpAsgnNode(OpAsgnNode iVisited) {
+    	return opAsgnNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitOpAsgnAndNode(OpAsgnAndNode)
      */
-    public void visitOpAsgnAndNode(OpAsgnAndNode iVisited) {
-        if (eval(iVisited.getFirstNode()).isTrue()) {
-            eval(iVisited.getSecondNode());
-        }
+    public SingleNodeVisitor visitOpAsgnAndNode(OpAsgnAndNode iVisited) {
+    	return andNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitOpAsgnOrNode(OpAsgnOrNode)
      */
-    public void visitOpAsgnOrNode(OpAsgnOrNode iVisited) {
-        if (!eval(iVisited.getFirstNode()).isTrue()) {
-            eval(iVisited.getSecondNode());
-        }
+    public SingleNodeVisitor visitOpAsgnOrNode(OpAsgnOrNode iVisited) {
+    	return orNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitOptNNode(OptNNode)
      */
-    public void visitOptNNode(OptNNode iVisited) {
-        while (RubyKernel.gets(runtime.getTopSelf(), IRubyObject.NULL_ARRAY).isTrue()) {
-            while (true) { // Used for the 'redo' command
-                try {
-                    eval(iVisited.getBodyNode());
-                    break;
-                } catch (RedoJump rJump) {
-                    // When a 'redo' is reached eval body of loop again.
-                } catch (NextJump nJump) {
-                    // When a 'next' is reached ceck condition of loop again.
-                    break;
-                } catch (BreakJump bJump) {
-                    // When a 'break' is reached leave loop.
-                    return;
-                }
-            }
-        }
+    public SingleNodeVisitor visitOptNNode(OptNNode iVisited) {
+    	return optNNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitOrNode(OrNode)
      */
-    public void visitOrNode(OrNode iVisited) {
-        if (!eval(iVisited.getFirstNode()).isTrue()) {
-            eval(iVisited.getSecondNode());
-        }
+    public SingleNodeVisitor visitOrNode(OrNode iVisited) {
+    	return orNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitPostExeNode(PostExeNode)
      */
-    public void visitPostExeNode(PostExeNode iVisited) {
+    public SingleNodeVisitor visitPostExeNode(PostExeNode iVisited) {
+    	return noopVisitor;
     }
 
     /**
      * @see NodeVisitor#visitRedoNode(RedoNode)
      */
-    public void visitRedoNode(RedoNode iVisited) {
-        throw new RedoJump();
+    public SingleNodeVisitor visitRedoNode(RedoNode iVisited) {
+    	return redoNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitRescueBodyNode(RescueBodyNode)
      */
-    public void visitRescueBodyNode(RescueBodyNode iVisited) {
-        eval(iVisited.getBodyNode());
+    public SingleNodeVisitor visitRescueBodyNode(RescueBodyNode iVisited) {
+    	return rescueBodyNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitRescueNode(RescueNode)
      */
-    public void visitRescueNode(RescueNode iVisited) {
-        RescuedBlock : while (true) {
-            try {
-                // Execute rescue block
-                eval(iVisited.getBodyNode());
-
-                // If no exception is thrown execute else block
-                if (iVisited.getElseNode() != null) {
-                    eval(iVisited.getElseNode());
-                }
-
-                return;
-            } catch (RaiseException raiseJump) {
-                // TODO: Rubicon TestKernel dies without this line.  A cursory glance implies we
-                // falsely set $! to nil and this sets it back to something valid.  This should 
-                // get fixed at the same time we address bug #1296484.
-                runtime.getGlobalVariables().set("$!", raiseJump.getException());
-
-                RescueBodyNode rescueNode = iVisited.getRescueNode();
-
-                while (rescueNode != null) {
-                    Node  exceptionNodes = rescueNode.getExceptionNodes();
-                    ListNode exceptionNodesList;
-                    
-                    if (exceptionNodes instanceof SplatNode) {                    
-                        exceptionNodesList = (ListNode) eval(exceptionNodes);
-                    } else {
-                        exceptionNodesList = (ListNode) exceptionNodes;
-                    }
-                    
-                    if (isRescueHandled(raiseJump.getException(), exceptionNodesList)) {
-                        try {
-                            eval(rescueNode);
-                            return;
-                        } catch (RetryJump retryJump) {
-                            runtime.getGlobalVariables().set("$!", runtime.getNil());
-                            continue RescuedBlock;
-                        }
-                    }
-                    
-                    rescueNode = rescueNode.getOptRescueNode();
-                }
-
-                throw raiseJump;
-            } finally {
-                runtime.getGlobalVariables().set("$!", runtime.getNil());
-            }
-        }
+    public SingleNodeVisitor visitRescueNode(RescueNode iVisited) {
+    	return rescueNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitRetryNode(RetryNode)
      */
-    public void visitRetryNode(RetryNode iVisited) {
-        throw new RetryJump();
+    public SingleNodeVisitor visitRetryNode(RetryNode iVisited) {
+    	return retryNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitReturnNode(ReturnNode)
      */
-    public void visitReturnNode(ReturnNode iVisited) {
-        throw new ReturnJump(eval(iVisited.getValueNode()), iVisited.getTarget());
+    public SingleNodeVisitor visitReturnNode(ReturnNode iVisited) {
+    	return returnNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitSClassNode(SClassNode)
      */
-    public void visitSClassNode(SClassNode iVisited) {
-        IRubyObject receiver = eval(iVisited.getReceiverNode());
-
-        RubyClass singletonClass;
-
-        if (receiver.isNil()) {
-            singletonClass = runtime.getClass("NilClass");
-        } else if (receiver == runtime.getTrue()) {
-            singletonClass = runtime.getClass("True");
-        } else if (receiver == runtime.getFalse()) {
-            singletonClass = runtime.getClass("False");
-        } else {
-            if (runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
-                throw runtime.newSecurityError("Insecure: can't extend object.");
-            }
-
-            singletonClass = receiver.getSingletonClass();
-        }
-
-        if (threadContext.getWrapper() != null) {
-            singletonClass.extendObject(threadContext.getWrapper());
-            singletonClass.includeModule(threadContext.getWrapper());
-        }
-
-        evalClassDefinitionBody(iVisited.getBodyNode(), singletonClass);
+    public SingleNodeVisitor visitSClassNode(SClassNode iVisited) {
+    	return sClassNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitScopeNode(ScopeNode)
      */
-    public void visitScopeNode(ScopeNode iVisited) {
-        threadContext.getFrameStack().pushCopy();
-        threadContext.getScopeStack().push(new Scope(runtime, iVisited.getLocalNames()));
-        try {
-            eval(iVisited.getBodyNode());
-        } finally {
-            threadContext.getScopeStack().pop();
-            threadContext.getFrameStack().pop();
-        }
+    public SingleNodeVisitor visitScopeNode(ScopeNode iVisited) {
+    	return scopeNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitSelfNode(SelfNode)
      */
-    public void visitSelfNode(SelfNode iVisited) {
-        result = self;
+    public SingleNodeVisitor visitSelfNode(SelfNode iVisited) {
+    	return selfNodeVisitor;
     }
 
-    public void visitSplatNode(SplatNode iVisited) {
-        result = splatValue(eval(iVisited.getValue()));
+    public SingleNodeVisitor visitSplatNode(SplatNode iVisited) {
+    	return splatNodeVisitor;
     }
     
     /**
      * @see NodeVisitor#visitStrNode(StrNode)
      */
-    public void visitStrNode(StrNode iVisited) {
-        result = runtime.newString(iVisited.getValue());
+    public SingleNodeVisitor visitStrNode(StrNode iVisited) {
+    	return strNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitSValueNode(SValueNode)
      */
-    public void visitSValueNode(SValueNode iVisited) {
-        result = aValueSplat(eval(iVisited.getValue()));
+    public SingleNodeVisitor visitSValueNode(SValueNode iVisited) {
+    	return sValueNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitSuperNode(SuperNode)
      */
-    public void visitSuperNode(SuperNode iVisited) {
-        if (threadContext.getCurrentFrame().getLastClass() == null) {
-            throw runtime.newNameError("Superclass method '" + threadContext.getCurrentFrame().getLastFunc() + "' disabled.");
-        }
-
-        Block tmpBlock = threadContext.beginCallArgs();
-
-        IRubyObject[] args = null;
-        try {
-            args = setupArgs(runtime, threadContext, iVisited.getArgsNode());
-        } finally {
-        	threadContext.endCallArgs(tmpBlock);
-        }
-        result = threadContext.callSuper(args);
+    public SingleNodeVisitor visitSuperNode(SuperNode iVisited) {
+    	return superNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitToAryNode(ToAryNode)
      */
-    public void visitToAryNode(ToAryNode iVisited) {
-        result = aryToAry(eval(iVisited.getValue()));
+    public SingleNodeVisitor visitToAryNode(ToAryNode iVisited) {
+    	return toAryNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitTrueNode(TrueNode)
      */
-    public void visitTrueNode(TrueNode iVisited) {
-        result = runtime.getTrue();
+    public SingleNodeVisitor visitTrueNode(TrueNode iVisited) {
+    	return trueNodeVisitor;
     }
-
+    
     /**
      * @see NodeVisitor#visitUndefNode(UndefNode)
      */
-    public void visitUndefNode(UndefNode iVisited) {
-        if (threadContext.getRubyClass() == null) {
-            throw runtime.newTypeError("No class to undef method '" + iVisited.getName() + "'.");
-        }
-        threadContext.getRubyClass().undef(iVisited.getName());
+    public SingleNodeVisitor visitUndefNode(UndefNode iVisited) {
+    	return undefNodeVisitor;    	
     }
 
     /**
      * @see NodeVisitor#visitUntilNode(UntilNode)
      */
-    public void visitUntilNode(UntilNode iVisited) {
-        while (!eval(iVisited.getConditionNode()).isTrue()) {
-            while (true) { // Used for the 'redo' command
-                try {
-                    eval(iVisited.getBodyNode());
-                    break;
-                } catch (RedoJump rJump) {
-                    // When a 'redo' is reached eval body of loop again.
-                    continue;
-                } catch (NextJump nJump) {
-                    // When a 'next' is reached ceck condition of loop again.
-                    break;
-                } catch (BreakJump bJump) {
-                    // When a 'break' is reached leave loop.
-                    return;
-                }
-            }
-        }
+    public SingleNodeVisitor visitUntilNode(UntilNode iVisited) {
+    	return untilNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitVAliasNode(VAliasNode)
      */
-    public void visitVAliasNode(VAliasNode iVisited) {
-        runtime.getGlobalVariables().alias(iVisited.getNewName(), iVisited.getOldName());
+    public SingleNodeVisitor visitVAliasNode(VAliasNode iVisited) {
+    	return vAliasNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitVCallNode(VCallNode)
      */
-    public void visitVCallNode(VCallNode iVisited) {
-        result = self.getMetaClass().call(self, iVisited.getMethodName(), IRubyObject.NULL_ARRAY, CallType.VARIABLE);
+    public SingleNodeVisitor visitVCallNode(VCallNode iVisited) {
+    	return vCallNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitWhenNode(WhenNode)
      */
-    public void visitWhenNode(WhenNode iVisited) {
+    public SingleNodeVisitor visitWhenNode(WhenNode iVisited) {
         assert false;
+        return null;
     }
 
     /**
      * @see NodeVisitor#visitWhileNode(WhileNode)
      */
-    public void visitWhileNode(WhileNode iVisited) {
-        // while do...Initial condition not met do not enter block
-        if (iVisited.evaluateAtStart() && 
-            eval(iVisited.getConditionNode()).isTrue() == false) {
-            return;
-        }
-        
-        do {
-            while (true) { // Used for the 'redo' command
-                try {
-                    eval(iVisited.getBodyNode());
-                    break;
-                } catch (RedoJump rJump) {
-                    // When a 'redo' is reached eval body of loop again.
-                } catch (NextJump nJump) {
-                    // When a 'next' is reached ceck condition of loop again.
-                    break;
-                } catch (BreakJump bJump) {
-                    // When a 'break' is reached leave loop.
-                    return;
-                }
-            }
-        } while (eval(iVisited.getConditionNode()).isTrue());
+    public SingleNodeVisitor visitWhileNode(WhileNode iVisited) {
+    	return whileNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitXStrNode(XStrNode)
      */
-    public void visitXStrNode(XStrNode iVisited) {
-        result = self.callMethod("`", runtime.newString(iVisited.getValue()));
+    public SingleNodeVisitor visitXStrNode(XStrNode iVisited) {
+    	return xStrNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitYieldNode(YieldNode)
      */
-    public void visitYieldNode(YieldNode iVisited) {
-        eval(iVisited.getArgsNode());
-
-	// Special Hack...We cannot tell between no args and a nil one.
-	// Change it back to null for now until a better solution is 
-	// found
-	// TODO: Find better way of differing...
-	if (iVisited.getArgsNode() == null) {
-	    result = null;
-	}
-        
-        result = threadContext.yield(result, null, null, false, iVisited.getCheckState());
+    public SingleNodeVisitor visitYieldNode(YieldNode iVisited) {
+    	return yieldNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitZArrayNode(ZArrayNode)
      */
-    public void visitZArrayNode(ZArrayNode iVisited) {
-        result = runtime.newArray();
+    public SingleNodeVisitor visitZArrayNode(ZArrayNode iVisited) {
+    	return zArrayNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitZSuperNode(ZSuperNode)
      */
-    public void visitZSuperNode(ZSuperNode iVisited) {
-        result = threadContext.callSuper();
+    public SingleNodeVisitor visitZSuperNode(ZSuperNode iVisited) {
+    	return zSuperNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitBignumNode(BignumNode)
      */
-    public void visitBignumNode(BignumNode iVisited) {
-        result = RubyBignum.newBignum(runtime, iVisited.getValue());
+    public SingleNodeVisitor visitBignumNode(BignumNode iVisited) {
+    	return bignumNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitFixnumNode(FixnumNode)
      */
-    public void visitFixnumNode(FixnumNode iVisited) {
-        result = runtime.newFixnum(iVisited.getValue());
+    public SingleNodeVisitor visitFixnumNode(FixnumNode iVisited) {
+    	return fixnumNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitFloatNode(FloatNode)
      */
-    public void visitFloatNode(FloatNode iVisited) {
-        result = RubyFloat.newFloat(runtime, iVisited.getValue());
+    public SingleNodeVisitor visitFloatNode(FloatNode iVisited) {
+    	return floatNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitRegexpNode(RegexpNode)
      */
-    public void visitRegexpNode(RegexpNode iVisited) {
-        result = RubyRegexp.newRegexp(runtime.newString(iVisited.getValue()), iVisited.getOptions(), null);
+    public SingleNodeVisitor visitRegexpNode(RegexpNode iVisited) {
+    	return regexpNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitSymbolNode(SymbolNode)
      */
-    public void visitSymbolNode(SymbolNode iVisited) {
-        result = runtime.newSymbol(iVisited.getName());
+    public SingleNodeVisitor visitSymbolNode(SymbolNode iVisited) {
+    	return symbolNodeVisitor;
     }
 
     /** Evaluates the body in a class or module definition statement.
      *
      */
-    private void evalClassDefinitionBody(ScopeNode iVisited, RubyModule type) {
-		RubyModule oldParent = threadContext.setRubyClass(type); 
-        threadContext.getFrameStack().pushCopy();
-        threadContext.getScopeStack().push(new Scope(runtime, iVisited.getLocalNames()));
-        threadContext.pushDynamicVars();
+    private static void evalClassDefinitionBody(EvaluationState state, ScopeNode iVisited, RubyModule type) {
+		RubyModule oldParent = state.getThreadContext().setRubyClass(type); 
+        state.getThreadContext().getFrameStack().pushCopy();
+        state.getThreadContext().getScopeStack().push(new Scope(state.getRuntime(), iVisited.getLocalNames()));
+        state.getThreadContext().pushDynamicVars();
 
-        IRubyObject oldSelf = self;
+        IRubyObject oldSelf = state.getSelf();
 
         try {
-            if (isTrace()) {
-                callTraceFunction("class", type);
+            if (isTrace(state)) {
+                callTraceFunction(state, "class", type);
             }
 
-            self = type;
-            eval(iVisited.getBodyNode());
+            state.setSelf(type);
+            state.getEvaluator().internalEval(state, iVisited.getBodyNode());
         } finally {
-            self = oldSelf;
+            state.setSelf(oldSelf);
 
-            threadContext.popDynamicVars();
-            threadContext.getScopeStack().pop();
-            threadContext.setRubyClass(oldParent);
-            threadContext.getFrameStack().pop();
+            state.getThreadContext().popDynamicVars();
+            state.getThreadContext().getScopeStack().pop();
+            state.getThreadContext().setRubyClass(oldParent);
+            state.getThreadContext().getFrameStack().pop();
 
-            if (isTrace()) {
-                callTraceFunction("end", null);
+            if (isTrace(state)) {
+                callTraceFunction(state, "end", null);
             }
         }
     }
 
-    private boolean isRescueHandled(RubyException currentException, ListNode exceptionNodes) {
-        if (exceptionNodes == null) {
-            return currentException.isKindOf(runtime.getClass("StandardError"));
-        }
-
-        Block tmpBlock = threadContext.beginCallArgs();
-
-        IRubyObject[] args = null;
-        try {
-            args = setupArgs(runtime, threadContext, exceptionNodes);
-        } finally {
-        	threadContext.endCallArgs(tmpBlock);
-        }
-
-        for (int i = 0; i < args.length; i++) {
-            if (! args[i].isKindOf(runtime.getClass("Module"))) {
-                throw runtime.newTypeError("class or module required for rescue clause");
-            }
-            if (args[i].callMethod("===", currentException).isTrue())
-                return true;
-        }
-        return false;
-    }
-    
-    private IRubyObject aryToAry(IRubyObject value) {
+    private static IRubyObject aryToAry(EvaluationState state, IRubyObject value) {
         if (value instanceof RubyArray) {
             return value;
         }
@@ -1609,21 +2654,21 @@ public final class EvaluateVisitor implements NodeVisitor {
             return value.convertToType("Array", "to_ary", false);
         }
         
-        return runtime.newArray(value);
+        return state.getRuntime().newArray(value);
     }
     
-    private IRubyObject splatValue(IRubyObject value) {
+    private static IRubyObject splatValue(EvaluationState state, IRubyObject value) {
         if (value.isNil()) {
-            return runtime.newArray(value);
+            return state.getRuntime().newArray(value);
         }
         
-        return arrayValue(value);
+        return arrayValue(state, value);
     }
 
-    private IRubyObject aValueSplat(IRubyObject value) {
+    private static IRubyObject aValueSplat(EvaluationState state, IRubyObject value) {
         if (!(value instanceof RubyArray) ||
             ((RubyArray) value).length().getLongValue() == 0) {
-            return runtime.getNil();
+            return state.getRuntime().getNil();
         }
         
         RubyArray array = (RubyArray) value;
@@ -1632,19 +2677,19 @@ public final class EvaluateVisitor implements NodeVisitor {
     }
 
     /* HACK: .... */
-    private RubyArray arrayValue(IRubyObject value) {
+    private static RubyArray arrayValue(EvaluationState state, IRubyObject value) {
         IRubyObject newValue = value.convertToType("Array", "to_ary", false);
 
         if (newValue.isNil()) {
             // XXXEnebo: We should call to_a except if it is kernel def....
             // but we will forego for now.
-            newValue = runtime.newArray(value);
+            newValue = state.getRuntime().newArray(value);
         }
         
         return (RubyArray) newValue;
     }
     
-    private IRubyObject[] setupArgs(IRuby runtime, ThreadContext context, Node node) {
+    private static IRubyObject[] setupArgs(EvaluationState state, IRuby runtime, ThreadContext context, Node node) {
         if (node == null) {
             return IRubyObject.NULL_ARRAY;
         }
@@ -1656,9 +2701,9 @@ public final class EvaluateVisitor implements NodeVisitor {
             for (Iterator iter=((ArrayNode)node).iterator(); iter.hasNext();){
                 final Node next = (Node) iter.next();
                 if (next instanceof SplatNode) {
-                    list.addAll(((RubyArray) eval(next)).getList());
+                    list.addAll(((RubyArray) state.getEvaluator().internalEval(state, next)).getList());
                 } else {
-                    list.add(eval(next));
+                    list.add(state.getEvaluator().internalEval(state, next));
                 }
             }
 
@@ -1667,22 +2712,22 @@ public final class EvaluateVisitor implements NodeVisitor {
             return (IRubyObject[]) list.toArray(new IRubyObject[list.size()]);
         }
 
-        return ArgsUtil.arrayify(eval(node));
+        return ArgsUtil.arrayify(state.getEvaluator().internalEval(state, node));
     }
 
-    private RubyModule getEnclosingModule(Node node) {
+    private static RubyModule getEnclosingModule(EvaluationState state, Node node) {
         RubyModule enclosingModule = null;
         
         if (node instanceof Colon2Node) {
-        	eval(((Colon2Node) node).getLeftNode());
+        	state.getEvaluator().internalEval(state, ((Colon2Node) node).getLeftNode());
         	
-        	if (result != null && !result.isNil()) {
-        		enclosingModule = (RubyModule) result;
+        	if (state.getResult() != null && !state.getResult().isNil()) {
+        		enclosingModule = (RubyModule) state.getResult();
         	}
         } 
         
         if (enclosingModule == null) {
-        	enclosingModule = threadContext.getRubyClass();
+        	enclosingModule = state.getThreadContext().getRubyClass();
         }
 
         return enclosingModule;

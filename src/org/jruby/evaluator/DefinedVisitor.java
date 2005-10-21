@@ -74,9 +74,10 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/** This visitor is used to evaluate a defined? statement.
- *
- * @author  jpetersen
+/**
+ * This visitor is used to evaluate a defined? statement.
+ * 
+ * @author jpetersen
  * @version $Revision$
  */
 public class DefinedVisitor extends AbstractVisitor {
@@ -119,291 +120,337 @@ public class DefinedVisitor extends AbstractVisitor {
     /**
      * @see AbstractVisitor#visitNode(Node)
      */
-    protected void visitNode(Node iVisited) {
+    protected SingleNodeVisitor visitNode(Node iVisited) {
         try {
-            EvaluateVisitor.createVisitor(self).eval(iVisited);
+			EvaluateVisitor.createVisitor().eval(self.getRuntime(), self,
+					iVisited);
             definition = "expression";
         } catch (JumpException jumpExcptn) {
         }
+		return null;
     }
 
 	/**
-     * @see AbstractVisitor#visitSuperNode(SuperNode)
-     */
-    public void visitSuperNode(SuperNode iVisited) {
-        String lastMethod = threadContext.getCurrentFrame().getLastFunc();
-        RubyModule lastClass = threadContext.getCurrentFrame().getLastClass();
-        if (lastMethod != null && lastClass != null && lastClass.getSuperClass().isMethodBound(lastMethod, false)) {
-            definition = getArgumentDefinition(iVisited.getArgsNode(), "super");
-        }
-    }
+	 * @see AbstractVisitor#visitSuperNode(SuperNode)
+	 */
+	public SingleNodeVisitor visitSuperNode(SuperNode iVisited) {
+		String lastMethod = threadContext.getCurrentFrame().getLastFunc();
+		RubyModule lastClass = threadContext.getCurrentFrame().getLastClass();
+		if (lastMethod != null && lastClass != null
+				&& lastClass.getSuperClass().isMethodBound(lastMethod, false)) {
+			definition = getArgumentDefinition(iVisited.getArgsNode(), "super");
+		}
+		return null;
+	}
 
-    /**
-     * @see AbstractVisitor#visitZSuperNode(ZSuperNode)
-     */
-    public void visitZSuperNode(ZSuperNode iVisited) {
-        String lastMethod = threadContext.getCurrentFrame().getLastFunc();
-        RubyModule lastClass = threadContext.getCurrentFrame().getLastClass();
-        if (lastMethod != null && lastClass != null && lastClass.getSuperClass().isMethodBound(lastMethod, false)) {
-            definition = "super";
-        }
-    }
-    /**
-     * @see AbstractVisitor#visitCallNode(CallNode)
-     */
-    public void visitCallNode(CallNode iVisited) {
-        if (getDefinition(iVisited.getReceiverNode()) != null) {
-            try {
-                IRubyObject receiver = EvaluateVisitor.createVisitor(self).eval(iVisited.getReceiverNode());
-                RubyClass metaClass = receiver.getMetaClass();
-                ICallable method = metaClass.searchMethod(iVisited.getName());
-                Visibility visibility = method.getVisibility();
+	/**
+	 * @see AbstractVisitor#visitZSuperNode(ZSuperNode)
+	 */
+	public SingleNodeVisitor visitZSuperNode(ZSuperNode iVisited) {
+		String lastMethod = threadContext.getCurrentFrame().getLastFunc();
+		RubyModule lastClass = threadContext.getCurrentFrame().getLastClass();
+		if (lastMethod != null && lastClass != null
+				&& lastClass.getSuperClass().isMethodBound(lastMethod, false)) {
+			definition = "super";
+		}
+		return null;
+	}
 
-                if (!visibility.isPrivate() && (!visibility.isProtected() || self.isKindOf(metaClass.getRealClass()))) {
-                    if (metaClass.isMethodBound(iVisited.getName(), false)) {
-                        definition = getArgumentDefinition(iVisited.getArgsNode(), "method");
-                        return;
-                    }
-                }
-            } catch (JumpException excptn) {
-            }
-        }
-        definition = null;
-    }
+	/**
+	 * @see AbstractVisitor#visitCallNode(CallNode)
+	 */
+	public SingleNodeVisitor visitCallNode(CallNode iVisited) {
+		if (getDefinition(iVisited.getReceiverNode()) != null) {
+			try {
+				IRubyObject receiver = EvaluateVisitor.createVisitor().eval(
+						self.getRuntime(), self, iVisited.getReceiverNode());
+				RubyClass metaClass = receiver.getMetaClass();
+				ICallable method = metaClass.searchMethod(iVisited.getName());
+				Visibility visibility = method.getVisibility();
 
-    /**
-     * @see AbstractVisitor#visitFCallNode(FCallNode)
-     */
-    public void visitFCallNode(FCallNode iVisited) {
-        if (self.getMetaClass().isMethodBound(iVisited.getName(), false)) {
-            definition = getArgumentDefinition(iVisited.getArgsNode(), "method");
-        }
-    }
+				if (!visibility.isPrivate()
+						&& (!visibility.isProtected() || self
+								.isKindOf(metaClass.getRealClass()))) {
+					if (metaClass.isMethodBound(iVisited.getName(), false)) {
+						definition = getArgumentDefinition(iVisited
+								.getArgsNode(), "method");
+						return null;
+					}
+				}
+			} catch (JumpException excptn) {
+			}
+		}
+		definition = null;
+		return null;
+	}
 
-    /**
-     * @see AbstractVisitor#visitVCallNode(VCallNode)
-     */
-    public void visitVCallNode(VCallNode iVisited) {
-        if (self.getMetaClass().isMethodBound(iVisited.getMethodName(), false)) {
-            definition = "method";
-        }
-    }
+	/**
+	 * @see AbstractVisitor#visitFCallNode(FCallNode)
+	 */
+	public SingleNodeVisitor visitFCallNode(FCallNode iVisited) {
+		if (self.getMetaClass().isMethodBound(iVisited.getName(), false)) {
+			definition = getArgumentDefinition(iVisited.getArgsNode(), "method");
+		}
+		return null;
+	}
 
-    /**
-     * @see AbstractVisitor#visitMatch2Node(Match2Node)
-     */
-    public void visitMatch2Node(Match2Node iVisited) {
-        definition = "method";
-    }
+	/**
+	 * @see AbstractVisitor#visitVCallNode(VCallNode)
+	 */
+	public SingleNodeVisitor visitVCallNode(VCallNode iVisited) {
+		if (self.getMetaClass().isMethodBound(iVisited.getMethodName(), false)) {
+			definition = "method";
+		}
+		return null;
+	}
 
-    /**
-     * @see AbstractVisitor#visitMatch3Node(Match3Node)
-     */
-    public void visitMatch3Node(Match3Node iVisited) {
-        definition = "method";
-    }
+	/**
+	 * @see AbstractVisitor#visitMatch2Node(Match2Node)
+	 */
+	public SingleNodeVisitor visitMatch2Node(Match2Node iVisited) {
+		definition = "method";
+		return null;
+	}
 
-    /**
-     * @see AbstractVisitor#visitFalseNode(FalseNode)
-     */
-    public void visitFalseNode(FalseNode iVisited) {
-        definition = "false";
-    }
+	/**
+	 * @see AbstractVisitor#visitMatch3Node(Match3Node)
+	 */
+	public SingleNodeVisitor visitMatch3Node(Match3Node iVisited) {
+		definition = "method";
+		return null;
+	}
 
-    /**
-     * @see AbstractVisitor#visitNilNode(NilNode)
-     */
-    public void visitNilNode(NilNode iVisited) {
-        definition = "nil";
-    }
+	/**
+	 * @see AbstractVisitor#visitFalseNode(FalseNode)
+	 */
+	public SingleNodeVisitor visitFalseNode(FalseNode iVisited) {
+		definition = "false";
+		return null;
+	}
 
-    /**
-     * @see AbstractVisitor#visitNullNode()
-     */
-    public void visitNullNode() {
-        definition = "expression";
-    }
+	/**
+	 * @see AbstractVisitor#visitNilNode(NilNode)
+	 */
+	public SingleNodeVisitor visitNilNode(NilNode iVisited) {
+		definition = "nil";
+		return null;
+	}
 
-    /**
-     * @see AbstractVisitor#visitSelfNode(SelfNode)
-     */
-    public void visitSelfNode(SelfNode iVisited) {
-        definition = "self";
-    }
+	/**
+	 * @see AbstractVisitor#visitNullNode()
+	 */
+	public SingleNodeVisitor visitNullNode() {
+		definition = "expression";
+		return null;
+	}
 
-    /**
-     * @see AbstractVisitor#visitTrueNode(TrueNode)
-     */
-    public void visitTrueNode(TrueNode iVisited) {
-        definition = "true";
-    }
+	/**
+	 * @see AbstractVisitor#visitSelfNode(SelfNode)
+	 */
+	public SingleNodeVisitor visitSelfNode(SelfNode iVisited) {
+		definition = "self";
+		return null;
+	}
 
-    /**
-     * @see AbstractVisitor#visitYieldNode(YieldNode)
-     */
-    public void visitYieldNode(YieldNode iVisited) {
-        if (threadContext.isBlockGiven()) {
-            definition = "yield";
-        }
-    }
+	/**
+	 * @see AbstractVisitor#visitTrueNode(TrueNode)
+	 */
+	public SingleNodeVisitor visitTrueNode(TrueNode iVisited) {
+		definition = "true";
+		return null;
+	}
 
-    /**
-     * @see AbstractVisitor#visitClassVarAsgnNode(ClassVarAsgnNode)
-     */
-    public void visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
-        definition = "assignment";
-    }
+	/**
+	 * @see AbstractVisitor#visitYieldNode(YieldNode)
+	 */
+	public SingleNodeVisitor visitYieldNode(YieldNode iVisited) {
+		if (threadContext.isBlockGiven()) {
+			definition = "yield";
+		}
+		return null;
+	}
 
-    /**
-     * @see AbstractVisitor#visitClassVarDeclNode(ClassVarDeclNode)
-     */
-    public void visitClassVarDeclNode(ClassVarDeclNode iVisited) {
-        definition = "assignment";
-    }
+	/**
+	 * @see AbstractVisitor#visitClassVarAsgnNode(ClassVarAsgnNode)
+	 */
+	public SingleNodeVisitor visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
+		definition = "assignment";
+		return null;
+	}
 
-    /**
-     * @see AbstractVisitor#visitConstDeclNode(ConstDeclNode)
-     */
-    public void visitConstDeclNode(ConstDeclNode iVisited) {
-        definition = "assignment";
-    }
+	/**
+	 * @see AbstractVisitor#visitClassVarDeclNode(ClassVarDeclNode)
+	 */
+	public SingleNodeVisitor visitClassVarDeclNode(ClassVarDeclNode iVisited) {
+		definition = "assignment";
+		return null;
+	}
 
-    /**
-     * @see AbstractVisitor#visitDAsgnNode(DAsgnNode)
-     */
-    public void visitDAsgnNode(DAsgnNode iVisited) {
-        definition = "assignment";
-    }
+	/**
+	 * @see AbstractVisitor#visitConstDeclNode(ConstDeclNode)
+	 */
+	public SingleNodeVisitor visitConstDeclNode(ConstDeclNode iVisited) {
+		definition = "assignment";
+		return null;
+	}
 
-    /**
-     * @see AbstractVisitor#visitGlobalAsgnNode(GlobalAsgnNode)
-     */
-    public void visitGlobalAsgnNode(GlobalAsgnNode iVisited) {
-        definition = "assignment";
-    }
+	/**
+	 * @see AbstractVisitor#visitDAsgnNode(DAsgnNode)
+	 */
+	public SingleNodeVisitor visitDAsgnNode(DAsgnNode iVisited) {
+		definition = "assignment";
+		return null;
+	}
 
-    /**
-     * @see AbstractVisitor#visitLocalAsgnNode(LocalAsgnNode)
-     */
-    public void visitLocalAsgnNode(LocalAsgnNode iVisited) {
-        definition = "assignment";
-    }
+	/**
+	 * @see AbstractVisitor#visitGlobalAsgnNode(GlobalAsgnNode)
+	 */
+	public SingleNodeVisitor visitGlobalAsgnNode(GlobalAsgnNode iVisited) {
+		definition = "assignment";
+		return null;
+	}
 
-    /**
-     * @see AbstractVisitor#visitMultipleAsgnNode(MultipleAsgnNode)
-     */
-    public void visitMultipleAsgnNode(MultipleAsgnNode iVisited) {
-        definition = "assignment";
-    }
+	/**
+	 * @see AbstractVisitor#visitLocalAsgnNode(LocalAsgnNode)
+	 */
+	public SingleNodeVisitor visitLocalAsgnNode(LocalAsgnNode iVisited) {
+		definition = "assignment";
+		return null;
+	}
 
-    /**
-     * @see AbstractVisitor#visitOpAsgnNode(OpAsgnNode)
-     */
-    public void visitOpAsgnNode(OpAsgnNode iVisited) {
-        definition = "assignment";
-    }
+	/**
+	 * @see AbstractVisitor#visitMultipleAsgnNode(MultipleAsgnNode)
+	 */
+	public SingleNodeVisitor visitMultipleAsgnNode(MultipleAsgnNode iVisited) {
+		definition = "assignment";
+		return null;
+	}
 
-    /**
-     * @see AbstractVisitor#visitOpElementAsgnNode(OpElementAsgnNode)
-     */
-    public void visitOpElementAsgnNode(OpElementAsgnNode iVisited) {
-        definition = "assignment";
-    }
+	/**
+	 * @see AbstractVisitor#visitOpAsgnNode(OpAsgnNode)
+	 */
+	public SingleNodeVisitor visitOpAsgnNode(OpAsgnNode iVisited) {
+		definition = "assignment";
+		return null;
+	}
 
-    /**
-     * @see AbstractVisitor#visitDVarNode(DVarNode)
-     */
-    public void visitDVarNode(DVarNode iVisited) {
-        definition = "local-variable(in-block)";
-    }
+	/**
+	 * @see AbstractVisitor#visitOpElementAsgnNode(OpElementAsgnNode)
+	 */
+	public SingleNodeVisitor visitOpElementAsgnNode(OpElementAsgnNode iVisited) {
+		definition = "assignment";
+		return null;
+	}
 
-    /**
-     * @see AbstractVisitor#visitLocalVarNode(LocalVarNode)
-     */
-    public void visitLocalVarNode(LocalVarNode iVisited) {
-        definition = "local-variable";
-    }
+	/**
+	 * @see AbstractVisitor#visitDVarNode(DVarNode)
+	 */
+	public SingleNodeVisitor visitDVarNode(DVarNode iVisited) {
+		definition = "local-variable(in-block)";
+		return null;
+	}
 
-    /**
-     * @see AbstractVisitor#visitClassVarNode(ClassVarNode)
-     */
-    public void visitClassVarNode(ClassVarNode iVisited) {
-        if (threadContext.getRubyClass() == null && self.getMetaClass().isClassVarDefined(iVisited.getName())) {
-            definition = "class_variable";
-        } else if (!threadContext.getRubyClass().isSingleton() && threadContext.getRubyClass().isClassVarDefined(iVisited.getName())) {
-            definition = "class_variable";
-        } else {
-        	RubyModule module = (RubyModule) threadContext.getRubyClass().getInstanceVariable("__attached__");
-        	
-        	if (module != null && module.isClassVarDefined(iVisited.getName())) {
-        		definition = "class_variable";
-            }
-        }
-    }
+	/**
+	 * @see AbstractVisitor#visitLocalVarNode(LocalVarNode)
+	 */
+	public SingleNodeVisitor visitLocalVarNode(LocalVarNode iVisited) {
+		definition = "local-variable";
+		return null;
+	}
 
-    /**
-     * @see AbstractVisitor#visitConstNode(ConstNode)
-     */
-    public void visitConstNode(ConstNode iVisited) {
-        if (runtime.getClass("Module").getConstant(iVisited.getName(), false) != null) {
-            definition = "constant";
-        }
-    }
+	/**
+	 * @see AbstractVisitor#visitClassVarNode(ClassVarNode)
+	 */
+	public SingleNodeVisitor visitClassVarNode(ClassVarNode iVisited) {
+		if (threadContext.getRubyClass() == null
+				&& self.getMetaClass().isClassVarDefined(iVisited.getName())) {
+			definition = "class_variable";
+		} else if (!threadContext.getRubyClass().isSingleton()
+				&& threadContext.getRubyClass().isClassVarDefined(
+						iVisited.getName())) {
+			definition = "class_variable";
+		} else {
+			RubyModule module = (RubyModule) threadContext.getRubyClass()
+					.getInstanceVariable("__attached__");
 
-    /**
-     * @see AbstractVisitor#visitGlobalVarNode(GlobalVarNode)
-     */
-    public void visitGlobalVarNode(GlobalVarNode iVisited) {
-        if (runtime.getGlobalVariables().isDefined(iVisited.getName())) {
-            definition = "global-variable";
-        }
-    }
+			if (module != null && module.isClassVarDefined(iVisited.getName())) {
+				definition = "class_variable";
+			}
+		}
+		return null;
+	}
 
-    /**
-     * @see AbstractVisitor#visitInstVarNode(InstVarNode)
-     */
-    public void visitInstVarNode(InstVarNode iVisited) {
-        if (self.getInstanceVariable(iVisited.getName()) != null) {
-            definition = "instance-variable";
-        }
-    }
+	/**
+	 * @see AbstractVisitor#visitConstNode(ConstNode)
+	 */
+	public SingleNodeVisitor visitConstNode(ConstNode iVisited) {
+		if (runtime.getClass("Module").getConstant(iVisited.getName(), false) != null) {
+			definition = "constant";
+		}
+		return null;
+	}
 
-    /**
-     * @see AbstractVisitor#visitColon2Node(Colon2Node)
-     */
-    public void visitColon2Node(Colon2Node iVisited) {
-        try {
-            IRubyObject left = EvaluateVisitor.createVisitor(self).eval(iVisited.getLeftNode());
-            if (left instanceof RubyModule) {
-                if (((RubyModule)left).getConstantAt(iVisited.getName()) != null) {
-                    definition = "constant";
-                }
-            } else if (left.getMetaClass().isMethodBound(iVisited.getName(), true)) {
-                definition = "method";
-            }
-        } catch (JumpException excptn) {
-        }
-    }
+	/**
+	 * @see AbstractVisitor#visitGlobalVarNode(GlobalVarNode)
+	 */
+	public SingleNodeVisitor visitGlobalVarNode(GlobalVarNode iVisited) {
+		if (runtime.getGlobalVariables().isDefined(iVisited.getName())) {
+			definition = "global-variable";
+		}
+		return null;
+	}
 
-    /**
-     * @see AbstractVisitor#visitBackRefNode(BackRefNode)
-     *
-     * @fixme Add test if back ref exists.
-     */
-    public void visitBackRefNode(BackRefNode iVisited) {
-        // if () {
-        definition = "$" + iVisited.getType();
-        // }
-    }
+	/**
+	 * @see AbstractVisitor#visitInstVarNode(InstVarNode)
+	 */
+	public SingleNodeVisitor visitInstVarNode(InstVarNode iVisited) {
+		if (self.getInstanceVariable(iVisited.getName()) != null) {
+			definition = "instance-variable";
+		}
+		return null;
+	}
 
-    /**
-     * @see AbstractVisitor#visitNthRefNode(NthRefNode)
-     *
-     * @fixme Add test if nth ref exists.
-     */
-    public void visitNthRefNode(NthRefNode iVisited) {
-        // if () {
-        definition = "$" + iVisited.getMatchNumber();
-        // }
-    }
+	/**
+	 * @see AbstractVisitor#visitColon2Node(Colon2Node)
+	 */
+	public SingleNodeVisitor visitColon2Node(Colon2Node iVisited) {
+		try {
+			IRubyObject left = EvaluateVisitor.createVisitor().eval(
+					self.getRuntime(), self, iVisited.getLeftNode());
+			if (left instanceof RubyModule) {
+				if (((RubyModule) left).getConstantAt(iVisited.getName()) != null) {
+					definition = "constant";
+				}
+			} else if (left.getMetaClass().isMethodBound(iVisited.getName(),
+					true)) {
+				definition = "method";
+			}
+		} catch (JumpException excptn) {
+		}
+		return null;
+	}
+
+	/**
+	 * @see AbstractVisitor#visitBackRefNode(BackRefNode)
+	 * 
+	 * @fixme Add test if back ref exists.
+	 */
+	public SingleNodeVisitor visitBackRefNode(BackRefNode iVisited) {
+		// if () {
+		definition = "$" + iVisited.getType();
+		// }
+		return null;
+	}
+
+	/**
+	 * @see AbstractVisitor#visitNthRefNode(NthRefNode)
+	 * 
+	 * @fixme Add test if nth ref exists.
+	 */
+	public SingleNodeVisitor visitNthRefNode(NthRefNode iVisited) {
+		// if () {
+		definition = "$" + iVisited.getMatchNumber();
+		// }
+		return null;
+	}
 }

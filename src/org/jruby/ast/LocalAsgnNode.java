@@ -35,10 +35,13 @@ import java.util.List;
 
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * local variable assignment node.
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class LocalAsgnNode extends AssignableNode implements INameNode {
     static final long serialVersionUID = 1118108700098164006L;
@@ -57,8 +60,8 @@ public class LocalAsgnNode extends AssignableNode implements INameNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitLocalAsgnNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitLocalAsgnNode(this);
     }
     
     /**

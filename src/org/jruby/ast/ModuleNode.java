@@ -33,10 +33,13 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents a module definition.
  *
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class ModuleNode extends Node implements IScopingNode {
     static final long serialVersionUID = 4938115602547834310L;
@@ -54,8 +57,8 @@ public class ModuleNode extends Node implements IScopingNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitModuleNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitModuleNode(this);
     }
 
     /**

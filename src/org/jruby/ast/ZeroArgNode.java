@@ -36,6 +36,7 @@ import java.util.List;
 
 import org.jruby.ast.types.IArityNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 
@@ -59,7 +60,8 @@ public class ZeroArgNode extends Node implements IArityNode {
     /**
      * @see Node#accept(NodeVisitor)
      */
-    public void accept(NodeVisitor visitor) {
+    public SingleNodeVisitor accept(NodeVisitor visitor) {
+    	return null; // never visited, should be ok
     }
 	
 	/**

@@ -35,6 +35,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents a star in a multiple assignent.
@@ -56,7 +57,8 @@ public class StarNode extends Node {
     /**
      * @see Node#accept(NodeVisitor)
      */
-    public void accept(NodeVisitor visitor) {
+    public SingleNodeVisitor accept(NodeVisitor visitor) {
+    	return null; // never visited, should be fine
     }
     
     public List childNodes() {

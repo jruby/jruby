@@ -34,10 +34,13 @@ import java.util.List;
 
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents a '::' constant access or method call.
  *
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class Colon2Node extends Node implements INameNode {
     static final long serialVersionUID = -3250593470034657352L;
@@ -55,8 +58,8 @@ public class Colon2Node extends Node implements INameNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitColon2Node(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitColon2Node(this);
     }
 
     /**

@@ -33,6 +33,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 public class ArgsCatNode extends Node {
@@ -47,8 +48,8 @@ public class ArgsCatNode extends Node {
         this.secondNode = secondNode;
     }
 
-    public void accept(NodeVisitor visitor) {
-        visitor.visitArgsCatNode(this);
+    public SingleNodeVisitor accept(NodeVisitor visitor) {
+        return visitor.visitArgsCatNode(this);
     }
     
     public Node getFirstNode() {

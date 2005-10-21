@@ -35,6 +35,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
@@ -45,6 +46,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * or SClassNode.  It can also be created by evaling a DefnNode or DefsNode as
  * part of the call to copyNodeScope.
  *
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class ScopeNode extends Node {
     static final long serialVersionUID = 3694868125861223886L;
@@ -62,8 +65,8 @@ public class ScopeNode extends Node {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitScopeNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitScopeNode(this);
     }
 
     /**

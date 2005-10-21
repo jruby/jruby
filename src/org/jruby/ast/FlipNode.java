@@ -34,12 +34,15 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * a Range in a boolean expression.
  * named after a FlipFlop component in electronic I believe.
  * 
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class FlipNode extends Node {
     static final long serialVersionUID = -4735579451657299802L;
@@ -61,8 +64,8 @@ public class FlipNode extends Node {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitFlipNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitFlipNode(this);
     }
 
     /**

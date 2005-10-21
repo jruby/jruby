@@ -35,12 +35,15 @@ import java.util.List;
 
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *
  * zero length list
  *
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class ZArrayNode extends Node implements ILiteralNode {
     static final long serialVersionUID = -5004157166982016917L;
@@ -54,8 +57,8 @@ public class ZArrayNode extends Node implements ILiteralNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitZArrayNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitZArrayNode(this);
     }
     
     public List childNodes() {

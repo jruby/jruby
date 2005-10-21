@@ -35,10 +35,13 @@ import java.util.List;
 
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents an integer literal.
  *
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class FixnumNode extends Node implements ILiteralNode {
     static final long serialVersionUID = 2236565825959274729L;
@@ -50,8 +53,8 @@ public class FixnumNode extends Node implements ILiteralNode {
         this.value = value;
     }
 
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitFixnumNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitFixnumNode(this);
     }
 
     /**

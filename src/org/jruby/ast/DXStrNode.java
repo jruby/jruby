@@ -32,12 +32,15 @@ package org.jruby.ast;
 
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Dynamic backquote string.
  * backquote strings are eXecuted using the shell, hence the X 
  * or maybe the X is due to the %x general quote syntax
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class DXStrNode extends ListNode implements ILiteralNode {
     static final long serialVersionUID = 7165988969190553667L;
@@ -50,7 +53,7 @@ public class DXStrNode extends ListNode implements ILiteralNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitDXStrNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitDXStrNode(this);
     }
 }

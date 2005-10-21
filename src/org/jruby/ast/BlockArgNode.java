@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
@@ -43,6 +44,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
  *	
  *	<code>def tutu(a, b, &amp;c)</code>
  *	in this example c is a BlockArgNode
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class BlockArgNode extends Node {
     static final long serialVersionUID = 8374824536805365398L;
@@ -58,8 +61,8 @@ public class BlockArgNode extends Node {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitBlockArgNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitBlockArgNode(this);
     }
 
     /**

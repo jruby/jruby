@@ -54,7 +54,7 @@ public class RubyException extends RubyObject {
         this(runtime, rubyClass, null);
     }
 
-    protected RubyException(IRuby runtime, RubyClass rubyClass, String message) {
+    public RubyException(IRuby runtime, RubyClass rubyClass, String message) {
         super(runtime, rubyClass);
         if (message == null) {
             this.message = runtime.getNil();

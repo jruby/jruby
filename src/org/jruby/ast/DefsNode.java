@@ -33,10 +33,13 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents a singleton method definition.
  *
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class DefsNode extends Node {
     static final long serialVersionUID = -4472719020304670080L;
@@ -58,8 +61,8 @@ public class DefsNode extends Node {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitDefsNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitDefsNode(this);
     }
 
     /**

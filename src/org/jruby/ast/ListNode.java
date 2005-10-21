@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 
 import org.jruby.lexer.yacc.ISourcePosition;
 
@@ -58,6 +59,11 @@ public abstract class ListNode extends Node {
     public Iterator iterator() {
         return list == null ? Collections.EMPTY_LIST.iterator() : 
         	list.iterator();
+    }
+    
+    public ListIterator reverseIterator() {
+    	return list == null ? Collections.EMPTY_LIST.listIterator() :
+    		list.listIterator(list.size());
     }
     
     public int size() {

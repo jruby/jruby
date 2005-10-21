@@ -33,10 +33,13 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents a 'break' statement.
  *
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class BreakNode extends Node {
     static final long serialVersionUID = 1491046888629861035L;
@@ -57,8 +60,8 @@ public class BreakNode extends Node {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitBreakNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitBreakNode(this);
     }
     
     /**

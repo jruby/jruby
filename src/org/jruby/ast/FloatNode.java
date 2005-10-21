@@ -35,10 +35,13 @@ import java.util.List;
 
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents a float literal.
  *
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class FloatNode extends Node implements ILiteralNode {
     static final long serialVersionUID = -6358513813684285950L;
@@ -50,8 +53,8 @@ public class FloatNode extends Node implements ILiteralNode {
         this.value = value;
     }
 
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitFloatNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitFloatNode(this);
     }
 
     /**

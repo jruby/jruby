@@ -36,11 +36,14 @@ import java.util.List;
 
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Represents an assignment to a global variable.
  * 
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class GlobalAsgnNode extends AssignableNode implements INameNode {
     static final long serialVersionUID = 2278414591762936906L;
@@ -59,8 +62,8 @@ public class GlobalAsgnNode extends AssignableNode implements INameNode {
      * accepts the visitor 
      * @param iVisitor the visitor to accept
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitGlobalAsgnNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitGlobalAsgnNode(this);
     }
     /**
      * Gets the name.

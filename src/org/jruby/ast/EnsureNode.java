@@ -33,10 +33,13 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *	an ensure statement.
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class EnsureNode extends Node {
     static final long serialVersionUID = -409805241533215981L;
@@ -54,8 +57,8 @@ public class EnsureNode extends Node {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitEnsureNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitEnsureNode(this);
     }
 
     /**

@@ -185,7 +185,8 @@ public class RubyArray extends RubyObject implements List {
     		return entry(index.getLongValue(), true);
     	} catch (RaiseException e) {
     		// FIXME: use constant or method for IndexError lookup?
-    		if (e.getException().isKindOf(getRuntime().getClassFromPath("IndexError"))) {
+    		RubyException raisedException = e.getException();
+    		if (raisedException.isKindOf(getRuntime().getClassFromPath("IndexError"))) {
 	    		if (args.length > 1) {
 	    			return args[1];
 	    		} else if (getRuntime().isBlockGiven()) {

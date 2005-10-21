@@ -34,9 +34,10 @@ package org.jruby.test;
 import java.util.ArrayList;
 
 import org.jruby.Ruby;
+import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyObject;
-import org.jruby.exceptions.SystemExit;
+import org.jruby.exceptions.RaiseException;
 
 /**
  * Unit test for the kernel class.
@@ -87,9 +88,14 @@ public class TestKernel extends TestRubyBase {
         try {
             eval("exit " + argument);
             fail("Expected a SystemExit to be thrown by calling exit.");
-        } catch (SystemExit e) {
-            RubyObject status = (RubyObject)e.getException().getInstanceVariable("status");
-            assertEquals(expectedStatus, status);
+        } catch (RaiseException re) {
+        	RubyException raisedException = re.getException();
+        	if (raisedException.isKindOf(runtime.getClass("SystemExit"))) {
+	            RubyObject status = (RubyObject)raisedException.getInstanceVariable("status");
+	            assertEquals(expectedStatus, status);
+        	} else {
+        		throw re;
+        	}
         }
     }
         

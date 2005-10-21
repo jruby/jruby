@@ -49,13 +49,14 @@ import org.jruby.ast.StarNode;
 import org.jruby.ast.ZeroArgNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.evaluator.AssignmentVisitor;
-import org.jruby.exceptions.NextJump;
-import org.jruby.exceptions.RedoJump;
+import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.SourcePositionFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
+ * @author jpetersen
+ * @version $Revision$
  */
 public class ThreadContext {
     private final IRuby runtime;
@@ -262,11 +263,21 @@ public class ThreadContext {
             while (true) {
                 try {
                     return currentBlock.getMethod().call(runtime, self, null, args, false);
-                } catch (RedoJump rExcptn) {}
+                } catch (JumpException je) {
+                	if (je.getJumpType() == JumpException.JumpType.RedoJump) {
+                		// do nothing, allow loop to redo
+                	} else {
+                		throw je;
+                	}
+                }
             }
-        } catch (NextJump nExcptn) {
-            IRubyObject nextValue = nExcptn.getNextValue();
-            return nextValue == null ? runtime.getNil() : nextValue;
+        } catch (JumpException je) {
+        	if (je.getJumpType() == JumpException.JumpType.NextJump) {
+	            IRubyObject nextValue = (IRubyObject)je.getPrimaryData();
+	            return nextValue == null ? runtime.getNil() : nextValue;
+        	} else {
+        		throw je;
+        	}
         } finally {
             iterStack.pop();
             dynamicVarsStack.pop();

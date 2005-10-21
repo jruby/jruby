@@ -37,6 +37,7 @@ import org.jruby.ast.Node;
 import org.jruby.ast.RedoNode;
 import org.jruby.ast.RetryNode;
 import org.jruby.ast.ReturnNode;
+import org.jruby.evaluator.SingleNodeVisitor;
 
 /**
  *
@@ -54,30 +55,36 @@ public class BreakStatementVisitor extends AbstractVisitor {
         return breakStatement;
     }
     
-    protected void visitNode(Node iVisited) {
+    protected SingleNodeVisitor visitNode(Node iVisited) {
+        return null;
     }
 
-    public void visitBreakNode(BreakNode iVisited) {
+    public SingleNodeVisitor visitBreakNode(BreakNode iVisited) {
         breakStatement = true;
+        return null;
     }
 
-    public void visitNewlineNode(NewlineNode iVisited) {
-        acceptNode(iVisited.getNextNode());
+    public SingleNodeVisitor visitNewlineNode(NewlineNode iVisited) {
+        return acceptNode(iVisited.getNextNode());
     }
 
-    public void visitNextNode(NextNode iVisited) {
+    public SingleNodeVisitor visitNextNode(NextNode iVisited) {
         breakStatement = true;
+        return null;
     }
 
-    public void visitRedoNode(RedoNode iVisited) {
+    public SingleNodeVisitor visitRedoNode(RedoNode iVisited) {
         breakStatement = true;
+        return null;
     }
 
-    public void visitRetryNode(RetryNode iVisited) {
+    public SingleNodeVisitor visitRetryNode(RetryNode iVisited) {
         breakStatement = true;
+        return null;
     }
 
-    public void visitReturnNode(ReturnNode iVisited) {
+    public SingleNodeVisitor visitReturnNode(ReturnNode iVisited) {
         breakStatement = true;
+        return null;
     }
 }

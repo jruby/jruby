@@ -41,9 +41,8 @@ import java.io.InputStreamReader;
 import java.util.Iterator;
 
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.SystemExit;
-import org.jruby.exceptions.ThrowJump;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.LastCallStatus;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -429,7 +428,7 @@ public class RubyKernel {
             }
         }
 
-        throw new SystemExit(recv.getRuntime(), status);
+        throw recv.getRuntime().newSystemExit(status);
     }
 
 
@@ -497,41 +496,54 @@ public class RubyKernel {
         IRuby runtime = recv.getRuntime();
         RubyString string = null;
         RubyException excptn = null;
+        RaiseException re = null;
         
         switch (args.length) {
         case 0 :
             IRubyObject defaultException = runtime.getGlobalVariables().get("$!");
             if (defaultException.isNil()) {
-                throw new RaiseException(runtime, runtime.getClass("RuntimeError"), "", false);
+                re = new RaiseException(runtime, runtime.getClass("RuntimeError"), "", false);
+            } else {
+            	re = new RaiseException((RubyException) defaultException);
             }
-            throw new RaiseException((RubyException) defaultException);
+            break;
         case 1 :
             if (args[0] instanceof RubyException) {
-                throw new RaiseException((RubyException) args[0]);
+                re = new RaiseException((RubyException) args[0]);
             } else if (args[0] instanceof RubyClass) {
-            	throw new RaiseException(RubyException.newInstance(args[0], new IRubyObject[0]));
+            	re = new RaiseException(RubyException.newInstance(args[0], new IRubyObject[0]));
+            } else {
+            	re = new RaiseException(RubyException.newInstance(runtime.getClass("RuntimeError"), args));
             }
-            throw new RaiseException(RubyException.newInstance(runtime.getClass("RuntimeError"), args));
+            break;
         case 2 :
             if (args[0] == runtime.getClass("Exception")) {
-                throw new RaiseException((RubyException) args[0].callMethod("exception", args[1]));
+                re = new RaiseException((RubyException) args[0].callMethod("exception", args[1]));
+            } else {
+	            string = (RubyString) args[1]; 
+	            re = new RaiseException(new RubyException(runtime, ((RubyClass)args[0]), string.getValue()));
             }
-            string = (RubyString) args[1];
-            excptn = RubyException.newException(runtime, (RubyClass)args[0], string.getValue()); 
-            throw new RaiseException(excptn);
+            break;
         case 3:
             if (args[0] == runtime.getClass("Exception")) {
-                throw new RaiseException((RubyException) args[0].callMethod("exception", args[1]));
+                re = new RaiseException((RubyException) args[0].callMethod("exception", args[1]));
+            } else {
+	            string = (RubyString) args[1];
+	            excptn = new RubyException(runtime, ((RubyClass)args[0]), string.getValue()); 
+	            excptn.set_backtrace(args[2]);
+	            re = new RaiseException(excptn);
             }
-            string = (RubyString) args[1];
-            excptn = RubyException.newException(runtime, (RubyClass)args[0], string.getValue()); 
-            excptn.set_backtrace(args[2]);
-            throw new RaiseException(excptn);
+            break;
         default :
-            throw runtime.newArgumentError("wrong number of arguments");
+            re = runtime.newArgumentError("wrong number of arguments");
         }
+        
+        // Insert exception to be raised into global var and current thread
+        runtime.getGlobalVariables().set("$!", re.getException());
+        
+        throw re;
     }
-
+    
     /**
      * Require.
      * MRI allows to require ever .rb files or ruby extension dll (.so or .dll depending on system).
@@ -585,16 +597,28 @@ public class RubyKernel {
     public static IRubyObject rbCatch(IRubyObject recv, IRubyObject tag) {
         try {
             return recv.getRuntime().yield(tag);
-        } catch (ThrowJump throwJump) {
-            if (throwJump.getTag().equals(tag.asSymbol())) {
-                return throwJump.getValue();
-            }
-			throw throwJump;
+        } catch (JumpException je) {
+        	if (je.getJumpType() == JumpException.JumpType.ThrowJump) {
+	            if (je.getPrimaryData().equals(tag.asSymbol())) {
+	                return (IRubyObject)je.getTertiaryData();
+	            }
+        	}
+       		throw je;
         }
     }
 
     public static IRubyObject rbThrow(IRubyObject recv, IRubyObject[] args) {
-        throw new ThrowJump(args[0].asSymbol(), args.length > 1 ? args[1] : recv.getRuntime().getNil());
+    	IRuby runtime = recv.getRuntime();
+    	JumpException je = new JumpException(JumpException.JumpType.ThrowJump);
+    	String tag = args[0].asSymbol();
+    	IRubyObject value = args.length > 1 ? args[1] : recv.getRuntime().getNil();
+    	RubyException nameException = new RubyException(runtime, runtime.getClass("NameError"), "uncaught throw '" + tag + '\'');
+    	
+		je.setPrimaryData(tag);
+    	je.setSecondaryData(value);
+    	je.setTertiaryData(nameException);
+    	
+        throw je;
     }
 
     public static IRubyObject set_trace_func(IRubyObject recv, IRubyObject trace_func) {

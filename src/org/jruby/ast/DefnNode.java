@@ -34,12 +34,15 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Visibility;
 
 /**
  * method definition node.
  * 
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class DefnNode extends Node {
     static final long serialVersionUID = -7634791007500033454L;
@@ -58,8 +61,8 @@ public class DefnNode extends Node {
         this.visibility = visibility;
     }
 
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitDefnNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitDefnNode(this);
     }
 
     /**

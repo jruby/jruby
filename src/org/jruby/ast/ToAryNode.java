@@ -31,6 +31,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 public class ToAryNode extends Node {
@@ -44,8 +45,8 @@ public class ToAryNode extends Node {
         this.node = node;
     }
 
-    public void accept(NodeVisitor visitor) {
-        visitor.visitToAryNode(this);
+    public SingleNodeVisitor accept(NodeVisitor visitor) {
+        return visitor.visitToAryNode(this);
     }
     
     public Node getValue() {

@@ -41,7 +41,7 @@ import java.util.Map;
 
 import org.jruby.ast.Node;
 import org.jruby.evaluator.EvaluateVisitor;
-import org.jruby.exceptions.BreakJump;
+import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -375,7 +375,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public IRubyObject eval(Node n) {
-        return EvaluateVisitor.createVisitor(this).eval(n);
+        return EvaluateVisitor.createVisitor().eval(this.getRuntime(), this, n);
     }
 
     public void callInit(IRubyObject[] args) {
@@ -546,10 +546,14 @@ public class RubyObject implements Cloneable, IRubyObject {
                     IRubyObject selfInYield = args[0];
                     return context.yield(valueInYield, selfInYield, context.getRubyClass(), false, false);
                     //TODO: Should next and return also catch here?
-                } catch (BreakJump e) {
-                    IRubyObject breakValue = e.getBreakValue();
+                } catch (JumpException je) {
+                	if (je.getJumpType() == JumpException.JumpType.BreakJump) {
+                		IRubyObject breakValue = (IRubyObject)je.getPrimaryData();
                     
-                    return breakValue == null ? getRuntime().getNil() : breakValue;
+                		return breakValue == null ? getRuntime().getNil() : breakValue;
+                	} else {
+                		throw je;
+                	}
                 } finally {
                     block.setVisibility(savedVisibility);
                 }

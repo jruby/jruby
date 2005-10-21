@@ -34,10 +34,13 @@ import java.util.Collections;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.SingleNodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents an undef statement.
  *
+ * @author  jpetersen
+ * @version $Revision$
  */
 public class UndefNode extends Node {
     static final long serialVersionUID = -8829084073375820727L;
@@ -53,8 +56,8 @@ public class UndefNode extends Node {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitUndefNode(this);
+    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+        return iVisitor.visitUndefNode(this);
     }
 
     /**
