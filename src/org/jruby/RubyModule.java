@@ -300,6 +300,14 @@ public class RubyModule extends RubyObject {
             if (var != null) {
                 return var;
             }
+            
+            // Bug 1303983: partial fix for constants in singleton/metaclasses of modules which are not included in the above searches
+            if (p instanceof IncludedModuleWrapper) {
+                var = ((IncludedModuleWrapper)p).getDelegate().getConstant(name, false);
+                if (var != null) {
+                    return var;
+                }
+            }
         }
 
         if (invokeConstMissing) {
