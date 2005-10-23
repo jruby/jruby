@@ -96,6 +96,26 @@ public class ThreadContext {
 
         pushDynamicVars();
     }
+    
+    Visibility lastVis;
+    CallType lastCallType;
+
+    /**
+     * Returns the lastCallStatus.
+     * @return LastCallStatus
+     */
+    public void setLastCallStatus(Visibility vis, CallType callType) {
+        lastVis = vis;
+        lastCallType = callType;
+    }
+    
+    public Visibility getLastVisibility() {
+        return lastVis;
+    }
+    
+    public CallType getLastCallType() {
+        return lastCallType;
+    }
 
     public BlockStack getBlockStack() {
         return blockStack;

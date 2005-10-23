@@ -24,7 +24,6 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.FrameStack;
 import org.jruby.runtime.GlobalVariable;
-import org.jruby.runtime.LastCallStatus;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.Scope;
 import org.jruby.runtime.ThreadContext;
@@ -208,12 +207,6 @@ public interface IRuby {
 	public ISourcePosition getPosition();
 
 	public void setPosition(ISourcePosition position);
-
-	/**
-	 * Returns the lastCallStatus.
-	 * @return LastCallStatus
-	 */
-	public LastCallStatus getLastCallStatus();
 
 	/**
 	 * Returns the loadService.

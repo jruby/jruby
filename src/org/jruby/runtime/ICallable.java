@@ -55,4 +55,5 @@ public interface ICallable {
     Arity getArity();
 
     ICallable dup();
+    boolean isCallableFrom(IRubyObject caller, CallType callType);
 }

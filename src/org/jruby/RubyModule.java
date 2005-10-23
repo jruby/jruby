@@ -571,23 +571,18 @@ public class RubyModule extends RubyObject {
         ICallable method = searchMethod(name);
 
         if (method.isUndefined()) {
-            callType.registerCallStatus(getRuntime().getLastCallStatus(), name);
+            if (callType == CallType.SUPER) {
+                throw getRuntime().newNameError("super: no superclass method '" + name + "'");
+            } else {
+                getRuntime().getCurrentContext().setLastCallStatus(method.getVisibility(), callType);
+            }
             return callMethodMissing(recv, name, args);
         }
 
         if (!name.equals("method_missing")) {
-            if (method.getVisibility().isPrivate() && callType.isNormal()) {
-                getRuntime().getLastCallStatus().setPrivate();
+            if (!method.isCallableFrom(getRuntime().getCurrentFrame().getSelf(), callType)) {
+                getRuntime().getCurrentContext().setLastCallStatus(method.getVisibility(), callType);
                 return callMethodMissing(recv, name, args);
-            } else if (method.getVisibility().isProtected()) {
-                RubyModule defined = method.getImplementationClass();
-                while (defined.isIncluded()) {
-                    defined = defined.getMetaClass();
-                }
-                if (!getRuntime().getCurrentFrame().getSelf().isKindOf(defined)) {
-                    getRuntime().getLastCallStatus().setProtected();
-                    return callMethodMissing(recv, name, args);
-                }
             }
         }
         

@@ -50,7 +50,6 @@ import org.jruby.runtime.Frame;
 import org.jruby.runtime.FrameStack;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
-import org.jruby.runtime.LastCallStatus;
 import org.jruby.runtime.Scope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -929,12 +928,13 @@ public class RubyObject implements Cloneable, IRubyObject {
         String name = args[0].asSymbol();
         String description = callMethod("inspect").toString();
         boolean noClass = description.length() > 0 && description.charAt(0) == '#';
-        LastCallStatus lastCallStatus = getRuntime().getLastCallStatus();
-        String format = lastCallStatus.errorMessageFormat(name);
+        Visibility lastVis = getRuntime().getCurrentContext().getLastVisibility();
+        CallType lastCallType = getRuntime().getCurrentContext().getLastCallType();
+        String format = lastVis.errorMessageFormat(lastCallType, name);
         String msg = new PrintfFormat(format).sprintf(new Object[] { name, description, 
             noClass ? "" : ":", noClass ? "" : getType().getName()});
 
-        if (lastCallStatus.isVariable()) {
+        if (lastCallType == CallType.VARIABLE) {
         	throw getRuntime().newNameError(msg);
         }
         throw getRuntime().newNoMethodError(msg);

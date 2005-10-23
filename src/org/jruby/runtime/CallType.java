@@ -43,18 +43,4 @@ public final class CallType {
     private CallType() {
         // nobody should create a CallType
     }
-
-    public boolean isNormal() {
-        return this == NORMAL;
-    }
-
-    public void registerCallStatus(LastCallStatus lastCallStatus, String name) {
-        if (this == SUPER) {
-            throw lastCallStatus.getRuntime().newNameError("super: no superclass method '" + name + "'");
-        } else if (this == VARIABLE) {
-            lastCallStatus.setVariable();
-        } else {
-            lastCallStatus.setNormal();
-        }
-    }
 }

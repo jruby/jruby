@@ -31,6 +31,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.IRuby;
 import org.jruby.RubyModule;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.ThreadContext;
@@ -61,5 +62,21 @@ public abstract class AbstractMethod extends AbstractCallable {
             context.getIterStack().pop();
             context.setRubyClass(oldParent);
         }
+    }
+    
+    public boolean isCallableFrom(IRubyObject caller, CallType callType) {
+        if (getVisibility().isPrivate() && (callType == CallType.NORMAL)) {
+            return false;
+        } else if (getVisibility().isProtected()) {
+            RubyModule defined = getImplementationClass();
+            while (defined.isIncluded()) {
+                defined = defined.getMetaClass();
+            }
+            if (!caller.isKindOf(defined)) {
+                return false;
+            }
+        }
+        
+        return true;
     }
 }

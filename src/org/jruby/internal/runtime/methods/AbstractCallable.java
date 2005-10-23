@@ -32,6 +32,7 @@ package org.jruby.internal.runtime.methods;
 import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -90,5 +91,10 @@ public abstract class AbstractCallable implements ICallable {
 
     public Arity getArity() {
         return Arity.optional();
+    }
+
+    public boolean isCallableFrom(IRubyObject caller, CallType callType) {
+        // default to true
+        return true;
     }
 }

@@ -61,7 +61,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.libraries.RbConfigLibrary;
 import org.jruby.libraries.SocketLibrary;
 import org.jruby.parser.Parser;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockStack;
 import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.CallbackFactory;
@@ -70,7 +69,6 @@ import org.jruby.runtime.FrameStack;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.Iter;
-import org.jruby.runtime.LastCallStatus;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.Scope;
 import org.jruby.runtime.ThreadContext;
@@ -137,8 +135,6 @@ public final class Ruby implements IRuby {
     private JavaSupport javaSupport;
 
     private Parser parser = new Parser(this);
-
-    private LastCallStatus lastCallStatus = new LastCallStatus(this);
 
     private LoadService loadService;
     private GlobalVariables globalVariables = new GlobalVariables(this);
@@ -705,14 +701,6 @@ public final class Ruby implements IRuby {
 
     public void setPosition(ISourcePosition position) {
         getCurrentContext().setPosition(position);
-    }
-
-    /**
-     * Returns the lastCallStatus.
-     * @return LastCallStatus
-     */
-    public LastCallStatus getLastCallStatus() {
-        return lastCallStatus;
     }
 
     /**

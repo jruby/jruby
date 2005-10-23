@@ -44,7 +44,7 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.LastCallStatus;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.meta.FileMetaClass;
 import org.jruby.runtime.builtin.meta.StringMetaClass;
@@ -156,6 +156,8 @@ public class RubyKernel {
     }
 
     public IRubyObject method_missing(IRubyObject recv, IRubyObject[] args) {
+        IRuby runtime = recv.getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
         if (args.length == 0) {
             throw recv.getRuntime().newArgumentError("no id given");
         }
@@ -175,9 +177,7 @@ public class RubyKernel {
             description = "false";
         }
 
-        LastCallStatus lastCallStatus = recv.getRuntime().getLastCallStatus();
-
-        String format = lastCallStatus.errorMessageFormat(name);
+        String format = context.getLastVisibility().errorMessageFormat(context.getLastCallType(), name);
 
         String msg =
             new PrintfFormat(format).sprintf(
