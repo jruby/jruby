@@ -45,7 +45,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * no leftNode which implicitly uses the Object class as a left node.
  * 
  * @author  jpetersen
- * @version $Revision$
  */
 public class Colon3Node extends Node {
     static final long serialVersionUID = 8860717109371016871L;

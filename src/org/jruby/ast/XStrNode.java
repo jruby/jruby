@@ -42,7 +42,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * Backtick string
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class XStrNode extends Node implements ILiteralNode {
     static final long serialVersionUID = 1371310021447439748L;

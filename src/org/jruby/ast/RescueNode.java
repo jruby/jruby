@@ -40,7 +40,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class RescueNode extends Node {
     static final long serialVersionUID = -4757038578511808125L;

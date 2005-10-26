@@ -40,7 +40,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /**
  *	access to a global variable.
  * @author  jpetersen
- * @version $Revision$
  */
 public class GlobalVarNode extends Node {
     static final long serialVersionUID = -8913633094119740033L;

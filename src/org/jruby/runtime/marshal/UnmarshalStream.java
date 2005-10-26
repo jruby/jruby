@@ -53,7 +53,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Unmarshals objects from strings or streams in Ruby's marsal format.
  *
  * @author Anders
- * $Revision$
  */
 public class UnmarshalStream extends FilterInputStream {
     protected final IRuby runtime;

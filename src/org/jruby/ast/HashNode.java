@@ -41,7 +41,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * this can represent either a {a=&amp;b, c=&amp;d} type expression or the list of default 
  * values in a method call.
  * @author  jpetersen
- * @version $Revision$
  */
 public class HashNode extends Node {
     static final long serialVersionUID = -7554050553303344025L;

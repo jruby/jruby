@@ -39,7 +39,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /**
  *	an ensure statement.
  * @author  jpetersen
- * @version $Revision$
  */
 public class EnsureNode extends Node {
     static final long serialVersionUID = -409805241533215981L;

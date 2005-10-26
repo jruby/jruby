@@ -50,7 +50,6 @@ import org.jruby.util.IOHandler.InvalidValueException;
  * Ruby File class equivalent in java.
  *
  * @author jpetersen
- * @version $Revision$
  **/
 public class RubyFile extends RubyIO {
 	public static final int LOCK_SH = 1;

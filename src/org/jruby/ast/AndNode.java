@@ -39,7 +39,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /** An AndNode represents a && operator.
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class AndNode extends Node implements BinaryOperatorNode {
     static final long serialVersionUID = 1716928209521564017L;

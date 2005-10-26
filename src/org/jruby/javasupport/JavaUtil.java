@@ -42,7 +42,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *
  * @author Jan Arne Petersen, Alan Moore
- * @version $Revision$
  */
 public class JavaUtil {
 

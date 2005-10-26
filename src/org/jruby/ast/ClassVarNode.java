@@ -41,7 +41,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * Access to a class variable.
  * 
  * @author  jpetersen
- * @version $Revision$
  */
 public class ClassVarNode extends Node {
     static final long serialVersionUID = -228883683599457381L;

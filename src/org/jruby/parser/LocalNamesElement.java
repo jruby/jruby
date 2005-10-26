@@ -36,7 +36,6 @@ import java.util.List;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class LocalNamesElement {
     private List localNames;

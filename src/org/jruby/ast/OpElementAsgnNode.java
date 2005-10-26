@@ -46,7 +46,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * </pre>
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class OpElementAsgnNode extends Node {
     static final long serialVersionUID = 1509701560452403776L;

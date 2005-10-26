@@ -39,7 +39,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class OpAsgnOrNode extends Node implements BinaryOperatorNode {
     static final long serialVersionUID = -1503963105325984745L;

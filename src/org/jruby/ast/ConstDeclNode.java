@@ -41,7 +41,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * Declaration (and assignment) of a Constant.
  * 
  * @author  jpetersen
- * @version $Revision$
  */
 public class ConstDeclNode extends AssignableNode implements INameNode {
     static final long serialVersionUID = -6260931203887158208L;

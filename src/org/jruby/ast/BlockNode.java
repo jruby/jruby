@@ -43,7 +43,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * {@link org.jruby.parser.ParserSupport#appendToBlock appendToBlock()} method
  * 
  * @author  jpetersen
- * @version $Revision$
  */
 public class BlockNode extends ListNode {
     static final long serialVersionUID = 6070308619613804520L;

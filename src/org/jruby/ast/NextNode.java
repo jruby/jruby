@@ -39,7 +39,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /** Represents a 'next' statement.
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class NextNode extends Node {
     static final long serialVersionUID = -6688896555206419923L;

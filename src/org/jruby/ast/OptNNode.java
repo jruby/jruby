@@ -39,7 +39,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class OptNNode extends Node {
     static final long serialVersionUID = -742216664550880045L;

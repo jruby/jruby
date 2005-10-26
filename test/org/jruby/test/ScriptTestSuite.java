@@ -47,7 +47,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author Anders
- * @version $Revision$
  */
 public class ScriptTestSuite extends TestSuite {
 

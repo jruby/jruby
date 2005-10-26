@@ -41,7 +41,6 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.IdUtil;
 
 /**
- * @version $Revision$
  * @author  jpetersen
  */
 public class RubyStruct extends RubyObject {

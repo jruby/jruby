@@ -33,7 +33,6 @@ package org.jruby.runtime;
  * By default the messages are displayed in the error stream.
  * 
  * @author  jpetersen
- * @version $Revision$
  */
 public interface ErrorLogger {
     public void warn(String message);

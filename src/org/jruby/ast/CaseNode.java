@@ -43,7 +43,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * when statements.
  * 
  * @author  jpetersen
- * @version $Revision$
  */
 public class CaseNode extends Node {
     static final long serialVersionUID = -2824917272720800901L;

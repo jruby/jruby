@@ -57,7 +57,6 @@ import org.jruby.util.CommandlineParser;
  *       Usage: java -jar jruby.jar [switches] [rubyfile.rb] [arguments]
  *           -e 'command'    one line of script. Several -e's allowed. Omit [programfile]
  * @author  jpetersen
- * @version $Revision$
  */
 public class Main {
     private static CommandlineParser commandline;

@@ -41,7 +41,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author  jpetersen
- * @version $Revision$
  */
 public class RubyProc extends RubyObject {
     private Block block = null;

@@ -40,7 +40,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /** Represents an undef statement.
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class UndefNode extends Node {
     static final long serialVersionUID = -8829084073375820727L;

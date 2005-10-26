@@ -136,7 +136,6 @@ import org.jruby.evaluator.SingleNodeVisitor;
  * 
  * @see NodeVisitor
  * @author Benoit Cerrina
- * @version $Revision$
  */
 public class DefaultIteratorVisitor implements NodeVisitor {
 	protected NodeVisitor _Payload;

@@ -37,7 +37,6 @@ import org.jruby.ast.Node;
 /**
  * 
  * @author jpetersen
- * @version $Revision$
  */
 public interface IAstDecoder {
     Node readNode() throws IOException;

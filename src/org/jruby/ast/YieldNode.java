@@ -39,7 +39,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /** Represents a yield statement.
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class YieldNode extends Node {
     static final long serialVersionUID = -4136185449481135660L;

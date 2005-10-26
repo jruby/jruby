@@ -42,7 +42,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * RubyMethod call without any arguments
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class VCallNode extends Node {
     static final long serialVersionUID = -7678578490000574578L;

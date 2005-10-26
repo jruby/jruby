@@ -39,7 +39,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /** Represents a return statement.
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class ReturnNode extends Node {
     static final long serialVersionUID = -6549592319167820636L;

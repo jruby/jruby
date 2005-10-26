@@ -66,7 +66,6 @@ import java.util.Vector;
  * default value will be used instead.
  *
  * @author Allan Jacobs
- * @version $Revision$
  * Release 1: Initial release.
  * Release 2: Asterisk field widths and precisions
  *            %n$ and *m$

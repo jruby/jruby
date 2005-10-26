@@ -35,7 +35,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * 
  * @author jpetersen
- * @version $Revision$
  */
 public final class ValueConverter {
     private IRuby runtime;

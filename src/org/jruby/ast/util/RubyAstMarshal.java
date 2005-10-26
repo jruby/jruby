@@ -33,7 +33,6 @@ import org.ablaf.internal.ast.SerializationAstMarshal;
 /**
  * 
  * @author jpetersen
- * @version $Revision$
  */
 public final class RubyAstMarshal {
     private static IAstMarshal instance = null;

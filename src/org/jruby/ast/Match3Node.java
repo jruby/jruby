@@ -39,7 +39,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class Match3Node extends Node {
     static final long serialVersionUID = -6147075329935023633L;

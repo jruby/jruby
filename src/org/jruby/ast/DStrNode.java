@@ -40,7 +40,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * a Dynamic String node.
  * A string which contains some dynamic elements which needs to be evaluated (introduced by #).
  * @author  jpetersen
- * @version $Revision$
  */
 public class DStrNode extends ListNode implements ILiteralNode {
     static final long serialVersionUID = -1488812415812799395L;

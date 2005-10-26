@@ -33,7 +33,6 @@ package org.jruby.lexer.yacc;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public final class LexState {
     public static final LexState EXPR_BEG    = new LexState("EXPR_BEG");

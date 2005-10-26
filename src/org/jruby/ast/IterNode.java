@@ -40,7 +40,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  *
  * @see ForNode
  * @author  jpetersen
- * @version $Revision$
  */
 public class IterNode extends Node {
     static final long serialVersionUID = -9181965000180892184L;

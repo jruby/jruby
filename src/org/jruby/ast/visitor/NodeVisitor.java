@@ -132,7 +132,6 @@ import org.jruby.evaluator.SingleNodeVisitor;
  * @see org.jruby.ast.visitor.AbstractVisitor
  * 
  * @author Benoit Cerrina
- * @version $Revision$
  **/
 public interface NodeVisitor {
     public SingleNodeVisitor visitAliasNode(AliasNode iVisited);

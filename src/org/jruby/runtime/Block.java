@@ -40,7 +40,6 @@ import org.jruby.util.collections.StackElement;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class Block implements StackElement {
     private Node var;

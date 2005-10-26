@@ -39,7 +39,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class WhenNode extends Node {
     static final long serialVersionUID = 9099987602002276708L;

@@ -37,7 +37,6 @@ import org.jruby.util.collections.StackElement;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class BlockNamesStack extends AbstractStack {
     private Stack localNames;

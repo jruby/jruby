@@ -43,7 +43,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /** Represents a big integer literal.
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class BignumNode extends Node implements ILiteralNode {
     static final long serialVersionUID = -8646636291868912747L;

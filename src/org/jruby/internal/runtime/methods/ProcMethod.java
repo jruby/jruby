@@ -39,7 +39,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * 
  * @author jpetersen
- * @version $Revision$
  */
 public class ProcMethod extends AbstractMethod {
     private RubyProc proc;

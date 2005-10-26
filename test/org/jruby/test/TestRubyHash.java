@@ -34,7 +34,6 @@ import org.jruby.Ruby;
 
 /**
  * @author chadfowler
- * @version $Revision$
  */
 public class TestRubyHash extends TestRubyBase {
 

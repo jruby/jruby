@@ -42,7 +42,6 @@ import org.jruby.runtime.Visibility;
  * method definition node.
  * 
  * @author  jpetersen
- * @version $Revision$
  */
 public class DefnNode extends Node {
     static final long serialVersionUID = -7634791007500033454L;

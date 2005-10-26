@@ -40,7 +40,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /** Represents an alias of a global variable.
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class VAliasNode extends Node {
     static final long serialVersionUID = 8647860367861922838L;

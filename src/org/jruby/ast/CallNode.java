@@ -41,7 +41,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * A method or operator call.
  * 
  * @author  jpetersen
- * @version $Revision$
  */
 public final class CallNode extends Node {
     static final long serialVersionUID = -1993752395320088525L;

@@ -51,7 +51,6 @@ import org.jruby.evaluator.SingleNodeVisitor;
 /**
  * 
  * @author jpetersen
- * @version $Revision$
  */
 public class ExpressionVisitor extends AbstractVisitor {
 	private boolean expression;

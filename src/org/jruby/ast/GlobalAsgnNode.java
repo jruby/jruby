@@ -43,7 +43,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * Represents an assignment to a global variable.
  * 
  * @author  jpetersen
- * @version $Revision$
  */
 public class GlobalAsgnNode extends AssignableNode implements INameNode {
     static final long serialVersionUID = 2278414591762936906L;

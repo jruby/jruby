@@ -40,7 +40,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class PostExeNode extends Node {
     static final long serialVersionUID = -2851659895226590014L;

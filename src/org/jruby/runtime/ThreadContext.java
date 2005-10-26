@@ -56,7 +56,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author jpetersen
- * @version $Revision$
  */
 public class ThreadContext {
     private final IRuby runtime;

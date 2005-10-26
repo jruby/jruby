@@ -39,7 +39,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /** Represents a 'break' statement.
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class BreakNode extends Node {
     static final long serialVersionUID = 1491046888629861035L;

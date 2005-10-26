@@ -47,7 +47,6 @@ import org.jruby.util.collections.StackElement;
  * can be popped of the top of the stack using the pop method.
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class Scope implements StackElement {
     private static final int LASTLINE_INDEX = 0;

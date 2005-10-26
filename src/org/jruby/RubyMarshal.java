@@ -47,7 +47,6 @@ import org.jruby.runtime.marshal.UnmarshalStream;
  * Marshal module
  *
  * @author Anders
- * @version $Revision$
  */
 public class RubyMarshal {
 

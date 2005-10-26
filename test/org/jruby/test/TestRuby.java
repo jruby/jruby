@@ -38,8 +38,7 @@ import org.jruby.Ruby;
  * Unit test for the ruby class.
  * 
  * @author Benoit
- * @version $Revision$
- */
+*/
 public class TestRuby extends TestRubyBase {
 
     public TestRuby(String name) {

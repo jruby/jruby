@@ -34,7 +34,6 @@ import java.util.EmptyStackException;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public abstract class AbstractStack {
     protected StackElement top = null;

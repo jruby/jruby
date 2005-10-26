@@ -56,7 +56,6 @@ import org.jruby.util.PrintfFormat;
  * Note: For CVS history, see KernelModule.java.
  *
  * @author jpetersen
- * @version $Revision$
  */
 public class RubyKernel {
     public static RubyModule createKernelModule(IRuby runtime) {

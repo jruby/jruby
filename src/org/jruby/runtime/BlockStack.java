@@ -34,7 +34,6 @@ import org.jruby.util.collections.AbstractStack;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class BlockStack extends AbstractStack {
     public void setCurrent(Block block) {

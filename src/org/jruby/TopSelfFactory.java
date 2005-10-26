@@ -37,7 +37,6 @@ import org.jruby.runtime.callback.Callback;
 /**
  * 
  * @author jpetersen
- * @version $Revision$
  */
 public final class TopSelfFactory {
 

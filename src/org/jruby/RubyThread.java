@@ -55,7 +55,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Note: For CVS history, see ThreadClass.java.
  *
  * @author Jason Voegele (jason@jvoegele.com)
- * @version $Revision$
  */
 public class RubyThread extends RubyObject {
     private static boolean globalAbortOnException; // move to runtime object

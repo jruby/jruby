@@ -30,7 +30,6 @@ package org.jruby.ast.types;
 /** A marker for literal nodes.
  * 
  * @author  jpetersen
- * @version $Revision$
  */
 public interface ILiteralNode {
     // only a marker interface

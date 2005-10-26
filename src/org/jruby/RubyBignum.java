@@ -44,7 +44,6 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class RubyBignum extends RubyInteger {
     private static final int BIT_SIZE = 64;

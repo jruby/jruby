@@ -35,7 +35,6 @@ import org.jruby.util.collections.StackElement;
 /**
  *
  * @author jpetersen
- * @version $Revision$
  */
 public class ScopeStack extends AbstractStack {
     public void setTop(StackElement newElement) {

@@ -37,7 +37,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Note: This was renamed from UnboundMethod.java
  * 
  * @author jpetersen
- * @version $Revision$
  */
 public class RubyUnboundMethod extends RubyMethod {
     protected RubyUnboundMethod(IRuby runtime) {

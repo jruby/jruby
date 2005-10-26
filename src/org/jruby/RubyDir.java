@@ -45,7 +45,6 @@ import org.jruby.util.Glob;
  * .The Ruby built-in class Dir.
  *
  * @author  jvoegele
- * @version $Revision$
  */
 public class RubyDir extends RubyObject {
 	// What we passed to the constructor for method 'path'

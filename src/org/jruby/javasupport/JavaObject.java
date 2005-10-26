@@ -45,7 +45,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class JavaObject extends RubyObject {
     private static Object NULL_LOCK = new Object();

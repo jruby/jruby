@@ -41,7 +41,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * some args stuff.
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class ArrayNode extends ListNode implements ILiteralNode {
     static final long serialVersionUID = 6279246130032958596L;

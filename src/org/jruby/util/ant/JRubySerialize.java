@@ -50,7 +50,6 @@ import org.jruby.main.ASTSerializer;
 /**
  * 
  * @author jpetersen
- * @version $Revision$
  */
 public class JRubySerialize extends Task {
     private File destdir = null;

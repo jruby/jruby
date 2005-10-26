@@ -38,7 +38,6 @@ import org.jruby.ast.Node;
  * eventually closed (which should free the resources of that internal stream).
  * 
  * @author jpetersen
- * @version $Revision$
  */
 public interface IAstEncoder {
     void writeNode(Node node) throws IOException;

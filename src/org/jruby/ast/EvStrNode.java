@@ -44,7 +44,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * the first evaluation this String is parsed into the evaluatedNode Node.
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class EvStrNode extends Node {
     static final long serialVersionUID = 1681935012117120817L;

@@ -49,7 +49,6 @@ import org.jruby.util.IOModes;
 /**
  * 
  * @author jpetersen
- * @version $Revision$
  */
 public class RubyIO extends RubyObject {
     public static final int STDIN = 0;

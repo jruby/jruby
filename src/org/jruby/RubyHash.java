@@ -50,7 +50,6 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 /** Implementation of the Hash class.
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class RubyHash extends RubyObject implements Map {
     private Map valueMap;

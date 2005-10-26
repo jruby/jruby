@@ -1,6 +1,5 @@
 JRuby Code Conventions
 ----------------------
-$Revision$
 
 
 This document summarizes the way we recommend to write source code for the

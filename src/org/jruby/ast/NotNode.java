@@ -39,7 +39,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class NotNode extends Node {
     static final long serialVersionUID = -9044821606260233871L;

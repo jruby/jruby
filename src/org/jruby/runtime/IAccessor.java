@@ -32,7 +32,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * 
  * @author jpetersen
- * @version $Revision$
  */
 public interface IAccessor {
     public IRubyObject getValue();

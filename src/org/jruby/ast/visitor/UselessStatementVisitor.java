@@ -63,7 +63,6 @@ import org.jruby.evaluator.SingleNodeVisitor;
 /**
  * 
  * @author jpetersen
- * @version $Revision$
  */
 public class UselessStatementVisitor extends AbstractVisitor {
 	private IRubyWarnings warnings;

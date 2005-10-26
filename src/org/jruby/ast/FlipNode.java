@@ -42,7 +42,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * named after a FlipFlop component in electronic I believe.
  * 
  * @author  jpetersen
- * @version $Revision$
  */
 public class FlipNode extends Node {
     static final long serialVersionUID = -4735579451657299802L;

@@ -41,7 +41,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public abstract class AbstractMethod extends AbstractCallable {
     protected AbstractMethod(RubyModule implementationClass, Visibility visibility) {

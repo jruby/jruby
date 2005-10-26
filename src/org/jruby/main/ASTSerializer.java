@@ -53,7 +53,6 @@ import org.jruby.parser.RubyParserResult;
 /**
  * 
  * @author jpetersen
- * @version $Revision$
  */
 public class ASTSerializer {
     public ASTSerializer() {

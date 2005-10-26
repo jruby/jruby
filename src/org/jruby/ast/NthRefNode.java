@@ -40,7 +40,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /** Represents a $number variable.
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class NthRefNode extends Node {
     static final long serialVersionUID = -3301605695065934063L;

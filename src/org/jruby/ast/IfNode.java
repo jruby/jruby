@@ -40,7 +40,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /**
  * an 'if' statement.
  * @author  jpetersen
- * @version $Revision$
  */
 public class IfNode extends Node {
     static final long serialVersionUID = -163780144332979551L;

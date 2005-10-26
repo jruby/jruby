@@ -1,7 +1,6 @@
 #
 #               getopts.rb - 
 #                       $Release Version: $
-#                       $Revision$
 #                       $Date$
 #                       by Yasuo OHBA(SHL Japan Inc. Technology Dept.)
 #

@@ -78,7 +78,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  * This visitor is used to evaluate a defined? statement.
  * 
  * @author jpetersen
- * @version $Revision$
  */
 public class DefinedVisitor extends AbstractVisitor {
     private IRuby runtime;

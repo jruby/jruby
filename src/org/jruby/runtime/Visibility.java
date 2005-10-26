@@ -45,7 +45,6 @@ import org.jruby.util.IdUtil;
  * method visibility is in the mask.
  *  
  * @author jpetersen
- * @version $Revision$
  */
 public final class Visibility implements Serializable {
 	private static final short PUBLIC_VALUE = (short) 1;

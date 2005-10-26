@@ -32,7 +32,6 @@ package org.jruby;
 /**
  *
  * @author  enebo
- * @version $Revision$
  */
 public class RubyProcess {
 

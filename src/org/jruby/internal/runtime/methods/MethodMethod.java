@@ -39,7 +39,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * 
  * @author jpetersen
- * @version $Revision$
  */
 public class MethodMethod extends AbstractMethod {
     private RubyUnboundMethod method;

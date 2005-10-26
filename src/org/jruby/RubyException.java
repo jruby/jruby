@@ -43,7 +43,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class RubyException extends RubyObject {
 

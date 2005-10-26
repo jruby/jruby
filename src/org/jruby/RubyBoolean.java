@@ -36,7 +36,6 @@ import org.jruby.runtime.marshal.MarshalStream;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class RubyBoolean extends RubyObject {
 	private final IRuby runtime;

@@ -1,7 +1,6 @@
 
 JRuby Developer's Glossary
 --------------------------
-$Revision$
 
 
 AST (Abstract Syntax Tree):

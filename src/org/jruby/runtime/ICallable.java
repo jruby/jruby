@@ -36,7 +36,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 // TODO: Consider making this be an interface that will have immutable concrete implementations
 public interface ICallable {

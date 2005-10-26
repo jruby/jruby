@@ -128,7 +128,6 @@ import org.jruby.evaluator.SingleNodeVisitor;
 /** This visitor calls by default the return visitNode method for each visited Node.
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public abstract class AbstractVisitor implements NodeVisitor {
     

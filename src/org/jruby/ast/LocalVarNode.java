@@ -40,7 +40,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class LocalVarNode extends Node {
     static final long serialVersionUID = 8562701804939317217L;

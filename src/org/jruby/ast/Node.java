@@ -43,7 +43,6 @@ import org.jruby.lexer.yacc.ISourcePositionHolder;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public abstract class Node implements ISourcePositionHolder, Serializable {
     static final long serialVersionUID = -5962822607672530224L;

@@ -48,7 +48,6 @@ import org.jruby.runtime.Arity;
  * </pre>
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class ZeroArgNode extends Node implements IArityNode {
     static final long serialVersionUID = 6596791950608957025L;

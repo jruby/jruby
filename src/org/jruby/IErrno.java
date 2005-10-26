@@ -35,7 +35,6 @@ package org.jruby;
  * sooner or later.
  * The purpose of this class it to help implement the Errno module which in turn in needed by rubicon.
  * @author Benoit Cerrina
- * @version $Revision$
  **/
 public interface IErrno
 {

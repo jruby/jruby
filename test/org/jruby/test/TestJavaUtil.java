@@ -37,7 +37,6 @@ import org.jruby.javasupport.JavaUtil;
 
 /**
  * @author jpetersen
- * @version $Revision$
  */
 public class TestJavaUtil extends TestCase {
     private IRuby runtime;

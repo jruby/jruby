@@ -42,7 +42,6 @@ import org.jruby.evaluator.SingleNodeVisitor;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class BreakStatementVisitor extends AbstractVisitor {
     private boolean breakStatement;

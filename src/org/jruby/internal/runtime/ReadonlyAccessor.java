@@ -34,7 +34,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * 
  * @author jpetersen
- * @version $Revision$
  */
 public class ReadonlyAccessor implements IAccessor {
     private String name;

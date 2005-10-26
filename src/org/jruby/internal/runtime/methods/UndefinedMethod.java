@@ -36,7 +36,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * 
  * @author jpetersen
- * @version $Revision$
  */
 public class UndefinedMethod extends AbstractMethod {
     private static final UndefinedMethod instance = new UndefinedMethod(Visibility.PUBLIC);

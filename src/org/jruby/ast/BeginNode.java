@@ -40,7 +40,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  *  A Begin ... End block without rescue.
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class BeginNode extends Node {
     static final long serialVersionUID = 7295877486186461712L;

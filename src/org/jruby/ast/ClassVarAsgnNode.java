@@ -41,7 +41,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * Class variable assignment node.
  * 
  * @author  jpetersen
- * @version $Revision$
  */
 public class ClassVarAsgnNode extends AssignableNode implements INameNode {
     static final long serialVersionUID = -2960487069128667341L;

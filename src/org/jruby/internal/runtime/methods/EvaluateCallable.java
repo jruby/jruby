@@ -41,7 +41,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class EvaluateCallable extends AbstractCallable {
     private final Node node;

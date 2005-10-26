@@ -41,7 +41,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /** Represents a false literal.
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class FalseNode extends Node implements INameNode {
     static final long serialVersionUID = 8153681841075601779L;

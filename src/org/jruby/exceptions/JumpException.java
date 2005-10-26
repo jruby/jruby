@@ -34,7 +34,6 @@ package org.jruby.exceptions;
  * Exception don't need a stack trace.
  * 
  * @author jpetersen
- * @version $Revision$
  */
 public class JumpException extends RuntimeException {
 	public static final class JumpType {

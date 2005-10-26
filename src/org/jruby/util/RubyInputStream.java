@@ -38,7 +38,6 @@ import java.io.PushbackInputStream;
 /**
  * 
  * @author jpetersen
- * @version $Revision$
  */
 public class RubyInputStream extends PushbackInputStream {
     public RubyInputStream(InputStream in) {

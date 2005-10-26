@@ -40,7 +40,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  * kind of control over garbage collection that MRI provides.
  *
  * @author Anders
- * @version $Revision$
  */
 public class RubyGC {
     public static RubyModule createGCModule(IRuby runtime) {

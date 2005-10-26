@@ -41,7 +41,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  * <p>
  *
  * @author Charles O Nutter (headius@headius.com)
- * @version $Revision$
  */
 public class RubyThreadGroup extends RubyObject {
     private Map rubyThreadList = new HashMap();

@@ -52,7 +52,6 @@ import org.jruby.util.PreparsedScript;
 /**
  *
  * @author jpetersen
- * @version $Revision$
  */
 public class LoadService {
     private static final String[] suffixes = { ".ast.ser", "", ".rb.ast.ser", ".rb", ".jar" };

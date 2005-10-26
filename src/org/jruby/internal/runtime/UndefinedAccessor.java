@@ -35,7 +35,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * 
  * @author jpetersen
- * @version $Revision$
  */
 public class UndefinedAccessor implements IAccessor {
     private final IRuby runtime;

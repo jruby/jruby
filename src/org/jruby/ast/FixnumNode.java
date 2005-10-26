@@ -41,7 +41,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /** Represents an integer literal.
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class FixnumNode extends Node implements ILiteralNode {
     static final long serialVersionUID = 2236565825959274729L;

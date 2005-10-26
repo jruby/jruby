@@ -41,7 +41,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * Access to a Dynamic variable.
  * Dynamic variable are those defined in a block.
  * @author  jpetersen
- * @version $Revision$
  */
 public class DVarNode extends Node {
     static final long serialVersionUID = -8479281167248673970L;

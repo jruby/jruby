@@ -52,7 +52,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  *
  *	
  * @author  jpetersen
- * @version $Revision$
  */
 public class BackRefNode extends Node {
     static final long serialVersionUID = 5321267679438359590L;

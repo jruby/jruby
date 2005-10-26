@@ -35,7 +35,6 @@ import java.io.OutputStream;
 /**
  * 
  * @author jpetersen
- * @version $Revision$
  */
 public interface IAstMarshal {
     IAstEncoder openEncoder(OutputStream output) throws IOException;

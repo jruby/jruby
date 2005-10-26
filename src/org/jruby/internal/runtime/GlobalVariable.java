@@ -38,7 +38,6 @@ import org.jruby.runtime.IAccessor;
 /**
  * 
  * @author jpetersen
- * @version $Revision$
  */
 public final class GlobalVariable {
     private IAccessor accessor;

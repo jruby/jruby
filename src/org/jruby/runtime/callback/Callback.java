@@ -36,7 +36,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public interface Callback {
     public IRubyObject execute(IRubyObject recv, IRubyObject[] args);

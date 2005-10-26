@@ -49,7 +49,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * 
  * @author jpetersen
- * @version $Revision$
  */
 public class AssignmentVisitor extends AbstractVisitor {
     private IRuby runtime;

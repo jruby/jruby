@@ -40,7 +40,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * backquote strings are eXecuted using the shell, hence the X 
  * or maybe the X is due to the %x general quote syntax
  * @author  jpetersen
- * @version $Revision$
  */
 public class DXStrNode extends ListNode implements ILiteralNode {
     static final long serialVersionUID = 7165988969190553667L;

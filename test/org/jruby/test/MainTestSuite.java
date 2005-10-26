@@ -42,7 +42,6 @@ import org.jruby.javasupport.test.JavaSupportTestSuite;
 /**
  *
  * @author chadfowler
- * @version $Revision$
  */
 public class MainTestSuite extends TestSuite {
 

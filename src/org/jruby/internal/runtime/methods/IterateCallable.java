@@ -38,7 +38,6 @@ import org.jruby.runtime.callback.Callback;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class IterateCallable extends AbstractCallable {
     private Callback callback;

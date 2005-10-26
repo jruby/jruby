@@ -39,7 +39,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /** Represents an until statement.
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class UntilNode extends Node {
     static final long serialVersionUID = -2929327250252365636L;

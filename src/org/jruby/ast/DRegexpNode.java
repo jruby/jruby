@@ -41,7 +41,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  *	a regexp is dynamic if it contains some expressions which will need to be evaluated
  *	everytime the regexp is used for a match
  * @author  jpetersen
- * @version $Revision$
  */
 public class DRegexpNode extends ListNode implements ILiteralNode {
     static final long serialVersionUID = 7307853378003210140L;

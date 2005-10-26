@@ -40,7 +40,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public abstract class AbstractCallable implements ICallable {
     protected RubyModule implementationClass;

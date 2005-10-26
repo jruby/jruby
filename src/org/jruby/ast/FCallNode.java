@@ -40,7 +40,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /** Represents a method call with self as receiver.
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class FCallNode extends Node {
     static final long serialVersionUID = 3590332973770104094L;

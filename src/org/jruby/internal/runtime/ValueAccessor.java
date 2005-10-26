@@ -33,7 +33,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * 
  * @author jpetersen
- * @version $Revision$
  */
 public class ValueAccessor implements IAccessor {
     private IRubyObject value;

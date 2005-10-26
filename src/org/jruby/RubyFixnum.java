@@ -40,7 +40,6 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 /** Implementation of the Fixnum class.
  *
  * @author jpetersen
- * @version $Revision$
  */
 public class RubyFixnum extends RubyInteger {
     private long value;

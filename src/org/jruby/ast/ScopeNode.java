@@ -47,7 +47,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * part of the call to copyNodeScope.
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class ScopeNode extends Node {
     static final long serialVersionUID = 3694868125861223886L;

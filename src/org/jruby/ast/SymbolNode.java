@@ -41,7 +41,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /** Represents a symbol (:symbol_name).
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class SymbolNode extends Node implements ILiteralNode {
     static final long serialVersionUID = 3168450881711346709L;

@@ -38,7 +38,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 /** Implementation of the Comparable module.
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class RubyComparable {
     public static RubyModule createComparable(IRuby runtime) {

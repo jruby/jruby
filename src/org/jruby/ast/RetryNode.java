@@ -40,7 +40,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /** Represents a 'retry' statement.
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class RetryNode extends Node {
     static final long serialVersionUID = 4648280998968560181L;

@@ -38,7 +38,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 /** Implementation of the Integer class.
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public abstract class RubyInteger extends RubyNumeric { 
     public RubyInteger(IRuby runtime, RubyClass rubyClass) {

@@ -32,7 +32,6 @@ package org.jruby.runtime;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public final class Iter {
     /** No block given */

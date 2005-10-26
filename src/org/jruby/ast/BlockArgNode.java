@@ -45,7 +45,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  *	<code>def tutu(a, b, &amp;c)</code>
  *	in this example c is a BlockArgNode
  * @author  jpetersen
- * @version $Revision$
  */
 public class BlockArgNode extends Node {
     static final long serialVersionUID = 8374824536805365398L;

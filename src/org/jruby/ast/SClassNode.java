@@ -45,7 +45,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * </pre>
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class SClassNode extends Node {
     static final long serialVersionUID = -3706492163082062224L;

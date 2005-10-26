@@ -47,7 +47,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Marshals objects into Ruby's binary marshal format.
  *
  * @author Anders
- * $Revision$
  */
 public class MarshalStream extends FilterOutputStream {
     private final IRuby runtime;

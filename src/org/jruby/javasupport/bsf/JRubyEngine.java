@@ -60,7 +60,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 /** An implementation of a JRuby BSF implementation.
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class JRubyEngine extends BSFEngineImpl {
     private IRuby runtime;

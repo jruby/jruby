@@ -41,7 +41,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * A block passing argument in a method call (last argument prefixed by an ampersand).
  * 
  * @author  jpetersen
- * @version $Revision$
  */
 public class BlockPassNode extends Node {
     static final long serialVersionUID = 7201862349971094217L;

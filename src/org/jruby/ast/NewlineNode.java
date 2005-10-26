@@ -49,7 +49,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * The parser generates such a node around each separate statement.  
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class NewlineNode extends Node {
     static final long serialVersionUID = -6180129177863553832L;

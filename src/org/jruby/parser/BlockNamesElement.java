@@ -38,7 +38,6 @@ import org.jruby.util.collections.StackElement;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class BlockNamesElement implements StackElement {
     private BlockNamesElement next;

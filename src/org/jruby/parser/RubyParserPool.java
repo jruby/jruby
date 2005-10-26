@@ -39,7 +39,6 @@ import java.util.List;
 /**
  * 
  * @author jpetersen
- * @version $Revision$
  */
 public class RubyParserPool {
     private static RubyParserPool instance = new RubyParserPool();

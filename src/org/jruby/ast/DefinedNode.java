@@ -40,7 +40,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /**
  * a defined statement.
  * @author  jpetersen
- * @version $Revision$
  */
 public class DefinedNode extends Node {
     static final long serialVersionUID = -6942286690645861964L;

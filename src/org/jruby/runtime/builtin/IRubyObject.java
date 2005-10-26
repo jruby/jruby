@@ -50,7 +50,6 @@ import org.jruby.runtime.marshal.MarshalStream;
  * therefore available to all objects unless explicitly overridden.
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public interface IRubyObject {
     public static final IRubyObject[] NULL_ARRAY = new IRubyObject[0];

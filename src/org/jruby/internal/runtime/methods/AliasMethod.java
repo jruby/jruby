@@ -37,7 +37,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class AliasMethod extends AbstractMethod {
     private ICallable oldMethod;

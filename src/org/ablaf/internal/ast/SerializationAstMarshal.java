@@ -44,7 +44,6 @@ import org.jruby.ast.Node;
 /**
  * 
  * @author jpetersen
- * @version $Revision$
  */
 public class SerializationAstMarshal implements IAstMarshal {
     /**

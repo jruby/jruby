@@ -42,7 +42,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 /** This class initializes global variables and constants.
  * 
  * @author jpetersen
- * @version $Revision$
  */
 public class RubyGlobal {
     public static void createGlobals(IRuby runtime) {

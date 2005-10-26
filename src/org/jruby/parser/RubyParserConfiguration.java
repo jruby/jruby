@@ -34,7 +34,6 @@ import java.util.List;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class RubyParserConfiguration {
     private boolean classNest;

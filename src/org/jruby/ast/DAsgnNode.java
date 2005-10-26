@@ -40,7 +40,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /**
  * assignment to dynamic variable
  * @author  jpetersen
- * @version $Revision$
  */
 public class DAsgnNode extends AssignableNode implements INameNode {
     static final long serialVersionUID = 2396008643154044043L;

@@ -40,7 +40,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /** Represents a '::' constant access or method call.
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class Colon2Node extends Node implements INameNode {
     static final long serialVersionUID = -3250593470034657352L;
