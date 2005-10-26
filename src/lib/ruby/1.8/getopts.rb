@@ -1,7 +1,5 @@
 #
 #               getopts.rb - 
-#                       $Release Version: $
-#                       $Date$
 #                       by Yasuo OHBA(SHL Japan Inc. Technology Dept.)
 #
 # --
@@ -14,7 +12,6 @@
 # rewritten by Akinori MUSHA <knu@ruby-lang.org>
 #
 
-$RCS_ID=%q$Header$
 
 
 def getopts(single_options, *options)
