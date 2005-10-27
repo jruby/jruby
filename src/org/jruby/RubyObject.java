@@ -301,19 +301,65 @@ public class RubyObject implements Cloneable, IRubyObject {
         return this;
     }
 
-    /** rb_funcall2
-     *
+    /**
+     * 
      */
     public IRubyObject callMethod(String name, IRubyObject[] args) {
-        return getMetaClass().call(this, name, args, CallType.FUNCTIONAL);
+        return callMethod(getMetaClass(), name, args, CallType.FUNCTIONAL);
+    }
+
+    /**
+     * 
+     */
+    public IRubyObject callMethod(String name, IRubyObject[] args,
+            CallType callType) {
+        return callMethod(getMetaClass(), name, args, callType);
+    }
+
+    /**
+     * 
+     */
+    public IRubyObject callMethod(RubyModule context, String name, IRubyObject[] args, 
+            CallType callType) {
+        assert args != null;
+        ICallable method = context.searchMethod(name);
+
+        if (method.isUndefined() ||
+            !(name.equals("method_missing") ||
+              method.isCallableFrom(getRuntime().getCurrentFrame().getSelf(), callType))) {
+            if (callType == CallType.SUPER) {
+                throw getRuntime().newNameError("super: no superclass method '" + name + "'");
+            }
+
+            // store call information so method_missing impl can use it
+            getRuntime().getCurrentContext().setLastCallStatus(method.getVisibility(), callType);
+
+            if (name.equals("method_missing")) {
+                return RubyKernel.method_missing(this, args);
+            }
+
+            IRubyObject[] newArgs = new IRubyObject[args.length + 1];
+            System.arraycopy(args, 0, newArgs, 1, args.length);
+            newArgs[0] = RubySymbol.newSymbol(getRuntime(), name);
+
+            return callMethod("method_missing", newArgs);
+        }
+
+        String originalName = method.getOriginalName();
+        if (originalName != null) {
+            name = originalName;
+        }
+
+        return method.call(getRuntime(), this, name, args, false);
     }
 
     public IRubyObject callMethod(String name) {
         return callMethod(name, IRubyObject.NULL_ARRAY);
     }
 
-    /** rb_funcall
-     *
+    /**
+     * rb_funcall
+     * 
      */
     public IRubyObject callMethod(String name, IRubyObject arg) {
         return callMethod(name, new IRubyObject[] { arg });
@@ -971,7 +1017,7 @@ public class RubyObject implements Cloneable, IRubyObject {
 
         getRuntime().getIterStack().push(getRuntime().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
         try {
-            return getMetaClass().call(this, name, newArgs, CallType.FUNCTIONAL);
+            return callMethod(name, newArgs, CallType.FUNCTIONAL);
         } finally {
             getRuntime().getIterStack().pop();
         }

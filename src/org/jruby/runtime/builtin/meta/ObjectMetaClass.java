@@ -109,7 +109,6 @@ public class ObjectMetaClass extends AbstractMetaClass {
 	        defineMethod("instance_variable_set", Arity.twoArguments());
 	        defineMethod("method", Arity.singleArgument(), "method");
 	        defineMethod("methods", Arity.optional());
-	        defineMethod("method_missing", Arity.optional());
 	        defineMethod("private_methods", Arity.noArguments());
 	        defineMethod("protected_methods", Arity.noArguments());
 	        defineMethod("public_methods", Arity.optional());

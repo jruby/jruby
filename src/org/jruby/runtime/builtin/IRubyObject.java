@@ -43,6 +43,7 @@ import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.ast.Node;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.marshal.MarshalStream;
 
@@ -71,6 +72,10 @@ public interface IRubyObject {
     
     Map getInstanceVariables();
 
+    IRubyObject callMethod(RubyModule context, String name, IRubyObject[] args, CallType callType);
+    
+    IRubyObject callMethod(String name, IRubyObject[] args, CallType callType);
+    
     /**
      * RubyMethod funcall.
      * @param string
@@ -274,13 +279,6 @@ public interface IRubyObject {
 
 
     public void callInit(IRubyObject[] args);
-
-    /**
-     * RubyMethod method_missing.
-     * @param args
-     * @return IRubyObject
-     */
-    IRubyObject method_missing(IRubyObject[] args);
 
     /**
      * RubyMethod defineSingletonMethod.

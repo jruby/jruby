@@ -158,6 +158,7 @@ import org.jruby.internal.runtime.methods.WrapperCallable;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.Scope;
@@ -529,7 +530,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             }
             assert receiver.getMetaClass() != null : receiver.getClass().getName();
             
-            state.setResult(receiver.getMetaClass().call(receiver, iVisited.getName(), args, CallType.NORMAL));
+            state.setResult(receiver.callMethod(iVisited.getName(), args, CallType.NORMAL));
     	}
     }
     private static final CallNodeVisitor callNodeVisitor = new CallNodeVisitor();
@@ -934,7 +935,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             	state.getThreadContext().endCallArgs(tmpBlock);
             }
 
-            state.setResult(state.getSelf().getMetaClass().call(state.getSelf(), iVisited.getName(), args, CallType.FUNCTIONAL));
+            state.setResult(state.getSelf().callMethod(iVisited.getName(), args, CallType.FUNCTIONAL));
     	}
     }
     private static final FCallNodeVisitor fCallNodeVisitor = new FCallNodeVisitor();
@@ -1002,7 +1003,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                             state.getThreadContext().setPosition(position);
                             state.getThreadContext().endCallArgs(tmpBlock);
                         }
-                        state.setResult(recv.getMetaClass().call(recv, "each", IRubyObject.NULL_ARRAY, CallType.NORMAL));
+                        state.setResult(recv.callMethod("each", IRubyObject.NULL_ARRAY, CallType.NORMAL));
                         return;
                     } catch (JumpException je) {
                     	if (je.getJumpType() == JumpException.JumpType.RetryJump) {
@@ -1840,7 +1841,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class VCallNodeVisitor implements SingleNodeVisitor {
     	public void visit(EvaluationState state, Node node) {
     		VCallNode iVisited = (VCallNode)node;
-            state.setResult(state.getSelf().getMetaClass().call(state.getSelf(), iVisited.getMethodName(), IRubyObject.NULL_ARRAY, CallType.VARIABLE));
+            state.setResult(state.getSelf().callMethod(iVisited.getMethodName(), IRubyObject.NULL_ARRAY, CallType.VARIABLE));
     	}
     }
     private static final VCallNodeVisitor vCallNodeVisitor = new VCallNodeVisitor();
@@ -1919,7 +1920,13 @@ public final class EvaluateVisitor implements NodeVisitor {
     // Not collapsed, is this a call?
     private static class ZSuperNodeVisitor implements SingleNodeVisitor {
     	public void visit(EvaluationState state, Node node) {
-            state.setResult(state.getThreadContext().callSuper());
+    		Frame frame = state.getThreadContext().getCurrentFrame();
+    		
+            if (frame.getLastClass() == null) {
+                throw state.getRuntime().newNameError("superclass method '" + frame.getLastFunc() + "' disabled");
+            }
+
+            state.setResult(state.getThreadContext().callSuper(frame.getArgs()));
     	}
     }
     private static final ZSuperNodeVisitor zSuperNodeVisitor = new ZSuperNodeVisitor();

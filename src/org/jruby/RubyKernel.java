@@ -43,8 +43,9 @@ import java.util.Iterator;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.meta.FileMetaClass;
 import org.jruby.runtime.builtin.meta.StringMetaClass;
@@ -98,8 +99,7 @@ public class RubyKernel {
         module.defineModuleFunction("local_variables", callbackFactory.getSingletonMethod("local_variables"));
         module.defineModuleFunction("loop", callbackFactory.getSingletonMethod("loop"));
         // Note: method_missing is documented as being in Object, but ruby appears to stick it in Kernel.
-        module.defineModuleFunction("method_missing",
-        		runtime.callbackFactory(RubyObject.class).getOptMethod("method_missing"));
+        module.defineModuleFunction("method_missing", callbackFactory.getOptSingletonMethod("method_missing"));
         module.defineModuleFunction("open", callbackFactory.getOptSingletonMethod("open"));
         module.defineModuleFunction("p", callbackFactory.getOptSingletonMethod("p"));
         module.defineModuleFunction("print", callbackFactory.getOptSingletonMethod("print"));
@@ -154,35 +154,22 @@ public class RubyKernel {
         return recv;
     }
 
-    public IRubyObject method_missing(IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject method_missing(IRubyObject recv, IRubyObject[] args) {
         IRuby runtime = recv.getRuntime();
-        ThreadContext context = runtime.getCurrentContext();
         if (args.length == 0) {
             throw recv.getRuntime().newArgumentError("no id given");
         }
 
         String name = args[0].asSymbol();
-
         String description = recv.callMethod("inspect").toString();
-        boolean noClass = description.charAt(0) == '#';
-        if (recv.isNil()) {
-            noClass = true;
-            description = "nil";
-        } else if (recv == recv.getRuntime().getTrue()) {
-            noClass = true;
-            description = "true";
-        } else if (recv == recv.getRuntime().getFalse()) {
-            noClass = true;
-            description = "false";
-        }
+        boolean noClass = description.length() > 0 && description.charAt(0) == '#';
+        Visibility lastVis = runtime.getCurrentContext().getLastVisibility();
+        CallType lastCallType = runtime.getCurrentContext().getLastCallType();
+        String format = lastVis.errorMessageFormat(lastCallType, name);
+        String msg = new PrintfFormat(format).sprintf(new Object[] { name, description, 
+            noClass ? "" : ":", noClass ? "" : recv.getType().getName()});
 
-        String format = context.getLastVisibility().errorMessageFormat(context.getLastCallType(), name);
-
-        String msg =
-            new PrintfFormat(format).sprintf(
-                new Object[] { name, description, noClass ? "" : ":", noClass ? "" : recv.getType().getName()});
-
-        throw recv.getRuntime().newNoMethodError(msg);
+        throw lastCallType == CallType.VARIABLE ? runtime.newNameError(msg) : runtime.newNoMethodError(msg);
     }
 
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args) {

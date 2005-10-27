@@ -46,7 +46,6 @@ import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.internal.runtime.methods.WrapperCallable;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.CallType;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.ThreadContext;
@@ -560,56 +559,6 @@ public class RubyModule extends RubyObject {
     		return getConstant(name, false);
     	}
     	return null;
-    }
-
-    /** rb_call
-     *
-     */
-    public final IRubyObject call(IRubyObject recv, String name, IRubyObject[] args, CallType callType) {
-        assert args != null;
-
-        ICallable method = searchMethod(name);
-
-        if (method.isUndefined()) {
-            if (callType == CallType.SUPER) {
-                throw getRuntime().newNameError("super: no superclass method '" + name + "'");
-            } else {
-                getRuntime().getCurrentContext().setLastCallStatus(method.getVisibility(), callType);
-            }
-            return callMethodMissing(recv, name, args);
-        }
-
-        if (!name.equals("method_missing")) {
-            if (!method.isCallableFrom(getRuntime().getCurrentFrame().getSelf(), callType)) {
-                getRuntime().getCurrentContext().setLastCallStatus(method.getVisibility(), callType);
-                return callMethodMissing(recv, name, args);
-            }
-        }
-        
-        String originalName = method.getOriginalName();
-        if (originalName != null) {
-        	name = originalName;
-        }
-
-        return method.call(getRuntime(), recv, name, args, false);
-    }
-
-    private IRubyObject callMethodMissing(IRubyObject receiver, String name, IRubyObject[] args) {
-    	IRuby runtime = getRuntime();
-        if (name == "method_missing") {
-            runtime.getFrameStack().push(new Frame(runtime.getCurrentContext()));
-            try {
-                return receiver.method_missing(args);
-            } finally {
-                runtime.getFrameStack().pop();
-            }
-        }
-
-        IRubyObject[] newArgs = new IRubyObject[args.length + 1];
-        System.arraycopy(args, 0, newArgs, 1, args.length);
-        newArgs[0] = RubySymbol.newSymbol(runtime, name);
-
-        return receiver.callMethod("method_missing", newArgs);
     }
 
     /** rb_alias

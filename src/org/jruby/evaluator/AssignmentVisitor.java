@@ -92,12 +92,12 @@ public class AssignmentVisitor extends AbstractVisitor {
 				.getReceiverNode());
 
         if (iVisited.getArgsNode() == null) { // attribute set.
-            receiver.getMetaClass().call(receiver, iVisited.getName(), new IRubyObject[] {value}, CallType.NORMAL);
+            receiver.callMethod(iVisited.getName(), new IRubyObject[] {value}, CallType.NORMAL);
         } else { // element set
             RubyArray args = (RubyArray) evaluator.eval(self.getRuntime(),
                     self, iVisited.getArgsNode());
             args.append(value);
-            receiver.getMetaClass().call(receiver, iVisited.getName(), args.toJavaArray(), CallType.NORMAL);
+            receiver.callMethod(iVisited.getName(), args.toJavaArray(), CallType.NORMAL);
         }
 		return null;
 	}

@@ -187,16 +187,6 @@ public class ThreadContext {
         return currentScope().getVisibility();
     }
 
-	public IRubyObject callSuper() {
-		Frame frame = getCurrentFrame();
-		
-        if (frame.getLastClass() == null) {
-            throw runtime.newNameError("superclass method '" + frame.getLastFunc() + "' disabled");
-        }
-
-        return callSuper(frame.getArgs());
-	}
-	
     public IRubyObject callSuper(IRubyObject[] args) {
     	Frame frame = getCurrentFrame();
     	
@@ -211,7 +201,7 @@ public class ThreadContext {
             if (superClass == null) {
             	superClass = runtime.getObject();
             }
-            return superClass.call(frame.getSelf(), frame.getLastFunc(),
+            return frame.getSelf().callMethod(superClass, frame.getLastFunc(),
                                    args, CallType.SUPER);
         } finally {
             iterStack.pop();

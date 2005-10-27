@@ -101,3 +101,34 @@ end
 
 test_exception(NoMethodError) { BadInspect.new.hop }
 
+# method_missing tests
+class Foo
+  def method_missing(sym)
+  end
+end
+
+# method_missing 1. Redefine to one which throws no Error
+test_no_exception { Foo.new.frogger }
+
+class Foo
+  undef method_missing
+end
+
+# method_missing 2. Undef user-defined for normal behavior
+test_exception(NoMethodError) { Foo.new.frogger }
+
+class Object
+  undef method_missing
+end
+
+# method_missing 3. Undef Object to make sure we handle that
+test_exception(NoMethodError) { Foo.new.frogger }
+
+module Kernel
+  undef method_missing
+end
+
+# method_missing 4. Undef Kernel to make sure we handle that
+test_exception(NoMethodError) { Foo.new.frogger }
+
+
