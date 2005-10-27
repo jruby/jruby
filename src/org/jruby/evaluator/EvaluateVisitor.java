@@ -444,7 +444,6 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final ConstDeclNodeVisitor2 constDeclNodeVisitor2 = new ConstDeclNodeVisitor2();
     private static class ConstDeclNodeVisitor implements SingleNodeVisitor {
     	public void visit(EvaluationState state, Node node) {
-    		ConstDeclNode iVisited = (ConstDeclNode)node;
             state.addNodeAndVisitor(node, constDeclNodeVisitor1);
     	}
     }
@@ -1240,7 +1239,6 @@ public final class EvaluateVisitor implements NodeVisitor {
     // Collapsed
     private static class MatchNodeVisitor1 implements SingleNodeVisitor {
     	public void visit(EvaluationState state, Node node) {
-    		MatchNode iVisited = (MatchNode)node;
             state.setResult(((RubyRegexp) state.getResult()).match2());
     	}
     }
@@ -1337,7 +1335,6 @@ public final class EvaluateVisitor implements NodeVisitor {
     // Collapsed
     private static class NotNodeVisitor1 implements SingleNodeVisitor {
     	public void visit(EvaluationState state, Node node) {
-    		NotNode iVisited = (NotNode)node;
             state.setResult(state.getResult().isTrue() ? state.getRuntime().getFalse() : state.getRuntime().getTrue());
     	}
     }
@@ -1698,7 +1695,6 @@ public final class EvaluateVisitor implements NodeVisitor {
     // Collapsed
     private static class SplatNodeVisitor1 implements SingleNodeVisitor {
     	public void visit(EvaluationState state, Node node) {
-    		SplatNode iVisited = (SplatNode)node;
             state.setResult(splatValue(state, state.getResult()));
     	}
     }
@@ -1725,7 +1721,6 @@ public final class EvaluateVisitor implements NodeVisitor {
     // Collapsed
     private static class SValueNodeVisitor1 implements SingleNodeVisitor {
     	public void visit(EvaluationState state, Node node) {
-    		SValueNode iVisited = (SValueNode)node;
             state.setResult(aValueSplat(state, state.getResult()));
     	}
     }
@@ -1764,7 +1759,6 @@ public final class EvaluateVisitor implements NodeVisitor {
     // Collapsed
     private static class ToAryNodeVisitor1 implements SingleNodeVisitor {
     	public void visit(EvaluationState state, Node node) {
-    		ToAryNode iVisited = (ToAryNode)node;
             state.setResult(aryToAry(state, state.getResult()));
     	}
     }
