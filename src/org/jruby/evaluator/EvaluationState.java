@@ -9,7 +9,6 @@ package org.jruby.evaluator;
 import java.util.Stack;
 
 import org.jruby.IRuby;
-import org.jruby.Ruby;
 import org.jruby.ast.Node;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
