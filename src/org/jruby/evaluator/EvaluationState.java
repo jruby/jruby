@@ -17,15 +17,23 @@ import org.jruby.runtime.builtin.IRubyObject;
 class EvaluationState {
 	private IRubyObject result;
 	private Object target; // for returns
-	private IRuby runtime;
-	private ThreadContext threadContext;
+	public final IRuby runtime;
+	public final ThreadContext threadContext;
 	private IRubyObject self;
-	private EvaluateVisitor evaluator;
+	public final EvaluateVisitor evaluator;
 	private Stack nodeStackStack = new Stack();
 	private Stack nodeVisitorStackStack = new Stack();
 	private EvaluationEvent event;
 	
 	private Stack returnPoints = new Stack();
+    
+    public EvaluationState(IRuby runtime, EvaluateVisitor evaluator) {
+        this.runtime = runtime;
+        this.evaluator = evaluator;
+        
+        result = runtime.getNil();
+        threadContext = runtime.getCurrentContext();
+    }
 	
 	/**
 	 * Mark the current stack position as "wanting return". When a return is encountered,
@@ -101,7 +109,7 @@ class EvaluationState {
 	 * @param node
 	 */
 	public void addNodeAndVisitor(Node node) {
-		addNodeAndVisitor(node, node.accept(getEvaluator()));
+		addNodeAndVisitor(node, node.accept(evaluator));
 		returnPoints.clear();
 	}
 	
@@ -135,63 +143,32 @@ class EvaluationState {
 	public void setResult(IRubyObject result) {
 		this.result = result;
 	}
+    
 	/**
 	 * @return Returns the result.
 	 */
 	public IRubyObject getResult() {
 		return result;
 	}
+    
 	public void clearResult() {
 		this.result = runtime.getNil();
 	}
-	/**
-	 * @param runtime The runtime to set.
-	 */
-	public void setRuntime(IRuby runtime) {
-		this.runtime = runtime;
-	}
-	/**
-	 * @return Returns the runtime.
-	 */
-	public IRuby getRuntime() {
-		return runtime;
-	}
-	/**
-	 * @param threadContext The threadContext to set.
-	 */
-	public void setThreadContext(ThreadContext threadContext) {
-		this.threadContext = threadContext;
-	}
-	/**
-	 * @return Returns the threadContext.
-	 */
-	public ThreadContext getThreadContext() {
-		return threadContext;
-	}
+    
 	/**
 	 * @param self The self to set.
 	 */
 	public void setSelf(IRubyObject self) {
 		this.self = self;
 	}
+    
 	/**
 	 * @return Returns the self.
 	 */
 	public IRubyObject getSelf() {
 		return self;
 	}
-	/**
-	 * @param evaluator The evaluator to set.
-	 */
-	public void setEvaluator(EvaluateVisitor evaluator) {
-		this.evaluator = evaluator;
-	}
-	/**
-	 * @return Returns the evaluator.
-	 */
-	public EvaluateVisitor getEvaluator() {
-		return evaluator;
-	}
+
 	public static class EvaluationEvent {
 		public static final EvaluationEvent Return = new EvaluationEvent(0);
 		public static final EvaluationEvent Retry = new EvaluationEvent(1);
