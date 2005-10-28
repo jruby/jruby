@@ -53,6 +53,25 @@ class JavaProxy
       class << self; self; end 
     end
 
+	# Is the method specified by name not yet defined (i.e. lazy)
+    def load_lazy_method?(name)
+      methods = JavaUtilities.find_java_methods(java_class, name.to_s)
+      methods.empty? ? nil : create_method(self, methods)
+    end
+    
+    # This accepts a clazz argument to allow us to use this method for lazy construction
+    # of class (static) proxy methods.  
+    def create_method(clazz, java_methods)
+	  name = java_methods.keys.first
+	  methods = java_methods[name]
+      clazz.send(:define_method, name) { |*args|
+        args.collect! { |v| Java.ruby_to_java(v) }
+        m = JavaUtilities.matching_method(methods.find_all {|m| m.arity == args.length}, args)
+        Java.java_to_ruby(m.invoke(self.java_object, *args))
+      }
+      name
+    end
+    
     # If the proxy class itself is passed as a parameter this will be called by Java#ruby_to_java    
     def to_java_object
       self.java_class
@@ -64,7 +83,6 @@ class JavaProxy
     
     def setup
       unless java_class.array?
-        setup_instance_methods
         setup_attributes
         setup_class_methods
         setup_constants
@@ -150,34 +168,23 @@ class JavaProxy
         JavaUtilities.create_proxy_class(constant, inner_class, self)
       end
     end
-
-    def setup_instance_methods
-      java_class.java_instance_methods.select { |m| m.public? }.group_by { |m| m.name
-      }.each do |name, methods|
-        # We optimize for java methods which only have one method of the same name.
-        if methods.length == 1
-          method = methods.first
-          class_eval do
-            define_method(name) do |*args|
-              args.collect! { |v| Java.ruby_to_java(v) }
-              Java.java_to_ruby(method.invoke(self.java_object, *args))
-            end
-          end
-        else
-          class_eval do
-            define_method(name) do |*args|
-              args.collect! { |v| Java.ruby_to_java(v) }
-              method = JavaUtilities.matching_method(methods, args)
-              Java.java_to_ruby(method.invoke(self.java_object, *args))
-            end
-          end 
-        end
-	  end
-    end
   end
   
   attr :java_object, true
+  alias_method :old_respond_to?, :respond_to?
   
+  # Does 'method' respond to an existing method or one which will come into existence the
+  # first time it is referenced?
+  def respond_to?(method, include_priv=false)
+    old_respond_to?(method, include_priv) || !JavaUtilities.find_java_methods(java_class, method.to_s).empty?
+  end
+  
+  # Lazily create a java method or defer to default method_missing behavior
+  def method_missing(name, *args)
+    methods = JavaUtilities.find_java_methods(java_class, name.to_s)
+    methods.empty? ? super(name, *args) : send(self.class.create_method(self.class, methods), *args)
+  end
+      
   def java_class
     self.class.java_class
   end
@@ -256,6 +263,30 @@ end
 module JavaUtilities
   @proxy_classes = {}
   @proxy_extenders = []
+  
+  # Find all java methods matching name (or its java beans inflected forms) and return them
+  # as a Hash (or an empty one if no matches are found).
+  def JavaUtilities.find_java_methods(java_class, name)
+    names = JavaUtilities.inflect_method_name(name)
+    java_class.java_instance_methods.select {|m| names.include?(m.name) }.group_by {|m| m.name }
+  end
+  
+  def JavaUtilities.inflect_method_name(name)
+    names = [name]
+    
+    # getters and setters called by proper name
+    return names if name =~ /^([gs]et[A-Z]|[^a-zA-Z])/
+   
+    sub_name = name.split(/(\?|=)/).first.sub!(/^./) { |c| c.upcase }
+		
+    if name =~ /=$/      # setter method name: foo= -> setFoo
+      names << 'set' + sub_name 
+    elsif name =~ /\?$/  # getter method name: foo? -> isFoo
+      names << 'is' + sub_name
+    else                 # ordinary method name: foo -> getFoo, isFoo
+      names << 'get' + sub_name << 'is' + sub_name
+    end
+  end
   
   def JavaUtilities.add_proxy_extender(extender)
     @proxy_extenders << extender
@@ -441,18 +472,15 @@ end
 
 
 class JavaInterfaceExtender
-  def initialize(javaClassName, &defBlock)
-    @java_class = Java::JavaClass.for_name(javaClassName)
-    @defBlock = defBlock
+  def initialize(java_class_name, &block)
+    @java_class = Java::JavaClass.for_name(java_class_name)
+    @block = block
   end
   
   def extend_proxy(proxy_class)
-    if @java_class.assignable_from? proxy_class.java_class
-        proxy_class.class_eval &@defBlock
-    end
+    proxy_class.class_eval &@block if @java_class.assignable_from? proxy_class.java_class
   end
 end
 
-require 'builtin/java/beans'
 require 'builtin/java/exceptions'
 require 'builtin/java/collections'

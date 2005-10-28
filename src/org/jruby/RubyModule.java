@@ -579,8 +579,14 @@ public class RubyModule extends RubyObject {
             }
             
             if (method.isUndefined()) {
-                throw getRuntime().newNameError("undefined method `" + oldName + "' for " +
-                    (isModule() ? "module" : "class") + " `" + getName() + "'");
+                // This is used by java proxies (see javasupport.rb)
+                if (respondsTo("load_lazy_method?") && 
+                    !callMethod("load_lazy_method?", getRuntime().newSymbol(oldName)).isNil()) {
+                    method = searchMethod(oldName);
+                } else {
+                    throw getRuntime().newNameError("undefined method `" + oldName + "' for " +
+                        (isModule() ? "module" : "class") + " `" + getName() + "'");
+                }
             }
         }
         getRuntime().getCacheMap().remove(name, searchMethod(name));

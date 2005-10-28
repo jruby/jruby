@@ -30,10 +30,6 @@ if defined? Java
     r = Random.new(1001)
     test_equal(10.0, Double.new(10).doubleValue())
     test_equal(10.0, Double.new("10").doubleValue())
-#    module Swing
-#      include_package "javax.swing"
-#    end
-#    Swing::JFrame.new(nil)
 
     # Instance methods
     test_equal(Random, r.class)
@@ -172,4 +168,30 @@ if defined? Java
   include_class 'org.jruby.test.BetaSingleton'
 
   test_no_exception { AlphaSingleton.getInstance.alpha }
+
+  # Lazy proxy method tests for alias and respond_to?  
+  include_class 'org.jruby.javasupport.test.Color'
+  
+  color = Color.new('green')
+
+  test_equal(true, color.respond_to?(:setColor))
+  test_equal(false, color.respond_to?(:setColorBogus))
+
+  class MyColor < Color
+  	alias_method :foo, :getColor
+  	
+  	def alias_test
+  	  test_exception(NoMethodError) { alias_method :foo2, :setColorReallyBogus }
+  	end
+  end
+  my_color = MyColor.new('blue')
+  
+  test_equal('blue', my_color.foo)
+  my_color.alias_test
+  my_color.color = 'red'
+  test_equal('red', my_color.color)
+  my_color.setDark(true)
+  test_equal(true, my_color.dark?)
+  my_color.dark = false
+  test_equal(false, my_color.dark?)
 end
