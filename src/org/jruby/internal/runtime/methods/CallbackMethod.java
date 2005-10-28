@@ -54,7 +54,7 @@ public class CallbackMethod extends AbstractMethod {
     	assert args != null;
     	
         if (runtime.getTraceFunction() != null) {
-            ISourcePosition position = runtime.getFrameStack().getPrevious().getPosition();
+            ISourcePosition position = runtime.getCurrentContext().getPreviousFrame().getPosition();
 
             runtime.callTraceFunction("c-call", position, receiver, name, getImplementationClass()); // XXX
             try {

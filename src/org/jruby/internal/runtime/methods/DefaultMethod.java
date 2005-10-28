@@ -48,7 +48,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Scope;
-import org.jruby.runtime.ScopeStack;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -85,8 +84,9 @@ public final class DefaultMethod extends AbstractMethod {
             optionalBlockArg = runtime.newProc();
         }
 
-		ScopeStack scopeStack = context.getScopeStack();
-        Scope scope = (Scope) scopeStack.push(new Scope(runtime));
+        context.pushScope();
+        
+        Scope scope = context.currentScope();
         if (body.getLocalNames() != null) {
             scope.resetLocalVariables(body.getLocalNames());
         }
@@ -117,7 +117,7 @@ public final class DefaultMethod extends AbstractMethod {
         } finally {
             context.setRubyClass(oldParent);
             context.popDynamicVars();
-            scopeStack.pop();
+            context.popScope();
             traceReturn(runtime, receiver, name);
         }
     }
@@ -134,7 +134,7 @@ public final class DefaultMethod extends AbstractMethod {
                 throw runtime.newArgumentError("wrong # of arguments(" + args.length + " for " + opt + ")");
             }
 
-            runtime.getCurrentFrame().setArgs(args);
+            runtime.getCurrentContext().getCurrentFrame().setArgs(args);
         }
 
         if (scope.hasLocalVariables()) {
@@ -174,7 +174,7 @@ public final class DefaultMethod extends AbstractMethod {
             return;
         }
 
-        ISourcePosition position = runtime.getFrameStack().getPrevious().getPosition();
+        ISourcePosition position = runtime.getCurrentContext().getPreviousFrame().getPosition();
         runtime.callTraceFunction("return", position, receiver, name, getImplementationClass()); // XXX
     }
 

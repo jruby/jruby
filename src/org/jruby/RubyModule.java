@@ -708,7 +708,7 @@ public class RubyModule extends RubyObject {
             name = name + "=";
             defineMethod(name, new Callback() {
                 public IRubyObject execute(IRubyObject self, IRubyObject[] args) {
-					IRubyObject[] fargs = runtime.getCurrentFrame().getArgs();
+					IRubyObject[] fargs = runtime.getCurrentContext().getCurrentFrame().getArgs();
 					
 			        if (fargs.length != 1) {
 			            throw runtime.newArgumentError("wrong # of arguments(" + fargs.length + "for 1)");
@@ -847,13 +847,12 @@ public class RubyModule extends RubyObject {
 		RubyModule oldParent = context.setRubyClass(this);
 
         Frame frame = context.getCurrentFrame();
-        context.getFrameStack().push(new Frame(context, null, frame.getArgs(), 
-            frame.getLastFunc(), frame.getLastClass()));
+        context.pushFrame(null, frame.getArgs(), frame.getLastFunc(), frame.getLastClass());
 
         try {
             return method.execute(this, args);
         } finally {
-            context.getFrameStack().pop();
+            context.popFrame();
 			context.setRubyClass(oldParent);
         }
     }

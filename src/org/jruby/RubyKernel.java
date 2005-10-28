@@ -559,12 +559,12 @@ public class RubyKernel {
 
         src.checkSafeString();
 
-        if (scope.isNil() && runtime.getFrameStack().getPrevious() != null) {
+        if (scope.isNil() && runtime.getCurrentContext().getPreviousFrame() != null) {
             try {
-                runtime.getFrameStack().push(runtime.getFrameStack().getPrevious());
+                runtime.getCurrentContext().pushFrame(runtime.getCurrentContext().getPreviousFrame());
                 return recv.eval(src, scope, file, line);
             } finally {
-                runtime.getFrameStack().pop();
+                runtime.getCurrentContext().popFrame();
             }
         }
         return recv.eval(src, scope, file, line);
@@ -576,8 +576,8 @@ public class RubyKernel {
         if (level < 0) {
             throw recv.getRuntime().newArgumentError("negative level(" + level + ')');
         }
-
-        return RubyException.createBacktrace(recv.getRuntime(), level, false);
+        
+        return recv.getRuntime().getCurrentContext().createBacktrace(level, false);
     }
 
     public static IRubyObject rbCatch(IRubyObject recv, IRubyObject tag) {

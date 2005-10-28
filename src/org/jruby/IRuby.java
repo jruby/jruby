@@ -21,8 +21,6 @@ import org.jruby.parser.Parser;
 import org.jruby.runtime.BlockStack;
 import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.Frame;
-import org.jruby.runtime.FrameStack;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.Scope;
@@ -159,10 +157,6 @@ public interface IRuby {
 	public void setVerbose(IRubyObject verbose);
 
 	public RubyModule getRubyClass();
-
-	public FrameStack getFrameStack();
-
-	public Frame getCurrentFrame();
 
 	public JavaSupport getJavaSupport();
 

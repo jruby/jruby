@@ -46,8 +46,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.Frame;
-import org.jruby.runtime.FrameStack;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.Scope;
@@ -326,7 +324,7 @@ public class RubyObject implements Cloneable, IRubyObject {
 
         if (method.isUndefined() ||
             !(name.equals("method_missing") ||
-              method.isCallableFrom(getRuntime().getCurrentFrame().getSelf(), callType))) {
+              method.isCallableFrom(getRuntime().getCurrentContext().getCurrentFrame().getSelf(), callType))) {
             if (callType == CallType.SUPER) {
                 throw getRuntime().newNameError("super: no superclass method '" + name + "'");
             }
@@ -503,8 +501,8 @@ public class RubyObject implements Cloneable, IRubyObject {
 
     public void checkSafeString() {
         if (getRuntime().getSafeLevel() > 0 && isTaint()) {
-            if (getRuntime().getCurrentFrame().getLastFunc() != null) {
-                throw getRuntime().newSecurityError("Insecure operation - " + getRuntime().getCurrentFrame().getLastFunc());
+            if (getRuntime().getCurrentContext().getCurrentFrame().getLastFunc() != null) {
+                throw getRuntime().newSecurityError("Insecure operation - " + getRuntime().getCurrentContext().getCurrentFrame().getLastFunc());
             }
             throw getRuntime().newSecurityError("Insecure operation: -r");
         }
@@ -528,7 +526,7 @@ public class RubyObject implements Cloneable, IRubyObject {
 		if (args.length == 0) {
 		    throw getRuntime().newArgumentError("block not supplied");
 		} else if (args.length > 3) {
-		    String lastFuncName = getRuntime().getCurrentFrame().getLastFunc();
+		    String lastFuncName = getRuntime().getCurrentContext().getCurrentFrame().getLastFunc();
 		    throw getRuntime().newArgumentError(
 		        "wrong # of arguments: " + lastFuncName + "(src) or " + lastFuncName + "{..}");
 		}
@@ -621,9 +619,8 @@ public class RubyObject implements Cloneable, IRubyObject {
             file = threadContext.getPosition().getFile();
         }
         if (scope.isNil()) {
-            FrameStack frameStack = threadContext.getFrameStack();
-            if (frameStack.getPrevious() != null) {
-                ((Frame) frameStack.peek()).setIter(frameStack.getPrevious().getIter());
+            if (threadContext.getPreviousFrame() != null) {
+                threadContext.getCurrentFrame().setIter(threadContext.getPreviousFrame().getIter());
             }
         }
         IRubyObject result = getRuntime().getNil();

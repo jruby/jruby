@@ -50,7 +50,6 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.runtime.Frame;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.Scope;
@@ -68,9 +67,10 @@ public class JRubyEngine extends BSFEngineImpl {
         ThreadContext threadContext = runtime.getCurrentContext();
         try {
             // add a new method conext
-            threadContext.getFrameStack().push(new Frame(threadContext));
+            threadContext.pushFrame();
             threadContext.pushDynamicVars();
-            Scope scope = (Scope) threadContext.getScopeStack().push(new Scope(runtime, paramNames));
+            threadContext.pushScope(paramNames);
+            Scope scope = threadContext.currentScope();
 
             // set global variables
             for (int i = 0, size = args.size(); i < size; i++) {
@@ -83,9 +83,9 @@ public class JRubyEngine extends BSFEngineImpl {
             Node node = runtime.getParser().parse(file, funcBody.toString());
             return convertToJava(runtime.getTopSelf().eval(node), Object.class);
         } finally {
-            threadContext.getScopeStack().pop();
+            threadContext.popScope();
             threadContext.popDynamicVars();
-            threadContext.getFrameStack().pop();
+            threadContext.popFrame();
         }
     }
 

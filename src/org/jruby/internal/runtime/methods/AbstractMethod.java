@@ -32,7 +32,6 @@ package org.jruby.internal.runtime.methods;
 import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.Frame;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -52,12 +51,12 @@ public abstract class AbstractMethod extends AbstractCallable {
         RubyModule oldParent = context.setRubyClass(implementationClass.parentModule);
 
         context.getIterStack().push(context.getCurrentIter().isPre() ? Iter.ITER_CUR : Iter.ITER_NOT);
-        context.getFrameStack().push(new Frame(context, recv, args, name, noSuper ? null : implementationClass));
+        context.pushFrame(recv, args, name, noSuper ? null : implementationClass);
 
         try {
             return internalCall(runtime, recv, name, args, noSuper);
         } finally {
-            context.getFrameStack().pop();
+            context.popFrame();
             context.getIterStack().pop();
             context.setRubyClass(oldParent);
         }

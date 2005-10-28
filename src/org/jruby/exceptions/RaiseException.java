@@ -37,8 +37,8 @@ package org.jruby.exceptions;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import org.jruby.NativeException;
 import org.jruby.IRuby;
+import org.jruby.NativeException;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -101,9 +101,9 @@ public class RaiseException extends JumpException {
             runtime.callTraceFunction(
                 "return",
                 runtime.getPosition(),
-                runtime.getCurrentFrame().getSelf(),
-                runtime.getCurrentFrame().getLastFunc(),
-                runtime.getCurrentFrame().getLastClass());
+                runtime.getCurrentContext().getCurrentFrame().getSelf(),
+                runtime.getCurrentContext().getCurrentFrame().getLastFunc(),
+                runtime.getCurrentContext().getCurrentFrame().getLastClass());
         }
 
         this.exception = newException;
@@ -115,7 +115,7 @@ public class RaiseException extends JumpException {
         runtime.setStackTraces(runtime.getStackTraces() + 1);
 
         if (newException.callMethod("backtrace").isNil() && runtime.getSourceFile() != null) {
-            IRubyObject backtrace = RubyException.createBacktrace(runtime, 0, nativeException);
+            IRubyObject backtrace = runtime.getCurrentContext().createBacktrace(0, nativeException);
             newException.callMethod("set_backtrace", backtrace);
         }
 

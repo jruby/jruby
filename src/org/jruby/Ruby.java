@@ -65,7 +65,6 @@ import org.jruby.runtime.BlockStack;
 import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Frame;
-import org.jruby.runtime.FrameStack;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.Iter;
@@ -303,7 +302,7 @@ public final class Ruby implements IRuby {
 
     public void secure(int level) {
         if (level <= safeLevel) {
-            throw newSecurityError("Insecure operation '" + getCurrentFrame().getLastFunc() + "' at level " + safeLevel);
+            throw newSecurityError("Insecure operation '" + getCurrentContext().getCurrentFrame().getLastFunc() + "' at level " + safeLevel);
         }
     }
 
@@ -357,8 +356,9 @@ public final class Ruby implements IRuby {
         initLibraries();
         
         getIterStack().push(Iter.ITER_NOT);
-        Frame frame = (Frame) getFrameStack().push(new Frame(getCurrentContext()));
-        getCurrentContext().getScopeStack().push(new Scope(this));
+        getCurrentContext().pushFrame();
+        Frame frame = getCurrentContext().getCurrentFrame();
+        getCurrentContext().pushScope();
 
         setCurrentVisibility(Visibility.PRIVATE);
 
@@ -585,11 +585,11 @@ public final class Ruby implements IRuby {
     }
 
     public boolean isBlockGiven() {
-        return getCurrentFrame().isBlockGiven();
+        return getCurrentContext().getCurrentFrame().isBlockGiven();
     }
 
     public boolean isFBlockGiven() {
-        Frame previous = getFrameStack().getPrevious();
+        Frame previous = getCurrentContext().getPreviousFrame();
         if (previous == null) {
             return false;
         }
@@ -605,14 +605,6 @@ public final class Ruby implements IRuby {
 
     public RubyModule getRubyClass() {
         return getCurrentContext().getRubyClass();
-    }
-
-    public FrameStack getFrameStack() {
-        return getCurrentContext().getFrameStack();
-    }
-
-    public Frame getCurrentFrame() {
-        return getCurrentContext().getCurrentFrame();
     }
 
     public JavaSupport getJavaSupport() {
@@ -822,9 +814,9 @@ public final class Ruby implements IRuby {
 
     private void printErrorPos() {
         if (getSourceFile() != null) {
-            if (getCurrentFrame().getLastFunc() != null) {
+            if (getCurrentContext().getCurrentFrame().getLastFunc() != null) {
                 getErrorStream().print(getPosition());
-                getErrorStream().print(":in '" + getCurrentFrame().getLastFunc() + '\'');
+                getErrorStream().print(":in '" + getCurrentContext().getCurrentFrame().getLastFunc() + '\'');
             } else if (getSourceLine() != 0) {
                 getErrorStream().print(getPosition());
             } else {
@@ -864,8 +856,8 @@ public final class Ruby implements IRuby {
             self.extendObject(context.getRubyClass());
         }
 
-        context.getFrameStack().push(new Frame(context, self, IRubyObject.NULL_ARRAY, null, null));
-        context.getScopeStack().push(new Scope(this));
+        context.pushFrame(self, IRubyObject.NULL_ARRAY, null, null);
+        context.pushScope();
 
         /* default visibility is private at loading toplevel */
         setCurrentVisibility(Visibility.PRIVATE);
@@ -880,8 +872,8 @@ public final class Ruby implements IRuby {
         		throw je;
         	}
         } finally {
-            context.getScopeStack().pop();
-            context.getFrameStack().pop();
+            context.popScope();
+            context.popFrame();
             context.setRubyClass(oldParent);
             context.popDynamicVars();
             context.setWrapper(wrapper);
@@ -910,8 +902,8 @@ public final class Ruby implements IRuby {
             self.extendObject(context.getRubyClass());
         }
 
-        context.getFrameStack().push(new Frame(context, self, IRubyObject.NULL_ARRAY, null, null));
-        context.getScopeStack().push(new Scope(this));
+        context.pushFrame(self, IRubyObject.NULL_ARRAY, null, null);
+        context.pushScope();
 
         /* default visibility is private at loading toplevel */
         setCurrentVisibility(Visibility.PRIVATE);
@@ -925,8 +917,8 @@ public final class Ruby implements IRuby {
         		throw je;
         	}
         } finally {
-            context.getScopeStack().pop();
-            context.getFrameStack().pop();
+            context.popScope();
+            context.popFrame();
             context.setRubyClass(oldParent);
             context.popDynamicVars();
             context.setWrapper(wrapper);
@@ -973,7 +965,7 @@ public final class Ruby implements IRuby {
             if (type == null) {
 				type = getFalse();
 			}
-            getFrameStack().push(new Frame(getCurrentContext(), Iter.ITER_NOT));
+            getCurrentContext().pushFrame(Iter.ITER_NOT);
 
             try {
                 traceFunction
@@ -985,7 +977,7 @@ public final class Ruby implements IRuby {
                         self != null ? self: getNil(),
                         type });
             } finally {
-                getFrameStack().pop();
+                getCurrentContext().popFrame();
                 setPosition(savePosition);
                 isWithinTrace = false;
             }

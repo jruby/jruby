@@ -37,8 +37,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Stack;
 
-import org.jruby.IncludedModuleWrapper;
 import org.jruby.IRuby;
+import org.jruby.IncludedModuleWrapper;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -74,7 +74,7 @@ public class ThreadContext {
 	private RubyModule lastParentModule = null;
 	
     private ScopeStack scopeStack;
-    private FrameStack frameStack;
+    private Stack frameStack;
     private Stack iterStack;
 
     private RubyModule wrapper;
@@ -90,7 +90,7 @@ public class ThreadContext {
         this.blockStack = new BlockStack();
         this.dynamicVarsStack = new Stack();
         this.scopeStack = new ScopeStack();
-        this.frameStack = new FrameStack(this);
+        this.frameStack = new Stack();
         this.iterStack = new Stack();
 
         pushDynamicVars();
@@ -143,13 +143,44 @@ public class ThreadContext {
     public void setThread(RubyThread thread) {
         this.thread = thread;
     }
-
-    public ScopeStack getScopeStack() {
-        return scopeStack;
+    
+    public void pushScope(List localNames) {
+        scopeStack.push(new Scope(runtime, localNames));
     }
+    
+    public void pushScope() {
+        scopeStack.push(new Scope(runtime));
+    }
+    
+    public void popScope() {
+        scopeStack.pop();
+    }
+    
+    public void pushFrameCopy() {
+        frameStack.push(((Frame) frameStack.peek()).duplicate());
+    }
+    
+    public void pushFrame(IRubyObject self, IRubyObject[] args, 
+            String lastFunc, RubyModule lastClass) {
+        frameStack.push(new Frame(this, self, args, lastFunc, lastClass));
+    }
+    
+    public void pushFrame() {
+        frameStack.push(new Frame(this));
+    }
+    
+    public void pushFrame(Frame frame) {
+        frameStack.push(frame);
+    }
+    
+    public void pushFrame(Iter iter) {
+        frameStack.push(new Frame(this, iter));
+    }
+    
+    public void popFrame() {
+        Frame frame = (Frame)frameStack.pop();
 
-    public FrameStack getFrameStack() {
-        return frameStack;
+        setPosition(frame.getPosition());
     }
 
     public Stack getIterStack() {
@@ -157,11 +188,16 @@ public class ThreadContext {
     }
     
     public Frame getCurrentFrame() {
-        return (Frame) getFrameStack().peek();
+        return (Frame) frameStack.peek();
+    }
+    
+    public Frame getPreviousFrame() {
+        int size = frameStack.size();
+        return size <= 1 ? null : (Frame) frameStack.elementAt(size - 2);
     }
 
     public Iter getCurrentIter() {
-        return (Iter) getIterStack().peek();
+        return (Iter) iterStack.peek();
     }
 
     public Scope currentScope() {
@@ -412,5 +448,47 @@ public class ThreadContext {
     public void endCallArgs(Block currentBlock) {
         blockStack.setCurrent(currentBlock);
         iterStack.pop();
+    }
+
+    private void addBackTraceElement(RubyArray backtrace, Frame frame, Frame previousFrame) {
+        StringBuffer sb = new StringBuffer(100);
+        ISourcePosition position = frame.getPosition();
+    
+        sb.append(position.getFile()).append(':').append(position.getEndLine());
+    
+        if (previousFrame != null && previousFrame.getLastFunc() != null) {
+            sb.append(":in `").append(previousFrame.getLastFunc()).append('\'');
+        } else if (previousFrame == null && frame.getLastFunc() != null) {
+            sb.append(":in `").append(frame.getLastFunc()).append('\'');
+        }
+    
+        backtrace.append(backtrace.getRuntime().newString(sb.toString()));
+    }
+
+    /** 
+     * Create an Array with backtrace information.
+     * @param runtime
+     * @param level
+     * @param nativeException
+     * @return an Array with the backtrace 
+     */
+    public IRubyObject createBacktrace(int level, boolean nativeException) {
+        RubyArray backtrace = runtime.newArray();
+        int traceSize = frameStack.size() - level - 1;
+        
+        if (traceSize <= 0) {
+        	return backtrace;
+        }
+        
+        if (nativeException) {
+            // assert level == 0;
+            addBackTraceElement(backtrace, (Frame) frameStack.elementAt(frameStack.size() - 1), null);
+        }
+        
+        for (int i = traceSize; i > 0; i--) {
+            addBackTraceElement(backtrace, (Frame) frameStack.elementAt(i), (Frame) frameStack.elementAt(i-1));
+        }
+    
+        return backtrace;
     }
 }

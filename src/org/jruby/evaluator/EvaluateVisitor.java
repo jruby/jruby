@@ -161,7 +161,6 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
-import org.jruby.runtime.Scope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -1669,13 +1668,13 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class ScopeNodeVisitor implements SingleNodeVisitor {
     	public void visit(EvaluationState state, Node node) {
     		ScopeNode iVisited = (ScopeNode)node;
-            state.threadContext.getFrameStack().pushCopy();
-            state.threadContext.getScopeStack().push(new Scope(state.runtime, iVisited.getLocalNames()));
+            state.threadContext.pushFrameCopy();
+            state.threadContext.pushScope(iVisited.getLocalNames());
             try {
                 state.evaluator.internalEval(state, iVisited.getBodyNode());
             } finally {
-                state.threadContext.getScopeStack().pop();
-                state.threadContext.getFrameStack().pop();
+                state.threadContext.popScope();
+                state.threadContext.popFrame();
             }
     	}
     }
@@ -2616,8 +2615,8 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     private static void evalClassDefinitionBody(EvaluationState state, ScopeNode iVisited, RubyModule type) {
 		RubyModule oldParent = state.threadContext.setRubyClass(type); 
-        state.threadContext.getFrameStack().pushCopy();
-        state.threadContext.getScopeStack().push(new Scope(state.runtime, iVisited.getLocalNames()));
+        state.threadContext.pushFrameCopy();
+        state.threadContext.pushScope(iVisited.getLocalNames());
         state.threadContext.pushDynamicVars();
 
         IRubyObject oldSelf = state.getSelf();
@@ -2633,9 +2632,9 @@ public final class EvaluateVisitor implements NodeVisitor {
             state.setSelf(oldSelf);
 
             state.threadContext.popDynamicVars();
-            state.threadContext.getScopeStack().pop();
+            state.threadContext.popScope();
             state.threadContext.setRubyClass(oldParent);
-            state.threadContext.getFrameStack().pop();
+            state.threadContext.popFrame();
 
             if (isTrace(state)) {
                 callTraceFunction(state, "end", null);

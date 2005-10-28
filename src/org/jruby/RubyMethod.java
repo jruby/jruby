@@ -35,7 +35,6 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.IterateCallable;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.Frame;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -173,10 +172,10 @@ public class RubyMethod extends RubyObject {
     	
         try {
             runtime.getIterStack().push(Iter.ITER_CUR);
-            runtime.getFrameStack().push(new Frame(runtime.getCurrentContext()));
+            runtime.getCurrentContext().pushFrame();
             return RubyKernel.proc(recv);
         } finally {
-            runtime.getFrameStack().pop();
+            runtime.getCurrentContext().popFrame();
             runtime.getIterStack().pop();
         }
     }
