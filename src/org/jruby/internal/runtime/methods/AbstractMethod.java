@@ -48,7 +48,7 @@ public abstract class AbstractMethod extends AbstractCallable {
 
     public IRubyObject call(IRuby runtime, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
         ThreadContext context = runtime.getCurrentContext();
-        RubyModule oldParent = context.setRubyClass(implementationClass.parentModule);
+        context.pushRubyClass(implementationClass.parentModule);
 
         context.getIterStack().push(context.getCurrentIter().isPre() ? Iter.ITER_CUR : Iter.ITER_NOT);
         context.pushFrame(recv, args, name, noSuper ? null : implementationClass);
@@ -58,7 +58,7 @@ public abstract class AbstractMethod extends AbstractCallable {
         } finally {
             context.popFrame();
             context.getIterStack().pop();
-            context.setRubyClass(oldParent);
+            context.popRubyClass();
         }
     }
     

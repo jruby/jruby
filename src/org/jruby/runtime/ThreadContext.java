@@ -64,14 +64,8 @@ public class ThreadContext {
     private Stack dynamicVarsStack;
 
     private RubyThread thread;
-
-	// Location of where we are executing from.
-	private RubyModule parentModule = null;
-	
-	// Last Location we executed from.  This exists because when we push new location for a module
-	// function like Module#nesting, parentModule gets set to Module instead of where it was called
-	// from.  lastParentModule will contain that information.
-	private RubyModule lastParentModule = null;
+    
+    private Stack parentStack;
 	
     private ScopeStack scopeStack;
     private Stack frameStack;
@@ -92,6 +86,7 @@ public class ThreadContext {
         this.scopeStack = new ScopeStack();
         this.frameStack = new Stack();
         this.iterStack = new Stack();
+        this.parentStack = new Stack();
 
         pushDynamicVars();
     }
@@ -258,7 +253,7 @@ public class ThreadContext {
 
         dynamicVarsStack.push(currentBlock.getDynamicVariables());
 
-        RubyModule oldParent = setRubyClass((klass != null) ? klass : currentBlock.getKlass()); 
+        pushRubyClass((klass != null) ? klass : currentBlock.getKlass()); 
 
         iterStack.push(currentBlock.getIter());
             
@@ -330,7 +325,7 @@ public class ThreadContext {
             
             blockStack.push(currentBlock);
             scopeStack.setTop(oldScope);
-			setRubyClass(oldParent);
+			popRubyClass();
         }
     }
     
@@ -399,18 +394,36 @@ public class ThreadContext {
         getThread().pollThreadEvents();
     }
 
-	public RubyModule setRubyClass(RubyModule currentModule) {
-		lastParentModule = this.parentModule;
-		this.parentModule = currentModule;
-		
-		return lastParentModule;
-	}
+    public RubyModule pushRubyClass(RubyModule currentModule) {
+        RubyModule previousModule = null;
+        if (!parentStack.isEmpty()) {
+            previousModule = (RubyModule)parentStack.peek();
+        }
+        
+        parentStack.push(currentModule);
+        
+        return previousModule;
+    }
+    
+    public RubyModule popRubyClass() {
+        return (RubyModule)parentStack.pop();
+    }
 	
 	public RubyModule getLastRubyClass() {
-		return lastParentModule;
+        if (parentStack.size() >= 2) {
+            return (RubyModule)parentStack.get(parentStack.size() - 2);
+        }
+        
+        return null;
 	}
 	
     public RubyModule getRubyClass() {
+        if (parentStack.isEmpty()) {
+            return null;
+        }
+        
+        RubyModule parentModule = (RubyModule)parentStack.peek();
+        
         if (parentModule == null) {
             return null;
         }

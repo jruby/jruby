@@ -141,14 +141,14 @@ public class TestHelper {
         Class c = loader.loadClass(name, javaClass);
         Method method = c.getMethod(methodName, new Class[] { IRuby.class, IRubyObject.class });
         IRuby runtime = self.getRuntime();
-		RubyModule oldParent = runtime.getCurrentContext().setRubyClass(self.getType());
+		runtime.getCurrentContext().pushRubyClass(self.getType());
 		
         try {
             return (IRubyObject) method.invoke(null, new Object[] { runtime, self });
         } catch (InvocationTargetException e) {
             throw unrollException(e);
         } finally {
-            runtime.getCurrentContext().setRubyClass(oldParent);
+            runtime.getCurrentContext().popRubyClass();
         }
     }
 

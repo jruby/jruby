@@ -610,7 +610,7 @@ public class RubyObject implements Cloneable, IRubyObject {
 
     public IRubyObject eval(IRubyObject src, IRubyObject scope, String file, int line) {
         ThreadContext threadContext = getRuntime().getCurrentContext();
-		RubyModule oldParent = threadContext.setRubyClass(this instanceof RubyModule ? 
+		threadContext.pushRubyClass(this instanceof RubyModule ? 
 				(RubyModule) this : this.getType());
 
         ISourcePosition savedPosition = threadContext.getPosition();
@@ -631,7 +631,7 @@ public class RubyObject implements Cloneable, IRubyObject {
                 threadContext.getCurrentFrame().setIter(iter);
             }
             threadContext.setPosition(savedPosition);
-			threadContext.setRubyClass(oldParent);
+			threadContext.popRubyClass();
         }
         return result;
     }

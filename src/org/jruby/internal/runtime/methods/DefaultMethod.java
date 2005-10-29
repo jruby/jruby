@@ -78,29 +78,24 @@ public final class DefaultMethod extends AbstractMethod {
     	assert args != null;
 
         ThreadContext context = runtime.getCurrentContext();
-        RubyProc optionalBlockArg = null;
         
-        if (argsNode.getBlockArgNode() != null && context.isBlockGiven()) {
-            optionalBlockArg = runtime.newProc();
-        }
-
         context.pushScope();
         
         Scope scope = context.currentScope();
         if (body.getLocalNames() != null) {
             scope.resetLocalVariables(body.getLocalNames());
         }
+        
+        if (argsNode.getBlockArgNode() != null && context.isBlockGiven()) {
+            scope.setValue(argsNode.getBlockArgNode().getCount(), runtime.newProc());
+        }
 
         context.pushDynamicVars();
 
-        RubyModule oldParent = context.setRubyClass(parent); 
+        context.pushRubyClass(parent); 
 
         try {
             prepareArguments(runtime, scope, receiver, args);
-
-            if (optionalBlockArg != null) {
-                scope.setValue(argsNode.getBlockArgNode().getCount(), optionalBlockArg);
-            }
             
             getArity().checkArity(runtime, args);
 
@@ -115,7 +110,7 @@ public final class DefaultMethod extends AbstractMethod {
         	}
        		throw je;
         } finally {
-            context.setRubyClass(oldParent);
+            context.popRubyClass();
             context.popDynamicVars();
             context.popScope();
             traceReturn(runtime, receiver, name);

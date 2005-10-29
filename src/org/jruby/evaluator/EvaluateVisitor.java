@@ -2614,7 +2614,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      *
      */
     private static void evalClassDefinitionBody(EvaluationState state, ScopeNode iVisited, RubyModule type) {
-		RubyModule oldParent = state.threadContext.setRubyClass(type); 
+		state.threadContext.pushRubyClass(type); 
         state.threadContext.pushFrameCopy();
         state.threadContext.pushScope(iVisited.getLocalNames());
         state.threadContext.pushDynamicVars();
@@ -2633,7 +2633,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
             state.threadContext.popDynamicVars();
             state.threadContext.popScope();
-            state.threadContext.setRubyClass(oldParent);
+            state.threadContext.popRubyClass();
             state.threadContext.popFrame();
 
             if (isTrace(state)) {

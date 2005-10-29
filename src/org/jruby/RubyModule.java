@@ -850,7 +850,7 @@ public class RubyModule extends RubyObject {
 
     public IRubyObject executeUnder(Callback method, IRubyObject[] args) {
         ThreadContext context = getRuntime().getCurrentContext();
-		RubyModule oldParent = context.setRubyClass(this);
+		context.pushRubyClass(this);
 
         Frame frame = context.getCurrentFrame();
         context.pushFrame(null, frame.getArgs(), frame.getLastFunc(), frame.getLastClass());
@@ -859,7 +859,7 @@ public class RubyModule extends RubyObject {
             return method.execute(this, args);
         } finally {
             context.popFrame();
-			context.setRubyClass(oldParent);
+			context.popRubyClass();
         }
     }
 

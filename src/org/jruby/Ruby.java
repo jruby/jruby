@@ -368,7 +368,7 @@ public final class Ruby implements IRuby {
 
         topSelf = TopSelfFactory.createTopSelf(this);
 
-        getCurrentContext().setRubyClass(objectClass);
+        getCurrentContext().pushRubyClass(objectClass);
         frame.setSelf(topSelf);
 
         initBuiltinClasses();
@@ -842,16 +842,15 @@ public final class Ruby implements IRuby {
         context.pushDynamicVars();
 
         RubyModule wrapper = context.getWrapper();
-		RubyModule oldParent;
 
         if (!wrap) {
             secure(4); /* should alter global state */
-            oldParent = context.setRubyClass(objectClass);
+            context.pushRubyClass(objectClass);
             context.setWrapper(null);
         } else {
             /* load in anonymous module as toplevel */
             context.setWrapper(RubyModule.newModule(this, null));
-            oldParent = context.setRubyClass(context.getWrapper());
+            context.pushRubyClass(context.getWrapper());
             self = getTopSelf().rbClone();
             self.extendObject(context.getRubyClass());
         }
@@ -874,7 +873,7 @@ public final class Ruby implements IRuby {
         } finally {
             context.popScope();
             context.popFrame();
-            context.setRubyClass(oldParent);
+            context.popRubyClass();
             context.popDynamicVars();
             context.setWrapper(wrapper);
         }
@@ -892,12 +891,12 @@ public final class Ruby implements IRuby {
 
         if (!wrap) {
             secure(4); /* should alter global state */
-            oldParent = context.setRubyClass(objectClass);
+            oldParent = context.pushRubyClass(objectClass);
             context.setWrapper(null);
         } else {
             /* load in anonymous module as toplevel */
             context.setWrapper(RubyModule.newModule(this, null));
-            oldParent = context.setRubyClass(context.getWrapper());
+            oldParent = context.pushRubyClass(context.getWrapper());
             self = getTopSelf().rbClone();
             self.extendObject(context.getRubyClass());
         }
@@ -919,7 +918,7 @@ public final class Ruby implements IRuby {
         } finally {
             context.popScope();
             context.popFrame();
-            context.setRubyClass(oldParent);
+            context.popRubyClass();
             context.popDynamicVars();
             context.setWrapper(wrapper);
         }
