@@ -179,7 +179,6 @@ public final class Ruby implements IRuby {
 
     public IRubyObject eval(Node node) {
         try {
-        	IRubyObject topSelf = getTopSelf();
 	        return EvaluateVisitor.createVisitor().eval(topSelf.getRuntime(), topSelf, node);
         } catch (JumpException je) {
         	if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
@@ -887,16 +886,15 @@ public final class Ruby implements IRuby {
         context.pushDynamicVars();
 
         RubyModule wrapper = context.getWrapper();
-		RubyModule oldParent;
 
         if (!wrap) {
             secure(4); /* should alter global state */
-            oldParent = context.pushRubyClass(objectClass);
+            context.pushRubyClass(objectClass);
             context.setWrapper(null);
         } else {
             /* load in anonymous module as toplevel */
             context.setWrapper(RubyModule.newModule(this, null));
-            oldParent = context.pushRubyClass(context.getWrapper());
+            context.pushRubyClass(context.getWrapper());
             self = getTopSelf().rbClone();
             self.extendObject(context.getRubyClass());
         }

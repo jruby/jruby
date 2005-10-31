@@ -332,11 +332,11 @@ public class LexerSource {
                 unread(c);
                 return scanOct(3);
             case 'x' : // hex constant
-            	int offset = getColumn();
+            	int hexOffset = getColumn();
             	char hexValue = scanHex(2);
             	
             	// No hex value after the 'x'.
-            	if (offset == getColumn()) {
+            	if (hexOffset == getColumn()) {
             	    throw new SyntaxException(getPosition(null), "Invalid escape character syntax");
             	}
                 return hexValue;
@@ -412,14 +412,14 @@ public class LexerSource {
     /**
      * Get character ahead of current position by offset positions.
      * 
-     * @param offset is location past current position to get char at
+     * @param anOffset is location past current position to get char at
      * @return character index positions ahead of source location or EOF
      */
-    public char getCharAt(int offset) {
-    	StringBuffer buffer = new StringBuffer(offset);
+    public char getCharAt(int anOffset) {
+    	StringBuffer buffer = new StringBuffer(anOffset);
     
     	// read next offset chars
-        for (int i = 0; i < offset; i++) {
+        for (int i = 0; i < anOffset; i++) {
             buffer.append(read());
         }
         

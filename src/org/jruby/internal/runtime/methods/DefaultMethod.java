@@ -36,7 +36,6 @@ import java.util.Iterator;
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
-import org.jruby.RubyProc;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.Node;
