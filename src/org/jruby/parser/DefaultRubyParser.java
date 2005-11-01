@@ -747,6 +747,7 @@ public class DefaultRubyParser {
       Nested for convenience, does not depend on parser class.
     */
   public static class yyException extends java.lang.Exception {
+    private static final long serialVersionUID = 1L;
     public yyException (String message) {
       super(message);
     }
@@ -838,7 +839,7 @@ public class DefaultRubyParser {
       @return result of the last reduction, if any.
       @throws yyException on irrecoverable parse error.
     */
-  public Object yyparse (RubyYaccLexer yyLex, Object yydebug)
+  public Object yyparse (RubyYaccLexer yyLex, Object ayydebug)
 				throws java.io.IOException, yyException {
     return yyparse(yyLex);
   }
@@ -3521,7 +3522,7 @@ case 494:
   {  yyVal = null;
 		  }
   break;
-					// line 7889 "-"
+					// line 7890 "-"
         }
         yyTop -= yyLen[yyN];
         yyState = yyStates[yyTop];
@@ -3587,4 +3588,4 @@ case 494:
 	return lexer.getPosition(null);
     }
 }
-					// line 7960 "-"
+					// line 7961 "-"

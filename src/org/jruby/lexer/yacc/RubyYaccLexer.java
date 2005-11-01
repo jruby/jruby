@@ -587,6 +587,7 @@ public class RubyYaccLexer {
                         lex_state = LexState.EXPR_BEG;
                         return Tokens.tOP_ASGN;
                     }
+                    yaccValue = "**";
                     src.unread(c);
                     c = Tokens.tPOW;
                 } else {
@@ -612,6 +613,7 @@ public class RubyYaccLexer {
                 } else {
                     lex_state = LexState.EXPR_BEG;
                 }
+                yaccValue = "*";
                 return c;
 
             case '!':
@@ -678,12 +680,15 @@ public class RubyYaccLexer {
                 if (c == '=') {
                     c = src.read();
                     if (c == '=') {
+                        yaccValue = "===";
                         return Tokens.tEQQ;
                     }
                     src.unread(c);
+                    yaccValue = "==";
                     return Tokens.tEQ;
                 }
                 if (c == '~') {
+                    yaccValue = "=~";
                     return Tokens.tMATCH;
                 } else if (c == '>') {
                     return Tokens.tASSOC;
@@ -710,20 +715,23 @@ public class RubyYaccLexer {
                 }
                 if (c == '=') {
                     if ((c = src.read()) == '>') {
+                        yaccValue = "<=>";
                         return Tokens.tCMP;
                     }
+                    yaccValue = "<=";
                     src.unread(c);
                     return Tokens.tLEQ;
                 }
                 if (c == '<') {
+                    yaccValue = "<<";
                     if ((c = src.read()) == '=') {
-                        yaccValue = "<<";
                         lex_state = LexState.EXPR_BEG;
                         return Tokens.tOP_ASGN;
                     }
                     src.unread(c);
                     return Tokens.tLSHFT;
                 }
+                yaccValue = "<";
                 src.unread(c);
                 return Tokens.tLT;
                 
@@ -736,17 +744,19 @@ public class RubyYaccLexer {
                 }
 
                 if ((c = src.read()) == '=') {
+                    yaccValue = ">=";
                     return Tokens.tGEQ;
                 }
                 if (c == '>') {
+                    yaccValue = ">>";
                     if ((c = src.read()) == '=') {
-                        yaccValue = ">>";
                         lex_state = LexState.EXPR_BEG;
                         return Tokens.tOP_ASGN;
                     }
                     src.unread(c);
                     return Tokens.tRSHFT;
                 }
+                yaccValue = ">";
                 src.unread(c);
                 return Tokens.tGT;
 
@@ -868,6 +878,7 @@ public class RubyYaccLexer {
                 } else {
                     lex_state = LexState.EXPR_BEG;
                 }
+                yaccValue = "&";
                 return c;
                 
             case '|':
@@ -892,6 +903,7 @@ public class RubyYaccLexer {
                 } else {
                     lex_state = LexState.EXPR_BEG;
                 }
+                yaccValue = "|";
                 src.unread(c);
                 return Tokens.tPIPE;
 
@@ -901,8 +913,10 @@ public class RubyYaccLexer {
                     lex_state == LexState.EXPR_DOT) {
                     lex_state = LexState.EXPR_ARG;
                     if (c == '@') {
+                        yaccValue = "@+";
                         return Tokens.tUPLUS;
                     }
+                    yaccValue = "+";
                     src.unread(c);
                     return Tokens.tPLUS;
                 }
@@ -933,8 +947,10 @@ public class RubyYaccLexer {
                     lex_state == LexState.EXPR_DOT) {
                     lex_state = LexState.EXPR_ARG;
                     if (c == '@') {
+                        yaccValue = "@-";
                         return Tokens.tUMINUS;
                     }
+                    yaccValue = "-";
                     src.unread(c);
                     return Tokens.tMINUS;
                 }
@@ -1044,11 +1060,12 @@ public class RubyYaccLexer {
                 } else {
                     lex_state = LexState.EXPR_BEG;
                 }
+                yaccValue = "/";
                 return Tokens.tDIVIDE;
 
             case '^':
+                yaccValue = "^";
                 if ((c = src.read()) == '=') {
-                    yaccValue = "^";
                     lex_state = LexState.EXPR_BEG;
                     return Tokens.tOP_ASGN;
                 }
@@ -1080,6 +1097,7 @@ public class RubyYaccLexer {
                 } else {
                     lex_state = LexState.EXPR_BEG;
                 }
+                yaccValue = "~";
                 return Tokens.tTILDE;
             case '(':
             	c = Tokens.tLPAREN2;
@@ -1106,8 +1124,10 @@ public class RubyYaccLexer {
                     lex_state = LexState.EXPR_ARG;
                     if ((c = src.read()) == ']') {
                         if ((c = src.read()) == '=') {
+                            yaccValue = "[]=";
                             return Tokens.tASET;
                         }
+                        yaccValue = "[]";
                         src.unread(c);
                         return Tokens.tAREF;
                     }
@@ -1167,6 +1187,7 @@ public class RubyYaccLexer {
                 } else {
                     lex_state = LexState.EXPR_BEG;
                 }
+                yaccValue = "%";
                 src.unread(c);
                 return Tokens.tPERCENT;
 
