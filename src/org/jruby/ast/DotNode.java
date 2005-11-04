@@ -34,7 +34,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.SingleNodeVisitor;
+import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents a range literal.
@@ -59,7 +59,7 @@ public class DotNode extends Node {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+    public Instruction accept(NodeVisitor iVisitor) {
         return iVisitor.visitDotNode(this);
     }
 

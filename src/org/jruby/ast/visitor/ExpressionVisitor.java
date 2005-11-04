@@ -46,7 +46,7 @@ import org.jruby.ast.RetryNode;
 import org.jruby.ast.ReturnNode;
 import org.jruby.ast.UntilNode;
 import org.jruby.ast.WhileNode;
-import org.jruby.evaluator.SingleNodeVisitor;
+import org.jruby.evaluator.Instruction;
 
 /**
  * 
@@ -60,83 +60,83 @@ public class ExpressionVisitor extends AbstractVisitor {
 		return expression;
 	}
 
-	protected SingleNodeVisitor visitNode(Node iVisited) {
+	protected Instruction visitNode(Node iVisited) {
 		expression = true;
 		return null;
 	}
 
-	public SingleNodeVisitor visitBeginNode(BeginNode iVisited) {
+	public Instruction visitBeginNode(BeginNode iVisited) {
 		acceptNode(iVisited.getBodyNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitBlockNode(BlockNode iVisited) {
+	public Instruction visitBlockNode(BlockNode iVisited) {
 		acceptNode(iVisited.getLast());
 		return null;
 	}
 
-	public SingleNodeVisitor visitBreakNode(BreakNode iVisited) {
+	public Instruction visitBreakNode(BreakNode iVisited) {
 		acceptNode(iVisited.getValueNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitClassNode(ClassNode iVisited) {
+	public Instruction visitClassNode(ClassNode iVisited) {
 		expression = false;
 		return null;
 	}
 
-	public SingleNodeVisitor visitDefnNode(DefnNode iVisited) {
+	public Instruction visitDefnNode(DefnNode iVisited) {
 		expression = false;
 		return null;
 	}
 
-	public SingleNodeVisitor visitDefsNode(DefsNode iVisited) {
+	public Instruction visitDefsNode(DefsNode iVisited) {
 		expression = false;
 		return null;
 	}
 
-	public SingleNodeVisitor visitIfNode(IfNode iVisited) {
+	public Instruction visitIfNode(IfNode iVisited) {
 		expression = isExpression(iVisited.getThenBody())
 				&& isExpression(iVisited.getElseBody());
 		return null;
 	}
 
-	public SingleNodeVisitor visitModuleNode(ModuleNode iVisited) {
+	public Instruction visitModuleNode(ModuleNode iVisited) {
 		expression = false;
 		return null;
 	}
 
-	public SingleNodeVisitor visitNewlineNode(NewlineNode iVisited) {
+	public Instruction visitNewlineNode(NewlineNode iVisited) {
 		acceptNode(iVisited.getNextNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitNextNode(NextNode iVisited) {
+	public Instruction visitNextNode(NextNode iVisited) {
 		expression = false;
 		return null;
 	}
 
-	public SingleNodeVisitor visitRedoNode(RedoNode iVisited) {
+	public Instruction visitRedoNode(RedoNode iVisited) {
 		expression = false;
 		return null;
 	}
 
-	public SingleNodeVisitor visitRetryNode(RetryNode iVisited) {
+	public Instruction visitRetryNode(RetryNode iVisited) {
 		expression = false;
 		return null;
 	}
 
-	public SingleNodeVisitor visitReturnNode(ReturnNode iVisited) {
+	public Instruction visitReturnNode(ReturnNode iVisited) {
 		expression = false;
 		return null;
 	}
 
-	public SingleNodeVisitor visitUntilNode(UntilNode iVisited) {
+	public Instruction visitUntilNode(UntilNode iVisited) {
 		expression = false;
 		return null;
 	}
 
-	public SingleNodeVisitor visitWhileNode(WhileNode iVisited) {
+	public Instruction visitWhileNode(WhileNode iVisited) {
 		expression = false;
 		return null;
 	}

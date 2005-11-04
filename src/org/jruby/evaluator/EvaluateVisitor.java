@@ -200,41 +200,13 @@ public final class EvaluateVisitor implements NodeVisitor {
     	state.setSelf(self);
     	state.setResult(runtime.getNil());
     	
-    	return internalEval(state, node);
-    }
-    
-    public IRubyObject internalEval(EvaluationState state, Node node) {
-        state.clearResult();
-        
-        if (node != null) {
-        	try {
-        		// for each call to internalEval, push down new stacks (to isolate eval runs that still want to be logically separate
-                state.pushCurrentNodeStacks();
-                
-                state.addNodeAndVisitor(node);
-        		
-        		while (!state.getCurrentNodeStack().isEmpty()) {
-        	        // FIXME: Poll from somewhere else in the code? This polls per-node, perhaps per newline?
-        	        state.threadContext.pollThreadEvents();
-        	        
-        	        // invoke the topmost code against the topmost node
-        	        state.callNextVisitor();
-        		}
-        	} catch (StackOverflowError soe) {
-        		// TODO: perhaps a better place to catch this (although it will go away)
-        		throw state.runtime.newSystemStackError("stack level too deep");
-        	} finally {
-        		state.popCurrentNodeStacks();
-        	}
-        }
-        
-        return state.getResult();
+    	return state.begin(node);
     }
     
     // Collapsing further needs method calls
-    private static class AliasNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		AliasNode iVisited = (AliasNode)node;
+    private static class AliasNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		AliasNode iVisited = (AliasNode)ctx;
             if (state.threadContext.getRubyClass() == null) {
             	throw state.runtime.newTypeError("no class to make alias");
             }
@@ -246,32 +218,32 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final AliasNodeVisitor aliasNodeVisitor = new AliasNodeVisitor();
     
     // And nodes are collapsed completely
-    private static class AndNodeImplVisitor implements SingleNodeVisitor {
-		public void visit(EvaluationState state, Node node) {
+    private static class AndNodeImplVisitor implements Instruction {
+		public void execute(EvaluationState state, InstructionContext ctx) {
 			if (state.getResult().isTrue()) {
-				state.addNodeAndVisitor(((BinaryOperatorNode)node).getSecondNode());
+				state.addNodeInstruction(((BinaryOperatorNode)ctx).getSecondNode());
 			}
 		}
     }
     private static final AndNodeImplVisitor andNodeImplVisitor = new AndNodeImplVisitor();
-    private static class AndNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		BinaryOperatorNode iVisited = (BinaryOperatorNode)node;
+    private static class AndNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		BinaryOperatorNode iVisited = (BinaryOperatorNode)ctx;
     		
     		// add in reverse order
-    		state.addNodeAndVisitor((Node)iVisited, andNodeImplVisitor);
-    		state.addNodeAndVisitor((Node)iVisited.getFirstNode());
+    		state.addNodeInstruction((Node)iVisited, andNodeImplVisitor);
+    		state.addNodeInstruction((Node)iVisited.getFirstNode());
     	}
     }
     // used also for OpAsgnAndNode
     private static final AndNodeVisitor andNodeVisitor = new AndNodeVisitor();
     
     // Collapsing will require multiple results to be collected between visitors
-    private static class ArgsCatNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		ArgsCatNode iVisited = (ArgsCatNode)node;
-            IRubyObject args = state.evaluator.internalEval(state, iVisited.getFirstNode());
-            IRubyObject secondArgs = splatValue(state, state.evaluator.internalEval(state, iVisited.getSecondNode()));
+    private static class ArgsCatNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		ArgsCatNode iVisited = (ArgsCatNode)ctx;
+            IRubyObject args = state.begin(iVisited.getFirstNode());
+            IRubyObject secondArgs = splatValue(state, state.begin(iVisited.getSecondNode()));
             RubyArray list = args instanceof RubyArray ? (RubyArray) args :
                 state.runtime.newArray(args);
             
@@ -281,13 +253,13 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final ArgsCatNodeVisitor argsCatNodeVisitor = new ArgsCatNodeVisitor();
     
     // Collapsing requires carrying a list through all visits (or adding array code to eval())
-    private static class ArrayNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		ArrayNode iVisited = (ArrayNode)node;
+    private static class ArrayNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		ArrayNode iVisited = (ArrayNode)ctx;
             ArrayList list = new ArrayList(iVisited.size());
 
             for (Iterator iterator = iVisited.iterator(); iterator.hasNext();) {
-                list.add(state.evaluator.internalEval(state, (Node) iterator.next()));
+                list.add(state.begin((Node) iterator.next()));
             }
             
             state.setResult(state.runtime.newArray(list));
@@ -296,9 +268,9 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final ArrayNodeVisitor arrayNodeVisitor = new ArrayNodeVisitor();
     
     // Collapsing requires a way to break out method calls
-    private static class BackRefNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		BackRefNode iVisited = (BackRefNode)node;
+    private static class BackRefNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		BackRefNode iVisited = (BackRefNode)ctx;
             IRubyObject backref = state.threadContext.getBackref();
             switch (iVisited.getType()) {
     	        case '~' :
@@ -322,35 +294,35 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final BackRefNodeVisitor backRefNodeVisitor = new BackRefNodeVisitor();
     
     // Collapsed
-    private static class BeginNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		BeginNode iVisited = (BeginNode)node;
-    		state.addNodeAndVisitor(iVisited.getBodyNode());
+    private static class BeginNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		BeginNode iVisited = (BeginNode)ctx;
+    		state.addNodeInstruction(iVisited.getBodyNode());
     	}
     }
     private static final BeginNodeVisitor beginNodeVisitor = new BeginNodeVisitor();
 
     // Collapsed
-    private static class BlockNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		BlockNode iVisited = (BlockNode)node;
+    private static class BlockNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		BlockNode iVisited = (BlockNode)ctx;
             for (ListIterator iter = iVisited.reverseIterator(); iter.hasPrevious(); ) {
-                state.addNodeAndVisitor((Node)iter.previous());
+                state.addNodeInstruction((Node)iter.previous());
             }
     	}
     }
     private static final BlockNodeVisitor blockNodeVisitor = new BlockNodeVisitor();
     
     // Big; collapsing will require multiple visitors
-    private static class BlockPassNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		BlockPassNode iVisited = (BlockPassNode)node;
-            IRubyObject proc = state.evaluator.internalEval(state, iVisited.getBodyNode());
+    private static class BlockPassNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		BlockPassNode iVisited = (BlockPassNode)ctx;
+            IRubyObject proc = state.begin(iVisited.getBodyNode());
 
             if (proc.isNil()) {
                 state.threadContext.getIterStack().push(Iter.ITER_NOT);
                 try {
-                    state.evaluator.internalEval(state, iVisited.getIterNode());
+                    state.begin(iVisited.getIterNode());
                     return;
                 } finally {
                     state.threadContext.getIterStack().pop();
@@ -376,7 +348,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                 if (blockObject != null && blockObject == proc) {
             	    try {
                 	    state.threadContext.getIterStack().push(Iter.ITER_PRE);
-                	    state.evaluator.internalEval(state, iVisited.getIterNode());
+                	    state.begin(iVisited.getIterNode());
                 	    return;
             	    } finally {
                         state.threadContext.getIterStack().pop();
@@ -392,7 +364,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             }
 
             try {
-                state.evaluator.internalEval(state, iVisited.getIterNode());
+                state.begin(iVisited.getIterNode());
             } finally {
                 state.threadContext.getIterStack().pop();
                 state.threadContext.getBlockStack().pop();
@@ -402,13 +374,13 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final BlockPassNodeVisitor blockPassNodeVisitor = new BlockPassNodeVisitor();
     
     // Not collapsed, will require exception handling
-    private static class BreakNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		BreakNode iVisited = (BreakNode)node;
+    private static class BreakNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		BreakNode iVisited = (BreakNode)ctx;
     		
             JumpException je = new JumpException(JumpException.JumpType.BreakJump);
             if (iVisited.getValueNode() != null) {
-                je.setPrimaryData(state.evaluator.internalEval(state, iVisited.getValueNode()));
+                je.setPrimaryData(state.begin(iVisited.getValueNode()));
             } else {
             	je.setPrimaryData(state.runtime.getNil());
             }
@@ -418,81 +390,81 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final BreakNodeVisitor breakNodeVisitor = new BreakNodeVisitor();
     
     // Collapsed, other than exception handling
-    private static class ConstDeclNodeVisitor1 implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		ConstDeclNode iVisited = (ConstDeclNode)node;
+    private static class ConstDeclNodeVisitor1 implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		ConstDeclNode iVisited = (ConstDeclNode)ctx;
             if (state.threadContext.getRubyClass() == null) {
             	// TODO: wire into new exception handling mechanism
                 throw state.runtime.newTypeError("no class/module to define constant");
             }
             state.clearResult();
-    		state.addNodeAndVisitor(node, constDeclNodeVisitor2);
-            state.addNodeAndVisitor(iVisited.getValueNode());
+    		state.addNodeInstruction(ctx, constDeclNodeVisitor2);
+            state.addNodeInstruction(iVisited.getValueNode());
     	}
     }
     private static final ConstDeclNodeVisitor1 constDeclNodeVisitor1 = new ConstDeclNodeVisitor1();
-    private static class ConstDeclNodeVisitor2 implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		ConstDeclNode iVisited = (ConstDeclNode)node;
+    private static class ConstDeclNodeVisitor2 implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		ConstDeclNode iVisited = (ConstDeclNode)ctx;
     		state.threadContext.getRubyClass().setConstant(iVisited.getName(), state.getResult());
     	}
     }
     private static final ConstDeclNodeVisitor2 constDeclNodeVisitor2 = new ConstDeclNodeVisitor2();
-    private static class ConstDeclNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-            state.addNodeAndVisitor(node, constDeclNodeVisitor1);
+    private static class ConstDeclNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+            state.addNodeInstruction(ctx, constDeclNodeVisitor1);
     	}
     }
     private static final ConstDeclNodeVisitor constDeclNodeVisitor = new ConstDeclNodeVisitor();
     
     // Collapsed
-    private static class ClassVarAsgnNodeVisitor1 implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		ClassVarAsgnNode iVisited = (ClassVarAsgnNode)node;
+    private static class ClassVarAsgnNodeVisitor1 implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		ClassVarAsgnNode iVisited = (ClassVarAsgnNode)ctx;
             state.threadContext.getRubyClass().setClassVar(iVisited.getName(), state.getResult());
     	}
     }
     private static final ClassVarAsgnNodeVisitor1 classVarAsgnNodeVisitor1 = new ClassVarAsgnNodeVisitor1();
-    private static class ClassVarAsgnNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		ClassVarAsgnNode iVisited = (ClassVarAsgnNode)node;
-    		state.addNodeAndVisitor(node, classVarAsgnNodeVisitor1);
-            state.addNodeAndVisitor(iVisited.getValueNode());
+    private static class ClassVarAsgnNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		ClassVarAsgnNode iVisited = (ClassVarAsgnNode)ctx;
+    		state.addNodeInstruction(ctx, classVarAsgnNodeVisitor1);
+            state.addNodeInstruction(iVisited.getValueNode());
     	}
     }
     private static final ClassVarAsgnNodeVisitor classVarAsgnNodeVisitor = new ClassVarAsgnNodeVisitor();
     
     // Collapsed
-    private static class ClassVarDeclNodeVisitor1 implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		ClassVarDeclNode iVisited = (ClassVarDeclNode)node;
+    private static class ClassVarDeclNodeVisitor1 implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		ClassVarDeclNode iVisited = (ClassVarDeclNode)ctx;
             if (state.threadContext.getRubyClass() == null) {
                 throw state.runtime.newTypeError("no class/module to define class variable");
             }
-            state.addNodeAndVisitor(node, classVarDeclNodeVisitor2);
-            state.addNodeAndVisitor(iVisited.getValueNode());
+            state.addNodeInstruction(ctx, classVarDeclNodeVisitor2);
+            state.addNodeInstruction(iVisited.getValueNode());
     	}
     }
     private static final ClassVarDeclNodeVisitor1 classVarDeclNodeVisitor1 = new ClassVarDeclNodeVisitor1();
-    private static class ClassVarDeclNodeVisitor2 implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		ClassVarDeclNode iVisited = (ClassVarDeclNode)node;
+    private static class ClassVarDeclNodeVisitor2 implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		ClassVarDeclNode iVisited = (ClassVarDeclNode)ctx;
             state.threadContext.getRubyClass().setClassVar(iVisited.getName(), state.getResult());
     	}
     }
     private static final ClassVarDeclNodeVisitor2 classVarDeclNodeVisitor2 = new ClassVarDeclNodeVisitor2();
-    private static class ClassVarDeclNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
+    private static class ClassVarDeclNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
     		state.clearResult();
-    		state.addNodeAndVisitor(node, classVarDeclNodeVisitor1);
+    		state.addNodeInstruction(ctx, classVarDeclNodeVisitor1);
     	}
     }
     private static final ClassVarDeclNodeVisitor classVarDeclNodeVisitor = new ClassVarDeclNodeVisitor();
     
     // Not collapsed, but maybe nothing to be done?
-    private static class ClassVarNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		ClassVarNode iVisited = (ClassVarNode)node;
+    private static class ClassVarNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		ClassVarNode iVisited = (ClassVarNode)ctx;
         	RubyModule rubyClass = state.threadContext.getRubyClass();
         	
             if (rubyClass == null) {
@@ -511,14 +483,14 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final ClassVarNodeVisitor classVarNodeVisitor = new ClassVarNodeVisitor();
     
     // Not collapsed; probably will depend on exception handling
-    private static class CallNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		CallNode iVisited = (CallNode)node;
+    private static class CallNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		CallNode iVisited = (CallNode)ctx;
             Block tmpBlock = state.threadContext.beginCallArgs();
             IRubyObject receiver = null;
             IRubyObject[] args;
             try {
-                receiver = state.evaluator.internalEval(state, iVisited.getReceiverNode());
+                receiver = state.begin(iVisited.getReceiverNode());
                 args = setupArgs(state, state.runtime, state.threadContext, iVisited.getArgsNode());
             } finally {
             	state.threadContext.endCallArgs(tmpBlock);
@@ -531,18 +503,18 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final CallNodeVisitor callNodeVisitor = new CallNodeVisitor();
     
     // Not collapsed; it's a big'un, will take some work
-    private static class CaseNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		CaseNode iVisited = (CaseNode)node;
+    private static class CaseNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		CaseNode iVisited = (CaseNode)ctx;
             IRubyObject expression = null;
             if (iVisited.getCaseNode() != null) {
-                expression = state.evaluator.internalEval(state, iVisited.getCaseNode());
+                expression = state.begin(iVisited.getCaseNode());
             }
             
             Node firstWhenNode = iVisited.getFirstWhenNode();
             while (firstWhenNode != null) {
                 if (!(firstWhenNode instanceof WhenNode)) {
-                    state.evaluator.internalEval(state, firstWhenNode);
+                    state.begin(firstWhenNode);
                     break;
                 }
 
@@ -560,7 +532,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                         // Ruby grammar has nested whens in a case body because of
                         // productions case_body and when_args.
                 	    if (tag instanceof WhenNode) {
-                		    RubyArray expressions = (RubyArray) state.evaluator.internalEval(state, ((WhenNode) tag).getExpressionNodes());
+                		    RubyArray expressions = (RubyArray) state.begin(((WhenNode) tag).getExpressionNodes());
                         
                             for (int j = 0; j < expressions.getLength(); j++) {
                         	    IRubyObject condition = expressions.entry(j);
@@ -568,27 +540,27 @@ public final class EvaluateVisitor implements NodeVisitor {
                                 if ((expression != null && 
                             	    condition.callMethod("===", expression).isTrue()) || 
     							    (expression == null && condition.isTrue())) {
-                                     state.evaluator.internalEval(state, ((WhenNode) firstWhenNode).getBodyNode());
+                                     state.begin(((WhenNode) firstWhenNode).getBodyNode());
                                      return;
                                 }
                             }
                             continue;
                 	    }
 
-                        state.evaluator.internalEval(state, tag);
+                        state.begin(tag);
                         
                         if ((expression != null && state.getResult().callMethod("===", expression).isTrue()) ||
                             (expression == null && state.getResult().isTrue())) {
-                            state.evaluator.internalEval(state, whenNode.getBodyNode());
+                            state.begin(whenNode.getBodyNode());
                             return;
                         }
                     }
     	        } else {
-                    state.evaluator.internalEval(state, whenNode.getExpressionNodes());
+                    state.begin(whenNode.getExpressionNodes());
 
                     if ((expression != null && state.getResult().callMethod("===", expression).isTrue())
                         || (expression == null && state.getResult().isTrue())) {
-                        state.evaluator.internalEval(state, ((WhenNode) firstWhenNode).getBodyNode());
+                        state.begin(((WhenNode) firstWhenNode).getBodyNode());
                         return;
                     }
                 }
@@ -600,9 +572,9 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final CaseNodeVisitor caseNodeVisitor = new CaseNodeVisitor();
     
     // Not collapsed; another big one
-    private static class ClassNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		ClassNode iVisited = (ClassNode)node;
+    private static class ClassNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		ClassNode iVisited = (ClassNode)ctx;
             RubyClass superClass = getSuperClassFromNode(state, iVisited.getSuperNode());
             Node classNameNode = iVisited.getCPath();
             String name = ((INameNode) classNameNode).getName();
@@ -622,7 +594,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             }
             RubyClass superClazz;
             try {
-                superClazz = (RubyClass) state.evaluator.internalEval(state, superNode);
+                superClazz = (RubyClass) state.begin(superNode);
             } catch (Exception e) {
                 if (superNode instanceof INameNode) {
                     String name = ((INameNode) superNode).getName();
@@ -639,9 +611,9 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final ClassNodeVisitor classNodeVisitor = new ClassNodeVisitor();
     
     // Collapsed, other than a method call
-    private static class Colon2NodeVisitor1 implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		Colon2Node iVisited = (Colon2Node)node;
+    private static class Colon2NodeVisitor1 implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		Colon2Node iVisited = (Colon2Node)ctx;
             if (state.getResult() instanceof RubyModule) {
                 state.setResult(((RubyModule) state.getResult()).getConstantAtOrConstantMissing(iVisited.getName()));
             } else {
@@ -650,9 +622,9 @@ public final class EvaluateVisitor implements NodeVisitor {
     	}
     }
     private static final Colon2NodeVisitor1 colon2NodeVisitor1 = new Colon2NodeVisitor1();
-    private static class Colon2NodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		Colon2Node iVisited = (Colon2Node)node;
+    private static class Colon2NodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		Colon2Node iVisited = (Colon2Node)ctx;
             Node leftNode = iVisited.getLeftNode();
 
             // TODO: Made this more colon3 friendly because of cpath production
@@ -662,59 +634,59 @@ public final class EvaluateVisitor implements NodeVisitor {
                 state.setResult(state.runtime.getObject().getConstant(iVisited.getName()));
             } else {
             	state.clearResult();
-            	state.addNodeAndVisitor(node, colon2NodeVisitor1);
-                state.addNodeAndVisitor(iVisited.getLeftNode());
+            	state.addNodeInstruction(ctx, colon2NodeVisitor1);
+                state.addNodeInstruction(iVisited.getLeftNode());
             }
     	}
     }
     private static final Colon2NodeVisitor colon2NodeVisitor = new Colon2NodeVisitor();
 
     // No collapsing to do (depending on getConstant())
-    private static class Colon3NodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		Colon3Node iVisited = (Colon3Node)node;
+    private static class Colon3NodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		Colon3Node iVisited = (Colon3Node)ctx;
             state.setResult(state.runtime.getObject().getConstant(iVisited.getName()));
     	}
     }
     private static final Colon3NodeVisitor colon3NodeVisitor = new Colon3NodeVisitor();
     
     // No collapsing to do (depending on getConstant())
-    private static class ConstNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		ConstNode iVisited = (ConstNode)node;
+    private static class ConstNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		ConstNode iVisited = (ConstNode)ctx;
             state.setResult(state.threadContext.getRubyClass().getConstant(iVisited.getName()));
     	}
     }
     private static final ConstNodeVisitor constNodeVisitor = new ConstNodeVisitor();
     
     // Collapsed
-    private static class DAsgnNodeVisitor1 implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		DAsgnNode iVisited = (DAsgnNode)node;
+    private static class DAsgnNodeVisitor1 implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		DAsgnNode iVisited = (DAsgnNode)ctx;
             state.threadContext.getCurrentDynamicVars().set(iVisited.getName(), state.getResult());
     	}
     }
     private static final DAsgnNodeVisitor1 dAsgnNodeVisitor1 = new DAsgnNodeVisitor1();
-    private static class DAsgnNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		DAsgnNode iVisited = (DAsgnNode)node;
+    private static class DAsgnNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		DAsgnNode iVisited = (DAsgnNode)ctx;
     		state.clearResult();
-    		state.addNodeAndVisitor(node, dAsgnNodeVisitor1);
-            state.addNodeAndVisitor(iVisited.getValueNode());
+    		state.addNodeInstruction(ctx, dAsgnNodeVisitor1);
+            state.addNodeInstruction(iVisited.getValueNode());
     	}
     }
     private static final DAsgnNodeVisitor dAsgnNodeVisitor = new DAsgnNodeVisitor();
     
     // Not collapsed; requires carrying a StringBuffer across visitors
-    private static class DRegexpNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		DRegexpNode iVisited = (DRegexpNode)node;
+    private static class DRegexpNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		DRegexpNode iVisited = (DRegexpNode)ctx;
             StringBuffer sb = new StringBuffer();
 
             Iterator iterator = iVisited.iterator();
             while (iterator.hasNext()) {
                 Node iterNode = (Node) iterator.next();
-                sb.append(state.evaluator.internalEval(state, iterNode));
+                sb.append(state.begin(iterNode));
             }
 
             state.setResult(RubyRegexp.newRegexp(state.runtime, sb.toString(), iVisited.getOptions(), null));
@@ -723,15 +695,15 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final DRegexpNodeVisitor dRegexpNodeVisitor = new DRegexpNodeVisitor();
     
     // Not collapsed; requires carrying a StringBuffer across visitors
-    private static class DStrNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		DStrNode iVisited = (DStrNode)node;
+    private static class DStrNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		DStrNode iVisited = (DStrNode)ctx;
             StringBuffer sb = new StringBuffer();
 
             Iterator iterator = iVisited.iterator();
             while (iterator.hasNext()) {
                 Node iterNode = (Node) iterator.next();
-                sb.append(state.evaluator.internalEval(state, iterNode));
+                sb.append(state.begin(iterNode));
             }
 
             state.setResult(state.runtime.newString(sb.toString()));
@@ -740,15 +712,15 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final DStrNodeVisitor dStrNodeVisitor = new DStrNodeVisitor();
     
     // Not collapsed; requires carrying a StringBuffer across visitors
-    private static class DSymbolNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		DSymbolNode iVisited = (DSymbolNode)node;
+    private static class DSymbolNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		DSymbolNode iVisited = (DSymbolNode)ctx;
             StringBuffer sb = new StringBuffer();
 
             for (Iterator iterator = iVisited.getNode().iterator(); 
             	iterator.hasNext();) {
                 Node iterNode = (Node) iterator.next();
-                sb.append(state.evaluator.internalEval(state, iterNode));
+                sb.append(state.begin(iterNode));
             }
 
             state.setResult(state.runtime.newSymbol(sb.toString()));
@@ -757,24 +729,24 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final DSymbolNodeVisitor dSymbolNodeVisitor = new DSymbolNodeVisitor();
 
     // Maybe nothing to do
-    private static class DVarNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		DVarNode iVisited = (DVarNode)node;
+    private static class DVarNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		DVarNode iVisited = (DVarNode)ctx;
             state.setResult(state.threadContext.getDynamicValue(iVisited.getName()));
     	}
     }
     private static final DVarNodeVisitor dVarNodeVisitor = new DVarNodeVisitor();
     
     // Not collapsed; requires carrying a StringBuffer across visitors
-    private static class DXStrNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		DXStrNode iVisited = (DXStrNode)node;
+    private static class DXStrNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		DXStrNode iVisited = (DXStrNode)ctx;
             StringBuffer sb = new StringBuffer();
 
             Iterator iterator = iVisited.iterator();
             while (iterator.hasNext()) {
                 Node iterNode = (Node) iterator.next();
-                sb.append(state.evaluator.internalEval(state, iterNode));
+                sb.append(state.begin(iterNode));
             }
 
             state.setResult(state.getSelf().callMethod("`", state.runtime.newString(sb.toString())));
@@ -783,9 +755,9 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final DXStrNodeVisitor dXStrNodeVisitor = new DXStrNodeVisitor();
     
     // Not collapsed; calls out to DefinedVisitor
-    private static class DefinedNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		DefinedNode iVisited = (DefinedNode)node;
+    private static class DefinedNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		DefinedNode iVisited = (DefinedNode)ctx;
             String def = new DefinedVisitor(state.runtime, state.getSelf()).getDefinition(iVisited.getExpressionNode());
             if (def != null) {
                 state.setResult(state.runtime.newString(def));
@@ -795,9 +767,9 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final DefinedNodeVisitor definedNodeVisitor = new DefinedNodeVisitor();
     
     // Not collapsed; big
-    private static class DefnNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		DefnNode iVisited = (DefnNode)node;
+    private static class DefnNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		DefnNode iVisited = (DefnNode)ctx;
             RubyModule containingClass = state.threadContext.getRubyClass();
             if (containingClass == null) {
                 throw state.runtime.newTypeError("No class to add method.");
@@ -840,10 +812,10 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final DefnNodeVisitor defnNodeVisitor = new DefnNodeVisitor();
 
     // Not collapsed; big
-    private static class DefsNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		DefsNode iVisited = (DefsNode)node;
-            IRubyObject receiver = state.evaluator.internalEval(state, iVisited.getReceiverNode());
+    private static class DefsNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		DefsNode iVisited = (DefsNode)ctx;
+            IRubyObject receiver = state.begin(iVisited.getReceiverNode());
 
             if (state.runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
                 throw state.runtime.newSecurityError("Insecure; can't define singleton method.");
@@ -883,24 +855,24 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final DefsNodeVisitor defsNodeVisitor = new DefsNodeVisitor();
     
     // Not collapsed; requires carrying two results
-    private static class DotNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		DotNode iVisited = (DotNode)node;
-            state.setResult(RubyRange.newRange(state.runtime, state.evaluator.internalEval(state, iVisited.getBeginNode()), state.evaluator.internalEval(state, iVisited.getEndNode()), iVisited.isExclusive()));
+    private static class DotNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		DotNode iVisited = (DotNode)ctx;
+            state.setResult(RubyRange.newRange(state.runtime, state.begin(iVisited.getBeginNode()), state.begin(iVisited.getEndNode()), iVisited.isExclusive()));
     	}
     }
     private static final DotNodeVisitor dotNodeVisitor = new DotNodeVisitor();
     
     // Not collapsed; needs exception handling
-    private static class EnsureNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		EnsureNode iVisited = (EnsureNode)node;
+    private static class EnsureNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		EnsureNode iVisited = (EnsureNode)ctx;
             try {
-                state.setResult(state.evaluator.internalEval(state, iVisited.getBodyNode()));
+                state.setResult(state.begin(iVisited.getBodyNode()));
             } finally {
                 if (iVisited.getEnsureNode() != null) {
                     IRubyObject oldresult = state.getResult();
-                    state.evaluator.internalEval(state, iVisited.getEnsureNode());
+                    state.begin(iVisited.getEnsureNode());
                     state.setResult(oldresult);
                 }
             }
@@ -909,19 +881,19 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final EnsureNodeVisitor ensureNodeVisitor = new EnsureNodeVisitor();
     
     // Collapsed
-    private static class EvStrNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		EvStrNode iVisited = (EvStrNode)node;
+    private static class EvStrNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		EvStrNode iVisited = (EvStrNode)ctx;
     		state.clearResult();
-    		state.addNodeAndVisitor(iVisited.getBody());
+    		state.addNodeInstruction(iVisited.getBody());
     	}
     }
     private static final EvStrNodeVisitor evStrNodeVisitor = new EvStrNodeVisitor();
     
     // Not collapsed; function call and needs exception handling
-    private static class FCallNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		FCallNode iVisited = (FCallNode)node;
+    private static class FCallNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		FCallNode iVisited = (FCallNode)ctx;
             Block tmpBlock = state.threadContext.beginCallArgs();
             IRubyObject[] args;
             try {
@@ -936,39 +908,39 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final FCallNodeVisitor fCallNodeVisitor = new FCallNodeVisitor();
     
     // Nothing to do
-    private static class FalseNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
+    private static class FalseNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
             state.setResult(state.runtime.getFalse());
     	}
     }
     private static final FalseNodeVisitor falseNodeVisitor = new FalseNodeVisitor();
     
     // Not collapsed; I do not understand this.
-    private static class FlipNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		FlipNode iVisited = (FlipNode)node;
+    private static class FlipNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		FlipNode iVisited = (FlipNode)ctx;
             if (iVisited.isExclusive()) {
                 if (! state.runtime.getCurrentScope().getValue(iVisited.getCount()).isTrue()) {
                     //Benoit: I don't understand why the state.result is inversed
-                    state.setResult(state.evaluator.internalEval(state, iVisited.getBeginNode()).isTrue() ? state.runtime.getFalse() : state.runtime.getTrue());
+                    state.setResult(state.begin(iVisited.getBeginNode()).isTrue() ? state.runtime.getFalse() : state.runtime.getTrue());
                     state.runtime.getCurrentScope().setValue(iVisited.getCount(), state.getResult());
                 } else {
-                    if (state.evaluator.internalEval(state, iVisited.getEndNode()).isTrue()) {
+                    if (state.begin(iVisited.getEndNode()).isTrue()) {
                         state.runtime.getCurrentScope().setValue(iVisited.getCount(), state.runtime.getFalse());
                     }
                     state.setResult(state.runtime.getTrue());
                 }
             } else {
                 if (! state.runtime.getCurrentScope().getValue(iVisited.getCount()).isTrue()) {
-                    if (state.evaluator.internalEval(state, iVisited.getBeginNode()).isTrue()) {
+                    if (state.begin(iVisited.getBeginNode()).isTrue()) {
                         //Benoit: I don't understand why the state.result is inversed
-                        state.runtime.getCurrentScope().setValue(iVisited.getCount(), state.evaluator.internalEval(state, iVisited.getEndNode()).isTrue() ? state.runtime.getFalse() : state.runtime.getTrue());
+                        state.runtime.getCurrentScope().setValue(iVisited.getCount(), state.begin(iVisited.getEndNode()).isTrue() ? state.runtime.getFalse() : state.runtime.getTrue());
                         state.setResult(state.runtime.getTrue());
                     } else {
                         state.setResult(state.runtime.getFalse());
                     }
                 } else {
-                    if (state.evaluator.internalEval(state, iVisited.getEndNode()).isTrue()) {
+                    if (state.begin(iVisited.getEndNode()).isTrue()) {
                         state.runtime.getCurrentScope().setValue(iVisited.getCount(), state.runtime.getFalse());
                     }
                     state.setResult(state.runtime.getTrue());
@@ -979,9 +951,9 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final FlipNodeVisitor flipNodeVisitor = new FlipNodeVisitor();
     
     // Not collapsed; big and copious use of flow-control exceptions
-    private static class ForNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		ForNode iVisited = (ForNode)node;
+    private static class ForNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		ForNode iVisited = (ForNode)ctx;
         	state.threadContext.getBlockStack().push(Block.createBlock(iVisited.getVarNode(), new EvaluateCallable(iVisited.getBodyNode(), iVisited.getVarNode()), state.getSelf()));
             state.threadContext.getIterStack().push(Iter.ITER_PRE);
 
@@ -993,7 +965,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
                         IRubyObject recv = null;
                         try {
-                            recv = state.evaluator.internalEval(state, iVisited.getIterNode());
+                            recv = state.begin(iVisited.getIterNode());
                         } finally {
                             state.threadContext.setPosition(position);
                             state.threadContext.endCallArgs(tmpBlock);
@@ -1025,44 +997,44 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final ForNodeVisitor forNodeVisitor = new ForNodeVisitor();
     
     // Collapsed
-    private static class GlobalAsgnNodeVisitor1 implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		GlobalAsgnNode iVisited = (GlobalAsgnNode)node;
+    private static class GlobalAsgnNodeVisitor1 implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		GlobalAsgnNode iVisited = (GlobalAsgnNode)ctx;
             state.runtime.getGlobalVariables().set(iVisited.getName(), state.getResult());
     	}
     }
     private static final GlobalAsgnNodeVisitor1 globalAsgnNodeVisitor1 = new GlobalAsgnNodeVisitor1();
-    private static class GlobalAsgnNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		GlobalAsgnNode iVisited = (GlobalAsgnNode)node;
+    private static class GlobalAsgnNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		GlobalAsgnNode iVisited = (GlobalAsgnNode)ctx;
     		state.clearResult();
-    		state.addNodeAndVisitor(node, globalAsgnNodeVisitor1);
-            state.addNodeAndVisitor(iVisited.getValueNode());
+    		state.addNodeInstruction(ctx, globalAsgnNodeVisitor1);
+            state.addNodeInstruction(iVisited.getValueNode());
     	}
     }
     private static final GlobalAsgnNodeVisitor globalAsgnNodeVisitor = new GlobalAsgnNodeVisitor();
     
     // Nothing to do
-    private static class GlobalVarNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		GlobalVarNode iVisited = (GlobalVarNode)node;
+    private static class GlobalVarNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		GlobalVarNode iVisited = (GlobalVarNode)ctx;
             state.setResult(state.runtime.getGlobalVariables().get(iVisited.getName()));
     	}
     }
     private static final GlobalVarNodeVisitor globalVarNodeVisitor = new GlobalVarNodeVisitor();
     
     // Not collapsed; requires carrying a hash across visits and has method calls
-    private static class HashNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		HashNode iVisited = (HashNode)node;
+    private static class HashNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		HashNode iVisited = (HashNode)ctx;
             RubyHash hash = RubyHash.newHash(state.runtime);
 
             if (iVisited.getListNode() != null) {
                 Iterator iterator = iVisited.getListNode().iterator();
                 while (iterator.hasNext()) {
-                    IRubyObject key = state.evaluator.internalEval(state, (Node) iterator.next());
+                    IRubyObject key = state.begin((Node) iterator.next());
                     if (iterator.hasNext()) {
-                        hash.aset(key, state.evaluator.internalEval(state, (Node) iterator.next()));
+                        hash.aset(key, state.begin((Node) iterator.next()));
                     } else {
                         // XXX
                         throw new RuntimeException("[BUG] odd number list for Hash");
@@ -1076,27 +1048,27 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final HashNodeVisitor hashNodeVisitor = new HashNodeVisitor();
     
     // Collapsed
-    private static class InstAsgnNodeVisitor1 implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		InstAsgnNode iVisited = (InstAsgnNode)node;
+    private static class InstAsgnNodeVisitor1 implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		InstAsgnNode iVisited = (InstAsgnNode)ctx;
             state.getSelf().setInstanceVariable(iVisited.getName(), state.getResult());
     	}
     }
     private static final InstAsgnNodeVisitor1 instAsgnNodeVisitor1 = new InstAsgnNodeVisitor1();
-    private static class InstAsgnNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		InstAsgnNode iVisited = (InstAsgnNode)node;
+    private static class InstAsgnNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		InstAsgnNode iVisited = (InstAsgnNode)ctx;
     		state.clearResult();
-    		state.addNodeAndVisitor(node, instAsgnNodeVisitor1);
-            state.addNodeAndVisitor(iVisited.getValueNode());
+    		state.addNodeInstruction(ctx, instAsgnNodeVisitor1);
+            state.addNodeInstruction(iVisited.getValueNode());
     	}
     }
     private static final InstAsgnNodeVisitor instAsgnNodeVisitor = new InstAsgnNodeVisitor();
     
     // Nothing to do
-    private static class InstVarNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		InstVarNode iVisited = (InstVarNode)node;
+    private static class InstVarNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		InstVarNode iVisited = (InstVarNode)ctx;
         	IRubyObject variable = state.getSelf().getInstanceVariable(iVisited.getName());
         	
             state.setResult(variable == null ? state.runtime.getNil() : variable);
@@ -1105,9 +1077,9 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final InstVarNodeVisitor instVarNodeVisitor = new InstVarNodeVisitor();
     
     // Collapsed
-    private static class IfNodeImplVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		IfNode iVisited = (IfNode)node;
+    private static class IfNodeImplVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		IfNode iVisited = (IfNode)ctx;
     		IRubyObject result = state.getResult();
     		
     		// Must set to nil; ifs or logical statements without then/else return nil
@@ -1115,37 +1087,37 @@ public final class EvaluateVisitor implements NodeVisitor {
     		
     		if (result.isTrue()) {
     			if (iVisited.getThenBody() != null) {
-    				state.addNodeAndVisitor(iVisited.getThenBody());
+    				state.addNodeInstruction(iVisited.getThenBody());
     			}
             } else {
             	if (iVisited.getElseBody() != null) {
-            		state.addNodeAndVisitor(iVisited.getElseBody());
+            		state.addNodeInstruction(iVisited.getElseBody());
             	}
             }
     	}
     }
     private static final IfNodeImplVisitor ifNodeImplVisitor = new IfNodeImplVisitor();
-    private static class IfNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		IfNode iVisited = (IfNode)node;
+    private static class IfNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		IfNode iVisited = (IfNode)ctx;
     		// add in reverse order
-    		state.addNodeAndVisitor(iVisited, ifNodeImplVisitor);
-    		state.addNodeAndVisitor(iVisited.getCondition());
+    		state.addNodeInstruction(iVisited, ifNodeImplVisitor);
+    		state.addNodeInstruction(iVisited.getCondition());
        	}
     }
     private static final IfNodeVisitor ifNodeVisitor = new IfNodeVisitor();
     
     // Not collapsed, depends on exception handling and function calls
-    private static class IterNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		IterNode iVisited = (IterNode)node;
+    private static class IterNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		IterNode iVisited = (IterNode)ctx;
         	state.threadContext.getBlockStack().push(Block.createBlock(iVisited.getVarNode(), 
             	    new EvaluateCallable(iVisited.getBodyNode(), iVisited.getVarNode()), state.getSelf()));
                 try {
                     while (true) {
                         try {
                             state.threadContext.getIterStack().push(Iter.ITER_PRE);
-                            state.setResult(state.evaluator.internalEval(state, iVisited.getIterNode()));
+                            state.setResult(state.begin(iVisited.getIterNode()));
                             return;
                         } catch (JumpException je) {
                         	if (je.getJumpType() == JumpException.JumpType.RetryJump) {
@@ -1173,56 +1145,56 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final IterNodeVisitor iterNodeVisitor = new IterNodeVisitor();
     
     // Collapsed
-    private static class LocalAsgnNodeVisitor1 implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		LocalAsgnNode iVisited = (LocalAsgnNode)node;
+    private static class LocalAsgnNodeVisitor1 implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		LocalAsgnNode iVisited = (LocalAsgnNode)ctx;
             state.runtime.getCurrentScope().setValue(iVisited.getCount(), state.getResult());
     	}
     }
     private static final LocalAsgnNodeVisitor1 localAsgnNodeVisitor1 = new LocalAsgnNodeVisitor1();
-    private static class LocalAsgnNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		LocalAsgnNode iVisited = (LocalAsgnNode)node;
+    private static class LocalAsgnNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		LocalAsgnNode iVisited = (LocalAsgnNode)ctx;
     		state.clearResult();
-    		state.addNodeAndVisitor(node, localAsgnNodeVisitor1);
-            state.addNodeAndVisitor(iVisited.getValueNode());
+    		state.addNodeInstruction(ctx, localAsgnNodeVisitor1);
+            state.addNodeInstruction(iVisited.getValueNode());
     	}
     }
     private static final LocalAsgnNodeVisitor localAsgnNodeVisitor = new LocalAsgnNodeVisitor();
     
     // Nothing to do assuming getValue() isn't recursing
-    private static class LocalVarNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		LocalVarNode iVisited = (LocalVarNode)node;
+    private static class LocalVarNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		LocalVarNode iVisited = (LocalVarNode)ctx;
             state.setResult(state.runtime.getCurrentScope().getValue(iVisited.getCount()));
     	}
     }
     private static final LocalVarNodeVisitor localVarNodeVisitor = new LocalVarNodeVisitor();
     
     // Not collapsed, calls out to AssignmentVisitor
-    private static class MultipleAsgnNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		MultipleAsgnNode iVisited = (MultipleAsgnNode)node;
-            state.setResult(new AssignmentVisitor(state.runtime, state.getSelf()).assign(iVisited, state.evaluator.internalEval(state, iVisited.getValueNode()), false));
+    private static class MultipleAsgnNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		MultipleAsgnNode iVisited = (MultipleAsgnNode)ctx;
+            state.setResult(new AssignmentVisitor(state.runtime, state.getSelf()).assign(iVisited, state.begin(iVisited.getValueNode()), false));
     	}
     }
     private static final MultipleAsgnNodeVisitor multipleAsgnNodeVisitor = new MultipleAsgnNodeVisitor(); 
     
     // Not collapsed; requires carrying multiple results
-    private static class Match2NodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		Match2Node iVisited = (Match2Node)node;
-            state.setResult(((RubyRegexp) state.evaluator.internalEval(state, iVisited.getReceiverNode())).match(state.evaluator.internalEval(state, iVisited.getValueNode())));
+    private static class Match2NodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		Match2Node iVisited = (Match2Node)ctx;
+            state.setResult(((RubyRegexp) state.begin(iVisited.getReceiverNode())).match(state.begin(iVisited.getValueNode())));
     	}
     }
     private static final Match2NodeVisitor match2NodeVisitor = new Match2NodeVisitor();
     
     // Not collapsed; requires carrying multiple results
-    private static class Match3NodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		Match3Node iVisited = (Match3Node)node;
-            IRubyObject receiver = state.evaluator.internalEval(state, iVisited.getReceiverNode());
-            IRubyObject value = state.evaluator.internalEval(state, iVisited.getValueNode());
+    private static class Match3NodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		Match3Node iVisited = (Match3Node)ctx;
+            IRubyObject receiver = state.begin(iVisited.getReceiverNode());
+            IRubyObject value = state.begin(iVisited.getValueNode());
             if (value instanceof RubyString) {
                 state.setResult(((RubyRegexp) receiver).match(value));
             } else {
@@ -1233,26 +1205,26 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final Match3NodeVisitor match3NodeVisitor = new Match3NodeVisitor();
     
     // Collapsed
-    private static class MatchNodeVisitor1 implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
+    private static class MatchNodeVisitor1 implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
             state.setResult(((RubyRegexp) state.getResult()).match2());
     	}
     }
     private static final MatchNodeVisitor1 matchNodeVisitor1 = new MatchNodeVisitor1();
-    private static class MatchNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		MatchNode iVisited = (MatchNode)node;
+    private static class MatchNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		MatchNode iVisited = (MatchNode)ctx;
     		state.clearResult();
-    		state.addNodeAndVisitor(node, matchNodeVisitor1);
-            state.addNodeAndVisitor(iVisited.getRegexpNode());
+    		state.addNodeInstruction(ctx, matchNodeVisitor1);
+            state.addNodeInstruction(iVisited.getRegexpNode());
     	}
     }
     private static final MatchNodeVisitor matchNodeVisitor = new MatchNodeVisitor();
     
     // Not collapsed; exceptions
-    private static class ModuleNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		ModuleNode iVisited = (ModuleNode)node;
+    private static class ModuleNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		ModuleNode iVisited = (ModuleNode)ctx;
             Node classNameNode = iVisited.getCPath();
             String name = ((INameNode) classNameNode).getName();
             RubyModule enclosingModule = getEnclosingModule(state, classNameNode);
@@ -1273,9 +1245,9 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final ModuleNodeVisitor moduleNodeVisitor = new ModuleNodeVisitor();
     
     // Collapsed
-    private static class NewlineNodeTraceVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		NewlineNode iVisited = (NewlineNode)node;
+    private static class NewlineNodeTraceVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		NewlineNode iVisited = (NewlineNode)ctx;
     		
     		// something in here is used to build up ruby stack trace...
             state.threadContext.setPosition(iVisited.getPosition());
@@ -1286,17 +1258,17 @@ public final class EvaluateVisitor implements NodeVisitor {
     	}
     }
     private static final NewlineNodeTraceVisitor newlineNodeTraceVisitor = new NewlineNodeTraceVisitor();
-    private static class NewlineNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
+    private static class NewlineNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
     		List l = new ArrayList();
-    		while (node instanceof NewlineNode) {
-    			l.add(0, node);
-    			node = ((NewlineNode)node).getNextNode();
+    		while (ctx instanceof NewlineNode) {
+    			l.add(0, ctx);
+    			ctx = ((NewlineNode)ctx).getNextNode();
     		}
-    		state.addNodeAndVisitor(node);
+    		state.addNodeInstruction(ctx);
     		
     		for (Iterator i = l.iterator(); i.hasNext();) {
-    			state.addNodeAndVisitor((Node)i.next(), newlineNodeTraceVisitor);
+    			state.addNodeInstruction((Node)i.next(), newlineNodeTraceVisitor);
     		}
 
 	        // FIXME: Poll from somewhere else in the code?
@@ -1309,12 +1281,12 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final NewlineNodeVisitor newlineNodeVisitor = new NewlineNodeVisitor();
     
     // Not collapsed, exceptions
-    private static class NextNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		NextNode iVisited = (NextNode)node;
+    private static class NextNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		NextNode iVisited = (NextNode)ctx;
     		JumpException je = new JumpException(JumpException.JumpType.NextJump);
             if (iVisited.getValueNode() != null) {
-                je.setPrimaryData(state.evaluator.internalEval(state, iVisited.getValueNode()));
+                je.setPrimaryData(state.begin(iVisited.getValueNode()));
             }
             throw je;
     	}
@@ -1322,43 +1294,43 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final NextNodeVisitor nextNodeVisitor = new NextNodeVisitor();
     
     // Nothing to do
-    private static class NoopVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
+    private static class NoopVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
     	}
     }
     private static final NoopVisitor noopVisitor = new NoopVisitor();
     
     // Collapsed
-    private static class NotNodeVisitor1 implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
+    private static class NotNodeVisitor1 implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
             state.setResult(state.getResult().isTrue() ? state.runtime.getFalse() : state.runtime.getTrue());
     	}
     }
     private static final NotNodeVisitor1 notNodeVisitor1 = new NotNodeVisitor1();    
-    private static class NotNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		NotNode iVisited = (NotNode)node;
+    private static class NotNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		NotNode iVisited = (NotNode)ctx;
     		state.clearResult();
-    		state.addNodeAndVisitor(node, notNodeVisitor1);
-            state.addNodeAndVisitor(iVisited.getConditionNode());
+    		state.addNodeInstruction(ctx, notNodeVisitor1);
+            state.addNodeInstruction(iVisited.getConditionNode());
     	}
     }
     private static final NotNodeVisitor notNodeVisitor = new NotNodeVisitor();
     
     // Not collapsed, method call
-    private static class NthRefNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		NthRefNode iVisited = (NthRefNode)node;
+    private static class NthRefNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		NthRefNode iVisited = (NthRefNode)ctx;
             state.setResult(RubyRegexp.nth_match(iVisited.getMatchNumber(), state.threadContext.getBackref()));
     	}
     }
     private static final NthRefNodeVisitor nthRefNodeVisitor = new NthRefNodeVisitor();
     
     // Not collapsed, multiple evals to resolve
-    private static class OpElementAsgnNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		OpElementAsgnNode iVisited = (OpElementAsgnNode)node;
-            IRubyObject receiver = state.evaluator.internalEval(state, iVisited.getReceiverNode());
+    private static class OpElementAsgnNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		OpElementAsgnNode iVisited = (OpElementAsgnNode)ctx;
+            IRubyObject receiver = state.begin(iVisited.getReceiverNode());
 
             IRubyObject[] args = setupArgs(state, state.runtime, state.threadContext, iVisited.getArgsNode());
 
@@ -1369,15 +1341,15 @@ public final class EvaluateVisitor implements NodeVisitor {
                     state.setResult(firstValue);
                     return;
                 }
-    			firstValue = state.evaluator.internalEval(state, iVisited.getValueNode());
+    			firstValue = state.begin(iVisited.getValueNode());
             } else if (iVisited.getOperatorName().equals("&&")) {
                 if (!firstValue.isTrue()) {
                     state.setResult(firstValue);
                     return;
                 }
-    			firstValue = state.evaluator.internalEval(state, iVisited.getValueNode());
+    			firstValue = state.begin(iVisited.getValueNode());
             } else {
-                firstValue = firstValue.callMethod(iVisited.getOperatorName(), state.evaluator.internalEval(state, iVisited.getValueNode()));
+                firstValue = firstValue.callMethod(iVisited.getOperatorName(), state.begin(iVisited.getValueNode()));
             }
 
             IRubyObject[] expandedArgs = new IRubyObject[args.length + 1];
@@ -1389,10 +1361,10 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final OpElementAsgnNodeVisitor opElementAsgnNodeVisitor = new OpElementAsgnNodeVisitor();
     
     // Not collapsed, multiple evals to resolve
-    private static class OpAsgnNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		OpAsgnNode iVisited = (OpAsgnNode)node;
-            IRubyObject receiver = state.evaluator.internalEval(state, iVisited.getReceiverNode());
+    private static class OpAsgnNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		OpAsgnNode iVisited = (OpAsgnNode)ctx;
+            IRubyObject receiver = state.begin(iVisited.getReceiverNode());
             IRubyObject value = receiver.callMethod(iVisited.getVariableName());
 
             if (iVisited.getOperatorName().equals("||")) {
@@ -1400,15 +1372,15 @@ public final class EvaluateVisitor implements NodeVisitor {
                     state.setResult(value);
                     return;
                 }
-    			value = state.evaluator.internalEval(state, iVisited.getValueNode());
+    			value = state.begin(iVisited.getValueNode());
             } else if (iVisited.getOperatorName().equals("&&")) {
                 if (!value.isTrue()) {
                     state.setResult(value);
                     return;
                 }
-    			value = state.evaluator.internalEval(state, iVisited.getValueNode());
+    			value = state.begin(iVisited.getValueNode());
             } else {
-                value = value.callMethod(iVisited.getOperatorName(), state.evaluator.internalEval(state, iVisited.getValueNode()));
+                value = value.callMethod(iVisited.getOperatorName(), state.begin(iVisited.getValueNode()));
             }
 
             receiver.callMethod(iVisited.getVariableName() + "=", value);
@@ -1419,13 +1391,13 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final OpAsgnNodeVisitor opAsgnNodeVisitor = new OpAsgnNodeVisitor();
     
     // Not collapsed, exceptions
-    private static class OptNNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		OptNNode iVisited = (OptNNode)node;
+    private static class OptNNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		OptNNode iVisited = (OptNNode)ctx;
             while (RubyKernel.gets(state.runtime.getTopSelf(), IRubyObject.NULL_ARRAY).isTrue()) {
                 while (true) { // Used for the 'redo' command
                     try {
-                        state.evaluator.internalEval(state, iVisited.getBodyNode());
+                        state.begin(iVisited.getBodyNode());
                         break;
                     } catch (JumpException je) {
                     	if (je.getJumpType() == JumpException.JumpType.RedoJump) {
@@ -1448,54 +1420,54 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final OptNNodeVisitor optNNodeVisitor = new OptNNodeVisitor();
     
     // Collapsed
-    private static class OrNodeImplVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		BinaryOperatorNode iVisited = (BinaryOperatorNode)node;
+    private static class OrNodeImplVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		BinaryOperatorNode iVisited = (BinaryOperatorNode)ctx;
             if (!state.getResult().isTrue()) {
-                state.addNodeAndVisitor(iVisited.getSecondNode());
+                state.addNodeInstruction(iVisited.getSecondNode());
             }
     	}
     }
     private static final OrNodeImplVisitor orNodeImplVisitor = new OrNodeImplVisitor();
-    private static class OrNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		BinaryOperatorNode iVisited = (BinaryOperatorNode)node;
+    private static class OrNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		BinaryOperatorNode iVisited = (BinaryOperatorNode)ctx;
     		state.clearResult();
-    		state.addNodeAndVisitor(node, orNodeImplVisitor);
-    		state.addNodeAndVisitor(iVisited.getFirstNode());	
+    		state.addNodeInstruction(ctx, orNodeImplVisitor);
+    		state.addNodeInstruction(iVisited.getFirstNode());	
     	}
     }
     private static final OrNodeVisitor orNodeVisitor = new OrNodeVisitor();
     
     // Not collapsed, pure exception stuff
-    private static class RedoNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
+    private static class RedoNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
             throw new JumpException(JumpException.JumpType.RedoJump);
     	}
     }
     private static final RedoNodeVisitor redoNodeVisitor = new RedoNodeVisitor();
     
     // Not collapsed; had some trouble with it
-    private static class RescueBodyNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		RescueBodyNode iVisited = (RescueBodyNode)node;
-            state.evaluator.internalEval(state, iVisited.getBodyNode());
+    private static class RescueBodyNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		RescueBodyNode iVisited = (RescueBodyNode)ctx;
+            state.begin(iVisited.getBodyNode());
     	}
     }
     private static final RescueBodyNodeVisitor rescueBodyNodeVisitor = new RescueBodyNodeVisitor();
     
     // Not collapsed, obviously heavy ties to exception handling
-    private static class RescueNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		RescueNode iVisited = (RescueNode)node;
+    private static class RescueNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		RescueNode iVisited = (RescueNode)ctx;
             RescuedBlock : while (true) {
                 try {
                     // Execute rescue block
-                    state.evaluator.internalEval(state, iVisited.getBodyNode());
+                    state.begin(iVisited.getBodyNode());
 
                     // If no exception is thrown execute else block
                     if (iVisited.getElseNode() != null) {
-                        state.evaluator.internalEval(state, iVisited.getElseNode());
+                        state.begin(iVisited.getElseNode());
                     }
 
                     return;
@@ -1513,14 +1485,14 @@ public final class EvaluateVisitor implements NodeVisitor {
                         ListNode exceptionNodesList;
                         
                         if (exceptionNodes instanceof SplatNode) {                    
-                            exceptionNodesList = (ListNode) state.evaluator.internalEval(state, exceptionNodes);
+                            exceptionNodesList = (ListNode) state.begin(exceptionNodes);
                         } else {
                             exceptionNodesList = (ListNode) exceptionNodes;
                         }
                         
                         if (isRescueHandled(state, raisedException, exceptionNodesList)) {
                             try {
-                                state.evaluator.internalEval(state, rescueNode);
+                                state.begin(rescueNode);
                                 return;
                             } catch (JumpException je) {
                             	if (je.getJumpType() == JumpException.JumpType.RetryJump) {
@@ -1573,8 +1545,8 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final RescueNodeVisitor rescueNodeVisitor = new RescueNodeVisitor();
     
     // Not collapsed, pure exception stuff
-    private static class RetryNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
+    private static class RetryNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
     		
     		// XXX: this should all change or go away with the new mechanism of recording "points" in the stack to return to
     		while (!state.getCurrentNodeStack().isEmpty()) {
@@ -1596,9 +1568,9 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final RetryNodeVisitor retryNodeVisitor = new RetryNodeVisitor();
     
     // Not collapsed, flow-control exceptions
-    private static class ReturnNodeVisitor1 implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		ReturnNode iVisited = (ReturnNode)node;
+    private static class ReturnNodeVisitor1 implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		ReturnNode iVisited = (ReturnNode)ctx;
     		
     		// reduce node stack to nearest return point
     		// TODO: if multiple return points in a row, tail-call optimize?
@@ -1618,13 +1590,13 @@ public final class EvaluateVisitor implements NodeVisitor {
     }
     private static final ReturnNodeVisitor1 returnNodeVisitor1 = new ReturnNodeVisitor1();
     // Not collapsed, flow-control exceptions
-    private static class ReturnNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		ReturnNode iVisited = (ReturnNode)node;
+    private static class ReturnNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		ReturnNode iVisited = (ReturnNode)ctx;
     		
-    		state.addNodeAndVisitor(node, returnNodeVisitor1);
+    		state.addNodeInstruction(ctx, returnNodeVisitor1);
     		if (iVisited.getValueNode() != null) {
-    			state.addNodeAndVisitor(iVisited.getValueNode());
+    			state.addNodeInstruction(iVisited.getValueNode());
     		}
     		
     		state.clearResult();
@@ -1633,10 +1605,10 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final ReturnNodeVisitor returnNodeVisitor = new ReturnNodeVisitor();
     
     // Not collapsed, evalClassBody will take some work
-    private static class SClassNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		SClassNode iVisited = (SClassNode)node;
-            IRubyObject receiver = state.evaluator.internalEval(state, iVisited.getReceiverNode());
+    private static class SClassNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		SClassNode iVisited = (SClassNode)ctx;
+            IRubyObject receiver = state.begin(iVisited.getReceiverNode());
 
             RubyClass singletonClass;
 
@@ -1665,13 +1637,13 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final SClassNodeVisitor sClassNodeVisitor = new SClassNodeVisitor();
     
     // Not collapsed, exception handling needed
-    private static class ScopeNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		ScopeNode iVisited = (ScopeNode)node;
+    private static class ScopeNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		ScopeNode iVisited = (ScopeNode)ctx;
             state.threadContext.pushFrameCopy();
             state.threadContext.pushScope(iVisited.getLocalNames());
             try {
-                state.evaluator.internalEval(state, iVisited.getBodyNode());
+                state.begin(iVisited.getBodyNode());
             } finally {
                 state.threadContext.popScope();
                 state.threadContext.popFrame();
@@ -1681,60 +1653,60 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final ScopeNodeVisitor scopeNodeVisitor = new ScopeNodeVisitor();
     
     // Nothing to do
-    private static class SelfNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
+    private static class SelfNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
             state.setResult(state.getSelf());
     	}
     }
     private static final SelfNodeVisitor selfNodeVisitor = new SelfNodeVisitor();
     
     // Collapsed
-    private static class SplatNodeVisitor1 implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
+    private static class SplatNodeVisitor1 implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
             state.setResult(splatValue(state, state.getResult()));
     	}
     }
     private static final SplatNodeVisitor1 splatNodeVisitor1 = new SplatNodeVisitor1();
-    private static class SplatNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		SplatNode iVisited = (SplatNode)node;
+    private static class SplatNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		SplatNode iVisited = (SplatNode)ctx;
     		state.clearResult();
-    		state.addNodeAndVisitor(node, splatNodeVisitor1);
-            state.addNodeAndVisitor(iVisited.getValue());
+    		state.addNodeInstruction(ctx, splatNodeVisitor1);
+            state.addNodeInstruction(iVisited.getValue());
     	}
     }
     private static final SplatNodeVisitor splatNodeVisitor = new SplatNodeVisitor();
     
     // Nothing to do, other than concerns about newString recursing
-    private static class StrNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		StrNode iVisited = (StrNode)node;
+    private static class StrNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		StrNode iVisited = (StrNode)ctx;
             state.setResult(state.runtime.newString(iVisited.getValue()));
     	}
     }
     private static final StrNodeVisitor strNodeVisitor = new StrNodeVisitor();
     
     // Collapsed
-    private static class SValueNodeVisitor1 implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
+    private static class SValueNodeVisitor1 implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
             state.setResult(aValueSplat(state, state.getResult()));
     	}
     }
     private static final SValueNodeVisitor1 sValueNodeVisitor1 = new SValueNodeVisitor1();
-    private static class SValueNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		SValueNode iVisited = (SValueNode)node;
+    private static class SValueNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		SValueNode iVisited = (SValueNode)ctx;
     		state.clearResult();
-    		state.addNodeAndVisitor(node, sValueNodeVisitor1);
-            state.addNodeAndVisitor(iVisited.getValue());
+    		state.addNodeInstruction(ctx, sValueNodeVisitor1);
+            state.addNodeInstruction(iVisited.getValue());
     	}
     }
     private static final SValueNodeVisitor sValueNodeVisitor = new SValueNodeVisitor();
     
     // Not collapsed, exceptions
-    private static class SuperNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		SuperNode iVisited = (SuperNode)node;
+    private static class SuperNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		SuperNode iVisited = (SuperNode)ctx;
             if (state.threadContext.getCurrentFrame().getLastClass() == null) {
                 throw state.runtime.newNameError("Superclass method '" + state.threadContext.getCurrentFrame().getLastFunc() + "' disabled.");
             }
@@ -1753,34 +1725,34 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final SuperNodeVisitor superNodeVisitor = new SuperNodeVisitor();
     
     // Collapsed
-    private static class ToAryNodeVisitor1 implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
+    private static class ToAryNodeVisitor1 implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
             state.setResult(aryToAry(state, state.getResult()));
     	}
     }
     private static final ToAryNodeVisitor1 toAryNodeVisitor1 = new ToAryNodeVisitor1();
-    private static class ToAryNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		ToAryNode iVisited = (ToAryNode)node;
+    private static class ToAryNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		ToAryNode iVisited = (ToAryNode)ctx;
     		state.clearResult();
-    		state.addNodeAndVisitor(node, toAryNodeVisitor1);
-            state.addNodeAndVisitor(iVisited.getValue());
+    		state.addNodeInstruction(ctx, toAryNodeVisitor1);
+            state.addNodeInstruction(iVisited.getValue());
     	}
     }
     private static final ToAryNodeVisitor toAryNodeVisitor = new ToAryNodeVisitor();
 
     // Nothing to do
-    private static class TrueNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
+    private static class TrueNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
             state.setResult(state.runtime.getTrue());
     	}
     }
     private static final TrueNodeVisitor trueNodeVisitor = new TrueNodeVisitor();
     
     // Probably nothing to do
-    private static class UndefNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		UndefNode iVisited = (UndefNode)node;
+    private static class UndefNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		UndefNode iVisited = (UndefNode)ctx;
             if (state.threadContext.getRubyClass() == null) {
                 throw state.runtime.newTypeError("No class to undef method '" + iVisited.getName() + "'.");
             }
@@ -1790,13 +1762,13 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final UndefNodeVisitor undefNodeVisitor = new UndefNodeVisitor();
     
     // Not collapsed, exception handling like crazy
-    private static class UntilNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		UntilNode iVisited = (UntilNode)node;
-            while (!state.evaluator.internalEval(state, iVisited.getConditionNode()).isTrue()) {
+    private static class UntilNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		UntilNode iVisited = (UntilNode)ctx;
+            while (!state.begin(iVisited.getConditionNode()).isTrue()) {
                 while (true) { // Used for the 'redo' command
                     try {
-                        state.evaluator.internalEval(state, iVisited.getBodyNode());
+                        state.begin(iVisited.getBodyNode());
                         break;
                     } catch (JumpException je) {
                     	if (je.getJumpType() == JumpException.JumpType.RedoJump) {
@@ -1819,37 +1791,37 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final UntilNodeVisitor untilNodeVisitor = new UntilNodeVisitor();
     
     // Nothing to do, but examine aliasing side effects
-    private static class VAliasNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		VAliasNode iVisited = (VAliasNode)node;
+    private static class VAliasNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		VAliasNode iVisited = (VAliasNode)ctx;
             state.runtime.getGlobalVariables().alias(iVisited.getNewName(), iVisited.getOldName());
     	}
     }
     private static final VAliasNodeVisitor vAliasNodeVisitor = new VAliasNodeVisitor();
     
     // Not collapsed, method call
-    private static class VCallNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		VCallNode iVisited = (VCallNode)node;
+    private static class VCallNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		VCallNode iVisited = (VCallNode)ctx;
             state.setResult(state.getSelf().callMethod(iVisited.getMethodName(), IRubyObject.NULL_ARRAY, CallType.VARIABLE));
     	}
     }
     private static final VCallNodeVisitor vCallNodeVisitor = new VCallNodeVisitor();
     
     // Not collapsed, complicated with exceptions
-    private static class WhileNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		WhileNode iVisited = (WhileNode)node;
+    private static class WhileNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		WhileNode iVisited = (WhileNode)ctx;
             // while do...Initial condition not met do not enter block
             if (iVisited.evaluateAtStart() && 
-                state.evaluator.internalEval(state, iVisited.getConditionNode()).isTrue() == false) {
+                state.begin(iVisited.getConditionNode()).isTrue() == false) {
                 return;
             }
             
             do {
                 while (true) { // Used for the 'redo' command
                     try {
-                        state.evaluator.internalEval(state, iVisited.getBodyNode());
+                        state.begin(iVisited.getBodyNode());
                         break;
                     } catch (JumpException je) {
                     	if (je.getJumpType() == JumpException.JumpType.RedoJump) {
@@ -1866,25 +1838,25 @@ public final class EvaluateVisitor implements NodeVisitor {
                     	}
                     }
                 }
-            } while (state.evaluator.internalEval(state, iVisited.getConditionNode()).isTrue());
+            } while (state.begin(iVisited.getConditionNode()).isTrue());
     	}
     }
     private static final WhileNodeVisitor whileNodeVisitor = new WhileNodeVisitor();
     
     // Not collapsed, method call
-    private static class XStrNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		XStrNode iVisited = (XStrNode)node;
+    private static class XStrNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		XStrNode iVisited = (XStrNode)ctx;
             state.setResult(state.getSelf().callMethod("`", state.runtime.newString(iVisited.getValue())));
     	}
     }
     private static final XStrNodeVisitor xStrNodeVisitor = new XStrNodeVisitor();
     
     // Not collapsed, yield is like a method call, needs research
-    private static class YieldNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		YieldNode iVisited = (YieldNode)node;
-            state.evaluator.internalEval(state, iVisited.getArgsNode());
+    private static class YieldNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		YieldNode iVisited = (YieldNode)ctx;
+            state.begin(iVisited.getArgsNode());
 
         	// Special Hack...We cannot tell between no args and a nil one.
         	// Change it back to null for now until a better solution is 
@@ -1900,16 +1872,16 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final YieldNodeVisitor yieldNodeVisitor = new YieldNodeVisitor();
     
     // Nothing to do, other than array creation side effects?
-    private static class ZArrayNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
+    private static class ZArrayNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
             state.setResult(state.runtime.newArray());
     	}
     }
     private static final ZArrayNodeVisitor zArrayNodeVisitor = new ZArrayNodeVisitor();
     
     // Not collapsed, is this a call?
-    private static class ZSuperNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
+    private static class ZSuperNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
     		Frame frame = state.threadContext.getCurrentFrame();
     		
             if (frame.getLastClass() == null) {
@@ -1922,45 +1894,45 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static final ZSuperNodeVisitor zSuperNodeVisitor = new ZSuperNodeVisitor();
     
     // Nothing to do, other than side effects
-    private static class BignumNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		BignumNode iVisited = (BignumNode)node;
+    private static class BignumNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		BignumNode iVisited = (BignumNode)ctx;
             state.setResult(RubyBignum.newBignum(state.runtime, iVisited.getValue()));
     	}
     }
     private static final BignumNodeVisitor bignumNodeVisitor = new BignumNodeVisitor();
     
 //  Nothing to do, other than side effects
-    private static class FixnumNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		FixnumNode iVisited = (FixnumNode)node;
+    private static class FixnumNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		FixnumNode iVisited = (FixnumNode)ctx;
             state.setResult(state.runtime.newFixnum(iVisited.getValue()));
     	}
     }
     private static final FixnumNodeVisitor fixnumNodeVisitor = new FixnumNodeVisitor();
     
 //  Nothing to do, other than side effects
-    private static class FloatNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		FloatNode iVisited = (FloatNode)node;
+    private static class FloatNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		FloatNode iVisited = (FloatNode)ctx;
             state.setResult(RubyFloat.newFloat(state.runtime, iVisited.getValue()));
     	}
     }
     private static final FloatNodeVisitor floatNodeVisitor = new FloatNodeVisitor();
     
 //  Nothing to do, other than side effects
-    private static class RegexpNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		RegexpNode iVisited = (RegexpNode)node;
+    private static class RegexpNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		RegexpNode iVisited = (RegexpNode)ctx;
             state.setResult(RubyRegexp.newRegexp(state.runtime.newString(iVisited.getValue()), iVisited.getOptions(), null));
     	}
     }
     private static final RegexpNodeVisitor regexpNodeVisitor = new RegexpNodeVisitor();
     
 //  Nothing to do, other than side effects
-    private static class SymbolNodeVisitor implements SingleNodeVisitor {
-    	public void visit(EvaluationState state, Node node) {
-    		SymbolNode iVisited = (SymbolNode)node;
+    private static class SymbolNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		SymbolNode iVisited = (SymbolNode)ctx;
             state.setResult(state.runtime.newSymbol(iVisited.getName()));
     	}
     }
@@ -1969,21 +1941,21 @@ public final class EvaluateVisitor implements NodeVisitor {
     /**
      * @see NodeVisitor#visitAliasNode(AliasNode)
      */
-    public SingleNodeVisitor visitAliasNode(AliasNode iVisited) {
+    public Instruction visitAliasNode(AliasNode iVisited) {
     	return aliasNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitAndNode(AndNode)
      */
-    public SingleNodeVisitor visitAndNode(AndNode iVisited) {
+    public Instruction visitAndNode(AndNode iVisited) {
     	return andNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitArgsNode(ArgsNode)
      */
-    public SingleNodeVisitor visitArgsNode(ArgsNode iVisited) {
+    public Instruction visitArgsNode(ArgsNode iVisited) {
         assert false;
         return null;
     }
@@ -1991,35 +1963,35 @@ public final class EvaluateVisitor implements NodeVisitor {
     /**
      * @see NodeVisitor#visitArgsCatNode(ArgsCatNode)
      */
-    public SingleNodeVisitor visitArgsCatNode(ArgsCatNode iVisited) {
+    public Instruction visitArgsCatNode(ArgsCatNode iVisited) {
     	return argsCatNodeVisitor;
     }
     
     /**
      * @see NodeVisitor#visitArrayNode(ArrayNode)
      */
-    public SingleNodeVisitor visitArrayNode(ArrayNode iVisited) {
+    public Instruction visitArrayNode(ArrayNode iVisited) {
     	return arrayNodeVisitor;
     }
     
     /**
      * @see NodeVisitor#visitBackRefNode(BackRefNode)
      */
-    public SingleNodeVisitor visitBackRefNode(BackRefNode iVisited) {
+    public Instruction visitBackRefNode(BackRefNode iVisited) {
     	return backRefNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitBeginNode(BeginNode)
      */
-    public SingleNodeVisitor visitBeginNode(BeginNode iVisited) {
+    public Instruction visitBeginNode(BeginNode iVisited) {
     	return beginNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitBlockArgNode(BlockArgNode)
      */
-    public SingleNodeVisitor visitBlockArgNode(BlockArgNode iVisited) {
+    public Instruction visitBlockArgNode(BlockArgNode iVisited) {
         assert false;
         return null;
     }
@@ -2027,515 +1999,515 @@ public final class EvaluateVisitor implements NodeVisitor {
     /**
      * @see NodeVisitor#visitBlockNode(BlockNode)
      */
-    public SingleNodeVisitor visitBlockNode(BlockNode iVisited) {
+    public Instruction visitBlockNode(BlockNode iVisited) {
     	return blockNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitBlockPassNode(BlockPassNode)
      */
-    public SingleNodeVisitor visitBlockPassNode(BlockPassNode iVisited) {
+    public Instruction visitBlockPassNode(BlockPassNode iVisited) {
     	return blockPassNodeVisitor;
     }
     
     /**
      * @see NodeVisitor#visitBreakNode(BreakNode)
      */
-    public SingleNodeVisitor visitBreakNode(BreakNode iVisited) {
+    public Instruction visitBreakNode(BreakNode iVisited) {
     	return breakNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitConstDeclNode(ConstDeclNode)
      */
-    public SingleNodeVisitor visitConstDeclNode(ConstDeclNode iVisited) {
+    public Instruction visitConstDeclNode(ConstDeclNode iVisited) {
     	return constDeclNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitClassVarAsgnNode(ClassVarAsgnNode)
      */
-    public SingleNodeVisitor visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
+    public Instruction visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
     	return classVarAsgnNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitClassVarDeclNode(ClassVarDeclNode)
      */
-    public SingleNodeVisitor visitClassVarDeclNode(ClassVarDeclNode iVisited) {
+    public Instruction visitClassVarDeclNode(ClassVarDeclNode iVisited) {
     	return classVarDeclNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitClassVarNode(ClassVarNode)
      */
-    public SingleNodeVisitor visitClassVarNode(ClassVarNode iVisited) {
+    public Instruction visitClassVarNode(ClassVarNode iVisited) {
     	return classVarNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitCallNode(CallNode)
      */
-    public SingleNodeVisitor visitCallNode(CallNode iVisited) {
+    public Instruction visitCallNode(CallNode iVisited) {
     	return callNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitCaseNode(CaseNode)
      */
-    public SingleNodeVisitor visitCaseNode(CaseNode iVisited) {
+    public Instruction visitCaseNode(CaseNode iVisited) {
     	return caseNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitClassNode(ClassNode)
      */
-    public SingleNodeVisitor visitClassNode(ClassNode iVisited) {
+    public Instruction visitClassNode(ClassNode iVisited) {
     	return classNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitColon2Node(Colon2Node)
      */
-    public SingleNodeVisitor visitColon2Node(Colon2Node iVisited) {
+    public Instruction visitColon2Node(Colon2Node iVisited) {
     	return colon2NodeVisitor;
     }
     
     /**
      * @see NodeVisitor#visitColon3Node(Colon3Node)
      */
-    public SingleNodeVisitor visitColon3Node(Colon3Node iVisited) {
+    public Instruction visitColon3Node(Colon3Node iVisited) {
     	return colon3NodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitConstNode(ConstNode)
      */
-    public SingleNodeVisitor visitConstNode(ConstNode iVisited) {
+    public Instruction visitConstNode(ConstNode iVisited) {
     	return constNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitDAsgnNode(DAsgnNode)
      */
-    public SingleNodeVisitor visitDAsgnNode(DAsgnNode iVisited) {
+    public Instruction visitDAsgnNode(DAsgnNode iVisited) {
     	return dAsgnNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitDRegxNode(DRegexpNode)
      */
-    public SingleNodeVisitor visitDRegxNode(DRegexpNode iVisited) {
+    public Instruction visitDRegxNode(DRegexpNode iVisited) {
     	return dRegexpNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitDStrNode(DStrNode)
      */
-    public SingleNodeVisitor visitDStrNode(DStrNode iVisited) {
+    public Instruction visitDStrNode(DStrNode iVisited) {
     	return dStrNodeVisitor;
     }
     
     /**
      * @see NodeVisitor#visitSymbolNode(SymbolNode)
      */
-    public SingleNodeVisitor visitDSymbolNode(DSymbolNode iVisited) {
+    public Instruction visitDSymbolNode(DSymbolNode iVisited) {
     	return dSymbolNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitDVarNode(DVarNode)
      */
-    public SingleNodeVisitor visitDVarNode(DVarNode iVisited) {
+    public Instruction visitDVarNode(DVarNode iVisited) {
     	return dVarNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitDXStrNode(DXStrNode)
      */
-    public SingleNodeVisitor visitDXStrNode(DXStrNode iVisited) {
+    public Instruction visitDXStrNode(DXStrNode iVisited) {
     	return dXStrNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitDefinedNode(DefinedNode)
      */
-    public SingleNodeVisitor visitDefinedNode(DefinedNode iVisited) {
+    public Instruction visitDefinedNode(DefinedNode iVisited) {
     	return definedNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitDefnNode(DefnNode)
      */
-    public SingleNodeVisitor visitDefnNode(DefnNode iVisited) {
+    public Instruction visitDefnNode(DefnNode iVisited) {
     	return defnNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitDefsNode(DefsNode)
      */
-    public SingleNodeVisitor visitDefsNode(DefsNode iVisited) {
+    public Instruction visitDefsNode(DefsNode iVisited) {
     	return defsNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitDotNode(DotNode)
      */
-    public SingleNodeVisitor visitDotNode(DotNode iVisited) {
+    public Instruction visitDotNode(DotNode iVisited) {
     	return dotNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitEnsureNode(EnsureNode)
      */
-    public SingleNodeVisitor visitEnsureNode(EnsureNode iVisited) {
+    public Instruction visitEnsureNode(EnsureNode iVisited) {
     	return ensureNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitEvStrNode(EvStrNode)
      */
-    public final SingleNodeVisitor visitEvStrNode(final EvStrNode iVisited) {
+    public final Instruction visitEvStrNode(final EvStrNode iVisited) {
     	return evStrNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitFCallNode(FCallNode)
      */
-    public SingleNodeVisitor visitFCallNode(FCallNode iVisited) {
+    public Instruction visitFCallNode(FCallNode iVisited) {
     	return fCallNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitFalseNode(FalseNode)
      */
-    public SingleNodeVisitor visitFalseNode(FalseNode iVisited) {
+    public Instruction visitFalseNode(FalseNode iVisited) {
     	return falseNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitFlipNode(FlipNode)
      */
-    public SingleNodeVisitor visitFlipNode(FlipNode iVisited) {
+    public Instruction visitFlipNode(FlipNode iVisited) {
     	return flipNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitForNode(ForNode)
      */
-    public SingleNodeVisitor visitForNode(ForNode iVisited) {
+    public Instruction visitForNode(ForNode iVisited) {
     	return forNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitGlobalAsgnNode(GlobalAsgnNode)
      */
-    public SingleNodeVisitor visitGlobalAsgnNode(GlobalAsgnNode iVisited) {
+    public Instruction visitGlobalAsgnNode(GlobalAsgnNode iVisited) {
     	return globalAsgnNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitGlobalVarNode(GlobalVarNode)
      */
-    public SingleNodeVisitor visitGlobalVarNode(GlobalVarNode iVisited) {
+    public Instruction visitGlobalVarNode(GlobalVarNode iVisited) {
     	return globalVarNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitHashNode(HashNode)
      */
-    public SingleNodeVisitor visitHashNode(HashNode iVisited) {
+    public Instruction visitHashNode(HashNode iVisited) {
     	return hashNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitInstAsgnNode(InstAsgnNode)
      */
-    public SingleNodeVisitor visitInstAsgnNode(InstAsgnNode iVisited) {
+    public Instruction visitInstAsgnNode(InstAsgnNode iVisited) {
     	return instAsgnNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitInstVarNode(InstVarNode)
      */
-    public SingleNodeVisitor visitInstVarNode(InstVarNode iVisited) {
+    public Instruction visitInstVarNode(InstVarNode iVisited) {
     	return instVarNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitIfNode(IfNode)
      */
-    public SingleNodeVisitor visitIfNode(IfNode iVisited) {
+    public Instruction visitIfNode(IfNode iVisited) {
     	return ifNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitIterNode(IterNode)
      */
-    public SingleNodeVisitor visitIterNode(IterNode iVisited) {
+    public Instruction visitIterNode(IterNode iVisited) {
     	return iterNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitLocalAsgnNode(LocalAsgnNode)
      */
-    public SingleNodeVisitor visitLocalAsgnNode(LocalAsgnNode iVisited) {
+    public Instruction visitLocalAsgnNode(LocalAsgnNode iVisited) {
     	return localAsgnNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitLocalVarNode(LocalVarNode)
      */
-    public SingleNodeVisitor visitLocalVarNode(LocalVarNode iVisited) {
+    public Instruction visitLocalVarNode(LocalVarNode iVisited) {
     	return localVarNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitMultipleAsgnNode(MultipleAsgnNode)
      */
-    public SingleNodeVisitor visitMultipleAsgnNode(MultipleAsgnNode iVisited) {
+    public Instruction visitMultipleAsgnNode(MultipleAsgnNode iVisited) {
     	return multipleAsgnNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitMatch2Node(Match2Node)
      */
-    public SingleNodeVisitor visitMatch2Node(Match2Node iVisited) {
+    public Instruction visitMatch2Node(Match2Node iVisited) {
     	return match2NodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitMatch3Node(Match3Node)
      */
-    public SingleNodeVisitor visitMatch3Node(Match3Node iVisited) {
+    public Instruction visitMatch3Node(Match3Node iVisited) {
     	return match3NodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitMatchNode(MatchNode)
      */
-    public SingleNodeVisitor visitMatchNode(MatchNode iVisited) {
+    public Instruction visitMatchNode(MatchNode iVisited) {
     	return matchNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitModuleNode(ModuleNode)
      */
-    public SingleNodeVisitor visitModuleNode(ModuleNode iVisited) {
+    public Instruction visitModuleNode(ModuleNode iVisited) {
     	return moduleNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitNewlineNode(NewlineNode)
      */
-    public SingleNodeVisitor visitNewlineNode(NewlineNode iVisited) {
+    public Instruction visitNewlineNode(NewlineNode iVisited) {
     	return newlineNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitNextNode(NextNode)
      */
-    public SingleNodeVisitor visitNextNode(NextNode iVisited) {
+    public Instruction visitNextNode(NextNode iVisited) {
     	return nextNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitNilNode(NilNode)
      */
-    public SingleNodeVisitor visitNilNode(NilNode iVisited) {
+    public Instruction visitNilNode(NilNode iVisited) {
     	return noopVisitor;
     }
 
     /**
      * @see NodeVisitor#visitNotNode(NotNode)
      */
-    public SingleNodeVisitor visitNotNode(NotNode iVisited) {
+    public Instruction visitNotNode(NotNode iVisited) {
     	return notNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitNthRefNode(NthRefNode)
      */
-    public SingleNodeVisitor visitNthRefNode(NthRefNode iVisited) {
+    public Instruction visitNthRefNode(NthRefNode iVisited) {
     	return nthRefNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitOpElementAsgnNode(OpElementAsgnNode)
      */
-    public SingleNodeVisitor visitOpElementAsgnNode(OpElementAsgnNode iVisited) {
+    public Instruction visitOpElementAsgnNode(OpElementAsgnNode iVisited) {
     	return opElementAsgnNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitOpAsgnNode(OpAsgnNode)
      */
-    public SingleNodeVisitor visitOpAsgnNode(OpAsgnNode iVisited) {
+    public Instruction visitOpAsgnNode(OpAsgnNode iVisited) {
     	return opAsgnNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitOpAsgnAndNode(OpAsgnAndNode)
      */
-    public SingleNodeVisitor visitOpAsgnAndNode(OpAsgnAndNode iVisited) {
+    public Instruction visitOpAsgnAndNode(OpAsgnAndNode iVisited) {
     	return andNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitOpAsgnOrNode(OpAsgnOrNode)
      */
-    public SingleNodeVisitor visitOpAsgnOrNode(OpAsgnOrNode iVisited) {
+    public Instruction visitOpAsgnOrNode(OpAsgnOrNode iVisited) {
     	return orNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitOptNNode(OptNNode)
      */
-    public SingleNodeVisitor visitOptNNode(OptNNode iVisited) {
+    public Instruction visitOptNNode(OptNNode iVisited) {
     	return optNNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitOrNode(OrNode)
      */
-    public SingleNodeVisitor visitOrNode(OrNode iVisited) {
+    public Instruction visitOrNode(OrNode iVisited) {
     	return orNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitPostExeNode(PostExeNode)
      */
-    public SingleNodeVisitor visitPostExeNode(PostExeNode iVisited) {
+    public Instruction visitPostExeNode(PostExeNode iVisited) {
     	return noopVisitor;
     }
 
     /**
      * @see NodeVisitor#visitRedoNode(RedoNode)
      */
-    public SingleNodeVisitor visitRedoNode(RedoNode iVisited) {
+    public Instruction visitRedoNode(RedoNode iVisited) {
     	return redoNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitRescueBodyNode(RescueBodyNode)
      */
-    public SingleNodeVisitor visitRescueBodyNode(RescueBodyNode iVisited) {
+    public Instruction visitRescueBodyNode(RescueBodyNode iVisited) {
     	return rescueBodyNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitRescueNode(RescueNode)
      */
-    public SingleNodeVisitor visitRescueNode(RescueNode iVisited) {
+    public Instruction visitRescueNode(RescueNode iVisited) {
     	return rescueNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitRetryNode(RetryNode)
      */
-    public SingleNodeVisitor visitRetryNode(RetryNode iVisited) {
+    public Instruction visitRetryNode(RetryNode iVisited) {
     	return retryNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitReturnNode(ReturnNode)
      */
-    public SingleNodeVisitor visitReturnNode(ReturnNode iVisited) {
+    public Instruction visitReturnNode(ReturnNode iVisited) {
     	return returnNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitSClassNode(SClassNode)
      */
-    public SingleNodeVisitor visitSClassNode(SClassNode iVisited) {
+    public Instruction visitSClassNode(SClassNode iVisited) {
     	return sClassNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitScopeNode(ScopeNode)
      */
-    public SingleNodeVisitor visitScopeNode(ScopeNode iVisited) {
+    public Instruction visitScopeNode(ScopeNode iVisited) {
     	return scopeNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitSelfNode(SelfNode)
      */
-    public SingleNodeVisitor visitSelfNode(SelfNode iVisited) {
+    public Instruction visitSelfNode(SelfNode iVisited) {
     	return selfNodeVisitor;
     }
 
-    public SingleNodeVisitor visitSplatNode(SplatNode iVisited) {
+    public Instruction visitSplatNode(SplatNode iVisited) {
     	return splatNodeVisitor;
     }
     
     /**
      * @see NodeVisitor#visitStrNode(StrNode)
      */
-    public SingleNodeVisitor visitStrNode(StrNode iVisited) {
+    public Instruction visitStrNode(StrNode iVisited) {
     	return strNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitSValueNode(SValueNode)
      */
-    public SingleNodeVisitor visitSValueNode(SValueNode iVisited) {
+    public Instruction visitSValueNode(SValueNode iVisited) {
     	return sValueNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitSuperNode(SuperNode)
      */
-    public SingleNodeVisitor visitSuperNode(SuperNode iVisited) {
+    public Instruction visitSuperNode(SuperNode iVisited) {
     	return superNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitToAryNode(ToAryNode)
      */
-    public SingleNodeVisitor visitToAryNode(ToAryNode iVisited) {
+    public Instruction visitToAryNode(ToAryNode iVisited) {
     	return toAryNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitTrueNode(TrueNode)
      */
-    public SingleNodeVisitor visitTrueNode(TrueNode iVisited) {
+    public Instruction visitTrueNode(TrueNode iVisited) {
     	return trueNodeVisitor;
     }
     
     /**
      * @see NodeVisitor#visitUndefNode(UndefNode)
      */
-    public SingleNodeVisitor visitUndefNode(UndefNode iVisited) {
+    public Instruction visitUndefNode(UndefNode iVisited) {
     	return undefNodeVisitor;    	
     }
 
     /**
      * @see NodeVisitor#visitUntilNode(UntilNode)
      */
-    public SingleNodeVisitor visitUntilNode(UntilNode iVisited) {
+    public Instruction visitUntilNode(UntilNode iVisited) {
     	return untilNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitVAliasNode(VAliasNode)
      */
-    public SingleNodeVisitor visitVAliasNode(VAliasNode iVisited) {
+    public Instruction visitVAliasNode(VAliasNode iVisited) {
     	return vAliasNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitVCallNode(VCallNode)
      */
-    public SingleNodeVisitor visitVCallNode(VCallNode iVisited) {
+    public Instruction visitVCallNode(VCallNode iVisited) {
     	return vCallNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitWhenNode(WhenNode)
      */
-    public SingleNodeVisitor visitWhenNode(WhenNode iVisited) {
+    public Instruction visitWhenNode(WhenNode iVisited) {
         assert false;
         return null;
     }
@@ -2543,70 +2515,70 @@ public final class EvaluateVisitor implements NodeVisitor {
     /**
      * @see NodeVisitor#visitWhileNode(WhileNode)
      */
-    public SingleNodeVisitor visitWhileNode(WhileNode iVisited) {
+    public Instruction visitWhileNode(WhileNode iVisited) {
     	return whileNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitXStrNode(XStrNode)
      */
-    public SingleNodeVisitor visitXStrNode(XStrNode iVisited) {
+    public Instruction visitXStrNode(XStrNode iVisited) {
     	return xStrNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitYieldNode(YieldNode)
      */
-    public SingleNodeVisitor visitYieldNode(YieldNode iVisited) {
+    public Instruction visitYieldNode(YieldNode iVisited) {
     	return yieldNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitZArrayNode(ZArrayNode)
      */
-    public SingleNodeVisitor visitZArrayNode(ZArrayNode iVisited) {
+    public Instruction visitZArrayNode(ZArrayNode iVisited) {
     	return zArrayNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitZSuperNode(ZSuperNode)
      */
-    public SingleNodeVisitor visitZSuperNode(ZSuperNode iVisited) {
+    public Instruction visitZSuperNode(ZSuperNode iVisited) {
     	return zSuperNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitBignumNode(BignumNode)
      */
-    public SingleNodeVisitor visitBignumNode(BignumNode iVisited) {
+    public Instruction visitBignumNode(BignumNode iVisited) {
     	return bignumNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitFixnumNode(FixnumNode)
      */
-    public SingleNodeVisitor visitFixnumNode(FixnumNode iVisited) {
+    public Instruction visitFixnumNode(FixnumNode iVisited) {
     	return fixnumNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitFloatNode(FloatNode)
      */
-    public SingleNodeVisitor visitFloatNode(FloatNode iVisited) {
+    public Instruction visitFloatNode(FloatNode iVisited) {
     	return floatNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitRegexpNode(RegexpNode)
      */
-    public SingleNodeVisitor visitRegexpNode(RegexpNode iVisited) {
+    public Instruction visitRegexpNode(RegexpNode iVisited) {
     	return regexpNodeVisitor;
     }
 
     /**
      * @see NodeVisitor#visitSymbolNode(SymbolNode)
      */
-    public SingleNodeVisitor visitSymbolNode(SymbolNode iVisited) {
+    public Instruction visitSymbolNode(SymbolNode iVisited) {
     	return symbolNodeVisitor;
     }
 
@@ -2627,7 +2599,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             }
 
             state.setSelf(type);
-            state.evaluator.internalEval(state, iVisited.getBodyNode());
+            state.begin(iVisited.getBodyNode());
         } finally {
             state.setSelf(oldSelf);
 
@@ -2698,9 +2670,9 @@ public final class EvaluateVisitor implements NodeVisitor {
             for (Iterator iter=((ArrayNode)node).iterator(); iter.hasNext();){
                 final Node next = (Node) iter.next();
                 if (next instanceof SplatNode) {
-                    list.addAll(((RubyArray) state.evaluator.internalEval(state, next)).getList());
+                    list.addAll(((RubyArray) state.begin(next)).getList());
                 } else {
-                    list.add(state.evaluator.internalEval(state, next));
+                    list.add(state.begin(next));
                 }
             }
 
@@ -2709,14 +2681,14 @@ public final class EvaluateVisitor implements NodeVisitor {
             return (IRubyObject[]) list.toArray(new IRubyObject[list.size()]);
         }
 
-        return ArgsUtil.arrayify(state.evaluator.internalEval(state, node));
+        return ArgsUtil.arrayify(state.begin(node));
     }
 
     private static RubyModule getEnclosingModule(EvaluationState state, Node node) {
         RubyModule enclosingModule = null;
         
         if (node instanceof Colon2Node) {
-        	state.evaluator.internalEval(state, ((Colon2Node) node).getLeftNode());
+        	state.begin(((Colon2Node) node).getLeftNode());
         	
         	if (state.getResult() != null && !state.getResult().isNil()) {
         		enclosingModule = (RubyModule) state.getResult();

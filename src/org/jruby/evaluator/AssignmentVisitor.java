@@ -77,7 +77,7 @@ public class AssignmentVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitNode(Node)
 	 */
-	protected SingleNodeVisitor visitNode(Node iVisited) {
+	protected Instruction visitNode(Node iVisited) {
 		assert false;
 		return null;
 	}
@@ -85,7 +85,7 @@ public class AssignmentVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitCallNode(CallNode)
 	 */
-	public SingleNodeVisitor visitCallNode(CallNode iVisited) {
+	public Instruction visitCallNode(CallNode iVisited) {
 		EvaluateVisitor evaluator = EvaluateVisitor.createVisitor();
 
 		IRubyObject receiver = evaluator.eval(self.getRuntime(), self, iVisited
@@ -105,7 +105,7 @@ public class AssignmentVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitClassVarAsgnNode(ClassVarAsgnNode)
 	 */
-	public SingleNodeVisitor visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
+	public Instruction visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
 		threadContext.getRubyClass().setClassVar(iVisited.getName(), value);
 		return null;
 	}
@@ -113,7 +113,7 @@ public class AssignmentVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitClassVarDeclNode(ClassVarDeclNode)
 	 */
-	public SingleNodeVisitor visitClassVarDeclNode(ClassVarDeclNode iVisited) {
+	public Instruction visitClassVarDeclNode(ClassVarDeclNode iVisited) {
 		if (runtime.getVerbose().isTrue()
 				&& threadContext.getRubyClass().isSingleton()) {
 			runtime.getWarnings().warn(iVisited.getPosition(),
@@ -126,7 +126,7 @@ public class AssignmentVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitConstDeclNode(ConstDeclNode)
 	 */
-	public SingleNodeVisitor visitConstDeclNode(ConstDeclNode iVisited) {
+	public Instruction visitConstDeclNode(ConstDeclNode iVisited) {
 		threadContext.getRubyClass().defineConstant(iVisited.getName(), value);
 		return null;
 	}
@@ -134,7 +134,7 @@ public class AssignmentVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitDAsgnNode(DAsgnNode)
 	 */
-	public SingleNodeVisitor visitDAsgnNode(DAsgnNode iVisited) {
+	public Instruction visitDAsgnNode(DAsgnNode iVisited) {
 		threadContext.getCurrentDynamicVars().set(iVisited.getName(), value);
 		return null;
 	}
@@ -142,7 +142,7 @@ public class AssignmentVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitGlobalAsgnNode(GlobalAsgnNode)
 	 */
-	public SingleNodeVisitor visitGlobalAsgnNode(GlobalAsgnNode iVisited) {
+	public Instruction visitGlobalAsgnNode(GlobalAsgnNode iVisited) {
 		runtime.getGlobalVariables().set(iVisited.getName(), value);
 		return null;
 	}
@@ -150,7 +150,7 @@ public class AssignmentVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitInstAsgnNode(InstAsgnNode)
 	 */
-	public SingleNodeVisitor visitInstAsgnNode(InstAsgnNode iVisited) {
+	public Instruction visitInstAsgnNode(InstAsgnNode iVisited) {
 		self.setInstanceVariable(iVisited.getName(), value);
 		return null;
 	}
@@ -158,7 +158,7 @@ public class AssignmentVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitLocalAsgnNode(LocalAsgnNode)
 	 */
-	public SingleNodeVisitor visitLocalAsgnNode(LocalAsgnNode iVisited) {
+	public Instruction visitLocalAsgnNode(LocalAsgnNode iVisited) {
 		runtime.getCurrentScope().setValue(iVisited.getCount(), value);
 		return null;
 	}
@@ -166,7 +166,7 @@ public class AssignmentVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitMultipleAsgnNode(MultipleAsgnNode)
 	 */
-	public SingleNodeVisitor visitMultipleAsgnNode(MultipleAsgnNode iVisited) {
+	public Instruction visitMultipleAsgnNode(MultipleAsgnNode iVisited) {
 		if (!(value instanceof RubyArray)) {
 			value = RubyArray.newArray(runtime, value);
 		}

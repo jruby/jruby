@@ -31,7 +31,7 @@
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.SingleNodeVisitor;
+import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
@@ -49,7 +49,7 @@ public class DSymbolNode extends Node {
 		this.node = node;
 	}
 
-	public SingleNodeVisitor accept(NodeVisitor visitor) {
+	public Instruction accept(NodeVisitor visitor) {
 		return visitor.visitDSymbolNode(this);
 	}
 	

@@ -33,7 +33,7 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.SingleNodeVisitor;
+import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
@@ -56,7 +56,7 @@ public class BlockNode extends ListNode {
      * accepts the visitor
      * @param iVisitor the visitor to accept
      **/
-    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+    public Instruction accept(NodeVisitor iVisitor) {
         return iVisitor.visitBlockNode(this);
     }
 }

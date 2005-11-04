@@ -119,7 +119,7 @@ public class DefinedVisitor extends AbstractVisitor {
     /**
      * @see AbstractVisitor#visitNode(Node)
      */
-    protected SingleNodeVisitor visitNode(Node iVisited) {
+    protected Instruction visitNode(Node iVisited) {
         try {
 			EvaluateVisitor.createVisitor().eval(self.getRuntime(), self,
 					iVisited);
@@ -132,7 +132,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitSuperNode(SuperNode)
 	 */
-	public SingleNodeVisitor visitSuperNode(SuperNode iVisited) {
+	public Instruction visitSuperNode(SuperNode iVisited) {
 		String lastMethod = threadContext.getCurrentFrame().getLastFunc();
 		RubyModule lastClass = threadContext.getCurrentFrame().getLastClass();
 		if (lastMethod != null && lastClass != null
@@ -145,7 +145,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitZSuperNode(ZSuperNode)
 	 */
-	public SingleNodeVisitor visitZSuperNode(ZSuperNode iVisited) {
+	public Instruction visitZSuperNode(ZSuperNode iVisited) {
 		String lastMethod = threadContext.getCurrentFrame().getLastFunc();
 		RubyModule lastClass = threadContext.getCurrentFrame().getLastClass();
 		if (lastMethod != null && lastClass != null
@@ -158,7 +158,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitCallNode(CallNode)
 	 */
-	public SingleNodeVisitor visitCallNode(CallNode iVisited) {
+	public Instruction visitCallNode(CallNode iVisited) {
 		if (getDefinition(iVisited.getReceiverNode()) != null) {
 			try {
 				IRubyObject receiver = EvaluateVisitor.createVisitor().eval(
@@ -186,7 +186,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitFCallNode(FCallNode)
 	 */
-	public SingleNodeVisitor visitFCallNode(FCallNode iVisited) {
+	public Instruction visitFCallNode(FCallNode iVisited) {
 		if (self.getMetaClass().isMethodBound(iVisited.getName(), false)) {
 			definition = getArgumentDefinition(iVisited.getArgsNode(), "method");
 		}
@@ -196,7 +196,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitVCallNode(VCallNode)
 	 */
-	public SingleNodeVisitor visitVCallNode(VCallNode iVisited) {
+	public Instruction visitVCallNode(VCallNode iVisited) {
 		if (self.getMetaClass().isMethodBound(iVisited.getMethodName(), false)) {
 			definition = "method";
 		}
@@ -206,7 +206,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitMatch2Node(Match2Node)
 	 */
-	public SingleNodeVisitor visitMatch2Node(Match2Node iVisited) {
+	public Instruction visitMatch2Node(Match2Node iVisited) {
 		definition = "method";
 		return null;
 	}
@@ -214,7 +214,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitMatch3Node(Match3Node)
 	 */
-	public SingleNodeVisitor visitMatch3Node(Match3Node iVisited) {
+	public Instruction visitMatch3Node(Match3Node iVisited) {
 		definition = "method";
 		return null;
 	}
@@ -222,7 +222,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitFalseNode(FalseNode)
 	 */
-	public SingleNodeVisitor visitFalseNode(FalseNode iVisited) {
+	public Instruction visitFalseNode(FalseNode iVisited) {
 		definition = "false";
 		return null;
 	}
@@ -230,7 +230,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitNilNode(NilNode)
 	 */
-	public SingleNodeVisitor visitNilNode(NilNode iVisited) {
+	public Instruction visitNilNode(NilNode iVisited) {
 		definition = "nil";
 		return null;
 	}
@@ -238,7 +238,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitNullNode()
 	 */
-	public SingleNodeVisitor visitNullNode() {
+	public Instruction visitNullNode() {
 		definition = "expression";
 		return null;
 	}
@@ -246,7 +246,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitSelfNode(SelfNode)
 	 */
-	public SingleNodeVisitor visitSelfNode(SelfNode iVisited) {
+	public Instruction visitSelfNode(SelfNode iVisited) {
 		definition = "self";
 		return null;
 	}
@@ -254,7 +254,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitTrueNode(TrueNode)
 	 */
-	public SingleNodeVisitor visitTrueNode(TrueNode iVisited) {
+	public Instruction visitTrueNode(TrueNode iVisited) {
 		definition = "true";
 		return null;
 	}
@@ -262,7 +262,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitYieldNode(YieldNode)
 	 */
-	public SingleNodeVisitor visitYieldNode(YieldNode iVisited) {
+	public Instruction visitYieldNode(YieldNode iVisited) {
 		if (threadContext.isBlockGiven()) {
 			definition = "yield";
 		}
@@ -272,7 +272,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitClassVarAsgnNode(ClassVarAsgnNode)
 	 */
-	public SingleNodeVisitor visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
+	public Instruction visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
 		definition = "assignment";
 		return null;
 	}
@@ -280,7 +280,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitClassVarDeclNode(ClassVarDeclNode)
 	 */
-	public SingleNodeVisitor visitClassVarDeclNode(ClassVarDeclNode iVisited) {
+	public Instruction visitClassVarDeclNode(ClassVarDeclNode iVisited) {
 		definition = "assignment";
 		return null;
 	}
@@ -288,7 +288,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitConstDeclNode(ConstDeclNode)
 	 */
-	public SingleNodeVisitor visitConstDeclNode(ConstDeclNode iVisited) {
+	public Instruction visitConstDeclNode(ConstDeclNode iVisited) {
 		definition = "assignment";
 		return null;
 	}
@@ -296,7 +296,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitDAsgnNode(DAsgnNode)
 	 */
-	public SingleNodeVisitor visitDAsgnNode(DAsgnNode iVisited) {
+	public Instruction visitDAsgnNode(DAsgnNode iVisited) {
 		definition = "assignment";
 		return null;
 	}
@@ -304,7 +304,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitGlobalAsgnNode(GlobalAsgnNode)
 	 */
-	public SingleNodeVisitor visitGlobalAsgnNode(GlobalAsgnNode iVisited) {
+	public Instruction visitGlobalAsgnNode(GlobalAsgnNode iVisited) {
 		definition = "assignment";
 		return null;
 	}
@@ -312,7 +312,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitLocalAsgnNode(LocalAsgnNode)
 	 */
-	public SingleNodeVisitor visitLocalAsgnNode(LocalAsgnNode iVisited) {
+	public Instruction visitLocalAsgnNode(LocalAsgnNode iVisited) {
 		definition = "assignment";
 		return null;
 	}
@@ -320,7 +320,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitMultipleAsgnNode(MultipleAsgnNode)
 	 */
-	public SingleNodeVisitor visitMultipleAsgnNode(MultipleAsgnNode iVisited) {
+	public Instruction visitMultipleAsgnNode(MultipleAsgnNode iVisited) {
 		definition = "assignment";
 		return null;
 	}
@@ -328,7 +328,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitOpAsgnNode(OpAsgnNode)
 	 */
-	public SingleNodeVisitor visitOpAsgnNode(OpAsgnNode iVisited) {
+	public Instruction visitOpAsgnNode(OpAsgnNode iVisited) {
 		definition = "assignment";
 		return null;
 	}
@@ -336,7 +336,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitOpElementAsgnNode(OpElementAsgnNode)
 	 */
-	public SingleNodeVisitor visitOpElementAsgnNode(OpElementAsgnNode iVisited) {
+	public Instruction visitOpElementAsgnNode(OpElementAsgnNode iVisited) {
 		definition = "assignment";
 		return null;
 	}
@@ -344,7 +344,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitDVarNode(DVarNode)
 	 */
-	public SingleNodeVisitor visitDVarNode(DVarNode iVisited) {
+	public Instruction visitDVarNode(DVarNode iVisited) {
 		definition = "local-variable(in-block)";
 		return null;
 	}
@@ -352,7 +352,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitLocalVarNode(LocalVarNode)
 	 */
-	public SingleNodeVisitor visitLocalVarNode(LocalVarNode iVisited) {
+	public Instruction visitLocalVarNode(LocalVarNode iVisited) {
 		definition = "local-variable";
 		return null;
 	}
@@ -360,7 +360,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitClassVarNode(ClassVarNode)
 	 */
-	public SingleNodeVisitor visitClassVarNode(ClassVarNode iVisited) {
+	public Instruction visitClassVarNode(ClassVarNode iVisited) {
 		if (threadContext.getRubyClass() == null
 				&& self.getMetaClass().isClassVarDefined(iVisited.getName())) {
 			definition = "class_variable";
@@ -382,7 +382,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitConstNode(ConstNode)
 	 */
-	public SingleNodeVisitor visitConstNode(ConstNode iVisited) {
+	public Instruction visitConstNode(ConstNode iVisited) {
 		if (runtime.getClass("Module").getConstant(iVisited.getName(), false) != null) {
 			definition = "constant";
 		}
@@ -392,7 +392,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitGlobalVarNode(GlobalVarNode)
 	 */
-	public SingleNodeVisitor visitGlobalVarNode(GlobalVarNode iVisited) {
+	public Instruction visitGlobalVarNode(GlobalVarNode iVisited) {
 		if (runtime.getGlobalVariables().isDefined(iVisited.getName())) {
 			definition = "global-variable";
 		}
@@ -402,7 +402,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitInstVarNode(InstVarNode)
 	 */
-	public SingleNodeVisitor visitInstVarNode(InstVarNode iVisited) {
+	public Instruction visitInstVarNode(InstVarNode iVisited) {
 		if (self.getInstanceVariable(iVisited.getName()) != null) {
 			definition = "instance-variable";
 		}
@@ -412,7 +412,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitColon2Node(Colon2Node)
 	 */
-	public SingleNodeVisitor visitColon2Node(Colon2Node iVisited) {
+	public Instruction visitColon2Node(Colon2Node iVisited) {
 		try {
 			IRubyObject left = EvaluateVisitor.createVisitor().eval(
 					self.getRuntime(), self, iVisited.getLeftNode());
@@ -434,7 +434,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	 * 
 	 * @fixme Add test if back ref exists.
 	 */
-	public SingleNodeVisitor visitBackRefNode(BackRefNode iVisited) {
+	public Instruction visitBackRefNode(BackRefNode iVisited) {
 		// if () {
 		definition = "$" + iVisited.getType();
 		// }
@@ -446,7 +446,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	 * 
 	 * @fixme Add test if nth ref exists.
 	 */
-	public SingleNodeVisitor visitNthRefNode(NthRefNode iVisited) {
+	public Instruction visitNthRefNode(NthRefNode iVisited) {
 		// if () {
 		definition = "$" + iVisited.getMatchNumber();
 		// }

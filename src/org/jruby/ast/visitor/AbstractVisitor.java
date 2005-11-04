@@ -123,7 +123,7 @@ import org.jruby.ast.XStrNode;
 import org.jruby.ast.YieldNode;
 import org.jruby.ast.ZArrayNode;
 import org.jruby.ast.ZSuperNode;
-import org.jruby.evaluator.SingleNodeVisitor;
+import org.jruby.evaluator.Instruction;
 
 /** This visitor calls by default the return visitNode method for each visited Node.
  *
@@ -134,13 +134,13 @@ public abstract class AbstractVisitor implements NodeVisitor {
     /**
      * This method is called by default for each visited Node.
      */
-    protected abstract SingleNodeVisitor visitNode(Node iVisited);
+    protected abstract Instruction visitNode(Node iVisited);
 
-    public SingleNodeVisitor visitNullNode() {
+    public Instruction visitNullNode() {
         return visitNode(null);
     }
     
-    public SingleNodeVisitor acceptNode(Node node) {
+    public Instruction acceptNode(Node node) {
         if (node == null) {
             return visitNullNode();
         } else {
@@ -148,371 +148,371 @@ public abstract class AbstractVisitor implements NodeVisitor {
         }
     }
 
-    public SingleNodeVisitor visitAliasNode(AliasNode iVisited) {
+    public Instruction visitAliasNode(AliasNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitAndNode(AndNode iVisited) {
+    public Instruction visitAndNode(AndNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitArgsCatNode(ArgsCatNode iVisited) {
+    public Instruction visitArgsCatNode(ArgsCatNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitArgsNode(ArgsNode iVisited) {
+    public Instruction visitArgsNode(ArgsNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitArrayNode(ArrayNode iVisited) {
+    public Instruction visitArrayNode(ArrayNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitBackRefNode(BackRefNode iVisited) {
+    public Instruction visitBackRefNode(BackRefNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitBeginNode(BeginNode iVisited) {
+    public Instruction visitBeginNode(BeginNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitBlockArgNode(BlockArgNode iVisited) {
+    public Instruction visitBlockArgNode(BlockArgNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitBlockNode(BlockNode iVisited) {
+    public Instruction visitBlockNode(BlockNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitBlockPassNode(BlockPassNode iVisited) {
+    public Instruction visitBlockPassNode(BlockPassNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitBreakNode(BreakNode iVisited) {
+    public Instruction visitBreakNode(BreakNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitConstDeclNode(ConstDeclNode iVisited) {
+    public Instruction visitConstDeclNode(ConstDeclNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
+    public Instruction visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitClassVarDeclNode(ClassVarDeclNode iVisited) {
+    public Instruction visitClassVarDeclNode(ClassVarDeclNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitClassVarNode(ClassVarNode iVisited) {
+    public Instruction visitClassVarNode(ClassVarNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitCallNode(CallNode iVisited) {
+    public Instruction visitCallNode(CallNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitCaseNode(CaseNode iVisited) {
+    public Instruction visitCaseNode(CaseNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitClassNode(ClassNode iVisited) {
+    public Instruction visitClassNode(ClassNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitColon2Node(Colon2Node iVisited) {
+    public Instruction visitColon2Node(Colon2Node iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitColon3Node(Colon3Node iVisited) {
+    public Instruction visitColon3Node(Colon3Node iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitConstNode(ConstNode iVisited) {
+    public Instruction visitConstNode(ConstNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitDAsgnNode(DAsgnNode iVisited) {
+    public Instruction visitDAsgnNode(DAsgnNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitDRegxNode(DRegexpNode iVisited) {
+    public Instruction visitDRegxNode(DRegexpNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitDStrNode(DStrNode iVisited) {
+    public Instruction visitDStrNode(DStrNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitDSymbolNode(DSymbolNode iVisited) {
+    public Instruction visitDSymbolNode(DSymbolNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitDVarNode(DVarNode iVisited) {
+    public Instruction visitDVarNode(DVarNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitDXStrNode(DXStrNode iVisited) {
+    public Instruction visitDXStrNode(DXStrNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitDefinedNode(DefinedNode iVisited) {
+    public Instruction visitDefinedNode(DefinedNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitDefnNode(DefnNode iVisited) {
+    public Instruction visitDefnNode(DefnNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitDefsNode(DefsNode iVisited) {
+    public Instruction visitDefsNode(DefsNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitDotNode(DotNode iVisited) {
+    public Instruction visitDotNode(DotNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitEnsureNode(EnsureNode iVisited) {
+    public Instruction visitEnsureNode(EnsureNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitEvStrNode(EvStrNode iVisited) {
+    public Instruction visitEvStrNode(EvStrNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitFCallNode(FCallNode iVisited) {
+    public Instruction visitFCallNode(FCallNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitFalseNode(FalseNode iVisited) {
+    public Instruction visitFalseNode(FalseNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitFlipNode(FlipNode iVisited) {
+    public Instruction visitFlipNode(FlipNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitForNode(ForNode iVisited) {
+    public Instruction visitForNode(ForNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitGlobalAsgnNode(GlobalAsgnNode iVisited) {
+    public Instruction visitGlobalAsgnNode(GlobalAsgnNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitGlobalVarNode(GlobalVarNode iVisited) {
+    public Instruction visitGlobalVarNode(GlobalVarNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitHashNode(HashNode iVisited) {
+    public Instruction visitHashNode(HashNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitInstAsgnNode(InstAsgnNode iVisited) {
+    public Instruction visitInstAsgnNode(InstAsgnNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitInstVarNode(InstVarNode iVisited) {
+    public Instruction visitInstVarNode(InstVarNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitIfNode(IfNode iVisited) {
+    public Instruction visitIfNode(IfNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitIterNode(IterNode iVisited) {
+    public Instruction visitIterNode(IterNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitLocalAsgnNode(LocalAsgnNode iVisited) {
+    public Instruction visitLocalAsgnNode(LocalAsgnNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitLocalVarNode(LocalVarNode iVisited) {
+    public Instruction visitLocalVarNode(LocalVarNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitMultipleAsgnNode(MultipleAsgnNode iVisited) {
+    public Instruction visitMultipleAsgnNode(MultipleAsgnNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitMatch2Node(Match2Node iVisited) {
+    public Instruction visitMatch2Node(Match2Node iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitMatch3Node(Match3Node iVisited) {
+    public Instruction visitMatch3Node(Match3Node iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitMatchNode(MatchNode iVisited) {
+    public Instruction visitMatchNode(MatchNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitModuleNode(ModuleNode iVisited) {
+    public Instruction visitModuleNode(ModuleNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitNewlineNode(NewlineNode iVisited) {
+    public Instruction visitNewlineNode(NewlineNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitNextNode(NextNode iVisited) {
+    public Instruction visitNextNode(NextNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitNilNode(NilNode iVisited) {
+    public Instruction visitNilNode(NilNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitNotNode(NotNode iVisited) {
+    public Instruction visitNotNode(NotNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitNthRefNode(NthRefNode iVisited) {
+    public Instruction visitNthRefNode(NthRefNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitOpElementAsgnNode(OpElementAsgnNode iVisited) {
+    public Instruction visitOpElementAsgnNode(OpElementAsgnNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitOpAsgnNode(OpAsgnNode iVisited) {
+    public Instruction visitOpAsgnNode(OpAsgnNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitOpAsgnAndNode(OpAsgnAndNode iVisited) {
+    public Instruction visitOpAsgnAndNode(OpAsgnAndNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitOpAsgnOrNode(OpAsgnOrNode iVisited) {
+    public Instruction visitOpAsgnOrNode(OpAsgnOrNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitOptNNode(OptNNode iVisited) {
+    public Instruction visitOptNNode(OptNNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitOrNode(OrNode iVisited) {
+    public Instruction visitOrNode(OrNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitPostExeNode(PostExeNode iVisited) {
+    public Instruction visitPostExeNode(PostExeNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitRedoNode(RedoNode iVisited) {
+    public Instruction visitRedoNode(RedoNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitRescueBodyNode(RescueBodyNode iVisited) {
+    public Instruction visitRescueBodyNode(RescueBodyNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitRescueNode(RescueNode iVisited) {
+    public Instruction visitRescueNode(RescueNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitRetryNode(RetryNode iVisited) {
+    public Instruction visitRetryNode(RetryNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitReturnNode(ReturnNode iVisited) {
+    public Instruction visitReturnNode(ReturnNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitSClassNode(SClassNode iVisited) {
+    public Instruction visitSClassNode(SClassNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitScopeNode(ScopeNode iVisited) {
+    public Instruction visitScopeNode(ScopeNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitSelfNode(SelfNode iVisited) {
+    public Instruction visitSelfNode(SelfNode iVisited) {
         return visitNode(iVisited);
     }
     
-    public SingleNodeVisitor visitSplatNode(SplatNode iVisited) {
+    public Instruction visitSplatNode(SplatNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitStrNode(StrNode iVisited) {
+    public Instruction visitStrNode(StrNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitSValueNode(SValueNode iVisited) {
+    public Instruction visitSValueNode(SValueNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitSuperNode(SuperNode iVisited) {
+    public Instruction visitSuperNode(SuperNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitToAryNode(ToAryNode iVisited) {
+    public Instruction visitToAryNode(ToAryNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitTrueNode(TrueNode iVisited) {
+    public Instruction visitTrueNode(TrueNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitUndefNode(UndefNode iVisited) {
+    public Instruction visitUndefNode(UndefNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitUntilNode(UntilNode iVisited) {
+    public Instruction visitUntilNode(UntilNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitVAliasNode(VAliasNode iVisited) {
+    public Instruction visitVAliasNode(VAliasNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitVCallNode(VCallNode iVisited) {
+    public Instruction visitVCallNode(VCallNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitWhenNode(WhenNode iVisited) {
+    public Instruction visitWhenNode(WhenNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitWhileNode(WhileNode iVisited) {
+    public Instruction visitWhileNode(WhileNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitXStrNode(XStrNode iVisited) {
+    public Instruction visitXStrNode(XStrNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitYieldNode(YieldNode iVisited) {
+    public Instruction visitYieldNode(YieldNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitZArrayNode(ZArrayNode iVisited) {
+    public Instruction visitZArrayNode(ZArrayNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitZSuperNode(ZSuperNode iVisited) {
+    public Instruction visitZSuperNode(ZSuperNode iVisited) {
         return visitNode(iVisited);
     }
     
-    public SingleNodeVisitor visitBignumNode(BignumNode iVisited) {
+    public Instruction visitBignumNode(BignumNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitFixnumNode(FixnumNode iVisited) {
+    public Instruction visitFixnumNode(FixnumNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitFloatNode(FloatNode iVisited) {
+    public Instruction visitFloatNode(FloatNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitRegexpNode(RegexpNode iVisited) {
+    public Instruction visitRegexpNode(RegexpNode iVisited) {
         return visitNode(iVisited);
     }
 
-    public SingleNodeVisitor visitSymbolNode(SymbolNode iVisited) {
+    public Instruction visitSymbolNode(SymbolNode iVisited) {
         return visitNode(iVisited);
     }
 }

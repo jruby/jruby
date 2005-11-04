@@ -36,7 +36,7 @@ import java.util.List;
 
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.SingleNodeVisitor;
+import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Representing a simple String literal.
@@ -57,7 +57,7 @@ public class StrNode extends Node implements ILiteralNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+    public Instruction accept(NodeVisitor iVisitor) {
         return iVisitor.visitStrNode(this);
     }
 

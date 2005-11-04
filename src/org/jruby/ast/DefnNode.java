@@ -34,7 +34,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.SingleNodeVisitor;
+import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Visibility;
 
@@ -60,7 +60,7 @@ public class DefnNode extends Node {
         this.visibility = visibility;
     }
 
-    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+    public Instruction accept(NodeVisitor iVisitor) {
         return iVisitor.visitDefnNode(this);
     }
 

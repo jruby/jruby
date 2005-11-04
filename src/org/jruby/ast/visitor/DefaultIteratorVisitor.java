@@ -126,7 +126,7 @@ import org.jruby.ast.XStrNode;
 import org.jruby.ast.YieldNode;
 import org.jruby.ast.ZArrayNode;
 import org.jruby.ast.ZSuperNode;
-import org.jruby.evaluator.SingleNodeVisitor;
+import org.jruby.evaluator.Instruction;
 
 /**
  * Default iterator visitor. This visitor will iterate over all the nodes using
@@ -151,19 +151,19 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 		_Payload = iPayload;
 	}
 
-	public SingleNodeVisitor visitAliasNode(AliasNode iVisited) {
+	public Instruction visitAliasNode(AliasNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitAndNode(AndNode iVisited) {
+	public Instruction visitAndNode(AndNode iVisited) {
 		iVisited.getFirstNode().accept(this);
 		iVisited.accept(_Payload);
 		iVisited.getSecondNode().accept(this);
 		return null;
 	}
 
-	public SingleNodeVisitor visitArgsNode(ArgsNode iVisited) {
+	public Instruction visitArgsNode(ArgsNode iVisited) {
 		iVisited.accept(_Payload);
 		if (iVisited.getOptArgs() != null) {
 			iVisited.getOptArgs().accept(this);
@@ -172,7 +172,7 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 	}
 
 	// XXXEnebo - Just guessed.
-	public SingleNodeVisitor visitArgsCatNode(ArgsCatNode iVisited) {
+	public Instruction visitArgsCatNode(ArgsCatNode iVisited) {
 		iVisited.accept(_Payload);
 		if (iVisited.getFirstNode() != null) {
 			iVisited.getFirstNode().accept(this);
@@ -183,7 +183,7 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 		return null;
 	}
 
-	public SingleNodeVisitor visitArrayNode(ArrayNode iVisited) {
+	public Instruction visitArrayNode(ArrayNode iVisited) {
 		iVisited.accept(_Payload);
 		Iterator iterator = iVisited.iterator();
 		while (iterator.hasNext()) {
@@ -193,22 +193,22 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 		return null;
 	}
 
-	public SingleNodeVisitor visitBackRefNode(BackRefNode iVisited) {
+	public Instruction visitBackRefNode(BackRefNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitBeginNode(BeginNode iVisited) {
+	public Instruction visitBeginNode(BeginNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitBlockArgNode(BlockArgNode iVisited) {
+	public Instruction visitBlockArgNode(BlockArgNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitBlockNode(BlockNode iVisited) {
+	public Instruction visitBlockNode(BlockNode iVisited) {
 		iVisited.accept(_Payload);
 		Iterator iterator = iVisited.iterator();
 		while (iterator.hasNext()) {
@@ -217,34 +217,34 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 		return null;
 	}
 
-	public SingleNodeVisitor visitBlockPassNode(BlockPassNode iVisited) {
+	public Instruction visitBlockPassNode(BlockPassNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitBreakNode(BreakNode iVisited) {
+	public Instruction visitBreakNode(BreakNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitConstDeclNode(ConstDeclNode iVisited) {
-		iVisited.accept(_Payload);
-		iVisited.getValueNode().accept(this);
-		return null;
-	}
-
-	public SingleNodeVisitor visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
+	public Instruction visitConstDeclNode(ConstDeclNode iVisited) {
 		iVisited.accept(_Payload);
 		iVisited.getValueNode().accept(this);
 		return null;
 	}
 
-	public SingleNodeVisitor visitClassVarDeclNode(ClassVarDeclNode iVisited) {
+	public Instruction visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
+		iVisited.accept(_Payload);
+		iVisited.getValueNode().accept(this);
+		return null;
+	}
+
+	public Instruction visitClassVarDeclNode(ClassVarDeclNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitClassVarNode(ClassVarNode iVisited) {
+	public Instruction visitClassVarNode(ClassVarNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
@@ -252,7 +252,7 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 	/**
 	 * @fixme iteration not correctly defined
 	 */
-	public SingleNodeVisitor visitCallNode(CallNode iVisited) {
+	public Instruction visitCallNode(CallNode iVisited) {
 		iVisited.getReceiverNode().accept(this);
 		//  FIXME
 		/*
@@ -263,12 +263,12 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 		return null;
 	}
 
-	public SingleNodeVisitor visitCaseNode(CaseNode iVisited) {
+	public Instruction visitCaseNode(CaseNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitClassNode(ClassNode iVisited) {
+	public Instruction visitClassNode(ClassNode iVisited) {
 		iVisited.accept(_Payload);
 		if (iVisited.getSuperNode() != null) {
 			iVisited.getSuperNode().accept(this);
@@ -279,7 +279,7 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 		return null;
 	}
 
-	public SingleNodeVisitor visitColon2Node(Colon2Node iVisited) {
+	public Instruction visitColon2Node(Colon2Node iVisited) {
 		if (iVisited.getLeftNode() != null) {
 			iVisited.getLeftNode().accept(this);
 		}
@@ -287,28 +287,28 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 		return null;
 	}
 
-	public SingleNodeVisitor visitColon3Node(Colon3Node iVisited) {
+	public Instruction visitColon3Node(Colon3Node iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitConstNode(ConstNode iVisited) {
+	public Instruction visitConstNode(ConstNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitDAsgnNode(DAsgnNode iVisited) {
+	public Instruction visitDAsgnNode(DAsgnNode iVisited) {
 		iVisited.accept(_Payload);
 		iVisited.getValueNode().accept(this);
 		return null;
 	}
 
-	public SingleNodeVisitor visitDRegxNode(DRegexpNode iVisited) {
+	public Instruction visitDRegxNode(DRegexpNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitDStrNode(DStrNode iVisited) {
+	public Instruction visitDStrNode(DStrNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
@@ -316,56 +316,56 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 	/**
 	 * @see NodeVisitor#visitDSymbolNode(DSymbolNode)
 	 */
-	public SingleNodeVisitor visitDSymbolNode(DSymbolNode iVisited) {
+	public Instruction visitDSymbolNode(DSymbolNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitDVarNode(DVarNode iVisited) {
+	public Instruction visitDVarNode(DVarNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitDXStrNode(DXStrNode iVisited) {
+	public Instruction visitDXStrNode(DXStrNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitDefinedNode(DefinedNode iVisited) {
+	public Instruction visitDefinedNode(DefinedNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitDefnNode(DefnNode iVisited) {
+	public Instruction visitDefnNode(DefnNode iVisited) {
 		iVisited.accept(_Payload);
 		iVisited.getBodyNode().accept(this);
 		return null;
 	}
 
-	public SingleNodeVisitor visitDefsNode(DefsNode iVisited) {
+	public Instruction visitDefsNode(DefsNode iVisited) {
 		iVisited.accept(_Payload);
 		iVisited.getReceiverNode().accept(this);
 		iVisited.getBodyNode().accept(this);
 		return null;
 	}
 
-	public SingleNodeVisitor visitDotNode(DotNode iVisited) {
+	public Instruction visitDotNode(DotNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitEnsureNode(EnsureNode iVisited) {
+	public Instruction visitEnsureNode(EnsureNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitEvStrNode(EvStrNode iVisited) {
+	public Instruction visitEvStrNode(EvStrNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
 	/** @fixme iteration not correctly defined */
-	public SingleNodeVisitor visitFCallNode(FCallNode iVisited) {
+	public Instruction visitFCallNode(FCallNode iVisited) {
 		iVisited.accept(_Payload);
 		// FIXME
 		/*
@@ -375,49 +375,49 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 		return null;
 	}
 
-	public SingleNodeVisitor visitFalseNode(FalseNode iVisited) {
+	public Instruction visitFalseNode(FalseNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitFlipNode(FlipNode iVisited) {
+	public Instruction visitFlipNode(FlipNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitForNode(ForNode iVisited) {
+	public Instruction visitForNode(ForNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitGlobalAsgnNode(GlobalAsgnNode iVisited) {
-		iVisited.accept(_Payload);
-		iVisited.getValueNode().accept(this);
-		return null;
-	}
-
-	public SingleNodeVisitor visitGlobalVarNode(GlobalVarNode iVisited) {
-		iVisited.accept(_Payload);
-		return null;
-	}
-
-	public SingleNodeVisitor visitHashNode(HashNode iVisited) {
-		iVisited.accept(_Payload);
-		return null;
-	}
-
-	public SingleNodeVisitor visitInstAsgnNode(InstAsgnNode iVisited) {
+	public Instruction visitGlobalAsgnNode(GlobalAsgnNode iVisited) {
 		iVisited.accept(_Payload);
 		iVisited.getValueNode().accept(this);
 		return null;
 	}
 
-	public SingleNodeVisitor visitInstVarNode(InstVarNode iVisited) {
+	public Instruction visitGlobalVarNode(GlobalVarNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitIfNode(IfNode iVisited) {
+	public Instruction visitHashNode(HashNode iVisited) {
+		iVisited.accept(_Payload);
+		return null;
+	}
+
+	public Instruction visitInstAsgnNode(InstAsgnNode iVisited) {
+		iVisited.accept(_Payload);
+		iVisited.getValueNode().accept(this);
+		return null;
+	}
+
+	public Instruction visitInstVarNode(InstVarNode iVisited) {
+		iVisited.accept(_Payload);
+		return null;
+	}
+
+	public Instruction visitIfNode(IfNode iVisited) {
 		iVisited.accept(_Payload);
 		iVisited.getCondition().accept(this);
 		iVisited.getThenBody().accept(this);
@@ -427,125 +427,125 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 		return null;
 	}
 
-	public SingleNodeVisitor visitIterNode(IterNode iVisited) {
+	public Instruction visitIterNode(IterNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitLocalAsgnNode(LocalAsgnNode iVisited) {
+	public Instruction visitLocalAsgnNode(LocalAsgnNode iVisited) {
 		iVisited.accept(_Payload);
 		iVisited.getValueNode().accept(this);
 		return null;
 	}
 
-	public SingleNodeVisitor visitLocalVarNode(LocalVarNode iVisited) {
+	public Instruction visitLocalVarNode(LocalVarNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitMultipleAsgnNode(MultipleAsgnNode iVisited) {
+	public Instruction visitMultipleAsgnNode(MultipleAsgnNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitMatch2Node(Match2Node iVisited) {
+	public Instruction visitMatch2Node(Match2Node iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitMatch3Node(Match3Node iVisited) {
+	public Instruction visitMatch3Node(Match3Node iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitMatchNode(MatchNode iVisited) {
+	public Instruction visitMatchNode(MatchNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitModuleNode(ModuleNode iVisited) {
+	public Instruction visitModuleNode(ModuleNode iVisited) {
 		iVisited.accept(_Payload);
 		iVisited.getBodyNode().accept(this);
 		return null;
 	}
 
-	public SingleNodeVisitor visitNewlineNode(NewlineNode iVisited) {
+	public Instruction visitNewlineNode(NewlineNode iVisited) {
 		iVisited.accept(_Payload);
 		iVisited.getNextNode().accept(this);
 		return null;
 	}
 
-	public SingleNodeVisitor visitNextNode(NextNode iVisited) {
+	public Instruction visitNextNode(NextNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitNilNode(NilNode iVisited) {
+	public Instruction visitNilNode(NilNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitNotNode(NotNode iVisited) {
+	public Instruction visitNotNode(NotNode iVisited) {
 		iVisited.accept(_Payload);
 		iVisited.getConditionNode().accept(this);
 		return null;
 	}
 
-	public SingleNodeVisitor visitNthRefNode(NthRefNode iVisited) {
+	public Instruction visitNthRefNode(NthRefNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitOpElementAsgnNode(OpElementAsgnNode iVisited) {
+	public Instruction visitOpElementAsgnNode(OpElementAsgnNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitOpAsgnNode(OpAsgnNode iVisited) {
+	public Instruction visitOpAsgnNode(OpAsgnNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitOpAsgnAndNode(OpAsgnAndNode iVisited) {
+	public Instruction visitOpAsgnAndNode(OpAsgnAndNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitOpAsgnOrNode(OpAsgnOrNode iVisited) {
+	public Instruction visitOpAsgnOrNode(OpAsgnOrNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitOptNNode(OptNNode iVisited) {
+	public Instruction visitOptNNode(OptNNode iVisited) {
 		iVisited.accept(_Payload);
 		iVisited.getBodyNode().accept(this);
 		return null;
 	}
 
-	public SingleNodeVisitor visitOrNode(OrNode iVisited) {
+	public Instruction visitOrNode(OrNode iVisited) {
 		iVisited.getFirstNode().accept(this);
 		iVisited.accept(_Payload);
 		iVisited.getSecondNode().accept(this);
 		return null;
 	}
 
-	public SingleNodeVisitor visitPostExeNode(PostExeNode iVisited) {
+	public Instruction visitPostExeNode(PostExeNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitRedoNode(RedoNode iVisited) {
+	public Instruction visitRedoNode(RedoNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitRescueBodyNode(RescueBodyNode iVisited) {
+	public Instruction visitRescueBodyNode(RescueBodyNode iVisited) {
 		iVisited.accept(_Payload);
 		// XXX iVisited.getBodyNode().accept(this);
 		return null;
 	}
 
-	public SingleNodeVisitor visitRescueNode(RescueNode iVisited) {
+	public Instruction visitRescueNode(RescueNode iVisited) {
 		iVisited.accept(_Payload);
 		/*
 		 * XXX iVisited.getHeadNode().accept(this); Node lElseNode =
@@ -559,22 +559,22 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 		return null;
 	}
 
-	public SingleNodeVisitor visitRetryNode(RetryNode iVisited) {
+	public Instruction visitRetryNode(RetryNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitReturnNode(ReturnNode iVisited) {
+	public Instruction visitReturnNode(ReturnNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitSClassNode(SClassNode iVisited) {
+	public Instruction visitSClassNode(SClassNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitScopeNode(ScopeNode iVisited) {
+	public Instruction visitScopeNode(ScopeNode iVisited) {
 		iVisited.accept(_Payload);
 		if (iVisited.getBodyNode() != null) {
 			iVisited.getBodyNode().accept(this);
@@ -582,62 +582,62 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 		return null;
 	}
 
-	public SingleNodeVisitor visitSelfNode(SelfNode iVisited) {
+	public Instruction visitSelfNode(SelfNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitSplatNode(SplatNode iVisited) {
+	public Instruction visitSplatNode(SplatNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitStrNode(StrNode iVisited) {
+	public Instruction visitStrNode(StrNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitSValueNode(SValueNode iVisited) {
+	public Instruction visitSValueNode(SValueNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitSuperNode(SuperNode iVisited) {
+	public Instruction visitSuperNode(SuperNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitToAryNode(ToAryNode iVisited) {
+	public Instruction visitToAryNode(ToAryNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitTrueNode(TrueNode iVisited) {
+	public Instruction visitTrueNode(TrueNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitUndefNode(UndefNode iVisited) {
+	public Instruction visitUndefNode(UndefNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitUntilNode(UntilNode iVisited) {
+	public Instruction visitUntilNode(UntilNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitVAliasNode(VAliasNode iVisited) {
+	public Instruction visitVAliasNode(VAliasNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitVCallNode(VCallNode iVisited) {
+	public Instruction visitVCallNode(VCallNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitWhenNode(WhenNode iVisited) {
+	public Instruction visitWhenNode(WhenNode iVisited) {
 		iVisited.accept(_Payload);
 		/*
 		 * XXX iVisited.getConditionNode().accept(this);
@@ -646,27 +646,27 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 		return null;
 	}
 
-	public SingleNodeVisitor visitWhileNode(WhileNode iVisited) {
+	public Instruction visitWhileNode(WhileNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitXStrNode(XStrNode iVisited) {
+	public Instruction visitXStrNode(XStrNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitYieldNode(YieldNode iVisited) {
+	public Instruction visitYieldNode(YieldNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitZArrayNode(ZArrayNode iVisited) {
+	public Instruction visitZArrayNode(ZArrayNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
 
-	public SingleNodeVisitor visitZSuperNode(ZSuperNode iVisited) {
+	public Instruction visitZSuperNode(ZSuperNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
@@ -674,7 +674,7 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 	/**
 	 * @see NodeVisitor#visitBignumNode(BignumNode)
 	 */
-	public SingleNodeVisitor visitBignumNode(BignumNode iVisited) {
+	public Instruction visitBignumNode(BignumNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
@@ -682,7 +682,7 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 	/**
 	 * @see NodeVisitor#visitFixnumNode(FixnumNode)
 	 */
-	public SingleNodeVisitor visitFixnumNode(FixnumNode iVisited) {
+	public Instruction visitFixnumNode(FixnumNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
@@ -690,7 +690,7 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 	/**
 	 * @see NodeVisitor#visitFloatNode(FloatNode)
 	 */
-	public SingleNodeVisitor visitFloatNode(FloatNode iVisited) {
+	public Instruction visitFloatNode(FloatNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
@@ -698,7 +698,7 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 	/**
 	 * @see NodeVisitor#visitRegexpNode(RegexpNode)
 	 */
-	public SingleNodeVisitor visitRegexpNode(RegexpNode iVisited) {
+	public Instruction visitRegexpNode(RegexpNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}
@@ -706,7 +706,7 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 	/**
 	 * @see NodeVisitor#visitSymbolNode(SymbolNode)
 	 */
-	public SingleNodeVisitor visitSymbolNode(SymbolNode iVisited) {
+	public Instruction visitSymbolNode(SymbolNode iVisited) {
 		iVisited.accept(_Payload);
 		return null;
 	}

@@ -35,7 +35,7 @@ import java.util.List;
 
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.SingleNodeVisitor;
+import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents a symbol (:symbol_name).
@@ -52,7 +52,7 @@ public class SymbolNode extends Node implements ILiteralNode {
 	    this.name = name;
 	}
 
-    public SingleNodeVisitor accept(NodeVisitor iVisitor) {
+    public Instruction accept(NodeVisitor iVisitor) {
         return iVisitor.visitSymbolNode(this);
     }
 

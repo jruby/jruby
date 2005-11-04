@@ -36,7 +36,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.SingleNodeVisitor;
+import org.jruby.evaluator.Instruction;
+import org.jruby.evaluator.InstructionContext;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
 
@@ -44,7 +45,7 @@ import org.jruby.lexer.yacc.ISourcePositionHolder;
  *
  * @author  jpetersen
  */
-public abstract class Node implements ISourcePositionHolder, Serializable {
+public abstract class Node implements ISourcePositionHolder, InstructionContext, Serializable {
     static final long serialVersionUID = -5962822607672530224L;
 
     private ISourcePosition position;
@@ -64,7 +65,7 @@ public abstract class Node implements ISourcePositionHolder, Serializable {
 		this.position = position;
 	}
     
-	public abstract SingleNodeVisitor accept(NodeVisitor visitor);
+	public abstract Instruction accept(NodeVisitor visitor);
 	public abstract List childNodes();
 
     static void addNode(Node node, List list) {

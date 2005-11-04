@@ -106,10 +106,11 @@ class EvaluationState {
 	 * Add a node and visitor to the top node and visitor stacks, using the default visitor for the given node.
 	 * The default visitor is determined by calling node.accept() with the current state's evaluator.
 	 * 
-	 * @param node
+	 * @param ctx
 	 */
-	public void addNodeAndVisitor(Node node) {
-		addNodeAndVisitor(node, node.accept(evaluator));
+	public void addNodeInstruction(InstructionContext ctx) {
+        Node node = (Node)ctx;
+		addNodeInstruction(node, node.accept(evaluator));
 		returnPoints.clear();
 	}
 	
@@ -120,7 +121,8 @@ class EvaluationState {
 	 * @param node
 	 * @param visitor
 	 */
-	public void addNodeAndVisitor(Node node, SingleNodeVisitor visitor) {
+	public void addNodeInstruction(InstructionContext ctx, Instruction visitor) {
+        Node node = (Node)ctx;
 		getCurrentNodeStack().push(node);
 		getCurrentNodeVisitorStack().push(visitor);
 	}
@@ -128,12 +130,15 @@ class EvaluationState {
 	/**
 	 * Call the topmost visitor in the current top visitor stack with the topmost node in the current top node stack.
 	 */
-	public void callNextVisitor() {
+	public void executeNext() {
+        // FIXME: Poll from somewhere else in the code? This polls per-node, perhaps per newline?
+        threadContext.pollThreadEvents();
+        
 		Node node = (Node)getCurrentNodeStack().pop();
-		SingleNodeVisitor snv = (SingleNodeVisitor)getCurrentNodeVisitorStack().pop();
+		Instruction snv = (Instruction)getCurrentNodeVisitorStack().pop();
 		
 		if (node != null) {
-			snv.visit(this, node);
+			snv.execute(this, node);
 		}
 	}
 	
@@ -210,4 +215,34 @@ class EvaluationState {
 	public void setTarget(Object target) {
 		this.target = target;
 	}
+
+    public IRubyObject begin(Node node) {
+        clearResult();
+        
+        if (node != null) {
+        	try {
+        		// for each call to internalEval, push down new stacks (to isolate eval runs that still want to be logically separate
+                pushCurrentNodeStacks();
+                
+                addNodeInstruction(node);
+        		
+                // TODO: once we're ready to have an external entity run this loop (i.e. thread scheduler) move this out
+        		while (hasNext()) {        	        
+        	        // invoke the next instruction
+        	        executeNext();
+        		}
+        	} catch (StackOverflowError soe) {
+        		// TODO: perhaps a better place to catch this (although it will go away)
+        		throw runtime.newSystemStackError("stack level too deep");
+        	} finally {
+        		popCurrentNodeStacks();
+        	}
+        }
+        
+        return getResult();
+    }
+
+    private boolean hasNext() {
+        return !getCurrentNodeStack().isEmpty();
+    }
 }

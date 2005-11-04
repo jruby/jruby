@@ -94,26 +94,26 @@ public class CreateJumpTargetVisitor extends AbstractVisitor {
 		this.target = target;
 	}
 
-	private SingleNodeVisitor visit(Node node) {
+	private Instruction visit(Node node) {
 		if (node != null) {
 			node.accept(this);
 		}
 		return null;
 	}
 
-	public SingleNodeVisitor visitAndNode(AndNode iVisited) {
+	public Instruction visitAndNode(AndNode iVisited) {
 		visit(iVisited.getFirstNode());
 		visit(iVisited.getSecondNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitArgsCatNode(ArgsCatNode iVisited) {
+	public Instruction visitArgsCatNode(ArgsCatNode iVisited) {
 		visit(iVisited.getFirstNode());
 		visit(iVisited.getSecondNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitArrayNode(ArrayNode iVisited) {
+	public Instruction visitArrayNode(ArrayNode iVisited) {
 		Iterator iterator = iVisited.iterator();
 		while (iterator.hasNext()) {
 			visit((Node) iterator.next());
@@ -122,13 +122,13 @@ public class CreateJumpTargetVisitor extends AbstractVisitor {
 		return null;
 	}
 
-	public SingleNodeVisitor visitBeginNode(BeginNode iVisited) {
+	public Instruction visitBeginNode(BeginNode iVisited) {
 		// FIXME
 		visit(iVisited.getBodyNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitBlockNode(BlockNode iVisited) {
+	public Instruction visitBlockNode(BlockNode iVisited) {
 		Iterator iterator = iVisited.iterator();
 		while (iterator.hasNext()) {
 			visit((Node) iterator.next());
@@ -136,67 +136,67 @@ public class CreateJumpTargetVisitor extends AbstractVisitor {
 		return null;
 	}
 
-	public SingleNodeVisitor visitBlockPassNode(BlockPassNode iVisited) {
+	public Instruction visitBlockPassNode(BlockPassNode iVisited) {
 		visit(iVisited.getBodyNode());
 		visit(iVisited.getIterNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitBreakNode(BreakNode iVisited) {
+	public Instruction visitBreakNode(BreakNode iVisited) {
 		// FIXME
 		visit(iVisited.getValueNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitConstDeclNode(ConstDeclNode iVisited) {
+	public Instruction visitConstDeclNode(ConstDeclNode iVisited) {
 		// FIXME
 		visit(iVisited.getValueNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
+	public Instruction visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
 		// FIXME
 		visit(iVisited.getValueNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitClassVarDeclNode(ClassVarDeclNode iVisited) {
+	public Instruction visitClassVarDeclNode(ClassVarDeclNode iVisited) {
 		// FIXME
 		visit(iVisited.getValueNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitCallNode(CallNode iVisited) {
+	public Instruction visitCallNode(CallNode iVisited) {
 		// FIXME
 		visit(iVisited.getReceiverNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitCaseNode(CaseNode iVisited) {
+	public Instruction visitCaseNode(CaseNode iVisited) {
 		visit(iVisited.getCaseNode());
 		visit(iVisited.getFirstWhenNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitClassNode(ClassNode iVisited) {
+	public Instruction visitClassNode(ClassNode iVisited) {
 		// FIXME
 		visit(iVisited.getSuperNode());
 		visit(iVisited.getBodyNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitColon2Node(Colon2Node iVisited) {
+	public Instruction visitColon2Node(Colon2Node iVisited) {
 		visit(iVisited.getLeftNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitDAsgnNode(DAsgnNode iVisited) {
+	public Instruction visitDAsgnNode(DAsgnNode iVisited) {
 		// FIXME
 		visit(iVisited.getValueNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitDRegxNode(DRegexpNode iVisited) {
+	public Instruction visitDRegxNode(DRegexpNode iVisited) {
 		// FIXME
 		Iterator iterator = iVisited.iterator();
 		while (iterator.hasNext()) {
@@ -205,7 +205,7 @@ public class CreateJumpTargetVisitor extends AbstractVisitor {
 		return null;
 	}
 
-	public SingleNodeVisitor visitDStrNode(DStrNode iVisited) {
+	public Instruction visitDStrNode(DStrNode iVisited) {
 		// FIXME
 		Iterator iterator = iVisited.iterator();
 		while (iterator.hasNext()) {
@@ -214,7 +214,7 @@ public class CreateJumpTargetVisitor extends AbstractVisitor {
 		return null;
 	}
 
-	public SingleNodeVisitor visitDSymbolNode(DSymbolNode iVisited) {
+	public Instruction visitDSymbolNode(DSymbolNode iVisited) {
 		// FIXME
 		Iterator iterator = iVisited.getNode().iterator();
 		while (iterator.hasNext()) {
@@ -223,7 +223,7 @@ public class CreateJumpTargetVisitor extends AbstractVisitor {
 		return null;
 	}
 
-	public SingleNodeVisitor visitDXStrNode(DXStrNode iVisited) {
+	public Instruction visitDXStrNode(DXStrNode iVisited) {
 		// FIXME
 		Iterator iterator = iVisited.iterator();
 		while (iterator.hasNext()) {
@@ -232,36 +232,36 @@ public class CreateJumpTargetVisitor extends AbstractVisitor {
 		return null;
 	}
 
-	public SingleNodeVisitor visitDefinedNode(DefinedNode iVisited) {
+	public Instruction visitDefinedNode(DefinedNode iVisited) {
 		// FIXME
 		visit(iVisited.getExpressionNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitDotNode(DotNode iVisited) {
+	public Instruction visitDotNode(DotNode iVisited) {
 		visit(iVisited.getBeginNode());
 		visit(iVisited.getEndNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitEnsureNode(EnsureNode iVisited) {
+	public Instruction visitEnsureNode(EnsureNode iVisited) {
 		visit(iVisited.getBodyNode());
 		visit(iVisited.getEnsureNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitEvStrNode(EvStrNode iVisited) {
+	public Instruction visitEvStrNode(EvStrNode iVisited) {
 		visit(iVisited.getBody());
 		return null;
 	}
 
-	public SingleNodeVisitor visitFlipNode(FlipNode iVisited) {
+	public Instruction visitFlipNode(FlipNode iVisited) {
 		visit(iVisited.getBeginNode());
 		visit(iVisited.getEndNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitForNode(ForNode iVisited) {
+	public Instruction visitForNode(ForNode iVisited) {
 		visit(iVisited.getBodyNode());
 		visit(iVisited.getIterNode());
 		// FIXME
@@ -269,13 +269,13 @@ public class CreateJumpTargetVisitor extends AbstractVisitor {
 		return null;
 	}
 
-	public SingleNodeVisitor visitGlobalAsgnNode(GlobalAsgnNode iVisited) {
+	public Instruction visitGlobalAsgnNode(GlobalAsgnNode iVisited) {
 		// FIXME
 		visit(iVisited.getValueNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitHashNode(HashNode iVisited) {
+	public Instruction visitHashNode(HashNode iVisited) {
 		// FIXME
 		if (iVisited.getListNode() != null) {
 			Iterator iterator = iVisited.getListNode().iterator();
@@ -286,13 +286,13 @@ public class CreateJumpTargetVisitor extends AbstractVisitor {
 		return null;
 	}
 
-	public SingleNodeVisitor visitInstAsgnNode(InstAsgnNode iVisited) {
+	public Instruction visitInstAsgnNode(InstAsgnNode iVisited) {
 		// FIXME
 		visit(iVisited.getValueNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitIfNode(IfNode iVisited) {
+	public Instruction visitIfNode(IfNode iVisited) {
 		// FIXME
 		visit(iVisited.getCondition());
 		visit(iVisited.getThenBody());
@@ -300,7 +300,7 @@ public class CreateJumpTargetVisitor extends AbstractVisitor {
 		return null;
 	}
 
-	public SingleNodeVisitor visitIterNode(IterNode iVisited) {
+	public Instruction visitIterNode(IterNode iVisited) {
 		visit(iVisited.getBodyNode());
 		visit(iVisited.getIterNode());
 		// FIXME
@@ -308,19 +308,19 @@ public class CreateJumpTargetVisitor extends AbstractVisitor {
 		return null;
 	}
 
-	public SingleNodeVisitor visitLocalAsgnNode(LocalAsgnNode iVisited) {
+	public Instruction visitLocalAsgnNode(LocalAsgnNode iVisited) {
 		// FIXME
 		visit(iVisited.getValueNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitMultipleAsgnNode(MultipleAsgnNode iVisited) {
+	public Instruction visitMultipleAsgnNode(MultipleAsgnNode iVisited) {
 		// FIXME
 		visit(iVisited.getValueNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitMatch2Node(Match2Node iVisited) {
+	public Instruction visitMatch2Node(Match2Node iVisited) {
 		// FIXME
 		visit(iVisited.getReceiverNode());
 		// FIXME
@@ -328,7 +328,7 @@ public class CreateJumpTargetVisitor extends AbstractVisitor {
 		return null;
 	}
 
-	public SingleNodeVisitor visitMatch3Node(Match3Node iVisited) {
+	public Instruction visitMatch3Node(Match3Node iVisited) {
 		// FIXME
 		visit(iVisited.getReceiverNode());
 		// FIXME
@@ -336,134 +336,134 @@ public class CreateJumpTargetVisitor extends AbstractVisitor {
 		return null;
 	}
 
-	public SingleNodeVisitor visitMatchNode(MatchNode iVisited) {
+	public Instruction visitMatchNode(MatchNode iVisited) {
 		visit(iVisited.getRegexpNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitModuleNode(ModuleNode iVisited) {
+	public Instruction visitModuleNode(ModuleNode iVisited) {
 		visit(iVisited.getBodyNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitNewlineNode(NewlineNode iVisited) {
+	public Instruction visitNewlineNode(NewlineNode iVisited) {
 		visit(iVisited.getNextNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitNotNode(NotNode iVisited) {
+	public Instruction visitNotNode(NotNode iVisited) {
 		// FIXME
 		visit(iVisited.getConditionNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitOpElementAsgnNode(OpElementAsgnNode iVisited) {
+	public Instruction visitOpElementAsgnNode(OpElementAsgnNode iVisited) {
 		// FIXME
 		visit(iVisited.getReceiverNode());
 		visit(iVisited.getValueNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitOpAsgnNode(OpAsgnNode iVisited) {
+	public Instruction visitOpAsgnNode(OpAsgnNode iVisited) {
 		// FIXME
 		visit(iVisited.getReceiverNode());
 		visit(iVisited.getValueNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitOpAsgnAndNode(OpAsgnAndNode iVisited) {
+	public Instruction visitOpAsgnAndNode(OpAsgnAndNode iVisited) {
 		visit(iVisited.getFirstNode());
 		visit(iVisited.getSecondNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitOpAsgnOrNode(OpAsgnOrNode iVisited) {
+	public Instruction visitOpAsgnOrNode(OpAsgnOrNode iVisited) {
 		visit(iVisited.getFirstNode());
 		visit(iVisited.getSecondNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitOptNNode(OptNNode iVisited) {
+	public Instruction visitOptNNode(OptNNode iVisited) {
 		visit(iVisited.getBodyNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitOrNode(OrNode iVisited) {
+	public Instruction visitOrNode(OrNode iVisited) {
 		visit(iVisited.getFirstNode());
 		visit(iVisited.getSecondNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitRescueBodyNode(RescueBodyNode iVisited) {
+	public Instruction visitRescueBodyNode(RescueBodyNode iVisited) {
 		visit(iVisited.getBodyNode());
 		visit(iVisited.getExceptionNodes());
 		visit(iVisited.getOptRescueNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitRescueNode(RescueNode iVisited) {
+	public Instruction visitRescueNode(RescueNode iVisited) {
 		visit(iVisited.getBodyNode());
 		visit(iVisited.getElseNode());
 		visit(iVisited.getRescueNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitReturnNode(ReturnNode iVisited) {
+	public Instruction visitReturnNode(ReturnNode iVisited) {
 		iVisited.setTarget(target);
 		return null;
 	}
 
-	public SingleNodeVisitor visitSClassNode(SClassNode iVisited) {
+	public Instruction visitSClassNode(SClassNode iVisited) {
 		// FIXME
 		visit(iVisited.getReceiverNode());
 		visit(iVisited.getBodyNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitScopeNode(ScopeNode iVisited) {
+	public Instruction visitScopeNode(ScopeNode iVisited) {
 		visit(iVisited.getBodyNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitSplatNode(SplatNode iVisited) {
+	public Instruction visitSplatNode(SplatNode iVisited) {
 		visit(iVisited.getValue());
 		return null;
 	}
 
-	public SingleNodeVisitor visitSValueNode(SValueNode iVisited) {
+	public Instruction visitSValueNode(SValueNode iVisited) {
 		// FIXME
 		visit(iVisited.getValue());
 		return null;
 	}
 
-	public SingleNodeVisitor visitToAryNode(ToAryNode iVisited) {
+	public Instruction visitToAryNode(ToAryNode iVisited) {
 		// FIXME
 		visit(iVisited.getValue());
 		return null;
 	}
 
-	public SingleNodeVisitor visitUntilNode(UntilNode iVisited) {
+	public Instruction visitUntilNode(UntilNode iVisited) {
 		// FIXME
 		visit(iVisited.getConditionNode());
 		visit(iVisited.getBodyNode());
 		return null;
 	}
 
-	public SingleNodeVisitor visitWhenNode(WhenNode iVisited) {
+	public Instruction visitWhenNode(WhenNode iVisited) {
 		visit(iVisited.getBodyNode());
 		visit(iVisited.getExpressionNodes());
 		visit(iVisited.getNextCase());
 		return null;
 	}
 
-	public SingleNodeVisitor visitWhileNode(WhileNode iVisited) {
+	public Instruction visitWhileNode(WhileNode iVisited) {
 		// FIXME
 		visit(iVisited.getConditionNode());
 		visit(iVisited.getBodyNode());
 		return null;
 	}
 
-	protected SingleNodeVisitor visitNode(Node iVisited) {
+	protected Instruction visitNode(Node iVisited) {
 		// do nothing
 		return null;
 	}

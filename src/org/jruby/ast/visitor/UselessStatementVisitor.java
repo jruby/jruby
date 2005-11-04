@@ -57,7 +57,8 @@ import org.jruby.ast.StrNode;
 import org.jruby.ast.SymbolNode;
 import org.jruby.ast.TrueNode;
 import org.jruby.common.IRubyWarnings;
-import org.jruby.evaluator.SingleNodeVisitor;
+import org.jruby.common.RubyWarnings;
+import org.jruby.evaluator.Instruction;
 
 /**
  * 
@@ -73,7 +74,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
 	/**
 	 * @see AbstractVisitor#visitNode(Node)
 	 */
-	protected SingleNodeVisitor visitNode(Node iVisited) {
+	protected Instruction visitNode(Node iVisited) {
 		return null;
 	}
 
@@ -85,7 +86,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
 	/**
 	 * @see NodeVisitor#visitCallNode(CallNode)
 	 */
-	public SingleNodeVisitor visitCallNode(CallNode iVisited) {
+	public Instruction visitCallNode(CallNode iVisited) {
 		String name = iVisited.getName().intern();
 
 		if (name == "+" || name == "-" || name == "*" || name == "/"
@@ -102,7 +103,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
 	/**
 	 * @see NodeVisitor#visitBackRefNode(BackRefNode)
 	 */
-	public SingleNodeVisitor visitBackRefNode(BackRefNode iVisited) {
+	public Instruction visitBackRefNode(BackRefNode iVisited) {
 		handleUselessWarn(iVisited, "a variable");
 		return null;
 	}
@@ -110,7 +111,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
 	/**
 	 * @see NodeVisitor#visitDVarNode(DVarNode)
 	 */
-	public SingleNodeVisitor visitDVarNode(DVarNode iVisited) {
+	public Instruction visitDVarNode(DVarNode iVisited) {
 		handleUselessWarn(iVisited, "a variable");
 		return null;
 	}
@@ -118,7 +119,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
 	/**
 	 * @see NodeVisitor#visitGlobalVarNode(GlobalVarNode)
 	 */
-	public SingleNodeVisitor visitGlobalVarNode(GlobalVarNode iVisited) {
+	public Instruction visitGlobalVarNode(GlobalVarNode iVisited) {
 		handleUselessWarn(iVisited, "a variable");
 		return null;
 	}
@@ -126,7 +127,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
 	/**
 	 * @see NodeVisitor#visitLocalVarNode(LocalVarNode)
 	 */
-	public SingleNodeVisitor visitLocalVarNode(LocalVarNode iVisited) {
+	public Instruction visitLocalVarNode(LocalVarNode iVisited) {
 		handleUselessWarn(iVisited, "a variable");
 		return null;
 	}
@@ -134,7 +135,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
 	/**
 	 * @see NodeVisitor#visitNthRefNode(NthRefNode)
 	 */
-	public SingleNodeVisitor visitNthRefNode(NthRefNode iVisited) {
+	public Instruction visitNthRefNode(NthRefNode iVisited) {
 		handleUselessWarn(iVisited, "a variable");
 		return null;
 	}
@@ -142,7 +143,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
 	/**
 	 * @see NodeVisitor#visitClassVarNode(ClassVarNode)
 	 */
-	public SingleNodeVisitor visitClassVarNode(ClassVarNode iVisited) {
+	public Instruction visitClassVarNode(ClassVarNode iVisited) {
 		handleUselessWarn(iVisited, "a variable");
 		return null;
 	}
@@ -150,7 +151,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
 	/**
 	 * @see NodeVisitor#visitInstVarNode(InstVarNode)
 	 */
-	public SingleNodeVisitor visitInstVarNode(InstVarNode iVisited) {
+	public Instruction visitInstVarNode(InstVarNode iVisited) {
 		handleUselessWarn(iVisited, "a variable");
 		return null;
 	}
@@ -158,7 +159,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
 	/**
 	 * @see NodeVisitor#visitConstNode(ConstNode)
 	 */
-	public SingleNodeVisitor visitConstNode(ConstNode iVisited) {
+	public Instruction visitConstNode(ConstNode iVisited) {
 		handleUselessWarn(iVisited, "a constant");
 		return null;
 	}
@@ -166,7 +167,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
 	/**
 	 * @see NodeVisitor#visitBignumNode(BignumNode)
 	 */
-	public SingleNodeVisitor visitBignumNode(BignumNode iVisited) {
+	public Instruction visitBignumNode(BignumNode iVisited) {
 		handleUselessWarn(iVisited, "a literal");
 		return null;
 	}
@@ -174,7 +175,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
 	/**
 	 * @see NodeVisitor#visitDRegxNode(DRegexpNode)
 	 */
-	public SingleNodeVisitor visitDRegxNode(DRegexpNode iVisited) {
+	public Instruction visitDRegxNode(DRegexpNode iVisited) {
 		handleUselessWarn(iVisited, "a literal");
 		return null;
 	}
@@ -182,7 +183,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
 	/**
 	 * @see NodeVisitor#visitDStrNode(DStrNode)
 	 */
-	public SingleNodeVisitor visitDStrNode(DStrNode iVisited) {
+	public Instruction visitDStrNode(DStrNode iVisited) {
 		handleUselessWarn(iVisited, "a literal");
 		return null;
 	}
@@ -190,7 +191,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
 	/**
 	 * @see NodeVisitor#visitFixnumNode(FixnumNode)
 	 */
-	public SingleNodeVisitor visitFixnumNode(FixnumNode iVisited) {
+	public Instruction visitFixnumNode(FixnumNode iVisited) {
 		handleUselessWarn(iVisited, "a literal");
 		return null;
 	}
@@ -198,7 +199,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
 	/**
 	 * @see NodeVisitor#visitFloatNode(FloatNode)
 	 */
-	public SingleNodeVisitor visitFloatNode(FloatNode iVisited) {
+	public Instruction visitFloatNode(FloatNode iVisited) {
 		handleUselessWarn(iVisited, "a literal");
 		return null;
 	}
@@ -206,7 +207,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
 	/**
 	 * @see NodeVisitor#visitRegexpNode(RegexpNode)
 	 */
-	public SingleNodeVisitor visitRegexpNode(RegexpNode iVisited) {
+	public Instruction visitRegexpNode(RegexpNode iVisited) {
 		handleUselessWarn(iVisited, "a literal");
 		return null;
 	}
@@ -214,7 +215,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
 	/**
 	 * @see NodeVisitor#visitStrNode(StrNode)
 	 */
-	public SingleNodeVisitor visitStrNode(StrNode iVisited) {
+	public Instruction visitStrNode(StrNode iVisited) {
 		handleUselessWarn(iVisited, "a literal");
 		return null;
 	}
@@ -222,7 +223,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
 	/**
 	 * @see NodeVisitor#visitSymbolNode(SymbolNode)
 	 */
-	public SingleNodeVisitor visitSymbolNode(SymbolNode iVisited) {
+	public Instruction visitSymbolNode(SymbolNode iVisited) {
 		handleUselessWarn(iVisited, "a literal");
 		return null;
 	}
@@ -230,7 +231,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
 	/**
 	 * @see NodeVisitor#visitClassNode(ClassNode)
 	 */
-	public SingleNodeVisitor visitClassNode(ClassNode iVisited) {
+	public Instruction visitClassNode(ClassNode iVisited) {
 		handleUselessWarn(iVisited, "::");
 		return null;
 	}
@@ -238,7 +239,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
 	/**
 	 * @see NodeVisitor#visitColon2Node(Colon2Node)
 	 */
-	public SingleNodeVisitor visitColon2Node(Colon2Node iVisited) {
+	public Instruction visitColon2Node(Colon2Node iVisited) {
 		handleUselessWarn(iVisited, "::");
 		return null;
 	}
@@ -246,7 +247,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
 	/**
 	 * @see NodeVisitor#visitDotNode(DotNode)
 	 */
-	public SingleNodeVisitor visitDotNode(DotNode iVisited) {
+	public Instruction visitDotNode(DotNode iVisited) {
 		handleUselessWarn(iVisited, iVisited.isExclusive() ? "..." : "..");
 		return null;
 	}
@@ -254,7 +255,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
 	/**
 	 * @see NodeVisitor#visitDefinedNode(DefinedNode)
 	 */
-	public SingleNodeVisitor visitDefinedNode(DefinedNode iVisited) {
+	public Instruction visitDefinedNode(DefinedNode iVisited) {
 		handleUselessWarn(iVisited, "defined?");
 		return null;
 	}
@@ -262,7 +263,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
 	/**
 	 * @see NodeVisitor#visitFalseNode(FalseNode)
 	 */
-	public SingleNodeVisitor visitFalseNode(FalseNode iVisited) {
+	public Instruction visitFalseNode(FalseNode iVisited) {
 		handleUselessWarn(iVisited, "false");
 		return null;
 	}
@@ -270,7 +271,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
 	/**
 	 * @see NodeVisitor#visitNilNode(NilNode)
 	 */
-	public SingleNodeVisitor visitNilNode(NilNode iVisited) {
+	public Instruction visitNilNode(NilNode iVisited) {
 		handleUselessWarn(iVisited, "nil");
 		return null;
 	}
@@ -278,7 +279,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
 	/**
 	 * @see NodeVisitor#visitSelfNode(SelfNode)
 	 */
-	public SingleNodeVisitor visitSelfNode(SelfNode iVisited) {
+	public Instruction visitSelfNode(SelfNode iVisited) {
 		handleUselessWarn(iVisited, "self");
 		return null;
 	}
@@ -286,7 +287,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
 	/**
 	 * @see NodeVisitor#visitTrueNode(TrueNode)
 	 */
-	public SingleNodeVisitor visitTrueNode(TrueNode iVisited) {
+	public Instruction visitTrueNode(TrueNode iVisited) {
 		handleUselessWarn(iVisited, "true");
 		return null;
 	}
@@ -294,7 +295,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
 	/**
 	 * @see NodeVisitor#visitNewlineNode(NewlineNode)
 	 */
-	public SingleNodeVisitor visitNewlineNode(NewlineNode iVisited) {
+	public Instruction visitNewlineNode(NewlineNode iVisited) {
 		acceptNode(iVisited.getNextNode());
 		return null;
 	}
