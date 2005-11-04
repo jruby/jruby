@@ -61,7 +61,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.libraries.RbConfigLibrary;
 import org.jruby.libraries.SocketLibrary;
 import org.jruby.parser.Parser;
-import org.jruby.runtime.BlockStack;
 import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Frame;
@@ -608,10 +607,6 @@ public final class Ruby implements IRuby {
 
     public JavaSupport getJavaSupport() {
         return javaSupport;
-    }
-
-    public BlockStack getBlockStack() {
-        return getCurrentContext().getBlockStack();
     }
 
     public Visibility getCurrentVisibility() {

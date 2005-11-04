@@ -580,7 +580,7 @@ public class RubyObject implements Cloneable, IRubyObject {
             public IRubyObject execute(IRubyObject self, IRubyObject[] args) {
                 ThreadContext context = getRuntime().getCurrentContext();
 
-                Block block = (Block) context.getBlockStack().peek();
+                Block block = (Block) context.peekBlock();
                 Visibility savedVisibility = block.getVisibility();
 
                 block.setVisibility(Visibility.PUBLIC);

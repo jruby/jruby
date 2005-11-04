@@ -69,7 +69,7 @@ public class RubyProc extends RubyObject {
         	// TODO: warn "tried to create Proc object without a block"
         }
         
-        Block block = (Block) runtime.getBlockStack().peek();
+        Block block = (Block) runtime.getCurrentContext().peekBlock();
         
         if (!isLambda && block.getBlockObject() instanceof RubyProc) {
         	return (RubyProc) block.getBlockObject();

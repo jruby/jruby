@@ -17,7 +17,6 @@ import org.jruby.internal.runtime.ThreadService;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.Parser;
-import org.jruby.runtime.BlockStack;
 import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.GlobalVariable;
@@ -158,8 +157,6 @@ public interface IRuby {
 	public RubyModule getRubyClass();
 
 	public JavaSupport getJavaSupport();
-
-	public BlockStack getBlockStack();
 
 	public Visibility getCurrentVisibility();
 

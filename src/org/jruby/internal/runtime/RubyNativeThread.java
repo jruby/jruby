@@ -54,7 +54,7 @@ public class RubyNativeThread extends Thread {
 		runtime = rubyThread.getRuntime();
 		proc = runtime.newProc();
         currentFrame = runtime.getCurrentContext().getCurrentFrame();
-        currentBlock = (Block) runtime.getBlockStack().peek();
+        currentBlock = (Block) runtime.getCurrentContext().peekBlock();
         this.arguments = args;
 	}
 	
@@ -68,7 +68,7 @@ public class RubyNativeThread extends Thread {
         runtime.getThreadService().registerNewThread(rubyThread);
         ThreadContext context = runtime.getCurrentContext();
         context.pushFrame(currentFrame);
-        context.getBlockStack().setCurrent(currentBlock);
+        context.setCurrentBlock(currentBlock);
 
         // Call the thread's code
         try {

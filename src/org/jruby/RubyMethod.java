@@ -136,7 +136,7 @@ public class RubyMethod extends RubyObject {
     	CallbackFactory f = getRuntime().callbackFactory(RubyMethod.class);
 		IRuby r = getRuntime();
         r.getCurrentContext().pushIter(Iter.ITER_PRE);
-		r.getBlockStack().push(Block.createBlock(null, new IterateCallable(f.getBlockMethod("bmcall"), this), r.getTopSelf()));
+		r.getCurrentContext().pushBlock(Block.createBlock(null, new IterateCallable(f.getBlockMethod("bmcall"), this), r.getTopSelf()));
 		
 		try {
 		    while (true) {
@@ -158,7 +158,7 @@ public class RubyMethod extends RubyObject {
 		    }
 		} finally {
 		    r.getCurrentContext().popIter();
-		    r.getBlockStack().pop();
+		    r.getCurrentContext().popBlock();
 		}
     }
 

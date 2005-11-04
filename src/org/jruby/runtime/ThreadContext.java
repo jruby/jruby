@@ -110,9 +110,21 @@ public class ThreadContext {
     public CallType getLastCallType() {
         return lastCallType;
     }
-
-    public BlockStack getBlockStack() {
-        return blockStack;
+    
+    public void pushBlock(Block block) {
+        blockStack.push(block);
+    }
+    
+    public Block popBlock() {
+        return (Block)blockStack.pop();
+    }
+    
+    public Block peekBlock() {
+        return (Block)blockStack.peek();
+    }
+    
+    public void setCurrentBlock(Block block) {
+        blockStack.setCurrent(block);
     }
 
     public DynamicVariableSet getCurrentDynamicVars() {

@@ -340,7 +340,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
             // TODO: Add safety check for taintedness
             
-            Block block = (Block) state.threadContext.getBlockStack().peek();
+            Block block = (Block) state.threadContext.peekBlock();
             if (block != null) {
                 IRubyObject blockObject = block.getBlockObject();
                 // The current block is already associated with the proc.  No need to create new
@@ -356,7 +356,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                 }
             }
 
-            state.threadContext.getBlockStack().push(((RubyProc) proc).getBlock());
+            state.threadContext.pushBlock(((RubyProc) proc).getBlock());
             state.threadContext.pushIter(Iter.ITER_PRE);
             
             if (state.threadContext.getCurrentFrame().getIter() == Iter.ITER_NOT) {
@@ -367,7 +367,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                 state.begin(iVisited.getIterNode());
             } finally {
                 state.threadContext.popIter();
-                state.threadContext.getBlockStack().pop();
+                state.threadContext.popBlock();
             }
     	}
     }
@@ -954,7 +954,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class ForNodeVisitor implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		ForNode iVisited = (ForNode)ctx;
-        	state.threadContext.getBlockStack().push(Block.createBlock(iVisited.getVarNode(), new EvaluateCallable(iVisited.getBodyNode(), iVisited.getVarNode()), state.getSelf()));
+        	state.threadContext.pushBlock(Block.createBlock(iVisited.getVarNode(), new EvaluateCallable(iVisited.getBodyNode(), iVisited.getVarNode()), state.getSelf()));
             state.threadContext.pushIter(Iter.ITER_PRE);
 
             try {
@@ -990,7 +990,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             	}
             } finally {
                 state.threadContext.popIter();
-                state.threadContext.getBlockStack().pop();
+                state.threadContext.popBlock();
             }
     	}
     }
@@ -1111,7 +1111,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class IterNodeVisitor implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		IterNode iVisited = (IterNode)ctx;
-        	state.threadContext.getBlockStack().push(Block.createBlock(iVisited.getVarNode(), 
+        	state.threadContext.pushBlock(Block.createBlock(iVisited.getVarNode(), 
             	    new EvaluateCallable(iVisited.getBodyNode(), iVisited.getVarNode()), state.getSelf()));
                 try {
                     while (true) {
@@ -1138,7 +1138,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                 		throw je;
                 	}
                 } finally {
-                    state.threadContext.getBlockStack().pop();
+                    state.threadContext.popBlock();
                 }
     	}
     }

@@ -92,20 +92,19 @@ public class Block implements StackElement {
     public IRubyObject call(IRubyObject[] args, IRubyObject replacementSelf) {
         IRuby runtime = self.getRuntime();
         ThreadContext context = runtime.getCurrentContext();
-        BlockStack blockStack = context.getBlockStack();
-        Block oldBlock = (Block) blockStack.peek();
+        Block oldBlock = context.peekBlock();
         Block newBlock = this.cloneBlock();
         if (replacementSelf != null) {
             newBlock.self = replacementSelf;
         }
-        blockStack.setCurrent(newBlock);
+        context.setCurrentBlock(newBlock);
         context.pushIter(Iter.ITER_CUR);
         context.getCurrentFrame().setIter(Iter.ITER_CUR);
         try {
             return context.yield(runtime.newArray(args), null, null, false, true);
         } finally {
             context.popIter();
-            blockStack.setCurrent(oldBlock);
+            context.setCurrentBlock(oldBlock);
         }
     }
 
