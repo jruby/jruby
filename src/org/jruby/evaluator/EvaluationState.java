@@ -182,7 +182,7 @@ class EvaluationState {
 		public static final EvaluationEvent Break = new EvaluationEvent(4);
 		public static final EvaluationEvent Continue = new EvaluationEvent(5);
 		
-		private int id;
+		public final int id;
 		
 		public EvaluationEvent(int id) {
 			this.id = id;

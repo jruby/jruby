@@ -8,7 +8,6 @@ import java.io.Reader;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Random;
-import java.util.Stack;
 
 import org.jruby.ast.Node;
 import org.jruby.common.RubyWarnings;
@@ -159,8 +158,6 @@ public interface IRuby {
 	public RubyModule getRubyClass();
 
 	public JavaSupport getJavaSupport();
-
-	public Stack getIterStack();
 
 	public BlockStack getBlockStack();
 

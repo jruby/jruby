@@ -36,7 +36,9 @@ package org.jruby.exceptions;
  * @author jpetersen
  */
 public class JumpException extends RuntimeException {
-	public static final class JumpType {
+    private static final long serialVersionUID = -228162532535826617L;
+
+    public static final class JumpType {
 		public static final JumpType BreakJump = new JumpType(0);
 		public static final JumpType NextJump = new JumpType(1);
 		public static final JumpType RedoJump = new JumpType(2);

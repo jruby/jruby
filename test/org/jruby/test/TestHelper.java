@@ -38,7 +38,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import org.jruby.IRuby;
-import org.jruby.RubyModule;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**

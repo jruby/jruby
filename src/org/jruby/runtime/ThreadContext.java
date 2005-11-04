@@ -177,10 +177,6 @@ public class ThreadContext {
 
         setPosition(frame.getPosition());
     }
-
-    public Stack getIterStack() {
-        return iterStack;
-    }
     
     public Frame getCurrentFrame() {
         return (Frame) frameStack.peek();
@@ -189,6 +185,14 @@ public class ThreadContext {
     public Frame getPreviousFrame() {
         int size = frameStack.size();
         return size <= 1 ? null : (Frame) frameStack.elementAt(size - 2);
+    }
+    
+    public Iter popIter() {
+        return (Iter) iterStack.pop();
+    }
+    
+    public void pushIter(Iter iter) {
+        iterStack.push(iter);
     }
 
     public Iter getCurrentIter() {

@@ -57,7 +57,6 @@ import org.jruby.ast.StrNode;
 import org.jruby.ast.SymbolNode;
 import org.jruby.ast.TrueNode;
 import org.jruby.common.IRubyWarnings;
-import org.jruby.common.RubyWarnings;
 import org.jruby.evaluator.Instruction;
 
 /**

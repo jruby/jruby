@@ -113,11 +113,11 @@ public class RubyMethod extends RubyObject {
         	throw getRuntime().newArgumentError("");
         }
         
-        getRuntime().getIterStack().push(getRuntime().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
+        getRuntime().getCurrentContext().pushIter(getRuntime().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
         try {
             return method.call(getRuntime(), receiver, methodName, args, false);
         } finally {
-            getRuntime().getIterStack().pop();
+            getRuntime().getCurrentContext().popIter();
         }
     }
 
@@ -135,7 +135,7 @@ public class RubyMethod extends RubyObject {
     public IRubyObject to_proc() {
     	CallbackFactory f = getRuntime().callbackFactory(RubyMethod.class);
 		IRuby r = getRuntime();
-        r.getIterStack().push(Iter.ITER_PRE);
+        r.getCurrentContext().pushIter(Iter.ITER_PRE);
 		r.getBlockStack().push(Block.createBlock(null, new IterateCallable(f.getBlockMethod("bmcall"), this), r.getTopSelf()));
 		
 		try {
@@ -157,7 +157,7 @@ public class RubyMethod extends RubyObject {
 		        }
 		    }
 		} finally {
-		    r.getIterStack().pop();
+		    r.getCurrentContext().popIter();
 		    r.getBlockStack().pop();
 		}
     }
@@ -171,12 +171,12 @@ public class RubyMethod extends RubyObject {
     	IRuby runtime = recv.getRuntime();
     	
         try {
-            runtime.getIterStack().push(Iter.ITER_CUR);
+            runtime.getCurrentContext().pushIter(Iter.ITER_CUR);
             runtime.getCurrentContext().pushFrame();
             return RubyKernel.proc(recv);
         } finally {
             runtime.getCurrentContext().popFrame();
-            runtime.getIterStack().pop();
+            runtime.getCurrentContext().popIter();
         }
     }
 

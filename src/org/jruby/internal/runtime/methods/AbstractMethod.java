@@ -50,14 +50,14 @@ public abstract class AbstractMethod extends AbstractCallable {
         ThreadContext context = runtime.getCurrentContext();
         context.pushRubyClass(implementationClass.parentModule);
 
-        context.getIterStack().push(context.getCurrentIter().isPre() ? Iter.ITER_CUR : Iter.ITER_NOT);
+        context.pushIter(context.getCurrentIter().isPre() ? Iter.ITER_CUR : Iter.ITER_NOT);
         context.pushFrame(recv, args, name, noSuper ? null : implementationClass);
 
         try {
             return internalCall(runtime, recv, name, args, noSuper);
         } finally {
             context.popFrame();
-            context.getIterStack().pop();
+            context.popIter();
             context.popRubyClass();
         }
     }

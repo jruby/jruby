@@ -422,11 +422,11 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public void callInit(IRubyObject[] args) {
-        getRuntime().getIterStack().push(getRuntime().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
+        getRuntime().getCurrentContext().pushIter(getRuntime().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
         try {
             callMethod("initialize", args);
         } finally {
-            getRuntime().getIterStack().pop();
+            getRuntime().getCurrentContext().popIter();
         }
     }
 
@@ -1012,11 +1012,11 @@ public class RubyObject implements Cloneable, IRubyObject {
         IRubyObject[] newArgs = new IRubyObject[args.length - 1];
         System.arraycopy(args, 1, newArgs, 0, newArgs.length);
 
-        getRuntime().getIterStack().push(getRuntime().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
+        getRuntime().getCurrentContext().pushIter(getRuntime().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
         try {
             return callMethod(name, newArgs, CallType.FUNCTIONAL);
         } finally {
-            getRuntime().getIterStack().pop();
+            getRuntime().getCurrentContext().popIter();
         }
     }
     

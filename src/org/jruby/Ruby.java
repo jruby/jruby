@@ -354,7 +354,7 @@ public final class Ruby implements IRuby {
         
         initLibraries();
         
-        getIterStack().push(Iter.ITER_NOT);
+        getCurrentContext().pushIter(Iter.ITER_NOT);
         getCurrentContext().pushFrame();
         Frame frame = getCurrentContext().getCurrentFrame();
         getCurrentContext().pushScope();
@@ -608,10 +608,6 @@ public final class Ruby implements IRuby {
 
     public JavaSupport getJavaSupport() {
         return javaSupport;
-    }
-
-    public Stack getIterStack() {
-        return getCurrentContext().getIterStack();
     }
 
     public BlockStack getBlockStack() {

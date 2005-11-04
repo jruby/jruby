@@ -99,12 +99,12 @@ public class Block implements StackElement {
             newBlock.self = replacementSelf;
         }
         blockStack.setCurrent(newBlock);
-        context.getIterStack().push(Iter.ITER_CUR);
+        context.pushIter(Iter.ITER_CUR);
         context.getCurrentFrame().setIter(Iter.ITER_CUR);
         try {
             return context.yield(runtime.newArray(args), null, null, false, true);
         } finally {
-            context.getIterStack().pop();
+            context.popIter();
             blockStack.setCurrent(oldBlock);
         }
     }
