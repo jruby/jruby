@@ -86,7 +86,7 @@ public class AssignmentVisitor extends AbstractVisitor {
 	 * @see AbstractVisitor#visitCallNode(CallNode)
 	 */
 	public Instruction visitCallNode(CallNode iVisited) {
-		EvaluateVisitor evaluator = EvaluateVisitor.createVisitor();
+		EvaluateVisitor evaluator = EvaluateVisitor.getInstance();
 
 		IRubyObject receiver = evaluator.eval(self.getRuntime(), self, iVisited
 				.getReceiverNode());

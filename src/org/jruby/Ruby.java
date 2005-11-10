@@ -177,7 +177,7 @@ public final class Ruby implements IRuby {
 
     public IRubyObject eval(Node node) {
         try {
-	        return EvaluateVisitor.createVisitor().eval(topSelf.getRuntime(), topSelf, node);
+	        return EvaluateVisitor.getInstance().eval(topSelf.getRuntime(), topSelf, node);
         } catch (JumpException je) {
         	if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
 	            return (IRubyObject)je.getSecondaryData();

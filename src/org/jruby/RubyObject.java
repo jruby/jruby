@@ -418,7 +418,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public IRubyObject eval(Node n) {
-        return EvaluateVisitor.createVisitor().eval(this.getRuntime(), this, n);
+        return EvaluateVisitor.getInstance().eval(this.getRuntime(), this, n);
     }
 
     public void callInit(IRubyObject[] args) {

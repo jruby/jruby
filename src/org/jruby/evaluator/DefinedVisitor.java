@@ -121,7 +121,7 @@ public class DefinedVisitor extends AbstractVisitor {
      */
     protected Instruction visitNode(Node iVisited) {
         try {
-			EvaluateVisitor.createVisitor().eval(self.getRuntime(), self,
+			EvaluateVisitor.getInstance().eval(self.getRuntime(), self,
 					iVisited);
             definition = "expression";
         } catch (JumpException jumpExcptn) {
@@ -161,7 +161,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	public Instruction visitCallNode(CallNode iVisited) {
 		if (getDefinition(iVisited.getReceiverNode()) != null) {
 			try {
-				IRubyObject receiver = EvaluateVisitor.createVisitor().eval(
+				IRubyObject receiver = EvaluateVisitor.getInstance().eval(
 						self.getRuntime(), self, iVisited.getReceiverNode());
 				RubyClass metaClass = receiver.getMetaClass();
 				ICallable method = metaClass.searchMethod(iVisited.getName());
@@ -414,7 +414,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	 */
 	public Instruction visitColon2Node(Colon2Node iVisited) {
 		try {
-			IRubyObject left = EvaluateVisitor.createVisitor().eval(
+			IRubyObject left = EvaluateVisitor.getInstance().eval(
 					self.getRuntime(), self, iVisited.getLeftNode());
 			if (left instanceof RubyModule) {
 				if (((RubyModule) left).getConstantAt(iVisited.getName()) != null) {

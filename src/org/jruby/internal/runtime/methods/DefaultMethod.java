@@ -149,7 +149,7 @@ public final class DefaultMethod extends AbstractMethod {
 
                 // assign the default values.
                 while (iter.hasNext()) {
-                    EvaluateVisitor.createVisitor().eval(receiver.getRuntime(), receiver, (Node)iter.next());
+                    EvaluateVisitor.getInstance().eval(receiver.getRuntime(), receiver, (Node)iter.next());
                 }
             }
 

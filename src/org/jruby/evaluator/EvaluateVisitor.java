@@ -173,7 +173,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public final class EvaluateVisitor implements NodeVisitor {
 	private static final EvaluateVisitor evaluator = new EvaluateVisitor();
 	
-    public static EvaluateVisitor createVisitor() {
+    public static EvaluateVisitor getInstance() {
         return evaluator;
     }
 
