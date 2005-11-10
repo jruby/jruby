@@ -159,7 +159,7 @@ public class AssignmentVisitor extends AbstractVisitor {
 	 * @see AbstractVisitor#visitLocalAsgnNode(LocalAsgnNode)
 	 */
 	public Instruction visitLocalAsgnNode(LocalAsgnNode iVisited) {
-		runtime.getCurrentScope().setValue(iVisited.getCount(), value);
+		runtime.getCurrentContext().getCurrentScope().setValue(iVisited.getCount(), value);
 		return null;
 	}
 

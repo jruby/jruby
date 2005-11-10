@@ -69,7 +69,7 @@ public class RubyProc extends RubyObject {
         	// TODO: warn "tried to create Proc object without a block"
         }
         
-        Block block = (Block) runtime.getCurrentContext().peekBlock();
+        Block block = (Block) runtime.getCurrentContext().getCurrentBlock();
         
         if (!isLambda && block.getBlockObject() instanceof RubyProc) {
         	return (RubyProc) block.getBlockObject();
@@ -78,7 +78,7 @@ public class RubyProc extends RubyObject {
         RubyProc newProc = new RubyProc(runtime, runtime.getClass("Proc"));
 
         newProc.block = block.cloneBlock();
-        newProc.wrapper = runtime.getWrapper();
+        newProc.wrapper = runtime.getCurrentContext().getWrapper();
         newProc.block.setIter(newProc.block.getNext() != null ? Iter.ITER_PRE : Iter.ITER_NOT);
         newProc.block.isLambda = isLambda;
         block.setBlockObject(newProc);

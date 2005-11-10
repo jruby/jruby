@@ -192,11 +192,11 @@ public class RubyGlobal {
         }
 
         public IRubyObject get() {
-            return runtime.getLastline();
+            return runtime.getCurrentContext().getLastline();
         }
 
         public IRubyObject set(IRubyObject value) {
-            runtime.setLastline(value);
+            runtime.getCurrentContext().setLastline(value);
             return value;
         }
     }

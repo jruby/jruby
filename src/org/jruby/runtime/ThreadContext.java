@@ -119,7 +119,7 @@ public class ThreadContext {
         return (Block)blockStack.pop();
     }
     
-    public Block peekBlock() {
+    public Block getCurrentBlock() {
         return (Block)blockStack.peek();
     }
     
@@ -161,6 +161,14 @@ public class ThreadContext {
     
     public void popScope() {
         scopeStack.pop();
+    }
+
+    public IRubyObject getLastline() {
+        return getCurrentScope().getLastLine();
+    }
+
+    public void setLastline(IRubyObject value) {
+        getCurrentScope().setLastLine(value);
     }
     
     public void pushFrameCopy() {
@@ -211,7 +219,7 @@ public class ThreadContext {
         return (Iter) iterStack.peek();
     }
 
-    public Scope currentScope() {
+    public Scope getCurrentScope() {
         return (Scope) scopeStack.peek();
     }
 
@@ -224,14 +232,11 @@ public class ThreadContext {
     }
 
     public IRubyObject getBackref() {
-        if (currentScope().hasLocalVariables()) {
-            return currentScope().getValue(1);
-        }
-        return runtime.getNil();
+        return getCurrentScope().getBackref();
     }
 
     public Visibility getCurrentVisibility() {
-        return currentScope().getVisibility();
+        return getCurrentScope().getVisibility();
     }
 
     public IRubyObject callSuper(IRubyObject[] args) {

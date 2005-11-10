@@ -80,7 +80,7 @@ public final class DefaultMethod extends AbstractMethod {
         
         context.pushScope();
         
-        Scope scope = context.currentScope();
+        Scope scope = context.getCurrentScope();
         if (body.getLocalNames() != null) {
             scope.resetLocalVariables(body.getLocalNames());
         }

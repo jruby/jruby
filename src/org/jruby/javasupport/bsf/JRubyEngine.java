@@ -70,7 +70,7 @@ public class JRubyEngine extends BSFEngineImpl {
             threadContext.pushFrame();
             threadContext.pushDynamicVars();
             threadContext.pushScope(paramNames);
-            Scope scope = threadContext.currentScope();
+            Scope scope = threadContext.getCurrentScope();
 
             // set global variables
             for (int i = 0, size = args.size(); i < size; i++) {

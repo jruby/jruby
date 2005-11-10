@@ -340,7 +340,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
             // TODO: Add safety check for taintedness
             
-            Block block = (Block) state.threadContext.peekBlock();
+            Block block = (Block) state.threadContext.getCurrentBlock();
             if (block != null) {
                 IRubyObject blockObject = block.getBlockObject();
                 // The current block is already associated with the proc.  No need to create new
@@ -920,28 +920,28 @@ public final class EvaluateVisitor implements NodeVisitor {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		FlipNode iVisited = (FlipNode)ctx;
             if (iVisited.isExclusive()) {
-                if (! state.runtime.getCurrentScope().getValue(iVisited.getCount()).isTrue()) {
+                if (! state.runtime.getCurrentContext().getCurrentScope().getValue(iVisited.getCount()).isTrue()) {
                     //Benoit: I don't understand why the state.result is inversed
                     state.setResult(state.begin(iVisited.getBeginNode()).isTrue() ? state.runtime.getFalse() : state.runtime.getTrue());
-                    state.runtime.getCurrentScope().setValue(iVisited.getCount(), state.getResult());
+                    state.runtime.getCurrentContext().getCurrentScope().setValue(iVisited.getCount(), state.getResult());
                 } else {
                     if (state.begin(iVisited.getEndNode()).isTrue()) {
-                        state.runtime.getCurrentScope().setValue(iVisited.getCount(), state.runtime.getFalse());
+                        state.runtime.getCurrentContext().getCurrentScope().setValue(iVisited.getCount(), state.runtime.getFalse());
                     }
                     state.setResult(state.runtime.getTrue());
                 }
             } else {
-                if (! state.runtime.getCurrentScope().getValue(iVisited.getCount()).isTrue()) {
+                if (! state.runtime.getCurrentContext().getCurrentScope().getValue(iVisited.getCount()).isTrue()) {
                     if (state.begin(iVisited.getBeginNode()).isTrue()) {
                         //Benoit: I don't understand why the state.result is inversed
-                        state.runtime.getCurrentScope().setValue(iVisited.getCount(), state.begin(iVisited.getEndNode()).isTrue() ? state.runtime.getFalse() : state.runtime.getTrue());
+                        state.runtime.getCurrentContext().getCurrentScope().setValue(iVisited.getCount(), state.begin(iVisited.getEndNode()).isTrue() ? state.runtime.getFalse() : state.runtime.getTrue());
                         state.setResult(state.runtime.getTrue());
                     } else {
                         state.setResult(state.runtime.getFalse());
                     }
                 } else {
                     if (state.begin(iVisited.getEndNode()).isTrue()) {
-                        state.runtime.getCurrentScope().setValue(iVisited.getCount(), state.runtime.getFalse());
+                        state.runtime.getCurrentContext().getCurrentScope().setValue(iVisited.getCount(), state.runtime.getFalse());
                     }
                     state.setResult(state.runtime.getTrue());
                 }
@@ -1148,7 +1148,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class LocalAsgnNodeVisitor1 implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		LocalAsgnNode iVisited = (LocalAsgnNode)ctx;
-            state.runtime.getCurrentScope().setValue(iVisited.getCount(), state.getResult());
+            state.runtime.getCurrentContext().getCurrentScope().setValue(iVisited.getCount(), state.getResult());
     	}
     }
     private static final LocalAsgnNodeVisitor1 localAsgnNodeVisitor1 = new LocalAsgnNodeVisitor1();
@@ -1166,7 +1166,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class LocalVarNodeVisitor implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		LocalVarNode iVisited = (LocalVarNode)ctx;
-            state.setResult(state.runtime.getCurrentScope().getValue(iVisited.getCount()));
+            state.setResult(state.runtime.getCurrentContext().getCurrentScope().getValue(iVisited.getCount()));
     	}
     }
     private static final LocalVarNodeVisitor localVarNodeVisitor = new LocalVarNodeVisitor();

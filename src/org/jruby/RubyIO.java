@@ -539,7 +539,7 @@ public class RubyIO extends RubyObject {
      */
     public IRubyObject print(IRubyObject[] args) {
         if (args.length == 0) {
-            args = new IRubyObject[] { getRuntime().getLastline() };
+            args = new IRubyObject[] { getRuntime().getCurrentContext().getLastline() };
         }
 
         IRubyObject fs = getRuntime().getGlobalVariables().get("$,");
@@ -748,7 +748,7 @@ public class RubyIO extends RubyObject {
         IRubyObject result = internalGets(args);
 
         if (!result.isNil()) {
-            getRuntime().setLastline(result);
+            getRuntime().getCurrentContext().setLastline(result);
         }
 
         return result;

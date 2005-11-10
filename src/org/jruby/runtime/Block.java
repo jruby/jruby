@@ -61,7 +61,7 @@ public class Block implements StackElement {
                          method,
                          self,
                          context.getCurrentFrame(),
-                         context.currentScope(),
+                         context.getCurrentScope(),
                          context.getRubyClass(),
                          context.getCurrentIter(),
                          context.getCurrentDynamicVars());
@@ -92,7 +92,7 @@ public class Block implements StackElement {
     public IRubyObject call(IRubyObject[] args, IRubyObject replacementSelf) {
         IRuby runtime = self.getRuntime();
         ThreadContext context = runtime.getCurrentContext();
-        Block oldBlock = context.peekBlock();
+        Block oldBlock = context.getCurrentBlock();
         Block newBlock = this.cloneBlock();
         if (replacementSelf != null) {
             newBlock.self = replacementSelf;

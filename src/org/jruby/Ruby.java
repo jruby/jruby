@@ -68,7 +68,6 @@ import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.ObjectSpace;
-import org.jruby.runtime.Scope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -267,18 +266,18 @@ public final class Ruby implements IRuby {
      * new module is created.
      */
     public RubyModule getOrCreateModule(String name) {
-        RubyModule module = (RubyModule) getRubyClass().getConstant(name, false);
+        RubyModule module = (RubyModule) getCurrentContext().getRubyClass().getConstant(name, false);
         
         if (module == null) {
-            module = (RubyModule) getRubyClass().setConstant(name, 
+            module = (RubyModule) getCurrentContext().getRubyClass().setConstant(name, 
             		defineModule(name)); 
         } else if (getSafeLevel() >= 4) {
         	throw newSecurityError("Extending module prohibited.");
         }
 
-        if (getWrapper() != null) {
-            module.getSingletonClass().includeModule(getWrapper());
-            module.includeModule(getWrapper());
+        if (getCurrentContext().getWrapper() != null) {
+            module.getSingletonClass().includeModule(getCurrentContext().getWrapper());
+            module.includeModule(getCurrentContext().getWrapper());
         }
         return module;
     }
@@ -554,25 +553,18 @@ public final class Ruby implements IRuby {
         errnoModule.defineClassUnder(name, systemCallError).defineConstant("Errno", newFixnum(i));
     }
     
-	/**
-	 * Get top-most (current) scope (local vars) in the current thread context.
-	 */
-	public Scope getCurrentScope() {
-		return getCurrentContext().currentScope();
-	}
-
-    /** Getter for property sourceFile.
+	/** Getter for property sourceFile.
      * @return Value of property sourceFile.
      */
     public String getSourceFile() {
-        return getPosition().getFile();
+        return getCurrentContext().getPosition().getFile();
     }
 
     /** Getter for property sourceLine.
      * @return Value of property sourceLine.
      */
     public int getSourceLine() {
-        return getPosition().getEndLine();
+        return getCurrentContext().getPosition().getEndLine();
     }
 
     /** Getter for property isVerbose.
@@ -601,27 +593,16 @@ public final class Ruby implements IRuby {
         this.verbose = verbose;
     }
 
-    public RubyModule getRubyClass() {
-        return getCurrentContext().getRubyClass();
-    }
-
     public JavaSupport getJavaSupport() {
         return javaSupport;
     }
 
     public Visibility getCurrentVisibility() {
-        return getCurrentScope().getVisibility();
+        return getCurrentContext().getCurrentScope().getVisibility();
     }
 
     public void setCurrentVisibility(Visibility visibility) {
-        getCurrentScope().setVisibility(visibility);
-    }
-
-    /** Getter for property wrapper.
-     * @return Value of property wrapper.
-     */
-    public RubyModule getWrapper() {
-        return getCurrentContext().getWrapper();
+        getCurrentContext().getCurrentScope().setVisibility(visibility);
     }
 
     /** Defines a global variable
@@ -653,18 +634,6 @@ public final class Ruby implements IRuby {
         return parser.parse(file, content);
     }
 
-    public IRubyObject getLastline() {
-        return getCurrentScope().getLastLine();
-    }
-
-    public void setLastline(IRubyObject value) {
-        getCurrentScope().setLastLine(value);
-    }
-
-    public IRubyObject getBackref() {
-        return getCurrentScope().getBackref();
-    }
-
     public Parser getParser() {
         return parser;
     }
@@ -675,14 +644,6 @@ public final class Ruby implements IRuby {
 
     public ThreadContext getCurrentContext() {
         return threadService.getCurrentContext();
-    }
-
-    public ISourcePosition getPosition() {
-        return getCurrentContext().getPosition();
-    }
-
-    public void setPosition(ISourcePosition position) {
-        getCurrentContext().setPosition(position);
     }
 
     /**
@@ -737,7 +698,7 @@ public final class Ruby implements IRuby {
 
         if (backtrace.isNil()) {
             if (getSourceFile() != null) {
-                getErrorStream().print(getPosition());
+                getErrorStream().print(getCurrentContext().getPosition());
             } else {
                 getErrorStream().print(getSourceLine());
             }
@@ -805,10 +766,10 @@ public final class Ruby implements IRuby {
     private void printErrorPos() {
         if (getSourceFile() != null) {
             if (getCurrentContext().getCurrentFrame().getLastFunc() != null) {
-                getErrorStream().print(getPosition());
+                getErrorStream().print(getCurrentContext().getPosition());
                 getErrorStream().print(":in '" + getCurrentContext().getCurrentFrame().getLastFunc() + '\'');
             } else if (getSourceLine() != 0) {
-                getErrorStream().print(getPosition());
+                getErrorStream().print(getCurrentContext().getPosition());
             } else {
                 getErrorStream().print(getSourceFile());
             }
@@ -944,7 +905,7 @@ public final class Ruby implements IRuby {
         if (!isWithinTrace && traceFunction != null) {
             isWithinTrace = true;
 
-            ISourcePosition savePosition = getPosition();
+            ISourcePosition savePosition = getCurrentContext().getPosition();
             String file = position.getFile();
 
             if (file == null) {
@@ -966,7 +927,7 @@ public final class Ruby implements IRuby {
                         type });
             } finally {
                 getCurrentContext().popFrame();
-                setPosition(savePosition);
+                getCurrentContext().setPosition(savePosition);
                 isWithinTrace = false;
             }
         }

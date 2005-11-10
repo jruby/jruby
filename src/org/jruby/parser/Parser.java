@@ -59,7 +59,7 @@ public class Parser {
     }
 
     private Node parse(String file, Reader content, RubyParserConfiguration config) {
-        config.setLocalVariables(runtime.getCurrentScope().getLocalNames());
+        config.setLocalVariables(runtime.getCurrentContext().getCurrentScope().getLocalNames());
         
         DefaultRubyParser parser = null;
         RubyParserResult result = null;
@@ -92,11 +92,11 @@ public class Parser {
 
     private void expandLocalVariables(List localVariables) {
         int oldSize = 0;
-        if (runtime.getCurrentScope().getLocalNames() != null) {
-            oldSize = runtime.getCurrentScope().getLocalNames().size();
+        if (runtime.getCurrentContext().getCurrentScope().getLocalNames() != null) {
+            oldSize = runtime.getCurrentContext().getCurrentScope().getLocalNames().size();
         }
         List newNames = localVariables.subList(oldSize, localVariables.size());
-        runtime.getCurrentScope().addLocalVariables(newNames);
+        runtime.getCurrentContext().getCurrentScope().addLocalVariables(newNames);
     }
 
     private boolean hasNewLocalVariables(RubyParserResult result) {
@@ -105,8 +105,8 @@ public class Parser {
             newSize = result.getLocalVariables().size();
         }
         int oldSize = 0;
-        if (runtime.getCurrentScope().hasLocalVariables()) {
-            oldSize = runtime.getCurrentScope().getLocalNames().size();
+        if (runtime.getCurrentContext().getCurrentScope().hasLocalVariables()) {
+            oldSize = runtime.getCurrentContext().getCurrentScope().getLocalNames().size();
         }
         return newSize > oldSize;
     }

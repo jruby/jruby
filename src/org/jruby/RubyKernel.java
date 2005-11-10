@@ -208,7 +208,7 @@ public class RubyKernel {
 
         IRubyObject line = argsFile.internalGets(args);
 
-        recv.getRuntime().setLastline(line);
+        recv.getRuntime().getCurrentContext().setLastline(line);
 
         return line;
     }
@@ -308,7 +308,7 @@ public class RubyKernel {
      * @return value of $_ as String.
      */
     private static RubyString getLastlineString(IRuby runtime) {
-        IRubyObject line = runtime.getLastline();
+        IRubyObject line = runtime.getCurrentContext().getLastline();
 
         if (line.isNil()) {
             throw runtime.newTypeError("$_ value need to be String (nil given).");
@@ -327,7 +327,7 @@ public class RubyKernel {
         RubyString str = (RubyString) getLastlineString(recv.getRuntime()).dup();
 
         if (!str.sub_bang(args).isNil()) {
-            recv.getRuntime().setLastline(str);
+            recv.getRuntime().getCurrentContext().setLastline(str);
         }
 
         return str;
@@ -341,7 +341,7 @@ public class RubyKernel {
         RubyString str = (RubyString) getLastlineString(recv.getRuntime()).dup();
 
         if (!str.gsub_bang(args).isNil()) {
-            recv.getRuntime().setLastline(str);
+            recv.getRuntime().getCurrentContext().setLastline(str);
         }
 
         return str;
@@ -357,7 +357,7 @@ public class RubyKernel {
         if (str.getValue().length() > 0) {
             str = (RubyString) str.dup();
             str.chop_bang();
-            recv.getRuntime().setLastline(str);
+            recv.getRuntime().getCurrentContext().setLastline(str);
         }
 
         return str;
@@ -375,7 +375,7 @@ public class RubyKernel {
             return str;
         } 
 
-        recv.getRuntime().setLastline(dup);
+        recv.getRuntime().getCurrentContext().setLastline(dup);
         return dup;
     }
 
@@ -441,9 +441,9 @@ public class RubyKernel {
         final IRuby runtime = recv.getRuntime();
         RubyArray localVariables = runtime.newArray();
 
-        if (runtime.getCurrentScope().getLocalNames() != null) {
-            for (int i = 2; i < runtime.getCurrentScope().getLocalNames().size(); i++) {
-				String variableName = (String) runtime.getCurrentScope().getLocalNames().get(i);
+        if (runtime.getCurrentContext().getCurrentScope().getLocalNames() != null) {
+            for (int i = 2; i < runtime.getCurrentContext().getCurrentScope().getLocalNames().size(); i++) {
+				String variableName = (String) runtime.getCurrentContext().getCurrentScope().getLocalNames().get(i);
                 if (variableName != null) {
                     localVariables.append(runtime.newString(variableName));
                 }

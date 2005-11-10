@@ -85,7 +85,7 @@ public class Split {
 		int len = splitee.length();
 		while ((beg = pattern.searchAgain(splitee)) > -1) {
 			hits++;
-			RubyMatchData matchData = (RubyMatchData) runtime.getBackref();
+			RubyMatchData matchData = (RubyMatchData) runtime.getCurrentContext().getBackref();
 			int end = matchData.matchEndPosition();
 
 			// Skip first positive lookahead match

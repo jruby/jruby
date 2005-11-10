@@ -240,7 +240,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      * 
      */
     public static IRubyObject last_match_s(IRubyObject recv) {
-        return recv.getRuntime().getBackref();
+        return recv.getRuntime().getCurrentContext().getBackref();
     }
 
     /** rb_reg_equal
@@ -271,7 +271,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      * 
      */
     public IRubyObject match2() {
-        IRubyObject target = getRuntime().getLastline();
+        IRubyObject target = getRuntime().getCurrentContext().getLastline();
         
         return target instanceof RubyString ? match(target) : getRuntime().getNil();
     }
@@ -297,7 +297,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             return target;
         }
         IRubyObject result = match(target);
-        return result.isNil() ? result : getRuntime().getBackref().rbClone();
+        return result.isNil() ? result : getRuntime().getCurrentContext().getBackref().rbClone();
     }
 
     /** rb_reg_source
@@ -376,7 +376,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
         // If nothing match then nil will be returned
         IRubyObject result = match(str, pos);
-        getRuntime().getCurrentScope().setBackref(result);
+        getRuntime().getCurrentContext().getCurrentScope().setBackref(result);
 
         // If nothing match then -1 will be returned
         return result instanceof RubyMatchData ? ((RubyMatchData) result).matchStartPosition() : -1;
@@ -406,7 +406,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 		
 		RubyMatchData match = new RubyMatchData(getRuntime(), target, begin, end);
 
-		getRuntime().getCurrentScope().setBackref(match);
+		getRuntime().getCurrentContext().getCurrentScope().setBackref(match);
             
 		return match.matchStartPosition(); 
     }

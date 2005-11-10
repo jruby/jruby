@@ -57,11 +57,11 @@ public class RubyWarnings implements IRubyWarnings {
     }
 
     public void warn(String message) {
-        warn(runtime.getPosition(), message);
+        warn(runtime.getCurrentContext().getPosition(), message);
     }
 
     public void warning(String message) {
-        warning(runtime.getPosition(), message);
+        warning(runtime.getCurrentContext().getPosition(), message);
     }
     
     public void warning(ISourcePosition position, String message) {

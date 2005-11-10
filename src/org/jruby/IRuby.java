@@ -21,7 +21,6 @@ import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.ObjectSpace;
-import org.jruby.runtime.Scope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -124,13 +123,8 @@ public interface IRuby {
 	 * @return Value of property rubyTopSelf.
 	 */
 	public IRubyObject getTopSelf();
-
-	/**
-	 * Get top-most (current) scope (local vars) in the current thread context.
-	 */
-	public Scope getCurrentScope();
-
-	/** Getter for property sourceFile.
+    
+    /** Getter for property sourceFile.
 	 * @return Value of property sourceFile.
 	 */
 	public String getSourceFile();
@@ -154,20 +148,13 @@ public interface IRuby {
 	 */
 	public void setVerbose(IRubyObject verbose);
 
-	public RubyModule getRubyClass();
-
-	public JavaSupport getJavaSupport();
+    public JavaSupport getJavaSupport();
 
 	public Visibility getCurrentVisibility();
 
 	public void setCurrentVisibility(Visibility visibility);
 
-	/** Getter for property wrapper.
-	 * @return Value of property wrapper.
-	 */
-	public RubyModule getWrapper();
-
-	/** Defines a global variable
+    /** Defines a global variable
 	 */
 	public void defineVariable(final GlobalVariable variable);
 
@@ -180,23 +167,13 @@ public interface IRuby {
 
 	public Node parse(String content, String file);
 
-	public IRubyObject getLastline();
-
-	public void setLastline(IRubyObject value);
-
-	public IRubyObject getBackref();
-
-	public Parser getParser();
+    public Parser getParser();
 
 	public ThreadService getThreadService();
 
 	public ThreadContext getCurrentContext();
 
-	public ISourcePosition getPosition();
-
-	public void setPosition(ISourcePosition position);
-
-	/**
+    /**
 	 * Returns the loadService.
 	 * @return ILoadService
 	 */
