@@ -20,6 +20,7 @@
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Kiel Hodges <jruby-devel@selfsosoft.com>
  * Copyright (C) 2005 Jason Voegele <jason@jvoegele.com>
+ * Copyright (C) 2005 Tim Azzopardi <tim@tigerfive.com>
  *  
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -103,10 +104,11 @@ public class Main {
 
     public static void printUsage() {
         if (!hasPrintedUsage) {
-            System.out.println("Usage: jruby [switches] [rubyfile.rb] [arguments]");
+            System.out.println("Usage: jruby [switches] [--] [rubyfile.rb] [arguments]");
             System.out.println("    -e 'command'    one line of script. Several -e's allowed. Omit [programfile]");
             System.out.println("    -b              benchmark mode, times the script execution");
             System.out.println("    -Idirectory     specify $LOAD_PATH directory (may be used more than once)");
+            System.out.println("    --              optional -- before rubyfile.rb for compatibility with ruby");
             hasPrintedUsage = true;
         }
     }

@@ -13,6 +13,7 @@
  *
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2005 Jason Voegele <jason@jvoegele.com>
+ * Copyright (C) 2005 Tim Azzopardi <tim@tigerfive.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -55,6 +56,29 @@ public class TestCommandlineParser extends TestCase {
         assertEquals("-", c.displayedFileName());
     }
 
+
+    
+    public void testParsingWithDashDash() {
+      class TestableCommandlineParser extends CommandlineParser {
+
+        public TestableCommandlineParser(String[] arguments) {
+          super(arguments);
+        }
+        protected void systemExit() {
+          throw new IllegalStateException("Real CommandlineParser would perform " +
+              "System.exit() because of a command line option error.");
+        }
+      }      
+      CommandlineParser c = new TestableCommandlineParser(new String[] { "-I", "someLoadPath", "--", "simple.rb", "-v", "--version" });
+      assertEquals("someLoadPath", c.loadPaths().get(0));
+      assertEquals("simple.rb",c.getScriptFileName());
+      assertEquals("simple.rb", c.displayedFileName());
+      assertTrue("Should not be verbose. The -v flag should be a parameter to the script, not the jruby interpreter", !c.isVerbose());
+      assertEquals("Script should have two parameters",2,c.getScriptArguments().length);
+      assertEquals("-v",c.getScriptArguments()[0]);
+      assertEquals("--version",c.getScriptArguments()[1]);
+    }    
+    
     public void testPrintVersionDoesNotRunInterpreter() {
         String[] args = new String[] { "-v" };
         CommandlineParser parser = new CommandlineParser(args);

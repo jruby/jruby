@@ -15,6 +15,7 @@
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Jason Voegele <jason@jvoegele.com>
+ * Copyright (C) 2005 Tim Azzopardi <tim@tigerfive.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -131,12 +132,26 @@ public class CommandlineParser {
                     if (argument.equals("--version")) {
                         setShowVersion(true);
                         break FOR;
+                    } else {
+                        if (argument.equals("--")) {
+                            // ruby interpreter compatibilty 
+                            // Usage: ruby [switches] [--] [programfile] [arguments])
+                            break FOR;
+                        }                    	
                     }
                 default :
                     System.err.println("unknown option " + argument.charAt(characterIndex));
-                    System.exit(1);
+                    systemExit();
             }
         }
+    }
+
+    /**
+     * Perform system.exit().
+     * This method exists so that unit tests can override it.
+     */
+    protected void systemExit() {
+      System.exit(1);
     }
 
     private String grabValue(String errorMessage) {
@@ -151,7 +166,7 @@ public class CommandlineParser {
 		System.err.println("invalid argument " + argumentIndex);
 		System.err.println(errorMessage);
 		Main.printUsage();
-		System.exit(1);
+		systemExit();
         return null;
     }
 
@@ -190,7 +205,7 @@ public class CommandlineParser {
                 return new BufferedReader(new FileReader(file));
             } catch (IOException e) {
                 System.err.println("Error opening script file: " + e.getMessage());
-                System.exit(1);
+                systemExit();
             }
         }
         assert false;
