@@ -19,6 +19,7 @@
  * Copyright (C) 2004 Joey Gibson <joey@joeygibson.com>
  * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 David Corbin <dcorbin@users.sf.net>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -34,6 +35,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.PrintStream;
+
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -45,6 +48,9 @@ public class RubyException extends RubyObject {
 
     private RubyArray backtrace;
     public IRubyObject message;
+	public static final int TRACE_HEAD = 8;
+	public static final int TRACE_TAIL = 4;
+	public static final int TRACE_MAX = TRACE_HEAD + TRACE_TAIL + 6;
 
     protected RubyException(IRuby runtime, RubyClass rubyClass) {
         this(runtime, rubyClass, null);
@@ -165,4 +171,26 @@ public class RubyException extends RubyObject {
         sb.append(">");
         return getRuntime().newString(sb.toString());
     }
+
+	public void printBacktrace(PrintStream errorStream) {
+	    RubyArray backtrace = (RubyArray) backtrace();
+		IRubyObject[] elements = backtrace.toJavaArray();
+	
+		for (int i = 1; i < elements.length; i++) {
+		    IRubyObject stackTraceLine = elements[i];
+			if (stackTraceLine instanceof RubyString) {
+		        printStackTraceLine(errorStream, stackTraceLine);
+		    }
+	
+		    if (i == RubyException.TRACE_HEAD && elements.length > RubyException.TRACE_MAX) {
+		        int hiddenLevels = elements.length - RubyException.TRACE_HEAD - RubyException.TRACE_TAIL;
+				errorStream.print("\t ... " + hiddenLevels + " levels...\n");
+		        i = elements.length - RubyException.TRACE_TAIL;
+		    }
+		}
+	}
+
+	private void printStackTraceLine(PrintStream errorStream, IRubyObject stackTraceLine) {
+		errorStream.print("\tfrom " + stackTraceLine + '\n');
+	}
 }

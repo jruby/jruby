@@ -681,36 +681,34 @@ public final class Ruby implements IRuby {
         return (RubyModule) type;
     }
     
-    private static final int TRACE_HEAD = 8;
-    private static final int TRACE_TAIL = 5;
-    private static final int TRACE_MAX = TRACE_HEAD + TRACE_TAIL + 5;
     /** Prints an error with backtrace to the error stream.
      *
      * MRI: eval.c - error_print()
      *
      */
     public void printError(RubyException excp) {
-        if (excp == null || excp.isNil()) {
+		if (excp == null || excp.isNil()) {
             return;
         }
 
         RubyArray backtrace = (RubyArray) excp.callMethod("backtrace");
 
-        if (backtrace.isNil()) {
+        PrintStream errorStream = getErrorStream();
+		if (backtrace.isNil()) {
             if (getSourceFile() != null) {
-                getErrorStream().print(getCurrentContext().getPosition());
+                errorStream.print(getCurrentContext().getPosition());
             } else {
-                getErrorStream().print(getSourceLine());
+                errorStream.print(getSourceLine());
             }
         } else if (backtrace.getLength() == 0) {
-            printErrorPos();
+            printErrorPos(errorStream);
         } else {
             IRubyObject mesg = backtrace.first(IRubyObject.NULL_ARRAY);
 
             if (mesg.isNil()) {
-                printErrorPos();
+                printErrorPos(errorStream);
             } else {
-                getErrorStream().print(mesg);
+                errorStream.print(mesg);
             }
         }
 
@@ -718,12 +716,12 @@ public final class Ruby implements IRuby {
         String info = excp.toString();
 
         if (type == getClass("RuntimeError") && (info == null || info.length() == 0)) {
-            getErrorStream().print(": unhandled exception\n");
+            errorStream.print(": unhandled exception\n");
         } else {
             String path = type.getName();
 
             if (info.length() == 0) {
-                getErrorStream().print(": " + path + '\n');
+                errorStream.print(": " + path + '\n');
             } else {
                 if (path.startsWith("#")) {
                     path = null;
@@ -735,43 +733,32 @@ public final class Ruby implements IRuby {
                     info = info.substring(0, info.indexOf("\n"));
                 }
 
-                getErrorStream().print(": " + info);
+                errorStream.print(": " + info);
 
                 if (path != null) {
-                    getErrorStream().print(" (" + path + ")\n");
+                    errorStream.print(" (" + path + ")\n");
                 }
 
                 if (tail != null) {
-                    getErrorStream().print(tail + '\n');
+                    errorStream.print(tail + '\n');
                 }
             }
         }
 
         if (!backtrace.isNil()) {
-            IRubyObject[] elements = backtrace.toJavaArray();
-
-            for (int i = 1; i < elements.length; i++) {
-                if (elements[i] instanceof RubyString) {
-                    getErrorStream().print("\tfrom " + elements[i] + '\n');
-                }
-
-                if (i == TRACE_HEAD && elements.length > TRACE_MAX) {
-                    getErrorStream().print("\t ... " + (elements.length - TRACE_HEAD - TRACE_TAIL) + "levels...\n");
-                    i = elements.length - TRACE_TAIL;
-                }
-            }
+            excp.printBacktrace(errorStream);
         }
-    }
+	}
 
-    private void printErrorPos() {
+	private void printErrorPos(PrintStream errorStream) {
         if (getSourceFile() != null) {
             if (getCurrentContext().getCurrentFrame().getLastFunc() != null) {
-                getErrorStream().print(getCurrentContext().getPosition());
-                getErrorStream().print(":in '" + getCurrentContext().getCurrentFrame().getLastFunc() + '\'');
+            	errorStream.print(getCurrentContext().getPosition());
+            	errorStream.print(":in '" + getCurrentContext().getCurrentFrame().getLastFunc() + '\'');
             } else if (getSourceLine() != 0) {
-                getErrorStream().print(getCurrentContext().getPosition());
+                errorStream.print(getCurrentContext().getPosition());
             } else {
-                getErrorStream().print(getSourceFile());
+            	errorStream.print(getSourceFile());
             }
         }
     }

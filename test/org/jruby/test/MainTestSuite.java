@@ -64,6 +64,7 @@ public class MainTestSuite extends TestSuite {
         suite.addTest(JavaSupportTestSuite.suite());
         suite.addTest(new TestSuite(TestIdentitySet.class));
         suite.addTest(new TestSuite(TestCommandlineParser.class));
+        suite.addTest(new TestSuite(TestRubyException.class));
         return suite;
     }
 }
