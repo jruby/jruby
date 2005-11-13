@@ -1323,6 +1323,10 @@ public class RubyModule extends RubyObject {
     public IRubyObject included(IRubyObject other) {
         return getRuntime().getNil();
     }
+    
+    public IRubyObject extended(IRubyObject other) {
+        return getRuntime().getNil();
+    }
 
     private void setVisibility(IRubyObject[] args, Visibility visibility) {
         if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {

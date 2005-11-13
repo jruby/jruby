@@ -859,6 +859,12 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public RubyBoolean kind_of(IRubyObject type) {
+        // TODO: Generalize this type-checking code into IRubyObject helper.
+        if (!type.isKindOf(getRuntime().getClass("Module"))) {
+            // TODO: newTypeError does not offer enough for ruby error string...
+            throw getRuntime().newTypeError(type, getRuntime().getClass("Module"));
+        }
+
         return getRuntime().newBoolean(isKindOf((RubyModule)type));
     }
 
@@ -942,16 +948,20 @@ public class RubyObject implements Cloneable, IRubyObject {
         return specificEval(getSingletonClass(), args);
     }
 
-    /**
-     *  @fixme: Check_Type?
-     **/
     public IRubyObject extend(IRubyObject[] args) {
-        if (args.length == 0) {
-            throw getRuntime().newArgumentError("wrong # of arguments");
+        checkArgumentCount(args, 1, -1);
+        
+        // Make sure all arguments are modules before calling the callbacks
+        RubyClass module = getRuntime().getClass("Module");
+        for (int i = 0; i < args.length; i++) {
+            if (!args[i].isKindOf(module)) {
+                throw getRuntime().newTypeError(args[i], module);
+            }
         }
-        // FIXME: Check_Type?
+        
         for (int i = 0; i < args.length; i++) {
             args[i].callMethod("extend_object", this);
+            args[i].callMethod("extended", this);
         }
         return this;
     }
