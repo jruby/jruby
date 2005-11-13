@@ -126,17 +126,17 @@ public class LoadService {
         if (builtinLibraries.containsKey(file)) {
             return (Library) builtinLibraries.get(file);
         }
-        URL url = findFile(file);
-        if (url == null) {
+        LoadServiceResource resource = findFile(file);
+        if (resource == null) {
             return null;
         }
 
         if (file.endsWith(".jar")) {
-            return new JarredScript(url);
+            return new JarredScript(resource);
         } else if (file.endsWith(".rb.ast.ser")) {
-        	return new PreparsedScript(url);
+        	return new PreparsedScript(resource);
         } else {
-            return new ExternalScript(url, file);
+            return new ExternalScript(resource, file);
         }
     }
 
@@ -193,10 +193,10 @@ public class LoadService {
      * @param name the file to find, this is a path name
      * @return the correct file
      */
-    private URL findFile(String name) {
+    private LoadServiceResource findFile(String name) {
         try {
             if (name.startsWith("jar:")) {
-                return new URL(name);
+                return new LoadServiceResource(new URL(name), name);
             }
 
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader(); 
@@ -206,7 +206,7 @@ public class LoadService {
                	// Load from local filesystem
                 File current = new File(name);
                 if (current.exists() && current.isFile()) {
-                	return current.toURL();
+                	return new LoadServiceResource(current.toURL(), name);
                 }
                 
                 // otherwise, try to load from classpath (Note: Jar resources always uses '/')
@@ -214,7 +214,7 @@ public class LoadService {
 
                 // Make sure this is not a directory or unavailable in some way
                 if (isRequireable(loc)) {
-                	return loc;
+                	return new LoadServiceResource(loc, loc.getPath());
                 }
             }
             
@@ -224,7 +224,7 @@ public class LoadService {
                     try {
                         JarFile current = new JarFile(entry.substring(4));
                         if (current.getJarEntry(name) != null) {
-                            return new URL(entry + name);
+                            return new LoadServiceResource(new URL(entry + name), entry + name);
                         }
                     } catch (FileNotFoundException ignored) {
                     } catch (IOException e) {
@@ -235,7 +235,7 @@ public class LoadService {
                	// Load from local filesystem
                 File current = new File(entry, name).getAbsoluteFile();
                 if (current.exists() && current.isFile()) {
-                	return current.toURL();
+                	return new LoadServiceResource(current.toURL(), new File(entry, name).getPath());
                 }
                 
                 // otherwise, try to load from classpath (Note: Jar resources always uses '/')
@@ -243,7 +243,7 @@ public class LoadService {
 
                 // Make sure this is not a directory or unavailable in some way
                 if (isRequireable(loc)) {
-                	return loc;
+                	return new LoadServiceResource(loc, loc.getPath());
                 }
             }
 
@@ -251,7 +251,7 @@ public class LoadService {
             // "./A/b.rb" in a jar file. (Note: Jar resources always uses '/')
             URL loc = classLoader.getResource(name.replace('\\', '/'));
 
-            return isRequireable(loc) ? loc : null;
+            return isRequireable(loc) ? new LoadServiceResource(loc, loc.getPath()) : null;
         } catch (MalformedURLException e) {
             throw runtime.newIOErrorFromException(e);
         }

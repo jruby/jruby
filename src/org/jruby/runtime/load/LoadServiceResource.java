@@ -11,9 +11,6 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2005 Thomas E. Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -30,27 +27,26 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.load;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import org.jruby.IRuby;
-import org.jruby.runtime.load.LoadServiceResource;
+import java.net.URL;
 
-public class ExternalScript implements Library {
-    private final LoadServiceResource resource;
-    
-    public ExternalScript(LoadServiceResource resource, String name) {
+/**
+ * Simple struct to capture name seperate from URL.  URL and File have internal 
+ * logic which does unexpected things when presenting the resource as a string. 
+ */
+public class LoadServiceResource {
+    private URL resource;
+    private String name;
+
+    public LoadServiceResource(URL resource, String name) {
         this.resource = resource;
+        this.name = name;
     }
-
-    public void load(IRuby runtime) {
-        try {
-            Reader reader = new BufferedReader(new InputStreamReader(resource.getURL().openStream()));
-            runtime.loadScript(resource.getName(), reader, false);
-            reader.close();
-        } catch (IOException e) {
-            throw runtime.newIOErrorFromException(e);
-        }
+    
+    public String getName() {
+        return name;
+    }
+    
+    public URL getURL() {
+        return resource;
     }
 }

@@ -31,22 +31,22 @@ package org.jruby.util;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 
 import org.ablaf.ast.IAstDecoder;
 import org.jruby.IRuby;
 import org.jruby.ast.Node;
 import org.jruby.ast.util.RubyAstMarshal;
 import org.jruby.runtime.load.Library;
+import org.jruby.runtime.load.LoadServiceResource;
 
 /**
  * Loading of pre-parsed, serialized, Ruby scripts that are built into JRuby.
  */
 public class PreparsedScript implements Library {
-    private URL loc;
+    private LoadServiceResource resource;
 
-    public PreparsedScript(URL loc) {
-        this.loc = loc;
+    public PreparsedScript(LoadServiceResource resource) {
+        this.resource = resource;
     }
 
     public void load(IRuby runtime) throws IOException {
@@ -56,9 +56,9 @@ public class PreparsedScript implements Library {
     private Node getNode(IRuby runtime) throws IOException {
         InputStream in;
         try {
-        	in = new BufferedInputStream(loc.openStream());
+        	in = new BufferedInputStream(resource.getURL().openStream());
         } catch (IOException e) {
-            throw runtime.newIOError("Resource not found: " + loc);
+            throw runtime.newIOError("Resource not found: " + resource.getName());
         }
         IAstDecoder decoder = RubyAstMarshal.getInstance().openDecoder(in);
         try {

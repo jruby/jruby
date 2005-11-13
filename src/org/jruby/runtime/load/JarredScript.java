@@ -14,6 +14,7 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2005 Thomas E. Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -40,6 +41,7 @@ import java.util.jar.Manifest;
 
 import org.jruby.IRuby;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.load.LoadServiceResource;
 
 /**
  * Loading of Ruby scripts packaged in Jar files.
@@ -48,14 +50,14 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  */
 public class JarredScript implements Library {
-    private final URL file;
+    private final LoadServiceResource resource;
 
-    public JarredScript(URL file) {
-        this.file = file;
+    public JarredScript(LoadServiceResource resource) {
+        this.resource = resource;
     }
 
     public void load(IRuby runtime) {
-        URL jarFile = file;
+        URL jarFile = resource.getURL();
 
         // Make Java class files in the jar reachable from Ruby
         runtime.getJavaSupport().addToClasspath(jarFile);
