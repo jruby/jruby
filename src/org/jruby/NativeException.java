@@ -27,6 +27,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.PrintStream;
+
 import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -36,9 +38,11 @@ public class NativeException extends RubyException {
 
     private final Throwable cause;
     public static final String CLASS_NAME = "NativeException";
+	private final IRuby runtime;
 
     public NativeException(IRuby runtime, RubyClass rubyClass, Throwable cause) {
         super(runtime, rubyClass, cause.getClass().getName()+": "+cause.getMessage());
+		this.runtime = runtime;
         this.cause = cause;
     }
     
@@ -65,9 +69,15 @@ public class NativeException extends RubyException {
         for (int i=stackTrace.length-1; i>=0; i--) {
             StackTraceElement element = stackTrace[i];
             String line = element.toString();
-            RubyString string = new RubyString(getRuntime(), line);
+            RubyString string = new RubyString(runtime, line);
             array.unshift(string);
         }
         return rubyTrace;
+    }
+    
+    public void printBacktrace(PrintStream errorStream) {
+    	super.printBacktrace(errorStream);
+    	errorStream.println("Complete Java stackTrace");
+    	cause.printStackTrace(errorStream);
     }
 }

@@ -75,6 +75,7 @@ public class TestRubyException extends TestCase {
 		String[] lines = output.split("\n");
 		return lines;
 	}
+
 	private void setBackTrace(int lineCount) {
 		List traceLines = new ArrayList();
 		for (int i=0; i<lineCount; i++)
