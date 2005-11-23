@@ -375,6 +375,7 @@ public final class Ruby implements IRuby {
         loadService = new LoadService(this);
         loadService.registerBuiltin("java", new BuiltinScript("javasupport"));
         loadService.registerBuiltin("socket", new SocketLibrary());
+        loadService.registerBuiltin("fcntl", new BuiltinScript("fcntl"));
         loadService.registerBuiltin("rbconfig.rb", new RbConfigLibrary());
     }
     

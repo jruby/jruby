@@ -70,6 +70,8 @@ public class RbConfigLibrary implements Library {
         
         if (isWindows()) {
         	setConfig(configHash, "EXEEXT", ".exe");
+        } else {
+        	setConfig(configHash, "EXEEXT", "");
         }
     }
 
