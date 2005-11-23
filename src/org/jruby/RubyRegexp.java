@@ -49,6 +49,7 @@ import org.jruby.util.PrintfFormat;
 public class RubyRegexp extends RubyObject implements ReOptions {
     private static final Pattern COMMENT_PATTERN = Pattern.compile("\\(\\?#[^)]*\\)");
     private static final Pattern HEX_SINGLE_DIGIT_PATTERN = Pattern.compile("\\\\x(\\p{XDigit})(?!\\p{XDigit})");
+    private static final Pattern OCTAL_SINGLE_DIGIT_PATTERN = Pattern.compile("\\\\([0-7])(?![0-7])");
     /** Class which represents the multibyte character set code.
 	 * (should be an enum in Java 5.0).
 	 * 
@@ -150,6 +151,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         }
         regex = COMMENT_PATTERN.matcher(regex).replaceAll("");
         regex = HEX_SINGLE_DIGIT_PATTERN.matcher(regex).replaceAll("\\\\"+"x0$1");
+        regex = OCTAL_SINGLE_DIGIT_PATTERN.matcher(regex).replaceAll("\\\\"+"0$1");
         pattern = Pattern.compile(regex, flags | this.code.flags());
     }
 

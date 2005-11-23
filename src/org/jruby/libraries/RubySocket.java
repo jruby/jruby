@@ -11,6 +11,25 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class RubySocket extends RubyObject {
+    public static abstract class SocketMethod extends DirectInvocationMethod {
+        public SocketMethod(RubyModule implementationClass, Arity arity, Visibility visibility) {
+            super(implementationClass, arity, visibility);
+        }
+        
+        public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+            RubySocket s = (RubySocket)receiver;
+            
+            return invoke(s, args);
+        }
+        
+        public abstract IRubyObject invoke(RubySocket target, IRubyObject[] args);
+
+        public ICallable dup() {
+            // TODO Auto-generated method stub
+            return null;
+        }
+        
+    };
 
 	public RubySocket(IRuby runtime, RubyClass metaClass) {
 		super(runtime, metaClass);
