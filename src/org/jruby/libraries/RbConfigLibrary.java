@@ -52,17 +52,21 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "MAJOR", versionParts[0]);
         setConfig(configHash, "MINOR", versionParts[1]);
         setConfig(configHash, "TEENY", versionParts[2]);
+        setConfig(configHash, "ruby_version", versionParts[0] + '.' + versionParts[1]);
 
         setConfig(configHash, "bindir", new File(System.getProperty("jruby.home"), "bin").getAbsolutePath());
         setConfig(configHash, "RUBY_INSTALL_NAME", System.getProperty("jruby.script"));
         setConfig(configHash, "ruby_install_name", System.getProperty("jruby.script"));
         setConfig(configHash, "SHELL", System.getProperty("jruby.shell"));
         setConfig(configHash, "prefix", new File(System.getProperty("jruby.home")).getAbsolutePath());
-        setConfig(configHash, "libdir", new File(System.getProperty("jruby.home"), "lib").getAbsolutePath());
-        setConfig(configHash, "rubylibdir", new File(System.getProperty("jruby.home"), "lib/ruby/1.8").getAbsolutePath());
-        setConfig(configHash, "sitedir", new File(System.getProperty("jruby.home"), "lib/ruby/site_ruby").getAbsolutePath());
-        setConfig(configHash, "sitelibdir", new File(System.getProperty("jruby.home"), "lib/ruby/site_ruby/1.8").getAbsolutePath());
-        setConfig(configHash, "sitearchdir", new File(System.getProperty("jruby.home"), "lib/ruby/site_ruby/1.8/java").getAbsolutePath());
+        String libdir = System.getProperty("jruby.lib");
+        if (libdir == null) 
+        	libdir = new File(System.getProperty("jruby.home"), "lib").getAbsolutePath();
+		setConfig(configHash, "libdir", libdir);
+        setConfig(configHash, "rubylibdir", 	new File(libdir, "ruby/1.8").getAbsolutePath());
+        setConfig(configHash, "sitedir", 		new File(libdir, "ruby/site_ruby").getAbsolutePath());
+        setConfig(configHash, "sitelibdir", 	new File(libdir, "ruby/site_ruby/1.8").getAbsolutePath());
+        setConfig(configHash, "sitearchdir", 	new File(libdir, "ruby/site_ruby/1.8/java").getAbsolutePath());
         setConfig(configHash, "configure_args", "");
         setConfig(configHash, "datadir", new File(System.getProperty("jruby.home"), "share").getAbsolutePath());
         setConfig(configHash, "mandir", new File(System.getProperty("jruby.home"), "man").getAbsolutePath());

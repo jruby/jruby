@@ -129,14 +129,15 @@ public class ReflectionCallback implements Callback {
     		methodArgs = packageRestArgumentsForReflection(methodArgs);
     	}
         try {
+        	IRubyObject receiver = recv;
             if (isStaticMethod) {
                 Object[] args = new Object[methodArgs.length + 1];
                 System.arraycopy(methodArgs, 0, args, 1, methodArgs.length);
                 args[0] = recv;
-                recv = null;
+                receiver = null;
                 methodArgs = args;
             }
-            return (IRubyObject) method.invoke(recv, methodArgs);
+            return (IRubyObject) method.invoke(receiver, methodArgs);
         } catch (InvocationTargetException e) {
             if (e.getTargetException() instanceof RaiseException) {
                 throw (RaiseException) e.getTargetException();

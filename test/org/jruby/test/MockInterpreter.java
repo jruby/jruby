@@ -30,9 +30,10 @@ package org.jruby.test;
 
 import org.jruby.RubyClass;
 import org.jruby.RubyString;
+import org.jruby.javasupport.JavaSupport;
 import org.jruby.runtime.ObjectSpace;
 
-final class MockInterpreter extends BaseMockRuby {
+public final class MockInterpreter extends BaseMockRuby {
 	public ObjectSpace getObjectSpace() {
 		return new MockObjectSpace();
 	}
@@ -47,5 +48,14 @@ final class MockInterpreter extends BaseMockRuby {
 	
 	public RubyClass getClass(String name) {
 		return null;
+	}
+	
+	public RubyClass getObject() {
+		return null;
+	}
+
+	public JavaSupport getJavaSupport() {
+		return new MockJavaSupport(this);
+		
 	}
 }

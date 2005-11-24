@@ -162,11 +162,6 @@ public class BaseMockRuby implements IRuby {
 
 	}
 
-	public JavaSupport getJavaSupport() {
-		throw new MockException();
-		
-	}
-
 	public Visibility getCurrentVisibility() {
 		throw new MockException();
 		
@@ -573,6 +568,10 @@ public class BaseMockRuby implements IRuby {
 	public long incrementRandomSeedSequence() {
 		throw new MockException();
 		
+	}
+
+	public JavaSupport getJavaSupport() {
+		throw new MockException();
 	}
 
 }

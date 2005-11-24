@@ -376,6 +376,7 @@ public final class Ruby implements IRuby {
         loadService.registerBuiltin("java", new BuiltinScript("javasupport"));
         loadService.registerBuiltin("socket", new SocketLibrary());
         loadService.registerBuiltin("fcntl", new BuiltinScript("fcntl"));
+        loadService.registerBuiltin("etc", new BuiltinScript("etc"));
         loadService.registerBuiltin("rbconfig.rb", new RbConfigLibrary());
     }
     
@@ -801,6 +802,7 @@ public final class Ruby implements IRuby {
         setCurrentVisibility(Visibility.PRIVATE);
 
         try {
+        	System.err.println(scriptName);
         	Node node = parse(source, scriptName);
             self.eval(node);
         } catch (JumpException je) {
