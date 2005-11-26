@@ -209,7 +209,7 @@ public class DefaultRubyParser {
    // On farg
 %token <Token>  tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tSTRING_CONTENT
 %token <Token>  tINTEGER tFLOAT
-%token <Node> tNTH_REF tBACK_REF tBACK_REF2
+%token <Node> tNTH_REF tBACK_REF
 %token <RegexpNode>    tREGEXP_END
 
 %type <Node>  singleton strings string string1 xstring regexp
@@ -283,6 +283,7 @@ public class DefaultRubyParser {
 %token <Token> tBANG          /* ! is just '!' in ruby and not a token */
 %token <Token> tCARET         /* ^ is just '^' in ruby and not a token */
 %token <Token> tLCURLY        /* { is just '{' in ruby and not a token */
+%token <Token> tBACK_REF2     /* { is just '`' in ruby and not a token */
 %token <Token> tSYMBEG tSTRING_BEG tXSTRING_BEG tREGEXP_BEG tWORDS_BEG tQWORDS_BEG
 %token <Token> tSTRING_DBEG tSTRING_DVAR tSTRING_END
 

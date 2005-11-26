@@ -765,6 +765,7 @@ public class RubyYaccLexer {
                 return Tokens.tSTRING_BEG;
 
             case '`':
+                yaccValue = "`";
                 if (lex_state == LexState.EXPR_FNAME) {
                     lex_state = LexState.EXPR_END;
                     return Tokens.tBACK_REF2;
