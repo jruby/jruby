@@ -46,7 +46,6 @@ import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.internal.runtime.methods.WrapperCallable;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.Frame;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -850,16 +849,13 @@ public class RubyModule extends RubyObject {
 
     public IRubyObject executeUnder(Callback method, IRubyObject[] args) {
         ThreadContext context = getRuntime().getCurrentContext();
-		context.pushRubyClass(this);
-
-        Frame frame = context.getCurrentFrame();
-        context.pushFrame(null, frame.getArgs(), frame.getLastFunc(), frame.getLastClass());
+        
+        context.preExecuteUnder(this);
 
         try {
             return method.execute(this, args);
         } finally {
-            context.popFrame();
-			context.popRubyClass();
+            context.postExecuteUnder();
         }
     }
 

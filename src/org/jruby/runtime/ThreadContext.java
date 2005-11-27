@@ -151,15 +151,15 @@ public class ThreadContext {
         this.thread = thread;
     }
     
-    public void pushScope(List localNames) {
+    private void pushScope(List localNames) {
         scopeStack.push(new Scope(runtime, localNames));
     }
     
-    public void pushScope() {
+    private void pushScope() {
         scopeStack.push(new Scope(runtime));
     }
     
-    public void popScope() {
+    private void popScope() {
         scopeStack.pop();
     }
 
@@ -171,28 +171,28 @@ public class ThreadContext {
         getCurrentScope().setLastLine(value);
     }
     
-    public void pushFrameCopy() {
+    private void pushFrameCopy() {
         frameStack.push(((Frame) frameStack.peek()).duplicate());
     }
     
-    public void pushFrame(IRubyObject self, IRubyObject[] args, 
+    private void pushFrame(IRubyObject self, IRubyObject[] args, 
             String lastFunc, RubyModule lastClass) {
         frameStack.push(new Frame(this, self, args, lastFunc, lastClass));
     }
     
-    public void pushFrame() {
+    private void pushFrame() {
         frameStack.push(new Frame(this));
     }
     
-    public void pushFrame(Frame frame) {
+    private void pushFrame(Frame frame) {
         frameStack.push(frame);
     }
     
-    public void pushFrame(Iter iter) {
+    private void pushFrame(Iter iter) {
         frameStack.push(new Frame(this, iter));
     }
     
-    public void popFrame() {
+    private void popFrame() {
         Frame frame = (Frame)frameStack.pop();
 
         setPosition(frame.getPosition());
@@ -524,5 +524,130 @@ public class ThreadContext {
         }
     
         return backtrace;
+    }
+
+    public void preClassEval(List localNames, RubyModule type) {
+        pushRubyClass(type); 
+        pushFrameCopy();
+        pushScope(localNames);
+        pushDynamicVars();
+    }
+    
+    public void postClassEval() {
+        popDynamicVars();
+        popScope();
+        popRubyClass();
+        popFrame();
+    }
+    
+    public void preScopedBody(List localNames) {
+        pushFrameCopy();
+        pushScope(localNames);
+    }
+    
+    public void postScopedBody() {
+        popScope();
+        popFrame();
+    }
+    
+    public void preBsfApply(List localNames) {
+        pushFrame();
+        pushDynamicVars();
+        pushScope(localNames);
+    }
+    
+    public void postBsfApply() {
+        popScope();
+        popDynamicVars();
+        popFrame();
+    }
+    
+    public void preDefMethodInternalCall(RubyModule parentClass) {
+        pushScope();
+        pushDynamicVars();
+        pushRubyClass(parentClass); 
+    }
+    
+    public void postDefMethodInternalCall() {
+        popRubyClass();
+        popDynamicVars();
+        popScope();
+    }
+    
+    public void preInit() {
+        pushIter(Iter.ITER_NOT);
+        pushFrame();
+        pushScope();
+    }
+    
+    public void preNodeEval(RubyModule wrapper, RubyModule rubyClass, IRubyObject self) {
+        pushDynamicVars();
+        setWrapper(wrapper);
+        pushRubyClass(rubyClass);
+        pushFrame(self, IRubyObject.NULL_ARRAY, null, null);
+        pushScope();
+    }
+    
+    public void postNodeEval(RubyModule wrapper) {
+        popScope();
+        popFrame();
+        popRubyClass();
+        setWrapper(wrapper);
+        popDynamicVars();
+    }
+
+    public void preMethodCall(RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+        pushRubyClass(implementationClass.parentModule);
+        pushIter(getCurrentIter().isPre() ? Iter.ITER_CUR : Iter.ITER_NOT);
+        pushFrame(recv, args, name, noSuper ? null : implementationClass);
+    }
+    
+    public void postMethodCall() {
+        popFrame();
+        popIter();
+        popRubyClass();
+    }
+    
+    public void preExecuteUnder(RubyModule executeUnderClass) {
+        Frame frame = getCurrentFrame();
+        
+        pushRubyClass(executeUnderClass);
+        pushFrame(null, frame.getArgs(), frame.getLastFunc(), frame.getLastClass());
+    }
+    
+    public void postExecuteUnder() {
+        popFrame();
+        popRubyClass();
+    }
+    
+    public void preMproc() {
+        pushIter(Iter.ITER_CUR);
+        pushFrame();
+    }
+    
+    public void postMproc() {
+        popFrame();
+        popIter();
+    }
+    
+    public void preRunThread(Frame currentFrame, Block currentBlock) {
+        pushFrame(currentFrame);
+        setCurrentBlock(currentBlock);
+    }
+    
+    public void preKernelEval() {
+        pushFrame(getPreviousFrame());
+    }
+    
+    public void postKernelEval() {
+        popFrame();
+    }
+    
+    public void preTrace() {
+        pushFrame(Iter.ITER_NOT);
+    }
+    
+    public void postTrace() {
+        popFrame();
     }
 }

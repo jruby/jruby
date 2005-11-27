@@ -169,14 +169,13 @@ public class RubyMethod extends RubyObject {
      */
     public static IRubyObject mproc(IRubyObject recv) {
     	IRuby runtime = recv.getRuntime();
-    	
+
+        runtime.getCurrentContext().preMproc();
+        
         try {
-            runtime.getCurrentContext().pushIter(Iter.ITER_CUR);
-            runtime.getCurrentContext().pushFrame();
             return RubyKernel.proc(recv);
         } finally {
-            runtime.getCurrentContext().popFrame();
-            runtime.getCurrentContext().popIter();
+            runtime.getCurrentContext().postMproc();
         }
     }
 

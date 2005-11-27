@@ -67,9 +67,7 @@ public class JRubyEngine extends BSFEngineImpl {
         ThreadContext threadContext = runtime.getCurrentContext();
         try {
             // add a new method conext
-            threadContext.pushFrame();
-            threadContext.pushDynamicVars();
-            threadContext.pushScope(paramNames);
+            threadContext.preBsfApply(paramNames);
             Scope scope = threadContext.getCurrentScope();
 
             // set global variables
@@ -83,9 +81,7 @@ public class JRubyEngine extends BSFEngineImpl {
             Node node = runtime.getParser().parse(file, funcBody.toString());
             return convertToJava(runtime.getTopSelf().eval(node), Object.class);
         } finally {
-            threadContext.popScope();
-            threadContext.popDynamicVars();
-            threadContext.popFrame();
+            threadContext.postBsfApply();
         }
     }
 

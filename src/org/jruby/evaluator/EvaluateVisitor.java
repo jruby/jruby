@@ -1640,13 +1640,11 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class ScopeNodeVisitor implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		ScopeNode iVisited = (ScopeNode)ctx;
-            state.threadContext.pushFrameCopy();
-            state.threadContext.pushScope(iVisited.getLocalNames());
+            state.threadContext.preScopedBody(iVisited.getLocalNames());
             try {
                 state.begin(iVisited.getBodyNode());
             } finally {
-                state.threadContext.popScope();
-                state.threadContext.popFrame();
+                state.threadContext.postScopedBody();
             }
     	}
     }
@@ -2586,10 +2584,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      *
      */
     private static void evalClassDefinitionBody(EvaluationState state, ScopeNode iVisited, RubyModule type) {
-		state.threadContext.pushRubyClass(type); 
-        state.threadContext.pushFrameCopy();
-        state.threadContext.pushScope(iVisited.getLocalNames());
-        state.threadContext.pushDynamicVars();
+		state.threadContext.preClassEval(iVisited.getLocalNames(), type);
 
         IRubyObject oldSelf = state.getSelf();
 
@@ -2603,10 +2598,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         } finally {
             state.setSelf(oldSelf);
 
-            state.threadContext.popDynamicVars();
-            state.threadContext.popScope();
-            state.threadContext.popRubyClass();
-            state.threadContext.popFrame();
+            state.threadContext.postClassEval();
 
             if (isTrace(state)) {
                 callTraceFunction(state, "end", null);

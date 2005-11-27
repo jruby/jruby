@@ -561,10 +561,10 @@ public class RubyKernel {
 
         if (scope.isNil() && runtime.getCurrentContext().getPreviousFrame() != null) {
             try {
-                runtime.getCurrentContext().pushFrame(runtime.getCurrentContext().getPreviousFrame());
+                runtime.getCurrentContext().preKernelEval();
                 return recv.eval(src, scope, file, line);
             } finally {
-                runtime.getCurrentContext().popFrame();
+                runtime.getCurrentContext().postKernelEval();
             }
         }
         return recv.eval(src, scope, file, line);

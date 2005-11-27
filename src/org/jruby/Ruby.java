@@ -352,10 +352,7 @@ public final class Ruby implements IRuby {
         
         initLibraries();
         
-        getCurrentContext().pushIter(Iter.ITER_NOT);
-        getCurrentContext().pushFrame();
-        Frame frame = getCurrentContext().getCurrentFrame();
-        getCurrentContext().pushScope();
+        getCurrentContext().preInit();
 
         setCurrentVisibility(Visibility.PRIVATE);
 
@@ -366,6 +363,8 @@ public final class Ruby implements IRuby {
         topSelf = TopSelfFactory.createTopSelf(this);
 
         getCurrentContext().pushRubyClass(objectClass);
+        
+        Frame frame = getCurrentContext().getCurrentFrame();
         frame.setSelf(topSelf);
 
         initBuiltinClasses();
@@ -779,24 +778,19 @@ public final class Ruby implements IRuby {
 
         ThreadContext context = getCurrentContext();
 
-        context.pushDynamicVars();
-
         RubyModule wrapper = context.getWrapper();
 
         if (!wrap) {
             secure(4); /* should alter global state */
-            context.pushRubyClass(objectClass);
-            context.setWrapper(null);
+            
+            context.preNodeEval(null, objectClass, self);
         } else {
             /* load in anonymous module as toplevel */
-            context.setWrapper(RubyModule.newModule(this, null));
-            context.pushRubyClass(context.getWrapper());
+            context.preNodeEval(RubyModule.newModule(this, null), context.getWrapper(), self);
+            
             self = getTopSelf().rbClone();
             self.extendObject(context.getRubyClass());
         }
-
-        context.pushFrame(self, IRubyObject.NULL_ARRAY, null, null);
-        context.pushScope();
 
         /* default visibility is private at loading toplevel */
         setCurrentVisibility(Visibility.PRIVATE);
@@ -812,11 +806,7 @@ public final class Ruby implements IRuby {
         		throw je;
         	}
         } finally {
-            context.popScope();
-            context.popFrame();
-            context.popRubyClass();
-            context.popDynamicVars();
-            context.setWrapper(wrapper);
+            context.postNodeEval(wrapper);
         }
     }
 
@@ -825,25 +815,20 @@ public final class Ruby implements IRuby {
 
         ThreadContext context = getCurrentContext();
 
-        context.pushDynamicVars();
-
         RubyModule wrapper = context.getWrapper();
 
         if (!wrap) {
             secure(4); /* should alter global state */
-            context.pushRubyClass(objectClass);
-            context.setWrapper(null);
+            
+            context.preNodeEval(null, objectClass, self);
         } else {
             /* load in anonymous module as toplevel */
-            context.setWrapper(RubyModule.newModule(this, null));
-            context.pushRubyClass(context.getWrapper());
+            context.preNodeEval(RubyModule.newModule(this, null), context.getWrapper(), self);
+            
             self = getTopSelf().rbClone();
             self.extendObject(context.getRubyClass());
         }
-
-        context.pushFrame(self, IRubyObject.NULL_ARRAY, null, null);
-        context.pushScope();
-
+        
         /* default visibility is private at loading toplevel */
         setCurrentVisibility(Visibility.PRIVATE);
 
@@ -856,11 +841,7 @@ public final class Ruby implements IRuby {
         		throw je;
         	}
         } finally {
-            context.popScope();
-            context.popFrame();
-            context.popRubyClass();
-            context.popDynamicVars();
-            context.setWrapper(wrapper);
+            context.postNodeEval(wrapper);
         }
     }
 
@@ -904,7 +885,7 @@ public final class Ruby implements IRuby {
             if (type == null) {
 				type = getFalse();
 			}
-            getCurrentContext().pushFrame(Iter.ITER_NOT);
+            getCurrentContext().preTrace();
 
             try {
                 traceFunction
@@ -916,7 +897,7 @@ public final class Ruby implements IRuby {
                         self != null ? self: getNil(),
                         type });
             } finally {
-                getCurrentContext().popFrame();
+                getCurrentContext().postTrace();
                 getCurrentContext().setPosition(savePosition);
                 isWithinTrace = false;
             }

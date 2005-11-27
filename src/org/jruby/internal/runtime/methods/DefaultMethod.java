@@ -78,7 +78,7 @@ public final class DefaultMethod extends AbstractMethod {
 
         ThreadContext context = runtime.getCurrentContext();
         
-        context.pushScope();
+        context.preDefMethodInternalCall(parent);
         
         Scope scope = context.getCurrentScope();
         if (body.getLocalNames() != null) {
@@ -88,10 +88,6 @@ public final class DefaultMethod extends AbstractMethod {
         if (argsNode.getBlockArgNode() != null && context.isBlockGiven()) {
             scope.setValue(argsNode.getBlockArgNode().getCount(), runtime.newProc());
         }
-
-        context.pushDynamicVars();
-
-        context.pushRubyClass(parent); 
 
         try {
             prepareArguments(runtime, scope, receiver, args);
@@ -109,9 +105,7 @@ public final class DefaultMethod extends AbstractMethod {
         	}
        		throw je;
         } finally {
-            context.popRubyClass();
-            context.popDynamicVars();
-            context.popScope();
+            context.postDefMethodInternalCall();
             traceReturn(runtime, receiver, name);
         }
     }

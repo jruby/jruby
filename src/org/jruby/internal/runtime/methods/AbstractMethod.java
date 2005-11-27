@@ -32,7 +32,6 @@ package org.jruby.internal.runtime.methods;
 import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.Iter;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -48,17 +47,13 @@ public abstract class AbstractMethod extends AbstractCallable {
 
     public IRubyObject call(IRuby runtime, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
         ThreadContext context = runtime.getCurrentContext();
-        context.pushRubyClass(implementationClass.parentModule);
-
-        context.pushIter(context.getCurrentIter().isPre() ? Iter.ITER_CUR : Iter.ITER_NOT);
-        context.pushFrame(recv, args, name, noSuper ? null : implementationClass);
+        
+        context.preMethodCall(implementationClass, recv, name, args, noSuper);
 
         try {
             return internalCall(runtime, recv, name, args, noSuper);
         } finally {
-            context.popFrame();
-            context.popIter();
-            context.popRubyClass();
+            context.postMethodCall();
         }
     }
     
