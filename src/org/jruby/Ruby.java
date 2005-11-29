@@ -66,7 +66,6 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.IAccessor;
-import org.jruby.runtime.Iter;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -796,7 +795,6 @@ public final class Ruby implements IRuby {
         setCurrentVisibility(Visibility.PRIVATE);
 
         try {
-        	System.err.println(scriptName);
         	Node node = parse(source, scriptName);
             self.eval(node);
         } catch (JumpException je) {
