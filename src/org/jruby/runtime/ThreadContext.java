@@ -111,11 +111,11 @@ public class ThreadContext {
         return lastCallType;
     }
     
-    public void pushBlock(Block block) {
+    private void pushBlock(Block block) {
         blockStack.push(block);
     }
     
-    public Block popBlock() {
+    private Block popBlock() {
         return (Block)blockStack.pop();
     }
     
@@ -123,7 +123,7 @@ public class ThreadContext {
         return (Block)blockStack.peek();
     }
     
-    public void setCurrentBlock(Block block) {
+    private void setCurrentBlock(Block block) {
         blockStack.setCurrent(block);
     }
 
@@ -131,16 +131,12 @@ public class ThreadContext {
         return (DynamicVariableSet) dynamicVarsStack.peek();
     }
 
-    public void pushDynamicVars() {
+    private void pushDynamicVars() {
         dynamicVarsStack.push(new DynamicVariableSet());
     }
 
-    public void popDynamicVars() {
+    private void popDynamicVars() {
         dynamicVarsStack.pop();
-    }
-
-    public List getDynamicNames() {
-        return getCurrentDynamicVars().names();
     }
 
     public RubyThread getThread() {
@@ -649,5 +645,58 @@ public class ThreadContext {
     
     public void postTrace() {
         popFrame();
+    }
+    
+    public void preBlockPassEval(Block block) {
+        pushBlock(block);
+        pushIter(Iter.ITER_PRE);
+        
+        if (getCurrentFrame().getIter() == Iter.ITER_NOT) {
+            getCurrentFrame().setIter(Iter.ITER_PRE);
+        }
+    }
+    
+    public void postBlockPassEval() {
+        popIter();
+        popBlock();
+    }
+    
+    public void preForLoopEval(Block block) {
+        pushBlock(block);
+        pushIter(Iter.ITER_PRE);
+    }
+    
+    public void postForLoopEval() {
+        popIter();
+        popBlock();
+    }
+    
+    public void preIterEval(Block block) {
+        pushBlock(block);
+    }
+    
+    public void postIterEval() {
+        popBlock();
+    }
+    
+    public void preToProc(Block block) {
+        pushIter(Iter.ITER_PRE);
+        pushBlock(block);
+    }
+    
+    public void postToProc() {
+        popIter();
+        popBlock();
+    }
+    
+    public void preBlockYield(Block newBlock) {
+        setCurrentBlock(newBlock);
+        pushIter(Iter.ITER_CUR);
+        getCurrentFrame().setIter(Iter.ITER_CUR);
+    }
+    
+    public void postBlockYield(Block oldBlock) {
+        popIter();
+        setCurrentBlock(oldBlock);
     }
 }

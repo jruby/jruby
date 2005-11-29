@@ -356,18 +356,12 @@ public final class EvaluateVisitor implements NodeVisitor {
                 }
             }
 
-            state.threadContext.pushBlock(((RubyProc) proc).getBlock());
-            state.threadContext.pushIter(Iter.ITER_PRE);
+            state.threadContext.preBlockPassEval(((RubyProc)proc).getBlock());
             
-            if (state.threadContext.getCurrentFrame().getIter() == Iter.ITER_NOT) {
-                state.threadContext.getCurrentFrame().setIter(Iter.ITER_PRE);
-            }
-
             try {
                 state.begin(iVisited.getIterNode());
             } finally {
-                state.threadContext.popIter();
-                state.threadContext.popBlock();
+                state.threadContext.postBlockPassEval();
             }
     	}
     }
@@ -954,9 +948,8 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class ForNodeVisitor implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		ForNode iVisited = (ForNode)ctx;
-        	state.threadContext.pushBlock(Block.createBlock(iVisited.getVarNode(), new EvaluateCallable(iVisited.getBodyNode(), iVisited.getVarNode()), state.getSelf()));
-            state.threadContext.pushIter(Iter.ITER_PRE);
-
+            state.threadContext.preForLoopEval(Block.createBlock(iVisited.getVarNode(), new EvaluateCallable(iVisited.getBodyNode(), iVisited.getVarNode()), state.getSelf()));
+        	
             try {
                 while (true) {
                     try {
@@ -989,8 +982,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             		throw je;
             	}
             } finally {
-                state.threadContext.popIter();
-                state.threadContext.popBlock();
+                state.threadContext.postForLoopEval();
             }
     	}
     }
@@ -1111,8 +1103,8 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class IterNodeVisitor implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		IterNode iVisited = (IterNode)ctx;
-        	state.threadContext.pushBlock(Block.createBlock(iVisited.getVarNode(), 
-            	    new EvaluateCallable(iVisited.getBodyNode(), iVisited.getVarNode()), state.getSelf()));
+            state.threadContext.preIterEval(Block.createBlock(iVisited.getVarNode(), 
+                    new EvaluateCallable(iVisited.getBodyNode(), iVisited.getVarNode()), state.getSelf()));
                 try {
                     while (true) {
                         try {
@@ -1138,7 +1130,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                 		throw je;
                 	}
                 } finally {
-                    state.threadContext.popBlock();
+                    state.threadContext.postIterEval();
                 }
     	}
     }

@@ -97,14 +97,11 @@ public class Block implements StackElement {
         if (replacementSelf != null) {
             newBlock.self = replacementSelf;
         }
-        context.setCurrentBlock(newBlock);
-        context.pushIter(Iter.ITER_CUR);
-        context.getCurrentFrame().setIter(Iter.ITER_CUR);
+        context.preBlockYield(newBlock);
         try {
             return context.yield(runtime.newArray(args), null, null, false, true);
         } finally {
-            context.popIter();
-            context.setCurrentBlock(oldBlock);
+            context.postBlockYield(oldBlock);
         }
     }
 

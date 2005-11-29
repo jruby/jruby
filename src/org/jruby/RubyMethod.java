@@ -135,8 +135,7 @@ public class RubyMethod extends RubyObject {
     public IRubyObject to_proc() {
     	CallbackFactory f = getRuntime().callbackFactory(RubyMethod.class);
 		IRuby r = getRuntime();
-        r.getCurrentContext().pushIter(Iter.ITER_PRE);
-		r.getCurrentContext().pushBlock(Block.createBlock(null, new IterateCallable(f.getBlockMethod("bmcall"), this), r.getTopSelf()));
+        r.getCurrentContext().preToProc(Block.createBlock(null, new IterateCallable(f.getBlockMethod("bmcall"), this), r.getTopSelf()));
 		
 		try {
 		    while (true) {
@@ -157,8 +156,7 @@ public class RubyMethod extends RubyObject {
 		        }
 		    }
 		} finally {
-		    r.getCurrentContext().popIter();
-		    r.getCurrentContext().popBlock();
+            r.getCurrentContext().postToProc();
 		}
     }
 
