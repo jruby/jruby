@@ -57,7 +57,7 @@ public class SymbolMetaClass extends ObjectMetaClass {
 		return new SymbolMeta();
 	}
 	
-	public RubyClass newSubClass(String name, RubyModule parentModule) {
-		return new SymbolMetaClass(name, this, parentModule);
+	public RubyClass newSubClass(String name, RubyModule parent) {
+		return new SymbolMetaClass(name, this, parent);
 	}
 }

@@ -123,8 +123,8 @@ public class FileMetaClass extends IOMetaClass {
     	return new FileMeta();
     }
 
-	public RubyClass newSubClass(String name, RubyModule parentModule) {
-		return new FileMetaClass(name, this, parentModule);
+	public RubyClass newSubClass(String name, RubyModule parent) {
+		return new FileMetaClass(name, this, parent);
 	}
 
 	public IRubyObject allocateObject() {

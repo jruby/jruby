@@ -58,8 +58,8 @@ public class ProcMetaClass extends ObjectMetaClass {
 		return new ProcMeta();
 	}
 	
-	public RubyClass newSubClass(String name, RubyModule parentModule) {
-		return new ProcMetaClass(name, this, parentModule);
+	public RubyClass newSubClass(String name, RubyModule parent) {
+		return new ProcMetaClass(name, this, parent);
 	}
 
 	protected IRubyObject allocateObject() {

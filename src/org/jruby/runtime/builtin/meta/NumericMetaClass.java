@@ -84,8 +84,8 @@ public class NumericMetaClass extends ObjectMetaClass {
     	return new NumericMeta();
     }
 		
-    public RubyClass newSubClass(String name, RubyModule parentModule) {
-        return new NumericMetaClass(name, this, parentModule);
+    public RubyClass newSubClass(String name, RubyModule parent) {
+        return new NumericMetaClass(name, this, parent);
     }
 
 	protected IRubyObject allocateObject() {

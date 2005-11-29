@@ -127,8 +127,8 @@ public class IOMetaClass extends ObjectMetaClass {
     	return new IOMeta();
     }
 
-    public RubyClass newSubClass(String name, RubyModule parentModule) {
-        return new IOMetaClass(name, this, parentModule);
+    public RubyClass newSubClass(String name, RubyModule parent) {
+        return new IOMetaClass(name, this, parent);
     }
 
     public IRubyObject allocateObject() {

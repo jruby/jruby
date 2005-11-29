@@ -80,8 +80,8 @@ public class FixnumMetaClass extends IntegerMetaClass {
 		return new FixnumMeta();
 	}
 
-	public RubyClass newSubClass(String name, RubyModule parentModule) {
-        return new FixnumMetaClass(name, this, parentModule);
+	public RubyClass newSubClass(String name, RubyModule parent) {
+        return new FixnumMetaClass(name, this, parent);
 	}
 
     public RubyInteger induced_from(IRubyObject number) {

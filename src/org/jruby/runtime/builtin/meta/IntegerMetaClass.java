@@ -76,8 +76,8 @@ public class IntegerMetaClass extends NumericMetaClass {
     	return new IntegerMeta();
     }
 
-	public RubyClass newSubClass(String name, RubyModule parentModule) {
-        return new IntegerMetaClass(name, this, parentModule);
+	public RubyClass newSubClass(String name, RubyModule parent) {
+        return new IntegerMetaClass(name, this, parent);
 	}
 
 	// This cannot be allocated directly

@@ -576,19 +576,19 @@ public class ThreadContext {
         pushScope();
     }
     
-    public void preNodeEval(RubyModule wrapper, RubyModule rubyClass, IRubyObject self) {
+    public void preNodeEval(RubyModule newWrapper, RubyModule rubyClass, IRubyObject self) {
         pushDynamicVars();
-        setWrapper(wrapper);
+        setWrapper(newWrapper);
         pushRubyClass(rubyClass);
         pushFrame(self, IRubyObject.NULL_ARRAY, null, null);
         pushScope();
     }
     
-    public void postNodeEval(RubyModule wrapper) {
+    public void postNodeEval(RubyModule newWrapper) {
         popScope();
         popFrame();
         popRubyClass();
-        setWrapper(wrapper);
+        setWrapper(newWrapper);
         popDynamicVars();
     }
 

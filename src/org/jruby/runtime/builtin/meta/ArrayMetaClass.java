@@ -128,8 +128,8 @@ public class ArrayMetaClass extends ObjectMetaClass {
 		return new ArrayMeta();
 	}
 	
-	public RubyClass newSubClass(String name, RubyModule parentModule) {
-		return new ArrayMetaClass(name, this, parentModule);
+	public RubyClass newSubClass(String name, RubyModule parent) {
+		return new ArrayMetaClass(name, this, parent);
 	}
 
 	protected IRubyObject allocateObject() {

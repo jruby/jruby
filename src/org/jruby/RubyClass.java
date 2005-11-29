@@ -142,8 +142,8 @@ public class RubyClass extends RubyModule {
         return this;
     }
 
-    public MetaClass newSingletonClass(RubyModule parentModule) {
-        MetaClass newClass = new MetaClass(getRuntime(), this, parentModule);
+    public MetaClass newSingletonClass(RubyModule parent) {
+        MetaClass newClass = new MetaClass(getRuntime(), this, parent);
         newClass.infectBy(this);
         return newClass;
     }
@@ -272,13 +272,13 @@ public class RubyClass extends RubyModule {
         return newObject;
     }
 
-    public RubyClass newSubClass(String name, RubyModule parentModule) {
-        RubyClass newClass = new RubyClass(runtime, runtime.getClass("Class"), this, parentModule, name);
+    public RubyClass newSubClass(String name, RubyModule parent) {
+        RubyClass newClass = new RubyClass(runtime, runtime.getClass("Class"), this, parent, name);
 
         newClass.makeMetaClass(getMetaClass(), newClass);
         newClass.inheritedBy(this);
 
-        parentModule.setConstant(name, newClass);
+        parent.setConstant(name, newClass);
 
         return newClass;
     }

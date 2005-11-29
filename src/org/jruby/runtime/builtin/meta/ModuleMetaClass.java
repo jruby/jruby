@@ -97,8 +97,8 @@ public class ModuleMetaClass extends ObjectMetaClass {
 		return new ModuleMeta();
 	}
 	
-	public RubyClass newSubClass(String name, RubyModule parentModule) {
-		return new ModuleMetaClass(name, this, parentModule);
+	public RubyClass newSubClass(String name, RubyModule parent) {
+		return new ModuleMetaClass(name, this, parent);
 	}
 
 	protected IRubyObject allocateObject() {

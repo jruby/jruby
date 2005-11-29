@@ -85,8 +85,8 @@ public class HashMetaClass extends ObjectMetaClass {
 		return new HashMeta();
 	}
 	
-	public RubyClass newSubClass(String name, RubyModule parentModule) {
-		return new HashMetaClass(name, this, parentModule);
+	public RubyClass newSubClass(String name, RubyModule parent) {
+		return new HashMetaClass(name, this, parent);
 	}
 
 	protected IRubyObject allocateObject() {

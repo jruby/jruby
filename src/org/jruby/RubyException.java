@@ -173,8 +173,7 @@ public class RubyException extends RubyObject {
     }
 
 	public void printBacktrace(PrintStream errorStream) {
-	    RubyArray backtrace = (RubyArray) backtrace();
-		IRubyObject[] elements = backtrace.toJavaArray();
+		IRubyObject[] elements = ((RubyArray) backtrace()).toJavaArray();
 	
 		for (int i = 1; i < elements.length; i++) {
 		    IRubyObject stackTraceLine = elements[i];

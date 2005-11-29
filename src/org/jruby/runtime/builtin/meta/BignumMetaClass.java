@@ -74,7 +74,7 @@ public class BignumMetaClass extends ObjectMetaClass {
 		return new BignumMeta();
 	}
 	
-	public RubyClass newSubClass(String name, RubyModule parentModule) {
-		return new BignumMetaClass(name, this, parentModule);
+	public RubyClass newSubClass(String name, RubyModule parent) {
+		return new BignumMetaClass(name, this, parent);
 	}
 }
