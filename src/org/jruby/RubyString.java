@@ -18,6 +18,7 @@
  * Copyright (C) 2002-2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2004 David Corbin <dcorbin@users.sourceforge.net>
+ * Copyright (C) 2005 Tim Azzopardi <tim@tigerfive.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -50,6 +51,8 @@ import org.jruby.util.Split;
  * @author  jpetersen
  */
 public class RubyString extends RubyObject {
+    // Default record seperator
+    private static final String DEFAULT_RS = "\n";
 
 	private static final String encoding = "iso8859-1";
 
@@ -1111,17 +1114,62 @@ public class RubyString extends RubyObject {
         return result;
 	}
 
-	/** rb_str_chomp_bang
-	 *
+	/** 
+     * rb_str_chomp_bang
+     * 
+	 * In the common case, removes CR and LF characters in various ways depending on the value of
+     *   the optional args[0].
+     * If args.length==0 removes one instance of CR, CRLF or LF from the end of the string.  
+     * If args.length>0 and args[0] is "\n" then same behaviour as args.length==0 .
+     * If args.length>0 and args[0] is "" then removes trailing multiple LF or CRLF (but no CRs at
+     *   all(!)).  
+     * @param args See method description.
 	 */
 	public IRubyObject chomp_bang(IRubyObject[] args) {
         if (isEmpty()) {
             return getRuntime().getNil();
         }
-        String separator = getRuntime().getGlobalVariables().get("$/").asSymbol();
-        if (args.length > 0) {
-            separator = args[0].asSymbol();
+
+        // Separator (a.k.a. $/) can be overriden by the -0 (zero) command line option
+        String separator = (args.length == 0) ? 
+                getRuntime().getGlobalVariables().get("$/").asSymbol() : args[0].asSymbol();
+        
+        if (separator.equals(DEFAULT_RS)) {
+            // Optimized very common case of str.chomp! on Windows (avoid 2 setValue calls)
+            int lastCharIndex = getValue().length() - 1;
+            char lastChar = getValue().charAt(lastCharIndex);
+            if (lastChar=='\n') {
+                if (lastCharIndex > 0 && getValue().charAt(lastCharIndex - 1) == '\r') {
+                    // Remove \r\n
+                    setValue(getValue().substring(0, lastCharIndex - 1));
+                } else {
+                    // Remove \n
+                    setValue(getValue().substring(0, lastCharIndex));
+                }
+            } else if (lastChar=='\r') {
+                // Very common case of chomp!(noParam) on Mac => No obvious optimzation 
+                setValue(getValue().substring(0, lastCharIndex));                
+            } else {
+                // No modifications made
+                return getRuntime().getNil();
+            }
+            return this;
         }
+
+        // Uncommon case of str.chomp!("") not optimized
+        if (separator.length() == 0) {
+            boolean modified = false;
+            while(getValue().length() > 0 && getValue().charAt(getValue().length() - 1) == '\n') {
+                modified = true;
+                setValue(getValue().substring(0, getValue().length() - 1));
+                if (getValue().length() > 0 && getValue().charAt(getValue().length() - 1) == '\r') {
+                    setValue(getValue().substring(0, getValue().length() - 1));                    
+                }
+            }
+            return modified ? this : getRuntime().getNil();
+        }
+        
+        // Uncommon case of str.chomp!("xxx")
         if (getValue().endsWith(separator)) {
             setValue(getValue().substring(0, getValue().length() - separator.length()));
             return this;

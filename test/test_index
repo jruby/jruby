@@ -19,6 +19,7 @@ testFloat.rb
 testBlock.rb
 testRange.rb
 testString.rb
+testStringChomp.rb
 testException.rb
 testException2.rb
 testFile.rb
