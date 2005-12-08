@@ -21,7 +21,7 @@ a class which already exists in the current namespace).</p>
 include_class "java.util.Random"
 include_class "java.lang.String" { |p,name| "J" + name }
 
-s = JString.new("My random number is #{Random.nextInt}")
+s = JString.new("My random number is #{Random.new.nextInt}")
 </pre>
 
 <b>Example2:</b><br/>
