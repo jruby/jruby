@@ -92,6 +92,7 @@ import org.jruby.ast.visitor.ExpressionVisitor;
 import org.jruby.ast.visitor.UselessStatementVisitor;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.lexer.yacc.ISourcePositionFactory;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.Token;
 import org.jruby.util.IdUtil;
@@ -103,6 +104,7 @@ public class ParserSupport {
     // Parser states:
     private Stack localNamesStack;
     private BlockNamesStack blockNamesStack;
+    private ISourcePositionFactory positionFactory;
 
     private int inSingle;
     private boolean inDef;
@@ -124,6 +126,10 @@ public class ParserSupport {
         inDefined = false;
 
         classNest = configuration.isClassNest() ? 1 : 0;
+    }
+    
+    public void setPositionFactory(ISourcePositionFactory factory) {
+        this.positionFactory = factory;
     }
 
 
@@ -276,6 +282,38 @@ public class ParserSupport {
     public Node newline_node(Node node, ISourcePosition position) {
         return node == null ? null : new NewlineNode(position, node); 
     }
+    
+    public ISourcePosition union(Node first, Node second) {
+        while (first instanceof NewlineNode) {
+            first = ((NewlineNode) first).getNextNode();
+        }
+
+        while (second instanceof NewlineNode) {
+            second = ((NewlineNode) second).getNextNode();
+        }
+        
+        return positionFactory.getUnion(first.getPosition(), second.getPosition());
+    }
+    
+    public ISourcePosition union(Node first, Token second) {
+        while (first instanceof NewlineNode) {
+            first = ((NewlineNode) first).getNextNode();
+        }
+
+        return positionFactory.getUnion(first.getPosition(), second.getPosition());
+    }
+
+    public ISourcePosition union(Token first, Node second) {
+        while (second instanceof NewlineNode) {
+            second = ((NewlineNode) second).getNextNode();
+        }
+        
+        return positionFactory.getUnion(first.getPosition(), second.getPosition());
+    }
+    
+    public ISourcePosition union(Token first, Token second) {
+        return positionFactory.getUnion(first.getPosition(), second.getPosition());
+    }
 
     public Node appendToBlock(Node head, Node tail) {
         if (tail == null) {
@@ -285,7 +323,7 @@ public class ParserSupport {
         }
 
         if (!(head instanceof BlockNode)) {
-            head = new BlockNode(head.getPosition()).add(head);
+            head = new BlockNode(union(head, tail)).add(head);
         }
 
         if (warnings.isVerbose() && new BreakStatementVisitor().isBreakStatement(((ListNode) head).getLast())) {
@@ -532,20 +570,20 @@ public class ParserSupport {
         return new CallNode(receiverNode.getPosition(), receiverNode, name, args);
     }
 
-    public Node new_fcall(String name, Node args, ISourcePosition iPosition) {
+    public Node new_fcall(String name, Node args, Token operation) {
         if (args != null && args instanceof BlockPassNode) {
-            ((BlockPassNode) args).setIterNode(new FCallNode(args.getPosition(), name, ((BlockPassNode) args).getArgsNode()));
+            ((BlockPassNode) args).setIterNode(new FCallNode(union(operation, args), name, ((BlockPassNode) args).getArgsNode()));
             return args;
         }
-        return new FCallNode(iPosition, name, args);
+        return new FCallNode(operation.getPosition(), name, args);
     }
 
-    public Node new_super(Node args, ISourcePosition iPosition) {
+    public Node new_super(Node args, Token operation) {
         if (args != null && args instanceof BlockPassNode) {
-            ((BlockPassNode) args).setIterNode(new SuperNode(args.getPosition(), ((BlockPassNode) args).getArgsNode()));
+            ((BlockPassNode) args).setIterNode(new SuperNode(union(operation, args), ((BlockPassNode) args).getArgsNode()));
             return args;
         }
-        return new SuperNode(iPosition, args);
+        return new SuperNode(operation.getPosition(), args);
     }
 
     /**

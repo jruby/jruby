@@ -85,7 +85,7 @@ public class LexerSource {
     public LexerSource(String sourceName, Reader reader) {
         this.sourceName = sourceName;
         this.reader = reader;
-        this.positionFactory = new SourcePositionFactory();
+        this.positionFactory = new SourcePositionFactory(this);
     }
     
     public LexerSource(String sourceName, Reader reader, ISourcePositionFactory factory) {
@@ -109,8 +109,9 @@ public class LexerSource {
     	} else {
     		c = wrappedRead();
             
-            // EOF...Do not advance (offset/column)...Go straight to jail
+            // EOF...Do not advance column...Go straight to jail
             if (c == 0) {
+                offset++;
                 return c;
             }
     	}
@@ -203,8 +204,8 @@ public class LexerSource {
      * 
      * @return the current position
      */
-    public ISourcePosition getPosition(ISourcePosition startPosition) {
-    	return positionFactory.getPosition(this, startPosition);
+    public ISourcePosition getPosition(ISourcePosition startPosition, boolean inclusive) {
+    	return positionFactory.getPosition(startPosition, inclusive);
     }
     
     /**
@@ -213,11 +214,15 @@ public class LexerSource {
      * @return the current position
      */
     public ISourcePosition getPosition() {
-    	return positionFactory.getPosition(this, null);
+    	return positionFactory.getPosition(null, false);
     }
     
     public ISourcePosition getDummyPosition() {
     	return positionFactory.getDummyPosition();
+    }
+    
+    public ISourcePositionFactory getPositionFactory() {
+        return positionFactory;
     }
 
     /**
@@ -337,7 +342,7 @@ public class LexerSource {
             	
             	// No hex value after the 'x'.
             	if (hexOffset == getColumn()) {
-            	    throw new SyntaxException(getPosition(null), "Invalid escape character syntax");
+            	    throw new SyntaxException(getPosition(null, false), "Invalid escape character syntax");
             	}
                 return hexValue;
             case 'b' : // backspace
@@ -346,16 +351,16 @@ public class LexerSource {
                 return ' ';
             case 'M' :
                 if ((c = read()) != '-') {
-                    throw new SyntaxException(getPosition(null), "Invalid escape character syntax");
+                    throw new SyntaxException(getPosition(null, false), "Invalid escape character syntax");
                 } else if ((c = read()) == '\\') {
                     return (char) (readEscape() | 0x80);
                 } else if (c == '\0') {
-                    throw new SyntaxException(getPosition(null), "Invalid escape character syntax");
+                    throw new SyntaxException(getPosition(null, false), "Invalid escape character syntax");
                 } 
                 return (char) ((c & 0xff) | 0x80);
             case 'C' :
                 if ((c = read()) != '-') {
-                    throw new SyntaxException(getPosition(null), "Invalid escape character syntax");
+                    throw new SyntaxException(getPosition(null, false), "Invalid escape character syntax");
                 }
             case 'c' :
                 if ((c = read()) == '\\') {
@@ -363,11 +368,11 @@ public class LexerSource {
                 } else if (c == '?') {
                     return '\u0177';
                 } else if (c == '\0') {
-                    throw new SyntaxException(getPosition(null), "Invalid escape character syntax");
+                    throw new SyntaxException(getPosition(null, false), "Invalid escape character syntax");
                 }
                 return (char) (c & 0x9f);
             case '\0' :
-                throw new SyntaxException(getPosition(null), "Invalid escape character syntax");
+                throw new SyntaxException(getPosition(null, false), "Invalid escape character syntax");
             default :
                 return c;
         }

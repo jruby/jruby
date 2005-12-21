@@ -58,6 +58,7 @@ import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.libraries.JRubyLibrary;
 import org.jruby.libraries.RbConfigLibrary;
 import org.jruby.libraries.SocketLibrary;
 import org.jruby.parser.Parser;
@@ -376,6 +377,7 @@ public final class Ruby implements IRuby {
         loadService.registerBuiltin("fcntl", new BuiltinScript("fcntl"));
         loadService.registerBuiltin("etc", new BuiltinScript("etc"));
         loadService.registerBuiltin("rbconfig.rb", new RbConfigLibrary());
+        loadService.registerBuiltin("jruby", new JRubyLibrary());
     }
     
     private void initCoreClasses() {

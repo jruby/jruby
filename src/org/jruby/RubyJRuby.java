@@ -11,10 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2001-2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2001-2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
- * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2005 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -28,45 +25,30 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.ast;
+package org.jruby;
 
-import java.util.List;
+import org.jruby.javasupport.Java;
+import org.jruby.javasupport.JavaObject;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
 
-import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.Instruction;
-import org.jruby.lexer.yacc.ISourcePosition;
-
-/** Represents an undef statement.
- *
- * @author  jpetersen
+/**
+ * Module which defines JRuby-specific methods for use. 
  */
-public class UndefNode extends Node {
-    static final long serialVersionUID = -8829084073375820727L;
+public class RubyJRuby {
+    public static RubyModule createJRuby(IRuby runtime) {
+        RubyModule comparableModule = runtime.defineModule("JRuby");
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyJRuby.class);
+        comparableModule.defineModuleFunction("parse", 
+            callbackFactory.getSingletonMethod("parse", IRubyObject.class, IRubyObject.class));
 
-    private final String name;
-
-    public UndefNode(ISourcePosition position, String name) {
-        super(position);
-        this.name = name;
-    }
-
-    /**
-     * Accept for the visitor pattern.
-     * @param iVisitor the visitor
-     **/
-    public Instruction accept(NodeVisitor iVisitor) {
-        return iVisitor.visitUndefNode(this);
-    }
-
-    /**
-     * Gets the name.
-     * @return Returns a String
-     */
-    public String getName() {
-        return name;
+        return comparableModule;
     }
     
-    public List childNodes() {
-        return EMPTY_LIST;
+    public static IRubyObject parse(IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
+        RubyString content = arg1.convertToString();
+        RubyString filename = arg2.convertToString();
+        return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), 
+            recv.getRuntime().parse(content.getValue(), filename.getValue())));
     }
 }

@@ -46,15 +46,15 @@ import org.jruby.runtime.Visibility;
 public class DefnNode extends Node {
     static final long serialVersionUID = -7634791007500033454L;
 
-    private final String name;
+    private final ArgumentNode nameNode;
     private final Node argsNode;
     private final ScopeNode bodyNode;
     private final Visibility visibility;
     
-    public DefnNode(ISourcePosition position, String name, Node argsNode, ScopeNode bodyNode, Visibility visibility) {
+    public DefnNode(ISourcePosition position, ArgumentNode nameNode, Node argsNode, ScopeNode bodyNode, Visibility visibility) {
         super(position);
         
-        this.name = name.intern();
+        this.nameNode = nameNode;
         this.argsNode = argsNode;
         this.bodyNode = bodyNode;
         this.visibility = visibility;
@@ -80,12 +80,16 @@ public class DefnNode extends Node {
         return bodyNode;
     }
 
+    public ArgumentNode getNameNode() {
+        return nameNode;
+    }
+
     /**
      * Gets the name.
      * @return Returns a String
      */
     public String getName() {
-        return name;
+        return nameNode.getName();
     }
 
     /**
@@ -97,7 +101,6 @@ public class DefnNode extends Node {
     }
     
     public List childNodes() {
-        return Node.createList(argsNode, bodyNode);
+        return Node.createList(nameNode, argsNode, bodyNode);
     }
-
 }

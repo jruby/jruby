@@ -56,7 +56,7 @@ public class SourcePosition implements ISourcePosition, Serializable {
      * Creates a default source position - required for serialization.
      */
     public SourcePosition() {
-    	this("", -1);
+    	this("", 0);
     }
     
     /**

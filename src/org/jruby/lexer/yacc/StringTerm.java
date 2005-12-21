@@ -99,7 +99,7 @@ public class StringTerm extends StrTerm {
             throw new SyntaxException(src.getPosition(), "unterminated string meets end of file");
         }
 
-        lexer.yaccValue = buffer.toString();
+        lexer.yaccValue = new Token(buffer.toString(), lexer.getPosition(null, false));
         return Tokens.tSTRING_CONTENT;
     }
 

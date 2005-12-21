@@ -1,6 +1,7 @@
 
 # Basic JRuby unit tests
 
+testPositions.rb
 testConstant.rb
 testReturn.rb
 testRegexp.rb

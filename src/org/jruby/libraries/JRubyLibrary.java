@@ -11,10 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2001-2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2001-2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
- * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2005 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -28,45 +25,17 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.ast;
+package org.jruby.libraries;
 
-import java.util.List;
+import java.io.IOException;
 
-import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.Instruction;
-import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.IRuby;
+import org.jruby.RubyJRuby;
+import org.jruby.runtime.load.Library;
 
-/** Represents an undef statement.
- *
- * @author  jpetersen
- */
-public class UndefNode extends Node {
-    static final long serialVersionUID = -8829084073375820727L;
+public class JRubyLibrary implements Library {
 
-    private final String name;
-
-    public UndefNode(ISourcePosition position, String name) {
-        super(position);
-        this.name = name;
-    }
-
-    /**
-     * Accept for the visitor pattern.
-     * @param iVisitor the visitor
-     **/
-    public Instruction accept(NodeVisitor iVisitor) {
-        return iVisitor.visitUndefNode(this);
-    }
-
-    /**
-     * Gets the name.
-     * @return Returns a String
-     */
-    public String getName() {
-        return name;
-    }
-    
-    public List childNodes() {
-        return EMPTY_LIST;
+    public void load(IRuby runtime) throws IOException {
+        RubyJRuby.createJRuby(runtime);
     }
 }

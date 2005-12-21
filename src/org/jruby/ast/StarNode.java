@@ -31,7 +31,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import java.util.Collections;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
@@ -61,7 +60,7 @@ public class StarNode extends Node {
     }
     
     public List childNodes() {
-        return Collections.EMPTY_LIST;
+        return EMPTY_LIST;
     }
 
 }

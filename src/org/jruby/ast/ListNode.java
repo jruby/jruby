@@ -29,17 +29,21 @@
 package org.jruby.ast;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
+import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
- * All Nodes which have a list representation inherit this.
+ * All Nodes which have a list representation inherit this.  This is also used
+ * as generic container for additional information that is not directly evaluated.
+ * In particular, f_arg production rule uses this to capture arg information for
+ * the editor projects who want position info saved.
  */
-public abstract class ListNode extends Node {
+public class ListNode extends Node {
     private static final long serialVersionUID = 1L;
     
     private List list = null;
@@ -57,13 +61,11 @@ public abstract class ListNode extends Node {
     }
 
     public Iterator iterator() {
-        return list == null ? Collections.EMPTY_LIST.iterator() : 
-        	list.iterator();
+        return list == null ? EMPTY_LIST.iterator() : list.iterator();
     }
     
     public ListIterator reverseIterator() {
-    	return list == null ? Collections.EMPTY_LIST.listIterator() :
-    		list.listIterator(list.size());
+    	return list == null ? EMPTY_LIST.listIterator() : list.listIterator(list.size());
     }
     
     public int size() {
@@ -84,17 +86,22 @@ public abstract class ListNode extends Node {
     }
     
     public String toString() {
+        String string = super.toString();
     	if (list == null) {
-    		return "";
+    		return string + ": {}";
     	}
     	StringBuffer b = new StringBuffer();
     	for (int i = 0; i < list.size(); i++) {
     		b.append(list.get(i));
     	}
-    	return b.toString();
+    	return string + ": {" + b.toString() + "}";
     }
     
     public List childNodes() {
     	return list;
+    }
+    
+    public Instruction accept(NodeVisitor visitor) {
+        throw new RuntimeException("Base class ListNode should never be evaluated");
     }
 }

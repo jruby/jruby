@@ -33,5 +33,6 @@ package org.jruby.lexer.yacc;
  */
 public interface ISourcePositionFactory {
     public ISourcePosition getDummyPosition();
-    public ISourcePosition getPosition(LexerSource source, ISourcePosition startPosition);
+    public ISourcePosition getPosition(ISourcePosition startPosition, boolean inclusive);
+    public ISourcePosition getUnion(ISourcePosition first, ISourcePosition second);
 }

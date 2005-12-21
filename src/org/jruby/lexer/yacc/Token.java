@@ -52,4 +52,8 @@ public class Token implements ISourcePositionHolder {
 	public void setPosition(ISourcePosition position) {
 		this.position = position;
 	}
+    
+    public String toString() {
+        return "Token { Value=" + value + ", Position=" + position + "}";
+    }
 }

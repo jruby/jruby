@@ -73,7 +73,7 @@ public class ThreadContext {
 
     private RubyModule wrapper;
 
-    private ISourcePosition sourcePosition = new SourcePositionFactory().getDummyPosition();
+    private ISourcePosition sourcePosition = new SourcePositionFactory(null).getDummyPosition();
 
     /**
      * Constructor for Context.

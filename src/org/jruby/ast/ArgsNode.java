@@ -58,28 +58,29 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class ArgsNode extends Node {
     static final long serialVersionUID = 3709437716296564785L;
 
-    private final int argsCount;
+    private final ListNode arguments;
     private final ListNode optArgs;
     private final int restArg;
     private final BlockArgNode blockArgNode;
 
     /**
      * 
-     * @param optArgs  Node describing the optional arguments
+     * @param optionalArguments  Node describing the optional arguments
      * 				This Block will contain assignments to locals (LAsgnNode)
-     * @param restArg  index of the rest argument in the local table
+     * @param restArguments  index of the rest argument in the local table
      * 				(the array argument prefixed by a * which collects 
      * 				all additional params)
      * 				or -1 if there is none.
      * @param argsCount number of regular arguments
      * @param blockArgNode An optional block argument (&amp;arg).
      **/
-    public ArgsNode(ISourcePosition position, int argsCount, ListNode optArgs, int restArg, BlockArgNode blockArgNode) {
+    public ArgsNode(ISourcePosition position, ListNode arguments, ListNode optionalArguments, 
+            int restArguments, BlockArgNode blockArgNode) {
         super(position);
 
-        this.argsCount = argsCount;
-        this.optArgs = optArgs;
-        this.restArg = restArg;
+        this.arguments = arguments;
+        this.optArgs = optionalArguments;
+        this.restArg = restArguments;
         this.blockArgNode = blockArgNode;
     }
 
@@ -92,11 +93,18 @@ public class ArgsNode extends Node {
     }
 
     /**
+     * Gets main arguments (as Tokens)
+     */
+    public ListNode getArgs() {
+        return arguments;
+    }
+    
+    /**
      * Gets the argsCount.
      * @return Returns a int
      */
     public int getArgsCount() {
-        return argsCount;
+        return arguments == null ? 0 : arguments.size();
     }
 
     /**
@@ -124,7 +132,7 @@ public class ArgsNode extends Node {
     }
     
     public List childNodes() {
-        return Node.createList(optArgs, blockArgNode);
+        return Node.createList(arguments, optArgs, blockArgNode);
     }
 
 }

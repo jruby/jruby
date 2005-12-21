@@ -47,6 +47,8 @@ import org.jruby.lexer.yacc.ISourcePositionHolder;
  */
 public abstract class Node implements ISourcePositionHolder, InstructionContext, Serializable {
     static final long serialVersionUID = -5962822607672530224L;
+    // We define an actual list to get around bug in java integration (1387115)
+    static final List EMPTY_LIST = new ArrayList();
 
     private ISourcePosition position;
 
