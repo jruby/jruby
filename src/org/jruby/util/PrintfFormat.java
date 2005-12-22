@@ -17,6 +17,7 @@
  * Copyright (C) 2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 Derek Berner <derek.berner@state.nm.us>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -574,6 +575,10 @@ public class PrintfFormat {
                 case 'C' :
                     s2 = printCFormat((char) s);
                     break;
+                case 's':
+                case 'S':
+                    s2 = printSFormat(String.valueOf(s));
+                    break;
                 default :
                     throw new IllegalArgumentException("Cannot format a int with a format using a " + conversionCharacter + " conversion character.");
             }
@@ -617,7 +622,8 @@ public class PrintfFormat {
                     s2 = printCFormat((char) s);
                     break;
                 case 's' :
-                    s2 = printSFormat(String.valueOf(s));
+                case 'S' :
+                	s2 = printSFormat(String.valueOf(s));
                     break;
                 case 'b' :
                     s2 = printBFormat(s);
@@ -652,6 +658,10 @@ public class PrintfFormat {
                 case 'G' :
                 case 'g' :
                     s2 = printGFormat(s);
+                    break;
+                case 's':
+                case 'S':
+                    s2 = printSFormat(String.valueOf(s));
                     break;
                 default :
                     throw new IllegalArgumentException("Cannot format a double with a format using a " + conversionCharacter + " conversion character.");
