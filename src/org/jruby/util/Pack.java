@@ -16,6 +16,7 @@
  * Copyright (C) 2003-2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 Derek Berner <derek.berner@state.nm.us>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -54,10 +55,18 @@ public class Pack {
         "`!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_".toCharArray();
     private static final char[] b64_table =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".toCharArray();
+    private static final int[] b64_xtable = new int[256];
     private static final char[] sHexDigits = "0123456789abcdef0123456789ABCDEFx".toCharArray();
     private static HashMap converters = new HashMap();
     
     static {
+        // b64_xtable for decoding Base 64
+        for (int i = 0; i < 256; i++) {
+            b64_xtable[i] = -1;
+        }
+        for (int i = 0; i < 64; i++) {
+            b64_xtable[(int)b64_table[i]] = i;
+        }
         // short, little-endian (network)
         converters.put(new Character('v'), new Converter(2) { 
             public IRubyObject decode(IRuby runtime, PtrList enc) {
@@ -65,10 +74,10 @@ public class Pack {
                         decodeShortUnsignedLittleEndian(enc));
             }
             public void encode(IRuby runtime, IRubyObject o, StringBuffer result){
-            	int s = o == runtime.getNil() ? 0 : (int) (RubyNumeric.num2long(o) & 0xffff);
-           		encodeShortLittleEndian(result, s);
-           	}});
-    	// single precision, little-endian
+                int s = o == runtime.getNil() ? 0 : (int) (RubyNumeric.num2long(o) & 0xffff);
+                   encodeShortLittleEndian(result, s);
+               }});
+        // single precision, little-endian
         converters.put(new Character('e'), new Converter(4) { 
             public IRubyObject decode(IRuby runtime, PtrList enc) {
                 return RubyFloat.newFloat(runtime, decodeFloatLittleEndian(enc));
@@ -132,7 +141,7 @@ public class Pack {
             public IRubyObject decode(IRuby runtime, PtrList enc) {
                 int c = enc.nextChar();
                 return runtime.newFixnum(c > (char) 127 ? c-256 : c);
-            }	
+            }    
             public void encode(IRuby runtime, IRubyObject o, StringBuffer result){
                 char c = o == runtime.getNil() ? 0 : (char) (RubyNumeric.num2long(o) & 0xff);
                 result.append(c);
@@ -292,7 +301,7 @@ public class Pack {
         }
         return io2Append;
     }
-
+    
     private static String convert2String(IRubyObject l2Conv) {
         IRuby runtime = l2Conv.getRuntime();
         if (l2Conv.getMetaClass() != runtime.getClass("String")) {
@@ -304,11 +313,11 @@ public class Pack {
     /**
      *    Decodes <i>str</i> (which may contain binary data) according to the format
      *       string, returning an array of each value extracted.
-     * 	  The format string consists of a sequence of single-character directives.<br/>
-     * 	  Each directive may be followed by a number, indicating the number of times to repeat with this directive.  An asterisk (``<code>*</code>'') will use up all
+     *       The format string consists of a sequence of single-character directives.<br/>
+     *       Each directive may be followed by a number, indicating the number of times to repeat with this directive.  An asterisk (``<code>*</code>'') will use up all
      *       remaining elements.  <br/>
-     * 	  The directives <code>sSiIlL</code> may each be followed by an underscore (``<code>_</code>'') to use the underlying platform's native size for the specified type; otherwise, it uses a platform-independent consistent size.  <br/>
-     * 	  Spaces are ignored in the format string.
+     *       The directives <code>sSiIlL</code> may each be followed by an underscore (``<code>_</code>'') to use the underlying platform's native size for the specified type; otherwise, it uses a platform-independent consistent size.  <br/>
+     *       Spaces are ignored in the format string.
      *           @see RubyArray#pack
      *       <table border="2" width="500" bgcolor="#ffe0e0">
      *           <tr>
@@ -551,8 +560,8 @@ public class Pack {
             // Next indicates to decode using native encoding format
             if (next == '_' || next == '!') {
                 if (NATIVE_CODES.indexOf(type) == -1) {
-                	throw runtime.newArgumentError("'" + next + 
-                	        "' allowed only after types " + NATIVE_CODES);
+                    throw runtime.newArgumentError("'" + next + 
+                            "' allowed only after types " + NATIVE_CODES);
                 } 
                 // We advance in case occurences follows
                 next = format.nextChar();
@@ -561,14 +570,14 @@ public class Pack {
             // How many occurrences of 'type' we want
             int occurrences = 0;
             if (format.isAtEnd()) {
-            	occurrences = 1;
+                occurrences = 1;
             } else if (next == '*') {
-            	occurrences = IS_STAR;
-				next = format.nextChar();
+                occurrences = IS_STAR;
+                next = format.nextChar();
             } else if (Character.isDigit(next)) {
-				format.backup(1);
-				occurrences = format.nextAsciiNumber();
-				next = format.nextChar();
+                format.backup(1);
+                occurrences = format.nextAsciiNumber();
+                next = format.nextChar();
             } else {
                 occurrences = type == '@' ? 0 : 1;
             }
@@ -576,32 +585,32 @@ public class Pack {
             // See if we have a converter for the job...
             Converter converter = (Converter) converters.get(new Character(type));
             if (converter != null) {
-            	decode(runtime, encode, occurrences, result, converter);
-            	type = next;
-            	continue;
+                decode(runtime, encode, occurrences, result, converter);
+                type = next;
+                continue;
             }
 
             // Otherwise the unpack should be here...
             switch (type) {
-            	case '@' :
-            	    encode.setPosition(occurrences);
-            	    break;
+                case '@' :
+                    encode.setPosition(occurrences);
+                    break;
                 case '%' :
                     throw runtime.newArgumentError("% is not supported");
                 case 'A' :
-                	{
+                    {
                     if (occurrences == IS_STAR || occurrences > encode.remaining()) {
-						occurrences = encode.remaining();
-					}
+                        occurrences = encode.remaining();
+                    }
 
                     String potential = encode.nextSubstring(occurrences);
                     
                     for (int t = occurrences - 1; occurrences > 0; occurrences--, t--) {
-						char c = potential.charAt(t);
+                        char c = potential.charAt(t);
                         
-                       	if (c != '\0' && c != ' ') {
-                       		break;
-                       	}
+                           if (c != '\0' && c != ' ') {
+                               break;
+                           }
                     }
                     
                     potential = potential.substring(0, occurrences);
@@ -609,36 +618,36 @@ public class Pack {
                     }
                     break;
                 case 'Z' :
-                	{
+                    {
                     if (occurrences == IS_STAR || occurrences > encode.remaining()) {
-						occurrences = encode.remaining();
-					}
+                        occurrences = encode.remaining();
+                    }
                     
                     String potential = encode.nextSubstring(occurrences);
                     
                     for (int t = occurrences - 1; occurrences > 0; occurrences--, t--) {
-                    	char c = potential.charAt(t);
+                        char c = potential.charAt(t);
                         
-                       	if (c != '\0') {
-                       		break;
-                       	}
+                           if (c != '\0') {
+                               break;
+                           }
                     }
                     
                     potential = potential.substring(0, occurrences);
                     result.append(runtime.newString(potential));
-                	}
+                    }
                     break;
                 case 'a' :
                     if (occurrences == IS_STAR || occurrences > encode.remaining()) {
-						occurrences = encode.remaining();
-					}
+                        occurrences = encode.remaining();
+                    }
                     result.append(runtime.newString(encode.nextSubstring(occurrences)));
                     break;
                 case 'b' :
                     {
                         if (occurrences == IS_STAR || occurrences > encode.remaining() * 8) {
-							occurrences = encode.remaining() * 8;
-						}
+                            occurrences = encode.remaining() * 8;
+                        }
                         int bits = 0;
                         StringBuffer lElem = new StringBuffer(occurrences);
                         for (int lCurByte = 0; lCurByte < occurrences; lCurByte++) {
@@ -655,8 +664,8 @@ public class Pack {
                 case 'B' :
                     {
                         if (occurrences == IS_STAR || occurrences > encode.remaining() * 8) {
-							occurrences = encode.remaining() * 8;
-						}
+                            occurrences = encode.remaining() * 8;
+                        }
                         int bits = 0;
                         StringBuffer lElem = new StringBuffer(occurrences);
                         for (int lCurByte = 0; lCurByte < occurrences; lCurByte++) {
@@ -673,8 +682,8 @@ public class Pack {
                 case 'h' :
                     {
                         if (occurrences == IS_STAR || occurrences > encode.remaining() * 2) {
-							occurrences = encode.remaining() * 2;
-						}
+                            occurrences = encode.remaining() * 2;
+                        }
                         int bits = 0;
                         StringBuffer lElem = new StringBuffer(occurrences);
                         for (int lCurByte = 0; lCurByte < occurrences; lCurByte++) {
@@ -691,8 +700,8 @@ public class Pack {
                 case 'H' :
                     {
                         if (occurrences == IS_STAR || occurrences > encode.remaining() * 2) {
-							occurrences = encode.remaining() * 2;
-						}
+                            occurrences = encode.remaining() * 2;
+                        }
                         int bits = 0;
                         StringBuffer lElem = new StringBuffer(occurrences);
                         for (int lCurByte = 0; lCurByte < occurrences; lCurByte++) {
@@ -705,11 +714,132 @@ public class Pack {
                         result.append(runtime.newString(lElem.toString()));
                     }
                     break;
+
+                case 'u': 
+                {
+                    int length = encode.remaining() * 3 / 4;
+                    StringBuffer lElem = new StringBuffer(length);
+                    char s;
+                    int total = 0;
+                    s = encode.nextChar();
+                    while (!encode.isAtEnd() && s > ' ' && s < 'a') {
+                        int a, b, c, d;
+                        char[] hunk = new char[3];
+    
+                        int len = (s - ' ') & 077;
+                        s = encode.nextChar();
+                        total += len;
+                        if (total > length) {
+                            len -= total - length;
+                            total = length;
+                        }
+    
+                        while (len > 0) {
+                            int mlen = len > 3 ? 3 : len;
+    
+                            if (!encode.isAtEnd() && s >= ' ') {
+                                a = (s - ' ') & 077;
+                                s = encode.nextChar();
+                            } else
+                                a = 0;
+                            if (!encode.isAtEnd() && s >= ' ') {
+                                b = (s - ' ') & 077;
+                                s = encode.nextChar();
+                            } else
+                                b = 0;
+                            if (!encode.isAtEnd() && s >= ' ') {
+                                c = (s - ' ') & 077;
+                                s = encode.nextChar();
+                            } else
+                                c = 0;
+                            if (!encode.isAtEnd() && s >= ' ') {
+                                d = (s - ' ') & 077;
+                                s = encode.nextChar();
+                            } else
+                                d = 0;
+                            hunk[0] = (char) ((a << 2 | b >> 4) & 255);
+                            hunk[1] = (char) ((b << 4 | c >> 2) & 255);
+                            hunk[2] = (char) ((c << 6 | d) & 255);
+    
+                            lElem.append(hunk, 0, (int) mlen);
+                            len -= mlen;
+                        }
+                        if (s == '\r')
+                            s = encode.nextChar();
+                        if (s == '\n')
+                            s = encode.nextChar();
+                        else if (!encode.isAtEnd()) {
+                            if (encode.nextChar() == '\n') {
+                                encode.nextChar(); // Possible Checksum Byte
+                            } else if (!encode.isAtEnd()) {
+                                encode.backup(1);
+                            }
+                        }
+                    }
+                    result.append(runtime.newString(lElem.toString()));
+                }
+                break;
+
+                case 'm':
+                {
+                    int length = encode.remaining()*3/4;
+                    StringBuffer lElem = new StringBuffer(length);
+                    int a = -1, b = -1, c = 0, d;
+                    while (!encode.isAtEnd()) {
+                        char s;
+                        do {
+                            s = encode.nextChar();
+                        } while (s == '\r' || s == '\n');
+                        if ((a = b64_xtable[s]) == -1) break;
+                        if ((b = b64_xtable[s = encode.nextChar()]) == -1) break;
+                        if ((c = b64_xtable[s = encode.nextChar()]) == -1) break;
+                        if ((d = b64_xtable[s = encode.nextChar()]) == -1) break;
+                        lElem.append((char)((a << 2 | b >> 4) & 255));
+                        lElem.append((char)((b << 4 | c >> 2) & 255));
+                        lElem.append((char)((c << 6 | d) & 255));
+                    }
+                    if (a != -1 && b != -1) {
+                        int remaining = encode.remaining();
+                        char[] s = encode.nextSubstring(4).toCharArray();
+                        
+                        if (remaining > 2 && s[2] == '=')
+                            lElem.append((char)((a << 2 | b >> 4) & 255));
+                        if (c != -1 && remaining > 3 && s[3] == '=') {
+                            lElem.append((char)((a << 2 | b >> 4) & 255));
+                            lElem.append((char)((b << 4 | c >> 2) & 255));
+                        }
+                    }
+                    result.append(runtime.newString(lElem.toString()));
+                }
+                break;
+
+                case 'M' :
+                    {
+                        StringBuffer lElem = new StringBuffer(Math.max(encode.remaining(),0)); 
+                        for(;;) {
+                            char c = encode.nextChar();
+                            if (encode.isAtEnd()) break;
+                            if (c != '=') {
+                                lElem.append(c);
+                            } else {
+                                char c1 = encode.nextChar(); 
+                                if (encode.isAtEnd()) break;
+                                if (c1 == '\n') continue;
+                                char c2 = encode.nextChar();
+                                if (encode.isAtEnd()) break;
+                                String hexString = new String(new char[]{c1,c2});
+                                int value = Integer.parseInt(hexString,16);
+                                lElem.append((char)value);
+                            }
+                        }
+                        result.append(runtime.newString(lElem.toString()));
+                    }
+                    break;
                 case 'U' :
                     {
                         if (occurrences == IS_STAR || occurrences > encode.remaining()) {
-							occurrences = encode.remaining();
-						}
+                            occurrences = encode.remaining();
+                        }
                         //get the correct substring
                         String toUnpack = encode.nextSubstring(occurrences);
                         String lUtf8 = null;
@@ -735,19 +865,19 @@ public class Pack {
                      }
                      break;
                  case 'x':
-              		if (occurrences == IS_STAR) {
-               			occurrences = encode.remaining();
-              		}
-              		
-              		try {
-              		    encode.nextSubstring(occurrences);
-              		} catch (IllegalArgumentException e) {
-              		    throw runtime.newArgumentError("in `unpack': x outside of string");
-              		}
+                      if (occurrences == IS_STAR) {
+                           occurrences = encode.remaining();
+                      }
+                      
+                      try {
+                          encode.nextSubstring(occurrences);
+                      } catch (IllegalArgumentException e) {
+                          throw runtime.newArgumentError("in `unpack': x outside of string");
+                      }
 
-                 	break;
+                     break;
             }
-			type = next;
+            type = next;
         }
         return result;
     }
@@ -755,7 +885,7 @@ public class Pack {
     public static void decode(IRuby runtime, PtrList encode, int occurrences, 
             RubyArray result, Converter converter) {
         int lPadLength = 0;
-    	
+        
         if (occurrences == IS_STAR) {
             occurrences = encode.remaining() / converter.size;
         } else if (occurrences > encode.remaining() / converter.size) {
@@ -787,15 +917,15 @@ public class Pack {
     }
     
     public abstract static class Converter {
-    	public int size;
-    	
-    	public Converter(int size) {
-    		this.size = size;
-    	}
-    	
-    	public abstract IRubyObject decode(IRuby runtime, PtrList format);
-    	public abstract void encode(IRuby runtime, IRubyObject from, 
-    	        StringBuffer result);
+        public int size;
+        
+        public Converter(int size) {
+            this.size = size;
+        }
+        
+        public abstract IRubyObject decode(IRuby runtime, PtrList format);
+        public abstract void encode(IRuby runtime, IRubyObject from, 
+                StringBuffer result);
     }
  
     static class PtrList {
@@ -814,114 +944,114 @@ public class Pack {
             return buffer.length - index;
         }
 
-		/**
-		 * <p>Get substring from current point of desired length and advance
-		 * pointer.</p>
-		 * 
-		 * @param length of substring
-		 * @return the substring
-		 */
-		public String nextSubstring(int length) {
-		    // Cannot get substring off end of buffer
-		    if (index + length > buffer.length) {
-		        throw new IllegalArgumentException();
-		    }
-		    
-			String substring = new String(buffer, index, length);
-			
-			index += length;
-			
-			return substring;
-		}
-		
-		public void setPosition(int position) {
-		    if (position < buffer.length) {
-		        index = position;
-		    }
-		}
+        /**
+         * <p>Get substring from current point of desired length and advance
+         * pointer.</p>
+         * 
+         * @param length of substring
+         * @return the substring
+         */
+        public String nextSubstring(int length) {
+            // Cannot get substring off end of buffer
+            if (index + length > buffer.length) {
+                throw new IllegalArgumentException();
+            }
+            
+            String substring = new String(buffer, index, length);
+            
+            index += length;
+            
+            return substring;
+        }
+        
+        public void setPosition(int position) {
+            if (position < buffer.length) {
+                index = position;
+            }
+        }
 
-		/**
-		 * @return numerical representation of ascii number at ptr
-		 */
-		public int nextAsciiNumber() {
+        /**
+         * @return numerical representation of ascii number at ptr
+         */
+        public int nextAsciiNumber() {
             int i = index;
 
             for (; i < buffer.length; i++) {
-            	if (!Character.isDigit(buffer[i])) {
+                if (!Character.isDigit(buffer[i])) {
                     break;
-				}
-			}
+                }
+            }
             
             // An exception will occur if no number is at ptr....
             int number = Integer.parseInt(new String(buffer, index, i - index));
             
             // An exception may occur here if an int can't hold this but ...
             index = i;
-			return number;
+            return number;
         }
 
-		/**
-		 * @return length of list
-		 */
-		public int getLength() {
-			return buffer.length;
-		}
-
-		/**
-		 * @return char at the pointer (advancing the pointer) or '\0' if at end.
-		 *
-		 * Note: the pointer gets advanced one past last character to indicate
-		 * that the whole buffer has been read.
-		 */
-		public char nextChar() {
-		    char next = '\0';
-		    		    
-		    if (index < buffer.length) {
-		        next = buffer[index++];
-		    } else if (index == buffer.length) {
-		        index++;
-		    }
-		    		        
-    		return next;
-    	}
-		
-		/**
-		 * @return low byte of the char
-		 */
-		public int nextByte() {
-			return nextChar() & 0xff;
-		}
-		
-		/**
-		 * <p>Backup the pointer occurrences times.</p>
-		 * 
-		 * @throws IllegalArgumentException if it backs up past beginning 
-		 * of buffer	
-		 */
-		public void backup(int occurrences) {
-		    index -= occurrences;
-
-		    if (index < 0) {
-		        throw new IllegalArgumentException();
-		    }
-		}
-
-		/**
-		 * @return true if index is at end of the buffer
-		 */
-	    public boolean isAtEnd() {
-			return index > buffer.length;
+        /**
+         * @return length of list
+         */
+        public int getLength() {
+            return buffer.length;
         }
 
-	    /**
-	     * @return the current pointer location in buffer
-	     */
-		public int getIndex() {
-	        return index;
-	    }
+        /**
+         * @return char at the pointer (advancing the pointer) or '\0' if at end.
+         *
+         * Note: the pointer gets advanced one past last character to indicate
+         * that the whole buffer has been read.
+         */
+        public char nextChar() {
+            char next = '\0';
+                        
+            if (index < buffer.length) {
+                next = buffer[index++];
+            } else if (index == buffer.length) {
+                index++;
+            }
+                            
+            return next;
+        }
+        
+        /**
+         * @return low byte of the char
+         */
+        public int nextByte() {
+            return nextChar() & 0xff;
+        }
+        
+        /**
+         * <p>Backup the pointer occurrences times.</p>
+         * 
+         * @throws IllegalArgumentException if it backs up past beginning 
+         * of buffer    
+         */
+        public void backup(int occurrences) {
+            index -= occurrences;
+
+            if (index < 0) {
+                throw new IllegalArgumentException();
+            }
+        }
+
+        /**
+         * @return true if index is at end of the buffer
+         */
+        public boolean isAtEnd() {
+            return index > buffer.length;
+        }
+
+        /**
+         * @return the current pointer location in buffer
+         */
+        public int getIndex() {
+            return index;
+        }
     }
     
-	/**
+    /**
      * shrinks a stringbuffer.
      * shrinks a stringbuffer by a number of characters.
      * @param i2Shrink the stringbuffer
@@ -960,7 +1090,7 @@ public class Pack {
      * pack_pack
      *
      * Template characters for Array#pack Directive  Meaning
-     * 	         <table class="codebox" cellspacing="0" border="0" cellpadding="3">
+     *              <table class="codebox" cellspacing="0" border="0" cellpadding="3">
      * <tr bgcolor="#ff9999">
      *   <td valign="top">
      *                     <b>Directive</b>
@@ -1135,8 +1265,8 @@ public class Pack {
         String lCurElemString;
         
         while(!format.isAtEnd()) {
-        	// Possible next type, format of current type, occurrences of type
-        	char next = format.nextChar();
+            // Possible next type, format of current type, occurrences of type
+            char next = format.nextChar();
 
             if (Character.isWhitespace(type)) { // skip all spaces
                 type = next;
@@ -1145,8 +1275,8 @@ public class Pack {
             
             if (next == '!' || next == '_') {
                 if (NATIVE_CODES.indexOf(type) == -1) {
-                	throw runtime.newArgumentError("'" + next +
-                	        "' allowed only after types " + NATIVE_CODES);
+                    throw runtime.newArgumentError("'" + next +
+                            "' allowed only after types " + NATIVE_CODES);
                 }
 
                 next = format.nextChar();
@@ -1188,173 +1318,173 @@ public class Pack {
                 case 'b' :
                 case 'H' :
                 case 'h' :
-                	{
-                		if (listSize-- <= 0) {
-                			throw runtime.newArgumentError(sTooFew);
-                		}
-                		
-                		IRubyObject from = (IRubyObject) list.get(idx++);
-                		lCurElemString = from == runtime.getNil() ? "" : convert2String(from);
+                    {
+                        if (listSize-- <= 0) {
+                            throw runtime.newArgumentError(sTooFew);
+                        }
+                        
+                        IRubyObject from = (IRubyObject) list.get(idx++);
+                        lCurElemString = from == runtime.getNil() ? "" : convert2String(from);
 
-                		if (isStar) {
-                			occurrences = lCurElemString.length();
-                		}
+                        if (isStar) {
+                            occurrences = lCurElemString.length();
+                        }
                     
-                		switch (type) {
-                			case 'a' :
-                			case 'A' :
-                			case 'Z' :
-                				if (lCurElemString.length() >= occurrences) {
-                					result.append(lCurElemString.toCharArray(), 0, occurrences);
-                				} else {//need padding
-                					//I'm fairly sure there is a library call to create a
-                					//string filled with a given char with a given length but I couldn't find it
-                					result.append(lCurElemString);
-                					occurrences -= lCurElemString.length();
-                					grow(result, (type == 'a') ? sNil10 : sSp10, occurrences);
-                				}	
+                        switch (type) {
+                            case 'a' :
+                            case 'A' :
+                            case 'Z' :
+                                if (lCurElemString.length() >= occurrences) {
+                                    result.append(lCurElemString.toCharArray(), 0, occurrences);
+                                } else {//need padding
+                                    //I'm fairly sure there is a library call to create a
+                                    //string filled with a given char with a given length but I couldn't find it
+                                    result.append(lCurElemString);
+                                    occurrences -= lCurElemString.length();
+                                    grow(result, (type == 'a') ? sNil10 : sSp10, occurrences);
+                                }    
                             break;
 
                             //I believe there is a bug in the b and B case we skip a char too easily
                             case 'b' :
-                            	{
-                            		int currentByte = 0;
-                            		int padLength = 0;
+                                {
+                                    int currentByte = 0;
+                                    int padLength = 0;
 
-                            		if (occurrences > lCurElemString.length()) {
-                            			padLength = occurrences - lCurElemString.length();
-                            			occurrences = lCurElemString.length();
-                            		}
+                                    if (occurrences > lCurElemString.length()) {
+                                        padLength = occurrences - lCurElemString.length();
+                                        occurrences = lCurElemString.length();
+                                    }
                                 
-                            		for (int i = 0; i < occurrences;) {
-                            			if ((lCurElemString.charAt(i++) & 1) != 0) {//if the low bit is set
-                            				currentByte |= 128; //set the high bit of the result
-                            			}
-                            			
-                            			if ((i & 7) == 0) {
-                            				result.append((char) (currentByte & 0xff));
-                            				currentByte = 0;
-                            				continue;
-                            			}
-                            			
-                           				//if the index is not a multiple of 8, we are not on a byte boundary
-                           				currentByte >>= 1; //shift the byte
-                            		}
+                                    for (int i = 0; i < occurrences;) {
+                                        if ((lCurElemString.charAt(i++) & 1) != 0) {//if the low bit is set
+                                            currentByte |= 128; //set the high bit of the result
+                                        }
+                                        
+                                        if ((i & 7) == 0) {
+                                            result.append((char) (currentByte & 0xff));
+                                            currentByte = 0;
+                                            continue;
+                                        }
+                                        
+                                           //if the index is not a multiple of 8, we are not on a byte boundary
+                                           currentByte >>= 1; //shift the byte
+                                    }
                                 
-                            		if ((occurrences & 7) != 0) { //if the length is not a multiple of 8
-                            			currentByte >>= 7 - (occurrences & 7); //we need to pad the last byte
-                            			result.append((char) (currentByte & 0xff));
-                            		}
+                                    if ((occurrences & 7) != 0) { //if the length is not a multiple of 8
+                                        currentByte >>= 7 - (occurrences & 7); //we need to pad the last byte
+                                        result.append((char) (currentByte & 0xff));
+                                    }
                                 
-                            		//do some padding, I don't understand the padding strategy
-                            		result.setLength(result.length() + padLength);
-                            	}
+                                    //do some padding, I don't understand the padding strategy
+                                    result.setLength(result.length() + padLength);
+                                }
                             break;
                             case 'B' :
-                            	{
-                            		int currentByte = 0;
-                            		int padLength = 0;
-                            		
-                            		if (occurrences > lCurElemString.length()) {
-                            			padLength = occurrences - lCurElemString.length();
-                            			occurrences = lCurElemString.length();
-                            		}
-                            		
-                            		for (int i = 0; i < occurrences;) {
-                            			currentByte |= lCurElemString.charAt(i++) & 1;
-                            			
-                            			// we filled up current byte; append it and create next one
-                            			if ((i & 7) == 0) {
-                            				result.append((char) (currentByte & 0xff));
-                            				currentByte = 0;
-                            				continue;
-                            			}
-                            			
-                            			//if the index is not a multiple of 8, we are not on a byte boundary
-                            			currentByte <<= 1; 
-                            		}
-                            		
-                            		if ((occurrences & 7) != 0) { //if the length is not a multiple of 8
-                            			currentByte <<= 7 - (occurrences & 7); //we need to pad the last byte
-                            			result.append((char) (currentByte & 0xff));
-                            		}
-                            		
-                            		result.setLength(result.length() + padLength);
-                            	}
+                                {
+                                    int currentByte = 0;
+                                    int padLength = 0;
+                                    
+                                    if (occurrences > lCurElemString.length()) {
+                                        padLength = occurrences - lCurElemString.length();
+                                        occurrences = lCurElemString.length();
+                                    }
+                                    
+                                    for (int i = 0; i < occurrences;) {
+                                        currentByte |= lCurElemString.charAt(i++) & 1;
+                                        
+                                        // we filled up current byte; append it and create next one
+                                        if ((i & 7) == 0) {
+                                            result.append((char) (currentByte & 0xff));
+                                            currentByte = 0;
+                                            continue;
+                                        }
+                                        
+                                        //if the index is not a multiple of 8, we are not on a byte boundary
+                                        currentByte <<= 1; 
+                                    }
+                                    
+                                    if ((occurrences & 7) != 0) { //if the length is not a multiple of 8
+                                        currentByte <<= 7 - (occurrences & 7); //we need to pad the last byte
+                                        result.append((char) (currentByte & 0xff));
+                                    }
+                                    
+                                    result.setLength(result.length() + padLength);
+                                }
                             break;
                             case 'h' :
-                            	{
-                            		int currentByte = 0;
-                            		int padLength = 0;
-                            		
-                            		if (occurrences > lCurElemString.length()) {
-                            			padLength = occurrences - lCurElemString.length();
-                            			occurrences = lCurElemString.length();
-                            		}
-                            		
-                            		for (int i = 0; i < occurrences;) {
-                            			char currentChar = lCurElemString.charAt(i++);
-                            			
-                            			if (Character.isJavaIdentifierStart(currentChar)) {
-                            				//this test may be too lax but it is the same as in MRI
-                            				currentByte |= (((currentChar & 15) + 9) & 15) << 4;
-                            			} else {
-                            				currentByte |= (currentChar & 15) << 4;
-                            			}
-                            			
-                            			if ((i & 1) != 0) {
-                            				currentByte >>= 4;
-                            			} else {
-                            				result.append((char) (currentByte & 0xff));
-                            				currentByte = 0;
-                            			}
-                            		}
-                            		
-                            		if ((occurrences & 1) != 0) {
-                            			result.append((char) (currentByte & 0xff));
-                            		}
+                                {
+                                    int currentByte = 0;
+                                    int padLength = 0;
+                                    
+                                    if (occurrences > lCurElemString.length()) {
+                                        padLength = occurrences - lCurElemString.length();
+                                        occurrences = lCurElemString.length();
+                                    }
+                                    
+                                    for (int i = 0; i < occurrences;) {
+                                        char currentChar = lCurElemString.charAt(i++);
+                                        
+                                        if (Character.isJavaIdentifierStart(currentChar)) {
+                                            //this test may be too lax but it is the same as in MRI
+                                            currentByte |= (((currentChar & 15) + 9) & 15) << 4;
+                                        } else {
+                                            currentByte |= (currentChar & 15) << 4;
+                                        }
+                                        
+                                        if ((i & 1) != 0) {
+                                            currentByte >>= 4;
+                                        } else {
+                                            result.append((char) (currentByte & 0xff));
+                                            currentByte = 0;
+                                        }
+                                    }
+                                    
+                                    if ((occurrences & 1) != 0) {
+                                        result.append((char) (currentByte & 0xff));
+                                    }
 
-                            		result.setLength(result.length() + padLength);
-                            	}
+                                    result.setLength(result.length() + padLength);
+                                }
                             break;
                             case 'H' :
-                            	{
-                            		int currentByte = 0;
-                            		int padLength = 0;
-                            		
-                            		if (occurrences > lCurElemString.length()) {
-                            			padLength = occurrences - lCurElemString.length();
-                            			occurrences = lCurElemString.length();
-                            		}
-                            		
-                            		for (int i = 0; i < occurrences;) {
-                            			char currentChar = lCurElemString.charAt(i++);
-                            			
-                            			if (Character.isJavaIdentifierStart(currentChar)) {
-                            				//this test may be too lax but it is the same as in MRI
-                            				currentByte |= ((currentChar & 15) + 9) & 15;
-                            			} else {
-                            				currentByte |= currentChar & 15;
-                            			}
-                            			
-                            			if ((i & 1) != 0) {
-                            				currentByte <<= 4;
-                            			} else {
-                            				result.append((char) (currentByte & 0xff));
-                            				currentByte = 0;
-                            			}
-                            		}
-                            		
-                            		if ((occurrences & 1) != 0) {
-                            			result.append((char) (currentByte & 0xff));
-                            		}
+                                {
+                                    int currentByte = 0;
+                                    int padLength = 0;
+                                    
+                                    if (occurrences > lCurElemString.length()) {
+                                        padLength = occurrences - lCurElemString.length();
+                                        occurrences = lCurElemString.length();
+                                    }
+                                    
+                                    for (int i = 0; i < occurrences;) {
+                                        char currentChar = lCurElemString.charAt(i++);
+                                        
+                                        if (Character.isJavaIdentifierStart(currentChar)) {
+                                            //this test may be too lax but it is the same as in MRI
+                                            currentByte |= ((currentChar & 15) + 9) & 15;
+                                        } else {
+                                            currentByte |= currentChar & 15;
+                                        }
+                                        
+                                        if ((i & 1) != 0) {
+                                            currentByte <<= 4;
+                                        } else {
+                                            result.append((char) (currentByte & 0xff));
+                                            currentByte = 0;
+                                        }
+                                    }
+                                    
+                                    if ((occurrences & 1) != 0) {
+                                        result.append((char) (currentByte & 0xff));
+                                    }
 
-                            		result.setLength(result.length() + padLength);
-                            	}
+                                    result.setLength(result.length() + padLength);
+                                }
                             break;
-                		}
-                		break;
-                	}
+                        }
+                        break;
+                    }
 
                 case 'x' :
                     grow(result, sNil10, occurrences);
@@ -1369,66 +1499,66 @@ public class Pack {
                 case '@' :
                     occurrences -= result.length();
                     if (occurrences > 0) {
-						grow(result, sNil10, occurrences);
-					}
+                        grow(result, sNil10, occurrences);
+                    }
                     occurrences = -occurrences;
                     if (occurrences > 0) {
-						shrink(result, occurrences);
-					}
+                        shrink(result, occurrences);
+                    }
                     break;
                 case 'u' :
                 case 'm' :
-                	{
-                		if (listSize-- <= 0) {
-                			throw runtime.newArgumentError(sTooFew);
-                		}
+                    {
+                        if (listSize-- <= 0) {
+                            throw runtime.newArgumentError(sTooFew);
+                        }
                         IRubyObject from = (IRubyObject) list.get(idx++);
                         lCurElemString = from == runtime.getNil() ? "" : convert2String(from);
                         occurrences = occurrences <= 2 ? 45 : occurrences / 3 * 3;
 
                         for (;;) {
-                        	encodes(runtime, result, lCurElemString, occurrences, type);
-                        	
-                        	if (occurrences >= lCurElemString.length()) {
-                        		break;
-                        	}
-                        	
-                        	lCurElemString = lCurElemString.substring(occurrences);
+                            encodes(runtime, result, lCurElemString, occurrences, type);
+                            
+                            if (occurrences >= lCurElemString.length()) {
+                                break;
+                            }
+                            
+                            lCurElemString = lCurElemString.substring(occurrences);
                         }
-                	}
+                    }
                     break;
                 case 'M' :
-                	{
-               		if (listSize-- <= 0) {
-               			throw runtime.newArgumentError(sTooFew);
-               		}
-                	
-               		IRubyObject from = (IRubyObject) list.get(idx++);
-               		lCurElemString = from == runtime.getNil() ? "" : convert2String(from);
-
-               		if (occurrences <= 1) {
-               			occurrences = 72;
-               		}
+                    {
+                       if (listSize-- <= 0) {
+                           throw runtime.newArgumentError(sTooFew);
+                       }
                     
-               		qpencode(result, lCurElemString, occurrences);
-                	}
+                       IRubyObject from = (IRubyObject) list.get(idx++);
+                       lCurElemString = from == runtime.getNil() ? "" : convert2String(from);
+
+                       if (occurrences <= 1) {
+                           occurrences = 72;
+                       }
+                    
+                       qpencode(result, lCurElemString, occurrences);
+                    }
                     break;
                 case 'U' :
-               		char[] c = new char[occurrences];
-               		for (int cIndex = 0; occurrences-- > 0; cIndex++) {
-               			if (listSize-- <= 0) {
-               				throw runtime.newArgumentError(sTooFew);
-               			}
+                       char[] c = new char[occurrences];
+                       for (int cIndex = 0; occurrences-- > 0; cIndex++) {
+                           if (listSize-- <= 0) {
+                               throw runtime.newArgumentError(sTooFew);
+                           }
 
-               			IRubyObject from = (IRubyObject) list.get(idx++);
-               			long l = from == runtime.getNil() ? 0 : RubyNumeric.num2long(from);
+                           IRubyObject from = (IRubyObject) list.get(idx++);
+                           long l = from == runtime.getNil() ? 0 : RubyNumeric.num2long(from);
 
-               			c[cIndex] = (char) l;
-               		}
+                           c[cIndex] = (char) l;
+                       }
                     
                     try {
-                    	byte[] bytes = new String(c).getBytes("UTF-8");
-                    	result.append(RubyString.bytesToString(bytes));
+                        byte[] bytes = new String(c).getBytes("UTF-8");
+                        result.append(RubyString.bytesToString(bytes));
                     } catch (java.io.UnsupportedEncodingException e) {
                         assert false : "can't convert to UTF8";
                     }
@@ -1486,200 +1616,200 @@ public class Pack {
     }
     
     /**
-	 * Encode an int in little endian format into a packed representation.
-	 *  
-	 * @param result to be appended to
-	 * @param s the integer to encode
-	 */
+     * Encode an int in little endian format into a packed representation.
+     *  
+     * @param result to be appended to
+     * @param s the integer to encode
+     */
     private static void encodeIntLittleEndian(StringBuffer result, int s) {
         result.append((char) (s & 0xff)).append((char) ((s >> 8) & 0xff));
         result.append((char) ((s>>16) & 0xff)).append((char) ((s>>24) &0xff));
     }
 
-	/**
-	 * Encode an int in big-endian format into a packed representation.
-	 *  
-	 * @param result to be appended to
-	 * @param s the integer to encode
-	 */
+    /**
+     * Encode an int in big-endian format into a packed representation.
+     *  
+     * @param result to be appended to
+     * @param s the integer to encode
+     */
     private static void encodeIntBigEndian(StringBuffer result, int s) {
         result.append((char) ((s>>24) &0xff)).append((char) ((s>>16) &0xff));
         result.append((char) ((s >> 8) & 0xff)).append((char) (s & 0xff));
     }
-	
-	/**
-	 * Decode a long in big-endian format from a packed value
-	 * 
+    
+    /**
+     * Decode a long in big-endian format from a packed value
+     * 
      * @param encode string to get int from
-	 * @return the long value
-	 */
-	private static long decodeLongBigEndian(PtrList encode) {
-	    int c1 = decodeIntBigEndian(encode);
-	    int c2 = decodeIntBigEndian(encode);
-		
-		return ((long) c1 << 32) + (c2 & 0xffffffffL); 
-	}
+     * @return the long value
+     */
+    private static long decodeLongBigEndian(PtrList encode) {
+        int c1 = decodeIntBigEndian(encode);
+        int c2 = decodeIntBigEndian(encode);
+        
+        return ((long) c1 << 32) + (c2 & 0xffffffffL); 
+    }
 
-	/**
-	 * Decode a long in little-endian format from a packed value
-	 * 
+    /**
+     * Decode a long in little-endian format from a packed value
+     * 
      * @param encode string to get int from
-	 * @return the long value
-	 */
-	private static long decodeLongLittleEndian(PtrList encode) {
-	    int c1 = decodeIntLittleEndian(encode);
-	    int c2 = decodeIntLittleEndian(encode);
+     * @return the long value
+     */
+    private static long decodeLongLittleEndian(PtrList encode) {
+        int c1 = decodeIntLittleEndian(encode);
+        int c2 = decodeIntLittleEndian(encode);
 
-	    return ((long) c2 << 32) + (c1 & 0xffffffffL); 
-	}
-	
-	/**
-	 * Encode a long in little-endian format into a packed value
-	 * 
-	 * @param result to pack long into
-	 * @param l is the long to encode
-	 */
-	private static void encodeLongLittleEndian(StringBuffer result, long l) {
-	    encodeIntLittleEndian(result, (int) (l & 0xffffffff));
-	    encodeIntLittleEndian(result, (int) (l >>> 32));
-	}
-	
-	/**
-	 * Encode a long in big-endian format into a packed value
-	 * 
-	 * @param result to pack long into
-	 * @param l is the long to encode
-	 */
-	private static void encodeLongBigEndian(StringBuffer result, long l) {
-	    encodeIntBigEndian(result, (int) (l >>> 32)); 
-	    encodeIntBigEndian(result, (int) (l & 0xffffffff)); 
-	}
-	
-	/**
-	 * Decode a double from a packed value
-	 * 
+        return ((long) c2 << 32) + (c1 & 0xffffffffL); 
+    }
+    
+    /**
+     * Encode a long in little-endian format into a packed value
+     * 
+     * @param result to pack long into
+     * @param l is the long to encode
+     */
+    private static void encodeLongLittleEndian(StringBuffer result, long l) {
+        encodeIntLittleEndian(result, (int) (l & 0xffffffff));
+        encodeIntLittleEndian(result, (int) (l >>> 32));
+    }
+    
+    /**
+     * Encode a long in big-endian format into a packed value
+     * 
+     * @param result to pack long into
+     * @param l is the long to encode
+     */
+    private static void encodeLongBigEndian(StringBuffer result, long l) {
+        encodeIntBigEndian(result, (int) (l >>> 32)); 
+        encodeIntBigEndian(result, (int) (l & 0xffffffff)); 
+    }
+    
+    /**
+     * Decode a double from a packed value
+     * 
      * @param encode string to get int from
-	 * @return the double value
-	 */
-	private static double decodeDoubleLittleEndian(PtrList encode) {
-	    return Double.longBitsToDouble(decodeLongLittleEndian(encode));
-	}
+     * @return the double value
+     */
+    private static double decodeDoubleLittleEndian(PtrList encode) {
+        return Double.longBitsToDouble(decodeLongLittleEndian(encode));
+    }
 
-	/**
-	 * Decode a double in big-endian from a packed value
-	 * 
+    /**
+     * Decode a double in big-endian from a packed value
+     * 
      * @param encode string to get int from
-	 * @return the double value
-	 */
-	private static double decodeDoubleBigEndian(PtrList encode) {
-	    return Double.longBitsToDouble(decodeLongBigEndian(encode));
-	}
-	
-	/**
-	 * Encode a double in little endian format into a packed value
-	 * 
-	 * @param result to pack double into
-	 * @param d is the double to encode
-	 */
-	private static void encodeDoubleLittleEndian(StringBuffer result, double d) {
-	    encodeLongLittleEndian(result, Double.doubleToLongBits(d)); 
-	}
+     * @return the double value
+     */
+    private static double decodeDoubleBigEndian(PtrList encode) {
+        return Double.longBitsToDouble(decodeLongBigEndian(encode));
+    }
+    
+    /**
+     * Encode a double in little endian format into a packed value
+     * 
+     * @param result to pack double into
+     * @param d is the double to encode
+     */
+    private static void encodeDoubleLittleEndian(StringBuffer result, double d) {
+        encodeLongLittleEndian(result, Double.doubleToLongBits(d)); 
+    }
 
-	/**
-	 * Encode a double in big-endian format into a packed value
-	 * 
-	 * @param result to pack double into
-	 * @param d is the double to encode
-	 */
-	private static void encodeDoubleBigEndian(StringBuffer result, double d) {
-	    encodeLongBigEndian(result, Double.doubleToLongBits(d)); 
-	}
-	
-	/**
-	 * Decode a float in big-endian from a packed value
-	 * 
+    /**
+     * Encode a double in big-endian format into a packed value
+     * 
+     * @param result to pack double into
+     * @param d is the double to encode
+     */
+    private static void encodeDoubleBigEndian(StringBuffer result, double d) {
+        encodeLongBigEndian(result, Double.doubleToLongBits(d)); 
+    }
+    
+    /**
+     * Decode a float in big-endian from a packed value
+     * 
      * @param encode string to get int from
-	 * @return the double value
-	 */
-	private static float decodeFloatBigEndian(PtrList encode) {
-	    return Float.intBitsToFloat(decodeIntBigEndian(encode));
-	}
+     * @return the double value
+     */
+    private static float decodeFloatBigEndian(PtrList encode) {
+        return Float.intBitsToFloat(decodeIntBigEndian(encode));
+    }
 
-	/**
-	 * Decode a float in little-endian from a packed value
-	 * 
-	 * @param encode string to get int from
-	 * @return the double value
-	 */
-	private static float decodeFloatLittleEndian(PtrList encode) {
-	    return Float.intBitsToFloat(decodeIntLittleEndian(encode));
-	}
-	
-	/**
-	 * Encode a float in little endian format into a packed value
-	 * @param result to pack float into
-	 * @param f is the float to encode
-	 */
-	private static void encodeFloatLittleEndian(StringBuffer result, float f) {
-		encodeIntLittleEndian(result, Float.floatToIntBits(f)); 
-	}
-
-	/**
-	 * Encode a float in big-endian format into a packed value
-	 * @param result to pack float into
-	 * @param f is the float to encode
-	 */
-	private static void encodeFloatBigEndian(StringBuffer result, float f) {
-		encodeIntBigEndian(result, Float.floatToIntBits(f)); 
-	}
-	
-	/**
-	 * Decode a short in big-endian from a packed value
-	 * 
+    /**
+     * Decode a float in little-endian from a packed value
+     * 
      * @param encode string to get int from
-	 * @return the short value
-	 */
-	private static int decodeShortUnsignedLittleEndian(PtrList encode) {
-		return encode.nextByte() + (encode.nextByte() << 8);
-	}
+     * @return the double value
+     */
+    private static float decodeFloatLittleEndian(PtrList encode) {
+        return Float.intBitsToFloat(decodeIntLittleEndian(encode));
+    }
+    
+    /**
+     * Encode a float in little endian format into a packed value
+     * @param result to pack float into
+     * @param f is the float to encode
+     */
+    private static void encodeFloatLittleEndian(StringBuffer result, float f) {
+        encodeIntLittleEndian(result, Float.floatToIntBits(f)); 
+    }
 
-	/**
-	 * Decode a short in big-endian from a packed value
-	 * 
+    /**
+     * Encode a float in big-endian format into a packed value
+     * @param result to pack float into
+     * @param f is the float to encode
+     */
+    private static void encodeFloatBigEndian(StringBuffer result, float f) {
+        encodeIntBigEndian(result, Float.floatToIntBits(f)); 
+    }
+    
+    /**
+     * Decode a short in big-endian from a packed value
+     * 
      * @param encode string to get int from
-	 * @return the short value
-	 */
-	private static int decodeShortUnsignedBigEndian(PtrList encode) {
-		return (encode.nextByte() << 8) + encode.nextByte();
-	}
+     * @return the short value
+     */
+    private static int decodeShortUnsignedLittleEndian(PtrList encode) {
+        return encode.nextByte() + (encode.nextByte() << 8);
+    }
 
-	/**
-	 * Decode a short in big-endian from a packed value
-	 * 
+    /**
+     * Decode a short in big-endian from a packed value
+     * 
      * @param encode string to get int from
-	 * @return the short value
-	 */
-	private static short decodeShortBigEndian(PtrList encode) {
-		return (short) ((short) (encode.nextByte() << 8) + encode.nextByte());
-	}
-	
-	/**
-	 * Encode an short in little endian format into a packed representation.
-	 *  
-	 * @param result to be appended to
-	 * @param s the short to encode
-	 */
-	private static void encodeShortLittleEndian(StringBuffer result, int s) {
-		result.append((char) (s & 0xff)).append((char) ((s & 0xff00) >> 8));
-	}
-	
-	/**
-	 * Encode an shortin big-endian format into a packed representation.
-	 *  
-	 * @param result to be appended to
-	 * @param s the short to encode
-	 */
-	private static void encodeShortBigEndian(StringBuffer result, int s) {
-		result.append((char) ((s & 0xff00) >> 8)).append((char) (s & 0xff));
-	}
+     * @return the short value
+     */
+    private static int decodeShortUnsignedBigEndian(PtrList encode) {
+        return (encode.nextByte() << 8) + encode.nextByte();
+    }
+
+    /**
+     * Decode a short in big-endian from a packed value
+     * 
+     * @param encode string to get int from
+     * @return the short value
+     */
+    private static short decodeShortBigEndian(PtrList encode) {
+        return (short) ((short) (encode.nextByte() << 8) + encode.nextByte());
+    }
+    
+    /**
+     * Encode an short in little endian format into a packed representation.
+     *  
+     * @param result to be appended to
+     * @param s the short to encode
+     */
+    private static void encodeShortLittleEndian(StringBuffer result, int s) {
+        result.append((char) (s & 0xff)).append((char) ((s & 0xff00) >> 8));
+    }
+    
+    /**
+     * Encode an shortin big-endian format into a packed representation.
+     *  
+     * @param result to be appended to
+     * @param s the short to encode
+     */
+    private static void encodeShortBigEndian(StringBuffer result, int s) {
+        result.append((char) ((s & 0xff00) >> 8)).append((char) (s & 0xff));
+    }
 }
