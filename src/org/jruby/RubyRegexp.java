@@ -47,10 +47,9 @@ import org.jruby.util.PrintfFormat;
  * @author  amoore
  */
 public class RubyRegexp extends RubyObject implements ReOptions {
-    private static final Pattern COMMENT_PATTERN = Pattern.compile("\\(\\?#[^)]*\\)");
-    private static final Pattern HEX_SINGLE_DIGIT_PATTERN = Pattern.compile("\\\\x(\\p{XDigit})(?!\\p{XDigit})");
-    private static final Pattern OCTAL_SINGLE_DIGIT_PATTERN = Pattern.compile("\\\\([0-7])(?![0-7])");
-    /** Class which represents the multibyte character set code.
+    private static final RegexpTranslator REGEXP_TRANSLATOR = new RegexpTranslator();
+
+	/** Class which represents the multibyte character set code.
 	 * (should be an enum in Java 5.0).
 	 * 
 	 * Warning: THIS IS NOT REALLY SUPPORTED BY JRUBY. 
@@ -139,20 +138,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     }
 
     public void initialize(String regex, int options) {
-    	int flags = Pattern.MULTILINE;
-        if ((options & RE_OPTION_IGNORECASE) > 0) {
-            flags |= Pattern.CASE_INSENSITIVE;
-        }
-        if ((options & RE_OPTION_EXTENDED) > 0) {
-        	flags |= Pattern.COMMENTS;
-        }
-        if ((options & RE_OPTION_MULTILINE) > 0) {
-        	flags |= Pattern.DOTALL;
-        }
-        regex = COMMENT_PATTERN.matcher(regex).replaceAll("");
-        regex = HEX_SINGLE_DIGIT_PATTERN.matcher(regex).replaceAll("\\\\"+"x0$1");
-        regex = OCTAL_SINGLE_DIGIT_PATTERN.matcher(regex).replaceAll("\\\\"+"0$1");
-        pattern = Pattern.compile(regex, flags | this.code.flags());
+        pattern = REGEXP_TRANSLATOR.translate(regex, options, code.flags());
     }
 
     public static String quote(String orig) {

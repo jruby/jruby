@@ -47,6 +47,7 @@ import org.jruby.IRuby;
 import org.jruby.RubyString;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.BuiltinScript;
 import org.jruby.util.PreparsedScript;
 
 /**
@@ -54,7 +55,9 @@ import org.jruby.util.PreparsedScript;
  * @author jpetersen
  */
 public class LoadService {
-    private static final String[] suffixes = { ".ast.ser", "", ".rb.ast.ser", ".rb", ".jar" };
+    private static final String JRUBY_BUILTIN_SUFFIX = ".jrb";
+
+	private static final String[] suffixes = { JRUBY_BUILTIN_SUFFIX, ".ast.ser", ".rb.ast.ser", ".rb",  "", ".jar" };
 
     private final List loadPath = new ArrayList();
     private final List loadedFeatures = new ArrayList();
@@ -271,4 +274,8 @@ public class LoadService {
         }
         return false;
     }
+
+	public void registerRubyBuiltin(String libraryName) {
+		registerBuiltin(libraryName + JRUBY_BUILTIN_SUFFIX, new BuiltinScript(libraryName));
+	}
 }

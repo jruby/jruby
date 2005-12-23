@@ -92,6 +92,8 @@ import org.jruby.util.BuiltinScript;
  * The jruby runtime.
  */
 public final class Ruby implements IRuby {
+	private static String[] BUILTIN_LIBRARIES = {"fcntl", "yaml", "etc", "nkf", "strscan"};
+    
 	private CacheMap cacheMap = new CacheMap();
     private ThreadService threadService = new ThreadService(this);
 
@@ -369,17 +371,21 @@ public final class Ruby implements IRuby {
 
         initBuiltinClasses();
     }
-    
+
     private void initLibraries() {
         loadService = new LoadService(this);
         loadService.registerBuiltin("java", new BuiltinScript("javasupport"));
         loadService.registerBuiltin("socket", new SocketLibrary());
-        loadService.registerBuiltin("fcntl", new BuiltinScript("fcntl"));
-        loadService.registerBuiltin("etc", new BuiltinScript("etc"));
         loadService.registerBuiltin("rbconfig.rb", new RbConfigLibrary());
+
+        for (int i=0; i<BUILTIN_LIBRARIES.length; i++) {
+        	loadService.registerRubyBuiltin(BUILTIN_LIBRARIES[i]);
+        }
+        
+        
         loadService.registerBuiltin("jruby", new JRubyLibrary());
     }
-    
+
     private void initCoreClasses() {
         ObjectMetaClass objectMetaClass = new ObjectMetaClass(this);
         objectMetaClass.initializeClass();

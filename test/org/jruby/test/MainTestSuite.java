@@ -36,6 +36,7 @@ package org.jruby.test;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
+import org.jruby.TestRegexpTranslator;
 import org.jruby.javasupport.TestJavaClass;
 import org.jruby.javasupport.test.JavaSupportTestSuite;
 import org.jruby.runtime.callback.TestReflectionCallback;
@@ -67,6 +68,7 @@ public class MainTestSuite extends TestSuite {
         suite.addTest(new TestSuite(TestCommandlineParser.class));
         suite.addTest(new TestSuite(TestRubyException.class));
         suite.addTest(new TestSuite(TestReflectionCallback.class));
+        suite.addTest(new TestSuite(TestRegexpTranslator.class));
         return suite;
     }
 }
