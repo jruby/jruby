@@ -29,30 +29,34 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.test;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+
 import junit.framework.TestCase;
 
 import org.jruby.util.CommandlineParser;
 
 public class TestCommandlineParser extends TestCase {
-    public TestCommandlineParser(String name) {
-        super(name);
-    }
+	private PrintStream outStream;
 
+	public void setUp() {
+		outStream = new PrintStream(new ByteArrayOutputStream());
+	}
     public void testParsing() {
-        CommandlineParser c = new CommandlineParser(new String[] { "-e", "hello", "-e", "world" });
+        CommandlineParser c = new CommandlineParser(new String[] { "-e", "hello", "-e", "world" }, outStream);
         assertEquals("hello\nworld\n", c.inlineScript());
         assertNull(c.getScriptFileName());
         assertEquals("-e", c.displayedFileName());
 
-        c = new CommandlineParser(new String[] { "--version" });
+        c = new CommandlineParser(new String[] { "--version" }, outStream);
         assertTrue(c.isShowVersion());
 
-        c = new CommandlineParser(new String[] { "-n", "myfile.rb" });
+        c = new CommandlineParser(new String[] { "-n", "myfile.rb" }, outStream);
         assertTrue(c.isAssumeLoop());
         assertEquals("myfile.rb", c.getScriptFileName());
         assertEquals("myfile.rb", c.displayedFileName());
 
-        c = new CommandlineParser(new String[0]);
+        c = new CommandlineParser(new String[0], outStream);
         assertEquals("-", c.displayedFileName());
     }
 
@@ -62,8 +66,9 @@ public class TestCommandlineParser extends TestCase {
       class TestableCommandlineParser extends CommandlineParser {
 
         public TestableCommandlineParser(String[] arguments) {
-          super(arguments);
+          super(arguments, outStream);
         }
+        
         protected void systemExit() {
           throw new IllegalStateException("Real CommandlineParser would perform " +
               "System.exit() because of a command line option error.");
@@ -81,13 +86,20 @@ public class TestCommandlineParser extends TestCase {
     
     public void testPrintVersionDoesNotRunInterpreter() {
         String[] args = new String[] { "-v" };
-        CommandlineParser parser = new CommandlineParser(args);
+        CommandlineParser parser = new CommandlineParser(args, outStream);
         assertTrue(parser.isShowVersion());
         assertFalse(parser.isShouldRunInterpreter());
 
         args = new String[] { "--version" };
-        parser = new CommandlineParser(args);
+        parser = new CommandlineParser(args, outStream);
         assertTrue(parser.isShowVersion());
         assertFalse(parser.isShouldRunInterpreter());
+    }
+    
+    public void testHelpDoesNotRunIntepreter() {
+        String[] args = new String[] { "-h" };
+        CommandlineParser parser = new CommandlineParser(args, outStream);
+        assertFalse(parser.isShouldRunInterpreter());
+    	
     }
 }

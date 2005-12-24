@@ -36,6 +36,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.PrintStream;
 import java.io.Reader;
 import java.util.Iterator;
 
@@ -64,7 +65,7 @@ public class Main {
     private static boolean hasPrintedUsage = false;
 
     public static void main(String[] args) {
-        commandline = new CommandlineParser(args);
+        commandline = new CommandlineParser(args, System.out);
 
         if (commandline.isShowVersion()) {
             showVersion();
@@ -102,13 +103,13 @@ public class Main {
         System.out.println("]");
     }
 
-    public static void printUsage() {
+    public static void printUsage(PrintStream printStream) {
         if (!hasPrintedUsage) {
-            System.out.println("Usage: jruby [switches] [--] [rubyfile.rb] [arguments]");
-            System.out.println("    -e 'command'    one line of script. Several -e's allowed. Omit [programfile]");
-            System.out.println("    -b              benchmark mode, times the script execution");
-            System.out.println("    -Idirectory     specify $LOAD_PATH directory (may be used more than once)");
-            System.out.println("    --              optional -- before rubyfile.rb for compatibility with ruby");
+			printStream.println("Usage: jruby [switches] [--] [rubyfile.rb] [arguments]");
+			printStream.println("    -e 'command'    one line of script. Several -e's allowed. Omit [programfile]");
+			printStream.println("    -b              benchmark mode, times the script execution");
+			printStream.println("    -Idirectory     specify $LOAD_PATH directory (may be used more than once)");
+			printStream.println("    --              optional -- before rubyfile.rb for compatibility with ruby");
             hasPrintedUsage = true;
         }
     }

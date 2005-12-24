@@ -36,6 +36,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -63,8 +64,11 @@ public class CommandlineParser {
     public int argumentIndex = 0;
     public int characterIndex = 0;
 
-    public CommandlineParser(String[] arguments) {
+	private final PrintStream outStream;
+
+    public CommandlineParser(String[] arguments, PrintStream outStream) {
         this.arguments = arguments;
+        this.outStream = outStream;
         processArguments();
     }
 
@@ -93,7 +97,8 @@ public class CommandlineParser {
         FOR : for (characterIndex = 1; characterIndex < argument.length(); characterIndex++) {
             switch (argument.charAt(characterIndex)) {
                 case 'h' :
-                    Main.printUsage();
+                    Main.printUsage(outStream);
+                    shouldRunInterpreter = false;
                     break;
                 case 'I' :
                     loadPaths.add(grabValue(" -I must be followed by a directory name to add to lib path"));
@@ -165,7 +170,7 @@ public class CommandlineParser {
         }
 		System.err.println("invalid argument " + argumentIndex);
 		System.err.println(errorMessage);
-		Main.printUsage();
+		Main.printUsage(outStream);
 		systemExit();
         return null;
     }
