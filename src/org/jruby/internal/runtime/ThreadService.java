@@ -29,6 +29,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+
 import org.jruby.IRuby;
 import org.jruby.RubyThread;
 import org.jruby.runtime.ThreadContext;
@@ -38,6 +43,7 @@ public class ThreadService {
     private ThreadContext mainContext = new ThreadContext(runtime);
     private ThreadContextLocal localContext = new ThreadContextLocal(mainContext);
     private ThreadGroup rubyThreadGroup;
+    private List rubyThreadList;
     private volatile boolean critical;
 
     public ThreadService(IRuby runtime) {
@@ -45,6 +51,10 @@ public class ThreadService {
         this.mainContext = new ThreadContext(runtime);
         this.localContext = new ThreadContextLocal(mainContext);
         this.rubyThreadGroup = new ThreadGroup("Ruby Threads#" + runtime.hashCode());
+        this.rubyThreadList = Collections.synchronizedList(new ArrayList());
+        
+        // Must be called from main thread (it is currently, but this bothers me)
+        rubyThreadList.add(Thread.currentThread());
     }
 
     public void disposeCurrentThread() {
@@ -63,15 +73,22 @@ public class ThreadService {
         mainContext.setThread(thread);
     }
     
-    public RubyThread[] getActiveRubyThreads() {
+    public synchronized RubyThread[] getActiveRubyThreads() {
     	// all threads in ruby thread group plus main thread
-    	Thread[] threads = new Thread[rubyThreadGroup.activeCount() + 1];
-    	RubyThread[] rubyThreads = new RubyThread[threads.length];
-    	
-    	rubyThreadGroup.enumerate(threads);
-    	for (int i = 0; i < threads.length; i++) {
-    		rubyThreads[i] = getRubyThreadFromThread(threads[i]);
-    	}
+        
+        List rtList = new ArrayList(rubyThreadList.size());
+        
+        for (Iterator iter = rubyThreadList.iterator(); iter.hasNext();) {
+            Thread t = (Thread)iter.next();
+            
+            if (!t.isAlive()) continue;
+            
+            RubyThread rt = getRubyThreadFromThread(t);
+            rtList.add(rt);
+        }
+        
+        RubyThread[] rubyThreads = new RubyThread[rtList.size()];
+        rtList.toArray(rubyThreads);
     	
     	return rubyThreads;
     }
@@ -80,9 +97,11 @@ public class ThreadService {
     	return rubyThreadGroup;
     }
 
-    public void registerNewThread(RubyThread thread) {
+    public synchronized void registerNewThread(RubyThread thread) {
         localContext.set(new ThreadContext(runtime));
         getCurrentContext().setThread(thread);
+        // This requires register to be called from within the registree thread
+        rubyThreadList.add(Thread.currentThread());
     }
     
     public synchronized void setCritical(boolean critical) {
@@ -93,16 +112,10 @@ public class ThreadService {
 			}
     		this.critical = false;
     		
-    		Thread[] activeThreads = new Thread[rubyThreadGroup.activeCount()];
-    		rubyThreadGroup.enumerate(activeThreads);
-    		
-    		// unsuspend all threads, starting with main if necessary
-    		if (getCurrentContext() != mainContext) {
-    			mainContext.getThread().decriticalize();
-    		}
+            RubyThread[] activeThreads = getActiveRubyThreads();
     		
     		for (int i = 0; i < activeThreads.length; i++) {
-    			RubyThread rubyThread = getRubyThreadFromThread(activeThreads[i]);
+    			RubyThread rubyThread = activeThreads[i];
     			
     			rubyThread.decriticalize();
     		}
@@ -112,18 +125,11 @@ public class ThreadService {
 			}
     		this.critical = true;
     		
-    		Thread[] activeThreads = new Thread[rubyThreadGroup.activeCount()];
-    		rubyThreadGroup.enumerate(activeThreads);
+            RubyThread[] activeThreads = getActiveRubyThreads();
     		AtomicSpinlock spinlock = new AtomicSpinlock();
-
-    		// suspend all threads, starting with main if necessary
-    		if (getCurrentContext() != mainContext) {
-    			mainContext.getThread().criticalize(spinlock);
-    		}
     		
     		for (int i = 0; i < activeThreads.length; i++) {
-    			RubyThread rubyThread = null;
-    			rubyThread = getRubyThreadFromThread(activeThreads[i]);
+    			RubyThread rubyThread = activeThreads[i];
 
     			if (rubyThread != getCurrentContext().getThread()) {
     				rubyThread.criticalize(spinlock);

@@ -49,7 +49,7 @@ public class RubyNativeThread extends Thread {
     
 	protected RubyNativeThread(RubyThread rubyThread, IRubyObject[] args) {
 		super(rubyThread.getRuntime().getThreadService().getRubyThreadGroup(), "Ruby Thread" + rubyThread.hash());
-		this.rubyThread = rubyThread;
+        this.rubyThread = rubyThread;
 		
 		runtime = rubyThread.getRuntime();
 		proc = runtime.newProc();
@@ -63,8 +63,6 @@ public class RubyNativeThread extends Thread {
 	}
 	
 	public void run() {
-        rubyThread.notifyStarted();
-
         runtime.getThreadService().registerNewThread(rubyThread);
         ThreadContext context = runtime.getCurrentContext();
         
@@ -72,6 +70,8 @@ public class RubyNativeThread extends Thread {
 
         // Call the thread's code
         try {
+            rubyThread.notifyStarted();
+            
             proc.call(arguments);
             rubyThread.cleanTerminate();
         } catch (ThreadKill tk) {

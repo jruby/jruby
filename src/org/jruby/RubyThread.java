@@ -195,6 +195,10 @@ public class RubyThread extends RubyObject {
 
         rubyThread.threadImpl = new NativeThread(rubyThread, args);
         rubyThread.threadImpl.start();
+        
+        // make sure the thread has started before continuing, so it will appear "runnable" to the rest of Ruby
+        rubyThread.ensureStarted();
+        
         return rubyThread;
     }
     
@@ -453,7 +457,16 @@ public class RubyThread extends RubyObject {
     }
 
     public IRubyObject priority_set(IRubyObject priority) {
-        threadImpl.setPriority(RubyNumeric.fix2int(priority));
+        // FIXME: This should probably do some translation from Ruby priority levels to Java priority levels (until we have green threads)
+        int iPriority = RubyNumeric.fix2int(priority);
+        
+        if (iPriority < Thread.MIN_PRIORITY) {
+            iPriority = Thread.MIN_PRIORITY;
+        } else if (iPriority > Thread.MAX_PRIORITY) {
+            iPriority = Thread.MAX_PRIORITY;
+        }
+        
+        threadImpl.setPriority(iPriority);
         return priority;
     }
 
@@ -495,10 +508,11 @@ public class RubyThread extends RubyObject {
     }
 
     public IRubyObject status() {
-        ensureStarted();
         if (threadImpl.isAlive()) {
         	if (isStopped) {
             	return getRuntime().newString("sleep");
+            } else if (killed) {
+                return getRuntime().newString("aborting");
             }
         	
             return getRuntime().newString("run");
@@ -557,19 +571,19 @@ public class RubyThread extends RubyObject {
         // hasn't started yet. We give it a chance to start
         // before we try to do anything.
 
-        if (hasStarted) {
-            return;
-        }
-        synchronized (hasStartedLock) {
-            if (!hasStarted) {
-                try {
-                    hasStartedLock.wait();
-                } catch (InterruptedException iExcptn) {
-                    assert false : iExcptn;
+
+        // Yes, I know double-check locking is broken.
+        if (!hasStarted) {
+            synchronized (hasStartedLock) {
+                if (!hasStarted) {
+                    try {
+                        hasStartedLock.wait();
+                    } catch (InterruptedException iExcptn) {
+                        assert false : iExcptn;
+                    }
                 }
             }
         }
-
     }
 
     public void exceptionRaised(RaiseException exception) {
