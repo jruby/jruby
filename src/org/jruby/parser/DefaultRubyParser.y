@@ -1164,7 +1164,7 @@ primary       : literal
 	      | var_ref
 	      | backref
 	      | tFID {
-                    $$ = new VCallNode(getPosition($<ISourcePositionHolder>1), (String) $1.getValue());
+                    $$ = new VCallNode($<ISourcePositionHolder>1.getPosition(), (String) $1.getValue());
 		}
               | kBEGIN bodystmt
 		kEND {
@@ -1295,7 +1295,7 @@ primary       : literal
                     // $$ = new Integer(ruby.getSourceLine());
                 } bodystmt 
 		  kEND {
-                    $$ = new ClassNode(getPosition($<ISourcePositionHolder>1, true), $2, new ScopeNode(getRealPosition($5), ((LocalNamesElement) support.getLocalNames().peek()).getNames(), $5), $3);
+                    $$ = new ClassNode(support.union($1, $6), $2, new ScopeNode(getRealPosition($5), ((LocalNamesElement) support.getLocalNames().peek()).getNames(), $5), $3);
                     // $<Node>$.setLine($<Integer>4.intValue());
                     support.getLocalNames().pop();
                     support.setClassNest(support.getClassNest() - 1);
@@ -1310,7 +1310,7 @@ primary       : literal
                     support.getLocalNames().push(new LocalNamesElement());
                 } bodystmt 
                   kEND {
-                    $$ = new SClassNode(getPosition($<ISourcePositionHolder>1, true), $3, new ScopeNode(getRealPosition($7), ((LocalNamesElement) support.getLocalNames().peek()).getNames(), $7));
+                    $$ = new SClassNode(support.union($1, $8), $3, new ScopeNode(getRealPosition($7), ((LocalNamesElement) support.getLocalNames().peek()).getNames(), $7));
                     support.getLocalNames().pop();
                     support.setClassNest(support.getClassNest() - 1);
                     support.setInDef($<Boolean>4.booleanValue());
@@ -1325,7 +1325,7 @@ primary       : literal
                     // $$ = new Integer(ruby.getSourceLine());
                 } bodystmt 
                   kEND {
-                    $$ = new ModuleNode(getPosition($<ISourcePositionHolder>1, true), $2, new ScopeNode(getRealPosition($4), ((LocalNamesElement) support.getLocalNames().peek()).getNames(), $4));
+                    $$ = new ModuleNode(support.union($1, $5), $2, new ScopeNode(getRealPosition($4), ((LocalNamesElement) support.getLocalNames().peek()).getNames(), $4));
                     // $<Node>$.setLine($<Integer>3.intValue());
                     support.getLocalNames().pop();
                     support.setClassNest(support.getClassNest() - 1);
@@ -1341,7 +1341,7 @@ primary       : literal
                   kEND {
 		      /* was in old jruby grammar support.getClassNest() !=0 || IdUtil.isAttrSet($2) ? Visibility.PUBLIC : Visibility.PRIVATE); */
                     /* NOEX_PRIVATE for toplevel */
-                    $$ = new DefnNode(getPosition($<ISourcePositionHolder>1, true), new ArgumentNode($<ISourcePositionHolder>2.getPosition(), (String) $2.getValue()), $4,
+                    $$ = new DefnNode(support.union($1, $6), new ArgumentNode($<ISourcePositionHolder>2.getPosition(), (String) $2.getValue()), $4,
 		                      new ScopeNode(getRealPosition($5), ((LocalNamesElement) support.getLocalNames().peek()).getNames(), $5), Visibility.PRIVATE);
                     // $<Node>$.setPosFrom($4);
                     support.getLocalNames().pop();
@@ -1357,7 +1357,7 @@ primary       : literal
                 } f_arglist 
 		  bodystmt 
                   kEND {
-                    $$ = new DefsNode(getPosition($<ISourcePositionHolder>1), $2, (String) $5.getValue(), $7, new ScopeNode(getPosition(null), ((LocalNamesElement) support.getLocalNames().peek()).getNames(), $8));
+                    $$ = new DefsNode(support.union($1, $9), $2, (String) $5.getValue(), $7, new ScopeNode(getPosition(null), ((LocalNamesElement) support.getLocalNames().peek()).getNames(), $8));
                     // $<Node>$.setPosFrom($2);
                     support.getLocalNames().pop();
                     support.setInSingle(support.getInSingle() - 1);
@@ -1522,13 +1522,13 @@ opt_ensure    : kENSURE compstmt {
 
 literal       : numeric
               | symbol {
-                    $$ = new SymbolNode(getPosition($<ISourcePositionHolder>1), (String) $1.getValue());
+                    $$ = new SymbolNode($<ISourcePositionHolder>1.getPosition(), (String) $1.getValue());
                 }
               | dsym
 
 strings       : string {
 		    if ($1 == null) {
-		        $$ = new StrNode(getPosition($<ISourcePositionHolder>1), "");
+		        $$ = new StrNode(getPosition(null), "");
 		    } else {
 		        if ($1 instanceof EvStrNode) {
 			    $$ = new DStrNode(getPosition($<ISourcePositionHolder>1)).add($1);
@@ -1539,7 +1539,7 @@ strings       : string {
 		} 
 
 string        : string1 {
-                    $$ = support.literal_concat(getPosition(null), null, $1);
+                    $$ = support.literal_concat(getPosition($<ISourcePositionHolder>1), null, $1);
 		}
               | string string1 {
                     $$ = support.literal_concat(getPosition($<ISourcePositionHolder>1), $1, $2);
@@ -1617,9 +1617,9 @@ qword_list     : /* none */ {
 		 }
 	       | qword_list tSTRING_CONTENT ' ' {
                      if ($1 == null) {
-		         $$ = new ArrayNode(getPosition($<ISourcePositionHolder>1)).add(new StrNode(getPosition($<ISourcePositionHolder>1), (String) $2.getValue()));
+		         $$ = new ArrayNode(getPosition($<ISourcePositionHolder>1)).add(new StrNode($<ISourcePositionHolder>2.getPosition(), (String) $2.getValue()));
 		     } else {
-		         $$ = $1.add(new StrNode(getPosition($<ISourcePositionHolder>1), (String) $2.getValue()));
+		         $$ = $1.add(new StrNode($<ISourcePositionHolder>2.getPosition(), (String) $2.getValue()));
 		     }
 		 }
 
@@ -1639,7 +1639,7 @@ xstring_contents: /* none */ {
 
 
 string_content	: tSTRING_CONTENT {
-                      $$ = new StrNode(getPosition($<ISourcePositionHolder>1), (String) $1.getValue());
+                      $$ = new StrNode($<ISourcePositionHolder>1.getPosition(), (String) $1.getValue());
                   }
 		| tSTRING_DVAR {
                       $$ = lexer.getStrTerm();
@@ -1679,6 +1679,7 @@ string_dvar    : tGVAR {
 symbol        : tSYMBEG sym {
                     lexer.setState(LexState.EXPR_END);
                     $$ = $2;
+		    $<ISourcePositionHolder>$.setPosition(support.union($1, $2));
                 }
 
 sym           : fname
@@ -1700,13 +1701,13 @@ numeric       : tINTEGER {
                     Object number = $1.getValue();
 
                     if (number instanceof Long) {
-		        $$ = new FixnumNode(getPosition($<ISourcePositionHolder>1), ((Long) number).longValue());
+		        $$ = new FixnumNode($<ISourcePositionHolder>1.getPosition(), ((Long) number).longValue());
                     } else {
-		        $$ = new BignumNode(getPosition($<ISourcePositionHolder>1), (BigInteger) number);
+		        $$ = new BignumNode($<ISourcePositionHolder>1.getPosition(), (BigInteger) number);
                     }
                 }
               | tFLOAT {
-                    $$ = new FloatNode(getPosition($<ISourcePositionHolder>1), ((Double) $1.getValue()).doubleValue());
+                    $$ = new FloatNode($<ISourcePositionHolder>1.getPosition(), ((Double) $1.getValue()).doubleValue());
 	        }
 	      | tUMINUS_NUM tINTEGER	       %prec tLOWEST {
                     Object number = $2.getValue();
@@ -1750,7 +1751,7 @@ variable      : tIDENTIFIER {
 		    $$ = new FalseNode($<ISourcePositionHolder>1.getPosition());
                 }
               | k__FILE__ {
-                    $$ = new StrNode(getPosition($<ISourcePositionHolder>1), getPosition($<ISourcePositionHolder>1).getFile());
+                    $$ = new StrNode($<ISourcePositionHolder>1.getPosition(), getPosition($<ISourcePositionHolder>1).getFile());
                 }
               | k__LINE__ {
                     $$ = new FixnumNode(getPosition($<ISourcePositionHolder>1), getPosition($<ISourcePositionHolder>1).getEndLine() + 1);

@@ -111,7 +111,7 @@ public class LexerSource {
             
             // EOF...Do not advance column...Go straight to jail
             if (c == 0) {
-                offset++;
+                //offset++;
                 return c;
             }
     	}
@@ -146,17 +146,19 @@ public class LexerSource {
      * @param c to be put back onto the source
      */
     public void unread(char c) {
-    	offset--;
+        if (c != (char) 0) {
+            offset--;
     	
-    	if (c == '\n') {
-    		line--;
-    		column = ((Integer)lineWidths.get(line)).intValue();
-    		nextCharIsOnANewLine = true;
-    	} else {
-    		column--;
-    	}
+            if (c == '\n') {
+                line--;
+                column = ((Integer)lineWidths.get(line)).intValue();
+                nextCharIsOnANewLine = true;
+            } else {
+                column--;
+            }
 
-    	buf.append(c);
+            buf.append(c);
+        }
     }
     
     public boolean peek(char to) {
