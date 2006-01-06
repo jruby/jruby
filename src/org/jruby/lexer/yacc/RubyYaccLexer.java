@@ -1087,7 +1087,7 @@ public class RubyYaccLexer {
                 }
                 
                 if ((c = src.read()) == '=') {
-                    yaccValue = "/";
+                    yaccValue = new Token("/", getPositionMinusOne());
                     lex_state = LexState.EXPR_BEG;
                     return Tokens.tOP_ASGN;
                 }
