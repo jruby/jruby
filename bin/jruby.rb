@@ -16,7 +16,7 @@ class Classpath
   end
 
   def to_s
-    @classpath.join(':')
+    @classpath.join(File::PATH_SEPARATOR)
   end
 end
 
