@@ -31,70 +31,8 @@ package org.jruby.parser;
 
 import java.util.List;
 
-/**
- *
- * @author  jpetersen
- */
 public class RubyParserConfiguration {
-    private boolean classNest;
-    private boolean compileForEval;
-    private List blockVariables;
     private List localVariables;
-
-    /**
-     * Constructor for RubyParserConfiguration.
-     */
-    public RubyParserConfiguration() {
-        super();
-    }
-    
-    /**
-     * Gets the blockVariables.
-     * @return Returns a List
-     */
-    public List getBlockVariables() {
-        return blockVariables;
-    }
-
-    /**
-     * Sets the blockVariables.
-     * @param blockVariables The blockVariables to set
-     */
-    public void setBlockVariables(List blockVariables) {
-        this.blockVariables = blockVariables;
-    }
-
-    /**
-     * Gets the classNest.
-     * @return Returns a boolean
-     */
-    public boolean isClassNest() {
-        return classNest;
-    }
-
-    /**
-     * Sets the classNest.
-     * @param classNest The classNest to set
-     */
-    public void setClassNest(boolean classNest) {
-        this.classNest = classNest;
-    }
-
-    /**
-     * Gets the compileForEval.
-     * @return Returns a boolean
-     */
-    public boolean isCompileForEval() {
-        return compileForEval;
-    }
-
-    /**
-     * Sets the compileForEval.
-     * @param compileForEval The compileForEval to set
-     */
-    public void setCompileForEval(boolean compileForEval) {
-        this.compileForEval = compileForEval;
-    }
 
     /**
      * Gets the localVariables.

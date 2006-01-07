@@ -72,7 +72,6 @@ public class ASTSerializer {
     public static void serialize(File input, IAstEncoder encoder) throws IOException {
         Reader reader = new BufferedReader(new FileReader(input));
         RubyParserConfiguration config = new RubyParserConfiguration();
-        config.setBlockVariables(new ArrayList());
         config.setLocalVariables(new ArrayList());
 
         DefaultRubyParser parser = null;

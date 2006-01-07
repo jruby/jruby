@@ -323,14 +323,8 @@ program     : {
                   lexer.setState(LexState.EXPR_BEG);
                   support.initTopLocalVariables();
 
-		  // Fix: Move to ruby runtime....?
-                  //if (ruby.getRubyClass() == ruby.getClasses().getObjectClass()) {
-                  //    support.setClassNest(0);
-                  //} else {
-                  //    support.setClassNest(1);
-                  //}
               } compstmt {
-                  if ($2 != null && !support.isCompileForEval()) {
+                  if ($2 != null) {
                       /* last expression should not be void */
                       if ($2 instanceof BlockNode) {
                           support.checkUselessStatement($<BlockNode>2.getLast());
@@ -340,7 +334,6 @@ program     : {
                   }
                   support.getResult().setAST(support.appendToBlock(support.getResult().getAST(), $2));
                   support.updateTopLocalVariables();
-                  support.setClassNest(0);
               }
 
 bodystmt    : compstmt
@@ -1290,7 +1283,6 @@ primary       : literal
                     if (support.isInDef() || support.isInSingle()) {
                         yyerror("class definition in method body");
                     }
-                    support.setClassNest(support.getClassNest() + 1);
                     support.getLocalNames().push(new LocalNamesElement());
                     // $$ = new Integer(ruby.getSourceLine());
                 } bodystmt 
@@ -1298,7 +1290,6 @@ primary       : literal
                     $$ = new ClassNode(support.union($1, $6), $2, new ScopeNode(getRealPosition($5), ((LocalNamesElement) support.getLocalNames().peek()).getNames(), $5), $3);
                     // $<Node>$.setLine($<Integer>4.intValue());
                     support.getLocalNames().pop();
-                    support.setClassNest(support.getClassNest() - 1);
                 }
               | kCLASS tLSHFT expr {
                     $$ = new Boolean(support.isInDef());
@@ -1306,13 +1297,11 @@ primary       : literal
                 } term {
                     $$ = new Integer(support.getInSingle());
                     support.setInSingle(0);
-                    support.setClassNest(support.getClassNest() + 1);
                     support.getLocalNames().push(new LocalNamesElement());
                 } bodystmt 
                   kEND {
                     $$ = new SClassNode(support.union($1, $8), $3, new ScopeNode(getRealPosition($7), ((LocalNamesElement) support.getLocalNames().peek()).getNames(), $7));
                     support.getLocalNames().pop();
-                    support.setClassNest(support.getClassNest() - 1);
                     support.setInDef($<Boolean>4.booleanValue());
                     support.setInSingle($<Integer>6.intValue());
                 }
@@ -1320,7 +1309,6 @@ primary       : literal
                     if (support.isInDef() || support.isInSingle()) { 
                         yyerror("module definition in method body");
                     }
-                    support.setClassNest(support.getClassNest() + 1);
                     support.getLocalNames().push(new LocalNamesElement());
                     // $$ = new Integer(ruby.getSourceLine());
                 } bodystmt 
@@ -1328,7 +1316,6 @@ primary       : literal
                     $$ = new ModuleNode(support.union($1, $5), $2, new ScopeNode(getRealPosition($4), ((LocalNamesElement) support.getLocalNames().peek()).getNames(), $4));
                     // $<Node>$.setLine($<Integer>3.intValue());
                     support.getLocalNames().pop();
-                    support.setClassNest(support.getClassNest() - 1);
                 }
 	      | kDEF fname {
 		      /* missing

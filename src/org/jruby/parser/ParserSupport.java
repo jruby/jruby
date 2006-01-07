@@ -110,8 +110,6 @@ public class ParserSupport {
     private boolean inDef;
     private boolean inDefined;
 
-    private int classNest;
-
     private IRubyWarnings warnings;
 
     private RubyParserConfiguration configuration;
@@ -124,8 +122,6 @@ public class ParserSupport {
         inSingle = 0;
         inDef = false;
         inDefined = false;
-
-        classNest = configuration.isClassNest() ? 1 : 0;
     }
     
     public void setPositionFactory(ISourcePositionFactory factory) {
@@ -597,10 +593,6 @@ public class ParserSupport {
 			LocalNamesElement localNames = (LocalNamesElement) localNamesStack.peek();
             localNames.setNames(new ArrayList(names));
         }
-
-        if (configuration.getBlockVariables() != null) {
-            blockNamesStack.push(new BlockNamesElement(configuration.getBlockVariables()));
-        }
     }
 
     /**
@@ -658,24 +650,6 @@ public class ParserSupport {
         this.inDefined = inDefined;
     }
 
-    public boolean isCompileForEval() {
-        return configuration.isCompileForEval();
-    }
-
-    /** Getter for property classNest.
-     * @return Value of property classNest.
-     */
-    public int getClassNest() {
-        return classNest;
-    }
-
-    /** Setter for property classNest.
-     * @param classNest New value of property classNest.
-     */
-    public void setClassNest(int classNest) {
-        this.classNest = classNest;
-    }
-
     /**
      * Gets the blockNames.
      * @return Returns a BlockNamesStack
@@ -706,14 +680,6 @@ public class ParserSupport {
      */
     public void setResult(RubyParserResult result) {
         this.result = result;
-    }
-
-    /**
-     * Gets the configuration.
-     * @return Returns a IRubyParserConfiguration
-     */
-    public RubyParserConfiguration getConfiguration() {
-        return configuration;
     }
 
     /**
