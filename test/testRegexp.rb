@@ -43,3 +43,6 @@ test_ok("\x9cZ" =~ /\x9cZ/)
 #########    test10   #################
 'ABCDE' =~ /B(C)D/
 test_equal('BCD', $~.to_s)
+
+"ALBUM: Foo Bar".match(/ALBUM: [^\s]*\s(.+)/)
+test_equal('Bar', $1)

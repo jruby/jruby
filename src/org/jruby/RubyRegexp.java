@@ -371,7 +371,11 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     }
     
     public IRubyObject search2(String str) {
-    	return match(str, 0);
+        IRubyObject result = match(str, 0);
+        
+        getRuntime().getCurrentContext().getCurrentScope().setBackref(result);
+        
+    	return result;
     }
 	
     public int searchAgain(String target) {
@@ -412,6 +416,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
                 begin[i] = aMatcher.start(i);
                 end[i] = aMatcher.end(i);
             }
+            
             return new RubyMatchData(getRuntime(), target, begin, end);
         }
         return getRuntime().getNil();
