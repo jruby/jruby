@@ -85,6 +85,15 @@ public class JavaMethod extends JavaCallable {
     public JavaMethod(IRuby runtime, Method method) {
         super(runtime, (RubyClass) runtime.getModule("Java").getClass("JavaMethod"));
         this.method = method;
+
+        // Special classes like Collections.EMPTY_LIST are inner classes that are private but 
+        // implement public interfaces.  Their methods are all public methods for the public 
+        // interface.  Let these public methods execute via setAccessible(true). 
+        if (Modifier.isPublic(method.getModifiers()) &&
+            Modifier.isPublic(method.getClass().getModifiers()) &&
+            !Modifier.isPublic(method.getDeclaringClass().getModifiers())) {
+            accesibleObject().setAccessible(true);
+        }
     }
 
     public static JavaMethod create(IRuby runtime, Method method) {
@@ -129,6 +138,7 @@ public class JavaMethod extends JavaCallable {
         if (args.length != 1 + getArity()) {
             throw getRuntime().newArgumentError(args.length, 1 + getArity());
         }
+
         IRubyObject invokee = args[0];
         if (! (invokee instanceof JavaObject)) {
             throw getRuntime().newTypeError("invokee not a java object");

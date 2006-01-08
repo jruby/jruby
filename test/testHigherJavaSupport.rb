@@ -114,7 +114,6 @@ if defined? Java
     test_equal(HashMap, h.class)
     h.put("a", 1)
     iter = h.entrySet.iterator
-    test_equal("java.util.Iterator", iter.java_class.name)
     inner_instance_entry = iter.next
     # The class implements a public interface, MapEntry, so the methods
     # on that should be available, even though the instance is of a
@@ -194,4 +193,9 @@ if defined? Java
   test_equal(true, my_color.dark?)
   my_color.dark = false
   test_equal(false, my_color.dark?)
+  
+  # No explicit test, but implicitly EMPTY_LIST.each should not blow up interpreter
+  # Old error was EMPTY_LIST is a private class implementing a public interface with public methods
+  include_class 'java.util.Collections'
+  Collections::EMPTY_LIST.each {|element| }
 end

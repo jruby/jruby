@@ -29,6 +29,9 @@
 # the terms of any one of the CPL, the GPL or the LGPL.
 ###### END LICENSE BLOCK ######
 
+# JavaProxy is a base class for all Java Proxies.  A Java proxy is a high-level abstraction
+# that wraps a low-level JavaObject with ruby methods capable of dispatching to the JavaObjects
+# native java methods.  
 class JavaProxy
   class << self
     attr :java_class, true
@@ -53,21 +56,25 @@ class JavaProxy
       class << self; self; end 
     end
 
-	# Is the method specified by name not yet defined (i.e. lazy)
+	# Is the java method specified by name not yet defined (i.e. lazy)?  As a side-effect this
+	# will load the method if it is lazy.
     def load_lazy_method?(name)
       methods = JavaUtilities.find_java_methods(java_class, name.to_s)
-      methods.empty? ? nil : create_method(self, methods)
+      methods.empty? ? nil : create_lazy_method(self, methods)
     end
-    
+
+    # Create a method on clazz that will dispatch to one of the supplied methods based on arity.
+    # The name of the ruby method created is the name of the first supplied method in java_methods.
+    # This method is only intended to be used internally by the proxy.
+    #--
     # This accepts a clazz argument to allow us to use this method for lazy construction
     # of class (static) proxy methods.  
-    def create_method(clazz, java_methods)
+    def create_lazy_method(clazz, java_methods)
 	  name = java_methods.keys.first
 	  methods = java_methods[name]
       clazz.send(:define_method, name) { |*args|
         args.collect! { |v| Java.ruby_to_java(v) }
-        m = JavaUtilities.matching_method(methods.find_all {|m| m.arity == args.length}, args)
-        Java.java_to_ruby(m.invoke(self.java_object, *args))
+        Java.java_to_ruby(JavaUtilities.matching_method(methods, args).invoke(self.java_object, *args))
       }
       name
     end
@@ -124,8 +131,7 @@ class JavaProxy
         else
           singleton_class.send(:define_method, name) do |*args|
             args.collect! { |v| Java.ruby_to_java(v) }
-            method = JavaUtilities.matching_method(methods, args)
-            Java.java_to_ruby(method.invoke_static(*args))
+            Java.java_to_ruby(JavaUtilities.matching_method(methods, args).invoke_static(*args))
           end
         end
       end
@@ -136,7 +142,7 @@ class JavaProxy
       constants = fields.select {|field|
         field.static? and field.final? and JavaUtilities.valid_constant_name?(field.name)
       }.each {|constant|
-        const_set(constant.name, Java.java_to_primitive(constant.static_value))
+        const_set(constant.name, Java.java_to_ruby(constant.static_value))
       }
       naughty_constants = fields.select {|field|
         field.static? and field.final? and !JavaUtilities.valid_constant_name?(field.name)
@@ -182,7 +188,7 @@ class JavaProxy
   # Lazily create a java method or defer to default method_missing behavior
   def method_missing(name, *args)
     methods = JavaUtilities.find_java_methods(java_class, name.to_s)
-    methods.empty? ? super(name, *args) : send(self.class.create_method(self.class, methods), *args)
+    methods.empty? ? super(name, *args) : send(self.class.create_lazy_method(self.class, methods), *args)
   end
       
   def java_class
@@ -255,8 +261,7 @@ class ConcreteJavaProxy < JavaProxy
     constructors = java_class.constructors.select {|c| c.arity == args.length }
     raise NameError.new("wrong # of arguments for constructor") if constructors.empty?
     args.collect! { |v| Java.ruby_to_java(v) }
-    constructor = JavaUtilities.matching_method(constructors, args)
-    self.java_object = constructor.new_instance(*args)
+    self.java_object = JavaUtilities.matching_method(constructors, args).new_instance(*args)
   end
 end
 
@@ -315,8 +320,11 @@ module JavaUtilities
         base_type = ConcreteJavaProxy
       end
       
-      proxy_class = Class.new(base_type) { self.java_class = java_class; setup }
+      proxy_class = Class.new(base_type) { self.java_class = java_class }
       @proxy_classes[class_id] = proxy_class
+      # We do not setup the proxy before we register it so that same-typed constants do
+      # not try and create a fresh proxy class and go into an infinite loop
+      proxy_class.setup
       @proxy_extenders.each {|e| e.extend_proxy(proxy_class)}
     end
 
@@ -335,16 +343,6 @@ module JavaUtilities
     mod.const_set(constant.to_s, get_proxy_class(java_class))
   end
   
-  def JavaUtilities.access(java_type)
-    if java_type.public?
-      "public"
-    elsif java_type.protected?
-      "protected"
-    else
-      "private"
-    end
-  end
-  
   def JavaUtilities.print_class(java_type, indent="")
      while (!java_type.nil? && java_type.name != "java.lang.Class")
         puts "#{indent}Name:  #{java_type.name}, access: #{ JavaUtilities.access(java_type) }  Interfaces: "
@@ -354,38 +352,14 @@ module JavaUtilities
         java_type = java_type.superclass
      end
   end
-  
-  # We could have a private class which implements more than one interface.
-  # I am working on a new way of creating proxies and I am not sure this will be there in that
-  # version.  This heuristic works with all the standard java libraries we use.
-  def JavaUtilities.narrowest_type(java_type)
-    # We want narrowest java class as wrapped type (e.g. Foo.clone should wrap a Foo if public)
-    # Also note this will not be an endless loop since we will always reach Object
-    while (!java_type.public?) do
-      java_type.interfaces.each {|i| return i if i.public? }
-      java_type = java_type.superclass
-    end
-    
-    java_type
+
+  def JavaUtilities.access(java_type)
+    java_type.public? ? "public" : (java_type.protected? ? "protected" : "private")
   end
 
+  # Wrap a low-level java_object with a high-level java proxy  
   def JavaUtilities.wrap(java_object)
-    real_type = java_object.java_class
-    java_class = JavaUtilities.narrowest_type(real_type)
-    proxy = get_proxy_class(java_class).new_instance_for(java_object)
-
-    unless real_type.public?
-      # If the instance is private, but implements public interfaces
-      # then we want the methods on those available.
-
-      real_type.interfaces.select { |interface| 
-        interface.public? 
-      }.collect! { |interface| 
-        get_proxy_class(interface) 
-      }.each { |interface_proxy| proxy.extend(interface_proxy) }
-    end
-
-    proxy
+    get_proxy_class(java_object.java_class).new_instance_for(java_object)
   end
 
   def JavaUtilities.matching_method(methods, args)
