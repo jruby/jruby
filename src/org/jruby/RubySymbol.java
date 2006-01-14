@@ -17,6 +17,7 @@
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Joey Gibson <joey@joeygibson.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2006 Derek Berner <derek.berner@state.nm.us>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -142,6 +143,10 @@ public class RubySymbol extends RubyObject {
     public RubyFixnum hash() {
         return getRuntime().newFixnum(symbol.hashCode());
     }
+    
+    public IRubyObject to_sym() {
+        return this;
+    }
 
     // TODO: Should all immediate classes be subclassed so that clone etc...can inherit 
     // immediate behavior like this.
@@ -221,4 +226,5 @@ public class RubySymbol extends RubyObject {
             }
         }
     }
+    
 }
