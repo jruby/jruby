@@ -99,7 +99,10 @@ public class Split {
 			    // Add to list any /(.)/ matched.
 			    long extraPatterns = matchData.getSize();
 			    for (int i = 1; i < extraPatterns; i++) {
-			        addResult(((RubyString) matchData.group(i)).getValue());
+                    IRubyObject matchValue = matchData.group(i);
+                    if (!matchValue.isNil()) {
+                        addResult(((RubyString) matchValue).getValue());
+                    }
 			    }
 			}
 
