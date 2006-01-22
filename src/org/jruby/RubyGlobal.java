@@ -32,6 +32,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.jruby.runtime.Constants;
@@ -259,7 +260,7 @@ public class RubyGlobal {
          * @see org.jruby.runtime.GlobalVariable#get()
          */
         public IRubyObject get() {
-            return runtime.newArray(runtime.getLoadService().getLoadedFeatures());
+            return runtime.newArray(new ArrayList(runtime.getLoadService().getLoadedFeatures()));
         }
     }
 }

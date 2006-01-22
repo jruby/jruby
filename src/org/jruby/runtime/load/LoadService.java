@@ -37,10 +37,13 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.jar.JarFile;
 
 import org.jruby.IRuby;
@@ -60,7 +63,7 @@ public class LoadService {
 	private static final String[] suffixes = { JRUBY_BUILTIN_SUFFIX, ".ast.ser", ".rb.ast.ser", ".rb",  "", ".jar" };
 
     private final List loadPath = new ArrayList();
-    private final List loadedFeatures = new ArrayList();
+    private final Set loadedFeatures = Collections.synchronizedSet(new HashSet());
     private final Map builtinLibraries = new HashMap();
 
     private final Map autoloadMap = new HashMap();
@@ -164,7 +167,7 @@ public class LoadService {
         return loadPath;
     }
 
-    public List getLoadedFeatures() {
+    public Set getLoadedFeatures() {
         return loadedFeatures;
     }
 
