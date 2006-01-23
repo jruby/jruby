@@ -90,7 +90,7 @@ public class ThreadContext {
 
         pushDynamicVars();
     }
-    
+
     Visibility lastVis;
     CallType lastCallType;
 
@@ -520,6 +520,13 @@ public class ThreadContext {
         }
     
         return backtrace;
+    }
+    
+    public void preAdoptThread() {
+        pushIter(Iter.ITER_NOT);
+        pushFrame();
+        pushScope();
+        pushRubyClass(runtime.getObject());
     }
 
     public void preClassEval(List localNames, RubyModule type) {

@@ -182,6 +182,26 @@ public class RubyThread extends RubyObject {
     public static RubyThread start(IRubyObject recv, IRubyObject[] args) {
         return startThread(recv, args, false);
     }
+    
+    public static RubyThread adopt(IRubyObject recv, Thread t) {
+        return adoptThread(recv, t);
+    }
+
+    private static RubyThread adoptThread(final IRubyObject recv, Thread t) {
+        final IRuby runtime = recv.getRuntime();
+        final RubyThread rubyThread = new RubyThread(runtime, (RubyClass) recv, false);
+        
+        rubyThread.threadImpl = new NativeThread(rubyThread, t);
+        runtime.getThreadService().registerNewThread(rubyThread);
+        
+        runtime.getCurrentContext().preAdoptThread();
+        
+        rubyThread.callInit(new IRubyObject[0]);
+        
+        rubyThread.notifyStarted();
+        
+        return rubyThread;
+    }
 
     private static RubyThread startThread(final IRubyObject recv, final IRubyObject[] args, boolean callInit) {
         final IRuby runtime = recv.getRuntime();
@@ -282,6 +302,15 @@ public class RubyThread extends RubyObject {
         RubyThreadGroup defaultThreadGroup = (RubyThreadGroup)runtime.getClass("ThreadGroup").getConstant("Default");
         defaultThreadGroup.add(this);
         
+    }
+
+    private RubyThread(IRuby runtime, RubyClass type, boolean narf) {
+        super(runtime, type);
+        this.threadService = runtime.getThreadService();
+        
+        // set to default thread group
+        RubyThreadGroup defaultThreadGroup = (RubyThreadGroup)runtime.getClass("ThreadGroup").getConstant("Default");
+        defaultThreadGroup.add(this);
     }
 
     /**

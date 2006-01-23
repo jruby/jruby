@@ -45,6 +45,7 @@ public class ThreadService {
     private ThreadGroup rubyThreadGroup;
     private List rubyThreadList;
     private volatile boolean critical;
+    private Thread mainThread;
 
     public ThreadService(IRuby runtime) {
         this.runtime = runtime;
@@ -54,7 +55,8 @@ public class ThreadService {
         this.rubyThreadList = Collections.synchronizedList(new ArrayList());
         
         // Must be called from main thread (it is currently, but this bothers me)
-        rubyThreadList.add(Thread.currentThread());
+        mainThread = Thread.currentThread();
+        rubyThreadList.add(mainThread);
     }
 
     public void disposeCurrentThread() {
@@ -62,6 +64,20 @@ public class ThreadService {
     }
 
     public ThreadContext getCurrentContext() {
+        ThreadContext tc = (ThreadContext) localContext.get();
+        
+        if (tc == mainContext && Thread.currentThread() != mainThread) {
+            tc = adoptCurrentThread();
+        }
+        
+        return tc;
+    }
+    
+    private ThreadContext adoptCurrentThread() {
+        Thread current = Thread.currentThread();
+        
+        RubyThread.adopt(runtime.getClass("Thread"), current);
+        
         return (ThreadContext) localContext.get();
     }
 
