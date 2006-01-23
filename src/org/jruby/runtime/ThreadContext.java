@@ -53,6 +53,7 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.SourcePositionFactory;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.UnsynchronizedStack;
 
 /**
  * @author jpetersen
@@ -61,15 +62,15 @@ public class ThreadContext {
     private final IRuby runtime;
 
     private BlockStack blockStack;
-    private Stack dynamicVarsStack;
+    private UnsynchronizedStack dynamicVarsStack;
 
     private RubyThread thread;
     
-    private Stack parentStack;
+    private UnsynchronizedStack parentStack;
 	
     private ScopeStack scopeStack;
-    private Stack frameStack;
-    private Stack iterStack;
+    private UnsynchronizedStack frameStack;
+    private UnsynchronizedStack iterStack;
 
     private RubyModule wrapper;
 
@@ -82,11 +83,11 @@ public class ThreadContext {
         this.runtime = runtime;
 
         this.blockStack = new BlockStack();
-        this.dynamicVarsStack = new Stack();
         this.scopeStack = new ScopeStack();
-        this.frameStack = new Stack();
-        this.iterStack = new Stack();
-        this.parentStack = new Stack();
+        this.dynamicVarsStack = new UnsynchronizedStack();
+        this.frameStack = new UnsynchronizedStack();
+        this.iterStack = new UnsynchronizedStack();
+        this.parentStack = new UnsynchronizedStack();
 
         pushDynamicVars();
     }
@@ -200,7 +201,7 @@ public class ThreadContext {
     
     public Frame getPreviousFrame() {
         int size = frameStack.size();
-        return size <= 1 ? null : (Frame) frameStack.elementAt(size - 2);
+        return size <= 1 ? null : (Frame) frameStack.get(size - 2);
     }
     
     public Iter popIter() {
@@ -512,11 +513,11 @@ public class ThreadContext {
         
         if (nativeException) {
             // assert level == 0;
-            addBackTraceElement(backtrace, (Frame) frameStack.elementAt(frameStack.size() - 1), null);
+            addBackTraceElement(backtrace, (Frame) frameStack.get(frameStack.size() - 1), null);
         }
         
         for (int i = traceSize; i > 0; i--) {
-            addBackTraceElement(backtrace, (Frame) frameStack.elementAt(i), (Frame) frameStack.elementAt(i-1));
+            addBackTraceElement(backtrace, (Frame) frameStack.get(i), (Frame) frameStack.get(i-1));
         }
     
         return backtrace;
