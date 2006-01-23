@@ -996,31 +996,31 @@ public class RubyModule extends RubyObject {
     /** rb_mod_le
      *
      */
-    public RubyBoolean op_le(IRubyObject obj) {
+    public IRubyObject op_le(IRubyObject obj) {
         if (!(obj instanceof RubyModule)) {
             throw getRuntime().newTypeError("compared with non class/module");
         }
-
-        for (RubyModule p = this; p != null; p = p.getSuperClass()) { 
-            if (p.getMethods() == ((RubyModule) obj).getMethods()) {
-                return getRuntime().getTrue();
-            }
+        
+        if (isKindOfModule((RubyModule)obj)) {
+            return getRuntime().getTrue();
+        } else if (((RubyModule)obj).isKindOfModule(this)) {
+            return getRuntime().getFalse();
         }
-
-        return getRuntime().getFalse();
+        
+        return getRuntime().getNil();
     }
 
     /** rb_mod_lt
      *
      */
-    public RubyBoolean op_lt(IRubyObject obj) {
+    public IRubyObject op_lt(IRubyObject obj) {
     	return obj == this ? getRuntime().getFalse() : op_le(obj); 
     }
 
     /** rb_mod_ge
      *
      */
-    public RubyBoolean op_ge(IRubyObject obj) {
+    public IRubyObject op_ge(IRubyObject obj) {
         if (!(obj instanceof RubyModule)) {
             throw getRuntime().newTypeError("compared with non class/module");
         }
@@ -1031,14 +1031,14 @@ public class RubyModule extends RubyObject {
     /** rb_mod_gt
      *
      */
-    public RubyBoolean op_gt(IRubyObject obj) {
+    public IRubyObject op_gt(IRubyObject obj) {
         return this == obj ? getRuntime().getFalse() : op_ge(obj);
     }
 
     /** rb_mod_cmp
      *
      */
-    public RubyFixnum op_cmp(IRubyObject obj) {
+    public IRubyObject op_cmp(IRubyObject obj) {
         if (this == obj) {
             return getRuntime().newFixnum(0);
         }
@@ -1047,9 +1047,27 @@ public class RubyModule extends RubyObject {
             throw getRuntime().newTypeError(
                 "<=> requires Class or Module (" + getMetaClass().getName() + " given)");
         }
+        
+        RubyModule module = (RubyModule)obj;
+        
+        if (module.isKindOfModule(this)) {
+            return getRuntime().newFixnum(1);
+        } else if (this.isKindOfModule(module)) {
+            return getRuntime().newFixnum(-1);
+        }
+        
+        return getRuntime().getNil();
+    }
 
-        return getRuntime().newFixnum(
-                op_le(obj).isTrue() ? -1 : 1);
+    public boolean isKindOfModule(RubyModule type) {
+        for (RubyModule p = this; p != null; p = p.getSuperClass()) { 
+            // FIXME: this equality check is totally lame; isKindOf should be enough
+            if (p.getMethods() == type.getMethods()) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     /** rb_mod_initialize
