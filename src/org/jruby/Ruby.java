@@ -87,6 +87,7 @@ import org.jruby.runtime.builtin.meta.SymbolMetaClass;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.util.BuiltinScript;
+import org.jruby.util.NormalizedFile;
 
 /**
  * The jruby runtime.
@@ -861,7 +862,7 @@ public final class Ruby implements IRuby {
         assert file != null : "No such file to load";
         try {
             BufferedReader source = new BufferedReader(new FileReader(file));
-            loadScript(file.getPath(), source, wrap);
+            loadScript(file.getPath().replace(File.separatorChar, '/'), source, wrap);
             source.close();
         } catch (IOException ioExcptn) {
             throw newIOErrorFromException(ioExcptn);
@@ -983,7 +984,7 @@ public final class Ruby implements IRuby {
     }
     
     public RubyFileStat newRubyFileStat(File file) {
-    	return new RubyFileStat(this, file);
+    	return new RubyFileStat(this, new NormalizedFile(file.getPath()));
     }
     
     public RubyFixnum newFixnum(long value) {

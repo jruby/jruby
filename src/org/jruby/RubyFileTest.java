@@ -30,11 +30,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.io.File;
 import java.io.IOException;
 
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.NormalizedFile;
 
 public class RubyFileTest {
     public static RubyModule createFileTestModule(IRuby runtime) {
@@ -81,7 +81,7 @@ public class RubyFileTest {
     }
     
     public static IRubyObject size(IRubyObject recv, RubyString filename) {
-        File file = newFile(filename);
+        NormalizedFile file = newFile(filename);
         
         if (!file.exists()) {
             throw recv.getRuntime().newErrnoENOENTError("No such file: " + filename.getValue());
@@ -96,24 +96,24 @@ public class RubyFileTest {
     }
     
     public static RubyBoolean zero_p(IRubyObject recv, RubyString filename) {
-        File file = newFile(filename);
+        NormalizedFile file = newFile(filename);
 		
         return filename.getRuntime().newBoolean(file.exists() && file.length() == 0L);
     }
 
     public static RubyBoolean file_p(IRubyObject recv, RubyString filename) {
-        File file = newFile(filename);
+        NormalizedFile file = newFile(filename);
 		
         return filename.getRuntime().newBoolean(file.isFile());
     }
     
-	private static File newFile(RubyString path) {
-		File file = new File(path.getValue());
+	private static NormalizedFile newFile(RubyString path) {
+		NormalizedFile file = new NormalizedFile(path.getValue());
 		
 		try {
-			file = file.getCanonicalFile();
+			file = (NormalizedFile)file.getCanonicalFile();
 		} catch (IOException e) {
-			file = file.getAbsoluteFile();
+			file = (NormalizedFile)file.getAbsoluteFile();
 		}
 		
 		return file;

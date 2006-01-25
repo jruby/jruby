@@ -32,17 +32,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.io.File;
-
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.NormalizedFile;
 
 /**
  * note: renamed from FileStatClass.java
  * Implements File::Stat
  */
 public class RubyFileStat extends RubyObject {
-    private File file;
+    private NormalizedFile file;
     private static final int READ = 222;
     private static final int WRITE = 444;
 
@@ -62,11 +61,11 @@ public class RubyFileStat extends RubyObject {
         return fileStatClass;
     }
 
-    protected RubyFileStat(IRuby runtime, File file) {
+    protected RubyFileStat(IRuby runtime, NormalizedFile file) {
         super(runtime, runtime.getClass("File").getClass("Stat"));
 		// In some versions of java changing user.dir will not get reflected in newly constructed
 		// files.  Getting the absolutefile does seem to hack around this...
-        this.file = file.getAbsoluteFile();
+        this.file = (NormalizedFile)file.getAbsoluteFile();
     }
 
     public RubyBoolean directory_p() {

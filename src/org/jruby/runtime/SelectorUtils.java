@@ -103,8 +103,8 @@ public final class SelectorUtils {
         // File.separator.
         // When pattern starts with a File.separator, str has to start with a
         // File.separator.
-        if (str.startsWith(File.separator)
-                != pattern.startsWith(File.separator)) {
+        if (str.startsWith("/")
+                != pattern.startsWith("/")) {
             return false;
         }
 
@@ -176,8 +176,8 @@ public final class SelectorUtils {
         // File.separator.
         // When pattern starts with a File.separator, str has to start with a
         // File.separator.
-        if (str.startsWith(File.separator)
-                != pattern.startsWith(File.separator)) {
+        if (str.startsWith("/")
+                != pattern.startsWith("/")) {
             return false;
         }
 
@@ -495,7 +495,7 @@ public final class SelectorUtils {
      * @return a Vector of path elements from the tokenized path
      */
     public static Vector tokenizePath (String path) {
-        return tokenizePath(path, File.separator);
+        return tokenizePath(path, "/");
     }
 
     /**
@@ -616,14 +616,14 @@ public final class SelectorUtils {
      * @return the leftmost part of the pattern without wildcards
      */
     public static String rtrimWildcardTokens(String input) {
-        Vector v = tokenizePath(input, File.separator);
+        Vector v = tokenizePath(input, "/");
         StringBuffer sb = new StringBuffer();
         for (int counter = 0; counter < v.size(); counter++) {
             if (hasWildcards((String) v.elementAt(counter))) {
                 break;
             }
             if (counter > 0) {
-                sb.append(File.separator);
+                sb.append("/");
             }
             sb.append((String) v.elementAt(counter));
         }

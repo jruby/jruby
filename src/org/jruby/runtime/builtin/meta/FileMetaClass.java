@@ -43,6 +43,7 @@ import org.jruby.RubyString;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOModes;
+import org.jruby.util.NormalizedFile;
 
 public class FileMetaClass extends IOMetaClass {
     public FileMetaClass(IRuby runtime) {
@@ -243,7 +244,7 @@ public class FileMetaClass extends IOMetaClass {
 			}
 		}
 
-        if (new File(relativePath).isAbsolute()) {
+        if (new NormalizedFile(relativePath).isAbsolute()) {
             return getRuntime().newString(relativePath);
         }
 
@@ -257,7 +258,7 @@ public class FileMetaClass extends IOMetaClass {
             return getRuntime().getNil();
         }
 
-        File path = new File(cwd, relativePath);
+        NormalizedFile path = new NormalizedFile(cwd, relativePath);
 
         String extractedPath;
         try {
@@ -277,7 +278,7 @@ public class FileMetaClass extends IOMetaClass {
     public IRubyObject lstat(IRubyObject filename) {
     	RubyString name = RubyString.stringValue(filename);
 
-        return getRuntime().newRubyFileStat(new File(name.getValue()));
+        return getRuntime().newRubyFileStat(new NormalizedFile(name.getValue()));
     }
 
 	public IRubyObject open(IRubyObject[] args) {
@@ -315,12 +316,12 @@ public class FileMetaClass extends IOMetaClass {
     	RubyString newNameString = RubyString.stringValue(newName);
         oldNameString.checkSafeString();
         newNameString.checkSafeString();
-        File oldFile = new File(oldNameString.getValue());
+        NormalizedFile oldFile = new NormalizedFile(oldNameString.getValue());
         
         if (!oldFile.exists()) {
         	throw getRuntime().newErrnoENOENTError("No such file: " + oldNameString.getValue());
         }
-        oldFile.renameTo(new File(newNameString.getValue()));
+        oldFile.renameTo(new NormalizedFile(newNameString.getValue()));
         
         return RubyFixnum.zero(getRuntime());
     }
@@ -353,7 +354,7 @@ public class FileMetaClass extends IOMetaClass {
         for (int i = 0; i < args.length; i++) {
         	RubyString filename = RubyString.stringValue(args[i]);
             filename.checkSafeString();
-            File lToDelete = new File(filename.getValue());
+            NormalizedFile lToDelete = new NormalizedFile(filename.getValue());
             if (!lToDelete.exists()) {
 				throw getRuntime().newErrnoENOENTError(" No such file or directory - \"" + filename.getValue() + "\"");
 			}

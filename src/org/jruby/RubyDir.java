@@ -31,7 +31,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +39,7 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Glob;
+import org.jruby.util.NormalizedFile;
 
 /**
  * .The Ruby built-in class Dir.
@@ -49,7 +49,7 @@ import org.jruby.util.Glob;
 public class RubyDir extends RubyObject {
 	// What we passed to the constructor for method 'path'
     private RubyString    path;
-    protected File      dir;
+    protected NormalizedFile      dir;
     private   String[]  snapshot;   // snapshot of contents of directory
     private   int       pos;        // current position in directory
     private boolean isOpen = true;
@@ -117,7 +117,7 @@ public class RubyDir extends RubyObject {
         newPath.checkSafeString();
 
 // TODO: Consolidate this absolute file nonsense
-        dir = new File(newPath.getValue()).getAbsoluteFile();
+        dir = (NormalizedFile)new NormalizedFile(newPath.getValue()).getAbsoluteFile();
         if (!dir.isDirectory()) {
             dir = null;
             throw getRuntime().newErrnoENOENTError(newPath.getValue() + " is not a directory");
@@ -160,7 +160,7 @@ public class RubyDir extends RubyObject {
             path = recv.getRuntime().newString(System.getProperty("user.dir"));
         }
         
-        File directory = new File(path.toString());
+        NormalizedFile directory = new NormalizedFile(path.toString());
         
         if (!directory.isDirectory()) {
             throw recv.getRuntime().newErrnoENOENTError("No such directory");
@@ -177,7 +177,7 @@ public class RubyDir extends RubyObject {
         recv.checkArgumentCount(args, 0, 1);
         RubyString path = args.length == 1 ? 
             (RubyString) args[0].convertToString() : getHomeDirectoryPath(recv); 
-        File dir = getDir(recv.getRuntime(), path.toString(), true);
+        NormalizedFile dir = getDir(recv.getRuntime(), path.toString(), true);
         String realPath = null;
         String oldCwd = System.getProperty("user.dir");
     
@@ -217,7 +217,7 @@ public class RubyDir extends RubyObject {
      * be empty.
      */
     public static IRubyObject rmdir(IRubyObject recv, RubyString path) {
-        File directory = getDir(recv.getRuntime(), path.toString(), true);
+        NormalizedFile directory = getDir(recv.getRuntime(), path.toString(), true);
         
         if (!directory.delete()) {
             throw recv.getRuntime().newSystemCallError("No such directory");
@@ -261,7 +261,7 @@ public class RubyDir extends RubyObject {
         args[0].checkSafeString();
         String path = args[0].toString();
 
-        File newDir = getDir(recv.getRuntime(), path, false);
+        NormalizedFile newDir = getDir(recv.getRuntime(), path, false);
 
         return newDir.mkdir() ? RubyFixnum.zero(recv.getRuntime()) :
             RubyFixnum.one(recv.getRuntime());
@@ -371,16 +371,16 @@ public class RubyDir extends RubyObject {
      * @param   mustExist is true the directory must exist.  If false it must not.
      * @throws  IOError if <code>path</code> is not a directory.
      */
-    protected static File getDir(IRuby runtime, String path, boolean mustExist) {
-        File result = new File(path);
+    protected static NormalizedFile getDir(IRuby runtime, String path, boolean mustExist) {
+        NormalizedFile result = new NormalizedFile(path);
 		
         // For some reason Java 1.5.x will print correct absolute path on a created file, 
         // but it will still operate on an old user.dir when performing any action.
         // This could even happen with older Java runtimes?
         try {
-			result = result.getCanonicalFile();
+			result = (NormalizedFile)result.getCanonicalFile();
         } catch (IOException e) {
-            result = result.getAbsoluteFile();
+            result = (NormalizedFile)result.getAbsoluteFile();
         }
 
 		boolean isDirectory = result.isDirectory();
@@ -397,7 +397,7 @@ public class RubyDir extends RubyObject {
      * Returns the contents of the specified <code>directory</code> as an
      * <code>ArrayList</code> containing the names of the files as Java Strings.
      */
-    protected static List getContents(File directory) {
+    protected static List getContents(NormalizedFile directory) {
         String[] contents = directory.list();
         List result = new ArrayList();
 
@@ -415,7 +415,7 @@ public class RubyDir extends RubyObject {
      * Returns the contents of the specified <code>directory</code> as an
      * <code>ArrayList</code> containing the names of the files as Ruby Strings.
      */
-    protected static List getContents(File directory, IRuby runtime) {
+    protected static List getContents(NormalizedFile directory, IRuby runtime) {
         List result = new ArrayList();
         String[] contents = directory.list();
         for (int i=0; i<contents.length; i++) {

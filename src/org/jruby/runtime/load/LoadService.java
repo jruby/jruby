@@ -31,7 +31,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.load;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -52,6 +51,7 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.BuiltinScript;
 import org.jruby.util.PreparsedScript;
+import org.jruby.util.NormalizedFile;
 
 /**
  *
@@ -87,7 +87,7 @@ public class LoadService {
       
       String jrubyHome = System.getProperty("jruby.home");
       if (jrubyHome != null) {
-        char sep = File.separatorChar;
+        char sep = '/';
         String rubyDir = jrubyHome + sep + "lib" + sep + "ruby" + sep;
         
         addPath(rubyDir + "site_ruby" + sep + Constants.RUBY_MAJOR_VERSION);
@@ -210,7 +210,7 @@ public class LoadService {
             // Absolute path names
             if (name.startsWith("/") || name.startsWith("\\")) {
                	// Load from local filesystem
-                File current = new File(name);
+                NormalizedFile current = new NormalizedFile(name);
                 if (current.exists() && current.isFile()) {
                 	return new LoadServiceResource(current.toURL(), name);
                 }
@@ -239,9 +239,9 @@ public class LoadService {
                 } 
 
                	// Load from local filesystem
-                File current = new File(entry, name).getAbsoluteFile();
+                NormalizedFile current = (NormalizedFile)new NormalizedFile(entry, name).getAbsoluteFile();
                 if (current.exists() && current.isFile()) {
-                	return new LoadServiceResource(current.toURL(), new File(entry, name).getPath());
+                	return new LoadServiceResource(current.toURL(), new NormalizedFile(entry, name).getPath());
                 }
                 
                 // otherwise, try to load from classpath (Note: Jar resources always uses '/')
@@ -266,7 +266,7 @@ public class LoadService {
     /* Directories and unavailable resources are not able to open a stream. */
     private boolean isRequireable(URL loc) {
         if (loc != null) {
-        	if (loc.getProtocol().equals("file") && new File(loc.getFile()).isDirectory()) {
+        	if (loc.getProtocol().equals("file") && new NormalizedFile(loc.getFile()).isDirectory()) {
         		return false;
         	}
         	

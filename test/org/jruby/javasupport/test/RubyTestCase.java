@@ -31,7 +31,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport.test;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,6 +44,7 @@ import org.jruby.RubyKernel;
 import org.jruby.RubyString;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.NormalizedFile;
 
 public class RubyTestCase extends TestCase {
     private static final IRubyObject[] EMPTY_ARRAY = IRubyObject.NULL_ARRAY;
@@ -58,7 +58,7 @@ public class RubyTestCase extends TestCase {
             throw new NullPointerException("url was null");
         }
         InputStream in = url.openStream();
-        File f = File.createTempFile("rtc", ".rb");
+        NormalizedFile f = (NormalizedFile)NormalizedFile.createTempFile("rtc", ".rb");
         FileOutputStream out = new FileOutputStream(f);
 
         int length;

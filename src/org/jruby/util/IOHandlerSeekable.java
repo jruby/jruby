@@ -33,7 +33,6 @@ package org.jruby.util;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -58,7 +57,7 @@ public class IOHandlerSeekable extends IOHandler {
         
         this.path = path;
         this.modes = modes;
-        File theFile = new File(path).getAbsoluteFile();
+        NormalizedFile theFile = (NormalizedFile)new NormalizedFile(path).getAbsoluteFile();
 
         if (theFile.exists()) {
             if (modes.shouldTruncate()) {

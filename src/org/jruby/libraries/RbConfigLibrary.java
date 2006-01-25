@@ -29,13 +29,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.libraries;
 
-import java.io.File;
-
 import org.jruby.IRuby;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.load.Library;
+import org.jruby.util.NormalizedFile;
 
 public class RbConfigLibrary implements Library {
     /**
@@ -54,23 +53,22 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "TEENY", versionParts[2]);
         setConfig(configHash, "ruby_version", versionParts[0] + '.' + versionParts[1]);
 
-        setConfig(configHash, "bindir", new File(System.getProperty("jruby.home"), "bin").getAbsolutePath());
-        setConfig(configHash, "RUBY_INSTALL_NAME", System.getProperty("jruby.script"));
-        setConfig(configHash, "ruby_install_name", System.getProperty("jruby.script"));
-        setConfig(configHash, "SHELL", System.getProperty("jruby.shell"));
-        setConfig(configHash, "prefix", new File(System.getProperty("jruby.home")).getAbsolutePath());
+        setConfig(configHash, "bindir", new NormalizedFile(System.getProperty("jruby.home"), "bin").getAbsolutePath());
+        setConfig(configHash, "RUBY_INSTALL_NAME", System.getProperty("jruby.script").replace('\\', '/'));
+        setConfig(configHash, "ruby_install_name", System.getProperty("jruby.script").replace('\\', '/'));
+        setConfig(configHash, "SHELL", System.getProperty("jruby.shell").replace('\\', '/'));
+        setConfig(configHash, "prefix", new NormalizedFile(System.getProperty("jruby.home")).getAbsolutePath());
         String libdir = System.getProperty("jruby.lib");
         if (libdir == null) 
-        	libdir = new File(System.getProperty("jruby.home"), "lib").getAbsolutePath();
-		setConfig(configHash, "libdir", libdir);
-        setConfig(configHash, "rubylibdir", 	new File(libdir, "ruby/1.8").getAbsolutePath());
-        setConfig(configHash, "sitedir", 		new File(libdir, "ruby/site_ruby").getAbsolutePath());
-        setConfig(configHash, "sitelibdir", 	new File(libdir, "ruby/site_ruby/1.8").getAbsolutePath());
-        setConfig(configHash, "sitearchdir", 	new File(libdir, "ruby/site_ruby/1.8/java").getAbsolutePath());
+        	libdir = new NormalizedFile(System.getProperty("jruby.home"), "lib").getAbsolutePath();
+        setConfig(configHash, "rubylibdir", 	new NormalizedFile(libdir, "ruby/1.8").getAbsolutePath());
+        setConfig(configHash, "sitedir", 		new NormalizedFile(libdir, "ruby/site_ruby").getAbsolutePath());
+        setConfig(configHash, "sitelibdir", 	new NormalizedFile(libdir, "ruby/site_ruby/1.8").getAbsolutePath());
+        setConfig(configHash, "sitearchdir", 	new NormalizedFile(libdir, "ruby/site_ruby/1.8/java").getAbsolutePath());
         setConfig(configHash, "configure_args", "");
-        setConfig(configHash, "datadir", new File(System.getProperty("jruby.home"), "share").getAbsolutePath());
-        setConfig(configHash, "mandir", new File(System.getProperty("jruby.home"), "man").getAbsolutePath());
-        setConfig(configHash, "sysconfdir", new File(System.getProperty("jruby.home"), "etc").getAbsolutePath());
+        setConfig(configHash, "datadir", new NormalizedFile(System.getProperty("jruby.home"), "share").getAbsolutePath());
+        setConfig(configHash, "mandir", new NormalizedFile(System.getProperty("jruby.home"), "man").getAbsolutePath());
+        setConfig(configHash, "sysconfdir", new NormalizedFile(System.getProperty("jruby.home"), "etc").getAbsolutePath());
         
         if (isWindows()) {
         	setConfig(configHash, "EXEEXT", ".exe");

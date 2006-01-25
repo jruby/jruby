@@ -68,7 +68,7 @@ public class Glob {
     
     private static String canonicalize(String path) {
     	try {
-    		return new File(path).getCanonicalPath();
+    		return new NormalizedFile(path).getCanonicalPath();
     	} catch (IOException e) {
     		return path;
     	}
@@ -101,25 +101,25 @@ public class Glob {
      * Get file objects for glob; made private to prevent it being used directly in the future
      */
     private void getFiles() {
-    	String pathSplitter = File.separator;
+    	String pathSplitter = "/";
     	
     	// Windows file delimeter needs to escape delimeter to prevent regex compilation error
     	if (File.separator.equals("\\")) {
-    		pathSplitter = pathSplitter + File.separator;
+    		//pathSplitter = pathSplitter + File.separator;
     	}
     	
 		for (Iterator iter = patterns.iterator(); iter.hasNext();) {
 			GlobPattern globPattern = (GlobPattern) iter.next();
 	        String[] dirs = globPattern.getPattern().split(pathSplitter);
-        	File root = new File(dirs[0]);
+        	NormalizedFile root = new NormalizedFile(dirs[0]);
         	int idx = 1;
         	if (glob2Regexp(dirs[0]) != null) {
-            	root = new File(".");
+            	root = new NormalizedFile(".");
             	idx = 0;
         	}
         	for (int size = dirs.length; idx < size; idx++) {
             	if (glob2Regexp(dirs[idx]) == null) {
-                	root = new File(root, dirs[idx]);
+                	root = new NormalizedFile(root, dirs[idx]);
             	} else {
 	                break;
     	        }
@@ -141,7 +141,7 @@ public class Glob {
             	for (int i = 0, size = matchingFiles.size(); i < size; i++) {
                 	boolean isDirectory = idx + 1 != length;
                 	String pattern = dirs[idx];
-                	File parent = (File) matchingFiles.get(i);
+                	NormalizedFile parent = (NormalizedFile) matchingFiles.get(i);
                 	currentMatchingFiles.addAll(getMatchingFiles(parent, pattern, isDirectory));
             	}
             	matchingFiles = currentMatchingFiles;
@@ -150,7 +150,7 @@ public class Glob {
 		}
     }
     
-    private static Collection getMatchingFiles(final File parent, final String pattern, final boolean isDirectory) {
+    private static Collection getMatchingFiles(final NormalizedFile parent, final String pattern, final boolean isDirectory) {
     	FileFilter filter = new FileFilter() {
             Pattern p = Pattern.compile(glob2Regexp(pattern));
 
@@ -159,7 +159,7 @@ public class Glob {
             }
     	};
     	
-    	File[] matchArray = parent.listFiles(filter);
+    	NormalizedFile[] matchArray = (NormalizedFile[])parent.listFiles(filter);
         Collection matchingFiles = new ArrayList();
 
         if (matchArray != null) {
@@ -280,23 +280,23 @@ public class Glob {
 	        // Make a boolean for this special case (how about multiple slashes?)
 	    	this.endsWithDelimeter = pattern.endsWith("/") || pattern.endsWith("\\");
 			
-	    	if (new File(pattern).isAbsolute()) {
+	    	if (new NormalizedFile(pattern).isAbsolute()) {
     			this.patternIsRelative = false;
     			this.pattern = canonicalize(pattern);
 	       	} else {
     	   		// pattern is relative, but we need to consider cwd; add cwd but remember it's relative so we chop it off later
        			this.patternIsRelative = true;
-       			this.pattern = canonicalize(new File(cwd, pattern).getAbsolutePath());
+       			this.pattern = canonicalize(new NormalizedFile(cwd, pattern).getAbsolutePath());
 	       	}
 		}
 
 		public ArrayList getMatchedFiles() {
 			ArrayList fileNames = new ArrayList();
 			int size = files.size();
-			int offset = cwd.endsWith(File.separator) ? 0 : 1;
+			int offset = cwd.endsWith("/") ? 0 : 1;
 			
 	        for (int i = 0; i < size; i++) {
-				String path = ((File) files.get(i)).getPath();
+				String path = ((NormalizedFile) files.get(i)).getPath();
 				String name;
 
 	        	if (patternIsRelative && path.startsWith(cwd)) {
