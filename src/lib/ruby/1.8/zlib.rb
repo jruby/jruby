@@ -1,7 +1,7 @@
 module Zlib
 
     # Constants
-    ZLIB_VERSION = 1.2.1
+    ZLIB_VERSION = "1.2.1"
     BINARY = 0
     MAX_MEM_LEVEL = 9
     OS_UNIX = 3
@@ -20,7 +20,7 @@ module Zlib
     NO_COMPRESSION = 0
     SYNC_FLUSH = 2
     OS_OS2 = 6
-    VERSION = 0.6.0
+    VERSION = "0.6.0"
     MAX_WBITS = 15
     OS_AMIGA = 1
     OS_QDOS = 12
@@ -57,6 +57,15 @@ module Zlib
     # Methods
 end
 
+class Zlib::Error < StandardError
+
+    # Constants
+
+    # class Methods
+
+    # Methods
+end
+
 class Zlib::StreamEnd < Zlib::Error
 
     # Constants
@@ -75,13 +84,64 @@ class Zlib::StreamError < Zlib::Error
     # Methods
 end
 
-class Zlib::Error < StandardError
+class Zlib::ZStream < Object
 
     # Constants
 
     # class Methods
 
     # Methods
+
+    def flush_next_out
+    end
+
+    def total_out
+    end
+
+    def stream_end?
+    end
+
+    def data_type
+    end
+
+    def closed?
+    end
+
+    def ended?
+    end
+
+    def end
+    end
+
+    def reset
+    end
+
+    def avail_out
+    end
+
+    def avail_out=
+    end
+
+    def adler
+    end
+
+    def finish
+    end
+
+    def avail_in
+    end
+
+    def flush_next_in
+    end
+
+    def total_in
+    end
+
+    def finished?
+    end
+
+    def close
+    end
 end
 
 class Zlib::Inflate < Zlib::ZStream
@@ -90,7 +150,7 @@ class Zlib::Inflate < Zlib::ZStream
 
     # class Methods
 
-    def Zlib::Inflate.inflate
+    def self.inflate
     end
 
     # Methods
@@ -111,13 +171,61 @@ class Zlib::Inflate < Zlib::ZStream
     end
 end
 
+class Zlib::GzipFile
+
+    # Constants
+
+    # class Methods
+
+    def self.wrap
+    end
+
+    # Methods
+
+    def os_code
+    end
+
+    def closed?
+    end
+
+    def orig_name
+    end
+
+    def to_io
+    end
+
+    def finish
+    end
+
+    def comment
+    end
+
+    def crc
+    end
+
+    def mtime
+    end
+
+    def sync
+    end
+
+    def close
+    end
+
+    def level
+    end
+
+    def sync=
+    end
+end
+
 class Zlib::GzipReader < Zlib::GzipFile
 
     # Constants
 
     # class Methods
 
-    def Zlib::GzipReader.open
+    def self.open
     end
 
     # Methods
@@ -237,7 +345,7 @@ class Zlib::GzipReader < Zlib::GzipFile
     end
 end
 
-class Zlib::GzipFile::CRCError < Zlib::GzipFile::Error
+class Zlib::GzipFile::Error < Zlib::Error
 
     # Constants
 
@@ -246,7 +354,7 @@ class Zlib::GzipFile::CRCError < Zlib::GzipFile::Error
     # Methods
 end
 
-class Zlib::GzipFile::Error < Zlib::Error
+class Zlib::GzipFile::CRCError < Zlib::GzipFile::Error
 
     # Constants
 
@@ -288,7 +396,7 @@ class Zlib::Deflate < Zlib::ZStream
 
     # class Methods
 
-    def Zlib::Deflate.deflate
+    def self.deflate
     end
 
     # Methods
@@ -324,7 +432,7 @@ class Zlib::GzipWriter < Zlib::GzipFile
 
     # class Methods
 
-    def Zlib::GzipWriter.open
+    def self.open
     end
 
     # Methods
@@ -411,54 +519,6 @@ class Zlib::BufError < Zlib::Error
     # Methods
 end
 
-class Zlib::GzipFile < Object
-
-    # Constants
-
-    # class Methods
-
-    def Zlib::GzipFile.wrap
-    end
-
-    # Methods
-
-    def os_code
-    end
-
-    def closed?
-    end
-
-    def orig_name
-    end
-
-    def to_io
-    end
-
-    def finish
-    end
-
-    def comment
-    end
-
-    def crc
-    end
-
-    def mtime
-    end
-
-    def sync
-    end
-
-    def close
-    end
-
-    def level
-    end
-
-    def sync=
-    end
-end
-
 class Zlib::GzipFile::CRCError < Zlib::GzipFile::Error
 
     # Constants
@@ -502,66 +562,6 @@ class Zlib::NeedDict < Zlib::Error
     # class Methods
 
     # Methods
-end
-
-class Zlib::ZStream < Object
-
-    # Constants
-
-    # class Methods
-
-    # Methods
-
-    def flush_next_out
-    end
-
-    def total_out
-    end
-
-    def stream_end?
-    end
-
-    def data_type
-    end
-
-    def closed?
-    end
-
-    def ended?
-    end
-
-    def end
-    end
-
-    def reset
-    end
-
-    def avail_out
-    end
-
-    def avail_out=
-    end
-
-    def adler
-    end
-
-    def finish
-    end
-
-    def avail_in
-    end
-
-    def flush_next_in
-    end
-
-    def total_in
-    end
-
-    def finished?
-    end
-
-    def close
-    end
 end
 
 class Zlib::MemError < Zlib::Error
