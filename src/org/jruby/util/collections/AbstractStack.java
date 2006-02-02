@@ -62,4 +62,17 @@ public abstract class AbstractStack {
     public boolean isEmpty() {
         return top == null;
     }
+    
+    public int size() {
+        StackElement current = top;
+        int count = 0;
+        
+        while (current != null) {
+            count++;
+            
+            current = current.getNext();
+        }
+        
+        return count;
+    }
 }

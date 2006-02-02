@@ -205,7 +205,7 @@ public class RubyThread extends RubyObject {
 
     private static RubyThread startThread(final IRubyObject recv, final IRubyObject[] args, boolean callInit) {
         final IRuby runtime = recv.getRuntime();
-        if (!runtime.isBlockGiven()) {
+        if (!runtime.getCurrentContext().isBlockGiven()) {
             throw runtime.newThreadError("must be called with a block");
         }
         final RubyThread rubyThread = new RubyThread(runtime, (RubyClass) recv);

@@ -41,7 +41,6 @@ import org.jruby.ast.ListNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.ScopeNode;
 import org.jruby.evaluator.AssignmentVisitor;
-import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
@@ -69,6 +68,18 @@ public final class DefaultMethod extends AbstractMethod {
 		assert body != null;
 		assert argsNode != null;
     }
+    
+    public void preMethod(IRuby runtime, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+        ThreadContext context = runtime.getCurrentContext();
+        
+        context.preDefMethodInternalCall(implementationClass, recv, name, args, noSuper);
+    }
+    
+    public void postMethod(IRuby runtime) {
+        ThreadContext context = runtime.getCurrentContext();
+        
+        context.postDefMethodInternalCall();
+    }
 
     /**
      * @see AbstractCallable#call(IRuby, IRubyObject, String, IRubyObject[], boolean)
@@ -78,14 +89,12 @@ public final class DefaultMethod extends AbstractMethod {
 
         ThreadContext context = runtime.getCurrentContext();
         
-        context.preDefMethodInternalCall(parent);
-        
         Scope scope = context.getCurrentScope();
         if (body.getLocalNames() != null) {
             scope.resetLocalVariables(body.getLocalNames());
         }
         
-        if (argsNode.getBlockArgNode() != null && context.isBlockGiven()) {
+        if (argsNode.getBlockArgNode() != null && context.isBlockGivenAndAvailable()) {
             scope.setValue(argsNode.getBlockArgNode().getCount(), runtime.newProc());
         }
 
@@ -105,7 +114,6 @@ public final class DefaultMethod extends AbstractMethod {
         	}
        		throw je;
         } finally {
-            context.postDefMethodInternalCall();
             traceReturn(runtime, receiver, name);
         }
     }
@@ -137,13 +145,18 @@ public final class DefaultMethod extends AbstractMethod {
 
                 Iterator iter = optArgs.iterator();
                 for (int i = expectedArgsCount; i < args.length && iter.hasNext(); i++) {
-                    new AssignmentVisitor(runtime, receiver).assign((Node)iter.next(), args[i], true);
+                    //new AssignmentVisitor(new EvaluationState(runtime, receiver)).assign((Node)iter.next(), args[i], true);
+//                  in-frame EvalState should already have receiver set as self, continue to use it
+                    new AssignmentVisitor(runtime.getCurrentContext().getCurrentFrame().getEvalState()).assign((Node)iter.next(), args[i], true);;
                     expectedArgsCount++;
                 }
 
                 // assign the default values.
                 while (iter.hasNext()) {
-                    EvaluateVisitor.getInstance().eval(receiver.getRuntime(), receiver, (Node)iter.next());
+                    //new EvaluationState(runtime, receiver).begin((Node)iter.next());
+                    //EvaluateVisitor.getInstance().eval(receiver.getRuntime(), receiver, (Node)iter.next());
+                    // in-frame EvalState should already have receiver set as self, continue to use it
+                    runtime.getCurrentContext().getCurrentFrame().getEvalState().begin((Node)iter.next());
                 }
             }
 

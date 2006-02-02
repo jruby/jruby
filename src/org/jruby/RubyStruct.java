@@ -346,7 +346,7 @@ public class RubyStruct extends RubyObject {
 
     public IRubyObject each() {
         for (int i = 0; i < values.length; i++) {
-            getRuntime().yield(values[i]);
+            getRuntime().getCurrentContext().yield(values[i]);
         }
 
         return this;

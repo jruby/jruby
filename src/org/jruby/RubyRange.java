@@ -293,7 +293,7 @@ public class RubyRange extends RubyObject {
             }
 
             for (; i < endLong; i++) {
-                getRuntime().yield(getRuntime().newFixnum(i));
+                getRuntime().getCurrentContext().yield(getRuntime().newFixnum(i));
             }
         } else if (begin instanceof RubyString) {
             ((RubyString) begin).upto(end, isExclusive);
@@ -302,7 +302,7 @@ public class RubyRange extends RubyObject {
                 end = end.callMethod("+", RubyFixnum.one(getRuntime()));
             }
             while (begin.callMethod("<", end).isTrue()) {
-                getRuntime().yield(begin);
+                getRuntime().getCurrentContext().yield(begin);
                 begin = begin.callMethod("+", RubyFixnum.one(getRuntime()));
             }
         } else {
@@ -313,12 +313,12 @@ public class RubyRange extends RubyObject {
                     if (v.equals(end)) {
                         break;
                     }
-                    getRuntime().yield(v);
+                    getRuntime().getCurrentContext().yield(v);
                     v = v.callMethod("succ");
                 }
             } else {
                 while (v.callMethod("<=", end).isTrue()) {
-                    getRuntime().yield(v);
+                    getRuntime().getCurrentContext().yield(v);
                     if (v.equals(end)) {
                         break;
                     }

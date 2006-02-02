@@ -32,7 +32,6 @@ package org.jruby.evaluator;
 
 import java.util.Iterator;
 
-import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.ast.ArrayNode;
@@ -70,7 +69,6 @@ import org.jruby.ast.ZSuperNode;
 import org.jruby.ast.visitor.AbstractVisitor;
 import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.ICallable;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -80,16 +78,12 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author jpetersen
  */
 public class DefinedVisitor extends AbstractVisitor {
-    private IRuby runtime;
-    private IRubyObject self;
-    private ThreadContext threadContext;
+    private EvaluationState state;
 
     private String definition;
 
-    public DefinedVisitor(IRuby runtime, IRubyObject self) {
-        this.runtime = runtime;
-        this.self = self;
-        this.threadContext = runtime.getCurrentContext();
+    public DefinedVisitor(EvaluationState state) {
+        this.state = state;
     }
 
     public String getDefinition(Node expression) {
@@ -121,8 +115,7 @@ public class DefinedVisitor extends AbstractVisitor {
      */
     protected Instruction visitNode(Node iVisited) {
         try {
-			EvaluateVisitor.getInstance().eval(self.getRuntime(), self,
-					iVisited);
+            new EvaluationState(state.runtime, state.getSelf()).begin(iVisited);
             definition = "expression";
         } catch (JumpException jumpExcptn) {
         }
@@ -133,8 +126,8 @@ public class DefinedVisitor extends AbstractVisitor {
 	 * @see AbstractVisitor#visitSuperNode(SuperNode)
 	 */
 	public Instruction visitSuperNode(SuperNode iVisited) {
-		String lastMethod = threadContext.getCurrentFrame().getLastFunc();
-		RubyModule lastClass = threadContext.getCurrentFrame().getLastClass();
+		String lastMethod = state.getThreadContext().getCurrentFrame().getLastFunc();
+		RubyModule lastClass = state.getThreadContext().getCurrentFrame().getLastClass();
 		if (lastMethod != null && lastClass != null
 				&& lastClass.getSuperClass().isMethodBound(lastMethod, false)) {
 			definition = getArgumentDefinition(iVisited.getArgsNode(), "super");
@@ -146,8 +139,8 @@ public class DefinedVisitor extends AbstractVisitor {
 	 * @see AbstractVisitor#visitZSuperNode(ZSuperNode)
 	 */
 	public Instruction visitZSuperNode(ZSuperNode iVisited) {
-		String lastMethod = threadContext.getCurrentFrame().getLastFunc();
-		RubyModule lastClass = threadContext.getCurrentFrame().getLastClass();
+		String lastMethod = state.getThreadContext().getCurrentFrame().getLastFunc();
+		RubyModule lastClass = state.getThreadContext().getCurrentFrame().getLastClass();
 		if (lastMethod != null && lastClass != null
 				&& lastClass.getSuperClass().isMethodBound(lastMethod, false)) {
 			definition = "super";
@@ -161,14 +154,13 @@ public class DefinedVisitor extends AbstractVisitor {
 	public Instruction visitCallNode(CallNode iVisited) {
 		if (getDefinition(iVisited.getReceiverNode()) != null) {
 			try {
-				IRubyObject receiver = EvaluateVisitor.getInstance().eval(
-						self.getRuntime(), self, iVisited.getReceiverNode());
+                IRubyObject receiver = new EvaluationState(state.runtime, state.getSelf()).begin(iVisited.getReceiverNode());
 				RubyClass metaClass = receiver.getMetaClass();
 				ICallable method = metaClass.searchMethod(iVisited.getName());
 				Visibility visibility = method.getVisibility();
 
 				if (!visibility.isPrivate()
-						&& (!visibility.isProtected() || self
+						&& (!visibility.isProtected() || state.getSelf()
 								.isKindOf(metaClass.getRealClass()))) {
 					if (metaClass.isMethodBound(iVisited.getName(), false)) {
 						definition = getArgumentDefinition(iVisited
@@ -187,7 +179,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	 * @see AbstractVisitor#visitFCallNode(FCallNode)
 	 */
 	public Instruction visitFCallNode(FCallNode iVisited) {
-		if (self.getMetaClass().isMethodBound(iVisited.getName(), false)) {
+		if (state.getSelf().getMetaClass().isMethodBound(iVisited.getName(), false)) {
 			definition = getArgumentDefinition(iVisited.getArgsNode(), "method");
 		}
 		return null;
@@ -197,7 +189,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	 * @see AbstractVisitor#visitVCallNode(VCallNode)
 	 */
 	public Instruction visitVCallNode(VCallNode iVisited) {
-		if (self.getMetaClass().isMethodBound(iVisited.getMethodName(), false)) {
+		if (state.getSelf().getMetaClass().isMethodBound(iVisited.getMethodName(), false)) {
 			definition = "method";
 		}
 		return null;
@@ -244,10 +236,10 @@ public class DefinedVisitor extends AbstractVisitor {
 	}
 
 	/**
-	 * @see AbstractVisitor#visitSelfNode(SelfNode)
+	 * @see AbstractVisitor#visitNode(state.getSelf()Node)
 	 */
 	public Instruction visitSelfNode(SelfNode iVisited) {
-		definition = "self";
+		definition = "state.getSelf()";
 		return null;
 	}
 
@@ -263,7 +255,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	 * @see AbstractVisitor#visitYieldNode(YieldNode)
 	 */
 	public Instruction visitYieldNode(YieldNode iVisited) {
-		if (threadContext.isBlockGiven()) {
+		if (state.getThreadContext().isBlockGivenAndAvailable()) {
 			definition = "yield";
 		}
 		return null;
@@ -361,15 +353,15 @@ public class DefinedVisitor extends AbstractVisitor {
 	 * @see AbstractVisitor#visitClassVarNode(ClassVarNode)
 	 */
 	public Instruction visitClassVarNode(ClassVarNode iVisited) {
-		if (threadContext.getRubyClass() == null
-				&& self.getMetaClass().isClassVarDefined(iVisited.getName())) {
+		if (state.getThreadContext().getRubyClass() == null
+				&& state.getSelf().getMetaClass().isClassVarDefined(iVisited.getName())) {
 			definition = "class_variable";
-		} else if (!threadContext.getRubyClass().isSingleton()
-				&& threadContext.getRubyClass().isClassVarDefined(
+		} else if (!state.getThreadContext().getRubyClass().isSingleton()
+				&& state.getThreadContext().getRubyClass().isClassVarDefined(
 						iVisited.getName())) {
 			definition = "class_variable";
 		} else {
-			RubyModule module = (RubyModule) threadContext.getRubyClass()
+			RubyModule module = (RubyModule) state.getThreadContext().getRubyClass()
 					.getInstanceVariable("__attached__");
 
 			if (module != null && module.isClassVarDefined(iVisited.getName())) {
@@ -383,7 +375,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	 * @see AbstractVisitor#visitConstNode(ConstNode)
 	 */
 	public Instruction visitConstNode(ConstNode iVisited) {
-		if (runtime.getClass("Module").getConstant(iVisited.getName(), false) != null) {
+		if (state.runtime.getClass("Module").getConstant(iVisited.getName(), false) != null) {
 			definition = "constant";
 		}
 		return null;
@@ -393,7 +385,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	 * @see AbstractVisitor#visitGlobalVarNode(GlobalVarNode)
 	 */
 	public Instruction visitGlobalVarNode(GlobalVarNode iVisited) {
-		if (runtime.getGlobalVariables().isDefined(iVisited.getName())) {
+		if (state.runtime.getGlobalVariables().isDefined(iVisited.getName())) {
 			definition = "global-variable";
 		}
 		return null;
@@ -403,7 +395,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	 * @see AbstractVisitor#visitInstVarNode(InstVarNode)
 	 */
 	public Instruction visitInstVarNode(InstVarNode iVisited) {
-		if (self.getInstanceVariable(iVisited.getName()) != null) {
+		if (state.getSelf().getInstanceVariable(iVisited.getName()) != null) {
 			definition = "instance-variable";
 		}
 		return null;
@@ -414,8 +406,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	 */
 	public Instruction visitColon2Node(Colon2Node iVisited) {
 		try {
-			IRubyObject left = EvaluateVisitor.getInstance().eval(
-					self.getRuntime(), self, iVisited.getLeftNode());
+            IRubyObject left = new EvaluationState(state.runtime, state.getSelf()).begin(iVisited.getLeftNode());
 			if (left instanceof RubyModule) {
 				if (((RubyModule) left).getConstantAt(iVisited.getName()) != null) {
 					definition = "constant";

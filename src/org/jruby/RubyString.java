@@ -544,7 +544,7 @@ public class RubyString extends RubyObject {
 	private IRubyObject sub(IRubyObject[] args, boolean bang) {
 		IRubyObject repl = getRuntime().getNil();
 		boolean iter = false;
-		if (args.length == 1 && getRuntime().isBlockGiven()) {
+		if (args.length == 1 && getRuntime().getCurrentContext().isBlockGiven()) {
 			iter = true;
 		} else if (args.length == 2) {
 			repl = args[1];
@@ -556,7 +556,7 @@ public class RubyString extends RubyObject {
 		if (pat.search(this, 0) >= 0) {
 			RubyMatchData match = (RubyMatchData) getRuntime().getCurrentContext().getBackref();
 			RubyString newStr = match.pre_match();
-			newStr.append(iter ? getRuntime().yield(match.group(0)) : pat.regsub(repl, match));
+			newStr.append(iter ? getRuntime().getCurrentContext().yield(match.group(0)) : pat.regsub(repl, match));
 			newStr.append(match.post_match());
 			newStr.setTaint(isTaint() || repl.isTaint());
 			if (bang) {
@@ -590,7 +590,7 @@ public class RubyString extends RubyObject {
 		IRubyObject repl = getRuntime().getNil();
 		RubyMatchData match;
 		boolean iter = false;
-		if (args.length == 1 && getRuntime().isBlockGiven()) {
+		if (args.length == 1 && getRuntime().getCurrentContext().isBlockGiven()) {
 			iter = true;
 		} else if (args.length == 2) {
 			repl = args[1];
@@ -611,9 +611,9 @@ public class RubyString extends RubyObject {
 		while (beg >= 0) {
 			match = (RubyMatchData) getRuntime().getCurrentContext().getBackref();
 			sbuf.append(str.substring(offset, beg));
-			newStr = iter ? getRuntime().yield(match.group(0)) : pat.regsub(repl, match);
+			newStr = iter ? getRuntime().getCurrentContext().yield(match.group(0)) : pat.regsub(repl, match);
 			taint |= newStr.isTaint();
-			sbuf.append(((RubyString) newStr).getValue());
+            sbuf.append(newStr.toString());
 			offset = match.matchEndPosition();
 			beg = pat.search(this, offset == beg ? beg + 1 : offset);
 		}
@@ -911,7 +911,7 @@ public class RubyString extends RubyObject {
 		RubyString current = this;
 		RubyString end = stringValue(str);
 		while (current.cmp(end) <= 0) {
-			getRuntime().yield(current);
+			getRuntime().getCurrentContext().yield(current);
 			if (current.cmp(end) == 0) {
 				break;
 			}
@@ -987,7 +987,7 @@ public class RubyString extends RubyObject {
 	public IRubyObject scan(IRubyObject arg) {
 		RubyRegexp pat = RubyRegexp.regexpValue(arg);
 		int start = 0;
-		if (!getRuntime().isBlockGiven()) {
+		if (!getRuntime().getCurrentContext().isBlockGiven()) {
 			RubyArray ary = getRuntime().newArray();
 			while (pat.search(this, start) != -1) {
 				RubyMatchData md = (RubyMatchData) getRuntime().getCurrentContext().getBackref();
@@ -1008,9 +1008,9 @@ public class RubyString extends RubyObject {
 		while (pat.search(this, start) != -1) {
 			RubyMatchData md = (RubyMatchData) getRuntime().getCurrentContext().getBackref();
 			if (md.getSize() == 1) {
-				getRuntime().yield(md.group(0));
+				getRuntime().getCurrentContext().yield(md.group(0));
 			} else {
-				getRuntime().yield(md.subseq(1, md.getSize()));
+				getRuntime().getCurrentContext().yield(md.subseq(1, md.getSize()));
 			}
 			if (md.matchEndPosition() == md.matchStartPosition()) {
 				start++;
@@ -1504,11 +1504,11 @@ public class RubyString extends RubyObject {
 		int start = 0;
 		while (pat.search(this, start) != -1) {
 			RubyMatchData md = (RubyMatchData) getRuntime().getCurrentContext().getBackref();
-			getRuntime().yield(md.group(0));
+			getRuntime().getCurrentContext().yield(md.group(0));
 			start = md.matchEndPosition();
 		}
 		if (start < strLen) {
-			getRuntime().yield(substr(start, strLen - start));
+			getRuntime().getCurrentContext().yield(substr(start, strLen - start));
 		}
 		return this;
 	}
@@ -1520,7 +1520,7 @@ public class RubyString extends RubyObject {
 		byte[] lByteValue = toByteArray();
 		int lLength = lByteValue.length;
 		for (int i = 0; i < lLength; i++) {
-			getRuntime().yield(getRuntime().newFixnum(lByteValue[i]));
+			getRuntime().getCurrentContext().yield(getRuntime().newFixnum(lByteValue[i]));
 		}
 		return this;
 	}

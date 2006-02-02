@@ -93,6 +93,9 @@ public class ListNode extends Node {
     	StringBuffer b = new StringBuffer();
     	for (int i = 0; i < list.size(); i++) {
     		b.append(list.get(i));
+            if (i + 1 < list.size()) {
+                b.append(", ");
+            }
     	}
     	return string + ": {" + b.toString() + "}";
     }

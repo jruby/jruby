@@ -290,8 +290,8 @@ public class RubyHash extends RubyObject implements Map {
         if (result == null) {
             if (args.length > 1) {
                 return args[1];
-            } else if (getRuntime().isBlockGiven()) {
-                return getRuntime().yield(key);
+            } else if (getRuntime().getCurrentContext().isBlockGiven()) {
+                return getRuntime().getCurrentContext().yield(key);
             } 
 
             throw getRuntime().newIndexError("key not found");
@@ -312,7 +312,7 @@ public class RubyHash extends RubyObject implements Map {
         for (Iterator iter = entryIterator(); iter.hasNext();) {
             checkRehashing();
             Map.Entry entry = (Map.Entry) iter.next();
-			getRuntime().yield(getRuntime().newArray((IRubyObject)entry.getKey(), (IRubyObject)entry.getValue()), null, null, true);
+			getRuntime().getCurrentContext().yield(getRuntime().newArray((IRubyObject)entry.getKey(), (IRubyObject)entry.getValue()), null, null, true);
         }
         return this;
     }
@@ -327,7 +327,7 @@ public class RubyHash extends RubyObject implements Map {
 		for (Iterator iter = valueIterator(); iter.hasNext();) {
             checkRehashing();
 			IRubyObject value = (IRubyObject) iter.next();
-			getRuntime().yield(value);
+			getRuntime().getCurrentContext().yield(value);
 		}
 		return this;
 	}
@@ -336,7 +336,7 @@ public class RubyHash extends RubyObject implements Map {
 		for (Iterator iter = keyIterator(); iter.hasNext();) {
 			checkRehashing();
             IRubyObject key = (IRubyObject) iter.next();
-			getRuntime().yield(key);
+			getRuntime().getCurrentContext().yield(key);
 		}
 		return this;
 	}
@@ -407,8 +407,8 @@ public class RubyHash extends RubyObject implements Map {
 		IRubyObject result = (IRubyObject) valueMap.remove(key);
 		if (result != null) {
 			return result;
-		} else if (getRuntime().isBlockGiven()) {
-			return getRuntime().yield(key);
+		} else if (getRuntime().getCurrentContext().isBlockGiven()) {
+			return getRuntime().getCurrentContext().yield(key);
 		} 
 
 		return getDefaultValue();
@@ -431,7 +431,7 @@ public class RubyHash extends RubyObject implements Map {
 		for (Iterator iter = keyIterator(); iter.hasNext();) {
 			IRubyObject key = (IRubyObject) iter.next();
 			IRubyObject value = (IRubyObject) valueMap.get(key);
-			IRubyObject shouldDelete = getRuntime().yield(getRuntime().newArray(key, value), null, null, true);
+			IRubyObject shouldDelete = getRuntime().getCurrentContext().yield(getRuntime().newArray(key, value), null, null, true);
 			if (shouldDelete.isTrue()) {
 				valueMap.remove(key);
 				isModified = true;

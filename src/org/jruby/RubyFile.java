@@ -151,7 +151,7 @@ public class RubyFile extends RubyIO {
 	    }
 	    openInternal(path, modes);
 	    
-	    if (getRuntime().isBlockGiven()) {
+	    if (getRuntime().getCurrentContext().isBlockGiven()) {
 	        // getRuby().getRuntime().warn("File::new does not take block; use File::open instead");
 	    }
 	    return this;

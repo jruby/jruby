@@ -41,26 +41,28 @@ import org.jruby.runtime.builtin.IRubyObject;
  * </p>
  */
 public abstract class AbstractMetaClass extends RubyClass {
-	protected class Meta {
+	protected abstract class Meta {
+        protected abstract void initializeClass();
+        
 		/**
 		 * Base implementation uses the data-driven approach not used currently but
 		 * possibly revisited in the future.
 		 */
-		protected void initializeClass() {
-			includeModules(getIncludedModules());
-
-			defineMethods(Visibility.PUBLIC, getSingletonMethods(), true);
-			defineMethods(Visibility.PUBLIC, getPublicMethods(), false);
-			defineMethods(Visibility.PRIVATE, getPrivateMethods(), false);
-
-			defineAliases(getAliases());
-
-			undefineMethods(getUndefineMethods(), false);
-			undefineMethods(getUndefineSingletonMethods(), true);
-
-			defineConstants(getDefineConstants(), false);
-			setConstants(getSetConstants(), false);
-		}
+//		protected void initializeClass() {
+//			includeModules(getIncludedModules());
+//
+//			defineMethods(Visibility.PUBLIC, getSingletonMethods(), true);
+//			defineMethods(Visibility.PUBLIC, getPublicMethods(), false);
+//			defineMethods(Visibility.PRIVATE, getPrivateMethods(), false);
+//
+//			defineAliases(getAliases());
+//
+//			undefineMethods(getUndefineMethods(), false);
+//			undefineMethods(getUndefineSingletonMethods(), true);
+//
+//			defineConstants(getDefineConstants(), false);
+//			setConstants(getSetConstants(), false);
+//		}
 
 		// Empty impls
 		protected Object[][] getPublicMethods() {
@@ -99,39 +101,39 @@ public abstract class AbstractMetaClass extends RubyClass {
 			return new String[] {};
 		}
 
-		public void defineMethods(Visibility visibility, Object[][] methods,
-				boolean singleton) {
-			for (int i = 0; i < methods.length; i++) {
-				String name = (String) methods[i][0];
-				Arity arity = (Arity) methods[i][1];
-				String java_name = null;
-				switch (methods[i].length) {
-				case 2:
-					java_name = (String) methods[i][0];
-					break;
-				case 3:
-					java_name = (String) methods[i][2];
-					break;
-				}
-
-				assert name != null;
-				assert arity != null;
-				assert java_name != null;
-
-				visibility = name.equals("initialize") ? Visibility.PRIVATE
-						: Visibility.PUBLIC;
-
-				if (singleton) {
-					getSingletonClass().addMethod(
-							name,
-							new ReflectedMethod(AbstractMetaClass.this, AbstractMetaClass.this
-									.getClass(), java_name, arity, visibility));
-				} else {
-					addMethod(name, new ReflectedMethod(AbstractMetaClass.this,
-							builtinClass, java_name, arity, visibility));
-				}
-			}
-		}
+//		public void defineMethods(Visibility visibility, Object[][] methods,
+//				boolean singleton) {
+//			for (int i = 0; i < methods.length; i++) {
+//				String name = (String) methods[i][0];
+//				Arity arity = (Arity) methods[i][1];
+//				String java_name = null;
+//				switch (methods[i].length) {
+//				case 2:
+//					java_name = (String) methods[i][0];
+//					break;
+//				case 3:
+//					java_name = (String) methods[i][2];
+//					break;
+//				}
+//
+//				assert name != null;
+//				assert arity != null;
+//				assert java_name != null;
+//
+//				visibility = name.equals("initialize") ? Visibility.PRIVATE
+//						: Visibility.PUBLIC;
+//
+//				if (singleton) {
+//					getSingletonClass().addMethod(
+//							name,
+//							new ReflectedMethod(AbstractMetaClass.this, AbstractMetaClass.this
+//									.getClass(), java_name, arity, visibility));
+//				} else {
+//					addMethod(name, new ReflectedMethod(AbstractMetaClass.this,
+//							builtinClass, java_name, arity, visibility));
+//				}
+//			}
+//		}
 
 		public void undefineMethods(String[] undefineMethods, boolean singleton) {
 			for (int i = 0; i < undefineMethods.length; i++) {

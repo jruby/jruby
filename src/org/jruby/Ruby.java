@@ -49,7 +49,6 @@ import java.util.Stack;
 
 import org.jruby.ast.Node;
 import org.jruby.common.RubyWarnings;
-import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariables;
@@ -180,7 +179,9 @@ public final class Ruby implements IRuby {
 
     public IRubyObject eval(Node node) {
         try {
-	        return EvaluateVisitor.getInstance().eval(topSelf.getRuntime(), topSelf, node);
+            // in all cases where this is called, Ruby() and init() will have prepared an EvalState to use in the frame
+            //return new EvaluationState(this, topSelf).begin(node);
+            return getCurrentContext().getCurrentFrame().getEvalState().begin(node);
         } catch (JumpException je) {
         	if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
 	            return (IRubyObject)je.getSecondaryData();
@@ -325,14 +326,6 @@ public final class Ruby implements IRuby {
         return getModule(name) != null;
     }
 
-    public IRubyObject yield(IRubyObject value) {
-        return yield(value, null, null, false);
-    }
-
-    public IRubyObject yield(IRubyObject value, IRubyObject self, RubyModule klass, boolean checkArguments) {
-        return getCurrentContext().yield(value, self, klass, false, checkArguments);
-    }
-
     /** Getter for property rubyTopSelf.
      * @return Value of property rubyTopSelf.
      */
@@ -357,7 +350,7 @@ public final class Ruby implements IRuby {
         
         getCurrentContext().preInit();
 
-        setCurrentVisibility(Visibility.PRIVATE);
+        getCurrentContext().setCurrentVisibility(Visibility.PRIVATE);
 
         initCoreClasses();
 
@@ -369,6 +362,7 @@ public final class Ruby implements IRuby {
         
         Frame frame = getCurrentContext().getCurrentFrame();
         frame.setSelf(topSelf);
+        frame.getEvalState().setSelf(topSelf);
 
         initBuiltinClasses();
     }
@@ -562,37 +556,11 @@ public final class Ruby implements IRuby {
         errnoModule.defineClassUnder(name, systemCallError).defineConstant("Errno", newFixnum(i));
     }
     
-	/** Getter for property sourceFile.
-     * @return Value of property sourceFile.
-     */
-    public String getSourceFile() {
-        return getCurrentContext().getPosition().getFile();
-    }
-
-    /** Getter for property sourceLine.
-     * @return Value of property sourceLine.
-     */
-    public int getSourceLine() {
-        return getCurrentContext().getPosition().getEndLine();
-    }
-
-    /** Getter for property isVerbose.
+	/** Getter for property isVerbose.
      * @return Value of property isVerbose.
      */
     public IRubyObject getVerbose() {
         return verbose;
-    }
-
-    public boolean isBlockGiven() {
-        return getCurrentContext().getCurrentFrame().isBlockGiven();
-    }
-
-    public boolean isFBlockGiven() {
-        Frame previous = getCurrentContext().getPreviousFrame();
-        if (previous == null) {
-            return false;
-        }
-        return previous.isBlockGiven();
     }
 
     /** Setter for property isVerbose.
@@ -604,14 +572,6 @@ public final class Ruby implements IRuby {
 
     public JavaSupport getJavaSupport() {
         return javaSupport;
-    }
-
-    public Visibility getCurrentVisibility() {
-        return getCurrentContext().getCurrentScope().getVisibility();
-    }
-
-    public void setCurrentVisibility(Visibility visibility) {
-        getCurrentContext().getCurrentScope().setVisibility(visibility);
     }
 
     /** Defines a global variable
@@ -704,10 +664,10 @@ public final class Ruby implements IRuby {
 
         PrintStream errorStream = getErrorStream();
 		if (backtrace.isNil()) {
-            if (getSourceFile() != null) {
+            if (getCurrentContext().getSourceFile() != null) {
                 errorStream.print(getCurrentContext().getPosition());
             } else {
-                errorStream.print(getSourceLine());
+                errorStream.print(getCurrentContext().getSourceLine());
             }
         } else if (backtrace.getLength() == 0) {
             printErrorPos(errorStream);
@@ -760,14 +720,14 @@ public final class Ruby implements IRuby {
 	}
 
 	private void printErrorPos(PrintStream errorStream) {
-        if (getSourceFile() != null) {
+        if (getCurrentContext().getSourceFile() != null) {
             if (getCurrentContext().getCurrentFrame().getLastFunc() != null) {
             	errorStream.print(getCurrentContext().getPosition());
             	errorStream.print(":in '" + getCurrentContext().getCurrentFrame().getLastFunc() + '\'');
-            } else if (getSourceLine() != 0) {
+            } else if (getCurrentContext().getSourceLine() != 0) {
                 errorStream.print(getCurrentContext().getPosition());
             } else {
-            	errorStream.print(getSourceFile());
+            	errorStream.print(getCurrentContext().getSourceFile());
             }
         }
     }
@@ -801,7 +761,7 @@ public final class Ruby implements IRuby {
         }
 
         /* default visibility is private at loading toplevel */
-        setCurrentVisibility(Visibility.PRIVATE);
+        getCurrentContext().setCurrentVisibility(Visibility.PRIVATE);
 
         try {
         	Node node = parse(source, scriptName);
@@ -837,7 +797,7 @@ public final class Ruby implements IRuby {
         }
         
         /* default visibility is private at loading toplevel */
-        setCurrentVisibility(Visibility.PRIVATE);
+        getCurrentContext().setCurrentVisibility(Visibility.PRIVATE);
 
         try {
             self.eval(node);

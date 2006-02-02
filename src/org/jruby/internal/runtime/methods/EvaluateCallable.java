@@ -30,9 +30,10 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.IRuby;
+import org.jruby.RubyModule;
 import org.jruby.ast.Node;
 import org.jruby.ast.types.IArityNode;
-import org.jruby.evaluator.EvaluateVisitor;
+import org.jruby.evaluator.EvaluationState;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Visibility;
@@ -56,8 +57,24 @@ public class EvaluateCallable extends AbstractCallable {
     	this(node, null, procArityOf(vars));
     }
     
+    public void preMethod(IRuby runtime, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+    }
+    
+    public void postMethod(IRuby runtime) {
+    }
+
     public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
-        return EvaluateVisitor.getInstance().eval(runtime, receiver, node);
+        return new EvaluationState(runtime, receiver).begin(node);
+        // REVIST: we will execute under a different self, so save it (should be a stack?)
+        // This almost works, but causes rubicon TestThread to run forever
+//        EvaluationState evalState = runtime.getCurrentContext().getCurrentFrame().getEvalState();
+//        IRubyObject oldSelf = evalState.getSelf();
+//        evalState.setSelf(receiver);
+//        try {
+//            return evalState.begin(node);
+//        } finally {
+//            evalState.setSelf(oldSelf);
+//        }
     }
 
     public Node getNode() {

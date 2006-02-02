@@ -38,6 +38,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ICallable;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -75,6 +76,18 @@ public class ReflectedMethod extends AbstractMethod {
         }
         
         assert method != null;
+    }
+
+    public void preMethod(IRuby runtime, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+        ThreadContext context = runtime.getCurrentContext();
+        
+        context.preReflectedMethodInternalCall(implementationClass, recv, name, args, noSuper);
+    }
+    
+    public void postMethod(IRuby runtime) {
+        ThreadContext context = runtime.getCurrentContext();
+        
+        context.postReflectedMethodInternalCall();
     }
     
 	public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {

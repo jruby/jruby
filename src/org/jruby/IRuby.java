@@ -22,7 +22,6 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadService;
 
@@ -114,34 +113,15 @@ public interface IRuby {
 
 	public boolean isClassDefined(String name);
 
-	public IRubyObject yield(IRubyObject value);
-
-	public IRubyObject yield(IRubyObject value, IRubyObject self,
-			RubyModule klass, boolean checkArguments);
-
 	/** Getter for property rubyTopSelf.
 	 * @return Value of property rubyTopSelf.
 	 */
 	public IRubyObject getTopSelf();
-    
-    /** Getter for property sourceFile.
-	 * @return Value of property sourceFile.
-	 */
-	public String getSourceFile();
 
-	/** Getter for property sourceLine.
-	 * @return Value of property sourceLine.
-	 */
-	public int getSourceLine();
-
-	/** Getter for property isVerbose.
+    /** Getter for property isVerbose.
 	 * @return Value of property isVerbose.
 	 */
 	public IRubyObject getVerbose();
-
-	public boolean isBlockGiven();
-
-	public boolean isFBlockGiven();
 
 	/** Setter for property isVerbose.
 	 * @param verbose New value of property isVerbose.
@@ -149,10 +129,6 @@ public interface IRuby {
 	public void setVerbose(IRubyObject verbose);
 
     public JavaSupport getJavaSupport();
-
-	public Visibility getCurrentVisibility();
-
-	public void setCurrentVisibility(Visibility visibility);
 
     /** Defines a global variable
 	 */

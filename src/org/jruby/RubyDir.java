@@ -191,10 +191,10 @@ public class RubyDir extends RubyObject {
         }
         
         IRubyObject result = null;
-        if (recv.getRuntime().isBlockGiven()) {
+        if (recv.getRuntime().getCurrentContext().isBlockGiven()) {
         	// FIXME: Don't use user.dir for cwd
         	System.setProperty("user.dir", realPath);
-        	result = recv.getRuntime().yield(path);
+        	result = recv.getRuntime().getCurrentContext().yield(path);
         	System.setProperty("user.dir", oldCwd); 
         } else {
         	System.setProperty("user.dir", realPath);
@@ -277,9 +277,9 @@ public class RubyDir extends RubyObject {
             (RubyDir) newInstance(recv.getRuntime().getClass("Dir"),
                     new IRubyObject[] { path });
 
-        if (recv.getRuntime().isBlockGiven()) {
+        if (recv.getRuntime().getCurrentContext().isBlockGiven()) {
             try {
-                recv.getRuntime().yield(directory);
+                recv.getRuntime().getCurrentContext().yield(directory);
             } finally {
                 directory.close();
             }
@@ -308,7 +308,7 @@ public class RubyDir extends RubyObject {
     public IRubyObject each() {
         String[] contents = snapshot;
         for (int i=0; i<contents.length; i++) {
-            getRuntime().yield(getRuntime().newString(contents[i]));
+            getRuntime().getCurrentContext().yield(getRuntime().newString(contents[i]));
         }
         return this;
     }

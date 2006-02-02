@@ -132,7 +132,7 @@ public class RubyArgsFile extends RubyObject {
         IRubyObject nextLine = internalGets(args);
         
         while (!nextLine.isNil()) {
-        	getRuntime().yield(nextLine);
+        	getRuntime().getCurrentContext().yield(nextLine);
         	nextLine = internalGets(args);
         }
         

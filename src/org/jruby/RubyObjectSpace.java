@@ -69,7 +69,7 @@ public class RubyObjectSpace {
         Iterator iter = recv.getRuntime().getObjectSpace().iterator(rubyClass);
         while (iter.hasNext()) {
             count++;
-            recv.getRuntime().yield((IRubyObject) iter.next());
+            recv.getRuntime().getCurrentContext().yield(((IRubyObject) iter.next()));
         }
         return recv.getRuntime().newFixnum(count);
     }

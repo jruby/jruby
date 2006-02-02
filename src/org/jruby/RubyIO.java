@@ -882,7 +882,7 @@ public class RubyIO extends RubyObject {
     	try {
             for (int c = handler.getc(); c != -1; c = handler.getc()) {
                 assert c < 256;
-                getRuntime().yield(getRuntime().newFixnum(c));
+                getRuntime().getCurrentContext().yield(getRuntime().newFixnum(c));
             }
 
             return getRuntime().getNil();
@@ -899,7 +899,7 @@ public class RubyIO extends RubyObject {
     public RubyIO each_line(IRubyObject[] args) {
         for (IRubyObject line = internalGets(args); !line.isNil(); 
         	line = internalGets(args)) {
-            getRuntime().yield(line);
+            getRuntime().getCurrentContext().yield(line);
         }
         
         return this;

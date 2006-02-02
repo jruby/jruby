@@ -36,6 +36,7 @@ import org.jruby.RubyModule;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ICallable;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
@@ -50,20 +51,38 @@ public class CallbackMethod extends AbstractMethod {
         this.callback = callback;
     }
 
+    public void preMethod(IRuby runtime, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+        ThreadContext context = runtime.getCurrentContext();
+        
+        context.preReflectedMethodInternalCall(implementationClass, recv, name, args, noSuper);
+    }
+    
+    public void postMethod(IRuby runtime) {
+        ThreadContext context = runtime.getCurrentContext();
+        
+        context.postReflectedMethodInternalCall();
+    }
+
     public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
     	assert args != null;
     	
-        if (runtime.getTraceFunction() != null) {
-            ISourcePosition position = runtime.getCurrentContext().getPreviousFrame().getPosition();
-
-            runtime.callTraceFunction("c-call", position, receiver, name, getImplementationClass()); // XXX
-            try {
-                return callback.execute(receiver, args);
-            } finally {
-                runtime.callTraceFunction("c-return", position, receiver, name, getImplementationClass()); // XXX
+        //runtime.getCurrentContext().preReflectedMethodInternalCall();
+        
+        try {
+            if (runtime.getTraceFunction() != null) {
+                ISourcePosition position = runtime.getCurrentContext().getPreviousFrame().getPosition();
+    
+                runtime.callTraceFunction("c-call", position, receiver, name, getImplementationClass()); // XXX
+                try {
+                    return callback.execute(receiver, args);
+                } finally {
+                    runtime.callTraceFunction("c-return", position, receiver, name, getImplementationClass()); // XXX
+                }
             }
+    		return callback.execute(receiver, args);
+        } finally {
+            //runtime.getCurrentContext().postReflectedMethodInternalCall();
         }
-		return callback.execute(receiver, args);
     }
 
     public Callback getCallback() {

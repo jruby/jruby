@@ -60,8 +60,8 @@ public class RubyGlobal {
         runtime.defineGlobalConstant("RELEASE_DATE", release);
         runtime.defineGlobalConstant("PLATFORM", platform);
 		
-		// TODO: ENV Not really a RubyHash (but close) 
-		// TODO: ENV Should not copy system properties, but should reference them instead
+		// FIXME: ENV Not really a RubyHash (but close) 
+		// FIXME: ENV Should not copy system properties, but should reference them instead
         HashMap envs = new HashMap();
 		envs.put(runtime.newString("HOME"), runtime.newString(System.getProperty("user.home")));
         runtime.defineGlobalConstant("ENV", RubyHash.newHash(runtime, envs, null));

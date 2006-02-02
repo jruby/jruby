@@ -370,7 +370,7 @@ public class RubyFixnum extends RubyInteger {
 
     public IRubyObject times() {
         for (long i = 0; i < value; i++) {
-            getRuntime().yield(newFixnum(i));
+            getRuntime().getCurrentContext().yield(newFixnum(i));
         }
         return this;
     }

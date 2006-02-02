@@ -151,7 +151,7 @@ public class IOMetaClass extends ObjectMetaClass {
 	
 	            IRubyObject nextLine = io.internalGets(newArgs);
 	            while (!nextLine.isNil()) {
-	                getRuntime().yield(nextLine);
+	                getRuntime().getCurrentContext().yield(nextLine);
 	                nextLine = io.internalGets(newArgs);
 	            }
         	} finally {
@@ -231,9 +231,9 @@ public class IOMetaClass extends ObjectMetaClass {
 	    	
 	    	RubyIO io = new RubyIO(runtime, process);
 	    	
-	    	if (runtime.isBlockGiven()) {
+	    	if (runtime.getCurrentContext().isBlockGiven()) {
 		        try {
-		        	runtime.yield(io);
+		        	runtime.getCurrentContext().yield(io);
 	    	        return runtime.getNil();
 		        } finally {
 		            io.close();

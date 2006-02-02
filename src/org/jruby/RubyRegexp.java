@@ -47,9 +47,11 @@ import org.jruby.util.PrintfFormat;
  * @author  amoore
  */
 public class RubyRegexp extends RubyObject implements ReOptions {
-    private static final RegexpTranslator REGEXP_TRANSLATOR = new RegexpTranslator();
-
-	/** Class which represents the multibyte character set code.
+    private static final Pattern COMMENT_PATTERN = Pattern.compile("\\(\\?#[^)]*\\)");
+    private static final Pattern HEX_SINGLE_DIGIT_PATTERN = Pattern.compile("\\\\x(\\p{XDigit})(?!\\p{XDigit})");
+    private static final Pattern OCTAL_SINGLE_DIGIT_PATTERN = Pattern.compile("\\\\([0-7])(?![0-7])");
+    private static final Pattern OCTAL_MISSING_ZERO_PATTERN = Pattern.compile("\\\\([1-7][0-7]+)");
+    /** Class which represents the multibyte character set code.
 	 * (should be an enum in Java 5.0).
 	 * 
 	 * Warning: THIS IS NOT REALLY SUPPORTED BY JRUBY. 
@@ -138,7 +140,21 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     }
 
     public void initialize(String regex, int options) {
-        pattern = REGEXP_TRANSLATOR.translate(regex, options, code.flags());
+    	int flags = Pattern.MULTILINE;
+        if ((options & RE_OPTION_IGNORECASE) > 0) {
+            flags |= Pattern.CASE_INSENSITIVE;
+        }
+        if ((options & RE_OPTION_EXTENDED) > 0) {
+        	flags |= Pattern.COMMENTS;
+        }
+        if ((options & RE_OPTION_MULTILINE) > 0) {
+        	flags |= Pattern.DOTALL;
+        }
+        regex = COMMENT_PATTERN.matcher(regex).replaceAll("");
+        regex = HEX_SINGLE_DIGIT_PATTERN.matcher(regex).replaceAll("\\\\"+"x0$1");
+        regex = OCTAL_SINGLE_DIGIT_PATTERN.matcher(regex).replaceAll("\\\\"+"0$1");
+        regex = OCTAL_MISSING_ZERO_PATTERN.matcher(regex).replaceAll("\\\\"+"0$1");
+        pattern = Pattern.compile(regex, flags | this.code.flags());
     }
 
     public static String quote(String orig) {
@@ -364,7 +380,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
         // If nothing match then nil will be returned
         IRubyObject result = match(str, pos);
-        getRuntime().getCurrentContext().getCurrentScope().setBackref(result);
+        getRuntime().getCurrentContext().setBackref(result);
 
         // If nothing match then -1 will be returned
         return result instanceof RubyMatchData ? ((RubyMatchData) result).matchStartPosition() : -1;
@@ -373,7 +389,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     public IRubyObject search2(String str) {
         IRubyObject result = match(str, 0);
         
-        getRuntime().getCurrentContext().getCurrentScope().setBackref(result);
+        getRuntime().getCurrentContext().setBackref(result);
         
     	return result;
     }
@@ -398,7 +414,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 		
 		RubyMatchData match = new RubyMatchData(getRuntime(), target, begin, end);
 
-		getRuntime().getCurrentContext().getCurrentScope().setBackref(match);
+		getRuntime().getCurrentContext().setBackref(match);
             
 		return match.matchStartPosition(); 
     }

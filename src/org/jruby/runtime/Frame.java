@@ -30,7 +30,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import java.util.List;
+
+import org.jruby.IRuby;
 import org.jruby.RubyModule;
+import org.jruby.ast.Node;
+import org.jruby.evaluator.EvaluationState;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -44,22 +49,26 @@ public class Frame {
     private RubyModule lastClass;
     private final ISourcePosition position;
     private Iter iter;
+    private IRuby runtime;
+    private EvaluationState evalState;
 
-    public Frame(ThreadContext threadContext, Iter iter) {
-        this(null, IRubyObject.NULL_ARRAY, null, null, threadContext.getPosition(), 
-             threadContext.getCurrentIter());    	
-    }
+    private Scope scope;
     
     public Frame(ThreadContext threadContext) {
-    	this(threadContext, threadContext.getCurrentIter());
+        this(threadContext, threadContext.getCurrentIter());
+    }
+
+    public Frame(ThreadContext threadContext, Iter iter) {
+        this(threadContext.getRuntime(), null, IRubyObject.NULL_ARRAY, null, null, threadContext.getPosition(), 
+             iter);   
     }
 
     public Frame(ThreadContext threadContext, IRubyObject self, IRubyObject[] args, 
     		String lastFunc, RubyModule lastClass) {
-    	this(self, args, lastFunc, lastClass, threadContext.getPosition(), threadContext.getCurrentIter());
+    	this(threadContext.getRuntime(), self, args, lastFunc, lastClass, threadContext.getPosition(), threadContext.getCurrentIter());
     }
 
-    public Frame(IRubyObject self, IRubyObject[] args, String lastFunc,
+    private Frame(IRuby runtime, IRubyObject self, IRubyObject[] args, String lastFunc,
                  RubyModule lastClass, ISourcePosition position, Iter iter) {
         this.self = self;
         this.args = args;
@@ -67,6 +76,18 @@ public class Frame {
         this.lastClass = lastClass;
         this.position = position;
         this.iter = iter;
+        this.runtime = runtime;
+        this.evalState = new EvaluationState(runtime, self);
+    }
+    
+    public void begin(Node node) {
+        evalState.begin2(node);
+    }
+    
+    public void step() {
+        if (evalState.hasNext()) {
+            evalState.executeNext();
+        }
     }
 
     /** Getter for property args.
@@ -135,7 +156,23 @@ public class Frame {
     public void setSelf(IRubyObject self) {
         this.self = self;
     }
-
+    
+    void newScope(List localNames) {
+        setScope(new Scope(runtime, localNames));
+    }
+    
+    Scope getScope() {
+        return scope;
+    }
+    
+    Scope setScope(Scope newScope) {
+        Scope oldScope = scope;
+        
+        scope = newScope;
+        
+        return oldScope;
+    }
+    
     public Frame duplicate() {
         IRubyObject[] newArgs;
         if (args.length != 0) {
@@ -145,7 +182,7 @@ public class Frame {
         	newArgs = args;
         }
 
-        return new Frame(self, newArgs, lastFunc, lastClass, position, iter);
+        return new Frame(runtime, self, newArgs, lastFunc, lastClass, position, iter);
     }
 
     /* (non-Javadoc)
@@ -160,5 +197,13 @@ public class Frame {
             sb.append(lastFunc);
         }
         return sb.toString();
+    }
+
+    public EvaluationState getEvalState() {
+        return evalState;
+    }
+
+    public void setEvalState(EvaluationState evalState) {
+        this.evalState = evalState;
     }
 }

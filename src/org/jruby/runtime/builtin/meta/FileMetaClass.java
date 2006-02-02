@@ -69,6 +69,13 @@ public class FileMetaClass extends IOMetaClass {
 	        RubyString pathSeparator = runtime.newString(File.pathSeparator);
 	        pathSeparator.freeze();
 	        defineConstant("PATH_SEPARATOR", pathSeparator);
+            
+            // TODO: These were missing, so we're not handling them elsewhere?
+	        setConstant("BINARY", runtime.newFixnum(32768));
+            setConstant("FNM_NOESCAPE", runtime.newFixnum(1));
+            setConstant("FNM_CASEFOLD", runtime.newFixnum(8));
+            setConstant("FNM_DOTMATCH", runtime.newFixnum(4));
+            setConstant("FNM_PATHNAME", runtime.newFixnum(2));
 	        
 	        // Create constants for open flags
 	        setConstant("RDONLY", runtime.newFixnum(IOModes.RDONLY));
@@ -86,6 +93,33 @@ public class FileMetaClass extends IOMetaClass {
 			setConstant("LOCK_EX", runtime.newFixnum(RubyFile.LOCK_EX));
 			setConstant("LOCK_NB", runtime.newFixnum(RubyFile.LOCK_NB));
 			setConstant("LOCK_UN", runtime.newFixnum(RubyFile.LOCK_UN));
+            
+            // Create Constants class
+            RubyModule constants = defineModuleUnder("Constants");
+            
+            // TODO: These were missing, so we're not handling them elsewhere?
+            constants.setConstant("BINARY", runtime.newFixnum(32768));
+            constants.setConstant("FNM_NOESCAPE", runtime.newFixnum(1));
+            constants.setConstant("FNM_CASEFOLD", runtime.newFixnum(8));
+            constants.setConstant("FNM_DOTMATCH", runtime.newFixnum(4));
+            constants.setConstant("FNM_PATHNAME", runtime.newFixnum(2));
+            
+            // Create constants for open flags
+            constants.setConstant("RDONLY", runtime.newFixnum(IOModes.RDONLY));
+            constants.setConstant("WRONLY", runtime.newFixnum(IOModes.WRONLY));
+            constants.setConstant("RDWR", runtime.newFixnum(IOModes.RDWR));
+            constants.setConstant("CREAT", runtime.newFixnum(IOModes.CREAT));
+            constants.setConstant("EXCL", runtime.newFixnum(IOModes.EXCL));
+            constants.setConstant("NOCTTY", runtime.newFixnum(IOModes.NOCTTY));
+            constants.setConstant("TRUNC", runtime.newFixnum(IOModes.TRUNC));
+            constants.setConstant("APPEND", runtime.newFixnum(IOModes.APPEND));
+            constants.setConstant("NONBLOCK", runtime.newFixnum(IOModes.NONBLOCK));
+            
+            // Create constants for flock
+            constants.setConstant("LOCK_SH", runtime.newFixnum(RubyFile.LOCK_SH));
+            constants.setConstant("LOCK_EX", runtime.newFixnum(RubyFile.LOCK_EX));
+            constants.setConstant("LOCK_NB", runtime.newFixnum(RubyFile.LOCK_NB));
+            constants.setConstant("LOCK_UN", runtime.newFixnum(RubyFile.LOCK_UN));
 	
 	        // TODO Singleton methods: atime, blockdev?, chardev?, chown, ctime, directory? 
 	        // TODO Singleton methods: executable?, executable_real?, extname, fnmatch, fnmatch?
@@ -298,9 +332,9 @@ public class FileMetaClass extends IOMetaClass {
 
 	    file.openInternal(path, modes);
 
-	    if (tryToYield && getRuntime().isBlockGiven()) {
+	    if (tryToYield && getRuntime().getCurrentContext().isBlockGiven()) {
 	        try {
-	            getRuntime().yield(file);
+	            getRuntime().getCurrentContext().yield(file);
 	        } finally {
 	            file.close();
 	        }

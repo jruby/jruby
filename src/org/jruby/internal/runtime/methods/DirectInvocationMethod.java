@@ -30,6 +30,7 @@ package org.jruby.internal.runtime.methods;
 import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -41,6 +42,18 @@ public abstract class DirectInvocationMethod extends AbstractMethod {
     	this.arity = arity;
     	
         assert arity != null;
+    }
+
+    public void preMethod(IRuby runtime, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+        ThreadContext context = runtime.getCurrentContext();
+        
+        context.preDirectInvokeMethodInternalCall(implementationClass, recv, name, args, noSuper);
+    }
+    
+    public void postMethod(IRuby runtime) {
+        ThreadContext context = runtime.getCurrentContext();
+        
+        context.postDirectInvokeMethodInternalCall();
     }
     
 	public abstract IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper);

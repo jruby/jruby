@@ -61,11 +61,11 @@ public class RubyProc extends RubyObject {
     // Proc class
 
     public static RubyProc newProc(IRuby runtime, boolean isLambda) {
-        if (!runtime.isBlockGiven() && !runtime.isFBlockGiven()) {
+        if (!runtime.getCurrentContext().isBlockGiven() && !runtime.getCurrentContext().isFBlockGiven()) {
             throw runtime.newArgumentError("tried to create Proc object without a block");
         }
         
-        if (isLambda && !runtime.isBlockGiven()) {
+        if (isLambda && !runtime.getCurrentContext().isBlockGiven()) {
         	// TODO: warn "tried to create Proc object without a block"
         }
         

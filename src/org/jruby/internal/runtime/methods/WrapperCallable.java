@@ -50,6 +50,12 @@ public class WrapperCallable extends AbstractCallable {
         this.callable = callable;
     }
 
+    public void preMethod(IRuby runtime, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+    }
+    
+    public void postMethod(IRuby runtime) {
+    }
+
     /**
      * @see org.jruby.runtime.ICallable#call(IRuby, IRubyObject, String, IRubyObject[], boolean)
      */

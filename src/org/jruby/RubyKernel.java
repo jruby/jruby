@@ -184,9 +184,9 @@ public class RubyKernel {
                 Process p = Runtime.getRuntime().exec(command);
                 RubyIO io = new RubyIO(recv.getRuntime(), p);
         		
-        	    if (recv.getRuntime().isBlockGiven()) {
+        	    if (recv.getRuntime().getCurrentContext().isBlockGiven()) {
         	        try {
-        	            recv.getRuntime().yield(io);
+        	            recv.getRuntime().getCurrentContext().yield(io);
         	            
             	        return recv.getRuntime().getNil();
         	        } finally {
@@ -460,7 +460,7 @@ public class RubyKernel {
     }
 
     public static RubyBoolean block_given(IRubyObject recv) {
-        return recv.getRuntime().newBoolean(recv.getRuntime().isFBlockGiven());
+        return recv.getRuntime().newBoolean(recv.getRuntime().getCurrentContext().isFBlockGiven());
     }
 
     public static IRubyObject sprintf(IRubyObject recv, IRubyObject[] args) {
@@ -582,7 +582,7 @@ public class RubyKernel {
 
     public static IRubyObject rbCatch(IRubyObject recv, IRubyObject tag) {
         try {
-            return recv.getRuntime().yield(tag);
+            return recv.getRuntime().getCurrentContext().yield(tag);
         } catch (JumpException je) {
         	if (je.getJumpType() == JumpException.JumpType.ThrowJump) {
 	            if (je.getPrimaryData().equals(tag.asSymbol())) {
@@ -628,7 +628,7 @@ public class RubyKernel {
 
     public static IRubyObject loop(IRubyObject recv) {
         while (true) {
-            recv.getRuntime().yield(recv.getRuntime().getNil());
+            recv.getRuntime().getCurrentContext().yield(recv.getRuntime().getNil());
 
             Thread.yield();
         }

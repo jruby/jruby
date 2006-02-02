@@ -43,6 +43,9 @@ public interface ICallable {
     RubyModule getImplementationClass();
     void setImplementationClass(RubyModule implClass);
     
+    void preMethod(IRuby runtime, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper);
+    void postMethod(IRuby runtime);
+
     Visibility getVisibility();
     void setVisibility(Visibility visibility);
 

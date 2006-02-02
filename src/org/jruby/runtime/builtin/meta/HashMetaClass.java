@@ -102,7 +102,7 @@ public class HashMetaClass extends ObjectMetaClass {
         RubyHash hash = new RubyHash(runtime);
 
         // A block to represent 'default' value for unknown values
-        if (runtime.isBlockGiven()) {
+        if (runtime.getCurrentContext().isBlockGiven()) {
         	hash.setDefaultProc(runtime.newProc());
         }
         

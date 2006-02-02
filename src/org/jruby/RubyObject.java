@@ -40,7 +40,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.jruby.ast.Node;
-import org.jruby.evaluator.EvaluateVisitor;
+import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
@@ -48,7 +48,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
-import org.jruby.runtime.Scope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -418,11 +417,20 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public IRubyObject eval(Node n) {
-        return EvaluateVisitor.getInstance().eval(this.getRuntime(), this, n);
+        //return new EvaluationState(getRuntime(), this).begin(n);
+        // need to continue evaluation with a new self, so save the old one (should be a stack?)
+        EvaluationState state = getRuntime().getCurrentContext().getCurrentFrame().getEvalState();
+        IRubyObject oldSelf = state.getSelf();
+        state.setSelf(this);
+        try {
+            return state.begin(n);
+        } finally {
+            state.setSelf(oldSelf);
+        }
     }
 
     public void callInit(IRubyObject[] args) {
-        getRuntime().getCurrentContext().pushIter(getRuntime().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
+        getRuntime().getCurrentContext().pushIter(getRuntime().getCurrentContext().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
         try {
             callMethod("initialize", args);
         } finally {
@@ -517,7 +525,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public IRubyObject specificEval(RubyModule mod, IRubyObject[] args) {
-        if (getRuntime().isBlockGiven()) {
+        if (getRuntime().getCurrentContext().isBlockGiven()) {
             if (args.length > 0) {
                 throw getRuntime().newArgumentError(args.length, 0);
             }
@@ -540,13 +548,12 @@ public class RubyObject implements Cloneable, IRubyObject {
 		IRubyObject file = args.length > 1 ? args[1] : getRuntime().newString("(eval)");
 		IRubyObject line = args.length > 2 ? args[2] : RubyFixnum.one(getRuntime());
 
-		Scope currentScope = getRuntime().getCurrentContext().getCurrentScope();
-		Visibility savedVisibility = currentScope.getVisibility();
-		currentScope.setVisibility(Visibility.PUBLIC);
+		Visibility savedVisibility = getRuntime().getCurrentContext().getCurrentVisibility();
+        getRuntime().getCurrentContext().setCurrentVisibility(Visibility.PUBLIC);
 		try {
 		    return evalUnder(mod, args[0], file, line);
 		} finally {
-		    currentScope.setVisibility(savedVisibility);
+            getRuntime().getCurrentContext().setCurrentVisibility(savedVisibility);
 		}
     }
 
@@ -616,7 +623,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         ISourcePosition savedPosition = threadContext.getPosition();
         Iter iter = threadContext.getCurrentFrame().getIter();
         if (file == null) {
-            file = threadContext.getPosition().getFile();
+            file = threadContext.getSourceFile();
         }
         if (scope.isNil()) {
             if (threadContext.getPreviousFrame() != null) {
@@ -1022,7 +1029,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         IRubyObject[] newArgs = new IRubyObject[args.length - 1];
         System.arraycopy(args, 1, newArgs, 0, newArgs.length);
 
-        getRuntime().getCurrentContext().pushIter(getRuntime().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
+        getRuntime().getCurrentContext().pushIter(getRuntime().getCurrentContext().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
         try {
             return callMethod(name, newArgs, CallType.FUNCTIONAL);
         } finally {

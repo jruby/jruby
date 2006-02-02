@@ -58,9 +58,15 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "ruby_install_name", System.getProperty("jruby.script").replace('\\', '/'));
         setConfig(configHash, "SHELL", System.getProperty("jruby.shell").replace('\\', '/'));
         setConfig(configHash, "prefix", new NormalizedFile(System.getProperty("jruby.home")).getAbsolutePath());
+        
         String libdir = System.getProperty("jruby.lib");
-        if (libdir == null) 
+        if (libdir == null) {
         	libdir = new NormalizedFile(System.getProperty("jruby.home"), "lib").getAbsolutePath();
+        } else {
+            libdir = new NormalizedFile(libdir).getAbsolutePath();
+        }
+        
+        setConfig(configHash, "libdir", libdir);
         setConfig(configHash, "rubylibdir", 	new NormalizedFile(libdir, "ruby/1.8").getAbsolutePath());
         setConfig(configHash, "sitedir", 		new NormalizedFile(libdir, "ruby/site_ruby").getAbsolutePath());
         setConfig(configHash, "sitelibdir", 	new NormalizedFile(libdir, "ruby/site_ruby/1.8").getAbsolutePath());

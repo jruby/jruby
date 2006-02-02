@@ -6,100 +6,121 @@
  */
 package org.jruby.evaluator;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Stack;
 
 import org.jruby.IRuby;
+import org.jruby.RubyArray;
+import org.jruby.RubyException;
+import org.jruby.ast.ArrayNode;
+import org.jruby.ast.BreakNode;
+import org.jruby.ast.ListNode;
+import org.jruby.ast.NextNode;
 import org.jruby.ast.Node;
+import org.jruby.ast.RedoNode;
+import org.jruby.ast.RescueBodyNode;
+import org.jruby.ast.RescueNode;
+import org.jruby.ast.ReturnNode;
+import org.jruby.ast.SplatNode;
+import org.jruby.ast.util.ArgsUtil;
+import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-
-class EvaluationState {
-	private IRubyObject result;
-	private Object target; // for returns
+public class EvaluationState {
+	//private IRubyObject result;
+    private Stack results = new Stack();
 	public final IRuby runtime;
-	public final ThreadContext threadContext;
 	private IRubyObject self;
 	public final EvaluateVisitor evaluator;
-	private Stack nodeStackStack = new Stack();
-	private Stack nodeVisitorStackStack = new Stack();
-	private EvaluationEvent event;
-	
-	private Stack returnPoints = new Stack();
+    private Stack instructionBundleStacks = new Stack();
     
-    public EvaluationState(IRuby runtime, EvaluateVisitor evaluator) {
-        this.runtime = runtime;
-        this.evaluator = evaluator;
+    private class InstructionBundle {
+        Instruction instruction;
+        InstructionContext instructionContext;
+        boolean ensured;
+        boolean redoable;
+        boolean breakable;
+        boolean rescuable;
+        boolean retriable;
         
-        result = runtime.getNil();
-        threadContext = runtime.getCurrentContext();
+        public InstructionBundle(Instruction i, InstructionContext ic) {
+            instruction = i;
+            instructionContext = ic;
+        }
     }
-	
-	/**
-	 * Mark the current stack position as "wanting return". When a return is encountered,
-	 * the stack will be returned to this point for evaluation to continue.
-	 */
-	public void addReturnPoint() {
-		returnPoints.push(new Integer(getCurrentNodeStack().size()));
-	}
-	
-	/**
-	 * Return to the nearest recorded return point in the stack. Currently if we bubble over to the
-	 * next lowest level in the stack of stacks, it means someone is immediately waiting to receive
-	 * the return value. As such, this stack will only apply to the current top-level node/visitor
-	 * stacks, and will be cleared upon crossing from one layer to another.
-	 */
-	public void returnToNearestReturnPoint() {
-		if (returnPoints.isEmpty()) {
-			getCurrentNodeStack().clear();
-			getCurrentNodeVisitorStack().clear();
-		} else {
-			Integer nearestReturnPoint = (Integer)returnPoints.pop();
-			while (getCurrentNodeStack().size() > nearestReturnPoint.intValue()) {
-				popCurrentNodeAndVisitor();
-			}
-		}
-	}
+    
+    public EvaluationState(IRuby runtime, IRubyObject self) {
+        this.runtime = runtime;
+        this.evaluator = EvaluateVisitor.getInstance();
+        
+        results.push(runtime.getNil());
+        
+        setSelf(self);
+    }
+    
+    // FIXME: exceptions thrown during aggregation cause this to leak
+    public void aggregateResult() {
+        results.push(runtime.getNil());
+    }
+    
+    public void dumpStack() {
+        for (int k = instructionBundleStacks.size() - 1; k >= 0; k--) {
+            Stack s = (Stack)instructionBundleStacks.get(k);
+            
+            for (int i = s.size() - 1; i >= 0; i--) {
+                System.err.println("at " + ((InstructionBundle)s.get(i)).instructionContext);
+            }
+        }
+    }
+    
+    public IRubyObject deaggregateResult() {
+        return (IRubyObject)results.pop();
+    }
+    
+    public Instruction peekCurrentInstruction() {
+        return peekCurrentInstructionBundle().instruction;
+    }
+    
+    public InstructionContext peekCurrentInstructionContext() {
+        return peekCurrentInstructionBundle().instructionContext;
+    }
+    
+    public InstructionBundle peekCurrentInstructionBundle() {
+        return (InstructionBundle)getCurrentInstructionStack().peek();
+    }
 	
 	/**
 	 * Return the current top stack of nodes
 	 * @return
 	 */
-	public Stack getCurrentNodeStack() {
-		return (Stack)nodeStackStack.peek();
+	public Stack getCurrentInstructionStack() {
+		return (Stack)instructionBundleStacks.peek();
 	}
 	
 	/**
 	 * Pop and discard the current top stacks of nodes and visitors
 	 */
-	public void popCurrentNodeStacks() {
-		nodeStackStack.pop();
-		nodeVisitorStackStack.pop();
-		returnPoints.clear();
+	public void popCurrentInstructionStack() {
+        instructionBundleStacks.pop();
 	}
 	
 	/**
 	 * Pop and discard the top item on the current top stacks of nodes and visitors
 	 */
-	public void popCurrentNodeAndVisitor() {
-		getCurrentNodeStack().pop();
-		getCurrentNodeVisitorStack().pop();
+	public void popCurrentInstruction() {
+		getCurrentInstructionStack().pop();
 	}
 	
 	/**
 	 * Push down a new pair of node and visitor stacks
 	 */
-	public void pushCurrentNodeStacks() {
-		nodeStackStack.push(new Stack());
-		nodeVisitorStackStack.push(new Stack());
-	}
-	
-	/**
-	 * Get the current top stack of node visitors
-	 * @return
-	 */
-	public Stack getCurrentNodeVisitorStack() {
-		return (Stack)nodeVisitorStackStack.peek();
+	public void pushCurrentInstructionStack() {
+		instructionBundleStacks.push(new Stack());
 	}
 	
 	/**
@@ -110,8 +131,7 @@ class EvaluationState {
 	 */
 	public void addNodeInstruction(InstructionContext ctx) {
         Node node = (Node)ctx;
-		addNodeInstruction(node, node.accept(evaluator));
-		returnPoints.clear();
+		addInstruction(node, node.accept(evaluator));
 	}
 	
 	/**
@@ -121,24 +141,73 @@ class EvaluationState {
 	 * @param node
 	 * @param visitor
 	 */
-	public void addNodeInstruction(InstructionContext ctx, Instruction visitor) {
-        Node node = (Node)ctx;
-		getCurrentNodeStack().push(node);
-		getCurrentNodeVisitorStack().push(visitor);
+	public void addInstruction(InstructionContext ctx, Instruction visitor) {
+        InstructionBundle ib = new InstructionBundle(visitor, ctx);
+		getCurrentInstructionStack().push(ib);
 	}
+    
+    public void addInstructionBundle(InstructionBundle ib) {
+        getCurrentInstructionStack().push(ib);
+    }
+    
+    private static class RedoMarker implements Instruction {
+        public void execute(EvaluationState state, InstructionContext ctx) {
+        }
+    }
+    
+    private static final RedoMarker redoMarker = new RedoMarker();
+    
+    public void addRedoMarker(Node redoableNode) {
+        InstructionBundle ib = new InstructionBundle(redoMarker, redoableNode);
+        
+        ib.redoable = true;
+        
+        addInstructionBundle(ib);
+    }
+    
+    public void addBreakableInstruction(InstructionContext ic, Instruction i) {
+        InstructionBundle ib = new InstructionBundle(i, ic);
+        
+        ib.breakable = true;
+        
+        addInstructionBundle(ib);
+    }
+    
+    public void addEnsuredInstruction(InstructionContext ic, Instruction i) {
+        InstructionBundle ib = new InstructionBundle(i, ic);
+        
+        ib.ensured = true;
+        
+        addInstructionBundle(ib);
+    }
+    
+    public void addRetriableInstruction(InstructionContext ic) {
+        InstructionBundle ib = new InstructionBundle(retrier, ic);
+        
+        ib.retriable = true;
+        
+        addInstructionBundle(ib);
+    }
+    
+    public void addRescuableInstruction(InstructionContext ic, Instruction i) {
+        InstructionBundle ib = new InstructionBundle(i, ic);
+        
+        ib.rescuable = true;
+        
+        addInstructionBundle(ib);
+    }
 	
 	/**
 	 * Call the topmost visitor in the current top visitor stack with the topmost node in the current top node stack.
 	 */
 	public void executeNext() {
         // FIXME: Poll from somewhere else in the code? This polls per-node, perhaps per newline?
-        threadContext.pollThreadEvents();
+        getThreadContext().pollThreadEvents();
         
-		Node node = (Node)getCurrentNodeStack().pop();
-		Instruction snv = (Instruction)getCurrentNodeVisitorStack().pop();
+        InstructionBundle ib = (InstructionBundle)getCurrentInstructionStack().pop();
 		
-		if (node != null) {
-			snv.execute(this, node);
+		if (ib != null) {
+			ib.instruction.execute(this, ib.instructionContext);
 		}
 	}
 	
@@ -146,18 +215,18 @@ class EvaluationState {
 	 * @param result The result to set.
 	 */
 	public void setResult(IRubyObject result) {
-		this.result = result;
+		results.set(results.size() - 1, result);
 	}
     
 	/**
 	 * @return Returns the result.
 	 */
 	public IRubyObject getResult() {
-		return result;
+		return (IRubyObject)results.peek();
 	}
     
 	public void clearResult() {
-		this.result = runtime.getNil();
+		setResult(runtime.getNil());
 	}
     
 	/**
@@ -173,76 +242,365 @@ class EvaluationState {
 	public IRubyObject getSelf() {
 		return self;
 	}
-
-	public static class EvaluationEvent {
-		public static final EvaluationEvent Return = new EvaluationEvent(0);
-		public static final EvaluationEvent Retry = new EvaluationEvent(1);
-		public static final EvaluationEvent Redo = new EvaluationEvent(2);
-		public static final EvaluationEvent Next = new EvaluationEvent(3);
-		public static final EvaluationEvent Break = new EvaluationEvent(4);
-		public static final EvaluationEvent Continue = new EvaluationEvent(5);
-		
-		public final int id;
-		
-		public EvaluationEvent(int id) {
-			this.id = id;
-		}
-	}
-
-	
-	/**
-	 * @return Returns the event.
-	 */
-	public EvaluationEvent getEvent() {
-		return event;
-	}
-	
-	/**
-	 * @param event The event to set.
-	 */
-	public void setEvent(EvaluationEvent event) {
-		this.event = event;
-	}
-	/**
-	 * @return Returns the target.
-	 */
-	public Object getTarget() {
-		return target;
-	}
-	/**
-	 * @param target The target to set.
-	 */
-	public void setTarget(Object target) {
-		this.target = target;
-	}
-
+    
+    private static class NextRethrower implements Instruction {
+        public void execute(EvaluationState state, InstructionContext ctx) {
+            JumpException je = new JumpException(JumpException.JumpType.NextJump);
+            
+            je.setPrimaryData(state.getResult());
+            je.setSecondaryData(ctx);
+            
+            throw je;
+        }
+    }
+    private static final NextRethrower nextRethrower = new NextRethrower();
+    
+    private static class RedoRethrower implements Instruction {
+        public void execute(EvaluationState state, InstructionContext ctx) {
+            JumpException je = new JumpException(JumpException.JumpType.RedoJump);
+            
+            je.setPrimaryData(state.getResult());
+            je.setSecondaryData(ctx);
+            
+            throw je;
+        }
+    }
+    private static final RedoRethrower redoRethrower = new RedoRethrower();
+    
+    private static class BreakRethrower implements Instruction {
+        public void execute(EvaluationState state, InstructionContext ctx) {
+            JumpException je = new JumpException(JumpException.JumpType.BreakJump);
+            
+            je.setPrimaryData(state.getResult());
+            je.setSecondaryData(ctx);
+            
+            throw je;
+        }
+    }
+    private static final BreakRethrower breakRethrower = new BreakRethrower();
+    
+    private static class RaiseRethrower implements Instruction {
+        public void execute(EvaluationState state, InstructionContext ctx) {
+            RaiseException re = new RaiseException((RubyException)state.getResult());
+            
+            throw re;
+        }
+    }
+    private static final RaiseRethrower raiseRethrower = new RaiseRethrower();
+    
+    private static class ReturnRethrower implements Instruction {
+        public void execute(EvaluationState state, InstructionContext ctx) {
+            ReturnNode iVisited = (ReturnNode)ctx;
+            JumpException je = new JumpException(JumpException.JumpType.ReturnJump);
+            
+            je.setPrimaryData(iVisited.getTarget());
+            je.setSecondaryData(state.getResult());
+            
+            throw je;
+        }
+    }
+    private static final ReturnRethrower returnRethrower = new ReturnRethrower();
+    
+    private static class Retrier implements Instruction {
+        public void execute(EvaluationState state, InstructionContext ctx) {
+            // dummy, only used to store the current "retriable" node and clear exceptions after a rescue block
+            state.runtime.getGlobalVariables().set("$!", state.runtime.getNil());
+        }
+    }
+    private static final Retrier retrier = new Retrier();
+    
+    // works like old recursive evaluation, for Assignment and Defined visitors.
     public IRubyObject begin(Node node) {
         clearResult();
         
         if (node != null) {
-        	try {
-        		// for each call to internalEval, push down new stacks (to isolate eval runs that still want to be logically separate
-                pushCurrentNodeStacks();
+            try {
+                // for each call to internalEval, push down new stacks (to isolate eval runs that still want to be logically separate
+                pushCurrentInstructionStack();
                 
                 addNodeInstruction(node);
-        		
+                
                 // TODO: once we're ready to have an external entity run this loop (i.e. thread scheduler) move this out
-        		while (hasNext()) {        	        
-        	        // invoke the next instruction
-        	        executeNext();
-        		}
-        	} catch (StackOverflowError soe) {
-        		// TODO: perhaps a better place to catch this (although it will go away)
-        		throw runtime.newSystemStackError("stack level too deep");
-        	} finally {
-        		popCurrentNodeStacks();
-        	}
+                masterLoop: while (hasNext()) {                 
+                    // invoke the next instruction
+                    try {
+                        executeNext();
+                    } catch (JumpException je) {
+                        if (je.getJumpType() == JumpException.JumpType.NextJump) {
+                            NextNode iVisited = (NextNode)je.getSecondaryData();
+                            
+                            while (!(getCurrentInstructionStack().isEmpty() || peekCurrentInstructionBundle().redoable)) {
+                                InstructionBundle ib = peekCurrentInstructionBundle();
+                                if (ib.ensured) {
+                                    // exec ensured node, return to "nexting" afterwards
+                                    popCurrentInstruction();
+                                    addInstruction(iVisited, nextRethrower);
+                                    addInstructionBundle(ib);
+                                    continue masterLoop;
+                                }
+                                popCurrentInstruction();
+                            }
+                            
+                            if (getCurrentInstructionStack().isEmpty()) {
+                                // rethrow next to previous level
+                                throw je;
+                            } else {
+                                // pop the redoable and continue
+                                popCurrentInstruction();
+                            }
+                        } else if (je.getJumpType() == JumpException.JumpType.RedoJump) {
+                            RedoNode iVisited = (RedoNode)je.getSecondaryData();
+                            
+                            while (!(getCurrentInstructionStack().isEmpty() || peekCurrentInstructionBundle().redoable)) {
+                                InstructionBundle ib = peekCurrentInstructionBundle();
+                                if (ib.ensured) {
+                                    // exec ensured node, return to "redoing" afterwards
+                                    popCurrentInstruction();
+                                    addInstruction(iVisited, redoRethrower);
+                                    addInstructionBundle(ib);
+                                    continue masterLoop;
+                                }
+                                popCurrentInstruction();
+                            }
+                            
+                            if (getCurrentInstructionStack().isEmpty()) {
+                                // rethrow next to previous level
+                                throw je;
+                            } else {
+                                // pop the redoable leave the redo body
+                                Node nodeToRedo = (Node)peekCurrentInstructionContext();
+                                popCurrentInstruction();
+                                addRedoMarker(nodeToRedo);
+                                addNodeInstruction(nodeToRedo);
+                            }
+                        } else if (je.getJumpType() == JumpException.JumpType.BreakJump) {
+                            BreakNode iVisited = (BreakNode)je.getSecondaryData();
+                            
+//                          pop everything but nearest breakable
+                            while (!(getCurrentInstructionStack().isEmpty() || peekCurrentInstructionBundle().breakable)) {
+                                InstructionBundle ib = peekCurrentInstructionBundle();
+                                if (ib.ensured) {
+                                    // exec ensured node, return to "breaking" afterwards
+                                    popCurrentInstruction();
+                                    addInstruction(iVisited, breakRethrower);
+                                    addInstructionBundle(ib);
+                                    continue masterLoop;
+                                }
+                                popCurrentInstruction();
+                            }
+                            
+                            if (getCurrentInstructionStack().isEmpty()) {
+                                // rethrow to next level
+                                throw je;
+                            } else {
+                                // pop breakable and push value node
+                                popCurrentInstruction();
+                                setResult(runtime.getNil());
+                                
+                                if (iVisited.getValueNode() != null) {
+                                    addNodeInstruction(iVisited.getValueNode());
+                                }
+                            }
+                        } else if (je.getJumpType() == JumpException.JumpType.RaiseJump) {                            
+                            RaiseException re = (RaiseException)je;
+                            RubyException raisedException = re.getException();
+                            setResult(raisedException);
+                            // TODO: Rubicon TestKernel dies without this line.  A cursory glance implies we
+                            // falsely set $! to nil and this sets it back to something valid.  This should 
+                            // get fixed at the same time we address bug #1296484.
+                            runtime.getGlobalVariables().set("$!", raisedException);
+
+                            
+//                          pop everything but nearest rescuable
+                            while (!(getCurrentInstructionStack().isEmpty() || peekCurrentInstructionBundle().rescuable)) {
+                                InstructionBundle ib = peekCurrentInstructionBundle();
+                                if (ib.ensured) {
+                                    // exec ensured node, return to "breaking" afterwards
+                                    popCurrentInstruction();
+                                    addInstruction(ib.instructionContext, raiseRethrower);
+                                    addInstructionBundle(ib);
+                                    continue masterLoop;
+                                }
+                                popCurrentInstruction();
+                            }
+                            
+                            if (getCurrentInstructionStack().isEmpty()) {
+                                // no rescuers, throw exception to next level
+                                throw re;
+                            }
+                            
+                            // we're at rescuer now
+                            RescueNode iVisited = (RescueNode)peekCurrentInstructionBundle().instructionContext;
+                            popCurrentInstruction();
+                            RescueBodyNode rescueNode = iVisited.getRescueNode();
+
+                            while (rescueNode != null) {
+                                Node exceptionNodes = rescueNode.getExceptionNodes();
+                                ListNode exceptionNodesList;
+                                
+                                // need to make these iterative
+                                if (exceptionNodes instanceof SplatNode) {                    
+                                    exceptionNodesList = (ListNode) begin(exceptionNodes);
+                                } else {
+                                    exceptionNodesList = (ListNode) exceptionNodes;
+                                }
+                                
+                                if (isRescueHandled(raisedException, exceptionNodesList)) {
+                                    addRetriableInstruction(iVisited);
+                                    addNodeInstruction(rescueNode);
+                                    continue masterLoop;
+                                }
+                                
+                                rescueNode = rescueNode.getOptRescueNode();
+                            }
+
+                            // no takers; bubble up
+                            throw je;
+                        } else if (je.getJumpType() == JumpException.JumpType.RetryJump) {
+//                          pop everything but nearest rescuable
+                            while (!(getCurrentInstructionStack().isEmpty() || peekCurrentInstructionBundle().retriable)) {
+                                InstructionBundle ib = peekCurrentInstructionBundle();
+                                
+                                // ensured fires when retrying a method?
+                                if (ib.ensured) {
+                                    // exec ensured node, return to "breaking" afterwards
+                                    popCurrentInstruction();
+                                    addInstruction(ib.instructionContext, raiseRethrower);
+                                    addInstructionBundle(ib);
+                                    continue masterLoop;
+                                }
+                                
+                                popCurrentInstruction();
+                            }
+                            
+                            if (getCurrentInstructionStack().isEmpty()) {
+                                throw je;
+                            }
+                            
+                            InstructionBundle ib = peekCurrentInstructionBundle();
+                            
+                            popCurrentInstruction();
+                            
+                            // re-run the retriable node, clearing any exceptions
+                            runtime.getGlobalVariables().set("$!", runtime.getNil());
+                            addNodeInstruction(ib.instructionContext);
+                        } else if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
+                            // make sure ensures fire
+                            while (!getCurrentInstructionStack().isEmpty()) {
+                                InstructionBundle ib = peekCurrentInstructionBundle();
+                                
+                                if (ib.ensured) {
+                                    // exec ensured node, return to "breaking" afterwards
+                                    popCurrentInstruction();
+                                    setResult((IRubyObject)je.getSecondaryData());
+                                    addInstruction((Node)je.getTertiaryData(), returnRethrower);
+                                    addInstructionBundle(ib);
+                                    continue masterLoop;
+                                }
+                                
+                                popCurrentInstruction();
+                            }
+                            throw je;
+                        } else if (je.getJumpType() == JumpException.JumpType.ThrowJump) {
+                            // make sure ensures fire
+                            // FIXME: BUG! Can't get ensures to fire like we want in response to a throw
+                            // evalstate isn't quite rich enough at the moment
+//                            while (!getCurrentInstructionStack().isEmpty()) {
+//                                InstructionBundle ib = peekCurrentInstructionBundle();
+//                                
+//                                if (ib.isEnsured()) {
+//                                    // exec ensured node, return to "breaking" afterwards
+//                                    popCurrentInstruction();
+//                                    setCurrentException(je);
+//                                    addInstruction((Node)je.getTertiaryData(), throwRethrower);
+//                                    addInstructionBundle(ib);
+//                                    continue masterLoop;
+//                                }
+//                                
+//                                popCurrentInstruction();
+//                            }
+                            throw je;
+                        }
+                    }
+                }
+            } catch (StackOverflowError soe) {
+                // TODO: perhaps a better place to catch this (although it will go away)
+                throw runtime.newSystemStackError("stack level too deep");
+            } finally {
+                popCurrentInstructionStack();
+            }
         }
         
         return getResult();
     }
+    
+    private boolean isRescueHandled(RubyException currentException, ListNode exceptionNodes) {
+        if (exceptionNodes == null) {
+            return currentException.isKindOf(runtime.getClass("StandardError"));
+        }
 
-    private boolean hasNext() {
-        return !getCurrentNodeStack().isEmpty();
+        Block tmpBlock = getThreadContext().beginCallArgs();
+
+        IRubyObject[] args = null;
+        try {
+            args = setupArgs(runtime, getThreadContext(), exceptionNodes);
+        } finally {
+            getThreadContext().endCallArgs(tmpBlock);
+        }
+
+        for (int i = 0; i < args.length; i++) {
+            if (! args[i].isKindOf(runtime.getClass("Module"))) {
+                throw runtime.newTypeError("class or module required for rescue clause");
+            }
+            if (args[i].callMethod("===", currentException).isTrue())
+                return true;
+        }
+        return false;
+    }
+
+    private IRubyObject[] setupArgs(IRuby runtime, ThreadContext context, Node node) {
+        if (node == null) {
+            return IRubyObject.NULL_ARRAY;
+        }
+
+        if (node instanceof ArrayNode) {
+            ISourcePosition position = context.getPosition();
+            ArrayList list = new ArrayList(((ArrayNode) node).size());
+            
+            for (Iterator iter=((ArrayNode)node).iterator(); iter.hasNext();){
+                final Node next = (Node) iter.next();
+                if (next instanceof SplatNode) {
+                    list.addAll(((RubyArray) begin(next)).getList());
+                } else {
+                    list.add(begin(next));
+                }
+            }
+
+            context.setPosition(position);
+
+            return (IRubyObject[]) list.toArray(new IRubyObject[list.size()]);
+        }
+
+        return ArgsUtil.arrayify(begin(node));
+    }
+    
+    public void begin2(Node node) {
+        clearResult();
+    
+        // for each call to internalEval, push down new stacks (to isolate eval runs that still want to be logically separate
+        pushCurrentInstructionStack();
+        
+        addNodeInstruction(node);
+    }
+
+    public boolean hasNext() {
+        return !getCurrentInstructionStack().isEmpty();
+    }
+
+    // Had to make it work this way because eval states are sometimes created in one thread for use in another...
+    // For example, block creation for a new Thread; block, frame, and evalstate for that Thread are created in the caller
+    // but used in the new Thread.
+    public ThreadContext getThreadContext() {
+        return runtime.getCurrentContext();
     }
 }

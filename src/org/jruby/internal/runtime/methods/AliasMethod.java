@@ -57,6 +57,16 @@ public class AliasMethod extends AbstractMethod {
     	return oldName;
     }
 
+    public IRubyObject call(IRuby runtime, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+        oldMethod.preMethod(runtime, implementationClass, recv, name, args, noSuper);
+
+        try {
+            return internalCall(runtime, recv, name, args, noSuper);
+        } finally {
+            oldMethod.postMethod(runtime);
+        }
+    }
+
     public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
         return oldMethod.internalCall(runtime, receiver, oldName, args, noSuper);
     }

@@ -36,7 +36,6 @@ import java.util.List;
 
 import org.jruby.IRuby;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.collections.StackElement;
 
 /**
  * A Scope in the Ruby Stack of scopes.
@@ -48,7 +47,7 @@ import org.jruby.util.collections.StackElement;
  *
  * @author  jpetersen
  */
-public class Scope implements StackElement {
+public class Scope {
     private static final int LASTLINE_INDEX = 0;
     private static final int BACKREF_INDEX = 1;
     private static final String[] SPECIAL_VARIABLE_NAMES =
@@ -61,8 +60,6 @@ public class Scope implements StackElement {
 
     private Visibility visibility = Visibility.PUBLIC; // Constants.SCOPE_PRIVATE; ? // Same as default for top level...just in case
 
-    private Scope next = null;
-
     public Scope(IRuby runtime) {
         this.rubyNil = runtime.getNil();
     }
@@ -72,14 +69,6 @@ public class Scope implements StackElement {
 		
 		resetLocalVariables(names);
 	}
-
-    public StackElement getNext() {
-        return next;
-    }
-
-    public void setNext(StackElement newNext) {
-        next = (Scope)newNext;
-    }
 
     /**
      * Gets the localNames.
@@ -153,14 +142,14 @@ public class Scope implements StackElement {
         setValue(LASTLINE_INDEX, value);
     }
 
-    public IRubyObject getBackref() {
+    IRubyObject getBackref() {
         if (hasLocalVariables()) {
             return getValue(BACKREF_INDEX);
         }
         return rubyNil;
     }
 
-    public void setBackref(IRubyObject match) {
+    void setBackref(IRubyObject match) {
         if (! hasLocalVariables()) {
             resetLocalVariables(new ArrayList(Arrays.asList(SPECIAL_VARIABLE_NAMES)));
         }

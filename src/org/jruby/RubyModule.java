@@ -686,7 +686,8 @@ public class RubyModule extends RubyObject {
     }
 
     private void addAccessor(String name, boolean readable, boolean writeable) {
-        Visibility attributeScope = getRuntime().getCurrentVisibility();
+        // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
+        Visibility attributeScope = getRuntime().getCurrentContext().getCurrentVisibility();
         if (attributeScope.isPrivate()) {
             //FIXME warning
         } else if (attributeScope.isModuleFunction()) {
@@ -815,7 +816,7 @@ public class RubyModule extends RubyObject {
         String name = args[0].asSymbol();
         IRubyObject body;
         ICallable newMethod;
-        Visibility visibility = getRuntime().getCurrentVisibility();
+        Visibility visibility = getRuntime().getCurrentContext().getCurrentVisibility();
 
         if (visibility.isModuleFunction()) {
             visibility = Visibility.PRIVATE;
@@ -837,7 +838,7 @@ public class RubyModule extends RubyObject {
         addMethod(name, newMethod);
 
         RubySymbol symbol = RubySymbol.newSymbol(getRuntime(), name);
-        if (getRuntime().getCurrentVisibility().isModuleFunction()) {
+        if (getRuntime().getCurrentContext().getPreviousVisibility().isModuleFunction()) {
             getSingletonClass().addMethod(name, new WrapperCallable(getSingletonClass(), newMethod, Visibility.PUBLIC));
             callMethod("singleton_method_added", symbol);
         }
@@ -994,81 +995,81 @@ public class RubyModule extends RubyObject {
     }
 
     /** rb_mod_le
-     *
-     */
-    public IRubyObject op_le(IRubyObject obj) {
-        if (!(obj instanceof RubyModule)) {
-            throw getRuntime().newTypeError("compared with non class/module");
-        }
-        
-        if (isKindOfModule((RubyModule)obj)) {
-            return getRuntime().getTrue();
-        } else if (((RubyModule)obj).isKindOfModule(this)) {
-            return getRuntime().getFalse();
-        }
-        
-        return getRuntime().getNil();
-    }
+    *
+    */
+   public IRubyObject op_le(IRubyObject obj) {
+       if (!(obj instanceof RubyModule)) {
+           throw getRuntime().newTypeError("compared with non class/module");
+       }
+       
+       if (isKindOfModule((RubyModule)obj)) {
+           return getRuntime().getTrue();
+       } else if (((RubyModule)obj).isKindOfModule(this)) {
+           return getRuntime().getFalse();
+       }
+       
+       return getRuntime().getNil();
+   }
 
-    /** rb_mod_lt
-     *
-     */
-    public IRubyObject op_lt(IRubyObject obj) {
-    	return obj == this ? getRuntime().getFalse() : op_le(obj); 
-    }
+   /** rb_mod_lt
+    *
+    */
+   public IRubyObject op_lt(IRubyObject obj) {
+    return obj == this ? getRuntime().getFalse() : op_le(obj); 
+   }
 
-    /** rb_mod_ge
-     *
-     */
-    public IRubyObject op_ge(IRubyObject obj) {
-        if (!(obj instanceof RubyModule)) {
-            throw getRuntime().newTypeError("compared with non class/module");
-        }
+   /** rb_mod_ge
+    *
+    */
+   public IRubyObject op_ge(IRubyObject obj) {
+       if (!(obj instanceof RubyModule)) {
+           throw getRuntime().newTypeError("compared with non class/module");
+       }
 
-        return ((RubyModule) obj).op_le(this);
-    }
+       return ((RubyModule) obj).op_le(this);
+   }
 
-    /** rb_mod_gt
-     *
-     */
-    public IRubyObject op_gt(IRubyObject obj) {
-        return this == obj ? getRuntime().getFalse() : op_ge(obj);
-    }
+   /** rb_mod_gt
+    *
+    */
+   public IRubyObject op_gt(IRubyObject obj) {
+       return this == obj ? getRuntime().getFalse() : op_ge(obj);
+   }
 
-    /** rb_mod_cmp
-     *
-     */
-    public IRubyObject op_cmp(IRubyObject obj) {
-        if (this == obj) {
-            return getRuntime().newFixnum(0);
-        }
+   /** rb_mod_cmp
+    *
+    */
+   public IRubyObject op_cmp(IRubyObject obj) {
+       if (this == obj) {
+           return getRuntime().newFixnum(0);
+       }
 
-        if (!(obj instanceof RubyModule)) {
-            throw getRuntime().newTypeError(
-                "<=> requires Class or Module (" + getMetaClass().getName() + " given)");
-        }
-        
-        RubyModule module = (RubyModule)obj;
-        
-        if (module.isKindOfModule(this)) {
-            return getRuntime().newFixnum(1);
-        } else if (this.isKindOfModule(module)) {
-            return getRuntime().newFixnum(-1);
-        }
-        
-        return getRuntime().getNil();
-    }
+       if (!(obj instanceof RubyModule)) {
+           throw getRuntime().newTypeError(
+               "<=> requires Class or Module (" + getMetaClass().getName() + " given)");
+       }
+       
+       RubyModule module = (RubyModule)obj;
+       
+       if (module.isKindOfModule(this)) {
+           return getRuntime().newFixnum(1);
+       } else if (this.isKindOfModule(module)) {
+           return getRuntime().newFixnum(-1);
+       }
+       
+       return getRuntime().getNil();
+   }
 
-    public boolean isKindOfModule(RubyModule type) {
-        for (RubyModule p = this; p != null; p = p.getSuperClass()) { 
-            // FIXME: this equality check is totally lame; isKindOf should be enough
-            if (p.getMethods() == type.getMethods()) {
-                return true;
-            }
-        }
-        
-        return false;
-    }
+   public boolean isKindOfModule(RubyModule type) {
+       for (RubyModule p = this; p != null; p = p.getSuperClass()) { 
+           // FIXME: this equality check is totally lame; isKindOf should be enough
+           if (p.getMethods() == type.getMethods()) {
+               return true;
+           }
+       }
+       
+       return false;
+   }
 
     /** rb_mod_initialize
      *
@@ -1348,7 +1349,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (args.length == 0) {
-            getRuntime().setCurrentVisibility(visibility);
+            getRuntime().getCurrentContext().setCurrentVisibility(visibility);
         } else {
             setMethodVisibility(args, visibility);
         }
@@ -1387,7 +1388,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (args.length == 0) {
-            getRuntime().setCurrentVisibility(Visibility.MODULE_FUNCTION);
+            getRuntime().getCurrentContext().setCurrentVisibility(Visibility.MODULE_FUNCTION);
         } else {
             setMethodVisibility(args, Visibility.PRIVATE);
 

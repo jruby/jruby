@@ -31,6 +31,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.IRuby;
+import org.jruby.RubyModule;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
@@ -47,6 +48,12 @@ public class IterateCallable extends AbstractCallable {
         super(null, null);
         this.callback = callback;
         this.data = data;
+    }
+
+    public void preMethod(IRuby runtime, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+    }
+    
+    public void postMethod(IRuby runtime) {
     }
 
     public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {

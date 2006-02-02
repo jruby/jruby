@@ -113,7 +113,7 @@ public class RubyMethod extends RubyObject {
         	throw getRuntime().newArgumentError("");
         }
         
-        getRuntime().getCurrentContext().pushIter(getRuntime().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
+        getRuntime().getCurrentContext().pushIter(getRuntime().getCurrentContext().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
         try {
             return method.call(getRuntime(), receiver, methodName, args, false);
         } finally {
