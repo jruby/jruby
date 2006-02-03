@@ -43,10 +43,10 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class ModuleNode extends Node implements IScopingNode {
     static final long serialVersionUID = 4938115602547834310L;
 
-    private final Colon2Node cpath;
+    private final Node cpath;
     private final ScopeNode bodyNode;
 
-    public ModuleNode(ISourcePosition position, Colon2Node cpath, ScopeNode bodyNode) {
+    public ModuleNode(ISourcePosition position, Node cpath, ScopeNode bodyNode) {
         super(position);
         this.cpath = cpath;
         this.bodyNode = bodyNode;
@@ -72,7 +72,7 @@ public class ModuleNode extends Node implements IScopingNode {
      * Gets the name.
      * @return Representation of the module path+name
      */
-    public Colon2Node getCPath() {
+    public Node getCPath() {
         return cpath;
     }
     

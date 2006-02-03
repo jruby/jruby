@@ -216,7 +216,7 @@ public class DefaultRubyParser {
 %type <Node>  string_contents xstring_contents string_content
 %type <Node>  words qwords word
 %type <Node>  literal numeric dsym 
-%type <Colon2Node> cpath
+%type <Node> cpath
 %type <Node>  compstmt bodystmt stmts stmt expr arg primary command command_call method_call
 %type <ListNode> qword_list word_list 
 %type <Node>  expr_value primary_value opt_else cases
