@@ -117,7 +117,7 @@ if [ "$1" = "EN_US" ]; then
   shift
 fi
 
-  $JAVA_HOME/bin/java $DEBUG -ea -classpath "$CP" \
+  "$JAVA_HOME/bin/java" $DEBUG -ea -classpath "$CP" \
   "-Djruby.base=$JRUBY_BASE" \
   "-Djruby.home=$JRUBY_HOME" \
   "-Djruby.lib=$JRUBY_BASE/lib" \
