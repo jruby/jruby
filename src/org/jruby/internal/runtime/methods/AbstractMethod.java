@@ -32,7 +32,6 @@ package org.jruby.internal.runtime.methods;
 import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -43,18 +42,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 public abstract class AbstractMethod extends AbstractCallable {
     protected AbstractMethod(RubyModule implementationClass, Visibility visibility) {
         super(implementationClass, visibility);
-    }
-    
-    public void preMethod(IRuby runtime, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
-        ThreadContext context = runtime.getCurrentContext();
-        
-        context.preMethodCall(implementationClass, recv, name, args, noSuper);
-    }
-    
-    public void postMethod(IRuby runtime) {
-        ThreadContext context = runtime.getCurrentContext();
-        
-        context.postMethodCall();
     }
 
     public IRubyObject call(IRuby runtime, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {

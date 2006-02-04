@@ -29,6 +29,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.IRuby;
+import org.jruby.RubyModule;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -46,6 +47,14 @@ public class UndefinedMethod extends AbstractMethod {
      */
     private UndefinedMethod(Visibility visibility) {
         super(null, visibility);
+    }
+    
+    public void preMethod(IRuby runtime, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+        // do nothing
+    }
+    
+    public void postMethod(IRuby runtime) {
+        // do nothing
     }
 
     public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {

@@ -33,6 +33,7 @@ import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.RubyUnboundMethod;
 import org.jruby.runtime.ICallable;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -50,6 +51,18 @@ public class MethodMethod extends AbstractMethod {
     public MethodMethod(RubyModule implementationClass, RubyUnboundMethod method, Visibility visibility) {
         super(implementationClass, visibility);
         this.method = method;
+    }
+    
+    public void preMethod(IRuby runtime, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+        ThreadContext context = runtime.getCurrentContext();
+        
+        context.preMethodCall(implementationClass, recv, name, args, noSuper);
+    }
+    
+    public void postMethod(IRuby runtime) {
+        ThreadContext context = runtime.getCurrentContext();
+        
+        context.postMethodCall();
     }
 
     /**

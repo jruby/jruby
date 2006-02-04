@@ -31,6 +31,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.IRuby;
+import org.jruby.RubyModule;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -57,14 +58,12 @@ public class AliasMethod extends AbstractMethod {
     	return oldName;
     }
 
-    public IRubyObject call(IRuby runtime, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+    public void preMethod(IRuby runtime, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
         oldMethod.preMethod(runtime, implementationClass, recv, name, args, noSuper);
+    }
 
-        try {
-            return internalCall(runtime, recv, name, args, noSuper);
-        } finally {
-            oldMethod.postMethod(runtime);
-        }
+    public void postMethod(IRuby runtime) {
+        oldMethod.postMethod(runtime);
     }
 
     public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {

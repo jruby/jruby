@@ -65,24 +65,18 @@ public class CallbackMethod extends AbstractMethod {
 
     public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
     	assert args != null;
-    	
-        //runtime.getCurrentContext().preReflectedMethodInternalCall();
         
-        try {
-            if (runtime.getTraceFunction() != null) {
-                ISourcePosition position = runtime.getCurrentContext().getPreviousFrame().getPosition();
-    
-                runtime.callTraceFunction("c-call", position, receiver, name, getImplementationClass()); // XXX
-                try {
-                    return callback.execute(receiver, args);
-                } finally {
-                    runtime.callTraceFunction("c-return", position, receiver, name, getImplementationClass()); // XXX
-                }
+        if (runtime.getTraceFunction() != null) {
+            ISourcePosition position = runtime.getCurrentContext().getPreviousFrame().getPosition();
+
+            runtime.callTraceFunction("c-call", position, receiver, name, getImplementationClass()); // XXX
+            try {
+                return callback.execute(receiver, args);
+            } finally {
+                runtime.callTraceFunction("c-return", position, receiver, name, getImplementationClass()); // XXX
             }
-    		return callback.execute(receiver, args);
-        } finally {
-            //runtime.getCurrentContext().postReflectedMethodInternalCall();
         }
+		return callback.execute(receiver, args);
     }
 
     public Callback getCallback() {
