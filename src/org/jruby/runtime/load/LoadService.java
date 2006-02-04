@@ -207,15 +207,15 @@ public class LoadService {
 
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader(); 
 
-            // Absolute path names
+            NormalizedFile file = new NormalizedFile(name);
+            // Name matches an absolute path that exists.
+            if (file.isAbsolute() && file.exists() && file.isFile()) {
+                return new LoadServiceResource(file.toURL(), name);
+            }
+            
+            // Look in classpath next (we do not use File as a test since UNC names will match)
+            // Note: Jar resources must always begin with an '/'.
             if (name.startsWith("/") || name.startsWith("\\")) {
-               	// Load from local filesystem
-                NormalizedFile current = new NormalizedFile(name);
-                if (current.exists() && current.isFile()) {
-                	return new LoadServiceResource(current.toURL(), name);
-                }
-                
-                // otherwise, try to load from classpath (Note: Jar resources always uses '/')
                 URL loc = classLoader.getResource(name.replace('\\', '/'));
 
                 // Make sure this is not a directory or unavailable in some way
