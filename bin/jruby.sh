@@ -29,7 +29,7 @@ esac
 if [ -z "$JRUBY_HOME" ] ; then
   ## resolve links - $0 may be a link to  home
   PRG=$0
-  progname=`basename $0`
+  progname=`basename "$0"`
   
   while [ -h "$PRG" ] ; do
     ls=`ls -ld "$PRG"`
@@ -43,8 +43,8 @@ if [ -z "$JRUBY_HOME" ] ; then
   
   JRUBY_HOME_1=`dirname "$PRG"`           # the ./bin dir
   JRUBY_HOME_1=`dirname "$JRUBY_HOME_1"`  # the . dir
-  if [ -d ${JRUBY_HOME_1}/lib ] ; then 
-	JRUBY_HOME=${JRUBY_HOME_1}
+  if [ -d "${JRUBY_HOME_1}/lib" ] ; then 
+	JRUBY_HOME="${JRUBY_HOME_1}"
   fi
 else
   if $cygwin; then
@@ -76,14 +76,20 @@ else
   CP=""
 fi
 
-for i in $JRUBY_HOME/lib/*.jar; do
-  CP=$CP:$i
+if $cygwin; then
+   CP_DELIMETER=";"
+else 
+   CP_DELIMETER=":"
+fi
+
+for i in "$JRUBY_HOME"/lib/*.jar; do
+  CP=$CP$CP_DELIMETER$i
 done
 
 # ----- Set Up JRUBY_BASE If Necessary -------------------------------------
 
 if [ -z "$JRUBY_BASE" ] ; then
-  JRUBY_BASE=$JRUBY_HOME
+  JRUBY_BASE="$JRUBY_HOME"
 fi
 
 # ----- Execute The Requested Command -----------------------------------------
@@ -106,7 +112,6 @@ fi
 
 if $cygwin; then
   JAVA_HOME=`cygpath --mixed "$JAVA_HOME"`
-  CP=`cygpath --path --mixed "$CP"`
   JRUBY_BASE=`cygpath --mixed "$JRUBY_BASE"`
   JRUBY_HOME=`cygpath --mixed "$JRUBY_HOME"`
 fi
