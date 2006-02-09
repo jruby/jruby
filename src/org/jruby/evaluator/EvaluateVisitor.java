@@ -1303,8 +1303,8 @@ public final class EvaluateVisitor implements NodeVisitor {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		LocalAsgnNode iVisited = (LocalAsgnNode)ctx;
             state.runtime.getCurrentContext().getCurrentScope().setValue(iVisited.getCount(), state.getResult());
+            }
     	}
-    }
     private static final LocalAsgnNodeVisitor1 localAsgnNodeVisitor1 = new LocalAsgnNodeVisitor1();
     private static class LocalAsgnNodeVisitor implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
@@ -2803,7 +2803,9 @@ public final class EvaluateVisitor implements NodeVisitor {
         	if (state.getResult() != null && !state.getResult().isNil()) {
         		enclosingModule = (RubyModule) state.getResult();
         	}
-        } 
+        } else if (node instanceof Colon3Node) {
+            enclosingModule = state.runtime.getObject(); 
+        }
         
         if (enclosingModule == null) {
         	enclosingModule = state.getThreadContext().getRubyClass();
