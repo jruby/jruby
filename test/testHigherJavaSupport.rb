@@ -198,4 +198,13 @@ if defined? Java
   # Old error was EMPTY_LIST is a private class implementing a public interface with public methods
   include_class 'java.util.Collections'
   Collections::EMPTY_LIST.each {|element| }
+  
+  # Already loaded proxies should still see extend_proxy
+  JavaUtilities.extend_proxy('java.util.List') {
+    def foo
+      true
+    end
+  }
+  
+  test_equal(true, Foo::ArrayList.new.foo)
 end

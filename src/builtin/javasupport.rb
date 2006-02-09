@@ -295,6 +295,8 @@ module JavaUtilities
   
   def JavaUtilities.add_proxy_extender(extender)
     @proxy_extenders << extender
+    # Already loaded proxies should be extended if they qualify
+    @proxy_classes.values.each {|proxy_class| extender.extend_proxy(proxy_class) }
   end
   
   def JavaUtilities.extend_proxy(java_class_name, &block)
