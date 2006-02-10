@@ -1304,8 +1304,8 @@ public final class EvaluateVisitor implements NodeVisitor {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		LocalAsgnNode iVisited = (LocalAsgnNode)ctx;
             state.runtime.getCurrentContext().getCurrentScope().setValue(iVisited.getCount(), state.getResult());
-            }
-    	}
+        }
+	}
     private static final LocalAsgnNodeVisitor1 localAsgnNodeVisitor1 = new LocalAsgnNodeVisitor1();
     private static class LocalAsgnNodeVisitor implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
