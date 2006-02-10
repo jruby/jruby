@@ -68,6 +68,7 @@ import org.jruby.ast.YieldNode;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.ast.visitor.AbstractVisitor;
 import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -375,9 +376,18 @@ public class DefinedVisitor extends AbstractVisitor {
 	 * @see AbstractVisitor#visitConstNode(ConstNode)
 	 */
 	public Instruction visitConstNode(ConstNode iVisited) {
-		if (state.runtime.getClass("Module").getConstant(iVisited.getName(), false) != null) {
-			definition = "constant";
+        //ENEBO: Wrong should have same thing at EvaluateVisitors more complex getConstant
+        //FIXME cnutter: exception handling is a poor substitute
+        try {
+            state.runtime.getClass("Module").getConstant(iVisited.getName());
+        } catch (RaiseException re) {
+            if (re.getException().isKindOf(state.runtime.getClass("NameError"))) {
+                return null;
+            }
+            
+            throw re;
 		}
+        definition = "constant";
 		return null;
 	}
 

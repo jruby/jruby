@@ -154,4 +154,18 @@ class I2
 end
 
 test_ok($included)
+
+############### test 'super' within a module method
+module A3
+  module B3
+    def self.extend_object(obj)
+      super
+    end
+  end
+end
+
+x = []
+x.extend(A::B)
+
+test_ok(x.kind_of?(A::B))
  

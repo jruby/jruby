@@ -29,26 +29,26 @@ package org.jruby.runtime.builtin.meta;
 
 import org.jruby.IRuby;
 import org.jruby.RubyClass;
-import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.collections.SinglyLinkedList;
 
 public class NumericMetaClass extends ObjectMetaClass {
 	public NumericMetaClass(IRuby runtime) {
         super("Numeric", RubyNumeric.class, runtime.getObject());
     }
 	    
-	public NumericMetaClass(String name, RubyClass superClass, RubyModule parentModule) {
-        super(name, RubyNumeric.class, superClass, parentModule);
+	public NumericMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
+        super(name, RubyNumeric.class, superClass, parentCRef);
     }
 
     public NumericMetaClass(String name, Class clazz, RubyClass superClass) {
     	super(name, clazz, superClass);
     }
 
-    public NumericMetaClass(String name, Class clazz, RubyClass superClass, RubyModule parentModule) {
-    	super(name, clazz, superClass, parentModule);
+    public NumericMetaClass(String name, Class clazz, RubyClass superClass, SinglyLinkedList parentCRef) {
+    	super(name, clazz, superClass, parentCRef);
     }
     
     protected class NumericMeta extends Meta {
@@ -84,8 +84,8 @@ public class NumericMetaClass extends ObjectMetaClass {
     	return new NumericMeta();
     }
 		
-    public RubyClass newSubClass(String name, RubyModule parent) {
-        return new NumericMetaClass(name, this, parent);
+    public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
+        return new NumericMetaClass(name, this, parentCRef);
     }
 
 	protected IRubyObject allocateObject() {

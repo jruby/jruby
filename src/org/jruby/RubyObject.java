@@ -54,6 +54,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.util.PrintfFormat;
+import org.jruby.util.collections.SinglyLinkedList;
 
 /**
  *
@@ -102,8 +103,8 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      * @since Ruby 1.6.7
      */
-    public MetaClass makeMetaClass(RubyClass type, RubyModule parentModule) {
-        MetaClass newMetaClass = type.newSingletonClass(parentModule);
+    public MetaClass makeMetaClass(RubyClass type, SinglyLinkedList parentCRef) {
+        MetaClass newMetaClass = type.newSingletonClass(parentCRef);
 		
 		if (!isNil()) {
 			setMetaClass(newMetaClass);
@@ -259,7 +260,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     public MetaClass getSingletonClass() {
         RubyClass type = getMetaClass();
         if (!type.isSingleton()) { 
-            type = makeMetaClass(type, getRuntime().getCurrentContext().getRubyClass());
+            type = makeMetaClass(type, type.getCRef());
         }
 
         assert type instanceof MetaClass; 
@@ -629,16 +630,24 @@ public class RubyObject implements Cloneable, IRubyObject {
             if (threadContext.getPreviousFrame() != null) {
                 threadContext.getCurrentFrame().setIter(threadContext.getPreviousFrame().getIter());
             }
+        } else if (scope instanceof RubyBinding) {
+            threadContext.preEvalWithBinding((RubyBinding)scope);
         }
         IRubyObject result = getRuntime().getNil();
         try {
-            result = eval(getRuntime().parse(src.toString(), file));
+            Node node = getRuntime().parse(src.toString(), file);
+            result = eval(node);
         } finally {
             if (scope.isNil()) {
                 threadContext.getCurrentFrame().setIter(iter);
+                threadContext.setPosition(savedPosition);
+                threadContext.popRubyClass();
+            } else if (scope instanceof RubyBinding) {
+                threadContext.postEvalWithBinding();
+            } else {
+                threadContext.setPosition(savedPosition);
+                threadContext.popRubyClass();
             }
-            threadContext.setPosition(savedPosition);
-			threadContext.popRubyClass();
         }
         return result;
     }

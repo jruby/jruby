@@ -107,7 +107,7 @@ public class LoadService {
     }
 
     private void addPath(String path) {
-        loadPath.add(runtime.newString(path));
+        loadPath.add(runtime.newString(path.replace('\\', '/')));
     }
 
     public void load(String file) {
@@ -176,7 +176,7 @@ public class LoadService {
     }
 
     public IRubyObject autoload(String name) {
-        IAutoloadMethod loadMethod = (IAutoloadMethod)autoloadMap.get(name);
+        IAutoloadMethod loadMethod = (IAutoloadMethod)autoloadMap.remove(name);
         if (loadMethod != null) {
             return loadMethod.load(runtime, name);
         }

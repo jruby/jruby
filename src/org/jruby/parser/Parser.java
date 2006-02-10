@@ -39,6 +39,7 @@ import org.jruby.RubyFile;
 import org.jruby.ast.Node;
 import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.SyntaxException;
+import org.jruby.util.collections.SinglyLinkedList;
 
 /**
  * Serves as a simple facade for all the parsing magic.
@@ -55,10 +56,16 @@ public class Parser {
     }
 
     public Node parse(String file, Reader content) {
-        return parse(file, content, new RubyParserConfiguration());
+        return parse(file, content, new RubyParserConfiguration(), 
+            runtime.getObject().getCRef());
+    }
+    
+    public Node parse(String file, String content, SinglyLinkedList cref) {
+        return parse(file, new StringReader(content), new RubyParserConfiguration(), cref);
     }
 
-    private Node parse(String file, Reader content, RubyParserConfiguration config) {
+    private Node parse(String file, Reader content, RubyParserConfiguration config, 
+        SinglyLinkedList cref) {
         config.setLocalVariables(runtime.getCurrentContext().getCurrentScope().getLocalNames());
         
         DefaultRubyParser parser = null;
@@ -67,6 +74,7 @@ public class Parser {
             parser = RubyParserPool.getInstance().borrowParser();
             parser.setWarnings(runtime.getWarnings());
             parser.init(config);
+            runtime.getCurrentContext().setCRef(cref);
             LexerSource lexerSource = LexerSource.getSource(file, content);
             result = parser.parse(lexerSource);
             if (result.isEndSeen()) {
@@ -81,6 +89,7 @@ public class Parser {
             throw runtime.newSyntaxError(buffer.toString());
         } finally {
             RubyParserPool.getInstance().returnParser(parser);
+            runtime.getCurrentContext().unsetCRef();
         }
 
         if (hasNewLocalVariables(result)) {

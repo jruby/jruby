@@ -49,6 +49,7 @@ import org.jruby.runtime.Scope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.collections.SinglyLinkedList;
 
 /**
  *
@@ -56,14 +57,14 @@ import org.jruby.runtime.builtin.IRubyObject;
 public final class DefaultMethod extends AbstractMethod {
     private ScopeNode body;
     private ArgsNode argsNode;
-    private RubyModule parent;
+    private SinglyLinkedList cref;
 
     public DefaultMethod(RubyModule implementationClass, ScopeNode body, ArgsNode argsNode, 
-        Visibility visibility, RubyModule parent) {
+        Visibility visibility, SinglyLinkedList cref) {
         super(implementationClass, visibility);
         this.body = body;
         this.argsNode = argsNode;
-		this.parent = parent;
+		this.cref = cref;
 		
 		assert body != null;
 		assert argsNode != null;
@@ -72,7 +73,7 @@ public final class DefaultMethod extends AbstractMethod {
     public void preMethod(IRuby runtime, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
         ThreadContext context = runtime.getCurrentContext();
         
-        context.preDefMethodInternalCall(implementationClass, recv, name, args, noSuper);
+        context.preDefMethodInternalCall(recv, name, args, noSuper, cref);
     }
     
     public void postMethod(IRuby runtime) {
@@ -205,6 +206,6 @@ public final class DefaultMethod extends AbstractMethod {
     }
     
     public ICallable dup() {
-        return new DefaultMethod(getImplementationClass(), body, argsNode, getVisibility(), parent);
+        return new DefaultMethod(getImplementationClass(), body, argsNode, getVisibility(), cref);
     }	
 }

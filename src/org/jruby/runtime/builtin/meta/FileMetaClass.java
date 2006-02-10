@@ -44,14 +44,15 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOModes;
 import org.jruby.util.NormalizedFile;
+import org.jruby.util.collections.SinglyLinkedList;
 
 public class FileMetaClass extends IOMetaClass {
     public FileMetaClass(IRuby runtime) {
         super("File", RubyFile.class, runtime.getClass("IO"));
     }
 
-    public FileMetaClass(String name, RubyClass superClass, RubyModule parentModule) {
-        super(name, RubyFile.class, superClass, parentModule);
+    public FileMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
+        super(name, RubyFile.class, superClass, parentCRef);
     }
 
     protected class FileMeta extends Meta {
@@ -158,8 +159,8 @@ public class FileMetaClass extends IOMetaClass {
     	return new FileMeta();
     }
 
-	public RubyClass newSubClass(String name, RubyModule parent) {
-		return new FileMetaClass(name, this, parent);
+	public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
+		return new FileMetaClass(name, this, parentCRef);
 	}
 
 	public IRubyObject allocateObject() {

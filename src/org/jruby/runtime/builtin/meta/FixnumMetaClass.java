@@ -31,18 +31,18 @@ import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
-import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.collections.SinglyLinkedList;
 
 public class FixnumMetaClass extends IntegerMetaClass {
 	public FixnumMetaClass(IRuby runtime) {
 		super("Fixnum", RubyFixnum.class, runtime.getClass("Integer"));
 	}
 	
-	public FixnumMetaClass(String name, RubyClass superClass, RubyModule parentModule) {
-		super(name, RubyFixnum.class, superClass, parentModule);
+	public FixnumMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
+		super(name, RubyFixnum.class, superClass, parentCRef);
 	}
 	
 	protected class FixnumMeta extends Meta {
@@ -80,8 +80,8 @@ public class FixnumMetaClass extends IntegerMetaClass {
 		return new FixnumMeta();
 	}
 
-	public RubyClass newSubClass(String name, RubyModule parent) {
-        return new FixnumMetaClass(name, this, parent);
+	public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
+        return new FixnumMetaClass(name, this, parentCRef);
 	}
 
     public RubyInteger induced_from(IRubyObject number) {

@@ -34,6 +34,7 @@ import org.jruby.internal.runtime.methods.ReflectedMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.collections.SinglyLinkedList;
 
 /**
  * <p>
@@ -191,27 +192,27 @@ public abstract class AbstractMetaClass extends RubyClass {
 
 	// Only for other core modules/classes
 	protected AbstractMetaClass(IRuby runtime, RubyClass metaClass,
-			RubyClass superClass, RubyModule parentClass, String name,
+			RubyClass superClass, SinglyLinkedList parentCRef, String name,
 			Class builtinClass) {
-		super(runtime, metaClass, superClass, parentClass, name);
+		super(runtime, metaClass, superClass, parentCRef, name);
 
 		this.builtinClass = builtinClass;
 	}
 
 	protected AbstractMetaClass(String name, Class builtinClass, RubyClass superClass) {
 		this(name, builtinClass, superClass, superClass.getRuntime().getClass(
-				"Object"), true);
+				"Object").getCRef(), true);
 	}
 
 	protected AbstractMetaClass(String name, Class builtinClass, RubyClass superClass,
-			RubyModule parentModule) {
-		this(name, builtinClass, superClass, parentModule, false);
+            SinglyLinkedList parentCRef) {
+		this(name, builtinClass, superClass, parentCRef, false);
 	}
 
 	protected AbstractMetaClass(String name, Class builtinClass, RubyClass superClass,
-			RubyModule parentModule, boolean init) {
+            SinglyLinkedList parentCRef, boolean init) {
 		super(superClass.getRuntime(), superClass.getRuntime()
-				.getClass("Class"), superClass, parentModule, name);
+				.getClass("Class"), superClass, parentCRef, name);
 
 		assert name != null;
 		assert builtinClass != null;
@@ -221,10 +222,10 @@ public abstract class AbstractMetaClass extends RubyClass {
 		this.builtinClass = builtinClass;
 
 		makeMetaClass(superClass.getMetaClass(), superClass.getRuntime()
-				.getCurrentContext().getRubyClass());
+				.getCurrentContext().peekCRef());
 		inheritedBy(superClass);
 
-		parentModule.setConstant(name, this);
+		((RubyModule)parentCRef.getValue()).setConstant(name, this);
 
 		if (init) {
 			getMeta().initializeClass();
@@ -232,8 +233,8 @@ public abstract class AbstractMetaClass extends RubyClass {
 	}
 
 	public AbstractMetaClass(IRuby runtime, RubyClass metaClass, RubyClass superClass,
-			RubyModule parentModule, String name) {
-		super(runtime, metaClass, superClass, parentModule, name);
+            SinglyLinkedList parentCRef, String name) {
+		super(runtime, metaClass, superClass, parentCRef, name);
 	}
 
 	public void defineMethod(String name, Arity arity) {

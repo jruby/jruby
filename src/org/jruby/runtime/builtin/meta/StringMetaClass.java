@@ -34,7 +34,6 @@ import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyInteger;
-import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubyString.StringMethod;
 import org.jruby.javasupport.JavaUtil;
@@ -42,14 +41,15 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.PrintfFormat;
+import org.jruby.util.collections.SinglyLinkedList;
 
 public class StringMetaClass extends ObjectMetaClass {
     public StringMetaClass(IRuby runtime) {
         super("String", RubyString.class, runtime.getObject());
     }
 
-    private StringMetaClass(String name, RubyClass superClass, RubyModule parentModule) {
-        super(name, RubyString.class, superClass, parentModule);
+    private StringMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
+        super(name, RubyString.class, superClass, parentCRef);
     }
 
     public StringMethod hash = new StringMethod(this, Arity.noArguments(), Visibility.PUBLIC) {
@@ -247,8 +247,8 @@ public class StringMetaClass extends ObjectMetaClass {
     	return new StringMeta();
     }
 
-    public RubyClass newSubClass(String name, RubyModule parent) {
-        return new StringMetaClass(name, this, parent);
+    public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
+        return new StringMetaClass(name, this, parentCRef);
     }
 
     protected IRubyObject allocateObject() {

@@ -35,6 +35,7 @@ import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.ast.Node;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.collections.SinglyLinkedList;
 import org.jruby.util.collections.StackElement;
 
 /**
@@ -46,6 +47,7 @@ public class Block implements StackElement {
     private ICallable method;
     private IRubyObject self;
     private Frame frame;
+    private SinglyLinkedList cref;
     private Scope scope;
     private RubyModule klass;
     private Iter iter;
@@ -61,23 +63,25 @@ public class Block implements StackElement {
                          method,
                          self,
                          context.getCurrentFrame(),
+                         context.peekCRef(),
                          context.getCurrentScope(),
                          context.getRubyClass(),
                          context.getCurrentIter(),
                          context.getCurrentDynamicVars());
     }
 
-    private Block(
+    public Block(
         Node var,
         ICallable method,
         IRubyObject self,
         Frame frame,
+        SinglyLinkedList cref,
         Scope scope,
         RubyModule klass,
         Iter iter,
         DynamicVariableSet dynamicVars) {
     	
-        assert method != null;
+        //assert method != null;
 
         this.var = var;
         this.method = method;
@@ -86,7 +90,15 @@ public class Block implements StackElement {
         this.scope = scope;
         this.klass = klass;
         this.iter = iter;
+        this.cref = cref;
         this.dynamicVariables = dynamicVars;
+    }
+    
+    public static Block createBinding(RubyModule wrapper, Iter iter, Frame frame, DynamicVariableSet dynVars) {
+        ThreadContext context = frame.getSelf().getRuntime().getCurrentContext();
+        
+        // FIXME: Ruby also saves wrapper, which we do not
+        return new Block(null, null, frame.getSelf(), frame, context.peekCRef(), frame.getScope(), context.getRubyClass(), iter, dynVars);
     }
 
     public IRubyObject call(IRubyObject[] args, IRubyObject replacementSelf) {
@@ -106,7 +118,7 @@ public class Block implements StackElement {
     }
 
     public Block cloneBlock() {
-        Block newBlock = new Block(var, method, self, frame, scope, klass, iter, new DynamicVariableSet(dynamicVariables));
+        Block newBlock = new Block(var, method, self, frame, cref, scope, klass, iter, new DynamicVariableSet(dynamicVariables));
         
         newBlock.isLambda = isLambda;
 
@@ -134,6 +146,10 @@ public class Block implements StackElement {
      */
     public StackElement getNext() {
         return next;
+    }
+    
+    public SinglyLinkedList getCRef() {
+        return cref;
     }
 
     /**

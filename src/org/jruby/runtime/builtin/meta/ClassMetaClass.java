@@ -8,18 +8,18 @@ package org.jruby.runtime.builtin.meta;
 
 import org.jruby.IRuby;
 import org.jruby.RubyClass;
-import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
+import org.jruby.util.collections.SinglyLinkedList;
 
 // Note: This code is not currently live.  It will be hooked up
 // some time around 0.8.3 development cycle.
 public class ClassMetaClass extends ObjectMetaClass {
     public ClassMetaClass(IRuby runtime, RubyClass superClass) {
-    	super(runtime, null, superClass, runtime.getObject(), "Class", RubyClass.class);
+    	super(runtime, null, superClass, runtime.getObject().getCRef(), "Class", RubyClass.class);
     }
 
-	public ClassMetaClass(String name, RubyClass superClass, RubyModule parentModule) {
-		super(name, RubyClass.class, superClass, parentModule);
+	public ClassMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
+		super(name, RubyClass.class, superClass, parentCRef);
 	}
 	
 	protected class ClassMeta extends Meta {

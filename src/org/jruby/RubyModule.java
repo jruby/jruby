@@ -54,6 +54,7 @@ import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.IdUtil;
+import org.jruby.util.collections.SinglyLinkedList;
 
 /**
  *
@@ -68,7 +69,10 @@ public class RubyModule extends RubyObject {
     private RubyClass superClass;
     
     // Containing class...The parent of Object is null. Object should always be last in chain.
-    public RubyModule parentModule;
+    //public RubyModule parentModule;
+    
+    // CRef...to eventually replace parentModule
+    public SinglyLinkedList cref;
 
     // ClassId is the name of the class/module sans where it is located.
     // If it is null, then it an anonymous class.
@@ -79,18 +83,22 @@ public class RubyModule extends RubyObject {
     // with same name by one of its subclasses).
     private Map methods = new HashMap();
 
-    protected RubyModule(IRuby runtime, RubyClass metaClass, RubyClass superClass, RubyModule parentModule, String name) {
+    protected RubyModule(IRuby runtime, RubyClass metaClass, RubyClass superClass, SinglyLinkedList parentCRef, String name) {
         super(runtime, metaClass);
         
         this.superClass = superClass;
-        this.parentModule = parentModule;
+        //this.parentModule = parentModule;
 		
         setBaseName(name);
 
         // If no parent is passed in, it is safe to assume Object.
-        if (this.parentModule == null) {
-            this.parentModule = runtime.getObject();
+        if (parentCRef == null) {
+            if (runtime.getObject() != null) {
+                parentCRef = runtime.getObject().getCRef();
+            }
         }
+        
+        this.cref = new SinglyLinkedList(this, parentCRef);
     }
     
     /** Getter for property superClass.
@@ -105,7 +113,11 @@ public class RubyModule extends RubyObject {
     }
     
     public RubyModule getParent() {
-    	return parentModule;
+        if (cref.getNext() == null) {
+            return null;
+        }
+
+        return (RubyModule)cref.getNext().getValue();
     }
 
     public Map getMethods() {
@@ -173,7 +185,14 @@ public class RubyModule extends RubyObject {
      * @return The module wrapper
      */
     public IncludedModuleWrapper newIncludeClass(RubyClass superClazz) {
-        return new IncludedModuleWrapper(getRuntime(), superClazz, this);
+        IncludedModuleWrapper includedModule = new IncludedModuleWrapper(getRuntime(), superClazz, this);
+        
+        // include its parent (and in turn that module's parents)
+        if (getSuperClass() != null) {
+            includedModule.includeModule(getSuperClass());
+        }
+        
+        return includedModule;
     }
     
     /**
@@ -263,57 +282,6 @@ public class RubyModule extends RubyObject {
         }
         return result;
     }
-
-    /**
-     * Retrieve the named constant, invoking 'const_missing' should that be appropriate.
-     * 
-     * @param name The constant to retrieve
-     * @return The value for the constant, or null if not found
-     * @see RubyModule#getConstant(String, boolean)
-     */
-    public IRubyObject getConstant(String name) {
-    	return getConstant(name, true);
-    }
-    
-    /**
-     * Retrieve the named constant, invoking 'const_missing' if invokeConstMissing == true and
-     * it is appropriate to do so.
-     * 
-     * @param name The constant to retrieve
-     * @param invokeConstMissing Whether or not to invoke const_missing as appropriate
-     * @return The retrieved value, or null if not found
-     */
-    public IRubyObject getConstant(String name, boolean invokeConstMissing) {
-    	// First look for constants in module hierachy
-    	for (RubyModule p = this; p != null; p = p.parentModule) {
-            IRubyObject var = p.getInstanceVariable(name);
-            if (var != null) {
-                return var;
-            }
-        }
-
-        // Second look for constants in the inheritance hierachy
-        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
-        	IRubyObject var = p.getInstanceVariable(name);
-            if (var != null) {
-                return var;
-            }
-            
-            // Bug 1303983: partial fix for constants in singleton/metaclasses of modules which are not included in the above searches
-            if (p instanceof IncludedModuleWrapper) {
-                var = ((IncludedModuleWrapper)p).getDelegate().getConstant(name, false);
-                if (var != null) {
-                    return var;
-                }
-            }
-        }
-
-        if (invokeConstMissing) {
-        	return callMethod("const_missing", RubySymbol.newSymbol(getRuntime(), name));
-        }
-		
-        return null;
-    }
     
     /**
      * Finds a class that is within the current module (or class).
@@ -322,7 +290,7 @@ public class RubyModule extends RubyObject {
      * @return the class or null if no such class
      */
     public RubyClass getClass(String name) {
-    	IRubyObject module = getConstant(name, false);
+    	IRubyObject module = getConstantAt(name);
     	
     	return  (module instanceof RubyClass) ? (RubyClass) module : null;
     }
@@ -378,11 +346,8 @@ public class RubyModule extends RubyObject {
         // Include new module
         setSuperClass(module.newIncludeClass(getSuperClass()));
         
-        // Try to include all included modules from module just added 
-        for (RubyModule p = module.getSuperClass(); p != null; 
-        	p = p.getSuperClass()) {
-        	includeModule(p);
-        }
+        // cnutter: removed iterative inclusion of module's superclasses, because it included them in reverse order
+        // see RubyModule.newIncludeClass for replacement
         
         module.callMethod("included", this);
     }
@@ -415,8 +380,7 @@ public class RubyModule extends RubyObject {
         }
         testFrozen("module");
         if (name.equals("__id__") || name.equals("__send__")) {
-            /*rb_warn("undefining `%s' may cause serious problem",
-                     rb_id2name( id ) );*/
+            getRuntime().getWarnings().warn("undefining `"+ name +"' may cause serious problem");
         }
         ICallable method = searchMethod(name);
         if (method.isUndefined()) {
@@ -530,34 +494,59 @@ public class RubyModule extends RubyObject {
         defineSingletonMethod(name, method);
     }
 
-    public IRubyObject getConstantAtOrConstantMissing(String name) {
-        IRubyObject constant = getConstantAt(name);
+    private IRubyObject getConstantInner(String name, boolean exclude) {
+        IRubyObject objectClass = getRuntime().getObject();
+        boolean retryForModule = false;
+        RubyModule p = this;
 
-        if (constant != null) {
-             return constant;
-        }
-
-    	for (RubyModule p = getSuperClass(); p != null; p = p.getSuperClass()) {
-            constant = p.getConstantAt(name);
-            if (constant != null) {
-                return constant;
+        retry: while (true) { 
+            while (p != null) {
+                IRubyObject constant = p.getConstantAt(name);
+            
+                if (constant == null) {
+                    if (getRuntime().getLoadService().autoload(name) != null) {
+                        continue;
+                    }
+                }
+                if (constant != null) {
+                    if (exclude && p == objectClass && this != objectClass) {
+                        getRuntime().getWarnings().warn("toplevel constant " + name + 
+                                " referenced by " + getName() + "::" + name);
+                    }
+            
+                    return constant;
+                }
+                p = p.getSuperClass();
             }
+            
+            if (!exclude && !retryForModule && getClass().equals(RubyModule.class)) {
+                retryForModule = true;
+                p = getRuntime().getObject();
+                continue retry;
+            }
+            
+            break;
         }
         
         return callMethod("const_missing", RubySymbol.newSymbol(getRuntime(), name));
     }
+    
+    /**
+     * Retrieve the named constant, invoking 'const_missing' should that be appropriate.
+     * 
+     * @param name The constant to retrieve
+     * @return The value for the constant, or null if not found
+     */
+    public IRubyObject getConstant(String name) {
+        return getConstantInner(name, false);
+    }
+    
+    public IRubyObject getConstantFrom(String name) {
+        return getConstantInner(name, true);
+    }
 
     public IRubyObject getConstantAt(String name) {
-    	IRubyObject constant = getInstanceVariable(name);
-    	
-    	if (constant != null) {
-    		return constant;
-    	} 
-    	
-    	if (this == getRuntime().getObject()) {
-    		return getConstant(name, false);
-    	}
-    	return null;
+    	return getInstanceVariable(name);
     }
 
     /** rb_alias
@@ -597,7 +586,7 @@ public class RubyModule extends RubyObject {
         
         if (type == null) {
             return (RubyClass) setConstant(name, 
-            		getRuntime().defineClassUnder(name, superClazz, this)); 
+            		getRuntime().defineClassUnder(name, superClazz, cref)); 
         }
 
         if (!(type instanceof RubyClass)) {
@@ -615,7 +604,7 @@ public class RubyModule extends RubyObject {
     	
     	if (type == null) {
             return (RubyClass) setConstant(name, 
-            		getRuntime().defineClassUnder(name, superClazz, this)); 
+            		getRuntime().defineClassUnder(name, superClazz, cref)); 
     	}
 
     	if (!(type instanceof RubyClass)) {
@@ -632,7 +621,7 @@ public class RubyModule extends RubyObject {
         
         if (type == null) {
             return (RubyModule) setConstant(name, 
-            		getRuntime().defineModuleUnder(name, this)); 
+            		getRuntime().defineModuleUnder(name, cref)); 
         }
 
         if (!(type instanceof RubyModule)) {
@@ -866,11 +855,12 @@ public class RubyModule extends RubyObject {
         return newModule(runtime, name, null);
     }
 
-    public static RubyModule newModule(IRuby runtime, String name, RubyModule parentModule) {
+    public static RubyModule newModule(IRuby runtime, String name, SinglyLinkedList parentCRef) {
         // Modules do not directly define Object as their superClass even though in theory they
     	// should.  The C version of Ruby may also do this (special checks in rb_alias for Module
     	// makes me think this).
-        return new RubyModule(runtime, runtime.getClass("Module"), null, parentModule, name);
+        // TODO cnutter: Shouldn't new modules have Module as their superclass?
+        return new RubyModule(runtime, runtime.getClass("Module"), null, parentCRef, name);
     }
     
     /** rb_mod_name
@@ -927,7 +917,7 @@ public class RubyModule extends RubyObject {
     }
     
     protected IRubyObject doClone() {
-    	return RubyModule.newModule(getRuntime(), getBaseName(), parentModule);
+    	return RubyModule.newModule(getRuntime(), getBaseName(), cref.getNext());
     }
 
     /** rb_mod_dup
@@ -1159,7 +1149,7 @@ public class RubyModule extends RubyObject {
             throw getRuntime().newNameError("wrong constant name " + name);
         }
 
-        return getRuntime().newBoolean(getConstant(name, false) != null);
+        return getRuntime().newBoolean(getConstantAt(name) != null);
     }
 
     private RubyArray instance_methods(IRubyObject[] args, final Visibility visibility) {
@@ -1454,5 +1444,9 @@ public class RubyModule extends RubyObject {
         }
         input.registerLinkTarget(result);
         return result;
+    }
+
+    public SinglyLinkedList getCRef() {
+        return cref;
     }
 }

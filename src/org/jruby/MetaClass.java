@@ -30,11 +30,12 @@
 package org.jruby;
 
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.collections.SinglyLinkedList;
 
 public class MetaClass extends RubyClass {
 
-    public MetaClass(IRuby runtime, RubyClass superClass, RubyModule parentModule) {
-        super(runtime, runtime.getClass("Class"), superClass, parentModule, null);
+    public MetaClass(IRuby runtime, RubyClass superClass, SinglyLinkedList parentCRef) {
+        super(runtime, runtime.getClass("Class"), superClass, parentCRef, null);
     }
  
     public boolean isSingleton() {

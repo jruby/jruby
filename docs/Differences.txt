@@ -1,8 +1,6 @@
 
 How JRuby differs from the original Ruby
 ----------------------------------------
-$Id$
-
 
 Speed:
 

@@ -126,7 +126,7 @@ public class RubyKernel {
         // TODO: Implement Kernel#test (partial impl)
         module.defineModuleFunction("throw", callbackFactory.getOptSingletonMethod("rbThrow"));
         // TODO: Implement Kernel#trace_var
-        // TODO: Implement Kernel#trap
+        module.defineModuleFunction("trap", callbackFactory.getOptSingletonMethod("trap"));
         // TODO: Implement Kernel#untrace_var
         // TODO: Implement Kernel#warn
         
@@ -594,17 +594,23 @@ public class RubyKernel {
     }
 
     public static IRubyObject rbThrow(IRubyObject recv, IRubyObject[] args) {
-    	IRuby runtime = recv.getRuntime();
-    	JumpException je = new JumpException(JumpException.JumpType.ThrowJump);
-    	String tag = args[0].asSymbol();
-    	IRubyObject value = args.length > 1 ? args[1] : recv.getRuntime().getNil();
-    	RubyException nameException = new RubyException(runtime, runtime.getClass("NameError"), "uncaught throw '" + tag + '\'');
-    	
-		je.setPrimaryData(tag);
-    	je.setSecondaryData(value);
-    	je.setTertiaryData(nameException);
-    	
+        IRuby runtime = recv.getRuntime();
+        JumpException je = new JumpException(JumpException.JumpType.ThrowJump);
+        String tag = args[0].asSymbol();
+        IRubyObject value = args.length > 1 ? args[1] : recv.getRuntime().getNil();
+        RubyException nameException = new RubyException(runtime, runtime.getClass("NameError"), "uncaught throw '" + tag + '\'');
+        
+        je.setPrimaryData(tag);
+        je.setSecondaryData(value);
+        je.setTertiaryData(nameException);
+        
         throw je;
+    }
+
+    public static IRubyObject trap(IRubyObject recv, IRubyObject[] args) {
+        // TODO: We may be able to fake some signal stuff, but obviously there's not much we can do
+        // FIXME: We could possibly register a shutdown hook for partial SIGINT support.
+        return recv.getRuntime().getNil();
     }
 
     public static IRubyObject set_trace_func(IRubyObject recv, IRubyObject trace_func) {

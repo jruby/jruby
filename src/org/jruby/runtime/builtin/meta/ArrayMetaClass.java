@@ -30,17 +30,17 @@ package org.jruby.runtime.builtin.meta;
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
-import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.collections.SinglyLinkedList;
 
 public class ArrayMetaClass extends ObjectMetaClass {
     public ArrayMetaClass(IRuby runtime) {
         super("Array", RubyArray.class, runtime.getObject());
     }
     
-	public ArrayMetaClass(String name, RubyClass superClass, RubyModule parentModule) {
-		super(name, RubyArray.class, superClass, parentModule);
+	public ArrayMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
+		super(name, RubyArray.class, superClass, parentCRef);
 	}
 
 	protected class ArrayMeta extends Meta {
@@ -128,8 +128,8 @@ public class ArrayMetaClass extends ObjectMetaClass {
 		return new ArrayMeta();
 	}
 	
-	public RubyClass newSubClass(String name, RubyModule parent) {
-		return new ArrayMetaClass(name, this, parent);
+	public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
+		return new ArrayMetaClass(name, this, parentCRef);
 	}
 
 	protected IRubyObject allocateObject() {

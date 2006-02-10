@@ -36,6 +36,7 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.collections.SinglyLinkedList;
 
 /**
  *
@@ -65,8 +66,8 @@ public class RubyClass extends RubyModule {
         this.runtime = runtime;
     }
     
-    protected RubyClass(IRuby runtime, RubyClass metaClass, RubyClass superClass, RubyModule parentModule, String name) {
-        super(runtime, metaClass, superClass, parentModule, name);
+    protected RubyClass(IRuby runtime, RubyClass metaClass, RubyClass superClass, SinglyLinkedList parentCRef, String name) {
+        super(runtime, metaClass, superClass, parentCRef, name);
         this.runtime = runtime;
     }
     
@@ -121,7 +122,7 @@ public class RubyClass extends RubyModule {
             return this;
         }
 
-        MetaClass clone = new MetaClass(getRuntime(), getMetaClass(), getSuperClass());
+        MetaClass clone = new MetaClass(getRuntime(), getMetaClass(), getSuperClass().getCRef());
         clone.initCopy(this);
         clone.setInstanceVariables(new HashMap(getInstanceVariables()));
 
@@ -142,14 +143,14 @@ public class RubyClass extends RubyModule {
         return this;
     }
 
-    public MetaClass newSingletonClass(RubyModule parent) {
-        MetaClass newClass = new MetaClass(getRuntime(), this, parent);
+    public MetaClass newSingletonClass(SinglyLinkedList parentCRef) {
+        MetaClass newClass = new MetaClass(getRuntime(), this, parentCRef);
         newClass.infectBy(this);
         return newClass;
     }
 
-    public static RubyClass newClass(IRuby runtime, RubyClass superClass, RubyModule parentClass, String name) {
-        return new RubyClass(runtime, runtime.getClass("Class"), superClass, parentClass, name);
+    public static RubyClass newClass(IRuby runtime, RubyClass superClass, SinglyLinkedList parentCRef, String name) {
+        return new RubyClass(runtime, runtime.getClass("Class"), superClass, parentCRef, name);
     }
 
     /** Create a new subclass of this class.
@@ -193,7 +194,7 @@ public class RubyClass extends RubyModule {
 
         RubyClass newClass = superClass.subclass();
 
-        newClass.makeMetaClass(superClass.getMetaClass(), runtime.getCurrentContext().getLastRubyClass());
+        newClass.makeMetaClass(superClass.getMetaClass(), runtime.getCurrentContext().peekCRef());
 
         // call "initialize" method
         newClass.callInit(args);
@@ -272,13 +273,13 @@ public class RubyClass extends RubyModule {
         return newObject;
     }
 
-    public RubyClass newSubClass(String name, RubyModule parent) {
-        RubyClass newClass = new RubyClass(runtime, runtime.getClass("Class"), this, parent, name);
+    public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
+        RubyClass newClass = new RubyClass(runtime, runtime.getClass("Class"), this, parentCRef, name);
 
-        newClass.makeMetaClass(getMetaClass(), newClass);
+        newClass.makeMetaClass(getMetaClass(), newClass.getCRef());
         newClass.inheritedBy(this);
 
-        parent.setConstant(name, newClass);
+        ((RubyModule)parentCRef.getValue()).setConstant(name, newClass);
 
         return newClass;
     }

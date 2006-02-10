@@ -72,6 +72,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.meta.ArrayMetaClass;
 import org.jruby.runtime.builtin.meta.BignumMetaClass;
+import org.jruby.runtime.builtin.meta.BindingMetaClass;
 import org.jruby.runtime.builtin.meta.FileMetaClass;
 import org.jruby.runtime.builtin.meta.FixnumMetaClass;
 import org.jruby.runtime.builtin.meta.HashMetaClass;
@@ -87,6 +88,7 @@ import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.util.BuiltinScript;
 import org.jruby.util.NormalizedFile;
+import org.jruby.util.collections.SinglyLinkedList;
 
 /**
  * The jruby runtime.
@@ -217,7 +219,7 @@ public final class Ruby implements IRuby {
     }
 
     public RubyModule getModule(String name) {
-        return (RubyModule) objectClass.getConstant(name, false);
+        return (RubyModule) objectClass.getConstantAt(name);
     }
 
     /** Returns a class from the instance pool.
@@ -239,28 +241,28 @@ public final class Ruby implements IRuby {
      *
      */
     public RubyClass defineClass(String name, RubyClass superClass) {
-        return defineClassUnder(name, superClass, objectClass);
+        return defineClassUnder(name, superClass, objectClass.getCRef());
     }
     
-    public RubyClass defineClassUnder(String name, RubyClass superClass, RubyModule parentModule) {
+    public RubyClass defineClassUnder(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
         if (superClass == null) {
             superClass = objectClass;
         }
 
-        return superClass.newSubClass(name, parentModule);
+        return superClass.newSubClass(name, parentCRef);
     }
     
     /** rb_define_module / rb_define_module_id
      *
      */
     public RubyModule defineModule(String name) {
-        return defineModuleUnder(name, objectClass);
+        return defineModuleUnder(name, objectClass.getCRef());
     }
     
-    public RubyModule defineModuleUnder(String name, RubyModule parentModule) {
-        RubyModule newModule = RubyModule.newModule(this, name, parentModule);
+    public RubyModule defineModuleUnder(String name, SinglyLinkedList parentCRef) {
+        RubyModule newModule = RubyModule.newModule(this, name, parentCRef);
 
-        parentModule.setConstant(name, newModule);
+        ((RubyModule)parentCRef.getValue()).setConstant(name, newModule);
         
         return newModule;
     }
@@ -270,7 +272,7 @@ public final class Ruby implements IRuby {
      * new module is created.
      */
     public RubyModule getOrCreateModule(String name) {
-        RubyModule module = (RubyModule) getCurrentContext().getRubyClass().getConstant(name, false);
+        RubyModule module = (RubyModule) getCurrentContext().getRubyClass().getConstantAt(name);
         
         if (module == null) {
             module = (RubyModule) getCurrentContext().getRubyClass().setConstant(name, 
@@ -359,10 +361,13 @@ public final class Ruby implements IRuby {
         topSelf = TopSelfFactory.createTopSelf(this);
 
         getCurrentContext().pushRubyClass(objectClass);
+        getCurrentContext().setCRef(getObject().getCRef());
         
         Frame frame = getCurrentContext().getCurrentFrame();
         frame.setSelf(topSelf);
         frame.getEvalState().setSelf(topSelf);
+        
+        getObject().defineConstant("TOPLEVEL_BINDING", newBinding());
 
         initBuiltinClasses();
     }
@@ -392,9 +397,10 @@ public final class Ruby implements IRuby {
         RubyClass classClass = new RubyClass(this, null /* Would be Class if it could */, moduleClass, null, "Class");
         objectClass.setConstant("Class", classClass);
 
-        RubyClass metaClass = objectClass.makeMetaClass(classClass, getCurrentContext().getRubyClass());
-        metaClass = moduleClass.makeMetaClass(metaClass, getCurrentContext().getRubyClass());
-        metaClass = classClass.makeMetaClass(metaClass, getCurrentContext().getRubyClass());
+        // I don't think the containment is correct here (parent cref)
+        RubyClass metaClass = objectClass.makeMetaClass(classClass, objectMetaClass.getCRef());
+        metaClass = moduleClass.makeMetaClass(metaClass, objectMetaClass.getCRef());
+        metaClass = classClass.makeMetaClass(metaClass, objectMetaClass.getCRef());
 
         ((ObjectMetaClass) moduleClass).initializeBootstrapClass();
         
@@ -430,6 +436,7 @@ public final class Ruby implements IRuby {
         RubyFloat.createFloatClass(this);
         
         new BignumMetaClass(this).initializeClass();
+        new BindingMetaClass(this).initializeClass();
         
         RubyMath.createMathModule(this); // depends on all numeric types
         RubyRegexp.createRegexpClass(this);
@@ -748,22 +755,22 @@ public final class Ruby implements IRuby {
 
         RubyModule wrapper = context.getWrapper();
 
-        if (!wrap) {
-            secure(4); /* should alter global state */
-            
-            context.preNodeEval(null, objectClass, self);
-        } else {
-            /* load in anonymous module as toplevel */
-            context.preNodeEval(RubyModule.newModule(this, null), context.getWrapper(), self);
-            
-            self = getTopSelf().rbClone();
-            self.extendObject(context.getRubyClass());
-        }
-
-        /* default visibility is private at loading toplevel */
-        getCurrentContext().setCurrentVisibility(Visibility.PRIVATE);
-
         try {
+            if (!wrap) {
+                secure(4); /* should alter global state */
+
+                context.preNodeEval(null, objectClass, self);
+            } else {
+                /* load in anonymous module as toplevel */
+                context.preNodeEval(RubyModule.newModule(this, null), context.getWrapper(), self);
+                
+                self = getTopSelf().rbClone();
+                self.extendObject(context.getRubyClass());
+            }
+
+            /* default visibility is private at loading toplevel */
+            getCurrentContext().setCurrentVisibility(Visibility.PRIVATE);
+
         	Node node = parse(source, scriptName);
             self.eval(node);
         } catch (JumpException je) {
@@ -784,22 +791,22 @@ public final class Ruby implements IRuby {
 
         RubyModule wrapper = context.getWrapper();
 
-        if (!wrap) {
-            secure(4); /* should alter global state */
-            
-            context.preNodeEval(null, objectClass, self);
-        } else {
-            /* load in anonymous module as toplevel */
-            context.preNodeEval(RubyModule.newModule(this, null), context.getWrapper(), self);
-            
-            self = getTopSelf().rbClone();
-            self.extendObject(context.getRubyClass());
-        }
-        
-        /* default visibility is private at loading toplevel */
-        getCurrentContext().setCurrentVisibility(Visibility.PRIVATE);
-
         try {
+            if (!wrap) {
+                secure(4); /* should alter global state */
+                
+                context.preNodeEval(null, objectClass, self);
+            } else {
+                /* load in anonymous module as toplevel */
+                context.preNodeEval(RubyModule.newModule(this, null), context.getWrapper(), self);
+                
+                self = getTopSelf().rbClone();
+                self.extendObject(context.getRubyClass());
+            }
+            
+            /* default visibility is private at loading toplevel */
+            getCurrentContext().setCurrentVisibility(Visibility.PRIVATE);
+            
             self.eval(node);
         } catch (JumpException je) {
         	if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
@@ -961,6 +968,10 @@ public final class Ruby implements IRuby {
     
     public RubyProc newProc() {
     	return RubyProc.newProc(this, false);
+    }
+    
+    public RubyBinding newBinding() {
+        return RubyBinding.newBinding(this);
     }
 
     public RubyString newString(String string) {

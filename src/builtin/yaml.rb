@@ -25,7 +25,6 @@ self.class.module_eval <<'..end /usr/local/lib/ruby/site_ruby/1.8/racc/parser.rb
 #   into a Racc output file, you may use that output file
 #   without restriction.
 #
-#   $Id$
 #
 
 unless defined? NotImplementedError
@@ -49,11 +48,12 @@ module Racc
 
   class Parser
 
+    # revisions have been hardcoded to avoid branch/merge issues
     Racc_Runtime_Version = '1.4.3'
-    Racc_Runtime_Revision = '$Revision$'.split(/\s+/)[1]
+    Racc_Runtime_Revision = '1.1'.split(/\s+/)[1]
 
     Racc_Runtime_Core_Version_R = '1.4.3'
-    Racc_Runtime_Core_Revision_R = '$Revision$'.split(/\s+/)[1]
+    Racc_Runtime_Core_Revision_R = '1.1'.split(/\s+/)[1]
     begin
       require 'racc/cparse'
     # Racc_Runtime_Core_Version_C  = (defined in extention)
@@ -489,7 +489,6 @@ end   # end of racc/parser.rb
 
 self.class.module_eval <<'..end src/emitter.rb modeval..iddd2784be19', 'src/emitter.rb', 1
 #												vim:sw=4:ts=4
-# $Id$
 #
 # YAML for Ruby:
 # - Thanks to Brian Ingerson for YAML.pm

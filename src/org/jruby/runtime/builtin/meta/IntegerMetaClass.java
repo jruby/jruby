@@ -33,25 +33,25 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyInteger;
-import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.collections.SinglyLinkedList;
 
 public class IntegerMetaClass extends NumericMetaClass {
 	public IntegerMetaClass(IRuby runtime) {
         super("Integer", RubyInteger.class, runtime.getClass("Numeric"));
 	}
 	
-	public IntegerMetaClass(String name, RubyClass superClass, RubyModule parentModule) {
-        super(name, RubyInteger.class, superClass, parentModule);
+	public IntegerMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
+        super(name, RubyInteger.class, superClass, parentCRef);
     }
 	
     public IntegerMetaClass(String name, Class clazz, RubyClass superClass) {
     	super(name, clazz, superClass);
     }
 
-    public IntegerMetaClass(String name, Class clazz, RubyClass superClass, RubyModule parentModule) {
-    	super(name, clazz, superClass, parentModule);
+    public IntegerMetaClass(String name, Class clazz, RubyClass superClass, SinglyLinkedList parentCRef) {
+    	super(name, clazz, superClass, parentCRef);
     }
     
     protected class IntegerMeta extends Meta {
@@ -76,8 +76,8 @@ public class IntegerMetaClass extends NumericMetaClass {
     	return new IntegerMeta();
     }
 
-	public RubyClass newSubClass(String name, RubyModule parent) {
-        return new IntegerMetaClass(name, this, parent);
+	public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
+        return new IntegerMetaClass(name, this, parentCRef);
 	}
 
 	// This cannot be allocated directly

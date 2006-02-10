@@ -670,7 +670,17 @@ public class RubyIO extends RubyObject {
         } catch (IOHandler.BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
         } catch (IOException e) {
-        	throw getRuntime().newIOError(e.getMessage());
+            throw getRuntime().newIOError(e.getMessage());
+        }
+    }
+
+    public RubyBoolean tty() {
+        // TODO: this is less than ideal but might be as close as we'll get
+        int fileno = handler.getFileno();
+        if (fileno == STDOUT || fileno == STDIN || fileno == STDERR) {
+            return getRuntime().getTrue();
+        } else {
+            return getRuntime().getFalse();
         }
     }
     

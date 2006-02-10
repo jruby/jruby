@@ -28,42 +28,35 @@
 package org.jruby.runtime.builtin.meta;
 
 import org.jruby.IRuby;
+import org.jruby.RubyBinding;
 import org.jruby.RubyClass;
-import org.jruby.RubyProc;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
 
-public class ProcMetaClass extends ObjectMetaClass {
-    public ProcMetaClass(IRuby runtime) {
-        super("Proc", RubyProc.class, runtime.getObject());
+public class BindingMetaClass extends ObjectMetaClass {
+    public BindingMetaClass(IRuby runtime) {
+        super("Binding", RubyBinding.class, runtime.getObject());
     }
     
-	public ProcMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
-		super(name, RubyProc.class, superClass, parentCRef);
+	public BindingMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
+		super(name, RubyBinding.class, superClass, parentCRef);
 	}
 
-	protected class ProcMeta extends Meta {
+	protected class BindingMeta extends Meta {
 		protected void initializeClass() {
-			defineMethod("arity", Arity.noArguments(), "arity");
-			defineMethod("call", Arity.optional(), "call");
-			defineAlias("[]", "call");
-			defineMethod("to_proc", Arity.noArguments(), "to_proc");
-	
-	        defineSingletonMethod("new", Arity.optional(), "newInstance"); 
 		}
 	};
 	
 	protected Meta getMeta() {
-		return new ProcMeta();
+		return new BindingMeta();
 	}
 	
 	public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
-		return new ProcMetaClass(name, this, parentCRef);
+		return new BindingMetaClass(name, this, parentCRef);
 	}
 
 	protected IRubyObject allocateObject() {
-        RubyProc instance = getRuntime().newProc();
+        RubyBinding instance = getRuntime().newBinding();
         
 		instance.setMetaClass(this);
 		
@@ -71,7 +64,7 @@ public class ProcMetaClass extends ObjectMetaClass {
 	}
 
     public IRubyObject newInstance(IRubyObject[] args) {
-        RubyProc instance = RubyProc.newProc(getRuntime(), false);
+        RubyBinding instance = RubyBinding.newBinding(getRuntime());
         
         instance.callInit(args);
        

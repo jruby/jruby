@@ -30,16 +30,16 @@ package org.jruby.runtime.builtin.meta;
 import org.jruby.IRuby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
-import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
+import org.jruby.util.collections.SinglyLinkedList;
 
 public class BignumMetaClass extends ObjectMetaClass {
     public BignumMetaClass(IRuby runtime) {
         super("Bignum", RubyBignum.class, runtime.getClass("Integer"));
     }
     
-	public BignumMetaClass(String name, RubyClass superClass, RubyModule parentModule) {
-		super(name, RubyBignum.class, superClass, parentModule);
+	public BignumMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
+		super(name, RubyBignum.class, superClass, parentCRef);
 	}
 
 	protected class BignumMeta extends Meta {
@@ -74,7 +74,7 @@ public class BignumMetaClass extends ObjectMetaClass {
 		return new BignumMeta();
 	}
 	
-	public RubyClass newSubClass(String name, RubyModule parent) {
-		return new BignumMetaClass(name, this, parent);
+	public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
+		return new BignumMetaClass(name, this, parentCRef);
 	}
 }

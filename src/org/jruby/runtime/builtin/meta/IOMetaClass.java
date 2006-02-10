@@ -37,10 +37,10 @@ import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyIO;
 import org.jruby.RubyKernel;
-import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOHandler;
+import org.jruby.util.collections.SinglyLinkedList;
 
 public class IOMetaClass extends ObjectMetaClass {
 
@@ -48,16 +48,16 @@ public class IOMetaClass extends ObjectMetaClass {
         this("IO", RubyIO.class, runtime.getObject());
     }
 
-    public IOMetaClass(String name, RubyClass superClass, RubyModule parentModule) {
-        this(name, RubyIO.class, superClass, parentModule);
+    public IOMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
+        this(name, RubyIO.class, superClass, parentCRef);
     }
     
     public IOMetaClass(String name, Class clazz, RubyClass superClass) {
     	super(name, clazz, superClass);
     }
 
-    public IOMetaClass(String name, Class clazz, RubyClass superClass, RubyModule parentModule) {
-    	super(name, clazz, superClass, parentModule);
+    public IOMetaClass(String name, Class clazz, RubyClass superClass, SinglyLinkedList parentCRef) {
+    	super(name, clazz, superClass, parentCRef);
     }
 
     protected class IOMeta extends Meta {
@@ -115,6 +115,8 @@ public class IOMetaClass extends ObjectMetaClass {
 	        defineMethod("to_io", Arity.noArguments());
 	        defineMethod("ungetc", Arity.singleArgument());
 	        defineMethod("write", Arity.singleArgument());
+            defineMethod("tty?", Arity.noArguments(), "tty");
+            defineAlias("isatty", "tty?");
 	        
 	        // Constants for seek
 	        setConstant("SEEK_SET", getRuntime().newFixnum(IOHandler.SEEK_SET));
@@ -127,8 +129,8 @@ public class IOMetaClass extends ObjectMetaClass {
     	return new IOMeta();
     }
 
-    public RubyClass newSubClass(String name, RubyModule parent) {
-        return new IOMetaClass(name, this, parent);
+    public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
+        return new IOMetaClass(name, this, parentCRef);
     }
 
     public IRubyObject allocateObject() {

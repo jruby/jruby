@@ -11,17 +11,17 @@ import java.util.HashMap;
 import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
-import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.collections.SinglyLinkedList;
 
 public class HashMetaClass extends ObjectMetaClass {
     public HashMetaClass(IRuby runtime) {
         super("Hash", RubyHash.class, runtime.getObject());
     }
     
-	public HashMetaClass(String name, RubyClass superClass, RubyModule parentModule) {
-		super(name, RubyHash.class, superClass, parentModule);
+	public HashMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
+		super(name, RubyHash.class, superClass, parentCRef);
 	}
 
 	protected class HashMeta extends Meta {
@@ -85,8 +85,8 @@ public class HashMetaClass extends ObjectMetaClass {
 		return new HashMeta();
 	}
 	
-	public RubyClass newSubClass(String name, RubyModule parent) {
-		return new HashMetaClass(name, this, parent);
+	public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
+		return new HashMetaClass(name, this, parentCRef);
 	}
 
 	protected IRubyObject allocateObject() {

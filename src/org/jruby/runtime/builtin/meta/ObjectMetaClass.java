@@ -34,6 +34,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.collections.SinglyLinkedList;
 
 /**
  * <p>
@@ -50,18 +51,18 @@ public class ObjectMetaClass extends AbstractMetaClass {
     
     // Only for other core modules/classes
     protected ObjectMetaClass(IRuby runtime, RubyClass metaClass, RubyClass superClass, 
-        RubyModule parentClass, String name, Class builtinClass) {
-    	super(runtime, metaClass, superClass, parentClass, name);
+            SinglyLinkedList parentCRef, String name, Class builtinClass) {
+    	super(runtime, metaClass, superClass, parentCRef, name);
     	
     	this.builtinClass = builtinClass;
     }
     
     protected ObjectMetaClass(String name, Class builtinClass, RubyClass superClass) {
-        this(name, builtinClass, superClass, superClass.getRuntime().getClass("Object"));
+        this(name, builtinClass, superClass, superClass.getRuntime().getClass("Object").getCRef());
     }
 
-    protected ObjectMetaClass(String name, Class builtinClass, RubyClass superClass, RubyModule parentModule) {
-        super(superClass.getRuntime(), superClass.getRuntime().getClass("Class"), superClass, parentModule, name);
+    protected ObjectMetaClass(String name, Class builtinClass, RubyClass superClass, SinglyLinkedList parentCRef) {
+        super(superClass.getRuntime(), superClass.getRuntime().getClass("Class"), superClass, parentCRef, name);
 
         assert name != null;
         assert builtinClass != null;
@@ -70,10 +71,10 @@ public class ObjectMetaClass extends AbstractMetaClass {
 
         this.builtinClass = builtinClass;
 
-        makeMetaClass(superClass.getMetaClass(), superClass.getRuntime().getCurrentContext().getRubyClass());
+        makeMetaClass(superClass.getMetaClass(), getCRef());
         inheritedBy(superClass);
 
-        parentModule.setConstant(name, this);
+        ((RubyModule)parentCRef.getValue()).setConstant(name, this);
     }
     
     protected class ObjectMeta extends Meta {

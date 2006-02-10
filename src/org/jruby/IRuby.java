@@ -24,6 +24,7 @@ import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadService;
+import org.jruby.util.collections.SinglyLinkedList;
 
 public interface IRuby {
 
@@ -76,15 +77,14 @@ public interface IRuby {
 	 */
 	public RubyClass defineClass(String name, RubyClass superClass);
 
-	public RubyClass defineClassUnder(String name, RubyClass superClass,
-			RubyModule parentModule);
+	public RubyClass defineClassUnder(String name, RubyClass superClass, SinglyLinkedList parentCRef);
 
 	/** rb_define_module / rb_define_module_id
 	 *
 	 */
 	public RubyModule defineModule(String name);
 
-	public RubyModule defineModuleUnder(String name, RubyModule parentModule);
+	public RubyModule defineModuleUnder(String name, SinglyLinkedList parentCRef);
 
 	/**
 	 * In the current context, get the named module. If it doesn't exist a
@@ -247,7 +247,9 @@ public interface IRuby {
 
 	public RubyNumeric newNumeric();
 
-	public RubyProc newProc();
+    public RubyProc newProc();
+
+    public RubyBinding newBinding();
 
 	public RubyString newString(String string);
 

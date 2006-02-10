@@ -12,26 +12,27 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.collections.SinglyLinkedList;
 
 public class ModuleMetaClass extends ObjectMetaClass {
 	public ModuleMetaClass(IRuby runtime, RubyClass superClass) {
-		super(runtime, null, superClass, runtime.getObject(), "Module", RubyModule.class);
+		super(runtime, null, superClass, runtime.getObject().getCRef(), "Module", RubyModule.class);
 	}
 
     public ModuleMetaClass(IRuby runtime) {
         super("Module", RubyModule.class, runtime.getObject());
     }
     
-	public ModuleMetaClass(String name, RubyClass superClass, RubyModule parentModule) {
-		super(name, RubyModule.class, superClass, parentModule);
+	public ModuleMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
+		super(name, RubyModule.class, superClass, parentCRef);
 	}
 	
 	protected ModuleMetaClass(String name, Class builtinClass, RubyClass superClass) {
 		super(name, builtinClass, superClass);
 	}
 	
-	protected ModuleMetaClass(String name, Class builtinClass, RubyClass superClass, RubyModule parentModule) {
-		super(name, builtinClass, superClass, parentModule);
+	protected ModuleMetaClass(String name, Class builtinClass, RubyClass superClass, SinglyLinkedList parentCRef) {
+		super(name, builtinClass, superClass, parentCRef);
 	}
 
 	protected class ModuleMeta extends Meta {
@@ -97,8 +98,8 @@ public class ModuleMetaClass extends ObjectMetaClass {
 		return new ModuleMeta();
 	}
 	
-	public RubyClass newSubClass(String name, RubyModule parent) {
-		return new ModuleMetaClass(name, this, parent);
+	public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
+		return new ModuleMetaClass(name, this, parentCRef);
 	}
 
 	protected IRubyObject allocateObject() {

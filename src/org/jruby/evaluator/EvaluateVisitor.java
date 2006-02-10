@@ -439,7 +439,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class ConstDeclNodeVisitor2 implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		ConstDeclNode iVisited = (ConstDeclNode)ctx;
-    		state.getThreadContext().getRubyClass().setConstant(iVisited.getName(), state.getResult());
+    		((RubyModule)state.getThreadContext().peekCRef().getValue()).setConstant(iVisited.getName(), state.getResult());
     	}
     }
     private static final ConstDeclNodeVisitor2 constDeclNodeVisitor2 = new ConstDeclNodeVisitor2();
@@ -650,7 +650,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		Colon2Node iVisited = (Colon2Node)ctx;
             if (state.getResult() instanceof RubyModule) {
-                state.setResult(((RubyModule) state.getResult()).getConstantAtOrConstantMissing(iVisited.getName()));
+                state.setResult(((RubyModule) state.getResult()).getConstantFrom(iVisited.getName()));
             } else {
                 state.setResult(state.getResult().callMethod(iVisited.getName()));
             }
@@ -666,7 +666,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             // rule in grammar (it is convenient to think of them as the same thing
             // at a grammar level even though evaluation is).
             if (leftNode == null) {
-                state.setResult(state.runtime.getObject().getConstant(iVisited.getName()));
+                state.setResult(state.runtime.getObject().getConstantFrom(iVisited.getName()));
             } else {
             	state.clearResult();
             	state.addInstruction(ctx, colon2NodeVisitor1);
@@ -680,7 +680,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class Colon3NodeVisitor implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		Colon3Node iVisited = (Colon3Node)ctx;
-            state.setResult(state.runtime.getObject().getConstant(iVisited.getName()));
+            state.setResult(state.runtime.getObject().getConstantFrom(iVisited.getName()));
     	}
     }
     private static final Colon3NodeVisitor colon3NodeVisitor = new Colon3NodeVisitor();
@@ -689,7 +689,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class ConstNodeVisitor implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		ConstNode iVisited = (ConstNode)ctx;
-            state.setResult(state.getThreadContext().getRubyClass().getConstant(iVisited.getName()));
+            state.setResult(state.getThreadContext().getConstant(iVisited.getName()));
     	}
     }
     private static final ConstNodeVisitor constNodeVisitor = new ConstNodeVisitor();
@@ -875,6 +875,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		DefnNode iVisited = (DefnNode)ctx;
             RubyModule containingClass = state.getThreadContext().getRubyClass();
+            
             if (containingClass == null) {
                 throw state.runtime.newTypeError("No class to add method.");
             }
@@ -894,7 +895,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             DefaultMethod newMethod = new DefaultMethod(containingClass, iVisited.getBodyNode(),
                                                         (ArgsNode) iVisited.getArgsNode(),
                                                         visibility,
-    													state.getThreadContext().getRubyClass());
+                                                        state.getThreadContext().peekCRef());
             
             iVisited.getBodyNode().accept(new CreateJumpTargetVisitor(newMethod));
             
@@ -946,7 +947,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             DefaultMethod newMethod = new DefaultMethod(rubyClass, iVisited.getBodyNode(),
                                                         (ArgsNode) iVisited.getArgsNode(),
                                                         Visibility.PUBLIC,
-    													state.getThreadContext().getRubyClass());
+    													state.getThreadContext().peekCRef());
 
             iVisited.getBodyNode().accept(new CreateJumpTargetVisitor(newMethod));
 

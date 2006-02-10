@@ -11,6 +11,7 @@ import java.util.Random;
 
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBinding;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
@@ -39,6 +40,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadService;
+import org.jruby.util.collections.SinglyLinkedList;
 
 public class BaseMockRuby implements IRuby {
 
@@ -83,7 +85,7 @@ public class BaseMockRuby implements IRuby {
 	}
 
 	public RubyClass defineClassUnder(String name, RubyClass superClass,
-			RubyModule parentModule) {
+            SinglyLinkedList parentCRef) {
 		throw new MockException();
 	}
 
@@ -91,7 +93,7 @@ public class BaseMockRuby implements IRuby {
 		throw new MockException();
 	}
 
-	public RubyModule defineModuleUnder(String name, RubyModule parentModule) {
+	public RubyModule defineModuleUnder(String name, SinglyLinkedList parentCRef) {
 		throw new MockException();
 	}
 
@@ -351,13 +353,18 @@ public class BaseMockRuby implements IRuby {
 
 	public RubyNumeric newNumeric() {
 		throw new MockException();
-		
-	}
 
-	public RubyProc newProc() {
-		throw new MockException();
-		
-	}
+    }
+
+    public RubyProc newProc() {
+        throw new MockException();
+        
+    }
+
+    public RubyBinding newBinding() {
+        throw new MockException();
+        
+    }
 
 	public RubyString newString(String string) {
 		throw new MockException();

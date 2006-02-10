@@ -39,6 +39,7 @@ import java.util.List;
 import org.jruby.IRuby;
 import org.jruby.IncludedModuleWrapper;
 import org.jruby.RubyArray;
+import org.jruby.RubyBinding;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyThread;
@@ -53,6 +54,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.SourcePositionFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.UnsynchronizedStack;
+import org.jruby.util.collections.SinglyLinkedList;
 
 /**
  * @author jpetersen
@@ -69,6 +71,7 @@ public class ThreadContext {
 	
     private UnsynchronizedStack frameStack;
     private UnsynchronizedStack iterStack;
+    private UnsynchronizedStack crefStack;
 
     private RubyModule wrapper;
 
@@ -85,6 +88,7 @@ public class ThreadContext {
         this.frameStack = new UnsynchronizedStack();
         this.iterStack = new UnsynchronizedStack();
         this.parentStack = new UnsynchronizedStack();
+        this.crefStack = new UnsynchronizedStack();
 
         pushDynamicVars();
     }
@@ -193,6 +197,10 @@ public class ThreadContext {
         return size <= 1 ? null : (Frame) frameStack.get(size - 2);
     }
     
+    public int getFrameCount() {
+        return frameStack.size();
+    }
+    
     public Iter popIter() {
         return (Iter) iterStack.pop();
     }
@@ -257,7 +265,8 @@ public class ThreadContext {
 
             // Modules do not directly inherit Object so we have hacks like this
             if (superClass == null) {
-            	superClass = runtime.getObject();
+                // TODO cnutter: I believe modules, the only ones here to have no superclasses, should have Module as their superclass
+            	superClass = runtime.getClass("Module");
             }
             return frame.getSelf().callMethod(superClass, frame.getLastFunc(),
                                    args, CallType.SUPER);
@@ -283,7 +292,9 @@ public class ThreadContext {
         Block currentBlock = preYield(klass);
         // block is executed under its own self, so save the old one (use a stack?)
         IRubyObject oldSelf = getCurrentFrame().getEvalState().getSelf();
-            
+
+        setCRef(currentBlock.getCRef());
+
         try {
             if (klass == null) {
                 self = currentBlock.getSelf();               
@@ -349,6 +360,7 @@ public class ThreadContext {
         	}
         } finally {
             getCurrentFrame().getEvalState().setSelf(oldSelf);
+            unsetCRef();
             postYield(currentBlock);
         }
     }
@@ -431,6 +443,45 @@ public class ThreadContext {
         getThread().pollThreadEvents();
     }
     
+    public SinglyLinkedList peekCRef() {
+        return (SinglyLinkedList)crefStack.peek();
+    }
+    
+    public void setCRef(SinglyLinkedList newCRef) {
+        crefStack.push(newCRef);
+    }
+    
+    public void unsetCRef() {
+        crefStack.pop();
+    }
+    
+    public SinglyLinkedList pushCRef(RubyModule newModule) {
+        if (crefStack.isEmpty()) {
+            crefStack.push(new SinglyLinkedList(newModule, null));
+        } else {
+            crefStack.push(new SinglyLinkedList(newModule, (SinglyLinkedList)crefStack.pop()));
+        }
+        
+        return (SinglyLinkedList)peekCRef();
+    }
+    
+    public RubyModule popCRef() {
+        if (crefStack.isEmpty()) {
+            Thread.dumpStack();
+            return null;
+        }
+        
+        RubyModule module = (RubyModule)peekCRef().getValue();
+        
+        SinglyLinkedList next = ((SinglyLinkedList)crefStack.pop()).getNext();
+        
+        if (next != null) {
+            crefStack.push(next);
+        }
+        
+        return module;
+    }
+
     public void dumpRubyClasses() {
         for (int i = parentStack.size() - 1; i >= 0; i--) {
             System.out.println("parent: " + parentStack.get(i));
@@ -506,6 +557,33 @@ public class ThreadContext {
         iterStack.pop();
     }
 
+    public IRubyObject getConstant(String name) {
+        //RubyModule self = state.threadContext.getRubyClass();
+        SinglyLinkedList cbase = peekCRef();
+        IRubyObject result = null;
+        
+        // flipped from while to do to search current class first
+        do {
+          RubyModule klass = (RubyModule) cbase.getValue();
+          
+          // Not sure how this can happen
+          //if (NIL_P(klass)) return rb_const_get(CLASS_OF(self), id);
+          result = klass.getConstantAt(name);
+          if (result == null) {
+              if (runtime.getLoadService().autoload(name) != null) {
+                  continue;
+              }
+          } else {
+              return result;
+          }
+          cbase = cbase.getNext();
+        } while (cbase != null);
+
+        
+        //System.out.println("CREF is " + state.threadContext.getCRef().getValue());  
+        return ((RubyModule) peekCRef().getValue()).getConstant(name);
+    }
+
     private void addBackTraceElement(RubyArray backtrace, Frame frame, Frame previousFrame) {
         StringBuffer sb = new StringBuffer(100);
         ISourcePosition position = frame.getPosition();
@@ -556,6 +634,7 @@ public class ThreadContext {
     }
 
     public void preClassEval(List localNames, RubyModule type) {
+        pushCRef(type);
         pushRubyClass(type); 
         pushFrameCopy();
         getCurrentFrame().newScope(localNames);
@@ -563,6 +642,7 @@ public class ThreadContext {
     }
     
     public void postClassEval() {
+        popCRef();
         popDynamicVars();
         popRubyClass();
         popFrame();
@@ -587,7 +667,7 @@ public class ThreadContext {
     }
 
     public void preMethodCall(RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
-        pushRubyClass(implementationClass.parentModule);
+        pushRubyClass((RubyModule)implementationClass.getCRef().getValue());
         pushIter(getCurrentIter().isPre() ? Iter.ITER_CUR : Iter.ITER_NOT);
         pushFrame(recv, args, name, noSuper ? null : implementationClass);
     }
@@ -598,12 +678,14 @@ public class ThreadContext {
         popRubyClass();
     }
     
-    public void preDefMethodInternalCall(RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+    public void preDefMethodInternalCall(IRubyObject recv, String name, IRubyObject[] args, boolean noSuper, SinglyLinkedList cref) {
+        RubyModule implementationClass = (RubyModule)cref.getValue();
+        setCRef(cref);
         pushIter(getCurrentIter().isPre() ? Iter.ITER_CUR : Iter.ITER_NOT);
         pushFrame(recv, args, name, noSuper ? null : implementationClass);
         getCurrentFrame().newScope(null);
         pushDynamicVars();
-        pushRubyClass(implementationClass); 
+        pushRubyClass(implementationClass);
     }
     
     public void postDefMethodInternalCall() {
@@ -611,12 +693,13 @@ public class ThreadContext {
         popDynamicVars();
         popFrame();
         popIter();
+        unsetCRef();
     }
     
     // NEW! Push a scope into the frame, since this is now required to use it
     // XXX: This is screwy...apparently Ruby runs internally-implemented methods in their own frames but in the *caller's* scope
     public void preReflectedMethodInternalCall(RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
-        pushRubyClass(implementationClass.parentModule);
+        pushRubyClass((RubyModule)implementationClass.getCRef().getValue());
         pushIter(getCurrentIter().isPre() ? Iter.ITER_CUR : Iter.ITER_NOT);
         pushFrame(recv, args, name, noSuper ? null : implementationClass);
         getCurrentFrame().setScope(getPreviousFrame().getScope());
@@ -632,7 +715,7 @@ public class ThreadContext {
     // XXX: This is screwy...apparently Ruby runs internally-implemented methods in their own frames but in the *caller's* scope
     // XXX: Copied from above when DirectInvocationMethods were seen to be missing scope. They MAY work with their own scopes, have not tried.
     public void preDirectInvokeMethodInternalCall(RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
-        pushRubyClass(implementationClass.parentModule);
+        pushRubyClass((RubyModule)implementationClass.getCRef().getValue());
         pushIter(getCurrentIter().isPre() ? Iter.ITER_CUR : Iter.ITER_NOT);
         pushFrame(recv, args, name, noSuper ? null : implementationClass);
         getCurrentFrame().setScope(getPreviousFrame().getScope());
@@ -656,6 +739,7 @@ public class ThreadContext {
         pushRubyClass(rubyClass);
         pushFrame(self, IRubyObject.NULL_ARRAY, null, null);
         getCurrentFrame().newScope(null);
+        setCRef(rubyClass.getCRef());
     }
     
     public void postNodeEval(RubyModule newWrapper) {
@@ -663,6 +747,7 @@ public class ThreadContext {
         popRubyClass();
         setWrapper(newWrapper);
         popDynamicVars();
+        unsetCRef();
     }
     
     // XXX: Again, screwy evaling under previous frame's scope
@@ -670,6 +755,7 @@ public class ThreadContext {
         Frame frame = getCurrentFrame();
         
         pushRubyClass(executeUnderClass);
+        setCRef(executeUnderClass.getCRef());
         pushFrame(null, frame.getArgs(), frame.getLastFunc(), frame.getLastClass());
         getCurrentFrame().setScope(getPreviousFrame().getScope());
     }
@@ -677,6 +763,7 @@ public class ThreadContext {
     public void postExecuteUnder() {
         popFrame();
         popRubyClass();
+        unsetCRef();
     }
     
     public void preMproc() {
@@ -792,6 +879,29 @@ public class ThreadContext {
         frameStack.pop();
         
         blockStack.push(currentBlock);
+        popRubyClass();
+    }
+
+    public void preEvalWithBinding(RubyBinding binding) {
+        Block bindingBlock = binding.getBlock();
+
+        pushFrame(bindingBlock.getFrame());
+
+        getCurrentFrame().setScope(bindingBlock.getScope());
+
+        dynamicVarsStack.push(bindingBlock.getDynamicVariables());
+
+        pushRubyClass(bindingBlock.getKlass()); 
+
+        iterStack.push(bindingBlock.getIter());
+    }
+
+    public void postEvalWithBinding() {
+        iterStack.pop();
+        dynamicVarsStack.pop();
+        frameStack.pop();
+        
+        //blockStack.push(currentBlock);
         popRubyClass();
     }
 }
