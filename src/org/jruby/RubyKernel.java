@@ -72,7 +72,7 @@ public class RubyKernel {
         module.defineModuleFunction("at_exit", callbackFactory.getSingletonMethod("at_exit"));
         module.defineModuleFunction("autoload", callbackFactory.getSingletonMethod("autoload", IRubyObject.class, IRubyObject.class));
         // TODO: Implement Kernel#autoload?
-        // TODO: Implement Kernel#binding
+        module.defineModuleFunction("binding", callbackFactory.getSingletonMethod("binding"));
         module.defineModuleFunction("block_given?", callbackFactory.getSingletonMethod("block_given"));
         // TODO: Implement Kernel#callcc
         module.defineModuleFunction("caller", callbackFactory.getOptSingletonMethod("caller"));
@@ -459,6 +459,10 @@ public class RubyKernel {
         return localVariables;
     }
 
+    public static RubyBinding binding(IRubyObject recv) {
+        return recv.getRuntime().newBinding();
+    }
+
     public static RubyBoolean block_given(IRubyObject recv) {
         return recv.getRuntime().newBoolean(recv.getRuntime().getCurrentContext().isFBlockGiven());
     }
@@ -608,8 +612,7 @@ public class RubyKernel {
     }
 
     public static IRubyObject trap(IRubyObject recv, IRubyObject[] args) {
-        // TODO: We may be able to fake some signal stuff, but obviously there's not much we can do
-        // FIXME: We could possibly register a shutdown hook for partial SIGINT support.
+        // FIXME: We can probably fake some basic signals, but obviously can't do everything. For now, stub.
         return recv.getRuntime().getNil();
     }
 
