@@ -38,8 +38,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Reader;
-import java.util.ArrayList;
-
 import org.ablaf.ast.IAstEncoder;
 import org.jruby.ast.util.RubyAstMarshal;
 import org.jruby.common.NullWarnings;
@@ -72,7 +70,7 @@ public class ASTSerializer {
     public static void serialize(File input, IAstEncoder encoder) throws IOException {
         Reader reader = new BufferedReader(new FileReader(input));
         RubyParserConfiguration config = new RubyParserConfiguration();
-        config.setLocalVariables(new ArrayList());
+        config.setLocalVariables(new String[0]);
 
         DefaultRubyParser parser = null;
         RubyParserResult result = null;

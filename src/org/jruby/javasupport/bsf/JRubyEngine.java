@@ -67,7 +67,9 @@ public class JRubyEngine extends BSFEngineImpl {
         ThreadContext threadContext = runtime.getCurrentContext();
         try {
             // add a new method conext
-            threadContext.preBsfApply(paramNames);
+            String[] names = new String[paramNames.size()];
+            paramNames.toArray(names);
+            threadContext.preBsfApply(names);
             Scope scope = threadContext.getCurrentScope();
 
             // set global variables

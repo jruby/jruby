@@ -588,10 +588,12 @@ public class ParserSupport {
     public void initTopLocalVariables() {
         localNamesStack.push(new LocalNamesElement());
 
-        List names = configuration.getLocalVariables();
-        if (names != null && names.size() > 0) {
+        String[] names = configuration.getLocalVariables();
+        if (names != null && names.length > 0) {
 			LocalNamesElement localNames = (LocalNamesElement) localNamesStack.peek();
-            localNames.setNames(new ArrayList(names));
+            List namesList = new ArrayList(names.length);
+            for (int i = 0; i < names.length; i++) namesList.add(names[i]);
+            localNames.setNames(namesList);
         }
     }
 

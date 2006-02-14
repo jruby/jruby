@@ -30,8 +30,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import java.util.List;
-
 import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.ast.Node;
@@ -157,7 +155,7 @@ public class Frame {
         this.self = self;
     }
     
-    void newScope(List localNames) {
+    void newScope(String[] localNames) {
         setScope(new Scope(runtime, localNames));
     }
     

@@ -51,10 +51,10 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class ScopeNode extends Node {
     static final long serialVersionUID = 3694868125861223886L;
 
-    private final List localNames;
+    private final String[] localNames;
     private final Node bodyNode;
 
-    public ScopeNode(ISourcePosition position, List table, Node bodyNode) {
+    public ScopeNode(ISourcePosition position, String[] table, Node bodyNode) {
         super(position);
         this.localNames =  table;
         this.bodyNode = bodyNode;
@@ -80,7 +80,7 @@ public class ScopeNode extends Node {
      * Gets the localNames.
      * @return Returns a List
      */
-    public List getLocalNames() {
+    public String[] getLocalNames() {
         return localNames;
     }
     

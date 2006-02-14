@@ -29,16 +29,15 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.parser;
 
-import java.util.List;
 
 public class RubyParserConfiguration {
-    private List localVariables;
+    private String[] localVariables;
 
     /**
      * Gets the localVariables.
      * @return Returns a List
      */
-    public List getLocalVariables() {
+    public String[] getLocalVariables() {
         return localVariables;
     }
 
@@ -46,7 +45,7 @@ public class RubyParserConfiguration {
      * Sets the localVariables.
      * @param localVariables The localVariables to set
      */
-    public void setLocalVariables(List localVariables) {
+    public void setLocalVariables(String[] localVariables) {
         this.localVariables = localVariables;
     }
 }

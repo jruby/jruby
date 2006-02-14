@@ -102,10 +102,12 @@ public class Parser {
     private void expandLocalVariables(List localVariables) {
         int oldSize = 0;
         if (runtime.getCurrentContext().getCurrentScope().getLocalNames() != null) {
-            oldSize = runtime.getCurrentContext().getCurrentScope().getLocalNames().size();
+            oldSize = runtime.getCurrentContext().getCurrentScope().getLocalNames().length;
         }
         List newNames = localVariables.subList(oldSize, localVariables.size());
-        runtime.getCurrentContext().getCurrentScope().addLocalVariables(newNames);
+        String[] newNamesArray = new String[newNames.size()];
+        newNames.toArray(newNamesArray);
+        runtime.getCurrentContext().getCurrentScope().addLocalVariables(newNamesArray);
     }
 
     private boolean hasNewLocalVariables(RubyParserResult result) {
@@ -115,7 +117,7 @@ public class Parser {
         }
         int oldSize = 0;
         if (runtime.getCurrentContext().getCurrentScope().hasLocalVariables()) {
-            oldSize = runtime.getCurrentContext().getCurrentScope().getLocalNames().size();
+            oldSize = runtime.getCurrentContext().getCurrentScope().getLocalNames().length;
         }
         return newSize > oldSize;
     }

@@ -34,7 +34,6 @@ package org.jruby.runtime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
 
 import org.jruby.IRuby;
 import org.jruby.IncludedModuleWrapper;
@@ -633,7 +632,7 @@ public class ThreadContext {
         pushRubyClass(runtime.getObject());
     }
 
-    public void preClassEval(List localNames, RubyModule type) {
+    public void preClassEval(String[] localNames, RubyModule type) {
         pushCRef(type);
         pushRubyClass(type); 
         pushFrameCopy();
@@ -648,14 +647,14 @@ public class ThreadContext {
         popFrame();
     }
     
-    public void preScopedBody(List localNames) {
+    public void preScopedBody(String[] localNames) {
         getCurrentFrame().newScope(localNames);
     }
     
     public void postScopedBody() {
     }
     
-    public void preBsfApply(List localNames) {
+    public void preBsfApply(String[] localNames) {
         pushFrame();
         pushDynamicVars();
         getCurrentFrame().newScope(localNames);

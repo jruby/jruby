@@ -442,8 +442,8 @@ public class RubyKernel {
         RubyArray localVariables = runtime.newArray();
 
         if (runtime.getCurrentContext().getCurrentScope().getLocalNames() != null) {
-            for (int i = 2; i < runtime.getCurrentContext().getCurrentScope().getLocalNames().size(); i++) {
-				String variableName = (String) runtime.getCurrentContext().getCurrentScope().getLocalNames().get(i);
+            for (int i = 2; i < runtime.getCurrentContext().getCurrentScope().getLocalNames().length; i++) {
+				String variableName = (String) runtime.getCurrentContext().getCurrentScope().getLocalNames()[i];
                 if (variableName != null) {
                     localVariables.append(runtime.newString(variableName));
                 }

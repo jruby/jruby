@@ -29,11 +29,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
 import org.jruby.IRuby;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -55,8 +51,10 @@ public class Scope {
 
     private IRubyObject rubyNil;
 
-    private List localNames = null;
-	private List localValues = null;
+    //private List localNames = null;
+	//private List localValues = null;
+    private String[] localNames;
+    private IRubyObject[] localValues;
 
     private Visibility visibility = Visibility.PUBLIC; // Constants.SCOPE_PRIVATE; ? // Same as default for top level...just in case
 
@@ -64,7 +62,7 @@ public class Scope {
         this.rubyNil = runtime.getNil();
     }
 	
-	public Scope(IRuby runtime, List names) {
+	public Scope(IRuby runtime, String[] names) {
 		this(runtime);
 		
 		resetLocalVariables(names);
@@ -74,7 +72,7 @@ public class Scope {
      * Gets the localNames.
      * @return Returns a NameList
      */
-    public List getLocalNames() {
+    public String[] getLocalNames() {
         return localNames;
     }
 
@@ -82,38 +80,53 @@ public class Scope {
      * Sets the localNames.
      * @param someLocalNames The localNames to set
      */
-    public void resetLocalVariables(List someLocalNames) {
-        if (someLocalNames == null || someLocalNames.isEmpty()) {
+    public void resetLocalVariables(String[] someLocalNames) {
+        if (someLocalNames == null || someLocalNames.length == 0) {
             this.localNames = null;
             this.localValues = null;
         } else {
             this.localNames = someLocalNames;
-            this.localValues = new ArrayList(Collections.nCopies(someLocalNames.size(), rubyNil));
+            this.localValues = new IRubyObject[someLocalNames.length];
+            Arrays.fill(localValues, rubyNil);
         }
     }
 
-    public void addLocalVariables(List someLocalNames) {
-        if (this.localNames == null || this.localNames.isEmpty()) {
-            this.localNames = new ArrayList(someLocalNames.size());
-            this.localValues = new ArrayList(someLocalNames.size());
+    public void addLocalVariables(String[] someLocalNames) {
+        if (this.localNames == null || this.localNames.length == 0) {
+            this.localNames = someLocalNames;
+            this.localValues = new IRubyObject[someLocalNames.length];
+            Arrays.fill(localValues, rubyNil);
+            
+            System.arraycopy(someLocalNames, 0, localNames, 0, someLocalNames.length);
+        } else {
+            String[] newLocalNames = new String[localNames.length + someLocalNames.length];
+            
+            System.arraycopy(localNames, 0, newLocalNames, 0, localNames.length);
+            System.arraycopy(someLocalNames, 0, newLocalNames, localNames.length, someLocalNames.length);
+            
+            IRubyObject[] newLocalValues = new IRubyObject[newLocalNames.length];
+            
+            System.arraycopy(localValues, 0, newLocalValues, 0, localValues.length);
+            Arrays.fill(newLocalValues, localValues.length, newLocalValues.length, rubyNil);
+            
+            this.localNames = newLocalNames;
+            this.localValues = newLocalValues;
         }
-        this.localNames.addAll(someLocalNames);
-        this.localValues.addAll(Collections.nCopies(someLocalNames.size(), rubyNil));
     }
 
     public boolean hasLocalVariables() {
         if (localNames == null) {
             return false;
         }
-        return ! localNames.isEmpty();
+        return localNames.length != 0;
     }
 
 	public IRubyObject getValue(int count) {
-	    return (IRubyObject)localValues.get(count);
+	    return localValues[count];
 	}
 
 	public void setValue(int count, IRubyObject value) {
-	    localValues.set(count, value);
+	    localValues[count] = value;
 	}
 
     /**
@@ -137,7 +150,7 @@ public class Scope {
 
     public void setLastLine(IRubyObject value) {
         if (! hasLocalVariables()) {
-            resetLocalVariables(new ArrayList(Arrays.asList(SPECIAL_VARIABLE_NAMES)));
+            resetLocalVariables(SPECIAL_VARIABLE_NAMES);
         }
         setValue(LASTLINE_INDEX, value);
     }
@@ -151,7 +164,7 @@ public class Scope {
 
     void setBackref(IRubyObject match) {
         if (! hasLocalVariables()) {
-            resetLocalVariables(new ArrayList(Arrays.asList(SPECIAL_VARIABLE_NAMES)));
+            resetLocalVariables(SPECIAL_VARIABLE_NAMES);
         }
         setValue(BACKREF_INDEX, match);
     }

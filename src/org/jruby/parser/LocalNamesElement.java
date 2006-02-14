@@ -38,6 +38,7 @@ import java.util.List;
  * @author  jpetersen
  */
 public class LocalNamesElement {
+    private static final String[] EMPTY_NAMES = new String[0];
     private List localNames;
     private int blockLevel;
 
@@ -122,6 +123,17 @@ public class LocalNamesElement {
      */
     public List getNames() {
         return localNames != null ? localNames : Collections.EMPTY_LIST;
+    }
+    
+    public String[] getNamesArray() {
+        if (localNames == null) {
+            return EMPTY_NAMES;
+        }
+        
+        String[] names = new String[localNames.size()];
+        localNames.toArray(names);
+        
+        return names;
     }
 
     /**
