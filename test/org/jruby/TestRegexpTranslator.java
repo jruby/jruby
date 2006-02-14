@@ -31,7 +31,7 @@ public class TestRegexpTranslator extends TestCase {
 		verifyTranslation("\\0177", 	"\\177",false);
 		verifyTranslation("\\0277", 	"\\277",false);
 		verifyTranslation("\\0377", 	"\\377",false);
-		verifyTranslation("\\477", 		"\\477",false);
+		verifyTranslation("\\0477", 		"\\477",false);
 	}
 
 	private void verifyTranslation(String expected, String rubyRE, boolean withComments) {

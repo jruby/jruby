@@ -53,6 +53,7 @@ testRedefine.rb
 testDupCloneTaintFreeze.rb
 testProc.rb
 testNesting.rb
+testXML.rb
 
 # MRI Ruby tests (from sample/test.rb in Matz's Ruby Interpreter):
 
