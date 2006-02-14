@@ -754,7 +754,7 @@ public class ThreadContext {
         Frame frame = getCurrentFrame();
         
         pushRubyClass(executeUnderClass);
-        setCRef(executeUnderClass.getCRef());
+        pushCRef(executeUnderClass);
         pushFrame(null, frame.getArgs(), frame.getLastFunc(), frame.getLastClass());
         getCurrentFrame().setScope(getPreviousFrame().getScope());
     }
@@ -762,7 +762,7 @@ public class ThreadContext {
     public void postExecuteUnder() {
         popFrame();
         popRubyClass();
-        unsetCRef();
+        popCRef();
     }
     
     public void preMproc() {

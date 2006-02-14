@@ -135,11 +135,11 @@ public class ModuleMetaClass extends ObjectMetaClass {
    public RubyArray nesting() {
 	   IRuby runtime = getRuntime();
        RubyModule object = runtime.getObject();
-	   RubyModule receiver = runtime.getCurrentContext().getLastRubyClass();
+       SinglyLinkedList base = runtime.getCurrentContext().peekCRef();
        RubyArray result = runtime.newArray();
        
-       for (RubyModule current = receiver; current != object; current = current.getParent()) {
-           result.append(current);
+       for (SinglyLinkedList current = base; current.getValue() != object; current = current.getNext()) {
+           result.append((RubyModule)current.getValue());
        }
        
        return result;
