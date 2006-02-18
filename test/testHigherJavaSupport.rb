@@ -207,4 +207,6 @@ if defined? Java
   }
   
   test_equal(true, Foo::ArrayList.new.foo)
+  
+  test_exception(ConstantAlreadyExistsError) { include_class 'java.lang.String' }
 end

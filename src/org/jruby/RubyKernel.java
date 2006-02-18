@@ -84,7 +84,7 @@ public class RubyKernel {
         module.defineModuleFunction("eval", callbackFactory.getOptSingletonMethod("eval"));
         // TODO: Implement Kernel#exec
         module.defineModuleFunction("exit", callbackFactory.getOptSingletonMethod("exit"));
-        // TODO: Implement Kernel#exit!
+        module.defineModuleFunction("exit!", callbackFactory.getOptSingletonMethod("exit_bang"));
         module.defineModuleFunction("fail", callbackFactory.getOptSingletonMethod("raise"));
         // TODO: Implement Kernel#fork
         module.defineModuleFunction("format", callbackFactory.getOptSingletonMethod("sprintf"));
@@ -401,6 +401,7 @@ public class RubyKernel {
         		Math.round((System.currentTimeMillis() - startTime) / 1000.0));
     }
 
+    // FIXME: Add at_exit and finalizers to exit, then make exit_bang not call those.
     public static IRubyObject exit(IRubyObject recv, IRubyObject[] args) {
         recv.getRuntime().secure(4);
 
@@ -415,6 +416,10 @@ public class RubyKernel {
         }
 
         throw recv.getRuntime().newSystemExit(status);
+    }
+
+    public static IRubyObject exit_bang(IRubyObject recv, IRubyObject[] args) {
+        return exit(recv, args);
     }
 
 
@@ -481,57 +486,44 @@ public class RubyKernel {
     }
 
     public static IRubyObject raise(IRubyObject recv, IRubyObject[] args) {
-        // FIXME  special case in ruby
-        // recv.checkArgumentCount(args, 0, 2); 
+        recv.checkArgumentCount(args, 0, 3); 
         IRuby runtime = recv.getRuntime();
-        RubyString string = null;
-        RubyException excptn = null;
-        RaiseException re = null;
-        
-        switch (args.length) {
-        case 0 :
-            IRubyObject defaultException = runtime.getGlobalVariables().get("$!");
-            if (defaultException.isNil()) {
-                re = new RaiseException(runtime, runtime.getClass("RuntimeError"), "", false);
-            } else {
-            	re = new RaiseException((RubyException) defaultException);
+
+        if (args.length == 0) {
+            IRubyObject lastException = runtime.getGlobalVariables().get("$!");
+            if (lastException.isNil()) {
+                throw new RaiseException(runtime, runtime.getClass("RuntimeError"), "", false);
+            } 
+            throw new RaiseException((RubyException) lastException);
+        }
+
+        IRubyObject exception;
+        if (args.length == 1) {
+            if (args[0] instanceof RubyString) {
+                throw new RaiseException(RubyException.newInstance(runtime.getClass("RuntimeError"), args));
             }
-            break;
-        case 1 :
-            if (args[0] instanceof RubyException) {
-                re = new RaiseException((RubyException) args[0]);
-            } else if (args[0] instanceof RubyClass) {
-            	re = new RaiseException(RubyException.newInstance(args[0], new IRubyObject[0]));
-            } else {
-            	re = new RaiseException(RubyException.newInstance(runtime.getClass("RuntimeError"), args));
+            
+            if (!args[0].respondsTo("exception")) {
+                throw runtime.newTypeError("exception class/object expected");
             }
-            break;
-        case 2 :
-            if (args[0] == runtime.getClass("Exception")) {
-                re = new RaiseException((RubyException) args[0].callMethod("exception", args[1]));
-            } else {
-	            string = (RubyString) args[1]; 
-	            re = new RaiseException(new RubyException(runtime, ((RubyClass)args[0]), string.getValue()));
+            exception = args[0].callMethod("exception");
+        } else {
+            if (!args[0].respondsTo("exception")) {
+                throw runtime.newTypeError("exception class/object expected");
             }
-            break;
-        case 3:
-            if (args[0] == runtime.getClass("Exception")) {
-                re = new RaiseException((RubyException) args[0].callMethod("exception", args[1]));
-            } else {
-	            string = (RubyString) args[1];
-	            excptn = new RubyException(runtime, ((RubyClass)args[0]), string.getValue()); 
-	            excptn.set_backtrace(args[2]);
-	            re = new RaiseException(excptn);
-            }
-            break;
-        default :
-            re = runtime.newArgumentError("wrong number of arguments");
+            
+            exception = args[0].callMethod("exception", args[1]);
         }
         
-        // Insert exception to be raised into global var and current thread
-        runtime.getGlobalVariables().set("$!", re.getException());
+        if (!exception.isKindOf(runtime.getClass("Exception"))) {
+            throw runtime.newTypeError("exception object expected");
+        }
         
-        throw re;
+        if (args.length == 3) {
+            ((RubyException) exception).set_backtrace(args[2]);
+        }
+        
+        throw new RaiseException((RubyException) exception);
     }
     
     /**

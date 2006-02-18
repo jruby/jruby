@@ -424,6 +424,9 @@ class Module
   end
 end
 
+class ConstantAlreadyExistsError < RuntimeError
+end
+
 class Object
   def include_class(include_class)
     class_names = include_class.to_a
@@ -437,6 +440,11 @@ class Object
         constant = class_name
       end
 
+	  # Constant already exists...do not let proxy get created
+      if (self.kind_of?(Module) && const_defined?(constant)) || self.class.const_defined?(constant)
+      	raise ConstantAlreadyExistsError.new, "Class #{constant} already exists"
+	  end
+	  
       if (respond_to?(:class_eval, true))
         class_eval("#{constant} = JavaUtilities.get_proxy_class(\"#{full_class_name}\")")
       else
