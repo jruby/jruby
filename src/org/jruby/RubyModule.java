@@ -821,7 +821,7 @@ public class RubyModule extends RubyObject {
             body = args[1];
             newMethod = new ProcMethod(this, (RubyProc)body, visibility);
         } else {
-            throw getRuntime().newTypeError("wrong argument type " + args[0].getType().getName() + " (expected Proc/RubyMethod)");
+            throw getRuntime().newTypeError("wrong argument type " + args[0].getType().getName() + " (expected Proc/Method)");
         }
 
         addMethod(name, newMethod);

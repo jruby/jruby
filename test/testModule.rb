@@ -103,7 +103,7 @@ class C2
   e = test_exception(TypeError) {
     define_method( 'methodNameX', 'badParameter')
   }
-  test_equal('wrong argument type String (expected Proc/RubyMethod)', e.message)
+  test_equal('wrong argument type String (expected Proc/Method)', e.message)
 end
 class C3 < C2
   define_method( 'methodName2', instance_method(:methodName))
