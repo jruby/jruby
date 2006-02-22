@@ -24,9 +24,9 @@ TestModule_Foo.module_eval {||
 }
 test_ok(! defined? abc)
 test_equal(4, TestModule_Foo.new.abc(2))
-test_equal(10, TestModule_Foo::XYZ)
-test_equal(TestModule_Foo, TestModule_Foo::ABC)
-test_equal(testmodule_local_variable, TestModule_Foo::LOCAL1)
+test_equal(10, XYZ)
+test_equal(TestModule_Foo, ABC)
+test_equal(testmodule_local_variable, LOCAL1)
 
 class TestModule2
 end
