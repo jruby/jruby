@@ -96,3 +96,5 @@ stat = File.stat('test');
 test_ok(!stat.file?)
 
 test_ok(File.exist?('test'))
+
+test_ok(File.size?('build.xml'))

@@ -29,7 +29,9 @@
 package org.jruby.runtime.builtin.meta;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.channels.FileChannel;
 
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
@@ -125,7 +127,7 @@ public class FileMetaClass extends IOMetaClass {
 	        // TODO Singleton methods: atime, blockdev?, chardev?, chown, ctime, directory? 
 	        // TODO Singleton methods: executable?, executable_real?, extname, fnmatch, fnmatch?
 	        // TODO Singleton methods: ftype, grpowned?, lchmod, lchown, link, mtime, owned?
-	        // TODO Singleton methods: pipe?, readlink, setgid?, setuid?, size?, socket?, 
+	        // TODO Singleton methods: pipe?, readlink, setgid?, setuid?, socket?, 
 	        // TODO Singleton methods: stat, sticky?, symlink, symlink?, umask, utime
 	
 	        extendObject(runtime.getModule("FileTest"));
@@ -139,6 +141,7 @@ public class FileMetaClass extends IOMetaClass {
 	        defineSingletonMethod("lstat", Arity.singleArgument());
 	        defineSingletonMethod("open", Arity.optional());
 	        defineSingletonMethod("rename", Arity.twoArguments());
+            defineSingletonMethod("size?", Arity.singleArgument(), "size_p");
 			defineSingletonMethod("split", Arity.singleArgument());
 	        defineSingletonMethod("stat", Arity.singleArgument(), "lstat");
 	        defineSingletonMethod("symlink?", Arity.singleArgument(), "symlink_p");
@@ -359,6 +362,26 @@ public class FileMetaClass extends IOMetaClass {
         oldFile.renameTo(new NormalizedFile(newNameString.getValue()));
         
         return RubyFixnum.zero(getRuntime());
+    }
+    
+    public IRubyObject size_p(IRubyObject filename) {
+        long size = 0;
+        
+        try {
+             FileInputStream fis = new FileInputStream(new File(filename.toString()));
+             FileChannel chan = fis.getChannel();
+             size = chan.size();
+             chan.close();
+             fis.close();
+        } catch (IOException ioe) {
+            // missing files or inability to open should just return nil
+        }
+        
+        if (size == 0) {
+            return getRuntime().getNil();
+        }
+        
+        return getRuntime().newFixnum(size);
     }
 	
     public RubyArray split(IRubyObject arg) {
