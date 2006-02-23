@@ -44,3 +44,10 @@ Dir.chdir(save_dir)
 
 # Test unescaped special char that is meant to be used with another (i.e. bogus glob pattern)
 test_equal([], Dir.glob("{"))
+
+# Test that glob expansion of ** works ok with non-patterns as path elements. This used to throw NPE.
+Dir.mkdir("./testDir_2")
+open("./testDir_2/testDir_tmp1", "w").close
+test_equal(['./testDir_2/testDir_tmp1'], Dir.glob('./**/testDir_tmp1'))
+File.delete("./testDir_2/testDir_tmp1")
+Dir.delete("./testDir_2")

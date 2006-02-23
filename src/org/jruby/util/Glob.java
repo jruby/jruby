@@ -151,9 +151,12 @@ public class Glob {
     }
     
     private static Collection getMatchingFiles(final NormalizedFile parent, final String pattern, final boolean isDirectory) {
+        String expandedPattern = glob2Regexp(pattern);
+        if (expandedPattern == null) expandedPattern = pattern;
+        
+        final Pattern p = Pattern.compile(expandedPattern);
+        
     	FileFilter filter = new FileFilter() {
-            Pattern p = Pattern.compile(glob2Regexp(pattern));
-
             public boolean accept(File pathname) {
                 return (pathname.isDirectory() || !isDirectory) && p.matcher(pathname.getName()).matches();
             }
