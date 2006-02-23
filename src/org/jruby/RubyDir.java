@@ -141,7 +141,7 @@ public class RubyDir extends RubyObject {
      */
     public static RubyArray glob(IRubyObject recv, RubyString pat) {
         String pattern = pat.toString();
-        String[] files = new Glob(System.getProperty("user.dir"), pattern).getNames();
+        String[] files = new Glob(NormalizedFile.getFileProperty("user.dir"), pattern).getNames();
         return recv.getRuntime().newArray(JavaUtil.convertJavaArrayToRuby(recv.getRuntime(), files));
     }
 
@@ -157,7 +157,7 @@ public class RubyDir extends RubyObject {
      */
     public static RubyArray entries(IRubyObject recv, RubyString path) {
         if (".".equals(path.toString().trim())) {
-            path = recv.getRuntime().newString(System.getProperty("user.dir"));
+            path = recv.getRuntime().newString(NormalizedFile.getFileProperty("user.dir"));
         }
         
         NormalizedFile directory = new NormalizedFile(path.toString());
@@ -179,7 +179,7 @@ public class RubyDir extends RubyObject {
             (RubyString) args[0].convertToString() : getHomeDirectoryPath(recv); 
         NormalizedFile dir = getDir(recv.getRuntime(), path.toString(), true);
         String realPath = null;
-        String oldCwd = System.getProperty("user.dir");
+        String oldCwd = NormalizedFile.getFileProperty("user.dir");
     
         // We get canonical path to try and flatten the path out.
         // a dir '/subdir/..' should return as '/'
@@ -242,7 +242,7 @@ public class RubyDir extends RubyObject {
 
     /** Returns the current directory. */
     public static RubyString getwd(IRubyObject recv) {
-        return recv.getRuntime().newString(System.getProperty("user.dir"));
+        return recv.getRuntime().newString(NormalizedFile.getFileProperty("user.dir"));
     }
 
     /**

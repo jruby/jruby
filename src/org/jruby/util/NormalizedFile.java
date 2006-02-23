@@ -167,4 +167,10 @@ public class NormalizedFile extends File {
             return smartFiles;
         }
     }
+    
+    public static String getFileProperty(String property) {
+        String value = System.getProperty(property);
+        
+        return value.replace(File.separatorChar, '/');
+    }
 }
