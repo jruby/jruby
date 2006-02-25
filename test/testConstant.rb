@@ -149,3 +149,6 @@ end
 
 test_ok("ok", OutA::InA.new.ok)
 test_ok("ok", OutA::InB::OK)
+
+test_ok("constant", defined? OutA)
+test_equal(nil, defined? OutNonsense)

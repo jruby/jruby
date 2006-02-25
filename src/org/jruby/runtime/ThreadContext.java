@@ -555,6 +555,20 @@ public class ThreadContext {
         blockStack.setCurrent(currentBlock);
         iterStack.pop();
     }
+    
+    public boolean getConstantDefined(String name) {
+        IRubyObject result = null;
+        
+        // flipped from while to do to search current class first
+        for (SinglyLinkedList cbase = peekCRef(); cbase != null; cbase = cbase.getNext()) {
+          result = ((RubyModule) cbase.getValue()).getConstantAt(name);
+          if (result != null || runtime.getLoadService().autoload(name) != null) {
+              return true;
+          }
+        } 
+        
+        return false;
+    }
 
     public IRubyObject getConstant(String name) {
         //RubyModule self = state.threadContext.getRubyClass();
