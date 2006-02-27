@@ -168,4 +168,25 @@ x = []
 x.extend(A::B)
 
 test_ok(x.kind_of?(A::B))
- 
+
+############## test multiple layers of includes
+module ModA
+ def methodA; true; end
+end
+
+module ModB
+ include ModA
+ def methodB; methodA; end
+end
+
+module ModC
+ include ModB
+ def methodC; methodB; end
+end
+
+class ModTest
+ include ModC
+ def test; methodC; end
+end
+
+test_ok(ModTest.new.test)

@@ -59,7 +59,14 @@ public final class IncludedModuleWrapper extends RubyClass {
      * @see org.jruby.RubyModule#newIncludeClass(RubyClass)
      */
     public IncludedModuleWrapper newIncludeClass(RubyClass superClass) {
-        return new IncludedModuleWrapper(getRuntime(), superClass, getDelegate());
+        IncludedModuleWrapper includedModule = new IncludedModuleWrapper(getRuntime(), superClass, getDelegate());
+        
+        // include its parent (and in turn that module's parents)
+        if (getSuperClass() != null) {
+            includedModule.includeModule(getSuperClass());
+        }
+        
+        return includedModule;
     }
 
     public boolean isModule() {
