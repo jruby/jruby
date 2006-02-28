@@ -1892,9 +1892,6 @@ public final class EvaluateVisitor implements NodeVisitor {
                     
             state.addBreakableInstruction(iVisited, untilConditionCheck);
             state.addNodeInstruction(iVisited.getConditionNode());
-            
-            state.addRedoMarker(iVisited.getBodyNode());
-            state.addNodeInstruction(iVisited.getBodyNode());
     	}
     }
     private static final UntilNodeVisitor untilNodeVisitor = new UntilNodeVisitor();

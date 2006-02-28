@@ -27,3 +27,10 @@ end while t > 0
 
 test_ok(2, t) 
 
+# make sure until and while don't fire before condition checking
+
+x = 1
+until true do; x = 2; end
+while false; x = 2; end
+
+test_equal(1, x)
