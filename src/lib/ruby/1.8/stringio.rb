@@ -34,7 +34,9 @@ class StringIO
   end
   def gets(sep="\n")
     i = @string.index(sep, @pos)
-    @string[@pos, i]
+    ret = @string[@pos...i]
+    @pos = i + sep.length
+    ret
   end
   def length() @string.length; end
   def print() @string.print; end
@@ -82,14 +84,14 @@ class StringIO
     end
 
     if str.nil?
-      str = @string[@pos, @pos+length]
+      str = @string[@pos, length]
       str = "" if str.nil?
     else
       rest = @string.length - @pos
       if (length > rest)
         length = rest
       end
-      replace_string_reference_with str, @string[@pos, @pos+length]
+      replace_string_reference_with str, @string[@pos, length]
     end
     if str.nil?
       str = "" if @eof
