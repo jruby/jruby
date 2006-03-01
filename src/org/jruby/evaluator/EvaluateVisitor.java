@@ -418,6 +418,8 @@ public final class EvaluateVisitor implements NodeVisitor {
             je.setPrimaryData(state.getResult());
             je.setSecondaryData(ctx);
             
+            state.setCurrentException(je);
+            
             throw je;
         }
     }
@@ -1099,6 +1101,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                     	if (je.getJumpType() == JumpException.JumpType.RetryJump) {
                     		// do nothing, allow loop to retry
                     	} else {
+                            state.setCurrentException(je);
                     		throw je;
                     	}
                     }
@@ -1109,6 +1112,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 	                
 	                state.setResult(breakValue == null ? state.runtime.getNil() : breakValue);
             	} else {
+                    state.setCurrentException(je);
             		throw je;
             	}
             } finally {
@@ -1278,6 +1282,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                         	if (je.getJumpType() == JumpException.JumpType.RetryJump) {
                         		// allow loop to retry
                         	} else {
+                                state.setCurrentException(je);
                         		throw je;
                         	}
                         } finally {
@@ -1290,6 +1295,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 	
 	                    state.setResult(breakValue == null ? state.runtime.getNil() : breakValue);
                 	} else {
+                        state.setCurrentException(je);
                 		throw je;
                 	}
                 } finally {
@@ -1468,7 +1474,8 @@ public final class EvaluateVisitor implements NodeVisitor {
             
             je.setPrimaryData(state.getResult());
             je.setSecondaryData(ctx);
-            
+
+            state.setCurrentException(je);
             throw je;
         }
     }
@@ -1677,7 +1684,8 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class RetryNodeVisitor implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		JumpException je = new JumpException(JumpException.JumpType.RetryJump);
-    		
+
+            state.setCurrentException(je);
     		throw je;
     	}
     }
@@ -1693,7 +1701,8 @@ public final class EvaluateVisitor implements NodeVisitor {
     		je.setPrimaryData(iVisited.getTarget());
     		je.setSecondaryData(state.getResult());
             je.setTertiaryData(iVisited);
-    		
+
+            state.setCurrentException(je);
     		throw je;
     	}
     }
