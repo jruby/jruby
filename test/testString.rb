@@ -76,3 +76,9 @@ test_equal("HELLO", s.upcase!)
 test_equal(nil, s.upcase!)
 
 test_equal(["cruel", "world"], "cruel world".scan(/\w+/))
+
+# ""[0,0]="foo" is valid
+s = ""
+s[0,0]="foo"
+
+test_equal("foo", s)

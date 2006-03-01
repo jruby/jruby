@@ -768,7 +768,7 @@ public class RubyString extends RubyObject {
 			if (beg < 0) {
 				beg += strLen;
 			}
-			if (beg < 0 || beg >= strLen) {
+            if (beg < 0 || (beg > 0 && beg >= strLen)) {
 				throw getRuntime().newIndexError("string index out of bounds");
 			}
 			if (beg + len > strLen) {
