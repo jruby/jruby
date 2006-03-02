@@ -582,7 +582,7 @@ public class RubyKernel {
         } catch (JumpException je) {
         	if (je.getJumpType() == JumpException.JumpType.ThrowJump) {
 	            if (je.getPrimaryData().equals(tag.asSymbol())) {
-	                return (IRubyObject)je.getTertiaryData();
+	                return (IRubyObject)je.getSecondaryData();
 	            }
         	}
        		throw je;
