@@ -34,6 +34,7 @@ class StringIO
   end
   def gets(sep="\n")
     i = @string.index(sep, @pos)
+    return nil if i.nil?
     ret = @string[@pos...i]
     @pos = i + sep.length
     ret

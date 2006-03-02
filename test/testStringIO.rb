@@ -13,3 +13,7 @@ lines = []
 test_equal(["one", "two", "three"], lines)
 
 File.delete("testStringIO_tmp")
+
+strio = StringIO.new("a")
+strio.gets
+test_equal(nil, strio.gets)
