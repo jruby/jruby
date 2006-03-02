@@ -1888,8 +1888,11 @@ public final class EvaluateVisitor implements NodeVisitor {
                 // re-push body, condition, and check
                 state.addBreakableInstruction(iVisited, this);
                 state.addNodeInstruction(iVisited.getConditionNode());
-                state.addRedoMarker(iVisited.getBodyNode());
-                state.addNodeInstruction(iVisited.getBodyNode());
+                if (iVisited.getBodyNode() != null) {
+                    // FIXME: Hack?...bodynode came up as null for lex method in irb's ruby-lex.rb
+                    state.addRedoMarker(iVisited.getBodyNode());
+                    state.addNodeInstruction(iVisited.getBodyNode());
+                }
             }
             // else loop terminates
         }
