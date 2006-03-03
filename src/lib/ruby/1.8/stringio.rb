@@ -16,7 +16,7 @@ class StringIO
   def close_write() @close_write = true; end
   def closed_write?() @close_write; end
 
-  def each(sep="\n")
+  def each(sep=$/)
     line = gets
     while line != nil
       yield(line)
@@ -32,12 +32,15 @@ class StringIO
     @pos = @pos + 1
     c
   end
-  def gets(sep="\n")
+  def gets(sep=$/)
     i = @string.index(sep, @pos)
-    return nil if i.nil?
-    ret = @string[@pos...i]
+    if i.nil?
+      @pos = length + 1
+	  return nil
+    end
+    line = @string[@pos...i+1]
     @pos = i + sep.length
-    ret
+    line
   end
   def length() @string.length; end
   def print() @string.print; end
@@ -117,7 +120,7 @@ class StringIO
   end
   def string; @string; end
   def syswrite(s); @string << s; s.length; end
-  def write(s); puts "SSSS #{s}"; @string = s; end
+  def write(s); @string = s; end
   private
   def replace_string_reference_with(s, new); s.gsub! /^.*/, new; end
 end
