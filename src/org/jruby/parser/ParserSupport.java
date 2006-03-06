@@ -177,7 +177,8 @@ public class ParserSupport {
         	return new TrueNode(position);
         } else if (id.equals("false")) {
         	return new FalseNode(position);
-        } /*else if (id == k__FILE__) {
+        } /* TODO: add __FILE__ and __LINE__ support?
+        else if (id == k__FILE__) {
         	return NEW_STR(rb_str_new2(ruby_sourcefile));
             }
             else if (id == k__LINE__) {
@@ -586,14 +587,19 @@ public class ParserSupport {
     *  Description of the RubyMethod
     */
     public void initTopLocalVariables() {
-        localNamesStack.push(new LocalNamesElement());
+        LocalNamesElement localNames = new LocalNamesElement();
+        localNamesStack.push(localNames);
 
         String[] names = configuration.getLocalVariables();
         if (names != null && names.length > 0) {
-			LocalNamesElement localNames = (LocalNamesElement) localNamesStack.peek();
-            List namesList = new ArrayList(names.length);
+			List namesList = new ArrayList(names.length);
             for (int i = 0; i < names.length; i++) namesList.add(names[i]);
             localNames.setNames(namesList);
+        }
+        
+        if (configuration.getDynamicVariables() != null) {
+            localNames.changeBlockLevel(1);
+            getBlockNames().push(new BlockNamesElement(configuration.getDynamicVariables()));
         }
     }
 

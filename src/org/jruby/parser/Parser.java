@@ -32,6 +32,7 @@ package org.jruby.parser;
 
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.Iterator;
 import java.util.List;
 
 import org.jruby.IRuby;
@@ -39,6 +40,7 @@ import org.jruby.RubyFile;
 import org.jruby.ast.Node;
 import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.SyntaxException;
+import org.jruby.runtime.Iter;
 import org.jruby.util.collections.SinglyLinkedList;
 
 /**
@@ -67,6 +69,14 @@ public class Parser {
     private Node parse(String file, Reader content, RubyParserConfiguration config, 
         SinglyLinkedList cref) {
         config.setLocalVariables(runtime.getCurrentContext().getCurrentScope().getLocalNames());
+        
+        // search for an ITER_CUR; this lets us know we're parsing from within a block and should bring dvars along
+        for (Iterator iter = runtime.getCurrentContext().getIterStack().iterator(); iter.hasNext();) {
+            if ((Iter)iter.next() == Iter.ITER_CUR) {
+                config.setDynamicVariables(runtime.getCurrentContext().getCurrentDynamicVars().names());
+                break;
+            }
+        }
         
         DefaultRubyParser parser = null;
         RubyParserResult result = null;

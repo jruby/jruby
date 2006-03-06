@@ -29,9 +29,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.parser;
 
+import java.util.List;
+
 
 public class RubyParserConfiguration {
     private String[] localVariables;
+    private List dynamicVariables;
 
     /**
      * Gets the localVariables.
@@ -47,5 +50,13 @@ public class RubyParserConfiguration {
      */
     public void setLocalVariables(String[] localVariables) {
         this.localVariables = localVariables;
+    }
+
+    public List getDynamicVariables() {
+        return dynamicVariables;
+    }
+
+    public void setDynamicVariables(List dynamicVariables) {
+        this.dynamicVariables = dynamicVariables;
     }
 }

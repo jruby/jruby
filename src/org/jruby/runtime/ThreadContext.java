@@ -211,6 +211,10 @@ public class ThreadContext {
     public Iter getCurrentIter() {
         return (Iter) iterStack.peek();
     }
+    
+    public UnsynchronizedStack getIterStack() {
+        return iterStack;
+    }
 
     public Scope getCurrentScope() {
         return getCurrentFrame().getScope();
