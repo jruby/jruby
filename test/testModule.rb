@@ -190,3 +190,26 @@ class ModTest
 end
 
 test_ok(ModTest.new.test)
+
+############# test same included modules from multiple parents
+module ModHello
+  def hello; "hello"; end
+end
+module IncludedFromMultipleParents
+end
+
+module ParentMod
+  include ModHello
+  include IncludedFromMultipleParents
+end
+
+class ParentClass
+  include IncludedFromMultipleParents
+end
+
+class Victim < ParentClass
+  include ParentMod
+end
+
+v = Victim.new
+test_no_exception { v.hello }

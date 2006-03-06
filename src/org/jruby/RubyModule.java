@@ -328,13 +328,11 @@ public class RubyModule extends RubyObject {
         RubyModule module = (RubyModule) arg;
         Map moduleMethods = module.getMethods();
 
-        // Make sure the module we include does not already exist 
-        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
-        	// XXXEnebo - Lame equality check (cause: IncludedModule?)
-        	if (p.getMethods() == moduleMethods) {
-        		return;
-        	}
-        }
+        // Make sure the module we include does not already exist
+        // FIXME: Enebo - Lame equality check (cause: IncludedModule?)
+    	if (getMethods() == moduleMethods) {
+    		return;
+    	}
         
         // Invalidate cache for all methods in the new included module in case a base class method
         // of the same name has already been cached.
