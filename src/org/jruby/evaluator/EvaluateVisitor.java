@@ -1938,8 +1938,11 @@ public final class EvaluateVisitor implements NodeVisitor {
                 // re-push body, condition, and check
                 state.addBreakableInstruction(iVisited, whileConditionCheck);
                 state.addNodeInstruction(iVisited.getConditionNode());
-                state.addRedoMarker(iVisited.getBodyNode());
-                state.addNodeInstruction(iVisited.getBodyNode());
+                // FIXME: Hack? See UntilConditionCheck for explanation of why this may not be kosher
+                if (iVisited.getBodyNode() != null) {
+                    state.addRedoMarker(iVisited.getBodyNode());
+                    state.addNodeInstruction(iVisited.getBodyNode());
+                }
             }
             // else loop terminates
         }
@@ -1952,7 +1955,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             state.addBreakableInstruction(iVisited, whileConditionCheck);
             state.addNodeInstruction(iVisited.getConditionNode());
 
-            if (!iVisited.evaluateAtStart()) {
+            if (!iVisited.evaluateAtStart() && iVisited.getBodyNode() != null) {
                 state.addRedoMarker(iVisited.getBodyNode());
                 state.addNodeInstruction(iVisited.getBodyNode());
             }
