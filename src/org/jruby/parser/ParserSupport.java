@@ -255,7 +255,7 @@ public class ParserSupport {
                 return new InstAsgnNode(position, name, value);
             } else if (IdUtil.isConstant(name)) {
                 if (isInDef() || isInSingle()) {
-                    throw new SyntaxException(value.getPosition(), "dynamic constant assignment");
+                    throw new SyntaxException(position, "dynamic constant assignment");
                 }
                 return new ConstDeclNode(position, name, value);
             } else if (IdUtil.isClassVariable(name)) {
