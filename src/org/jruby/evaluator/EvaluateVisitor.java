@@ -890,8 +890,6 @@ public final class EvaluateVisitor implements NodeVisitor {
             Visibility visibility = state.getThreadContext().getCurrentVisibility();
             if (name.equals("initialize") || visibility.isModuleFunction()) {
                 visibility = Visibility.PRIVATE;
-            } else if (visibility.isPublic() && containingClass == state.runtime.getObject()) {
-                visibility = iVisited.getVisibility();
             }
 
             DefaultMethod newMethod = new DefaultMethod(containingClass, iVisited.getBodyNode(),

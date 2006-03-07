@@ -131,4 +131,9 @@ end
 # method_missing 4. Undef Kernel to make sure we handle that
 test_exception(NoMethodError) { Foo.new.frogger }
 
-
+# test that methods added to Object are not made private by default (old code in evaluator did this, but was removed)
+class Object
+  def newmethod
+  end
+end
+test_no_exception {"".newmethod}
