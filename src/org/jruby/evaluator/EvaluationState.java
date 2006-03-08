@@ -20,7 +20,6 @@ import org.jruby.ast.Node;
 import org.jruby.ast.RedoNode;
 import org.jruby.ast.RescueBodyNode;
 import org.jruby.ast.RescueNode;
-import org.jruby.ast.ReturnNode;
 import org.jruby.ast.SplatNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.JumpException;
@@ -39,6 +38,7 @@ public class EvaluationState {
 	public final EvaluateVisitor evaluator;
     private UnsynchronizedStack instructionBundleStacks = new UnsynchronizedStack();
     private JumpException currentException;
+    private boolean handlingException;
     
     private class InstructionBundle {
         Instruction instruction;
@@ -251,41 +251,12 @@ public class EvaluationState {
     }
     private static final ExceptionRethrower exceptionRethrower = new ExceptionRethrower();
     
-    private static class NextRethrower implements Instruction {
+    private static class ExceptionContinuer implements Instruction {
         public void execute(EvaluationState state, InstructionContext ctx) {
-            JumpException je = new JumpException(JumpException.JumpType.NextJump);
-            
-            je.setPrimaryData(state.getResult());
-            je.setSecondaryData(ctx);
-            
-            throw je;
+            state.handlingException = false;
         }
     }
-    private static final NextRethrower nextRethrower = new NextRethrower();
-    
-    private static class RedoRethrower implements Instruction {
-        public void execute(EvaluationState state, InstructionContext ctx) {
-            JumpException je = new JumpException(JumpException.JumpType.RedoJump);
-            
-            je.setPrimaryData(state.getResult());
-            je.setSecondaryData(ctx);
-            
-            throw je;
-        }
-    }
-    private static final RedoRethrower redoRethrower = new RedoRethrower();
-    
-    private static class BreakRethrower implements Instruction {
-        public void execute(EvaluationState state, InstructionContext ctx) {
-            JumpException je = new JumpException(JumpException.JumpType.BreakJump);
-            
-            je.setPrimaryData(state.getResult());
-            je.setSecondaryData(ctx);
-            
-            throw je;
-        }
-    }
-    private static final BreakRethrower breakRethrower = new BreakRethrower();
+    private static final ExceptionContinuer exceptionContinuer = new ExceptionContinuer();
     
     private static class RaiseRethrower implements Instruction {
         public void execute(EvaluationState state, InstructionContext ctx) {
@@ -295,19 +266,6 @@ public class EvaluationState {
         }
     }
     private static final RaiseRethrower raiseRethrower = new RaiseRethrower();
-    
-    private static class ReturnRethrower implements Instruction {
-        public void execute(EvaluationState state, InstructionContext ctx) {
-            ReturnNode iVisited = (ReturnNode)ctx;
-            JumpException je = new JumpException(JumpException.JumpType.ReturnJump);
-            
-            je.setPrimaryData(iVisited.getTarget());
-            je.setSecondaryData(state.getResult());
-            
-            throw je;
-        }
-    }
-    private static final ReturnRethrower returnRethrower = new ReturnRethrower();
     
     private static class Retrier implements Instruction {
         public void execute(EvaluationState state, InstructionContext ctx) {
@@ -334,11 +292,7 @@ public class EvaluationState {
                     try {
                         executeNext();
                     } catch (JumpException je) {
-                        if (je.getJumpType() == JumpException.JumpType.NextJump) {
-                            handleNext(je);
-                        } else if (je.getJumpType() == JumpException.JumpType.RedoJump) {
-                            handleRedo(je);
-                        } else if (je.getJumpType() == JumpException.JumpType.BreakJump) {
+                        if (je.getJumpType() == JumpException.JumpType.BreakJump) {
                             handleBreak(je);
                         } else if (je.getJumpType() == JumpException.JumpType.RaiseJump) {
                             handleRaise(je);
@@ -348,6 +302,14 @@ public class EvaluationState {
                             handleReturn(je);
                         } else if (je.getJumpType() == JumpException.JumpType.ThrowJump) {
                             handleThrow(je);
+                        }
+                    }
+                    
+                    if (currentException != null && !handlingException) {
+                        if (currentException.getJumpType() == JumpException.JumpType.RedoJump) {
+                            handleRedo(currentException);
+                        } else if (currentException.getJumpType() == JumpException.JumpType.NextJump) {
+                            handleNext(currentException);
                         }
                     }
                 }
@@ -370,7 +332,8 @@ public class EvaluationState {
             if (ib.ensured) {
                 // exec ensured node, return to "nexting" afterwards
                 popCurrentInstruction();
-                addInstruction(iVisited, exceptionRethrower);
+                handlingException = true;
+                addInstruction(iVisited, exceptionContinuer);
                 addInstructionBundle(ib);
                 return;
             }
@@ -384,6 +347,7 @@ public class EvaluationState {
             // pop the redoable and continue
             popCurrentInstruction();
             setCurrentException(null);
+            handlingException = false;
         }
     }
     
@@ -395,6 +359,7 @@ public class EvaluationState {
             if (ib.ensured) {
                 // exec ensured node, return to "redoing" afterwards
                 popCurrentInstruction();
+                handlingException = true;
                 addInstruction(iVisited, exceptionRethrower);
                 addInstructionBundle(ib);
                 return;
@@ -412,6 +377,7 @@ public class EvaluationState {
             addRedoMarker(nodeToRedo);
             addNodeInstruction(nodeToRedo);
             setCurrentException(null);
+            handlingException = false;
         }
     }
     

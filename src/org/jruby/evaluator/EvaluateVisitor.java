@@ -1474,7 +1474,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             je.setSecondaryData(ctx);
 
             state.setCurrentException(je);
-            throw je;
+            //throw je;
         }
     }
     private static final NextThrower nextThrower = new NextThrower();
@@ -1642,7 +1642,8 @@ public final class EvaluateVisitor implements NodeVisitor {
             
             je.setSecondaryData(ctx);
             
-            throw je;
+            //throw je;
+            state.setCurrentException(je);
     	}
     }
     private static final RedoNodeVisitor redoNodeVisitor = new RedoNodeVisitor();
