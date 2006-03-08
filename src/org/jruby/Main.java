@@ -127,7 +127,11 @@ public class Main {
         		if (raisedException.isKindOf(runtime.getClass("SystemExit"))) {
                 	RubyFixnum status = (RubyFixnum)raisedException.getInstanceVariable("status");
                 	
-                	return RubyNumeric.fix2int(status);
+                    if (status != null) {
+                        return RubyNumeric.fix2int(status);
+                    } else {
+                        return 0;
+                    }
         		} else {
 		            runtime.printError(raisedException);
 		            return 1;
