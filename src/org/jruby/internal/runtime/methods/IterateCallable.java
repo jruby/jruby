@@ -56,7 +56,7 @@ public class IterateCallable extends AbstractCallable {
     public void postMethod(IRuby runtime) {
     }
 
-    public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
         return callback.execute(args[0], new IRubyObject[] { data, receiver });
     }
     

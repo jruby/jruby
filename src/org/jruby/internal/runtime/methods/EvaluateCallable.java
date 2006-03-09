@@ -63,7 +63,7 @@ public class EvaluateCallable extends AbstractCallable {
     public void postMethod(IRuby runtime) {
     }
 
-    public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
         return new EvaluationState(runtime, receiver).begin(node);
         // REVIST: we will execute under a different self, so save it (should be a stack?)
         // This almost works, but causes rubicon TestThread to run forever

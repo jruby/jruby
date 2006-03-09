@@ -63,7 +63,7 @@ public class RubyString extends RubyObject {
             super(implementationClass, arity, visibility);
         }
         
-        public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+        public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
             RubyString s = (RubyString)receiver;
             
             return invoke(s, args);
@@ -284,7 +284,7 @@ public class RubyString extends RubyObject {
 			getRuntime().newString(
 					stringValue(other).getValue().toLowerCase());
 
-		return ((StringMetaClass)thisLCString.getMetaClass()).op_cmp.call(getRuntime(), thisLCString, "<=>", new IRubyObject[] {lcString}, false);
+		return ((StringMetaClass)thisLCString.getMetaClass()).op_cmp.call(getRuntime(), thisLCString, thisLCString.getMetaClass(), "<=>", new IRubyObject[] {lcString}, false);
 	}
     
 	/** rb_str_match

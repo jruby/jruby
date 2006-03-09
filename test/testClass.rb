@@ -136,3 +136,34 @@ end
 b = a.new
 
 test_equal("foo", b.foo)
+
+# test class var declaration
+class ClassVarTest
+  @@foo = "foo"
+  test_equal(@@foo, "foo")
+  
+  def self.x
+    @@bar = "bar"
+    @@foo = "foonew"
+    
+    test_equal(@@bar, "bar")
+    test_equal(@@foo, "foonew")
+  end
+  
+  # call after self.x
+  def z
+    @@baz = "baz"
+    
+    test_equal(@@foo, "foonew")
+    test_equal(@@bar, "bar")
+    test_equal(@@baz, "baz")
+  end
+  
+  def y
+    @@foo
+  end
+end
+
+test_no_exception {ClassVarTest.x }
+test_no_exception {ClassVarTest.new.z }
+test_equal(ClassVarTest.new.y, "foonew")

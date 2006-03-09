@@ -57,15 +57,15 @@ public class UndefinedMethod extends AbstractMethod {
         // do nothing
     }
 
-    public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * If UndefinedMethod gets invoked, don't do the usual method scoping/framing. It should never be invoked.
      */
-    public IRubyObject call(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
-        return internalCall(runtime, receiver, name, args, noSuper);
+    public IRubyObject call(IRuby runtime, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+        return internalCall(runtime, receiver, lastClass, name, args, noSuper);
     }
 
     public boolean isUndefined() {

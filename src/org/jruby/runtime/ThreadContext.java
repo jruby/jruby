@@ -345,7 +345,10 @@ public class ThreadContext {
 
             while (true) {
                 try {
-                    return currentBlock.getMethod().call(runtime, self, null, args, false);
+                    // FIXME: is it appropriate to use the current frame's (the block's frame's) lastClass?
+                    IRubyObject result = currentBlock.getMethod().call(runtime, self, getCurrentFrame().getLastClass(), null, args, false);
+                    
+                    return result;
                 } catch (JumpException je) {
                 	if (je.getJumpType() == JumpException.JumpType.RedoJump) {
                 		// do nothing, allow loop to redo
@@ -505,14 +508,6 @@ public class ThreadContext {
     public RubyModule popRubyClass() {
         return (RubyModule)parentStack.pop();
     }
-	
-	public RubyModule getLastRubyClass() {
-        if (parentStack.size() >= 2) {
-            return (RubyModule)parentStack.get(parentStack.size() - 2);
-        }
-        
-        return null;
-	}
 	
     public RubyModule getRubyClass() {
         if (parentStack.isEmpty()) {
@@ -683,10 +678,10 @@ public class ThreadContext {
         popFrame();
     }
 
-    public void preMethodCall(RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+    public void preMethodCall(RubyModule implementationClass, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
         pushRubyClass((RubyModule)implementationClass.getCRef().getValue());
         pushIter(getCurrentIter().isPre() ? Iter.ITER_CUR : Iter.ITER_NOT);
-        pushFrame(recv, args, name, noSuper ? null : implementationClass);
+        pushFrame(recv, args, name, noSuper ? null : lastClass);
     }
     
     public void postMethodCall() {
@@ -695,11 +690,11 @@ public class ThreadContext {
         popRubyClass();
     }
     
-    public void preDefMethodInternalCall(IRubyObject recv, String name, IRubyObject[] args, boolean noSuper, SinglyLinkedList cref) {
+    public void preDefMethodInternalCall(RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper, SinglyLinkedList cref) {
         RubyModule implementationClass = (RubyModule)cref.getValue();
         setCRef(cref);
         pushIter(getCurrentIter().isPre() ? Iter.ITER_CUR : Iter.ITER_NOT);
-        pushFrame(recv, args, name, noSuper ? null : implementationClass);
+        pushFrame(recv, args, name, noSuper ? null : lastClass);
         getCurrentFrame().newScope(null);
         pushDynamicVars();
         pushRubyClass(implementationClass);
@@ -715,30 +710,14 @@ public class ThreadContext {
     
     // NEW! Push a scope into the frame, since this is now required to use it
     // XXX: This is screwy...apparently Ruby runs internally-implemented methods in their own frames but in the *caller's* scope
-    public void preReflectedMethodInternalCall(RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+    public void preReflectedMethodInternalCall(RubyModule implementationClass, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
         pushRubyClass((RubyModule)implementationClass.getCRef().getValue());
         pushIter(getCurrentIter().isPre() ? Iter.ITER_CUR : Iter.ITER_NOT);
-        pushFrame(recv, args, name, noSuper ? null : implementationClass);
+        pushFrame(recv, args, name, noSuper ? null : lastClass);
         getCurrentFrame().setScope(getPreviousFrame().getScope());
     }
     
     public void postReflectedMethodInternalCall() {
-        popFrame();
-        popIter();
-        popRubyClass();
-    }
-    
-    // NEW! Push a scope into the frame, since this is now required to use it
-    // XXX: This is screwy...apparently Ruby runs internally-implemented methods in their own frames but in the *caller's* scope
-    // XXX: Copied from above when DirectInvocationMethods were seen to be missing scope. They MAY work with their own scopes, have not tried.
-    public void preDirectInvokeMethodInternalCall(RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
-        pushRubyClass((RubyModule)implementationClass.getCRef().getValue());
-        pushIter(getCurrentIter().isPre() ? Iter.ITER_CUR : Iter.ITER_NOT);
-        pushFrame(recv, args, name, noSuper ? null : implementationClass);
-        getCurrentFrame().setScope(getPreviousFrame().getScope());
-    }
-    
-    public void postDirectInvokeMethodInternalCall() {
         popFrame();
         popIter();
         popRubyClass();

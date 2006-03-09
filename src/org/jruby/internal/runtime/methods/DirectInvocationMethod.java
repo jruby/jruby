@@ -44,19 +44,19 @@ public abstract class DirectInvocationMethod extends AbstractMethod {
         assert arity != null;
     }
 
-    public void preMethod(IRuby runtime, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+    public void preMethod(IRuby runtime, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
         ThreadContext context = runtime.getCurrentContext();
         
-        context.preDirectInvokeMethodInternalCall(implementationClass, recv, name, args, noSuper);
+        context.preReflectedMethodInternalCall(implementationClass, lastClass, recv, name, args, noSuper);
     }
     
     public void postMethod(IRuby runtime) {
         ThreadContext context = runtime.getCurrentContext();
         
-        context.postDirectInvokeMethodInternalCall();
+        context.postReflectedMethodInternalCall();
     }
     
-	public abstract IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper);
+	public abstract IRubyObject internalCall(IRuby runtime, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper);
 
 	// TODO:  Perhaps abstract method should contain this and all other Methods should pass in decent value
 	public Arity getArity() {

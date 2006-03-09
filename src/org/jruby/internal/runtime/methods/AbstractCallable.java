@@ -60,8 +60,8 @@ public abstract class AbstractCallable implements ICallable {
      * are only invoked from within ThreadContext.yield. Eventually TC.yield scoping/framing may be moved into
      * superclass of the two non-methods.
      */
-    public IRubyObject call(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
-        return internalCall(runtime, receiver, name, args, noSuper);
+    public IRubyObject call(IRuby runtime, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+        return internalCall(runtime, receiver, lastClass, name, args, noSuper);
     }
     
     public String getOriginalName() {

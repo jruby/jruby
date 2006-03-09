@@ -42,6 +42,7 @@ import java.util.Map;
 import org.jruby.ast.Node;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
+import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -320,7 +321,14 @@ public class RubyObject implements Cloneable, IRubyObject {
     public IRubyObject callMethod(RubyModule context, String name, IRubyObject[] args, 
             CallType callType) {
         assert args != null;
-        ICallable method = context.searchMethod(name);
+        RubyModule implementer = context.findImplementer(name);
+        ICallable method = null;
+        
+        if (implementer != null) {
+            method = implementer.retrieveMethod(name);
+        } else {
+            method = UndefinedMethod.getInstance();
+        }
 
         if (method.isUndefined() ||
             !(name.equals("method_missing") ||
@@ -342,13 +350,17 @@ public class RubyObject implements Cloneable, IRubyObject {
 
             return callMethod("method_missing", newArgs);
         }
+        
+        //System.out.println("method " + name + " found in " + (implementer.isIncluded()?"included module ":"module or class ") + implementer.getName());
 
         String originalName = method.getOriginalName();
         if (originalName != null) {
             name = originalName;
         }
 
-        return method.call(getRuntime(), this, name, args, false);
+        IRubyObject result = method.call(getRuntime(), this, implementer, name, args, false);
+        
+        return result;
     }
 
     public IRubyObject callMethod(String name) {
@@ -636,7 +648,23 @@ public class RubyObject implements Cloneable, IRubyObject {
         IRubyObject result = getRuntime().getNil();
         try {
             Node node = getRuntime().parse(src.toString(), file);
-            result = eval(node);
+            
+            //return new EvaluationState(getRuntime(), this).begin(n);
+            // need to continue evaluation with a new self, so save the old one (should be a stack?)
+            // FIXME: condense this and the other eval appropriately
+            EvaluationState state = getRuntime().getCurrentContext().getCurrentFrame().getEvalState();
+            IRubyObject oldSelf = state.getSelf();
+            if (scope.isNil()) {
+                state.setSelf(this);
+            } else if (scope instanceof RubyBinding) {
+                state.setSelf(threadContext.getCurrentFrame().getSelf());
+            }
+            
+            try {
+                result = state.begin(node);
+            } finally {
+                state.setSelf(oldSelf);
+            }
         } finally {
             if (scope.isNil()) {
                 threadContext.getCurrentFrame().setIter(iter);

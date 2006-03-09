@@ -78,10 +78,10 @@ public class ReflectedMethod extends AbstractMethod {
         assert method != null;
     }
 
-    public void preMethod(IRuby runtime, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+    public void preMethod(IRuby runtime, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
         ThreadContext context = runtime.getCurrentContext();
         
-        context.preReflectedMethodInternalCall(implementationClass, recv, name, args, noSuper);
+        context.preReflectedMethodInternalCall(implementationClass, lastClass, recv, name, args, noSuper);
     }
     
     public void postMethod(IRuby runtime) {
@@ -90,7 +90,7 @@ public class ReflectedMethod extends AbstractMethod {
         context.postReflectedMethodInternalCall();
     }
     
-	public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+	public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
         arity.checkArity(runtime, args);
         
         assert receiver != null;

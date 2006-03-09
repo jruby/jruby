@@ -71,3 +71,7 @@ arr.delete_at(index)
 test_equal([1], arr)
 arr = arr * eindex
 test_equal([1, 1], arr)
+
+# unshifting nothing is valid
+test_no_exception { [].unshift(*[]) }
+test_no_exception { [].unshift() }

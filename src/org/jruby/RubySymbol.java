@@ -62,7 +62,7 @@ public class RubySymbol extends RubyObject {
             super(implementationClass, arity, visibility);
         }
         
-        public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+        public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
             RubySymbol s = (RubySymbol)receiver;
             
             return invoke(s, args);

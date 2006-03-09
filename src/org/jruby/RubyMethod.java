@@ -115,7 +115,8 @@ public class RubyMethod extends RubyObject {
         
         getRuntime().getCurrentContext().pushIter(getRuntime().getCurrentContext().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
         try {
-            return method.call(getRuntime(), receiver, methodName, args, false);
+            // FIXME: should lastClass be implementation module for a Method?
+            return method.call(getRuntime(), receiver, implementationModule, methodName, args, false);
         } finally {
             getRuntime().getCurrentContext().popIter();
         }

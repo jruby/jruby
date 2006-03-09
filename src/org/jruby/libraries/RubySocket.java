@@ -16,7 +16,7 @@ public class RubySocket extends RubyObject {
             super(implementationClass, arity, visibility);
         }
         
-        public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+        public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
             RubySocket s = (RubySocket)receiver;
             
             return invoke(s, args);

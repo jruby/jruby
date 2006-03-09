@@ -58,7 +58,8 @@ public class AliasMethod extends AbstractMethod {
     	return oldName;
     }
 
-    public void preMethod(IRuby runtime, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+    public void preMethod(IRuby runtime, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+    	// FIXME: using implementationClass may not be right, since the alias may be found in an included module
         oldMethod.preMethod(runtime, implementationClass, recv, name, args, noSuper);
     }
 
@@ -66,8 +67,8 @@ public class AliasMethod extends AbstractMethod {
         oldMethod.postMethod(runtime);
     }
 
-    public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
-        return oldMethod.internalCall(runtime, receiver, oldName, args, noSuper);
+    public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+        return oldMethod.internalCall(runtime, receiver, lastClass, oldName, args, noSuper);
     }
 
     public ICallable dup() {

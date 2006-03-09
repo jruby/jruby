@@ -50,7 +50,7 @@ public class WrapperCallable extends AbstractCallable {
         this.callable = callable;
     }
 
-    public void preMethod(IRuby runtime, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+    public void preMethod(IRuby runtime, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
     }
     
     public void postMethod(IRuby runtime) {
@@ -59,8 +59,8 @@ public class WrapperCallable extends AbstractCallable {
     /**
      * @see org.jruby.runtime.ICallable#call(IRuby, IRubyObject, String, IRubyObject[], boolean)
      */
-    public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
-        return callable.call(runtime, receiver, name, args, noSuper);
+    public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+        return callable.call(runtime, receiver, lastClass, name, args, noSuper);
     }
     
     public ICallable dup() {

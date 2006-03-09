@@ -55,6 +55,7 @@ testProc.rb
 testNesting.rb
 testXML.rb
 testStringIO.rb
+testEval.rb
 
 # MRI Ruby tests (from sample/test.rb in Matz's Ruby Interpreter):
 

@@ -472,9 +472,6 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public RubyArray unshift(IRubyObject[] items) {
-        if (items.length == 0) {
-            throw getRuntime().newArgumentError("wrong # of arguments(at least 1)");
-        }
         modify();
         boolean taint = false;
         for (int i = 0; i < items.length; i++) {
@@ -749,7 +746,7 @@ public class RubyArray extends RubyObject implements List {
             } else if (!(tmp instanceof RubyString)) {
                 tmp = RubyString.objAsString(tmp);
             }
-            str.append(((StringMetaClass)sep.getMetaClass()).op_plus.call(getRuntime(), sep, "+", new IRubyObject[] {tmp}, false));
+            str.append(((StringMetaClass)sep.getMetaClass()).op_plus.call(getRuntime(), sep, (StringMetaClass)sep.getMetaClass(), "+", new IRubyObject[] {tmp}, false));
         }
         str.setTaint(taint);
         return str;
@@ -1385,7 +1382,7 @@ public class RubyArray extends RubyObject implements List {
             if (o1 instanceof RubyString && o2 instanceof RubyString) {
                 StringMetaClass stringMC = (StringMetaClass)((RubyObject)o1).getMetaClass();
                 return RubyNumeric.fix2int(
-                        stringMC.op_cmp.call(stringMC.getRuntime(), (RubyString)o1, "<=>", new IRubyObject[] {(RubyString)o2}, false));
+                        stringMC.op_cmp.call(stringMC.getRuntime(), (RubyString)o1, stringMC, "<=>", new IRubyObject[] {(RubyString)o2}, false));
             }
 
             return RubyNumeric.fix2int(obj1.callMethod("<=>", obj2));
