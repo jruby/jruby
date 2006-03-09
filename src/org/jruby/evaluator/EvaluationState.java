@@ -260,9 +260,7 @@ public class EvaluationState {
     
     private static class RaiseRethrower implements Instruction {
         public void execute(EvaluationState state, InstructionContext ctx) {
-            RaiseException re = new RaiseException((RubyException)state.getResult());
-            
-            throw re;
+            throw state.getCurrentException();
         }
     }
     private static final RaiseRethrower raiseRethrower = new RaiseRethrower();
@@ -292,7 +290,11 @@ public class EvaluationState {
                     try {
                         executeNext();
                     } catch (JumpException je) {
-                        if (je.getJumpType() == JumpException.JumpType.BreakJump) {
+                        if (je.getJumpType() == JumpException.JumpType.RedoJump) {
+                            handleRedo(je);
+                        } else if (je.getJumpType() == JumpException.JumpType.NextJump) {
+                            handleNext(je);
+                        } else if (je.getJumpType() == JumpException.JumpType.BreakJump) {
                             handleBreak(je);
                         } else if (je.getJumpType() == JumpException.JumpType.RaiseJump) {
                             handleRaise(je);
@@ -302,14 +304,6 @@ public class EvaluationState {
                             handleReturn(je);
                         } else if (je.getJumpType() == JumpException.JumpType.ThrowJump) {
                             handleThrow(je);
-                        }
-                    }
-                    
-                    if (currentException != null && !handlingException) {
-                        if (currentException.getJumpType() == JumpException.JumpType.RedoJump) {
-                            handleRedo(currentException);
-                        } else if (currentException.getJumpType() == JumpException.JumpType.NextJump) {
-                            handleNext(currentException);
                         }
                     }
                 }
@@ -332,8 +326,9 @@ public class EvaluationState {
             if (ib.ensured) {
                 // exec ensured node, return to "nexting" afterwards
                 popCurrentInstruction();
-                handlingException = true;
-                addInstruction(iVisited, exceptionContinuer);
+                //handlingException = true;
+                setCurrentException(je);
+                addInstruction(iVisited, exceptionRethrower);
                 addInstructionBundle(ib);
                 return;
             }
@@ -347,7 +342,7 @@ public class EvaluationState {
             // pop the redoable and continue
             popCurrentInstruction();
             setCurrentException(null);
-            handlingException = false;
+            //handlingException = false;
         }
     }
     
@@ -359,7 +354,8 @@ public class EvaluationState {
             if (ib.ensured) {
                 // exec ensured node, return to "redoing" afterwards
                 popCurrentInstruction();
-                handlingException = true;
+                //handlingException = true;
+                setCurrentException(je);
                 addInstruction(iVisited, exceptionRethrower);
                 addInstructionBundle(ib);
                 return;
@@ -376,8 +372,8 @@ public class EvaluationState {
             popCurrentInstruction();
             addRedoMarker(nodeToRedo);
             addNodeInstruction(nodeToRedo);
-            setCurrentException(null);
-            handlingException = false;
+            //setCurrentException(null);
+            //handlingException = false;
         }
     }
     
@@ -390,6 +386,7 @@ public class EvaluationState {
             if (ib.ensured) {
                 // exec ensured node, return to "breaking" afterwards
                 popCurrentInstruction();
+                setCurrentException(je);
                 addInstruction(iVisited, exceptionRethrower);
                 addInstructionBundle(ib);
                 return;
@@ -425,6 +422,7 @@ public class EvaluationState {
             if (ib.ensured) {
                 // exec ensured node, return to "breaking" afterwards
                 popCurrentInstruction();
+                setCurrentException(je);
                 addInstruction(ib.instructionContext, raiseRethrower);
                 addInstructionBundle(ib);
                 return;
@@ -456,6 +454,7 @@ public class EvaluationState {
             if (isRescueHandled(raisedException, exceptionNodesList)) {
                 addRetriableInstruction(iVisited);
                 addNodeInstruction(rescueNode);
+                setCurrentException(null);
                 return;
             }
             
@@ -475,6 +474,7 @@ public class EvaluationState {
             if (ib.ensured) {
                 // exec ensured node, return to "breaking" afterwards
                 popCurrentInstruction();
+                setCurrentException(je);
                 addInstruction(ib.instructionContext, exceptionRethrower);
                 addInstructionBundle(ib);
                 return;
