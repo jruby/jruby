@@ -17,4 +17,25 @@ class A
   end
 end
 
+old_self = self
 test_equal(A.new.y, "foo")
+test_equal(x, "foo")
+
+#### ensure self is back to pre bound eval
+test_equal(self, old_self)
+
+#### ensure returns within ensures that cross evalstates during an eval are handled properly (whew!)
+def inContext &proc 
+   begin
+     proc.call
+   ensure
+   end
+end
+
+def x2
+  inContext do
+     return "foo"
+  end
+end
+
+test_equal(x2, "foo")

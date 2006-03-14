@@ -630,52 +630,62 @@ public class RubyObject implements Cloneable, IRubyObject {
 
     public IRubyObject eval(IRubyObject src, IRubyObject scope, String file, int line) {
         ThreadContext threadContext = getRuntime().getCurrentContext();
-		threadContext.pushRubyClass(this instanceof RubyModule ? 
-				(RubyModule) this : this.getType());
-
-        ISourcePosition savedPosition = threadContext.getPosition();
-        Iter iter = threadContext.getCurrentFrame().getIter();
-        if (file == null) {
-            file = threadContext.getSourceFile();
-        }
-        if (scope.isNil()) {
-            if (threadContext.getPreviousFrame() != null) {
-                threadContext.getCurrentFrame().setIter(threadContext.getPreviousFrame().getIter());
-            }
-        } else if (scope instanceof RubyBinding) {
-            threadContext.preEvalWithBinding((RubyBinding)scope);
-        }
+        
+        ISourcePosition savedPosition = null;
+        Iter iter = null;
+        IRubyObject oldSelf = null;
+        EvaluationState state = null;
+        
         IRubyObject result = getRuntime().getNil();
+        
         try {
+            savedPosition = threadContext.getPosition();
+            iter = threadContext.getCurrentFrame().getIter();
+            
+            // make sure we have a file
+            if (file == null) {
+                file = threadContext.getSourceFile();
+            }
+            
+            IRubyObject newSelf = null;
+            if (scope.isNil() || !(scope instanceof RubyBinding)) {
+//              FIXME: this is broken for Proc, and should allow using a Proc as our binding; perhaps IRubyObject.isBindable()?
+                // no scope provided, use eval's containing scope (prepared in RubyKernel.eval by a call to TC.preKernelEval
+                threadContext.pushRubyClass(this instanceof RubyModule ? 
+                        (RubyModule) this : this.getType());
+
+                if (threadContext.getPreviousFrame() != null) {
+                    threadContext.getCurrentFrame().setIter(threadContext.getPreviousFrame().getIter());
+                }
+                newSelf = this;
+            } else {
+                // Binding provided for scope, use it
+                threadContext.preEvalWithBinding((RubyBinding)scope);
+                
+                newSelf = threadContext.getCurrentFrame().getSelf();
+            }
+
+            state = getRuntime().getCurrentContext().getCurrentFrame().getEvalState();
+            oldSelf = state.getSelf();
+            state.setSelf(newSelf);
+            
             Node node = getRuntime().parse(src.toString(), file);
             
-            //return new EvaluationState(getRuntime(), this).begin(n);
-            // need to continue evaluation with a new self, so save the old one (should be a stack?)
-            // FIXME: condense this and the other eval appropriately
-            EvaluationState state = getRuntime().getCurrentContext().getCurrentFrame().getEvalState();
-            IRubyObject oldSelf = state.getSelf();
-            if (scope.isNil()) {
-                state.setSelf(this);
-            } else if (scope instanceof RubyBinding) {
-                state.setSelf(threadContext.getCurrentFrame().getSelf());
-            }
-            
-            try {
-                result = state.begin(node);
-            } finally {
-                state.setSelf(oldSelf);
-            }
+            result = state.begin(node);
         } finally {
-            if (scope.isNil()) {
+            // return the eval state to its original self
+            state.setSelf(oldSelf);
+            
+            if (scope.isNil() || !(scope instanceof RubyBinding)) {
+//              FIXME: this is broken for Proc, see above
                 threadContext.getCurrentFrame().setIter(iter);
-                threadContext.setPosition(savedPosition);
                 threadContext.popRubyClass();
             } else if (scope instanceof RubyBinding) {
                 threadContext.postEvalWithBinding();
-            } else {
-                threadContext.setPosition(savedPosition);
-                threadContext.popRubyClass();
             }
+            
+            // restore position
+            threadContext.setPosition(savedPosition);
         }
         return result;
     }
