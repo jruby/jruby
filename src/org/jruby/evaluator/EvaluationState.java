@@ -506,6 +506,7 @@ public class EvaluationState {
                 // exec ensured node, return to "breaking" afterwards
                 popCurrentInstruction();
                 setResult((IRubyObject)je.getSecondaryData());
+                setCurrentException(je);
                 addInstruction(ib.instructionContext, exceptionRethrower);
                 addInstructionBundle(ib);
                 return;
