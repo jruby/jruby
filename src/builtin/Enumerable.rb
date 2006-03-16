@@ -86,7 +86,7 @@ module Enumerable
 
   def collect
     result = []
-    each { |item| result << yield(item) }
+    each { |item| result << if block_given?; yield(item); else; item; end }
     result
   end
   alias map collect
