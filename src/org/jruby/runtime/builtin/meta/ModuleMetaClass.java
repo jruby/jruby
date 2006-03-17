@@ -89,7 +89,6 @@ public class ModuleMetaClass extends ObjectMetaClass {
 	        definePrivateMethod("remove_method", Arity.singleArgument());
 	        definePrivateMethod("undef_method", Arity.singleArgument());
 	
-	        defineSingletonMethod("new", Arity.noArguments(), "newInstance");
 	        defineSingletonMethod("nesting", Arity.noArguments());
 		}
 	};
@@ -109,15 +108,6 @@ public class ModuleMetaClass extends ObjectMetaClass {
 		
 		return instance;
 	}
-
-    public IRubyObject newInstance() {
-        RubyModule instance = RubyModule.newModule(getRuntime(), null);
-        
-        instance.setMetaClass(this);
-        instance.callInit(IRubyObject.NULL_ARRAY);
-       
-        return instance;
-    }
     
     protected void defineModuleFunction(String name, Arity arity) {
         definePrivateMethod(name, arity);

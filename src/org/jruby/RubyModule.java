@@ -986,10 +986,6 @@ public class RubyModule extends RubyObject {
         RubyArray ary = getRuntime().newArray();
 
         for (RubyModule p = this; p != null; p = p.getSuperClass()) {
-            if (p.isSingleton()) {
-                continue;
-            }
-
             if (p.isIncluded()) {
                 ary.append(((IncludedModuleWrapper) p).getDelegate());
             } else {
