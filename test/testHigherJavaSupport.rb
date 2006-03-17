@@ -209,4 +209,10 @@ if defined? Java
   test_equal(true, Foo::ArrayList.new.foo)
   
   test_exception(ConstantAlreadyExistsError) { include_class 'java.lang.String' }
+  # JString already included and it is the same proxy, so do not throw an error
+  # (e.g. intent of include_class already satisfied)
+  test_no_exception() do
+  	include_class("java.lang.String") {|package,name| "J#{name}" }
+  end	
+  
 end

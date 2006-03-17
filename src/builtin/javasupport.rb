@@ -439,12 +439,19 @@ class Object
       else
         constant = class_name
       end
+      
+      cls = self.kind_of?(Module) ? self : self.class
 
-	  # Constant already exists...do not let proxy get created
-      if (self.kind_of?(Module) && const_defined?(constant)) || self.class.const_defined?(constant)
-      	raise ConstantAlreadyExistsError.new, "Class #{constant} already exists"
+	  # Constant already exists...do not let proxy get created unless the collision is the proxy
+	  # you are trying to include.
+      if (cls.const_defined?(constant) )
+        proxy = JavaUtilities.get_proxy_class(full_class_name)
+        existing_constant = cls.const_get(constant)
+      	raise ConstantAlreadyExistsError.new, "Class #{constant} already exists" unless existing_constant == proxy
 	  end
-	  
+
+      # FIXME: When I changed this user const_set instead of eval below Comparator got lost
+      # which means I am missing something.
       if (respond_to?(:class_eval, true))
         class_eval("#{constant} = JavaUtilities.get_proxy_class(\"#{full_class_name}\")")
       else
