@@ -723,31 +723,31 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public RubyString join(RubyString sep) {
+        StringBuffer buf = new StringBuffer();
         int length = getLength();
         if (length == 0) {
             getRuntime().newString("");
         }
         boolean taint = isTaint() || sep.isTaint();
         RubyString str;
-        IRubyObject tmp = entry(0);
-        taint |= tmp.isTaint();
-        if (tmp instanceof RubyString) {
-            str = (RubyString) tmp.dup();
-        } else if (tmp instanceof RubyArray) {
-            str = ((RubyArray) tmp).join(sep);
-        } else {
-            str = RubyString.objAsString(tmp);
-        }
-        for (long i = 1; i < length; i++) {
+        IRubyObject tmp = null;
+        for (long i = 0; i < length; i++) {
             tmp = entry(i);
             taint |= tmp.isTaint();
-            if (tmp instanceof RubyArray) {
+            if (tmp instanceof RubyString) {
+                // do nothing
+            } else if (tmp instanceof RubyArray) {
                 tmp = ((RubyArray) tmp).join(sep);
-            } else if (!(tmp instanceof RubyString)) {
+            } else {
                 tmp = RubyString.objAsString(tmp);
             }
-            str.append(((StringMetaClass)sep.getMetaClass()).op_plus.call(getRuntime(), sep, (StringMetaClass)sep.getMetaClass(), "+", new IRubyObject[] {tmp}, false));
+            
+            if (i > 0 && !sep.isNil()) {
+                buf.append(sep.getValue());
+            }
+            buf.append(((RubyString)tmp).getValue());
         }
+        str = RubyString.newString(getRuntime(), buf.toString());
         str.setTaint(taint);
         return str;
     }
