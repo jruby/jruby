@@ -32,11 +32,20 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
+import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
@@ -46,8 +55,11 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
+import org.jruby.internal.runtime.methods.UndefinedMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callback.Callback;
 
 public class JavaClass extends JavaObject {
 
@@ -135,16 +147,152 @@ public class JavaClass extends JavaObject {
                 callbackFactory.getOptMethod("declared_constructor"));
         result.defineMethod("declared_method", 
                 callbackFactory.getOptMethod("declared_method"));
-
+        result.defineMethod("define_instance_methods_for_proxy", 
+                callbackFactory.getMethod("define_instance_methods_for_proxy", IRubyObject.class));
+        
         result.getMetaClass().undefineMethod("new");
 
         return result;
     }
-
+    
     public static JavaClass for_name(IRubyObject recv, IRubyObject name) {
         String className = name.asSymbol();
         Class klass = recv.getRuntime().getJavaSupport().loadJavaClass(className);
         return JavaClass.get(recv.getRuntime(), klass);
+    }
+    
+    /**
+     *  Get all methods grouped by name (e.g. 'new => {new(), new(int), new(int, int)}, ...')
+     *  @param isStatic determines whether you want static or instance methods from the class
+     */
+    private Map getMethodsClumped(boolean isStatic) {
+        Map map = new HashMap();
+        Method methods[] = javaClass().getMethods();
+        
+        for (int i = 0; i < methods.length; i++) {
+            if (isStatic != Modifier.isStatic(methods[i].getModifiers())) {
+                continue;
+            }
+            
+            String key = methods[i].getName();
+            RubyArray methodsWithName = (RubyArray) map.get(key); 
+            
+            if (methodsWithName == null) {
+                methodsWithName = getRuntime().newArray();
+                map.put(key, methodsWithName);
+            }
+            
+            methodsWithName.append(JavaMethod.create(getRuntime(), methods[i]));
+        }
+        
+        return map;
+    }
+    
+    private Map getPropertysClumped() {
+        Map map = new HashMap();
+        BeanInfo info;
+        
+        try {
+            info = Introspector.getBeanInfo(javaClass());
+        } catch (IntrospectionException e) {
+            return map;
+        }
+        
+        PropertyDescriptor[] descriptors = info.getPropertyDescriptors();
+        
+        for (int i = 0; i < descriptors.length; i++) {
+            Method readMethod = descriptors[i].getReadMethod();
+            
+            if (readMethod != null) {
+                String key = readMethod.getName();
+                List aliases = (List) map.get(key);
+                
+                if (aliases == null) {
+                    aliases = new ArrayList();
+                    
+                    map.put(key, aliases);    
+                }
+
+                if (readMethod.getReturnType() == Boolean.class ||
+                    readMethod.getReturnType() == boolean.class) {
+                    aliases.add(descriptors[i].getName() + "?");
+                }
+                aliases.add(descriptors[i].getName());
+            }
+            
+            Method writeMethod = descriptors[i].getWriteMethod();
+
+            if (writeMethod != null) {
+                String key = writeMethod.getName();
+                List aliases = (List) map.get(key);
+                
+                if (aliases == null) {
+                    aliases = new ArrayList();
+                    map.put(key, aliases);
+                }
+                
+                aliases.add(descriptors[i].getName()  + "=");
+            }
+        }
+        
+        return map;
+    }
+    
+    private void define_instance_method_for_proxy(final RubyClass proxy, List names, 
+            final RubyArray methods) {
+        final RubyModule javaUtilities = getRuntime().getModule("JavaUtilities");
+        Callback method = new Callback() {
+            public IRubyObject execute(IRubyObject self, IRubyObject[] args) {
+                IRubyObject[] argsArray = new IRubyObject[args.length + 1];
+                argsArray[0] = self.callMethod("java_object");
+                RubyArray argsAsArray = getRuntime().newArray();
+                for (int j = 0; j < args.length; j++) {
+                    argsArray[j+1] = Java.ruby_to_java(proxy, args[j]);
+                    argsAsArray.append(argsArray[j+1]);
+                }
+
+                IRubyObject[] mmArgs = new IRubyObject[] {methods, argsAsArray};
+                IRubyObject result = javaUtilities.callMethod("matching_method", mmArgs);
+                return Java.java_to_ruby(self, result.callMethod("invoke", argsArray));
+            }
+
+            public Arity getArity() {
+                return Arity.optional();
+            }
+        };
+        
+        for(Iterator iter = names.iterator(); iter.hasNext(); ) {
+            String methodName = (String) iter.next();
+            
+            // Do not override a built-in Ruby method.  This begs a question or two...
+            if (proxy.searchMethod(methodName) == UndefinedMethod.getInstance()) {
+                proxy.defineMethod(methodName, method);
+            }
+        }
+    }
+    
+    public IRubyObject define_instance_methods_for_proxy(IRubyObject arg) {
+        assert arg instanceof RubyClass;
+        
+        Map aliasesClump = getPropertysClumped();
+        Map methodsClump = getMethodsClumped(false);
+        RubyClass proxy = (RubyClass) arg;
+        
+        for (Iterator iter = methodsClump.keySet().iterator(); iter.hasNext(); ) {
+            String name = (String) iter.next();
+            RubyArray methods = (RubyArray) methodsClump.get(name);
+            List aliases = (List) aliasesClump.get(name);
+
+            if (aliases == null) {
+                aliases = new ArrayList();
+            }
+
+            aliases.add(name);
+            
+            define_instance_method_for_proxy(proxy, aliases, methods);
+        }
+        
+        return getRuntime().getNil();
     }
 
     public RubyBoolean public_p() {
