@@ -32,6 +32,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
+import java.util.regex.Pattern;
 
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
@@ -60,7 +61,7 @@ public class FileMetaClass extends IOMetaClass {
     protected class FileMeta extends Meta {
 		protected void initializeClass() {
 			IRuby runtime = getRuntime();
-	        RubyString separator = runtime.newString(File.separator);
+	        RubyString separator = runtime.newString("/");
 	        separator.freeze();
 	        defineConstant("SEPARATOR", separator);
 	        defineConstant("Separator", separator);
@@ -286,7 +287,7 @@ public class FileMetaClass extends IOMetaClass {
             return getRuntime().newString(relativePath);
         }
 
-        String cwd = System.getProperty("user.dir");
+        String cwd = getRuntime().getCurrentDirectory();
         if (args.length == 2 && !args[1].isNil()) {
             cwd = RubyString.stringValue(args[1]).getValue();
         }
@@ -307,10 +308,17 @@ public class FileMetaClass extends IOMetaClass {
         return getRuntime().newString(extractedPath);
     }
     
+    private static final Pattern MULTIPLE_DIR_SEPS = Pattern.compile("[/\\\\][/\\\\]+");
+    
     public RubyString join(IRubyObject[] args) {
 		RubyArray argArray = getRuntime().newArray(args);
-		
-		return argArray.join(getRuntime().newString(File.separator));
+        
+        RubyString str = argArray.join(RubyString.newString(getRuntime(), "/"));
+        
+        // create ruby string, cleaning out double dir separators
+        RubyString fixedStr = RubyString.newString(getRuntime(), MULTIPLE_DIR_SEPS.matcher(str.getValue()).replaceAll("/"));
+        fixedStr.setTaint(str.isTaint());
+        return fixedStr;
     }
 
     public IRubyObject lstat(IRubyObject filename) {
