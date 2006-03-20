@@ -130,6 +130,7 @@ public final class Ruby implements IRuby {
     private RubyClass systemCallError = null;
     private RubyModule errnoModule = null;
     private IRubyObject topSelf;
+    private String currentDirectory = NormalizedFile.getFileProperty("user.dir");
     private IRubyObject verbose;
 
     // Java support
@@ -333,6 +334,14 @@ public final class Ruby implements IRuby {
      */
     public IRubyObject getTopSelf() {
         return topSelf;
+    }
+    
+    public void setCurrentDirectory(String dir) {
+        currentDirectory = dir;
+    }
+    
+    public String getCurrentDirectory() {
+        return currentDirectory;
     }
 
     /** ruby_init

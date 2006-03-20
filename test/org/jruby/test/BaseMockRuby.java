@@ -581,4 +581,12 @@ public class BaseMockRuby implements IRuby {
 		throw new MockException();
 	}
 
+    public String getCurrentDirectory() {
+        throw new MockException();
+    }
+
+    public void setCurrentDirectory(String dir) {
+        throw new MockException();
+    }
+
 }

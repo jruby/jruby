@@ -110,6 +110,10 @@ public interface IRuby {
 	public void defineGlobalConstant(String name, IRubyObject value);
 
 	public IRubyObject getTopConstant(String name);
+    
+    public String getCurrentDirectory();
+    
+    public void setCurrentDirectory(String dir);
 
 	public boolean isClassDefined(String name);
 
