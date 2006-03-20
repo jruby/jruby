@@ -101,14 +101,10 @@ public class Glob {
      * Get file objects for glob; made private to prevent it being used directly in the future
      */
     private void getFiles() {
+        // we always use / to normalize all file paths internally
     	String pathSplitter = "/";
     	
-    	// Windows file delimeter needs to escape delimeter to prevent regex compilation error
-    	if (File.separator.equals("\\")) {
-    		//pathSplitter = pathSplitter + File.separator;
-    	}
-    	
-		for (Iterator iter = patterns.iterator(); iter.hasNext();) {
+    	for (Iterator iter = patterns.iterator(); iter.hasNext();) {
 			GlobPattern globPattern = (GlobPattern) iter.next();
 	        String[] dirs = globPattern.getPattern().split(pathSplitter);
         	NormalizedFile root = new NormalizedFile(dirs[0]);
