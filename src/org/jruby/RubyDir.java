@@ -141,7 +141,7 @@ public class RubyDir extends RubyObject {
      */
     public static RubyArray glob(IRubyObject recv, RubyString pat) {
         String pattern = pat.toString();
-        String[] files = new Glob(NormalizedFile.getFileProperty("user.dir"), pattern).getNames();
+        String[] files = new Glob(recv.getRuntime().getCurrentDirectory(), pattern).getNames();
         return recv.getRuntime().newArray(JavaUtil.convertJavaArrayToRuby(recv.getRuntime(), files));
     }
 
@@ -157,7 +157,7 @@ public class RubyDir extends RubyObject {
      */
     public static RubyArray entries(IRubyObject recv, RubyString path) {
         if (".".equals(path.toString().trim())) {
-            path = recv.getRuntime().newString(NormalizedFile.getFileProperty("user.dir"));
+            path = recv.getRuntime().newString(recv.getRuntime().getCurrentDirectory());
         }
         
         NormalizedFile directory = new NormalizedFile(path.toString());
@@ -179,8 +179,8 @@ public class RubyDir extends RubyObject {
             (RubyString) args[0].convertToString() : getHomeDirectoryPath(recv); 
         NormalizedFile dir = getDir(recv.getRuntime(), path.toString(), true);
         String realPath = null;
-        String oldCwd = NormalizedFile.getFileProperty("user.dir");
-    
+        String oldCwd = recv.getRuntime().getCurrentDirectory();
+        
         // We get canonical path to try and flatten the path out.
         // a dir '/subdir/..' should return as '/'
         // cnutter: Do we want to flatten path out?
@@ -192,12 +192,15 @@ public class RubyDir extends RubyObject {
         
         IRubyObject result = null;
         if (recv.getRuntime().getCurrentContext().isBlockGiven()) {
-        	// FIXME: Don't use user.dir for cwd
-        	System.setProperty("user.dir", realPath);
-        	result = recv.getRuntime().getCurrentContext().yield(path);
-        	System.setProperty("user.dir", oldCwd); 
+        	// FIXME: Don't allow multiple threads to do this at once
+            recv.getRuntime().setCurrentDirectory(realPath);
+            try {
+                result = recv.getRuntime().getCurrentContext().yield(path);
+            } finally {
+                recv.getRuntime().setCurrentDirectory(oldCwd);
+            }
         } else {
-        	System.setProperty("user.dir", realPath);
+        	recv.getRuntime().setCurrentDirectory(realPath);
         	result = recv.getRuntime().newFixnum(0);
         }
         
@@ -242,7 +245,7 @@ public class RubyDir extends RubyObject {
 
     /** Returns the current directory. */
     public static RubyString getwd(IRubyObject recv) {
-        return recv.getRuntime().newString(NormalizedFile.getFileProperty("user.dir"));
+        return recv.getRuntime().newString(recv.getRuntime().getCurrentDirectory());
     }
 
     /**
@@ -263,7 +266,7 @@ public class RubyDir extends RubyObject {
 
         NormalizedFile newDir = getDir(recv.getRuntime(), path, false);
 
-        return newDir.mkdir() ? RubyFixnum.zero(recv.getRuntime()) :
+        return newDir.mkdirs() ? RubyFixnum.zero(recv.getRuntime()) :
             RubyFixnum.one(recv.getRuntime());
     }
 
