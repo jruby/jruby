@@ -36,9 +36,12 @@
 package org.jruby;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Iterator;
+import java.util.StringTokenizer;
+import java.util.regex.Pattern;
 
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.JumpException;
@@ -643,12 +646,69 @@ public class RubyKernel {
         
         return recv.getRuntime().newString(output.toString());
     }
+    
+    private static final Pattern PATH_SEPARATORS = Pattern.compile("[/\\\\]");
+    
+    /**
+     * For the first full token on the command, most likely the actual executable to run, replace
+     * all dir separators with that which is appropriate for the current platform. Return the new
+     * with this executable string at the beginning.
+     * 
+     * @param command The all-forward-slashes command to be "fixed"
+     * @return The "fixed" full command line
+     */
+    private static String repairDirSeps(String command) {
+        // TODO: This could be improved and optimized
+        StringTokenizer toker = new StringTokenizer(command, " ");
+        StringBuffer executable = new StringBuffer();
+        
+        boolean insideQuotes = false;
+        char quoteChar = 0;
+        loop: while (true) {
+            String token = toker.nextToken();
+            
+            if (!insideQuotes) {
+                char first = token.charAt(0);
+                switch (first) {
+                    case '"':
+                    case '\'':
+                        insideQuotes = true;
+                        quoteChar = first;
+                        executable.append(token + " ");
+                        break;
+                    default:
+                        executable.append(token);
+                        break loop;
+                }
+            } else {
+                char last = token.charAt(token.length() - 1);
+                executable.append(token);
+                if (last == quoteChar) {
+                    insideQuotes = false;
+                    break loop;
+                } else {
+                    executable.append(" ");
+                }
+            }
+        }
+        
+        String remainder = command.substring(executable.length());
+        
+        // Matcher.replaceAll treats backslashes in the replacement string as escaped characters
+        String replacement = File.separator;
+        if (File.separatorChar == '\\') replacement = "\\\\";
+        
+        return PATH_SEPARATORS.matcher(executable).replaceAll(replacement) + remainder;
+    }
 
     private static int runInShell(IRuby runtime, String command, StringBuffer output) {
         try {
             String shell = System.getProperty("jruby.shell");
             Process aProcess;
             String shellSwitch = "-c";
+            
+            command = repairDirSeps(command);
+            
             if (shell != null) {
                 if (!shell.endsWith("sh")) {
                     shellSwitch = "/c";
