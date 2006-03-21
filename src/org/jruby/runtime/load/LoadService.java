@@ -207,8 +207,17 @@ public class LoadService {
 
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader(); 
 
+            // FIXME: We may only want to do one of the following two lookups; however, Ruby is obviously not
+            // thread safe with a global CWD, and I don't know if we'll get around that
             NormalizedFile file = new NormalizedFile(name);
             // Name matches an absolute path that exists.
+            if (file.isAbsolute() && file.exists() && file.isFile()) {
+                return new LoadServiceResource(file.toURL(), name);
+            }
+            
+            // Try with CWD from Ruby
+            String cwd = runtime.getCurrentDirectory();
+            file = (NormalizedFile)new NormalizedFile(cwd, name).getAbsoluteFile();
             if (file.isAbsolute() && file.exists() && file.isFile()) {
                 return new LoadServiceResource(file.toURL(), name);
             }

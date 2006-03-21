@@ -762,7 +762,8 @@ class Zlib::GzipWriter < Zlib::GzipFile
     # Creates a GzipWriter object associated with io. level and strategy should be the same as the arguments of Zlib::Deflate.new. 
     # The GzipWriter object writes gzipped data to io. At least, io must respond to the write method that behaves same as write method in IO class
     #
-    def initialize(io, level, strategy)
+    def initialize(io, level=nil, strategy=nil)
+    p IOConverter.new(io).asOutputStream
       @io = GZIPOutputStream.new(IOConverter.new(io).asOutputStream)
     end
 
