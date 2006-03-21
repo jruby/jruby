@@ -55,7 +55,6 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
-import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -264,8 +263,9 @@ public class JavaClass extends JavaObject {
         for(Iterator iter = names.iterator(); iter.hasNext(); ) {
             String methodName = (String) iter.next();
             
-            // Do not override a built-in Ruby method.  This begs a question or two...
-            if (proxy.searchMethod(methodName) == UndefinedMethod.getInstance()) {
+            // We do not override class since it is too important to be overridden by getClass
+            // short name.
+            if (!methodName.equals("class")) {
                 proxy.defineMethod(methodName, method);
             }
         }
