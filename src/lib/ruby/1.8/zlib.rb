@@ -28,7 +28,9 @@ require "stringio"
 
 include_class("java.lang.String"){ |p,name| "J#{name}"}
 
+include_class "java.io.BufferedReader"
 include_class "java.io.ByteArrayOutputStream"
+include_class "java.io.InputStreamReader"
 include_class "java.io.PipedInputStream"
 include_class "java.io.PipedOutputStream"
 
@@ -381,15 +383,23 @@ end
 #
 class Zlib::GzipFile
     #
-    # Wraps a yield to the object and then ensures that it will be closed.
+    # Wraps a yield to the object and then ensures that it will be closed.  Unless there is no
+    # provided block then it just returns the object.
     #
-    def self.wrap(obj)
-      begin
-        yield obj
-      ensure
-        obj.close if !obj.closed?
+    # This signature is a little differant then Ruby version, but contrary to their docs
+    # Zlib::GzipReader and Zlib::GzipWriter have no documentation and I think they are the only
+    # real consumer of this.
+    def self.wrap(io, proc)
+      unless proc.nil?
+        begin
+          proc.call(io) unless proc.nil?
+        ensure
+      	  io.close unless io.closed?
+        end
+        nil
+      else
+        io
       end
-      nil
     end
 
     #
@@ -483,9 +493,10 @@ class Zlib::GzipReader < Zlib::GzipFile
     #
     # Otherwise returns the open File object.
     #
-    def self.open(filename,&block)
-      gz = new(File.open(filename,"rb"))
-      wrap(gz,&block)
+    def self.open(filename)
+      proc = block_given? ? Proc.new : nil
+      io = new(File.open(filename, "rb"))
+      wrap(io, proc)
     end
 
     #
@@ -629,6 +640,11 @@ class Zlib::GzipReader < Zlib::GzipFile
     # Not supported.
     #
     def gets(separator=$/)
+      # This is impl is wrong since it ignores separator argument.  I wanted some symmetrical
+      # unit tests so I added this as a quick hack (plus newline is the common case so it will
+      # have some use until it is fixed).
+      b = BufferedReader.new(InputStreamReader.new(@io))
+	  b.readLine + "\n"
     end
     
     #
@@ -763,7 +779,6 @@ class Zlib::GzipWriter < Zlib::GzipFile
     # The GzipWriter object writes gzipped data to io. At least, io must respond to the write method that behaves same as write method in IO class
     #
     def initialize(io, level=nil, strategy=nil)
-    p IOConverter.new(io).asOutputStream
       @io = GZIPOutputStream.new(IOConverter.new(io).asOutputStream)
     end
 
@@ -771,9 +786,10 @@ class Zlib::GzipWriter < Zlib::GzipFile
     # Opens a file specified by filename for writing gzip compressed data, and returns a GzipWriter object associated with that file. 
     # Further details of this method are found in Zlib::GzipWriter.new and Zlib::GzipFile#wrap.
     #
-    def self.open(filename,level=nil,strategy=nil,&block)
-      gz = new(File.open(filename,"wb"),level,strategy)
-      wrap(gz,&block)
+    def self.open(filename,level=nil,strategy=nil)
+      proc = block_given? ? Proc.new : nil
+      io = new(File.open(filename,"wb"),level,strategy)
+      wrap(io, proc)
     end
 
     #
@@ -838,7 +854,7 @@ class Zlib::GzipWriter < Zlib::GzipFile
     #
     def puts(*opts)
       sio = StringIO.new
-      sio.puts(opts)
+      sio.puts(*opts)
       write(sio.string)
       nil
     end

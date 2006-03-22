@@ -57,6 +57,7 @@ testXML.rb
 testStringIO.rb
 testEval.rb
 testSuper.rb
+testZlib.rb
 
 # MRI Ruby tests (from sample/test.rb in Matz's Ruby Interpreter):
 
