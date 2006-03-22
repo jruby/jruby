@@ -43,8 +43,13 @@ class StringIO
     line
   end
   def length() @string.length; end
-  def print() @string.print; end
-  def printf(*args) @string.printf(*args); end
+  def print(obj=$_, *rest)
+  	@string = @string + obj.to_s
+  	rest.each { |arg| @string = @string + arg.to_s }
+  	@string = @string + $\
+  end
+  def printf(*args) @string = @string + sprintf(*args); end
+  def puts(*args) @string = @string + args.join("\n") + "\n" end
   def read(*args)
     str = nil
     
