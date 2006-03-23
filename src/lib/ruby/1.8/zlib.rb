@@ -43,8 +43,8 @@ include_class "java.util.zip.GZIPOutputStream"
 
 include_class "org.jruby.util.Adler32Ext"
 include_class "org.jruby.util.CRC32Ext"
-include_class "org.jruby.util.IOConverter"
-
+include_class "org.jruby.util.IOInputStream"
+include_class "org.jruby.util.IOOutputStream"
 
 #
 # Implementation of the Zlib library with the help of Java classes
@@ -508,7 +508,7 @@ class Zlib::GzipReader < Zlib::GzipFile
     # This particular implementation requires that io actually IS an IO-object, or child. TODO: fix this. implement wrapper of OutputStream, maybe?
     #
     def initialize(io)
-      @io = GZIPInputStream.new(IOConverter.new(io).asInputStream)
+      @io = GZIPInputStream.new(IOInputStream.new(io))
       @line = 1
     end
 
@@ -779,7 +779,7 @@ class Zlib::GzipWriter < Zlib::GzipFile
     # The GzipWriter object writes gzipped data to io. At least, io must respond to the write method that behaves same as write method in IO class
     #
     def initialize(io, level=nil, strategy=nil)
-      @io = GZIPOutputStream.new(IOConverter.new(io).asOutputStream)
+      @io = GZIPOutputStream.new(IOOutputStream.new(io))
     end
 
     #

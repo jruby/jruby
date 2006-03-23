@@ -11,7 +11,8 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * 
+ * Copyright (C) 2006 Ola Bini <Ola.Bini@ki.se>
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -26,46 +27,39 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
-import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.IOException;
 
-import org.jruby.RubyIO;
+import org.jruby.RubyString;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * A wrapper object to allow access to the IO-internal input and outputstreams.
- * This class is a hack, and should be replaced by Ruby classes that extend
- * OutputStream and InputStream to act as wrappers to IO-objects.
- * This is not possible at this point, since those classes are abstract.
+ * This class wraps a IRubyObject in an OutputStream. Depending on which messages
+ * the IRubyObject answers to, it will have different functionality.
+ * 
+ * The point is that the IRubyObject could exhibit duck typing, in the style of IO versus StringIO, for example.
  *
- * The fatal flaw of this class is that there is no possibility for duck typing.
+ * At the moment, the only functionality supported is writing, and the only requirement on the io-object is
+ * that it responds to write() like IO.
+ * 
+ * @author <a href="mailto:Ola.Bini@ki.se">Ola Bini</a>
  */
-public class IOConverter {
-    private final RubyIO io;
+public class IOOutputStream extends OutputStream {
+    private IRubyObject io;
 
     /**
-     * Creates a new converter with the IO object provided.
+     * Creates a new OutputStream with the object provided.
      *
-     * @param io the io object
+     * @param io the ruby object
      */
-    public IOConverter(final RubyIO io) {
+    public IOOutputStream(final IRubyObject io) {
+        if(!io.respondsTo("write")) {
+            throw new IllegalArgumentException("Object: " + io + " is not a legal argument to this wrapper, cause it doesn't respond to \"write\".");
+        }
         this.io = io;
     }
     
-    /**
-     * Returns the internal OutputStream.
-     *
-     * @return the output stream
-     */
-    public OutputStream asOutputStream() {
-        return io.getOutStream();
-    }
-
-    /**
-     * Returns the internal InputStream.
-     *
-     * @return the input stream
-     */
-    public InputStream asInputStream() {
-        return io.getInStream();
+    public void write(final int bite) throws IOException {
+        io.callMethod("write", new RubyString(io.getRuntime(), new String(new char[]{(char)(0x000000FF & bite)})));
     }
 }
