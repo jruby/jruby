@@ -19,6 +19,7 @@
  * Copyright (C) 2002-2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2006 Ola Bini <Ola.Bini@ki.se>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -33,6 +34,8 @@
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby;
+
+import java.lang.reflect.Array;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -1423,9 +1426,21 @@ public class RubyArray extends RubyObject implements List {
 		return array;
 	}
 
-	public Object[] toArray(Object[] arg0) {
-		// TODO: Implement
-		return null;
+	public Object[] toArray(final Object[] arg) {
+        Object[] array = arg;
+        int length = getLength();
+            
+        if(array.length < length) {
+            Class type = array.getClass().getComponentType();
+            array = (Object[])Array.newInstance(type, length);
+        }
+
+        Iterator iter = iterator();
+        for (int i = 0; iter.hasNext(); i++) {
+            array[i] = iter.next();
+        }
+        
+        return array;
 	}
 
 	public boolean add(Object element) {
