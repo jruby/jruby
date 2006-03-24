@@ -33,8 +33,8 @@ public class HashMetaClass extends ObjectMetaClass {
 	        defineMethod("[]=", Arity.twoArguments(), "aset");
 			defineMethod("clear", Arity.noArguments(), "rb_clear");
 			defineMethod("clone", Arity.noArguments(), "rbClone");
-			defineMethod("default", Arity.noArguments(), "getDefaultValue");
-	        defineMethod("default_proc", Arity.noArguments()); 
+			defineMethod("default", Arity.optional(), "getDefaultValue");
+            defineMethod("default_proc", Arity.noArguments()); 
 			defineMethod("default=", Arity.singleArgument(), "setDefaultValue");
 			defineMethod("delete", Arity.singleArgument());
 			defineMethod("delete_if", Arity.noArguments());

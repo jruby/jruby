@@ -32,15 +32,28 @@ test_equal([2, 6], h.values_at(1, 5))
 h = {1=>2,3=>4}
 test_equal(1, h.index(2))
 test_equal(nil, h.index(10))
+test_equal(nil, h.default_proc)
 h.default = :hello
+test_equal(nil, h.default_proc)
 test_equal(1, h.index(2))
 test_equal(nil, h.index(10))
 
-h = Hash.new {|h,k| h[k] = 10000 }
+h = Hash.new {|h,k| h[k] = k.to_i*10 }
 
-test_equal(10000, h[10])
+test_ok(!nil, h.default_proc)
+test_equal(100, h[10])
+test_equal(0, h.default)
+test_equal(20, h.default(2))
 
 h.default = 5
+test_equal(nil, h.default_proc)
 
 test_equal(5, h[12])
+
+class << h
+ def default(k); 2; end
+end
+
+test_equal(nil, h.default_proc)
+test_equal(2, h[30])
 

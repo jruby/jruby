@@ -16,7 +16,7 @@
  * Copyright (C) 2001-2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2006 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2006 Ola Bini <Ola.Bini@ki.se>
@@ -36,7 +36,6 @@
 package org.jruby;
 
 import java.lang.reflect.Array;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -46,7 +45,9 @@ import java.util.Set;
 
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.ConversionIterator;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
@@ -56,14 +57,13 @@ import org.jruby.runtime.marshal.UnmarshalStream;
  */
 public class RubyHash extends RubyObject implements Map {
     private Map valueMap;
+    // Place we capture any explicitly set proc so we can return it for default_proc
+    private IRubyObject capturedDefaultProc;
     
-    // Value returned by various functions if no such hash element exists
-    private IRubyObject defaultValue;
+    // Holds either default value or default proc.  Executing whatever is here will return the
+    // correct default value.
+    private Callback defaultValueCallback;
     
-    // Proc which gets run by various function if no such hash element exists.
-    // Sometimes this proc will be run even if a default_value exists.
-    private IRubyObject defaultProc;
-
     private boolean isRehashing = false;
 
     public RubyHash(IRuby runtime) {
@@ -77,8 +77,8 @@ public class RubyHash extends RubyObject implements Map {
     public RubyHash(IRuby runtime, Map valueMap, IRubyObject defaultValue) {
         super(runtime, runtime.getClass("Hash"));
         this.valueMap = new HashMap(valueMap);
-        this.defaultValue = defaultValue;
-        this.defaultProc = runtime.getNil();
+        this.capturedDefaultProc = runtime.getNil();
+        setDefaultValue(defaultValue);
     }
 
     public static RubyHash nilHash(IRuby runtime) {
@@ -88,24 +88,47 @@ public class RubyHash extends RubyObject implements Map {
             }
         };
     }
-
-    public IRubyObject getDefaultValue() {
-        return (defaultValue == null) ? getRuntime().getNil() : defaultValue;
+    
+    public IRubyObject getDefaultValue(IRubyObject[] args) {
+        return defaultValueCallback != null ? defaultValueCallback.execute(this, args) : getRuntime().getNil();
     }
 
-    public IRubyObject setDefaultValue(IRubyObject defaultValue) {
-        this.defaultValue = defaultValue;
-        
-        // Setting a default value will wipe out any proc
-        defaultProc = getRuntime().getNil();
+    public IRubyObject setDefaultValue(final IRubyObject defaultValue) {
+        capturedDefaultProc = getRuntime().getNil();
+        defaultValueCallback = new Callback() {
+            public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
+                return defaultValue;
+            }
+
+            public Arity getArity() {
+                return Arity.optional();
+            }
+        };
         
         return defaultValue;
     }
 
-    public void setDefaultProc(RubyProc newProc) {
-    	defaultProc = newProc;
+    public void setDefaultProc(final RubyProc newProc) {
+        final IRubyObject self = this;
+        capturedDefaultProc = newProc;
+        defaultValueCallback = new Callback() {
+            public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
+                IRubyObject[] nargs = args.length == 0 ? new IRubyObject[] { self } :
+                     new IRubyObject[] { self, args[0] };
+
+                return newProc.call(nargs);
+            }
+
+            public Arity getArity() {
+                return Arity.optional();
+            }
+        };
     }
     
+    public IRubyObject default_proc() {
+        return capturedDefaultProc;
+    }
+
     public Map getValueMap() {
         return valueMap;
     }
@@ -184,10 +207,6 @@ public class RubyHash extends RubyObject implements Map {
         return this;
     }
     
-    public IRubyObject default_proc() {
-    	return defaultProc;
-    }
-
     public RubyString inspect() {
         final String sep = ", ";
         final String arrow = "=>";
@@ -234,7 +253,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
 	public IRubyObject rbClone() {
-		RubyHash result = newHash(getRuntime(), getValueMap(), getDefaultValue());
+		RubyHash result = newHash(getRuntime(), getValueMap(), getDefaultValue(NULL_ARRAY));
 		result.setTaint(isTaint());
 		result.initCopy(this);
 		result.setFrozen(isFrozen());
@@ -272,16 +291,7 @@ public class RubyHash extends RubyObject implements Map {
     public IRubyObject aref(IRubyObject key) {
         IRubyObject value = (IRubyObject) valueMap.get(key);
 
-        if (value != null) {
-        	return value;
-        }
-        
-        if (!defaultProc.isNil()) {
-        	IRubyObject[] args = {this, key};
-        	return ((RubyProc) defaultProc).call(args, this);
-        } 
-
-        return getDefaultValue(); 
+        return value != null ? value : callMethod("default", new IRubyObject[] {key});
     }
 
     public IRubyObject fetch(IRubyObject[] args) {
@@ -414,7 +424,7 @@ public class RubyHash extends RubyObject implements Map {
 			return getRuntime().getCurrentContext().yield(key);
 		} 
 
-		return getDefaultValue();
+		return getDefaultValue(new IRubyObject[] {key});
 	}
 
 	public RubyHash delete_if() {
