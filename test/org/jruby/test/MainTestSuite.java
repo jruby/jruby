@@ -70,6 +70,7 @@ public class MainTestSuite extends TestSuite {
         suite.addTest(new TestSuite(TestReflectionCallback.class));
         suite.addTest(new TestSuite(TestRegexpTranslator.class));
         //suite.addTest(new TestSuite(TestAdoptedThreading.class));
+        suite.addTest(new TestSuite(TestRubyArray.class));
         return suite;
     }
 }
