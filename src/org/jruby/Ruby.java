@@ -84,6 +84,7 @@ import org.jruby.runtime.builtin.meta.ObjectMetaClass;
 import org.jruby.runtime.builtin.meta.ProcMetaClass;
 import org.jruby.runtime.builtin.meta.StringMetaClass;
 import org.jruby.runtime.builtin.meta.SymbolMetaClass;
+import org.jruby.runtime.builtin.meta.TimeMetaClass;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.util.BuiltinScript;
@@ -465,7 +466,7 @@ public final class Ruby implements IRuby {
         
         RubyPrecision.createPrecisionModule(this);
         RubyProcess.createProcessModule(this);
-        RubyTime.createTimeClass(this);
+        new TimeMetaClass(this).initializeClass();
         RubyUnboundMethod.defineUnboundMethodClass(this);
         RubyClass exceptionClass = getClass("Exception");
         RubyClass standardError = defineClass("StandardError", exceptionClass);

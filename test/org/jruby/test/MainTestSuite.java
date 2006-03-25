@@ -52,7 +52,6 @@ public class MainTestSuite extends TestSuite {
         suite.addTest(new TestSuite(TestRubyObject.class));
         suite.addTest(new TestSuite(TestRubyNil.class));
         suite.addTest(new TestSuite(TestRubyHash.class));
-        suite.addTest(new TestSuite(TestRubyTime.class));
         suite.addTest(new TestSuite(TestRuby.class));
         suite.addTest(new TestSuite(TestRequire.class));
         suite.addTest(new TestSuite(TestJavaUtil.class));
