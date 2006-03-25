@@ -195,6 +195,8 @@ public class RubyHash extends RubyObject implements Map {
     }
 
 	public static RubyHash newHash(IRuby runtime, Map valueMap, IRubyObject defaultValue) {
+		assert defaultValue != null;
+		
 		return new RubyHash(runtime, valueMap, defaultValue);
 	}
 

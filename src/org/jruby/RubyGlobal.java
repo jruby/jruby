@@ -64,7 +64,7 @@ public class RubyGlobal {
 		// FIXME: ENV Should not copy system properties, but should reference them instead
         HashMap envs = new HashMap();
 		envs.put(runtime.newString("HOME"), runtime.newString(System.getProperty("user.home")));
-        runtime.defineGlobalConstant("ENV", RubyHash.newHash(runtime, envs, null));
+        runtime.defineGlobalConstant("ENV", RubyHash.newHash(runtime, envs, runtime.getNil()));
 
         runtime.defineVariable(new StringGlobalVariable(runtime, "$KCODE", runtime.newString("UTF8")));
         runtime.defineVariable(new StringGlobalVariable(runtime, "$/", runtime.newString("\n")));

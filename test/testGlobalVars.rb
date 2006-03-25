@@ -22,3 +22,6 @@ test_equal("UTF8", $KCODE)
 
 # Make last test so we don't have safety mucking with other tests
 test_exception(SecurityError) { $SAFE = 3; $SAFE = 2 }
+
+# Make sure ENV exists (TODO: add tests for env var support, once it works)
+test_equal(nil, ENV['BOGUS_VARIABLE'])
