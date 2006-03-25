@@ -92,7 +92,7 @@ public class EvaluateCallable extends AbstractCallable {
             return ((IArityNode) node).getArity();
         } 
 
-        throw new Error("unexpected type " + node.getClass());
+        throw new Error("unexpected type " + node.getClass() + " at " + node.getPosition());
     }
     
     public ICallable dup() {
