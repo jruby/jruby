@@ -149,9 +149,13 @@ public class RubyTime extends RubyObject {
         return (RubyNumeric.fix2int(callMethod("<=>", other)) == 0) ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
-    public RubyFixnum op_cmp(IRubyObject other) {
+    public IRubyObject op_cmp(IRubyObject other) {
         long millis = getTimeInMillis();
-
+        
+        if (other.isNil()) {
+        	return other;
+        }
+        
         if (other instanceof RubyFloat || other instanceof RubyBignum) {
             double time = millis / 1000.0;
 

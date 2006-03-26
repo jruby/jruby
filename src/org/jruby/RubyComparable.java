@@ -68,12 +68,22 @@ public class RubyComparable {
         return comparableModule;
     }
 
-    public static RubyBoolean equal(IRubyObject recv, IRubyObject other) {
+    public static IRubyObject equal(IRubyObject recv, IRubyObject other) {
         try {
             if (recv == other) {
                 return recv.getRuntime().getTrue();
             }
-            return (RubyNumeric.fix2int(recv.callMethod("<=>", other)) == 0) ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
+            IRubyObject result = recv.callMethod("<=>", other);
+            
+            if (result.isNil()) {
+            	return result;
+            }
+            
+            if (RubyNumeric.fix2int(result) != 0) {
+                return recv.getRuntime().getFalse();
+            }
+            	
+            return recv.getRuntime().getTrue();
         } catch (RaiseException rnExcptn) {
         	RubyException raisedException = rnExcptn.getException();
         	if (raisedException.isKindOf(recv.getRuntime().getClass("NoMethodError"))) {

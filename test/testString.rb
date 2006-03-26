@@ -82,3 +82,7 @@ s = ""
 s[0,0]="foo"
 
 test_equal("foo", s)
+
+# oct should return zero in appropriate cases
+test_equal(0, "b".oct)
+test_equal(0, "".oct)

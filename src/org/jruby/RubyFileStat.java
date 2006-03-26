@@ -55,6 +55,8 @@ public class RubyFileStat extends RubyObject {
         fileStatClass.defineMethod("mode", callbackFactory.getMethod("mode"));
         fileStatClass.defineMethod("size", callbackFactory.getMethod("size"));
         fileStatClass.defineMethod("writable?", callbackFactory.getMethod("writable"));
+        fileStatClass.defineMethod("symlink?", callbackFactory.getMethod("symlink_p"));
+        fileStatClass.defineMethod("blksize", callbackFactory.getMethod("blksize"));
 
         fileStatClass.defineMethod("file?", callbackFactory.getMethod("file_p"));
     	
@@ -66,6 +68,11 @@ public class RubyFileStat extends RubyObject {
 		// In some versions of java changing user.dir will not get reflected in newly constructed
 		// files.  Getting the absolutefile does seem to hack around this...
         this.file = (NormalizedFile)file.getAbsoluteFile();
+    }
+    
+    public RubyFixnum blksize() {
+        // We cannot determine, so always return 4096 (better than blowing up)
+        return RubyFixnum.newFixnum(getRuntime(), 4096);
     }
 
     public RubyBoolean directory_p() {
@@ -92,6 +99,11 @@ public class RubyFileStat extends RubyObject {
     
     public IRubyObject size() {
     	return getRuntime().newFixnum(file.length());
+    }
+    
+    public IRubyObject symlink_p() {
+        // We cannot determine this in Java, so we will always return false (better than blowing up)
+        return getRuntime().getFalse();
     }
     
     public IRubyObject writable() {

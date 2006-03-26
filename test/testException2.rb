@@ -65,3 +65,10 @@ test_exception(Bar) { raise Gar.new, "HEH" }
 test_exception(TypeError) { raise Bar.new, "HEH" }
 test_exception(TypeError) { raise Bar.new, "HEH", caller }
 
+# empty rescue block should cause method to return nil
+def do_except
+  raise Exception.new
+rescue Exception
+end
+
+test_equal(nil, do_except)

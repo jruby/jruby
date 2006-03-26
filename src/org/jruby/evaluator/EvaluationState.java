@@ -438,10 +438,10 @@ public class EvaluationState {
         // we're at rescuer now
         RescueNode iVisited = (RescueNode)peekCurrentInstructionBundle().instructionContext;
         popCurrentInstruction();
-        RescueBodyNode rescueNode = iVisited.getRescueNode();
+        RescueBodyNode rescueBodyNode = iVisited.getRescueNode();
 
-        while (rescueNode != null) {
-            Node exceptionNodes = rescueNode.getExceptionNodes();
+        while (rescueBodyNode != null) {
+            Node exceptionNodes = rescueBodyNode.getExceptionNodes();
             ListNode exceptionNodesList;
             
             // need to make these iterative
@@ -453,12 +453,13 @@ public class EvaluationState {
             
             if (isRescueHandled(raisedException, exceptionNodesList)) {
                 addRetriableInstruction(iVisited);
-                addNodeInstruction(rescueNode);
+                addNodeInstruction(rescueBodyNode);
                 setCurrentException(null);
+                clearResult();
                 return;
             }
             
-            rescueNode = rescueNode.getOptRescueNode();
+            rescueBodyNode = rescueBodyNode.getOptRescueNode();
         }
 
         // no takers; bubble up

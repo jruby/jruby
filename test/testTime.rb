@@ -40,3 +40,10 @@ test_equal(500, t.tv_usec)
 t = Time.at(0.9, 500)
 test_equal(0, t.tv_sec)
 test_equal(500, t.tv_usec)
+
+# test comparison with nil
+t = Time.now
+test_equal(nil, t == nil)
+
+# Time.utc can accept float values (by turning them into ints)
+test_no_exception { Time::utc(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0) }

@@ -949,6 +949,10 @@ public class RubyString extends RubyObject {
 	 *
 	 */
 	public IRubyObject oct() {
+		if (isEmpty()) {
+			return getRuntime().newFixnum(0);
+		}
+		
 		int base = 8;
 		String str = getValue().trim();
 		int pos = (str.charAt(0) == '-' || str.charAt(0) == '+') ? 1 : 0;

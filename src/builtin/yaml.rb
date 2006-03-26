@@ -935,8 +935,9 @@ module YAML
 	def YAML.make_stream( io )
         if String === io
             io = StringIO.new( io )
-        elsif not IO === io
-            raise YAML::Error, "YAML stream must be an IO or String object."
+        #elsif not IO === io
+        #    raise YAML::Error, "YAML stream must be an IO or String object."
+        # cnutter: This test was removed because GzipFile does not < IO in Ruby 1.8
         end
         if YAML::unicode
             def io.readline

@@ -260,7 +260,8 @@ class Zlib::ZStream < Object
     end
 
     def finish
-      @stream.finish
+      # FIXME: this doesn't appear to work
+      #@stream.finish
     end
 
     #
@@ -546,10 +547,10 @@ class Zlib::GzipReader < Zlib::GzipFile
       else
         raise ArgError.new("negative length %d given",len) if len<0
         len.times do 
-          if n=getc
+          if n = getc
             val << n
           else
-            raise ArgError.new("to long %d given",len)
+            raise ArgError.new("too long %d given",len)
           end
         end
       end
@@ -575,7 +576,7 @@ class Zlib::GzipReader < Zlib::GzipFile
     #
     def readchar
       val = getc
-      raise EOFError.new("end of file reached") if val.nil?1
+      raise EOFError.new("end of file reached") if val.nil?
       val
     end
 
@@ -633,18 +634,26 @@ class Zlib::GzipReader < Zlib::GzipFile
     # Not supported.
     #
     def eof?
-      eof
+      @io.available != 1
     end
 
     #
     # Not supported.
     #
-    def gets(separator=$/)
-      # This is impl is wrong since it ignores separator argument.  I wanted some symmetrical
-      # unit tests so I added this as a quick hack (plus newline is the common case so it will
-      # have some use until it is fixed).
-      b = BufferedReader.new(InputStreamReader.new(@io))
-	  b.readLine + "\n"
+    def gets(separator = $/)
+      # cnutter: This is going to be *slow* but using a BufferedReader causes the whole zip stream to
+      # be read in and buffered, so we need a better way to pull off a line at a time
+      
+      str = ''
+      ch = getc
+      return nil if ch.nil?
+      # FIXME cnutter: this only works for single-char separators at the moment
+      while ch > -1 && ch.chr != separator
+        str << ch
+        ch = @io.read
+      end
+	  # return line if nil, otherwise cat \n
+	  str.chomp + separator
     end
     
     #

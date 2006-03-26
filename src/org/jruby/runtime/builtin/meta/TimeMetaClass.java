@@ -182,8 +182,7 @@ public class TimeMetaClass extends ObjectMetaClass {
         } else {
             len = checkArgumentCount(args, 1, 7);
         }
-
-        int year = RubyNumeric.fix2int(args[0]);
+        int year = (int)RubyNumeric.num2long(args[0]);
         int month = 0;
         
         if (len > 1) {
@@ -203,7 +202,7 @@ public class TimeMetaClass extends ObjectMetaClass {
                         }
                     }
                 } else {
-                    month = RubyNumeric.fix2int(args[1]) - 1;
+                    month = (int)RubyNumeric.num2long(args[1]) - 1;
                 }
             }
             if (0 > month || month > 11) {
@@ -215,7 +214,7 @@ public class TimeMetaClass extends ObjectMetaClass {
 
         for (int i = 0; len > i + 2; i++) {
             if (!args[i + 2].isNil()) {
-                int_args[i] = RubyNumeric.fix2int(args[i + 2]);
+                int_args[i] = (int)RubyNumeric.num2long(args[i + 2]);
                 if (time_min[i] > int_args[i] || int_args[i] > time_max[i]) {
                     throw getRuntime().newArgumentError("Argument out of range.");
                 }
