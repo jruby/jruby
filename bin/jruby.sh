@@ -70,7 +70,7 @@ fi
 if [ "$CLASSPATH" != "" ]; then
   CP="$CLASSPATH"
   if $cygwin; then
-    CP=`cygpath -p -u "$CP"`
+    CP=`cygpath -p -w "$CP"`
   fi
 else
   CP=""
