@@ -1,4 +1,4 @@
-#!/bin/ruby
+#!/usr/bin/env jruby
 #
 #   irb.rb - intaractive ruby
 #   	$Release Version: 0.7.3 $
