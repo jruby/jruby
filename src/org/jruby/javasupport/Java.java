@@ -34,6 +34,7 @@ package org.jruby.javasupport;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Date;
 
 import org.jruby.IRuby;
 import org.jruby.RubyBignum;
@@ -41,8 +42,10 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
+import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
+import org.jruby.RubyTime;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -99,6 +102,10 @@ public class Java {
             javaObject = ((RubyString) object).getValue();
         } else if (object instanceof RubyBoolean) {
             javaObject = Boolean.valueOf(object.isTrue());
+        } else if (object instanceof RubyTime) {
+            long milliseconds = ((RubyNumeric) object.callMethod("to_i")).getLongValue();
+
+            javaObject = new Date(milliseconds);
         } else {
             javaObject = object;
         }

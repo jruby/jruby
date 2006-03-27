@@ -213,6 +213,16 @@ if defined? Java
   # (e.g. intent of include_class already satisfied)
   test_no_exception() do
   	include_class("java.lang.String") {|package,name| "J#{name}" }
-  end	
+  end
+  
+  # Test java.util.Date <=> Time implicit conversion
+  include_class 'java.util.Calendar'
+  calendar = Calendar.getInstance
+  calendar.setTime(Time.at(0))
+  java_date = calendar.getTime
+  
+  test_equal(java_date.getTime, Time.at(0).to_i)
+  
+  
   
 end
