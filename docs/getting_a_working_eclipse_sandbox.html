@@ -1,0 +1,67 @@
+<h1>Getting a working sandbox in eclipse</h1>
+
+Getting a working sandbox is paramount if you want to contribute to JRuby
+development.  This document will show you how it is done via Eclipse and
+from the command-line.  It will also show some of the idiosynchracies in
+our project.<p/>
+
+<h2>Part I: Eclipse</h2>
+
+Eclipse is a popular platform for JRuby development.  Most JRuby developers 
+use it.  Because of this, we have all the eclipse settings committed in our 
+source tree.  We can also provide assistance easier on our jruby-devel 
+mailing list.<p/>
+
+<h3>Step 1: Create a new project</h3>
+
+<ul>
+<li>Select 'File' : 'New Project...' </li>
+<li>Select 'CVS' : 'Checkout Projects from CVS'</li>
+<li>Press 'Next'</li>
+<li>Select 'Create a new repository location'</li>
+<li>Press 'Next'</li>
+<li>Fill out form:</li>
+  <ul>
+  <li>Host: cvs.sourceforge.net</li>
+  <li>Repository Path: /cvsroot/jruby</li>
+  <li>User: anonymous</li>
+  <li>Password: <leave blank></li>
+  <li>Connection Type: pserver</li>
+  <li>Use Default Port: <make sure it is checked></li>
+  </ul>
+<li>Press 'Next'</li>
+<li>Enter 'jruby' in 'Use specified module name' field</li>
+<li>Press 'Finish'</li>
+</ul>
+
+At this point JRuby latest development source should be checked out into 
+your new project.<p/>
+
+You will notice many errors at this point.  This is because eclipse 3.1 and
+earlier does not allow compiler settings to be stored in the projects local
+project settings.  JRuby's source uses the Java's 'assert' facility and 
+eclipses default settings are unhappy about this.  To correct this, do the 
+following:<p/>
+
+<ul>
+<li>Right click on jruby project in package explorer and select 
+    'Properties'.</li>
+<li>Highlight 'Java Compiler' on left hand side of dialog.</li>
+<li>Select 'Enable project specific settings'.</li>
+<li>Set the following values on this page:</li>
+  <ul>
+  <li>Compiler compliance level: 1.4</li>
+  <li>Generated .class files compatibility: 1.4</li>
+  <li>Source compatibility: 1.4</li>
+  </ul>
+<li>Select 'Ok'</li>
+<li>At this point a dialog should pop-up requesting a rebuild of the project
+   say 'Ok'</li>
+</ul>
+
+At this point you should have a clean project that builds and with any luck
+has no warnings.<p/>
+
+<h2>Part II: Command-line</h2>
+
+TO BE WRITTEN STILL<p/>
