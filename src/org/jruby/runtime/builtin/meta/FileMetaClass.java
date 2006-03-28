@@ -13,6 +13,7 @@
  *
  * Copyright (C) 2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2006 Ola Bini <ola.bini@ki.se>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -42,7 +43,9 @@ import org.jruby.RubyFile;
 import org.jruby.RubyFileStat;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
+import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
+import org.jruby.RubyTime;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOModes;
@@ -140,6 +143,7 @@ public class FileMetaClass extends IOMetaClass {
 	        defineSingletonMethod("expand_path", Arity.optional());
 			defineSingletonMethod("join", Arity.optional());
 	        defineSingletonMethod("lstat", Arity.singleArgument());
+            defineSingletonMethod("mtime", Arity.singleArgument());
 	        defineSingletonMethod("open", Arity.optional());
 	        defineSingletonMethod("rename", Arity.twoArguments());
             defineSingletonMethod("size?", Arity.singleArgument(), "size_p");
@@ -147,6 +151,7 @@ public class FileMetaClass extends IOMetaClass {
 	        defineSingletonMethod("stat", Arity.singleArgument(), "lstat");
 	        defineSingletonMethod("symlink?", Arity.singleArgument(), "symlink_p");
 			defineSingletonMethod("truncate", Arity.twoArguments());
+			defineSingletonMethod("utime", Arity.optional());
 	        defineSingletonMethod("unlink", Arity.optional());
 			
 	        // TODO: Define instance methods: atime, chmod, chown, ctime, lchmod, lchown, lstat, mtime
@@ -323,8 +328,13 @@ public class FileMetaClass extends IOMetaClass {
 
     public IRubyObject lstat(IRubyObject filename) {
     	RubyString name = RubyString.stringValue(filename);
-
         return getRuntime().newRubyFileStat(new NormalizedFile(name.getValue()));
+    }
+    
+    public IRubyObject mtime(IRubyObject filename) {
+        RubyString name = RubyString.stringValue(filename);
+
+        return getRuntime().newFixnum(new NormalizedFile(name.getValue()).lastModified());
     }
 
 	public IRubyObject open(IRubyObject[] args) {
@@ -338,6 +348,7 @@ public class FileMetaClass extends IOMetaClass {
         RubyString pathString = RubyString.stringValue(args[0]);
 	    pathString.checkSafeString();
 	    String path = pathString.getValue();
+
 	    IOModes modes = 
 	    	args.length >= 2 ? getModes(args[1]) : new IOModes(runtime, IOModes.RDONLY);
 	    RubyFile file = new RubyFile(runtime, this);
@@ -345,13 +356,14 @@ public class FileMetaClass extends IOMetaClass {
 	    file.openInternal(path, modes);
 
 	    if (tryToYield && getRuntime().getCurrentContext().isBlockGiven()) {
+            IRubyObject value = getRuntime().getNil();
 	        try {
-	            getRuntime().getCurrentContext().yield(file);
+	            value = getRuntime().getCurrentContext().yield(file);
 	        } finally {
 	            file.close();
 	        }
 	        
-	        return getRuntime().getNil();
+	        return value;
 	    }
 	    
 	    return file;
@@ -414,6 +426,39 @@ public class FileMetaClass extends IOMetaClass {
         file.close();
         
         return RubyFixnum.zero(getRuntime());
+    }
+
+    /**
+     * This method does NOT set atime, only mtime, since Java doesn't support anything else.
+     */
+    public IRubyObject utime(IRubyObject[] args) {
+        checkArgumentCount(args, 2, -1);
+        
+        // Ignore access_time argument since Java does not support it.
+        
+        long mtime;
+        if (args[1] instanceof RubyTime) {
+            mtime = ((RubyTime) args[1]).getJavaDate().getTime();
+        } else if (args[1] instanceof RubyNumeric) {
+            mtime = RubyNumeric.num2long(args[1]);
+        } else {
+            mtime = 0;
+        }
+        
+        for (int i = 2, j = args.length; i < j; i++) {
+            RubyString filename = RubyString.stringValue(args[i]);
+            filename.checkSafeString();
+            NormalizedFile fileToTouch = new NormalizedFile(filename.getValue());
+            
+            if (!fileToTouch.exists()) {
+                throw getRuntime().newErrnoENOENTError(" No such file or directory - \"" + 
+                        filename.getValue() + "\"");
+            }
+            
+            fileToTouch.setLastModified(mtime);
+        }
+        
+        return getRuntime().newFixnum(args.length - 2);
     }
 	
     public IRubyObject unlink(IRubyObject[] args) {

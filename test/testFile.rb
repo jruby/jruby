@@ -98,3 +98,9 @@ test_ok(!stat.file?)
 test_ok(File.exist?('test'))
 
 test_ok(File.size?('build.xml'))
+
+filename = "__test__file"
+File.open(filename, "w") {|f| }
+File.utime(0, 0, filename)
+test_equal(Time.at(0), File.mtime(filename))
+File.unlink(filename)
