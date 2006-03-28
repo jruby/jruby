@@ -65,6 +65,7 @@ public class RubyKernel {
     public static RubyModule createKernelModule(IRuby runtime) {
         RubyModule module = runtime.defineModule("Kernel");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyKernel.class);
+        CallbackFactory objectCallbackFactory = runtime.callbackFactory(RubyObject.class);
 
         module.defineModuleFunction("Array", callbackFactory.getSingletonMethod("new_array", IRubyObject.class));
         module.defineModuleFunction("Float", callbackFactory.getSingletonMethod("new_float", IRubyObject.class));
@@ -135,6 +136,49 @@ public class RubyKernel {
         
         // Defined p411 Pickaxe 2nd ed.
         module.defineModuleFunction("singleton_method_added", callbackFactory.getSingletonMethod("singleton_method_added", IRubyObject.class));
+        
+        // Object methods
+        module.definePublicModuleFunction("==", objectCallbackFactory.getMethod("equal", IRubyObject.class));
+        module.defineAlias("===", "==");
+        module.defineAlias("eql?", "==");
+        module.definePublicModuleFunction("to_s", objectCallbackFactory.getMethod("to_s"));
+        module.definePublicModuleFunction("nil?", objectCallbackFactory.getMethod("nil_p"));
+        module.definePublicModuleFunction("to_a", objectCallbackFactory.getMethod("to_a"));
+        module.definePublicModuleFunction("hash", objectCallbackFactory.getMethod("hash"));
+        module.definePublicModuleFunction("id", objectCallbackFactory.getMethod("id"));
+        module.defineAlias("__id__", "id");
+        module.defineAlias("object_id", "id");
+        module.definePublicModuleFunction("is_a?", objectCallbackFactory.getMethod("kind_of", IRubyObject.class));
+        module.defineAlias("kind_of?", "is_a?");
+        module.definePublicModuleFunction("dup", objectCallbackFactory.getMethod("dup"));
+        module.definePublicModuleFunction("equal?", objectCallbackFactory.getMethod("same", IRubyObject.class));
+        module.definePublicModuleFunction("type", objectCallbackFactory.getMethod("type_deprecated"));
+        module.definePublicModuleFunction("class", objectCallbackFactory.getMethod("type"));
+        module.definePublicModuleFunction("inspect", objectCallbackFactory.getMethod("inspect"));
+        module.definePublicModuleFunction("=~", objectCallbackFactory.getMethod("match", IRubyObject.class));
+        module.definePublicModuleFunction("clone", objectCallbackFactory.getMethod("rbClone"));
+        module.definePublicModuleFunction("display", objectCallbackFactory.getOptMethod("display"));
+        module.definePublicModuleFunction("extend", objectCallbackFactory.getOptMethod("extend"));
+        module.definePublicModuleFunction("freeze", objectCallbackFactory.getMethod("freeze"));
+        module.definePublicModuleFunction("frozen?", objectCallbackFactory.getMethod("frozen"));
+        module.defineModuleFunction("initialize_copy", objectCallbackFactory.getMethod("initialize_copy", IRubyObject.class));
+        module.definePublicModuleFunction("instance_eval", objectCallbackFactory.getOptMethod("instance_eval"));
+        module.definePublicModuleFunction("instance_of?", objectCallbackFactory.getMethod("instance_of", IRubyObject.class));
+        module.definePublicModuleFunction("instance_variables", objectCallbackFactory.getMethod("instance_variables"));
+        module.definePublicModuleFunction("instance_variable_get", objectCallbackFactory.getMethod("instance_variable_get", IRubyObject.class));
+        module.definePublicModuleFunction("instance_variable_set", objectCallbackFactory.getMethod("instance_variable_set", IRubyObject.class, IRubyObject.class));
+        module.definePublicModuleFunction("method", objectCallbackFactory.getMethod("method", IRubyObject.class));
+        module.definePublicModuleFunction("methods", objectCallbackFactory.getOptMethod("methods"));
+        module.definePublicModuleFunction("private_methods", objectCallbackFactory.getMethod("private_methods"));
+        module.definePublicModuleFunction("protected_methods", objectCallbackFactory.getMethod("protected_methods"));
+        module.definePublicModuleFunction("public_methods", objectCallbackFactory.getOptMethod("public_methods"));
+        module.definePublicModuleFunction("respond_to?", objectCallbackFactory.getOptMethod("respond_to"));
+        module.definePublicModuleFunction("send", objectCallbackFactory.getOptMethod("send"));
+        module.defineAlias("__send__", "send");
+        module.definePublicModuleFunction("singleton_methods", objectCallbackFactory.getMethod("singleton_methods"));
+        module.definePublicModuleFunction("taint", objectCallbackFactory.getMethod("taint"));
+        module.definePublicModuleFunction("tainted?", objectCallbackFactory.getMethod("tainted"));
+        module.definePublicModuleFunction("untaint", objectCallbackFactory.getMethod("untaint"));
 
         return module;
     }

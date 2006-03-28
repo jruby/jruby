@@ -79,48 +79,6 @@ public class ObjectMetaClass extends AbstractMetaClass {
     
     protected class ObjectMeta extends Meta {
 	    protected void initializeClass() {
-	        defineMethod("==", Arity.singleArgument(), "equal");
-	        defineAlias("===", "==");
-	        defineMethod("to_s", Arity.noArguments());
-	        defineMethod("nil?", Arity.noArguments(), "nil_p");
-	        defineMethod("to_a", Arity.noArguments());
-	        defineMethod("hash", Arity.noArguments());
-	        defineMethod("id", Arity.noArguments());
-	        defineAlias("__id__", "id");
-	        defineAlias("object_id", "id");
-	        defineMethod("is_a?", Arity.singleArgument(), "kind_of");
-	        defineAlias("kind_of?", "is_a?");
-	        defineMethod("dup", Arity.noArguments());
-	        defineAlias("eql?", "==");
-	        defineMethod("equal?", Arity.singleArgument(), "same");
-	        defineMethod("type", Arity.noArguments(), "type_deprecated");
-	        defineMethod("class", Arity.noArguments(), "type");
-	        defineMethod("inspect", Arity.noArguments());
-	        defineMethod("=~", Arity.singleArgument(), "match");
-	        defineMethod("clone", Arity.noArguments(), "rbClone");
-	        defineMethod("display", Arity.optional(), "display");
-	        defineMethod("extend", Arity.optional(), "extend");
-	        defineMethod("freeze", Arity.noArguments());
-	        defineMethod("frozen?", Arity.noArguments(), "frozen");
-	        defineMethod("initialize_copy", Arity.singleArgument(), "initialize_copy");
-	        defineMethod("instance_eval", Arity.optional());
-	        defineMethod("instance_of?", Arity.singleArgument(), "instance_of");
-	        defineMethod("instance_variables", Arity.noArguments());
-	        defineMethod("instance_variable_get", Arity.singleArgument());
-	        defineMethod("instance_variable_set", Arity.twoArguments());
-	        defineMethod("method", Arity.singleArgument(), "method");
-	        defineMethod("methods", Arity.optional());
-	        defineMethod("private_methods", Arity.noArguments());
-	        defineMethod("protected_methods", Arity.noArguments());
-	        defineMethod("public_methods", Arity.optional());
-	        defineMethod("respond_to?", Arity.optional(), "respond_to");
-	        defineMethod("send", Arity.optional());
-	        defineAlias("__send__", "send");
-	        defineMethod("singleton_methods", Arity.noArguments());
-	        defineMethod("taint", Arity.noArguments());
-	        defineMethod("tainted?", Arity.noArguments(), "tainted");
-	        defineMethod("untaint", Arity.noArguments());
-	        
 	        definePrivateMethod("initialize", Arity.optional());
 	        definePrivateMethod("inherited", Arity.singleArgument());
 		}

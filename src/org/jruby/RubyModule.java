@@ -524,6 +524,14 @@ public class RubyModule extends RubyObject {
         defineSingletonMethod(name, method);
     }
 
+    /** rb_define_module_function
+     *
+     */
+    public void definePublicModuleFunction(String name, Callback method) {
+        defineMethod(name, method);
+        defineSingletonMethod(name, method);
+    }
+
     private IRubyObject getConstantInner(String name, boolean exclude) {
         IRubyObject objectClass = getRuntime().getObject();
         boolean retryForModule = false;
