@@ -109,6 +109,10 @@ public class RubyFileTest {
     
 	private static NormalizedFile newFile(RubyString path) {
 		NormalizedFile file = new NormalizedFile(path.getValue());
+        
+        if (!file.isAbsolute()) {
+            file = new NormalizedFile(path.getRuntime().getCurrentDirectory(), path.getValue());
+        }
 		
 		try {
 			file = (NormalizedFile)file.getCanonicalFile();

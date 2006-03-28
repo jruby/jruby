@@ -376,6 +376,10 @@ public class RubyDir extends RubyObject {
      */
     protected static NormalizedFile getDir(IRuby runtime, String path, boolean mustExist) {
         NormalizedFile result = new NormalizedFile(path);
+        
+        if (!result.isAbsolute()) {
+            result = new NormalizedFile(runtime.getCurrentDirectory(), path);
+        }
 		
         // For some reason Java 1.5.x will print correct absolute path on a created file, 
         // but it will still operate on an old user.dir when performing any action.

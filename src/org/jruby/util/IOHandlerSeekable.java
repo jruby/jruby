@@ -57,7 +57,11 @@ public class IOHandlerSeekable extends IOHandler {
         
         this.path = path;
         this.modes = modes;
-        NormalizedFile theFile = (NormalizedFile)new NormalizedFile(path).getAbsoluteFile();
+        NormalizedFile theFile = new NormalizedFile(path);
+        
+        if (!theFile.isAbsolute()) {
+            theFile = (NormalizedFile)new NormalizedFile(getRuntime().getCurrentDirectory(), path).getAbsoluteFile();
+        }
 
         if (theFile.exists()) {
             if (modes.shouldTruncate()) {
