@@ -16,6 +16,7 @@
  * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2006 Ola Bini <ola.bini@ki.se>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -38,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -174,6 +176,10 @@ public class Glob {
             }
         }
         
+        if("**".equals(pattern)) {
+            matchingFiles.add(parent);
+        }
+        
         return matchingFiles;
     }
     
@@ -186,7 +192,7 @@ public class Glob {
             return new String[] {};
         }
 		
-		ArrayList allMatchedNames = new ArrayList();
+		Collection allMatchedNames = new TreeSet();
 		for (Iterator iter = patterns.iterator(); iter.hasNext();) {
 			GlobPattern pattern = (GlobPattern) iter.next();
 			
