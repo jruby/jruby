@@ -223,6 +223,22 @@ if defined? Java
   
   test_equal(java_date.getTime, Time.at(0).to_i)
   
+  # test that the list of methods produced matches expectations
+  jstring_methods = ["<", "<=", "<=>", "==", "===", "=~", ">", ">=", "__id__", "__send__", "between?",
+    "bytes", "charAt", "char_at", "class", "clone", "compareTo", "compareToIgnoreCase", "compare_to",
+    "compare_to_ignore_case", "concat", "contentEquals", "content_equals", "display", "dup", "endsWith",
+    "ends_with", "eql?", "equal?", "equals", "equalsIgnoreCase", "equals_ignore_case", "extend", "freeze",
+    "frozen?", "getBytes", "getChars", "getClass", "get_bytes", "get_chars", "get_class", "hash",
+    "hashCode", "hash_code", "id", "include_class", "indexOf", "index_of", "inspect", "instance_eval",
+    "instance_of?", "instance_variable_get", "instance_variable_set", "instance_variables", "intern",
+    "is_a?", "java_class", "java_object", "java_object=", "kind_of?", "lastIndexOf", "last_index_of",
+    "length", "matches", "method", "methods", "nil?", "notify", "notifyAll", "notify_all", "object_id",
+    "private_methods", "protected_methods", "public_methods", "regionMatches", "region_matches", "replace",
+    "replaceAll", "replaceFirst", "replace_all", "replace_first","respond_to?", "send", "singleton_methods",
+    "split", "startsWith", "starts_with", "subSequence", "sub_sequence", "substring", "taint", "tainted?",
+    "toCharArray", "toLowerCase", "toString", "toUpperCase", "to_a", "to_char_array", "to_java_object",
+    "to_lower_case","to_s", "to_string", "to_upper_case", "trim", "type", "untaint", "wait"]
   
+  test_equal(jstring_methods, JString.public_instance_methods.sort)
   
 end

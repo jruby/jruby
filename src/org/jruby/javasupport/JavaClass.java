@@ -46,6 +46,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
@@ -267,8 +269,27 @@ public class JavaClass extends JavaObject {
             // short name.
             if (!methodName.equals("class")) {
                 proxy.defineMethod(methodName, method);
+                
+                String rubyCasedName = getRubyCasedName(methodName);
+                if (rubyCasedName != null) {
+                    proxy.defineAlias(rubyCasedName, methodName);
+                }
             }
         }
+    }
+    
+    private static final Pattern CAMEL_CASE_SPLITTER = Pattern.compile("([a-z])([A-Z])");
+    
+    private String getRubyCasedName(String javaCasedName) {
+        Matcher m = CAMEL_CASE_SPLITTER.matcher(javaCasedName);
+
+        String rubyCasedName = m.replaceAll("$1_$2").toLowerCase();
+        
+        if (rubyCasedName.equals(javaCasedName)) {
+            return null;
+        }
+        
+        return rubyCasedName;
     }
     
     public IRubyObject define_instance_methods_for_proxy(IRubyObject arg) {
