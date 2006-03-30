@@ -944,14 +944,4 @@ public class RubyIO extends RubyObject {
     public String toString() {
         return "RubyIO(" + modes + ", " + fileno + ")";
     }
-    
-    protected void bindStreams(InputStream inputStream, OutputStream outputStream) {
-        try {
-            handler = new IOHandlerUnseekable(getRuntime(), inputStream, outputStream);
-    	} catch (IOException e) {
-            throw getRuntime().newIOError(e.getMessage());
-        }
-        registerIOHandler(handler);
-        modes = handler.getModes();
-    }
 }

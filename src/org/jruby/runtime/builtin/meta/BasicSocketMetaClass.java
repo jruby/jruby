@@ -12,6 +12,8 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2005 David Corbin <dcorbin@users.sourceforge.net>
+ * Copyright (C) 2006 Evan <evan@heron.sytes.net>
+ * Copyright (C) 2006 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -32,20 +34,28 @@ import org.jruby.RubyBasicSocket;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Arity;
+import org.jruby.util.collections.SinglyLinkedList;
 
-public class BasicSocketMetaClass extends ObjectMetaClass {
+public class BasicSocketMetaClass extends IOMetaClass {
 
     public BasicSocketMetaClass(IRuby runtime) {
-        super("BasicSocket", RubyBasicSocket.class, 
-                runtime.getClass("IO")); 
+        super("BasicSocket", RubyBasicSocket.class, runtime.getClass("IO")); 
     }
 
-    protected IRubyObject allocateObject() {
-		return new RubyBasicSocket(getRuntime(), this);
+    public BasicSocketMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
+        this(name, RubyBasicSocket.class, superClass, parentCRef);
     }
     
+    public BasicSocketMetaClass(String name, Class clazz, RubyClass superClass, SinglyLinkedList parentCRef) {
+        super(name, clazz, superClass, parentCRef);
+    }
+
     protected class BasicSocketMeta extends Meta {
     	protected void initializeClass() {
+            defineMethod("initialize", Arity.optional());
+            defineMethod("send", Arity.optional(), "write_send");
+            defineMethod("recv", Arity.optional(), "recv");
     	}
     };
     
@@ -53,10 +63,18 @@ public class BasicSocketMetaClass extends ObjectMetaClass {
     	return new BasicSocketMeta();
     }
 
+    public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
+        return new BasicSocketMetaClass(name, this, parentCRef);
+    }
+
     public RubyClass newSubClass(String name, RubyModule parent) {
 		BasicSocketMetaClass basicSocketMetaClass = new BasicSocketMetaClass(getRuntime());
         basicSocketMetaClass.initializeClass();
         
         return basicSocketMetaClass;
+    }
+    
+    public IRubyObject allocateObject() {
+        return new RubyBasicSocket(getRuntime(), this); 
     }
 }

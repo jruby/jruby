@@ -258,7 +258,7 @@ public abstract class IOHandler {
         return syswrite(string);
     }
     
-    private int sysread(StringBuffer buf, int length) throws IOException {
+    protected int sysread(StringBuffer buf, int length) throws IOException {
         if (buf == null) {
             throw new IOException("sysread2: Buf is null");
         }

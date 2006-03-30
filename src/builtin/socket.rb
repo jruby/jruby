@@ -27,6 +27,20 @@
 # ***** END LICENSE BLOCK *****/
 require "java"
 
+class Socket < BasicSocket
+  include_class 'java.net.InetAddress'
+  include_class 'java.net.UnknownHostException'
+
+  def self.gethostname
+    begin
+      # FIXME: Static methods should allow java short-hand
+	  InetAddress.getLocalHost.hostName
+	rescue UnknownHostException => e
+	  throw SystemError.new("gethostname")
+	end
+  end
+end
+
 class IPSocket < BasicSocket
 end
 
@@ -60,7 +74,7 @@ class TCPSocket < IPSocket
       end
       value
     else
-      io
+      sock
     end
   end
 end

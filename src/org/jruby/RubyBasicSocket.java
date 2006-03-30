@@ -12,6 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2005 David Corbin <dcorbin@users.sourceforge.net>
+ * Copyright (C) 2006 Evan <evan@heron.sytes.net>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -29,10 +30,13 @@ package org.jruby;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.EOFException;
+import java.io.IOException;
 
 import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.builtin.IRubyObject;
-
+import org.jruby.util.IOHandlerSocket;
+import org.jruby.util.IOHandler;
 
 public class RubyBasicSocket extends RubyIO {
 
@@ -46,7 +50,13 @@ public class RubyBasicSocket extends RubyIO {
         
         InputStream inputStream = (InputStream) extractStream(input);
         OutputStream outputStream = (OutputStream) extractStream(output);
-        bindStreams(inputStream, outputStream);
+        try {
+            handler = new IOHandlerSocket(getRuntime(), inputStream, outputStream);
+    	} catch (IOException e) {
+            throw getRuntime().newIOError(e.getMessage());
+        }
+        registerIOHandler(handler);
+        modes = handler.getModes();
         
         return this;
     }
@@ -54,5 +64,28 @@ public class RubyBasicSocket extends RubyIO {
     private Object extractStream(IRubyObject proxyObject) {
         IRubyObject javaObject = proxyObject.getInstanceVariable("@java_object");
         return ((JavaObject)javaObject).getValue();
+    }
+
+    public IRubyObject write_send(IRubyObject[] args) {
+	return syswrite(args[0]);
+    }
+    
+    public IRubyObject recv(IRubyObject[] args) {
+	try {
+            return getRuntime().newString(((IOHandlerSocket) handler).recv(RubyNumeric.fix2int(args[0])));
+        } catch (IOHandler.BadDescriptorException e) {
+            throw getRuntime().newErrnoEBADFError();
+        } catch (EOFException e) {
+	    // recv returns nil on EOF
+	    return getRuntime().getNil();
+    	} catch (IOException e) {
+	    // All errors to sysread should be SystemCallErrors, but on a closed stream
+	    // Ruby returns an IOError.  Java throws same exception for all errors so
+	    // we resort to this hack...
+	    if ("Socket not open".equals(e.getMessage())) {
+		throw getRuntime().newIOError(e.getMessage());
+	    }
+    	    throw getRuntime().newSystemCallError(e.getMessage());
+    	}
     }
 }
