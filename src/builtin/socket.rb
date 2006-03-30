@@ -49,6 +49,20 @@ class TCPSocket < IPSocket
       raise Errno::ECONNREFUSED.new
     end
   end
+
+  def self.open(*args)
+    sock = new(*args)
+    if block_given?
+      begin
+        value = yield sock
+      ensure
+        sock.close unless sock.closed?
+      end
+      value
+    else
+      io
+    end
+  end
 end
 
 class TCPServer < TCPSocket
