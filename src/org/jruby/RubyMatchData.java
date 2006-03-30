@@ -58,6 +58,7 @@ public class RubyMatchData extends RubyObject {
 
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyMatchData.class);
 
+        matchDataClass.defineMethod("captures", callbackFactory.getMethod("captures"));
         matchDataClass.defineMethod("clone", callbackFactory.getMethod("rbClone"));
         matchDataClass.defineMethod("size", callbackFactory.getMethod("size"));
         matchDataClass.defineMethod("length", callbackFactory.getMethod("size"));
@@ -74,6 +75,14 @@ public class RubyMatchData extends RubyObject {
         matchDataClass.getMetaClass().undefineMethod("new");
 
         return matchDataClass;
+    }
+    
+    public IRubyObject captures() {
+        RubyArray arr = getRuntime().newArray(begin.length);
+        for (long i = 1; i < begin.length; i++) {
+            arr.append(group(i));
+        }
+        return arr;
     }
 
     public IRubyObject subseq(long beg, long len) {
