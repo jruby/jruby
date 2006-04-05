@@ -39,21 +39,7 @@ public class EvaluationState {
     private UnsynchronizedStack instructionBundleStacks = new UnsynchronizedStack();
     private JumpException currentException;
     private boolean handlingException;
-    
-    private class InstructionBundle {
-        Instruction instruction;
-        InstructionContext instructionContext;
-        boolean ensured;
-        boolean redoable;
-        boolean breakable;
-        boolean rescuable;
-        boolean retriable;
-        
-        public InstructionBundle(Instruction i, InstructionContext ic) {
-            instruction = i;
-            instructionContext = ic;
-        }
-    }
+    private InstructionBundle currentStack;
     
     public EvaluationState(IRuby runtime, IRubyObject self) {
         this.runtime = runtime;
@@ -69,59 +55,61 @@ public class EvaluationState {
         results.push(runtime.getNil());
     }
     
-    public void dumpStack() {
-        for (int k = instructionBundleStacks.size() - 1; k >= 0; k--) {
-            UnsynchronizedStack s = (UnsynchronizedStack)instructionBundleStacks.get(k);
-            
-            for (int i = s.size() - 1; i >= 0; i--) {
-                System.err.println("at " + ((InstructionBundle)s.get(i)).instructionContext);
-            }
-        }
-    }
-    
     public IRubyObject deaggregateResult() {
         return (IRubyObject)results.pop();
     }
     
     public Instruction peekCurrentInstruction() {
-        return peekCurrentInstructionBundle().instruction;
+        return getCurrentInstructionStack().instruction;
     }
     
     public InstructionContext peekCurrentInstructionContext() {
-        return peekCurrentInstructionBundle().instructionContext;
+        return getCurrentInstructionStack().instructionContext;
     }
     
-    public InstructionBundle peekCurrentInstructionBundle() {
-        return (InstructionBundle)getCurrentInstructionStack().peek();
-    }
-	
-	/**
+    /**
 	 * Return the current top stack of nodes
 	 * @return
 	 */
-	public UnsynchronizedStack getCurrentInstructionStack() {
-		return (UnsynchronizedStack)instructionBundleStacks.peek();
+	public InstructionBundle getCurrentInstructionStack() {
+		return currentStack;
 	}
 	
 	/**
 	 * Pop and discard the current top stacks of nodes and visitors
 	 */
 	public void popCurrentInstructionStack() {
-        instructionBundleStacks.pop();
+        if (instructionBundleStacks.isEmpty()) {
+            currentStack = null;
+            return;
+        }
+        while (currentStack != null) {
+            currentStack = currentStack.nextInstruction;
+        }
+        currentStack = (InstructionBundle)instructionBundleStacks.pop();
 	}
 	
 	/**
 	 * Pop and discard the top item on the current top stacks of nodes and visitors
 	 */
-	public void popCurrentInstruction() {
-		getCurrentInstructionStack().pop();
+	public InstructionBundle popCurrentInstruction() {
+        InstructionBundle prev = currentStack;
+        if (currentStack != null) {
+            currentStack = currentStack.nextInstruction;
+        }
+        return prev;
 	}
 	
 	/**
 	 * Push down a new pair of node and visitor stacks
 	 */
 	public void pushCurrentInstructionStack() {
-		instructionBundleStacks.push(new UnsynchronizedStack());
+	    if (currentStack == null && instructionBundleStacks.isEmpty()) {
+            return;
+        }
+        
+        instructionBundleStacks.push(currentStack);
+        currentStack = null;
 	}
 	
 	/**
@@ -132,7 +120,10 @@ public class EvaluationState {
 	 */
 	public void addNodeInstruction(InstructionContext ctx) {
         Node node = (Node)ctx;
-		addInstruction(node, node.accept(evaluator));
+        
+        if (node.instruction != null || (node.instruction = new InstructionBundle(node.accept(evaluator), node)) != null) {
+            addInstructionBundle(node.instruction);
+        }
 	}
 	
 	/**
@@ -144,11 +135,12 @@ public class EvaluationState {
 	 */
 	public void addInstruction(InstructionContext ctx, Instruction visitor) {
         InstructionBundle ib = new InstructionBundle(visitor, ctx);
-		getCurrentInstructionStack().push(ib);
+        addInstructionBundle(ib);
 	}
     
     public void addInstructionBundle(InstructionBundle ib) {
-        getCurrentInstructionStack().push(ib);
+        ib.nextInstruction = currentStack; 
+        currentStack = ib;
     }
     
     private static class RedoMarker implements Instruction {
@@ -205,7 +197,7 @@ public class EvaluationState {
         // FIXME: Poll from somewhere else in the code? This polls per-node, perhaps per newline?
         getThreadContext().pollThreadEvents();
         
-        InstructionBundle ib = (InstructionBundle)getCurrentInstructionStack().pop();
+        InstructionBundle ib = popCurrentInstruction();
 		
 		if (ib != null) {
 			ib.instruction.execute(this, ib.instructionContext);
@@ -250,13 +242,6 @@ public class EvaluationState {
         }
     }
     private static final ExceptionRethrower exceptionRethrower = new ExceptionRethrower();
-    
-    private static class ExceptionContinuer implements Instruction {
-        public void execute(EvaluationState state, InstructionContext ctx) {
-            state.handlingException = false;
-        }
-    }
-    private static final ExceptionContinuer exceptionContinuer = new ExceptionContinuer();
     
     private static class RaiseRethrower implements Instruction {
         public void execute(EvaluationState state, InstructionContext ctx) {
@@ -321,8 +306,8 @@ public class EvaluationState {
     private void handleNext(JumpException je) {
         NextNode iVisited = (NextNode)je.getSecondaryData();
         
-        while (!(getCurrentInstructionStack().isEmpty() || peekCurrentInstructionBundle().redoable)) {
-            InstructionBundle ib = peekCurrentInstructionBundle();
+        while (!(getCurrentInstructionStack() == null || getCurrentInstructionStack().redoable)) {
+            InstructionBundle ib = getCurrentInstructionStack();
             if (ib.ensured) {
                 // exec ensured node, return to "nexting" afterwards
                 popCurrentInstruction();
@@ -335,7 +320,7 @@ public class EvaluationState {
             popCurrentInstruction();
         }
         
-        if (getCurrentInstructionStack().isEmpty()) {
+        if (getCurrentInstructionStack() == null ) {
             // rethrow next to previous level
             throw je;
         } else {
@@ -349,8 +334,8 @@ public class EvaluationState {
     private void handleRedo(JumpException je) {
         RedoNode iVisited = (RedoNode)je.getSecondaryData();
         
-        while (!(getCurrentInstructionStack().isEmpty() || peekCurrentInstructionBundle().redoable)) {
-            InstructionBundle ib = peekCurrentInstructionBundle();
+        while (!(getCurrentInstructionStack() == null  || getCurrentInstructionStack().redoable)) {
+            InstructionBundle ib = getCurrentInstructionStack();
             if (ib.ensured) {
                 // exec ensured node, return to "redoing" afterwards
                 popCurrentInstruction();
@@ -363,7 +348,7 @@ public class EvaluationState {
             popCurrentInstruction();
         }
         
-        if (getCurrentInstructionStack().isEmpty()) {
+        if (getCurrentInstructionStack() == null ) {
             // rethrow next to previous level
             throw je;
         } else {
@@ -381,8 +366,8 @@ public class EvaluationState {
         BreakNode iVisited = (BreakNode)je.getSecondaryData();
         
 //      pop everything but nearest breakable
-        while (!(getCurrentInstructionStack().isEmpty() || peekCurrentInstructionBundle().breakable)) {
-            InstructionBundle ib = peekCurrentInstructionBundle();
+        while (!(getCurrentInstructionStack() == null  || getCurrentInstructionStack().breakable)) {
+            InstructionBundle ib = getCurrentInstructionStack();
             if (ib.ensured) {
                 // exec ensured node, return to "breaking" afterwards
                 popCurrentInstruction();
@@ -394,7 +379,7 @@ public class EvaluationState {
             popCurrentInstruction();
         }
         
-        if (getCurrentInstructionStack().isEmpty()) {
+        if (getCurrentInstructionStack() == null ) {
             // rethrow to next level
             throw je;
         } else {
@@ -417,8 +402,8 @@ public class EvaluationState {
         // FIXME: don't use the raise rethrower; work with the exception rethrower like all other handlers do
         
 //      pop everything but nearest rescuable
-        while (!(getCurrentInstructionStack().isEmpty() || peekCurrentInstructionBundle().rescuable)) {
-            InstructionBundle ib = peekCurrentInstructionBundle();
+        while (!(getCurrentInstructionStack() == null  || getCurrentInstructionStack().rescuable)) {
+            InstructionBundle ib = getCurrentInstructionStack();
             if (ib.ensured) {
                 // exec ensured node, return to "breaking" afterwards
                 popCurrentInstruction();
@@ -430,13 +415,13 @@ public class EvaluationState {
             popCurrentInstruction();
         }
         
-        if (getCurrentInstructionStack().isEmpty()) {
+        if (getCurrentInstructionStack() == null ) {
             // no rescuers, throw exception to next level
             throw re;
         }
         
         // we're at rescuer now
-        RescueNode iVisited = (RescueNode)peekCurrentInstructionBundle().instructionContext;
+        RescueNode iVisited = (RescueNode)getCurrentInstructionStack().instructionContext;
         popCurrentInstruction();
         RescueBodyNode rescueBodyNode = iVisited.getRescueNode();
 
@@ -468,8 +453,8 @@ public class EvaluationState {
     
     private void handleRetry(JumpException je) {
 //      pop everything but nearest rescuable
-        while (!(getCurrentInstructionStack().isEmpty() || peekCurrentInstructionBundle().retriable)) {
-            InstructionBundle ib = peekCurrentInstructionBundle();
+        while (!(getCurrentInstructionStack() == null  || getCurrentInstructionStack().retriable)) {
+            InstructionBundle ib = getCurrentInstructionStack();
             
             // ensured fires when retrying a method?
             if (ib.ensured) {
@@ -484,11 +469,11 @@ public class EvaluationState {
             popCurrentInstruction();
         }
         
-        if (getCurrentInstructionStack().isEmpty()) {
+        if (getCurrentInstructionStack() == null ) {
             throw je;
         }
         
-        InstructionBundle ib = peekCurrentInstructionBundle();
+        InstructionBundle ib = getCurrentInstructionStack();
         
         popCurrentInstruction();
         
@@ -500,8 +485,8 @@ public class EvaluationState {
     
     private void handleReturn(JumpException je) {
         // make sure ensures fire
-        while (!getCurrentInstructionStack().isEmpty()) {
-            InstructionBundle ib = peekCurrentInstructionBundle();
+        while (getCurrentInstructionStack() != null ) {
+            InstructionBundle ib = getCurrentInstructionStack();
             
             if (ib.ensured) {
                 // exec ensured node, return to "breaking" afterwards
@@ -519,8 +504,8 @@ public class EvaluationState {
     }
     
     private void handleThrow(JumpException je) {
-        while (!getCurrentInstructionStack().isEmpty()) {
-            InstructionBundle ib = peekCurrentInstructionBundle();
+        while (getCurrentInstructionStack() != null ) {
+            InstructionBundle ib = getCurrentInstructionStack();
             
             if (ib.ensured) {
                 // exec ensured node, return to "breaking" afterwards
@@ -596,7 +581,7 @@ public class EvaluationState {
     }
 
     public boolean hasNext() {
-        return !getCurrentInstructionStack().isEmpty();
+        return getCurrentInstructionStack() != null ;
     }
 
     // Had to make it work this way because eval states are sometimes created in one thread for use in another...
