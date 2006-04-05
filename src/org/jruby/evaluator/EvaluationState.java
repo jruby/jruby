@@ -221,6 +221,11 @@ public class EvaluationState {
 	public void clearResult() {
 		setResult(runtime.getNil());
 	}
+	
+	public void flushResults() {
+		results.clear();
+        results.push(runtime.getNil());
+	}
     
 	/**
 	 * @param self The self to set.
@@ -393,7 +398,10 @@ public class EvaluationState {
     private void handleRaise(JumpException je) {
         RaiseException re = (RaiseException)je;
         RubyException raisedException = re.getException();
-        setResult(raisedException);
+        
+        // clear out result aggregator, in case we were aggregating
+        flushResults();
+        
         // TODO: Rubicon TestKernel dies without this line.  A cursory glance implies we
         // falsely set $! to nil and this sets it back to something valid.  This should 
         // get fixed at the same time we address bug #1296484.
