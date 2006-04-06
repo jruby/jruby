@@ -72,3 +72,30 @@ rescue Exception
 end
 
 test_equal(nil, do_except)
+
+# Check exception hierarchy structure
+test_ok(NoMemoryError < Exception)
+test_ok(ScriptError < Exception)
+test_ok(LoadError < ScriptError)
+test_ok(NotImplementedError < ScriptError)
+test_ok(SyntaxError < ScriptError)
+# we don't implement SignalError or descendants
+test_ok(StandardError < Exception)
+test_ok(ArgumentError < StandardError)
+test_ok(IOError < StandardError)
+test_ok(EOFError < IOError)
+test_ok(IndexError < StandardError)
+test_ok(LocalJumpError < StandardError)
+test_ok(NameError < StandardError)
+test_ok(NoMethodError < NameError)
+test_ok(RangeError < StandardError)
+test_ok(FloatDomainError < RangeError)
+test_ok(RegexpError < StandardError)
+test_ok(RuntimeError < StandardError)
+test_ok(SecurityError < StandardError)
+# we don't implement SystemCallError
+test_ok(ThreadError < StandardError)
+test_ok(TypeError < StandardError)
+test_ok(ZeroDivisionError < StandardError)
+test_ok(SystemExit < Exception)
+test_ok(SystemStackError < Exception)
