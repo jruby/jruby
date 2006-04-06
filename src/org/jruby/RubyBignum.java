@@ -160,7 +160,13 @@ public class RubyBignum extends RubyInteger {
         if (other instanceof RubyFloat) {
             return RubyFloat.newFloat(getRuntime(), getDoubleValue()).op_div(other);
         } else if (other instanceof RubyNumeric) {
-            BigInteger[] results = getValue().divideAndRemainder(bigIntValue((RubyNumeric) other));
+        	BigInteger otherBig = bigIntValue((RubyNumeric) other);
+        	
+        	if (otherBig.equals(BigInteger.ZERO)) {
+        		throw getRuntime().newZeroDivisionError();
+        	}
+        	
+            BigInteger[] results = getValue().divideAndRemainder(otherBig);
 
             if (results[0].compareTo(BigInteger.ZERO) <= 0 &&
                 results[1].compareTo(BigInteger.ZERO) != 0) {

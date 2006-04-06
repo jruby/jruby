@@ -589,4 +589,8 @@ public class BaseMockRuby implements IRuby {
         throw new MockException();
     }
 
+	public RaiseException newZeroDivisionError() {
+        throw new MockException();
+	}
+
 }

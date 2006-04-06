@@ -316,8 +316,10 @@ public interface IRuby {
     public RaiseException newIOErrorFromException(IOException ioe);
     
     public RaiseException newTypeError(IRubyObject receivedObject, RubyClass expectedType);
-    
+
     public RaiseException newEOFError();
+    
+    public RaiseException newZeroDivisionError();
 
 	public RubySymbol.SymbolTable getSymbolTable();
 

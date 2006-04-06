@@ -166,6 +166,11 @@ public class RubyFixnum extends RubyInteger {
             // Java / and % are not the same as ruby
             long x = getLongValue();
             long y = ((RubyNumeric) other).getLongValue();
+            
+            if (y == 0) {
+            	throw getRuntime().newZeroDivisionError();
+            }
+            
             long div = x / y;
             long mod = x % y;
 

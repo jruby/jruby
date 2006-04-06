@@ -473,7 +473,8 @@ public final class Ruby implements IRuby {
         RubyClass runtimeError = defineClass("RuntimeError", standardError);
         RubyClass ioError = defineClass("IOError", standardError);
         RubyClass scriptError = defineClass("ScriptError", exceptionClass);
-        RubyClass nameError = defineClass("NameError", scriptError);
+        RubyClass nameError = defineClass("NameError", standardError);
+        RubyClass rangeError = defineClass("RangeError", standardError);
         defineClass("SystemExit", exceptionClass);
         defineClass("Fatal", exceptionClass);
         defineClass("Interrupt", exceptionClass);
@@ -481,18 +482,20 @@ public final class Ruby implements IRuby {
         defineClass("TypeError", standardError);
         defineClass("ArgumentError", standardError);
         defineClass("IndexError", standardError);
-        defineClass("RangeError", standardError);
         defineClass("SyntaxError", scriptError);
         defineClass("LoadError", scriptError);
         defineClass("NotImplementedError", scriptError);
         defineClass("NoMethodError", nameError);
         defineClass("SecurityError", standardError);
-        defineClass("NoMemError", exceptionClass);
+        defineClass("NoMemoryError", exceptionClass);
         defineClass("RegexpError", standardError);
         defineClass("EOFError", ioError);
         defineClass("LocalJumpError", standardError);
         defineClass("ThreadError", standardError);
         defineClass("SystemStackError", exceptionClass);
+        defineClass("ZeroDivisionError", standardError);
+        // FIXME: Actually this somewhere
+        defineClass("FloatDomainError", rangeError);
         NativeException.createClass(this, runtimeError);
         systemCallError = defineClass("SystemCallError", standardError);
         errnoModule = defineModule("Errno");
@@ -1114,6 +1117,10 @@ public final class Ruby implements IRuby {
     
     public RaiseException newEOFError() {
     	return newRaiseException(getClass("EOFError"), "End of file reached");
+    }
+    
+    public RaiseException newZeroDivisionError() {
+    	return newRaiseException(getClass("ZeroDivisionError"), "divided by 0");
     }
     
     /**
