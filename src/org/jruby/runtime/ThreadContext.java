@@ -61,7 +61,7 @@ import org.jruby.util.collections.SinglyLinkedList;
 public class ThreadContext {
     private final IRuby runtime;
 
-    private BlockStack blockStack;
+    private UnsynchronizedStack blockStack;
     private UnsynchronizedStack dynamicVarsStack;
 
     private RubyThread thread;
@@ -82,7 +82,7 @@ public class ThreadContext {
     public ThreadContext(IRuby runtime) {
         this.runtime = runtime;
 
-        this.blockStack = new BlockStack();
+        this.blockStack = new UnsynchronizedStack();
         this.dynamicVarsStack = new UnsynchronizedStack();
         this.frameStack = new UnsynchronizedStack();
         this.iterStack = new UnsynchronizedStack();
@@ -117,19 +117,43 @@ public class ThreadContext {
     }
     
     private void pushBlock(Block block) {
-        blockStack.push(block);
+        if (blockStack.isEmpty()) {
+            blockStack.push(block);
+        } else {
+            block.setNext((Block)blockStack.pop());
+            blockStack.push(block);
+        }
     }
     
     private Block popBlock() {
-        return (Block)blockStack.pop();
+        assert blockStack.peek() != null : "Attempt to pop a block when none exists";
+        
+        Block block = (Block)blockStack.pop();
+        Block newBlock = (Block)block.getNext();
+        
+        if (blockStack.isEmpty() && newBlock == null) {
+            // do nothing
+        } else {
+            blockStack.push(block.getNext());
+        }
+        
+        return block;
     }
     
     public Block getCurrentBlock() {
+        if (blockStack.isEmpty()) {
+            return null;
+        }
+
         return (Block)blockStack.peek();
     }
     
     private void setCurrentBlock(Block block) {
-        blockStack.setCurrent(block);
+        blockStack.push(block);
+    }
+    
+    private void unsetCurrentBlock() {
+        blockStack.pop();
     }
 
     public DynamicVariableSet getCurrentDynamicVars() {
@@ -430,7 +454,7 @@ public class ThreadContext {
     
     // TODO: This and the following version maybe can be combined after studying usage patterns
     public boolean isBlockGivenAndAvailable() {
-        return getCurrentFrame().isBlockGiven() && blockStack.peek() != null;
+        return getCurrentFrame().isBlockGiven() && getCurrentBlock() != null;
     }
 
     public boolean isBlockGiven() {
@@ -540,19 +564,22 @@ public class ThreadContext {
         return result == null ? runtime.getNil() : result;
     }
     
-    public Block beginCallArgs() {
-        Block currentBlock = (Block) blockStack.peek();
+    public void beginCallArgs() {
+        //Block block = getCurrentBlock();
 
-        if (getCurrentIter().isPre()) {
-            blockStack.pop();
+        if (getCurrentIter().isPre() && getCurrentBlock() != null) {
+            setCurrentBlock((Block)getCurrentBlock().getNext());
         }
         iterStack.push(Iter.ITER_NOT);
-        return currentBlock;
+        //return block;
     }
 
-    public void endCallArgs(Block currentBlock) {
-        blockStack.setCurrent(currentBlock);
+    public void endCallArgs(){//Block block) {
+        //setCurrentBlock(block);
         iterStack.pop();
+        if (getCurrentIter().isPre() && !blockStack.isEmpty()) {
+            unsetCurrentBlock();
+        }
     }
     
     public boolean getConstantDefined(String name) {
@@ -849,13 +876,13 @@ public class ThreadContext {
         getCurrentFrame().setIter(Iter.ITER_CUR);
     }
     
-    public void postBlockYield(Block oldBlock) {
+    public void postBlockYield() {
         popIter();
-        setCurrentBlock(oldBlock);
+        unsetCurrentBlock();
     }
 
     private Block preYield(RubyModule klass) {
-        Block currentBlock = (Block) blockStack.pop();
+        Block currentBlock = popBlock();
 
         pushFrame(currentBlock.getFrame());
 
@@ -875,7 +902,7 @@ public class ThreadContext {
         dynamicVarsStack.pop();
         frameStack.pop();
         
-        blockStack.push(currentBlock);
+        pushBlock(currentBlock);
         popRubyClass();
     }
 

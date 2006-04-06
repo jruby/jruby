@@ -534,13 +534,13 @@ public class EvaluationState {
             return currentException.isKindOf(runtime.getClass("StandardError"));
         }
 
-        Block tmpBlock = getThreadContext().beginCallArgs();
+        getThreadContext().beginCallArgs();
 
         IRubyObject[] args = null;
         try {
             args = setupArgs(runtime, getThreadContext(), exceptionNodes);
         } finally {
-            getThreadContext().endCallArgs(tmpBlock);
+            getThreadContext().endCallArgs();
         }
 
         for (int i = 0; i < args.length; i++) {

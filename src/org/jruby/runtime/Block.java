@@ -104,7 +104,7 @@ public class Block implements StackElement {
     public IRubyObject call(IRubyObject[] args, IRubyObject replacementSelf) {
         IRuby runtime = self.getRuntime();
         ThreadContext context = runtime.getCurrentContext();
-        Block oldBlock = context.getCurrentBlock();
+        //Block oldBlock = context.getCurrentBlock();
         Block newBlock = this.cloneBlock();
         if (replacementSelf != null) {
             newBlock.self = replacementSelf;
@@ -113,7 +113,7 @@ public class Block implements StackElement {
         try {
             return context.yield(runtime.newArray(args), null, null, false, true);
         } finally {
-            context.postBlockYield(oldBlock);
+            context.postBlockYield();
         }
     }
 

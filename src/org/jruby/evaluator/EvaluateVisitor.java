@@ -522,14 +522,14 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class CallNodeVisitor implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		CallNode iVisited = (CallNode)ctx;
-            Block tmpBlock = state.getThreadContext().beginCallArgs();
+            state.getThreadContext().beginCallArgs();
             IRubyObject receiver = null;
             IRubyObject[] args = null;
             try {
                 receiver = state.begin(iVisited.getReceiverNode());
                 args = setupArgs(state, state.runtime, state.getThreadContext(), iVisited.getArgsNode());
             } finally {
-            	state.getThreadContext().endCallArgs(tmpBlock);
+            	state.getThreadContext().endCallArgs();
             }
             assert receiver.getMetaClass() != null : receiver.getClass().getName();
             if (iVisited.getName().equals("blah")) ;
@@ -1017,12 +1017,12 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class FCallNodeVisitor implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		FCallNode iVisited = (FCallNode)ctx;
-            Block tmpBlock = state.getThreadContext().beginCallArgs();
-            IRubyObject[] args;
+            state.getThreadContext().beginCallArgs();
+            IRubyObject[] args = null;
             try {
                 args = setupArgs(state, state.runtime, state.getThreadContext(), iVisited.getArgsNode());
             } finally {
-            	state.getThreadContext().endCallArgs(tmpBlock);
+            	state.getThreadContext().endCallArgs();
             }
 
             state.setResult(state.getSelf().callMethod(iVisited.getName(), args, CallType.FUNCTIONAL));
@@ -1083,14 +1083,14 @@ public final class EvaluateVisitor implements NodeVisitor {
                 while (true) {
                     try {
                         ISourcePosition position = state.getThreadContext().getPosition();
-                        Block tmpBlock = state.getThreadContext().beginCallArgs();
+                        state.getThreadContext().beginCallArgs();
 
                         IRubyObject recv = null;
                         try {
                             recv = state.begin(iVisited.getIterNode());
                         } finally {
                             state.getThreadContext().setPosition(position);
-                            state.getThreadContext().endCallArgs(tmpBlock);
+                            state.getThreadContext().endCallArgs();
                         }
                         
                         state.setResult(recv.callMethod("each", IRubyObject.NULL_ARRAY, CallType.NORMAL));
@@ -1825,13 +1825,13 @@ public final class EvaluateVisitor implements NodeVisitor {
                 throw state.runtime.newNameError("Superclass method '" + state.getThreadContext().getCurrentFrame().getLastFunc() + "' disabled.");
             }
 
-            Block tmpBlock = state.getThreadContext().beginCallArgs();
+            state.getThreadContext().beginCallArgs();
 
             IRubyObject[] args = null;
             try {
                 args = setupArgs(state, state.runtime, state.getThreadContext(), iVisited.getArgsNode());
             } finally {
-            	state.getThreadContext().endCallArgs(tmpBlock);
+            	state.getThreadContext().endCallArgs();
             }
             state.setResult(state.getThreadContext().callSuper(args));
     	}
