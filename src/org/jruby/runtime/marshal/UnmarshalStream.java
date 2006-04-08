@@ -16,6 +16,7 @@
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2006 Ola Bini <ola.bini@ki.se>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -134,6 +135,9 @@ public class UnmarshalStream extends FilterInputStream {
             case 'u' :
                 rubyObj = userUnmarshal();
                 break;
+            case 'U' :
+                rubyObj = userNewUnmarshal();
+                break;
             default :
                 throw getRuntime().newArgumentError("dump format error(" + type + ")");
         }
@@ -227,6 +231,16 @@ public class UnmarshalStream extends FilterInputStream {
         IRubyObject result = classInstance.callMethod(
             "_load",
             runtime.newString(marshaled));
+        registerLinkTarget(result);
+        return result;
+    }
+
+    private IRubyObject userNewUnmarshal() throws IOException {
+        String className = unmarshalObject().asSymbol();
+        IRubyObject marshaled = unmarshalObject();
+        RubyClass classInstance = runtime.getClass(className);
+        IRubyObject result = classInstance.newInstance(new IRubyObject[0]);;
+        result.callMethod("marshal_load",marshaled);
         registerLinkTarget(result);
         return result;
     }

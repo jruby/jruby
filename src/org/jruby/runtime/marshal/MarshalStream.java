@@ -16,6 +16,7 @@
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2006 Ola Bini <ola.bini@ki.se>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -54,6 +55,10 @@ public class MarshalStream extends FilterOutputStream {
     private int depth = 0;
     private MarshalCache cache;
 
+    private final static char TYPE_USRMARSHAL = 'U';
+    private final static char TYPE_USERDEF = 'u';
+
+
     public MarshalStream(IRuby runtime, OutputStream out, int depthLimit) throws IOException {
         super(out);
 
@@ -72,6 +77,8 @@ public class MarshalStream extends FilterOutputStream {
         }
         if (! shouldBeRegistered(value)) {
             writeDirectly(value);
+        } else if (hasNewUserDefinedMarshaling(value)) {
+            userNewMarshal(value);
         } else if (hasUserDefinedMarshaling(value)) {
             userMarshal(value);
         } else {
@@ -115,12 +122,24 @@ public class MarshalStream extends FilterOutputStream {
         return value.respondsTo("_dump");
     }
 
+    private boolean hasNewUserDefinedMarshaling(IRubyObject value) {
+        return value.respondsTo("marshal_dump");
+    }
+
     private void userMarshal(IRubyObject value) throws IOException {
-        out.write('u');
+        out.write(TYPE_USERDEF);
         dumpObject(RubySymbol.newSymbol(runtime, value.getMetaClass().getName()));
 
         RubyString marshaled = (RubyString) value.callMethod("_dump", runtime.newFixnum(depthLimit)); 
         dumpString(marshaled.getValue());
+    }
+
+    private void userNewMarshal(final IRubyObject value) throws IOException {
+        out.write(TYPE_USRMARSHAL);
+        dumpObject(RubySymbol.newSymbol(runtime, value.getMetaClass().getName()));
+
+        IRubyObject marshaled =  value.callMethod("marshal_dump"); 
+        dumpObject(marshaled);
     }
 
     public void dumpString(String value) throws IOException {

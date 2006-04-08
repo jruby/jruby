@@ -19,6 +19,7 @@
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2006 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2006 Ola Bini <ola.bini@ki.se>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -269,4 +270,38 @@ public class RubyTime extends RubyObject {
     	// modified to match how hash is calculated in 1.8.2
         return getRuntime().newFixnum((int)(((cal.getTimeInMillis() / 1000) ^ microseconds()) << 1) >> 1);
     }    
+
+    public RubyString dump(final IRubyObject[] args) {
+        if (args.length > 1) {
+            throw getRuntime().newArgumentError(0, 1);
+        }
+
+        return (RubyString) mdump(new IRubyObject[] { this });
+    }    
+
+    public RubyObject mdump(final IRubyObject[] args) {
+        RubyTime obj = (RubyTime)args[0];
+        Calendar calendar = obj.gmtime().cal;
+        byte dumpValue[] = new byte[8];
+        int pe = 
+            0x1                                 << 31 |
+            (calendar.get(Calendar.YEAR)-1900)  << 14 |
+            calendar.get(Calendar.MONTH)        << 10 |
+            calendar.get(Calendar.DAY_OF_MONTH) << 5  |
+            calendar.get(Calendar.HOUR_OF_DAY);
+        int se =
+            calendar.get(Calendar.MINUTE)       << 26 |
+            calendar.get(Calendar.SECOND)       << 20 |
+            calendar.get(Calendar.MILLISECOND);
+
+        for(int i = 0; i < 4; i++) {
+            dumpValue[i] = (byte)(pe & 0xFF);
+            pe >>>= 8;
+        }
+        for(int i = 4; i < 8 ;i++) {
+            dumpValue[i] = (byte)(se & 0xFF);
+            se >>>= 8;
+        }
+        return RubyString.newString(obj.getRuntime(), dumpValue);
+    }
 }

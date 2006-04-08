@@ -19,6 +19,7 @@
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2006 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2006 Ola Bini <ola.bini@ki.se>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -76,6 +77,7 @@ public class TimeMetaClass extends ObjectMetaClass {
             defineSingletonMethod("mktime", Arity.optional(), "new_local"); 
             defineSingletonMethod("utc", Arity.optional(), "new_utc"); 
             defineSingletonMethod("gm", Arity.optional(), "new_utc"); 
+            defineSingletonMethod("_load", Arity.singleArgument(), "s_load"); 
                     
             // Missing getgm, getlocal, getutc (alias of getgm), gmt_offset, gmtoff (alias of
             // gmt_offset), utc_offset (alias of gmt_offset)
@@ -115,6 +117,7 @@ public class TimeMetaClass extends ObjectMetaClass {
             defineMethod("localtime", Arity.noArguments()); 
             defineMethod("hash", Arity.noArguments()); 
             defineMethod("initialize_copy", Arity.singleArgument()); 
+            defineMethod("_dump", Arity.optional(),"dump"); 
         }
     };
     
@@ -168,6 +171,47 @@ public class TimeMetaClass extends ObjectMetaClass {
 
     public RubyTime new_utc(IRubyObject[] args) {
         return createTime(args, true);
+    }
+
+    public RubyTime s_load(IRubyObject from) {
+        return s_mload((RubyTime) s_new(), from);
+    }
+
+    protected RubyTime s_mload(RubyTime time, IRubyObject from) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.clear();
+        calendar.setTimeZone(TimeZone.getTimeZone(RubyTime.UTC));
+        byte[] fromAsBytes = null;
+        try {
+            fromAsBytes = from.toString().getBytes("iso8859-1");
+        } catch(final java.io.UnsupportedEncodingException uee) {
+            throw getRuntime().newTypeError("marshaled time format differ");
+        }
+        if(fromAsBytes.length != 8) {
+            throw getRuntime().newTypeError("marshaled time format differ");
+        }
+        int p=0;
+        int s=0;
+        for(int i = 0; i < 4; i++) {
+            p |= ((int)fromAsBytes[i] & 0xFF) << (8*i);
+        }
+        for(int i = 4; i < 8; i++) {
+            s |= ((int)fromAsBytes[i] & 0xFF) << (8*(i-4));
+        }
+        if((p & (1<<31)) == 0) {
+            calendar.setTimeInMillis(p * 1000L + s);
+        } else {
+            p &= ~(1<<31);
+            calendar.set(Calendar.YEAR,((p >>> 14) & 0xFFFF)+1900);
+            calendar.set(Calendar.MONTH,((p >>> 10) & 0xF));
+            calendar.set(Calendar.DAY_OF_MONTH,((p >>> 5)  & 0x1F));
+            calendar.set(Calendar.HOUR_OF_DAY,(p & 0x1F));
+            calendar.set(Calendar.MINUTE,((s >>> 26) & 0x3F));
+            calendar.set(Calendar.SECOND,((s >>> 20) & 0x3F));
+            calendar.set(Calendar.MILLISECOND,(s & 0xFFFFF));
+        }
+        time.setJavaCalendar(calendar);
+        return time;
     }
     
     private static final String[] months = {"jan", "feb", "mar", "apr", "may", "jun",
