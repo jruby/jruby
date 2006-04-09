@@ -117,10 +117,10 @@ public class RubyDir extends RubyObject {
         newPath.checkSafeString();
 
 // TODO: Consolidate this absolute file nonsense
-        dir = (NormalizedFile)new NormalizedFile(newPath.getValue()).getAbsoluteFile();
+        dir = (NormalizedFile)new NormalizedFile(newPath.toString()).getAbsoluteFile();
         if (!dir.isDirectory()) {
             dir = null;
-            throw getRuntime().newErrnoENOENTError(newPath.getValue() + " is not a directory");
+            throw getRuntime().newErrnoENOENTError(newPath.toString() + " is not a directory");
         }
         path = newPath;
 		List snapshotList = new ArrayList();
@@ -354,7 +354,7 @@ public class RubyDir extends RubyObject {
         if (pos >= snapshot.length) {
             return getRuntime().getNil();
         }
-        RubyString result = new RubyString(getRuntime(), snapshot[pos]);
+        RubyString result = getRuntime().newString(snapshot[pos]);
         pos++;
         return result;
     }
@@ -426,7 +426,7 @@ public class RubyDir extends RubyObject {
         List result = new ArrayList();
         String[] contents = directory.list();
         for (int i=0; i<contents.length; i++) {
-            result.add(new RubyString(runtime, contents[i]));
+            result.add(runtime.newString(contents[i]));
         }
         return result;
     }

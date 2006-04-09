@@ -101,7 +101,7 @@ public class Split {
 			    for (int i = 1; i < extraPatterns; i++) {
                     IRubyObject matchValue = matchData.group(i);
                     if (!matchValue.isNil()) {
-                        addResult(((RubyString) matchValue).getValue());
+                        addResult(((RubyString) matchValue).toString());
                     }
 			    }
 			}
@@ -143,7 +143,7 @@ public class Split {
             // still get the do not ignore the front match behavior.
             return RubyRegexp.regexpValue(args[0]);
         }
-		String stringPattern = RubyString.stringValue(args[0]).getValue();
+		String stringPattern = RubyString.stringValue(args[0]).toString();
 		
 		if (stringPattern.equals(" ")) {
 		    isWhitespace = true;

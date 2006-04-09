@@ -179,7 +179,7 @@ public class FileMetaClass extends IOMetaClass {
     public IRubyObject basename(IRubyObject[] args) {
     	checkArgumentCount(args, 1, 2);
 
-    	String name = RubyString.stringValue(args[0]).getValue(); 
+    	String name = RubyString.stringValue(args[0]).toString(); 
 		if (name.length() > 1 && name.charAt(name.length() - 1) == '/') {
 			name = name.substring(0, name.length() - 1);
 		}
@@ -209,7 +209,7 @@ public class FileMetaClass extends IOMetaClass {
 		}
 		
 		if (args.length == 2) {
-			String ext = RubyString.stringValue(args[1]).getValue();
+			String ext = RubyString.stringValue(args[1]).toString();
 			if (".*".equals(ext)) {
 				index = name.lastIndexOf('.');
 				if (index != -1) {
@@ -253,7 +253,7 @@ public class FileMetaClass extends IOMetaClass {
     
     public IRubyObject expand_path(IRubyObject[] args) {
         checkArgumentCount(args, 1, 2);
-        String relativePath = RubyString.stringValue(args[0]).getValue();
+        String relativePath = RubyString.stringValue(args[0]).toString();
 		int pathLength = relativePath.length();
 		
 		if (pathLength >= 1 && relativePath.charAt(0) == '~') {
@@ -263,7 +263,7 @@ public class FileMetaClass extends IOMetaClass {
 			if (userEnd == -1) {
 				if (pathLength == 1) { 
 	                // Single '~' as whole path to expand
-					relativePath = RubyDir.getHomeDirectoryPath(this).getValue();
+					relativePath = RubyDir.getHomeDirectoryPath(this).toString();
 				} else {
 					// No directory delimeter.  Rest of string is username
 					userEnd = pathLength;
@@ -272,7 +272,7 @@ public class FileMetaClass extends IOMetaClass {
 			
 			if (userEnd == 1) {
 				// '~/...' as path to expand 
-				relativePath = RubyDir.getHomeDirectoryPath(this).getValue() + 
+				relativePath = RubyDir.getHomeDirectoryPath(this).toString() + 
                	    relativePath.substring(1);
 			} else if (userEnd > 1){
 				// '~user/...' as path to expand
@@ -294,7 +294,7 @@ public class FileMetaClass extends IOMetaClass {
 
         String cwd = getRuntime().getCurrentDirectory();
         if (args.length == 2 && !args[1].isNil()) {
-            cwd = RubyString.stringValue(args[1]).getValue();
+            cwd = RubyString.stringValue(args[1]).toString();
         }
 
         // Something wrong we don't know the cwd...
@@ -321,20 +321,20 @@ public class FileMetaClass extends IOMetaClass {
         RubyString str = argArray.join(RubyString.newString(getRuntime(), "/"));
         
         // create ruby string, cleaning out double dir separators
-        RubyString fixedStr = RubyString.newString(getRuntime(), MULTIPLE_DIR_SEPS.matcher(str.getValue()).replaceAll("/"));
+        RubyString fixedStr = RubyString.newString(getRuntime(), MULTIPLE_DIR_SEPS.matcher(str.toString()).replaceAll("/"));
         fixedStr.setTaint(str.isTaint());
         return fixedStr;
     }
 
     public IRubyObject lstat(IRubyObject filename) {
     	RubyString name = RubyString.stringValue(filename);
-        return getRuntime().newRubyFileStat(new NormalizedFile(name.getValue()));
+        return getRuntime().newRubyFileStat(new NormalizedFile(name.toString()));
     }
     
     public IRubyObject mtime(IRubyObject filename) {
         RubyString name = RubyString.stringValue(filename);
 
-        return getRuntime().newFixnum(new NormalizedFile(name.getValue()).lastModified());
+        return getRuntime().newFixnum(new NormalizedFile(name.toString()).lastModified());
     }
 
 	public IRubyObject open(IRubyObject[] args) {
@@ -347,7 +347,7 @@ public class FileMetaClass extends IOMetaClass {
         
         RubyString pathString = RubyString.stringValue(args[0]);
 	    pathString.checkSafeString();
-	    String path = pathString.getValue();
+	    String path = pathString.toString();
 
 	    IOModes modes = 
 	    	args.length >= 2 ? getModes(args[1]) : new IOModes(runtime, IOModes.RDONLY);
@@ -374,12 +374,12 @@ public class FileMetaClass extends IOMetaClass {
     	RubyString newNameString = RubyString.stringValue(newName);
         oldNameString.checkSafeString();
         newNameString.checkSafeString();
-        NormalizedFile oldFile = new NormalizedFile(oldNameString.getValue());
+        NormalizedFile oldFile = new NormalizedFile(oldNameString.toString());
         
         if (!oldFile.exists()) {
-        	throw getRuntime().newErrnoENOENTError("No such file: " + oldNameString.getValue());
+        	throw getRuntime().newErrnoENOENTError("No such file: " + oldNameString);
         }
-        oldFile.renameTo(new NormalizedFile(newNameString.getValue()));
+        oldFile.renameTo(new NormalizedFile(newNameString.toString()));
         
         return RubyFixnum.zero(getRuntime());
     }
@@ -448,11 +448,11 @@ public class FileMetaClass extends IOMetaClass {
         for (int i = 2, j = args.length; i < j; i++) {
             RubyString filename = RubyString.stringValue(args[i]);
             filename.checkSafeString();
-            NormalizedFile fileToTouch = new NormalizedFile(filename.getValue());
+            NormalizedFile fileToTouch = new NormalizedFile(filename.toString());
             
             if (!fileToTouch.exists()) {
                 throw getRuntime().newErrnoENOENTError(" No such file or directory - \"" + 
-                        filename.getValue() + "\"");
+                        filename + "\"");
             }
             
             fileToTouch.setLastModified(mtime);
@@ -465,9 +465,9 @@ public class FileMetaClass extends IOMetaClass {
         for (int i = 0; i < args.length; i++) {
         	RubyString filename = RubyString.stringValue(args[i]);
             filename.checkSafeString();
-            NormalizedFile lToDelete = new NormalizedFile(filename.getValue());
+            NormalizedFile lToDelete = new NormalizedFile(filename.toString());
             if (!lToDelete.exists()) {
-				throw getRuntime().newErrnoENOENTError(" No such file or directory - \"" + filename.getValue() + "\"");
+				throw getRuntime().newErrnoENOENTError(" No such file or directory - \"" + filename + "\"");
 			}
             if (!lToDelete.delete()) {
                 return getRuntime().getFalse();
@@ -479,7 +479,7 @@ public class FileMetaClass extends IOMetaClass {
     // TODO: Figure out to_str and to_int conversion + precedence here...
 	private IOModes getModes(IRubyObject object) {
 		if (object instanceof RubyString) {
-			return new IOModes(getRuntime(), ((RubyString)object).getValue());
+			return new IOModes(getRuntime(), ((RubyString)object).toString());
 		} else if (object instanceof RubyFixnum) {
 			return new IOModes(getRuntime(), ((RubyFixnum)object).getLongValue());
 		}

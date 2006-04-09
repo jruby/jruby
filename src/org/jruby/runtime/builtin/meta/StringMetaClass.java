@@ -54,7 +54,7 @@ public class StringMetaClass extends ObjectMetaClass {
 
     public StringMethod hash = new StringMethod(this, Arity.noArguments(), Visibility.PUBLIC) {
         public IRubyObject invoke(RubyString self, IRubyObject[] args) {
-            return self.getRuntime().newFixnum(self.getValue().hashCode());
+            return self.getRuntime().newFixnum(self.toString().hashCode());
         }
     };
     
@@ -78,11 +78,12 @@ public class StringMetaClass extends ObjectMetaClass {
             if (other == self) {
                 return self.getRuntime().getTrue();
             } else if (!(other instanceof RubyString)) {
-                return self.getRuntime().getNil();
+                return self.getRuntime().getFalse();
             }
             /* use Java implementation if both different String instances */
             return self.getRuntime().newBoolean(
-                    self.getValue().equals(((RubyString) other).getValue()));
+                    self.toString().equals(((RubyString) other).toString()));
+            
         }
     };
     
@@ -100,7 +101,7 @@ public class StringMetaClass extends ObjectMetaClass {
             IRubyObject other = args[0];
             RubyString str = RubyString.stringValue(other);
             
-            return (RubyString) self.newString(self.getValue() + str.getValue()).infectBy(str);
+            return (RubyString) self.newString(self.toString() + str.toString()).infectBy(str);
         }
     };
 
@@ -140,9 +141,9 @@ public class StringMetaClass extends ObjectMetaClass {
                 for (int i = 0; i < args2.length; i++) {
                     args2[i] = JavaUtil.convertRubyToJava(((RubyArray) arg).entry(i));
                 }
-                return self.getRuntime().newString(new PrintfFormat(Locale.US, self.getValue()).sprintf(args2));
+                return self.getRuntime().newString(new PrintfFormat(Locale.US, self.toString()).sprintf(args2));
             }
-            return self.getRuntime().newString(new PrintfFormat(Locale.US, self.getValue()).sprintf(JavaUtil.convertRubyToJava(arg)));
+            return self.getRuntime().newString(new PrintfFormat(Locale.US, self.toString()).sprintf(JavaUtil.convertRubyToJava(arg)));
         }
     };
 
@@ -167,7 +168,7 @@ public class StringMetaClass extends ObjectMetaClass {
 	        defineMethod("capitalize", Arity.noArguments());
 	        defineMethod("capitalize!", Arity.noArguments(), "capitalize_bang");
 	        defineMethod("casecmp", Arity.singleArgument());
-	        defineMethod("center", Arity.singleArgument());
+	        defineMethod("center", Arity.optional());
 	        defineMethod("chop", Arity.noArguments());
 	        defineMethod("chop!", Arity.noArguments(), "chop_bang");
 	        defineMethod("chomp", Arity.optional());

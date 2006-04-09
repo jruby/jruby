@@ -220,7 +220,7 @@ public class RubyKernel {
     }
 
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args) {
-        String arg = args[0].convertToString().getValue();
+        String arg = args[0].convertToString().toString();
 
         // Should this logic be pushed into RubyIO Somewhere?
         if (arg.startsWith("|")) {

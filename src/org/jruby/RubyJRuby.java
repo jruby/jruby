@@ -49,6 +49,6 @@ public class RubyJRuby {
         RubyString content = arg1.convertToString();
         RubyString filename = arg2.convertToString();
         return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), 
-            recv.getRuntime().parse(content.getValue(), filename.getValue())));
+            recv.getRuntime().parse(content.toString(), filename.toString())));
     }
 }

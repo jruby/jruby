@@ -37,22 +37,22 @@ public class SocketMetaClass extends ObjectMetaClass {
     public RubyString gethostname() {
     	try {
 			String hostName = InetAddress.getLocalHost().getHostName();
-			return new RubyString(getRuntime(), hostName);
+			return getRuntime().newString(hostName);
 		} catch (UnknownHostException e) {
 			// DSC throw SystemError("gethostname");
-			return new RubyString(getRuntime(), "");
+			return getRuntime().newString("");
 		}
     }
     
     public RubyArray gethostbyname(IRubyObject hostname) {
 		try {
 			RubyString name = (RubyString) hostname;
-			InetAddress inetAddress = InetAddress.getByName(name.getValue());
+			InetAddress inetAddress = InetAddress.getByName(name.toString());
 			List parts = new ArrayList();
-			parts.add(new RubyString(getRuntime(), inetAddress.getCanonicalHostName()));
+			parts.add(getRuntime().newString(inetAddress.getCanonicalHostName()));
 			parts.add(RubyArray.newArray(getRuntime()));
 			parts.add(new RubyFixnum(getRuntime(),2));
-			parts.add(new RubyString(getRuntime(), RubyString.bytesToString(inetAddress.getAddress())));
+			parts.add(getRuntime().newString(RubyString.bytesToString(inetAddress.getAddress())));
 			return RubyArray.newArray(getRuntime(), parts);
 		} catch (UnknownHostException e) {
 			// DSC throw SystemError("gethostbyname");

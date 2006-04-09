@@ -307,7 +307,7 @@ public class Pack {
         if (l2Conv.getMetaClass() != runtime.getClass("String")) {
             l2Conv = l2Conv.convertToType("String", "to_s", true); //we may need a false here, not sure
         }
-        return ((RubyString) l2Conv).getValue();
+        return ((RubyString) l2Conv).toString();
     }
 
     /**
@@ -549,7 +549,7 @@ public class Pack {
             RubyString formatString) {
         IRuby runtime = formatString.getRuntime();
         RubyArray result = runtime.newArray();
-        PtrList format = new PtrList(formatString.getValue());
+        PtrList format = new PtrList(formatString.toString());
         PtrList encode = new PtrList(encodedString);
         char type = format.nextChar(); // Type to be unpacked
         
@@ -1256,7 +1256,7 @@ public class Pack {
      **/
     public static RubyString pack(List list, RubyString formatString) {
         IRuby runtime = formatString.getRuntime();
-        PtrList format = new PtrList(formatString.getValue());
+        PtrList format = new PtrList(formatString.toString());
         StringBuffer result = new StringBuffer();
         int listSize = list.size();
         char type = format.nextChar();

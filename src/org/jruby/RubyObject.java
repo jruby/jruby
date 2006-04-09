@@ -132,7 +132,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public String toString() {
-        return ((RubyString) callMethod("to_s")).getValue();
+        return ((RubyString) callMethod("to_s")).toString();
     }
 
     /** Getter for property ruby.
@@ -459,7 +459,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public String asSymbol() {
-        throw getRuntime().newTypeError(inspect().getValue() + " is not a symbol");
+        throw getRuntime().newTypeError(inspect().toString() + " is not a symbol");
     }
 
     /** 
@@ -585,7 +585,7 @@ public class RubyObject implements Cloneable, IRubyObject {
                 IRubyObject lineNumber = args[3];
                 return args[0].eval(source,
                                   self.getRuntime().getNil(),
-                                  ((RubyString) filename).getValue(),
+                                  ((RubyString) filename).toString(),
                                   RubyNumeric.fix2int(lineNumber));
             }
 
@@ -991,9 +991,8 @@ public class RubyObject implements Cloneable, IRubyObject {
 
     public RubyString to_s() {
         String cname = getMetaClass().getRealClass().getName();
-        RubyString str = getRuntime().newString("");
         /* 6:tags 16:addr 1:eos */
-        str.setValue("#<" + cname + ":0x" + Integer.toHexString(System.identityHashCode(this)) + ">");
+        RubyString str = getRuntime().newString("#<" + cname + ":0x" + Integer.toHexString(System.identityHashCode(this)) + ">");
         str.setTaint(isTaint());
         return str;
     }

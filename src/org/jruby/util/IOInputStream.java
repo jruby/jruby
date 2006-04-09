@@ -32,7 +32,6 @@ import java.io.IOException;
 
 import org.jruby.RubyArray;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -62,7 +61,7 @@ public class IOInputStream extends InputStream {
         }
         this.io = io;
         this.numOne = RubyFixnum.one(this.io.getRuntime());
-        this.packArg = new RubyString(this.io.getRuntime(), "C");
+        this.packArg = io.getRuntime().newString("C");
     }
     
     public int read() throws IOException {

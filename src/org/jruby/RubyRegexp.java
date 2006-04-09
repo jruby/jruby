@@ -176,7 +176,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     // Methods of the Regexp class (rb_reg_*):
 
     public static RubyRegexp newRegexp(RubyString str, int options, String lang) {
-        return newRegexp(str.getRuntime(), str.getValue(), options, lang);
+        return newRegexp(str.getRuntime(), str.toString(), options, lang);
     }
     
     public static RubyRegexp newRegexp(IRuby runtime, String str, int options, String kcode) {
@@ -196,8 +196,8 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     public IRubyObject initialize(IRubyObject[] args) {
         String pat =
             (args[0] instanceof RubyRegexp)
-                ? ((RubyRegexp) args[0]).source().getValue()
-                : RubyString.stringValue(args[0]).getValue();
+                ? ((RubyRegexp) args[0]).source().toString()
+                : RubyString.stringValue(args[0]).toString();
         int opts = 0;
         if (args.length > 1) {
             if (args[1] instanceof RubyFixnum) {
@@ -207,7 +207,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             }
         }
         if (args.length > 2) {
-        	code = Code.create(getRuntime(), RubyString.stringValue (args[2]).getValue());
+        	code = Code.create(getRuntime(), RubyString.stringValue (args[2]).toString());
         } else {
         	code = Code.create(getRuntime(), null);
         }
@@ -356,7 +356,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      *
      */
     public int search(IRubyObject target, int pos) {
-        String str = RubyString.stringValue(target).getValue();
+        String str = RubyString.stringValue(target).toString();
         if (pos > str.length()) {
             return -1;
         }
@@ -403,7 +403,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 		return match.matchStartPosition(); 
     }
     
-    private IRubyObject match(String target, int startPos) {
+    public IRubyObject match(String target, int startPos) {
     	if (target.length() == 0) {
     		target = "\n";
     	}
@@ -427,7 +427,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      *
      */
     public IRubyObject regsub(IRubyObject str, RubyMatchData match) {
-        String repl = RubyString.stringValue(str).getValue();
+        String repl = RubyString.stringValue(str).toString();
         StringBuffer sb = new StringBuffer("");
         int pos = 0;
         int end = repl.length();
@@ -545,7 +545,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     
     
     public RubyString to_s() {
-      return new RubyString(getRuntime(), toString());
+        return getRuntime().newString(toString());
     }
     
     public String toString() {

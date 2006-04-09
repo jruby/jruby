@@ -99,7 +99,7 @@ public class Java {
         } else if (object instanceof RubyFloat) {
             javaObject = new Double(((RubyFloat) object).getValue());
         } else if (object instanceof RubyString) {
-            javaObject = ((RubyString) object).getValue();
+            javaObject = ((RubyString) object).toString();
         } else if (object instanceof RubyBoolean) {
             javaObject = Boolean.valueOf(object.isTrue());
         } else if (object instanceof RubyTime) {

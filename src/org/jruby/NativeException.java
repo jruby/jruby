@@ -69,7 +69,7 @@ public class NativeException extends RubyException {
         for (int i=stackTrace.length-1; i>=0; i--) {
             StackTraceElement element = stackTrace[i];
             String line = element.toString();
-            RubyString string = new RubyString(runtime, line);
+            RubyString string = runtime.newString(line);
             array.unshift(string);
         }
         return rubyTrace;

@@ -366,7 +366,7 @@ public class RubyThread extends RubyObject {
         if (key instanceof RubySymbol) {
             name = key.asSymbol();
         } else if (key instanceof RubyString) {
-            name = ((RubyString) key).getValue();
+            name = ((RubyString) key).toString();
         } else {
             throw getRuntime().newArgumentError(key.inspect() + " is not a symbol");
         }

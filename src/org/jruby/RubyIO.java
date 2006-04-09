@@ -291,14 +291,14 @@ public class RubyIO extends RubyObject {
             // Update fileno list with our new handler
             registerIOHandler(handler);
         } else if (args[0].isKindOf(getRuntime().getClass("String"))) {
-            String path = ((RubyString) args[0]).getValue();
+            String path = ((RubyString) args[0]).toString();
             String mode = "r";
             if (args.length > 1) {
                 if (!args[1].isKindOf(getRuntime().getClass("String"))) {
                     throw getRuntime().newTypeError(args[1], getRuntime().getClass("String"));
                 }
                     
-                mode = ((RubyString) args[1]).getValue();
+                mode = ((RubyString) args[1]).toString();
             }
 
             try {
@@ -335,7 +335,7 @@ public class RubyIO extends RubyObject {
         }
 
         
-        String separator = sepVal.isNil() ? null : ((RubyString) sepVal).getValue();
+        String separator = sepVal.isNil() ? null : ((RubyString) sepVal).toString();
 
         if (separator != null && separator.length() == 0) {
             separator = IOHandler.PARAGRAPH_DELIMETER;
@@ -369,7 +369,7 @@ public class RubyIO extends RubyObject {
         String mode = null;
         
         if (count > 1) {
-            mode = args[1].convertToString().getValue();
+            mode = args[1].convertToString().toString();
         }
 
         // See if we already have this descriptor open.

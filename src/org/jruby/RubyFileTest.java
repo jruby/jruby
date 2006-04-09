@@ -84,7 +84,7 @@ public class RubyFileTest {
         NormalizedFile file = newFile(filename);
         
         if (!file.exists()) {
-            throw recv.getRuntime().newErrnoENOENTError("No such file: " + filename.getValue());
+            throw recv.getRuntime().newErrnoENOENTError("No such file: " + filename);
         }
         return filename.getRuntime().newFixnum(file.length());
     }
@@ -108,10 +108,10 @@ public class RubyFileTest {
     }
     
 	private static NormalizedFile newFile(RubyString path) {
-		NormalizedFile file = new NormalizedFile(path.getValue());
+		NormalizedFile file = new NormalizedFile(path.toString());
         
         if (!file.isAbsolute()) {
-            file = new NormalizedFile(path.getRuntime().getCurrentDirectory(), path.getValue());
+            file = new NormalizedFile(path.getRuntime().getCurrentDirectory(), path.toString());
         }
 		
 		try {

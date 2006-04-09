@@ -181,7 +181,7 @@ public class RubyFile extends RubyIO {
     // TODO: This is also defined in the MetaClass too...Consolidate somewhere.
 	private IOModes getModes(IRubyObject object) {
 		if (object instanceof RubyString) {
-			return new IOModes(getRuntime(), ((RubyString)object).getValue());
+			return new IOModes(getRuntime(), ((RubyString)object).toString());
 		} else if (object instanceof RubyFixnum) {
 			return new IOModes(getRuntime(), ((RubyFixnum)object).getLongValue());
 		}

@@ -41,7 +41,6 @@ import junit.framework.TestCase;
 import org.jruby.IRuby;
 import org.jruby.Ruby;
 import org.jruby.RubyKernel;
-import org.jruby.RubyString;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.NormalizedFile;
@@ -72,7 +71,7 @@ public class RubyTestCase extends TestCase {
         String filePath = f.getAbsolutePath();
         IRuby runtime = Ruby.getDefaultInstance();
         initRuby(runtime);
-        RubyKernel.require(runtime.getTopSelf(), new RubyString(runtime, filePath));
+        RubyKernel.require(runtime.getTopSelf(), runtime.newString(filePath));
         f.delete();
         return runtime;
     }

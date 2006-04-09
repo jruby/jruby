@@ -52,7 +52,7 @@ public class TestRubyException extends TestCase {
 		setBackTrace(19);
 		
 		String[] lines = printError();
-		
+        
 		assertEquals(expectedTraceLine(1), lines[0]);
 		assertEquals("\t ... 7 levels...", lines[RubyException.TRACE_HEAD]);
 		assertEquals(expectedTraceLine(16), lines[RubyException.TRACE_HEAD + 1]);
@@ -79,7 +79,7 @@ public class TestRubyException extends TestCase {
 	private void setBackTrace(int lineCount) {
 		List traceLines = new ArrayList();
 		for (int i=0; i<lineCount; i++)
-			traceLines.add(new RubyString(interpreter, testLine(i)));
+			traceLines.add(RubyString.newString(interpreter, testLine(i)));
 		exception.set_backtrace(RubyArray.newArray(interpreter, traceLines));
 	}
 

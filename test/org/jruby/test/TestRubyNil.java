@@ -70,7 +70,7 @@ public class TestRubyNil extends TestCase {
     }
 
     public void testToS() {
-        assertEquals("", RubyNil.to_s(rubyNil).getValue());
+        assertEquals("", RubyNil.to_s(rubyNil).toString());
     }
 
     public void testToA() {
@@ -78,7 +78,7 @@ public class TestRubyNil extends TestCase {
     }
 
     public void testInspect() {
-        assertEquals("nil", RubyNil.inspect(rubyNil).getValue());
+        assertEquals("nil", RubyNil.inspect(rubyNil).toString());
     }
 
     public void testType() {

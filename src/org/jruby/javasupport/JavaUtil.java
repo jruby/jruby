@@ -113,13 +113,13 @@ public class JavaUtil {
             }
 
             // XXX this probably isn't good enough -AM
-            String s = ((RubyString) rubyObject.callMethod("to_s")).getValue();
+            String s = ((RubyString) rubyObject.callMethod("to_s")).toString();
             if (s.length() > 0) {
                 return new Character(s.charAt(0));
             }
 			return new Character('\0');
         } else if (javaClass == String.class) {
-            return ((RubyString) rubyObject.callMethod("to_s")).getValue();
+            return ((RubyString) rubyObject.callMethod("to_s")).toString();
         } else {
             return ((JavaObject) rubyObject).getValue();
         }

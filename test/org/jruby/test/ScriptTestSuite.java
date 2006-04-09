@@ -140,7 +140,7 @@ public class ScriptTestSuite extends TestSuite {
             
             if (! lastFailed.isNil()) {
 				RubyString message = (RubyString) lastFailed.callMethod("to_s");
-                fail(message.getValue());
+                fail(message.toString());
             }
 
             System.out.flush(); // Without a flush Ant will miss some of our output

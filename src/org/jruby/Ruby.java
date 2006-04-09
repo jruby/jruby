@@ -758,7 +758,7 @@ public final class Ruby implements IRuby {
      *
      */
     public void loadScript(RubyString scriptName, RubyString source, boolean wrap) {
-        loadScript(scriptName.getValue(), new StringReader(source.getValue()), wrap);
+        loadScript(scriptName.toString(), new StringReader(source.toString()), wrap);
     }
 
     public void loadScript(String scriptName, Reader source, boolean wrap) {

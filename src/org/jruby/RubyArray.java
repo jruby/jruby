@@ -746,9 +746,9 @@ public class RubyArray extends RubyObject implements List {
             }
             
             if (i > 0 && !sep.isNil()) {
-                buf.append(sep.getValue());
+                buf.append(sep.toString());
             }
-            buf.append(((RubyString)tmp).getValue());
+            buf.append(((RubyString)tmp).toString());
         }
         str = RubyString.newString(getRuntime(), buf.toString());
         str.setTaint(taint);

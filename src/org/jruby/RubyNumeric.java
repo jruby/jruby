@@ -113,7 +113,7 @@ public class RubyNumeric extends RubyObject {
      *          conversion failed.
      */
     public static RubyInteger str2inum(IRuby runtime, RubyString str, int base) {
-        StringBuffer sbuf = new StringBuffer(str.getValue().trim());
+        StringBuffer sbuf = new StringBuffer(str.toString().trim());
         if (sbuf.length() == 0) {
             return RubyFixnum.zero(runtime);
         }
@@ -182,7 +182,7 @@ public class RubyNumeric extends RubyObject {
      *          will be 0.0 if the conversion failed.
      */
     public static RubyFloat str2fnum(IRuby runtime, RubyString arg) {
-        String str = arg.getValue().trim();
+        String str = arg.toString().trim();
         double d = 0.0;
         int pos = str.length();
         for (int i = 0; i < pos; i++) {
