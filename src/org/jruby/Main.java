@@ -16,7 +16,7 @@
  * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
- * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2004-2006 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Kiel Hodges <jruby-devel@selfsosoft.com>
  * Copyright (C) 2005 Jason Voegele <jason@jvoegele.com>
@@ -36,12 +36,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.util.Iterator;
 
 import org.jruby.ast.Node;
 import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.JavaUtil;
@@ -61,17 +63,44 @@ import org.jruby.util.CommandlineParser;
  * @author  jpetersen
  */
 public class Main {
-    private static CommandlineParser commandline;
-    private static boolean hasPrintedUsage = false;
+    private CommandlineParser commandline;
+    private boolean hasPrintedUsage = false;
+    private InputStream in;
+    private PrintStream out;
+    private PrintStream err;
+    
+    public Main(InputStream in, PrintStream out, PrintStream err) {
+    	this.in = in;
+    	this.out = out;
+    	this.err = err;
+    }
+    
+    public Main() {
+    	this(System.in, System.out, System.err);
+    }
 
     public static void main(String[] args) {
-        commandline = new CommandlineParser(args, System.out);
+    	Main main = new Main();
+    	
+    	try {
+    		main.run(args);
+    	} catch (MainExitException mee) {
+    		main.err.println(mee.getMessage());
+    		if (mee.isUsageError()) {
+    			main.printUsage();
+    		}
+    		System.exit(mee.getStatus());
+    	}
+    }
+    
+    public int run(String[] args) {
+        commandline = new CommandlineParser(this, args);
 
         if (commandline.isShowVersion()) {
             showVersion();
         }
         if (! commandline.shouldRunInterpreter()) {
-            return;
+            return 0;
         }
 
         long now = -1;
@@ -82,40 +111,35 @@ public class Main {
         int status = runInterpreter(commandline.getScriptSource(), commandline.displayedFileName());
 
         if (commandline.isBenchmarking()) {
-            System.out.println("Runtime: " + (System.currentTimeMillis() - now) + " ms");
+            out.println("Runtime: " + (System.currentTimeMillis() - now) + " ms");
         }
         
-        // Only do an explicit exit if the interpreter has had an error.  We
-        // do not want to exit on non-errors since the interpreter may have
-        // started background threads (ala samples/swing2.rb)
-        if (status != 0) {
-        	System.exit(status);
-        }
+        return status;
     }
 
-    private static void showVersion() {
-        System.out.print("ruby ");
-        System.out.print(Constants.RUBY_VERSION);
-        System.out.print(" (");
-        System.out.print(Constants.COMPILE_DATE);
-        System.out.print(") [");
-        System.out.print("java");
-        System.out.println("]");
+    private void showVersion() {
+        out.print("ruby ");
+        out.print(Constants.RUBY_VERSION);
+        out.print(" (");
+        out.print(Constants.COMPILE_DATE);
+        out.print(") [");
+        out.print("java");
+        out.println("]");
     }
 
-    public static void printUsage(PrintStream printStream) {
+    public void printUsage() {
         if (!hasPrintedUsage) {
-			printStream.println("Usage: jruby [switches] [--] [rubyfile.rb] [arguments]");
-			printStream.println("    -e 'command'    one line of script. Several -e's allowed. Omit [programfile]");
-			printStream.println("    -b              benchmark mode, times the script execution");
-			printStream.println("    -Idirectory     specify $LOAD_PATH directory (may be used more than once)");
-			printStream.println("    --              optional -- before rubyfile.rb for compatibility with ruby");
+			out.println("Usage: jruby [switches] [--] [rubyfile.rb] [arguments]");
+			out.println("    -e 'command'    one line of script. Several -e's allowed. Omit [programfile]");
+			out.println("    -b              benchmark mode, times the script execution");
+			out.println("    -Idirectory     specify $LOAD_PATH directory (may be used more than once)");
+			out.println("    --              optional -- before rubyfile.rb for compatibility with ruby");
             hasPrintedUsage = true;
         }
     }
 
-    private static int runInterpreter(Reader reader, String filename) {
-        IRuby runtime = Ruby.getDefaultInstance();
+    private int runInterpreter(Reader reader, String filename) {
+        IRuby runtime = Ruby.newInstance(in, out, err);
 
         try {
         	runInterpreter(runtime, reader, filename);
@@ -145,7 +169,7 @@ public class Main {
         }
     }
     
-    private static void runInterpreter(IRuby runtime, Reader reader, String filename) {
+    private void runInterpreter(IRuby runtime, Reader reader, String filename) {
     	try {
     		initializeRuntime(runtime, filename);
     		Node parsedScript = getParsedScript(runtime, reader, filename);
@@ -156,7 +180,7 @@ public class Main {
     	}
     }
 
-    private static Node getParsedScript(IRuby runtime, Reader reader, String filename) {
+    private Node getParsedScript(IRuby runtime, Reader reader, String filename) {
         Node result = runtime.parse(reader, filename);
         if (commandline.isAssumePrinting()) {
             result = new ParserSupport().appendPrintToBlock(result);
@@ -167,7 +191,7 @@ public class Main {
         return result;
     }
 
-    private static void initializeRuntime(final IRuby runtime, String filename) {
+    private void initializeRuntime(final IRuby runtime, String filename) {
         IRubyObject argumentArray = runtime.newArray(JavaUtil.convertJavaArrayToRuby(runtime, commandline.getScriptArguments()));
         runtime.setVerbose(runtime.newBoolean(commandline.isVerbose()));
 
@@ -192,7 +216,7 @@ public class Main {
         }
     }
 
-    private static void defineGlobalVERBOSE(final IRuby runtime) {
+    private void defineGlobalVERBOSE(final IRuby runtime) {
         // $VERBOSE can be true, false, or nil.  Any non-false-nil value will get stored as true  
         runtime.getGlobalVariables().define("$VERBOSE", new IAccessor() {
             public IRubyObject getValue() {
@@ -211,7 +235,7 @@ public class Main {
         });
     }
 
-    private static void defineGlobal(IRuby runtime, String name, boolean value) {
+    private void defineGlobal(IRuby runtime, String name, boolean value) {
         runtime.getGlobalVariables().defineReadonly(name, new ValueAccessor(value ? runtime.getTrue() : runtime.getNil()));
     }
 

@@ -95,17 +95,17 @@ public class IOHandlerUnseekable extends IOHandler {
         
         switch (fileno) {
         case 0:
-            input = new RubyInputStream(System.in);
+            input = new RubyInputStream(runtime.getIn());
             modes = new IOModes(runtime, "r");
             isOpen = true;
             break;
         case 1:
-            output = System.out;
+            output = runtime.getOut();
             modes = new IOModes(runtime, "w");
             isOpen = true;
             break;
         case 2:
-            output = System.err;
+            output = runtime.getErr();
             modes = new IOModes(runtime, "w");
             isOpen = true;
             break;

@@ -131,7 +131,13 @@ public final class Ruby implements IRuby {
     private RubyClass systemCallError = null;
     private RubyModule errnoModule = null;
     private IRubyObject topSelf;
+    
+    // former java.lang.System concepts now internalized for MVM
     private String currentDirectory = NormalizedFile.getFileProperty("user.dir");
+    private InputStream in;
+    private PrintStream out;
+    private PrintStream err;
+    
     private IRubyObject verbose;
 
     // Java support
@@ -150,8 +156,11 @@ public final class Ruby implements IRuby {
     /**
      * Create and initialize a new jruby Runtime.
      */
-    private Ruby() {
-      init();
+    private Ruby(InputStream in, PrintStream out, PrintStream err) {
+    	this.in = in;
+    	this.out = out;
+    	this.err = err;
+    	init();
     }
     
     /**
@@ -171,7 +180,16 @@ public final class Ruby implements IRuby {
      * @return the JRuby runtime
      */
     public static IRuby getDefaultInstance() {
-        return new Ruby();
+        return new Ruby(System.in, System.out, System.err);
+    }
+
+    /**
+     * Returns a default instance of the JRuby runtime.
+     *
+     * @return the JRuby runtime
+     */
+    public static IRuby newInstance(InputStream in, PrintStream out, PrintStream err) {
+        return new Ruby(in, out, err);
     }
 
     /**
@@ -1172,5 +1190,17 @@ public final class Ruby implements IRuby {
 
 	public long incrementRandomSeedSequence() {
 		return randomSeedSequence++;
+	}
+
+	public InputStream getIn() {
+		return in;
+	}
+
+	public PrintStream getOut() {
+		return out;
+	}
+
+	public PrintStream getErr() {
+		return err;
 	}
 }

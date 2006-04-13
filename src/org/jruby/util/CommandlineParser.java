@@ -16,6 +16,7 @@
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Jason Voegele <jason@jvoegele.com>
  * Copyright (C) 2005 Tim Azzopardi <tim@tigerfive.com>
+ * Copyright (C) 2006 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -36,16 +37,17 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.jruby.Main;
+import org.jruby.exceptions.MainExitException;
 
 public class CommandlineParser {
     private final String[] arguments;
+    private Main main;
 
     private ArrayList loadPaths = new ArrayList();
     private StringBuffer inlineScript = new StringBuffer();
@@ -64,11 +66,9 @@ public class CommandlineParser {
     public int argumentIndex = 0;
     public int characterIndex = 0;
 
-	private final PrintStream outStream;
-
-    public CommandlineParser(String[] arguments, PrintStream outStream) {
+    public CommandlineParser(Main main, String[] arguments) {
         this.arguments = arguments;
-        this.outStream = outStream;
+        this.main = main;
         processArguments();
     }
 
@@ -97,7 +97,7 @@ public class CommandlineParser {
         FOR : for (characterIndex = 1; characterIndex < argument.length(); characterIndex++) {
             switch (argument.charAt(characterIndex)) {
                 case 'h' :
-                    Main.printUsage(outStream);
+                    main.printUsage();
                     shouldRunInterpreter = false;
                     break;
                 case 'I' :
@@ -145,18 +145,9 @@ public class CommandlineParser {
                         }                    	
                     }
                 default :
-                    System.err.println("unknown option " + argument.charAt(characterIndex));
-                    systemExit();
+                    throw new MainExitException(1, "unknown option " + argument.charAt(characterIndex));
             }
         }
-    }
-
-    /**
-     * Perform system.exit().
-     * This method exists so that unit tests can override it.
-     */
-    protected void systemExit() {
-      System.exit(1);
     }
 
     private String grabValue(String errorMessage) {
@@ -168,11 +159,11 @@ public class CommandlineParser {
         if (argumentIndex < arguments.length) {
             return arguments[argumentIndex];
         }
-		System.err.println("invalid argument " + argumentIndex);
-		System.err.println(errorMessage);
-		Main.printUsage(outStream);
-		systemExit();
-        return null;
+		
+		MainExitException mee = new MainExitException(1, "invalid argument " + argumentIndex + "\n" + errorMessage);
+		mee.setUsageError(true);
+		
+		throw mee;
     }
 
     public boolean hasInlineScript() {
@@ -209,12 +200,9 @@ public class CommandlineParser {
             try {
                 return new BufferedReader(new FileReader(file));
             } catch (IOException e) {
-                System.err.println("Error opening script file: " + e.getMessage());
-                systemExit();
+            	throw new MainExitException(1, "Error opening script file: " + e.getMessage());
             }
         }
-        assert false;
-        return null;
     }
 
     public String displayedFileName() {

@@ -593,4 +593,16 @@ public class BaseMockRuby implements IRuby {
         throw new MockException();
 	}
 
+	public InputStream getIn() {
+        throw new MockException();
+	}
+
+	public PrintStream getOut() {
+        throw new MockException();
+	}
+
+	public PrintStream getErr() {
+        throw new MockException();
+	}
+
 }

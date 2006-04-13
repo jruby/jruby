@@ -114,6 +114,10 @@ public interface IRuby {
     public String getCurrentDirectory();
     
     public void setCurrentDirectory(String dir);
+    
+    public InputStream getIn();
+    public PrintStream getOut();
+    public PrintStream getErr();
 
 	public boolean isClassDefined(String name);
 

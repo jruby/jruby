@@ -187,8 +187,7 @@ public class Glob {
         try {
             getFiles();
         } catch (PatternSyntaxException e) {
-        	System.out.println("BAD PATTERN: " + e.getPattern());
-            // This can happen if someone does Dir.glob("{") or similiar.
+        	// This can happen if someone does Dir.glob("{") or similiar.
             return new String[] {};
         }
 		

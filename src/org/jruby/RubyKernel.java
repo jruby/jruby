@@ -35,11 +35,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.Iterator;
+import java.util.List;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
@@ -55,6 +58,7 @@ import org.jruby.runtime.builtin.meta.StringMetaClass;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.util.PrintfFormat;
+import org.jruby.util.UnsynchronizedStack;
 
 /**
  * Note: For CVS history, see KernelModule.java.
@@ -683,10 +687,12 @@ public class RubyKernel {
     }
 
     public static IRubyObject backquote(IRubyObject recv, IRubyObject aString) {
-        StringBuffer output = new StringBuffer();
         IRuby runtime = recv.getRuntime();
-        runtime.getGlobalVariables().set("$?", runtime.newFixnum(
-            runInShell(runtime, aString.toString(), output)));
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        
+        int resultCode = runInShell(runtime, new IRubyObject[] {aString}, output);
+        
+        recv.getRuntime().getGlobalVariables().set("$?", runtime.newFixnum(resultCode));
         
         return recv.getRuntime().newString(output.toString());
     }
@@ -702,93 +708,196 @@ public class RubyKernel {
      * @return The "fixed" full command line
      */
     private static String repairDirSeps(String command) {
-        // TODO: This could be improved and optimized
-        StringTokenizer toker = new StringTokenizer(command, " ");
-        StringBuffer executable = new StringBuffer();
-        
-        boolean insideQuotes = false;
-        char quoteChar = 0;
-        loop: while (true) {
-            String token = toker.nextToken();
-            
-            if (!insideQuotes) {
-                char first = token.charAt(0);
-                switch (first) {
-                    case '"':
-                    case '\'':
-                        insideQuotes = true;
-                        quoteChar = first;
-                        executable.append(token + " ");
-                        break;
-                    default:
-                        executable.append(token);
-                        break loop;
-                }
-            } else {
-                char last = token.charAt(token.length() - 1);
-                executable.append(token);
-                if (last == quoteChar) {
-                    insideQuotes = false;
-                    break loop;
-                } else {
-                    executable.append(" ");
-                }
-            }
+        String executable = "", remainder = "";
+        command = command.trim();
+        if (command.startsWith("'")) {
+            String [] tokens = command.split("'", 3);
+            executable = "'"+tokens[1]+"'";
+            if (tokens.length > 2)
+                remainder = tokens[2];
+        } else if (command.startsWith("\"")) {
+            String [] tokens = command.split("\"", 3);
+            executable = "\""+tokens[1]+"\"";
+            if (tokens.length > 2)
+                remainder = tokens[2];
+        } else {
+            String [] tokens = command.split(" ", 2);
+            executable = tokens[0];
+            if (tokens.length > 1)
+                remainder = " "+tokens[1];
         }
-        
-        String remainder = command.substring(executable.length());
         
         // Matcher.replaceAll treats backslashes in the replacement string as escaped characters
         String replacement = File.separator;
-        if (File.separatorChar == '\\') replacement = "\\\\";
-        
+        if (File.separatorChar == '\\')
+            replacement = "\\\\";
+            
         return PATH_SEPARATORS.matcher(executable).replaceAll(replacement) + remainder;
+                }
+
+    private static List parseCommandLine(IRubyObject[] rawArgs) {
+        // first parse the first element of rawArgs since this may contain
+        // the whole command line
+        String command = rawArgs[0].toString();
+        UnsynchronizedStack args = new UnsynchronizedStack();
+        StringTokenizer st = new StringTokenizer(command, " ");
+        String quoteChar = null;
+
+        while (st.hasMoreTokens()) {
+            String token = st.nextToken();
+            if (quoteChar == null) {
+                // not currently in the middle of a quoted token
+                if (token.startsWith("'") || token.startsWith("\"")) {
+                    // note quote char and remove from beginning of token
+                    quoteChar = token.substring(0, 1);
+                    token = token.substring(1);
+                }
+                if (quoteChar!=null && token.endsWith(quoteChar)) {
+                    // quoted token self contained, remove from end of token
+                    token = token.substring(0, token.length()-1);
+                    quoteChar = null;
+                }
+                // add new token to list
+                args.push(token);
+            } else {
+                // in the middle of quoted token
+                if (token.endsWith(quoteChar)) {
+                    // end of quoted token
+                    token = token.substring(0, token.length()-1);
+                    quoteChar = null;
+                }
+                // update token at end of list
+                token = args.pop() + " " + token;
+                args.push(token);
+            }
+        }
+        
+        // now append the remaining raw args to the cooked arg list
+        for (int i=1;i<rawArgs.length;i++) {
+            args.push(rawArgs[i].toString());
+        }
+        
+        return args;
+    }
+        
+    private static boolean isRubyCommand(String command) {
+        command = command.trim();
+        String [] spaceDelimitedTokens = command.split(" ", 2);
+        String [] slashDelimitedTokens = spaceDelimitedTokens[0].split("/");
+        String finalToken = slashDelimitedTokens[slashDelimitedTokens.length-1];
+        if (finalToken.contains("ruby") || finalToken.endsWith(".rb"))
+            return true;
+        else
+            return false;
+    }
+    
+    private static class InProcessScript extends Thread {
+    	private String[] argArray;
+    	private InputStream in;
+    	private PrintStream out;
+    	private PrintStream err;
+    	private int result;
+    	
+    	public InProcessScript(String[] argArray, InputStream in, PrintStream out, PrintStream err) {
+    		this.argArray = argArray;
+    		this.in = in;
+    		this.out = out;
+    		this.err = err;
+    	}
+
+		public int getResult() {
+			return result;
+		}
+
+		public void setResult(int result) {
+			this.result = result;
+		}
+		
+        public void run() {
+            result = new Main(in, out, out).run(argArray);
+        }
     }
 
-    private static int runInShell(IRuby runtime, String command, StringBuffer output) {
+    private static int runInShell(IRuby runtime, IRubyObject[] rawArgs, OutputStream output) {
         try {
+            // startup scripts set jruby.shell to /bin/sh for Unix, cmd.exe for Windows
             String shell = System.getProperty("jruby.shell");
-            Process aProcess;
-            String shellSwitch = "-c";
+            rawArgs[0] = runtime.newString(repairDirSeps(rawArgs[0].toString()));
+            Process aProcess = null;
+            InProcessScript ipScript = null;
             
-            command = repairDirSeps(command);
-            
-            if (shell != null) {
-                if (!shell.endsWith("sh")) {
-                    shellSwitch = "/c";
-                }
-                aProcess = Runtime.getRuntime().exec(new String[] { shell, shellSwitch, command });
+            if (isRubyCommand(rawArgs[0].toString())) {
+                List args = parseCommandLine(rawArgs);
+                PrintStream redirect = new PrintStream(output);
+                String command = (String)args.get(0);
+
+                String[] argArray = new String[args.size()-1];
+                // snip off ruby or jruby command from list of arguments
+                // leave alone if the command is the name of a script
+                int startIndex = command.endsWith(".rb") ? 0 : 1;
+                args.subList(startIndex,args.size()).toArray(argArray);
+
+                // FIXME: Where should we get in and err from?
+                ipScript = new InProcessScript(argArray, System.in, redirect, redirect);
+                
+                // execute ruby command in-process
+                ipScript.start();
+                ipScript.join();
+            } else if (shell != null && rawArgs.length == 1) {
+                // execute command with sh -c or cmd.exe /c
+                // this does shell expansion of wildcards
+                String shellSwitch = shell.endsWith("sh") ? "-c" : "/c";
+                String[] argArray = new String[3];
+                argArray[0] = shell;
+                argArray[1] = shellSwitch;
+                argArray[2] = rawArgs[0].toString();
+                aProcess = Runtime.getRuntime().exec(argArray);
             } else {
-                aProcess = Runtime.getRuntime().exec(command);
+                // execute command directly, no wildcard expansion
+                if (rawArgs.length > 1) {
+                    String[] argArray = new String[rawArgs.length];
+                    for (int i=0;i<rawArgs.length;i++) {
+                        argArray[i] = rawArgs[i].toString();
+                    }
+                    aProcess = Runtime.getRuntime().exec(argArray);
+                } else {
+                    aProcess = Runtime.getRuntime().exec(rawArgs[0].toString());
+                }
             }
-
-            final BufferedReader reader = new BufferedReader(new InputStreamReader(aProcess.getInputStream()));
-
-            // Fairly innefficient impl, but readLine is unable to tell 
-            // whether the last line in a process ended with a newline or not.
-            int c;
-            boolean crSeen = false;
-            while ((c = reader.read()) != -1) {
-            	if (c == '\r') {
-            		crSeen = true;
-            	} else {
-            		if (crSeen) {
-            			if (c != '\n') {
-            				output.append('\r');
-            			}
-            			crSeen = false;
-            		}
-            		output.append((char)c);
-            	}
-            }
-            if (crSeen) {
-            	output.append('\r');
-            }
-            aProcess.getErrorStream().close();
-            aProcess.getOutputStream().close();
-            reader.close();
             
-            return aProcess.waitFor();
+            if (aProcess != null) {
+                InputStream processOutput = aProcess.getInputStream();
+                
+                // Fairly innefficient impl, but readLine is unable to tell
+                // whether the last line in a process ended with a newline or not.
+                int b;
+                boolean crSeen = false;
+                while ((b = processOutput.read()) != -1) {
+                    if (b == '\r') {
+                        crSeen = true;
+                    } else {
+                        if (crSeen) {
+                            if (b != '\n') {
+                                output.write('\r');
+                            }
+                            crSeen = false;
+                        }
+                        output.write(b);
+                    }
+                }
+                if (crSeen) {
+                    output.write('\r');
+                }
+                aProcess.getErrorStream().close();
+                aProcess.getOutputStream().close();
+                processOutput.close();
+                
+                return aProcess.waitFor();
+            } else if (ipScript != null) {
+            	return ipScript.getResult();
+            } else {
+                return 0;
+            }
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
         } catch (InterruptedException e) {
@@ -839,11 +948,8 @@ public class RubyKernel {
 
     public static RubyBoolean system(IRubyObject recv, IRubyObject[] args) {
         IRuby runtime = recv.getRuntime();
-        if (args.length > 1) {
-            throw runtime.newArgumentError("more arguments not yet supported");
-        }
-        StringBuffer output = new StringBuffer();
-        int resultCode = runInShell(runtime, args[0].toString(), output);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        int resultCode = runInShell(runtime, args, output);
         recv.getRuntime().getGlobalVariables().set("$?", runtime.newFixnum(resultCode));
         return runtime.newBoolean(resultCode == 0);
     }
