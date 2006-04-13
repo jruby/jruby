@@ -25,36 +25,18 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby;
 
-import java.util.Map;
+package org.jruby.environment;
 
-public interface IOSEnvironment {
+public class OSEnvironmentReaderExcepton extends RuntimeException {
 
-	/**
-	 * Get the operating system environment variables.
-     * 
-     * Returns an unmodifiable string map view of the current system environment. 
-     * If environment variables,are not supported, then null is returned.  (isEnvironmentAccessible() returns false).
-     * If there are no variables defined, then an empty Map is returned. 
-	 * 
-	 * @return the operating system environment variables in a Map<String,String>.
-     * @throws EnvironmentAccessExcepton if there is a problem accessing the environment variables.
-	 */
-	Map getVariables();
+	private static final long serialVersionUID = 8101107415664066073L;
 
-    /**
-     * Determines whether the OS environment variables are accessible.
-     * 
-     * @return  whether the OS environment variables are accessible.
-     */
-    boolean isAccessible();
+	public OSEnvironmentReaderExcepton() {
+        super();
+    }
     
-    
-    class EnvironmentAccessExcepton extends RuntimeException {
-        public EnvironmentAccessExcepton(String message) {
-            super(message);
-        }
-    };
-
+    public OSEnvironmentReaderExcepton(String message) {
+        super(message);
+    }
 }

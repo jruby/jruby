@@ -818,7 +818,7 @@ public class RubyKernel {
         }
     }
 
-    private static int runInShell(IRuby runtime, IRubyObject[] rawArgs, OutputStream output) {
+    public static int runInShell(IRuby runtime, IRubyObject[] rawArgs, OutputStream output) {
         try {
             // startup scripts set jruby.shell to /bin/sh for Unix, cmd.exe for Windows
             String shell = System.getProperty("jruby.shell");

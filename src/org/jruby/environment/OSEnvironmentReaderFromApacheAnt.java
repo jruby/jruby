@@ -26,66 +26,100 @@
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 
-package org.jruby;
+package org.jruby.environment;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Vector;
 
-public class OSEnvironmentFromJava5SystemGetenv implements IOSEnvironment {
+import org.jruby.IRuby;
 
-    protected void warn(String warning, Exception e) {
-        throw new EnvironmentAccessExcepton(warning + " (" + e.getClass().getName() + " " + e.getMessage() + ")");
+class OSEnvironmentReaderFromApacheAnt implements IOSEnvironmentReader {
+
+
+    protected Map getProcEnvironmentMethodV() {
+
+    	Method getProcEnvironment = getProcEnvironmentMethod();
+    	Vector v = new Vector();
+
+    	HashMap map = new HashMap();
+
+    	
+    	if (getProcEnvironment != null) {
+            try {
+				v = (Vector) getProcEnvironment.invoke(null, (Object[]) null);
+			} catch (IllegalArgumentException e) {
+				return map;
+			} catch (IllegalAccessException e) {
+				return map;
+			} catch (InvocationTargetException e) {
+				return map;
+			}    		
+    	}
+
+		String line;
+		int equalsPos;
+
+    	for (java.util.Enumeration e  = v.elements(); e.hasMoreElements();) {
+			line = (String) e.nextElement();
+			equalsPos = line.indexOf('=');
+			if (equalsPos >= 1) {
+				map.put(line.substring(0, equalsPos), line.substring(equalsPos + 1));
+			}			
+		}
+    	
+    	
+    	return map;
+
     }
+	
+	
+    protected Method getProcEnvironmentMethod() {
 
-    /**
-     * Gets the new Java 5 Sytem.getenv method via reflection.
-     * @return
-     */
-    protected Method getSystemGetenvMethod() {
-        Method getenvMethod = null;
-        try {
-            getenvMethod = java.lang.System.class.getMethod("getenv", (Class[]) null);
-            if (!getenvMethod.getReturnType().equals(java.util.Map.class)) {
-                // wrong return type
-                getenvMethod = null;
-            }
-        } catch (NoSuchMethodException e) {
-            // This is the error you get if using Java 1.4.2
-            getenvMethod = null;
-        } catch (Exception e) {
-            // Some other e.g. security problem
-            getenvMethod = null;
-        }
-        return getenvMethod;
+    	Method getProcEnvironment;
+    	Class c;
+    	
+    	try {
+    		c = Class.forName("org.apache.tools.ant.taskdefs.Execute");
+    	} catch (ClassNotFoundException e) {
+    		return null;
+    	}
+    	
+    	try {
+    		getProcEnvironment = c.getMethod("getProcEnvironment", (Class[]) null);
+    	} catch (SecurityException e) {
+    		return null;
+    	} catch (NoSuchMethodException e) {
+    		return null;
+    	}
+    	
+    	return getProcEnvironment;
+    	
     }
+	
+	
+	
 
     /* (non-Javadoc)
      * @see org.jruby.IOSEnvironment#isAccessible()
      */
-    public boolean isAccessible() {
-        return getSystemGetenvMethod() != null;
+    public boolean isAccessible(IRuby runtime) {
+    	return getProcEnvironmentMethod() != null;
     }
 
     /* (non-Javadoc)
      * @see org.jruby.IOSEnvironment#getVariables()
      */
-    public Map getVariables() {
-        Map returnMap = null;
-        Method getenvMethod = getSystemGetenvMethod();
-        try {
-            if (getenvMethod != null) {
-                returnMap = (Map) getenvMethod.invoke(null, (Object[]) null);
-            }
-        } catch (Exception e) {
-            warn("Unable to call System.getenv", e);
-        }
-        return returnMap;
+    public Map getVariables(IRuby runtime) {
+        return getProcEnvironmentMethodV();
     }
 
     public static void main(String[] args) {
-        OSEnvironmentFromJava5SystemGetenv getenv = new OSEnvironmentFromJava5SystemGetenv();
-        Map envs = getenv.getVariables();
+        OSEnvironmentReaderFromApacheAnt getenv = new OSEnvironmentReaderFromApacheAnt();
+        Map envs = getenv.getVariables(null);
         for (Iterator i = envs.entrySet().iterator(); i.hasNext();) {
             Map.Entry entry = (Map.Entry) i.next();
             System.out.println(entry.getKey() + ":" + entry.getValue());

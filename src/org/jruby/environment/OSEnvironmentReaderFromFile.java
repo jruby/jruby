@@ -26,28 +26,34 @@
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 
-package org.jruby;
+package org.jruby.environment;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
-public class OSEnvironmentFromFile implements IOSEnvironment {
+import org.jruby.IRuby;
+
+
+/**
+ *   Get the os environment from a file.
+ *   Requires a java system property "jruby.envfile" to give the location of a file from which 
+ *   the environment variables can be loaded.  
+ *
+ */
+class OSEnvironmentReaderFromFile implements IOSEnvironmentReader {
 
     private static final String JRUBY_ENVFILE = "jruby.envfile";
 
-    protected void warn(String warning) {
-        throw new EnvironmentAccessExcepton(warning);
-    }
+    private final OSEnvironment environmentReader = new OSEnvironment();
+    
     
     /* (non-Javadoc)
      * @see org.jruby.IOSEnvironment#isAccessible()
      */
-    public boolean isAccessible() {
+    public boolean isAccessible(IRuby runtime) {
         String jrubyEnvFilename = System.getProperty(JRUBY_ENVFILE);
 
         if (jrubyEnvFilename == null || jrubyEnvFilename.length() < 1) {
@@ -62,43 +68,23 @@ public class OSEnvironmentFromFile implements IOSEnvironment {
     /* (non-Javadoc)
      * @see org.jruby.IOSEnvironment#getVariables()
      */
-    public Map getVariables() {
+    public Map getVariables(IRuby runtime) {
         String jrubyEnvFilename = System.getProperty(JRUBY_ENVFILE);
 
-        HashMap envs = new HashMap();
-
+        Map envs = null;
+        
         if (jrubyEnvFilename == null || jrubyEnvFilename.length() < 1) {
-            warn("Property " + JRUBY_ENVFILE + " not defined.");
+            environmentReader.handleException(new OSEnvironmentReaderExcepton("Property " + JRUBY_ENVFILE + " not defined."));
         } else {
-            BufferedReader jrubyEnvFile = null;
+            BufferedReader reader = null;
             try {
-                jrubyEnvFile = new BufferedReader(new FileReader(jrubyEnvFilename));
-                try {
-                    String line, envVarName, envVarValue;
-                    int equalsPos;
-                    while ((line = jrubyEnvFile.readLine()) != null) {
-                        equalsPos = line.indexOf('=');
-                        if (equalsPos >= 1) {
-                            envVarName = line.substring(0, equalsPos);
-                            envVarValue = line.substring(equalsPos + 1);
-                            envs.put(envVarName, envVarValue);
-                        }
-                    }
-                } catch (IOException e) {
-                    envs = null;
-                    warn(e.getMessage() + " reading " + jrubyEnvFilename);
-                } finally {
-                    try {
-                        jrubyEnvFile.close();
-                    } catch (IOException e) {
-                        envs = null;
-                        warn(e.getMessage() + " closing " + jrubyEnvFilename);
-                    }
-                }
+                reader = new BufferedReader(new FileReader(jrubyEnvFilename));
             } catch (FileNotFoundException e) {
                 envs = null;
-                warn("File " + jrubyEnvFilename + " (jruby.envfile) does not exist. ");
+                // Very unlikely to happen as isAccessible() should be used first
+                environmentReader.handleException(e);
             }
+            envs = environmentReader.getVariablesFrom(reader);
         }
         return envs;
     }

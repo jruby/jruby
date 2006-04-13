@@ -17,6 +17,7 @@
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2006 Tim Azzopardi <tim@tigerfive.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -34,7 +35,10 @@ package org.jruby;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
+import org.jruby.environment.OSEnvironmentReaderExcepton;
+import org.jruby.environment.OSEnvironment;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.ReadonlyGlobalVariable;
@@ -60,12 +64,6 @@ public class RubyGlobal {
         runtime.defineGlobalConstant("RELEASE_DATE", release);
         runtime.defineGlobalConstant("PLATFORM", platform);
 		
-		// FIXME: ENV Not really a RubyHash (but close) 
-		// FIXME: ENV Should not copy system properties, but should reference them instead
-        HashMap envs = new HashMap();
-		envs.put(runtime.newString("HOME"), runtime.newString(System.getProperty("user.home")));
-        runtime.defineGlobalConstant("ENV", RubyHash.newHash(runtime, envs, runtime.getNil()));
-
         runtime.defineVariable(new StringGlobalVariable(runtime, "$KCODE", runtime.newString("UTF8")));
         runtime.defineVariable(new StringGlobalVariable(runtime, "$/", runtime.newString("\n")));
         runtime.defineVariable(new StringGlobalVariable(runtime, "$\\", runtime.getNil()));
@@ -102,10 +100,38 @@ public class RubyGlobal {
         runtime.defineVariable(new LoadPath(runtime, "$-I"));
         runtime.defineVariable(new LoadPath(runtime, "$LOAD_PATH"));
 
+        // after defn of $stderr as the call may produce warnings
+        defineGlobalEnvConstants(runtime);
+        
         // ARGF, $< object
         RubyArgsFile argsFile = new RubyArgsFile(runtime);
         argsFile.initArgsFile();
     }
+
+    private static void defineGlobalEnvConstants(IRuby runtime) {
+
+    	Map environmentVariableMap = null;
+    	OSEnvironment environment = new OSEnvironment();
+    	try {
+    		environmentVariableMap = environment.getEnvironmentVariableMap(runtime);
+    	} catch (OSEnvironmentReaderExcepton e) {
+    		// If the environment variables are not accessible shouldn't terminate 
+    		runtime.getWarnings().warn(e.getMessage());
+    	}
+		
+    	if (environmentVariableMap == null) {
+            // if the environment variables can't be obtainded, define an empty ENV
+    		environmentVariableMap = new HashMap();
+    	}
+        runtime.defineGlobalConstant("ENV", RubyHash.newHash(runtime, environmentVariableMap, runtime.getNil()));
+
+        // Define System.getProperties() in ENV_JAVA
+        Map systemProps =  environment.getSystemPropertiesMap(runtime);
+        runtime.defineGlobalConstant("ENV_JAVA", RubyHash.newHash(runtime, systemProps, runtime.getNil()));
+        
+    }
+
+
 
     // Accessor methods.
 
