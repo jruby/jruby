@@ -34,6 +34,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.channels.FileChannel;
 
 import org.jruby.IRuby;
 import org.jruby.RubyIO;
@@ -202,4 +203,9 @@ public class IOHandlerProcess extends IOHandler {
     public void truncate(long newLength) throws IOException, PipeException {
         throw new IOHandler.PipeException();
     }
+
+	public FileChannel getFileChannel() {
+		assert false : "No file channel for process streams";
+		return null;
+	}
 }

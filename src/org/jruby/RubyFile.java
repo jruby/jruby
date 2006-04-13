@@ -38,7 +38,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOHandler;
 import org.jruby.util.IOHandlerSeekable;
@@ -114,24 +117,57 @@ public class RubyFile extends RubyIO {
             throw getRuntime().newIOError(e.getMessage());
 		}
     }
+    
+    private FileLock currentLock;
 	
-	/* TODO: Implement flock()...
-    public IRubyObject flock(IRubyObject lockingConstant) {
-        FileChannel fileChanel = handler.getFileChannel();
+	public IRubyObject flock(IRubyObject lockingConstant) {
+        FileChannel fileChannel = handler.getFileChannel();
         int lockMode = (int) ((RubyFixnum) lockingConstant.convertToType("Fixnum", "to_int", 
             true)).getLongValue();
 
-		switch(lockMode) {
-		case LOCK_UN:
-		case LOCK_EX:
-		case LOCK_EX | LOCK_NB:
-		case LOCK_SH:
-		case LOCK_SH | LOCK_NB:
-		default:	
-		}
+        try {
+			switch(lockMode) {
+			case LOCK_UN:
+				if (currentLock != null) {
+					currentLock.release();
+					currentLock = null;
+					
+					return getRuntime().newFixnum(0);
+				}
+				break;
+			case LOCK_EX:
+			case LOCK_EX | LOCK_NB:
+				if (currentLock != null) {
+					currentLock.release();
+					currentLock = null;
+				}
+				currentLock = fileChannel.tryLock();
+				if (currentLock != null) {
+					return getRuntime().newFixnum(0);
+				}
+
+				break;
+			case LOCK_SH:
+			case LOCK_SH | LOCK_NB:
+				if (currentLock != null) {
+					currentLock.release();
+					currentLock = null;
+				}
+				
+				currentLock = fileChannel.tryLock(0L, Long.MAX_VALUE, true);
+				if (currentLock != null) {
+					return getRuntime().newFixnum(0);
+				}
+
+				break;
+			default:	
+			}
+        } catch (IOException ioe) {
+        	throw new RaiseException(new NativeException(getRuntime(), getRuntime().getClass("IOError"), ioe));
+        }
 		
 		return getRuntime().getFalse();
-	}*/
+	}
 
 	public IRubyObject initialize(IRubyObject[] args) {
 	    if (args.length == 0) {

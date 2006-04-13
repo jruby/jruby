@@ -35,6 +35,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.channels.FileChannel;
 
 import org.jruby.IRuby;
 
@@ -73,6 +74,8 @@ public abstract class IOHandler {
     protected IRuby getRuntime() {
         return runtime;
     }
+    
+    public abstract FileChannel getFileChannel();
     
     public boolean isReadable() {
         return modes.isReadable();

@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
 
 import org.jruby.IRuby;
 import org.jruby.RubyIO;
@@ -265,4 +266,8 @@ public class IOHandlerSeekable extends IOHandler {
     public void truncate(long newLength) throws IOException {
         file.setLength(newLength);
     }
+
+	public FileChannel getFileChannel() {
+		return file.getChannel();
+	}
 }
