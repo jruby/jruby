@@ -157,7 +157,7 @@ public class Split {
     private static String unescapeString(String unescapedString) {
         int length = unescapedString.length();
         char[] charsToEscape = {'|', '(', ')', '.', '*', 
-                '[', ']', '^', '$', '\\'};
+                '[', ']', '^', '$', '\\', '?'};
         StringBuffer buf = new StringBuffer();
         
         for (int i = 0; i < length; i++) {
