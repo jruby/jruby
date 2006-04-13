@@ -398,6 +398,9 @@ public final class Ruby implements IRuby {
         getObject().defineConstant("TOPLEVEL_BINDING", newBinding());
 
         initBuiltinClasses();
+        
+        // Load additional definitions and hacks from etc.rb
+        getLoadService().load("builtin/etc.rb");
     }
 
     private void initLibraries() {
