@@ -123,4 +123,13 @@ test_equal(f.gets(), $_)
 test_equal(f.readline(), $_)
 f.close
 
+# test that read returns correct values
+f = File.open(@file)
+f.read # read all
+test_equal("", f.read)
+test_equal(nil, f.read(1))
+f.close
+
+# Test deleting files
 test_ok(File.delete(@file, @file2, @file3))
+

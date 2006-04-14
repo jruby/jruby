@@ -856,7 +856,14 @@ public class RubyIO extends RubyObject {
             String buf = args.length > 0 ? 
                 handler.read(RubyNumeric.fix2int(args[0])) : handler.getsEntireStream();
 
-            return buf == null ? getRuntime().newString("") : getRuntime().newString(buf);
+            if (buf == null) {
+                if (args.length > 0) {
+                    return getRuntime().getNil();
+                }
+                return getRuntime().newString("");
+            }
+            
+            return getRuntime().newString(buf);
         } catch (IOHandler.BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
         } catch (IOException e) {
