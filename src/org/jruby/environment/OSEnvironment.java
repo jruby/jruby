@@ -75,9 +75,9 @@ public class OSEnvironment {
             // not Java5 so try getting environment using Runtime exec
             if (reader == null) {
                 reader = getAccessibleOSEnvironment(runtime, OSEnvironmentReaderFromRuntimeExec.class.getName());
-                runtime.getWarnings().warn("Getting environment variables using Runtime Exec");
+                //runtime.getWarnings().warn("Getting environment variables using Runtime Exec");
             }  else {
-            	 runtime.getWarnings().warn("Getting environment variables using Java5 System.getenv()");
+                //runtime.getWarnings().warn("Getting environment variables using Java5 System.getenv()");
             }
         } else {
             // get environment from jruby command line property supplied class
