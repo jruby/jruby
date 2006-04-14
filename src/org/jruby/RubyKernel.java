@@ -785,7 +785,7 @@ public class RubyKernel {
         String [] spaceDelimitedTokens = command.split(" ", 2);
         String [] slashDelimitedTokens = spaceDelimitedTokens[0].split("/");
         String finalToken = slashDelimitedTokens[slashDelimitedTokens.length-1];
-        if (finalToken.contains("ruby") || finalToken.endsWith(".rb"))
+        if (finalToken.indexOf("ruby") != -1 || finalToken.endsWith(".rb"))
             return true;
         else
             return false;
