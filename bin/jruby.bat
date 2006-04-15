@@ -51,13 +51,15 @@ set JRUBY_BASE=%JRUBY_HOME%
 
 rem ----- Prepare Appropriate Java Execution Commands -------------------------
 
+if "%JAVA_COMMAND%" == "" set JAVA_COMMAND=java
+
 if not "%OS%" == "Windows_NT" goto noTitle
 rem set _STARTJAVA=start "JRuby" "%JAVA_HOME%\bin\java"
-set _STARTJAVA="%JAVA_HOME%\bin\java"
+set _STARTJAVA="%JAVA_HOME%\bin\%JAVA_COMMAND%"
 goto gotTitle
 :noTitle
 rem set _STARTJAVA=start "%JAVA_HOME%\bin\java"
-set _STARTJAVA="%JAVA_HOME%\bin\java"
+set _STARTJAVA="%JAVA_HOME%\bin\%JAVA_COMMAND%"
 :gotTitle
 
 set _RUNJAVA="%JAVA_HOME%\bin\java"
