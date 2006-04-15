@@ -30,11 +30,12 @@ package org.jruby.internal.runtime.methods;
 import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ICallable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public abstract class DirectInvocationMethod extends AbstractMethod {
+public abstract class DirectInvocationMethod extends AbstractMethod implements Cloneable {
     private Arity arity;
     
     public DirectInvocationMethod(RubyModule implementationClass, Arity arity, Visibility visibility) {
@@ -61,5 +62,14 @@ public abstract class DirectInvocationMethod extends AbstractMethod {
 	// TODO:  Perhaps abstract method should contain this and all other Methods should pass in decent value
 	public Arity getArity() {
 		return arity;
+	}
+
+	public ICallable dup() {
+		try {
+			DirectInvocationMethod dim = (DirectInvocationMethod)clone();
+			return dim;
+		} catch (CloneNotSupportedException cnse) {
+			return null;
+		}
 	}
 }

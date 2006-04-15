@@ -41,7 +41,6 @@ import java.util.Map;
 
 import org.jruby.internal.runtime.methods.DirectInvocationMethod;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -69,11 +68,6 @@ public class RubySymbol extends RubyObject {
         }
         
         public abstract IRubyObject invoke(RubySymbol target, IRubyObject[] args);
-
-        public ICallable dup() {
-            // TODO Auto-generated method stub
-            return null;
-        }
         
     };
     

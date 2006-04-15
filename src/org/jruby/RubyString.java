@@ -36,7 +36,6 @@ package org.jruby;
 
 import org.jruby.internal.runtime.methods.DirectInvocationMethod;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.meta.StringMetaClass;
@@ -70,11 +69,6 @@ public class RubyString extends RubyObject {
         }
         
         public abstract IRubyObject invoke(RubyString target, IRubyObject[] args);
-
-        public ICallable dup() {
-            // TODO Auto-generated method stub
-            return null;
-        }
         
     };
     

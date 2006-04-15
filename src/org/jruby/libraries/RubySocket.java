@@ -6,7 +6,6 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.internal.runtime.methods.DirectInvocationMethod;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -23,12 +22,6 @@ public class RubySocket extends RubyObject {
         }
         
         public abstract IRubyObject invoke(RubySocket target, IRubyObject[] args);
-
-        public ICallable dup() {
-            // TODO Auto-generated method stub
-            return null;
-        }
-        
     };
 
 	public RubySocket(IRuby runtime, RubyClass metaClass) {
