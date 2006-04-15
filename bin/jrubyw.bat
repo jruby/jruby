@@ -8,7 +8,7 @@ set _JRUBY_BASE=%JRUBY_BASE%
 set _JRUBY_HOME=%JRUBY_HOME%
 set _CLASSPATH=%CLASSPATH%
 set _CP=%CP%
-
+set _JAVA_COMMAND=%JAVA_COMMAND%
 
 rem ----- Verify and Set Required Environment Variables -----------------------
 set JAVA_COMMAND=javaw
@@ -31,6 +31,7 @@ goto cleanup
 
 if not "%JRUBY_BASE%" == "" goto gotBase
 set JRUBY_BASE=%JRUBY_HOME%
+:gotBase
 
 %JRUBY_HOME%\bin\jruby.bat %*
 
@@ -44,8 +45,10 @@ set _JRUBY_HOME=
 set CLASSPATH=%_CLASSPATH%
 set _CLASSPATH=
 set CP=%_CP%
+set JAVA_COMMAND=%_JAVA_COMMAND%
 set _LIBJARS=
 set _RUNJAVA=
 set _STARTJAVA=
+set _JAVA_COMMAND=
 :finish
 exit /b %E%
