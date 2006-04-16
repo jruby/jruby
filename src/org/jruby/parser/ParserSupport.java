@@ -526,12 +526,12 @@ public class ParserSupport {
 
     public AndNode newAndNode(Node left, Node right) {
         checkExpression(left);
-        return new AndNode(left.getPosition(), getConditionNode(left), getConditionNode(right));
+        return new AndNode(left.getPosition(), left, right);
     }
 
     public OrNode newOrNode(Node left, Node right) {
         checkExpression(left);
-        return new OrNode(left.getPosition(), getConditionNode(left), getConditionNode(right));
+        return new OrNode(left.getPosition(), left, right);
     }
 
     public Node getReturnArgsNode(Node node) {

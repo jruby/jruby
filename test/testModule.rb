@@ -213,3 +213,20 @@ end
 
 v = Victim.new
 test_no_exception { v.hello }
+
+###### instance_methods + undef_method
+
+class InstanceMethodsUndefBase
+  def foo; end
+end
+
+class InstanceMethodsUndefDerived < InstanceMethodsUndefBase
+  test_equal(true, instance_methods.include?("foo"))
+  undef_method "foo"
+  test_equal(false, instance_methods.include?("foo"))
+end
+
+class InstanceMethodsUndefBase
+  test_equal(true, instance_methods.include?("foo"))
+end
+  

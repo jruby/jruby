@@ -1183,20 +1183,26 @@ public class RubyModule extends RubyObject {
     private RubyArray instance_methods(IRubyObject[] args, final Visibility visibility) {
         boolean includeSuper = args.length > 0 ? args[0].isTrue() : true;
         RubyArray ary = getRuntime().newArray();
+        HashMap undefinedMethods = new HashMap();
 
         for (RubyModule type = this; type != null; type = type.getSuperClass()) {
         	RubyModule realType = type.isIncluded() ? ((IncludedModuleWrapper) type).getDelegate() : type;
             for (Iterator iter = type.getMethods().entrySet().iterator(); iter.hasNext();) {
                 Map.Entry entry = (Map.Entry) iter.next();
                 ICallable method = (ICallable) entry.getValue();
+                String methodName = (String) entry.getKey();
 
+                if (method.isUndefined()) {
+                	undefinedMethods.put(methodName, Boolean.TRUE);
+                	continue;
+                }
                 if (method.getImplementationClass() == realType && 
-                    method.getVisibility().is(visibility) && !method.isUndefined()) {
-                    RubyString name = getRuntime().newString((String) entry.getKey());
+                    method.getVisibility().is(visibility) && undefinedMethods.get(methodName) == null) {
+                	RubyString name = getRuntime().newString(methodName);
 
-                    if (!ary.includes(name)) {
-                        ary.append(name);
-                    }
+                	if (!ary.includes(name)) {
+                		ary.append(name);
+                	}
                 } 
             }
 				
