@@ -55,6 +55,7 @@ testProc.rb
 testNesting.rb
 testXML.rb
 testStringIO.rb
+testStringScan.rb
 testTime.rb
 testEval.rb
 testSuper.rb

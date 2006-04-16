@@ -42,6 +42,10 @@ class Socket < BasicSocket
 end
 
 class IPSocket < BasicSocket
+  include_class('java.net.InetAddress')
+  def self.getaddress(hostname)
+  	InetAddress.getByName(hostname).hostAddress
+  end
 end
 
 class TCPSocket < IPSocket
