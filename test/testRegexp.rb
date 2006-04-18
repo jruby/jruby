@@ -52,3 +52,6 @@ match_data = /(.)(.)(\d+)(\d)/.match("THX1138")
 
 test_equal(["HX1138", "H", "X", "113", "8"], match_data.to_a)
 test_equal(["H", "X", "113", "8"], match_data.captures)
+
+##### === ######
+/a/ === :a

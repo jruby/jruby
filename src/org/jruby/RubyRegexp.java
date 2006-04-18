@@ -271,6 +271,11 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         if (target.isNil()) {
             return getRuntime().getFalse();
         }
+        // FIXME:  I think all String expecting functions has this magic via RSTRING
+    	if (target instanceof RubySymbol) {
+    		target = ((RubySymbol) target).to_s();
+    	}
+
         int result = search(target, 0);
         
         return result < 0 ? getRuntime().getNil() :
@@ -356,7 +361,8 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      *
      */
     public int search(IRubyObject target, int pos) {
-        String str = RubyString.stringValue(target).toString();
+		String str = RubyString.stringValue(target).toString();
+
         if (pos > str.length()) {
             return -1;
         }

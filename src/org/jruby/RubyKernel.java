@@ -176,6 +176,7 @@ public class RubyKernel {
         module.definePublicModuleFunction("private_methods", objectCallbackFactory.getMethod("private_methods"));
         module.definePublicModuleFunction("protected_methods", objectCallbackFactory.getMethod("protected_methods"));
         module.definePublicModuleFunction("public_methods", objectCallbackFactory.getOptMethod("public_methods"));
+        module.definePublicModuleFunction("remove_instance_variable", objectCallbackFactory.getMethod("remove_instance_variable", IRubyObject.class));
         module.definePublicModuleFunction("respond_to?", objectCallbackFactory.getOptMethod("respond_to"));
         module.definePublicModuleFunction("send", objectCallbackFactory.getOptMethod("send"));
         module.defineAlias("__send__", "send");

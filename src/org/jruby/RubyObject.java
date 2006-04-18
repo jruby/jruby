@@ -54,6 +54,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.util.IdUtil;
 import org.jruby.util.PrintfFormat;
 import org.jruby.util.collections.SinglyLinkedList;
 
@@ -1090,6 +1091,25 @@ public class RubyObject implements Cloneable, IRubyObject {
     public IRubyObject match(IRubyObject arg) {
     	return getRuntime().getFalse();
     }
+    
+   public IRubyObject remove_instance_variable(IRubyObject name) {
+       String id = name.asSymbol();
+
+       if (!IdUtil.isInstanceVariable(id)) {
+           throw getRuntime().newNameError("wrong instance variable name " + id);
+       }
+       if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
+           throw getRuntime().newSecurityError("Insecure: can't remove instance variable");
+       }
+       testFrozen("class/module");
+
+       IRubyObject variable = removeInstanceVariable(id); 
+       if (variable != null) {
+           return variable;
+       }
+
+       throw getRuntime().newNameError("instance variable " + id + " not defined");
+   }
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {
         output.write('o');
@@ -1110,6 +1130,7 @@ public class RubyObject implements Cloneable, IRubyObject {
             }
         }
     }
+   
     
     /**
      * @see org.jruby.runtime.builtin.IRubyObject#getType()

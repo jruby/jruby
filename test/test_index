@@ -16,6 +16,7 @@ testMethods.rb
 testGlobalVars.rb
 testClasses.rb
 testNumber.rb
+testObject.rb
 testFloat.rb
 testBlock.rb
 testRange.rb
