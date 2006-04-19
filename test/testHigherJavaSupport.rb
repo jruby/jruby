@@ -237,4 +237,6 @@ if defined? Java
   
   jstring_methods.each { |method| test_ok(JString.public_instance_methods.include?(method)) }
   
+  include_class 'java.math.BigDecimal'
+  test_equal(BigDecimal, BigDecimal.new("1.23").add(BigDecimal.new("2.34")).class)
 end

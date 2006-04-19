@@ -32,6 +32,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
+import java.math.BigDecimal;
 import org.jruby.IRuby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyFloat;
@@ -167,7 +168,7 @@ public class JavaUtil {
             return RubyFloat.newFloat(runtime, ((Number) object).doubleValue());
         } else if (javaClass == Character.class) {
             return runtime.newFixnum(((Character) object).charValue());
-        } else if (Number.class.isAssignableFrom(javaClass)) {
+        } else if (Number.class.isAssignableFrom(javaClass) && javaClass != BigDecimal.class) {
             return runtime.newFixnum(((Number) object).longValue());
         } else if (javaClass == String.class) {
             return runtime.newString(object.toString());
