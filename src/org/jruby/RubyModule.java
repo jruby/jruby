@@ -895,11 +895,8 @@ public class RubyModule extends RubyObject {
         return new RubyModule(runtime, runtime.getClass("Module"), null, parentCRef, name);
     }
     
-    /** rb_mod_name
-     *
-     */
     public RubyString name() {
-        return getRuntime().newString(getName());
+    	return getRuntime().newString(getBaseName() == null ? "" : getName());
     }
 
     /** rb_mod_class_variables
