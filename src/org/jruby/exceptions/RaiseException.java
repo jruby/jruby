@@ -55,7 +55,7 @@ public class RaiseException extends JumpException {
 
     public RaiseException(IRuby runtime, RubyClass excptnClass, String msg, boolean nativeException) {
 		super(msg, JumpType.RaiseJump);
-        setException(new RubyException(runtime, excptnClass, msg), nativeException);
+        setException((RubyException) excptnClass.callMethod("new", excptnClass.getRuntime().newString(msg)), nativeException);
     }
     
     public static RaiseException createNativeRaiseException(IRuby runtime, Throwable cause) {
