@@ -325,10 +325,14 @@ public class RubyFixnum extends RubyInteger {
         return callCoerced("^", other);
     }
 
-    public RubyString to_s() {
-        return getRuntime().newString(String.valueOf(getLongValue()));
-    }
+    public RubyString to_s(IRubyObject[] args) {
+    	checkArgumentCount(args, 0, 1);
 
+    	int radix = args.length == 0 ? 10 : (int) args[0].convertToInteger().getLongValue();
+        
+        return getRuntime().newString(Long.toString(getLongValue(), radix));
+    }
+    
     public RubyFloat to_f() {
         return RubyFloat.newFloat(getRuntime(), getDoubleValue());
     }

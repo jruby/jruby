@@ -99,3 +99,12 @@ test_exception(TypeError) {
     "fools"
   end
 }
+
+test_equal("8", 8.to_s)
+test_equal("10", 8.to_s(8))
+
+class IntClass
+  def to_int; 8; end
+end
+
+test_equal("10", 8.to_s(IntClass.new))

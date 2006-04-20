@@ -50,7 +50,7 @@ public class FixnumMetaClass extends IntegerMetaClass {
 		        defineMethod("quo", Arity.singleArgument());
 		        defineMethod("to_f", Arity.noArguments());
 		        defineMethod("to_i", Arity.noArguments());
-		        defineMethod("to_s", Arity.noArguments());
+		        defineMethod("to_s", Arity.optional());
 		        defineMethod("taint", Arity.noArguments());
 		        defineMethod("freeze", Arity.noArguments());
 		        defineMethod("<<", Arity.singleArgument(), "op_lshift");
