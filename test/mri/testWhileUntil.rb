@@ -19,7 +19,8 @@ while tmp.gets()
   break if /vt100/
 end
 
-test_ok(!tmp.eof? && /vt100/)
+test_ok(false) unless /vt100/
+test_ok(!tmp.eof?)
 tmp.close
 
 # test next
@@ -29,7 +30,9 @@ while tmp.gets()
   next if /vt100/;
   $bad = 1 if /vt100/;
 end
-test_ok(!(!tmp.eof? || /vt100/ || $bad))
+test_ok(tmp.eof?)
+test_ok(false) if /vt100/
+test_ok(!$bad)
 tmp.close
 
 # test redo
@@ -57,19 +60,6 @@ for i in 1..10
   end
 end
 test_ok(sum == 220)
-
-# test interval
-$bad = false
-tmp = open("while_tmp", "r")
-while tmp.gets()
-  break unless 1..2
-  if /vt100/ || /Amiga/ || /paper/
-    $bad = true
-    break
-  end
-end
-test_ok(!$bad)
-tmp.close
 
 File.unlink "while_tmp" or `/bin/rm -f "while_tmp"`
 test_ok(!File.exist?("while_tmp"))
