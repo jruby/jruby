@@ -158,6 +158,7 @@ public class FileMetaClass extends IOMetaClass {
 			//defineMethod("flock", Arity.singleArgument());
 			defineMethod("initialize", Arity.optional());
 			defineMethod("path", Arity.noArguments());
+	        defineMethod("stat", Arity.noArguments());
 			defineMethod("truncate", Arity.singleArgument());
 			defineMethod("flock", Arity.singleArgument());
 			
