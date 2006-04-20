@@ -11,6 +11,7 @@ class StringIO
 
   # TODO: Figure out if this is supposed to have same semantics as String.<<
   def <<(arg); @string = @string + arg; end
+  def binmode(); self; end
   def close() close_read; close_write; end
   def closed?() closed_read? && closed_write?; end
   def close_read() @close_read = true; end
