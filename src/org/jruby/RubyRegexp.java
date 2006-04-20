@@ -263,7 +263,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         
         return target instanceof RubyString ? match(target) : getRuntime().getNil();
     }
-
+    
     /** rb_reg_match
      * 
      */
@@ -272,8 +272,8 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             return getRuntime().getFalse();
         }
         // FIXME:  I think all String expecting functions has this magic via RSTRING
-    	if (target instanceof RubySymbol) {
-    		target = ((RubySymbol) target).to_s();
+    	if (target instanceof RubySymbol || target instanceof RubyHash || target instanceof RubyArray) {
+    		return getRuntime().getFalse();
     	}
 
         int result = search(target, 0);

@@ -54,4 +54,7 @@ test_equal(["HX1138", "H", "X", "113", "8"], match_data.to_a)
 test_equal(["H", "X", "113", "8"], match_data.captures)
 
 ##### === ######
-/a/ === :a
+test_equal(false, /a/ === :a)
+test_equal(false, /aa/ === ['a' => 'a'])
+test_equal(false, :a =~ /a/)
+test_equal(false, ['a' => 'a'] =~ /a/)
