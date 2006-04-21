@@ -31,6 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -264,8 +265,12 @@ public class RubyDir extends RubyObject {
         args[0].checkSafeString();
         String path = args[0].toString();
 
-        NormalizedFile newDir = getDir(recv.getRuntime(), path, false);
-
+        File newDir = getDir(recv.getRuntime(), path, false);
+        if (File.separatorChar == '\\') {
+            // FIXME: NormalizedFile's mkdirs doesn't work on windows with forward slashes...
+            newDir = new File(newDir.getPath());
+        }
+        
         return newDir.mkdirs() ? RubyFixnum.zero(recv.getRuntime()) :
             RubyFixnum.one(recv.getRuntime());
     }
