@@ -126,6 +126,7 @@ class StringIO
       @pos = amount
     end
   end
+  def size; @string.size; end
   def string; @string; end
   def syswrite(s); @string << s; s.length; end
   def write(s); @string = s; end

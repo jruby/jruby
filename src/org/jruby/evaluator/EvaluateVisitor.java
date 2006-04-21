@@ -552,7 +552,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             while (firstWhenNode != null) {
                 if (!(firstWhenNode instanceof WhenNode)) {
                     state.begin(firstWhenNode);
-                    break;
+                    return;
                 }
 
                 WhenNode whenNode = (WhenNode) firstWhenNode;

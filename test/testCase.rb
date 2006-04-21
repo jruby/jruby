@@ -53,3 +53,9 @@ x = case "FOO"
   when Proc then "HEH1"
 end
 test_equal(nil, x)
+
+x = case "HEH"
+  when Proc then "BAD"
+  else "GOOD"
+end
+test_equal("GOOD", x)

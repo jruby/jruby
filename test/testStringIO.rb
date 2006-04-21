@@ -38,3 +38,6 @@ test_equal(<<EOF, s.string)
 3
 123:a 1 b
 EOF
+
+s = StringIO.new("12345")
+test_equal(5, s.size)
