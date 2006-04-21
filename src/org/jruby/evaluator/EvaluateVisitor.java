@@ -604,6 +604,8 @@ public final class EvaluateVisitor implements NodeVisitor {
                 
                 firstWhenNode = whenNode.getNextCase();
             }
+            
+            state.setResult(state.runtime.getNil());
     	}
     }
     private static final CaseNodeVisitor caseNodeVisitor = new CaseNodeVisitor();

@@ -42,3 +42,14 @@ else
   x = 'c'
 end
 test_equal('c', x)
+
+# No match nil returns nil (for nil or anything else)
+x = case nil
+  when String then "HEH1"
+end
+test_equal(nil, x)
+
+x = case "FOO"
+  when Proc then "HEH1"
+end
+test_equal(nil, x)
