@@ -14,9 +14,13 @@ class StringScanner
     sub_string = @string.slice(@position..-1)
     regexp = Regexp.new(regexp) unless regexp.kind_of? Regexp
     regexp = Regexp.new("^" + regexp.source)
-    match_data = regexp.match(sub_string)
-    return nil if match_data.nil?
-    match_data[0]
+    @match_data = regexp.match(sub_string)
+    if @match_data.nil?
+      @pre_match, @matched, @post_match = nil, nil, nil
+	  return nil 
+    end
+	@pre_match, @matched, @post_match = @match_data.pre_match, @match_data[0], @match_data.post_match
+    @match_data[0]
   end
   
   def getch
@@ -43,28 +47,28 @@ class StringScanner
     sub_string = @string.slice(@position..-1)
     regexp = Regexp.new(regexp) unless regexp.kind_of? Regexp
     regexp = Regexp.new("^" + regexp.source)
-    match_data = regexp.match(sub_string)
-    if match_data.nil?
+    @match_data = regexp.match(sub_string)
+    if @match_data.nil?
       @pre_match, @matched, @post_match = nil, nil, nil
       return nil 
     end
     
-	@pre_match, @matched, @post_match = match_data.pre_match, match_data[0], match_data.post_match
-    @position = @position + match_data.end(0)
+	@pre_match, @matched, @post_match = @match_data.pre_match, @match_data[0], @match_data.post_match
+    @position = @position + @match_data.end(0)
     @matched
   end
   
   def scan_until(regexp)
     sub_string = @string.slice(@position..-1)
     regexp = Regexp.new(regexp) unless regexp.kind_of? Regexp
-    match_data = regexp.match(sub_string)
-    if match_data.nil?
+    @match_data = regexp.match(sub_string)
+    if @match_data.nil?
       @pre_match, @matched, @post_match = nil, nil, nil
 	  return nil 
 	end
 	
-	@pre_match, @matched, @post_match = match_data.pre_match, match_data[0], match_data.post_match
-    @position = @position + match_data.end(0)
+	@pre_match, @matched, @post_match = @match_data.pre_match, @match_data[0], @match_data.post_match
+    @position = @position + @match_data.end(0)
 	@pre_match + @matched
   end
   
@@ -72,15 +76,15 @@ class StringScanner
     sub_string = @string.slice(@position..-1)
     regexp = Regexp.new(regexp) unless regexp.kind_of? Regexp
     regexp = Regexp.new("^" + regexp.source)
-    match_data = regexp.match(sub_string)
-    if match_data.nil?
+    @match_data = regexp.match(sub_string)
+    if @match_data.nil?
       @pre_match, @matched, @post_match = nil, nil, nil
       return nil
     end
     
-	@pre_match, @matched, @post_match = match_data.pre_match, match_data[0], match_data.post_match
-    @position = @position + match_data.end(0)
-    match_data.end(0)
+	@pre_match, @matched, @post_match = @match_data.pre_match, @match_data[0], @match_data.post_match
+    @position = @position + @match_data.end(0)
+    @match_data.end(0)
   end
 
   def [](i)

@@ -1,6 +1,27 @@
 require 'test/minirunit'
 require 'strscan'
 
+##### [] #####
+s = StringScanner.new("Fri Dec 12 1975 14:39")
+test_equal("Fri Dec 12 ", s.scan(/(\w+) (\w+) (\d+) /))
+test_equal("Fri Dec 12 ", s[0])
+test_equal("Fri", s[1])
+test_equal("Dec", s[2])
+test_equal("12", s[3])
+test_equal("1975 14:39", s.post_match)
+test_equal("", s.pre_match)
+
+##### check #####
+
+s = StringScanner.new("Fri Dec 12 1975 14:39")
+test_equal("Fri", s.check(/Fri/))
+test_equal(0, s.pos)
+test_equal("Fri", s.matched)
+test_equal("", s.pre_match)
+test_equal(" Dec 12 1975 14:39", s.post_match)
+test_equal(nil, s.check(/12/))
+test_equal(nil, s.matched)
+  
 ##### getch #####
 s = StringScanner.new('abc')
 test_equal("a", s.getch)
@@ -15,6 +36,15 @@ test_equal(nil, s.getch)
 s = StringScanner.new('test string')
 test_equal(7, s.pos = 7)
 test_equal("ring", s.rest)
+
+##### scan ######
+
+s = StringScanner.new('test string')
+test_equal("test", s.scan(/\w+/))
+test_equal(nil, s.scan(/\w+/))
+test_equal(" ", s.scan(/\s+/))
+test_equal("string", s.scan(/\w+/))
+test_equal(nil, s.scan(/./))
   
 ##### scan_until, pre_match #####
 s = StringScanner.new("Fri Dec 12 1975 14:39")
