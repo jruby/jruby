@@ -92,9 +92,6 @@ end
 test_ok(File.file?('test/testFile.rb'))
 test_ok(! File.file?('test'))
 
-stat = File.stat('test');
-test_ok(!stat.file?)
-
 test_ok(File.exist?('test'))
 
 test_ok(File.size?('build.xml'))
@@ -104,3 +101,12 @@ File.open(filename, "w") {|f| }
 File.utime(0, 0, filename)
 test_equal(Time.at(0), File.mtime(filename))
 File.unlink(filename)
+
+# File::Stat tests
+stat = File.stat('test');
+stat2 = file.stat('build.xml');
+test_ok(stat.directory?)
+test_ok(stat2.file?)
+test_equal("directory", stat.ftype)
+test_equal("file", stat2.ftype)
+test_ok(stat2.readable?)

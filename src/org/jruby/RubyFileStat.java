@@ -57,6 +57,8 @@ public class RubyFileStat extends RubyObject {
         fileStatClass.defineMethod("writable?", callbackFactory.getMethod("writable"));
         fileStatClass.defineMethod("symlink?", callbackFactory.getMethod("symlink_p"));
         fileStatClass.defineMethod("blksize", callbackFactory.getMethod("blksize"));
+        fileStatClass.defineMethod("readable?", callbackFactory.getMethod("readable_p"));
+        fileStatClass.defineMethod("ftype", callbackFactory.getMethod("ftype"));
 
         fileStatClass.defineMethod("file?", callbackFactory.getMethod("file_p"));
     	
@@ -83,6 +85,20 @@ public class RubyFileStat extends RubyObject {
         return getRuntime().newBoolean(file.isFile());
     }
     
+    public RubyString ftype() {
+        if (!file.exists()) {
+            throw getRuntime().newErrnoENOENTError("No such file or directory: " + file.toString());
+        } else if (file.isDirectory()) {
+            return getRuntime().newString("directory");
+        } else if (file.isDirectory()) {
+            return getRuntime().newString("file");
+        } else {
+            // possible?
+            assert false: "Not a directory and not a file: " + file;
+            return null;
+        }
+    }
+    
     public IRubyObject mode() {
     	// implementation to lowest common denominator...Windows has no file mode, but C ruby returns either 0100444 or 0100666
     	int baseMode = 0100000;
@@ -95,6 +111,10 @@ public class RubyFileStat extends RubyObject {
     	}
     	
     	return getRuntime().newFixnum(baseMode);
+    }
+    
+    public IRubyObject readable_p() {
+        return getRuntime().newBoolean(file.canRead());
     }
     
     public IRubyObject size() {
