@@ -34,6 +34,7 @@ package org.jruby;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -130,6 +131,8 @@ public class RubyMarshal {
 
             return input.unmarshalObject(proc);
 
+        } catch (EOFException ee) {
+            throw recv.getRuntime().newEOFError();
         } catch (IOException ioe) {
             throw recv.getRuntime().newIOErrorFromException(ioe);
         }
