@@ -648,10 +648,11 @@ public class RubyObject implements Cloneable, IRubyObject {
                 file = threadContext.getSourceFile();
             }
             
+            if (scope instanceof RubyProc) {
+            	scope = ((RubyProc) scope).binding();
+            }
             IRubyObject newSelf = null;
             if (scope.isNil() || !(scope instanceof RubyBinding)) {
-//              FIXME: this is broken for Proc, and should allow using a Proc as our binding; perhaps IRubyObject.isBindable()?
-                // no scope provided, use eval's containing scope (prepared in RubyKernel.eval by a call to TC.preKernelEval
                 threadContext.pushRubyClass(this instanceof RubyModule ? 
                         (RubyModule) this : this.getType());
 

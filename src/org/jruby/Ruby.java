@@ -61,6 +61,7 @@ import org.jruby.libraries.JRubyLibrary;
 import org.jruby.libraries.RbConfigLibrary;
 import org.jruby.libraries.SocketLibrary;
 import org.jruby.parser.Parser;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Frame;
@@ -1006,6 +1007,10 @@ public final class Ruby implements IRuby {
     
     public RubyBinding newBinding() {
         return RubyBinding.newBinding(this);
+    }
+    
+    public RubyBinding newBinding(Block block) {
+    	return RubyBinding.newBinding(this, block);
     }
 
     public RubyString newString(String string) {

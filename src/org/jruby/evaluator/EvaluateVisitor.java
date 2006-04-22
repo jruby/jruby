@@ -1591,6 +1591,20 @@ public final class EvaluateVisitor implements NodeVisitor {
     }
     private static final OpAsgnNodeVisitor opAsgnNodeVisitor = new OpAsgnNodeVisitor();
     
+    private static class OpAsgnOrNodeVisitor implements Instruction {
+    	public void execute(EvaluationState state, InstructionContext ctx) {
+    		OpAsgnOrNode iVisited = (OpAsgnOrNode) ctx;
+    		String def = new DefinedVisitor(state).getDefinition(iVisited.getFirstNode());
+    		
+    		state.clearResult();
+    		state.addInstruction(ctx, orNodeImplVisitor);
+    		if (def != null) {
+    			state.addNodeInstruction(iVisited.getFirstNode());
+    		}
+    	}
+    }
+    private static final OpAsgnOrNodeVisitor opAsgnOrNodeVisitor = new OpAsgnOrNodeVisitor();
+    
     // Collapsed
     private static class OptNNodeGets implements Instruction {
         public void execute(EvaluationState state, InstructionContext ctx) {
@@ -2487,7 +2501,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitOpAsgnOrNode(OpAsgnOrNode)
      */
     public Instruction visitOpAsgnOrNode(OpAsgnOrNode iVisited) {
-    	return orNodeVisitor;
+    	return opAsgnOrNodeVisitor;
     }
 
     /**

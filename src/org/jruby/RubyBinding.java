@@ -62,6 +62,10 @@ public class RubyBinding extends RubyObject {
     }
 
     // Proc class
+    
+    public static RubyBinding newBinding(IRuby runtime, Block block) {
+        return new RubyBinding(runtime, runtime.getClass("Binding"), block, block.getKlass());
+    }
 
     public static RubyBinding newBinding(IRuby runtime) {
         ThreadContext context = runtime.getCurrentContext();

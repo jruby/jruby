@@ -32,6 +32,7 @@ import org.jruby.internal.runtime.ThreadService;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.Parser;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.GlobalVariable;
@@ -362,6 +363,11 @@ public class BaseMockRuby implements IRuby {
     }
 
     public RubyBinding newBinding() {
+        throw new MockException();
+        
+    }
+
+    public RubyBinding newBinding(Block block) {
         throw new MockException();
         
     }

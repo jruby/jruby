@@ -136,7 +136,7 @@ public class RubyKernel {
         // TODO: Implement Kernel#trace_var
         module.defineModuleFunction("trap", callbackFactory.getOptSingletonMethod("trap"));
         // TODO: Implement Kernel#untrace_var
-        // TODO: Implement Kernel#warn
+        module.defineModuleFunction("warn", callbackFactory.getSingletonMethod("warn", IRubyObject.class));
         
         // Defined p411 Pickaxe 2nd ed.
         module.defineModuleFunction("singleton_method_added", callbackFactory.getSingletonMethod("singleton_method_added", IRubyObject.class));
@@ -658,6 +658,14 @@ public class RubyKernel {
     public static IRubyObject trap(IRubyObject recv, IRubyObject[] args) {
         // FIXME: We can probably fake some basic signals, but obviously can't do everything. For now, stub.
         return recv.getRuntime().getNil();
+    }
+    
+    public static IRubyObject warn(IRubyObject recv, IRubyObject message) {
+    	IRubyObject out = recv.getRuntime().getObject().getConstant("STDERR");
+        RubyIO io = (RubyIO) out.convertToType("IO", "to_io", true); 
+
+        io.puts(new IRubyObject[] { message });
+    	return recv.getRuntime().getNil();
     }
 
     public static IRubyObject set_trace_func(IRubyObject recv, IRubyObject trace_func) {

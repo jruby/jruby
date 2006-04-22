@@ -34,3 +34,13 @@ argument_test(false, lambda{|a,|}, 1,2)
 
 l = lambda{1}
 test_ok(l.clone.call == 1)
+
+##### Proc.binding #####
+c = "a"
+def fred(param)
+  lambda {}
+end
+
+b = fred(99)
+test_equal(99, eval("param", b.binding))
+test_equal(99, eval("param", b))

@@ -96,6 +96,10 @@ public class RubyProc extends RubyObject {
     	return newProc;
     }
     
+    public IRubyObject binding() {
+        return getRuntime().newBinding(block);
+    }
+    
     public IRubyObject call(IRubyObject[] args) {
         return call(args, null);
     }

@@ -17,6 +17,7 @@ import org.jruby.internal.runtime.ThreadService;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.Parser;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.GlobalVariable;
@@ -258,6 +259,7 @@ public interface IRuby {
     public RubyProc newProc();
 
     public RubyBinding newBinding();
+    public RubyBinding newBinding(Block block);
 
 	public RubyString newString(String string);
 
