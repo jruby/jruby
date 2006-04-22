@@ -499,7 +499,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /** rb_reg_inspect
      *
      */
-    public RubyString inspect() {
+    public IRubyObject inspect() {
         final String regex = pattern.pattern();
 		final int length = regex.length();
         StringBuffer sb = new StringBuffer(length + 2);
@@ -550,7 +550,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     }
     
     
-    public RubyString to_s() {
+    public IRubyObject to_s() {
         return getRuntime().newString(toString());
     }
     

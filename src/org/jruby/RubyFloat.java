@@ -261,7 +261,7 @@ public class RubyFloat extends RubyNumeric {
         return RubyFloat.newFloat(getRuntime(), -value);
     }
 
-    public RubyString to_s() {
+    public IRubyObject to_s() {
         return getRuntime().newString("" + getValue());
     }
 

@@ -869,7 +869,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** rb_obj_inspect
      *
      */
-    public RubyString inspect() {
+    public IRubyObject inspect() {
         // TODO Review this and either remove the comment, or do it
         //     if (TYPE(obj) == T_OBJECT
         // 	&& ROBJECT(obj)->iv_tbl
@@ -891,7 +891,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         //     }
         //     return rb_funcall(obj, rb_intern("to_s"), 0, 0);
         // }
-        return (RubyString) callMethod("to_s");
+        return callMethod("to_s");
     }
 
     /** rb_obj_is_instance_of
@@ -991,12 +991,16 @@ public class RubyObject implements Cloneable, IRubyObject {
         return getRuntime().newArray(this);
     }
 
-    public RubyString to_s() {
+    protected IRubyObject anyToString() {
         String cname = getMetaClass().getRealClass().getName();
         /* 6:tags 16:addr 1:eos */
         RubyString str = getRuntime().newString("#<" + cname + ":0x" + Integer.toHexString(System.identityHashCode(this)) + ">");
         str.setTaint(isTaint());
         return str;
+    }
+    
+    public IRubyObject to_s() {
+    	return anyToString();
     }
 
     public IRubyObject instance_eval(IRubyObject[] args) {

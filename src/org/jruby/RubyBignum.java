@@ -286,7 +286,7 @@ public class RubyBignum extends RubyInteger {
         return getRuntime().newFixnum(isSet ? 1 : 0);
     }
 
-    public RubyString to_s() {
+    public IRubyObject to_s() {
         return getRuntime().newString(getValue().toString());
     }
 

@@ -209,7 +209,7 @@ public class RubyHash extends RubyObject implements Map {
         return this;
     }
     
-    public RubyString inspect() {
+    public IRubyObject inspect() {
         final String sep = ", ";
         final String arrow = "=>";
         final StringBuffer sb = new StringBuffer("{");
@@ -250,7 +250,7 @@ public class RubyHash extends RubyObject implements Map {
         return result;
     }
 
-    public RubyString to_s() {
+    public IRubyObject to_s() {
         return to_a().to_s();
     }
 

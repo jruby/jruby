@@ -1000,7 +1000,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_to_s
      *
      */
-    public RubyString to_s() {
+    public IRubyObject to_s() {
         return getRuntime().newString(getName());
     }
 

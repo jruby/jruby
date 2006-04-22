@@ -37,8 +37,8 @@ import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyString;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public abstract class JavaCallable extends JavaAccessibleObject {
 
@@ -59,7 +59,7 @@ public abstract class JavaCallable extends JavaAccessibleObject {
         return result;
     }
 
-    public final RubyString inspect() {
+    public IRubyObject inspect() {
         StringBuffer result = new StringBuffer();
         result.append(nameOnInspection());
         Class[] parameterTypes = parameterTypes();

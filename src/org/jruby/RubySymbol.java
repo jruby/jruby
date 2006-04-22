@@ -126,11 +126,11 @@ public class RubySymbol extends RubyObject {
         return getRuntime().newFixnum(id);
     }
 
-    public RubyString inspect() {
+    public IRubyObject inspect() {
         return getRuntime().newString(":" + symbol);
     }
 
-    public RubyString to_s() {
+    public IRubyObject to_s() {
         return getRuntime().newString(symbol);
     }
 

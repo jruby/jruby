@@ -189,7 +189,7 @@ public class RubyTime extends RubyObject {
         return getRuntime().newString(result);
     }
 
-    public RubyString to_s() {
+    public IRubyObject to_s() {
         simpleDateFormat.setCalendar(cal);
         simpleDateFormat.applyPattern("EEE MMM dd HH:mm:ss z yyyy");
         String result = simpleDateFormat.format(cal.getTime());

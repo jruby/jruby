@@ -422,7 +422,7 @@ public class RubyString extends RubyObject {
 	/** rb_str_inspect
 	 *
 	 */
-	public RubyString inspect() {
+	public IRubyObject inspect() {
 		return inspect(false);
 	}
 

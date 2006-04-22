@@ -129,7 +129,7 @@ public class JavaObject extends RubyObject {
         return getRuntime().newFixnum(value == null ? 0 : value.hashCode());
     }
 
-    public RubyString to_s() {
+    public IRubyObject to_s() {
         return getRuntime().newString(
            value == null ? "null" : value.toString());
     }

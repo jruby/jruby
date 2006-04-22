@@ -616,7 +616,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_inspect
      *
      */
-    public RubyString inspect() {
+    public IRubyObject inspect() {
         int length = getLength();
 
         if (length == 0) {
@@ -767,7 +767,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_to_s
      *
      */
-    public RubyString to_s() {
+    public IRubyObject to_s() {
         IRubyObject separatorObject = getRuntime().getGlobalVariables().get("$,");
         RubyString separator;
         if (separatorObject.isNil()) {

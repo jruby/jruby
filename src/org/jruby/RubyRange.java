@@ -196,7 +196,7 @@ public class RubyRange extends RubyObject {
         return end;
     }
 
-    public RubyString inspect() {
+    public IRubyObject inspect() {
         RubyString begStr = (RubyString) begin.callMethod("to_s");
         RubyString endStr = (RubyString) end.callMethod("to_s");
 

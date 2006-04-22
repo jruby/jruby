@@ -60,6 +60,7 @@ public class RubyMatchData extends RubyObject {
 
         matchDataClass.defineMethod("captures", callbackFactory.getMethod("captures"));
         matchDataClass.defineMethod("clone", callbackFactory.getMethod("rbClone"));
+        matchDataClass.defineMethod("inspect", callbackFactory.getMethod("inspect"));
         matchDataClass.defineMethod("size", callbackFactory.getMethod("size"));
         matchDataClass.defineMethod("length", callbackFactory.getMethod("size"));
         matchDataClass.defineMethod("offset", callbackFactory.getMethod("offset", RubyFixnum.class));
@@ -187,6 +188,10 @@ public class RubyMatchData extends RubyObject {
         }
         return getRuntime().newFixnum(end[RubyNumeric.fix2int(index)]);
     }
+    
+    public IRubyObject inspect() {
+    	return anyToString();
+    }
 
     /** match_size
      *
@@ -242,7 +247,7 @@ public class RubyMatchData extends RubyObject {
     /** match_to_s
      *
      */
-    public RubyString to_s() {
+    public IRubyObject to_s() {
         return getRuntime().newString(str.substring(begin[0], end[0]));
     }
 

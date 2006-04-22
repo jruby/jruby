@@ -309,11 +309,11 @@ public class RubyStruct extends RubyObject {
         }
     }
 
-    public RubyString to_s() {
+    public IRubyObject to_s() {
         return getRuntime().newString("#<" + getMetaClass().getName() + ">");
     }
 
-    public RubyString inspect() {
+    public IRubyObject inspect() {
         RubyArray member = (RubyArray) getInstanceVariable(classOf(), "__member__");
 
         assert !member.isNil() : "uninitialized struct";

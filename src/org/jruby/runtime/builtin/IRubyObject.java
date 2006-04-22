@@ -258,7 +258,7 @@ public interface IRubyObject {
      * RubyMethod inspect.
      * @return String
      */
-    RubyString inspect();
+    IRubyObject inspect();
 
     /**
      * Make sure the arguments fit the range specified by minimum and maximum.  On

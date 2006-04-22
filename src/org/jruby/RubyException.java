@@ -143,7 +143,7 @@ public class RubyException extends RubyObject {
 
     }
 
-    public RubyString to_s() {
+    public IRubyObject to_s() {
         if (message.isNil()) {
             return getRuntime().newString(getMetaClass().getName());
         }
@@ -155,7 +155,7 @@ public class RubyException extends RubyObject {
      * 
      *@return A RubyString containing the debug information.
      */
-    public RubyString inspect() {
+    public IRubyObject inspect() {
         RubyModule rubyClass = getMetaClass();
 
         RubyString exception = RubyString.stringValue(this);
