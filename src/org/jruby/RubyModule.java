@@ -845,12 +845,14 @@ public class RubyModule extends RubyObject {
         
         if (args.length == 1) {
             body = getRuntime().newProc();
+            ((RubyProc)body).getBlock().isLambda = true;
             newMethod = new ProcMethod(this, (RubyProc)body, visibility);
         } else if (args[1].isKindOf(getRuntime().getClass("Method"))) {
             body = args[1];
             newMethod = new MethodMethod(this, ((RubyMethod)body).unbind(), visibility);
         } else if (args[1].isKindOf(getRuntime().getClass("Proc"))) {
             body = args[1];
+            ((RubyProc)body).getBlock().isLambda = true;
             newMethod = new ProcMethod(this, (RubyProc)body, visibility);
         } else {
             throw getRuntime().newTypeError("wrong argument type " + args[0].getType().getName() + " (expected Proc/Method)");

@@ -83,3 +83,16 @@ def proc_return1
 end
 test_ok(proc_return1() == 42)
 
+# Procs (blocks) turn lambda-like when defined as a methods
+# (actually define_method instance_eval's them, but lambda is easier for now)
+class X
+  def self.make_method(sym, &blk)
+    define_method(sym, &blk)
+  end
+  
+  make_method :foo do
+    return "bar"
+  end
+end
+
+test_equal("bar", X.new.foo)
