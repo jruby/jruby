@@ -162,12 +162,12 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             throw getRuntime().newTypeError("uninitialized Regexp");
         }
     }
-
+    
     public static RubyRegexp regexpValue(IRubyObject obj) {
         if (obj instanceof RubyRegexp) {
             return (RubyRegexp) obj;
         } else if (obj instanceof RubyString) {
-            return newRegexp((RubyString) obj, 0, null);
+            return newRegexp(obj.getRuntime().newString(REGEXP_TRANSLATOR.escapeSpecialChars(((RubyString) obj).toString())), 0, null);
         } else {
             throw obj.getRuntime().newArgumentError("can't convert arg to Regexp");
         }

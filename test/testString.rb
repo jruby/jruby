@@ -109,6 +109,12 @@ s = "HELlo"
 test_equal("hello", s.downcase!)
 test_equal(nil, s.downcase!)
 
+##### gsub #####
+test_equal("h*ll*", "hello".gsub(/[aeiou]/, '*'))
+test_equal("h<e>ll<o>", "hello".gsub(/([aeiou])/, '<\1>'))
+test_equal("104 101 108 108 111 ", "hello".gsub(/./) {|s| s[0].to_s + ' '})
+test_equal("a-b-c", "a+b+c".gsub("+", "-"))
+
 ##### index/rindex ######
 testcase='toto'
 test_ok(1 == idx = testcase.index('o'))
@@ -168,6 +174,14 @@ test_equal(["a", "b", "c"], "abc".split(//))
 test_equal(["/home", "/jruby"], "/home/jruby".split(%r<(?=/)>))
 test_equal(["///home", "///jruby"], "///home///jruby".split(%r<(?=///)>))
 
+##### sub #####
+
+test_equal("h*llo", "hello".sub(/[aeiou]/, '*'))
+test_equal("h<e>llo", "hello".sub(/([aeiou])/, '<\1>'))
+test_equal("104 ello", "hello".sub(/./) {|s| s[0].to_s + ' ' })
+test_equal("a-b+c", "a+b+c".sub("+", "-"))
+test_equal("a+b+c", "a-b+c".sub("-", "+"))
+   
 ##### succ/succ! #####
 
 def test_succ!(expected, start); start.succ!; test_equal(expected, start); end

@@ -3,6 +3,6 @@
 <jruby>
   <version>
   	 <jruby>0.8.3</jruby>
-  	 <ruby major="1.8" minor="3"/>
+  	 <ruby major="1.8" minor="4"/>
   </version>
 </jruby>
