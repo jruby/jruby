@@ -90,7 +90,7 @@ public class RubyFileStat extends RubyObject {
             throw getRuntime().newErrnoENOENTError("No such file or directory: " + file.toString());
         } else if (file.isDirectory()) {
             return getRuntime().newString("directory");
-        } else if (file.isDirectory()) {
+        } else if (file.isFile()) {
             return getRuntime().newString("file");
         } else {
             // possible?
