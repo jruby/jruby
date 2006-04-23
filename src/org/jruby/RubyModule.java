@@ -720,6 +720,8 @@ public class RubyModule extends RubyObject {
         if (readable) {
             defineMethod(name, new Callback() {
                 public IRubyObject execute(IRubyObject self, IRubyObject[] args) {
+                	checkArgumentCount(args, 0, 0);
+
 		    	    IRubyObject variable = self.getInstanceVariable(variableName);
 		    	
 		            return variable == null ? runtime.getNil() : variable;

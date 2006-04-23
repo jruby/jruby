@@ -230,3 +230,14 @@ class InstanceMethodsUndefBase
   test_equal(true, instance_methods.include?("foo"))
 end
   
+###### attr_reader ######
+
+class AttrReaderTest
+  attr_reader :foo
+  def initialize(a); @foo = a; end
+end
+
+a = AttrReaderTest.new(9)
+test_equal(9, a.foo)
+test_exception(ArgumentError) { a.foo 1 }
+test_exception(ArgumentError) { a.foo 1, 2 }

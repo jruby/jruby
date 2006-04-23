@@ -58,3 +58,10 @@ test_equal(false, /a/ === :a)
 test_equal(false, /aa/ === ['a' => 'a'])
 test_equal(false, :a =~ /a/)
 test_equal(false, ['a' => 'a'] =~ /a/)
+
+##### inspect #####
+re = /^admin\/.+$/
+
+test_equal("^admin\\/.+$", re.source)
+test_equal("/^admin\\/.+$/", re.inspect)
+

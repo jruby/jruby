@@ -511,7 +511,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             if (RubyString.isAlnum(c)) {
                 sb.append(c);
             } else if (c == '/') {
-                sb.append('\\').append(c);
+            	sb.append(c);
             } else if (RubyString.isPrint(c)) {
                 sb.append(c);
             } else if (c == '\n') {
