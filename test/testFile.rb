@@ -104,7 +104,7 @@ File.unlink(filename)
 
 # File::Stat tests
 stat = File.stat('test');
-stat2 = file.stat('build.xml');
+stat2 = File.stat('build.xml');
 test_ok(stat.directory?)
 test_ok(stat2.file?)
 test_equal("directory", stat.ftype)
