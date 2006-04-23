@@ -65,3 +65,9 @@ re = /^admin\/.+$/
 test_equal("^admin\\/.+$", re.source)
 test_equal("/^admin\\/.+$/", re.inspect)
 
+##### Posix sequences ######
+"a  b" =~ /([[:space:]]+)/
+test_equal("  ", $1)
+# We should only honor this as posix sequence inside [] (bug 1475096)
+#test_equal(0, "a  b" =~ /([:space:]+)/)
+
