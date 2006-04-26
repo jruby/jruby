@@ -16,6 +16,9 @@ test_equal("c", File.basename("a/b/c"))
 test_equal("b", File.basename("a/b", ""))
 test_equal("b", File.basename("a/bc", "c"))
 test_equal("b", File.basename("a/b.c", ".c"))
+test_equal("b", File.basename("a/b.c", ".*"))
+test_equal(".c", File.basename("a/.c", ".*"))
+
 
 test_equal("a", File.basename("a/"))
 test_equal("b", File.basename("a/b/"))

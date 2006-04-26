@@ -109,9 +109,7 @@ public class RubyMethod extends RubyObject {
     public IRubyObject call(IRubyObject[] args) {
     	assert args != null;
 
-        if (args.length != method.getArity().getValue()) {
-        	throw getRuntime().newArgumentError("");
-        }
+    	method.getArity().checkArity(getRuntime(), args);
         
         getRuntime().getCurrentContext().pushIter(getRuntime().getCurrentContext().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
         try {

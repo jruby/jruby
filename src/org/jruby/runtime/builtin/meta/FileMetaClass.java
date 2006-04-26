@@ -214,7 +214,7 @@ public class FileMetaClass extends IOMetaClass {
 			String ext = RubyString.stringValue(args[1]).toString();
 			if (".*".equals(ext)) {
 				index = name.lastIndexOf('.');
-				if (index != -1) {
+				if (index > 0) {  // -1 no match; 0 it is dot file not extension
 					name = name.substring(0, index);
 				}
 			} else if (name.endsWith(ext)) {
