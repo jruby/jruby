@@ -53,6 +53,7 @@ public class RubyFileStat extends RubyObject {
 
         fileStatClass.defineMethod("directory?", callbackFactory.getMethod("directory_p"));
         fileStatClass.defineMethod("mode", callbackFactory.getMethod("mode"));
+        fileStatClass.defineMethod("mtime", callbackFactory.getMethod("mtime"));
         fileStatClass.defineMethod("size", callbackFactory.getMethod("size"));
         fileStatClass.defineMethod("writable?", callbackFactory.getMethod("writable"));
         fileStatClass.defineMethod("symlink?", callbackFactory.getMethod("symlink_p"));
@@ -111,6 +112,10 @@ public class RubyFileStat extends RubyObject {
     	}
     	
     	return getRuntime().newFixnum(baseMode);
+    }
+    
+    public IRubyObject mtime() {
+        return getRuntime().newFixnum(file.lastModified());
     }
     
     public IRubyObject readable_p() {
