@@ -48,6 +48,7 @@ import org.jruby.util.PrintfFormat;
  */
 public class RubyRegexp extends RubyObject implements ReOptions {
     private static final RegexpTranslator REGEXP_TRANSLATOR = new RegexpTranslator();
+    private static final Pattern SPECIAL_CHARS = Pattern.compile("([\\+\\[\\]\\.\\?\\*\\(\\)\\{\\}\\|\\\\\\^\\$])");    
 
 	/** Class which represents the multibyte character set code.
 	 * (should be an enum in Java 5.0).
@@ -141,16 +142,8 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         pattern = REGEXP_TRANSLATOR.translate(regex, options, code.flags());
     }
 
-    public static String quote(String orig) {
-        StringBuffer sb = new StringBuffer(orig.length() * 2);
-        for (int i = 0; i < orig.length(); i++) {
-            char c = orig.charAt(i);
-            if ("[]{}()|-*.\\?+^$".indexOf(c) != -1) {
-                sb.append('\\');
-            }
-            sb.append(c);
-        }
-        return sb.toString();
+    public static String escapeSpecialChars(String original) {
+    	return SPECIAL_CHARS.matcher(original).replaceAll("\\\\$1");
     }
 
     private void recompileIfNeeded() {
@@ -167,7 +160,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         if (obj instanceof RubyRegexp) {
             return (RubyRegexp) obj;
         } else if (obj instanceof RubyString) {
-            return newRegexp(obj.getRuntime().newString(REGEXP_TRANSLATOR.escapeSpecialChars(((RubyString) obj).toString())), 0, null);
+            return newRegexp(obj.getRuntime().newString(escapeSpecialChars(((RubyString) obj).toString())), 0, null);
         } else {
             throw obj.getRuntime().newArgumentError("can't convert arg to Regexp");
         }
@@ -220,8 +213,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      * 
      */
     public static RubyString quote(IRubyObject recv, RubyString str) {
-        return (RubyString) recv.getRuntime().newString(
-        		quote(str.toString())).infectBy(str);
+        return (RubyString) recv.getRuntime().newString(escapeSpecialChars(str.toString())).infectBy(str);
     }
 
     /** 

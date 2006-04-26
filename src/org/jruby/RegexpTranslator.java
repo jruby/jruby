@@ -17,7 +17,6 @@ class RegexpTranslator {
     private static final Pattern HEX_SINGLE_DIGIT_PATTERN = Pattern.compile("\\\\x(\\p{XDigit})(?!\\p{XDigit})");
     private static final Pattern OCTAL_SINGLE_ZERO_PATTERN = Pattern.compile("\\\\(0)(?![0-7])");
     private static final Pattern OCTAL_MISSING_ZERO_PATTERN = Pattern.compile("\\\\([1-7][0-7]{1,2})");
-    private static final Pattern SPECIAL_CHARS = Pattern.compile("([\\+\\[\\]\\.\\?\\*\\(\\)])");
     private static final Pattern POSIX_NAME = Pattern.compile("\\[:(\\w+):\\]");
     
     public Pattern translate(String regex, int options, int javaRegexFlags) {
@@ -32,10 +31,6 @@ class RegexpTranslator {
 		
 		return null;
 	}
-    
-    public String escapeSpecialChars(String original) {
-    	return SPECIAL_CHARS.matcher(original).replaceAll("\\\\$1");
-    }
     
     // We do not check for pathological case of [:foo:] outside of [] (bug 1475096).
     private String translatePosixPattern(String regex) {

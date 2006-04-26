@@ -1448,9 +1448,9 @@ public class RubyString extends RubyObject {
 		}
 		String sep;
 		if (checkArgumentCount(args, 0, 1) == 1) {
-			sep = RubyRegexp.quote(stringValue(args[0]).toString());
+			sep = RubyRegexp.escapeSpecialChars(stringValue(args[0]).toString());
 		} else {
-			sep = RubyRegexp.quote(getRuntime().getGlobalVariables().get("$/").asSymbol());
+			sep = RubyRegexp.escapeSpecialChars(getRuntime().getGlobalVariables().get("$/").asSymbol());
 		}
 		if (sep == null) {
 			sep = "(?:\\n|\\r\\n?)";

@@ -179,8 +179,8 @@ test_equal(["///home", "///jruby"], "///home///jruby".split(%r<(?=///)>))
 test_equal("h*llo", "hello".sub(/[aeiou]/, '*'))
 test_equal("h<e>llo", "hello".sub(/([aeiou])/, '<\1>'))
 test_equal("104 ello", "hello".sub(/./) {|s| s[0].to_s + ' ' })
-test_equal("a-b+c", "a+b+c".sub("+", "-"))
-test_equal("a+b+c", "a-b+c".sub("-", "+"))
+special_chars = "{}(){}|*.\\?+^\$".split(//)
+special_chars.each {|c| test_equal("H", c.sub(c, "H")) }
    
 ##### succ/succ! #####
 
