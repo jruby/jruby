@@ -30,6 +30,7 @@
 package org.jruby.evaluator;
 
 import org.jruby.RubyArray;
+import org.jruby.RubyModule;
 import org.jruby.ast.CallNode;
 import org.jruby.ast.ClassVarAsgnNode;
 import org.jruby.ast.ClassVarDeclNode;
@@ -115,7 +116,11 @@ public class AssignmentVisitor extends AbstractVisitor {
 	 * @see AbstractVisitor#visitConstDeclNode(ConstDeclNode)
 	 */
 	public Instruction visitConstDeclNode(ConstDeclNode iVisited) {
-        state.getThreadContext().getRubyClass().defineConstant(iVisited.getName(), value);
+		if (iVisited.getPathNode() == null) {
+			state.getThreadContext().getRubyClass().defineConstant(iVisited.getName(), value);
+		} else {
+			((RubyModule) state.begin(iVisited.getPathNode())).defineConstant(iVisited.getName(), value);
+		}
 		return null;
 	}
 

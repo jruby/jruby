@@ -55,6 +55,7 @@ import org.jruby.ast.ClassNode;
 import org.jruby.ast.ClassVarNode;
 import org.jruby.ast.Colon2Node;
 import org.jruby.ast.Colon3Node;
+import org.jruby.ast.ConstDeclNode;
 import org.jruby.ast.DRegexpNode;
 import org.jruby.ast.DStrNode;
 import org.jruby.ast.DSymbolNode;
@@ -661,7 +662,7 @@ mlhs_node     : variable {
 			    yyerror("dynamic constant assignment");
 		    }
 			
-                    $$ = support.getAttributeAssignmentNode($1, (String) $3.getValue());
+		    $$ = new ConstDeclNode(support.union($1, $3), $1, (String) $3.getValue(), null);
 		}
  	      | tCOLON3 tCONSTANT {
                     if (support.isInDef() || support.isInSingle()) {
@@ -698,7 +699,7 @@ lhs           : variable {
 			    yyerror("dynamic constant assignment");
 		    }
 			
-                    $$ = support.getAttributeAssignmentNode($1, (String) $3.getValue());
+                    $$ = new ConstDeclNode(support.union($1, $3), $1, (String) $3.getValue(), null);
 	        }
 	      | tCOLON3 tCONSTANT {
                     if (support.isInDef() || support.isInSingle()) {

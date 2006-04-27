@@ -152,3 +152,13 @@ test_ok("ok", OutA::InB::OK)
 
 test_ok("constant", defined? OutA)
 test_equal(nil, defined? OutNonsense)
+
+class Empty
+end
+
+# Declare constant outside of class/module
+test_equal(1, Empty::FOOT = 1)
+# Declare constant outside of class/module in multi assign
+Empty::BART, a = 1, 1
+test_equal(1, Empty::BART)
+

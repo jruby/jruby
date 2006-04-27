@@ -441,20 +441,32 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class ConstDeclNodeVisitor2 implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		ConstDeclNode iVisited = (ConstDeclNode)ctx;
-    		((RubyModule)state.getThreadContext().peekCRef().getValue()).setConstant(iVisited.getName(), state.getResult());
+            IRubyObject value = state.deaggregateResult(); 
+            IRubyObject module = state.getResult();
+
+    		((RubyModule) module).setConstant(iVisited.getName(), value);
+    		state.setResult(value);
     	}
     }
     private static final ConstDeclNodeVisitor2 constDeclNodeVisitor2 = new ConstDeclNodeVisitor2();
     private static class ConstDeclNodeVisitor implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
             ConstDeclNode iVisited = (ConstDeclNode)ctx;
-            if (state.getThreadContext().getRubyClass() == null) {
-                // TODO: wire into new exception handling mechanism
-                throw state.runtime.newTypeError("no class/module to define constant");
-            }
+            
             state.clearResult();
             state.addInstruction(ctx, constDeclNodeVisitor2);
             state.addNodeInstruction(iVisited.getValueNode());
+            state.addInstruction(iVisited, aggregateResult);
+            if (iVisited.getPathNode() != null) {
+                state.addNodeInstruction(iVisited.getPathNode());
+            } else { 
+                if (state.getThreadContext().getRubyClass() == null) {
+                    // TODO: wire into new exception handling mechanism
+                    throw state.runtime.newTypeError("no class/module to define constant");
+                }
+                //System.out.println("M: " +state.getThreadContext().peekCRef().getValue());
+                state.setResult((RubyModule) state.getThreadContext().peekCRef().getValue());
+            } 
     	}
     }
     private static final ConstDeclNodeVisitor constDeclNodeVisitor = new ConstDeclNodeVisitor();

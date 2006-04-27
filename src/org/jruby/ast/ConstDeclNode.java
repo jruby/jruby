@@ -46,10 +46,12 @@ public class ConstDeclNode extends AssignableNode implements INameNode {
     static final long serialVersionUID = -6260931203887158208L;
 
     private final String name;
+    private final Node pathNode;
 
-    public ConstDeclNode(ISourcePosition position, String name, Node valueNode) {
+    public ConstDeclNode(ISourcePosition position, Node pathNode, String name, Node valueNode) {
         super(position);
         this.name = name;
+        this.pathNode = pathNode;
         setValueNode(valueNode);
     }
 
@@ -62,12 +64,20 @@ public class ConstDeclNode extends AssignableNode implements INameNode {
     }
 
     /**
-     * Gets the name.
+     * Gets the name (this is the rightmost element of lhs (in Foo::BAR it is BAR).
 	 * name is the constant Name, it normally starts with a Capital
      * @return name
      */
     public String getName() {
-        return name;
+    	return name;
+    }
+    
+    /**
+     * Get the path the name is associated with or null (in Foo::BAR it is Foo).
+     * @return pathNode
+     */
+    public Node getPathNode() {
+        return pathNode;
     }
     
     public List childNodes() {
