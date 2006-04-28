@@ -56,7 +56,7 @@ public class IntegerMetaClass extends NumericMetaClass {
     
     protected class IntegerMeta extends Meta {
 		protected void initializeClass() {
-	        includeModule(getRuntime().getModule("Enumerable"));
+	        includeModule(getRuntime().getModule("Precision"));
 	        
 	        defineMethod("chr", Arity.noArguments());
 	        defineMethod("downto",  Arity.singleArgument());

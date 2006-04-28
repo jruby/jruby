@@ -536,7 +536,7 @@ public class RubyString extends RubyObject {
 		}
 		RubyRegexp pat = RubyRegexp.regexpValue(args[0]);
 
-		if (pat.search(this, 0) >= 0) {
+		if (pat.search(toString(), 0) >= 0) {
 			RubyMatchData match = (RubyMatchData) getRuntime().getCurrentContext().getBackref();
 			RubyString newStr = match.pre_match();
 			newStr.append(iter ? getRuntime().getCurrentContext().yield(match.group(0)) : pat.regsub(repl, match));
@@ -581,7 +581,7 @@ public class RubyString extends RubyObject {
 		boolean taint = repl.isTaint();
 		RubyRegexp pat = RubyRegexp.regexpValue(args[0]);
 
-		int beg = pat.search(this, 0);
+		int beg = pat.search(toString(), 0);
 		if (beg < 0) {
 			return bang ? getRuntime().getNil() : dup();
 		}
@@ -596,9 +596,11 @@ public class RubyString extends RubyObject {
 			taint |= newStr.isTaint();
             sbuf.append(newStr.toString());
 			offset = match.matchEndPosition();
-			beg = pat.search(this, offset == beg ? beg + 1 : offset);
+			beg = pat.search(toString(), offset == beg ? beg + 1 : offset);
 		}
+
 		sbuf.append(str.substring(offset, str.length()));
+			
 		if (bang) {
 			setTaint(isTaint() || taint);
 			setValue(sbuf);
@@ -647,12 +649,12 @@ public class RubyString extends RubyObject {
 		    // RubyRegexp doesn't (yet?) support reverse searches, so we
 		    // find all matches and use the last one--very inefficient.
 		    // XXX - find a better way
-		    pos = ((RubyRegexp) args[0]).search(this, reverse ? 0 : pos);
+		    pos = ((RubyRegexp) args[0]).search(toString(), reverse ? 0 : pos);
 
 			int dummy = pos;
 			while (reverse && dummy > -1 && dummy <= doNotLookPastIfReverse) {
 				pos = dummy;
-				dummy = ((RubyRegexp) args[0]).search(this, pos + 1);
+				dummy = ((RubyRegexp) args[0]).search(toString(), pos + 1);
 			}
 		} else if (args[0] instanceof RubyString) {
 			String sub = ((RubyString) args[0]).toString();
@@ -710,7 +712,7 @@ public class RubyString extends RubyObject {
 	    }
         
 	    if (args[0] instanceof RubyRegexp) {
-	    	return RubyRegexp.regexpValue(args[0]).search(this, 0) >= 0 ?
+	    	return RubyRegexp.regexpValue(args[0]).search(toString(), 0) >= 0 ?
 	            RubyRegexp.last_match(getRuntime().getCurrentContext().getBackref()) :
 	            	getRuntime().getNil();
 	    } else if (args[0] instanceof RubyString) {
@@ -955,7 +957,7 @@ public class RubyString extends RubyObject {
 		int start = 0;
 		if (!getRuntime().getCurrentContext().isBlockGiven()) {
 			RubyArray ary = getRuntime().newArray();
-			while (pattern.search(this, start) != -1) {
+			while (pattern.search(toString(), start) != -1) {
 				RubyMatchData md = (RubyMatchData) getRuntime().getCurrentContext().getBackref();
                 ary.append(md.getSize() == 1 ? md.group(0) : md.subseq(1, md.getSize()));
 
@@ -968,7 +970,7 @@ public class RubyString extends RubyObject {
 			return ary;
 		}
 
-		while (pattern.search(this, start) != -1) {
+		while (pattern.search(toString(), start) != -1) {
 			RubyMatchData md = (RubyMatchData) getRuntime().getCurrentContext().getBackref();
             getRuntime().getCurrentContext().yield(md.getSize() == 1 ? md.group(0) : md.subseq(1, md.getSize()));
 
@@ -1459,7 +1461,7 @@ public class RubyString extends RubyObject {
 		}
 		RubyRegexp pat = RubyRegexp.newRegexp(getRuntime(), ".*?" + sep, RubyRegexp.RE_OPTION_MULTILINE, null);
 		int start = 0;
-		while (pat.search(this, start) != -1) {
+		while (pat.search(toString(), start) != -1) {
 			RubyMatchData md = (RubyMatchData) getRuntime().getCurrentContext().getBackref();
 			getRuntime().getCurrentContext().yield(md.group(0));
 			start = md.matchEndPosition();

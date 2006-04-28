@@ -114,6 +114,7 @@ test_equal("h*ll*", "hello".gsub(/[aeiou]/, '*'))
 test_equal("h<e>ll<o>", "hello".gsub(/([aeiou])/, '<\1>'))
 test_equal("104 101 108 108 111 ", "hello".gsub(/./) {|s| s[0].to_s + ' '})
 test_equal("a-b-c", "a+b+c".gsub("+", "-"))
+test_equal("", "".gsub(/\r\n|\n/, "\n"))
 
 ##### index/rindex ######
 testcase='toto'

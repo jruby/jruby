@@ -267,8 +267,14 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     	if (target instanceof RubySymbol || target instanceof RubyHash || target instanceof RubyArray) {
     		return getRuntime().getFalse();
     	}
-
-        int result = search(target, 0);
+    	
+    	String string = RubyString.stringValue(target).toString();
+    	
+    	if (string.length() == 0) {
+    		string = "\n";
+    	}
+    	
+        int result = search(string, 0);
         
         return result < 0 ? getRuntime().getNil() :
         	getRuntime().newFixnum(result);
@@ -352,16 +358,14 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /** rb_reg_search
      *
      */
-    public int search(IRubyObject target, int pos) {
-		String str = RubyString.stringValue(target).toString();
-
-        if (pos > str.length()) {
+    public int search(String target, int pos) {
+        if (pos > target.length()) {
             return -1;
         }
         recompileIfNeeded();
 
         // If nothing match then nil will be returned
-        IRubyObject result = match(str, pos);
+        IRubyObject result = match(target, pos);
         getRuntime().getCurrentContext().setBackref(result);
 
         // If nothing match then -1 will be returned
@@ -402,10 +406,8 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     }
     
     public IRubyObject match(String target, int startPos) {
-    	if (target.length() == 0) {
-    		target = "\n";
-    	}
     	Matcher aMatcher = pattern.matcher(target);
+    	
         if (aMatcher.find(startPos)) {
             int count = aMatcher.groupCount() + 1;
             int[] begin = new int[count];

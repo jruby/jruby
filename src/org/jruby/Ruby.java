@@ -456,6 +456,7 @@ public final class Ruby implements IRuby {
         RubyThread.createThreadClass(this);
         RubyException.createExceptionClass(this);
         
+        RubyPrecision.createPrecisionModule(this);
         new NumericMetaClass(this).initializeClass();
         new IntegerMetaClass(this).initializeClass();        
         new FixnumMetaClass(this).initializeClass();
@@ -486,7 +487,6 @@ public final class Ruby implements IRuby {
         
         new FileMetaClass(this).initializeClass(); // depends on IO, FileTest
         
-        RubyPrecision.createPrecisionModule(this);
         RubyProcess.createProcessModule(this);
         new TimeMetaClass(this).initializeClass();
         RubyUnboundMethod.defineUnboundMethodClass(this);
