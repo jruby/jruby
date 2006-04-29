@@ -161,4 +161,20 @@ test_equal(1, Empty::FOOT = 1)
 # Declare constant outside of class/module in multi assign
 Empty::BART, a = 1, 1
 test_equal(1, Empty::BART)
+# Declare a constant whose value changes scope
+CONST_SCOPE_CHANGE = begin
+     require 'this_will_never_load'
+     true
+   rescue LoadError
+     false
+   end
+test_equal(false, CONST_SCOPE_CHANGE)
+Empty::CONST_FOO = begin
+     require 'this_will_never_load'
+     true
+   rescue LoadError
+     false
+   end
+test_equal(false, Empty::CONST_FOO)
+
 
