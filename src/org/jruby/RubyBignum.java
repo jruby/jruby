@@ -286,8 +286,12 @@ public class RubyBignum extends RubyInteger {
         return getRuntime().newFixnum(isSet ? 1 : 0);
     }
 
-    public IRubyObject to_s() {
-        return getRuntime().newString(getValue().toString());
+    public IRubyObject to_s(IRubyObject[] args) {
+    	checkArgumentCount(args, 0, 1);
+
+    	int radix = args.length == 0 ? 10 : (int) args[0].convertToInteger().getLongValue();
+
+        return getRuntime().newString(getValue().toString(radix));
     }
 
     public RubyFloat to_f() {

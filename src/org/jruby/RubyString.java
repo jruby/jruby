@@ -905,8 +905,10 @@ public class RubyString extends RubyObject {
 	/** rb_str_to_i
 	 *
 	 */
-	public IRubyObject to_i() {
-		return RubyNumeric.str2inum(getRuntime(), this, 10);
+	public IRubyObject to_i(IRubyObject[] args) {
+		long base = checkArgumentCount(args, 0, 1) == 0 ? 10 : ((RubyInteger) args[0].convertType(RubyInteger.class,
+                "Integer", "to_i")).getLongValue();
+		return RubyNumeric.str2inum(getRuntime(), this, (int) base);
 	}
 
 	/** rb_str_oct
@@ -1479,7 +1481,7 @@ public class RubyString extends RubyObject {
 		byte[] lByteValue = toByteArray();
 		int lLength = lByteValue.length;
 		for (int i = 0; i < lLength; i++) {
-			getRuntime().getCurrentContext().yield(getRuntime().newFixnum(lByteValue[i]));
+			getRuntime().getCurrentContext().yield(getRuntime().newFixnum(Math.abs(lByteValue[i])));
 		}
 		return this;
 	}
@@ -1498,12 +1500,12 @@ public class RubyString extends RubyObject {
                     "Integer", "to_i")).getLongValue();
         }
 
-        int result = 0;
+        long result = 0;
         char[] characters = toString().toCharArray();
         for (int i = 0; i < characters.length; i++) {
             result += characters[i];
         }
-        return getRuntime().newFixnum(result % (2 * bitSize - 1));
+        return getRuntime().newFixnum(bitSize == 0 ? result : result % (long) Math.pow(2, bitSize)); 
     }
 
 	public void marshalTo(MarshalStream output) throws java.io.IOException {

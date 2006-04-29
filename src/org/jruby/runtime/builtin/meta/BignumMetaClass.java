@@ -66,7 +66,7 @@ public class BignumMetaClass extends ObjectMetaClass {
 	        defineMethod("quo", Arity.singleArgument(), "quo");
 	        defineMethod("to_f", Arity.noArguments(), "to_f");
 	        defineMethod("to_i", Arity.noArguments(), "to_i");
-	        defineMethod("to_s", Arity.noArguments(), "to_s");
+	        defineMethod("to_s", Arity.optional(), "to_s");
 		}
 	};
 	

@@ -109,6 +109,10 @@ s = "HELlo"
 test_equal("hello", s.downcase!)
 test_equal(nil, s.downcase!)
 
+##### each_byte #####
+
+"\x80".each_byte {|c| test_equal(128, c) }
+
 ##### gsub #####
 test_equal("h*ll*", "hello".gsub(/[aeiou]/, '*'))
 test_equal("h<e>ll<o>", "hello".gsub(/([aeiou])/, '<\1>'))
@@ -202,6 +206,21 @@ test_succ!("**+", "***")
 ##### sum #####
 
 test_equal(2, "\001\001\000".sum)
+test_equal(1408, "now is the time".sum)
+test_equal(128, "now is the time".sum(8))
+test_equal(128, "\x80".sum)
+
+def check_sum(str, bits=16)
+  sum = 0
+  str.each_byte {|c| sum += c}
+  sum = sum & ((1 << bits) - 1) if bits != 0
+  test_equal(sum, str.sum(bits))
+end
+
+0.upto(70) {|bits|
+  check_sum("xyz", bits)
+}
+
 
 ##### swapcase/swapcase! #####
 
@@ -213,6 +232,23 @@ test_equal("ABc", s)
 s = "111"
 test_equal("111", s.swapcase)
 test_equal(nil, s.swapcase!)
+
+##### to_i #####
+
+test_equal(12345, "12345".to_i)
+test_equal(99, "99 red balloons".to_i)
+test_equal(0, "0a".to_i)
+test_equal(10, "0a".to_i(16))
+test_equal(0, "0x10".to_i)
+test_equal(16, "0x10".to_i(0))
+test_equal(-16,"-0x10".to_i(0))
+test_equal(0, "hello".to_i)
+test_equal(14167554, "hello".to_i(30))
+test_equal(101, "1100101".to_i(2))
+test_equal(294977, "1100101".to_i(8))
+test_equal(1100101, "1100101".to_i(10))
+test_equal(17826049, "1100101".to_i(16))
+test_equal(199066177, "1100101".to_i(24))
 
 ##### upcase/upcase! ######
 
