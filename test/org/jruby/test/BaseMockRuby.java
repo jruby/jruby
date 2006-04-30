@@ -287,6 +287,11 @@ public class BaseMockRuby implements IRuby {
 		
 	}
 
+	public void setGlobalVariables(GlobalVariables variables) {
+		throw new MockException();
+		
+	}
+
 	public CallbackFactory callbackFactory(Class type) {
 		throw new MockException();
 		

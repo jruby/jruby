@@ -923,6 +923,11 @@ public final class Ruby implements IRuby {
     public GlobalVariables getGlobalVariables() {
         return globalVariables;
     }
+    
+    // For JSR 223 support: see http://scripting.java.net/
+    public void setGlobalVariables(GlobalVariables globalVariables) {
+    	this.globalVariables = globalVariables;
+    }
 
     public CallbackFactory callbackFactory(Class type) {
         return CallbackFactory.createFactory(type);

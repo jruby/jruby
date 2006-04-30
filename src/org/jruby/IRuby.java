@@ -213,6 +213,7 @@ public interface IRuby {
 	public void setTraceFunction(RubyProc traceFunction);
 
 	public GlobalVariables getGlobalVariables();
+	public void setGlobalVariables(GlobalVariables variables);
 
 	public CallbackFactory callbackFactory(Class type);
 
