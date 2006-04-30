@@ -56,7 +56,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 	 * Warning: THIS IS NOT REALLY SUPPORTED BY JRUBY. 
 	 */
 
-	private static final class Code {
+	public static final class Code {
 		private static final Code NIL = new Code(null);
 		private static final Code NONE = new Code("none");
 		private static final Code UTF8 = new Code("utf8");
@@ -170,6 +170,13 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
     public static RubyRegexp newRegexp(RubyString str, int options, String lang) {
         return newRegexp(str.getRuntime(), str.toString(), options, lang);
+    }
+    
+    public static RubyRegexp newRegexp(IRuby runtime, Pattern pattern, String lang) {
+        RubyRegexp re = new RubyRegexp(runtime);
+        re.code = Code.create(runtime, lang);
+        re.pattern = pattern;
+        return re;
     }
     
     public static RubyRegexp newRegexp(IRuby runtime, String str, int options, String kcode) {

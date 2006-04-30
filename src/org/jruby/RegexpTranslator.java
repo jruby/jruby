@@ -9,7 +9,7 @@ import java.util.regex.PatternSyntaxException;
 
 import org.jruby.parser.ReOptions;
 
-class RegexpTranslator {
+public class RegexpTranslator {
 
     private static final Pattern SHARP_IN_CHARACTER_CLASS_PATTERN = Pattern.compile("(\\[[^]]*)#(.*?])");
 	private static final Pattern SPACE_IN_CHARACTER_CLASS_PATTERN = Pattern.compile("(\\[[^]]*) (.*?])");

@@ -2085,7 +2085,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class RegexpNodeVisitor implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		RegexpNode iVisited = (RegexpNode)ctx;
-            state.setResult(RubyRegexp.newRegexp(state.runtime.newString(iVisited.getValue()), iVisited.getOptions(), null));
+            state.setResult(RubyRegexp.newRegexp(state.runtime, iVisited.getPattern(), null));
     	}
     }
     private static final RegexpNodeVisitor regexpNodeVisitor = new RegexpNodeVisitor();
