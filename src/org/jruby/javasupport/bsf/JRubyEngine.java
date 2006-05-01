@@ -42,12 +42,12 @@ import org.apache.bsf.BSFManager;
 import org.apache.bsf.util.BSFEngineImpl;
 import org.apache.bsf.util.BSFFunctions;
 import org.jruby.IRuby;
-import org.jruby.Ruby;
 import org.jruby.RubyException;
 import org.jruby.ast.Node;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.Java;
+import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.GlobalVariable;
@@ -74,14 +74,14 @@ public class JRubyEngine extends BSFEngineImpl {
 
             // set global variables
             for (int i = 0, size = args.size(); i < size; i++) {
-                scope.setValue(i, convertToRuby(args.get(i)));
+                scope.setValue(i, JavaEmbedUtils.javaToRuby(runtime, args.get(i)));
             }
 
         	// See eval todo about why this is commented out
             //runtime.setPosition(file, line);
 
             Node node = runtime.getParser().parse(file, funcBody.toString());
-            return convertToJava(runtime.getTopSelf().eval(node), Object.class);
+            return JavaEmbedUtils.rubyToJava(runtime, runtime.getTopSelf().eval(node), Object.class);
         } finally {
             threadContext.postBsfApply();
         }
@@ -95,7 +95,7 @@ public class JRubyEngine extends BSFEngineImpl {
         	// what is expected.
             //runtime.setPosition(file, line);
             IRubyObject result = runtime.evalScript(expr.toString());
-            return convertToJava(result, Object.class);
+            return JavaEmbedUtils.rubyToJava(runtime, result, Object.class);
         } catch (Exception excptn) {
             throw new BSFException(BSFException.REASON_EXECUTION_ERROR, "Exception", excptn);
         }
@@ -113,47 +113,17 @@ public class JRubyEngine extends BSFEngineImpl {
 
     public Object call(Object recv, String method, Object[] args) throws BSFException {
         try {
-            IRubyObject rubyRecv = recv != null ? JavaUtil.convertJavaToRuby(runtime, recv) : runtime.getTopSelf();
-
-            IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(runtime, args);
-
-            // Create Ruby proxies for any input arguments that are not primitives.
-            IRubyObject javaUtilities = runtime.getObject().getConstant("JavaUtilities");
-            for (int i = 0; i < rubyArgs.length; i++) {
-                IRubyObject obj = rubyArgs[i];
-
-                if (obj instanceof JavaObject) {
-                    rubyArgs[i] = javaUtilities.callMethod("wrap", obj);
-                }
-            }
-
-            IRubyObject result = rubyRecv.callMethod(method, rubyArgs);
-
-            return convertToJava(result, Object.class);
+        	return JavaEmbedUtils.invokeMethod(runtime, recv, method, args, Object.class);
         } catch (Exception excptn) {
             printException(runtime, excptn);
             throw new BSFException(BSFException.REASON_EXECUTION_ERROR, excptn.getMessage(), excptn);
         }
     }
 
-    private IRubyObject convertToRuby(Object value) {
-        IRubyObject result = JavaUtil.convertJavaToRuby(runtime, value);
-        if (result instanceof JavaObject) {
-            return runtime.getModule("JavaUtilities").callMethod("wrap", result);
-        }
-        return result;
-    }
-
-    private Object convertToJava(IRubyObject value, Class type) {
-        return JavaUtil.convertArgument(Java.ruby_to_java(runtime.getObject(), value), type);
-    }
-
     public void initialize(BSFManager manager, String language, Vector someDeclaredBeans) throws BSFException {
         super.initialize(manager, language, someDeclaredBeans);
 
-        runtime = Ruby.getDefaultInstance();
-        runtime.getLoadService().init(getClassPath(manager));
-        runtime.getLoadService().require("java");
+        runtime = JavaEmbedUtils.initialize(getClassPath(manager));
 
         for (int i = 0, size = someDeclaredBeans.size(); i < size; i++) {
             BSFDeclaredBean bean = (BSFDeclaredBean) someDeclaredBeans.elementAt(i);
@@ -253,8 +223,7 @@ public class JRubyEngine extends BSFEngineImpl {
      * @see org.apache.bsf.BSFEngine#terminate()
      */
     public void terminate() {
-        runtime.tearDown();
-        runtime.getThreadService().disposeCurrentThread();
+    	JavaEmbedUtils.terminate(runtime);
         runtime = null;
         super.terminate();
     }
