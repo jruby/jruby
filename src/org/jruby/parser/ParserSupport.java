@@ -702,24 +702,44 @@ public class ParserSupport {
         this.warnings = warnings;
     }
     
-    public Node literal_concat(ISourcePosition position, Node head, 
-            Object tail) {
-        ListNode list;
-        
+    public Node literal_concat(ISourcePosition position, Node head, Node tail) { 
+
         if (head == null) {
-            list = new DStrNode(position);
-        } else if (head instanceof EvStrNode) {
-            list = new DStrNode(position).add(head);
-        } else {
-            list = (ListNode) head;
+        	assert tail == null || tail instanceof Node;
+        	return (Node) tail;
         }
         
-        if (tail instanceof String) {
-            tail = new StrNode(position, (String)tail);
+        if (tail == null) {
+        	return head;
         }
-        list.add((Node)tail);
         
-        return list;
+        if (head instanceof EvStrNode) {
+            head = new DStrNode(position).add(head);
+        } 
+
+        if (tail instanceof StrNode) {
+        	if (head instanceof StrNode) {
+        	    head = new StrNode(union(head, (Node) tail), 
+                       ((StrNode) head).getValue() + ((StrNode) tail).getValue());
+        	} else {
+        		((ListNode) head).add((Node) tail);
+        	}
+        } else if (tail instanceof DStrNode) {
+            // Ruby actually has a special case for StrNode, but I cannot actually get one to
+        	// occur.  I am asserting on ListNode to help flag the case.
+
+            assert head instanceof ListNode;
+            return list_concat((ListNode) head, tail);
+
+        } else if (tail instanceof EvStrNode) {
+        	if (head instanceof StrNode) {
+        		head = new DStrNode(head.getPosition()).add(head);
+        		
+        	}
+        	((DStrNode) head).add(tail);
+        }
+        
+        return head;
     }
     
     public Node newEvStrNode(ISourcePosition position, Node node) {

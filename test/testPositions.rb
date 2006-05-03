@@ -157,3 +157,36 @@ module Abc
   end
 end
 END
+
+list = [
+nil,
+['ClassNode', 0, 6, 0, 81],
+['Colon2Node', 0, 0, 6, 9],
+nil, #['ScopeNode', 1, 5, 20, 77],
+nil, #['BlockNode', 1, 5, 20, 77],
+nil,
+['ClassVarDeclNode', 1, 1, 13, 24],
+['FixnumNode', 1, 1, 24, 24],
+nil,
+['DefnNode', 2, 5, 28, 77],
+['ArgumentNode', 2, 2, 32, 34],
+['ArgsNode', 2, 3, 35, 36],
+nil, #['ScopeNode', 3, 4, 45, 70],
+nil, #['BlockNode', 3, 4, 45, 70],
+nil,
+['InstAsgnNode', 3, 3, 40, 54],
+['StrNode', 3, 3, 49, 54],
+nil,
+['LocalAsgnNode', 4, 4, 60, 71],
+['FixnumNode', 4, 4, 71, 71]
+]
+
+test_tree(list, <<END)
+class Test
+  @@static = 5
+  def foo
+    @field = "test"
+    localvar = 0
+  end
+end
+END

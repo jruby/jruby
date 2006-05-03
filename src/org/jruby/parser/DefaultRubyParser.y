@@ -680,7 +680,7 @@ mlhs_node     : variable {
                 }
 
 lhs           : variable {
-                    $$ = support.assignable(getPosition($<ISourcePositionHolder>1), $1, null);
+                    $$ = support.assignable(getPosition($<ISourcePositionHolder>1, true), $1, null);
                 }
               | primary_value '[' aref_args ']' {
                     $$ = support.getElementAssignmentNode($1, $3);
@@ -793,6 +793,8 @@ reswords	: k__LINE__ | k__FILE__  | klBEGIN | klEND
 
 arg           : lhs '=' arg {
                     $$ = support.node_assign($1, $3);
+		    // FIXME: Consider fixing node_assign itself rather than single case
+		    $<Node>$.setPosition(support.union($1, $3));
                 }
 	      | lhs '=' arg kRESCUE_MOD arg {
                     $$ = support.node_assign($1, new RescueNode(getPosition($<ISourcePositionHolder>1), $3, new RescueBodyNode(getPosition($<ISourcePositionHolder>1), null,$5, null), null));
