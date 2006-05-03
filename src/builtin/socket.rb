@@ -12,6 +12,8 @@
 # * rights and limitations under the License.
 # *
 # * Copyright (C) 2005 David Corbin <dcorbin@users.sourceforge.net>
+# * Copyright (C) 2005-2006 Thomas E Enebo <enebo@acm.org>
+# * Copyright (C) 2006 Evan Buswell <evan@heron.sytes.net>
 # * 
 # * Alternatively, the contents of this file may be used under the terms of
 # * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -27,42 +29,121 @@
 # ***** END LICENSE BLOCK *****/
 require "java"
 
+class SocketError < StandardError; end
+
+class BasicSocket
+  def getsockname
+      JavaUtilities.wrap(__getsockname)
+  end
+  
+  def getpeername
+    JavaUtilities.wrap(__getpeername)
+  end
+end
+
 class Socket < BasicSocket
   include_class 'java.net.InetAddress'
+  include_class 'java.net.InetSocketAddress'
   include_class 'java.net.UnknownHostException'
 
+  module Constants
+    # we don't have to define any that we don't support; see socket.c
+    SOCK_STREAM, SOCK_DGRAM = 1, 2
+    PF_UNSPEC = 0
+    AF_UNSPEC = PF_UNSPEC
+    PF_INET = 2
+    AF_INET = PF_INET
+  end
+  include Constants
+
   def self.gethostname
-    begin
-      # FIXME: Static methods should allow java short-hand
-	  InetAddress.getLocalHost.hostName
-	rescue UnknownHostException => e
-	  throw SystemError.new("gethostname")
-	end
+    # FIXME: Static methods should allow java short-hand
+    InetAddress.getLocalHost.hostName
+  rescue UnknownHostException => e
+    raise SocketError.new("getaddrinfo: Name or service not known")
+  end
+
+  def self.gethostbyaddr(addr, type=AF_INET)
+    return [ addr.getAddress.getCanonicalHostName, [], AF_INET, addr ]
+  rescue UnknownHostException => e
+    raise SocketError.new("getaddrinfo: Name or service not known")
+  end
+
+  def self.gethostbyname(hostname)
+    addr = InetAddress.getByName(hostname)
+    return [ addr.getCanonicalHostName, [], AF_INET, InetSocketAddress.new(addr, 0) ]
+  rescue UnknownHostException => e
+    throw SocketError.new("getaddrinfo: Name or service not known")
+  end
+
+  def self.getaddrinfo(host, port, family = nil, socktype = nil, protocol = nil, flags = nil)
+    addrs = InetAddress.getAllByName(host)
+    return addrs.inject([]) do |array, addr|
+      # protocol number 6 is TCP
+      array << [ "AF_INET", port, addr.getHostName, addr.getHostAddress, PF_INET, SOCK_STREAM, 6 ]
+    end
+  rescue UnknownHostException => e
+    raise SocketError.new("getaddrinfo: Name or service not known")
+  end
+  
+  def self.getnameinfo(addr, flags = nil)
+    # since strings act a lot like arrays, we can't easily distinguish them by behaviour
+    if(addr.kind_of? Array)
+      return [ InetAddress.getByName(addr[2]).getCanonicalHostName, addr[1] ]
+    else
+      return [ addr.getAddress.getCanonicalHostName, addr.getPort ]
+    end
+  rescue UnknownHostException => e
+    raise SocketError.new("getaddrinfo: Name or service not known")
   end
 end
 
 class IPSocket < BasicSocket
-  include_class('java.net.InetAddress')
+  include_class 'java.net.InetAddress'
+  include_class 'java.net.InetSocketAddress'
+  include_class 'java.net.UnknownHostException'
+
+  def addr
+    addr = getsockname
+    return [ "AF_INET", addr.getPort,
+      (BasicSocket.do_not_reverse_lookup ? addr.getAddress.getHostAddress : addr.getHostName),
+      addr.getAddress.getHostAddress ]
+  end
+
+  def peeraddr()
+    addr = getpeername
+    return [ "AF_INET", addr.getPort,
+      (BasicSocket.do_not_reverse_lookup ? addr.getAddress.getHostAddress : addr.getHostName),
+      addr.getAddress.getHostAddress ]
+  end
+
   def self.getaddress(hostname)
-  	InetAddress.getByName(hostname).hostAddress
+    return InetAddress.getByName(hostname).getHostAddress
+  rescue UnknownHostException => e
+    throw SocketError.new("getaddrinfo: Name or service not known")
   end
 end
 
 class TCPSocket < IPSocket
-  include_class('org.jruby.util.IOHandlerUnseekable') 
-  include_class('org.jruby.RubyIO') 
-  include_class('java.net.ConnectException') 
+  include Socket::Constants
+  include_class 'java.net.InetAddress'
+  include_class 'java.net.ConnectException'
   include_class('java.net.Socket') {|p,c| 'JavaSocket'}
+  include_class 'java.net.UnknownHostException'
   
   def initialize(arg1, port) 
     begin
       if port
-        @javaSocket = JavaSocket.new(arg1, port)
+        begin
+          javaSocket = JavaSocket.new(arg1, port)
+        rescue UnknownHostException
+          raise SocketError.new("getaddrinfo: Name or service not known")
+        end
       else 
-        @javaSocket = arg1
+        javaSocket = arg1
       end
         
-      super @javaSocket.getInputStream, @javaSocket.getOutputStream
+      super javaSocket
     rescue ConnectException => e
       raise Errno::ECONNREFUSED.new
     end
@@ -81,16 +162,25 @@ class TCPSocket < IPSocket
       sock
     end
   end
+  def self.gethostbyname(hostname)
+    addr = InetAddress.getByName(hostname)
+    return [ addr.getCanonicalHostName, [], AF_INET, addr.getHostAddress ]
+  rescue UnknownHostException => e
+    throw SocketError.new("getaddrinfo: Name or service not known")
+  end
 end
 
 class TCPServer < TCPSocket
   include_class('java.net.ServerSocket')
   include_class('java.net.InetAddress')
+  include_class('java.net.UnknownHostException')
 
   def initialize(hostname, port) 
       addr = nil
       addr = InetAddress.getByName hostname if hostname
       @javaServerSocket = ServerSocket.new(port, 10, addr)
+  rescue UnknownHostException => e
+    raise SocketError.new("getaddrinfo: Name or service not known")
   end
   
   def self.open(*args)

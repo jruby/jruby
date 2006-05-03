@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2005 David Corbin <dcorbin@users.sourceforge.net>
- * Copyright (C) 2006 Evan <evan@heron.sytes.net>
+ * Copyright (C) 2006 Evan Buswell <evan@heron.sytes.net>
  * Copyright (C) 2006 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -33,6 +33,7 @@ import org.jruby.IRuby;
 import org.jruby.RubyBasicSocket;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.RubyBoolean;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Arity;
 import org.jruby.util.collections.SinglyLinkedList;
@@ -53,11 +54,25 @@ public class BasicSocketMetaClass extends IOMetaClass {
 
     protected class BasicSocketMeta extends Meta {
     	protected void initializeClass() {
-            defineMethod("initialize", Arity.optional());
+            defineMethod("initialize", Arity.singleArgument());
             defineMethod("send", Arity.optional(), "write_send");
-            defineMethod("recv", Arity.optional(), "recv");
+            defineMethod("recv", Arity.optional());
+            defineMethod("shutdown", Arity.optional());
+            defineMethod("__getsockname", Arity.noArguments(), "getsockname");
+            defineMethod("__getpeername", Arity.noArguments(), "getpeername");
+            defineSingletonMethod("do_not_reverse_lookup", Arity.noArguments());
+            defineSingletonMethod("do_not_reverse_lookup=", Arity.singleArgument(), "set_do_not_reverse_lookup");
     	}
     };
+
+    public IRubyObject do_not_reverse_lookup() {
+        return getRuntime().newBoolean(RubyBasicSocket.do_not_reverse_lookup);
+    }
+    
+    public IRubyObject set_do_not_reverse_lookup(IRubyObject flag) {
+        RubyBasicSocket.do_not_reverse_lookup = ((RubyBoolean) flag).isTrue();
+        return getRuntime().newBoolean(RubyBasicSocket.do_not_reverse_lookup);
+    }
     
     protected Meta getMeta() {
     	return new BasicSocketMeta();
