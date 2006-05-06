@@ -296,20 +296,16 @@ public class RubyKernel {
 
     public static IRubyObject puts(IRubyObject recv, IRubyObject[] args) {
         IRubyObject defout = recv.getRuntime().getGlobalVariables().get("$>");
-        // TODO: $> requires 'write' to be defined, but we implement via 'print' method. Resolve.
-        RubyIO io = (RubyIO) defout.convertToType("IO", "to_io", true); 
-
-        io.puts(args);
+        
+        defout.callMethod("puts", args);
 
         return recv.getRuntime().getNil();
     }
 
     public static IRubyObject print(IRubyObject recv, IRubyObject[] args) {
         IRubyObject defout = recv.getRuntime().getGlobalVariables().get("$>");
-        // TODO: $> requires 'write' to be defined, but we implement via 'print' method. Resolve.
-        RubyIO io = (RubyIO) defout.convertToType("IO", "to_io", true); 
 
-        io.print(args);
+        defout.callMethod("print", args);
 
         return recv.getRuntime().getNil();
     }

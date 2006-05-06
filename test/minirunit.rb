@@ -4,6 +4,7 @@ $testnum=0
 $ntest=0
 $failed = []
 $curtestOK=true
+$saved_stdout = $stdout
 
 module MiniRUnit
   class Failure
@@ -30,7 +31,7 @@ end
 
 
 def test_check(what)
-  printf "%s : ", what unless $silentTests
+  $saved_stdout.printf "%s : ", what unless $silentTests
   $what = what
   $testnum = 0
 end
@@ -39,11 +40,11 @@ def test_ok(cond, msg="")
   $testnum+=1
   $ntest+=1
   if cond
-    print "." unless $silentTests
+    $saved_stdout.print "." unless $silentTests
   else
     where = caller.reject {|where| where =~ /minirunit/}[0]
     $failed.push(MiniRUnit::Failure.new($what, $testnum, msg, where))
-    print "F" unless $silentTests
+    $saved_stdout.print "F" unless $silentTests
     $curtestOK=false
   end
 end
@@ -85,11 +86,11 @@ def test_get_last_failed
 end
 
 def test_print_report
-  puts
-  puts "-" * 80
-  $failed.each { |error| puts error }
-  puts "-" * 80
-  puts "Tests: #$ntest. (Ok: #{$ntest - $failed.size}; Failed: #{$failed.size})"
+  $saved_stdout.puts
+  $saved_stdout.puts "-" * 80
+  $failed.each { |error| $saved_stdout.puts error }
+  $saved_stdout.puts "-" * 80
+  $saved_stdout.puts "Tests: #$ntest. (Ok: #{$ntest - $failed.size}; Failed: #{$failed.size})"
 end
 
 def test_load(test)
@@ -97,13 +98,13 @@ def test_load(test)
 	$curtestOK=true
 	load(test)
   rescue Exception => boom
-	puts 'ERROR' unless $silentTests
+	$saved_stdout.puts 'ERROR' unless $silentTests
 	$failed.push(MiniRUnit::Error.new($what, $testnum, boom))
   else
 	if $curtestOK
-		puts 'OK' unless $silentTests
+		$saved_stdout.puts 'OK' unless $silentTests
 	else
-		puts 'FAILED' unless $silentTests
+		$saved_stdout.puts 'FAILED' unless $silentTests
 	end
   end
 end

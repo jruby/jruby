@@ -49,3 +49,17 @@ saved_stdin = $stdin
 $stdin = StringIO.new("HEH\nWorld\n")
 test_equal("HEH\n", gets)
 $stdin = saved_stdin
+
+n = StringIO.new
+old_stdout = $stdout
+$stdout = n
+test_equal($>, $stdout)
+puts "HEL\nEEEE\n"
+n.rewind
+test_equal("HEL\n", n.gets)
+$stdout = old_stdout
+n = StringIO.new
+$> = n
+puts "HEL\nEEEE\n"
+n.rewind
+test_equal("HEL\n", n.gets)

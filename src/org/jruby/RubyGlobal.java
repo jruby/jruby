@@ -266,6 +266,11 @@ public class RubyGlobal {
                 throw runtime.newTypeError(name() + " must have write method, " +
                                     value.getType().getName() + " given");
             }
+            
+            if ("$stdout".equals(name())) {
+                runtime.defineVariable(new OutputGlobalVariable(runtime, "$>", value));
+            }
+
             return super.set(value);
         }
     }
