@@ -14,8 +14,10 @@ lines = []
 
 test_equal(["one\n", "two\n", "three\n"], lines)
 
+##### gets #####
+
 strio = StringIO.new("a")
-strio.gets
+test_equal("a", strio.gets)
 test_equal(nil, strio.gets)
 test_equal(true, strio.eof?)
 
@@ -41,3 +43,9 @@ EOF
 
 s = StringIO.new("12345")
 test_equal(5, s.size)
+
+$/="\n"
+saved_stdin = $stdin
+$stdin = StringIO.new("HEH\nWorld\n")
+test_equal("HEH\n", gets)
+$stdin = saved_stdin

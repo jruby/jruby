@@ -39,7 +39,7 @@ public class RubyArgsFile extends RubyObject {
         super(runtime, runtime.getObject());
     }
 
-    private RubyIO currentFile = null;
+    private IRubyObject currentFile = null;
     private int currentLineNumber;
     
     public void setCurrentLineNumber(int newLineNumber) {
@@ -80,7 +80,7 @@ public class RubyArgsFile extends RubyObject {
 
         if (args.getLength() == 0) {
             if (currentFile == null) { 
-                currentFile = (RubyIO) getRuntime().getGlobalVariables().get("$stdin");
+                currentFile = getRuntime().getGlobalVariables().get("$stdin");
                 ((RubyString) getRuntime().getGlobalVariables().get("$FILENAME")).setValue(new StringBuffer("-"));
                 currentLineNumber = 0;
                 return true;
@@ -93,7 +93,7 @@ public class RubyArgsFile extends RubyObject {
         ((RubyString) getRuntime().getGlobalVariables().get("$FILENAME")).setValue(new StringBuffer(filename));
 
         if (filename.equals("-")) {
-            currentFile = (RubyIO) getRuntime().getGlobalVariables().get("$stdin");
+            currentFile = getRuntime().getGlobalVariables().get("$stdin");
         } else {
             currentFile = new RubyFile(getRuntime(), filename); 
         }

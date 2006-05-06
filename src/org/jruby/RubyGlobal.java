@@ -39,6 +39,7 @@ import java.util.Map;
 
 import org.jruby.environment.OSEnvironmentReaderExcepton;
 import org.jruby.environment.OSEnvironment;
+import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.ReadonlyGlobalVariable;
@@ -102,6 +103,11 @@ public class RubyGlobal {
 
         // after defn of $stderr as the call may produce warnings
         defineGlobalEnvConstants(runtime);
+        
+        // Fixme: Do we need the check or does Main.java not call this...they should consolidate 
+        if (runtime.getGlobalVariables().get("$*").isNil()) {
+            runtime.getGlobalVariables().defineReadonly("$*", new ValueAccessor(runtime.newArray()));
+        }
         
         // ARGF, $< object
         RubyArgsFile argsFile = new RubyArgsFile(runtime);

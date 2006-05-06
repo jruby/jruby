@@ -38,8 +38,9 @@ class StringIO
   def gets(sep=$/)
     i = @string.index(sep, @pos)
     if i.nil?
+      line = @string[@pos..-1]
       @pos = length + 1
-	  return nil
+	  return line
     end
     line = @string[@pos...i+1]
     @pos = i + sep.length
