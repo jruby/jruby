@@ -36,6 +36,12 @@ class StringIO
     c
   end
   def gets(sep=$/)
+    if sep.nil?
+      line = @string[@pos..-1]
+      @pos = length + 1
+      return line
+    end      
+    
     i = @string.index(sep, @pos)
     if i.nil?
       line = @string[@pos..-1]

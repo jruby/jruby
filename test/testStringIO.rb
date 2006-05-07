@@ -63,3 +63,6 @@ $> = n
 puts "HEL\nEEEE\n"
 n.rewind
 test_equal("HEL\n", n.gets)
+
+n = StringIO.new("123\n456\n789\n")
+test_equal("123\n456\n789\n", n.gets(nil))
