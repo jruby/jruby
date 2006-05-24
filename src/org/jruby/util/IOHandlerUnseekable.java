@@ -46,7 +46,7 @@ import org.jruby.RubyIO;
  * @author enebo
  *
  */
-public class IOHandlerUnseekable extends IOHandler {
+public class IOHandlerUnseekable extends IOHandlerJavaIO {
     protected InputStream input = null;
     protected OutputStream output = null;
 

@@ -15,6 +15,7 @@
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2006 Evan Buswell <evan@heron.sytes.net>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -31,9 +32,18 @@
 package org.jruby.runtime.builtin.meta;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.Selector;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Channel;
 
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
 import org.jruby.RubyClass;
 import org.jruby.RubyIO;
 import org.jruby.RubyKernel;
@@ -73,6 +83,7 @@ public class IOMetaClass extends ObjectMetaClass {
 			defineSingletonMethod("read", Arity.optional());
 	        defineSingletonMethod("readlines", Arity.optional());
 	        defineSingletonMethod("popen", Arity.optional());
+            defineSingletonMethod("select", Arity.optional());
 	
 	        defineMethod("<<", Arity.singleArgument(), "addString");
 			defineMethod("binmode", Arity.noArguments());
@@ -163,7 +174,108 @@ public class IOMetaClass extends ObjectMetaClass {
         
         return getRuntime().getNil();
     }
-	
+
+    private static void registerSelect(Selector selector, IRubyObject obj, int ops) throws IOException {
+        RubyIO ioObj;
+
+        if(!(obj instanceof RubyIO)) {
+            // invoke to_io
+            if(!obj.respondsTo("to_io")) {
+                return;
+            }
+            ioObj = (RubyIO) obj.callMethod("to_io");
+        } else {
+            ioObj = (RubyIO) obj;
+        }
+
+        Channel channel = ioObj.getChannel();
+        if(channel == null || !(channel instanceof SelectableChannel)) {
+            return;
+        }
+
+        ((SelectableChannel) channel).configureBlocking(false);
+        int real_ops = ((SelectableChannel) channel).validOps() & ops;
+        SelectionKey key = ((SelectableChannel) channel).keyFor(selector);
+
+        if(key == null) {
+            ((SelectableChannel) channel).register(selector, real_ops, obj);
+        } else {
+            key.interestOps(key.interestOps()|real_ops);
+        }
+    }
+
+    public IRubyObject select(IRubyObject[] args) {
+        return select_static(getRuntime(), args);
+    }
+
+    public static IRubyObject select_static(IRuby runtime, IRubyObject[] args) {
+        try {
+            Selector selector = Selector.open();
+            if (!args[0].isNil()) {
+                // read
+                for (Iterator i = ((RubyArray) args[0]).getList().iterator(); i.hasNext(); ) {
+                    IRubyObject obj = (IRubyObject) i.next();
+                    registerSelect(selector, obj, SelectionKey.OP_READ|SelectionKey.OP_ACCEPT|SelectionKey.OP_CONNECT);
+                }
+            }
+            if (args.length > 1 && !args[1].isNil()) {
+                // write
+		for (Iterator i = ((RubyArray) args[0]).getList().iterator(); i.hasNext(); ) {
+                    IRubyObject obj = (IRubyObject) i.next();
+                    registerSelect(selector, obj, SelectionKey.OP_WRITE);
+                }
+            }
+            if (args.length > 2 && !args[2].isNil()) {
+        	// error
+        	// Java's select doesn't do anything about this, so we leave it be.
+            }
+            if(args.length > 3 && !args[3].isNil()) {
+                // select with timeout
+                long timeout;
+                if (args[3] instanceof RubyFloat) {
+                    timeout = Math.round(((RubyFloat) args[3]).getDoubleValue() * 1000);
+                } else {
+                    timeout = Math.round(((RubyFixnum) args[3]).getDoubleValue() * 1000);
+                }
+                selector.select(timeout);
+            } else {
+                // select without timeout
+                selector.select();
+            }	
+            List r = new ArrayList();
+            List w = new ArrayList();
+            List e = new ArrayList();
+            for (Iterator i = selector.selectedKeys().iterator(); i.hasNext(); ) {
+                SelectionKey key = (SelectionKey) i.next();
+                if ((key.interestOps() & key.readyOps()
+                    & (SelectionKey.OP_READ|SelectionKey.OP_ACCEPT|SelectionKey.OP_CONNECT)) != 0) {
+                    r.add(key.attachment());
+                }
+                if ((key.interestOps() & key.readyOps() & (SelectionKey.OP_WRITE)) != 0) {
+                    w.add(key.attachment());
+                }
+            }
+            List ret = new ArrayList();
+            ret.add(RubyArray.newArray(runtime, r));
+            ret.add(RubyArray.newArray(runtime, w));
+            ret.add(RubyArray.newArray(runtime, e));
+            // make all sockets blocking again
+            List toReset = new ArrayList();
+            for (Iterator i = selector.keys().iterator(); i.hasNext(); ) {
+                SelectionKey key = (SelectionKey) i.next();
+                toReset.add(key.channel());
+            }
+            selector.close();
+            for (Iterator i = toReset.iterator(); i.hasNext(); ) {
+                SelectableChannel channel = (SelectableChannel) i.next();
+                channel.configureBlocking(true);
+            }
+            return RubyArray.newArray(runtime, ret);
+        } catch(IOException e) {
+            throw runtime.newIOError(e.getMessage());
+        }
+    }
+
     public IRubyObject read(IRubyObject[] args) {
         checkArgumentCount(args, 1, 3);
         IRubyObject[] fileArguments = new IRubyObject[] {args[0]};

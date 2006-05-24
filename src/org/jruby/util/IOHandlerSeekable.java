@@ -48,7 +48,7 @@ import org.jruby.RubyIO;
  * 
  * @author Thomas E Enebo (enebo@acm.org)
  */
-public class IOHandlerSeekable extends IOHandler {
+public class IOHandlerSeekable extends IOHandlerJavaIO {
     protected RandomAccessFile file;
     protected String path;
     

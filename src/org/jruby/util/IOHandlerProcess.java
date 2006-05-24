@@ -39,7 +39,7 @@ import java.nio.channels.FileChannel;
 import org.jruby.IRuby;
 import org.jruby.RubyIO;
 
-public class IOHandlerProcess extends IOHandler {
+public class IOHandlerProcess extends IOHandlerJavaIO {
     protected InputStream input = null;
     protected OutputStream output = null;
     protected Process process = null;

@@ -53,6 +53,34 @@ class Socket < BasicSocket
     AF_UNSPEC = PF_UNSPEC
     PF_INET = 2
     AF_INET = PF_INET
+    # mandatory constants we haven't implemented
+    MSG_OOB = 0x01
+    SOL_SOCKET = 1
+    SOL_IP = 0
+    SOL_TCP = 6
+    #  SOL_UDP = 17
+    IPPROTO_IP = 0
+    IPPROTO_ICMP = 1
+    IPPROTO_TCP = 6
+    #  IPPROTO_UDP = 17
+    #  IPPROTO_RAW = 255
+    INADDR_ANY = 0x00000000
+    INADDR_BROADCAST = 0xffffffff
+    INADDR_LOOPBACK = 0x7f000001
+    INADDR_UNSPEC_GROUP = 0xe0000000
+    INADDR_ALLHOSTS_GROUP = 0xe0000001
+    INADDR_MAX_LOCAL_GROUP = 0xe00000ff
+    INADDR_NONE = 0xffffffff
+    SO_REUSEADDR = 2
+    SHUT_RD = 0
+    SHUT_WR = 1
+    SHUT_RDWR = 2
+    
+    # constants webrick crashes without
+    AI_PASSIVE = 1
+    
+    # drb needs defined
+    TCP_NODELAY = 1
   end
   include Constants
 
@@ -127,7 +155,9 @@ end
 class TCPSocket < IPSocket
   include Socket::Constants
   include_class 'java.net.InetAddress'
+  include_class 'java.net.InetSocketAddress'
   include_class 'java.net.ConnectException'
+  include_class 'java.nio.channels.SocketChannel'
   include_class('java.net.Socket') {|p,c| 'JavaSocket'}
   include_class 'java.net.UnknownHostException'
   
@@ -135,18 +165,27 @@ class TCPSocket < IPSocket
     begin
       if port
         begin
-          javaSocket = JavaSocket.new(arg1, port)
+          addr = InetSocketAddress.new(InetAddress.getByName(arg1), port)
+          channel = SocketChannel.open(addr)
+          channel.finishConnect
         rescue UnknownHostException
           raise SocketError.new("getaddrinfo: Name or service not known")
         end
       else 
-        javaSocket = arg1
+        channel = arg1
       end
         
-      super javaSocket
+      super channel
     rescue ConnectException => e
       raise Errno::ECONNREFUSED.new
     end
+  end
+
+  def self.gethostbyname(hostname)
+    addr = InetAddress.getByName(hostname)
+    return [ addr.getCanonicalHostName, [], AF_INET, addr.getHostAddress ]
+  rescue UnknownHostException => e
+    throw SocketError.new("getaddrinfo: Name or service not known")
   end
 
   def self.open(*args)
@@ -162,23 +201,34 @@ class TCPSocket < IPSocket
       sock
     end
   end
+
   def self.gethostbyname(hostname)
     addr = InetAddress.getByName(hostname)
     return [ addr.getCanonicalHostName, [], AF_INET, addr.getHostAddress ]
   rescue UnknownHostException => e
     throw SocketError.new("getaddrinfo: Name or service not known")
   end
+    
+  # Stubbed out for drb (perhaps some of these are possible?)
+  def setsockopt(*args)
+  end
 end
 
 class TCPServer < TCPSocket
   include_class('java.net.ServerSocket')
+  include_class('java.nio.channels.ServerSocketChannel')
   include_class('java.net.InetAddress')
+  include_class('java.net.UnknownHostException')
+  include_class('java.net.InetSocketAddress')
   include_class('java.net.UnknownHostException')
 
   def initialize(hostname, port) 
-      addr = nil
-      addr = InetAddress.getByName hostname if hostname
-      @javaServerSocket = ServerSocket.new(port, 10, addr)
+    hostname ||= '0.0.0.0'
+    addr = InetAddress.getByName hostname
+    @javaServerSocketChannel = ServerSocketChannel.open
+    @javaServerSocketChannel.socket.bind(InetSocketAddress.new(addr, port))
+
+    super @javaServerSocketChannel, nil
   rescue UnknownHostException => e
     raise SocketError.new("getaddrinfo: Name or service not known")
   end
@@ -186,15 +236,17 @@ class TCPServer < TCPSocket
   def self.open(*args)
     TCPServer.new(*args)
   end
-  public_instance_methods(true).each {|method|
-    define_method(method.to_sym) {|*args| raise "Not Supported" }
-  }
+
+  [:peeraddr, :getpeername].each do |symbol|
+      define_method(symbol) {|*args| raise "Not Supported" }
+  end
+
   def accept
-    socket = TCPSocket.new(@javaServerSocket.accept, nil)
+    socket = TCPSocket.new(@javaServerSocketChannel.accept, nil)
   end
   
   def close
-    @javaServerSocket.close()
+    TCPSocket.new(@javaServerSocketChannel.accept, nil)
   end
 end
 

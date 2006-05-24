@@ -30,30 +30,28 @@ package org.jruby;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.net.Socket;
+import java.nio.channels.SocketChannel;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.Channel;
 
 import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.IOHandlerSocket;
+import org.jruby.util.IOHandlerNio;
 import org.jruby.util.IOHandler;
 
 public class RubyBasicSocket extends RubyIO {
-	private static final int SHUTDOWN_RECEIVER = 1;
-	private static final int SHUTDOWN_SENDER = 2;
-	private static final int SHUTDOWN_BOTH = SHUTDOWN_RECEIVER | SHUTDOWN_SENDER;
-	
     public static boolean do_not_reverse_lookup = false;
-    private Socket socket;
+    private Channel socketChannel;
     
     public RubyBasicSocket(IRuby runtime, RubyClass type) {
         super(runtime, type);
     }
     
     public IRubyObject initialize(IRubyObject arg) {
-        socket = extractSocket(arg);
+        socketChannel = extractSocketChannel(arg);
         
         try {
-            handler = new IOHandlerSocket(getRuntime(), socket.getInputStream(), socket.getOutputStream());
+            handler = new IOHandlerNio(getRuntime(), socketChannel);
     	} catch (IOException e) {
             throw getRuntime().newIOError(e.getMessage());
         }
@@ -63,8 +61,9 @@ public class RubyBasicSocket extends RubyIO {
         return this;
     }
     
-    private Socket extractSocket(IRubyObject proxyObject) {
-        return (Socket) ((JavaObject) proxyObject.getInstanceVariable("@java_object")).getValue();
+    private Channel extractSocketChannel(IRubyObject proxyObject) {
+        IRubyObject javaObject = proxyObject.getInstanceVariable("@java_object");
+        return (Channel) ((JavaObject) javaObject).getValue();
     }
 
     public IRubyObject write_send(IRubyObject[] args) {
@@ -73,7 +72,7 @@ public class RubyBasicSocket extends RubyIO {
     
     public IRubyObject recv(IRubyObject[] args) {
         try {
-            return getRuntime().newString(((IOHandlerSocket) handler).recv(RubyNumeric.fix2int(args[0])));
+            return getRuntime().newString(((IOHandlerNio) handler).recv(RubyNumeric.fix2int(args[0])));
         } catch (IOHandler.BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
         } catch (EOFException e) {
@@ -91,23 +90,36 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     public IRubyObject getsockname() {
-        return JavaObject.wrap(getRuntime(), socket.getLocalSocketAddress());
+        if (socketChannel instanceof SocketChannel) {
+            return JavaObject.wrap(getRuntime(), ((SocketChannel) socketChannel).socket().getLocalSocketAddress());
+        } else if (socketChannel instanceof ServerSocketChannel) {
+            return JavaObject.wrap(getRuntime(), ((ServerSocketChannel) socketChannel).socket().getLocalSocketAddress());
+        } else {
+            throw getRuntime().newIOError("Not Supported");
+        }
     }
 
     public IRubyObject getpeername() {
-        return JavaObject.wrap(getRuntime(), socket.getRemoteSocketAddress());
+        if (socketChannel instanceof SocketChannel) {
+            return JavaObject.wrap(getRuntime(), ((SocketChannel) socketChannel).socket().getRemoteSocketAddress());
+        } else {
+            throw getRuntime().newIOError("Not Supported");
+        }
     }
 
     public IRubyObject shutdown(IRubyObject[] args) {
         if (getRuntime().getSafeLevel() >= 4 && tainted().isFalse()) {
             throw getRuntime().newSecurityError("Insecure: can't shutdown socket");
         }
-        int how = args.length > 0 ? RubyNumeric.fix2int(args[0]) : SHUTDOWN_BOTH; 
-
-        if (how != SHUTDOWN_RECEIVER && how != SHUTDOWN_SENDER && how != SHUTDOWN_BOTH) {
+        
+        int how = 2;
+        if (args.length > 0) {
+            how = RubyNumeric.fix2int(args[0]);
+        }
+        if (how < 0 || 2 < how) {
             throw getRuntime().newArgumentError("`how' should be either 0, 1, 2");
         }
-        if (how != SHUTDOWN_BOTH) {
+        if (how != 2) {
             throw getRuntime().newNotImplementedError("Shutdown currently only works with how=2");
         }
         return close();

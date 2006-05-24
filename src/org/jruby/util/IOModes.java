@@ -14,6 +14,7 @@
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2006 Evan Buswell <evan@heron.sytes.net>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -68,8 +69,12 @@ public class IOModes {
     public boolean isReadable() {
         return (modes & RDWR) != 0 || modes == RDONLY;
     }
-    
+
     public boolean isWriteable() {
+        return isWritable();
+    }
+
+    public boolean isWritable() {
     	return (modes & RDWR) != 0 || (modes & WRONLY) != 0 || (modes & CREAT) != 0;
     }
     

@@ -16,6 +16,7 @@
  * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2006 Evan Buswell <evan@heron.sytes.net>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -33,8 +34,6 @@ package org.jruby.util;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.channels.FileChannel;
 
 import org.jruby.IRuby;
@@ -55,9 +54,6 @@ public abstract class IOHandler {
     protected int fileno;
     protected boolean isOpen = false;
     protected boolean isSync = false;
-    
-    // Last char to be 'ungot'.  <0 indicates nothing waiting to be re-got  
-    private int ungotc = -1;
     
     protected IOHandler(IRuby runtime) {
         this.runtime = runtime;
@@ -97,7 +93,7 @@ public abstract class IOHandler {
     
     protected void checkReadable() throws IOException, BadDescriptorException {
         if (!isOpen) {
-        	throw new BadDescriptorException();
+            throw new BadDescriptorException();
         }
         
         if (!modes.isReadable()) {
@@ -106,6 +102,10 @@ public abstract class IOHandler {
     }
 
     protected void checkWriteable() throws IOException, BadDescriptorException {
+	checkWritable();
+    }
+
+    protected void checkWritable() throws IOException, BadDescriptorException {
         if (!isOpen) {
             throw new BadDescriptorException();
         }
@@ -130,192 +130,39 @@ public abstract class IOHandler {
     public void setIsSync(boolean isSync) {
         this.isSync = isSync;
     }
-    
-    public String gets(String separatorString) throws IOException, BadDescriptorException {
-        checkReadable();
-        
-        if (separatorString == null) {
-            return getsEntireStream();
-        }
-        
-        final char[] separator = separatorString.equals(PARAGRAPH_DELIMETER) ?
-        		"\n\n".toCharArray() : separatorString.toCharArray();
 
-        int c = read();
-        if (c == -1) {
-            return null;
-        }
-
-        StringBuffer buffer = new StringBuffer();
-
-        LineLoop : while (true) {
-            while (c != separator[0] && c != -1) {
-                buffer.append((char) c);
-                c = read();
-            }
-            for (int i = 0; i < separator.length; i++) {
-                if (c == -1) {
-                    break LineLoop;
-                } else if (c != separator[i]) {
-                    continue LineLoop;
-                }
-                buffer.append((char) c);
-                if (i < separator.length - 1) {
-                    c = read();
-                }
-            }
-            break;
-        }
-        
-        if (separatorString.equals(PARAGRAPH_DELIMETER)) {
-            while (c == separator[0]) {
-                c = read();
-            }
-            ungetc(c);
-        }
-        
-        return buffer.toString();
-    }
-    
-    public String getsEntireStream() throws IOException {
-        StringBuffer result = new StringBuffer();
-        int c;
-        while ((c = read()) != -1) {
-            result.append((char) c);
-        }
-        
-        // We are already at EOF
-        if (result.length() == 0) {
-            return null;
-        }
-        
-        return result.toString();
-    }
-    
-    public int read() throws IOException {
-        try {
-            if (ungotc >= 0) {
-                int c = ungotc;
-                ungotc = -1;
-                return c;
-            }
-            
-            return sysread();
-        } catch (EOFException e) {
-            return -1;
-        }
-    }
-    
-    public int getc() throws IOException, BadDescriptorException {
-        checkReadable();
-        
-        int c = read();
-        
-        if (c == -1) {
-            return c;
-        }
-        return c & 0xff;
-    }
-
-    // TODO: We overflow on large files...We could increase to long to limit
-    // this, but then the impl gets more involved since java io APIs based on
-    // int (means we have to chunk up a long into a series of int ops).
-    
-    public String read(int number) throws IOException, BadDescriptorException {
-        try {
-            
-            if (ungotc >= 0) {
-                String buf2 = sysread(number - 1);
-                int c = ungotc;
-                ungotc = -1;
-                return c + buf2;
-            } 
-
-            return sysread(number);
-        } catch (EOFException e) {
-            return null;
-        }
-    }
-    
-    public void ungetc(int c) {
-        // Ruby silently ignores negative ints for some reason?
-        if (c >= 0) {
-            ungotc = c;
-        }
-    }
-    
-    public void putc(int c) throws IOException, BadDescriptorException {
-        try {
-            syswrite("" + (char) c);         // LAME
-        } catch (IOException e) {
-        }
-    }
-    
     public void reset(IOModes subsetModes) throws IOException, InvalidValueException {
         checkPermissionsSubsetOf(subsetModes);
         
         resetByModes(subsetModes);
     }
-    
-    public int write(String string) throws IOException, BadDescriptorException {
-        return syswrite(string);
-    }
-    
-    protected int sysread(StringBuffer buf, int length) throws IOException {
-        if (buf == null) {
-            throw new IOException("sysread2: Buf is null");
-        }
-        
-        int i = 0;
-        for (;i < length; i++) {
-            int c = sysread();
-            
-            if (c == -1) {
-                if (i <= 0) {
-                    return -1;
-                }
-                break;
-            }
-            
-            buf.append((char) c);
-        }
-        
-        return i;
-    }
 
-    // Question: We should read bytes or chars?
-    public String sysread(int number) throws IOException, BadDescriptorException {
-        if (!isOpen()) {
-            throw new IOException("File not open");
-        }
-        checkReadable();
-        
-        StringBuffer buf = new StringBuffer();
-        int position = 0;
-        
-        while (position < number) {
-            int s = sysread(buf, number - position);
-                
-            if (s == -1) {
-                if (position <= 0) {
-                    throw new EOFException();
-                }
-                break;
-            }
-                
-            position += s;
-        }
-            
-        return buf.toString();
-    }
+    public abstract String gets(String separatorString) throws IOException, BadDescriptorException, EOFException;
+    public abstract String getsEntireStream() throws IOException, BadDescriptorException, EOFException;
+
+    // TODO: We overflow on large files...We could increase to long to limit
+    // this, but then the impl gets more involved since java io APIs based on
+    // int (means we have to chunk up a long into a series of int ops).
+
+    public abstract String read(int number) throws IOException, BadDescriptorException, EOFException;
+    public abstract int write(String string) throws IOException, BadDescriptorException;
+
+    public abstract int getc() throws IOException, BadDescriptorException, EOFException;
+    public abstract void ungetc(int c);
+    public abstract void putc(int c) throws IOException, BadDescriptorException;
     
+    public abstract String sysread(int number) throws IOException, BadDescriptorException, EOFException;
+    public abstract int syswrite(String buf) throws IOException, BadDescriptorException;
     
     public abstract IOHandler cloneIOHandler() throws IOException, PipeException, InvalidValueException;
     public abstract void close() throws IOException, BadDescriptorException;
     public abstract void flush() throws IOException, BadDescriptorException;
-    public abstract InputStream getInputStream();
-    public abstract OutputStream getOutputStream();
-    
+    /**
+     * <p>Flush and sync all writes to the filesystem.</p>
+     * 
+     * @throws IOException if the sync does not work
+     */
+    public abstract void sync() throws IOException, BadDescriptorException; 
     /**
      * <p>Return true when at end of file (EOF).</p>
      * 
@@ -353,14 +200,6 @@ public abstract class IOHandler {
      * @throws InvalidValueException 
      */
     public abstract void seek(long offset, int type) throws IOException, PipeException, InvalidValueException;
-    /**
-     * <p>Flush and sync all writes to the filesystem.</p>
-     * 
-     * @throws IOException if the sync does not work
-     */
-    public abstract void sync() throws IOException; 
-    public abstract int sysread() throws IOException;
-    public abstract int syswrite(String buf) throws IOException, BadDescriptorException;
     public abstract void truncate(long newLength) throws IOException, PipeException;
     
     public class PipeException extends Exception {

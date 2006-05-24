@@ -17,6 +17,7 @@
  * Copyright (C) 2002-2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2006 Evan Buswell <evan@heron.sytes.net>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -38,9 +39,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
+import java.nio.channels.Channel;
 
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOHandler;
+import org.jruby.util.IOHandlerJavaIO;
+import org.jruby.util.IOHandlerNio;
 import org.jruby.util.IOHandlerProcess;
 import org.jruby.util.IOHandlerSeekable;
 import org.jruby.util.IOHandlerUnseekable;
@@ -174,6 +178,24 @@ public class RubyIO extends RubyObject {
         registerIOHandler(handler);
     }
     
+    public RubyIO(IRuby runtime, Channel channel) {
+        super(runtime, runtime.getClass("IO"));
+        
+        // We only want IO objects with valid streams (better to error now). 
+        if (channel == null) {
+            throw runtime.newIOError("Opening invalid stream");
+        }
+        
+        try {
+            handler = new IOHandlerNio(runtime, channel);
+        } catch (IOException e) {
+            throw runtime.newIOError(e.getMessage());
+        }
+        modes = handler.getModes();
+        
+        registerIOHandler(handler);
+    }
+
     public RubyIO(IRuby runtime, Process process) {
     	super(runtime, runtime.getClass("IO"));
 
@@ -239,13 +261,29 @@ public class RubyIO extends RubyObject {
     }
 
     public OutputStream getOutStream() {
-        return handler.getOutputStream();
+        if(handler instanceof IOHandlerJavaIO) {
+            return ((IOHandlerJavaIO) handler).getOutputStream();
+        } else {
+            return null;
+        }
     }
 
     public InputStream getInStream() {
-        return handler.getInputStream();
+        if (handler instanceof IOHandlerJavaIO) {
+            return ((IOHandlerJavaIO) handler).getInputStream();
+        } else {
+            return null;
+        }
     }
-    
+
+    public Channel getChannel() {
+        if (handler instanceof IOHandlerNio) {
+            return ((IOHandlerNio) handler).getChannel();
+        } else {
+            return null;
+        }
+    }
+
     public IRubyObject reopen(IRubyObject[] args) {
     	if (args.length < 1) {
             throw getRuntime().newArgumentError("wrong number of arguments");
@@ -261,7 +299,9 @@ public class RubyIO extends RubyObject {
                 try {
                     handler.close();
                 } catch (IOHandler.BadDescriptorException e) {
-                	throw getRuntime().newErrnoEBADFError();
+                    throw getRuntime().newErrnoEBADFError();
+                } catch (EOFException e) {
+                    return getRuntime().getNil();
                 } catch (IOException e) {
                     throw getRuntime().newIOError(e.getMessage());
                 }
@@ -648,6 +688,8 @@ public class RubyIO extends RubyObject {
             handler.sync();
         } catch (IOException e) {
             throw getRuntime().newIOError(e.getMessage());
+        } catch (IOHandler.BadDescriptorException e) {
+            throw getRuntime().newErrnoEBADFError();
         }
 
         return RubyFixnum.zero(getRuntime());
@@ -815,6 +857,8 @@ public class RubyIO extends RubyObject {
             return c == -1 ? getRuntime().getNil() : getRuntime().newFixnum(c);
         } catch (IOHandler.BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
+        } catch (EOFException e) {
+            return getRuntime().getNil();
         } catch (IOException e) {
             throw getRuntime().newIOError(e.getMessage());
         }
@@ -866,6 +910,8 @@ public class RubyIO extends RubyObject {
             return getRuntime().newString(buf);
         } catch (IOHandler.BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
+        } catch (EOFException e) {
+            return getRuntime().getNil();
         } catch (IOException e) {
             throw getRuntime().newIOError(e.getMessage());
         }
@@ -887,6 +933,8 @@ public class RubyIO extends RubyObject {
             return getRuntime().newFixnum(c);
         } catch (IOHandler.BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
+        } catch (EOFException e) {
+            throw getRuntime().newEOFError();
         } catch (IOException e) {
             throw getRuntime().newIOError(e.getMessage());
         }
@@ -905,6 +953,8 @@ public class RubyIO extends RubyObject {
             return getRuntime().getNil();
         } catch (IOHandler.BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
+        } catch (EOFException e) {
+            return getRuntime().getNil();
     	} catch (IOException e) {
     	    throw getRuntime().newIOError(e.getMessage());
         }
