@@ -1,5 +1,14 @@
 class StringIO
   attr_accessor :pos
+  
+  # FIXME: Mode is ignored....
+  def StringIO.open(string = String.new, mode="r+")
+  	if (block_given?)
+      yield StringIO.new(string)
+  	else
+  	  StringIO.new(string)
+  	end
+  end
 
   def initialize(string=String.new)
     @string = string
@@ -10,7 +19,10 @@ class StringIO
   end
 
   # TODO: Figure out if this is supposed to have same semantics as String.<<
-  def <<(arg); @string = @string + arg; end
+  def <<(arg)
+    @string[@pos..@pos+arg.length] = arg
+    @pos = @pos + arg.length
+  end
   def binmode(); self; end
   def close() close_read; close_write; end
   def closed?() closed_read? && closed_write?; end
@@ -29,7 +41,8 @@ class StringIO
   def each_byte() @string[@pos..-1].each_byte; end
   def each_line() each; end
   def eof() @pos = length + 1; end
-  def eof?() @pos > length; end
+  def eof?() @pos >= length; end
+  def fcntl(*args) raise NotImplementedError; end
   def getc() 
     c = @string[@pos]
     @pos = @pos + 1
@@ -64,7 +77,6 @@ class StringIO
   def puts(*args) @string = @string + args.join("\n") + "\n" end
   def read(*args)
     str = nil
-    
     raise ArgumentError.new("wrong number of arguments (#{args.length} for 0)") if args.length > 2
 
     str = args[1] if args.length == 2
@@ -121,7 +133,7 @@ class StringIO
       @pos = @pos + length
     end
 
-    @eof = true if olength < 0 || olength > length
+    @eof = olength < 0 || olength >= length
     str
   end
   alias readline gets
@@ -138,7 +150,7 @@ class StringIO
   def size; @string.size; end
   def string; @string; end
   def syswrite(s); @string << s; s.length; end
-  def write(s); @string = s; end
+  def write(s); @string << s; s.length; end
   private
   def replace_string_reference_with(s, new); s.gsub! /^.*/, new; end
 end
