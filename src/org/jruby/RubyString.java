@@ -418,6 +418,23 @@ public class RubyString extends RubyObject {
 	public RubyString dump() {
 		return inspect(true);
 	}
+	
+	public IRubyObject insert(IRubyObject indexArg, IRubyObject stringArg) {
+	    int index = (int) indexArg.convertToInteger().getLongValue();
+	    if (index < 0) {
+	        index += getValue().length() + 1;
+	    }
+	    
+	    if (index < 0 || index > getValue().length()) {
+	    	throw getRuntime().newIndexError("index " + index + " out of range");
+	    }
+	    
+	    String insert = stringArg.convertToString().toString();
+	    
+	    getValue().insert(index, insert);
+	    
+	    return this;
+	}
 
 	/** rb_str_inspect
 	 *

@@ -192,6 +192,7 @@ public class StringMetaClass extends ObjectMetaClass {
 	        defineMethod("index", Arity.optional());
 	        defineMethod("initialize", Arity.optional(), "initialize");
 	        defineMethod("initialize_copy", Arity.singleArgument(), "replace");
+	        defineMethod("insert", Arity.twoArguments());
 	        defineMethod("inspect", Arity.noArguments());
 	        defineMethod("length", Arity.noArguments());
 	        defineMethod("ljust", Arity.singleArgument());
