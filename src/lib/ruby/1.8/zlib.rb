@@ -33,6 +33,8 @@ include_class "java.io.ByteArrayOutputStream"
 include_class "java.io.InputStreamReader"
 include_class "java.io.PipedInputStream"
 include_class "java.io.PipedOutputStream"
+include_class "java.io.StringBufferInputStream"
+include_class "java.lang.StringBuffer"
 
 include_class "java.util.zip.Deflater"
 include_class "java.util.zip.DeflaterOutputStream"
@@ -45,6 +47,8 @@ include_class "org.jruby.util.Adler32Ext"
 include_class "org.jruby.util.CRC32Ext"
 include_class "org.jruby.util.IOInputStream"
 include_class "org.jruby.util.IOOutputStream"
+include_class "org.jruby.util.ZlibInflate"
+include_class "org.jruby.util.ZlibDeflate"
 
 #
 # Implementation of the Zlib library with the help of Java classes
@@ -301,32 +305,21 @@ class Zlib::Inflate < Zlib::ZStream
     # Decompresses string. Raises a Zlib::NeedDict exception if a preset dictionary is needed for decompression.
     #
     def self.inflate(string)
-      zstream = Zlib::Inflate.new
-      buf = zstream.inflate(string)
-      zstream.finish
-      zstream.close
-      buf
+      ZlibInflate.s_inflate(self,string)
     end
 
     #
     # Creates a new inflate stream for decompression. See zlib.h for details of the argument. If window_bits is nil, the default value is used.
     #
     def initialize(window_bits=nil)
-      if window_bits.nil?
-        window_bits = Zlib::MAX_WBITS
-      end
-      @flater = Inflater.new
-      @write_stream = PipedOutputStream.new
-      @intern_stream = PipedInputStream.new(@write_stream)
-      @stream = InflaterInputStream.new(@intern_stream,@flater)
-      @val = ""
+      @infl = ZlibInflate.new(self)
     end
 
     #
     # Adds p1 to stream and returns self
     #
     def <<(p1)
-      @write_stream.write JString.new(p1.to_s).getBytes("ISO-8859-1")
+      @infl.append(p1)
       self
     end
 
@@ -334,15 +327,14 @@ class Zlib::Inflate < Zlib::ZStream
     # No idea, no implementation
     #
     def sync_point?
-      false
+      @infl.sync_point
     end
 
     #
     # Sets the preset dictionary and returns string. This method is available just only after a Zlib::NeedDict exception was raised. See zlib.h for details.
     #
     def set_dictionary(p1)
-      @flater.setDictionary(JString.new(p1).getBytes("ISO-8859-1")) 
-      p1
+      @infl.set_dictionary(p1)
     end
 
     #
@@ -354,23 +346,14 @@ class Zlib::Inflate < Zlib::ZStream
     # Set the dictionary by Zlib::Inflate#set_dictionary and then call this method again with an empty string.
     #
     def inflate(string)
-      if string
-        @write_stream.write JString.new(string).getBytes("ISO-8859-1")
-      end
-      while (n = @stream.read) != -1
-        @val << n
-      end
-      raise Zlib::NeedDict.new if @flater.needsDictionary
-      val
+      @infl.inflate(string)
     end
 
     #
     # This implementation is not correct
     #
     def sync(string)
-      @write_stream.write JString.new(p1).getBytes("ISO-8859-1")
-      @write_stream.flush
-      false
+      @infl.sync(string)
     end
 end
 
@@ -545,12 +528,12 @@ class Zlib::GzipReader < Zlib::GzipFile
           val << n
         end
       else
-        raise ArgError.new("negative length %d given",len) if len<0
+        raise ArgumentError,"negative length #{len} given" if len<0
         len.times do 
           if n = getc
             val << n
           else
-            raise ArgError.new("too long %d given",len)
+            break
           end
         end
       end
@@ -686,10 +669,7 @@ class Zlib::Deflate < Zlib::ZStream
     # Zlib::BEST_COMPRESSION, Zlib::DEFAULT_COMPRESSION, and an integer from 0 to 9.
     #
     def self.deflate(string, level=Zlib::DEFAULT_COMPRESSION)
-      z = Zlib::Deflate.new(level)
-      dst = z.deflate(string,Zlib::FINISH)
-      z.close
-      dst
+      ZlibDeflate.s_deflate(self,string,level)
     end
 
     # 
@@ -709,10 +689,7 @@ class Zlib::Deflate < Zlib::ZStream
       if memlevel.nil?
         memlevel = Zlib::DEF_MEM_LEVEL
       end
-      @flater = Deflater.new(level)
-      @flater.setStrategy(strategy)
-      @intern_stream = ByteArrayOutputStream.new
-      @stream = DeflaterOutputStream.new(@intern_stream,@flater)
+      @defl = ZlibDeflate.new(self,level,window_bits,memlevel,strategy)
     end
 
     #
@@ -720,7 +697,7 @@ class Zlib::Deflate < Zlib::ZStream
     # Returns self
     #
     def <<(p1)
-      deflate(p1.to_s,Zlib::NO_FLUSH)
+      @defl.append(p1)
       self
     end
 
@@ -728,8 +705,7 @@ class Zlib::Deflate < Zlib::ZStream
     # Changes the parameters of the deflate stream. See zlib.h for details. The output from the stream by changing the params is preserved in output buffer.
     #
     def params(level,strategy)
-      @flater.setLevel(level)
-      @flater.setStrategy(strategy)
+      @defl.params(level,strategy)
     end
 
     #
@@ -737,7 +713,7 @@ class Zlib::Deflate < Zlib::ZStream
     # Zlib::ZStream#reset method was called. See zlib.h for details.
     # 
     def set_dictionary(string)
-      @flater.setDictionary(JString.new(string).getBytes("ISO-8859-1")) 
+      @defl.set_dictionary(string)
     end
 
     #
@@ -745,7 +721,7 @@ class Zlib::Deflate < Zlib::ZStream
     # method is just provided to improve the readability of your Ruby program.
     #
     def flush(flush=Zlib::SYNC_FLUSH)
-      deflate('',flush)
+      @defl.flush(flush)
     end
 
     # 
@@ -756,21 +732,7 @@ class Zlib::Deflate < Zlib::ZStream
     # The value of flush should be either Zlib::NO_FLUSH, Zlib::SYNC_FLUSH, Zlib::FULL_FLUSH, or Zlib::FINISH. See zlib.h for details. 
     #
     def deflate(string,flush=nil)
-      if string.nil?
-        finish
-        @intern_stream.toByteArray.to_a.pack("C*")
-      else
-        @stream.write(JString.new(string).getBytes("ISO-8859-1"))
-        case flush
-        when Zlib::FINISH
-          finish
-          @intern_stream.toByteArray.to_a.pack("C*")
-        when Zlib::SYNC_FLUSH
-          @stream.flush
-        when Zlib::FULL_FLUSH
-          @stream.flush
-        end
-      end
+      @defl.deflate(string,flush)
     end
 end
 
