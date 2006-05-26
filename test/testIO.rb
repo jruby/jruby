@@ -133,3 +133,7 @@ f.close
 # Test deleting files
 test_ok(File.delete(@file, @file2, @file3))
 
+##### select #####
+test_equal(nil, select(nil, nil, nil, 0))
+test_exception(ArgumentError) { select(nil, nil, nil, -1) }
+

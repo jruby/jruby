@@ -210,8 +210,12 @@ public class IOMetaClass extends ObjectMetaClass {
 
     public static IRubyObject select_static(IRuby runtime, IRubyObject[] args) {
         try {
+        	boolean atLeastOneDescriptor = false;
+        	
             Selector selector = Selector.open();
             if (!args[0].isNil()) {
+            	atLeastOneDescriptor = true;
+            	
                 // read
                 for (Iterator i = ((RubyArray) args[0]).getList().iterator(); i.hasNext(); ) {
                     IRubyObject obj = (IRubyObject) i.next();
@@ -219,29 +223,41 @@ public class IOMetaClass extends ObjectMetaClass {
                 }
             }
             if (args.length > 1 && !args[1].isNil()) {
+            	atLeastOneDescriptor = true;
                 // write
-		for (Iterator i = ((RubyArray) args[0]).getList().iterator(); i.hasNext(); ) {
+                for (Iterator i = ((RubyArray) args[0]).getList().iterator(); i.hasNext(); ) {
                     IRubyObject obj = (IRubyObject) i.next();
                     registerSelect(selector, obj, SelectionKey.OP_WRITE);
                 }
             }
             if (args.length > 2 && !args[2].isNil()) {
-        	// error
-        	// Java's select doesn't do anything about this, so we leave it be.
+            	atLeastOneDescriptor = true;
+        	    // Java's select doesn't do anything about this, so we leave it be.
             }
+            
+            long timeout = 0;
             if(args.length > 3 && !args[3].isNil()) {
-                // select with timeout
-                long timeout;
                 if (args[3] instanceof RubyFloat) {
                     timeout = Math.round(((RubyFloat) args[3]).getDoubleValue() * 1000);
                 } else {
                     timeout = Math.round(((RubyFixnum) args[3]).getDoubleValue() * 1000);
                 }
+                
+                if (timeout < 0) {
+                	throw runtime.newArgumentError("negative timeout given");
+                }
+            }
+
+            if (!atLeastOneDescriptor) {
+            	return runtime.getNil();
+            }
+
+            if(args.length > 3) {
                 selector.select(timeout);
             } else {
-                // select without timeout
                 selector.select();
-            }	
+            }
+            
             List r = new ArrayList();
             List w = new ArrayList();
             List e = new ArrayList();
