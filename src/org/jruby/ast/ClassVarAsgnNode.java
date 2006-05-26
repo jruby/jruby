@@ -30,6 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.jruby.ast.types.INameNode;
@@ -45,7 +46,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class ClassVarAsgnNode extends AssignableNode implements INameNode {
     static final long serialVersionUID = -2960487069128667341L;
 
-    private final String name;
+    private String name;
 
     /**
      * @param name id of the class variable to assign to
@@ -53,9 +54,16 @@ public class ClassVarAsgnNode extends AssignableNode implements INameNode {
      */
     public ClassVarAsgnNode(ISourcePosition position, String name, Node valueNode) {
         super(position);
-        this.name = name;
+        this.name = name.intern();
         
         setValueNode(valueNode);
+    }
+    
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        
+        // deserialized strings are not interned; intern it now
+        name = name.intern();
     }
 
     /**

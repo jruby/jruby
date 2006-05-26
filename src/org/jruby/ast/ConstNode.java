@@ -30,6 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.jruby.ast.types.INameNode;
@@ -45,11 +46,18 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class ConstNode extends Node implements INameNode {
     static final long serialVersionUID = -5190161028130457944L;
 
-    private final String name;
+    private String name;
     
     public ConstNode(ISourcePosition position, String name) {
         super(position);
-        this.name = name;
+        this.name = name.intern();
+    }
+    
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        
+        // deserialized strings are not interned; intern it now
+        name = name.intern();
     }
 
     /**

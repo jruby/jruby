@@ -31,6 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
@@ -44,13 +45,20 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class FCallNode extends Node {
     static final long serialVersionUID = 3590332973770104094L;
 
-    private final String name;
+    private String name;
     private final Node argsNode;
 
     public FCallNode(ISourcePosition position, String name, Node argsNode) {
         super(position);
         this.name = name.intern();
         this.argsNode = argsNode;
+    }
+    
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        
+        // deserialized strings are not interned; intern it now
+        name = name.intern();
     }
 
     /**

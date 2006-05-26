@@ -30,6 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.jruby.ast.types.INameNode;
@@ -45,12 +46,19 @@ public class Colon2Node extends Node implements INameNode {
     static final long serialVersionUID = -3250593470034657352L;
 
     private final Node leftNode;
-    private final String name;
+    private String name;
 
     public Colon2Node(ISourcePosition position, Node leftNode, String name) {
         super(position);
         this.leftNode = leftNode;
-        this.name = name;
+        this.name = name.intern();
+    }
+    
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        
+        // deserialized strings are not interned; intern it now
+        name = name.intern();
     }
 
     /**

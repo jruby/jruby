@@ -30,6 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
@@ -51,16 +52,23 @@ public class OpElementAsgnNode extends Node {
     static final long serialVersionUID = 1509701560452403776L;
 
     private final Node receiverNode;
-    private final String operatorName;
+    private String operatorName;
     private final Node argsNode;
     private final Node valueNode;
 
     public OpElementAsgnNode(ISourcePosition position, Node receiverNode, String operatorName, Node argsNode, Node valueNode) {
         super(position);
         this.receiverNode = receiverNode;
-        this.operatorName = operatorName;
+        this.operatorName = operatorName.intern();
         this.argsNode = argsNode;
         this.valueNode = valueNode;
+    }
+    
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        
+        // deserialized strings are not interned; intern it now
+        operatorName = operatorName.intern();
     }
 
     /**

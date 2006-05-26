@@ -107,4 +107,8 @@ public class ListNode extends Node {
     public Instruction accept(NodeVisitor visitor) {
         throw new RuntimeException("Base class ListNode should never be evaluated");
     }
+    
+    public Node get(int idx) {
+        return (Node)list.get(idx);
+    }
 }

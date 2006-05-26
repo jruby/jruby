@@ -30,6 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.jruby.ast.types.ILiteralNode;
@@ -44,12 +45,19 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class SymbolNode extends Node implements ILiteralNode {
     static final long serialVersionUID = 3168450881711346709L;
 
-	private final String name;
+	private String name;
 
 	public SymbolNode(ISourcePosition position, String name) {
 	    super(position);
-	    this.name = name;
+	    this.name = name.intern();
 	}
+    
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        
+        // deserialized strings are not interned; intern it now
+        name = name.intern();
+    }
 
     public Instruction accept(NodeVisitor iVisitor) {
         return iVisitor.visitSymbolNode(this);

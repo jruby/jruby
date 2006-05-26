@@ -32,6 +32,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
@@ -51,13 +52,27 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class ScopeNode extends Node {
     static final long serialVersionUID = 3694868125861223886L;
 
-    private final String[] localNames;
+    private String[] localNames;
     private final Node bodyNode;
 
     public ScopeNode(ISourcePosition position, String[] table, Node bodyNode) {
         super(position);
-        this.localNames =  table;
+        this.localNames = new String[table.length];
+        for (int i = 0; i < table.length; i++) 
+            if (table[i] != null)
+                localNames[i] = table[i].intern();
         this.bodyNode = bodyNode;
+    }
+    
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        
+        // deserialized strings are not interned; intern it now
+        String[] old = localNames;
+        this.localNames = new String[old.length];
+        for (int i = 0; i < old.length; i++) 
+            if (old[i] != null)
+                localNames[i] = old[i].intern();
     }
 
     /**

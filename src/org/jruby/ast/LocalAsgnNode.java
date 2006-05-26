@@ -31,6 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.jruby.ast.types.INameNode;
@@ -46,13 +47,20 @@ public class LocalAsgnNode extends AssignableNode implements INameNode {
     static final long serialVersionUID = 1118108700098164006L;
 
     private final int count;
-    private final String name;
+    private String name;
 
     public LocalAsgnNode(ISourcePosition position, String name, int count, Node valueNode) {
         super(position);
-        this.name = name;
+        this.name = name.intern();
         this.count = count;
         setValueNode(valueNode);
+    }
+    
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        
+        // deserialized strings are not interned; intern it now
+        name = name.intern();
     }
 
     /**

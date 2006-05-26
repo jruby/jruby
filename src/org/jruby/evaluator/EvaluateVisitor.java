@@ -2853,7 +2853,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         }
         
         if (enclosingModule == null) {
-        	enclosingModule = state.getThreadContext().getRubyClass();
+        	enclosingModule = (RubyModule)state.getThreadContext().peekCRef().getValue();
         }
 
         return enclosingModule;

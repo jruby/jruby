@@ -39,3 +39,8 @@ def x2
 end
 
 test_equal(x2, "foo")
+
+# test that evaling a proc doesn't goof up the module nesting for a binding
+proc_binding = eval("proc{binding}.call", TOPLEVEL_BINDING)
+nesting = eval("$nesting = nil; class A; $nesting = Module.nesting; end; $nesting", TOPLEVEL_BINDING)
+test_equal("A", nesting.to_s)

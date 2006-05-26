@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
@@ -44,7 +45,13 @@ public class ArgumentNode extends Node {
     public ArgumentNode(ISourcePosition position, String identifier) {
         super(position);
         
-        this.identifier = identifier;
+        this.identifier = identifier.intern();
+    }
+    
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        
+        identifier = identifier.intern();
     }
 
     public Instruction accept(NodeVisitor visitor) {

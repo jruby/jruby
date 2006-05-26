@@ -30,6 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
@@ -43,13 +44,21 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class VAliasNode extends Node {
     static final long serialVersionUID = 8647860367861922838L;
 
-    private final String oldName;
-    private final String newName;
+    private String oldName;
+    private String newName;
 
     public VAliasNode(ISourcePosition position, String newName, String oldName) {
         super(position);
-        this.oldName = oldName;
-        this.newName = newName;
+        this.oldName = oldName.intern();
+        this.newName = newName.intern();
+    }
+    
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        
+        // deserialized strings are not interned; intern it now
+        oldName = oldName.intern();
+        newName = newName.intern();
     }
 
     /**

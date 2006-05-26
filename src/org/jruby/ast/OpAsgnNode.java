@@ -30,6 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
@@ -45,15 +46,26 @@ public class OpAsgnNode extends Node {
 
     private final Node receiverNode;
     private final Node valueNode;
-    private final String variableName;
-    private final String operatorName;
+    private String variableName;
+    private String operatorName;
+    private String variableNameAsgn;
 
     public OpAsgnNode(ISourcePosition position, Node receiverNode, Node valueNode, String variableName, String methodName) {
         super(position);
         this.receiverNode = receiverNode;
         this.valueNode = valueNode;
-        this.variableName = variableName;
-        this.operatorName = methodName;
+        this.variableName = variableName.intern();
+        this.operatorName = methodName.intern();
+        this.variableNameAsgn = (variableName + "=").intern();
+    }
+    
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        
+        // deserialized strings are not interned; intern it now
+        variableName = variableName.intern();
+        operatorName = operatorName.intern();
+        variableNameAsgn = variableNameAsgn.intern();
     }
 
     /**
@@ -94,6 +106,10 @@ public class OpAsgnNode extends Node {
      */
     public String getVariableName() {
         return variableName;
+    }
+    
+    public String getVariableNameAsgn() {
+        return variableNameAsgn;
     }
     
     public List childNodes() {

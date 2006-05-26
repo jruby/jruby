@@ -25,7 +25,6 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.UnsynchronizedStack;
@@ -191,20 +190,6 @@ public class EvaluationState {
     }
 	
 	/**
-	 * Call the topmost visitor in the current top visitor stack with the topmost node in the current top node stack.
-	 */
-	public void executeNext() {
-        // FIXME: Poll from somewhere else in the code? This polls per-node, perhaps per newline?
-        getThreadContext().pollThreadEvents();
-        
-        InstructionBundle ib = popCurrentInstruction();
-		
-		if (ib != null) {
-			ib.instruction.execute(this, ib.instructionContext);
-		}
-	}
-	
-	/**
 	 * @param result The result to set.
 	 */
 	public void setResult(IRubyObject result) {
@@ -263,49 +248,77 @@ public class EvaluationState {
     }
     private static final Retrier retrier = new Retrier();
     
+    /**
+     * Call the topmost visitor in the current top visitor stack with the topmost node in the current top node stack.
+     */
+    public void executeNext() {
+        try {
+            // FIXME: Poll from somewhere else in the code? This polls per-node, perhaps per newline?
+            getThreadContext().pollThreadEvents();
+            
+            InstructionBundle ib = popCurrentInstruction();
+            
+            if (ib != null) {
+                ib.instruction.execute(this, ib.instructionContext);
+            }
+        } catch (JumpException je) {
+            if (je.getJumpType() == JumpException.JumpType.RedoJump) {
+                handleRedo(je);
+            } else if (je.getJumpType() == JumpException.JumpType.NextJump) {
+                handleNext(je);
+            } else if (je.getJumpType() == JumpException.JumpType.BreakJump) {
+                handleBreak(je);
+            } else if (je.getJumpType() == JumpException.JumpType.RaiseJump) {
+                handleRaise(je);
+            } else if (je.getJumpType() == JumpException.JumpType.RetryJump) {
+                handleRetry(je);
+            } else if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
+                handleReturn(je);
+            } else if (je.getJumpType() == JumpException.JumpType.ThrowJump) {
+                handleThrow(je);
+            }
+        }
+    }
+    
     // works like old recursive evaluation, for Assignment and Defined visitors.
     public IRubyObject begin(Node node) {
-        clearResult();
+        if (node == null) {
+            clearResult(); // must clear result in case we are still in use
+            
+            return getResult();
+        }
         
-        if (node != null) {
-            try {
-                // for each call to internalEval, push down new stacks (to isolate eval runs that still want to be logically separate
-                pushCurrentInstructionStack();
-                
-                addNodeInstruction(node);
-                
-                // TODO: once we're ready to have an external entity run this loop (i.e. thread scheduler) move this out
-                masterLoop: while (hasNext()) {                 
-                    // invoke the next instruction
-                    try {
-                        executeNext();
-                    } catch (JumpException je) {
-                        if (je.getJumpType() == JumpException.JumpType.RedoJump) {
-                            handleRedo(je);
-                        } else if (je.getJumpType() == JumpException.JumpType.NextJump) {
-                            handleNext(je);
-                        } else if (je.getJumpType() == JumpException.JumpType.BreakJump) {
-                            handleBreak(je);
-                        } else if (je.getJumpType() == JumpException.JumpType.RaiseJump) {
-                            handleRaise(je);
-                        } else if (je.getJumpType() == JumpException.JumpType.RetryJump) {
-                            handleRetry(je);
-                        } else if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
-                            handleReturn(je);
-                        } else if (je.getJumpType() == JumpException.JumpType.ThrowJump) {
-                            handleThrow(je);
-                        }
-                    }
-                }
-            } catch (StackOverflowError soe) {
+        begin2(node);
+        
+        try {
+            // TODO: once we're ready to have an external entity run this loop (i.e. thread scheduler) move this out
+            while (hasNext()) {                 
+                // invoke the next instruction
+                executeNext();
+            }
+        } catch (StackOverflowError soe) {
                 // TODO: perhaps a better place to catch this (although it will go away)
                 throw runtime.newSystemStackError("stack level too deep");
-            } finally {
-                popCurrentInstructionStack();
-            }
+        } finally {
+            end();
         }
         
         return getResult();
+    }
+    
+    public void begin2(Node node) {
+        clearResult();
+        
+        if (node != null) {
+            // for each call to internalEval, push down new stacks (to isolate eval runs that still want to be logically separate
+            pushCurrentInstructionStack();
+            
+            addNodeInstruction(node);
+        }
+    }
+    
+    public void end() {
+        popCurrentInstructionStack();
     }
     
     private void handleNext(JumpException je) {
@@ -577,15 +590,6 @@ public class EvaluationState {
         }
 
         return ArgsUtil.arrayify(begin(node));
-    }
-    
-    public void begin2(Node node) {
-        clearResult();
-    
-        // for each call to internalEval, push down new stacks (to isolate eval runs that still want to be logically separate
-        pushCurrentInstructionStack();
-        
-        addNodeInstruction(node);
     }
 
     public boolean hasNext() {

@@ -83,6 +83,7 @@ public class ThreadContext {
         this.runtime = runtime;
 
         this.blockStack = new UnsynchronizedStack();
+        pushdownBlocks(null);
         this.dynamicVarsStack = new UnsynchronizedStack();
         this.frameStack = new UnsynchronizedStack();
         this.iterStack = new UnsynchronizedStack();
@@ -117,43 +118,52 @@ public class ThreadContext {
     }
     
     private void pushBlock(Block block) {
-        if (blockStack.isEmpty()) {
-            blockStack.push(block);
-        } else {
-            block.setNext((Block)blockStack.pop());
-            blockStack.push(block);
-        }
-    }
-    
-    private Block popBlock() {
-        assert blockStack.peek() != null : "Attempt to pop a block when none exists";
-        
-        Block block = (Block)blockStack.pop();
-        Block newBlock = (Block)block.getNext();
-        
-        if (blockStack.isEmpty() && newBlock == null) {
-            // do nothing
-        } else {
-            blockStack.push(block.getNext());
-        }
-        
-        return block;
-    }
-    
-    public Block getCurrentBlock() {
-        if (blockStack.isEmpty()) {
-            return null;
-        }
-
-        return (Block)blockStack.peek();
-    }
-    
-    private void setCurrentBlock(Block block) {
+        block.setNext((Block)blockStack.pop());
         blockStack.push(block);
     }
     
-    private void unsetCurrentBlock() {
+    private Block popBlock() {
+        if (blockStack.peek() == null) {
+            return null;
+        }
+        
+        Block current = (Block)blockStack.pop();
+        blockStack.push(current.getNext());
+        
+        return current;
+    }
+    
+    public Block getCurrentBlock() {
+        return (Block)blockStack.peek();
+    }
+    
+    private void pushdownBlocks(Block block) {
+        blockStack.push(block);
+    }
+    
+    private void popupBlocks() {
+        if (blockStack.size() == 1) {
+            // do not pop last slot
+            return;
+        }
         blockStack.pop();
+    }
+    
+    // TODO: This and the following version maybe can be combined after studying usage patterns
+    public boolean isBlockGivenAndAvailable() {
+        return getCurrentFrame().isBlockGiven() && getCurrentBlock() != null;
+    }
+
+    public boolean isBlockGiven() {
+        return getCurrentFrame().isBlockGiven();
+    }
+
+    public boolean isFBlockGiven() {
+        Frame previous = getPreviousFrame();
+        if (previous == null) {
+            return false;
+        }
+        return previous.isBlockGiven();
     }
 
     public DynamicVariableSet getCurrentDynamicVars() {
@@ -329,43 +339,7 @@ public class ThreadContext {
 
             getCurrentFrame().getEvalState().setSelf(getCurrentFrame().getSelf()); 
             
-            Node blockVar = currentBlock.getVar();
-            if (blockVar != null) {
-                if (blockVar instanceof ZeroArgNode) {
-                    // Better not have arguments for a no-arg block.
-                    if (yieldProc && arrayLength(value) != 0) { 
-                        throw runtime.newArgumentError("wrong # of arguments(" + 
-                                ((RubyArray)value).getLength() + "for 0)");
-                    }
-                } else if (blockVar instanceof MultipleAsgnNode) {
-                    if (!aValue) {
-                        value = sValueToMRHS(value, ((MultipleAsgnNode)blockVar).getHeadNode());
-                    }
-
-                    value = mAssign(self, (MultipleAsgnNode)blockVar, (RubyArray)value, yieldProc);
-                } else {
-                    if (aValue) {
-                        int length = arrayLength(value);
-                    
-                        if (length == 0) {
-                            value = runtime.getNil();
-                        } else if (length == 1) {
-                            value = ((RubyArray)value).first(IRubyObject.NULL_ARRAY);
-                        } else {
-                            // XXXEnebo - Should be warning not error.
-                            //throw runtime.newArgumentError("wrong # of arguments(" + 
-                            //        length + "for 1)");
-                        }
-                    } else if (value == null) { 
-                        // XXXEnebo - Should be warning not error.
-                        //throw runtime.newArgumentError("wrong # of arguments(0 for 1)");
-                    }
-
-                    new AssignmentVisitor(getCurrentFrame().getEvalState()).assign(blockVar, value, yieldProc); 
-                }
-            }
-
-            IRubyObject[] args = ArgsUtil.arrayify(value);
+            IRubyObject[] args = getBlockArgs(value, self, yieldProc, aValue, currentBlock);
 
             while (true) {
                 try {
@@ -393,6 +367,47 @@ public class ThreadContext {
             unsetCRef();
             postYield(currentBlock);
         }
+    }
+
+    private IRubyObject[] getBlockArgs(IRubyObject value, IRubyObject self, boolean yieldProc, boolean aValue, Block currentBlock) {
+        Node blockVar = currentBlock.getVar();
+        if (blockVar != null) {
+            if (blockVar instanceof ZeroArgNode) {
+                // Better not have arguments for a no-arg block.
+                if (yieldProc && arrayLength(value) != 0) { 
+                    throw runtime.newArgumentError("wrong # of arguments(" + 
+                            ((RubyArray)value).getLength() + "for 0)");
+                }
+            } else if (blockVar instanceof MultipleAsgnNode) {
+                if (!aValue) {
+                    value = sValueToMRHS(value, ((MultipleAsgnNode)blockVar).getHeadNode());
+                }
+
+                value = mAssign(self, (MultipleAsgnNode)blockVar, (RubyArray)value, yieldProc);
+            } else {
+                if (aValue) {
+                    int length = arrayLength(value);
+                
+                    if (length == 0) {
+                        value = runtime.getNil();
+                    } else if (length == 1) {
+                        value = ((RubyArray)value).first(IRubyObject.NULL_ARRAY);
+                    } else {
+                        // XXXEnebo - Should be warning not error.
+                        //throw runtime.newArgumentError("wrong # of arguments(" + 
+                        //        length + "for 1)");
+                    }
+                } else if (value == null) { 
+                    // XXXEnebo - Should be warning not error.
+                    //throw runtime.newArgumentError("wrong # of arguments(0 for 1)");
+                }
+
+                new AssignmentVisitor(getCurrentFrame().getEvalState()).assign(blockVar, value, yieldProc); 
+            }
+        }
+
+        IRubyObject[] args = ArgsUtil.arrayify(value);
+        return args;
     }
     
     public IRubyObject mAssign(IRubyObject self, MultipleAsgnNode node, RubyArray value, boolean pcall) {
@@ -450,23 +465,6 @@ public class ThreadContext {
     
     private int arrayLength(IRubyObject node) {
         return node instanceof RubyArray ? ((RubyArray)node).getLength() : 0;
-    }
-    
-    // TODO: This and the following version maybe can be combined after studying usage patterns
-    public boolean isBlockGivenAndAvailable() {
-        return getCurrentFrame().isBlockGiven() && getCurrentBlock() != null;
-    }
-
-    public boolean isBlockGiven() {
-        return getCurrentFrame().isBlockGiven();
-    }
-
-    public boolean isFBlockGiven() {
-        Frame previous = getPreviousFrame();
-        if (previous == null) {
-            return false;
-        }
-        return previous.isBlockGiven();
     }
 
     public void pollThreadEvents() {
@@ -568,7 +566,7 @@ public class ThreadContext {
         //Block block = getCurrentBlock();
 
         if (getCurrentIter().isPre() && getCurrentBlock() != null) {
-            setCurrentBlock((Block)getCurrentBlock().getNext());
+            pushdownBlocks((Block)getCurrentBlock().getNext());
         }
         iterStack.push(Iter.ITER_NOT);
         //return block;
@@ -578,7 +576,7 @@ public class ThreadContext {
         //setCurrentBlock(block);
         iterStack.pop();
         if (getCurrentIter().isPre() && !blockStack.isEmpty()) {
-            unsetCurrentBlock();
+            popupBlocks();
         }
     }
     
@@ -806,7 +804,7 @@ public class ThreadContext {
         // XXX: this is kind of a hack, since eval state holds ThreadContext, and when it's created it's in the other thread :(
         // we'll want to revisit these issues of block ownership since the block is created in one thread and used in another
         //currentBlock.getFrame().setEvalState(new EvaluationState(runtime, currentBlock.getFrame().getSelf()));
-        setCurrentBlock(currentBlock);
+        pushdownBlocks(currentBlock);
     }
     
     public void preKernelEval() {
@@ -871,14 +869,14 @@ public class ThreadContext {
     }
     
     public void preBlockYield(Block newBlock) {
-        setCurrentBlock(newBlock);
+        pushdownBlocks(newBlock);
         pushIter(Iter.ITER_CUR);
         getCurrentFrame().setIter(Iter.ITER_CUR);
     }
     
     public void postBlockYield() {
         popIter();
-        unsetCurrentBlock();
+        popupBlocks();
     }
 
     private Block preYield(RubyModule klass) {
@@ -910,6 +908,8 @@ public class ThreadContext {
         Block bindingBlock = binding.getBlock();
 
         pushFrame(bindingBlock.getFrame());
+        
+        setCRef(bindingBlock.getCRef());
 
         getCurrentFrame().setScope(bindingBlock.getScope());
 
@@ -924,6 +924,8 @@ public class ThreadContext {
         iterStack.pop();
         dynamicVarsStack.pop();
         frameStack.pop();
+        
+        unsetCRef();
         
         //blockStack.push(currentBlock);
         popRubyClass();
