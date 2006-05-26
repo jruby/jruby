@@ -44,6 +44,71 @@ EOF
 s = StringIO.new("12345")
 test_equal(5, s.size)
 
+###### StringIO#new, StringIO#open ######
+
+io = StringIO.new("foo")
+test_equal(102, io.getc)
+test_equal(1, io.pos)
+test_equal(3, io.size)
+io << "bar"
+test_equal(4, io.size)
+test_equal(4, io.pos)
+io.rewind
+test_equal("fbar", io.gets)
+
+StringIO.open("foo"){|io| 
+  test_equal("foo", io.string)
+}
+
+###### close, close_read?, close_write? ######
+s = StringIO.open("A")
+test_equal(false, s.closed?)
+s.close_read
+test_equal(false, s.closed?)
+s.close_write
+test_equal(true, s.closed?)
+
+###### fcntl ######
+test_exception(NotImplementedError) { StringIO.new("").fcntl() }
+
+###### read ######
+io = StringIO.new("A")
+test_equal(false, io.eof?)
+test_equal("A", io.read(1))
+test_equal(true, io.eof?)
+test_equal(nil, io.read(1))
+
+###### write ######
+
+io = StringIO.new("a")
+io.getc
+test_equal(2, io.write("bc"))
+io.rewind
+test_equal("abc", io.string)
+
+###### Misc. ######
+$/="\n"
+saved_stdin = $stdin
+$stdin = StringIO.new("HEH\nWorld\n")
+test_equal("HEH\n", gets)
+$stdin = saved_stdin
+
+n = StringIO.new
+old_stdout = $stdout
+$stdout = n
+test_equal($>, $stdout)
+puts "HEL\nEEEE\n"
+n.rewind
+test_equal("HEL\n", n.gets)
+$stdout = old_stdout
+n = StringIO.new
+$> = n
+puts "HEL\nEEEE\n"
+n.rewind
+test_equal("HEL\n", n.gets)
+
+n = StringIO.new("123\n456\n789\n")
+test_equal("123\n456\n789\n", n.gets(nil))
 $/="\n"
 saved_stdin = $stdin
 $stdin = StringIO.new("HEH\nWorld\n")

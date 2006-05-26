@@ -127,6 +127,20 @@ test_ok(3 == testcase.index('o',idx.succ))
 test_ok(3 == idx = testcase.rindex('o'))
 test_ok(1 == testcase.rindex('o', idx-1))
 
+##### insert #####
+
+s = "abcd"
+test_equal("Xabcd", s.insert(0, 'X'))
+test_equal("Xabcd", s)
+test_equal("abcXd", "abcd".insert(3, 'X'))
+test_equal("abcdX", "abcd".insert(4, 'X'))
+test_equal("abXcd", "abcd".insert(-3, 'X'))
+test_equal("abcdX", "abcd".insert(-1, 'X'))
+
+test_exception(IndexError) { "".insert(-100, 'X') }
+test_exception(IndexError) { "".insert(100, 'X') }
+test_exception(TypeError) { "abcd".insert(1, nil) }
+
 ##### oct #####
 # oct should return zero in appropriate cases
 test_equal(0, "b".oct)
