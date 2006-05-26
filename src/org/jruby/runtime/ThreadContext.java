@@ -915,7 +915,7 @@ public class ThreadContext {
 
         dynamicVarsStack.push(bindingBlock.getDynamicVariables());
 
-        pushRubyClass(bindingBlock.getKlass()); 
+        pushRubyClass((RubyModule) bindingBlock.getCRef().getValue()); 
 
         iterStack.push(bindingBlock.getIter());
     }
