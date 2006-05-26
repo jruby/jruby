@@ -797,12 +797,20 @@ public class RubyArray extends RubyObject implements List {
             return getRuntime().getTrue();
         }
 
+        RubyArray ary;
+        
         if (!(obj instanceof RubyArray)) {
-            return getRuntime().getFalse();
+            if (obj.respondsTo("to_ary")) {
+                ary = obj.convertToArray();
+            } else {
+                return getRuntime().getFalse();
+            }
+        } else {
+        	ary = (RubyArray) obj;
         }
+        
         int length = getLength();
 
-        RubyArray ary = (RubyArray) obj;
         if (length != ary.getLength()) {
             return getRuntime().getFalse();
         }
@@ -825,6 +833,7 @@ public class RubyArray extends RubyObject implements List {
         int length = getLength();
 
         RubyArray ary = (RubyArray) obj;
+        
         if (length != ary.getLength()) {
             return getRuntime().getFalse();
         }
