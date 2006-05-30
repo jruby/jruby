@@ -15,6 +15,7 @@
  * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2006 Lukas Felber <lfelber@hsr.ch>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -34,6 +35,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.jruby.ast.types.IArityNode;
+import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -42,7 +44,7 @@ import org.jruby.runtime.Arity;
 /** 
  * Represents an instance variable accessor.
  */
-public class InstVarNode extends Node implements IArityNode {
+public class InstVarNode extends Node implements IArityNode, INameNode {
     static final long serialVersionUID = 6839063763576230282L;
 
     private String name;

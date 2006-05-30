@@ -77,6 +77,7 @@ public class IOHandlerNio extends IOHandler {
             modes = new IOModes(runtime, mode);
         }
         fileno = RubyIO.getNewFileno();
+        outBuffer = ByteBuffer.allocate(BLOCK_SIZE);
     }
 
     public Channel getChannel() {
@@ -124,7 +125,8 @@ public class IOHandlerNio extends IOHandler {
     
     public int syswrite(String string) throws BadDescriptorException, IOException {
         checkWritable();
-        checkBuffered();
+        outBuffer.flip();
+        flushOutBuffer();
 	
         ByteBuffer buffer = ByteBuffer.wrap(RubyString.stringToBytes(string));
         while (buffer.hasRemaining()) {
@@ -160,7 +162,6 @@ public class IOHandlerNio extends IOHandler {
         if (bufferedIO) {
             return;
         }
-        outBuffer = ByteBuffer.allocate(BLOCK_SIZE);
         inBuffer = ByteBuffer.allocate(BLOCK_SIZE);
         flushInBuffer();
         bufferedIO = true;
@@ -269,7 +270,6 @@ public class IOHandlerNio extends IOHandler {
     }
 
     public int write(String string) throws IOException, BadDescriptorException {
-        setupBufferedIO();
         checkWritable();
 
         ByteBuffer buffer = ByteBuffer.wrap(RubyString.stringToBytes(string));
@@ -381,12 +381,12 @@ public class IOHandlerNio extends IOHandler {
     }
 
     public void ungetc(int c) {
+        setupBufferedIO();
         ungotc = c;
     }
     
     public void putc(int c) throws IOException, BadDescriptorException {
         checkWritable();
-        setupBufferedIO();
 
         if (!outBuffer.hasRemaining()) {
             outBuffer.flip();
@@ -426,13 +426,12 @@ public class IOHandlerNio extends IOHandler {
 
     /* buffering independent */
     public void close() throws IOException {
-        if (bufferedIO) {
-            /* flush output buffer before close */
-            if (outBuffer.position() > 0) {
-                outBuffer.flip();
-                flushOutBuffer();
-            }
-        }
+	/* flush output buffer before close */
+	if (outBuffer.position() > 0) {
+	    outBuffer.flip();
+	    flushOutBuffer();
+	}
+
         channel.close();
     }
     
