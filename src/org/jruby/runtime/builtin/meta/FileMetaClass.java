@@ -49,7 +49,7 @@ import org.jruby.RubyTime;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOModes;
-import org.jruby.util.NormalizedFile;
+import org.jruby.util.JRubyFile;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public class FileMetaClass extends IOMetaClass {
@@ -290,7 +290,7 @@ public class FileMetaClass extends IOMetaClass {
 			}
 		}
 
-        if (new NormalizedFile(relativePath).isAbsolute()) {
+        if (new File(relativePath).isAbsolute()) {
             return getRuntime().newString(relativePath);
         }
 
@@ -304,7 +304,7 @@ public class FileMetaClass extends IOMetaClass {
             return getRuntime().getNil();
         }
 
-        NormalizedFile path = new NormalizedFile(cwd, relativePath);
+        JRubyFile path = JRubyFile.create(cwd, relativePath);
 
         String extractedPath;
         try {
@@ -330,13 +330,14 @@ public class FileMetaClass extends IOMetaClass {
 
     public IRubyObject lstat(IRubyObject filename) {
     	RubyString name = RubyString.stringValue(filename);
-        return getRuntime().newRubyFileStat(new NormalizedFile(name.toString()));
+    	
+        return getRuntime().newRubyFileStat(JRubyFile.create(getRuntime().getCurrentDirectory(),name.toString()));
     }
     
     public IRubyObject mtime(IRubyObject filename) {
         RubyString name = RubyString.stringValue(filename);
 
-        return getRuntime().newFixnum(new NormalizedFile(name.toString()).lastModified());
+        return getRuntime().newFixnum(JRubyFile.create(getRuntime().getCurrentDirectory(),name.toString()).lastModified());
     }
 
 	public IRubyObject open(IRubyObject[] args) {
@@ -376,12 +377,12 @@ public class FileMetaClass extends IOMetaClass {
     	RubyString newNameString = RubyString.stringValue(newName);
         oldNameString.checkSafeString();
         newNameString.checkSafeString();
-        NormalizedFile oldFile = new NormalizedFile(oldNameString.toString());
+        JRubyFile oldFile = JRubyFile.create(getRuntime().getCurrentDirectory(),oldNameString.toString());
         
         if (!oldFile.exists()) {
         	throw getRuntime().newErrnoENOENTError("No such file: " + oldNameString);
         }
-        oldFile.renameTo(new NormalizedFile(newNameString.toString()));
+        oldFile.renameTo(JRubyFile.create(getRuntime().getCurrentDirectory(),newNameString.toString()));
         
         return RubyFixnum.zero(getRuntime());
     }
@@ -450,7 +451,7 @@ public class FileMetaClass extends IOMetaClass {
         for (int i = 2, j = args.length; i < j; i++) {
             RubyString filename = RubyString.stringValue(args[i]);
             filename.checkSafeString();
-            NormalizedFile fileToTouch = new NormalizedFile(filename.toString());
+            JRubyFile fileToTouch = JRubyFile.create(getRuntime().getCurrentDirectory(),filename.toString());
             
             if (!fileToTouch.exists()) {
                 throw getRuntime().newErrnoENOENTError(" No such file or directory - \"" + 
@@ -467,7 +468,7 @@ public class FileMetaClass extends IOMetaClass {
         for (int i = 0; i < args.length; i++) {
         	RubyString filename = RubyString.stringValue(args[i]);
             filename.checkSafeString();
-            NormalizedFile lToDelete = new NormalizedFile(filename.toString());
+            JRubyFile lToDelete = JRubyFile.create(getRuntime().getCurrentDirectory(),filename.toString());
             if (!lToDelete.exists()) {
 				throw getRuntime().newErrnoENOENTError(" No such file or directory - \"" + filename + "\"");
 			}

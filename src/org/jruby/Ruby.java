@@ -89,7 +89,7 @@ import org.jruby.runtime.builtin.meta.TimeMetaClass;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.util.BuiltinScript;
-import org.jruby.util.NormalizedFile;
+import org.jruby.util.JRubyFile;
 import org.jruby.util.collections.SinglyLinkedList;
 
 /**
@@ -134,7 +134,7 @@ public final class Ruby implements IRuby {
     private IRubyObject topSelf;
     
     // former java.lang.System concepts now internalized for MVM
-    private String currentDirectory = NormalizedFile.getFileProperty("user.dir");
+    private String currentDirectory = JRubyFile.getFileProperty("user.dir");
     private InputStream in;
     private PrintStream out;
     private PrintStream err;
@@ -991,7 +991,7 @@ public final class Ruby implements IRuby {
     }
     
     public RubyFileStat newRubyFileStat(File file) {
-    	return new RubyFileStat(this, new NormalizedFile(file.getPath()));
+    	return new RubyFileStat(this, JRubyFile.create(currentDirectory,file.getPath()));
     }
     
     public RubyFixnum newFixnum(long value) {

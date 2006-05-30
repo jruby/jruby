@@ -34,104 +34,141 @@ package org.jruby;
 
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.NormalizedFile;
+import org.jruby.util.JRubyFile;
 
 /**
  * note: renamed from FileStatClass.java
  * Implements File::Stat
  */
 public class RubyFileStat extends RubyObject {
-    private NormalizedFile file;
     private static final int READ = 222;
     private static final int WRITE = 444;
 
-    public static RubyClass createFileStatClass(IRuby runtime) {
-        RubyClass fileStatClass = runtime.getClass("File").defineClassUnder("Stat", 
-        		runtime.getObject());
-    	
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyFileStat.class);
+    private RubyFixnum blksize;
+    private RubyBoolean isDirectory;
+    private RubyBoolean isFile;
+    private RubyString ftype;
+    private RubyFixnum mode;
+    private RubyFixnum mtime;
+    private RubyBoolean isReadable;
+    private RubyBoolean isWritable;
+    private RubyFixnum size;
+    private RubyBoolean isSymlink;
 
+    public static RubyClass createFileStatClass(IRuby runtime) {
+        final RubyClass fileStatClass = runtime.getClass("File").defineClassUnder("Stat",runtime.getObject());
+        final CallbackFactory callbackFactory = runtime.callbackFactory(RubyFileStat.class);
+        //        fileStatClass.defineMethod("<=>", callbackFactory.getMethod(""));
+        //        fileStateClass.includeModule(runtime.getModule("Comparable"));
+        //        fileStatClass.defineMethod("atime", callbackFactory.getMethod(""));
+        fileStatClass.defineMethod("blksize", callbackFactory.getMethod("blksize"));
+        //        fileStatClass.defineMethod("blockdev?", callbackFactory.getMethod(""));
+        //        fileStatClass.defineMethod("blocks", callbackFactory.getMethod(""));
+        //        fileStatClass.defineMethod("chardev?", callbackFactory.getMethod(""));
+        //        fileStatClass.defineMethod("ctime", callbackFactory.getMethod(""));
+        //        fileStatClass.defineMethod("dev", callbackFactory.getMethod(""));
+        //        fileStatClass.defineMethod("dev_major", callbackFactory.getMethod(""));
+        //        fileStatClass.defineMethod("dev_minor", callbackFactory.getMethod(""));
         fileStatClass.defineMethod("directory?", callbackFactory.getMethod("directory_p"));
+        //        fileStatClass.defineMethod("executable?", callbackFactory.getMethod(""));
+        //        fileStatClass.defineMethod("executable_real?", callbackFactory.getMethod(""));
+        fileStatClass.defineMethod("file?", callbackFactory.getMethod("file_p"));
+        fileStatClass.defineMethod("ftype", callbackFactory.getMethod("ftype"));
+        //        fileStatClass.defineMethod("gid", callbackFactory.getMethod(""));
+        //        fileStatClass.defineMethod("grpowned?", callbackFactory.getMethod(""));
+        //        fileStatClass.defineMethod("ino", callbackFactory.getMethod(""));
         fileStatClass.defineMethod("mode", callbackFactory.getMethod("mode"));
         fileStatClass.defineMethod("mtime", callbackFactory.getMethod("mtime"));
-        fileStatClass.defineMethod("size", callbackFactory.getMethod("size"));
-        fileStatClass.defineMethod("writable?", callbackFactory.getMethod("writable"));
-        fileStatClass.defineMethod("symlink?", callbackFactory.getMethod("symlink_p"));
-        fileStatClass.defineMethod("blksize", callbackFactory.getMethod("blksize"));
+        //        fileStatClass.defineMethod("nlink", callbackFactory.getMethod(""));
+        //        fileStatClass.defineMethod("owned?", callbackFactory.getMethod(""));
+        //        fileStatClass.defineMethod("pipe?", callbackFactory.getMethod(""));
+        //        fileStatClass.defineMethod("rdev", callbackFactory.getMethod(""));
+        //        fileStatClass.defineMethod("rdev_major", callbackFactory.getMethod(""));
+        //        fileStatClass.defineMethod("rdev_minor", callbackFactory.getMethod(""));
         fileStatClass.defineMethod("readable?", callbackFactory.getMethod("readable_p"));
-        fileStatClass.defineMethod("ftype", callbackFactory.getMethod("ftype"));
-
-        fileStatClass.defineMethod("file?", callbackFactory.getMethod("file_p"));
+        //        fileStatClass.defineMethod("readable_real?", callbackFactory.getMethod(""));
+        //        fileStatClass.defineMethod("setgid?", callbackFactory.getMethod(""));
+        //        fileStatClass.defineMethod("setuid?", callbackFactory.getMethod(""));
+        fileStatClass.defineMethod("size", callbackFactory.getMethod("size"));
+        //        fileStatClass.defineMethod("size?", callbackFactory.getMethod(""));
+        //        fileStatClass.defineMethod("socket?", callbackFactory.getMethod(""));
+        //        fileStatClass.defineMethod("sticky?", callbackFactory.getMethod(""));
+        fileStatClass.defineMethod("symlink?", callbackFactory.getMethod("symlink_p"));
+        //        fileStatClass.defineMethod("uid", callbackFactory.getMethod(""));
+        fileStatClass.defineMethod("writable?", callbackFactory.getMethod("writable"));
+        //        fileStatClass.defineMethod("writable_real?", callbackFactory.getMethod(""));
+        //        fileStatClass.defineMethod("zero?", callbackFactory.getMethod(""));
     	
         return fileStatClass;
     }
 
-    protected RubyFileStat(IRuby runtime, NormalizedFile file) {
+    protected RubyFileStat(IRuby runtime, JRubyFile file) {
         super(runtime, runtime.getClass("File").getClass("Stat"));
-		// In some versions of java changing user.dir will not get reflected in newly constructed
-		// files.  Getting the absolutefile does seem to hack around this...
-        this.file = (NormalizedFile)file.getAbsoluteFile();
-    }
-    
-    public RubyFixnum blksize() {
-        // We cannot determine, so always return 4096 (better than blowing up)
-        return RubyFixnum.newFixnum(getRuntime(), 4096);
-    }
 
-    public RubyBoolean directory_p() {
-        return getRuntime().newBoolean(file.isDirectory());
-    }
-
-    public RubyBoolean file_p() {
-        return getRuntime().newBoolean(file.isFile());
-    }
-    
-    public RubyString ftype() {
-        if (!file.exists()) {
-            throw getRuntime().newErrnoENOENTError("No such file or directory: " + file.toString());
-        } else if (file.isDirectory()) {
-            return getRuntime().newString("directory");
-        } else if (file.isFile()) {
-            return getRuntime().newString("file");
-        } else {
-            // possible?
-            assert false: "Not a directory and not a file: " + file;
-            return null;
+        if(!file.exists()) {
+            throw runtime.newErrnoENOENTError("No such file or directory - " + file.getPath());
         }
-    }
-    
-    public IRubyObject mode() {
+
+        // We cannot determine, so always return 4096 (better than blowing up)
+        blksize = runtime.newFixnum(4096);
+        isDirectory = runtime.newBoolean(file.isDirectory());
+        isFile = runtime.newBoolean(file.isFile());
+        ftype = file.isDirectory()? runtime.newString("directory") : (file.isFile() ? runtime.newString("file") : null);
+
     	// implementation to lowest common denominator...Windows has no file mode, but C ruby returns either 0100444 or 0100666
     	int baseMode = 0100000;
     	if (file.canRead()) {
-    		baseMode += READ;
-    	}
-    	
+            baseMode += READ;
+    	}    	
     	if (file.canWrite()) {
-    		baseMode += WRITE;
+            baseMode += WRITE;
     	}
-    	
-    	return getRuntime().newFixnum(baseMode);
+    	mode = runtime.newFixnum(baseMode);
+        mtime = runtime.newFixnum(file.lastModified());
+        isReadable = runtime.newBoolean(file.canRead());
+        isWritable = runtime.newBoolean(file.canWrite());
+        size = runtime.newFixnum(file.length());
+        // We cannot determine this in Java, so we will always return false (better than blowing up)
+        isSymlink = runtime.getFalse();
+    }
+    
+    public RubyFixnum blksize() {
+        return blksize;
+    }
+
+    public RubyBoolean directory_p() {
+        return isDirectory;
+    }
+
+    public RubyBoolean file_p() {
+        return isFile;
+    }
+    
+    public RubyString ftype() {
+        return ftype;
+    }
+    
+    public IRubyObject mode() {
+        return mode;
     }
     
     public IRubyObject mtime() {
-        return getRuntime().newFixnum(file.lastModified());
+        return mtime;
     }
     
     public IRubyObject readable_p() {
-        return getRuntime().newBoolean(file.canRead());
+        return isReadable;
     }
     
     public IRubyObject size() {
-    	return getRuntime().newFixnum(file.length());
+        return size;
     }
     
     public IRubyObject symlink_p() {
-        // We cannot determine this in Java, so we will always return false (better than blowing up)
-        return getRuntime().getFalse();
+        return isSymlink;
     }
     
     public IRubyObject writable() {
-    	return getRuntime().newBoolean(file.canWrite());
+    	return isWritable;
     }
 }

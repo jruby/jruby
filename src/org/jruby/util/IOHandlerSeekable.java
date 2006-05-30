@@ -58,12 +58,8 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
         
         this.path = path;
         this.modes = modes;
-        NormalizedFile theFile = new NormalizedFile(path);
+        JRubyFile theFile = JRubyFile.create(runtime.getCurrentDirectory(),path);
         
-        if (!theFile.isAbsolute()) {
-            theFile = (NormalizedFile)new NormalizedFile(getRuntime().getCurrentDirectory(), path).getAbsoluteFile();
-        }
-
         if (theFile.exists()) {
             if (modes.shouldTruncate()) {
                 // If we only want to open for writing we should remove

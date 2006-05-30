@@ -47,7 +47,7 @@ import org.jruby.util.IOHandler;
 import org.jruby.util.IOHandlerSeekable;
 import org.jruby.util.IOHandlerUnseekable;
 import org.jruby.util.IOModes;
-import org.jruby.util.NormalizedFile;
+import org.jruby.util.JRubyFile;
 import org.jruby.util.IOHandler.InvalidValueException;
 
 /**
@@ -199,7 +199,7 @@ public class RubyFile extends RubyIO {
 	}
 
 	public IRubyObject stat() {
-        return getRuntime().newRubyFileStat(new NormalizedFile(path));
+        return getRuntime().newRubyFileStat(JRubyFile.create(getRuntime().getCurrentDirectory(),path));
 	}
 	
     public IRubyObject truncate(IRubyObject arg) {
