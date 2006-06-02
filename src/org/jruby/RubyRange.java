@@ -16,7 +16,7 @@
  * Copyright (C) 2001 Ed Sinjiashvili <slorcim@users.sourceforge.net>
  * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
- * Copyright (C) 2002-2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2002-2006 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
@@ -79,12 +79,14 @@ public class RubyRange extends RubyObject {
         result.defineMethod("end", callbackFactory.getMethod("last"));
         result.defineMethod("exclude_end?", callbackFactory.getMethod("exclude_end_p"));
         result.defineMethod("first", callbackFactory.getMethod("first"));
+        result.defineMethod("hash", callbackFactory.getMethod("hash"));
         result.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
         result.defineMethod("inspect", callbackFactory.getMethod("inspect"));
         result.defineMethod("last", callbackFactory.getMethod("last"));
         result.defineMethod("length", callbackFactory.getMethod("length"));
         result.defineMethod("size", callbackFactory.getMethod("length"));
-        result.defineMethod("to_s", callbackFactory.getMethod("inspect"));
+        result.defineMethod("step", callbackFactory.getOptMethod("step"));
+        result.defineMethod("to_s", callbackFactory.getMethod("to_s"));
 
         result.defineMethod("to_a", callbackFactory.getMethod("to_a"));
         result.defineMethod("include?", callbackFactory.getMethod("include_p", IRubyObject.class));
@@ -195,14 +197,33 @@ public class RubyRange extends RubyObject {
     public IRubyObject last() {
         return end;
     }
+    
+    public RubyFixnum hash() {
+        long baseHash = (isExclusive ? 1 : 0);
+        long beginHash = ((RubyFixnum) begin.callMethod("hash")).getLongValue();
+        long endHash = ((RubyFixnum) end.callMethod("hash")).getLongValue();
+        
+        long hash = baseHash;
+        hash = hash ^ (beginHash << 1);
+        hash = hash ^ (endHash << 9);
+        hash = hash ^ (baseHash << 24);
+        
+        return getRuntime().newFixnum(hash);
+    }
 
+    private IRubyObject asString(String stringMethod) {
+        RubyString begStr = (RubyString) begin.callMethod(stringMethod);
+        RubyString endStr = (RubyString) end.callMethod(stringMethod);
+
+        return begStr.cat(isExclusive ? "..." : "..").concat(endStr);
+    }
+    
     public IRubyObject inspect() {
-        RubyString begStr = (RubyString) begin.callMethod("to_s");
-        RubyString endStr = (RubyString) end.callMethod("to_s");
-
-        begStr.cat(isExclusive ? "..." : "..");
-        begStr.concat(endStr);
-        return begStr;
+        return asString("inspect");
+    }
+    
+    public IRubyObject to_s() {
+        return asString("to_s");
     }
 
     public RubyBoolean exclude_end_p() {
@@ -327,6 +348,36 @@ public class RubyRange extends RubyObject {
             }
         }
 
+        return this;
+    }
+    
+    public IRubyObject step(IRubyObject[] args) {
+        checkArgumentCount(args, 0, 1);
+        
+        IRubyObject currentObject = begin;
+        String compareMethod = isExclusive ? "<" : "<=";
+        int stepSize = (int) (args.length == 0 ? 1 : args[0].convertToInteger().getLongValue());
+        
+        if (stepSize <= 0) {
+            throw getRuntime().newArgumentError("step can't be negative");
+        }
+        
+        if (begin instanceof RubyNumeric && end instanceof RubyNumeric) {
+            RubyFixnum stepNum = getRuntime().newFixnum(stepSize);
+            while (currentObject.callMethod(compareMethod, end).isTrue()) {
+                getRuntime().getCurrentContext().yield(currentObject);
+                currentObject = currentObject.callMethod("+", stepNum);
+            }
+        } else {
+            while (currentObject.callMethod(compareMethod, end).isTrue()) {
+                getRuntime().getCurrentContext().yield(currentObject);
+                
+                for (int i = 0; i < stepSize; i++) {
+                    currentObject = currentObject.callMethod("succ");
+                }
+            }
+        }
+        
         return this;
     }
     

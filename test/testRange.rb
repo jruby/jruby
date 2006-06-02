@@ -25,3 +25,7 @@ test_ok((1..4).include?(2.2))
 test_ok((4.8..7.2).include?(5.5))
 test_ok(!(4.8..7.2).include?(4))
 test_ok(!(4.8..7.2).include?(7.3))
+
+##### step #####
+test_exception(ArgumentError) { (1..2).step(-1) }
+
