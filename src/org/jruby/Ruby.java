@@ -1026,6 +1026,10 @@ public final class Ruby implements IRuby {
     	return RubySymbol.newSymbol(this, string);
     }
     
+    public RubyTime newTime(long milliseconds) {
+        return RubyTime.newTime(this, milliseconds);
+    }
+    
     public RaiseException newArgumentError(String message) {
     	return newRaiseException(getClass("ArgumentError"), message);
     }

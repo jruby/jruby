@@ -348,4 +348,5 @@ public interface IRuby {
 
 	public long incrementRandomSeedSequence();
 
+    public RubyTime newTime(long milliseconds);
 }

@@ -49,7 +49,7 @@ public class RubyFileStat extends RubyObject {
     private RubyBoolean isFile;
     private RubyString ftype;
     private RubyFixnum mode;
-    private RubyFixnum mtime;
+    private RubyTime mtime;
     private RubyBoolean isReadable;
     private RubyBoolean isWritable;
     private RubyFixnum size;
@@ -76,7 +76,7 @@ public class RubyFileStat extends RubyObject {
         fileStatClass.defineMethod("ftype", callbackFactory.getMethod("ftype"));
         //        fileStatClass.defineMethod("gid", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("grpowned?", callbackFactory.getMethod(""));
-        //        fileStatClass.defineMethod("ino", callbackFactory.getMethod(""));
+        fileStatClass.defineMethod("ino", callbackFactory.getMethod("ino"));
         fileStatClass.defineMethod("mode", callbackFactory.getMethod("mode"));
         fileStatClass.defineMethod("mtime", callbackFactory.getMethod("mtime"));
         //        fileStatClass.defineMethod("nlink", callbackFactory.getMethod(""));
@@ -124,7 +124,7 @@ public class RubyFileStat extends RubyObject {
             baseMode += WRITE;
     	}
     	mode = runtime.newFixnum(baseMode);
-        mtime = runtime.newFixnum(file.lastModified());
+        mtime = runtime.newTime(file.lastModified());
         isReadable = runtime.newBoolean(file.canRead());
         isWritable = runtime.newBoolean(file.canWrite());
         size = runtime.newFixnum(file.length());
@@ -146,6 +146,11 @@ public class RubyFileStat extends RubyObject {
     
     public RubyString ftype() {
         return ftype;
+    }
+    
+    // Limitation: We have no pure-java way of getting inode.  webrick needs this defined to work.
+    public IRubyObject ino() {
+        return getRuntime().newFixnum(0);
     }
     
     public IRubyObject mode() {

@@ -53,6 +53,11 @@ import org.jruby.util.JRubyFile;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public class FileMetaClass extends IOMetaClass {
+    private static final int FNM_NOESCAPE = 1;
+    private static final int FNM_PATHNAME = 2;
+    private static final int FNM_DOTMATCH = 4;
+    private static final int FNM_CASEFOLD = 8;
+    
     public FileMetaClass(IRuby runtime) {
         super("File", RubyFile.class, runtime.getClass("IO"));
     }
@@ -79,10 +84,10 @@ public class FileMetaClass extends IOMetaClass {
             
             // TODO: These were missing, so we're not handling them elsewhere?
 	        setConstant("BINARY", runtime.newFixnum(32768));
-            setConstant("FNM_NOESCAPE", runtime.newFixnum(1));
-            setConstant("FNM_CASEFOLD", runtime.newFixnum(8));
-            setConstant("FNM_DOTMATCH", runtime.newFixnum(4));
-            setConstant("FNM_PATHNAME", runtime.newFixnum(2));
+            setConstant("FNM_NOESCAPE", runtime.newFixnum(FNM_NOESCAPE));
+            setConstant("FNM_CASEFOLD", runtime.newFixnum(FNM_CASEFOLD));
+            setConstant("FNM_DOTMATCH", runtime.newFixnum(FNM_DOTMATCH));
+            setConstant("FNM_PATHNAME", runtime.newFixnum(FNM_PATHNAME));
 	        
 	        // Create constants for open flags
 	        setConstant("RDONLY", runtime.newFixnum(IOModes.RDONLY));
@@ -129,7 +134,7 @@ public class FileMetaClass extends IOMetaClass {
             constants.setConstant("LOCK_UN", runtime.newFixnum(RubyFile.LOCK_UN));
 	
 	        // TODO Singleton methods: atime, blockdev?, chardev?, chown, ctime, directory? 
-	        // TODO Singleton methods: executable?, executable_real?, extname, fnmatch, fnmatch?
+	        // TODO Singleton methods: executable?, executable_real?, extname,
 	        // TODO Singleton methods: ftype, grpowned?, lchmod, lchown, link, mtime, owned?
 	        // TODO Singleton methods: pipe?, readlink, setgid?, setuid?, socket?, 
 	        // TODO Singleton methods: stat, sticky?, symlink, symlink?, umask, utime
@@ -141,6 +146,8 @@ public class FileMetaClass extends IOMetaClass {
 	        defineSingletonMethod("delete", Arity.optional(), "unlink");
 			defineSingletonMethod("dirname", Arity.singleArgument());
 	        defineSingletonMethod("expand_path", Arity.optional());
+            defineSingletonMethod("fnmatch", Arity.optional());
+            defineSingletonMethod("fnmatch?", Arity.optional(), "fnmatch");
 			defineSingletonMethod("join", Arity.optional());
 	        defineSingletonMethod("lstat", Arity.singleArgument());
             defineSingletonMethod("mtime", Arity.singleArgument());
@@ -315,6 +322,43 @@ public class FileMetaClass extends IOMetaClass {
         return getRuntime().newString(extractedPath);
     }
     
+    /**
+     * Returns true if path matches against pattern The pattern is not a regular expression; 
+     * instead it follows rules similar to shell filename globbing. It may contain the following 
+     * metacharacters:
+     *   *:  Glob - match any sequence chars (re: .*).  If like begins with '.' then it doesn't.   
+     *   ?:  Matches a single char (re: .).
+     *   [set]:  Matches a single char in a set (re: [...]).
+     *    
+     */
+    // Fixme: implement FNM_PATHNAME, FNM_DOTMATCH, and FNM_CASEFOLD
+    public IRubyObject fnmatch(IRubyObject[] args) {
+        checkArgumentCount(args, 2, -1);
+        String pattern = args[0].convertToString().toString();
+        RubyString path = args[1].convertToString();
+        int opts = (int) (args.length > 2 ? args[2].convertToInteger().getLongValue() : 0);
+
+        boolean dot = pattern.startsWith(".");
+        
+        pattern = pattern.replaceAll("(\\.)", "\\\\$1");
+        pattern = pattern.replaceAll("(?<=[^\\\\])\\*", ".*");
+        pattern = pattern.replaceAll("^\\*", ".*");
+        pattern = pattern.replaceAll("(?<=[^\\\\])\\?", ".");
+        pattern = pattern.replaceAll("^\\?", ".");
+        if ((opts & FNM_NOESCAPE) != FNM_NOESCAPE) {
+            pattern = pattern.replaceAll("\\\\([^\\\\*\\\\?])", "$1");
+        }
+        pattern = pattern.replaceAll("\\{", "\\\\{");
+        pattern = pattern.replaceAll("\\}", "\\\\}");
+        pattern = "^" + pattern + "$";
+        
+        if (path.toString().startsWith(".") && !dot) {
+            return getRuntime().newBoolean(false);
+        }
+
+        return getRuntime().newBoolean(Pattern.matches(pattern, path.toString()));
+    }
+    
     private static final Pattern MULTIPLE_DIR_SEPS = Pattern.compile("[/\\\\][/\\\\]+");
     
     public RubyString join(IRubyObject[] args) {
@@ -337,7 +381,7 @@ public class FileMetaClass extends IOMetaClass {
     public IRubyObject mtime(IRubyObject filename) {
         RubyString name = RubyString.stringValue(filename);
 
-        return getRuntime().newFixnum(JRubyFile.create(getRuntime().getCurrentDirectory(),name.toString()).lastModified());
+        return getRuntime().newTime(JRubyFile.create(getRuntime().getCurrentDirectory(),name.toString()).lastModified());
     }
 
 	public IRubyObject open(IRubyObject[] args) {

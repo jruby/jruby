@@ -77,6 +77,15 @@ public class RubyTime extends RubyObject {
     protected long getTimeInMillis() {
         return cal.getTime().getTime();  // For JDK 1.4 we can use "cal.getTimeInMillis()"
     }
+    
+    public static RubyTime newTime(IRuby runtime, long milliseconds) {
+        Calendar cal = Calendar.getInstance(); 
+        RubyTime time = new RubyTime(runtime, runtime.getClass("Time"), cal);
+        
+        cal.setTimeInMillis(milliseconds);
+        
+        return time;
+    }
 
 
     public IRubyObject initialize_copy(IRubyObject original) {
