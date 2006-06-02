@@ -23,6 +23,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.RubyTime;
 import org.jruby.RubySymbol.SymbolTable;
 import org.jruby.ast.Node;
 import org.jruby.common.RubyWarnings;
@@ -386,6 +387,10 @@ public class BaseMockRuby implements IRuby {
 		throw new MockException();
 		
 	}
+    
+    public RubyTime newTime(long milliseconds) {
+        throw new MockException();
+    }
 
 	public RaiseException newArgumentError(String message) {
 		throw new MockException();

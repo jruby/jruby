@@ -39,6 +39,31 @@ test_equal("/", File.dirname("/"))
 
 # expand_path
 
+##### fnmatch #####
+test_equal(true, File.fnmatch('cat', 'cat'))
+test_equal(false, File.fnmatch('cat', 'category'))
+test_equal(false, File.fnmatch('c{at,ub}s', 'cats'))
+test_equal(false, File.fnmatch('c{at,ub}s', 'cubs'))
+test_equal(false, File.fnmatch('c{at,ub}s', 'cat'))
+
+test_equal(true, File.fnmatch('c?t', 'cat'))
+test_equal(false, File.fnmatch('c\?t', 'cat'))
+test_equal(true, File.fnmatch('c\?t', 'c?t'))
+test_equal(false, File.fnmatch('c??t', 'cat'))
+test_equal(true, File.fnmatch('c*', 'cats'));
+test_equal(true, File.fnmatch('c*t', 'cat'))
+test_equal(true, File.fnmatch('c\at', 'cat'))
+test_equal(false, File.fnmatch('c\at', 'cat', File::FNM_NOESCAPE))
+test_equal(true, File.fnmatch('a?b', 'a/b'))
+#test_equal(false, File.fnmatch('a?b', 'a/b', File::FNM_PATHNAME))
+#test_equal(false, File.fnmatch('a?b', 'a/b', File::FNM_PATHNAME))
+
+test_equal(false, File.fnmatch('*', '.profile'))
+#test_equal(true, File.fnmatch('*', '.profile', File::FNM_DOTMATCH))
+test_equal(true, File.fnmatch('*', 'dave/.profile'))
+#test_equal(true, File.fnmatch('*', 'dave/.profile', File::FNM_DOTMATCH))
+#test_equal(false, File.fnmatch('*', 'dave/.profile', File::FNM_PATHNAME))
+
 # join
 [
   ["a", "b", "c", "d"],

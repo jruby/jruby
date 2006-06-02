@@ -91,7 +91,7 @@ public class TestRubyHash extends TestRubyBase {
         result = eval("key = /a/; hash = {key => 'one'}; hash[/a/] = 'two'; puts hash[key]");
         assertEquals("one", result);
         result = eval("key = (1..3); hash = {key => 'one'}; hash[(1..3)] = 'two'; puts hash[key]");
-        assertEquals("one", result);
+        assertEquals("two", result);
     }
 
     /**
