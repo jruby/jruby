@@ -258,6 +258,10 @@ public class RubyTime extends RubyObject {
     public RubyInteger yday() {
         return getRuntime().newFixnum(cal.get(Calendar.DAY_OF_YEAR));
     }
+
+    public RubyInteger gmt_offset() {
+        return getRuntime().newFixnum((int)(cal.get(Calendar.ZONE_OFFSET)/1000));
+    }
     
     public RubyBoolean isdst() {
         return getRuntime().newBoolean(cal.getTimeZone().inDaylightTime(cal.getTime()));

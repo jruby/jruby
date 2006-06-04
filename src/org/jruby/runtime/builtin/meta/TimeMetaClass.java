@@ -118,6 +118,8 @@ public class TimeMetaClass extends ObjectMetaClass {
             defineMethod("hash", Arity.noArguments()); 
             defineMethod("initialize_copy", Arity.singleArgument()); 
             defineMethod("_dump", Arity.optional(),"dump"); 
+            defineMethod("gmt_offset", Arity.noArguments());
+            defineAlias("utc_offset", "gmt_offset");
         }
     };
     
