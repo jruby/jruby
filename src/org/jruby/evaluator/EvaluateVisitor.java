@@ -549,9 +549,10 @@ public final class EvaluateVisitor implements NodeVisitor {
             	state.getThreadContext().endCallArgs();
             }
             assert receiver.getMetaClass() != null : receiver.getClass().getName();
-            if (iVisited.getName().equals("blah")) ;
+            // If reciever is self then we do the call the same way as vcall
+            CallType callType = (receiver == state.getSelf() ? CallType.VARIABLE : CallType.NORMAL);
             
-            state.setResult(receiver.callMethod(iVisited.getName(), args, CallType.NORMAL));
+            state.setResult(receiver.callMethod(iVisited.getName(), args, callType));            if (iVisited.getName().equals("blah")) ;
         }
     }
     private static final CallNodeVisitor callNodeVisitor = new CallNodeVisitor();

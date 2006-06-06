@@ -137,3 +137,20 @@ class Object
   end
 end
 test_no_exception {"".newmethod}
+
+#####
+class PrivMethod
+  attr_accessor :a
+  def bar
+    self.foo = 'good'
+  end
+  private
+  def foo=(a)
+    @a = a
+  end
+end
+
+f = PrivMethod.new
+f.bar
+test_equal('good', f.a)
+

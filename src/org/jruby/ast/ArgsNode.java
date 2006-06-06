@@ -36,6 +36,7 @@ import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Arity;
 
 /**
  * arguments for a function.
@@ -62,6 +63,7 @@ public class ArgsNode extends Node {
     private final ListNode optArgs;
     private final int restArg;
     private final BlockArgNode blockArgNode;
+    private final Arity arity;
 
     /**
      * 
@@ -82,8 +84,16 @@ public class ArgsNode extends Node {
         this.optArgs = optionalArguments;
         this.restArg = restArguments;
         this.blockArgNode = blockArgNode;
+        
+        if (getRestArg() == -2) {
+            arity = Arity.optional();
+        } else if (getOptArgs() != null || getRestArg() >= 0) {
+            arity = Arity.required(getArgsCount());
+        } else {   
+            arity = Arity.createArity(getArgsCount());
+        }
     }
-
+    
     /**
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
@@ -98,11 +108,11 @@ public class ArgsNode extends Node {
     public ListNode getArgs() {
         return arguments;
     }
+
+    public Arity getArity() {
+        return arity;
+    }
     
-    /**
-     * Gets the argsCount.
-     * @return Returns a int
-     */
     public int getArgsCount() {
         return arguments == null ? 0 : arguments.size();
     }

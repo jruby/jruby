@@ -192,17 +192,7 @@ public final class DefaultMethod extends AbstractMethod {
     }
 
     public Arity getArity() {
-        // TODO: Make special arity-related values use mnemonic
-        // -2 means (*) signature to method def
-        if (argsNode.getRestArg() == -2) {
-        	return Arity.optional();
-        } 
-
-        if (argsNode.getOptArgs() != null || argsNode.getRestArg() >= 0) {
-            return Arity.required(argsNode.getArgsCount());
-        }
-
-        return Arity.createArity(argsNode.getArgsCount());
+        return argsNode.getArity();
     }
     
     public ICallable dup() {

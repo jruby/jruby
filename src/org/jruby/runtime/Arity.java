@@ -29,6 +29,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,7 +39,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * The arity of a method is the number of arguments it takes.
  */
-public final class Arity {
+public final class Arity implements Serializable {
+    private static final long serialVersionUID = 1L;
     private static Map arities = new HashMap();
     private final int value;
 
