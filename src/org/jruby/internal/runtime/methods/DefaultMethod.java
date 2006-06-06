@@ -31,6 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 
 import org.jruby.IRuby;
@@ -121,9 +122,11 @@ public final class DefaultMethod extends AbstractMethod {
 
     private void prepareArguments(IRuby runtime, Scope scope, IRubyObject receiver, IRubyObject[] args) {
         int expectedArgsCount = argsNode.getArgsCount();
+
         if (expectedArgsCount > args.length) {
             throw runtime.newArgumentError("Wrong # of arguments(" + args.length + " for " + expectedArgsCount + ")");
         }
+
         if (argsNode.getRestArg() == -1 && argsNode.getOptArgs() != null) {
             int opt = expectedArgsCount + argsNode.getOptArgs().size();
 
@@ -131,7 +134,19 @@ public final class DefaultMethod extends AbstractMethod {
                 throw runtime.newArgumentError("wrong # of arguments(" + args.length + " for " + opt + ")");
             }
 
-            runtime.getCurrentContext().getCurrentFrame().setArgs(args);
+            //runtime.getCurrentContext().getCurrentFrame().setArgs(args);
+        }
+        
+        int count = expectedArgsCount;
+        if (argsNode.getOptArgs() != null) {
+            count += argsNode.getOptArgs().size();
+        }
+
+        ArrayList allArgs = new ArrayList();
+        
+        // Combine static and optional args into a single list allArgs
+        for (int i = 0; i < count && i < args.length; i++) {
+            allArgs.add(args[i]);
         }
 
         if (scope.hasLocalVariables()) {
@@ -148,27 +163,31 @@ public final class DefaultMethod extends AbstractMethod {
                 for (int i = expectedArgsCount; i < args.length && iter.hasNext(); i++) {
                     //new AssignmentVisitor(new EvaluationState(runtime, receiver)).assign((Node)iter.next(), args[i], true);
 //                  in-frame EvalState should already have receiver set as self, continue to use it
-                    new AssignmentVisitor(runtime.getCurrentContext().getCurrentFrame().getEvalState()).assign((Node)iter.next(), args[i], true);;
+                    new AssignmentVisitor(runtime.getCurrentContext().getCurrentFrame().getEvalState()).assign((Node)iter.next(), args[i], true);
                     expectedArgsCount++;
                 }
 
-                // assign the default values.
+                // assign the default values, adding to the end of allArgs
                 while (iter.hasNext()) {
                     //new EvaluationState(runtime, receiver).begin((Node)iter.next());
                     //EvaluateVisitor.getInstance().eval(receiver.getRuntime(), receiver, (Node)iter.next());
                     // in-frame EvalState should already have receiver set as self, continue to use it
-                    runtime.getCurrentContext().getCurrentFrame().getEvalState().begin((Node)iter.next());
+                    allArgs.add(runtime.getCurrentContext().getCurrentFrame().getEvalState().begin((Node)iter.next()));
                 }
             }
 
+            // build an array from *rest type args, also adding to allArgs
             if (argsNode.getRestArg() >= 0) {
                 RubyArray array = runtime.newArray(args.length - expectedArgsCount);
                 for (int i = expectedArgsCount; i < args.length; i++) {
                     array.append(args[i]);
+                    allArgs.add(args[i]);
                 }
                 scope.setValue(argsNode.getRestArg(), array);
             }
         }
+        
+        runtime.getCurrentContext().getCurrentFrame().setArgs((IRubyObject[])allArgs.toArray(new IRubyObject[allArgs.size()]));
     }
 
     private void traceReturn(IRuby runtime, IRubyObject receiver, String name) {

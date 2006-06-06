@@ -480,7 +480,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class ClassVarAsgnNodeVisitor1 implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		ClassVarAsgnNode iVisited = (ClassVarAsgnNode)ctx;
-            state.getThreadContext().getRubyClass().setClassVar(iVisited.getName(), state.getResult());
+            ((RubyModule) state.getThreadContext().peekCRef().getValue()).setClassVar(iVisited.getName(), state.getResult());
     	}
     }
     private static final ClassVarAsgnNodeVisitor1 classVarAsgnNodeVisitor1 = new ClassVarAsgnNodeVisitor1();
@@ -552,7 +552,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             // If reciever is self then we do the call the same way as vcall
             CallType callType = (receiver == state.getSelf() ? CallType.VARIABLE : CallType.NORMAL);
             
-            state.setResult(receiver.callMethod(iVisited.getName(), args, callType));            if (iVisited.getName().equals("blah")) ;
+            state.setResult(receiver.callMethod(iVisited.getName(), args, callType));
         }
     }
     private static final CallNodeVisitor callNodeVisitor = new CallNodeVisitor();

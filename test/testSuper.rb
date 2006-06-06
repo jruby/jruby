@@ -136,3 +136,45 @@ require 'test/superReq1'
 class Mongo
   require 'test/superReq2'
 end
+
+
+# ZSuper tests
+
+class Test9Base
+  def foo(a = 'bad')
+    test_equal("good", a)
+  end
+
+  def gar(a, b="bad", *rest)
+  	test_equal(2, b)
+  	test_equal([3, 4], rest)
+  end
+
+  def har(a="bad", b="bad", c="bad")
+    test_equal("good", a)
+    test_equal("good", b)
+    test_equal("bad", c)
+  end
+end
+
+class Test9Derived < Test9Base
+  def foo(a = 'good')
+    super
+  end  
+
+  def bar(a, b=100, *rest)
+  end
+  
+  def gar(a, b="good", *rest)
+    super
+  end
+
+  def har(a, b)
+    super
+  end
+end
+
+Test9Derived.new.foo
+Test9Derived.new.bar(1,2,3,4)
+Test9Derived.new.gar(1,2,3,4)
+Test9Derived.new.har("good", "good")
