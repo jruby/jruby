@@ -129,6 +129,7 @@ public final class Ruby implements IRuby {
     private RubyBoolean trueObject;
     private RubyBoolean falseObject;
     private RubyClass objectClass;
+    private StringMetaClass stringClass;
     private RubyClass systemCallError = null;
     private RubyModule errnoModule = null;
     private IRubyObject topSelf;
@@ -216,6 +217,10 @@ public final class Ruby implements IRuby {
 
     public RubyClass getObject() {
     	return objectClass;
+    }
+    
+    public RubyClass getString() {
+        return stringClass;
     }
 
     /** Returns the "true" instance from the instance pool.
@@ -450,7 +455,8 @@ public final class Ruby implements IRuby {
         RubyBoolean.createTrueClass(this);
         RubyComparable.createComparable(this);
         defineModule("Enumerable"); // Impl: src/builtin/enumerable.rb
-        new StringMetaClass(this).initializeClass();
+        stringClass = new StringMetaClass(this);
+        stringClass.initializeClass();
         new SymbolMetaClass(this).initializeClass();
         RubyThreadGroup.createThreadGroupClass(this);
         RubyThread.createThreadClass(this);

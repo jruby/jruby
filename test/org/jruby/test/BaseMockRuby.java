@@ -61,6 +61,10 @@ public class BaseMockRuby implements IRuby {
 	public RubyClass getObject() {
 		throw new MockException();
 	}
+    
+    public RubyClass getString() {
+        throw new MockException();
+    }
 
 	public RubyBoolean getTrue() {
 		throw new MockException();

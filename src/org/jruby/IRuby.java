@@ -46,6 +46,8 @@ public interface IRuby {
 	public IRubyObject eval(Node node);
 
 	public RubyClass getObject();
+    
+    public RubyClass getString();
 
 	/** Returns the "true" instance from the instance pool.
 	 * @return The "true" instance.
