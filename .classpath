@@ -6,5 +6,6 @@
 	<classpathentry kind="lib" path="lib/bsf.jar"/>
 	<classpathentry kind="lib" path="lib/junit.jar"/>
 	<classpathentry kind="lib" path="lib/ant.jar"/>
+	<classpathentry kind="lib" path="lib/jvyaml.jar"/>
 	<classpathentry kind="output" path="build/classes/jruby"/>
 </classpath>
