@@ -26,3 +26,13 @@ class Fixnum
     self <= ?9 && self >= ?0
   end
 end
+
+module RbYAML
+  class PrivateType
+    attr_accessor :type_id, :value
+    def initialize( type, val )
+      @type_id = type; 
+      @value = val
+    end
+  end
+end

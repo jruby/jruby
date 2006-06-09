@@ -48,10 +48,10 @@ module RbYAML
       elsif @closed
         raise SerializerError.new("serializer is closed")
       end
-      @emitter.emit(DocumentStartEvent.new(@use_explicit_start,@use_version,@use_tags))
+      @emitter.emit(DocumentStartEvent.new(nil,nil,@use_explicit_start,@use_version,@use_tags))
       anchor_node(node)
       serialize_node(node,nil,nil)
-      @emitter.emit(DocumentEndEvent.new(@use_explicit_end))
+      @emitter.emit(DocumentEndEvent.new(nil,nil,@use_explicit_end))
       @serialized_nodes = {}
       @anchors = {}
       @last_alias_id = 0

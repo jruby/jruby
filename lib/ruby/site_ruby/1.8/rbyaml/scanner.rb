@@ -344,7 +344,8 @@ module RbYAML
     ENDING = /^---[\0 \t\r\n\x85]$/
     START = /^\.\.\.[\0 \t\r\n\x85]$/
     NULL_OR_OTHER = "\0 \t\r\n\x85"
-    BEG = /^([^\0 \t\r\n\x85\-?:,\[\]{}#&*!|>'"%@`]|([\-?:][^\0 \t\r\n\x85]))/
+#    BEG = /^([^\0 \t\r\n\x85\-?:,\[\]{}#&*!|>'"%@`]|([\-?:][^\0 \t\r\n\x85]))/    #Since current SYCK handles this one wrong, we have to allow backtick right now.
+    BEG = /^([^\0 \t\r\n\x85\-?:,\[\]{}#&*!|>'"%@]|([\-?:][^\0 \t\r\n\x85]))/    
     def fetch_more_tokens
       # Eat whitespaces and comments until we reach the next token.
       scan_to_next_token
@@ -399,7 +400,7 @@ module RbYAML
       #   ALIAS, ANCHOR, TAG, SCALAR(flow), '[', and '{'.
       # The next token might be a simple key. Let's save it's number and
       # position.
-      @possible_simple_keys[@flow_level] = SimpleKey.new(@tokens_taken+@tokens.length, @flow_zero && @indent == @column,index,line,column,get_mark) if @allow_simple_key
+      @possible_simple_keys[@flow_level] = SimpleKey.new(@tokens_taken+@tokens.length, @flow_zero && @indent == @column,-1,-1,column,get_mark) if @allow_simple_key
     end
 
     # Indentation functions.
@@ -427,11 +428,11 @@ module RbYAML
       end
     end
     
-    def add_indent(column)
+    def add_indent(col)
       # Check if we need to increase indentation.
-      if @indent < column
+      if @indent < col
         @indents << @indent
-        @indent = column
+        @indent = col
         return true
       end
       return false
@@ -713,15 +714,12 @@ module RbYAML
       # `unwind_indent` before issuing BLOCK-END.
       # Scanners for block, flow, and plain scalars need to be modified.
       while true
-        peek_0 = peek0
-        while peek_0 == 32
+        while peek0 == 32
           forward1
-          peek_0 = peek0
         end
-        if peek_0 == ?#
+        if peek0 == ?#
           while !NULL_OR_LINEBR.include?(peek0)
             forward1
-            peek_0 = peek0
           end
         end
 
@@ -760,9 +758,9 @@ module RbYAML
       # See the specification for details.
       length = 0
       ch = peek(length)
-      zlen = false
+      zlen = true
       while ALPHA_REG  =~ ch.chr
-        zlen = true
+        zlen = false
         length += 1
         ch = peek(length)
       end
@@ -940,7 +938,7 @@ module RbYAML
           # Unfortunately, folding rules are ambiguous.
           #
           # This is the folding according to the specification:
-          if folded && line_break == ?\n && leading_non_space && !BLANK_T.include?(peek0)
+          if folded && line_break == "\n" && leading_non_space && !BLANK_T.include?(peek0)
             chunks << ' ' if breaks.empty?
           else
             chunks << line_break
@@ -982,12 +980,12 @@ module RbYAML
         forward1
         ch = peek0
         if ch.__is_ascii_num
-          increment = ch.to_i
+          increment = ch.chr.to_i
           raise ScannerError.new("while scanning a block scalar", start_mark,"expected indentation indicator in the range 1-9, but found 0",get_mark) if increment == 0
           forward1
         end
       elsif ch.__is_ascii_num
-        increment = ch
+        increment = ch.chr.to_i
         raise ScannerError.new("while scanning a block scalar", start_mark,"expected indentation indicator in the range 1-9, but found 0",get_mark) if increment == 0
         forward1
         ch = peek0
@@ -1119,7 +1117,7 @@ module RbYAML
               raise ScannerError.new("while scanning a double-quoted scalar", start_mark,
                                      "expected escape sequence of #{length} hexdecimal numbers, but found something else: #{prefix(length)}}",get_mark)
             end
-            code = prefix(length).to_i.to_s(16)
+            code = prefix(length).to_i(16).to_s
             chunks << code
             forward(length)
           elsif FULL_LINEBR.include?(ch)
@@ -1147,7 +1145,7 @@ module RbYAML
       elsif FULL_LINEBR.include?(ch)
         line_break = scan_line_break
         breaks = scan_flow_scalar_breaks(double, start_mark)
-        if line_break != ?\n
+        if line_break != "\n"
           chunks << line_break
         elsif breaks.empty?
           chunks << ' '
@@ -1248,11 +1246,7 @@ module RbYAML
             return if END_OR_START =~ prefix(4)
           end
         end
-        if line_break != '\n'
-          chunks << line_break
-        elsif breaks.empty?
-          chunks << ' '
-        end
+        chunks << line_break
         chunks += breaks
       else
         chunks << whitespaces
@@ -1306,7 +1300,6 @@ module RbYAML
       if length!=0
         chunks << prefix(length)
         forward(length)
-        length = 0
       end
       
       raise ScannerError.new("while parsing a #{name}", start_mark,"expected URI, but found #{ch}",get_mark) if chunks.empty?
@@ -1321,7 +1314,7 @@ module RbYAML
       while peek0 == ?%
         forward1
         raise ScannerError.new("while scanning a #{name}", start_mark,"expected URI escape sequence of 2 hexdecimal numbers, but found #{peek1} and #{peek2}",get_mark) if HEXA_REG !~ peek1.chr || HEXA_REG !~ peek2.chr
-        bytes << prefix(2).to_i.to_s(16)
+        bytes << prefix(2).to_i(16).to_s
         forward2
       end
       bytes.to_s

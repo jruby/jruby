@@ -153,7 +153,7 @@ module RbYAML
     def document_start_implicit
       token = @scanner.peek_token
       version, tags = process_directives
-      DocumentStartEvent.new(token.start_mark,token.start_mark,false)
+      DocumentStartEvent.new(token.start_mark,token.start_mark,false,version,tags)
     end
 
     def document_start
@@ -185,14 +185,14 @@ module RbYAML
 
     def block_sequence_start
       end_mark = @scanner.peek_token.start_mark
-      implicit = @tags.last.nil? || @tags.last == ?!
+      implicit = @tags.last.nil? || @tags.last == "!"
       @tokens = token = @scanner.get_token
       SequenceStartEvent.new(@anchors.last, @tags.last, implicit, @start_marks.last, end_mark,false)
     end
 
     def block_indentless_sequence_start
       end_mark = @scanner.peek_token.end_mark
-      implicit = @tags.last.nil? || @tags.last == ?!
+      implicit = @tags.last.nil? || @tags.last == "!"
       SequenceStartEvent.new(@anchors.last, @tags.last, implicit, @start_marks.last, end_mark,false)
     end
 
@@ -212,7 +212,7 @@ module RbYAML
 
     def block_mapping_start
       end_mark = @scanner.peek_token.start_mark
-      implicit = @tags.last.nil? || @tags.last == ?!
+      implicit = @tags.last.nil? || @tags.last == "!"
       @tokens = token = @scanner.get_token
       MappingStartEvent.new(@anchors.last, @tags.last, implicit, @start_marks.last, end_mark,false)
     end
@@ -228,7 +228,7 @@ module RbYAML
 
     def flow_sequence_start
       end_mark = @scanner.peek_token.end_mark
-      implicit = @tags.last.nil? || @tags.last == ?!
+      implicit = @tags.last.nil? || @tags.last == "!"
       @tokens = token = @scanner.get_token
       SequenceStartEvent.new(@anchors.last, @tags.last, implicit, @start_marks.last, end_mark,true)
     end
@@ -244,13 +244,13 @@ module RbYAML
     end
 
     def flow_internal_mapping_end
-      token = peek_token
+      token = @scanner.peek_token
       MappingEndEvent.new(token.start_mark, token.start_mark)
     end
 
     def flow_mapping_start
       end_mark = @scanner.peek_token.end_mark
-      implicit = @tags.last.nil? || @tags.last == ?!
+      implicit = @tags.last.nil? || @tags.last == "!"
       @tokens = token = @scanner.get_token
       MappingStartEvent.new(@anchors.last, @tags.last, implicit, @start_marks.last, end_mark,true)
     end
@@ -263,7 +263,7 @@ module RbYAML
     def scalar
       token = @scanner.get_token
       end_mark = token.end_mark
-      if (token.plain && @tags.last.nil?) || @tags.last == ?!
+      if (token.plain && @tags.last.nil?) || @tags.last == "!"
         implicit = [true, false]
       elsif @tags.last.nil?
         implicit = [false, true]

@@ -94,7 +94,7 @@ module RbYAML
     
     def represent_scalar(tag, value, style=nil)
       style ||= @default_style
-      ScalarNode.new(tag, value, style)
+      ScalarNode.new(tag,value,nil,nil,style)
     end
 
     def represent_sequence(tag, sequence, flow_style=nil)
@@ -145,15 +145,27 @@ module RbYAML
     end
 
     def represent_none(data)
-      represent_scalar(data.taguri,"null")
+#      represent_scalar(data.taguri,"null")
+      represent_scalar('tag:yaml.org,2002:str',"")
     end
 
+    NON_PRINTABLE = /[^\x09\x0A\x0D\x20-\x7E\x85\xA0-\xFF]/
     def represent_str(data)
-      represent_scalar(data.taguri,data,nil)
+      style = nil
+      if NON_PRINTABLE =~ data
+        data = Base64.encode64(data)
+        data.taguri ="tag:yaml.org,2002:binary"
+        style = "|"
+      end
+      represent_scalar(data.taguri,data,style)
     end
 
     def represent_symbol(data)
       represent_scalar(data.taguri,data.to_s)
+    end
+
+    def represent_private_type(data)
+      represent_scalar(data.type_id,data.value)
     end
 
     def represent_bool(data)
@@ -196,14 +208,26 @@ module RbYAML
     end
     
     def represent_datetime(data)
-      value = "%04d-%02d-%02d %02d:%02d:%02d" % [data.year, data.month, data.day, data.hour, data.min, data.sec]
-      if data.usec != 0
-        value += "." + (data.usec/1000000.0).to_s.split(/\./)[1]
+      tz = "Z"
+      # from the tidy Tobias Peters <t-peters@gmx.de> Thanks!
+      unless data.utc?
+        utc_same_instant = data.dup.utc
+        utc_same_writing = Time.utc(data.year,data.month,data.day,data.hour,data.min,data.sec,data.usec)
+        difference_to_utc = utc_same_writing - utc_same_instant
+        if (difference_to_utc < 0) 
+          difference_sign = '-'
+          absolute_difference = -difference_to_utc
+        else
+          difference_sign = '+'
+          absolute_difference = difference_to_utc
+        end
+        difference_minutes = (absolute_difference/60).round
+        tz = "%s%02d:%02d" % [ difference_sign, difference_minutes / 60, difference_minutes % 60]
       end
-      if data.utc_offset != 0
-        value += data.utc_offset.to_s
-      end
-      represent_scalar(data.taguri, value)
+      standard = data.strftime( "%Y-%m-%d %H:%M:%S" )
+      standard += ".%06d" % [data.usec] if data.usec.nonzero?
+      standard += " %s" % [tz]
+      represent_scalar(data.taguri, standard)
     end
     
     def represent_ruby(data)
@@ -240,6 +264,7 @@ module RbYAML
   BaseRepresenter.add_representer(Hash,:represent_dict)
   BaseRepresenter.add_representer(Set,:represent_set)
   BaseRepresenter.add_representer(Time,:represent_datetime)
+  BaseRepresenter.add_representer(PrivateType,:represent_private_type)
   BaseRepresenter.add_representer(Object,:represent_ruby)
   BaseRepresenter.add_representer(nil,:represent_undefined)
   

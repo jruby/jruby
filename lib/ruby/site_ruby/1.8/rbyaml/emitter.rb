@@ -178,7 +178,7 @@ module RbYAML
         implicit = first && !@event.explicit && !@canonical && !@event.version && !@event.tags && !check_empty_document
         if !implicit
           write_indent
-          write_indicator("---",true)
+          write_indicator("--- ",true,true)
           if @canonical
             write_indent
           end
@@ -349,14 +349,14 @@ module RbYAML
     end
     
     def expect_flow_mapping_simple_value
-      write_indicator(":", false)
+      write_indicator(": ", false,true)
       @states << :expect_flow_mapping_key
       expect_node(false,false,true)
     end
 
     def expect_flow_mapping_value
       write_indent if @canonical || @column > @best_width
-      write_indicator(":", true)
+      write_indicator(": ", false,true)
       @states << :expect_flow_mapping_key
       expect_node(false,false,true)
     end
@@ -414,14 +414,14 @@ module RbYAML
     end
     
     def expect_block_mapping_simple_value
-      write_indicator(":", false)
+      write_indicator(": ", false,true)
       @states << :expect_block_mapping_key
       expect_node(false,false,true)
     end
 
     def expect_block_mapping_value
       write_indent
-      write_indicator(":",true,false,true)
+      write_indicator(": ",true,true,true)
       @states << :expect_block_mapping_key
       expect_node(false,false,true)
     end
@@ -506,7 +506,6 @@ module RbYAML
           return ""
         end
       end
-
       if !@event.style && @event.implicit && (!(@simple_key_context && (@analysis.empty || @analysis.multiline)) && 
                                               (@flow_level!=0 && @analysis.allow_flow_plain || (@flow_level==0 && @analysis.allow_block_plain)))
         return ""
@@ -852,7 +851,6 @@ module RbYAML
           end
         elsif breaks
           if ch.nil? or !"\n\x85".include?(ch)
-            write_line_break if text[start] == ?\n
             (text[start...ending]).each_byte { |br|
               if br == ?\n
                 write_line_break

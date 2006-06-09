@@ -86,7 +86,7 @@ module RbYAML
           end
         end
       else
-        for path, kind in @@yaml_path_resolvers
+        for path, kind in @@yaml_path_resolvers.keys
           if !path
             exact_paths[kind] = @@yaml_path_resolvers[[path, kind]]
           else
@@ -150,7 +150,7 @@ module RbYAML
   end
   
   BaseResolver.add_implicit_resolver('tag:yaml.org,2002:bool',/^(?:y|Y|yes|Yes|YES|n|N|no|No|NO|true|True|TRUE|false|False|FALSE|on|On|ON|off|Off|OFF)$/,'yYnNtTfFoO')
-  BaseResolver.add_implicit_resolver('tag:yaml.org,2002:float',/^(?:[-+]?(?:[0-9][0-9_]*)?\.[0-9_]*(?:[eE][-+][0-9]+)?|[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\.[0-9_]*|[-+]?\.(?:inf|Inf|INF)|\.(?:nan|NaN|NAN))$/,'-+0123456789.')
+  BaseResolver.add_implicit_resolver('tag:yaml.org,2002:float',/^(?:[-+]?(?:[0-9][0-9_]*)\.[0-9_]*(?:[eE][-+][0-9]+)?|[-+]?(?:[0-9][0-9_]*)?\.[0-9_]+(?:[eE][-+][0-9]+)?|[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\.[0-9_]*|[-+]?\.(?:inf|Inf|INF)|\.(?:nan|NaN|NAN))$/,'-+0123456789.')
   BaseResolver.add_implicit_resolver('tag:yaml.org,2002:int',/^(?:[-+]?0b[0-1_]+|[-+]?0[0-7_]+|[-+]?(?:0|[1-9][0-9_]*)|[-+]?0x[0-9a-fA-F_]+|[-+]?[1-9][0-9_]*(?::[0-5]?[0-9])+)$/,'-+0123456789')
   BaseResolver.add_implicit_resolver('tag:yaml.org,2002:merge',/^(?:<<)$/,'<')
   BaseResolver.add_implicit_resolver('tag:yaml.org,2002:null',/^(?: ~|null|Null|NULL| )$/,'~nN' + ?\0.chr)

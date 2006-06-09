@@ -60,12 +60,12 @@ module RbYAML
     stream.string if StringIO === stream
   end
 
-  def self._serialize_all(nodes,stream=nil,dumper=Dumper,default_style=nil,default_flow_style=nil,canonical=nil,indent=nil,width=nil,line_break=nil,explicit_start=nil,explicit_end=nil,version=nil,tags=nil)
+  def self._serialize_all(nodes,stream=nil,dumper=Dumper,default_style=nil,default_flow_style=nil,canonical=nil,indent=nil,width=nil,line_break=nil,explicit_start=true,explicit_end=nil,version=nil,tags=nil)
     if stream.nil?
       require 'stringio'
       stream = StringIO.new
     end
-    dumper = dumper.new(stream,default_style,default_flow_style,canonical,indent,width,line_break,version,tags,explicit_start,explicit_end)
+    dumper = dumper.new(stream,default_style,default_flow_style,canonical,indent,width,line_break,explicit_start,explicit_end,version,tags)
     dumper.serializer.open
     for node in nodes
       dumper.serializer.serialize(node)
@@ -78,12 +78,12 @@ module RbYAML
     _serialize_all([node], stream, dumper, *kwds)
   end
   
-  def self._dump_all(documents,stream=nil,dumper=Dumper,default_style=nil,default_flow_style=nil,canonical=nil,indent=nil,width=nil,line_break=nil,explicit_start=nil,explicit_end=nil,version=nil,tags=nil)
+  def self._dump_all(documents,stream=nil,dumper=Dumper,default_style=nil,default_flow_style=nil,canonical=nil,indent=nil,width=nil,line_break=nil,explicit_start=true,explicit_end=nil,version=nil,tags=nil)
     if stream.nil?
       require 'stringio'
       stream = StringIO.new
     end
-    dumper = dumper.new(stream,default_style,default_flow_style,canonical,indent,width,line_break,version,tags,explicit_start,explicit_end)
+    dumper = dumper.new(stream,default_style,default_flow_style,canonical,indent,width,line_break,explicit_start,explicit_end,version,tags)
     dumper.serializer.open
     for data in documents
       dumper.representer.represent(data)
@@ -111,7 +111,7 @@ module RbYAML
 
   def self._add_path_resolver(tag, path, kind=nil, loader=Loader, dumper=Dumper)
     loader.add_path_resolver(tag, path, kind)
-    lumper.add_path_resolver(tag, path, kind)
+    dumper.add_path_resolver(tag, path, kind)
   end
   
   def self._add_constructor(tag, constructor, loader=Loader)

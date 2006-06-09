@@ -63,6 +63,11 @@ module RbYAML
     d.emit
   end
 
+
+  def self.add_builtin_ctor(type_tag, &transfer_proc)
+    BaseConstructor::add_constructor("tag:yaml.org,2002:#{ type_tag }",transfer_proc)
+  end
+
   # this operation does not make sense in RbYAML (right now)
   def self.add_domain_type( domain, type_re, &transfer_proc )
     #    @@loader.add_domain_type( domain, type_re, &transfer_proc )

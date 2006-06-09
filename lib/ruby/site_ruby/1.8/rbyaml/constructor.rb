@@ -1,6 +1,8 @@
 require 'base64'
 require 'set'
 
+require 'rbyaml/util'
+
 require 'rbyaml/error'
 require 'rbyaml/nodes'
 require 'rbyaml/composer'
@@ -13,7 +15,7 @@ end
 
 class Proc
   def __call(obj,*args)
-    call(*args)
+    call(obj,*args)
   end
 end
 
@@ -62,39 +64,56 @@ module RbYAML
       @recursive_objects = {}
       data
     end
+
+    class RecursiveProxy
+      attr_writer :value
+      def method_missing(*args)
+        @value.send(*args)
+      end
+      def class
+        @value.class
+      end
+      def to_s
+        @value.to_s
+      end
+    end
     
     def construct_object(node)
       return @constructed_objects[node] if @constructed_objects.include?(node)
-      raise ConstructorError.new(nil,nil,"found recursive nod",node.start_mark) if @recursive_objects.include?(node)
-      @recursive_objects[node] = nil
+      @constructed_objects[node] = RecursiveProxy.new
       constructor = @@yaml_constructors[node.tag]
       if !constructor
         ruby_cls = RbYAML::tagged_classes[node.tag]
         if ruby_cls && (ruby_cls.method_defined?(:yaml_initialize) || ruby_cls.respond_to?(:yaml_new))
-          constructor = lambda { |node| send(:construct_ruby_object,ruby_cls,node) }
+          constructor = lambda { |obj,node| send(:construct_ruby_object,ruby_cls,node) }
         else
           through = true
           for tag_prefix,reg in @@yaml_multi_regexps
             if reg =~ node.tag
               tag_suffix = node.tag[tag_prefix.length..-1]
-              constructor = lambda { |node| @@yaml_multi_constructors[tag_prefix].__call(self,tag_suffix, node) }
+              constructor = lambda { |obj, node| @@yaml_multi_constructors[tag_prefix].__call(self,tag_suffix, node) }
               through = false
               break
             end
           end
           if through
-            ctor = @@yaml_multi_constructors[nil] || @@yaml_constructors[nil]
+            ctor = @@yaml_multi_constructors[nil]
             if ctor
-              constructor = lambda { |node| ctor.__call(self,node.tag,node) }
+              constructor = lambda { |obj, node| ctor.__call(self,node.tag,node) }
             else
-              constructor = lambda { |node| construct_primitive(node) }
+              ctor = @@yaml_constructors[nil]
+              if ctor
+                constructor = lambda { |obj, node| ctor.__call(self,node)}
+              else
+                constructor = lambda { |obj, node| construct_primitive(node) }
+              end
             end
           end
         end
       end
       data = constructor.__call(self,node)
+      @constructed_objects[node].value = data
       @constructed_objects[node] = data
-      @recursive_objects.delete(node)
       data
     end
 
@@ -122,6 +141,11 @@ module RbYAML
         raise ConstructorError.new(nil, nil,"expected a scalar node, but found #{node.tid}",node.start_mark)
       end
       node.value
+    end
+
+    def construct_private_type(node)
+#      construct_scalar(node)
+      PrivateType.new(node.tag,node.value)
     end
 
     def construct_sequence(node)
@@ -155,14 +179,14 @@ module RbYAML
           mapping["="] = value
         else
           key = construct_object(key_node)
+          value = construct_object(value_node)
+          mapping[key] = value
 #          raise ConstructorError.new("while constructing a mapping", node.start_mark,"found duplicate key", key_node.start_mark) if mapping.include?(key)
         end
-        value = construct_object(value_node)
-        mapping[key] = value
       end
       if !merge.nil?
         merge << mapping
-        mapping = {}
+        mapping = { }
         for submapping in merge
           mapping.merge!(submapping)
         end
@@ -279,14 +303,15 @@ module RbYAML
 
     def construct_yaml_binary(node)
       value = construct_scalar(node)
-      Base64.decode64(value.to_s)
+      Base64.decode64(value.split(/[\n\x85]|(?:\r[^\n])/).to_s)
     end
 
     TIMESTAMP_REGEXP = /^([0-9][0-9][0-9][0-9])-([0-9][0-9]?)-([0-9][0-9]?)(?:(?:[Tt]|[ \t]+)([0-9][0-9]?):([0-9][0-9]):([0-9][0-9])(?:\.([0-9]*))?(?:[ \t]*(?:Z|([-+][0-9][0-9]?)(?::([0-9][0-9])?)?))?)?$/
     
     def construct_yaml_timestamp(node)
-      value = construct_scalar(node)
-      match = TIMESTAMP_REGEXP.match(node.value)
+      unless (match = TIMESTAMP_REGEXP.match(node.value))
+        return construct_private_type(node)
+      end
       values = match.captures.map {|val| val.to_i}
       fraction = values[6]
       if fraction != 0
@@ -327,7 +352,8 @@ module RbYAML
     end
     
     def construct_yaml_str(node)
-      construct_scalar(node).to_s
+      val = construct_scalar(node).to_s
+      val.empty? ? nil : val
     end
 
     def construct_yaml_seq(node)
@@ -382,7 +408,7 @@ module RbYAML
   BaseConstructor::add_constructor('tag:yaml.org,2002:str',:construct_yaml_str)
   BaseConstructor::add_constructor('tag:yaml.org,2002:seq',:construct_yaml_seq)
   BaseConstructor::add_constructor('tag:yaml.org,2002:map',:construct_yaml_map)
-  BaseConstructor::add_constructor(nil,:construct_undefined)
+  BaseConstructor::add_constructor(nil,:construct_private_type)
 
   BaseConstructor::add_multi_constructor("!ruby/object:",:construct_ruby)
 
