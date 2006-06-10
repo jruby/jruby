@@ -17,6 +17,7 @@
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2006 Mirko Stocker <me@misto.ch>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -725,12 +726,12 @@ public class ParserSupport {
         		((ListNode) head).add((Node) tail);
         	}
         } else if (tail instanceof DStrNode) {
-            // Ruby actually has a special case for StrNode, but I cannot actually get one to
-        	// occur.  I am asserting on ListNode to help flag the case.
-
-            assert head instanceof ListNode;
-            return list_concat((ListNode) head, tail);
-
+            if(head instanceof StrNode){
+                ((DStrNode)tail).childNodes().add(0, head);
+                return tail;
+            } else {
+            	return list_concat((ListNode) head, tail);
+            }
         } else if (tail instanceof EvStrNode) {
         	if (head instanceof StrNode) {
         		head = new DStrNode(head.getPosition()).add(head);
