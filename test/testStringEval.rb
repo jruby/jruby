@@ -9,5 +9,5 @@ test_ok('Ho! Ho! Ho! Merry Christmas' == "#{'Ho! '*3}Merry Christmas" )
 
 #########    test3   #################
 test_ok('Say: Ho! Ho! Ho! Merry Christmas' == "Say: " "#{'Ho! '*3}Merry Christmas" )
-test_ok('Ho! Ho! Ho! Ho! Ho! Ho!' == "#{'Ho! '*3} " "#{'Ho! '*3}" )
+test_ok('Ho! Ho! Ho! Ho! Ho! Ho! ' == "#{'Ho! '*3}" "#{'Ho! '*3}" )
 
