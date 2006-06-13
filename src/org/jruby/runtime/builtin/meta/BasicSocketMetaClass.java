@@ -48,6 +48,10 @@ public class BasicSocketMetaClass extends IOMetaClass {
         this(name, RubyBasicSocket.class, superClass, parentCRef);
     }
     
+    public BasicSocketMetaClass(String name, Class clazz, RubyClass superClass) {
+    	super(name, clazz, superClass);
+    }
+    
     public BasicSocketMetaClass(String name, Class clazz, RubyClass superClass, SinglyLinkedList parentCRef) {
         super(name, clazz, superClass, parentCRef);
     }
