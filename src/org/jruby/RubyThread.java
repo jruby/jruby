@@ -88,9 +88,9 @@ public class RubyThread extends RubyObject {
         threadClass.defineMethod("[]=", 
                 callbackFactory.getMethod("aset", IRubyObject.class, IRubyObject.class));
         threadClass.defineMethod("abort_on_exception", 
-                callbackFactory.getMethod("abort_on_exception", IRubyObject.class));
+                callbackFactory.getMethod("abort_on_exception"));
         threadClass.defineMethod("abort_on_exception=", 
-                callbackFactory.getMethod("abort_on_exception_set", IRubyObject.class, IRubyObject.class));
+                callbackFactory.getMethod("abort_on_exception_set", IRubyObject.class));
         threadClass.defineMethod("alive?", 
                 callbackFactory.getMethod("is_alive"));
         threadClass.defineMethod("group", 
@@ -140,6 +140,10 @@ public class RubyThread extends RubyObject {
                 callbackFactory.getSingletonMethod("s_kill", RubyThread.class));
         threadClass.defineSingletonMethod("exit", 
                 callbackFactory.getSingletonMethod("s_exit"));
+        threadClass.defineSingletonMethod("abort_on_exception",
+                callbackFactory.getSingletonMethod("abort_on_exception"));
+        threadClass.defineSingletonMethod("abort_on_exception=",
+                callbackFactory.getSingletonMethod("abort_on_exception_set", IRubyObject.class));
 
         RubyThread rubyThread = new RubyThread(runtime, threadClass);
         // set hasStarted to true, otherwise Thread.main.status freezes
@@ -280,8 +284,11 @@ public class RubyThread extends RubyObject {
 
     private void pollReceivedExceptions() {
         if (receivedException != null) {
+            // clear this so we don't keep re-throwing
+            IRubyObject raiseException = receivedException;
+            receivedException = null;
             RubyModule kernelModule = getRuntime().getModule("Kernel");
-            kernelModule.callMethod("raise", receivedException);
+            kernelModule.callMethod("raise", raiseException);
         }
     }
 
