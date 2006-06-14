@@ -40,6 +40,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.nio.channels.Channel;
+import java.nio.channels.SelectableChannel;
 
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOHandler;
@@ -804,6 +805,38 @@ public class RubyIO extends RubyObject {
         }
 
         return result;
+    }
+
+    public IRubyObject fcntl(IRubyObject cmd, IRubyObject arg) throws IOException {
+        long realCmd = cmd.convertToInteger().getLongValue();
+        
+        // Fixme: Arg may also be true, false, and nil and still be valid.  Strangely enough, 
+        // protocol conversion is not happening in Ruby on this arg?
+        if (!(arg instanceof RubyNumeric)) {
+            return getRuntime().newFixnum(0);
+        }
+        
+        long realArg = ((RubyNumeric)arg).getLongValue();
+
+        // Fixme: Only F_SETFL is current supported
+        if (realCmd == 1L) {  // cmd is F_SETFL
+            boolean block = false;
+            
+            if((realArg & IOModes.NONBLOCK) == IOModes.NONBLOCK) {
+                block = true;
+            }
+            
+            Channel channel = getChannel();
+            if (channel != null && channel instanceof SelectableChannel) {
+                try {
+                    ((SelectableChannel)channel).configureBlocking(block);
+                } catch (IOException e) {
+                    throw getRuntime().newIOError(e.getMessage());
+                }
+            }         
+        }
+        
+        return getRuntime().newFixnum(0);
     }
 
     public IRubyObject puts(IRubyObject[] args) {

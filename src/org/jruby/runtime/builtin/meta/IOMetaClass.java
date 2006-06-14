@@ -95,6 +95,7 @@ public class IOMetaClass extends ObjectMetaClass {
 	        defineMethod("each_line", Arity.optional());
 	        defineMethod("eof", Arity.noArguments());
 	        defineAlias("eof?", "eof");
+	        defineMethod("fcntl", Arity.twoArguments());
 	        defineMethod("fileno", Arity.noArguments());
 	        defineMethod("flush", Arity.noArguments());
 	        defineMethod("fsync", Arity.noArguments());
