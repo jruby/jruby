@@ -296,8 +296,7 @@ public class RubyThread extends RubyObject {
     	try {
     		waitIfCriticalized();
     	} catch (InterruptedException ie) {
-    		// TODO: throw something better
-    		throw new RuntimeException(ie);
+    		throw new ThreadKill();
     	}
     	dieIfKilled();
     }
@@ -581,8 +580,7 @@ public class RubyThread extends RubyObject {
     				}
     			}
     		} catch (InterruptedException ie) {
-    			// throw something better
-    			throw new RuntimeException(ie);
+    			throw new ThreadKill();
     		}
     	}
 
