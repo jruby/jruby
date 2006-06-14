@@ -68,7 +68,7 @@ set _STARTJAVA="%JAVA_HOME%\bin\%JAVA_COMMAND%"
 set _RUNJAVA="%JAVA_HOME%\bin\java"
 rem ----- Set Up The Runtime Classpath ----------------------------------------
 
-set CP=%JRUBY_HOME%\lib\jruby.jar
+set CP=%JRUBY_HOME%\lib\jruby.jar;%JRUBY_HOME%\lib\jvyaml.jar
 
 if not "%CLASSPATH%" == "" goto gotCP
 set CLASSPATH=%CP%
