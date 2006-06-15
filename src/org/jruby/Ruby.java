@@ -114,6 +114,8 @@ public final class Ruby implements IRuby {
 
     private RubyProc traceFunction;
     private boolean isWithinTrace = false;
+    private boolean globalAbortOnExceptionEnabled = false;
+    private boolean doNotReverseLookupEnabled = false;
 
     /** safe-level:
     		0 - strings from streams/environment/ARGV are tainted (default)
@@ -1225,5 +1227,21 @@ public final class Ruby implements IRuby {
 
 	public PrintStream getErr() {
 		return err;
+	}
+
+	public boolean isGlobalAbortOnExceptionEnabled() {
+		return globalAbortOnExceptionEnabled;
+	}
+
+	public void setGlobalAbortOnExceptionEnabled(boolean enable) {
+		globalAbortOnExceptionEnabled = enable;
+	}
+
+	public boolean isDoNotReverseLookupEnabled() {
+		return doNotReverseLookupEnabled;
+	}
+
+	public void setDoNotReverseLookupEnabled(boolean b) {
+		doNotReverseLookupEnabled = b;
 	}
 }

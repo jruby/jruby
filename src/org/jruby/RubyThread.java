@@ -57,8 +57,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author Jason Voegele (jason@jvoegele.com)
  */
 public class RubyThread extends RubyObject {
-    private static boolean globalAbortOnException; // move to runtime object
-
     private NativeThread threadImpl;
     private Map threadLocalVariables = new HashMap();
     private boolean abortOnException;
@@ -326,11 +324,12 @@ public class RubyThread extends RubyObject {
      * Thread.abort_on_exception= .
      */
     public static RubyBoolean abort_on_exception(IRubyObject recv) {
-        return globalAbortOnException ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
+    	IRuby runtime = recv.getRuntime();
+        return runtime.isGlobalAbortOnExceptionEnabled() ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
     }
 
     public static IRubyObject abort_on_exception_set(IRubyObject recv, IRubyObject value) {
-        globalAbortOnException = value.isTrue();
+        recv.getRuntime().setGlobalAbortOnExceptionEnabled(value.isTrue());
         return value;
     }
 
@@ -623,7 +622,8 @@ public class RubyThread extends RubyObject {
     public void exceptionRaised(RaiseException exception) {
         assert isCurrent();
 
-        if (abortOnException()) {
+        IRuby runtime = exception.getException().getRuntime();
+        if (abortOnException(runtime)) {
             // FIXME: printError explodes on some nullpointer
             //getRuntime().getRuntime().printError(exception.getException());
         	// TODO: Doesn't SystemExit have its own method to make this less wordy..
@@ -635,8 +635,8 @@ public class RubyThread extends RubyObject {
         }
     }
 
-    private boolean abortOnException() {
-        return (globalAbortOnException || abortOnException);
+    private boolean abortOnException(IRuby runtime) {
+        return (runtime.isGlobalAbortOnExceptionEnabled() || abortOnException);
     }
 
     public static RubyThread mainThread(IRubyObject receiver) {

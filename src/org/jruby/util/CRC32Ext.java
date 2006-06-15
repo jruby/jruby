@@ -40,7 +40,7 @@ public class CRC32Ext implements Checksum {
     private int crc;
     private final CRC32 intern;
 
-    private static Field intern_crc; 
+    private static final Field intern_crc; 
 
     static {
         try {

@@ -625,4 +625,20 @@ public class BaseMockRuby implements IRuby {
         throw new MockException();
 	}
 
+	public boolean isGlobalAbortOnExceptionEnabled() {
+        throw new MockException();
+	}
+
+	public void setGlobalAbortOnExceptionEnabled(boolean b) {
+        throw new MockException();
+	}
+
+	public boolean isDoNotReverseLookupEnabled() {
+        throw new MockException();
+	}
+
+	public void setDoNotReverseLookupEnabled(boolean b) {
+        throw new MockException();
+	}
+
 }

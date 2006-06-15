@@ -41,7 +41,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public final class Arity implements Serializable {
     private static final long serialVersionUID = 1L;
-    private static Map arities = new HashMap();
+    private static final Map arities = new HashMap();
     private final int value;
 
     private Arity(int value) {

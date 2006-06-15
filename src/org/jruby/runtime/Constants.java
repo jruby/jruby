@@ -40,10 +40,10 @@ public final class Constants {
     public static final int MARSHAL_MAJOR = 4;
     public static final int MARSHAL_MINOR = 10;
     
-    public static String RUBY_MAJOR_VERSION;
-    public static String RUBY_VERSION;
-    public static String COMPILE_DATE;
-    public static String VERSION;
+    public static final String RUBY_MAJOR_VERSION;
+    public static final String RUBY_VERSION;
+    public static final String COMPILE_DATE;
+    public static final String VERSION;
 
     static {
     	try {

@@ -53,8 +53,8 @@ public class RubyTime extends RubyObject {
 	private Calendar cal;
     private long usec;
 
-    private static RubyDateFormat rubyDateFormat = new RubyDateFormat("-", Locale.US);
-    private static SimpleDateFormat simpleDateFormat = new SimpleDateFormat("-", Locale.US);
+    private static final RubyDateFormat rubyDateFormat = new RubyDateFormat("-", Locale.US);
+    private static final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("-", Locale.US);
 
     public RubyTime(IRuby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);

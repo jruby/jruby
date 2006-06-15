@@ -351,4 +351,12 @@ public interface IRuby {
 	public long incrementRandomSeedSequence();
 
     public RubyTime newTime(long milliseconds);
+
+	public boolean isGlobalAbortOnExceptionEnabled();
+
+	public void setGlobalAbortOnExceptionEnabled(boolean b);
+
+	public boolean isDoNotReverseLookupEnabled();
+
+	public void setDoNotReverseLookupEnabled(boolean b);
 }

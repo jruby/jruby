@@ -32,7 +32,6 @@ package org.jruby.yaml;
 
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +52,6 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyHash;
-import org.jruby.RubyTime;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**

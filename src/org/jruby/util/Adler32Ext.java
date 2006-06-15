@@ -40,7 +40,7 @@ public class Adler32Ext implements Checksum {
     private int adler;
     private final Adler32 intern;
 
-    private static Field intern_adler; 
+    private static final Field intern_adler; 
 
     static {
         try {

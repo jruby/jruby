@@ -40,7 +40,6 @@ import org.jruby.util.IOHandlerNio;
 import org.jruby.util.IOHandler;
 
 public class RubyBasicSocket extends RubyIO {
-    public static boolean do_not_reverse_lookup = false;
     private Channel socketChannel;
     
     public RubyBasicSocket(IRuby runtime, RubyClass type) {

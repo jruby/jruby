@@ -70,12 +70,12 @@ public class BasicSocketMetaClass extends IOMetaClass {
     };
 
     public IRubyObject do_not_reverse_lookup() {
-        return getRuntime().newBoolean(RubyBasicSocket.do_not_reverse_lookup);
+        return getRuntime().newBoolean(getRuntime().isDoNotReverseLookupEnabled());
     }
     
     public IRubyObject set_do_not_reverse_lookup(IRubyObject flag) {
-        RubyBasicSocket.do_not_reverse_lookup = ((RubyBoolean) flag).isTrue();
-        return getRuntime().newBoolean(RubyBasicSocket.do_not_reverse_lookup);
+        getRuntime().setDoNotReverseLookupEnabled(((RubyBoolean) flag).isTrue());
+        return getRuntime().newBoolean(getRuntime().isDoNotReverseLookupEnabled());
     }
     
     protected Meta getMeta() {

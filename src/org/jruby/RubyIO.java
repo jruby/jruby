@@ -147,6 +147,7 @@ public class RubyIO extends RubyObject {
         return (IOHandler) ((WeakReference) getRuntime().getIoHandlers().get(new Integer(aFileno))).get();
     }
     
+    // FIXME can't use static; would interfere with other runtimes in the same JVM
     protected static int fileno = 2;
     
     public static int getNewFileno() {
