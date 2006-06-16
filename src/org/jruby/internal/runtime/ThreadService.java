@@ -44,8 +44,8 @@ public class ThreadService {
     private ThreadContextLocal localContext = new ThreadContextLocal(mainContext);
     private ThreadGroup rubyThreadGroup;
     private List rubyThreadList;
-    private volatile boolean critical;
     private Thread mainThread;
+    private RubyThread criticalThread;
 
     public ThreadService(IRuby runtime) {
         this.runtime = runtime;
@@ -121,43 +121,35 @@ public class ThreadService {
     }
     
     public synchronized void setCritical(boolean critical) {
+        RubyThread currentThread = getCurrentContext().getThread();
+        
     	// TODO: this implementation is obviously dependent on native threads
-    	if (this.critical) {
+    	if (criticalThread != null) {
+            // currently in a critical section
     		if (critical) {
+                // enabling critical, do nothing
 				return;
 			}
-    		this.critical = false;
-    		
-            RubyThread[] activeThreads = getActiveRubyThreads();
-    		
-    		for (int i = 0; i < activeThreads.length; i++) {
-    			RubyThread rubyThread = activeThreads[i];
-    			
-    			rubyThread.decriticalize();
-    		}
+            if (criticalThread != currentThread) {
+                // we're not the critical thread, do nothing (TODO: or perhaps wait on the critical thread here?)
+                return;
+            }
+            
+            // clear the critical thread and notify all waiting on it
+            synchronized (criticalThread) {
+                RubyThread critThread = criticalThread;
+                criticalThread = null;
+                critThread.notifyAll();
+            }
     	} else {
+            // not in a critical section
     		if (!critical) {
+                // not asking for critical, do nothing
 				return;
 			}
-    		this.critical = true;
-    		
-            RubyThread[] activeThreads = getActiveRubyThreads();
-    		AtomicSpinlock spinlock = new AtomicSpinlock();
-    		
-    		for (int i = 0; i < activeThreads.length; i++) {
-    			RubyThread rubyThread = activeThreads[i];
-
-    			if (rubyThread != getCurrentContext().getThread()) {
-    				rubyThread.criticalize(spinlock);
-    			}
-    		}
-    		
-    		try {
-    			spinlock.waitForZero(1000);
-    		} catch (InterruptedException ie) {
-    			// TODO: throw something more appropriate
-    			throw new RuntimeException(ie);
-    		}
+            
+            // set the critical thread!
+            criticalThread = currentThread;
     	}
     }
     
@@ -173,8 +165,8 @@ public class ThreadService {
 		return rubyThread;
 	}
 
-	public boolean getCritical() {
-    	return critical;
+	public RubyThread getCriticalThread() {
+    	return criticalThread;
     }
 
     private static class ThreadContextLocal extends ThreadLocal {

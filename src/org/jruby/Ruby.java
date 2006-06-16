@@ -60,6 +60,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.libraries.JRubyLibrary;
 import org.jruby.libraries.RbConfigLibrary;
 import org.jruby.libraries.SocketLibrary;
+import org.jruby.libraries.StringIOLibrary;
 import org.jruby.parser.Parser;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CacheMap;
@@ -423,6 +424,7 @@ public final class Ruby implements IRuby {
         
         
         loadService.registerBuiltin("jruby", new JRubyLibrary());
+        loadService.registerBuiltin("stringio", new StringIOLibrary());
     }
 
     private void initCoreClasses() {

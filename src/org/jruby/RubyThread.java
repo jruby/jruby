@@ -37,7 +37,6 @@ import java.util.Map;
 
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
-import org.jruby.internal.runtime.AtomicSpinlock;
 import org.jruby.internal.runtime.NativeThread;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.runtime.CallbackFactory;
@@ -70,12 +69,9 @@ public class RubyThread extends RubyObject {
     private volatile boolean isStopped = false;
     public Object stopLock = new Object();
     
-    private volatile boolean criticalized = false;
-    private AtomicSpinlock spinlock;
-    public Object criticalLock = new Object();
-    
     private volatile boolean killed = false;
     public Object killLock = new Object();
+    private RubyThread joinedByCriticalThread;
     
     public static RubyClass createThreadClass(IRuby runtime) {
         RubyClass threadClass = runtime.defineClass("Thread", runtime.getObject());
@@ -232,38 +228,16 @@ public class RubyThread extends RubyObject {
     		// ignore
     	}
     }
-    
-	public void criticalize(AtomicSpinlock lock) {
-		synchronized (criticalLock) {
-			criticalized = true;
-			// if already stopped, don't increment spinlock
-			// it will either decriticalize before waking or criticalize when it wakes
-			if (!isStopped && threadImpl.isAlive()) {
-				spinlock = lock;
-				spinlock.increment();
-			}
-		}
-	}
-	
-	public void decriticalize() {
-		synchronized (criticalLock) {
-			criticalized = false;
-			spinlock = null;
-			criticalLock.notify();
-		}
-	}
 	
 	public void waitIfCriticalized() throws InterruptedException {
-		if (criticalized) {
-			synchronized (criticalLock) {
-				// Warning: DCL
-				if (criticalized) {
-					if (spinlock != null) spinlock.decrement();
-					criticalLock.wait();
-				}
+        RubyThread criticalThread = getRuntime().getThreadService().getCriticalThread();
+		if (criticalThread != null && criticalThread != this && criticalThread != joinedByCriticalThread) {
+			synchronized (criticalThread) {
+                criticalThread.wait();
 			}
 		}
 	}
+    
     public void notifyStarted() {
         assert isCurrent();
         synchronized (hasStartedLock) {
@@ -342,7 +316,23 @@ public class RubyThread extends RubyObject {
     }
 
     public static IRubyObject pass(IRubyObject recv) {
+        IRuby runtime = recv.getRuntime();
+        ThreadService ts = runtime.getThreadService();
+        RubyThread criticalThread = ts.getCriticalThread();
+        RubyThread currentThread = ts.getCurrentContext().getThread();
+        
+        if (criticalThread == currentThread) {
+            // we're currently the critical thread; decriticalize for pass
+            ts.setCritical(false);
+        }
+        
         Thread.yield();
+        
+        if (criticalThread != null) {
+            // recriticalize
+            ts.setCritical(true);
+        }
+        
         return recv.getRuntime().getNil();
     }
 
@@ -397,6 +387,12 @@ public class RubyThread extends RubyObject {
         }
         ensureStarted();
         try {
+            RubyThread criticalThread = getRuntime().getThreadService().getCriticalThread();
+            if (criticalThread != null) {
+                // set the target thread's joinedBy, so it knows it can execute during a critical section
+                joinedByCriticalThread = criticalThread;
+                threadImpl.interrupt(); // break target thread out of critical
+            }
             threadImpl.join();
         } catch (InterruptedException iExcptn) {
             assert false : iExcptn;
@@ -424,7 +420,6 @@ public class RubyThread extends RubyObject {
         return getRuntime().newBoolean(threadLocalVariables.containsKey(name));
     }
     
-    // TODO: Determine overhead in implementing this
     public static IRubyObject critical_set(IRubyObject receiver, RubyBoolean value) {
     	receiver.getRuntime().getThreadService().setCritical(value.isTrue());
     	
@@ -432,7 +427,7 @@ public class RubyThread extends RubyObject {
     }
 
     public static IRubyObject critical(IRubyObject receiver) {
-    	return receiver.getRuntime().newBoolean(receiver.getRuntime().getThreadService().getCritical());
+    	return receiver.getRuntime().newBoolean(receiver.getRuntime().getThreadService().getCriticalThread() != null);
     }
 
     public static IRubyObject stop(IRubyObject receiver) {
@@ -442,10 +437,8 @@ public class RubyThread extends RubyObject {
     	synchronized (stopLock) {
     		try {
     			rubyThread.isStopped = true;
-    			// decriticalize all if we're the critical thread
-    			if (receiver.getRuntime().getThreadService().getCritical() && !rubyThread.criticalized) {
-    				receiver.getRuntime().getThreadService().setCritical(false);
-    			}
+    			// attempt to decriticalize all if we're the critical thread
+    			receiver.getRuntime().getThreadService().setCritical(false);
 
     			stopLock.wait();
     		} catch (InterruptedException ie) {
@@ -465,10 +458,8 @@ public class RubyThread extends RubyObject {
     	RubyThread rubyThread = receiver.getRuntime().getThreadService().getCurrentContext().getThread();
     	
 		rubyThread.killed = true;
-		// decriticalize all if we're the critical thread
-		if (receiver.getRuntime().getThreadService().getCritical() && !rubyThread.criticalized) {
-			receiver.getRuntime().getThreadService().setCritical(false);
-		}
+		// attempt to decriticalize all if we're the critical thread
+		receiver.getRuntime().getThreadService().setCritical(false);
 		
 		throw new ThreadKill();
     }
@@ -563,20 +554,13 @@ public class RubyThread extends RubyObject {
     		if (killed) return this;
     		
     		killed = true;
-    		synchronized (criticalLock) {
-    			criticalLock.notify(); // in case waiting in critical (nice)
-    		}
-    		synchronized (stopLock) {
-    			stopLock.notify(); // in case asleep or stopped
-    		}
-    		threadImpl.interrupt(); // in case blocking (not nice)
+            
+    		threadImpl.interrupt(); // break out of wait states and blocking IO
     		try {
     			if (!threadImpl.isInterrupted()) {
-    				synchronized (killLock) {
-    					if (threadImpl.isAlive()) {
-    						killLock.wait(); // still running, wait for it to kill itself
-    					}
-    				}
+                    // we did not interrupt the thread, so wait for it to complete
+                    // TODO: test that this is correct...should killer wait for killee to die?
+                    threadImpl.join();
     			}
     		} catch (InterruptedException ie) {
     			throw new ThreadKill();

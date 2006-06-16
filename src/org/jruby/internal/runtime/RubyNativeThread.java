@@ -82,6 +82,7 @@ public class RubyNativeThread extends Thread {
         } catch (RaiseException e) {
             rubyThread.exceptionRaised(e);
         } finally {
+            runtime.getThreadService().setCritical(false);
         	((RubyThreadGroup)rubyThread.group()).remove(rubyThread);
         }
     }
