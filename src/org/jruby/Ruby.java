@@ -1043,7 +1043,7 @@ public final class Ruby implements IRuby {
     }
     
     public RaiseException newArgumentError(int got, int expected) {
-    	return newRaiseException(getClass("ArgumentError"), "wrong # of arguments(" + got + " for " + expected);
+    	return newRaiseException(getClass("ArgumentError"), "wrong # of arguments(" + got + " for " + expected + ")");
     }
     
     public RaiseException newErrnoEBADFError() {
