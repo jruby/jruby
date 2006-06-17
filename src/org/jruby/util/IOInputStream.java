@@ -30,7 +30,6 @@ package org.jruby.util;
 import java.io.InputStream;
 import java.io.IOException;
 
-import org.jruby.RubyArray;
 import org.jruby.RubyFixnum;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -42,38 +41,54 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * At the moment, the only functionality supported is reading, and the only requirement on the io-object is
  * that it responds to read() like IO.
- * 
- * @author <a href="mailto:Ola.Bini@ki.se">Ola Bini</a>
  */
 public class IOInputStream extends InputStream {
     private IRubyObject io;
     private final IRubyObject numOne;
-    private final IRubyObject packArg;
+    //private final IRubyObject packArg;
 
     /**
      * Creates a new InputStream with the object provided.
      *
      * @param io the ruby object
      */
-    public IOInputStream(final IRubyObject io) {
-        if(!io.respondsTo("read")) {
+    public IOInputStream(IRubyObject io) {
+        if (!io.respondsTo("read")) {
             throw new IllegalArgumentException("Object: " + io + " is not a legal argument to this wrapper, cause it doesn't respond to \"read\".");
         }
         this.io = io;
         this.numOne = RubyFixnum.one(this.io.getRuntime());
-        this.packArg = io.getRuntime().newString("C");
+        //this.packArg = io.getRuntime().newString("C");
     }
     
     public int read() throws IOException {
         IRubyObject readValue = io.callMethod("read", numOne);
         int returnValue = -1;
-        if(!readValue.isNil()) {
-            RubyArray unpackValue = (RubyArray) readValue.callMethod("unpack", packArg);
-            IRubyObject firstCharacter = unpackValue.entry(0);
-            if(!firstCharacter.isNil()) {
-                returnValue = (int)((RubyFixnum) firstCharacter).getLongValue();
-            }
+        if (!readValue.isNil()) {
+            returnValue = readValue.toString().charAt(0);
         }
         return returnValue;
     }
+
+    public int read(byte[] b) throws IOException {
+        IRubyObject readValue = io.callMethod("read", this.io.getRuntime().newFixnum(b.length));
+        int returnValue = -1;
+        if (!readValue.isNil()) {
+            final String str = readValue.toString();
+            System.arraycopy(str.getBytes("PLAIN"),0,b,0,str.length());
+            returnValue = str.length();
+        }
+        return returnValue;
+    }
+
+    public int read(byte[] b, int off, int len) throws IOException {
+        IRubyObject readValue = io.callMethod("read", io.getRuntime().newFixnum(len));
+        int returnValue = -1;
+        if (!readValue.isNil()) {
+            String str = readValue.toString();
+            System.arraycopy(str.getBytes("PLAIN"),0,b,off,str.length());
+            returnValue = str.length();
+        }
+        return returnValue;
+     }
 }

@@ -61,4 +61,12 @@ public class IOOutputStream extends OutputStream {
     public void write(final int bite) throws IOException {
         io.callMethod("write", io.getRuntime().newString(new String(new char[]{(char)(0x000000FF & bite)})));
     }
+
+    public void write(final byte[] b) throws IOException {
+        write(b,0,b.length);
+    }
+
+    public void write(final byte[] b,final int off, final int len) throws IOException {
+        io.callMethod("write",io.getRuntime().newString(new String(b,off,len,"PLAIN")));
+    }
 }
