@@ -1,19 +1,18 @@
 # TODO java.util.Comparator support?
 JavaUtilities.extend_proxy('java.util.Map') {
+  include Enumerable
   def each(&block)
     entrySet.each { |pair| block.call(pair.key, pair.value) }
   end
-}
-  
-JavaUtilities.extend_proxy('java.util.Set') {
-  def each(&block)
-    iter = iterator
-    while iter.hasNext
-      block.call(iter.next)
-    end
+  def [](key)
+    get(key)
+  end
+  def []=(key,val)
+    put(key,val)
+    val
   end
 }
-
+  
 JavaUtilities.extend_proxy('java.lang.Comparable') {
   include Comparable
   def <=>(a)
@@ -21,15 +20,43 @@ JavaUtilities.extend_proxy('java.lang.Comparable') {
   end
 }
 
-JavaUtilities.extend_proxy('java.util.List') {
+JavaUtilities.extend_proxy('java.util.Collection') { 
   include Enumerable
-
-  def each
-# TODO: With 'def each(&block)' the following line will not work.
-#      0.upto(size-1) { |index| block.call(get(index)) }
-    0.upto(size-1) { |index| yield(get(index)) }
+  def each(&block)
+    iter = iterator
+    while iter.hasNext
+      block.call(iter.next)
+    end
   end
-  def <<(a); add(a); end
+  def <<(a); add(a); self; end
+  def +(oth)
+    nw = self.dup
+    nw.addAll(oth)
+    nw
+  end
+  def -(oth)
+    nw = self.dup
+    nw.removeAll(oth)
+    nw
+  end
+}
+
+
+JavaUtilities.extend_proxy('java.util.List') {
+  def [](ix)
+    if ix < size
+      get(ix)
+    else
+      nil
+    end
+  end
+  def []=(ix,val)
+    if size < ix
+      ((ix-size)+1).times { self << nil }
+    end
+    set(ix,val)
+    val
+  end
   def sort()
     include_class 'java.util.ArrayList'
     include_class 'java.util.Collections'
