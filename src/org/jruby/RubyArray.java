@@ -114,7 +114,11 @@ public class RubyArray extends RubyObject implements List {
     }
 
     public RubyFixnum hash() {
-        return getRuntime().newFixnum(list.hashCode());
+        return getRuntime().newFixnum(hashCode());
+    }
+    
+    public int hashCode() {
+    	return list.hashCode();
     }
 
     /** rb_ary_modify

@@ -98,7 +98,11 @@ public class RubyFixnum extends RubyInteger {
     }
 
     public RubyFixnum hash() {
-        return newFixnum((int) value ^ (int) (value >> 32));
+        return newFixnum(hashCode());
+    }
+    
+    public int hashCode() {
+    	return (int) value ^ (int) (value >> 32);
     }
 
     // Methods of the Fixnum Class (fix_*):

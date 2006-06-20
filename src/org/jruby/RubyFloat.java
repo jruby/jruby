@@ -112,9 +112,12 @@ public class RubyFloat extends RubyNumeric {
     }
 
     public RubyFixnum hash() {
-        return getRuntime().newFixnum(new Double(value).hashCode());
+        return getRuntime().newFixnum(hashCode());
     }
 
+    public int hashCode() {
+    	return new Double(value).hashCode();
+    }
     // Float methods (flo_*)
 
     public static RubyFloat newFloat(IRuby runtime, double value) {

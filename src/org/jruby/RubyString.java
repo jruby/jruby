@@ -145,6 +145,10 @@ public class RubyString extends RubyObject {
         return getRuntime().newFixnum(toString().hashCode());
     }
     
+    public final int hashCode() {
+    	return chars.hashCode();
+    }
+    
     // Common enough check to make it a convenience method.
     private boolean sameAs(Object other) {
         return toString().equals(other.toString());
