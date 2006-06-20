@@ -35,6 +35,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -503,7 +504,11 @@ public class RubyHash extends RubyObject implements Map {
         return result;
     }
 
-	public void marshalTo(MarshalStream output) throws java.io.IOException {
+    // FIXME:  Total hack to get flash in Rails marshalling/unmarshalling in session ok...We need
+    // to totally change marshalling to work with overridden core classes.
+	public void marshalTo(MarshalStream output) throws IOException {
+		output.writeIVar(this, output);
+		output.writeUserClass(this, getRuntime().getClass("Hash"), output);
 		output.write('{');
 		output.dumpInt(getValueMap().size());
 		
@@ -513,9 +518,13 @@ public class RubyHash extends RubyObject implements Map {
 			output.dumpObject((IRubyObject) entry.getKey());
 			output.dumpObject((IRubyObject) entry.getValue());
 		}
+		
+    	if (!getMetaClass().equals(getRuntime().getClass("Hash"))) {
+    		output.writeInstanceVars(this, output);
+    	}
 	}
 
-    public static RubyHash unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
+    public static RubyHash unmarshalFrom(UnmarshalStream input) throws IOException {
         RubyHash result = newHash(input.getRuntime());
         input.registerLinkTarget(result);
         int size = input.unmarshalInt();

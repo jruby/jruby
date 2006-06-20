@@ -32,6 +32,7 @@
 package org.jruby.runtime.builtin;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.jruby.MetaClass;
@@ -288,4 +289,6 @@ public interface IRubyObject {
     void defineSingletonMethod(String name, Callback callback);
 
     boolean singletonMethodsAllowed();
+
+	Iterator instanceVariableNames();
 }

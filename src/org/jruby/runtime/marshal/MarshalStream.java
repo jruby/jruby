@@ -35,9 +35,11 @@ package org.jruby.runtime.marshal;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Iterator;
 
 import org.jruby.IRuby;
 import org.jruby.RubyBoolean;
+import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
@@ -55,9 +57,11 @@ public class MarshalStream extends FilterOutputStream {
     private int depth = 0;
     private MarshalCache cache;
 
+    private final static char TYPE_IVAR = 'I';
     private final static char TYPE_USRMARSHAL = 'U';
     private final static char TYPE_USERDEF = 'u';
-
+    
+    protected static char TYPE_UCLASS = 'C';
 
     public MarshalStream(IRuby runtime, OutputStream out, int depthLimit) throws IOException {
         super(out);
@@ -87,6 +91,43 @@ public class MarshalStream extends FilterOutputStream {
         depth--;
         if (depth == 0) {
         	out.flush(); // flush afer whole dump is complete
+        }
+    }
+    
+    public void writeUserClass(IRubyObject obj, RubyClass baseClass, MarshalStream output) throws IOException {
+    	// TODO: handle w_extended code here
+    	
+    	if (obj.getMetaClass().equals(baseClass)) {
+    		// do nothing, simple builtin type marshalling
+    		return;
+    	}
+    	
+    	output.write(TYPE_UCLASS);
+    	
+    	// w_unique
+    	if (obj.getMetaClass().getName().charAt(0) == '#') {
+    		throw obj.getRuntime().newTypeError("Can't dump anonymous class");
+    	}
+    	
+    	// w_symbol
+    	// TODO: handle symlink?
+    	RubySymbol.newSymbol(obj.getRuntime(), obj.getMetaClass().getName()).marshalTo(output);
+    }
+    
+    public void writeInstanceVars(IRubyObject obj, MarshalStream output) throws IOException {
+    	IRuby runtime = obj.getRuntime();
+        output.dumpInt(obj.getInstanceVariables().size());
+        
+        for (Iterator iter = obj.instanceVariableNames(); iter.hasNext();) {
+            String name = (String) iter.next();
+            IRubyObject value = obj.getInstanceVariable(name);
+
+            // Between getting name and retrieving value the instance variable could have been
+            // removed
+            if (value != null) {
+            	output.dumpObject(runtime.newSymbol(name));
+            	output.dumpObject(value);
+            }
         }
     }
 
@@ -171,4 +212,10 @@ public class MarshalStream extends FilterOutputStream {
             }
         }
     }
+
+	public void writeIVar(IRubyObject obj, MarshalStream output) throws IOException {
+		if (obj.getInstanceVariables().size() > 0) {
+			out.write(TYPE_IVAR);
+		} 
+	}
 }

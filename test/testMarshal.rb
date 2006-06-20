@@ -1,11 +1,7 @@
 require 'test/minirunit'
 test_check "Test Marshal:"
 
-if defined? Java
-  MARSHAL_HEADER = "\004\012"
-else
-  MARSHAL_HEADER = Marshal.dump(nil).chop
-end
+MARSHAL_HEADER = Marshal.dump(nil).chop
 
 def test_marshal(expected, marshalee)
   test_equal(MARSHAL_HEADER + expected, Marshal.dump(marshalee))
@@ -148,3 +144,29 @@ test_ok(a[0] == a[1])
 a = Marshal.load(Marshal.dump([:hi, :hi, :hi, :hi]))
 test_ok(a[0] == :hi)
 test_ok(a[1] == :hi)
+
+# simple extensions of builtins should retain their types
+class MyHash < Hash
+  attr_accessor :used, :me
+  
+  def initialize
+  	super
+    @used = {}
+    @me = 'a'
+  end
+  
+  def []=(k, v) #:nodoc:
+    @used[k] = false
+    super
+  end
+  
+  def foo; end
+end
+
+x = MyHash.new
+
+test_equal(MyHash, Marshal.load(Marshal.dump(x)).class)
+test_equal(x, Marshal.load(Marshal.dump(x)))
+
+x['a'] = 'b'
+#test_equal(x, Marshal.load(Marshal.dump(x)))

@@ -90,6 +90,10 @@ public class UnmarshalStream extends FilterInputStream {
     private IRubyObject unmarshalObjectDirectly(int type, IRubyObject proc) throws IOException {
     	IRubyObject rubyObj = null;
         switch (type) {
+        	case 'I':
+                rubyObj = unmarshalObject(proc);
+                defaultInstanceVarsUnmarshal(rubyObj, proc);
+        		break;
             case '0' :
                 rubyObj = runtime.getNil();
                 break;
@@ -138,8 +142,11 @@ public class UnmarshalStream extends FilterInputStream {
             case 'U' :
                 rubyObj = userNewUnmarshal();
                 break;
+            case 'C' :
+            	rubyObj = uclassUnmarshall();
+            	break;
             default :
-                throw getRuntime().newArgumentError("dump format error(" + type + ")");
+                throw getRuntime().newArgumentError("dump format error(" + (char)type + ")");
         }
         
         if (proc != null) {
@@ -217,11 +224,29 @@ public class UnmarshalStream extends FilterInputStream {
         IRubyObject result = new RubyObject(runtime, type);
         registerLinkTarget(result);
 
-        for (int i = 0, count = unmarshalInt(); i < count; i++) {
-            result.setInstanceVariable(unmarshalObject().asSymbol(), unmarshalObject(proc));
-        }
+        defaultInstanceVarsUnmarshal(result, proc);
 
         return result;
+    }
+    
+    private void defaultInstanceVarsUnmarshal(IRubyObject object, IRubyObject proc) throws IOException {
+    	int count = unmarshalInt();
+    	
+    	for (int i = 0; i < count; i++) {
+    		object.setInstanceVariable(unmarshalObject().asSymbol(), unmarshalObject(proc));
+    	}
+    }
+    
+    private IRubyObject uclassUnmarshall() throws IOException {
+    	RubySymbol className = (RubySymbol)unmarshalObject();
+    	
+    	RubyClass type = (RubyClass)runtime.getClassFromPath(className.asSymbol());
+    	
+    	IRubyObject result = unmarshalObject();
+    	
+    	result.setMetaClass(type);
+    	
+    	return result;
     }
 
     private IRubyObject userUnmarshal() throws IOException {
