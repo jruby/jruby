@@ -51,6 +51,9 @@ import org.jruby.RubyIO;
 public class IOHandlerSeekable extends IOHandlerJavaIO {
     protected RandomAccessFile file;
     protected String path;
+
+    private boolean shouldReplace = false;
+    private boolean isWin = true;
     
     public IOHandlerSeekable(IRuby runtime, String path, IOModes modes) 
     	throws IOException, InvalidValueException {
@@ -87,6 +90,13 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
         
         if (modes.isAppendable()) {
             seek(0, SEEK_END);
+        }
+        String ls = System.getProperty("line.separator");
+        if (!modes.isBinary() && !"\n".equals(ls)) {
+            shouldReplace = true;
+            if ("\r".equals(ls)) {
+                isWin = false;
+            }
         }
 
         // We give a fileno last so that we do not consume these when
@@ -233,7 +243,24 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
      * @see org.jruby.util.IOHandler#sysread()
      */
     public int sysread() throws IOException {
-        return file.read();
+        if(!shouldReplace) {
+            return file.read();
+        } else {
+            int curr = file.read();
+            if (curr != '\r') {
+                return curr;
+            } else if (!isWin) {
+                return '\n';
+            } else {
+                int next = file.read();
+                if(next == '\n') {
+                    return next;
+                }
+                
+                file.seek(file.getFilePointer() - 1);
+                return curr;
+            }
+        }
     }
     
     /**

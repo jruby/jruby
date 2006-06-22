@@ -106,11 +106,7 @@ public class RubyBignum extends RubyInteger {
     }
 
     public RubyFixnum hash() {
-        return getRuntime().newFixnum(hashCode());
-    }
-    
-    public int hashCode() {
-    	return value.hashCode();
+        return getRuntime().newFixnum(value.hashCode());
     }
 
     // Bignum methods

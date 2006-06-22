@@ -199,10 +199,7 @@ public class RubyRange extends RubyObject {
     }
     
     public RubyFixnum hash() {
-    	return getRuntime().newFixnum(hashCode());
-    }
     
-    public int hashCode() {
         long baseHash = (isExclusive ? 1 : 0);
         long beginHash = ((RubyFixnum) begin.callMethod("hash")).getLongValue();
         long endHash = ((RubyFixnum) end.callMethod("hash")).getLongValue();
@@ -212,7 +209,7 @@ public class RubyRange extends RubyObject {
         hash = hash ^ (endHash << 9);
         hash = hash ^ (baseHash << 24);
         
-        return (int) hash;
+        return getRuntime().newFixnum(hash);
     }
 
     private IRubyObject asString(String stringMethod) {

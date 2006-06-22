@@ -46,6 +46,7 @@ public class IOModes {
     public static final int TRUNC = 512;
     public static final int APPEND = 1024;
     public static final int NONBLOCK = 2048;
+    public static final int BINARY = 4096;
     
     private IRuby runtime;
     private int modes;
@@ -67,11 +68,15 @@ public class IOModes {
     }
     
     public boolean isReadable() {
-        return (modes & RDWR) != 0 || modes == RDONLY;
+        return (modes & RDWR) != 0 || modes == RDONLY || modes == BINARY;
     }
 
     public boolean isWriteable() {
         return isWritable();
+    }
+
+    public boolean isBinary() {
+        return (modes & BINARY) == BINARY;
     }
 
     public boolean isWritable() {
@@ -81,7 +86,7 @@ public class IOModes {
     public boolean isAppendable() {
     	return (modes & APPEND) != 0;
     }
-    
+
     public boolean shouldTruncate() {
     	return (modes & TRUNC) != 0;
     }
@@ -140,6 +145,10 @@ public class IOModes {
                     throw runtime.newArgumentError("illegal access mode " + modes);
                 }
             }
+            if (i == 2) {
+                modes |= BINARY;
+            }
+
         }
     	return modes;
     }

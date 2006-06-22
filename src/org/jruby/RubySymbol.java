@@ -136,11 +136,7 @@ public class RubySymbol extends RubyObject {
     }
 
     public RubyFixnum hash() {
-        return getRuntime().newFixnum(hashCode());
-    }
-    
-    public int hashCode() {
-    	return symbol.hashCode();
+        return getRuntime().newFixnum(symbol.hashCode());
     }
     
     public IRubyObject to_sym() {
