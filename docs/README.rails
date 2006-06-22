@@ -1,0 +1,32 @@
+Ruby on Rails works more or less with JRuby 0.9.0.  It is slower than we would
+like, but it gives a good feeling of how well JRuby has been progressing 
+lately.  To get started:
+
+1. Install Rails gem (with dependencies)
+2. Apply patch to rails gem: docs/patches/rails/rails-1.1.2-blockargs-fix.patch
+3. Generate your Rails application using JRuby
+4. Start Rails*: jruby scripts/server webrick
+
+If you use a activerecord connection you will need to 
+
+1. download the activerecord connector from Nick Sieger: 
+http://blog.nicksieger.com/articles/2006/05/15/jruby-on-rails-and-activerecord-on-jdbc
+2. Put the jdbc_adapter.rb file into:
+lib/ruby/gems/1.8/gems/activerecord-1.14.2/lib/active_record/connection_adapters/
+3. Add a line to let Rails know you want to use jdbc adapter (well just jdbc in JRuby):
+RAILS_CONNECTION_ADAPTERS = %w( jdbc )
+4. Make sure jdbc driver you configure in database.yml is included into your Java
+CLASSPATH.**
+
+Here is an example database.yml section for those who may not be familiar with JDBC:
+development:
+  adapter: jdbc
+  driver: com.mysql.jdbc.Driver
+  url: jdbc:mysql://localhost:3306/cookbook
+  username: root
+  password: yeahpwhere
+
+* We need to explicity specify webrick for this release.  We will fix this for 0.9.1.
+** This connector I believe has only been tested with MySQL, but may work with others.
+   It sounds like Nick has discovered some challenges which may or may not be a problem
+   for more other jdbc adapters.
