@@ -37,6 +37,7 @@ import java.nio.channels.Channel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.FileChannel;
+import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.ByteBuffer;
 
 import java.io.IOException;
@@ -62,6 +63,9 @@ public class IOHandlerNio extends IOHandler {
         if (channel instanceof WritableByteChannel) {
             mode += "w";
             isOpen = true;
+        }
+        if (channel instanceof AbstractSelectableChannel) {
+            ((AbstractSelectableChannel)channel).configureBlocking(false);
         }
         if ("rw".equals(mode)) {
             modes = new IOModes(runtime, IOModes.RDWR);
@@ -104,10 +108,15 @@ public class IOHandlerNio extends IOHandler {
         ByteBuffer buffer = ByteBuffer.allocate(length);
         boolean eof = false;
         while (buffer.hasRemaining()) {
-            if (((ReadableByteChannel) channel).read(buffer) < 0) {
+        	int bytesRead = ((ReadableByteChannel) channel).read(buffer);
+        	if (bytesRead < 0) {
                 eof = true;
                 break;
             }
+        	if (bytesRead == 0) {
+        	    // only should happen for nonblocking IO...break and allow the next call to try again
+        	    break;
+        	}
         }
         if (buffer.position() == 0 && eof == true) {
             throw new EOFException();
