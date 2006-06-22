@@ -212,8 +212,6 @@
 	   	         <include name="docs/**"/>
                          <include name="COPYING*"/>
                          <include name="README"/>
-                         <!-- Just in case we have link to real ruby dist -->
-                         <exclude name="lib/ruby/**"/>
                          <exclude name="lib/ant.jar"/>
    		     </tarfileset>
   		</tar>
@@ -239,8 +237,6 @@
                          <include name=".project"/>
                          <include name=".classpath"/>
                          <include name="default.build.properties"/>
-                         <!-- Just in case we have link to real ruby dist -->
-                         <exclude name="lib/ruby/**"/>
                          <exclude name="lib/jruby.jar"/>
    		     </tarfileset>
   		</tar>
