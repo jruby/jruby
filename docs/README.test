@@ -22,24 +22,21 @@ to rubicon (a good example is tests involving java integration).
 Using Rubicon
 -------------
 
-a) Before you can use rubicon, you must allow jruby to use ruby's core 
-modules.  jruby does not distribute its own set, so you must borrow them.  
-Copy your 'ruby/{verion}' (i.e. /usr/lib/ruby/1.8 on most linuxes) to 
-'lib/ruby' in your CVS sandbox (on linux a softlink works also).
-
-b) Install rubicon (http://rubyforge.org/projects/rubytests).  To get 
+a) Install rubicon (http://rubyforge.org/projects/rubytests).  To get 
 it from CVS:
 
     cvs -d:pserver:anonymous@rubyforge.org:/var/cvs/rubytests login
     cvs -z3 -d:pserver:anonymous@rubyforge.org:/var/cvs/rubytests co rubicon
 
-c) Run rubicon 
+b) Run rubicon (unix CLI examples)
 
-    make RUBY={PATH_TO_JRUBY_HOME}/bin/jruby.sh 
-
-  to run all tests
-
-    {PATH_TO_JRUBY_HOME}/bin/jruby.sh builtin/TestFloat.rb
+    make RUBY={PATH_TO_JRUBY_HOME}/bin/jruby
+    OR
+    {PATH_TO_JRUBY_HOME}/bin/jruby AllTest.rb
+    
+  to run all tests OR
+    
+    {PATH_TO_JRUBY_HOME}/bin/jruby builtin/TestFloat.rb
 
   to test a single file (TestFloat in this case). 
 
@@ -52,9 +49,7 @@ Using minirunit
 When implementing new methods on the builtin classes the easiest way is to write the tests in Ruby. It also makes it possible to verify the tests against the original Ruby interpreter (MRI).
 In the folder "test" you will find JRuby's own tests, and in "test/mri" some tests taken from MRI. Run all of them with:
 
-        ./jruby.sh test/testSuite.rb
-or
-        jruby.bat test/testSuite.rb
+        jruby test/testSuite.rb
 
 Writing Java Tests
 ------------------
