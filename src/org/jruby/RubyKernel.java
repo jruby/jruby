@@ -703,7 +703,7 @@ public class RubyKernel {
         
         int resultCode = runInShell(runtime, new IRubyObject[] {aString}, output);
         
-        recv.getRuntime().getGlobalVariables().set("$?", runtime.newFixnum(resultCode));
+        recv.getRuntime().getGlobalVariables().set("$?", RubyProcess.RubyStatus.newProcessStatus(runtime, resultCode));
         
         return recv.getRuntime().newString(output.toString());
     }
@@ -961,7 +961,7 @@ public class RubyKernel {
         IRuby runtime = recv.getRuntime();
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         int resultCode = runInShell(runtime, args, output);
-        recv.getRuntime().getGlobalVariables().set("$?", runtime.newFixnum(resultCode));
+        recv.getRuntime().getGlobalVariables().set("$?", RubyProcess.RubyStatus.newProcessStatus(runtime, resultCode));
         return runtime.newBoolean(resultCode == 0);
     }
 }

@@ -64,6 +64,10 @@ public class ReflectionCallbackFactory extends CallbackFactory {
         return new ReflectionCallback(type, method, new Class[] { arg1, arg2 }, false, true, Arity.fixed(2));
     }
 
+    public Callback getSingletonMethod(String method, Class arg1, Class arg2, Class arg3) {
+        return new ReflectionCallback(type, method, new Class[] { arg1, arg2, arg3 }, false, true, Arity.fixed(3));
+    }
+
     public Callback getBlockMethod(String method) {
         return new ReflectionCallback(
             type,

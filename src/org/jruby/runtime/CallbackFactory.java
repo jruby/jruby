@@ -89,6 +89,13 @@ public abstract class CallbackFactory {
      **/
     public abstract Callback getSingletonMethod(String method, Class arg1, Class arg2);
 
+    /**
+     * gets a singleton (class) method with 3 arguments.
+     * @param method name of the method
+     * @return a CallBack object corresponding to the appropriate method
+     **/
+    public abstract Callback getSingletonMethod(String method, Class arg1, Class arg2, Class arg3);
+
     public abstract Callback getBlockMethod(String method);
 
     /**

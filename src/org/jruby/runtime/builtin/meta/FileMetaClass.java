@@ -359,17 +359,47 @@ public class FileMetaClass extends IOMetaClass {
         return getRuntime().newBoolean(Pattern.matches(pattern, path.toString()));
     }
     
-    private static final Pattern MULTIPLE_DIR_SEPS = Pattern.compile("[/\\\\][/\\\\]+");
-    
+    /*
+     * Fixme:  This does not have exact same semantics as RubyArray.join, but they
+     * probably could be consolidated (perhaps as join(args[], sep, doChomp)).  
+     */
     public RubyString join(IRubyObject[] args) {
-		RubyArray argArray = getRuntime().newArray(args);
+    	boolean isTainted = false;
+		StringBuffer buffer = new StringBuffer();
+
+		for (int i = 0; i < args.length; i++) {
+			if (args[i].isTaint()) {
+				isTainted = true;
+			}
+			String element;
+			if (args[i] instanceof RubyString) {
+				element = args[i].toString();
+			} else if (args[i] instanceof RubyArray) {
+				// Fixme: Need infinite recursion check to put [...] and not go into a loop
+				element = join(((RubyArray) args[i]).toJavaArray()).toString();
+			} else {
+				element = args[i].convertToString().toString();
+			}
+			
+			chomp(buffer);
+			if (i > 0 && !element.startsWith("/") && !element.startsWith("\\")) {
+				buffer.append("/");
+			} 
+			buffer.append(element);
+		}
         
-        RubyString str = argArray.join(RubyString.newString(getRuntime(), "/"));
-        
-        // create ruby string, cleaning out double dir separators
-        RubyString fixedStr = RubyString.newString(getRuntime(), MULTIPLE_DIR_SEPS.matcher(str.toString()).replaceAll("/"));
-        fixedStr.setTaint(str.isTaint());
+        RubyString fixedStr = RubyString.newString(getRuntime(), buffer.toString());
+        fixedStr.setTaint(isTainted);
         return fixedStr;
+    }
+    
+    private void chomp(StringBuffer buffer) {
+    	int lastIndex = buffer.length() - 1;
+    	
+    	while (lastIndex >= 0 && (buffer.lastIndexOf("/") == lastIndex || buffer.lastIndexOf("\\") == lastIndex)) { 
+    		buffer.setLength(lastIndex);
+    		lastIndex--;
+    	}
     }
 
     public IRubyObject lstat(IRubyObject filename) {
