@@ -68,11 +68,20 @@ test_equal(true, File.fnmatch('*', 'dave/.profile'))
 [
   ["a", "b", "c", "d"],
   ["a"],
-  [],	
+  [],
   ["a", "b", "..", "c"]
 ].each do |a|
   test_equal(a.join(File::SEPARATOR), File.join(*a))
 end
+
+test_equal("////heh////bar/heh", File.join("////heh////bar", "heh"))
+test_equal("/heh/bar/heh", File.join("/heh/bar/", "heh"))
+test_equal("/heh/bar/heh", File.join("/heh/bar/", "/heh"))
+test_equal("/heh//bar/heh", File.join("/heh//bar/", "/heh"))
+test_equal("/heh/bar/heh", File.join("/heh/", "/bar/", "/heh"))
+test_equal("/HEH/BAR/FOO/HOH", File.join("/HEH", ["/BAR", "FOO"], "HOH"))
+test_equal("/heh/bar", File.join("/heh//", "/bar"))
+test_equal("/heh///bar", File.join("/heh", "///bar"))
 
 # split
 test_equal([".", ""], File.split(""))
