@@ -1587,7 +1587,11 @@ word_list      : /* none */ {
 		       node = new DStrNode(getPosition($<ISourcePositionHolder>1)).add(node);
 		     }
 
-		     $$ = $1.add(node);
+		     if ($1 == null) {
+		       $$ = new ArrayNode(getPosition($<ISourcePositionHolder>1)).add(node);
+		     } else {
+		       $$ = $1.add(node);
+		     }
 		 }
 
 word	       : string_content
