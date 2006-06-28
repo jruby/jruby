@@ -17,7 +17,7 @@
  * Copyright (C) 2002-2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * Copyright (C) 2006 Evan Buswell <evan@heron.sytes.net>
+ * Copyright (C) 2006 Evan Buswell <ebuswell@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -40,7 +40,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.nio.channels.Channel;
-import java.nio.channels.SelectableChannel;
 
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOHandler;
@@ -808,7 +807,15 @@ public class RubyIO extends RubyObject {
         return result;
     }
 
-    public IRubyObject fcntl(IRubyObject cmd, IRubyObject arg) throws IOException {
+    public boolean getBlocking() {
+        if (!(handler instanceof IOHandlerNio)) {
+            return true;
+        }
+
+        return ((IOHandlerNio) handler).getBlocking();
+     }
+
+     public IRubyObject fcntl(IRubyObject cmd, IRubyObject arg) throws IOException {
         long realCmd = cmd.convertToInteger().getLongValue();
         
         // Fixme: Arg may also be true, false, and nil and still be valid.  Strangely enough, 
@@ -827,14 +834,16 @@ public class RubyIO extends RubyObject {
                 block = true;
             }
             
-            Channel channel = getChannel();
-            if (channel != null && channel instanceof SelectableChannel) {
-                try {
-                    ((SelectableChannel)channel).configureBlocking(block);
-                } catch (IOException e) {
-                    throw getRuntime().newIOError(e.getMessage());
-                }
-            }         
+ 	    if(!(handler instanceof IOHandlerNio)) {
+ 		// cryptic for the uninitiated...
+ 		throw getRuntime().newNotImplementedError("FCNTL only works with Nio based handlers");
+ 	    }
+ 	
+ 	    try {
+                ((IOHandlerNio) handler).setBlocking(block);
+            } catch (IOException e) {
+                throw getRuntime().newIOError(e.getMessage());
+            }
         }
         
         return getRuntime().newFixnum(0);

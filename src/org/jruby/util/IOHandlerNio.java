@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006 Evan Buswell <evan@heron.sytes.net>
+ * Copyright (C) 2006 Evan Buswell <ebuswell@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -34,10 +34,11 @@ import org.jruby.RubyString;
 import org.jruby.RubyIO;
 
 import java.nio.channels.Channel;
-import java.nio.channels.WritableByteChannel;
-import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.FileChannel;
-import java.nio.channels.spi.AbstractSelectableChannel;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.WritableByteChannel;
+import java.nio.channels.IllegalBlockingModeException;
 import java.nio.ByteBuffer;
 
 import java.io.IOException;
@@ -49,7 +50,7 @@ public class IOHandlerNio extends IOHandler {
     private static final int BLOCK_SIZE = 1024 * 16;
     private ByteBuffer outBuffer;
     private ByteBuffer inBuffer;
-
+    private boolean blocking = true;
     private boolean bufferedIO = false;
 
     public IOHandlerNio(IRuby runtime, Channel channel) throws IOException {
@@ -63,9 +64,6 @@ public class IOHandlerNio extends IOHandler {
         if (channel instanceof WritableByteChannel) {
             mode += "w";
             isOpen = true;
-        }
-        if (channel instanceof AbstractSelectableChannel) {
-            ((AbstractSelectableChannel)channel).configureBlocking(false);
         }
         if ("rw".equals(mode)) {
             modes = new IOModes(runtime, IOModes.RDWR);
@@ -101,26 +99,37 @@ public class IOHandlerNio extends IOHandler {
 
     /* Unbuffered operations */
     
+    public void setBlocking(boolean block) throws IOException {
+        if (!(channel instanceof SelectableChannel)) {
+            return;
+        }
+        synchronized (((SelectableChannel) channel).blockingLock()) {
+            blocking = block;
+            try {
+                ((SelectableChannel) channel).configureBlocking(block);
+            } catch (IllegalBlockingModeException e) {
+                // ignore this; select() will set the correct mode when it is finished
+            }
+        }
+    }
+
+    public boolean getBlocking() {
+        return blocking;
+    }
+
     public String sysread(int length) throws EOFException, BadDescriptorException, IOException {
         checkReadable();
         checkBuffered();
 	
         ByteBuffer buffer = ByteBuffer.allocate(length);
-        boolean eof = false;
-        while (buffer.hasRemaining()) {
-        	int bytesRead = ((ReadableByteChannel) channel).read(buffer);
-        	if (bytesRead < 0) {
-                eof = true;
-                break;
+	int bytes_read = 0;
+        do {
+            bytes_read = ((ReadableByteChannel) channel).read(buffer);
+            if (bytes_read < 0) {
+                throw new EOFException();
             }
-        	if (bytesRead == 0) {
-        	    // only should happen for nonblocking IO...break and allow the next call to try again
-        	    break;
-        	}
-        }
-        if (buffer.position() == 0 && eof == true) {
-            throw new EOFException();
-        }
+        } while (blocking && (bytes_read == 0));
+
         byte[] ret;
         if (buffer.hasRemaining()) {
             buffer.flip();
@@ -148,22 +157,7 @@ public class IOHandlerNio extends IOHandler {
     }
     
     public String recv(int length) throws EOFException, BadDescriptorException, IOException {
-        checkReadable();
-        checkBuffered();
-	
-        ByteBuffer buffer = ByteBuffer.allocate(length);
-        if (((ReadableByteChannel) channel).read(buffer) < 0) {
-            throw new EOFException();
-        }
-        byte[] ret;
-        if (buffer.hasRemaining()) {
-            buffer.flip();
-            ret = new byte[buffer.remaining()];
-            buffer.get(ret);
-        } else {
-            ret = buffer.array();
-        }
-        return RubyString.bytesToString(ret);
+        return sysread(length);
     }
 
     /* Buffered operations */
