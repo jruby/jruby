@@ -1,32 +1,35 @@
 Ruby on Rails works more or less with JRuby 0.9.0.  It is slower than we would
 like, but it gives a good feeling of how well JRuby has been progressing 
-lately.  To get started:
+lately.  For reasons still not completely understood Ruby on Rails only works
+properly using Java5 and higher.  It does not currently work with Java 1.4.2.
+We will be looking into this for 0.9.1 release of JRuby.
 
-1. Install Rails gem (with dependencies)
-2. Apply patch to rails gem: docs/patches/rails/rails-1.1.2-blockargs-fix.patch
-3. Generate your Rails application using JRuby
-4. Start Rails*: jruby scripts/server webrick
+To get started:
 
-If you use a activerecord connection you will need to 
+1. Install Rails gem (with dependencies)*:
+ % gem install --no-rdoc --no-ri rails
+2. Generate your Rails application using JRuby
+ % jruby ${JRUBY_HOME}/bin/rails my_app
+3. Start Rails: 
+ % jruby scripts/server
 
-1. download the activerecord connector from Nick Sieger: 
-http://blog.nicksieger.com/articles/2006/05/15/jruby-on-rails-and-activerecord-on-jdbc
-2. Put the jdbc_adapter.rb file into:
-lib/ruby/gems/1.8/gems/activerecord-1.14.2/lib/active_record/connection_adapters/
-3. Add a line to let Rails know you want to use jdbc adapter (well just jdbc in JRuby):
-RAILS_CONNECTION_ADAPTERS = %w( jdbc )
-4. Make sure jdbc driver you configure in database.yml is included into your Java
-CLASSPATH.**
+To use a database connection you need to use an experimental adapter by Nick Sieger.
+This adapter currently has only been tested on MySQL, but it sounds like Nick is trying
+it with additional databases.  To use the JDBC adapter you will need to:
 
-Here is an example database.yml section for those who may not be familiar with JDBC:
-development:
+1. download the JDBC activerecord connector from Nick Sieger: 
+ % jruby script/plugin install http://svn.caldersphere.net/svn/main/activerecord-jdbc/trunk/activerecord_jdbc/
+2. Add the following line to your conf/environment.rb file
+  config.frameworks -= [:active_record]
+3. Configure your database settings in database.yaml.  Here is a sample:
   adapter: jdbc
   driver: com.mysql.jdbc.Driver
   url: jdbc:mysql://localhost:3306/cookbook
   username: root
   password: yeahpwhere
+4. Make sure jdbc driver is in your Java CLASSPATH:
+  export CLASSPATH=/my_path_to/driver.jar
 
-* We need to explicity specify webrick for this release.  We will fix this for 0.9.1.
-** This connector I believe has only been tested with MySQL, but may work with others.
-   It sounds like Nick has discovered some challenges which may or may not be a problem
-   for more other jdbc adapters.
+ *If you are explicitly installing an older rails version 1.1.12 or 1.1.13 then you need
+ to apply a patch in docs/rails the Rails gem after it has been installed.  As of version
+ 1.1.14 the patch is unneccesary.
