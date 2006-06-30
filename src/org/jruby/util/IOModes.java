@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2006 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2006 Evan Buswell <evan@heron.sytes.net>
@@ -54,6 +54,10 @@ public class IOModes {
     public IOModes(IRuby runtime) {
     	modes = 0;
         this.runtime = runtime;
+    }
+    
+    public Object clone() {
+    	return new IOModes(runtime, modes);
     }
     
     public IOModes(IRuby runtime, String modesString) {

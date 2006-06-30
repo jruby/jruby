@@ -14,8 +14,8 @@
  * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2002-2004 Thomas E Enebo <enebo@acm.org>
- * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2002-2006 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2006 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2006 Evan Buswell <ebuswell@gmail.com>
  * 
@@ -45,6 +45,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOHandler;
 import org.jruby.util.IOHandlerJavaIO;
 import org.jruby.util.IOHandlerNio;
+import org.jruby.util.IOHandlerNull;
 import org.jruby.util.IOHandlerProcess;
 import org.jruby.util.IOHandlerSeekable;
 import org.jruby.util.IOHandlerUnseekable;
@@ -333,21 +334,29 @@ public class RubyIO extends RubyObject {
             registerIOHandler(handler);
         } else if (args[0].isKindOf(getRuntime().getClass("String"))) {
             String path = ((RubyString) args[0]).toString();
-            String mode = "r";
+            IOModes newModes = null;
+
             if (args.length > 1) {
                 if (!args[1].isKindOf(getRuntime().getClass("String"))) {
                     throw getRuntime().newTypeError(args[1], getRuntime().getClass("String"));
                 }
                     
-                mode = ((RubyString) args[1]).toString();
+                newModes = new IOModes(getRuntime(), ((RubyString) args[1]).toString());
             }
 
             try {
                 if (handler != null) {
                     close();
                 }
-                modes = new IOModes(getRuntime(), mode);
-                handler = new IOHandlerSeekable(getRuntime(), path, modes);
+
+                if (newModes != null) {
+                	modes = newModes;
+                }
+                if ("/dev/null".equals(path)) {
+                	handler = new IOHandlerNull(getRuntime(), modes);
+                } else {
+                	handler = new IOHandlerSeekable(getRuntime(), path, modes);
+                }
                 
                 registerIOHandler(handler);
             } catch (IOHandler.InvalidValueException e) {
@@ -743,6 +752,7 @@ public class RubyIO extends RubyObject {
         // copy of the handler.  In fact, ruby 1.8 must do this as the cloned
         // resource is in fact a different fileno.  What is clone for again?
         io.handler = handler;
+        io.modes = (IOModes) modes.clone();
         
         return io;
     }
@@ -818,7 +828,7 @@ public class RubyIO extends RubyObject {
      public IRubyObject fcntl(IRubyObject cmd, IRubyObject arg) throws IOException {
         long realCmd = cmd.convertToInteger().getLongValue();
         
-        // Fixme: Arg may also be true, false, and nil and still be valid.  Strangely enough, 
+        // FIXME: Arg may also be true, false, and nil and still be valid.  Strangely enough, 
         // protocol conversion is not happening in Ruby on this arg?
         if (!(arg instanceof RubyNumeric)) {
             return getRuntime().newFixnum(0);

@@ -16,7 +16,7 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2003 Joey Gibson <joey@joeygibson.com>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
- * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2004-2006 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -44,6 +44,7 @@ import java.nio.channels.FileLock;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOHandler;
+import org.jruby.util.IOHandlerNull;
 import org.jruby.util.IOHandlerSeekable;
 import org.jruby.util.IOHandlerUnseekable;
 import org.jruby.util.IOModes;
@@ -105,9 +106,13 @@ public class RubyFile extends RubyIO {
     public void openInternal(String newPath, IOModes newModes) {
         this.path = newPath;
         this.modes = newModes;
-
+        
         try {
-            handler = new IOHandlerSeekable(getRuntime(), newPath, newModes);
+            if (newPath.equals("/dev/null")) {
+                handler = new IOHandlerNull(getRuntime(), newModes);
+            } else {
+                handler = new IOHandlerSeekable(getRuntime(), newPath, newModes);
+            }
             
             registerIOHandler(handler);
         } catch (InvalidValueException e) {

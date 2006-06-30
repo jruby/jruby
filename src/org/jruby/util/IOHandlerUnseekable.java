@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2006 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 David Corbin <dcorbin@users.sourceforge.net>
@@ -144,6 +144,12 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
         return new IOHandlerUnseekable(getRuntime(), input, output); 
     }
 
+    // FIXME: Only close underlying stream if it is not shared by another IO.
+    //  The real problem is that when an IO is dup'd, we do not actually
+    //  clone the handler AND get a new fileno.  The importance of this is 
+    //  that we need to make sure we only close underlying streams that are 
+    //  not shared by multiple IOHandlers.
+
     /**
      * <p>Close IO handler resources.</p>
      * @throws IOException 
@@ -158,11 +164,13 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
         
         isOpen = false;
 
-        if (modes.isReadable()) {
+        // We are not allowing the underlying System stream to be closed 
+        if (modes.isReadable() && input != System.in) {
             input.close();
         }
         
-        if (modes.isWriteable()) {
+        // We are not allowing the underlying System stream to be closed 
+        if (modes.isWriteable() && output != System.out && output != System.err) {
             output.close();
         }
     }
