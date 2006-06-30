@@ -1,3 +1,9 @@
+#--
+# Copyright 2006 by Chad Fowler, Rich Kilmer, Jim Weirich and others.
+# All rights reserved.
+# See LICENSE.txt for permissions.
+#++
+
 
 # Some system might not have OpenSSL installed, therefore the core
 # library file openssl might not be available.  We localize testing
@@ -26,6 +32,12 @@ end
 
 begin
   require 'openssl'
+
+  # Reference a constant defined in the .rb portion of ssl (just to
+  # make sure that part is loaded too).
+
+  dummy = OpenSSL::Digest::SHA1
+
   Gem.ssl_available = true
 rescue LoadError
   Gem.ssl_available = false

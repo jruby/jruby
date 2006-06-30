@@ -506,10 +506,8 @@ class TarInput
                     gzis.close
                 end
             when 'metadata.gz.sig'
-              Gem.ensure_ssl_available
               meta_sig = entry.read
             when 'data.tar.gz.sig'
-              Gem.ensure_ssl_available
               data_sig = entry.read
             when 'data.tar.gz'
               if security_policy
@@ -703,7 +701,11 @@ class TarOutput
 
                     TarWriter.new(os) do |inner_tar_stream| 
                         klass = class <<inner_tar_stream; self end
-                        klass.send(:define_method, :metadata=, &set_meta) 
+                        if RUBY_VERSION >= "1.9" then
+                          klass.funcall(:define_method, :metadata=, &set_meta) 
+                        else
+                          klass.send(:define_method, :metadata=, &set_meta) 
+                        end
                         block.call inner_tar_stream
                     end
                 ensure

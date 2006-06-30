@@ -1,7 +1,13 @@
+#--
+# Copyright 2006 by Chad Fowler, Rich Kilmer, Jim Weirich and others.
+# All rights reserved.
+# See LICENSE.txt for permissions.
+#++
+
 require 'rubygems/source_index'
 
 module Kernel
-  alias require__ require
+  alias gem_original_require require
 
   #
   # We replace Ruby's require with our own, which is capable of
@@ -18,13 +24,13 @@ module Kernel
   # that file has already been loaded is preserved.
   #
   def require(path)
-    require__ path
+    gem_original_require path
   rescue LoadError => load_error
     begin
       @gempath_searcher ||= Gem::GemPathSearcher.new
       if spec = @gempath_searcher.find(path)
-        Gem.activate(spec.name, true, "= #{spec.version}")
-        require__ path
+        Gem.activate(spec.name, false, "= #{spec.version}")
+        gem_original_require path
       else
 	raise load_error
       end
@@ -85,7 +91,7 @@ module Gem
 
     private
 
-    SUFFIX_PATTERN = "{,.rb,.so,.bundle,.dll,.sl}"
+    SUFFIX_PATTERN = "{,.rb,.rbw,.so,.bundle,.dll,.sl}"
 
     #
     # Attempts to find a matching path using the require_paths of the
@@ -96,7 +102,7 @@ module Gem
     #
     def matching_file(spec, path)  # :doc:
       glob = "#{@lib_dirs[spec.object_id]}/#{path}#{SUFFIX_PATTERN}"
-      return true unless Dir[glob].select { |f| File.file?(f) }.empty?
+      return true unless Dir[glob].select { |f| File.file?(f.untaint) }.empty?
     end
 
     # Return a list of all installed gemspecs, sorted by alphabetical

@@ -1,35 +1,52 @@
+#--
+# Copyright 2006 by Chad Fowler, Rich Kilmer, Jim Weirich and others.
+# All rights reserved.
+# See LICENSE.txt for permissions.
+#++
+
 require 'rubygems'
 require 'rubygems/command'
 require 'rubygems/user_interaction'
 require 'rubygems/gem_commands'
+require 'timeout'
 
 module Gem
 
+  ###################################################################
   # Signals that local installation will not proceed, not that it has
   # been tried and failed.  TODO: better name.
   class LocalInstallationError < Gem::Exception; end
   
+  ####################################################################
+  # Signals that a file permission error is preventing the user from
+  # installing in the requested directories.
   class FilePermissionError < Gem::Exception
     def initialize(path)
       super("You don't have write permissions into the #{path} directory.")
     end
   end
 
-  # Signals that a remote operation cannot be conducted, probably due to not being
-  # connected (or just not finding host).
+  ####################################################################
+  # Signals that a remote operation cannot be conducted, probably due
+  # to not being connected (or just not finding host).
   #
-  # TODO: create a method that tests connection to the preferred gems server.  All code
-  # dealing with remote operations will want this.  Failure in that method should raise
-  # this error.
+  # TODO: create a method that tests connection to the preferred gems
+  # server.  All code dealing with remote operations will want this.
+  # Failure in that method should raise this error.
   class RemoteError < Gem::Exception; end
 
+  ####################################################################
+  # The command manager registers and installs all the individual
+  # sub-commands supported by the gem command.
   class CommandManager
     include UserInteraction
 
+    # Return the authoratative instance of the command manager.
     def self.instance
       @cmd_manager ||= CommandManager.new
     end
 
+    # Register all the subcommands supported by the gem command.
     def initialize
       @commands = {}
       register_command HelpCommand.new
@@ -51,28 +68,35 @@ module Gem
       register_command ContentsCommand.new
     end
     
-    def register_command(command)
-      @commands[command.command.intern] = command
+    # Register the command object.
+    def register_command(command_obj)
+      @commands[command_obj.command.intern] = command_obj
     end
     
+    # Return the registered command from the command name.
     def [](command_name)
       @commands[command_name.intern]
     end
     
+    # Return a list of all command names (as strings).
     def command_names
       @commands.keys.collect {|key| key.to_s}.sort
     end
     
-    def run(cfg)
-      process_args(cfg.args)
-    rescue StandardError => ex
+    # Run the config specificed by +args+.
+    def run(args)
+      process_args(args)
+    rescue StandardError, Timeout::Error => ex
       alert_error "While executing gem ... (#{ex.class})\n    #{ex.to_s}"
-      puts ex.backtrace if cfg.backtrace
+      puts ex.backtrace if Gem.configuration.backtrace
+      terminate_interaction(1)
+    rescue Interrupt
+      alert_error "Interrupted"
       terminate_interaction(1)
     end
 
     def process_args(args)
-      args = args.to_str.split(/\s/) if args.respond_to?(:to_str)
+      args = args.to_str.split(/\s+/) if args.respond_to?(:to_str)
       if args.size == 0
         say Gem::HELP
         terminate_interaction(1)
@@ -90,7 +114,6 @@ module Gem
       else
         cmd_name = args.shift.downcase
         cmd = find_command(cmd_name)
-        #load_config_file_options(args)
         cmd.invoke(*args)
       end
     end
@@ -110,22 +133,5 @@ module Gem
       len = cmd_name.length
       self.command_names.select { |n| cmd_name == n[0,len] }
     end
-
-    #  - a config file may be specified on the command line
-    #  - if it's specified multiple times, the first one wins 
-    #  - there is a default config file location HOME/.gemrc
-    def load_config_file_options(args)
-      config_file = Gem.config_file
-      if args.index("--config-file")
-        config_file = args[args.index("--config-file")+1]
-      end
-      if File.exist?(config_file)
-        @config_file_options = YAML.load(File.read(config_file))
-      else
-        alert_error "Config file #{config_file} not found" if options[:config_file]
-        terminate_interaction!if options[:config_file]
-      end
-    end
-
   end
 end 

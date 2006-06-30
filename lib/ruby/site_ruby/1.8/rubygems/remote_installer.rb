@@ -1,3 +1,9 @@
+#--
+# Copyright 2006 by Chad Fowler, Rich Kilmer, Jim Weirich and others.
+# All rights reserved.
+# See LICENSE.txt for permissions.
+#++
+
 require 'rubygems'
 require 'socket'
 require 'fileutils'
@@ -8,18 +14,37 @@ module Gem
   class GemNotFoundException < Gem::Exception; end
   class RemoteInstallationCancelled < Gem::Exception; end
 
+  ####################################################################
   # RemoteSourceFetcher handles the details of fetching gems and gem
   # information from a remote source.  
   class RemoteSourceFetcher
     include UserInteraction
 
     # Initialize a remote fetcher using the source URI (and possible
-    # proxy information).
+    # proxy information).  
+    # +proxy+
+    # * [String]: explicit specification of proxy; overrides any
+    #   environment variable setting
+    # * nil: respect environment variables (HTTP_PROXY, HTTP_PROXY_USER, HTTP_PROXY_PASS)
+    # * <tt>:no_proxy</tt>: ignore environment variables and _don't_
+    #   use a proxy
     def initialize(source_uri, proxy)
       @uri = normalize_uri(source_uri)
-      @http_proxy = proxy
-      if @http_proxy == true
-	@http_proxy = ENV['http_proxy'] || ENV['HTTP_PROXY']
+      @proxy_uri =
+      case proxy
+      when :no_proxy
+        nil
+      when nil
+        env_proxy = ENV['http_proxy'] || ENV['HTTP_PROXY']
+        uri = env_proxy ? URI.parse(env_proxy) : nil
+        if uri and uri.user.nil? and uri.password.nil?
+          #Probably we have http_proxy_* variables?
+          uri.user = ENV['http_proxy_user'] || ENV['HTTP_PROXY_USER']
+          uri.password = ENV['http_proxy_pass'] || ENV['HTTP_PROXY_PASS']
+        end
+        uri
+      else
+        URI.parse(proxy.to_str)
       end
     end
 
@@ -43,7 +68,7 @@ module Gem
     # and queries, but may have some information elided (hence
     # "abbreviated").
     def source_index
-      say "Updating Gem source index for: #{@uri}"
+      say "Bulk updating Gem source index for: #{@uri}"
       begin
         require 'zlib'
         yaml_spec = fetch_path("/yaml.Z")
@@ -53,7 +78,7 @@ module Gem
       end
       begin
 	yaml_spec = fetch_path("/yaml") unless yaml_spec
-	r = convert_spec(yaml_spec)
+	convert_spec(yaml_spec)
       rescue SocketError => e
 	raise RemoteSourceException.new("Error fetching remote gem cache: #{e.to_s}")
       end
@@ -68,9 +93,8 @@ module Gem
 
     # Connect to the source host/port, using a proxy if needed.
     def connect_to(host, port)
-      if @http_proxy
-	proxy_uri = URI.parse(@http_proxy)
-	Net::HTTP::Proxy(proxy_uri.host, proxy_uri.port).new(host, port)
+      if @proxy_uri
+        Net::HTTP::Proxy(@proxy_uri.host, @proxy_uri.port, @proxy_uri.user, @proxy_uri.password).new(host, port)
       else
 	Net::HTTP.new(host, port)
       end
@@ -86,7 +110,6 @@ module Gem
     # command.
     def read_size(uri)
       return File.size(get_file_uri_path(uri)) if is_file_uri(uri)
-      
       require 'net/http'
       require 'uri'
       u = URI.parse(uri)
@@ -118,10 +141,13 @@ module Gem
       if is_file_uri(uri)
         open(get_file_uri_path(uri), &block)
       else
-        open(uri,
-             "User-Agent" => "RubyGems/#{Gem::RubyGemsVersion}",
-             :proxy => @http_proxy,
-             &block)
+        connection_options = {"User-Agent" => "RubyGems/#{Gem::RubyGemsVersion}"}
+        if @proxy_uri
+          http_proxy_url = "#{@proxy_uri.scheme}://#{@proxy_uri.host}:#{@proxy_uri.port}"  
+          connection_options[:proxy_http_basic_authentication] = [http_proxy_url, @proxy_uri.user||'', @proxy_uri.password||'']
+        end
+        
+        open(uri, connection_options, &block)
       end
     end
     
@@ -139,7 +165,7 @@ module Gem
     # these are hashes of specs.).
     def convert_spec(yaml_spec)
       YAML.load(reduce_spec(yaml_spec)) or
-	raise "Didn't get a valid YAML document"
+	fail "Didn't get a valid YAML document"
     end
 
     # This reduces the source spec in size so that YAML bugs with
@@ -172,10 +198,33 @@ module Gem
     end
   end
 
-  # LocalSourceInfoCache implements the cache management policy on
-  # where the source info is stored on local file system.  There are
-  # two possible cache locations: (1) the system wide cache, and (2)
-  # the user specific cache.
+  ####################################################################
+  # Entrys held by a SourceInfoCache.
+  class SourceInfoCacheEntry
+    # The source index for this cache entry.
+    attr_reader :source_index
+
+    # The size of the of the source entry.  Used to determine if the
+    # source index has changed.
+    attr_reader :size
+
+    # Create a cache entry.
+    def initialize(si, size)
+      replace_source_index(si, size)
+    end
+
+    # Replace the source index and the index size with given values.
+    def replace_source_index(si, size)
+      @source_index = si || SourceIndex.new({})
+      @size = size
+    end
+  end
+
+  ####################################################################
+  # SourceInfoCache implements the cache management policy on where
+  # the source info is stored on local file system.  There are two
+  # possible cache locations: (1) the system wide cache, and (2) the
+  # user specific cache.
   #
   # * The system cache is prefered if it is writable (or can be
   #   created).
@@ -185,7 +234,10 @@ module Gem
   # Once a cache is selected, it will be used for all operations.  It
   # will not switch between cache files dynamically.
   #
-  class LocalSourceInfoCache
+  # Cache data is a simple hash indexed by the source URI.  Retrieving
+  # and entry from the cache data will return a SourceInfoCacheEntry.
+  #
+  class SourceInfoCache
 
     # The most recent cache data.
     def cache_data
@@ -197,7 +249,7 @@ module Gem
     def write_cache
       data = cache_data
       open(writable_file, "wb") do |f|
-	f.puts Marshal.dump(data)
+        f.write Marshal.dump(data)
       end
     end
 
@@ -242,8 +294,6 @@ module Gem
 
     def load_local_cache(f)
       Marshal.load(f)
-    rescue StandardError => ex
-      {}
     end
 
     # Select a writable cache file
@@ -274,7 +324,7 @@ module Gem
     end
   end
 
-
+  ####################################################################
   # CachedFetcher is a decorator that adds local file caching to
   # RemoteSourceFetcher objects.
   class CachedFetcher
@@ -282,8 +332,10 @@ module Gem
     # Create a cached fetcher (based on a RemoteSourceFetcher) for the
     # source at +source_uri+ (through the proxy +proxy+).
     def initialize(source_uri, proxy)
+      require 'rubygems/incremental_fetcher'
       @source_uri = source_uri
-      @fetcher = RemoteSourceFetcher.new(source_uri, proxy)
+      rsf = RemoteSourceFetcher.new(source_uri, proxy)
+      @fetcher = IncrementalFetcher.new(source_uri, rsf, manager)
     end
 
     # The uncompressed +size+ of the source's directory (e.g. source
@@ -307,14 +359,11 @@ module Gem
     # "abbreviated").
     def source_index
       cache = manager.cache_data[@source_uri]
-      if cache && cache['size'] == @fetcher.size
-	cache['cache']
+      if cache && cache.size == @fetcher.size
+	cache.source_index
       else
 	result = @fetcher.source_index
-	manager.cache_data[@source_uri] = {
-	  'size' => @fetcher.size,
-	  'cache' => result,
-	}
+	manager.cache_data[@source_uri] = SourceInfoCacheEntry.new(result, @fetcher.size)
 	manager.update
 	result
       end
@@ -338,9 +387,8 @@ module Gem
 
       # The Cache manager for all instances of this class.
       def manager
-	@manager ||= LocalSourceInfoCache.new
+	@manager ||= SourceInfoCache.new
       end
-
 
       # Sent by the client when it is done with all the sources,
       # allowing any cleanup activity to take place.
@@ -354,25 +402,18 @@ module Gem
   class RemoteInstaller
     include UserInteraction
 
-    # <tt>http_proxy</tt>::
+    # <tt>options[:http_proxy]</tt>::
     # * [String]: explicit specification of proxy; overrides any
     #   environment variable setting
-    # * nil: respect environment variables
+    # * nil: respect environment variables (HTTP_PROXY, HTTP_PROXY_USER, HTTP_PROXY_PASS)
     # * <tt>:no_proxy</tt>: ignore environment variables and _don't_
     #   use a proxy
     #
     def initialize(options={})
+      require 'uri'
+
       # Ensure http_proxy env vars are used if no proxy explicitly supplied.
       @options = options
-      @http_proxy =
-        case @options[:http_proxy]
-        when :no_proxy
-          false
-        when nil
-          true
-        else
-          @options[:http_proxy].to_str
-        end
       @fetcher_class = CachedFetcher
     end
 
@@ -387,11 +428,7 @@ module Gem
     # Returns::
     #   an array of Gem::Specification objects, one for each gem installed. 
     #
-    def install(gem_name,
-	version_requirement = "> 0.0.0",
-	force=false,
-	install_dir=Gem.dir,
-	install_stub=true)
+    def install(gem_name, version_requirement = "> 0.0.0", force=false, install_dir=Gem.dir, install_stub=true)
       unless version_requirement.respond_to?(:satisfied_by?)
         version_requirement = Version::Requirement.new(version_requirement)
       end
@@ -422,7 +459,7 @@ module Gem
     # Return a list of the sources that we can download gems from
     def sources
       unless @sources
-	require_gem("sources")
+	require 'sources'
 	@sources = Gem.sources
       end
       @sources
@@ -441,7 +478,7 @@ module Gem
     
     # Return the source info for the given source.  The 
     def fetch_source(source)
-      rsf = @fetcher_class.new(source, @http_proxy)
+      rsf = @fetcher_class.new(source, @options[:http_proxy])
       rsf.source_index
     end
 
@@ -524,7 +561,7 @@ module Gem
     end
 
     def download_gem(destination_file, source, spec)
-      rsf = @fetcher_class.new(source, @http_proxy)
+      rsf = @fetcher_class.new(source, @proxy_uri)
       path = "/gems/#{spec.full_name}.gem"
       response = rsf.fetch_path(path)
       write_gem_to_file(response, destination_file)

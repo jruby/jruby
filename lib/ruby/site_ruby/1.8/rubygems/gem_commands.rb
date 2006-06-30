@@ -1,10 +1,23 @@
 #!/usr/bin/env ruby
+#--
+# Copyright 2006 by Chad Fowler, Rich Kilmer, Jim Weirich and others.
+# All rights reserved.
+# See LICENSE.txt for permissions.
+#++
+
 
 module Gem
 
   class CommandLineError < Gem::Exception; end
 
+  ####################################################################
+  # The following mixin methods aid in the retrieving of information
+  # from the command line.
+  #
   module CommandAids
+
+    # Get the single gem name from the command line.  Fail if there is
+    # no gem name or if there is more than one gem name given.
     def get_one_gem_name
       args = options[:args]
       if args.nil? or args.empty?
@@ -18,92 +31,146 @@ module Gem
       args.first
     end
 
+    # Get a single optional argument from the command line.  If more
+    # than one argument is given, return only the first. Return nil if
+    # none are given.
     def get_one_optional_argument
       args = options[:args] || []
       args.first
     end
 
+    # True if +long+ begins with the characters from +short+.
     def begins?(long, short)
       return false if short.nil?
       long[0, short.length] == short
     end
   end
 
+  ####################################################################
+  # Mixin methods for handling the local/remote command line options.
+  #
   module LocalRemoteOptions
+
+    # Add the local/remote options to the command line parser.
     def add_local_remote_options
-      add_option('-l', '--local', 'Restrict operations to the LOCAL domain (default)') do |value, options|
+      add_option('-l', '--local',
+	'Restrict operations to the LOCAL domain (default)') do
+	|value, options|
         options[:domain] = :local
       end
-      add_option('-r', '--remote', 'Restrict operations to the REMOTE domain') do |value, options|
+
+      add_option('-r', '--remote',
+	'Restrict operations to the REMOTE domain') do
+	|value, options|
         options[:domain] = :remote
       end
-      add_option('-b', '--both', 'Allow LOCAL and REMOTE operations') do |value, options|
+
+      add_option('-b', '--both',
+	'Allow LOCAL and REMOTE operations') do
+	|value, options|
         options[:domain] = :both
       end
     end
 
+    # Is local fetching enabled?
     def local?
       options[:domain] == :local || options[:domain] == :both
     end
 
+    # Is remote fetching enabled?
     def remote?
       options[:domain] == :remote || options[:domain] == :both
     end
   end
 
-  ##
-  # OptionParser options specific to the gem install command.
-
+  ####################################################################
+  # Mixin methods and OptionParser options specific to the gem install
+  # command.
+  #
   module InstallUpdateOptions
+
+    # Add the install/update options to the option parser.
     def add_install_update_options
-      add_option('-i', '--install-dir DIR', '') do |value, options|
-        options[:install_dir] = value
+      add_option('-i', '--install-dir DIR',
+	'Gem repository directory to get installed gems.') do 
+	|value, options|
+        options[:install_dir] = File.expand_path(value)
       end
-      add_option('-d', '--[no-]rdoc', 'Generate RDoc documentation for the gem on install') do |value, options|
+
+      add_option('-d', '--[no-]rdoc', 
+	'Generate RDoc documentation for the gem on install') do
+	|value, options|
         options[:generate_rdoc] = value
       end
-      add_option('-f', '--[no-]force', 'Force gem to install, bypassing dependency checks') do |value, options|
+
+      add_option('--[no-]ri', 
+	'Generate RI documentation for the gem on install') do
+	|value, options|
+        options[:generate_ri] = value
+      end
+
+      add_option('-f', '--[no-]force', 
+	'Force gem to install, bypassing dependency checks') do 
+	|value, options|
         options[:force] = value
       end
-      add_option('-t', '--[no-]test', 'Run unit tests prior to installation') do |value, options|
+
+      add_option('-t', '--[no-]test', 
+	'Run unit tests prior to installation') do 
+	|value, options|
         options[:test] = value
       end
-      add_option('-w', '--[no-]wrappers', 'Use bin wrappers for executables',
-                 'Not available on dosish platforms') do |value, options|
+
+      add_option('-w', '--[no-]wrappers', 
+	'Use bin wrappers for executables',
+	'Not available on dosish platforms') do 
+	|value, options|
         options[:wrappers] = value
       end
-      add_option('-P', '--trust-policy POLICY', 'Specify gem trust policy.') do |value, options|
+
+      add_option('-P', '--trust-policy POLICY', 
+	'Specify gem trust policy.') do 
+	|value, options|
         options[:security_policy] = value
       end
+
       add_option('--ignore-dependencies',
-	'Do not install any required dependent gems') do |value, options|
+	'Do not install any required dependent gems') do 
+	|value, options|
 	options[:ignore_dependencies] = value
       end
+
       add_option('-y', '--include-dependencies',
-	'Unconditionally install the required dependent gems') do |value, options|
+	'Unconditionally install the required dependent gems') do 
+	|value, options|
 	options[:include_dependencies] = value
       end
     end
     
-    ##
     # Default options for the gem install command.
-
     def install_update_defaults_str
       '--rdoc --no-force --no-test --wrappers'
     end
   end
 
+  ####################################################################
+  # Mixin methods for the version command.
+  #
   module VersionOption
+
+    # Add the options to the option parser.
     def add_version_option(taskname)
-      add_option('-v', '--version VERSION', "Specify version of gem to #{taskname}") do |value, options|
+      add_option('-v', '--version VERSION', 
+	"Specify version of gem to #{taskname}") do 
+	|value, options|
         options[:version] = value
       end
     end
   end
 
-  ##
+  ####################################################################
   # Gem install command.
-
+  #
   class InstallCommand < Command
     include CommandAids
     include VersionOption
@@ -116,7 +183,8 @@ module Gem
         'Install a gem into the local repository',
         {
           :domain => :both, 
-          :generate_rdoc => true, 
+          :generate_rdoc => true,
+          :generate_ri   => true,
           :force => false, 
           :test => false, 
           :wrappers => true,
@@ -130,7 +198,8 @@ module Gem
     end
     
     def usage
-      "#{program_name} GEMNAME"
+      "#{program_name} GEMNAME [options]
+   or: #{program_name} GEMNAME [options] -- --build-flags"
     end
 
     def arguments
@@ -138,14 +207,12 @@ module Gem
     end
 
     def defaults_str
-      "--both --version '> 0' --rdoc --no-force --no-test\n" +
+      "--both --version '> 0' --rdoc --ri --no-force --no-test\n" +
       "--install-dir #{Gem.dir}"
     end
 
     def execute
       ENV['GEM_PATH'] = options[:install_dir]
-      # TODO: If a dependency isn't met, first check to see if it's in 
-      # the install list
       if(options[:args].empty?)
         fail Gem::CommandLineError,
           "Please specify a gem name on the command line (e.g. gem build GEMNAME)"
@@ -153,7 +220,6 @@ module Gem
       options[:args].each do |gem_name|
         if local?
           begin
-            say "Attempting local installation of '#{gem_name}'"
 	    entries = []
 	    if(File.exist?(gem_name) && !File.directory?(gem_name))
               entries << gem_name
@@ -162,9 +228,7 @@ module Gem
               entries = Dir[filepattern] 
             end
             unless entries.size > 0
-              if options[:domain] == :both
-                say "Local gem file not found: #{filepattern}"
-              else
+              if options[:domain] == :local
                 alert_error "Local gem file not found: #{filepattern}"
               end
             else
@@ -181,7 +245,7 @@ module Gem
             say " -> Local installation can't proceed due to LoadError: #{e.message}"
           rescue => e
 	    # TODO: Fix this handle to allow the error to propagate to
-	    # the top level handler.  Example the other errors as
+	    # the top level handler.  Examine the other errors as
 	    # well.  This implementation here looks suspicious to me --
 	    # JimWeirich (4/Jan/05) 
             alert_error "Error installing gem #{gem_name}[.gem]: #{e.message}"
@@ -190,7 +254,6 @@ module Gem
         end
         
         if remote? && installed_gems.nil?
-          say "Attempting remote installation of '#{gem_name}'"
           installer = Gem::RemoteInstaller.new(options)
           installed_gems = installer.install(
 	    gem_name,
@@ -206,16 +269,27 @@ module Gem
         end
         
         unless installed_gems
-          alert_error "Could not install a local or remote copy of the gem: #{gem_name}"
+          alert_error "Could not install a local " +
+            "or remote copy of the gem: #{gem_name}"
           terminate_interaction(1)
         end
         
+        # NOTE: *All* of the RI documents must be generated first.
+        # For some reason, RI docs cannot be generated after any RDoc
+        # documents are generated.
+
+        if options[:generate_ri]
+          installed_gems.each do |gem|
+            Gem::DocManager.new(gem, options[:rdoc_args]).generate_ri
+          end
+        end
+
         if options[:generate_rdoc]
           installed_gems.each do |gem|
             Gem::DocManager.new(gem, options[:rdoc_args]).generate_rdoc
           end
-          # TODO: catch exceptions and inform user that doc generation was not successful.
         end
+
         if options[:test]
           installed_gems.each do |spec|
             gem_spec = Gem::SourceIndex.from_installed_gems.search(spec.name, spec.version.version).first
@@ -271,7 +345,6 @@ module Gem
 
     def execute
       gem_name = get_one_gem_name
-      say "Attempting to uninstall gem '#{gem_name}'"
       Gem::Uninstaller.new(gem_name, options).uninstall
     end
   end      
@@ -282,7 +355,7 @@ module Gem
     def initialize
       super(
         'cert',
-        'Adjust RubyGems certificate settings.',
+        'Adjust RubyGems certificate settings',
         {
         })
 
@@ -314,7 +387,9 @@ module Gem
         end
       end
 
-      add_option('-b', '--build EMAIL_ADDR', 'Build private key and self-signed certificate for EMAIL_ADDR.') do |value, options|
+      add_option('-b', '--build EMAIL_ADDR',
+	'Build private key and self-signed certificate for EMAIL_ADDR.'
+	) do |value, options|
         vals = Gem::Security::build_self_signed_cert(value)
         File::chmod(0600, vals[:key_path])
         puts "Public Cert: #{vals[:cert_path]}",
@@ -322,18 +397,24 @@ module Gem
              "Don't forget to move the key file to somewhere private..."
       end
 
-      add_option('-C', '--certificate CERT', 'Certificate for --sign command.') do |value, options|
+      add_option('-C', '--certificate CERT',
+	'Certificate for --sign command.'
+	) do |value, options|
         cert = OpenSSL::X509::Certificate.new(File.read(value))
         Gem::Security::OPT[:issuer_cert] = cert
       end
 
-      add_option('-K', '--private-key KEY', 'Private key for --sign command.') do |value, options|
+      add_option('-K', '--private-key KEY',
+	'Private key for --sign command.'
+	) do |value, options|
         key = OpenSSL::PKey::RSA.new(File.read(value))
         Gem::Security::OPT[:issuer_key] = key
       end
 
 
-      add_option('-s', '--sign NEWCERT', 'Sign a certificate with my key and certificate.') do |value, options|
+      add_option('-s', '--sign NEWCERT', 
+	'Sign a certificate with my key and certificate.'
+	) do |value, options|
         cert = OpenSSL::X509::Certificate.new(File.read(value))
         my_cert = Gem::Security::OPT[:issuer_cert]
         my_key = Gem::Security::OPT[:issuer_key]
@@ -403,20 +484,14 @@ module Gem
 	specs.values.sort.each do |spec|
 	  unless spec.dependencies.empty?
 	    spec.dependencies.each do |dep|
-	      puts %{#{dep.name} --version '#{dep.version_requirements}'}
+	      puts "#{dep.name} --version '#{dep.version_requirements}'"
 	    end
 	  end
 	end	
       else
 	response = ''
 	specs.values.sort.each do |spec|
-	  response << "Gem #{spec.full_name}\n"
-	  unless spec.dependencies.empty?
-	    response << "  Requires\n"
-	    spec.dependencies.each do |dep|
-	      response << "    #{dep}\n"
-	    end
-	  end
+          response << print_dependencies(spec)
 	  unless reverse[spec.full_name].empty?
 	    response << "  Used by\n"
 	    reverse[spec.full_name].each do |sp, dep|
@@ -427,6 +502,18 @@ module Gem
 	end
 	say response
       end
+    end
+
+    def print_dependencies(spec, level = 0)
+      response = ''
+      response << '  ' * level + "Gem #{spec.full_name}\n"
+      unless spec.dependencies.empty?
+#        response << '  ' * level + "  Requires\n"
+        spec.dependencies.each do |dep|
+          response << '  ' * level + "  #{dep}\n"
+        end
+      end
+      response
     end
 
     # Retuns list of [specification, dep] that are satisfied by spec.
@@ -527,7 +614,6 @@ module Gem
     def execute
       gemspec = get_one_gem_name
       if File.exist?(gemspec)
-        say "Attempting to build gem spec '#{gemspec}'"
         specs = load_gemspecs(gemspec)
         specs.each do |spec|
           Gem::Builder.new(spec).build
@@ -596,11 +682,7 @@ module Gem
       if remote?
         say
         say "*** REMOTE GEMS ***"
-        begin
           output_query_results(Gem::RemoteInstaller.new(options).search(options[:name]))
-        rescue Gem::RemoteSourceException => e
-          alert_error e.to_s
-        end
       end
     end
 
@@ -722,9 +804,10 @@ module Gem
     def initialize
       super(
         'update',
-        'Upgrade the named gem (or all installed gems) in the local repository',
+        'Update the named gem (or all installed gems) in the local repository',
         {
           :generate_rdoc => true, 
+          :generate_ri => true, 
           :force => false, 
           :test => false,
           :install_dir => Gem.dir
@@ -737,7 +820,7 @@ module Gem
     end
     
     def defaults_str
-      "--rdoc --no-force --no-test\n" +
+      "--rdoc --ri --no-force --no-test\n" +
       "--install-dir #{Gem.dir}"
     end
 
@@ -748,13 +831,13 @@ module Gem
 
     def execute
       if options[:system]
-	say "Upgrading RubyGems..."
+	say "Updating RubyGems..."
 	if ! options[:args].empty?
 	  fail "No gem names are allowed with the --system option"
 	end
 	options[:args] = ["rubygems-update"]
       else
-	say "Upgrading installed gems..."
+	say "Updating installed gems..."
       end
       hig = highest_installed_gems = {}
       Gem::SourceIndex.from_installed_gems.each do |name, spec|
@@ -775,13 +858,17 @@ module Gem
       options[:domain] = :remote # install from remote source
       install_command = command_manager['install']
       gems_to_update.uniq.sort.each do |name|
-        say "Attempting remote upgrade of #{name}"
+        say "Attempting remote update of #{name}"
         options[:args] = [name]
         install_command.merge_options(options)
         install_command.execute
       end
       if gems_to_update.include?("rubygems-update")
-	latest_ruby_gem = remote_gemspecs.select { |s| s.name == 'rubygems-update' }.sort_by { |s| s.version }.last
+	latest_ruby_gem = remote_gemspecs.select { |s|
+          s.name == 'rubygems-update' 
+        }.sort_by { |s|
+          s.version
+        }.last
 	say "Updating version of RubyGems to #{latest_ruby_gem.version}"
 	do_rubygems_update(latest_ruby_gem.version.to_s)
       end
@@ -893,15 +980,33 @@ module Gem
     include CommandAids
 
     def initialize
-      super('rdoc', 'Generates RDoc for pre-installed gems', {:version=>"> 0.0.0"})
-      add_option('--all', 'Generate RDoc documentation for all installed gems') do |value, options|
+      super('rdoc',
+        'Generates RDoc for pre-installed gems',
+        {
+          :version => "> 0.0.0",
+          :include_rdoc => true,
+          :include_ri => true,
+        })
+      add_option('--all',
+        'Generate RDoc/RI documentation for all installed gems'
+        ) do |value, options|
         options[:all] = value
+      end
+      add_option('--[no-]rdoc', 
+	'Include RDoc generated documents') do
+	|value, options|
+        options[:include_rdoc] = value
+      end
+      add_option('--[no-]ri', 
+	'Include RI generated documents'
+        ) do |value, options|
+        options[:include_ri] = value
       end
       add_version_option('rdoc')
     end
 
     def defaults_str
-      "--version '> 0.0.0'"
+      "--version '> 0.0.0' --rdoc --ri"
     end
 
     def usage
@@ -914,21 +1019,29 @@ module Gem
 
     def execute
       if options[:all]
-        Gem::SourceIndex.from_installed_gems.each do |name, spec|
-          say "Doing gem #{spec.name}"
-          Gem::DocManager.new(spec).generate_rdoc
-        end
+        specs = Gem::SourceIndex.from_installed_gems.collect { |name, spec|
+          spec
+        }
       else
         gem_name = get_one_gem_name
-        specs = Gem::SourceIndex.from_installed_gems.search(gem_name, options[:version])
-        if specs.empty?
-          #version = options[:version] || "> 0.0.0"
-          fail "Failed to find gem #{gem_name} to generate RDoc for #{options[:version]}"
+        specs = Gem::SourceIndex.from_installed_gems.search(
+          gem_name, options[:version])
+      end
+
+      if specs.empty?
+        fail "Failed to find gem #{gem_name} to generate RDoc for #{options[:version]}"
+      end
+      if options[:include_ri]
+        specs.each do |spec|
+          Gem::DocManager.new(spec).generate_ri
         end
+      end
+      if options[:include_rdoc]
         specs.each do |spec|
           Gem::DocManager.new(spec).generate_rdoc
         end
       end
+
       true
     end
   end
@@ -1037,8 +1150,9 @@ module Gem
       
       if remote?
         say "(Remote 'info' operation is not yet implemented.)"
-        # NOTE: when we do implement remote info, make sure we don't duplicate huge swabs of
-        # local data.  If it's the same, just say it's the same.
+        # NOTE: when we do implement remote info, make sure we don't
+        # duplicate huge swabs of local data.  If it's the same, just
+        # say it's the same.
       end
     end
   end
@@ -1069,8 +1183,9 @@ module Gem
       "GEMNAME       Name of the gem to unpack"
     end
 
-    # TODO: allow, e.g., 'gem unpack rake-0.3.1'.  Find a general solution for this, so that it
-    # works for uninstall as well.  (And check other commands at the same time.)
+    # TODO: allow, e.g., 'gem unpack rake-0.3.1'.  Find a general
+    # solution for this, so that it works for uninstall as well.  (And
+    # check other commands at the same time.)
     def execute
       gemname = get_one_gem_name
       path = get_path(gemname, options[:version])
@@ -1085,25 +1200,29 @@ module Gem
       end
     end
 
-    # Return the full path to the cached gem file matching the given name and version
-    # requirement.  Returns 'nil' if no match.  Example:
+    # Return the full path to the cached gem file matching the given
+    # name and version requirement.  Returns 'nil' if no match.
+    # Example:
     #
     #  get_path('rake', '> 0.4')   # -> '/usr/lib/ruby/gems/1.8/cache/rake-0.4.2.gem'
     #  get_path('rake', '< 0.1')   # -> nil
     #  get_path('rak')             # -> nil (exact name required)
     #
-    # XXX: This should be refactored so that it's a general service.  I don't think any of our
-    # existing classes are the right place though.  Just maybe 'Cache'?
+    # TODO: This should be refactored so that it's a general service.
+    # I don't think any of our existing classes are the right place
+    # though.  Just maybe 'Cache'?
     #
-    # XXX: It just uses Gem.dir for now.  What's an easy way to get the list of source directories? 
+    # TODO: It just uses Gem.dir for now.  What's an easy way to get
+    # the list of source directories?
     #
     def get_path(gemname, version_req)
+      return gemname if gemname =~ /\.gem$/i
       specs = SourceIndex.from_installed_gems.search(gemname, version_req)
-      selected = specs.sort_by { |s| s.full_name }.last
+      selected = specs.sort_by { |s| s.version }.last
       return nil if selected.nil?
-      # We expect to find (basename).gem in the 'cache' directory.  Furthermore, the name match
-      # must be exact.
-      if gemname == selected.name
+      # We expect to find (basename).gem in the 'cache' directory.
+      # Furthermore, the name match must be exact (ignoring case).
+      if gemname =~ /^#{selected.name}$/i
         filename = selected.full_name + '.gem'
         return File.join(Gem.dir, 'cache', filename)
       else
@@ -1176,10 +1295,11 @@ module Gem
     end
   end
 
+  ####################################################################
   class ContentsCommand < Command
     include CommandAids
     def initialize
-      super('contents','Disply the contents of the installed gems', {:list => true, :specdirs => [] })
+      super('contents','Display the contents of the installed gems', {:list => true, :specdirs => [] })
       add_option("-l","--list",'List the files inside a Gem') do |v,o|
 	o[:list] = true
       end
@@ -1214,7 +1334,7 @@ module Gem
 	  system = false
 	end
 	
-	si = Gem::SourceIndex.from_installed_gems(*s)
+	si = Gem::SourceIndex.from_gems_in(*s)
 	
 	gem_spec = si.search(gem, version).first
 	unless gem_spec
@@ -1243,8 +1363,9 @@ module Gem
   
 end # module
 
-## Documentation Constants
-
+######################################################################
+# Documentation Constants
+#
 module Gem
 
   HELP = %{
@@ -1285,7 +1406,7 @@ module Gem
     * Install 'rake' from remote server, and run unit tests,
       and generate RDocs:
 
-        gem install --remote rake --test --rdoc
+        gem install --remote rake --test --rdoc --ri
 
     * Install 'rake', but only version 0.3.1, even if dependencies
       are not met, and into a specific directory:

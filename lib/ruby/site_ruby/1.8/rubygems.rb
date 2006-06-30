@@ -1,3 +1,12 @@
+#!/usr/bin/env ruby
+# -*- ruby -*-
+
+#--
+# Copyright 2006 by Chad Fowler, Rich Kilmer, Jim Weirich and others.
+# All rights reserved.
+# See LICENSE.txt for permissions.
+#++
+
 require 'rbconfig'
 
 module Gem
@@ -8,44 +17,67 @@ end
 
 module Kernel
 
-  ##
-  # Adds a Ruby Gem to the $LOAD_PATH.  Before a Gem is loaded, its required
-  # Gems are loaded (by specified version or highest version).  If the version
-  # information is omitted, the highest version Gem of the supplied name is 
-  # loaded.  If a Gem is not found that meets the version requirement and/or 
-  # a required Gem is not found, a Gem::LoadError is raised. More information on 
-  # version requirements can be found in the Gem::Version documentation.
+  # Adds a Ruby Gem to the $LOAD_PATH.  Before a Gem is loaded, its
+  # required Gems are loaded.  If the version information is omitted,
+  # the highest version Gem of the supplied name is loaded.  If a Gem
+  # is not found that meets the version requirement and/or a required
+  # Gem is not found, a Gem::LoadError is raised. More information on
+  # version requirements can be found in the Gem::Version
+  # documentation.
+  #
+  # The +gem+ directive should be executed *before* any require
+  # statements (otherwise rubygems might select a conflicting library
+  # version).
   #
   # You can define the environment variable GEM_SKIP as a way to not
-  # load specified gems.  you might do this to test out changes that haven't 
-  # been intsalled yet.  Example:
+  # load specified gems.  you might do this to test out changes that
+  # haven't been intsalled yet.  Example:
   #
   #   GEM_SKIP=libA:libB ruby-I../libA -I../libB ./mycode.rb
   #
-  # gem:: [String or Gem::Dependency] The gem name or dependency instance.
-  # version_requirement:: [default="> 0.0.0"] The version requirement.
-  # return:: [Boolean] true if the Gem is loaded, otherwise false.
-  # raises:: [Gem::LoadError] if Gem cannot be found, is listed in GEM_SKIP, or version requirement not met.
+  # gem:: [String or Gem::Dependency] The gem name or dependency
+  #       instance.
   #
-  def require_gem(gem, *version_requirements)
-    require_gem_with_options(gem, version_requirements, :auto_require=>true)
+  # version_requirement:: [default=">= 0.0.0"] The version
+  #                       requirement.
+  #
+  # return:: [Boolean] true if the Gem is loaded, otherwise false.
+  #
+  # raises:: [Gem::LoadError] if Gem cannot be found, is listed in
+  #          GEM_SKIP, or version requirement not met. 
+  #
+  def gem(gem_name, *version_requirements)
+    active_gem_with_options(gem_name, version_requirements)
   end
   
-  def require_gem_with_options(gem, version_requirements, options={})
-    skip_list = (ENV['GEM_SKIP'] || "").split(/:/)
-    raise Gem::LoadError, "skipping #{gem}" if skip_list.include? gem
-    Gem.activate(gem, options[:auto_require], *version_requirements)
+  # Same as the +gem+ command, but will also require a file if the gem
+  # provides an auto-required file name.
+  #
+  # DEPRECATED!  Use +gem+ instead.
+  #
+  def require_gem(gem_name, *version_requirements)
+    active_gem_with_options(gem_name,
+      version_requirements, :auto_require=>true)
   end
+
+  def active_gem_with_options(gem_name, version_requirements, options={})
+    skip_list = (ENV['GEM_SKIP'] || "").split(/:/)
+    raise Gem::LoadError, "skipping #{gem_name}" if skip_list.include? gem_name
+    Gem.activate(gem_name, options[:auto_require], *version_requirements)
+  end
+  private :active_gem_with_options
 end
 
 
-##
 # Main module to hold all RubyGem classes/modules.
 #
 module Gem
   require 'rubygems/rubygems_version.rb'
 
   class Exception < RuntimeError
+  end
+
+  class OperationNotSupportedError < Gem::Exception
   end
 
   RubyGemsPackageVersion = RubyGemsVersion 
@@ -67,10 +99,8 @@ module Gem
       require 'rubygems/cmd_manager'
       require 'rubygems/gem_runner'
       require 'rubygems/config_file'
-      require 'rubygems/deployment'
     end
   
-    ##
     # Returns an Cache of specifications that are in the Gem.path
     #
     # return:: [Gem::SourceIndex] Index of installed Gem::Specifications
@@ -82,7 +112,6 @@ module Gem
     # Provide an alias for the old name.
     alias cache source_index
     
-    ##
     # The directory path where Gems are to be installed.
     #
     # return:: [String] The directory path
@@ -93,7 +122,6 @@ module Gem
       @gem_home
     end
     
-    ##
     # List of directory paths to search for Gems.
     #
     # return:: [List<String>] List of directory paths.
@@ -114,12 +142,31 @@ module Gem
       File.join(Gem.user_home, '.gemrc')
     end
 
+    # The standard configuration object for gems.
+    def configuration
+      @configuration ||= {}
+    end
+
+    # Use the given configuration object (which implements the
+    # ConfigFile protocol) as the standard configuration object.
+    def configuration=(config)
+      @configuration = config
+    end
+
+    # Return the path the the data directory specified by the gem
+    # name.  If the package is not available as a gem, return nil.
+    def datadir(gem_name)
+      return nil if @loaded_specs.nil?
+      spec = @loaded_specs[gem_name]
+      return nil if spec.nil?
+      File.join(spec.full_gem_path, 'data', gem_name)
+    end
+
     # Return the Ruby command to use to execute the Ruby interpreter.
     def ruby
       "ruby"
     end
 
-    ##
     # Activate a gem (i.e. add it to the Ruby load path).  The gem
     # must satisfy all the specified version constraints.  If
     # +autorequire+ is true, then automatically require the specified
@@ -131,7 +178,7 @@ module Gem
     def activate(gem, autorequire, *version_requirements)
       @loaded_specs ||= Hash.new
       unless version_requirements.size > 0
-        version_requirements = ["> 0.0.0"]
+        version_requirements = [">= 0.0.0"]
       end
       unless gem.respond_to?(:name) && gem.respond_to?(:version_requirements)
         gem = Gem::Dependency.new(gem, version_requirements)
@@ -391,6 +438,25 @@ module Gem
 
   end
 end
+
+
+# Modify the non-gem version of datadir to handle gem package names.
+
+require 'rbconfig/datadir'
+module Config
+  class << self
+    alias gem_original_datadir datadir
+
+    # Return the path to the data directory associated with the named
+    # package.  If the package is loaded as a gem, return the gem
+    # specific data directory.  Otherwise return a path to the share
+    # area as define by "#{Config::CONFIG['datadir']}/#{package_name}".
+    def datadir(package_name)
+      Gem.datadir(package_name) || Config.gem_original_datadir(package_name)
+    end
+  end
+end
+
 
 require 'rubygems/source_index'
 require 'rubygems/specification'

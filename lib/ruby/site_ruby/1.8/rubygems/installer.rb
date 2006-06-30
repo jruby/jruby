@@ -1,3 +1,9 @@
+#--
+# Copyright 2006 by Chad Fowler, Rich Kilmer, Jim Weirich and others.
+# All rights reserved.
+# See LICENSE.txt for permissions.
+#++
+
 $TESTING = false unless defined? $TESTING
 
 require 'pathname'
@@ -51,9 +57,8 @@ module Gem
       # the security policy says that we only install singed gems
       # (this includes Gem::Security::HighSecurity)
       security_policy = @options[:security_policy]
-      security_policy = nil if force && security_policy && 
-                            security_policy.only_signed != true
-
+      security_policy = nil if force && security_policy && security_policy.only_signed != true
+      
       format = Gem::Format.from_file_by_path(@gem, security_policy)
       unless force
         spec = format.spec
@@ -73,7 +78,7 @@ module Gem
       raise Gem::FilePermissionError.new(install_dir) unless File.writable?(install_dir)
 
       # Build spec dir.
-      @directory = File.join(install_dir, "gems", format.spec.full_name)
+      @directory = File.join(install_dir, "gems", format.spec.full_name).untaint
       FileUtils.mkdir_p @directory
 
       extract_files(@directory, format)
@@ -88,6 +93,8 @@ module Gem
       unless File.exist? File.join(install_dir, "cache", @gem.split(/\//).pop)
         FileUtils.cp @gem, File.join(install_dir, "cache")
       end
+
+      puts format.spec.post_install_message unless format.spec.post_install_message.nil?
 
       format.spec.loaded_from = File.join(install_dir, 'specifications', format.spec.full_name+".gemspec")
       return format.spec
@@ -146,7 +153,8 @@ module Gem
     #
     def write_spec(spec, spec_path)
       rubycode = spec.to_ruby
-      File.open(File.join(spec_path, spec.full_name+".gemspec"), "w") do |file|
+      file_name = File.join(spec_path, spec.full_name+".gemspec").untaint
+      File.open(file_name, "w") do |file|
         file.puts rubycode
       end
     end
@@ -284,29 +292,35 @@ TEXT
       say "Building native extensions.  This could take a while..."
       start_dir = Dir.pwd
       dest_path = File.join(directory, spec.require_paths[0])
+
+      results = []
       spec.extensions.each do |extension|
-        Dir.chdir File.join(directory, File.dirname(extension))
-        results = ["#{Gem.ruby} #{File.basename(extension)} #{ARGV.join(" ")}"]
-        results << `#{Gem.ruby} #{File.basename(extension)} #{ARGV.join(" ")}`
-        if File.exist?('Makefile')
-          mf = File.read('Makefile')
-          mf = mf.gsub(/^RUBYARCHDIR\s*=\s*\$.*/, "RUBYARCHDIR = #{dest_path}")
-          mf = mf.gsub(/^RUBYLIBDIR\s*=\s*\$.*/, "RUBYLIBDIR = #{dest_path}")
-          File.open('Makefile', 'wb') {|f| f.print mf}
-          make_program = ENV['make']
-          unless make_program
-            make_program = (/mswin/ =~ RUBY_PLATFORM) ? 'nmake' : 'make'
-          end
-          results << "#{make_program}"
-          results << `#{make_program}`
-          results << "#{make_program} install"
-          results << `#{make_program} install`
-          say results.join("\n")
+        case extension
+        when /extconf/ then
+          builder = ExtExtConfBuilder
+        when /configure/ then
+          builder = ExtConfigureBuilder
+        when /rakefile/i then
+          builder = ExtRakeBuilder
         else
-          File.open(File.join(Dir.pwd, 'gem_make.out'), 'wb') {|f| f.puts results.join("\n")}
-          raise "ERROR: Failed to build gem native extension.\nGem files will remain installed in #{directory} for inspection.\n  #{results.join('\n')}\n\nResults logged to #{File.join(Dir.pwd, 'gem_make.out')}"
+          builder = nil
+          results = ["No builder for extension '#{extension}'"]
         end
+
+        begin
+          err = false
+          Dir.chdir File.join(directory, File.dirname(extension))
+          results = builder.build(extension, directory, dest_path)
+        rescue => ex
+          err = true
+        end
+
+        say results.join("\n")
         File.open('gem_make.out', 'wb') {|f| f.puts results.join("\n")}
+
+        if err
+          raise "ERROR: Failed to build gem native extension.\nGem files will remain installed in #{directory} for inspection.\n  #{results.join('\n')}\n\nResults logged to #{File.join(Dir.pwd, 'gem_make.out')}"
+		end
       end
       Dir.chdir start_dir
     end
@@ -324,7 +338,7 @@ TEXT
       wd = Dir.getwd
       Dir.chdir directory do
         format.file_entries.each do |entry, file_data|
-          path = entry['path']
+          path = entry['path'].untaint
           FileUtils.mkdir_p File.dirname(path)
           File.open(path, "wb") do |out|
             out.write file_data
@@ -383,8 +397,9 @@ TEXT
           remove_all(list.dup) 
           remove_executables(list.last)
         elsif index >= 0 && index < list.size
-          remove(list[index], list)
-          remove_executables(list[index])
+	  to_remove = list[index]
+          remove(to_remove, list)
+          remove_executables(to_remove)
         else
           say "Error: must enter a number [1-#{list.size+1}]"
         end
@@ -418,7 +433,7 @@ TEXT
         answer = @force_executables || ask_yes_no(
 	  "Remove executables and scripts for\n" +
 	  "'#{gemspec.executables.join(", ")}' in addition to the gem?",
-	  true)
+	  true) # " # appease ruby-mode - don't ask
         unless answer
           say "Executables and scripts will remain installed."
           return
@@ -535,4 +550,64 @@ TEXT
 
   end  # class Uninstaller
 
+  class ExtConfigureBuilder
+    def self.build(extension, directory, dest_path)
+      results = []
+      unless File.exist?('Makefile') then
+        cmd = "sh ./configure --prefix=#{dest_path}"
+        results << cmd
+        results << `#{cmd}`
+      end
+
+      results.push(*ExtExtConfBuilder.make(dest_path))
+      results
+    end
+  end
+
+  class ExtExtConfBuilder
+    def self.build(extension, directory, dest_path)
+      results = ["#{Gem.ruby} #{File.basename(extension)} #{ARGV.join(" ")}"]
+      results << `#{Gem.ruby} #{File.basename(extension)} #{ARGV.join(" ")}`
+      results.push(*make(dest_path))
+      results
+    end
+
+    def self.make(dest_path)
+      results = []
+      raise unless File.exist?('Makefile')
+      mf = File.read('Makefile')
+      mf = mf.gsub(/^RUBYARCHDIR\s*=\s*\$[^$]*/, "RUBYARCHDIR = #{dest_path}")
+      mf = mf.gsub(/^RUBYLIBDIR\s*=\s*\$[^$]*/, "RUBYLIBDIR = #{dest_path}")
+      File.open('Makefile', 'wb') {|f| f.print mf}
+
+      make_program = ENV['make']
+      unless make_program
+        make_program = (/mswin/ =~ RUBY_PLATFORM) ? 'nmake' : 'make'
+      end
+
+      ['', 'install', 'clean'].each do |target|
+        results << "#{make_program} #{target}".strip
+        results << `#{make_program} #{target}`
+      end
+
+      results
+    end
+
+  end
+
+  class ExtRakeBuilder
+    def ExtRakeBuilder.build(ext, directory, dest_path)
+      make_program = ENV['rake'] || 'rake'
+      make_program += " RUBYARCHDIR=#{dest_path} RUBYLIBDIR=#{dest_path}"
+
+      results = []
+
+      ['', 'install', 'clean'].each do |target|
+        results << "#{make_program} #{target}".strip
+        results << `#{make_program} #{target}`
+      end
+
+      results
+    end
+  end
 end  # module Gem
