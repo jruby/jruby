@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarFile;
+import java.util.regex.Pattern;
 
 import org.jruby.IRuby;
 import org.jruby.RubyString;
@@ -61,6 +62,7 @@ public class LoadService {
     private static final String JRUBY_BUILTIN_SUFFIX = ".jrb";
 
 	private static final String[] suffixes = { JRUBY_BUILTIN_SUFFIX, ".ast.ser", ".rb.ast.ser", ".rb", ".jar" };
+    private static final Pattern suffixPattern = Pattern.compile(".*\\.(jrb|ast\\.ser|rb\\.ast\\.ser|rb|jar)$");
 
     private final List loadPath = new ArrayList();
     private final Set loadedFeatures = Collections.synchronizedSet(new HashSet());
@@ -127,12 +129,12 @@ public class LoadService {
 
     public void smartLoad(String file) {
         Library library = null;
-        
-        if (file.endsWith(".rb")) {
-            // .rb specified, try without suffixes
+
+        if (suffixPattern.matcher(file).matches()) {
+            // known extension specified specified, try without suffixes
             library = findLibrary(file);
         }
-        
+
         if (library == null) {
             // nothing yet, try suffixes
             for (int i = 0; i < suffixes.length; i++) {
@@ -141,7 +143,7 @@ public class LoadService {
                     break;
                 }
             }
-        }
+        }   
 
         if (library == null) {
             throw runtime.newLoadError("No such file to load -- " + file);
