@@ -6,7 +6,8 @@ file = __FILE__
 if (File::Separator == '\\')
 	file.gsub!('\\\\', '/')
 end
-require File::dirname(file) + "/RubyInitTest.jar"
+# Load jar file RubyInitTest.java
+require File::dirname(file) + "/RubyInitTest"
 test_ok($ruby_init)
 
 # Yes, the following line is supposed to appear twice

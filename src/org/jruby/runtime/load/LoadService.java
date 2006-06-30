@@ -60,7 +60,7 @@ import org.jruby.util.NormalizedFile;
 public class LoadService {
     private static final String JRUBY_BUILTIN_SUFFIX = ".jrb";
 
-	private static final String[] suffixes = { JRUBY_BUILTIN_SUFFIX, ".ast.ser", ".rb.ast.ser", ".rb",  "", ".jar" };
+	private static final String[] suffixes = { JRUBY_BUILTIN_SUFFIX, ".ast.ser", ".rb.ast.ser", ".rb", ".jar" };
 
     private final List loadPath = new ArrayList();
     private final Set loadedFeatures = Collections.synchronizedSet(new HashSet());
@@ -112,19 +112,44 @@ public class LoadService {
 
     public void load(String file) {
         Library library = null;
-        for (int i = 0; i < suffixes.length; i++) {
-            library = findLibrary(file + suffixes[i]);
-            if (library != null) {
-                break;
-            }
-        }
+        
+        library = findLibrary(file);
+
         if (library == null) {
             throw runtime.newLoadError("No such file to load -- " + file);
         }
         try {
-        	library.load(runtime);
+            library.load(runtime);
         } catch (IOException e) {
-        	throw runtime.newLoadError("IO error -- " + file);
+            throw runtime.newLoadError("IO error -- " + file);
+        }
+    }
+
+    public void smartLoad(String file) {
+        Library library = null;
+        
+        if (file.endsWith(".rb")) {
+            // .rb specified, try without suffixes
+            library = findLibrary(file);
+        }
+        
+        if (library == null) {
+            // nothing yet, try suffixes
+            for (int i = 0; i < suffixes.length; i++) {
+                library = findLibrary(file + suffixes[i]);
+                if (library != null) {
+                    break;
+                }
+            }
+        }
+
+        if (library == null) {
+            throw runtime.newLoadError("No such file to load -- " + file);
+        }
+        try {
+            library.load(runtime);
+        } catch (IOException e) {
+            throw runtime.newLoadError("IO error -- " + file);
         }
     }
 
@@ -155,7 +180,7 @@ public class LoadService {
         loadedFeatures.add(name);
         
         try {
-	        load(file);
+	        smartLoad(file);
 	        return true;
         } catch (RuntimeException e) {
             loadedFeatures.remove(name);

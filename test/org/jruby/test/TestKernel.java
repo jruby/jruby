@@ -55,8 +55,8 @@ public class TestKernel extends TestRubyBase {
 
     public void testLoad() throws Exception {
         //load should work several times in a row
-        assertEquals("0", eval("load 'test/loadTest'"));
-        assertEquals("load did not load the same file several times", "1", eval("load 'test/loadTest'"));
+        assertEquals("0", eval("load 'test/loadTest.rb'"));
+        assertEquals("load did not load the same file several times", "1", eval("load 'test/loadTest.rb'"));
     }
 
     public void testRequire() throws Exception {

@@ -410,13 +410,13 @@ public final class Ruby implements IRuby {
         initBuiltinClasses();
         
         // Load additional definitions and hacks from etc.rb
-        getLoadService().load("builtin/etc.rb");
+        getLoadService().smartLoad("builtin/etc.rb");
     }
 
     private void initLibraries() {
         loadService = new LoadService(this);
-        loadService.registerBuiltin("java", new BuiltinScript("javasupport"));
-        loadService.registerBuiltin("socket", new SocketLibrary());
+        loadService.registerBuiltin("java.rb", new BuiltinScript("javasupport"));
+        loadService.registerBuiltin("socket.rb", new SocketLibrary());
         loadService.registerBuiltin("rbconfig.rb", new RbConfigLibrary());
 
         for (int i=0; i<BUILTIN_LIBRARIES.length; i++) {
@@ -424,9 +424,9 @@ public final class Ruby implements IRuby {
         }
         
         
-        loadService.registerBuiltin("jruby", new JRubyLibrary());
-        loadService.registerBuiltin("stringio", new StringIOLibrary());
-        loadService.registerBuiltin("zlib", new ZlibLibrary());
+        loadService.registerBuiltin("jruby.rb", new JRubyLibrary());
+        loadService.registerBuiltin("stringio.rb", new StringIOLibrary());
+        loadService.registerBuiltin("zlib.rb", new ZlibLibrary());
     }
 
     private void initCoreClasses() {
