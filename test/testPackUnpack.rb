@@ -35,6 +35,8 @@ test_equal(["h", "e", "l", "l", "o"], "whole".unpack('xax2aX2aX1aX2a'))
 test_equal([987.654321098/100.0], [987.654321098/100.0].pack("d*").unpack("d*"))
 test_equal([987.654321098/100.0], [987.654321098/100.0].pack("E*").unpack("E*"))
 test_equal([987.654321098/100.0], [987.654321098/100.0].pack("G*").unpack("G*"))
+test_equal(["123"], ["123"].pack("m").unpack("m"))
+test_equal(["12"], ["12"].pack("m").unpack("m"))
 # TODO: Missing more tests for double precision.  
 # TODO: Missing all single precision tests.
 test_exception(ArgumentError) { ["A"].pack("X2") }

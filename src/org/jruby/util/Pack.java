@@ -17,6 +17,7 @@
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Derek Berner <derek.berner@state.nm.us>
+ * Copyright (C) 2006 Evan Buswell <ebuswell@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -797,17 +798,14 @@ public class Pack {
                         lElem.append((char)((a << 2 | b >> 4) & 255));
                         lElem.append((char)((b << 4 | c >> 2) & 255));
                         lElem.append((char)((c << 6 | d) & 255));
+                        a = -1;
                     }
                     if (a != -1 && b != -1) {
-                        int remaining = encode.remaining();
-                        char[] s = encode.nextSubstring(4).toCharArray();
-                        
-                        if (remaining > 2 && s[2] == '=')
-                            lElem.append((char)((a << 2 | b >> 4) & 255));
-                        if (c != -1 && remaining > 3 && s[3] == '=') {
-                            lElem.append((char)((a << 2 | b >> 4) & 255));
-                            lElem.append((char)((b << 4 | c >> 2) & 255));
+                        lElem.append((char)((a << 2 | b >> 4) & 255));
+                        if(c != -1) {
+                        	lElem.append((char)((b << 4 | c >> 2) & 255));
                         }
+
                     }
                     result.append(runtime.newString(lElem.toString()));
                 }
