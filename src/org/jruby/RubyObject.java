@@ -653,9 +653,6 @@ public class RubyObject implements Cloneable, IRubyObject {
             }
             IRubyObject newSelf = null;
             if (scope.isNil() || !(scope instanceof RubyBinding)) {
-                threadContext.pushRubyClass(this instanceof RubyModule ? 
-                        (RubyModule) this : this.getType());
-
                 if (threadContext.getPreviousFrame() != null) {
                     threadContext.getCurrentFrame().setIter(threadContext.getPreviousFrame().getIter());
                 }
@@ -681,7 +678,6 @@ public class RubyObject implements Cloneable, IRubyObject {
             if (scope.isNil() || !(scope instanceof RubyBinding)) {
 //              FIXME: this is broken for Proc, see above
                 threadContext.getCurrentFrame().setIter(iter);
-                threadContext.popRubyClass();
             } else if (scope instanceof RubyBinding) {
                 threadContext.postEvalWithBinding();
             }

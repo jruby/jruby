@@ -44,3 +44,28 @@ test_equal(x2, "foo")
 proc_binding = eval("proc{binding}.call", TOPLEVEL_BINDING)
 nesting = eval("$nesting = nil; class A; $nesting = Module.nesting; end; $nesting", TOPLEVEL_BINDING)
 test_equal("A", nesting.to_s)
+
+class Foo
+  def initialize(p)
+    @prefix = p
+  end
+
+  def result(val)
+    redefine_result
+    result val
+  end
+  
+  def redefine_result
+    method_decl = "def result(val); \"#{@prefix}: \#\{val\}\"; end"
+    instance_eval method_decl, "generated code (#{__FILE__}:#{__LINE__})"
+  end
+end
+
+f = Foo.new("foo")
+test_equal "foo: hi", f.result("hi")
+
+g = Foo.new("bar")
+test_equal "bar: hi", g.result("hi")
+
+test_equal "foo: bye", f.result("bye")
+test_equal "bar: bye", g.result("bye")
