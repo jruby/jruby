@@ -18,6 +18,7 @@
  * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 David Corbin <dcorbin@users.sourceforge.net>
+ * Copyright (C) 2006 Nick Sieger <nicksieger@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -134,6 +135,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         regexpClass.defineSingletonMethod("quote", callbackFactory.getSingletonMethod("quote", RubyString.class));
         regexpClass.defineSingletonMethod("escape", callbackFactory.getSingletonMethod("quote", RubyString.class));
         regexpClass.defineSingletonMethod("last_match", callbackFactory.getSingletonMethod("last_match_s"));
+        regexpClass.defineSingletonMethod("union", callbackFactory.getOptSingletonMethod("union"));
 
         return regexpClass;
     }
@@ -512,6 +514,9 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             if (RubyString.isAlnum(c)) {
                 sb.append(c);
             } else if (c == '/') {
+                if (i == 0 || regex.charAt(i - 1) != '\\') {
+                    sb.append("\\");
+                }
             	sb.append(c);
             } else if (RubyString.isPrint(c)) {
                 sb.append(c);
@@ -550,6 +555,37 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         return getRuntime().newString(sb.toString());
     }
     
+    /**
+     * rb_reg_s_union
+     */
+    public static IRubyObject union(IRubyObject recv, IRubyObject[] args) {
+        if (args.length == 0) {
+            return newInstance(recv, new IRubyObject[] {recv.getRuntime().newString("(?!)")});
+        }
+        
+        if (args.length == 1) {
+            IRubyObject arg = args[0].convertToType("Regexp", "to_regexp", false);
+            if (!arg.isNil()) {
+                return arg;
+            }
+            return newInstance(recv, new IRubyObject[] {quote(recv, args[0].convertToString())});
+        }
+        
+        StringBuffer buffer = new StringBuffer();
+        for (int i = 0; i < args.length; i++) {
+        	if (i > 0) {
+        		buffer.append("|");
+            }
+        	IRubyObject arg = args[i].convertToType("Regexp", "to_regexp", false);
+            if (arg.isNil()) {
+                arg = quote(recv, args[i].convertToString());
+            }
+            buffer.append(arg.toString());
+        }
+        
+        return newInstance(recv, new IRubyObject[] {recv.getRuntime().newString(buffer.toString())});
+    }
+
     
     public IRubyObject to_s() {
         return getRuntime().newString(toString());
@@ -570,7 +606,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 		}
 
     	buffer.append(':');
-    	buffer.append(pattern.pattern());
+        buffer.append(pattern.pattern().replaceAll("^/|([^\\\\])/", "$1\\\\/"));
 		buffer.append(')');
 
     	return buffer.toString();

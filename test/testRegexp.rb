@@ -65,9 +65,18 @@ re = /^admin\/.+$/
 test_equal("^admin\\/.+$", re.source)
 test_equal("/^admin\\/.+$/", re.inspect)
 
+re = Regexp.new("/hi/")
+test_equal("/hi/", re.source)
+test_equal("/\\/hi\\//", re.inspect)
+
 ##### Posix sequences ######
 "a  b" =~ /([[:space:]]+)/
 test_equal("  ", $1)
 # We should only honor this as posix sequence inside [] (bug 1475096)
 #test_equal(0, "a  b" =~ /([:space:]+)/)
 
+##### union #####
+test_equal(/(?!)/, Regexp.union)
+test_equal(/penzance/, Regexp.union("penzance"))
+test_equal(/skiing|sledding/, Regexp.union("skiing", "sledding"))
+test_equal(/(?-mix:dogs)|(?i-mx:cats)/, Regexp.union(/dogs/, /cats/i))
