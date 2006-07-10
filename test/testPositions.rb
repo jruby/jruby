@@ -1,5 +1,5 @@
 require 'test/minirunit'
-test_check "Test Class derivation:"
+test_check "Test Source Positions:"
 
 require 'java'
 require 'jruby'
@@ -35,6 +35,12 @@ end
 
 def test_tree(expected_list, script_content)
    compare_node(JRuby::parse(script_content, ""), expected_list)
+end
+
+def print_tree(node)
+	p node_string(node)
+
+    node.childNodes.each {|child| print_tree(child) }
 end
 
 list = [
@@ -81,7 +87,6 @@ nil,   #['NewlineNode', 0, 12, 0, 142],
 ['Colon2Node', 0, 0, 6, 6],
 ['ScopeNode', 1, 10, 14, 137],
 ['BlockNode', 1, 10, 14, 137],
-['NewlineNode', 1, 5, 14, 75],
 ['DefnNode', 1, 4, 14, 73],
 ['ArgumentNode', 1, 1, 18, 21],
 nil,   #['ArgsNode', 1, 1, 27, 35],
@@ -90,7 +95,6 @@ nil,   #['ArgsNode', 1, 1, 27, 35],
 ['ArgumentNode', 1, 1, 29, 32],
 nil,   #['ScopeNode', 2, 3, 44, 68],
 nil,   #['BlockNode', 2, 3, 44, 68],
-nil,   #['NewlineNode', 2, 3, 44, 60],
 nil,   #['FCallNode', 2, 3, 44, 60],
 nil,   #['ArrayNode', 2, 2, 48, 54],
 ['CallNode', 2, 2, 45, 47],
@@ -164,7 +168,6 @@ nil,
 ['Colon2Node', 0, 0, 6, 9],
 nil, #['ScopeNode', 1, 5, 20, 77],
 nil, #['BlockNode', 1, 5, 20, 77],
-nil,
 ['ClassVarDeclNode', 1, 1, 13, 24],
 ['FixnumNode', 1, 1, 24, 24],
 nil,
@@ -173,7 +176,6 @@ nil,
 ['ArgsNode', 2, 3, 35, 36],
 nil, #['ScopeNode', 3, 4, 45, 70],
 nil, #['BlockNode', 3, 4, 45, 70],
-nil,
 ['InstAsgnNode', 3, 3, 40, 54],
 ['StrNode', 3, 3, 49, 54],
 nil,

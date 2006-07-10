@@ -296,7 +296,7 @@ public class DefaultRubyParser {
 %nonassoc tLOWEST
 %nonassoc tLBRACE_ARG
 
-%left  kIF_MOD kUNLESS_MOD kWHILE_MOD kUNTIL_MOD 
+%nonassoc  kIF_MOD kUNLESS_MOD kWHILE_MOD kUNTIL_MOD 
 %left  kOR kAND
 %right kNOT
 %nonassoc kDEFINED
@@ -506,7 +506,7 @@ stmt          : kALIAS fitem {
                     $<AssignableNode>1.setValueNode($3);
 		    $$ = $1;
 		}
-              | expr
+              | expr 
 
 expr          : command_call 
               | expr kAND expr {
@@ -1166,8 +1166,7 @@ primary       : literal
 		kEND {
                     $$ = new BeginNode(support.union($1, $3), $2);
 		}
-	      | tLPAREN_ARG expr opt_nl ')' {
-		    lexer.setState(LexState.EXPR_ENDARG);
+              | tLPAREN_ARG expr { lexer.setState(LexState.EXPR_ENDARG); } opt_nl ')' {
 		    warnings.warn(getPosition($<ISourcePositionHolder>1), "(...) interpreted as grouped expression");
                     $$ = $2;
 		}
@@ -1864,10 +1863,10 @@ f_opt         : tIDENTIFIER '=' arg_value {
                 }
 
 f_optarg      : f_opt {
-                    $$ = new ArrayNode(getPosition($<ISourcePositionHolder>1)).add($1);
+                    $$ = new BlockNode(getPosition($<ISourcePositionHolder>1)).add($1);
                 }
               | f_optarg ',' f_opt {
-                    $$ = $1.add($3);
+                    $$ = support.appendToBlock($1, $3);
                 }
 
  restarg_mark	: tSTAR2 

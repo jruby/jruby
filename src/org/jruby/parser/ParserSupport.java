@@ -278,7 +278,11 @@ public class ParserSupport {
      *@return a NewlineNode or null if node is null.
      */
     public Node newline_node(Node node, ISourcePosition position) {
-        return node == null ? null : new NewlineNode(position, node); 
+        if (node == null) {
+            return null;
+        }
+        
+        return node instanceof NewlineNode ? node : new NewlineNode(position, node); 
     }
     
     public ISourcePosition union(Node first, Node second) {
@@ -318,6 +322,10 @@ public class ParserSupport {
             return head;
         } else if (head == null) {
             return tail;
+        }
+        
+        while (head instanceof NewlineNode) {
+            head = ((NewlineNode) head).getNextNode();
         }
 
         if (!(head instanceof BlockNode)) {
