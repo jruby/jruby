@@ -5,9 +5,39 @@
   <groupId>org.jruby</groupId>
   <artifactId>jruby</artifactId>
   <packaging>jar</packaging>
-  <version>0.9-SNAPSHOT</version>
+  <version>0.9.1-SNAPSHOT</version>
   <name>JRuby</name>
   <url>http://www.jruby.org/</url>
+  <description>A 1.8.2 compatible Ruby interpreter written in 100% pure Java</description>
+
+  <issueManagement>
+    <system>JIRA</system>
+    <url>http://jira.codehaus.org/browse/JRUBY</url>
+  </issueManagement>
+
+  <scm>
+    <connection>scm:svn:http://svn.codehaus.org/jruby/trunk/jruby/</connection>
+    <developerConnection>scm:svn:https://svn.codehaus.org/jruby/trunk/jruby/</developerConnection>
+    <url>http://svn.codehaus.org/jruby/trunk/jruby/</url>
+  </scm>
+
+  <licenses>
+    <license>
+      <name>Common Public License - v 1.0</name>
+      <url>http://www-128.ibm.com/developerworks/library/os-cpl.html</url>
+      <distribution>repo</distribution>
+    </license>
+    <license>
+      <name>GNU General Public License Version 2</name>
+      <url>http://www.gnu.org/copyleft/gpl.html</url>
+      <distribution>repo</distribution>
+    </license>
+    <license>
+      <name>GNU Lesser General Public License Version 2.1</name>
+      <url>http://www.gnu.org/licenses/lgpl.html</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
 
   <developers>
     <developer>
@@ -27,13 +57,12 @@
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>3.8.1</version>
-      <scope>provided</scope>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>bsf</groupId>
       <artifactId>bsf</artifactId>
       <version>2.3.0</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>ant</groupId>
@@ -46,13 +75,25 @@
       <artifactId>jvyaml</artifactId>
       <version>1.0</version>
       <scope>system</scope>
-      <systemPath>${basedir}/lib/jvyaml.jar</systemPath>  
+      <systemPath>${basedir}/lib/jvyaml.jar</systemPath>
     </dependency>
   </dependencies>
 
   <build>
     <sourceDirectory>src</sourceDirectory>
     <testSourceDirectory>test</testSourceDirectory>
+    <outputDirectory>build/classes</outputDirectory>
+    <testOutputDirectory>build/test-classes</testOutputDirectory>
+    <directory>build</directory>
+    <resources>
+      <resource>
+        <directory>src</directory>
+        <includes>
+          <include>**/*.rb</include>
+          <include>**/*.properties</include>
+        </includes>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -60,6 +101,44 @@
         <configuration>
           <source>1.4</source>
           <target>1.4</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>process-classes</phase>
+            <configuration>
+              <tasks>
+                <unjar src="${basedir}/lib/plaincharset.jar" dest="${project.build.outputDirectory}"/>
+                <unjar src="${basedir}/lib/jvyaml.jar" dest="${project.build.outputDirectory}"/>
+                <delete file="${project.build.outputDirectory}/META-INF/MANIFEST.MF"/>
+                <taskdef name="jruby-serialize" classname="org.jruby.util.ant.JRubySerialize">
+                  <classpath path="${project.build.outputDirectory}"/>
+                </taskdef>
+                <jruby-serialize destdir="${project.build.outputDirectory}">
+                  <fileset dir="${project.build.sourceDirectory}">
+                    <include name="**/*.rb"/>
+                  </fileset>
+                </jruby-serialize>
+              </tasks>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>org.jruby.Main</mainClass>
+              <packageName>org.jruby</packageName>
+            </manifest>
+          </archive>
         </configuration>
       </plugin>
       <plugin>
@@ -89,5 +168,4 @@
       </plugin>
     </plugins>
   </build>
-
 </project>
