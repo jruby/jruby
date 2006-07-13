@@ -14,6 +14,7 @@
 
   	<path id="build.classpath">
     	<fileset dir="${lib.dir}" includes="*.jar" excludes="jruby.jar"/>
+  		<fileset dir="../codegen/lib" includes="*.jar"/>
   	</path>
 
   	<patternset id="java.src.pattern">

@@ -40,9 +40,15 @@ public class RubyJRuby {
         RubyModule comparableModule = runtime.defineModule("JRuby");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyJRuby.class);
         comparableModule.defineModuleFunction("parse", 
-            callbackFactory.getSingletonMethod("parse", IRubyObject.class, IRubyObject.class));
+                callbackFactory.getSingletonMethod("parse", IRubyObject.class, IRubyObject.class));
+        comparableModule.defineModuleFunction("runtime", 
+                callbackFactory.getSingletonMethod("runtime"));
 
         return comparableModule;
+    }
+    
+    public static IRubyObject runtime(IRubyObject recv) {
+        return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), recv.getRuntime()));
     }
     
     public static IRubyObject parse(IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
