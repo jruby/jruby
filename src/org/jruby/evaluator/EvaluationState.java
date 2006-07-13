@@ -30,32 +30,69 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.UnsynchronizedStack;
 
 public class EvaluationState {
-	//private IRubyObject result;
-    private UnsynchronizedStack results = new UnsynchronizedStack();
+	private IRubyObject result;
+    private UnsynchronizedStack results = null;
+    
 	public final IRuby runtime;
 	private IRubyObject self;
 	public final EvaluateVisitor evaluator;
-    private UnsynchronizedStack instructionBundleStacks = new UnsynchronizedStack();
-    private JumpException currentException;
-    private boolean handlingException;
+    
+    private UnsynchronizedStack instructionBundleStacks = null;
     private InstructionBundle currentStack;
+    
+    private JumpException currentException;
     
     public EvaluationState(IRuby runtime, IRubyObject self) {
         this.runtime = runtime;
         this.evaluator = EvaluateVisitor.getInstance();
         
-        results.push(runtime.getNil());
-        
+        result = runtime.getNil();
+         
         setSelf(self);
     }
     
     // FIXME: exceptions thrown during aggregation cause this to leak
     public void aggregateResult() {
+        if (results == null) {
+            results = new UnsynchronizedStack();
+            results.push(result);
+        }
         results.push(runtime.getNil());
     }
     
     public IRubyObject deaggregateResult() {
         return (IRubyObject)results.pop();
+    }
+    
+    /**
+     * @param result The result to set.
+     */
+    public void setResult(IRubyObject result) {
+        if (results == null) {
+            this.result = result;
+        } else {
+            results.set(results.size() - 1, result);
+        }
+    }
+    
+    /**
+     * @return Returns the result.
+     */
+    public IRubyObject getResult() {
+        if (results == null) {
+            return result;
+        } else {
+            return (IRubyObject)results.peek();
+        }
+    }
+    
+    public void clearResult() {
+        setResult(runtime.getNil());
+    }
+    
+    public void flushResults() {
+        results = null;
+        result = runtime.getNil();
     }
     
     public Instruction peekCurrentInstruction() {
@@ -103,6 +140,7 @@ public class EvaluationState {
 	 * Push down a new pair of node and visitor stacks
 	 */
 	public void pushCurrentInstructionStack() {
+        if (instructionBundleStacks == null) instructionBundleStacks = new UnsynchronizedStack();
 	    if (currentStack == null && instructionBundleStacks.isEmpty()) {
             return;
         }
@@ -188,29 +226,6 @@ public class EvaluationState {
         
         addInstructionBundle(ib);
     }
-	
-	/**
-	 * @param result The result to set.
-	 */
-	public void setResult(IRubyObject result) {
-		results.set(results.size() - 1, result);
-	}
-    
-	/**
-	 * @return Returns the result.
-	 */
-	public IRubyObject getResult() {
-		return (IRubyObject)results.peek();
-	}
-    
-	public void clearResult() {
-		setResult(runtime.getNil());
-	}
-	
-	public void flushResults() {
-		results.clear();
-        results.push(runtime.getNil());
-	}
     
 	/**
 	 * @param self The self to set.
@@ -253,14 +268,9 @@ public class EvaluationState {
      */
     public void executeNext() {
         try {
-            // FIXME: Poll from somewhere else in the code? This polls per-node, perhaps per newline?
-            getThreadContext().pollThreadEvents();
+        	InstructionBundle ib = popCurrentInstruction();
             
-            InstructionBundle ib = popCurrentInstruction();
-            
-            if (ib != null) {
-                ib.instruction.execute(this, ib.instructionContext);
-            }
+            ib.instruction.execute(this, ib.instructionContext);
         } catch (JumpException je) {
             if (je.getJumpType() == JumpException.JumpType.RedoJump) {
                 handleRedo(je);
@@ -285,8 +295,12 @@ public class EvaluationState {
         if (node == null) {
             clearResult(); // must clear result in case we are still in use
             
-            return getResult();
+            return runtime.getNil();
         }
+        
+        // TODO: This is a minor hack that depends on us being called in recursion; safe for now
+        InstructionBundle previousStack = currentStack;
+        currentStack = null;
         
         begin2(node);
         
@@ -300,6 +314,7 @@ public class EvaluationState {
                 // TODO: perhaps a better place to catch this (although it will go away)
                 throw runtime.newSystemStackError("stack level too deep");
         } finally {
+            currentStack = previousStack;
             end();
         }
         
@@ -311,14 +326,17 @@ public class EvaluationState {
         
         if (node != null) {
             // for each call to internalEval, push down new stacks (to isolate eval runs that still want to be logically separate
-            pushCurrentInstructionStack();
+            
+            // TODO: If we ever go pure iterative, this will need to be added back or re-thought. See TODO above in begin().
+            //if (currentStack != null) pushCurrentInstructionStack();
             
             addNodeInstruction(node);
         }
     }
     
     public void end() {
-        popCurrentInstructionStack();
+        // FIXME: If we ever go pure iterative, this will need to be added back or re-thought. See TODO above in begin().
+        //if (instructionBundleStacks != null) popCurrentInstructionStack();
     }
     
     private void handleNext(JumpException je) {
