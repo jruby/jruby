@@ -33,10 +33,12 @@ package org.jruby.javasupport.test;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.bsf.BSFException;
 import org.apache.bsf.BSFManager;
@@ -64,6 +66,8 @@ public class TestBSF extends RubyTestCase {
     public void tearDown() {
         manager = null;
     }
+ 
+    
     
     public void testList() {
 		try {
@@ -163,22 +167,166 @@ public class TestBSF extends RubyTestCase {
 		}
     }
 
+    /**
+     * Tests the use of RubyHash when used from java.
+     * Tests:
+     *  RubyHash#keySet()
+     *  RubyHash#get()
+     *  RubyHash#keySet()#iterator()#hasNext()
+     *  RubyHash#keySet()#iterator()#next()
+     *  RubyHash#keySet()#remove()
+     *  RubyHash#keySet()#contains()
+     *  RubyHash#keySet()#containsAll()
+     *  RubyHash#values()
+     *  RubyHash#values()#iterator()
+     *  RubyHash#values()#iterator()#hasNext()
+     *  RubyHash#values()#iterator()#next()
+     *  RubyHash#values()#contains()
+     *  RubyHash#values()#containsAll()
+     *  RubyHash#values()#remove()
+     */
     public void testMap() {
 		try {
 			SimpleInterface si = (SimpleInterface) manager.eval("ruby", "(java)", 1, 1, "SimpleInterfaceImpl.new");
 			Map map = si.getMap();
 			
-			for (Iterator e = map.keySet().iterator(); e.hasNext(); ) {
-				Object key = e.next();
+			List values = new ArrayList();
+			List keys = new ArrayList();
+			
+
+			Iterator valuesIterator = map.values().iterator();
+			assertTrue(valuesIterator.hasNext());
+
+			// Iterate over the RubyHash keySet, simultaneously iterating over the values()  
+			for (Iterator keySetIterator = map.keySet().iterator(); keySetIterator.hasNext(); ) {
+				Object key = keySetIterator.next();
+				
+				// Get the value from the map via the key
 				Object value = map.get(key);
+				
 				assertTrue(key.getClass() == String.class);
 				assertTrue(value.getClass() == Long.class);
+				
+				// Get the value from the map via the values iterator
+	            Object valueViaValuesIterator = valuesIterator.next();
+	            
+	            // Check the 2 values obtained via different means
+				assertTrue(value.equals(valueViaValuesIterator));
+				
+				// Note that WE CAN'T say the following, because of the on-the-fly conversion of Fixnum to Long 
+				// assertTrue(value == valueViaValuesIterator);
+	            
+				assertTrue(map.keySet().contains(key));
+				assertTrue(map.values().contains(value));
 			}	
+			assertFalse(valuesIterator.hasNext());
+			
+			assertTrue(map.keySet().containsAll(keys));
+			assertTrue(map.values().containsAll(values));
+
+			assertTrue(map.keySet().contains("A"));
+			assertTrue(map.values().contains(new Long(1)));
+			assertFalse(map.keySet().remove("-"));
+			assertTrue(map.keySet().remove("A"));
+			assertFalse(map.keySet().contains("A"));
+			assertFalse(map.values().contains(new Long(1)));
+			
+			assertTrue(map.keySet().contains("B"));
+			assertTrue(map.values().contains(new Long(2)));
+			assertFalse(map.values().remove("-"));
+			assertTrue(map.values().remove(new Long(2)));
+			assertFalse(map.values().contains(new Long(2)));
+			assertFalse(map.keySet().contains("B"));
+		
+		
 		} catch (BSFException e) {
-			fail("Problem evaluating List Test: " + e);
+			fail("Problem evaluating Map Test: " + e);
 		}
     }
 
+    /**
+     * Tests the use of RubyHash when used from java.
+     * Tests:
+     *  RubyHash#entrySet()
+     *  RubyHash#entrySet()#iterator()#hasNext()
+     *  RubyHash#entrySet()#iterator()#next()
+     *  RubyHash#entrySet()#iterator()#next()#setValue()
+     */
+    public void testMapEntrySetIterator() {
+    	
+    	class TestMapValue { private int i; private String s; TestMapValue() {i = 1; s="2";} public String toString(){ return s + i; } } 
+    	
+        try {
+            SimpleInterface si = (SimpleInterface) manager.eval("ruby", "(java)", 1, 1, "SimpleInterfaceImpl.new");
+            Map map = si.getMap();
+            int iteration = 1;
+            for (Iterator e = map.entrySet().iterator(); e.hasNext();) {
+                Object o = e.next();
+                assertNotNull(o);
+                Map.Entry entry = (Map.Entry) o;
+                assertTrue(entry.getKey().getClass() == String.class);
+                assertTrue(entry.getValue().getClass() == Long.class);
+                if (iteration++ == 1) {
+                    assertEquals("A", entry.getKey());
+                    assertEquals(new Long(1L), entry.getValue());
+                    // Set a value in the RubyHash
+                    entry.setValue(new Long(3));
+                } else {
+                    assertEquals("B", entry.getKey());
+                    assertEquals(new Long(2L), entry.getValue());
+                    // Set a value in the RubyHash
+                    entry.setValue(new TestMapValue());
+                }
+            }
+            // Check the entry.setValue values come back out ok
+            
+            iteration = 1;
+            for (Iterator e = map.entrySet().iterator(); e.hasNext();) {
+                Object o = e.next();
+                assertNotNull(o);
+                Map.Entry entry = (Map.Entry) o;
+                assertTrue(entry.getKey().getClass() == String.class);
+                if (iteration++ == 1) {
+                    assertTrue(entry.getValue().getClass() == Long.class);
+                    assertEquals("A", entry.getKey());
+                    assertEquals(new Long(3L), entry.getValue());
+                } else {
+                    assertTrue(entry.getValue().getClass() == TestMapValue.class);
+                    assertEquals("B", entry.getKey());
+                    assertEquals("21", entry.getValue().toString());
+                }
+            }
+        } catch (BSFException e) {
+            fail("Problem evaluating testMapEntrySetIterator Test: " + e);
+        }
+    }
+
+    /**
+     * Tests the use of RubyHash when used from java.
+     * Tests:
+     *  RubyHash#entrySet()#contains()
+     *  RubyHash#entrySet()#remove()
+     */
+    public void testMapEntrySetContainsAndRemove() {
+        try {
+            SimpleInterface si = (SimpleInterface) manager.eval("ruby", "(java)", 1, 1, "SimpleInterfaceImpl.new");
+            Map map = si.getMap();
+            Set entrySet = map.entrySet();
+			Iterator e = entrySet.iterator();
+            Object next1 = e.next();
+            Object next2 = e.next();
+            assertFalse(e.hasNext());
+			assertTrue(entrySet.contains(next1));
+			assertTrue(entrySet.contains(next2));
+			entrySet.remove(next1);
+			assertFalse(entrySet.contains(next1));
+			entrySet.remove(next2);			
+			assertFalse(entrySet.contains(next2));
+        } catch (BSFException e) {
+            fail("Problem evaluating testMapEntrySetContainsAndRemove Test: " + e);
+        }
+    }            
+    
     public void testModifyMap() {
 		try {
 			SimpleInterface si = (SimpleInterface) manager.eval("ruby", "(java)", 1, 1, "MODIFY_MAP = SimpleInterfaceImpl.new");

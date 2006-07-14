@@ -20,6 +20,7 @@
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2006 Ola Bini <Ola.Bini@ki.se>
+ * Copyright (C) 2006 Tim Azzopardi <tim@tigerfive.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -36,7 +37,8 @@
 package org.jruby;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
+import java.util.AbstractCollection;
+import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -45,7 +47,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.javasupport.util.ConversionIterator;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
@@ -582,134 +583,180 @@ public class RubyHash extends RubyObject implements Map {
 		}
 	}
 
-	public Set keySet() {
-		return new ConversionSet(valueMap.keySet());
-	}
 
 	public Set entrySet() {
-		// TODO: Set.Entry must be wrapped appropriately...?
-		return new ConversionSet(valueMap.entrySet());
+		return new ConversionMapEntrySet(getRuntime(), valueMap.entrySet());
 	}
 
 	public int size() {
 		return valueMap.size();
 	}
 
-	public Collection values() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 	public void clear() {
 		valueMap.clear();
 	}
-	
-	class ConversionSet implements Set {
-		private Set set;
 
-		public ConversionSet(Set set) {
-			this.set = set;
-		}
-
-		public int size() {
-			return set.size();
-		}
-
-		public boolean isEmpty() {
-			return set.isEmpty();
-		}
-
-		public boolean contains(Object element) {
-			return set.contains(JavaUtil.convertJavaToRuby(getRuntime(), element));
-		}
-
-		public Iterator iterator() {
-			return new ConversionIterator(set.iterator());
-		}
-
-		public Object[] toArray() {
-			Object[] array = new Object[size()];
-			Iterator iter = iterator();
-			
-			for (int i = 0; iter.hasNext(); i++) {
-				array[i] = iter.next();
+	public Collection values() {
+		return new AbstractCollection() {
+			public Iterator iterator() {
+				return new IteratorAdapter(entrySet().iterator()) {
+					public Object next() {
+						return ((Map.Entry) super.next()).getValue();
+					}
+				};
 			}
 
-			return array;
-		}
+			public int size() {
+				return RubyHash.this.size();
+			}
 
-        public Object[] toArray(final Object[] arg) {
-            Object[] array = arg;
-            int length = size();
-            
-            if(array.length < length) {
-                Class type = array.getClass().getComponentType();
-                array = (Object[]) Array.newInstance(type, length);
+			public boolean contains(Object v) {
+				return RubyHash.this.containsValue(v);
+			}
+		};
+	}
+	
+	public Set keySet() {
+		return new AbstractSet() {
+			public Iterator iterator() {
+				return new IteratorAdapter(entrySet().iterator()) {
+					public Object next() {
+						return ((Map.Entry) super.next()).getKey();
+					}
+				};
+			}
+
+			public int size() {
+				return RubyHash.this.size();
+			}
+		};
+	}	
+
+	/**
+	 * Convenience adaptor for delegating to an Iterator.
+	 *
+	 */
+	private static class IteratorAdapter implements Iterator {
+		private Iterator iterator;
+		
+		public IteratorAdapter(Iterator iterator) {
+			this.iterator = iterator;
+		}
+		public boolean hasNext() {
+			return iterator.hasNext();
+		}
+		public Object next() {
+			return iterator.next();
+		}
+		public void remove() {
+			iterator.remove();
+		}		
+	}
+	
+	
+    /**
+     * Wraps a Set of Map.Entry (See #entrySet) such that JRuby types are mapped to Java types and vice verce.
+     *
+     */
+    private static class ConversionMapEntrySet extends AbstractSet {
+		protected Set mapEntrySet;
+		protected IRuby runtime;
+
+		public ConversionMapEntrySet(IRuby runtime, Set mapEntrySet) {
+			this.mapEntrySet = mapEntrySet;
+			this.runtime = runtime;
+		}
+        public Iterator iterator() {
+            return new ConversionMapEntryIterator(runtime, mapEntrySet.iterator());
+        }
+        public boolean contains(Object o) {
+            if (!(o instanceof Map.Entry)) {
+                return false;
             }
-            
-            Iterator iter = iterator();
-            for (int i = 0; iter.hasNext(); i++) {
-                array[i] = iter.next();
+            return mapEntrySet.contains(getRubifiedMapEntry((Map.Entry) o));
+        }
+        
+        public boolean remove(Object o) {
+            if (!(o instanceof Map.Entry)) {
+                return false;
             }
-            
-            return array;
+            return mapEntrySet.remove(getRubifiedMapEntry((Map.Entry) o));
+        }
+		public int size() {
+			return mapEntrySet.size();
+		}
+        public void clear() {
+        	mapEntrySet.clear();
+        }
+		private Entry getRubifiedMapEntry(final Map.Entry mapEntry) {
+			return new Map.Entry(){
+				public Object getKey() {
+					return JavaUtil.convertJavaToRuby(runtime, mapEntry.getKey());
+				}
+				public Object getValue() {
+					return JavaUtil.convertJavaToRuby(runtime, mapEntry.getValue());
+				}
+				public Object setValue(Object arg0) {
+					// This should never get called in this context, but if it did...
+					throw new UnsupportedOperationException("unexpected call in this context");
+				}
+            };
+		}
+    }    
+    
+    /**
+     * Wraps a RubyHash#entrySet#iterator such that the Map.Entry returned by next() will have its key and value 
+     * mapped from JRuby types to Java types where applicable.
+     */
+    private static class ConversionMapEntryIterator implements Iterator {
+        private Iterator iterator;
+		private IRuby runtime;
+
+        public ConversionMapEntryIterator(IRuby runtime, Iterator iterator) {
+            this.iterator = iterator;
+            this.runtime = runtime;            
         }
 
-		public boolean add(Object element) {
-			return set.add(JavaUtil.convertJavaToRuby(getRuntime(), element));
-		}
+        public boolean hasNext() {
+            return iterator.hasNext();
+        }
 
-		public boolean remove(Object element) {
-			return set.remove(JavaUtil.convertJavaToRuby(getRuntime(), element));
-		}
+        public Object next() {
+            return new ConversionMapEntry(runtime, ((Map.Entry) iterator.next())); 
+        }
 
-		public boolean containsAll(Collection c) {
-			for (Iterator iter = c.iterator(); iter.hasNext();) {
-				if (!contains(iter.next())) {
-					return false;
-				}
-			}
+        public void remove() {
+            iterator.remove();
+        }
+    }
+    
+   
+    /**
+     * Wraps a Map.Entry from RubyHash#entrySet#iterator#next such that the the key and value 
+     * are mapped from/to JRuby/Java types where applicable.
+     */
+    private static class ConversionMapEntry implements Map.Entry {
+        private Entry entry;
+		private IRuby runtime;
 
-			return true;
-		}
-
-		public boolean addAll(Collection c) {
-			for (Iterator iter = c.iterator(); iter.hasNext(); ) {
-				add(iter.next());
-			}
-
-			return !c.isEmpty();
-		}
-
-		public boolean retainAll(Collection c) {
-			boolean listChanged = false;
-			
-			for (Iterator iter = iterator(); iter.hasNext();) {
-				Object element = iter.next();
-				if (!c.contains(element)) {
-					remove(element);
-					listChanged = true;
-				}
-			}
-
-			return listChanged;
-		}
-
-		public boolean removeAll(Collection c) {
-			boolean changed = false;
-			
-			for (Iterator iter = c.iterator(); iter.hasNext();) {
-				if (remove(iter.next())) {
-					changed = true;
-				}
-			}
-
-			return changed;
-		}
-
-		public void clear() {
-			set.clear();
-		}
-		
-	}
+        public ConversionMapEntry(IRuby runtime, Map.Entry entry) {
+            this.entry = entry;
+            this.runtime = runtime;
+        }
+        
+        public Object getKey() {
+            IRubyObject rubyObject = (IRubyObject) entry.getKey();
+            return JavaUtil.convertRubyToJava(rubyObject, Object.class); 
+        }
+        
+        public Object getValue() {
+            IRubyObject rubyObject = (IRubyObject) entry.getValue();
+            return JavaUtil.convertRubyToJava(rubyObject, Object.class); 
+        }
+        
+        public Object setValue(Object value) {
+            return entry.setValue(JavaUtil.convertJavaToRuby(runtime, value));            
+        }
+    }
+    
 }
