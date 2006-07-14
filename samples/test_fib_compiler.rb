@@ -10,16 +10,30 @@ compiler = InstructionCompiler2.new("MyCompiledScript", __FILE__);
 
 # pure ruby version
 def fib_ruby(n)
-	if n < 2
-	  n
-	else
-	  fib_ruby(n - 2) + fib_ruby(n - 1)
-	end
+  nil
+  1111111111111111111111111111111111111111111111111111111111
+  1.0
+  false
+  true
+  [1, 2, 3, 4, 5]
+  "hello"
+  if n < 2
+    n
+  else
+    fib_ruby(n - 2) + fib_ruby(n - 1)
+  end
 end
 
 # version to be parsed and compiled
 fib_java_str = <<EOS
 def fib_java(n)
+  nil
+  1111111111111111111111111111111111111111111111111111111111
+  1.0
+  false
+  true
+  [1, 2, 3, 4, 5]
+  "hello"
 	if n < 2
 	  n
 	else
@@ -30,7 +44,12 @@ EOS
 
 # parse and compile
 n = JRuby.parse(fib_java_str, __FILE__);
-n.accept(compiler);
+begin
+  n.accept(compiler);
+rescue Exception => e
+  puts e
+  exit(1)
+end
 
 # create the class
 script_class = JRubyClassLoader.new.define_class("MyCompiledScript", compiler.class_writer.to_byte_array())
@@ -51,5 +70,5 @@ def time(str)
 end
 
 # time interpreted versus compiled
-time("interpreted") { fib_ruby(30) }
-time("compiled") { fib_java(30) }
+time("interpreted") { fib_ruby(20) }
+time("compiled") { fib_java(20) }

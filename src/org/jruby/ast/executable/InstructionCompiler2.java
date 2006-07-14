@@ -1,3 +1,30 @@
+/***** BEGIN LICENSE BLOCK *****
+ * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Common Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.eclipse.org/legal/cpl-v10.html
+ *
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * Copyright (C) 2004-2006 Charles O Nutter <headius@headius.com>
+ *  
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the CPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the CPL, the GPL or the LGPL.
+ ***** END LICENSE BLOCK *****/
 package org.jruby.ast.executable;
 
 import java.util.Iterator;
@@ -103,12 +130,36 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 
 public class InstructionCompiler2 implements NodeVisitor {
-    private static final boolean EXPERIMENTAL_SOURCING = true; 
-    ClassWriter cv;
+    private static final String IRUBY = "org/jruby/IRuby";
 
-    MethodVisitor mv;
+    private static final String IRUBYOBJECT = "org/jruby/runtime/builtin/IRubyObject";
+
+    private static final String FRAME = "org/jruby/runtime/Frame";
+
+    private static final String THREADCONTEXT = "org/jruby/runtime/ThreadContext";
+
+    private static final boolean EXPERIMENTAL_SOURCING = true; 
+    
+    private ArgsNode args;
+    private ClassWriter cv;
+    private MethodVisitor mv;
+    
+    private int lastLine = 0;
+
+    private boolean tcLoaded;
+
+    private boolean runtimeLoaded;
+    
+    public class NotCompilableException extends RuntimeException {
+        private static final long serialVersionUID = 8481162670192366492L;
+
+        public NotCompilableException(String message) {
+            super(message);
+        }
+    }
 
     public InstructionCompiler2(String classname, String sourceName) {
         cv = new ClassWriter(true);
@@ -134,161 +185,254 @@ public class InstructionCompiler2 implements NodeVisitor {
 
         node.accept(this);
 
-        mv.visitMaxs(10, 10);
+        mv.visitMaxs(1, 1); // bogus values, ASM will auto-calculate
         mv.visitInsn(Opcodes.ARETURN);
         mv.visitEnd();
+        
+        // clean up state
+        tcLoaded = false;
+        runtimeLoaded = false;
     }
     
     public void defineModuleFunction(IRuby runtime, String module, String name, Callback callback) {
         runtime.getModule("Kernel").definePublicModuleFunction(name, callback);
     }
 
+    // finished
     public Instruction visitAliasNode(AliasNode iVisited) {
-        // TODO Auto-generated method stub
+        lineNumber(iVisited);
+        loadThreadContext();
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, THREADCONTEXT, "getRubyClass", "()Lorg/jruby/RubyModule;");
+        mv.visitInsn(Opcodes.DUP);
+        mv.visitInsn(Opcodes.DUP);
+        Label l1 = new Label();
+        mv.visitJumpInsn(Opcodes.IFNONNULL, l1);
+        loadRuntime();
+        mv.visitLdcInsn("no class to make alias");
+        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, "newTypeError", "(Ljava/lang/String;)Lorg/jruby/exceptions/RaiseException;");
+        mv.visitInsn(Opcodes.ATHROW);
+        
+        mv.visitLabel(l1);
+        mv.visitLdcInsn(iVisited.getNewName());
+        mv.visitLdcInsn(iVisited.getOldName());
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/RubyModule", "defineAlias", "(Ljava/lang/String;Ljava/lang/String;)V");
+        mv.visitLdcInsn("method_added");
+        loadRuntime();
+        mv.visitLdcInsn(iVisited.getNewName());
+        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, "newSymbol", "()Lorg/jruby/RubySymbol;");
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/RubyModule", "callMethod", "(Ljava/lang/String;Lorg/jruby/RubySymbol;)Lorg/jruby/runtime/builtin/IRubyObject;");
+        
         return null;
     }
 
     public Instruction visitAndNode(AndNode iVisited) {
-        // TODO Auto-generated method stub
+        lineNumber(iVisited);
+        iVisited.getFirstNode().accept(this);
+        mv.visitInsn(Opcodes.DUP);
+        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBYOBJECT, "isTrue", "()B");
+        Label l1 = new Label();
+        mv.visitJumpInsn(Opcodes.IFEQ, l1);
+        mv.visitInsn(Opcodes.POP); // remove first node's result
+        iVisited.getSecondNode().accept(this);
+        mv.visitLabel(l1);
+        
         return null;
     }
 
     public Instruction visitArgsNode(ArgsNode iVisited) {
-        // TODO Auto-generated method stub
+        // TODO: this node should never be visited, but it may simplify argument processing if it were
         return null;
     }
 
     public Instruction visitArgsCatNode(ArgsCatNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
+    }
+    
+    private interface ValueCallback {
+        public void putValueOnStack(Object sourceArray, int index);
     }
 
     public Instruction visitArrayNode(ArrayNode iVisited) {
-        // TODO Auto-generated method stub
+        lineNumber(iVisited);
+        loadRuntime();
+        
+        ValueCallback callback = new ValueCallback() {
+            public void putValueOnStack(Object sourceArray, int index) {
+                Node node = (Node)((Object[])sourceArray)[index];
+                node.accept(InstructionCompiler2.this);
+            }
+        };
+        buildObjectArray(IRUBYOBJECT, iVisited.childNodes().toArray(), callback);
+
+        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, "newArray", "([Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/RubyArray;");
+        
         return null;
     }
 
+    private void buildObjectArray(String type, Object[] sourceArray, ValueCallback callback) {
+        mv.visitLdcInsn(new Integer(sourceArray.length));
+        mv.visitTypeInsn(Opcodes.ANEWARRAY, type);
+        
+        for (int i = 0; i < sourceArray.length; i++) {
+            mv.visitInsn(Opcodes.DUP);
+            mv.visitLdcInsn(new Integer(i));
+            
+            callback.putValueOnStack(sourceArray, i);
+            
+            mv.visitInsn(Opcodes.AASTORE);
+            i++;
+        }
+    }
+
+    private void buildPrimitiveArray(Type type, Object sourceArray, int length, ValueCallback callback) {
+        mv.visitLdcInsn(new Integer(length));
+        mv.visitTypeInsn(Opcodes.NEWARRAY, type.getDescriptor());
+        
+        for (int i = 0; i < length; i++) {
+            mv.visitInsn(Opcodes.DUP);
+            mv.visitLdcInsn(new Integer(i));
+            
+            callback.putValueOnStack(sourceArray, i);
+            
+            if (type.equals(Type.BYTE_TYPE) || type.equals(Type.BOOLEAN_TYPE)) {
+                mv.visitInsn(Opcodes.BASTORE);
+            } else if (type.equals(Type.CHAR_TYPE)) {
+                mv.visitInsn(Opcodes.CASTORE);
+            } else if (type.equals(Type.INT_TYPE)) {
+                mv.visitInsn(Opcodes.IASTORE);
+            } else if (type.equals(Type.LONG_TYPE)) {
+                mv.visitInsn(Opcodes.LASTORE);
+            } else if (type.equals(Type.FLOAT_TYPE)) {
+                mv.visitInsn(Opcodes.FASTORE);
+            } else if (type.equals(Type.DOUBLE_TYPE)) {
+                mv.visitInsn(Opcodes.DASTORE);
+            }
+            i++;
+        }
+    }
+
     public Instruction visitBackRefNode(BackRefNode iVisited) {
-        // TODO Auto-generated method stub
+        loadThreadContext();
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, THREADCONTEXT, "getBackref", "()Lorg/jruby/runtime/builtin/IRubyObject;");
+        Label l1 = new Label();
+        Label l2 = new Label();
+        Label l3 = new Label();
+        Label l4 = new Label();
+        Label l5 = new Label();
+        Label lafter = new Label();
+        mv.visitLookupSwitchInsn(lafter, new int[] { '~', '&', '`', '\\', '+' }, new Label[] { l1, l2, l3, l4, l5 });
+        mv.visitLabel(l1);
+        // ~ do nothing
+        mv.visitJumpInsn(Opcodes.GOTO, lafter);
+        
+        mv.visitLabel(l2);
+        // &
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/jruby/RubyRegexp", "last_match", "(Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
+        mv.visitJumpInsn(Opcodes.GOTO, lafter);
+        
+        mv.visitLabel(l3);
+        // `
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/jruby/RubyRegexp", "match_pre", "(Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
+        mv.visitJumpInsn(Opcodes.GOTO, lafter);
+        
+        mv.visitLabel(l4);
+        // \
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/jruby/RubyRegexp", "match_post", "(Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
+        mv.visitJumpInsn(Opcodes.GOTO, lafter);
+        
+        mv.visitLabel(l5);
+        // +
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/jruby/RubyRegexp", "match_last", "(Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
+
+        mv.visitLabel(lafter);
+        
         return null;
     }
 
     public Instruction visitBeginNode(BeginNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitBignumNode(BignumNode iVisited) {
-        // TODO Auto-generated method stub
+        // FIXME: storing the bignum as a string is not as efficient as storing as a byte array
+        lineNumber(iVisited);
+        loadRuntime();
+        mv.visitTypeInsn(Opcodes.NEW, "java/math/BigInteger");
+        mv.visitInsn(Opcodes.DUP);
+        mv.visitLdcInsn(iVisited.getValue().toString());
+        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/math/BigInteger", "<init>", "(Ljava/lang/String;)V");
+        
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/jruby/RubyBignum", "newBignum", "(Lorg/jruby/IRuby;Ljava/math/BigInteger;)Lorg/jruby/RubyBignum;");
+        
         return null;
     }
 
     public Instruction visitBlockArgNode(BlockArgNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitBlockNode(BlockNode iVisited) {
+        lineNumber(iVisited);
         for (Iterator iter = iVisited.childNodes().iterator(); iter.hasNext();) {
             Node n = (Node)iter.next();
             
             n.accept(this);
             
-            // TODO need to not keep pushing down more and more values
+            if (iter.hasNext()) {
+                // clear result from previous line
+                mv.visitInsn(Opcodes.POP);
+            }
         }
         
         return null;
     }
 
     public Instruction visitBlockPassNode(BlockPassNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitBreakNode(BreakNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitConstDeclNode(ConstDeclNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitClassVarDeclNode(ClassVarDeclNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitClassVarNode(ClassVarNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    private void setupArgs(Node node) {
-        if (EXPERIMENTAL_SOURCING) lineNumber(node);
-        if (node == null) {
-            mv.visitInsn(Opcodes.ICONST_0);
-            mv.visitTypeInsn(Opcodes.ANEWARRAY, "org/jruby/runtime/builtin/IRubyObject");
-        } else if (node instanceof ArrayNode) {
-            int count = ((ArrayNode)node).size();
-            mv.visitLdcInsn(new Integer(count));
-            mv.visitTypeInsn(Opcodes.ANEWARRAY, "org/jruby/runtime/builtin/IRubyObject");
-            
-            int i = 0;
-            for (Iterator iter = ((ArrayNode) node).iterator(); iter.hasNext();) {
-                final Node next = (Node) iter.next();
-                
-                mv.visitInsn(Opcodes.DUP);
-                mv.visitLdcInsn(new Integer(i));
-                
-//              implement splatnode logic to make appropriate count
-                if (next instanceof SplatNode) {
-                    //count += getSplatNodeSize((SplatNode)next) - 1;
-                } else {
-                    next.accept(this);
-                }
-                
-                mv.visitInsn(Opcodes.AASTORE);
-            }
-        }
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitCallNode(CallNode iVisited) {
-        if (EXPERIMENTAL_SOURCING) lineNumber(iVisited);
-        mv.visitVarInsn(Opcodes.ALOAD, 0);
-        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, "org/jruby/runtime/builtin/IRubyObject", "getRuntime", "()Lorg/jruby/IRuby;");
-        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, "org/jruby/IRuby", "getCurrentContext", "()Lorg/jruby/runtime/ThreadContext;");
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/runtime/ThreadContext", "beginCallArgs", "()V");
+        lineNumber(iVisited);
+        loadThreadContext();
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, THREADCONTEXT, "beginCallArgs", "()V");
         
         // TODO: try finally around this
         // recv
         iVisited.getReceiverNode().accept(this);
         
-        
         // args
         setupArgs(iVisited.getArgsNode());
 
-        mv.visitVarInsn(Opcodes.ALOAD, 0);
-        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, "org/jruby/runtime/builtin/IRubyObject", "getRuntime", "()Lorg/jruby/IRuby;");
-        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, "org/jruby/IRuby", "getCurrentContext", "()Lorg/jruby/runtime/ThreadContext;");
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/runtime/ThreadContext", "endCallArgs", "()V");
+        loadThreadContext();
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, THREADCONTEXT, "endCallArgs", "()V");
         
         // dup recv for CallType check
         mv.visitInsn(Opcodes.SWAP);
         mv.visitInsn(Opcodes.DUP);
         
-        // compare recv with Frame.getSelf
-        mv.visitVarInsn(Opcodes.ALOAD, 0);
-        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, "org/jruby/runtime/builtin/IRubyObject", "getRuntime", "()Lorg/jruby/IRuby;");
-        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, "org/jruby/IRuby", "getCurrentContext", "()Lorg/jruby/runtime/ThreadContext;");
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/runtime/ThreadContext", "getCurrentFrame", "()Lorg/jruby/runtime/Frame;");
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/runtime/Frame", "getSelf", "()Lorg/jruby/runtime/builtin/IRubyObject;");
+        loadThreadContext();
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, THREADCONTEXT, "getCurrentFrame", "()Lorg/jruby/runtime/Frame;");
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, FRAME, "getSelf", "()Lorg/jruby/runtime/builtin/IRubyObject;");
         
         Label l1 = new Label();
         Label l2 = new Label();
@@ -313,72 +457,58 @@ public class InstructionCompiler2 implements NodeVisitor {
         // pop name and recv on top
         mv.visitInsn(Opcodes.POP2);
         
-        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, "org/jruby/runtime/builtin/IRubyObject", "callMethod", "(Ljava/lang/String;[Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/CallType;)Lorg/jruby/runtime/builtin/IRubyObject;");
+        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBYOBJECT, "callMethod", "(Ljava/lang/String;[Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/CallType;)Lorg/jruby/runtime/builtin/IRubyObject;");
         
         return null;
     }
 
     public Instruction visitCaseNode(CaseNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitClassNode(ClassNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitColon2Node(Colon2Node iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitColon3Node(Colon3Node iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitConstNode(ConstNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitDAsgnNode(DAsgnNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitDRegxNode(DRegexpNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitDStrNode(DStrNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitDSymbolNode(DSymbolNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitDVarNode(DVarNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitDXStrNode(DXStrNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitDefinedNode(DefinedNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
-    
-    private ArgsNode args;
 
     public Instruction visitDefnNode(DefnNode iVisited) {
         // TODO: build arg list based on number of args, optionals, etc
@@ -389,7 +519,12 @@ public class InstructionCompiler2 implements NodeVisitor {
         // TODO: this probably isn't always an ArgsNode
         args = (ArgsNode)iVisited.getArgsNode();
         
-        iVisited.getBodyNode().accept(this);
+        try {
+            iVisited.getBodyNode().accept(this);
+        } catch (NotCompilableException nce) {
+            // TODO: recover somehow? build a pure eval method?
+            throw nce;
+        }
 
         mv.visitMaxs(1, 1); // automatically calculated by ASM
         mv.visitInsn(Opcodes.ARETURN);
@@ -399,119 +534,105 @@ public class InstructionCompiler2 implements NodeVisitor {
     }
 
     public Instruction visitDefsNode(DefsNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitDotNode(DotNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitEnsureNode(EnsureNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitEvStrNode(EvStrNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitFCallNode(FCallNode iVisited) {
-        if (EXPERIMENTAL_SOURCING) lineNumber(iVisited);
-        // TODO: try finally around this
-        // recv
-        mv.visitVarInsn(Opcodes.ALOAD, 0);
-        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, "org/jruby/runtime/builtin/IRubyObject", "getRuntime", "()Lorg/jruby/IRuby;");
-        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, "org/jruby/IRuby", "getCurrentContext", "()Lorg/jruby/runtime/ThreadContext;");
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/runtime/ThreadContext", "getCurrentFrame", "()Lorg/jruby/runtime/Frame;");
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/runtime/Frame", "getSelf", "()Lorg/jruby/runtime/builtin/IRubyObject;");
+        lineNumber(iVisited);
+        loadThreadContext();
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, THREADCONTEXT, "getCurrentFrame", "()Lorg/jruby/runtime/Frame;");
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, FRAME, "getSelf", "()Lorg/jruby/runtime/builtin/IRubyObject;");
 
         mv.visitLdcInsn(iVisited.getName());
         
-        mv.visitVarInsn(Opcodes.ALOAD, 0);
-        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, "org/jruby/runtime/builtin/IRubyObject", "getRuntime", "()Lorg/jruby/IRuby;");
-        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, "org/jruby/IRuby", "getCurrentContext", "()Lorg/jruby/runtime/ThreadContext;");
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/runtime/ThreadContext", "beginCallArgs", "()V");
+        loadThreadContext();
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, THREADCONTEXT, "beginCallArgs", "()V");
         
         // args
         setupArgs(iVisited.getArgsNode());
 
-        mv.visitVarInsn(Opcodes.ALOAD, 0);
-        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, "org/jruby/runtime/builtin/IRubyObject", "getRuntime", "()Lorg/jruby/IRuby;");
-        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, "org/jruby/IRuby", "getCurrentContext", "()Lorg/jruby/runtime/ThreadContext;");
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/runtime/ThreadContext", "endCallArgs", "()V");
+        loadThreadContext();
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, THREADCONTEXT, "endCallArgs", "()V");
         
         mv.visitFieldInsn(Opcodes.GETSTATIC, "org/jruby/runtime/CallType", "FUNCTIONAL", "Lorg/jruby/runtime/CallType;");
         
-        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, "org/jruby/runtime/builtin/IRubyObject", "callMethod", "(Ljava/lang/String;[Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/CallType;)Lorg/jruby/runtime/builtin/IRubyObject;");
+        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBYOBJECT, "callMethod", "(Ljava/lang/String;[Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/CallType;)Lorg/jruby/runtime/builtin/IRubyObject;");
         
         return null;
     }
 
     public Instruction visitFalseNode(FalseNode iVisited) {
-        // TODO Auto-generated method stub
+        lineNumber(iVisited);
+        loadRuntime();
+        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, "getFalse", "()Lorg/jruby/RubyBoolean;");
+        
         return null;
     }
 
     public Instruction visitFixnumNode(FixnumNode iVisited) {
-        if (EXPERIMENTAL_SOURCING) lineNumber(iVisited);
-        mv.visitVarInsn(Opcodes.ALOAD, 0);
-        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, "org/jruby/runtime/builtin/IRubyObject", "getRuntime", "()Lorg/jruby/IRuby;");
-        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, "org/jruby/IRuby", "getCurrentContext", "()Lorg/jruby/runtime/ThreadContext;");
+        lineNumber(iVisited);
+        loadThreadContext();
         mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
-                "org/jruby/runtime/ThreadContext", "getRuntime",
+                THREADCONTEXT, "getRuntime",
                 "()Lorg/jruby/IRuby;");
         mv.visitLdcInsn(new Long(iVisited.getValue()));
-        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, "org/jruby/IRuby",
+        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY,
                 "newFixnum", "(J)Lorg/jruby/RubyFixnum;");
 
         return null;
     }
 
     public Instruction visitFlipNode(FlipNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitFloatNode(FloatNode iVisited) {
-        // TODO Auto-generated method stub
+        lineNumber(iVisited);
+        loadRuntime();
+        mv.visitLdcInsn(new Double(iVisited.getValue()));
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/jruby/RubyFloat", "newFloat", "(Lorg/jruby/IRuby;D)Lorg/jruby/RubyFloat;");
+        
         return null;
     }
 
     public Instruction visitForNode(ForNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitGlobalAsgnNode(GlobalAsgnNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitGlobalVarNode(GlobalVarNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitHashNode(HashNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitInstAsgnNode(InstAsgnNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitInstVarNode(InstVarNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitIfNode(IfNode iVisited) {
-        if (EXPERIMENTAL_SOURCING) lineNumber(iVisited);
+        lineNumber(iVisited);
         Label afterJmp = new Label();
         Label falseJmp = new Label();
 
@@ -520,7 +641,7 @@ public class InstructionCompiler2 implements NodeVisitor {
 
         // call isTrue on the result
         mv.visitMethodInsn(Opcodes.INVOKEINTERFACE,
-                "org/jruby/runtime/builtin/IRubyObject", "isTrue", "()Z");
+                IRUBYOBJECT, "isTrue", "()Z");
         mv.visitJumpInsn(Opcodes.IFEQ, falseJmp); // EQ == 0 (i.e. false)
         iVisited.getThenBody().accept(this);
         mv.visitJumpInsn(Opcodes.GOTO, afterJmp);
@@ -534,17 +655,15 @@ public class InstructionCompiler2 implements NodeVisitor {
     }
 
     public Instruction visitIterNode(IterNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitLocalAsgnNode(LocalAsgnNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitLocalVarNode(LocalVarNode iVisited) {
-        if (EXPERIMENTAL_SOURCING) lineNumber(iVisited);
+        lineNumber(iVisited);
         // check if it's an argument
         int index = iVisited.getCount();
         
@@ -553,12 +672,9 @@ public class InstructionCompiler2 implements NodeVisitor {
             // index is 2-based, and our zero is runtime
             mv.visitVarInsn(Opcodes.ALOAD, index - 1);
         } else {
-            // load from scoped local vars (probably not right? local vars should get compiled
-            mv.visitVarInsn(Opcodes.ALOAD, 0); // load ThreadContext
-            mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, "org/jruby/runtime/builtin/IRubyObject", "getRuntime", "()Lorg/jruby/IRuby;");
-            mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, "org/jruby/IRuby", "getCurrentContext", "()Lorg/jruby/runtime/ThreadContext;");
+            loadThreadContext();
             mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
-                    "org/jruby/runtime/ThreadContext", "getCurrentScope",
+                    THREADCONTEXT, "getCurrentScope",
                     "()Lorg/jruby/runtime/Scope;");
             mv.visitLdcInsn(new Integer(iVisited.getCount()));
             mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/runtime/Scope",
@@ -567,40 +683,25 @@ public class InstructionCompiler2 implements NodeVisitor {
 
         return null;
     }
-    
-    int lastLine = 0;
-
-    private void lineNumber(Node iVisited) {   
-        if (lastLine == (lastLine = iVisited.getPosition().getEndLine())) return; // did not change lines for this node, don't bother relabeling
-        
-        Label l = new Label();
-        mv.visitLabel(l);
-        mv.visitLineNumber(iVisited.getPosition().getEndLine(), l);
-    }
 
     public Instruction visitMultipleAsgnNode(MultipleAsgnNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitMatch2Node(Match2Node iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitMatch3Node(Match3Node iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitMatchNode(MatchNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitModuleNode(ModuleNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitNewlineNode(NewlineNode iVisited) {
@@ -612,93 +713,91 @@ public class InstructionCompiler2 implements NodeVisitor {
     }
 
     public Instruction visitNextNode(NextNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitNilNode(NilNode iVisited) {
-        // TODO Auto-generated method stub
+        lineNumber(iVisited);
+        loadRuntime();
+        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, "getNil", "()Lorg/jruby/runtime/builtin/IRubyObject;");
+        
         return null;
     }
 
     public Instruction visitNotNode(NotNode iVisited) {
-        // TODO Auto-generated method stub
+        lineNumber(iVisited);
+        loadRuntime();
+        iVisited.getConditionNode().accept(this);
+        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBYOBJECT, "isTrue", "()B");
+        Label l1 = new Label();
+        Label l2 = new Label();
+        mv.visitJumpInsn(Opcodes.IFEQ, l1);
+        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, "getFalse", "()Lorg/jruby/RubyBoolean;");
+        mv.visitLabel(l1);
+        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, "getTrue", "()Lorg/jruby/RubyBoolean;");
+        mv.visitLabel(l2);
+        
         return null;
     }
 
     public Instruction visitNthRefNode(NthRefNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitOpElementAsgnNode(OpElementAsgnNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitOpAsgnNode(OpAsgnNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitOpAsgnAndNode(OpAsgnAndNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitOpAsgnOrNode(OpAsgnOrNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitOptNNode(OptNNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitOrNode(OrNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitPostExeNode(PostExeNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitRedoNode(RedoNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitRegexpNode(RegexpNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitRescueBodyNode(RescueBodyNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitRescueNode(RescueNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitRetryNode(RetryNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitReturnNode(ReturnNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitSClassNode(SClassNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitScopeNode(ScopeNode iVisited) {
@@ -708,93 +807,95 @@ public class InstructionCompiler2 implements NodeVisitor {
     }
 
     public Instruction visitSelfNode(SelfNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitSplatNode(SplatNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitStrNode(StrNode iVisited) {
-        // TODO Auto-generated method stub
+        lineNumber(iVisited);
+        loadRuntime();
+        mv.visitLdcInsn(iVisited.getValue());
+        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, "newString", "(Ljava/lang/String;)Lorg/jruby/RubyString;");
+        
         return null;
     }
 
     public Instruction visitSuperNode(SuperNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitSValueNode(SValueNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitSymbolNode(SymbolNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitToAryNode(ToAryNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitTrueNode(TrueNode iVisited) {
-        // TODO Auto-generated method stub
+        lineNumber(iVisited);
+        loadRuntime();
+        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, "getTrue", "()Lorg/jruby/RubyBoolean;");
+        
         return null;
     }
 
     public Instruction visitUndefNode(UndefNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitUntilNode(UntilNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitVAliasNode(VAliasNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitVCallNode(VCallNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitWhenNode(WhenNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitWhileNode(WhileNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitXStrNode(XStrNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitYieldNode(YieldNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitZArrayNode(ZArrayNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
 
     public Instruction visitZSuperNode(ZSuperNode iVisited) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
+    }
+
+    private void lineNumber(Node iVisited) {
+        if (!EXPERIMENTAL_SOURCING) {
+            return;
+        }
+        if (lastLine == (lastLine = iVisited.getPosition().getEndLine())) return; // did not change lines for this node, don't bother relabeling
+        
+        Label l = new Label();
+        mv.visitLabel(l);
+        mv.visitLineNumber(iVisited.getPosition().getEndLine(), l);
     }
 
     public ClassWriter getClassWriter() {
@@ -803,5 +904,61 @@ public class InstructionCompiler2 implements NodeVisitor {
     
     public void setClassWriter(ClassWriter cv) {
         this.cv = cv;
+    }
+
+    private void setupArgs(Node node) {
+        lineNumber(node);
+        if (node == null) {
+            mv.visitInsn(Opcodes.ICONST_0);
+            mv.visitTypeInsn(Opcodes.ANEWARRAY, IRUBYOBJECT);
+        } else if (node instanceof ArrayNode) {
+            int count = ((ArrayNode)node).size();
+            mv.visitLdcInsn(new Integer(count));
+            mv.visitTypeInsn(Opcodes.ANEWARRAY, IRUBYOBJECT);
+            
+            int i = 0;
+            for (Iterator iter = ((ArrayNode) node).iterator(); iter.hasNext();) {
+                final Node next = (Node) iter.next();
+                
+                mv.visitInsn(Opcodes.DUP);
+                mv.visitLdcInsn(new Integer(i));
+                
+                // FIXME: implement splatnode logic to make appropriate count
+                if (next instanceof SplatNode) {
+                    //count += getSplatNodeSize((SplatNode)next) - 1;
+                } else {
+                    next.accept(this);
+                }
+                
+                mv.visitInsn(Opcodes.AASTORE);
+                i++;
+            }
+        }
+    }
+
+    private void loadThreadContext() {
+        // FIXME: make this work correctly for non-static, non-singleton
+        if (tcLoaded) {
+            mv.visitVarInsn(Opcodes.ALOAD, 51);
+            return;
+        }
+        loadRuntime();
+        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, "getCurrentContext", "()Lorg/jruby/runtime/ThreadContext;");
+        mv.visitInsn(Opcodes.DUP);
+        mv.visitVarInsn(Opcodes.ASTORE, 51);
+        tcLoaded = true;
+    }
+
+    private void loadRuntime() {
+        // FIXME: make this work correctly for non-static, non-singleton
+        if (runtimeLoaded) {
+            mv.visitVarInsn(Opcodes.ALOAD, 50);
+            return;
+        } 
+        mv.visitVarInsn(Opcodes.ALOAD, 0);
+        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBYOBJECT, "getRuntime", "()Lorg/jruby/IRuby;");
+        mv.visitInsn(Opcodes.DUP);
+        mv.visitVarInsn(Opcodes.ASTORE, 50);
+        runtimeLoaded = true;
     }
 }
