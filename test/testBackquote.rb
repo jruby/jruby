@@ -8,10 +8,10 @@ end
 
 if File.exists?("/bin/true")
   test_ok(system("/bin/true"))
-  test_equal(0, $?)
+  test_equal(0, $?.exitstatus)
 end
 
 if File.exists?("/bin/false")
   test_ok(! system("/bin/false"))
-  test_ok($? > 0)
+  test_ok($?.exitstatus > 0)
 end

@@ -164,7 +164,7 @@
   
   	<target name="test" depends="copy-test-files"
 		description="runs junit tests">
-    	<junit fork="yes" haltonfailure="false" dir="${basedir}">
+    	<junit fork="yes" haltonfailure="false" dir="${basedir}" maxmemory="256M">
       		<classpath>
         		<path refid="build.classpath"/>
         		<pathelement path="${lib.dir}/jruby.jar"/>
