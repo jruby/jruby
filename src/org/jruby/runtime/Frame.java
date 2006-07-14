@@ -48,27 +48,26 @@ public class Frame {
     private final ISourcePosition position;
     private Iter iter;
     private IRuby runtime;
-    private boolean javaMethod;
     private EvaluationState evalState;
 
     private Scope scope;
     
-    public Frame(ThreadContext threadContext, boolean javaMethod) {
-        this(threadContext, threadContext.getCurrentIter(), javaMethod);
+    public Frame(ThreadContext threadContext) {
+        this(threadContext, threadContext.getCurrentIter());
     }
 
-    public Frame(ThreadContext threadContext, Iter iter, boolean javaMethod) {
+    public Frame(ThreadContext threadContext, Iter iter) {
         this(threadContext.getRuntime(), null, IRubyObject.NULL_ARRAY, null, null, threadContext.getPosition(), 
-             iter, javaMethod);   
+             iter);   
     }
 
     public Frame(ThreadContext threadContext, IRubyObject self, IRubyObject[] args, 
-    		String lastFunc, RubyModule lastClass, boolean javaMethod) {
-    	this(threadContext.getRuntime(), self, args, lastFunc, lastClass, threadContext.getPosition(), threadContext.getCurrentIter(), javaMethod);
+    		String lastFunc, RubyModule lastClass) {
+    	this(threadContext.getRuntime(), self, args, lastFunc, lastClass, threadContext.getPosition(), threadContext.getCurrentIter());
     }
 
     private Frame(IRuby runtime, IRubyObject self, IRubyObject[] args, String lastFunc,
-                 RubyModule lastClass, ISourcePosition position, Iter iter, boolean javaMethod) {
+                 RubyModule lastClass, ISourcePosition position, Iter iter) {
         this.self = self;
         this.args = args;
         this.lastFunc = lastFunc;
@@ -76,11 +75,7 @@ public class Frame {
         this.position = position;
         this.iter = iter;
         this.runtime = runtime;
-        this.javaMethod = javaMethod;
-        
-        if (!javaMethod) {
-            this.evalState = new EvaluationState(runtime, self);
-        }
+        this.evalState = new EvaluationState(runtime, self);
     }
     
     public void begin(Node node) {
@@ -185,7 +180,7 @@ public class Frame {
         	newArgs = args;
         }
 
-        return new Frame(runtime, self, newArgs, lastFunc, lastClass, position, iter, javaMethod);
+        return new Frame(runtime, self, newArgs, lastFunc, lastClass, position, iter);
     }
 
     /* (non-Javadoc)
