@@ -42,7 +42,6 @@ import java.util.Map;
 import org.jruby.ast.Node;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
-import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -322,13 +321,17 @@ public class RubyObject implements Cloneable, IRubyObject {
     public IRubyObject callMethod(RubyModule context, String name, IRubyObject[] args, 
             CallType callType) {
         assert args != null;
-        RubyModule implementer = context.findImplementer(name);
+        RubyModule implementer = null;
         ICallable method = null;
         
-        if (implementer != null) {
-            method = implementer.retrieveMethod(name);
+        method = context.searchMethod(name);
+        
+        if (method.getImplementationClass() != null && method.getImplementationClass().isClass()) {
+        	// classes are directly in the hierarchy, so no special logic is necessary for implementer
+        	implementer = method.getImplementationClass();
         } else {
-            method = UndefinedMethod.getInstance();
+        	// modules are included with a shim class; we must find that shim to handle super() appropriately
+        	implementer = context.findImplementer(name);
         }
 
         if (method.isUndefined() ||
