@@ -273,9 +273,11 @@ test_equal(nil, s.upcase!)
 
 ##### upto ######
 
-UPTO_ANS = ["a8", "a9", "b0"]
-s = "a8"
-ans = []
-s.upto("b0") { |e| ans << e }
-test_equal(UPTO_ANS, ans)
-test_equal("a8", s)
+def upto_test(expected, first, last)
+  answer = []
+  first.upto(last) { |e| answer << e }
+  test_equal(expected, answer)
+end
+
+upto_test(%w{a8 a9 b0}, "a8", "b0")
+upto_test(%w{a b c d e f g h i j k l m n o p q r s t u v w x y z aa}, "a", "aa")

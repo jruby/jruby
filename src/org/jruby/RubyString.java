@@ -19,6 +19,7 @@
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2004 David Corbin <dcorbin@users.sourceforge.net>
  * Copyright (C) 2005 Tim Azzopardi <tim@tigerfive.com>
+ * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -884,25 +885,39 @@ public class RubyString extends RubyObject {
 		return upto(str, false);
 	}
 
-	/* rb_str_upto */
-	public IRubyObject upto(IRubyObject str, boolean excl) {
-		RubyString current = (RubyString) dup();
-		RubyString end = stringValue(str);
-        int endLength = end.getValue().length();
+    /* rb_str_upto */
+    public IRubyObject upto(IRubyObject str, boolean excl) {
+        // alias 'this' to 'beg' for ease of comparison with MRI
+        RubyString beg = this;
+        RubyString end = stringValue(str);
 
-        for (int cmp = current.cmp(end); cmp <= 0;) {
-			getRuntime().getCurrentContext().yield(current);
-			if (cmp == 0) {
-				break;
-			}
-			current = (RubyString) current.succ();
-            cmp = current.cmp(end);
-			if ((excl && cmp == 0) || current.getValue().length() > endLength) {
-				break;
-			}
-		}
-		return this;
-	}
+        int n = beg.cmp(end);
+        if (n > 0 || (excl && n == 0)) {
+            return beg;
+        }
+        
+        RubyString afterEnd = stringValue(end.succ());
+        RubyString current = beg;
+
+        while (!current.equals(afterEnd)) {
+            getRuntime().getCurrentContext().yield(current);
+            if (!excl && current.equals(afterEnd)) {
+                break;
+            }
+            
+            current = (RubyString) current.succ();
+            if (excl && current.equals(afterEnd)) {
+                break;
+            }
+            if (current.length().getLongValue() > end.length().getLongValue()) {
+                break;
+            }
+        }
+
+        return beg;
+
+    }
+
 
 	/** rb_str_include
 	 *
