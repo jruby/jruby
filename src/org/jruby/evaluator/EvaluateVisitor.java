@@ -480,7 +480,15 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class ClassVarAsgnNodeVisitor1 implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		ClassVarAsgnNode iVisited = (ClassVarAsgnNode)ctx;
-            ((RubyModule) state.getThreadContext().peekCRef().getValue()).setClassVar(iVisited.getName(), state.getResult());
+    		RubyModule rubyClass = (RubyModule) state.getThreadContext().peekCRef().getValue();
+    		
+            if (rubyClass == null) {
+            	rubyClass = state.getSelf().getMetaClass();
+            } else if (rubyClass.isSingleton()) {
+                rubyClass = (RubyModule) rubyClass.getInstanceVariable("__attached__");
+            }
+            
+        	rubyClass.setClassVar(iVisited.getName(), state.getResult());
     	}
     }
     private static final ClassVarAsgnNodeVisitor1 classVarAsgnNodeVisitor1 = new ClassVarAsgnNodeVisitor1();

@@ -167,3 +167,17 @@ end
 test_no_exception {ClassVarTest.x }
 test_no_exception {ClassVarTest.new.z }
 test_equal(ClassVarTest.new.y, "foonew")
+
+class TestClassVarAssignmentInSingleton
+  @@a = nil
+
+  class << self
+    def bar
+      test_equal(nil, @@a)
+      @@a = 1 unless @@a
+      test_equal(1, @@a)
+    end
+  end
+end
+
+TestClassVarAssignmentInSingleton.bar
