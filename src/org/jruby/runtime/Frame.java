@@ -15,6 +15,7 @@
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2006 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -75,7 +76,6 @@ public class Frame {
         this.position = position;
         this.iter = iter;
         this.runtime = runtime;
-        this.evalState = new EvaluationState(runtime, self);
     }
     
     public void begin(Node node) {
@@ -198,7 +198,7 @@ public class Frame {
     }
 
     public EvaluationState getEvalState() {
-        return evalState;
+        return evalState != null ? evalState : (evalState = new EvaluationState(runtime, self));
     }
 
     public void setEvalState(EvaluationState evalState) {
