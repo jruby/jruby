@@ -719,9 +719,8 @@ public class RubyString extends RubyObject {
 	    if (checkArgumentCount(args, 1, 2) == 2) {
             if (args[0] instanceof RubyRegexp) {
                 IRubyObject match = RubyRegexp.regexpValue(args[0]).match(toString(), 0);
-                
-                return match.isNil() ? getRuntime().getNil() :
-                    ((RubyMatchData) match).group(args[1].convertToInteger().getLongValue());
+                long idx = args[1].convertToInteger().getLongValue();
+                return RubyRegexp.nth_match((int) idx, match);
             } 
 	        return substr(RubyNumeric.fix2int(args[0]), RubyNumeric.fix2int(args[1]));
 	    }

@@ -33,6 +33,11 @@ test_equal("ell", s[/[aeiow](.)\1/])
 test_equal("ell", s[/[aeiow](.)\1/, 0])
 test_equal("l", s[/[aeiow](.)\1/, 1])
 test_equal(nil, s[/[aeiow](.)\1/, 2])
+# negative subscripts exercising rubicon test case
+test_equal("o", s[/[aeiow](.)\1(.)/, -1])
+test_equal("l", s[/[aeiow](.)\1(.)/, -2])
+# zero subscript should capture whole matched pattern
+test_equal("ello", s[/[aeiow](.)\1(.)/, 0])
 test_equal("the", s[/(..)e/])
 test_equal("th", s[/(..)e/, 1])
 test_equal("lo", s["lo"])
