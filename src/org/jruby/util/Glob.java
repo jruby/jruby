@@ -17,6 +17,7 @@
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2006 Ola Bini <ola.bini@ki.se>
+ * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -303,7 +304,7 @@ public class Glob {
 				String path = ((NormalizedFile) files.get(i)).getPath();
 				String name;
 
-	        	if (patternIsRelative && path.startsWith(cwd)) {
+	        	if (patternIsRelative && !path.equals(cwd) && path.startsWith(cwd)) {
 	        		// chop off cwd when returning results
 	        		name = path.substring(cwd.length() + offset);
 	        	} else {

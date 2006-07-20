@@ -51,3 +51,19 @@ open("testDir_2/testDir_tmp1", "w").close
 Dir.glob('./**/testDir_tmp1').each { |f| test_equal(true, File.exist?(f)) }
 File.delete("testDir_2/testDir_tmp1")
 Dir.delete("testDir_2")
+
+# begin JIRA 31 issues
+
+# works with MRI though not JRuby ('.' gets globbed)
+# test_equal(['.'], Dir['.'])
+
+# Dir.mkdir('DirTest')
+# also works with MRI though not JRuby ('./' stripped off front)
+# test_equal(['./DirTest'], Dir['./DirTest'])
+# Dir.delete('DirTest')
+
+# just makes sure this doesn't throw a Java exception 
+Dir['.']
+
+# end JIRA 31 issues
+
