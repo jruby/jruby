@@ -24,9 +24,11 @@ test_equal("ell", s[1..3])
 test_equal("el", s[1...3])
 test_equal("er", s[-3, 2])
 test_equal("her", s[-4..-2])
-# Bug #1467286
-#test_equal("", s[-2..-4])
-#test_equal("", s[6..2])
+test_equal("", s[-2..-4])
+test_equal("", s[6..2])
+t = ""
+test_equal(nil, t[6..2])
+test_equal(nil, t[-2..-4])
 test_equal("ell", s[/[aeiow](.)\1/])
 test_equal("ell", s[/[aeiow](.)\1/, 0])
 test_equal("l", s[/[aeiow](.)\1/, 1])
@@ -273,11 +275,9 @@ test_equal(nil, s.upcase!)
 
 ##### upto ######
 
-def upto_test(expected, first, last)
-  answer = []
-  first.upto(last) { |e| answer << e }
-  test_equal(expected, answer)
-end
-
-upto_test(%w{a8 a9 b0}, "a8", "b0")
-upto_test(%w{a b c d e f g h i j k l m n o p q r s t u v w x y z aa}, "a", "aa")
+UPTO_ANS = ["a8", "a9", "b0"]
+s = "a8"
+ans = []
+s.upto("b0") { |e| ans << e }
+test_equal(UPTO_ANS, ans)
+test_equal("a8", s)
