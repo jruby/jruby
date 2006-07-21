@@ -296,7 +296,7 @@ public class ThreadContext {
         if (frame.getLastClass() == null) {
             throw runtime.newNameError("superclass method '" + frame.getLastFunc() + "' must be enabled by enableSuper().");
         }
-        iterStack.push(getCurrentIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
+        pushIter(getCurrentIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
         try {
             RubyClass superClass = frame.getLastClass().getSuperClass();
 
@@ -308,7 +308,7 @@ public class ThreadContext {
             return frame.getSelf().callMethod(superClass, frame.getLastFunc(),
                                    args, CallType.SUPER);
         } finally {
-            iterStack.pop();
+            popIter();
         }
     }
 
@@ -568,13 +568,13 @@ public class ThreadContext {
         if (getCurrentIter().isPre() && getCurrentBlock() != null) {
             pushdownBlocks((Block)getCurrentBlock().getNext());
         }
-        iterStack.push(Iter.ITER_NOT);
+        pushIter(Iter.ITER_NOT);
         //return block;
     }
 
     public void endCallArgs(){//Block block) {
         //setCurrentBlock(block);
-        iterStack.pop();
+        popIter();
         if (getCurrentIter().isPre() && !blockStack.isEmpty()) {
             popupBlocks();
         }
@@ -890,13 +890,13 @@ public class ThreadContext {
 
         pushRubyClass((klass != null) ? klass : currentBlock.getKlass()); 
 
-        iterStack.push(currentBlock.getIter());
+        pushIter(currentBlock.getIter());
         
         return currentBlock;
     }
 
     private void postYield(Block currentBlock) {
-        iterStack.pop();
+        popIter();
         dynamicVarsStack.pop();
         frameStack.pop();
         
@@ -917,11 +917,11 @@ public class ThreadContext {
 
         pushRubyClass((RubyModule) bindingBlock.getCRef().getValue()); 
 
-        iterStack.push(bindingBlock.getIter());
+        pushIter(bindingBlock.getIter());
     }
 
     public void postEvalWithBinding() {
-        iterStack.pop();
+        popIter();
         dynamicVarsStack.pop();
         frameStack.pop();
         
