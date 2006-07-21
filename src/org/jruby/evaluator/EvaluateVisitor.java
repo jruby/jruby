@@ -448,6 +448,7 @@ public final class EvaluateVisitor implements NodeVisitor {
    			 	module = state.deaggregateResult();
    			 	value = state.getResult();
     		} else { 
+                // FIXME: why do we check RubyClass and then use CRef?
                 if (state.getThreadContext().getRubyClass() == null) {
                     // TODO: wire into new exception handling mechanism
                     throw state.runtime.newTypeError("no class/module to define constant");
@@ -456,6 +457,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                 value = state.getResult();
             } 
 
+            // FIXME: shouldn't we use the result of this set in setResult?
     		((RubyModule) module).setConstant(iVisited.getName(), value);
     		state.setResult(value);
     	}
@@ -488,6 +490,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                 rubyClass = (RubyModule) rubyClass.getInstanceVariable("__attached__");
             }
             
+            // FIXME shouldn't we use the return value for setResult?
         	rubyClass.setClassVar(iVisited.getName(), state.getResult());
     	}
     }
@@ -505,7 +508,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class ClassVarDeclNodeVisitor2 implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		ClassVarDeclNode iVisited = (ClassVarDeclNode)ctx;
-            state.getThreadContext().getRubyClass().setClassVar(iVisited.getName(), state.getResult());
+            ((RubyModule)state.getThreadContext().peekCRef().getValue()).setClassVar(iVisited.getName(), state.getResult());
     	}
     }
     private static final ClassVarDeclNodeVisitor2 classVarDeclNodeVisitor2 = new ClassVarDeclNodeVisitor2();
@@ -513,6 +516,8 @@ public final class EvaluateVisitor implements NodeVisitor {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		state.clearResult();
             ClassVarDeclNode iVisited = (ClassVarDeclNode)ctx;
+            
+            // FIXME: shouldn't we use cref here?
             if (state.getThreadContext().getRubyClass() == null) {
                 throw state.runtime.newTypeError("no class/module to define class variable");
             }

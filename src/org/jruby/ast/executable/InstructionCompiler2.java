@@ -396,11 +396,83 @@ public class InstructionCompiler2 implements NodeVisitor {
     }
 
     public Instruction visitConstDeclNode(ConstDeclNode iVisited) {
-        throw new NotCompilableException("Node not supported: " + iVisited.toString());
+        // TODO untested
+        lineNumber(iVisited);
+        
+        iVisited.getValueNode().accept(this);
+        
+        if (iVisited.getPathNode() != null) {
+            iVisited.getPathNode().accept(this);
+        } else {
+            loadThreadContext();
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, THREADCONTEXT, "getRubyClass", "()Lorg/jruby/RubyModule;");
+            Label l1 = new Label();
+            
+            mv.visitJumpInsn(Opcodes.IFNONNULL, l1);
+            
+            loadRuntime();
+            mv.visitLdcInsn("no class/module to define constant");
+            mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, "newTypeError", "(Ljava/lang/String;)Lorg/jruby/exceptions/RaiseException;");
+            mv.visitInsn(Opcodes.ATHROW);
+            
+            mv.visitLabel(l1);
+            
+            loadThreadContext();
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, THREADCONTEXT, "peekCRef", "()Lorg/jruby/util/collections/SinglyLinkedList;");
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, THREADCONTEXT, "getValue", "()Ljava/lang/Object;");
+        }
+
+        mv.visitTypeInsn(Opcodes.CHECKCAST, "org/jruby/RubyModule");
+        
+        mv.visitInsn(Opcodes.SWAP);
+        mv.visitLdcInsn(iVisited.getName());
+        mv.visitInsn(Opcodes.SWAP);
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/RubyModule", "setConstant", "(Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
+        
+        return null;
     }
 
     public Instruction visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
-        throw new NotCompilableException("Node not supported: " + iVisited.toString());
+        // TODO untested
+        lineNumber(iVisited);
+        
+        iVisited.getValueNode().accept(this);
+                
+        loadThreadContext();
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, THREADCONTEXT, "peekCRef", "()Lorg/jruby/util/collections/SinglyLinkedList;");
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/util/collections/SinglyLinkedList", "getValue", "()Ljava/lang/Object;");
+        mv.visitTypeInsn(Opcodes.CHECKCAST, "org/jruby/RubyModule");
+        mv.visitInsn(Opcodes.DUP);
+        
+        Label l1 = new Label();
+        Label l2 = new Label();
+        mv.visitJumpInsn(Opcodes.IFNONNULL, l1);
+        
+        // null class
+        mv.visitInsn(Opcodes.POP);
+        loadThreadContext();
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, THREADCONTEXT, "getCurrentFrame", "()Lorg/jruby/runtime/Frame;");
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/runtime/Frame", "getSelf", "()Lorg/jruby/runtime/builtin/IRubyObject;");
+        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBYOBJECT, "getMetaClass", "()Lorg/jruby/RubyClass;");
+        mv.visitJumpInsn(Opcodes.GOTO, l2);
+        
+        mv.visitLabel(l1);
+        mv.visitInsn(Opcodes.DUP);
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/RubyModule", "isSingleton", "()B");
+        mv.visitJumpInsn(Opcodes.IFEQ, l2);
+        
+        mv.visitLdcInsn("__attached__");
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/RubyObject", "getInstanceVariable", "(Ljava/lang/String;)Lorg/jruby/runtime/builtin/IRubyObject;");
+        mv.visitTypeInsn(Opcodes.CHECKCAST, "org/jruby/RubyModule");
+        
+        mv.visitLabel(l2);
+        
+        mv.visitInsn(Opcodes.SWAP);
+        mv.visitLdcInsn(iVisited.getName());
+        mv.visitInsn(Opcodes.SWAP);
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/RubyModule", "setClassVar", "(Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
+        
+        return null;
     }
 
     public Instruction visitClassVarDeclNode(ClassVarDeclNode iVisited) {
@@ -529,6 +601,9 @@ public class InstructionCompiler2 implements NodeVisitor {
         mv.visitMaxs(1, 1); // automatically calculated by ASM
         mv.visitInsn(Opcodes.ARETURN);
         mv.visitEnd();
+        
+        tcLoaded = false;
+        runtimeLoaded = false;
         
         return null;
     }
@@ -659,7 +734,19 @@ public class InstructionCompiler2 implements NodeVisitor {
     }
 
     public Instruction visitLocalAsgnNode(LocalAsgnNode iVisited) {
-        throw new NotCompilableException("Node not supported: " + iVisited.toString());
+        lineNumber(iVisited);
+        
+        iVisited.getValueNode().accept(this);
+        mv.visitInsn(Opcodes.DUP);
+        
+        loadThreadContext();
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, THREADCONTEXT, "getCurrentScope", "()Lorg/jruby/runtime/Scope;");
+        mv.visitInsn(Opcodes.SWAP);
+        mv.visitLdcInsn(new Integer(iVisited.getCount()));
+        mv.visitInsn(Opcodes.SWAP);
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/runtime/Scope", "setValue", "(ILorg/jruby/runtime/builtin/IRubyObject;)V");
+        
+        return null;
     }
 
     public Instruction visitLocalVarNode(LocalVarNode iVisited) {
@@ -868,7 +955,43 @@ public class InstructionCompiler2 implements NodeVisitor {
     }
 
     public Instruction visitWhileNode(WhileNode iVisited) {
-        throw new NotCompilableException("Node not supported: " + iVisited.toString());
+        lineNumber(iVisited);
+        
+        // leave nil on the stack when we're done
+        loadRuntime();
+        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, "getNil", "()Lorg/jruby/runtime/builtin/IRubyObject;");
+        
+        if (iVisited.getBodyNode() != null) {
+            Label l1 = new Label();
+            Label l2 = new Label();
+            
+            mv.visitLabel(l1);
+            
+            if (iVisited.evaluateAtStart()) {
+                iVisited.getConditionNode().accept(this);
+                mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBYOBJECT, "isTrue", "()Z");
+                // conditionally jump end for while
+                mv.visitJumpInsn(Opcodes.IFEQ, l2);
+            }
+            
+            iVisited.getBodyNode().accept(this);
+            // clear last result
+            mv.visitInsn(Opcodes.POP);
+            
+            if (!iVisited.evaluateAtStart()) {
+                iVisited.getConditionNode().accept(this);
+                mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBYOBJECT, "isTrue", "()Z");
+                // conditionally jump back for do...while
+                mv.visitJumpInsn(Opcodes.IFNE, l1);
+            } else {
+                // jump back for while
+                mv.visitJumpInsn(Opcodes.GOTO, l1);
+            }
+            
+            mv.visitLabel(l2);
+        }
+        
+        return null;
     }
 
     public Instruction visitXStrNode(XStrNode iVisited) {
