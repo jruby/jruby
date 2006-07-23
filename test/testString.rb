@@ -286,3 +286,10 @@ ans = []
 s.upto("b0") { |e| ans << e }
 test_equal(UPTO_ANS, ans)
 test_equal("a8", s)
+
+##### formatting with % and a string #####
+test_equal(" 5", '%02s' % '5')
+test_equal("5.000000", '%02f' % '5')
+test_equal("05", '%02d' % '5')
+test_equal("05", '%02g' % '5')
+test_equal("05", '%02G' % '5')

@@ -683,6 +683,14 @@ public class PrintfFormat {
                 case 'f': 
                     s2 = printFFormat(Double.parseDouble(s));
                     break;
+                case 'G' :
+                case 'g' :
+                    s2 = printGFormat(Double.parseDouble(s));
+                    break;
+                case 'd':
+                case 'D':
+                    s2 = printDFormat(s);
+                    break;
                 default:
                     throw new IllegalArgumentException("Cannot format a String with a format using a " + conversionCharacter + " conversion character.");
             }
