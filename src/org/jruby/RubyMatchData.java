@@ -132,7 +132,11 @@ public class RubyMatchData extends RubyObject {
     }
 
     private boolean outOfBounds(RubyFixnum index) {
-        long n = index.getLongValue();
+        return outOfBounds(index.getLongValue());
+    }
+    
+    // version to work with Java primitives for efficiency
+    private boolean outOfBounds(long n) {
         return n < 0 || n >= getSize();
     }
 
@@ -173,20 +177,28 @@ public class RubyMatchData extends RubyObject {
      *
      */
     public IRubyObject begin(RubyFixnum index) {
-        if (outOfBounds(index)) {
-            return getRuntime().getNil();
-        }
-        return getRuntime().newFixnum(begin[RubyNumeric.fix2int(index)]);
+        long lIndex = index.getLongValue();
+        long answer = begin(lIndex);
+        
+        return answer == -1 ? getRuntime().getNil() : getRuntime().newFixnum(answer);
+    }
+    
+    public long begin(long index) {
+        return outOfBounds(index) ? -1 : begin[(int) index];
     }
 
     /** match_end
      *
      */
     public IRubyObject end(RubyFixnum index) {
-        if (outOfBounds(index)) {
-            return getRuntime().getNil();
-        }
-        return getRuntime().newFixnum(end[RubyNumeric.fix2int(index)]);
+        int lIndex = RubyNumeric.fix2int(index);
+        long answer = end(lIndex);
+
+        return answer == -1 ? getRuntime().getNil() : getRuntime().newFixnum(answer);
+    }
+    
+    public long end(long index) {
+        return outOfBounds(index) ? -1 : end[(int) index]; 
     }
     
     public IRubyObject inspect() {

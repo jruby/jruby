@@ -57,6 +57,21 @@ s[0,0]="foo"
 
 test_equal("foo", s)
 
+# regexp, integer asets from rubicon
+
+s="BarFoo"
+test_equal("Foo", s[/([A-Z]..)([A-Z]..)/, 1] = "Foo")
+test_equal("FooFoo", s)
+test_equal("Bar", s[/([A-Z]..)([A-Z]..)/, 2] = "Bar")
+test_equal("FooBar", s)
+test_exception(IndexError) { s[/([A-Z]..)([A-Z]..)/, 3] = "None" }
+test_equal("FooBar", s)
+test_equal("Foo", s[/([A-Z]..)([A-Z]..)/, -1] = "Foo")
+test_equal("FooFoo", s)
+test_equal("Bar", s[/([A-Z]..)([A-Z]..)/, -2] = "Bar")
+test_equal("BarFoo", s)
+test_exception(IndexError) { s[/([A-Z]..)([A-Z]..)/, -3] = "None" }
+
 ##### capitalize/capitalize! ######
 
 test_equal("Hello", "hello".capitalize)

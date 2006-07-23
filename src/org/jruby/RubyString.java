@@ -744,7 +744,42 @@ public class RubyString extends RubyObject {
 	    return idx < 0 || idx >= getValue().length() ? getRuntime().getNil() : 
 	    	getRuntime().newFixnum(getValue().charAt(idx));
 	}
+    
+    /**
+     * rb_str_subpat_set
+     * 
+     */
+    private void subpatSet(RubyRegexp regexp, int nth, IRubyObject repl) {
+        int found = regexp.search(this.toString(), 0);
+        if (found == -1) {
+            throw getRuntime().newIndexError("regexp not matched");
+        }
 
+        RubyMatchData match = (RubyMatchData) getRuntime().getCurrentContext()
+                .getBackref();
+
+        if (nth >= match.getSize()) {
+            throw getRuntime().newIndexError("index " + nth + " out of regexp");
+        }
+        if (nth < 0) {
+            if (-nth >= match.getSize()) {
+                throw getRuntime().newIndexError("index " + nth + " out of regexp");
+            }
+            nth += match.getSize();
+        }
+
+        IRubyObject group = match.group(nth);
+        if (getRuntime().getNil().equals(group)) {
+            throw getRuntime().newIndexError(
+                    "regexp group " + nth + " not matched");
+        }
+
+        int beg = (int) match.begin(nth);
+        int len = (int) (match.end(nth) - beg);
+
+        replace(beg, len, stringValue(repl));
+
+    }
 
 	/** rb_str_aset, rb_str_aset_m
 	 *
@@ -753,23 +788,32 @@ public class RubyString extends RubyObject {
 		testFrozen("class");
 		int strLen = getValue().length();
 		if (checkArgumentCount(args, 2, 3) == 3) {
-			RubyString repl = stringValue(args[2]);
-			int beg = RubyNumeric.fix2int(args[0]);
-			int len = RubyNumeric.fix2int(args[1]);
-			if (len < 0) {
-				throw getRuntime().newIndexError("negative length");
-			}
-			if (beg < 0) {
-				beg += strLen;
-			}
-            if (beg < 0 || (beg > 0 && beg >= strLen)) {
-				throw getRuntime().newIndexError("string index out of bounds");
-			}
-			if (beg + len > strLen) {
-				len = strLen - beg;
-			}
-			replace(beg, len, repl);
-			return repl;
+            if (args[0] instanceof RubyFixnum) {
+                RubyString repl = stringValue(args[2]);
+                int beg = RubyNumeric.fix2int(args[0]);
+                int len = RubyNumeric.fix2int(args[1]);
+                if (len < 0) {
+                    throw getRuntime().newIndexError("negative length");
+                }
+                if (beg < 0) {
+                    beg += strLen;
+                }
+                if (beg < 0 || (beg > 0 && beg >= strLen)) {
+                    throw getRuntime().newIndexError(
+                            "string index out of bounds");
+                }
+                if (beg + len > strLen) {
+                    len = strLen - beg;
+                }
+                replace(beg, len, repl);
+                return repl;
+            }
+            if (args[0] instanceof RubyRegexp) {
+                RubyString repl = stringValue(args[2]);
+                int nth = RubyNumeric.fix2int(args[1]);
+                subpatSet((RubyRegexp) args[0], nth, repl); 
+                return repl;
+            }
 		}
 		if (args[0] instanceof RubyFixnum) { // RubyNumeric?
 			int idx = RubyNumeric.fix2int(args[0]); // num2int?
