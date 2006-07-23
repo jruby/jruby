@@ -900,6 +900,8 @@ public final class EvaluateVisitor implements NodeVisitor {
             String def = new DefinedVisitor(state).getDefinition(iVisited.getExpressionNode());
             if (def != null) {
                 state.setResult(state.runtime.newString(def));
+            } else {
+                state.setResult(state.runtime.getNil());
             }
     	}
     }
