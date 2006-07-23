@@ -159,6 +159,8 @@ public final class Ruby implements IRuby {
     // the runtime environment exits.
     private Stack atExitBlocks = new Stack();
 
+    private RubyModule kernelModule;
+
     /**
      * Create and initialize a new jruby Runtime.
      */
@@ -221,6 +223,10 @@ public final class Ruby implements IRuby {
 
     public RubyClass getObject() {
     	return objectClass;
+    }
+    
+    public RubyModule getKernel() {
+        return kernelModule;
     }
     
     public RubyClass getString() {
@@ -447,7 +453,8 @@ public final class Ruby implements IRuby {
 
         ((ObjectMetaClass) moduleClass).initializeBootstrapClass();
         
-        objectClass.includeModule(RubyKernel.createKernelModule(this));
+        kernelModule = RubyKernel.createKernelModule(this);
+        objectClass.includeModule(kernelModule);
 
         RubyClass.createClassClass(classClass);
 

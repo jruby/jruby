@@ -326,12 +326,12 @@ public class RubyObject implements Cloneable, IRubyObject {
         
         method = context.searchMethod(name);
         
-        if (method.getImplementationClass() != null && method.getImplementationClass().isClass()) {
-        	// classes are directly in the hierarchy, so no special logic is necessary for implementer
-        	implementer = method.getImplementationClass();
+        if (method.needsImplementer()) {
+            // modules are included with a shim class; we must find that shim to handle super() appropriately
+            implementer = context.findImplementer(name);
         } else {
-        	// modules are included with a shim class; we must find that shim to handle super() appropriately
-        	implementer = context.findImplementer(name);
+            // classes are directly in the hierarchy, so no special logic is necessary for implementer
+            implementer = method.getImplementationClass();
         }
 
         if (method.isUndefined() ||

@@ -58,4 +58,6 @@ public interface ICallable {
 
     ICallable dup();
     boolean isCallableFrom(IRubyObject caller, CallType callType);
+    
+    boolean needsImplementer();
 }

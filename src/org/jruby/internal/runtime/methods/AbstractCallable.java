@@ -96,4 +96,9 @@ public abstract class AbstractCallable implements ICallable {
         // default to true
         return true;
     }
+    
+    // default to false; only non-kernel module methods need implementer
+    public boolean needsImplementer() {
+        return false;
+    }
 }

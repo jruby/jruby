@@ -47,6 +47,8 @@ public interface IRuby {
 
 	public RubyClass getObject();
     
+    public RubyModule getKernel();
+    
     public RubyClass getString();
 
 	/** Returns the "true" instance from the instance pool.

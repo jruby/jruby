@@ -74,4 +74,8 @@ public class AliasMethod extends AbstractMethod {
     public ICallable dup() {
         return new AliasMethod(oldMethod, oldName);
     }
+    
+    public boolean needsImplementer() {
+        return oldMethod.needsImplementer();
+    }
 }

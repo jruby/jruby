@@ -40,8 +40,15 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author  jpetersen
  */
 public abstract class AbstractMethod extends AbstractCallable {
+    private boolean implIsClass;
+    private boolean implIsKernel;
+    
     protected AbstractMethod(RubyModule implementationClass, Visibility visibility) {
         super(implementationClass, visibility);
+        if (implementationClass != null) {
+            this.implIsClass = implementationClass.isClass();
+            this.implIsKernel = implementationClass.equals(implementationClass.getRuntime().getKernel());
+        }
     }
 
     public IRubyObject call(IRuby runtime, IRubyObject recv, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
@@ -68,5 +75,9 @@ public abstract class AbstractMethod extends AbstractCallable {
         }
         
         return true;
+    }
+    
+    public boolean needsImplementer() {
+        return !(implIsClass || implIsKernel);
     }
 }
