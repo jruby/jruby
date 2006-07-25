@@ -342,9 +342,9 @@ if __FILE__ == $0
     opts.on_tail("--help", 
       "show this message") {puts opts; exit}
     opts.on('-pPORT','--port=PORT', 
-      "Specify the port to listen on") { |options[:port]| }
+      "Specify the port to listen on") { |p| options[:port] = p }
     opts.on('-dGEMDIR','--dir=GEMDIR', 
-      "Specify the directory from which to serve Gems") { |options[:gemdir]| }
+      "Specify the directory from which to serve Gems") { |d| options[:gemdir] = d }
     opts.parse!
   end
 
