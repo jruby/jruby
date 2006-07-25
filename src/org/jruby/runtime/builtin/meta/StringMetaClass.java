@@ -195,7 +195,7 @@ public class StringMetaClass extends ObjectMetaClass {
 	        defineMethod("insert", Arity.twoArguments());
 	        defineMethod("inspect", Arity.noArguments());
 	        defineMethod("length", Arity.noArguments());
-	        defineMethod("ljust", Arity.singleArgument());
+	        defineMethod("ljust", Arity.optional());
 	        defineMethod("lstrip", Arity.noArguments());
 	        defineMethod("lstrip!", Arity.noArguments(), "lstrip_bang");
 	        defineMethod("match", Arity.singleArgument(), "match3");
@@ -204,7 +204,7 @@ public class StringMetaClass extends ObjectMetaClass {
 	        defineMethod("reverse", Arity.noArguments());
 	        defineMethod("reverse!", Arity.noArguments(), "reverse_bang");
 	        defineMethod("rindex", Arity.optional());
-	        defineMethod("rjust", Arity.singleArgument());
+	        defineMethod("rjust", Arity.optional());
 	        defineMethod("rstrip", Arity.noArguments());
 	        defineMethod("rstrip!", Arity.noArguments(), "rstrip_bang");
 	        defineMethod("scan", Arity.singleArgument());

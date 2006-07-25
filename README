@@ -50,7 +50,7 @@ This will create a jruby.jar file in the projects 'lib' directory.
 Testing
 =======
 
-See 'docs/README.testing' for more information
+See 'docs/README.test' for more information.
 
 
 More Information

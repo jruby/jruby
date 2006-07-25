@@ -119,6 +119,11 @@ public class RubyRange extends RubyObject {
     public long[] getBeginLength(long limit, boolean truncate, boolean isStrict) {
         long beginLong = RubyNumeric.num2long(begin);
         long endLong = RubyNumeric.num2long(end);
+        
+        // Apparent legend for MRI 'err' param to JRuby 'truncate' and 'isStrict':
+        // 0 =>  truncate && !strict
+        // 1 => !truncate &&  strict
+        // 2 =>  truncate &&  strict
 
         if (! isExclusive) {
             endLong++;
@@ -154,10 +159,6 @@ public class RubyRange extends RubyObject {
 				return null;
 			}
 		}
-
-        if (beginLong > endLong && isStrict) {
-            throw getRuntime().newRangeError(inspect().toString() + " out of range.");
-        }
 
         return new long[] { beginLong, Math.max(endLong - beginLong, 0L) };
     }

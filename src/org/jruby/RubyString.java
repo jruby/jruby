@@ -1056,31 +1056,71 @@ public class RubyString extends RubyObject {
 		}
 		return this;
 	}
+    
+    private IRubyObject justify(IRubyObject [] args, boolean leftJustify) {
+        checkArgumentCount(args, 1, 2);
+        int length = RubyNumeric.fix2int(args[0]);
+        if (length <= getValue().length()) {
+            return dup();
+        }
+        
+        String paddingArg;
+        
+        if (args.length == 2) {
+            paddingArg = args[1].convertToString().toString();
+            if (paddingArg.length() == 0) {
+                throw getRuntime().newArgumentError("zero width padding");
+            }
+        } else {
+            paddingArg = " ";
+        }
+            
+        StringBuffer sbuf = new StringBuffer(length);
+        String thisStr = toString();
+        
+        if (leftJustify) {
+            sbuf.append(thisStr);
+        }
+        
+        // Add n whole paddings
+        int whole = (length - thisStr.length()) / paddingArg.length();
+        for (int w = 0; w < whole; w++ ) {
+            sbuf.append(paddingArg);
+        }
+        
+        // Add fractional amount of padding to make up difference
+        int fractionalLength = (length - thisStr.length()) % paddingArg.length();
+        if (fractionalLength > 0) {
+            sbuf.append(paddingArg.substring(0, fractionalLength));
+        }
+        
+        if (!leftJustify) {
+            sbuf.append(thisStr);
+        }
+        
+        RubyString ret = newString(sbuf.toString());
+        
+        if (args.length == 2) {
+            ret.infectBy(args[1]);
+        }
+        
+        return ret;
+    }
 
 	/** rb_str_ljust
 	 *
 	 */
-	public IRubyObject ljust(IRubyObject arg) {
-		int len = RubyNumeric.fix2int(arg);
-		if (len <= getValue().length()) {
-			return dup();
-		}
-		Object[] args = new Object[] { getValue(), new Integer(-len)};
-		return newString(new PrintfFormat("%*2$s").sprintf(args));
+	public IRubyObject ljust(IRubyObject [] args) {
+        return justify(args, true);
 	}
 
 	/** rb_str_rjust
 	 *
 	 */
-	public IRubyObject rjust(IRubyObject arg) {
-		int len = RubyNumeric.fix2int(arg);
-		if (len <= getValue().length()) {
-			return dup();
-		}
-		Object[] args = new Object[] { getValue(), new Integer(len)};
-		return newString(new PrintfFormat("%*2$s").sprintf(args));
-	}
-
+    public IRubyObject rjust(IRubyObject [] args) {
+        return justify(args, false);
+    }
+    
 	public IRubyObject center(IRubyObject[] args) {
         checkArgumentCount(args, 1, 2);
 		int len = RubyNumeric.fix2int(args[0]);

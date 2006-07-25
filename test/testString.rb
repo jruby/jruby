@@ -163,6 +163,30 @@ test_exception(IndexError) { "".insert(-100, 'X') }
 test_exception(IndexError) { "".insert(100, 'X') }
 test_exception(TypeError) { "abcd".insert(1, nil) }
 
+##### ljust,rjust #####
+
+test_equal("hello", "hello".ljust(4))
+test_equal("hello      ", "hello".ljust(11))
+
+# with explicit padding
+test_equal("hi111111111", "hi".ljust(11, "1"))
+test_equal("hi121212121", "hi".ljust(11, "12"))
+test_equal("hi123412341", "hi".ljust(11, "1234"))
+
+# zero width padding
+test_exception(ArgumentError)  { "hello".ljust(11, "") }
+
+test_equal("hello", "hello".rjust(4))
+test_equal("      hello", "hello".rjust(11))
+
+# with explicit padding
+test_equal("111111111hi", "hi".rjust(11, "1"))
+test_equal("121212121hi", "hi".rjust(11, "12"))
+test_equal("123412341hi", "hi".rjust(11, "1234"))
+
+# zero width padding
+test_exception(ArgumentError)  { "hi".rjust(11, "") }
+
 ##### oct #####
 # oct should return zero in appropriate cases
 test_equal(0, "b".oct)
@@ -183,6 +207,8 @@ test_equal("abc", s)
 test_equal("cba", s.reverse!)
 test_equal("cba", s)
 
+##### rjust (see ljust) #####
+
 ##### scan
 
 s = "cruel world"
@@ -197,6 +223,71 @@ test_equal(["<<cruel>>", "<<world>>"], l)
 l = ""
 s.scan(/(.)(.)/) { |a,b|  l << b; l << a }
 test_equal("rceu lowlr", l)
+
+##### slice! ######
+
+o = "FooBar"
+
+s = o.dup
+test_equal(?F, s.slice!(0))
+test_equal("ooBar", s)
+test_equal("FooBar", o)
+s = o.dup
+test_equal(?r, s.slice!(-1))
+test_equal("FooBa", s)
+
+s = o.dup
+test_equal(nil, s.slice!(6))
+test_equal("FooBar", s)
+s = o.dup
+test_equal(nil, s.slice!(-7))
+test_equal("FooBar", s)
+
+s = o.dup
+test_equal("Foo", s.slice!(0,3))
+test_equal("Bar", s)
+s = o.dup
+test_equal("Bar", s.slice!(-3,3))
+test_equal("Foo", s)
+
+s = o.dup
+test_equal(nil, s.slice!(7,2))      # Maybe should be six?
+test_equal("FooBar", s)
+s = o.dup
+test_equal(nil, s.slice!(-7,10))
+test_equal("FooBar", s)
+
+s = o.dup
+test_equal("Foo", s.slice!(0..2))
+test_equal("Bar", s)
+s = o.dup
+test_equal("Bar", s.slice!(-3..-1))
+test_equal("Foo", s)
+
+s = o.dup
+test_equal("", s.slice!(6..2))
+test_equal("FooBar", s)
+s = o.dup
+test_equal(nil, s.slice!(-10..-7))
+test_equal("FooBar", s)
+
+s = o.dup
+test_equal("Foo", s.slice!(/^F../))
+test_equal("Bar", s)
+s = o.dup
+test_equal("Bar", s.slice!(/..r$/))
+test_equal("Foo", s)
+
+s = o.dup
+test_equal(nil, s.slice!(/xyzzy/))
+test_equal("FooBar", s)
+
+s = o.dup
+test_equal("Foo", s.slice!("Foo"))
+test_equal("Bar", s)
+s = o.dup
+test_equal("Bar", s.slice!("Bar"))
+test_equal("Foo", s)
 
 ##### split ######
 
@@ -304,7 +395,8 @@ test_equal("a8", s)
 
 ##### formatting with % and a string #####
 test_equal(" 5", '%02s' % '5')
-test_equal("5.000000", '%02f' % '5')
+# FIXME: JRUBY-39
+#test_equal("5.000000", '%02f' % '5')
 test_equal("05", '%02d' % '5')
 test_equal("05", '%02g' % '5')
 test_equal("05", '%02G' % '5')

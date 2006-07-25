@@ -1,6 +1,7 @@
 
 Software Requirements
 ---------------------
+
 Testing is done with JUnit (http://www.junit.org).
 To run the JUnit ant tasks, you also need the optional ant tasks jar file from
 http://jakarta.apache.org/site/binindex.html
@@ -32,7 +33,7 @@ b) Run rubicon (unix CLI examples)
 
     make RUBY={PATH_TO_JRUBY_HOME}/bin/jruby
     OR
-    {PATH_TO_JRUBY_HOME}/bin/jruby AllTest.rb
+    {PATH_TO_JRUBY_HOME}/bin/jruby AllTests.rb
     
   to run all tests OR
     
@@ -46,8 +47,11 @@ something since this document was published).
 Using minirunit
 ---------------
 
-When implementing new methods on the builtin classes the easiest way is to write the tests in Ruby. It also makes it possible to verify the tests against the original Ruby interpreter (MRI).
-In the folder "test" you will find JRuby's own tests, and in "test/mri" some tests taken from MRI. Run all of them with:
+When implementing new methods on the builtin classes the easiest way is to write the tests in Ruby.
+It also makes it possible to verify the tests against the original Ruby interpreter (MRI).
+
+In the folder "test" you will find JRuby's own tests, and in "test/mri" some tests taken from MRI.
+Run all of them with:
 
         jruby test/testSuite.rb
 
@@ -56,7 +60,10 @@ Writing Java Tests
 
 1) Java unit tests with JUnit:
 
-Tests for classes should be put in a "test" subpackage of the original class's package.  For example, org.jruby.RubyModule's tests should go in org.jruby.test.  Test files should be named: Test${classname}.java (e.g. TestRubyModule.java).  After creating individual tests, each test class should be added to the main test suite at org.jruby.test.MainTestSuite.
+Tests for classes should be put in a "test" subpackage of the original class's package.  For
+example, org.jruby.RubyModule's tests should go in org.jruby.test.  Test files should be named:
+Test${classname}.java (e.g. TestRubyModule.java).  After creating individual tests, each test class
+should be added to the main test suite at org.jruby.test.MainTestSuite.
 
 Before checking in your changes, be sure to run the full test suite with the following command line:
 
@@ -66,7 +73,8 @@ Before checking in your changes, be sure to run the full test suite with the fol
 
 	java junit.textui.TestRunner org.jruby.test.MainTestSuite
 
-This will ensure that your changes not only work by themselves but haven't caused problems elsewhere in the source.
+This will ensure that your changes not only work by themselves but haven't caused problems elsewhere
+in the source.
 
 Unit tests should ALWAYS run at 100% pass rate when checked into CVS.
 
