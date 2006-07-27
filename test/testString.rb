@@ -163,6 +163,23 @@ test_exception(IndexError) { "".insert(-100, 'X') }
 test_exception(IndexError) { "".insert(100, 'X') }
 test_exception(TypeError) { "abcd".insert(1, nil) }
 
+
+##### intern #####
+for method in [:intern, :to_sym] do
+    test_equal(:koala, "koala".send(method))
+    test_ok(:koala != "Koala".send(method))
+   
+    for str in ["identifier", "with spaces", "9with_digits", "9and spaces"]
+      sym = str.send(method)
+      test_equal(Symbol, sym.class)
+      test_equal(str, sym.to_s)
+    end
+   
+    test_exception(ArgumentError) { "".send(method) }
+    test_exception(ArgumentError) { "with\0null\0inside".send(method) }
+end
+
+
 ##### ljust,rjust #####
 
 test_equal("hello", "hello".ljust(4))
@@ -376,6 +393,9 @@ test_equal(294977, "1100101".to_i(8))
 test_equal(1100101, "1100101".to_i(10))
 test_equal(17826049, "1100101".to_i(16))
 test_equal(199066177, "1100101".to_i(24))
+
+
+##### to_sym (see intern) #####
 
 ##### upcase/upcase! ######
 

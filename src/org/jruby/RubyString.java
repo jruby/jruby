@@ -175,9 +175,6 @@ public class RubyString extends RubyObject {
 		return toString();
 	}
 
-	public RubySymbol to_sym() {
-		return RubySymbol.newSymbol(getRuntime(), toString());
-	}
 	
 	/** Create a new String which uses the same Ruby runtime and the same
 	 *  class like this String.
@@ -1602,9 +1599,20 @@ public class RubyString extends RubyObject {
 	 *
 	 */
 	public RubySymbol intern() {
-		return RubySymbol.newSymbol(getRuntime(), toString());
-	}
+        String s = toString();
+        if (s.equals("")) {
+            throw getRuntime().newArgumentError("interning empty string");
+        }
+        if (s.contains("\0")) {
+            throw getRuntime().newArgumentError("symbol string may not contain '\\0'");
+        }
+        return RubySymbol.newSymbol(getRuntime(), toString());
+    }
 
+    public RubySymbol to_sym() {
+        return intern();
+    }
+    
     public RubyInteger sum(IRubyObject[] args) {
         long bitSize = 16;
         if (args.length > 0) {
