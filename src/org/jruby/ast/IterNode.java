@@ -34,7 +34,9 @@ import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
+import org.jruby.internal.runtime.methods.EvaluateCallable;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.ICallable;
 
 /**
  *
@@ -47,6 +49,7 @@ public class IterNode extends Node {
     private final Node varNode;
     private final Node bodyNode;
     private Node iterNode;
+    private ICallable callable;
 
     public IterNode(ISourcePosition position, Node varNode, Node bodyNode, Node iterNode) {
         super(position);
@@ -99,4 +102,7 @@ public class IterNode extends Node {
         return Node.createList(varNode, bodyNode, iterNode);
     }
 
+    public ICallable getCallable() {
+        return callable == null ? callable = new EvaluateCallable(bodyNode, varNode) : callable;
+    }
 }

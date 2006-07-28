@@ -151,7 +151,6 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DefaultMethod;
-import org.jruby.internal.runtime.methods.EvaluateCallable;
 import org.jruby.internal.runtime.methods.WrapperCallable;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
@@ -1112,7 +1111,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class ForNodeVisitor implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		ForNode iVisited = (ForNode)ctx;
-            state.getThreadContext().preForLoopEval(Block.createBlock(iVisited.getVarNode(), new EvaluateCallable(iVisited.getBodyNode(), iVisited.getVarNode()), state.getSelf()));
+            state.getThreadContext().preForLoopEval(Block.createBlock(iVisited.getVarNode(), iVisited.getCallable(), state.getSelf()));
         	
             try {
                 while (true) {
@@ -1303,8 +1302,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class IterNodeVisitor implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		IterNode iVisited = (IterNode)ctx;
-            state.getThreadContext().preIterEval(Block.createBlock(iVisited.getVarNode(), 
-                    new EvaluateCallable(iVisited.getBodyNode(), iVisited.getVarNode()), state.getSelf()));
+            state.getThreadContext().preIterEval(Block.createBlock(iVisited.getVarNode(), iVisited.getCallable(), state.getSelf()));
                 try {
                     while (true) {
                         try {

@@ -30,8 +30,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import java.util.List;
-
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -44,18 +42,11 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @see IterNode
  * @author  jpetersen
  */
-public class ForNode extends Node {
+public class ForNode extends IterNode {
     static final long serialVersionUID = -8319863477790150586L;
 
-    private final Node varNode;
-    private final Node bodyNode;
-    private final Node iterNode;
-
     public ForNode(ISourcePosition position, Node varNode, Node bodyNode, Node iterNode) {
-        super(position);
-        this.varNode = varNode;
-        this.bodyNode = bodyNode;
-        this.iterNode = iterNode;
+        super(position, varNode, bodyNode, iterNode);
     }
 
     /**
@@ -65,37 +56,4 @@ public class ForNode extends Node {
     public Instruction accept(NodeVisitor iVisitor) {
         return iVisitor.visitForNode(this);
     }
-
-    /**
-     * Gets the bodyNode.
-	 * bodyNode is the expression after the in, it is the expression which will have its each() method called.
-     * @return Returns a Node
-     */
-    public Node getBodyNode() {
-        return bodyNode;
-    }
-
-    /**
-     * Gets the iterNode.
-	 * iterNode is the block which will be executed when the each() method of the bodyNode will yield.
-	 * 
-     * @return Returns a Node
-     */
-    public Node getIterNode() {
-        return iterNode;
-    }
-
-    /**
-     * Gets the varNode.
-	 * varNode is the equivalent of the block variable in a regular method call with block type of iteration
-     * @return Returns a Node
-     */
-    public Node getVarNode() {
-        return varNode;
-    }
-    
-    public List childNodes() {
-        return Node.createList(varNode, iterNode, bodyNode);
-    }
-
 }
