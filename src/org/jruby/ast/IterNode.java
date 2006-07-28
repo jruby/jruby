@@ -49,7 +49,7 @@ public class IterNode extends Node {
     private final Node varNode;
     private final Node bodyNode;
     private Node iterNode;
-    private ICallable callable;
+    private transient ICallable callable;
 
     public IterNode(ISourcePosition position, Node varNode, Node bodyNode, Node iterNode) {
         super(position);
