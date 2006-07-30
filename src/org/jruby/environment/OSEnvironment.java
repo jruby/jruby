@@ -116,7 +116,7 @@ public class OSEnvironment {
             runtime.getWarnings().warn(e.getMessage());
         }
         
-        if (osenvironment != null & osenvironment.isAccessible(runtime)) {
+        if (osenvironment != null && osenvironment.isAccessible(runtime)) {
             return osenvironment;
         }
         return null;
