@@ -62,6 +62,7 @@ testEval.rb
 testSuper.rb
 testZlib.rb
 testExpressions.rb
+testEnumerable.rb
 
 # MRI Ruby tests (from sample/test.rb in Matz's Ruby Interpreter):
 

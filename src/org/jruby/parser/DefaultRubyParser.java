@@ -22,6 +22,7 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -2327,7 +2328,7 @@ case 276:
 case 277:
 					// line 1169 "DefaultRubyParser.y"
   {
-		    warnings.warn(getPosition(((ISourcePositionHolder)yyVals[-4+yyTop])), "(...) interpreted as grouped expression");
+		    warnings.warning(getPosition(((ISourcePositionHolder)yyVals[-4+yyTop])), "(...) interpreted as grouped expression");
                     yyVal = ((Node)yyVals[-3+yyTop]);
 		}
   break;

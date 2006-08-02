@@ -14,6 +14,7 @@
 # Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
 # Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
 # Copyright (C) 2004 Charles O Nutter <headius@headius.com>
+# Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
 # 
 # Alternatively, the contents of this file may be used under the terms of
 # either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -133,9 +134,9 @@ module Enumerable
   end
   alias member? include?
 
-  def max
+  def max(&block)
     if block_given? then
-      cmp = lambda { |a, b| yield(a, b) > 0 }
+      cmp = lambda { |a, b| block.call(a, b) > 0 }
     else
       cmp = lambda { |a, b| (a <=> b) > 0 }
     end
@@ -146,9 +147,9 @@ module Enumerable
     result
   end
 
-  def min
+  def min(&block)
     if block_given? then
-      cmp = lambda { |a, b| yield(a, b) < 0 }
+      cmp = lambda { |a, b| block.call(a, b) < 0 }
     else
       cmp = lambda { |a, b| (a <=> b) < 0 }
     end

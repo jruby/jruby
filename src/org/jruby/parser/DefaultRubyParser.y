@@ -19,6 +19,7 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -1167,7 +1168,7 @@ primary       : literal
                     $$ = new BeginNode(support.union($1, $3), $2);
 		}
               | tLPAREN_ARG expr { lexer.setState(LexState.EXPR_ENDARG); } opt_nl ')' {
-		    warnings.warn(getPosition($<ISourcePositionHolder>1), "(...) interpreted as grouped expression");
+		    warnings.warning(getPosition($<ISourcePositionHolder>1), "(...) interpreted as grouped expression");
                     $$ = $2;
 		}
               | tLPAREN compstmt ')' {

@@ -1603,7 +1603,7 @@ public class RubyString extends RubyObject {
         if (s.equals("")) {
             throw getRuntime().newArgumentError("interning empty string");
         }
-        if (s.contains("\0")) {
+        if (s.indexOf('\0') >= 0) {
             throw getRuntime().newArgumentError("symbol string may not contain '\\0'");
         }
         return RubySymbol.newSymbol(getRuntime(), toString());
