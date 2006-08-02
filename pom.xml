@@ -38,7 +38,23 @@
       <distribution>repo</distribution>
     </license>
   </licenses>
-
+  <distributionManagement>
+    <repository>
+      <id>codehaus-jruby-repository</id>
+      <name>JRuby Central Repository</name>
+      <url>dav:https://dav.codehaus.org/repository/jruby/</url>
+    </repository>
+    <snapshotRepository>
+      <id>codehaus-jruby-snapshot-repository</id>
+      <name>JRuby Central Development Repository</name>
+      <url>dav:https://dav.codehaus.org/snapshots.repository/jruby/</url>
+    </snapshotRepository>
+    <site>
+      <id>codehaus-jruby-site</id>
+      <name>JRuby Maven site</name>
+      <url>dav:https://dav.codehaus.org/jruby/info/</url>
+    </site>
+  </distributionManagement>
   <developers>
     <developer>
       <id>headius</id>
@@ -87,6 +103,13 @@
   </dependencies>
 
   <build>
+    <extensions>
+      <extension>
+        <groupId>org.apache.maven.wagon</groupId>
+        <artifactId>wagon-webdav</artifactId>
+        <version>1.0-beta-1</version>
+      </extension>
+    </extensions>
     <sourceDirectory>src</sourceDirectory>
     <testSourceDirectory>test</testSourceDirectory>
     <outputDirectory>build/classes</outputDirectory>
