@@ -37,6 +37,8 @@ import org.jruby.runtime.Arity;
  * Base class of any node which can be assigned to.
  */
 public abstract class AssignableNode extends Node implements IArityNode {
+	static final long serialVersionUID= 7997990944631594662L;
+	
     private Node valueNode;
 
 	public AssignableNode(ISourcePosition position) {
