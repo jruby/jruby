@@ -1353,7 +1353,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyModule include(IRubyObject[] modules) {
-        for (int i = 0; i < modules.length; i++) {
+        for (int i = modules.length - 1; i >= 0; i--) {
             modules[i].callMethod("append_features", this);
         }
 

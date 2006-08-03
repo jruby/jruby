@@ -241,3 +241,35 @@ a = AttrReaderTest.new(9)
 test_equal(9, a.foo)
 test_exception(ArgumentError) { a.foo 1 }
 test_exception(ArgumentError) { a.foo 1, 2 }
+
+##### test include order when specifying multiple modules ###
+class Base
+attr_reader :last_called
+def initialize
+super
+end
+end
+
+module Mod1
+def initialize
+super
+  @last_called = :Mod1
+end
+end
+
+module Mod2
+def initialize
+super
+  @last_called = :Mod2
+end
+end
+
+class Child < Base
+include Mod1, Mod2
+
+def initialize
+super
+end
+end
+
+test_equal(:Mod1, Child.new.last_called)
