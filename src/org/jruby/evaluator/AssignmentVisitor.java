@@ -43,6 +43,7 @@ import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.visitor.AbstractVisitor;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -103,12 +104,13 @@ public class AssignmentVisitor extends AbstractVisitor {
 	 * @see AbstractVisitor#visitClassVarDeclNode(ClassVarDeclNode)
 	 */
 	public Instruction visitClassVarDeclNode(ClassVarDeclNode iVisited) {
+        ThreadContext tc = state.getThreadContext();
 		if (state.runtime.getVerbose().isTrue()
-				&& state.getThreadContext().getRubyClass().isSingleton()) {
+				&& tc.getRubyClass().isSingleton()) {
             state.runtime.getWarnings().warn(iVisited.getPosition(),
 					"Declaring singleton class variable.");
 		}
-        state.getThreadContext().getRubyClass().setClassVar(iVisited.getName(), value);
+        tc.getRubyClass().setClassVar(iVisited.getName(), value);
 		return null;
 	}
 

@@ -69,6 +69,7 @@ import org.jruby.ast.ZSuperNode;
 import org.jruby.ast.visitor.AbstractVisitor;
 import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.ICallable;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -126,8 +127,9 @@ public class DefinedVisitor extends AbstractVisitor {
 	 * @see AbstractVisitor#visitSuperNode(SuperNode)
 	 */
 	public Instruction visitSuperNode(SuperNode iVisited) {
-		String lastMethod = state.getThreadContext().getCurrentFrame().getLastFunc();
-		RubyModule lastClass = state.getThreadContext().getCurrentFrame().getLastClass();
+        ThreadContext tc = state.getThreadContext();
+		String lastMethod = tc.getCurrentFrame().getLastFunc();
+		RubyModule lastClass = tc.getCurrentFrame().getLastClass();
 		if (lastMethod != null && lastClass != null
 				&& lastClass.getSuperClass().isMethodBound(lastMethod, false)) {
 			definition = getArgumentDefinition(iVisited.getArgsNode(), "super");
@@ -139,8 +141,9 @@ public class DefinedVisitor extends AbstractVisitor {
 	 * @see AbstractVisitor#visitZSuperNode(ZSuperNode)
 	 */
 	public Instruction visitZSuperNode(ZSuperNode iVisited) {
-		String lastMethod = state.getThreadContext().getCurrentFrame().getLastFunc();
-		RubyModule lastClass = state.getThreadContext().getCurrentFrame().getLastClass();
+        ThreadContext tc = state.getThreadContext();
+		String lastMethod = tc.getCurrentFrame().getLastFunc();
+		RubyModule lastClass = tc.getCurrentFrame().getLastClass();
 		if (lastMethod != null && lastClass != null
 				&& lastClass.getSuperClass().isMethodBound(lastMethod, false)) {
 			definition = "super";
@@ -353,15 +356,17 @@ public class DefinedVisitor extends AbstractVisitor {
 	 * @see AbstractVisitor#visitClassVarNode(ClassVarNode)
 	 */
 	public Instruction visitClassVarNode(ClassVarNode iVisited) {
-		if (state.getThreadContext().getRubyClass() == null
+        ThreadContext tc = state.getThreadContext();
+        
+		if (tc.getRubyClass() == null
 				&& state.getSelf().getMetaClass().isClassVarDefined(iVisited.getName())) {
 			definition = "class_variable";
-		} else if (!state.getThreadContext().getRubyClass().isSingleton()
-				&& state.getThreadContext().getRubyClass().isClassVarDefined(
+		} else if (!tc.getRubyClass().isSingleton()
+				&& tc.getRubyClass().isClassVarDefined(
 						iVisited.getName())) {
 			definition = "class_variable";
 		} else {
-			RubyModule module = (RubyModule) state.getThreadContext().getRubyClass()
+			RubyModule module = (RubyModule) tc.getRubyClass()
 					.getInstanceVariable("__attached__");
 
 			if (module != null && module.isClassVarDefined(iVisited.getName())) {

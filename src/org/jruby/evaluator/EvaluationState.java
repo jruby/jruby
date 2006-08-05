@@ -564,14 +564,16 @@ public class EvaluationState {
         if (exceptionNodes == null) {
             return currentException.isKindOf(runtime.getClass("StandardError"));
         }
+        
+        ThreadContext tc = getThreadContext();
 
-        getThreadContext().beginCallArgs();
+        tc.beginCallArgs();
 
         IRubyObject[] args = null;
         try {
-            args = setupArgs(runtime, getThreadContext(), exceptionNodes);
+            args = setupArgs(runtime, tc, exceptionNodes);
         } finally {
-            getThreadContext().endCallArgs();
+            tc.endCallArgs();
         }
 
         for (int i = 0; i < args.length; i++) {
