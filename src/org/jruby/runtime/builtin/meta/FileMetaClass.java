@@ -47,6 +47,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOModes;
 import org.jruby.util.JRubyFile;
@@ -421,6 +422,7 @@ public class FileMetaClass extends IOMetaClass {
 	public IRubyObject open(IRubyObject[] args, boolean tryToYield) {
         checkArgumentCount(args, 1, -1);
         IRuby runtime = getRuntime();
+        ThreadContext tc = runtime.getCurrentContext();
         
         RubyString pathString = RubyString.stringValue(args[0]);
 	    pathString.checkSafeString();
@@ -432,10 +434,10 @@ public class FileMetaClass extends IOMetaClass {
 
 	    file.openInternal(path, modes);
 
-	    if (tryToYield && getRuntime().getCurrentContext().isBlockGiven()) {
+	    if (tryToYield && tc.isBlockGiven()) {
             IRubyObject value = getRuntime().getNil();
 	        try {
-	            value = getRuntime().getCurrentContext().yield(file);
+	            value = tc.yield(file);
 	        } finally {
 	            file.close();
 	        }

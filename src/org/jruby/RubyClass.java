@@ -33,6 +33,7 @@ package org.jruby;
 import java.util.HashMap;
 
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -193,8 +194,9 @@ public class RubyClass extends RubyModule {
         }
 
         RubyClass newClass = superClass.subclass();
+        ThreadContext tc = runtime.getCurrentContext();
 
-        newClass.makeMetaClass(superClass.getMetaClass(), runtime.getCurrentContext().peekCRef());
+        newClass.makeMetaClass(superClass.getMetaClass(), tc.peekCRef());
 
         // call "initialize" method
         newClass.callInit(args);
@@ -202,8 +204,8 @@ public class RubyClass extends RubyModule {
         // call "inherited" method of the superclass
         newClass.inheritedBy(superClass);
 
-		if (runtime.getCurrentContext().isBlockGivenAndAvailable()) {
-			runtime.getCurrentContext().yield(null, newClass, newClass, false);
+		if (tc.isBlockGivenAndAvailable()) {
+			tc.yield(null, newClass, newClass, false);
 		}
 
 		return newClass;

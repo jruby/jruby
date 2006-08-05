@@ -52,6 +52,7 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.meta.FileMetaClass;
@@ -217,8 +218,9 @@ public class RubyKernel {
         String name = args[0].asSymbol();
         String description = recv.callMethod("inspect").toString();
         boolean noClass = description.length() > 0 && description.charAt(0) == '#';
-        Visibility lastVis = runtime.getCurrentContext().getLastVisibility();
-        CallType lastCallType = runtime.getCurrentContext().getLastCallType();
+        ThreadContext tc = runtime.getCurrentContext();
+        Visibility lastVis = tc.getLastVisibility();
+        CallType lastCallType = tc.getLastCallType();
         String format = lastVis.errorMessageFormat(lastCallType, name);
         String msg = new PrintfFormat(format).sprintf(new Object[] { name, description, 
             noClass ? "" : ":", noClass ? "" : recv.getType().getName()});
@@ -237,10 +239,11 @@ public class RubyKernel {
                 // TODO: may need to part cli parms out ourself?
                 Process p = Runtime.getRuntime().exec(command);
                 RubyIO io = new RubyIO(recv.getRuntime(), p);
+                ThreadContext tc = recv.getRuntime().getCurrentContext();
         		
-        	    if (recv.getRuntime().getCurrentContext().isBlockGiven()) {
+        	    if (tc.isBlockGiven()) {
         	        try {
-        	            recv.getRuntime().getCurrentContext().yield(io);
+        	            tc.yield(io);
         	            
             	        return recv.getRuntime().getNil();
         	        } finally {
@@ -499,17 +502,18 @@ public class RubyKernel {
     public static RubyArray local_variables(IRubyObject recv) {
         final IRuby runtime = recv.getRuntime();
         RubyArray localVariables = runtime.newArray();
+        ThreadContext tc = runtime.getCurrentContext();
 
-        if (runtime.getCurrentContext().getCurrentScope().getLocalNames() != null) {
-            for (int i = 2; i < runtime.getCurrentContext().getCurrentScope().getLocalNames().length; i++) {
-				String variableName = (String) runtime.getCurrentContext().getCurrentScope().getLocalNames()[i];
+        if (tc.getCurrentScope().getLocalNames() != null) {
+            for (int i = 2; i < tc.getCurrentScope().getLocalNames().length; i++) {
+				String variableName = (String) tc.getCurrentScope().getLocalNames()[i];
                 if (variableName != null) {
                     localVariables.append(runtime.newString(variableName));
                 }
             }
         }
 
-        Iterator dynamicNames = runtime.getCurrentContext().getCurrentDynamicVars().names().iterator();
+        Iterator dynamicNames = tc.getCurrentDynamicVars().names().iterator();
         while (dynamicNames.hasNext()) {
             String name = (String) dynamicNames.next();
             localVariables.append(runtime.newString(name));
@@ -608,13 +612,14 @@ public class RubyKernel {
         int line = args.length > 3 ? RubyNumeric.fix2int(args[3]) : 1;
 
         src.checkSafeString();
+        ThreadContext tc = runtime.getCurrentContext();
 
-        if (scope.isNil() && runtime.getCurrentContext().getPreviousFrame() != null) {
+        if (scope.isNil() && tc.getPreviousFrame() != null) {
             try {
-                runtime.getCurrentContext().preKernelEval();
+                tc.preKernelEval();
                 return recv.eval(src, scope, file, line);
             } finally {
-                runtime.getCurrentContext().postKernelEval();
+                tc.postKernelEval();
             }
         }
         return recv.eval(src, scope, file, line);

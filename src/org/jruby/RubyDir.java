@@ -38,6 +38,7 @@ import java.util.List;
 
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Glob;
 import org.jruby.util.JRubyFile;
@@ -187,11 +188,12 @@ public class RubyDir extends RubyObject {
         }
         
         IRubyObject result = null;
-        if (recv.getRuntime().getCurrentContext().isBlockGiven()) {
+        ThreadContext tc = recv.getRuntime().getCurrentContext();
+        if (tc.isBlockGiven()) {
         	// FIXME: Don't allow multiple threads to do this at once
             recv.getRuntime().setCurrentDirectory(realPath);
             try {
-                result = recv.getRuntime().getCurrentContext().yield(path);
+                result = tc.yield(path);
             } finally {
                 recv.getRuntime().setCurrentDirectory(oldCwd);
             }
@@ -279,9 +281,10 @@ public class RubyDir extends RubyObject {
             (RubyDir) newInstance(recv.getRuntime().getClass("Dir"),
                     new IRubyObject[] { path });
 
-        if (recv.getRuntime().getCurrentContext().isBlockGiven()) {
+        ThreadContext tc = recv.getRuntime().getCurrentContext();
+        if (tc.isBlockGiven()) {
             try {
-                recv.getRuntime().getCurrentContext().yield(directory);
+                tc.yield(directory);
             } finally {
                 directory.close();
             }

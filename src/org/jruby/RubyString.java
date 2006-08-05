@@ -37,6 +37,7 @@ package org.jruby;
 
 import org.jruby.internal.runtime.methods.DirectInvocationMethod;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.meta.StringMetaClass;
@@ -539,7 +540,9 @@ public class RubyString extends RubyObject {
 	private IRubyObject sub(IRubyObject[] args, boolean bang) {
 		IRubyObject repl = getRuntime().getNil();
 		boolean iter = false;
-		if (args.length == 1 && getRuntime().getCurrentContext().isBlockGiven()) {
+        ThreadContext tc = getRuntime().getCurrentContext();
+        
+		if (args.length == 1 && tc.isBlockGiven()) {
 			iter = true;
 		} else if (args.length == 2) {
 			repl = args[1];
@@ -549,9 +552,9 @@ public class RubyString extends RubyObject {
 		RubyRegexp pat = RubyRegexp.regexpValue(args[0]);
 
 		if (pat.search(toString(), 0) >= 0) {
-			RubyMatchData match = (RubyMatchData) getRuntime().getCurrentContext().getBackref();
+			RubyMatchData match = (RubyMatchData) tc.getBackref();
 			RubyString newStr = match.pre_match();
-			newStr.append(iter ? getRuntime().getCurrentContext().yield(match.group(0)) : pat.regsub(repl, match));
+			newStr.append(iter ? tc.yield(match.group(0)) : pat.regsub(repl, match));
 			newStr.append(match.post_match());
 			newStr.setTaint(isTaint() || repl.isTaint());
 			if (bang) {
@@ -583,7 +586,8 @@ public class RubyString extends RubyObject {
 		IRubyObject repl = getRuntime().getNil();
 		RubyMatchData match;
 		boolean iter = false;
-		if (args.length == 1 && getRuntime().getCurrentContext().isBlockGiven()) {
+        ThreadContext tc = getRuntime().getCurrentContext();
+		if (args.length == 1 && tc.isBlockGiven()) {
 			iter = true;
 		} else if (args.length == 2) {
 			repl = args[1];
@@ -602,9 +606,9 @@ public class RubyString extends RubyObject {
 		IRubyObject newStr;
 		int offset = 0;
 		while (beg >= 0) {
-			match = (RubyMatchData) getRuntime().getCurrentContext().getBackref();
+			match = (RubyMatchData) tc.getBackref();
 			sbuf.append(str.substring(offset, beg));
-			newStr = iter ? getRuntime().getCurrentContext().yield(match.group(0)) : pat.regsub(repl, match);
+			newStr = iter ? tc.yield(match.group(0)) : pat.regsub(repl, match);
 			taint |= newStr.isTaint();
             sbuf.append(newStr.toString());
 			offset = match.matchEndPosition();
@@ -1026,10 +1030,12 @@ public class RubyString extends RubyObject {
 	public IRubyObject scan(IRubyObject arg) {
 		RubyRegexp pattern = RubyRegexp.regexpValue(arg);
 		int start = 0;
-		if (!getRuntime().getCurrentContext().isBlockGiven()) {
+        ThreadContext tc = getRuntime().getCurrentContext();
+        
+		if (!tc.isBlockGiven()) {
 			RubyArray ary = getRuntime().newArray();
 			while (pattern.search(toString(), start) != -1) {
-				RubyMatchData md = (RubyMatchData) getRuntime().getCurrentContext().getBackref();
+				RubyMatchData md = (RubyMatchData) tc.getBackref();
                 ary.append(md.getSize() == 1 ? md.group(0) : md.subseq(1, md.getSize()));
 
                 if (md.matchEndPosition() == md.matchStartPosition()) {
@@ -1042,8 +1048,8 @@ public class RubyString extends RubyObject {
 		}
 
 		while (pattern.search(toString(), start) != -1) {
-			RubyMatchData md = (RubyMatchData) getRuntime().getCurrentContext().getBackref();
-            getRuntime().getCurrentContext().yield(md.getSize() == 1 ? md.group(0) : md.subseq(1, md.getSize()));
+			RubyMatchData md = (RubyMatchData) tc.getBackref();
+            tc.yield(md.getSize() == 1 ? md.group(0) : md.subseq(1, md.getSize()));
 
             if (md.matchEndPosition() == md.matchStartPosition()) {
 				start++;
@@ -1572,13 +1578,15 @@ public class RubyString extends RubyObject {
 		}
 		RubyRegexp pat = RubyRegexp.newRegexp(getRuntime(), ".*?" + sep, RubyRegexp.RE_OPTION_MULTILINE, null);
 		int start = 0;
+        ThreadContext tc = getRuntime().getCurrentContext();
+        
 		while (pat.search(toString(), start) != -1) {
-			RubyMatchData md = (RubyMatchData) getRuntime().getCurrentContext().getBackref();
-			getRuntime().getCurrentContext().yield(md.group(0));
+			RubyMatchData md = (RubyMatchData) tc.getBackref();
+			tc.yield(md.group(0));
 			start = md.matchEndPosition();
 		}
 		if (start < strLen) {
-			getRuntime().getCurrentContext().yield(substr(start, strLen - start));
+			tc.yield(substr(start, strLen - start));
 		}
 		return this;
 	}

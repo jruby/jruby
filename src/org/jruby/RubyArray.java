@@ -51,6 +51,7 @@ import java.util.Set;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.ConversionIterator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.meta.ArrayMetaClass;
 import org.jruby.runtime.builtin.meta.StringMetaClass;
@@ -187,13 +188,14 @@ public class RubyArray extends RubyObject implements List {
     	try {
     		return entry(index.getLongValue(), true);
     	} catch (RaiseException e) {
+            ThreadContext tc = getRuntime().getCurrentContext();
     		// FIXME: use constant or method for IndexError lookup?
     		RubyException raisedException = e.getException();
     		if (raisedException.isKindOf(getRuntime().getClassFromPath("IndexError"))) {
 	    		if (args.length > 1) {
 	    			return args[1];
-	    		} else if (getRuntime().getCurrentContext().isBlockGiven()) {
-	    			return getRuntime().getCurrentContext().yield(index);
+	    		} else if (tc.isBlockGiven()) {
+	    			return tc.yield(index);
 	    		}
     		}
     		
@@ -526,11 +528,12 @@ public class RubyArray extends RubyObject implements List {
             throw getRuntime().newArgumentError("array size too big");
         }
         list = new ArrayList((int) len);
+        ThreadContext tc = getRuntime().getCurrentContext();
         if (len > 0) {
-        	if (getRuntime().getCurrentContext().isBlockGiven()) {
+        	if (tc.isBlockGiven()) {
         		// handle block-based array initialization
                 for (int i = 0; i < len; i++) {
-                    list.add(getRuntime().getCurrentContext().yield(new RubyFixnum(getRuntime(), i)));
+                    list.add(tc.yield(new RubyFixnum(getRuntime(), i)));
                 }
         	} else {
         		IRubyObject obj = (argc == 2) ? args[1] : getRuntime().getNil();
@@ -897,7 +900,8 @@ public class RubyArray extends RubyObject implements List {
         IRubyObject begObj;
         IRubyObject lenObj;
         IRuby runtime = getRuntime();
-        if (runtime.getCurrentContext().isBlockGiven()) {
+        ThreadContext tc = runtime.getCurrentContext();
+        if (tc.isBlockGiven()) {
         	argc = checkArgumentCount(args, 0, 2);
         	filObj = null;
         	begObj = argc > 0 ? args[0] : null;
@@ -935,7 +939,7 @@ public class RubyArray extends RubyObject implements List {
         autoExpand(beg + len);
         for (int i = beg; i < beg + len; i++) {
         	if (filObj == null) {
-        		list.set(i, runtime.getCurrentContext().yield(runtime.newFixnum(i)));
+        		list.set(i, tc.yield(runtime.newFixnum(i)));
         	} else {
         		list.set(i, filObj);
         	}
@@ -1012,12 +1016,13 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public RubyArray collect() {
-        if (!getRuntime().getCurrentContext().isBlockGiven()) {
+        ThreadContext tc = getRuntime().getCurrentContext();
+        if (!tc.isBlockGiven()) {
             return (RubyArray) dup();
         }
         ArrayList ary = new ArrayList();
         for (int i = 0, len = getLength(); i < len; i++) {
-            ary.add(getRuntime().getCurrentContext().yield(entry(i)));
+            ary.add(tc.yield(entry(i)));
         }
         return new RubyArray(getRuntime(), ary);
     }
@@ -1038,14 +1043,15 @@ public class RubyArray extends RubyObject implements List {
      */
     public IRubyObject delete(IRubyObject obj) {
         modify();
+        ThreadContext tc = getRuntime().getCurrentContext();
         IRubyObject result = getRuntime().getNil();
         for (int i = getLength() - 1; i >= 0; i--) {
             if (obj.callMethod("==", entry(i)).isTrue()) {
                 result = (IRubyObject) list.remove(i);
             }
         }
-        if (result.isNil() && getRuntime().getCurrentContext().isBlockGiven()) {
-            result = getRuntime().getCurrentContext().yield(entry(0));
+        if (result.isNil() && tc.isBlockGiven()) {
+            result = tc.yield(entry(0));
         }
         return result;
     }

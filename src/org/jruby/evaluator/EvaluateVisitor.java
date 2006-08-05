@@ -1076,29 +1076,30 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class FlipNodeVisitor implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		FlipNode iVisited = (FlipNode)ctx;
+            ThreadContext tc = state.runtime.getCurrentContext();
             if (iVisited.isExclusive()) {
-                if (! state.runtime.getCurrentContext().getCurrentScope().getValue(iVisited.getCount()).isTrue()) {
+                if (! tc.getCurrentScope().getValue(iVisited.getCount()).isTrue()) {
                     //Benoit: I don't understand why the state.result is inversed
                     state.setResult(state.begin(iVisited.getBeginNode()).isTrue() ? state.runtime.getFalse() : state.runtime.getTrue());
-                    state.runtime.getCurrentContext().getCurrentScope().setValue(iVisited.getCount(), state.getResult());
+                    tc.getCurrentScope().setValue(iVisited.getCount(), state.getResult());
                 } else {
                     if (state.begin(iVisited.getEndNode()).isTrue()) {
-                        state.runtime.getCurrentContext().getCurrentScope().setValue(iVisited.getCount(), state.runtime.getFalse());
+                        tc.getCurrentScope().setValue(iVisited.getCount(), state.runtime.getFalse());
                     }
                     state.setResult(state.runtime.getTrue());
                 }
             } else {
-                if (! state.runtime.getCurrentContext().getCurrentScope().getValue(iVisited.getCount()).isTrue()) {
+                if (! tc.getCurrentScope().getValue(iVisited.getCount()).isTrue()) {
                     if (state.begin(iVisited.getBeginNode()).isTrue()) {
                         //Benoit: I don't understand why the state.result is inversed
-                        state.runtime.getCurrentContext().getCurrentScope().setValue(iVisited.getCount(), state.begin(iVisited.getEndNode()).isTrue() ? state.runtime.getFalse() : state.runtime.getTrue());
+                        tc.getCurrentScope().setValue(iVisited.getCount(), state.begin(iVisited.getEndNode()).isTrue() ? state.runtime.getFalse() : state.runtime.getTrue());
                         state.setResult(state.runtime.getTrue());
                     } else {
                         state.setResult(state.runtime.getFalse());
                     }
                 } else {
                     if (state.begin(iVisited.getEndNode()).isTrue()) {
-                        state.runtime.getCurrentContext().getCurrentScope().setValue(iVisited.getCount(), state.runtime.getFalse());
+                        tc.getCurrentScope().setValue(iVisited.getCount(), state.runtime.getFalse());
                     }
                     state.setResult(state.runtime.getTrue());
                 }

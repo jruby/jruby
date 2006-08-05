@@ -38,6 +38,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import org.jruby.IRuby;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -136,14 +137,16 @@ public class TestHelper {
         Class c = loader.loadClass(name, javaClass);
         Method method = c.getMethod(methodName, new Class[] { IRuby.class, IRubyObject.class });
         IRuby runtime = self.getRuntime();
-        runtime.getCurrentContext().pushRubyClass(self.getType());
+        ThreadContext tc = runtime.getCurrentContext();
+        
+        tc.pushRubyClass(self.getType());
 
         try {
             return (IRubyObject) method.invoke(null, new Object[] { runtime, self });
         } catch (InvocationTargetException e) {
             throw unrollException(e);
         } finally {
-            runtime.getCurrentContext().popRubyClass();
+            tc.popRubyClass();
         }
     }
 

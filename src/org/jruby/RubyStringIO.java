@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.util.IOHandler;
@@ -112,9 +113,11 @@ public class RubyStringIO extends RubyObject {
         }
         RubyStringIO strio = (RubyStringIO)newInstance(recv,new IRubyObject[]{str,mode});
         IRubyObject val = strio;
-        if (recv.getRuntime().getCurrentContext().isBlockGiven()) {
+        ThreadContext tc = recv.getRuntime().getCurrentContext();
+        
+        if (tc.isBlockGiven()) {
             try {
-                val = recv.getRuntime().getCurrentContext().yield(strio);
+                val = tc.yield(strio);
             } finally {
                 strio.close();
             }

@@ -48,6 +48,7 @@ import java.util.Set;
 
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -305,11 +306,12 @@ public class RubyHash extends RubyObject implements Map {
         IRubyObject key = args[0];
         IRubyObject result = (IRubyObject) valueMap.get(key);
         if (result == null) {
+            ThreadContext tc = getRuntime().getCurrentContext();
             if (args.length > 1) {
                 return args[1];
-            } else if (getRuntime().getCurrentContext().isBlockGiven()) {
-                return getRuntime().getCurrentContext().yield(key);
-            } 
+            } else if (tc.isBlockGiven()) {
+                return tc.yield(key);
+            }
 
             throw getRuntime().newIndexError("key not found");
         }
@@ -422,10 +424,11 @@ public class RubyHash extends RubyObject implements Map {
 	public IRubyObject delete(IRubyObject key) {
 		modify();
 		IRubyObject result = (IRubyObject) valueMap.remove(key);
+        ThreadContext tc = getRuntime().getCurrentContext();
 		if (result != null) {
 			return result;
-		} else if (getRuntime().getCurrentContext().isBlockGiven()) {
-			return getRuntime().getCurrentContext().yield(key);
+		} else if (tc.isBlockGiven()) {
+			return tc.yield(key);
 		} 
 
 		return getDefaultValue(new IRubyObject[] {key});

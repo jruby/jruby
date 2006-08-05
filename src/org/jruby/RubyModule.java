@@ -707,8 +707,10 @@ public class RubyModule extends RubyObject {
     }
 
     private void addAccessor(String name, boolean readable, boolean writeable) {
+        ThreadContext tc = getRuntime().getCurrentContext();
+        
         // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
-        Visibility attributeScope = getRuntime().getCurrentContext().getCurrentVisibility();
+        Visibility attributeScope = tc.getCurrentVisibility();
         if (attributeScope.isPrivate()) {
             //FIXME warning
         } else if (attributeScope.isModuleFunction()) {
@@ -839,7 +841,8 @@ public class RubyModule extends RubyObject {
         String name = args[0].asSymbol();
         IRubyObject body;
         ICallable newMethod;
-        Visibility visibility = getRuntime().getCurrentContext().getCurrentVisibility();
+        ThreadContext tc = getRuntime().getCurrentContext();
+        Visibility visibility = tc.getCurrentVisibility();
 
         if (visibility.isModuleFunction()) {
             visibility = Visibility.PRIVATE;
@@ -863,7 +866,7 @@ public class RubyModule extends RubyObject {
         addMethod(name, newMethod);
 
         RubySymbol symbol = RubySymbol.newSymbol(getRuntime(), name);
-        if (getRuntime().getCurrentContext().getPreviousVisibility().isModuleFunction()) {
+        if (tc.getPreviousVisibility().isModuleFunction()) {
             getSingletonClass().addMethod(name, new WrapperCallable(getSingletonClass(), newMethod, Visibility.PUBLIC));
             callMethod("singleton_method_added", symbol);
         }

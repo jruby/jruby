@@ -122,6 +122,7 @@ public final class DefaultMethod extends AbstractMethod {
 
     private void prepareArguments(IRuby runtime, Scope scope, IRubyObject receiver, IRubyObject[] args) {
         int expectedArgsCount = argsNode.getArgsCount();
+        ThreadContext tc = runtime.getCurrentContext();
 
         if (expectedArgsCount > args.length) {
             throw runtime.newArgumentError("Wrong # of arguments(" + args.length + " for " + expectedArgsCount + ")");
@@ -163,7 +164,7 @@ public final class DefaultMethod extends AbstractMethod {
                 for (int i = expectedArgsCount; i < args.length && iter.hasNext(); i++) {
                     //new AssignmentVisitor(new EvaluationState(runtime, receiver)).assign((Node)iter.next(), args[i], true);
 //                  in-frame EvalState should already have receiver set as self, continue to use it
-                    new AssignmentVisitor(runtime.getCurrentContext().getCurrentFrame().getEvalState()).assign((Node)iter.next(), args[i], true);
+                    new AssignmentVisitor(tc.getCurrentFrame().getEvalState()).assign((Node)iter.next(), args[i], true);
                     expectedArgsCount++;
                 }
 
@@ -172,7 +173,7 @@ public final class DefaultMethod extends AbstractMethod {
                     //new EvaluationState(runtime, receiver).begin((Node)iter.next());
                     //EvaluateVisitor.getInstance().eval(receiver.getRuntime(), receiver, (Node)iter.next());
                     // in-frame EvalState should already have receiver set as self, continue to use it
-                    allArgs.add(runtime.getCurrentContext().getCurrentFrame().getEvalState().begin((Node)iter.next()));
+                    allArgs.add(tc.getCurrentFrame().getEvalState().begin((Node)iter.next()));
                 }
             }
 
@@ -187,7 +188,7 @@ public final class DefaultMethod extends AbstractMethod {
             }
         }
         
-        runtime.getCurrentContext().getCurrentFrame().setArgs((IRubyObject[])allArgs.toArray(new IRubyObject[allArgs.size()]));
+        tc.getCurrentFrame().setArgs((IRubyObject[])allArgs.toArray(new IRubyObject[allArgs.size()]));
     }
 
     private void traceReturn(IRuby runtime, IRubyObject receiver, String name) {

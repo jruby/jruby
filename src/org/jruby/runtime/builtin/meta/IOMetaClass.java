@@ -48,6 +48,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyIO;
 import org.jruby.RubyKernel;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOHandler;
 import org.jruby.util.collections.SinglyLinkedList;
@@ -337,6 +338,7 @@ public class IOMetaClass extends ObjectMetaClass {
     	IRubyObject cmdObj = args[0].convertToString();
     	cmdObj.checkSafeString();
     	String command = cmdObj.toString();
+        ThreadContext tc = runtime.getCurrentContext();
 
     	// only r works so throw error if anything else specified.
         if (args.length >= 2) {
@@ -362,9 +364,9 @@ public class IOMetaClass extends ObjectMetaClass {
 	    	
 	    	RubyIO io = new RubyIO(runtime, process);
 	    	
-	    	if (runtime.getCurrentContext().isBlockGiven()) {
+	    	if (tc.isBlockGiven()) {
 		        try {
-		        	runtime.getCurrentContext().yield(io);
+		        	tc.yield(io);
 	    	        return runtime.getNil();
 		        } finally {
 		            io.close();

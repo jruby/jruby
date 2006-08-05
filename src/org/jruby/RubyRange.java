@@ -38,6 +38,7 @@ package org.jruby;
 
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -305,6 +306,8 @@ public class RubyRange extends RubyObject {
     }
 
     public IRubyObject each() {
+        ThreadContext tc = getRuntime().getCurrentContext();
+        
         if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
             long endLong = ((RubyNumeric) end).getLongValue();
             long i = ((RubyNumeric) begin).getLongValue();
@@ -314,7 +317,7 @@ public class RubyRange extends RubyObject {
             }
 
             for (; i < endLong; i++) {
-                getRuntime().getCurrentContext().yield(getRuntime().newFixnum(i));
+                tc.yield(getRuntime().newFixnum(i));
             }
         } else if (begin instanceof RubyString) {
             ((RubyString) begin).upto(end, isExclusive);
@@ -323,7 +326,7 @@ public class RubyRange extends RubyObject {
                 end = end.callMethod("+", RubyFixnum.one(getRuntime()));
             }
             while (begin.callMethod("<", end).isTrue()) {
-                getRuntime().getCurrentContext().yield(begin);
+                tc.yield(begin);
                 begin = begin.callMethod("+", RubyFixnum.one(getRuntime()));
             }
         } else {
@@ -334,12 +337,12 @@ public class RubyRange extends RubyObject {
                     if (v.equals(end)) {
                         break;
                     }
-                    getRuntime().getCurrentContext().yield(v);
+                    tc.yield(v);
                     v = v.callMethod("succ");
                 }
             } else {
                 while (v.callMethod("<=", end).isTrue()) {
-                    getRuntime().getCurrentContext().yield(v);
+                    tc.yield(v);
                     if (v.equals(end)) {
                         break;
                     }

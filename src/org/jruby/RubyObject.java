@@ -447,11 +447,12 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public void callInit(IRubyObject[] args) {
-        getRuntime().getCurrentContext().pushIter(getRuntime().getCurrentContext().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
+        ThreadContext tc = getRuntime().getCurrentContext();
+        tc.pushIter(tc.isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
         try {
             callMethod("initialize", args);
         } finally {
-            getRuntime().getCurrentContext().popIter();
+            tc.popIter();
         }
     }
 
@@ -526,8 +527,9 @@ public class RubyObject implements Cloneable, IRubyObject {
 
     public void checkSafeString() {
         if (getRuntime().getSafeLevel() > 0 && isTaint()) {
-            if (getRuntime().getCurrentContext().getCurrentFrame().getLastFunc() != null) {
-                throw getRuntime().newSecurityError("Insecure operation - " + getRuntime().getCurrentContext().getCurrentFrame().getLastFunc());
+            ThreadContext tc = getRuntime().getCurrentContext();
+            if (tc.getCurrentFrame().getLastFunc() != null) {
+                throw getRuntime().newSecurityError("Insecure operation - " + tc.getCurrentFrame().getLastFunc());
             }
             throw getRuntime().newSecurityError("Insecure operation: -r");
         }
@@ -542,7 +544,9 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public IRubyObject specificEval(RubyModule mod, IRubyObject[] args) {
-        if (getRuntime().getCurrentContext().isBlockGiven()) {
+        ThreadContext tc = getRuntime().getCurrentContext();
+        
+        if (tc.isBlockGiven()) {
             if (args.length > 0) {
                 throw getRuntime().newArgumentError(args.length, 0);
             }
@@ -551,7 +555,7 @@ public class RubyObject implements Cloneable, IRubyObject {
 		if (args.length == 0) {
 		    throw getRuntime().newArgumentError("block not supplied");
 		} else if (args.length > 3) {
-		    String lastFuncName = getRuntime().getCurrentContext().getCurrentFrame().getLastFunc();
+		    String lastFuncName = tc.getCurrentFrame().getLastFunc();
 		    throw getRuntime().newArgumentError(
 		        "wrong # of arguments: " + lastFuncName + "(src) or " + lastFuncName + "{..}");
 		}
@@ -565,12 +569,12 @@ public class RubyObject implements Cloneable, IRubyObject {
 		IRubyObject file = args.length > 1 ? args[1] : getRuntime().newString("(eval)");
 		IRubyObject line = args.length > 2 ? args[2] : RubyFixnum.one(getRuntime());
 
-		Visibility savedVisibility = getRuntime().getCurrentContext().getCurrentVisibility();
-        getRuntime().getCurrentContext().setCurrentVisibility(Visibility.PUBLIC);
+		Visibility savedVisibility = tc.getCurrentVisibility();
+        tc.setCurrentVisibility(Visibility.PUBLIC);
 		try {
 		    return evalUnder(mod, args[0], file, line);
 		} finally {
-            getRuntime().getCurrentContext().setCurrentVisibility(savedVisibility);
+            tc.setCurrentVisibility(savedVisibility);
 		}
     }
 
@@ -667,7 +671,7 @@ public class RubyObject implements Cloneable, IRubyObject {
                 newSelf = threadContext.getCurrentFrame().getSelf();
             }
 
-            state = getRuntime().getCurrentContext().getCurrentFrame().getEvalState();
+            state = threadContext.getCurrentFrame().getEvalState();
             oldSelf = state.getSelf();
             state.setSelf(newSelf);
             
@@ -1033,8 +1037,9 @@ public class RubyObject implements Cloneable, IRubyObject {
         String name = args[0].asSymbol();
         String description = callMethod("inspect").toString();
         boolean noClass = description.length() > 0 && description.charAt(0) == '#';
-        Visibility lastVis = getRuntime().getCurrentContext().getLastVisibility();
-        CallType lastCallType = getRuntime().getCurrentContext().getLastCallType();
+        ThreadContext tc = getRuntime().getCurrentContext();
+        Visibility lastVis = tc.getLastVisibility();
+        CallType lastCallType = tc.getLastCallType();
         String format = lastVis.errorMessageFormat(lastCallType, name);
         String msg = new PrintfFormat(format).sprintf(new Object[] { name, description, 
             noClass ? "" : ":", noClass ? "" : getType().getName()});
@@ -1073,12 +1078,13 @@ public class RubyObject implements Cloneable, IRubyObject {
 
         IRubyObject[] newArgs = new IRubyObject[args.length - 1];
         System.arraycopy(args, 1, newArgs, 0, newArgs.length);
+        ThreadContext tc = getRuntime().getCurrentContext();
 
-        getRuntime().getCurrentContext().pushIter(getRuntime().getCurrentContext().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
+        tc.pushIter(tc.isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
         try {
             return callMethod(name, newArgs, CallType.FUNCTIONAL);
         } finally {
-            getRuntime().getCurrentContext().popIter();
+            tc.popIter();
         }
     }
     

@@ -37,6 +37,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
@@ -108,15 +109,16 @@ public class RubyMethod extends RubyObject {
      */
     public IRubyObject call(IRubyObject[] args) {
     	assert args != null;
+        ThreadContext tc = getRuntime().getCurrentContext();
 
     	method.getArity().checkArity(getRuntime(), args);
         
-        getRuntime().getCurrentContext().pushIter(getRuntime().getCurrentContext().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
+        tc.pushIter(tc.isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
         try {
             // FIXME: should lastClass be implementation module for a Method?
             return method.call(getRuntime(), receiver, implementationModule, methodName, args, false);
         } finally {
-            getRuntime().getCurrentContext().popIter();
+            tc.popIter();
         }
     }
 
@@ -134,7 +136,8 @@ public class RubyMethod extends RubyObject {
     public IRubyObject to_proc() {
     	CallbackFactory f = getRuntime().callbackFactory(RubyMethod.class);
 		IRuby r = getRuntime();
-        r.getCurrentContext().preToProc(Block.createBlock(null, new IterateCallable(f.getBlockMethod("bmcall"), this), r.getTopSelf()));
+        ThreadContext tc = r.getCurrentContext();
+        tc.preToProc(Block.createBlock(null, new IterateCallable(f.getBlockMethod("bmcall"), this), r.getTopSelf()));
 		
 		try {
 		    while (true) {
@@ -155,7 +158,7 @@ public class RubyMethod extends RubyObject {
 		        }
 		    }
 		} finally {
-            r.getCurrentContext().postToProc();
+            tc.postToProc();
 		}
     }
 
@@ -166,13 +169,14 @@ public class RubyMethod extends RubyObject {
      */
     public static IRubyObject mproc(IRubyObject recv) {
     	IRuby runtime = recv.getRuntime();
-
-        runtime.getCurrentContext().preMproc();
+    	ThreadContext tc = runtime.getCurrentContext();
+        
+        tc.preMproc();
         
         try {
             return RubyKernel.proc(recv);
         } finally {
-            runtime.getCurrentContext().postMproc();
+            tc.postMproc();
         }
     }
 

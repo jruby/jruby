@@ -308,18 +308,19 @@ public final class Ruby implements IRuby {
      * new module is created.
      */
     public RubyModule getOrCreateModule(String name) {
-        RubyModule module = (RubyModule) getCurrentContext().getRubyClass().getConstantAt(name);
+        ThreadContext tc = getCurrentContext();
+        RubyModule module = (RubyModule) tc.getRubyClass().getConstantAt(name);
         
         if (module == null) {
-            module = (RubyModule) getCurrentContext().getRubyClass().setConstant(name, 
+            module = (RubyModule) tc.getRubyClass().setConstant(name, 
             		defineModule(name)); 
         } else if (getSafeLevel() >= 4) {
         	throw newSecurityError("Extending module prohibited.");
         }
 
-        if (getCurrentContext().getWrapper() != null) {
-            module.getSingletonClass().includeModule(getCurrentContext().getWrapper());
-            module.includeModule(getCurrentContext().getWrapper());
+        if (tc.getWrapper() != null) {
+            module.getSingletonClass().includeModule(tc.getWrapper());
+            module.includeModule(tc.getWrapper());
         }
         return module;
     }
@@ -384,6 +385,7 @@ public final class Ruby implements IRuby {
      */
     // TODO: Figure out real dependencies between vars and reorder/refactor into better methods
     private void init() {
+        ThreadContext tc = getCurrentContext();
         nilObject = new RubyNil(this);
         trueObject = new RubyBoolean(this, true);
         falseObject = new RubyBoolean(this, false);
@@ -394,9 +396,10 @@ public final class Ruby implements IRuby {
         
         initLibraries();
         
-        getCurrentContext().preInit();
+        
+        tc.preInit();
 
-        getCurrentContext().setCurrentVisibility(Visibility.PRIVATE);
+        tc.setCurrentVisibility(Visibility.PRIVATE);
 
         initCoreClasses();
 
@@ -404,10 +407,10 @@ public final class Ruby implements IRuby {
 
         topSelf = TopSelfFactory.createTopSelf(this);
 
-        getCurrentContext().pushRubyClass(objectClass);
-        getCurrentContext().setCRef(getObject().getCRef());
+        tc.pushRubyClass(objectClass);
+        tc.setCRef(getObject().getCRef());
         
-        Frame frame = getCurrentContext().getCurrentFrame();
+        Frame frame = tc.getCurrentFrame();
         frame.setSelf(topSelf);
         frame.getEvalState().setSelf(topSelf);
         
@@ -725,10 +728,12 @@ public final class Ruby implements IRuby {
 
         PrintStream errorStream = getErrorStream();
 		if (backtrace.isNil()) {
-            if (getCurrentContext().getSourceFile() != null) {
-                errorStream.print(getCurrentContext().getPosition());
+            ThreadContext tc = getCurrentContext();
+            
+            if (tc.getSourceFile() != null) {
+                errorStream.print(tc.getPosition());
             } else {
-                errorStream.print(getCurrentContext().getSourceLine());
+                errorStream.print(tc.getSourceLine());
             }
         } else if (backtrace.getLength() == 0) {
             printErrorPos(errorStream);
@@ -781,14 +786,15 @@ public final class Ruby implements IRuby {
 	}
 
 	private void printErrorPos(PrintStream errorStream) {
-        if (getCurrentContext().getSourceFile() != null) {
-            if (getCurrentContext().getCurrentFrame().getLastFunc() != null) {
-            	errorStream.print(getCurrentContext().getPosition());
-            	errorStream.print(":in '" + getCurrentContext().getCurrentFrame().getLastFunc() + '\'');
-            } else if (getCurrentContext().getSourceLine() != 0) {
-                errorStream.print(getCurrentContext().getPosition());
+        ThreadContext tc = getCurrentContext();
+        if (tc.getSourceFile() != null) {
+            if (tc.getCurrentFrame().getLastFunc() != null) {
+            	errorStream.print(tc.getPosition());
+            	errorStream.print(":in '" + tc.getCurrentFrame().getLastFunc() + '\'');
+            } else if (tc.getSourceLine() != 0) {
+                errorStream.print(tc.getPosition());
             } else {
-            	errorStream.print(getCurrentContext().getSourceFile());
+            	errorStream.print(tc.getSourceFile());
             }
         }
     }
@@ -823,7 +829,7 @@ public final class Ruby implements IRuby {
             }
 
             /* default visibility is private at loading toplevel */
-            getCurrentContext().setCurrentVisibility(Visibility.PRIVATE);
+            context.setCurrentVisibility(Visibility.PRIVATE);
 
         	Node node = parse(source, scriptName);
             self.eval(node);
@@ -859,7 +865,7 @@ public final class Ruby implements IRuby {
             }
             
             /* default visibility is private at loading toplevel */
-            getCurrentContext().setCurrentVisibility(Visibility.PRIVATE);
+            context.setCurrentVisibility(Visibility.PRIVATE);
             
             self.eval(node);
         } catch (JumpException je) {
@@ -902,9 +908,10 @@ public final class Ruby implements IRuby {
         String name,
         IRubyObject type) {
         if (!isWithinTrace && traceFunction != null) {
+            ThreadContext tc = getCurrentContext();
             isWithinTrace = true;
 
-            ISourcePosition savePosition = getCurrentContext().getPosition();
+            ISourcePosition savePosition = tc.getPosition();
             String file = position.getFile();
 
             if (file == null) {
@@ -913,7 +920,7 @@ public final class Ruby implements IRuby {
             if (type == null) {
 				type = getFalse();
 			}
-            getCurrentContext().preTrace();
+            tc.preTrace();
 
             try {
                 traceFunction
@@ -925,8 +932,8 @@ public final class Ruby implements IRuby {
                         self != null ? self: getNil(),
                         type });
             } finally {
-                getCurrentContext().postTrace();
-                getCurrentContext().setPosition(savePosition);
+                tc.postTrace();
+                tc.setPosition(savePosition);
                 isWithinTrace = false;
             }
         }

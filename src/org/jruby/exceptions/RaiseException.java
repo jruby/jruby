@@ -41,6 +41,7 @@ import org.jruby.IRuby;
 import org.jruby.NativeException;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class RaiseException extends JumpException {
@@ -94,16 +95,17 @@ public class RaiseException extends JumpException {
      */
     protected void setException(RubyException newException, boolean nativeException) {
         IRuby runtime = newException.getRuntime();
+        ThreadContext tc = runtime.getCurrentContext();
         
         runtime.getGlobalVariables().set("$!", newException);
 
         if (runtime.getTraceFunction() != null) {
             runtime.callTraceFunction(
                 "return",
-                runtime.getCurrentContext().getPosition(),
-                runtime.getCurrentContext().getCurrentFrame().getSelf(),
-                runtime.getCurrentContext().getCurrentFrame().getLastFunc(),
-                runtime.getCurrentContext().getCurrentFrame().getLastClass());
+                tc.getPosition(),
+                tc.getCurrentFrame().getSelf(),
+                tc.getCurrentFrame().getLastFunc(),
+                tc.getCurrentFrame().getLastClass());
         }
 
         this.exception = newException;
@@ -114,8 +116,8 @@ public class RaiseException extends JumpException {
 
         runtime.setStackTraces(runtime.getStackTraces() + 1);
 
-        if (newException.callMethod("backtrace").isNil() && runtime.getCurrentContext().getSourceFile() != null) {
-            IRubyObject backtrace = runtime.getCurrentContext().createBacktrace(0, nativeException);
+        if (newException.callMethod("backtrace").isNil() && tc.getSourceFile() != null) {
+            IRubyObject backtrace = tc.createBacktrace(0, nativeException);
             newException.callMethod("set_backtrace", backtrace);
         }
 
