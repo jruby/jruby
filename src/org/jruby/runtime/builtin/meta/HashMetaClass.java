@@ -99,7 +99,7 @@ public class HashMetaClass extends ObjectMetaClass {
 
     public IRubyObject newInstance(IRubyObject[] args) {
     	IRuby runtime = getRuntime();
-        RubyHash hash = new RubyHash(runtime);
+        RubyHash hash = (RubyHash)allocateObject();
 
         // A block to represent 'default' value for unknown values
         if (runtime.getCurrentContext().isBlockGiven()) {
@@ -113,7 +113,8 @@ public class HashMetaClass extends ObjectMetaClass {
     }
     
     public IRubyObject create(IRubyObject[] args) {
-        RubyHash hash = new RubyHash(getRuntime());
+        RubyHash hash = (RubyHash)allocateObject();
+
         if (args.length == 1) {
             hash.setValueMap(new HashMap(((RubyHash) args[0]).getValueMap()));
         } else if (args.length % 2 != 0) {

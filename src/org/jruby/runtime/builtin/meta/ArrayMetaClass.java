@@ -141,7 +141,7 @@ public class ArrayMetaClass extends ObjectMetaClass {
 	}
 
     public IRubyObject newInstance(IRubyObject[] args) {
-        RubyArray instance = getRuntime().newArray();
+        RubyArray instance = (RubyArray)allocateObject();
         
         instance.setMetaClass(this);
         instance.callInit(args);
@@ -150,6 +150,15 @@ public class ArrayMetaClass extends ObjectMetaClass {
     }
     
     public IRubyObject create(IRubyObject[] args) {
-        return getRuntime().newArray(args);
+        RubyArray array = (RubyArray)allocateObject();
+        array.setMetaClass(this);
+        
+        if (args.length > 1) {
+            for (int i = 0; i < args.length; i++) {
+                array.add(args[i]);
+            }
+        }
+        
+        return array;
     }
 }

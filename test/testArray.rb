@@ -81,3 +81,9 @@ class AryTest
   def to_ary; [1,2]; end
 end
 test_equal([1,2], AryTest.new)
+
+# test that extensions of the base classes are typed correctly
+class ArrayExt < Array
+end
+test_equal(ArrayExt, ArrayExt.new.class)
+test_equal(ArrayExt, ArrayExt[:foo, :bar].class)

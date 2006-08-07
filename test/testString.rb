@@ -420,3 +420,9 @@ test_equal(" 5", '%02s' % '5')
 test_equal("05", '%02d' % '5')
 test_equal("05", '%02g' % '5')
 test_equal("05", '%02G' % '5')
+
+# test that extensions of the base classes are typed correctly
+class StringExt < String
+end
+test_equal(StringExt, StringExt.new.class)
+test_equal(StringExt, StringExt.new("test").class)

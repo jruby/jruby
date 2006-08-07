@@ -57,3 +57,9 @@ end
 test_equal(nil, h.default_proc)
 test_equal(2, h[30])
 
+# test that extensions of the base classes are typed correctly
+class HashExt < Hash
+end
+test_equal(HashExt, HashExt.new.class)
+test_equal(HashExt, HashExt[:foo => :bar].class)
+
