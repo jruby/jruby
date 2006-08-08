@@ -13,6 +13,7 @@
  *
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2006 Derek Berner <derek.berner@state.nm.us>
+ * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -68,6 +69,7 @@ public class SymbolMetaClass extends ObjectMetaClass {
 	        defineMethod("to_i", Arity.noArguments());
 	        defineMethod("to_s", Arity.noArguments());
             defineMethod("to_sym", Arity.noArguments());
+            defineSingletonMethod("all_symbols", Arity.noArguments());
             defineAlias("dup", "clone");
 	        defineAlias("id2name", "to_s");
 	        defineAlias("to_int", "to_i");
@@ -83,4 +85,9 @@ public class SymbolMetaClass extends ObjectMetaClass {
 	public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
 		return new SymbolMetaClass(name, this, parentCRef);
 	}
+    
+    public IRubyObject all_symbols() {
+        return getRuntime().newArray(getRuntime().getSymbolTable().all_symbols());
+    }
+
 }

@@ -18,6 +18,7 @@
  * Copyright (C) 2004 Joey Gibson <joey@joeygibson.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2006 Derek Berner <derek.berner@state.nm.us>
+ * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -128,7 +129,8 @@ public class RubySymbol extends RubyObject {
     }
 
     public IRubyObject inspect() {
-        return getRuntime().newString(":" + symbol);
+        return getRuntime().newString(":" + 
+            (isSymbolName(symbol) ? symbol : getRuntime().newString(symbol).dump().toString())); 
     }
 
     public IRubyObject to_s() {
@@ -161,6 +163,122 @@ public class RubySymbol extends RubyObject {
         output.write(':');
         output.dumpString(symbol);
     }
+    
+    private static boolean isIdentChar(char c) {
+        return ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z')
+                || c == '_');
+    }
+    
+    private static boolean isIdentifier(String s) {
+        if (s == null || s.length() <= 0) {
+            return false;
+        } 
+           
+        for (int i = 0; i < s.length(); i++) {
+            if (!isIdentChar(s.charAt(i))) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    /**
+     * is_special_global_name from parse.c.  
+     * @param s
+     * @return
+     */
+    private static boolean isSpecialGlobalName(String s) {
+        if (s == null || s.length() <= 0) {
+            return false;
+        }
+
+        int length = s.length();
+           
+        switch (s.charAt(0)) {        
+        case '~': case '*': case '$': case '?': case '!': case '@': case '/': case '\\':        
+        case ';': case ',': case '.': case '=': case ':': case '<': case '>': case '\"':        
+        case '&': case '`': case '\'': case '+': case '0':
+            return length == 1;            
+        case '-':
+            return (length == 1 || (length == 2 && isIdentChar(s.charAt(1))));
+            
+        default:
+            // we already confirmed above that length > 0
+            for (int i = 0; i < length; i++) {
+                if (!Character.isDigit(s.charAt(i))) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    
+    private static boolean isSymbolName(String s) {
+        if (s == null || s.length() < 1) {
+            return false;
+        }
+
+        int length = s.length();
+
+        char c = s.charAt(0);
+        switch (c) {
+        case '$':
+            return length > 1 && isSpecialGlobalName(s.substring(1));
+        case '@':
+            int offset = 1;
+            if (length >= 2 && s.charAt(1) == '@') {
+                offset++;
+            }
+
+            return isIdentifier(s.substring(offset));
+        case '<':
+            return (length == 1 || (length == 2 && (s.equals("<<") || s.equals("<="))) || 
+                    (length == 3 && s.equals("<=>")));
+        case '>':
+            return (length == 1) || (length == 2 && (s.equals(">>") || s.equals(">=")));
+        case '=':
+            return ((length == 2 && (s.equals("==") || s.equals("=~"))) || 
+                    (length == 3 && s.equals("===")));
+        case '*':
+            return (length == 1 || (length == 2 && s.equals("**")));
+        case '+':
+            return (length == 1 || (length == 2 && s.equals("+@")));
+        case '-':
+            return (length == 1 || (length == 2 && s.equals("-@")));
+        case '|': case '^': case '&': case '/': case '%': case '~': case '`':
+            return length == 1;
+        case '[':
+            return s.equals("[]") || s.equals("[]=");
+        }
+        
+        if (!isIdentChar(c)) {
+            return false;
+        }
+
+        boolean localID = (c >= 'a' && c <= 'z');
+        int last = 1;
+        
+        for (; last < length; last++) {
+            char d = s.charAt(last);
+            
+            if (!isIdentChar(d)) {
+                break;
+            }
+        }
+                    
+        if (last == length) {
+            return true;
+        } else if (localID && last == length - 1) {
+            char d = s.charAt(last);
+            
+            return d == '!' || d == '?' || d == '=';
+        }
+        
+        return false;
+    }
+    
+ 
 
     public static RubySymbol unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         RubySymbol result = RubySymbol.newSymbol(input.getRuntime(), input.unmarshalString());
@@ -199,6 +317,18 @@ public class RubySymbol extends RubyObject {
         public void store(RubySymbol symbol) {
             clean();
             table.put(symbol.asSymbol(), new WeakSymbolEntry(symbol, unusedSymbols));
+        }
+
+        
+        public IRubyObject[] all_symbols() {
+            Object[] tmp = table.values().toArray();
+            IRubyObject[] array = new IRubyObject[tmp.length];
+            
+            for (int i = 0; i < tmp.length; i++) {
+                array[i] = (IRubyObject) ((WeakSymbolEntry) tmp[i]).get();
+            }
+
+            return array;
         }
 
         private void clean() {

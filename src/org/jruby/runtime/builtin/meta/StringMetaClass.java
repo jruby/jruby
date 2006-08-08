@@ -13,6 +13,7 @@
  *
  * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2005 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -33,6 +34,7 @@ import java.util.Locale;
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyString;
 import org.jruby.RubyString.StringMethod;
@@ -64,10 +66,23 @@ public class StringMetaClass extends ObjectMetaClass {
         }
     };
     
+    /* rb_str_cmp_m */
     public StringMethod op_cmp = new StringMethod(this, Arity.singleArgument(), Visibility.PUBLIC) {
         public IRubyObject invoke(RubyString self, IRubyObject[] args) {
-            IRubyObject other = args[0];
-            return self.getRuntime().newFixnum(self.cmp(RubyString.stringValue(other)));
+            if (args[0] instanceof RubyString) {
+                return getRuntime().newFixnum(self.cmp((RubyString) args[0]));
+            }
+                
+            if (args[0].respondsTo("to_str") && args[0].respondsTo("<=>")) {
+                IRubyObject tmp = args[0].callMethod("<=>", self);
+
+                if (!tmp.isNil()) {
+                    return tmp instanceof RubyFixnum ? tmp.callMethod("-") :
+                        getRuntime().newFixnum(0).callMethod("-", tmp);
+                }
+            }
+            
+            return getRuntime().getNil();
         }
     };
 
