@@ -75,7 +75,6 @@ public class RubyRange extends RubyObject {
         result.includeModule(runtime.getModule("Enumerable"));
 
         result.defineMethod("==", callbackFactory.getMethod("equal", IRubyObject.class));
-        result.defineMethod("===", callbackFactory.getMethod("op_eqq", IRubyObject.class));
         result.defineMethod("begin", callbackFactory.getMethod("first"));
         result.defineMethod("each", callbackFactory.getMethod("each"));
         result.defineMethod("end", callbackFactory.getMethod("last"));
@@ -94,6 +93,7 @@ public class RubyRange extends RubyObject {
         result.defineMethod("include?", callbackFactory.getMethod("include_p", IRubyObject.class));
 		// We override Enumerable#member? since ranges in 1.8.1 are continuous.
 		result.defineAlias("member?", "include?");
+        result.defineAlias("===", "include?");
 		
 		result.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
         
@@ -268,41 +268,6 @@ public class RubyRange extends RubyObject {
             end.equals(otherRange.end) &&
             isExclusive == otherRange.isExclusive;
         return getRuntime().newBoolean(result);
-    }
-
-    public RubyBoolean op_eqq(IRubyObject obj) {
-    	if (!(obj instanceof RubyNumeric)) {//FIXME should be anything that doesn't responds to <=??
-    		return getRuntime().getFalse();
-    	}
-        if (begin instanceof RubyFixnum && obj instanceof RubyFixnum && end instanceof RubyFixnum) {
-            long b = RubyNumeric.fix2long(begin);
-            long o = RubyNumeric.fix2long(obj);
-
-            if (b <= o) {
-                long e =  RubyNumeric.fix2long(end);
-                if (isExclusive) {
-                    if (o < e) {
-                        return getRuntime().getTrue();
-                    }
-                } else {
-                    if (o <= e) {
-                        return getRuntime().getTrue();
-                    }
-                }
-            }
-            return getRuntime().getFalse();
-        } else if (begin.callMethod("<=", obj).isTrue()) {
-            if (isExclusive) {
-                if (end.callMethod(">", obj).isTrue()) {
-                    return getRuntime().getTrue();
-                }
-            } else {
-                if (end.callMethod(">=", obj).isTrue()) {
-                    return getRuntime().getTrue();
-                }
-            }
-        }
-        return getRuntime().getFalse();
     }
 
     public IRubyObject each() {

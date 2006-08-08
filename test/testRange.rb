@@ -26,6 +26,24 @@ test_ok((4.8..7.2).include?(5.5))
 test_ok(!(4.8..7.2).include?(4))
 test_ok(!(4.8..7.2).include?(7.3))
 
+# member? / include ? / ===
+
+def test_member(expect, recv, arg)
+  for method in ["member?", "include?", "==="]
+    test_equal(expect, recv.send(method, arg))
+  end
+end
+ 
+az_incl = 'aa'..'az'
+az_excl = 'aa'...'az'
+
+test_member(true,  az_incl, 'az')
+test_member(false, az_excl, 'az')
+test_member(true,  az_incl, 'ak')
+test_member(true,  az_excl, 'ak')
+test_member(false, az_incl, 'bb')
+test_member(false, az_excl, 'bb')
+
 ##### step #####
 test_exception(ArgumentError) { (1..2).step(-1) }
 
