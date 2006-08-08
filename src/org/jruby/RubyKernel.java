@@ -93,7 +93,6 @@ public class RubyKernel {
         module.defineModuleFunction("chop", callbackFactory.getSingletonMethod("chop"));
         module.defineModuleFunction("chop!", callbackFactory.getSingletonMethod("chop_bang"));
         module.defineModuleFunction("eval", callbackFactory.getOptSingletonMethod("eval"));
-        // TODO: Implement Kernel#exec
         module.defineModuleFunction("exit", callbackFactory.getOptSingletonMethod("exit"));
         module.defineModuleFunction("exit!", callbackFactory.getOptSingletonMethod("exit_bang"));
         module.defineModuleFunction("fail", callbackFactory.getOptSingletonMethod("raise"));
@@ -134,6 +133,8 @@ public class RubyKernel {
         module.defineModuleFunction("sub!", callbackFactory.getOptSingletonMethod("sub_bang"));
         // Skipping: Kernel#syscall (too system dependent)
         module.defineModuleFunction("system", callbackFactory.getOptSingletonMethod("system"));
+        // TODO: Implement Kernel#exec differently?
+        module.defineAlias("exec", "system");
         // TODO: Implement Kernel#test (partial impl)
         module.defineModuleFunction("throw", callbackFactory.getOptSingletonMethod("rbThrow"));
         // TODO: Implement Kernel#trace_var
