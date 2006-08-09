@@ -276,41 +276,19 @@ public class IOHandlerNio extends IOHandler {
         checkWritable();
 
         ByteBuffer buffer = ByteBuffer.wrap(RubyString.stringToBytes(string));
-        byte[] trigger;
-        IRubyObject dollar_backslash = getRuntime().getGlobalVariables().get("$\\");
-        if (dollar_backslash instanceof RubyString) {
-            trigger = ((RubyString) dollar_backslash).toByteArray();
-        } else {
-            trigger = RubyString.stringToBytes("\n");
-        }
-        loop:
         while (buffer.hasRemaining()) {
             /* append data */
             while (buffer.hasRemaining() && outBuffer.hasRemaining()) {
                 outBuffer.put(buffer.get());
             }
 
-            int idx;
             outBuffer.flip();
-            if (!outBuffer.hasRemaining() || isSync()) {
+            if ((buffer.hasRemaining() && !outBuffer.hasRemaining()) || isSync()) {
                 flushOutBuffer();
-            } else if ((idx = buffer_rindex(outBuffer, trigger)) >= 0) {
-                int oldLimit = outBuffer.limit();
-                outBuffer.limit(idx + trigger.length);
-                flushOutBuffer();
-                outBuffer.position(idx + trigger.length);
-                outBuffer.limit(oldLimit);
-                int i;
-                for (i = 0; outBuffer.hasRemaining(); i++) {
-                    outBuffer.put(i, outBuffer.get());
-                }
-                outBuffer.position(i);
-                outBuffer.limit(outBuffer.capacity());
-            } else {
-                // unflip
-                outBuffer.position(outBuffer.limit());
-                outBuffer.limit(outBuffer.capacity());
             }
+        }
+        if(!isSync()) {
+          flushOutBuffer();
         }
         return buffer.capacity();
     }

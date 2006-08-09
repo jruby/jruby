@@ -877,10 +877,8 @@ public class RubyIO extends RubyObject {
             } else {
                 line = args[i].toString();
             }
-            callMethod("write", getRuntime().newString(line));
-            if (!line.endsWith("\n")) {
-                callMethod("write", getRuntime().newString("\n"));
-            }
+            callMethod("write", getRuntime().newString(line+
+            		(line.endsWith("\n") ? "" : "\n")));
         }
         return getRuntime().getNil();
     }
