@@ -178,3 +178,84 @@ Test9Derived.new.foo
 Test9Derived.new.bar(1,2,3,4)
 Test9Derived.new.gar(1,2,3,4)
 Test9Derived.new.har("good", "good")
+
+# taken from MRI test/ruby/test_super.rb
+
+class Base
+  def single(a) a end
+  def double(a, b) [a,b] end
+  def array(*a) a end
+  def optional(a = 0) a end
+end
+class Single1 < Base
+  def single(*) super end
+end
+class Single2 < Base
+  def single(a,*) super end
+end
+class Double1 < Base
+  def double(*) super end
+end
+class Double2 < Base
+  def double(a,*) super end
+end
+class Double3 < Base
+  def double(a,b,*) super end
+end
+class Array1 < Base
+  def array(*) super end
+end
+class Array2 < Base
+  def array(a,*) super end
+end
+class Array3 < Base
+  def array(a,b,*) super end
+end
+class Array4 < Base
+  def array(a,b,c,*) super end
+end
+class Optional1 < Base
+  def optional(a = 1) super end
+end
+class Optional2 < Base
+  def optional(a, b = 1) super end
+end
+class Optional3 < Base
+  def single(a = 1) super end
+end
+
+
+test_equal(1, Single1.new.single(1))
+test_equal(1, Single2.new.single(1))
+
+test_equal([1, 2], Double1.new.double(1, 2))
+test_equal([1, 2], Double2.new.double(1, 2))
+test_equal([1, 2], Double3.new.double(1, 2))
+
+test_equal([], Array1.new.array())
+test_equal([1], Array1.new.array(1))
+test_equal([1], Array2.new.array(1))
+test_equal([1,2], Array2.new.array(1, 2))
+test_equal([1,2], Array3.new.array(1, 2))
+test_equal([1,2,3], Array3.new.array(1, 2, 3))
+test_equal([1,2,3], Array4.new.array(1, 2, 3))
+test_equal([1,2,3,4], Array4.new.array(1, 2, 3, 4))
+
+test_equal(9, Optional1.new.optional(9))
+test_equal(1, Optional1.new.optional)
+
+test_exception(ArgumentError) do
+    # call Base#optional with 2 arguments; the 2nd arg is supplied
+    test_equal(9, Optional2.new.optional(9))
+  end
+
+test_exception(ArgumentError) do
+    # call Base#optional with 2 arguments
+    test_equal(9, Optional2.new.optional(9, 2))
+  end
+
+test_equal(9, Optional3.new.single(9))
+  # call Base#single with 1 argument; the arg is supplied
+test_equal(1, Optional3.new.single)
+
+

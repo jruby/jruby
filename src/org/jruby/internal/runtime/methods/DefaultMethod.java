@@ -16,6 +16,7 @@
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -176,15 +177,25 @@ public final class DefaultMethod extends AbstractMethod {
                     allArgs.add(tc.getCurrentFrame().getEvalState().begin((Node)iter.next()));
                 }
             }
-
-            // build an array from *rest type args, also adding to allArgs
-            if (argsNode.getRestArg() >= 0) {
-                RubyArray array = runtime.newArray(args.length - expectedArgsCount);
-                for (int i = expectedArgsCount; i < args.length; i++) {
-                    array.append(args[i]);
-                    allArgs.add(args[i]);
-                }
-                scope.setValue(argsNode.getRestArg(), array);
+        }
+        
+        // build an array from *rest type args, also adding to allArgs
+        
+        // move this out of the scope.hasLocalVariables() condition to deal
+        // with anonymous restargs (* versus *rest)
+        int restArg = argsNode.getRestArg();
+        // none present ==> -1
+        // named restarg ==> >=0
+        // anonymous restarg ==> -2
+        if (restArg != -1) {
+            RubyArray array = runtime.newArray(args.length - expectedArgsCount);
+            for (int i = expectedArgsCount; i < args.length; i++) {
+                array.append(args[i]);
+                allArgs.add(args[i]);
+            }
+            // only set in scope if named
+            if (restArg >= 0) {
+                scope.setValue(restArg, array);
             }
         }
         
