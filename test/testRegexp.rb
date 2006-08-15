@@ -80,3 +80,11 @@ test_equal(/(?!)/, Regexp.union)
 test_equal(/penzance/, Regexp.union("penzance"))
 test_equal(/skiing|sledding/, Regexp.union("skiing", "sledding"))
 test_equal(/(?-mix:dogs)|(?i-mx:cats)/, Regexp.union(/dogs/, /cats/i))
+
+# copied from MRI sample/test.rb
+a = []
+(0..255).each {|n|
+  ch = [n].pack("C")                     
+  a.push ch if /a#{Regexp.quote ch}b/x =~ "ab" 
+}
+test_ok(a.size == 0)
