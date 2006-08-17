@@ -179,6 +179,25 @@ public class JRubyConstructor extends ConstructorImpl {
         return oo;
     }
 
+    public static Object constructRubyMap(final Constructor ctor, final String tag, final Node node) {
+        final IRuby runtime = ((JRubyConstructor)ctor).runtime;
+        RubyModule objClass = runtime.getModule("Object");
+        if(tag != null) {
+            final String[] nms = tag.split("::");
+            for(int i=0,j=nms.length;i<j;i++) {
+                objClass = (RubyModule)objClass.getConstant(nms[i]);
+            }
+        }
+        final RubyClass theCls = (RubyClass)objClass;
+        final RubyObject oo = (RubyObject)theCls.allocate();
+        final Map vars = (Map)(ctor.constructMapping(node));
+        for(final Iterator iter = vars.keySet().iterator();iter.hasNext();) {
+            final IRubyObject key = (IRubyObject)iter.next();
+            oo.callMethod("[]=",new IRubyObject[]{key,(IRubyObject)vars.get(key)});
+        }
+        return oo;
+    }
+
     static {
         addConstructor("tag:yaml.org,2002:null",new YamlConstructor() {
                 public Object call(final Constructor self, final Node node) {
@@ -246,6 +265,11 @@ public class JRubyConstructor extends ConstructorImpl {
                 }
             });
 
+        addMultiConstructor("tag:yaml.org,2002:map:",new YamlMultiConstructor() {
+                public Object call(final Constructor self, final String pref, final Node node) {
+                    return constructRubyMap(self,pref,node);
+                }
+            });
         addMultiConstructor("!ruby/object:",new YamlMultiConstructor() {
                 public Object call(final Constructor self, final String pref, final Node node) {
                     return constructRuby(self,pref,node);
