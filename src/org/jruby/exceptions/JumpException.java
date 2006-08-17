@@ -39,13 +39,21 @@ public class JumpException extends RuntimeException {
     private static final long serialVersionUID = -228162532535826617L;
 
     public static final class JumpType {
-		public static final JumpType BreakJump = new JumpType(0);
-		public static final JumpType NextJump = new JumpType(1);
-		public static final JumpType RedoJump = new JumpType(2);
-		public static final JumpType RetryJump = new JumpType(3);
-		public static final JumpType ReturnJump = new JumpType(4);
-		public static final JumpType ThrowJump = new JumpType(5);
-		public static final JumpType RaiseJump = new JumpType(6);
+        public static final int BREAK = 0;
+        public static final int NEXT = 1;
+        public static final int REDO = 2;
+        public static final int RETRY = 3;
+        public static final int RETURN = 4;
+        public static final int THROW = 5;
+        public static final int RAISE = 6;
+        
+		public static final JumpType BreakJump = new JumpType(BREAK);
+		public static final JumpType NextJump = new JumpType(NEXT);
+		public static final JumpType RedoJump = new JumpType(REDO);
+		public static final JumpType RetryJump = new JumpType(RETRY);
+		public static final JumpType ReturnJump = new JumpType(RETURN);
+		public static final JumpType ThrowJump = new JumpType(THROW);
+		public static final JumpType RaiseJump = new JumpType(RAISE);
 		
 		private final int typeId;
 		private JumpType(int typeId) {

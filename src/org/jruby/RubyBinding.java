@@ -72,12 +72,16 @@ public class RubyBinding extends RubyObject {
         
         // FIXME: We should be cloning, not reusing: frame, scope, dynvars, and potentially iter/block info
         RubyModule wrapper = context.getWrapper();
-        Iter iter = context.getCurrentIter();
-        Frame frame = context.getPreviousFrame();
-        // for TOPLEVEL_BINDING
-        if (frame == null) {
-            frame = context.getCurrentFrame();
+        
+        // defaults for TOPLEVEL_BINDING
+        Iter iter = Iter.ITER_NOT;
+        Frame frame = context.getCurrentFrame();
+        
+        if (context.getPreviousFrame() != null) {
+            
+            iter = context.getPreviousFrameIter();
         }
+
         DynamicVariableSet dynVars = context.getCurrentDynamicVars();
         Block bindingBlock = Block.createBinding(wrapper, iter, frame, dynVars);
 

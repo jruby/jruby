@@ -70,7 +70,7 @@ public class JRubyEngine extends BSFEngineImpl {
             String[] names = new String[paramNames.size()];
             paramNames.toArray(names);
             threadContext.preBsfApply(names);
-            Scope scope = threadContext.getCurrentScope();
+            Scope scope = threadContext.getFrameScope();
 
             // set global variables
             for (int i = 0, size = args.size(); i < size; i++) {

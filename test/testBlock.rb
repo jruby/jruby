@@ -57,3 +57,18 @@ test_equal(-1, Proc.new { 1 }.arity)
 test_equal(-1, Proc.new{|*x| 1}.arity)
 
 def f; yield; end; f {|*a| test_ok(a == []) }
+
+# test passing blocks to super
+class A
+  def foo
+    yield
+  end
+end
+
+class B < A
+  def foo
+    super
+  end
+end
+
+test_equal("bar", B.new.foo { "bar" })

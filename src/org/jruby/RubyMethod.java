@@ -36,7 +36,6 @@ import org.jruby.internal.runtime.methods.IterateCallable;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ICallable;
-import org.jruby.runtime.Iter;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -113,12 +112,12 @@ public class RubyMethod extends RubyObject {
 
     	method.getArity().checkArity(getRuntime(), args);
         
-        tc.pushIter(tc.isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
+        tc.setIfBlockAvailable();
         try {
             // FIXME: should lastClass be implementation module for a Method?
             return method.call(getRuntime(), receiver, implementationModule, methodName, args, false);
         } finally {
-            tc.popIter();
+            tc.clearIfBlockAvailable();
         }
     }
 

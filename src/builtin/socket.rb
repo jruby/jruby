@@ -14,6 +14,7 @@
 # * Copyright (C) 2005 David Corbin <dcorbin@users.sourceforge.net>
 # * Copyright (C) 2005-2006 Thomas E Enebo <enebo@acm.org>
 # * Copyright (C) 2006 Evan Buswell <evan@heron.sytes.net>
+# * Copyright (C) 2006 Ola Bini <ola.bini@ki.se>
 # * 
 # * Alternatively, the contents of this file may be used under the terms of
 # * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -139,7 +140,7 @@ class IPSocket < BasicSocket
   end
 
   def peeraddr()
-    addr = getpeername
+    addr = getpeername 
     return [ "AF_INET", addr.getPort,
       (BasicSocket.do_not_reverse_lookup ? addr.getAddress.getHostAddress : addr.getHostName),
       addr.getAddress.getHostAddress ]
@@ -226,7 +227,8 @@ class TCPServer < TCPSocket
     hostname ||= '0.0.0.0'
     addr = InetAddress.getByName hostname
     @javaServerSocketChannel = ServerSocketChannel.open
-    @javaServerSocketChannel.socket.bind(InetSocketAddress.new(addr, port))
+    @socket_address = InetSocketAddress.new(addr, port)
+    @javaServerSocketChannel.socket.bind(@socket_address)
 
     super @javaServerSocketChannel, nil
   rescue UnknownHostException => e
@@ -247,6 +249,11 @@ class TCPServer < TCPSocket
   
   def close
     TCPSocket.new(@javaServerSocketChannel.accept, nil)
+  end
+  
+  def listen(backlog)
+    @javaServerSocketChannel.socket.bind(@socket_address,backlog)
+    0
   end
 end
 

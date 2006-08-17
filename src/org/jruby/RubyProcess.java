@@ -43,7 +43,7 @@ public class RubyProcess {
         
         RubyModule process_status = process.defineClassUnder("Status", runtime.getObject()); 
 
-        CallbackFactory processCallbackFactory = runtime.callbackFactory(RubyProcess.class);
+        //CallbackFactory processCallbackFactory = runtime.callbackFactory(RubyProcess.class);
         CallbackFactory process_statusCallbackFactory = runtime.callbackFactory(RubyProcess.RubyStatus.class);
 
 //        process.defineModuleFunction("fork", processCallbackFactory.getSingletonMethod("fork"));

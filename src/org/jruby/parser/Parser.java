@@ -70,11 +70,13 @@ public class Parser {
     private Node parse(String file, Reader content, RubyParserConfiguration config, 
         SinglyLinkedList cref) {
         ThreadContext tc = runtime.getCurrentContext();
-        config.setLocalVariables(tc.getCurrentScope().getLocalNames());
+        config.setLocalVariables(tc.getFrameScope().getLocalNames());
         
-        // search for an ITER_CUR; this lets us know we're parsing from within a block and should bring dvars along
-        for (Iterator iter = tc.getIterStack().iterator(); iter.hasNext();) {
-            if ((Iter)iter.next() == Iter.ITER_CUR) {
+        // FIXME: hack; search for an ITER_CUR; this lets us know we're parsing from within a block and should bring dvars along
+        for (Iterator iterator = tc.getIterStack().iterator(); iterator.hasNext();) {
+            Iter iter = (Iter)iterator.next();
+            
+            if (iter == Iter.ITER_CUR) {
                 config.setDynamicVariables(tc.getCurrentDynamicVars().names());
                 break;
             }
@@ -114,13 +116,13 @@ public class Parser {
     private void expandLocalVariables(List localVariables) {
         int oldSize = 0;
         ThreadContext tc = runtime.getCurrentContext();
-        if (tc.getCurrentScope().getLocalNames() != null) {
-            oldSize = tc.getCurrentScope().getLocalNames().length;
+        if (tc.getFrameScope().getLocalNames() != null) {
+            oldSize = tc.getFrameScope().getLocalNames().length;
         }
         List newNames = localVariables.subList(oldSize, localVariables.size());
         String[] newNamesArray = new String[newNames.size()];
         newNames.toArray(newNamesArray);
-        tc.getCurrentScope().addLocalVariables(newNamesArray);
+        tc.getFrameScope().addLocalVariables(newNamesArray);
     }
 
     private boolean hasNewLocalVariables(RubyParserResult result) {
@@ -131,8 +133,8 @@ public class Parser {
             newSize = result.getLocalVariables().size();
         }
         int oldSize = 0;
-        if (tc.getCurrentScope().hasLocalVariables()) {
-            oldSize = tc.getCurrentScope().getLocalNames().length;
+        if (tc.getFrameScope().hasLocalVariables()) {
+            oldSize = tc.getFrameScope().getLocalNames().length;
         }
         return newSize > oldSize;
     }

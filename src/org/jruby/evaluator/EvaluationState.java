@@ -24,6 +24,7 @@ import org.jruby.ast.SplatNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.JumpException.JumpType;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -272,20 +273,28 @@ public class EvaluationState {
             
             ib.instruction.execute(this, ib.instructionContext);
         } catch (JumpException je) {
-            if (je.getJumpType() == JumpException.JumpType.RedoJump) {
-                handleRedo(je);
-            } else if (je.getJumpType() == JumpException.JumpType.NextJump) {
-                handleNext(je);
-            } else if (je.getJumpType() == JumpException.JumpType.BreakJump) {
+            switch (je.getJumpType().getTypeId()) {
+            case JumpType.BREAK:
                 handleBreak(je);
-            } else if (je.getJumpType() == JumpException.JumpType.RaiseJump) {
-                handleRaise(je);
-            } else if (je.getJumpType() == JumpException.JumpType.RetryJump) {
-                handleRetry(je);
-            } else if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
+                break;
+            case JumpType.NEXT:
+                handleNext(je);
+                break;
+            case JumpType.RETURN:
                 handleReturn(je);
-            } else if (je.getJumpType() == JumpException.JumpType.ThrowJump) {
+                break;
+            case JumpType.RAISE:
+                handleRaise(je);
+                break;
+            case JumpType.REDO:
+                handleRedo(je);
+                break;
+            case JumpType.RETRY:
+                handleRetry(je);
+                break;
+            case JumpType.THROW:
                 handleThrow(je);
+                break;
             }
         }
     }

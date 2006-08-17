@@ -87,3 +87,11 @@ class ArrayExt < Array
 end
 test_equal(ArrayExt, ArrayExt.new.class)
 test_equal(ArrayExt, ArrayExt[:foo, :bar].class)
+
+##### splat test #####
+class ATest
+  def to_a; 1; end
+end
+
+proc { |a| test_equal(1, a) }.call(*1)
+test_exception(TypeError) { proc { |a| }.call(*ATest.new) }

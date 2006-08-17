@@ -172,14 +172,23 @@ public interface IRubyObject {
     IRubyObject eval(Node iNode);
 
     /**
-     * RubyMethod eval.
-     * @param iRubyObject
-     * @param rubyObject
-     * @param string
-     * @param i
-     * @return IRubyObject
+     * Evaluate the given string under the specified binding object. If the binding is not a Proc or Binding object
+     * (RubyProc or RubyBinding) throw an appropriate type error.
+     * @param evalString The string containing the text to be evaluated
+     * @param binding The binding object under which to perform the evaluation
+     * @param file The filename to use when reporting errors during the evaluation
+     * @return An IRubyObject result from the evaluation
      */
-    IRubyObject eval(IRubyObject iRubyObject, IRubyObject rubyObject, String string, int i);
+    IRubyObject evalWithBinding(IRubyObject evalString, IRubyObject binding, String file);
+
+    /**
+     * Evaluate the given string.
+     * @param evalString The string containing the text to be evaluated
+     * @param binding The binding object under which to perform the evaluation
+     * @param file The filename to use when reporting errors during the evaluation
+     * @return An IRubyObject result from the evaluation
+     */
+    IRubyObject evalSimple(IRubyObject evalString, String file);
 
     /**
      * RubyMethod extendObject.

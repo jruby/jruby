@@ -82,3 +82,4 @@ mri/testString.rb
 mri/testAssignment2.rb
 mri/testCall.rb
 mri/testProc.rb
+mri/sample/test.rb

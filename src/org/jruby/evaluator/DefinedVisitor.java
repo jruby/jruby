@@ -128,8 +128,8 @@ public class DefinedVisitor extends AbstractVisitor {
 	 */
 	public Instruction visitSuperNode(SuperNode iVisited) {
         ThreadContext tc = state.getThreadContext();
-		String lastMethod = tc.getCurrentFrame().getLastFunc();
-		RubyModule lastClass = tc.getCurrentFrame().getLastClass();
+		String lastMethod = tc.getFrameLastFunc();
+		RubyModule lastClass = tc.getFrameLastClass();
 		if (lastMethod != null && lastClass != null
 				&& lastClass.getSuperClass().isMethodBound(lastMethod, false)) {
 			definition = getArgumentDefinition(iVisited.getArgsNode(), "super");
@@ -142,8 +142,8 @@ public class DefinedVisitor extends AbstractVisitor {
 	 */
 	public Instruction visitZSuperNode(ZSuperNode iVisited) {
         ThreadContext tc = state.getThreadContext();
-		String lastMethod = tc.getCurrentFrame().getLastFunc();
-		RubyModule lastClass = tc.getCurrentFrame().getLastClass();
+		String lastMethod = tc.getFrameLastFunc();
+		RubyModule lastClass = tc.getFrameLastClass();
 		if (lastMethod != null && lastClass != null
 				&& lastClass.getSuperClass().isMethodBound(lastMethod, false)) {
 			definition = "super";
@@ -258,7 +258,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	 * @see AbstractVisitor#visitYieldNode(YieldNode)
 	 */
 	public Instruction visitYieldNode(YieldNode iVisited) {
-		if (state.getThreadContext().isBlockGivenAndAvailable()) {
+		if (state.getThreadContext().isBlockGiven()) {
 			definition = "yield";
 		}
 		return null;

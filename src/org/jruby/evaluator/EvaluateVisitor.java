@@ -14,10 +14,11 @@
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2006 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2004-2006 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 David Corbin <dcorbin@users.sourceforge.net>
+ * Copyright (C) 2006 Ola Bini <ola.bini@ki.se>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -155,9 +156,7 @@ import org.jruby.internal.runtime.methods.WrapperCallable;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.Frame;
 import org.jruby.runtime.ICallable;
-import org.jruby.runtime.Iter;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -186,8 +185,8 @@ public final class EvaluateVisitor implements NodeVisitor {
 
     private static void callTraceFunction(EvaluationState state, String event, IRubyObject zelf) {
         ThreadContext tc = state.getThreadContext();
-        String name = tc.getCurrentFrame().getLastFunc();
-        RubyModule type = tc.getCurrentFrame().getLastClass();
+        String name = tc.getFrameLastFunc();
+        RubyModule type = tc.getFrameLastClass();
         state.runtime.callTraceFunction(event, tc.getPosition(), zelf, name, type);
     }
     
@@ -365,12 +364,12 @@ public final class EvaluateVisitor implements NodeVisitor {
             ThreadContext tc = state.getThreadContext();
 
             if (proc.isNil()) {
-                tc.pushIter(Iter.ITER_NOT);
+                tc.setNoBlock();
                 try {
                     state.begin(iVisited.getIterNode());
                     return;
                 } finally {
-                    tc.popIter();
+                    tc.clearNoBlock();
                 }
             }
             
@@ -392,11 +391,11 @@ public final class EvaluateVisitor implements NodeVisitor {
                 // block for it.  Just eval!
                 if (blockObject != null && blockObject == proc) {
             	    try {
-                	    tc.pushIter(Iter.ITER_PRE);
+                        tc.setBlockAvailable();
                 	    state.begin(iVisited.getIterNode());
                 	    return;
             	    } finally {
-                        tc.popIter();
+                        tc.clearBlockAvailable();
             	    }
                 }
             }
@@ -1090,28 +1089,28 @@ public final class EvaluateVisitor implements NodeVisitor {
     		FlipNode iVisited = (FlipNode)ctx;
             ThreadContext tc = state.runtime.getCurrentContext();
             if (iVisited.isExclusive()) {
-                if (! tc.getCurrentScope().getValue(iVisited.getCount()).isTrue()) {
+                if (! tc.getFrameScope().getValue(iVisited.getCount()).isTrue()) {
                     //Benoit: I don't understand why the state.result is inversed
                     state.setResult(state.begin(iVisited.getBeginNode()).isTrue() ? state.runtime.getFalse() : state.runtime.getTrue());
-                    tc.getCurrentScope().setValue(iVisited.getCount(), state.getResult());
+                    tc.getFrameScope().setValue(iVisited.getCount(), state.getResult());
                 } else {
                     if (state.begin(iVisited.getEndNode()).isTrue()) {
-                        tc.getCurrentScope().setValue(iVisited.getCount(), state.runtime.getFalse());
+                        tc.getFrameScope().setValue(iVisited.getCount(), state.runtime.getFalse());
                     }
                     state.setResult(state.runtime.getTrue());
                 }
             } else {
-                if (! tc.getCurrentScope().getValue(iVisited.getCount()).isTrue()) {
+                if (! tc.getFrameScope().getValue(iVisited.getCount()).isTrue()) {
                     if (state.begin(iVisited.getBeginNode()).isTrue()) {
                         //Benoit: I don't understand why the state.result is inversed
-                        tc.getCurrentScope().setValue(iVisited.getCount(), state.begin(iVisited.getEndNode()).isTrue() ? state.runtime.getFalse() : state.runtime.getTrue());
+                        tc.getFrameScope().setValue(iVisited.getCount(), state.begin(iVisited.getEndNode()).isTrue() ? state.runtime.getFalse() : state.runtime.getTrue());
                         state.setResult(state.runtime.getTrue());
                     } else {
                         state.setResult(state.runtime.getFalse());
                     }
                 } else {
                     if (state.begin(iVisited.getEndNode()).isTrue()) {
-                        tc.getCurrentScope().setValue(iVisited.getCount(), state.runtime.getFalse());
+                        tc.getFrameScope().setValue(iVisited.getCount(), state.runtime.getFalse());
                     }
                     state.setResult(state.runtime.getTrue());
                 }
@@ -1323,7 +1322,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                 try {
                     while (true) {
                         try {
-                            tc.pushIter(Iter.ITER_PRE);
+                            tc.setBlockAvailable();
                             state.setResult(state.begin(iVisited.getIterNode()));
                             return;
                         } catch (JumpException je) {
@@ -1334,7 +1333,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                         		throw je;
                         	}
                         } finally {
-                            tc.popIter();
+                            tc.clearBlockAvailable();
                         }
                     }
                 } catch (JumpException je) {
@@ -1357,7 +1356,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class LocalAsgnNodeVisitor1 implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		LocalAsgnNode iVisited = (LocalAsgnNode)ctx;
-            state.runtime.getCurrentContext().getCurrentScope().setValue(iVisited.getCount(), state.getResult());
+            state.runtime.getCurrentContext().getFrameScope().setValue(iVisited.getCount(), state.getResult());
         }
 	}
     private static final LocalAsgnNodeVisitor1 localAsgnNodeVisitor1 = new LocalAsgnNodeVisitor1();
@@ -1375,7 +1374,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class LocalVarNodeVisitor implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		LocalVarNode iVisited = (LocalVarNode)ctx;
-            state.setResult(state.runtime.getCurrentContext().getCurrentScope().getValue(iVisited.getCount()));
+            state.setResult(state.runtime.getCurrentContext().getFrameScope().getValue(iVisited.getCount()));
     	}
     }
     private static final LocalVarNodeVisitor localVarNodeVisitor = new LocalVarNodeVisitor();
@@ -1891,8 +1890,8 @@ public final class EvaluateVisitor implements NodeVisitor {
     		SuperNode iVisited = (SuperNode)ctx;
             ThreadContext tc = state.getThreadContext();
             
-            if (tc.getCurrentFrame().getLastClass() == null) {
-                throw state.runtime.newNameError("Superclass method '" + tc.getCurrentFrame().getLastFunc() + "' disabled.");
+            if (tc.getFrameLastClass() == null) {
+                throw state.runtime.newNameError("Superclass method '" + tc.getFrameLastFunc() + "' disabled.");
             }
 
             tc.beginCallArgs();
@@ -2055,7 +2054,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                 state.setResult(null);
             }
                 
-            state.setResult(state.getThreadContext().yield(state.getResult(), null, null, false, iVisited.getCheckState()));
+            state.setResult(state.getThreadContext().yieldCurrentBlock(state.getResult(), null, null, iVisited.getCheckState()));
         }
     }
     private static final Yield2 yield2 = new Yield2();
@@ -2083,13 +2082,12 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class ZSuperNodeVisitor implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
             ThreadContext tc = state.getThreadContext();
-    		Frame frame = tc.getCurrentFrame();
     		
-            if (frame.getLastClass() == null) {
-                throw state.runtime.newNameError("superclass method '" + frame.getLastFunc() + "' disabled");
+            if (tc.getFrameLastClass() == null) {
+                throw state.runtime.newNameError("superclass method '" + tc.getFrameLastFunc() + "' disabled");
             }
 
-            state.setResult(tc.callSuper(frame.getArgs()));
+            state.setResult(tc.callSuper(tc.getFrameArgs()));
     	}
     }
     private static final ZSuperNodeVisitor zSuperNodeVisitor = new ZSuperNodeVisitor();
@@ -2842,14 +2840,20 @@ public final class EvaluateVisitor implements NodeVisitor {
         return array.getLength() == 1 ? array.first(IRubyObject.NULL_ARRAY) : array;
     }
 
-    /* HACK: .... */
     private static RubyArray arrayValue(EvaluationState state, IRubyObject value) {
         IRubyObject newValue = value.convertToType("Array", "to_ary", false);
 
         if (newValue.isNil()) {
-            // XXXEnebo: We should call to_a except if it is kernel def....
-            // but we will forego for now.
-            newValue = state.runtime.newArray(value);
+            // Object#to_a is obsolete.  We match Ruby's hack until to_a goes away.  Then we can 
+            // remove this hack too.
+            if (value.getType().searchMethod("to_a").getImplementationClass() != state.runtime.getKernel()) {
+                newValue = value.convertToType("Array", "to_a", false);
+                if(newValue.getType() != state.runtime.getClass("Array")) {
+                    throw state.runtime.newTypeError("`to_a' did not return Array");
+                }
+            } else {
+                newValue = state.runtime.newArray(value);
+            }
         }
         
         return (RubyArray) newValue;

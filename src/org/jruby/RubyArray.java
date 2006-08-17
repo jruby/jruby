@@ -1382,7 +1382,7 @@ public class RubyArray extends RubyObject implements List {
 
     class BlockComparator implements Comparator {
         public int compare(Object o1, Object o2) {
-            IRubyObject result = getRuntime().getCurrentContext().yield(getRuntime().newArray((IRubyObject) o1, (IRubyObject) o2), null, null, true);
+            IRubyObject result = getRuntime().getCurrentContext().yieldCurrentBlock(getRuntime().newArray((IRubyObject) o1, (IRubyObject) o2), null, null, true);
             return (int) ((RubyNumeric) result).getLongValue();
         }
     }

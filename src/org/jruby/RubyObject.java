@@ -16,7 +16,7 @@
  * Copyright (C) 2001-2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2006 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
@@ -120,6 +120,10 @@ public class RubyObject implements Cloneable, IRubyObject {
 
     public Class getJavaClass() {
         return IRubyObject.class;
+    }
+    
+    public static void puts(Object obj) {
+        System.out.println(obj.toString());
     }
 
     /**
@@ -336,7 +340,7 @@ public class RubyObject implements Cloneable, IRubyObject {
 
         if (method.isUndefined() ||
             !(name.equals("method_missing") ||
-              method.isCallableFrom(getRuntime().getCurrentContext().getCurrentFrame().getSelf(), callType))) {
+              method.isCallableFrom(getRuntime().getCurrentContext().getFrameSelf(), callType))) {
             if (callType == CallType.SUPER) {
                 throw getRuntime().newNameError("super: no superclass method '" + name + "'");
             }
@@ -436,7 +440,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     public IRubyObject eval(Node n) {
         //return new EvaluationState(getRuntime(), this).begin(n);
         // need to continue evaluation with a new self, so save the old one (should be a stack?)
-        EvaluationState state = getRuntime().getCurrentContext().getCurrentFrame().getEvalState();
+        EvaluationState state = getRuntime().getCurrentContext().getFrameEvalState();
         IRubyObject oldSelf = state.getSelf();
         state.setSelf(this);
         try {
@@ -448,11 +452,12 @@ public class RubyObject implements Cloneable, IRubyObject {
 
     public void callInit(IRubyObject[] args) {
         ThreadContext tc = getRuntime().getCurrentContext();
-        tc.pushIter(tc.isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
+        
+        tc.setIfBlockAvailable();
         try {
             callMethod("initialize", args);
         } finally {
-            tc.popIter();
+            tc.clearIfBlockAvailable();
         }
     }
 
@@ -528,8 +533,8 @@ public class RubyObject implements Cloneable, IRubyObject {
     public void checkSafeString() {
         if (getRuntime().getSafeLevel() > 0 && isTaint()) {
             ThreadContext tc = getRuntime().getCurrentContext();
-            if (tc.getCurrentFrame().getLastFunc() != null) {
-                throw getRuntime().newSecurityError("Insecure operation - " + tc.getCurrentFrame().getLastFunc());
+            if (tc.getFrameLastFunc() != null) {
+                throw getRuntime().newSecurityError("Insecure operation - " + tc.getFrameLastFunc());
             }
             throw getRuntime().newSecurityError("Insecure operation: -r");
         }
@@ -555,7 +560,7 @@ public class RubyObject implements Cloneable, IRubyObject {
 		if (args.length == 0) {
 		    throw getRuntime().newArgumentError("block not supplied");
 		} else if (args.length > 3) {
-		    String lastFuncName = tc.getCurrentFrame().getLastFunc();
+		    String lastFuncName = tc.getFrameLastFunc();
 		    throw getRuntime().newArgumentError(
 		        "wrong # of arguments: " + lastFuncName + "(src) or " + lastFuncName + "{..}");
 		}
@@ -590,11 +595,11 @@ public class RubyObject implements Cloneable, IRubyObject {
             public IRubyObject execute(IRubyObject self, IRubyObject[] args) {
                 IRubyObject source = args[1];
                 IRubyObject filename = args[2];
-                IRubyObject lineNumber = args[3];
-                return args[0].eval(source,
-                                  self.getRuntime().getNil(),
-                                  ((RubyString) filename).toString(),
-                                  RubyNumeric.fix2int(lineNumber));
+                // FIXME: lineNumber is not supported
+                //IRubyObject lineNumber = args[3];
+                
+                return args[0].evalSimple(source,
+                                  ((RubyString) filename).toString());
             }
 
             public Arity getArity() {
@@ -615,7 +620,7 @@ public class RubyObject implements Cloneable, IRubyObject {
                 try {
                     IRubyObject valueInYield = args[0];
                     IRubyObject selfInYield = args[0];
-                    return context.yield(valueInYield, selfInYield, context.getRubyClass(), false, false);
+                    return context.yieldCurrentBlock(valueInYield, selfInYield, context.getRubyClass(), false);
                     //TODO: Should next and return also catch here?
                 } catch (JumpException je) {
                 	if (je.getJumpType() == JumpException.JumpType.BreakJump) {
@@ -636,62 +641,89 @@ public class RubyObject implements Cloneable, IRubyObject {
         }, new IRubyObject[] { this });
     }
 
-    public IRubyObject eval(IRubyObject src, IRubyObject scope, String file, int line) {
+    /* (non-Javadoc)
+     * @see org.jruby.runtime.builtin.IRubyObject#evalWithBinding(org.jruby.runtime.builtin.IRubyObject, org.jruby.runtime.builtin.IRubyObject, java.lang.String)
+     */
+    public IRubyObject evalWithBinding(IRubyObject src, IRubyObject scope, String file) {
+        // both of these are ensured by the (very few) callers
+        assert !scope.isNil();
+        assert file != null;
+        
         ThreadContext threadContext = getRuntime().getCurrentContext();
         
-        ISourcePosition savedPosition = null;
-        Iter iter = null;
+        ISourcePosition savedPosition = threadContext.getPosition();
         IRubyObject oldSelf = null;
         EvaluationState state = null;
-        
         IRubyObject result = getRuntime().getNil();
         
-        try {
-            savedPosition = threadContext.getPosition();
-            iter = threadContext.getCurrentFrame().getIter();
-            
-            // make sure we have a file
-            if (file == null) {
-                file = threadContext.getSourceFile();
-            }
-            
-            if (scope instanceof RubyProc) {
-            	scope = ((RubyProc) scope).binding();
-            }
-            IRubyObject newSelf = null;
-            if (scope.isNil() || !(scope instanceof RubyBinding)) {
-                if (threadContext.getPreviousFrame() != null) {
-                    threadContext.getCurrentFrame().setIter(threadContext.getPreviousFrame().getIter());
-                }
-                newSelf = this;
-            } else {
-                // Binding provided for scope, use it
-                threadContext.preEvalWithBinding((RubyBinding)scope);
-                
-                newSelf = threadContext.getCurrentFrame().getSelf();
-            }
+        IRubyObject newSelf = null;
 
-            state = threadContext.getCurrentFrame().getEvalState();
+        if (!(scope instanceof RubyBinding)) {
+            if (scope instanceof RubyProc) {
+                scope = ((RubyProc) scope).binding();
+            } else {
+                // bomb out, it's not a binding or a proc
+                throw getRuntime().newTypeError("wrong argument type " + scope.getMetaClass() + " (expected Proc/Binding)");
+            }
+        }
+        
+        try {
+            // Binding provided for scope, use it
+            threadContext.preEvalWithBinding((RubyBinding)scope);            
+            newSelf = threadContext.getFrameSelf();
+
+            state = threadContext.getFrameEvalState();
             oldSelf = state.getSelf();
             state.setSelf(newSelf);
             
-            Node node = getRuntime().parse(src.toString(), file);
-            
-            result = state.begin(node);
+            result = state.begin(getRuntime().parse(src.toString(), file));
         } finally {
             // return the eval state to its original self
             state.setSelf(oldSelf);
-            
-            if (scope.isNil() || !(scope instanceof RubyBinding)) {
-//              FIXME: this is broken for Proc, see above
-                threadContext.getCurrentFrame().setIter(iter);
-            } else if (scope instanceof RubyBinding) {
-                threadContext.postEvalWithBinding();
-            }
+            threadContext.postEvalWithBinding();
             
             // restore position
             threadContext.setPosition(savedPosition);
         }
+        return result;
+    }
+
+    /* (non-Javadoc)
+     * @see org.jruby.runtime.builtin.IRubyObject#evalSimple(org.jruby.runtime.builtin.IRubyObject, java.lang.String)
+     */
+    public IRubyObject evalSimple(IRubyObject src, String file) {
+        // this is ensured by the callers
+        assert file != null;
+        
+        ThreadContext threadContext = getRuntime().getCurrentContext();
+        
+        ISourcePosition savedPosition = threadContext.getPosition();
+        // no binding, just eval in "current" frame (caller's frame)
+        Iter iter = threadContext.getFrameIter();
+        EvaluationState state = threadContext.getFrameEvalState();
+        IRubyObject oldSelf = state.getSelf();
+        IRubyObject result = getRuntime().getNil();
+        
+        try {
+            // hack to avoid using previous frame if we're the first frame, since this eval is used to start execution too
+            if (threadContext.getPreviousFrame() != null) {
+                threadContext.setFrameIter(threadContext.getPreviousFrameIter());
+            }
+            
+            state.setSelf(this);
+            
+            result = state.begin(getRuntime().parse(src.toString(), file));
+        } finally {
+            // return the eval state to its original self
+            state.setSelf(oldSelf);
+            
+            // FIXME: this is broken for Proc, see above
+            threadContext.setFrameIter(iter);
+            
+            // restore position
+            threadContext.setPosition(savedPosition);
+        }
+        
         return result;
     }
 
@@ -984,10 +1016,6 @@ public class RubyObject implements Cloneable, IRubyObject {
         return getMetaClass().newMethod(this, symbol.asSymbol(), true);
     }
 
-    public RubyArray to_a() {
-        return getRuntime().newArray(this);
-    }
-
     protected IRubyObject anyToString() {
         String cname = getMetaClass().getRealClass().getName();
         /* 6:tags 16:addr 1:eos */
@@ -1078,13 +1106,14 @@ public class RubyObject implements Cloneable, IRubyObject {
 
         IRubyObject[] newArgs = new IRubyObject[args.length - 1];
         System.arraycopy(args, 1, newArgs, 0, newArgs.length);
+        
         ThreadContext tc = getRuntime().getCurrentContext();
-
-        tc.pushIter(tc.isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
+        
+        tc.setIfBlockAvailable();
         try {
             return callMethod(name, newArgs, CallType.FUNCTIONAL);
         } finally {
-            tc.popIter();
+            tc.clearIfBlockAvailable();
         }
     }
     

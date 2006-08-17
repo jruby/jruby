@@ -66,7 +66,6 @@ import org.jruby.parser.Parser;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.Frame;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ObjectSpace;
@@ -168,19 +167,7 @@ public final class Ruby implements IRuby {
     	this.in = in;
     	this.out = out;
     	this.err = err;
-    	init();
     }
-    
-    /**
-     * Retrieve mappings of cached methods to where they have been cached.  When a cached
-     * method needs to be invalidated this map can be used to remove all places it has been
-     * cached.
-     * 
-     * @return the mappings of where cached methods have been stored
-     */
-	public CacheMap getCacheMap() {
-		return cacheMap;
-	}
 
     /**
      * Returns a default instance of the JRuby runtime.
@@ -188,7 +175,10 @@ public final class Ruby implements IRuby {
      * @return the JRuby runtime
      */
     public static IRuby getDefaultInstance() {
-        return new Ruby(System.in, System.out, System.err);
+        Ruby ruby = new Ruby(System.in, System.out, System.err);
+        ruby.init();
+        
+        return ruby;
     }
 
     /**
@@ -197,7 +187,10 @@ public final class Ruby implements IRuby {
      * @return the JRuby runtime
      */
     public static IRuby newInstance(InputStream in, PrintStream out, PrintStream err) {
-        return new Ruby(in, out, err);
+        Ruby ruby = new Ruby(in, out, err);
+        ruby.init();
+        
+        return ruby;
     }
 
     /**
@@ -209,9 +202,7 @@ public final class Ruby implements IRuby {
 
     public IRubyObject eval(Node node) {
         try {
-            // in all cases where this is called, Ruby() and init() will have prepared an EvalState to use in the frame
-            //return new EvaluationState(this, topSelf).begin(node);
-            return getCurrentContext().getCurrentFrame().getEvalState().begin(node);
+            return getCurrentContext().getFrameEvalState().begin(node);
         } catch (JumpException je) {
         	if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
 	            return (IRubyObject)je.getSecondaryData();
@@ -342,8 +333,19 @@ public final class Ruby implements IRuby {
 
     public void secure(int level) {
         if (level <= safeLevel) {
-            throw newSecurityError("Insecure operation '" + getCurrentContext().getCurrentFrame().getLastFunc() + "' at level " + safeLevel);
+            throw newSecurityError("Insecure operation '" + getCurrentContext().getFrameLastFunc() + "' at level " + safeLevel);
         }
+    }
+    
+    /**
+     * Retrieve mappings of cached methods to where they have been cached.  When a cached
+     * method needs to be invalidated this map can be used to remove all places it has been
+     * cached.
+     * 
+     * @return the mappings of where cached methods have been stored
+     */
+    public CacheMap getCacheMap() {
+        return cacheMap;
     }
 
     /** rb_define_global_const
@@ -396,10 +398,7 @@ public final class Ruby implements IRuby {
         
         initLibraries();
         
-        
-        tc.preInit();
-
-        tc.setCurrentVisibility(Visibility.PRIVATE);
+        tc.preInitCoreClasses();
 
         initCoreClasses();
 
@@ -407,16 +406,11 @@ public final class Ruby implements IRuby {
 
         topSelf = TopSelfFactory.createTopSelf(this);
 
-        tc.pushRubyClass(objectClass);
-        tc.setCRef(getObject().getCRef());
-        
-        Frame frame = tc.getCurrentFrame();
-        frame.setSelf(topSelf);
-        frame.getEvalState().setSelf(topSelf);
-        
-        getObject().defineConstant("TOPLEVEL_BINDING", newBinding());
+        tc.preInitBuiltinClasses(objectClass, topSelf);
 
         initBuiltinClasses();
+        
+        getObject().defineConstant("TOPLEVEL_BINDING", newBinding());
         
         // Load additional definitions and hacks from etc.rb
         getLoadService().smartLoad("builtin/etc.rb");
@@ -788,9 +782,9 @@ public final class Ruby implements IRuby {
 	private void printErrorPos(PrintStream errorStream) {
         ThreadContext tc = getCurrentContext();
         if (tc.getSourceFile() != null) {
-            if (tc.getCurrentFrame().getLastFunc() != null) {
+            if (tc.getFrameLastFunc() != null) {
             	errorStream.print(tc.getPosition());
-            	errorStream.print(":in '" + tc.getCurrentFrame().getLastFunc() + '\'');
+            	errorStream.print(":in '" + tc.getFrameLastFunc() + '\'');
             } else if (tc.getSourceLine() != 0) {
                 errorStream.print(tc.getPosition());
             } else {

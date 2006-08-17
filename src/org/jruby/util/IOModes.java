@@ -15,6 +15,7 @@
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2006 Evan Buswell <evan@heron.sytes.net>
+ * Copyright (C) 2006 Dave Brosius <dbrosius@mebigfatguy.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -36,7 +37,7 @@ import org.jruby.IRuby;
  * @author enebo
  *
  */
-public class IOModes {
+public class IOModes implements Cloneable {
     public static final int RDONLY = 0;
     public static final int WRONLY = 1;
     public static final int RDWR = 2;
@@ -57,7 +58,12 @@ public class IOModes {
     }
     
     public Object clone() {
-    	return new IOModes(runtime, modes);
+        try {	
+    	    return super.clone();
+    	} catch (CloneNotSupportedException cnse) {
+    	    //won't happen
+    	    return null;
+    	}
     }
     
     public IOModes(IRuby runtime, String modesString) {

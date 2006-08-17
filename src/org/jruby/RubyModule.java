@@ -739,7 +739,7 @@ public class RubyModule extends RubyObject {
             name = name + "=";
             defineMethod(name, new Callback() {
                 public IRubyObject execute(IRubyObject self, IRubyObject[] args) {
-					IRubyObject[] fargs = runtime.getCurrentContext().getCurrentFrame().getArgs();
+					IRubyObject[] fargs = runtime.getCurrentContext().getFrameArgs();
 					
 			        if (fargs.length != 1) {
 			            throw runtime.newArgumentError("wrong # of arguments(" + fargs.length + "for 1)");
@@ -791,7 +791,7 @@ public class RubyModule extends RubyObject {
                 final ThreadContext context = getRuntime().getCurrentContext();
                 addMethod(name, new CallbackMethod(this, new Callback() {
 	                public IRubyObject execute(IRubyObject self, IRubyObject[] args) {
-				        return context.callSuper(context.getCurrentFrame().getArgs());
+				        return context.callSuper(context.getFrameArgs());
 	                }
 
 	                public Arity getArity() {

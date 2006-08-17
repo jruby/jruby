@@ -64,7 +64,7 @@ public class Block implements StackElement {
                          self,
                          context.getCurrentFrame(),
                          context.peekCRef(),
-                         context.getCurrentScope(),
+                         context.getFrameScope(),
                          context.getRubyClass(),
                          context.getCurrentIter(),
                          context.getCurrentDynamicVars());
@@ -109,12 +109,8 @@ public class Block implements StackElement {
         if (replacementSelf != null) {
             newBlock.self = replacementSelf;
         }
-        context.preBlockYield(newBlock);
-        try {
-            return context.yield(runtime.newArray(args), null, null, false, true);
-        } finally {
-            context.postBlockYield();
-        }
+
+        return context.yieldSpecificBlock(newBlock, runtime.newArray(args), null, null, true);
     }
 
     public Block cloneBlock() {

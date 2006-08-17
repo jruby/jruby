@@ -92,12 +92,12 @@ public final class DefaultMethod extends AbstractMethod {
 
         ThreadContext context = runtime.getCurrentContext();
         
-        Scope scope = context.getCurrentScope();
+        Scope scope = context.getFrameScope();
         if (body.getLocalNames() != null) {
             scope.resetLocalVariables(body.getLocalNames());
         }
         
-        if (argsNode.getBlockArgNode() != null && context.isBlockGivenAndAvailable()) {
+        if (argsNode.getBlockArgNode() != null && context.isBlockGiven()) {
             scope.setValue(argsNode.getBlockArgNode().getCount(), runtime.newProc());
         }
 
@@ -165,7 +165,7 @@ public final class DefaultMethod extends AbstractMethod {
                 for (int i = expectedArgsCount; i < args.length && iter.hasNext(); i++) {
                     //new AssignmentVisitor(new EvaluationState(runtime, receiver)).assign((Node)iter.next(), args[i], true);
 //                  in-frame EvalState should already have receiver set as self, continue to use it
-                    new AssignmentVisitor(tc.getCurrentFrame().getEvalState()).assign((Node)iter.next(), args[i], true);
+                    new AssignmentVisitor(tc.getFrameEvalState()).assign((Node)iter.next(), args[i], true);
                     expectedArgsCount++;
                 }
 
@@ -174,7 +174,7 @@ public final class DefaultMethod extends AbstractMethod {
                     //new EvaluationState(runtime, receiver).begin((Node)iter.next());
                     //EvaluateVisitor.getInstance().eval(receiver.getRuntime(), receiver, (Node)iter.next());
                     // in-frame EvalState should already have receiver set as self, continue to use it
-                    allArgs.add(tc.getCurrentFrame().getEvalState().begin((Node)iter.next()));
+                    allArgs.add(tc.getFrameEvalState().begin((Node)iter.next()));
                 }
             }
         }
@@ -199,7 +199,7 @@ public final class DefaultMethod extends AbstractMethod {
             }
         }
         
-        tc.getCurrentFrame().setArgs((IRubyObject[])allArgs.toArray(new IRubyObject[allArgs.size()]));
+        tc.setFrameArgs((IRubyObject[])allArgs.toArray(new IRubyObject[allArgs.size()]));
     }
 
     private void traceReturn(IRuby runtime, IRubyObject receiver, String name) {
@@ -207,7 +207,7 @@ public final class DefaultMethod extends AbstractMethod {
             return;
         }
 
-        ISourcePosition position = runtime.getCurrentContext().getPreviousFrame().getPosition();
+        ISourcePosition position = runtime.getCurrentContext().getPreviousFramePosition();
         runtime.callTraceFunction("return", position, receiver, name, getImplementationClass()); // XXX
     }
 

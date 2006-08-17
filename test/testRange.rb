@@ -47,3 +47,5 @@ test_member(false, az_excl, 'bb')
 ##### step #####
 test_exception(ArgumentError) { (1..2).step(-1) }
 
+test_equal(['A','B','C'],Array[*('A'..'C')])
+

@@ -42,6 +42,7 @@ import junit.framework.TestSuite;
 
 import org.jruby.IRuby;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -134,13 +135,13 @@ public class ScriptTestSuite extends TestSuite {
         	script.append("require 'test/minirunit'").append('\n');
         	script.append("$silentTests = true").append('\n');
         	script.append("test_load('").append(scriptName()).append("')").append('\n');
-            script.append("test_get_last_failed()").append('\n');
+            script.append("$failed").append('\n');
 
-            IRubyObject lastFailed = runtime.evalScript(script.toString());
+            RubyArray lastFailed = (RubyArray)runtime.evalScript(script.toString());
             
-            if (! lastFailed.isNil()) {
+            if (!lastFailed.isEmpty()) {
 				RubyString message = (RubyString) lastFailed.callMethod("to_s");
-                fail(message.toString());
+                fail(scriptName() + " failed, complete failure list follows:\n" + message.toString());
             }
 
             System.out.flush(); // Without a flush Ant will miss some of our output

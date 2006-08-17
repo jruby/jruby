@@ -12,6 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola.bini@ki.se>
+ * Copyright (C) 2006 Dave Brosius <dbrosius@mebigfatguy.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -57,7 +58,7 @@ public class ZlibInflate {
     }
 
     public void append(IRubyObject obj) {
-        append(obj.convertToString());
+        append(obj.convertToString().toString());
     }
 
     public void append(String obj) {
