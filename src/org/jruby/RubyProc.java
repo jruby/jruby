@@ -35,7 +35,6 @@ package org.jruby;
 
 import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Iter;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -81,7 +80,6 @@ public class RubyProc extends RubyObject {
 
         newProc.block = block.cloneBlock();
         newProc.wrapper = tc.getWrapper();
-        newProc.block.setIter(newProc.block.getNext() != null ? Iter.ITER_PRE : Iter.ITER_NOT);
         newProc.block.isLambda = isLambda;
         block.setBlockObject(newProc);
 

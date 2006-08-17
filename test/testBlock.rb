@@ -72,3 +72,25 @@ class B < A
 end
 
 test_equal("bar", B.new.foo { "bar" })
+
+# test blocks being available to procs (JRUBY-91)
+class Baz
+  def foo
+    bar do
+      qux
+    end
+  end
+
+  def bar(&block)
+    block.call
+  end
+
+  def qux
+    if block_given?
+      return false
+    end
+    return true
+  end
+end
+
+test_ok(Baz.new.foo { })
