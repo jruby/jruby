@@ -18,15 +18,15 @@ test_equal(1, t3 <=> t4)
 
 t = Time.at(0.5)
 test_equal(0, t.tv_sec)
-#test_equal(500_000, t.tv_usec)
+test_equal(500_000, t.tv_usec)
 
 t = Time.at(0.1)
 test_equal(0, t.tv_sec)
-#test_equal(100_000, t.tv_usec)
+test_equal(100_000, t.tv_usec)
 
 t = Time.at(0.9)
 test_equal(0, t.tv_sec)
-#test_equal(900_000, t.tv_usec)
+test_equal(900_000, t.tv_usec)
 
 # Time floors floating point values if explicit usecs provided (odd)
 t = Time.at(0.5, 500)

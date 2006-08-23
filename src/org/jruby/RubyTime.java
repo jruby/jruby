@@ -20,6 +20,7 @@
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2006 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2006 Ola Bini <ola.bini@ki.se>
+ * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -75,7 +76,7 @@ public class RubyTime extends RubyObject {
     }
     
     protected long getTimeInMillis() {
-        return cal.getTime().getTime();  // For JDK 1.4 we can use "cal.getTimeInMillis()"
+        return cal.getTimeInMillis();  // For JDK 1.4 we can use "cal.getTimeInMillis()"
     }
     
     public static RubyTime newTime(IRuby runtime, long milliseconds) {
