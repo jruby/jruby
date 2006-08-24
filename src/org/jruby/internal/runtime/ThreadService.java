@@ -14,6 +14,7 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -40,8 +41,8 @@ import org.jruby.runtime.ThreadContext;
 
 public class ThreadService {
     private IRuby runtime;
-    private ThreadContext mainContext = new ThreadContext(runtime);
-    private ThreadContextLocal localContext = new ThreadContextLocal(mainContext);
+    private ThreadContext mainContext;
+    private ThreadContextLocal localContext;
     private ThreadGroup rubyThreadGroup;
     private List rubyThreadList;
     private Thread mainThread;

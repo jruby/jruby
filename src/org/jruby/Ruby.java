@@ -19,6 +19,7 @@
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -87,7 +88,6 @@ import org.jruby.runtime.builtin.meta.ProcMetaClass;
 import org.jruby.runtime.builtin.meta.StringMetaClass;
 import org.jruby.runtime.builtin.meta.SymbolMetaClass;
 import org.jruby.runtime.builtin.meta.TimeMetaClass;
-import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.util.BuiltinScript;
 import org.jruby.util.JRubyFile;
@@ -539,12 +539,6 @@ public final class Ruby implements IRuby {
         errnoModule = defineModule("Errno");
         
         initErrnoErrors();
-
-        getLoadService().addAutoload("UnboundMethod", new IAutoloadMethod() {
-            public IRubyObject load(IRuby ruby, String name) {
-                return RubyUnboundMethod.defineUnboundMethodClass(ruby);
-            }
-        });
     }
 
     private void initBuiltinClasses() {
