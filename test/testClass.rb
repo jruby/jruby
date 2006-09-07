@@ -181,3 +181,22 @@ class TestClassVarAssignmentInSingleton
 end
 
 TestClassVarAssignmentInSingleton.bar
+
+# test define_method behavior to be working properly
+$foo_calls = []
+class BaseClass
+def foo
+$foo_calls << BaseClass
+end
+end
+
+class SubClass < BaseClass
+define_method(:foo) do
+$foo_calls << SubClass
+super
+end
+end
+
+x = SubClass.new
+test_no_exception { x.foo }
+test_equal([SubClass, BaseClass], $foo_calls)

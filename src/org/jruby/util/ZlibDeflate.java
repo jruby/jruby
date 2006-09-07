@@ -82,7 +82,7 @@ public class ZlibDeflate {
     }
 
     public IRubyObject set_dictionary(IRubyObject str) throws UnsupportedEncodingException {
-        flater.setDictionary(str.convertToString().toString().getBytes("ISO-8859-1"));
+        flater.setDictionary(str.convertToString().toString().getBytes("ISO8859_1"));
         
         return str;
     }
@@ -97,7 +97,7 @@ public class ZlibDeflate {
         if (null == str) {
             StringBuffer result = new StringBuffer();
             byte[] outp = new byte[1024];
-            byte[] buf = collected.toString().getBytes("ISO-8859-1");
+            byte[] buf = collected.toString().getBytes("ISO8859_1");
             collected = new StringBuffer();
             flater.setInput(buf);
             flater.finish();
@@ -113,7 +113,7 @@ public class ZlibDeflate {
             if (flush == FINISH) {
                 StringBuffer result = new StringBuffer();
                 byte[] outp = new byte[1024];
-                byte[] buf = collected.toString().getBytes("ISO-8859-1");
+                byte[] buf = collected.toString().getBytes("ISO8859_1");
                 collected = new StringBuffer();
                 flater.setInput(buf);
                 flater.finish();

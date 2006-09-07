@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2005 David Corbin <dcorbin@users.sourceforge.net>
+ * Copyright (C) 2006 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -25,32 +25,13 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+package org.jruby.runtime;
 
-package org.jruby.test;
+import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.ArrayList;
-
-import org.jruby.Ruby;
-import org.jruby.runtime.load.LoadService;
-
-
-public class TestLoadService extends TestRubyBase {
-
-    private LoadService loadService;
-    public void setUp() {
-        runtime = Ruby.getDefaultInstance();
-        loadService = (LoadService) runtime.getLoadService();
-        
-        loadService.init(new ArrayList());
-    }
-    
-    public void testRequireSocket() {
-        runtime.evalScript("require 'socket'");
-    }
-
-    public void testExtensionLoader() {
-        BasicLibraryTestService.counter = 0;
-        runtime.evalScript("require 'org/jruby/test/basic_library_test'");
-        assertEquals("The library should've have been loaded", BasicLibraryTestService.counter, 1);
-    }
-}
+/**
+ * A simple interface for creating a callback using JRuby's block logic.
+ */
+public interface BlockCallback {
+    IRubyObject call(IRubyObject[] args, IRubyObject replacementSelf);
+ }

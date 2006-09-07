@@ -33,6 +33,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -43,6 +44,7 @@ import java.nio.channels.FileLock;
 
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.meta.FileMetaClass;
 import org.jruby.util.IOHandler;
 import org.jruby.util.IOHandlerNull;
 import org.jruby.util.IOHandlerSeekable;
@@ -198,6 +200,47 @@ public class RubyFile extends RubyIO {
 	    }
 	    return this;
 	}
+
+    public IRubyObject chmod(IRubyObject[] args) {
+        checkArgumentCount(args, 1, 1);
+        
+        RubyInteger mode = args[0].convertToInteger();
+        System.out.println(mode);
+        if (!new File(path).exists()) {
+            throw getRuntime().newErrnoENOENTError("No such file or directory - " + path);
+        }
+            
+        try {
+            Process chown = Runtime.getRuntime().exec("chmod " + FileMetaClass.OCTAL_FORMATTER.sprintf(mode.getLongValue()) + " " + path);
+            chown.waitFor();
+        } catch (IOException ioe) {
+            // FIXME: ignore?
+        } catch (InterruptedException ie) {
+            // FIXME: ignore?
+        }
+        
+        return getRuntime().newFixnum(0);
+    }
+
+    public IRubyObject chown(IRubyObject[] args) {
+        checkArgumentCount(args, 1, 1);
+        
+        RubyInteger owner = args[0].convertToInteger();
+        if (!new File(path).exists()) {
+            throw getRuntime().newErrnoENOENTError("No such file or directory - " + path);
+        }
+            
+        try {
+            Process chown = Runtime.getRuntime().exec("chown " + owner + " " + path);
+            chown.waitFor();
+        } catch (IOException ioe) {
+            // FIXME: ignore?
+        } catch (InterruptedException ie) {
+            // FIXME: ignore?
+        }
+        
+        return getRuntime().newFixnum(0);
+    }
 	
 	public RubyString path() {
 		return getRuntime().newString(path);

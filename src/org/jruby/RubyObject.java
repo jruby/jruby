@@ -285,6 +285,10 @@ public class RubyObject implements Cloneable, IRubyObject {
         getSingletonClass().defineMethod(name, method);
     }
 
+    public void addSingletonMethod(String name, ICallable method) {
+        getSingletonClass().addMethod(name, method);
+    }
+
     /* rb_init_ccopy */
     public void initCopy(IRubyObject original) {
         assert original != null;
@@ -325,19 +329,10 @@ public class RubyObject implements Cloneable, IRubyObject {
     public IRubyObject callMethod(RubyModule context, String name, IRubyObject[] args, 
             CallType callType) {
         assert args != null;
-        RubyModule implementer = null;
         ICallable method = null;
         
         method = context.searchMethod(name);
         
-        if (method.needsImplementer()) {
-            // modules are included with a shim class; we must find that shim to handle super() appropriately
-            implementer = context.findImplementer(name);
-        } else {
-            // classes are directly in the hierarchy, so no special logic is necessary for implementer
-            implementer = method.getImplementationClass();
-        }
-
         if (method.isUndefined() ||
             !(name.equals("method_missing") ||
               method.isCallableFrom(getRuntime().getCurrentContext().getFrameSelf(), callType))) {
@@ -359,8 +354,15 @@ public class RubyObject implements Cloneable, IRubyObject {
             return callMethod("method_missing", newArgs);
         }
         
-        //System.out.println("method " + name + " found in " + (implementer.isIncluded()?"included module ":"module or class ") + implementer.getName());
-
+        RubyModule implementer = null;
+        if (method.needsImplementer()) {
+            // modules are included with a shim class; we must find that shim to handle super() appropriately
+            implementer = context.findImplementer(method.getImplementationClass());
+        } else {
+            // classes are directly in the hierarchy, so no special logic is necessary for implementer
+            implementer = method.getImplementationClass();
+        }
+        
         String originalName = method.getOriginalName();
         if (originalName != null) {
             name = originalName;
@@ -680,7 +682,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         } finally {
             // return the eval state to its original self
             state.setSelf(oldSelf);
-            threadContext.postEvalWithBinding();
+            threadContext.postBoundEvalOrYield();
             
             // restore position
             threadContext.setPosition(savedPosition);

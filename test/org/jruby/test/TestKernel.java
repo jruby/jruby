@@ -65,7 +65,7 @@ public class TestKernel extends TestRubyBase {
         assertEquals("failed to load the file test/loadTest", "0", eval("require 'test/loadTest'"));
         assertEquals("incorrectly reloaded the file test/loadTest", "", eval("require 'test/loadTest'"));
 
-        assertEquals("incorrect value for $\" variable", "test/loadTest", eval("print $\""));
+        assertEquals("incorrect value for $\" variable", "test/loadTest.rbbuiltin/etc.rb.ast.ser", eval("print $\""));
     }
 
     public void testPrintf() throws Exception {

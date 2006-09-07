@@ -51,6 +51,10 @@ public class ReflectionCallbackFactory extends CallbackFactory {
     public Callback getMethod(String method, Class arg1, Class arg2) {
         return new ReflectionCallback(type, method, new Class[] { arg1, arg2 }, false, false, Arity.fixed(2));
     }
+    
+    public Callback getMethod(String method, Class arg1, Class arg2, Class arg3) {
+        return new ReflectionCallback(type, method, new Class[] { arg1, arg2, arg3 }, false, false, Arity.fixed(3));
+    }
 
     public Callback getSingletonMethod(String method) {
         return new ReflectionCallback(type, method, NULL_CLASS_ARRAY, false, true, Arity.noArguments());

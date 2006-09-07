@@ -56,6 +56,10 @@ public class JarredScript implements Library {
         this.resource = resource;
     }
 
+    public LoadServiceResource getResource() {
+        return this.resource;
+    }
+
     public void load(IRuby runtime) {
         URL jarFile = resource.getURL();
 

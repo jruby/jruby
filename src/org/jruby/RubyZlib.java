@@ -536,7 +536,7 @@ public class RubyZlib {
 
         public IRubyObject write(IRubyObject p1) throws IOException {
             String str = p1.toString();
-            io.write(str.getBytes("PLAIN"));
+            io.write(str.getBytes("ISO8859_1"));
             return getRuntime().newFixnum(str.length());
         }
     }

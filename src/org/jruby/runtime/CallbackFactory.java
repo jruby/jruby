@@ -66,6 +66,16 @@ public abstract class CallbackFactory {
      * @return a CallBack object corresponding to the appropriate method
      **/
     public abstract Callback getMethod(String method, Class arg1, Class arg2);
+    
+    /**
+     * gets an instance method with two arguments.
+     * @param method name of the method
+     * @param arg1 the java class of the first argument for this method
+     * @param arg2 the java class of the second argument for this method
+     * @param arg3 the java class of the second argument for this method
+     * @return a CallBack object corresponding to the appropriate method
+     **/
+    public abstract Callback getMethod(String method, Class arg1, Class arg2, Class arg3);
 
     /**
      * gets a singleton (class) method without arguments.

@@ -282,7 +282,7 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
             return 0;
         }
         
-        output.write(buf.getBytes());
+        output.write(buf.getBytes("ISO8859_1"));
 
         // Should syswrite sync?
         if (isSync) {
@@ -290,6 +290,25 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
         }
             
         return buf.length();
+    }
+
+    /**
+     * @throws IOException 
+     * @throws BadDescriptorException 
+     * @see org.jruby.util.IOHandler#syswrite(String buf)
+     */
+    public int syswrite(int c) throws IOException, BadDescriptorException {
+        getRuntime().secure(4);
+        checkWriteable();
+        
+        output.write(c);
+
+        // Should syswrite sync?
+        if (isSync) {
+            sync();
+        }
+            
+        return c;
     }
     
     public void truncate(long newLength) throws IOException, PipeException {

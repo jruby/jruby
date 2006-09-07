@@ -29,7 +29,6 @@
 package org.jruby.util;
 
 import org.jruby.IRuby;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyString;
 import org.jruby.RubyIO;
 
@@ -145,15 +144,19 @@ public class IOHandlerNio extends IOHandler {
         checkWritable();
         outBuffer.flip();
         flushOutBuffer();
-	
+    
         ByteBuffer buffer = ByteBuffer.wrap(RubyString.stringToBytes(string));
         while (buffer.hasRemaining()) {
-	    if (((WritableByteChannel) channel).write(buffer) < 0) {
-	        // does this ever happen??
-	        throw new IOException("write returned less than zero");
-	    }
+        if (((WritableByteChannel) channel).write(buffer) < 0) {
+            // does this ever happen??
+            throw new IOException("write returned less than zero");
+        }
         }
         return buffer.capacity();
+    }
+    
+    public int syswrite(int c) throws BadDescriptorException, IOException {
+        return syswrite(Character.toString((char)c));
     }
     
     public String recv(int length) throws EOFException, BadDescriptorException, IOException {

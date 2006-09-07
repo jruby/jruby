@@ -59,7 +59,7 @@ public final class IncludedModuleWrapper extends RubyClass {
      * @see org.jruby.RubyModule#newIncludeClass(RubyClass)
      */
     public IncludedModuleWrapper newIncludeClass(RubyClass superClass) {
-        IncludedModuleWrapper includedModule = new IncludedModuleWrapper(getRuntime(), superClass, getDelegate());
+        IncludedModuleWrapper includedModule = new IncludedModuleWrapper(getRuntime(), superClass, getNonIncludedClass());
         
         // include its parent (and in turn that module's parents)
         if (getSuperClass() != null) {
@@ -109,11 +109,15 @@ public final class IncludedModuleWrapper extends RubyClass {
 		return delegate.getName();
     }
 
-    public RubyModule getDelegate() {
+    public RubyModule getNonIncludedClass() {
         return delegate;
     }
     
     public RubyClass getRealClass() {
         return getSuperClass().getRealClass();
+    }
+
+    public boolean isSame(RubyModule module) {
+        return delegate.isSame(module);
     }
 }

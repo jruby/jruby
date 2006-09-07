@@ -251,10 +251,10 @@ module Gem
         path_to_ruby = File.join(Config::CONFIG['bindir'], Config::CONFIG['ruby_install_name'])
         if first_line =~ /^#!/
           # Preserve extra words on shebang line, like "-w".  Thanks RPA.
-          shebang = first_line.sub(/\A\#!\s*\S*ruby\S*/, "#!" + path_to_ruby)
+          shebang = first_line.sub(/\A\#!\s*\S*ruby\S*/, "#!/usr/bin/env " + path_to_ruby)
         else
           # Create a plain shebang line.
-          shebang = "#!" + path_to_ruby
+          shebang = "#!/usr/bin/env " + path_to_ruby
         end
         return shebang.strip  # Avoid nasty ^M issues.
       end

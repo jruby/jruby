@@ -842,7 +842,7 @@ public class Pack {
                         String toUnpack = encode.nextSubstring(occurrences);
                         String lUtf8 = null;
                         try {
-                            lUtf8 = new String(toUnpack.getBytes("iso8859-1"), "UTF-8");
+                            lUtf8 = new String(toUnpack.getBytes("ISO8859_1"), "UTF8");
                         } catch (java.io.UnsupportedEncodingException e) {
                             assert false : "can't convert from UTF8";
                         }
@@ -1555,7 +1555,7 @@ public class Pack {
                        }
                     
                     try {
-                        byte[] bytes = new String(c).getBytes("UTF-8");
+                        byte[] bytes = new String(c).getBytes("UTF8");
                         result.append(RubyString.bytesToString(bytes));
                     } catch (java.io.UnsupportedEncodingException e) {
                         assert false : "can't convert to UTF8";

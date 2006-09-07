@@ -81,7 +81,7 @@ public class JavaSupport {
     }
     
     public void addToClasspath(URL url) {
-        javaClassLoader = new URLClassLoader(new URL[] { url }, javaClassLoader);
+        javaClassLoader = URLClassLoader.newInstance(new URL[] { url }, javaClassLoader);
     }
 
     public void defineExceptionHandler(String exceptionClass, RubyProc handler) {

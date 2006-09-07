@@ -43,7 +43,6 @@ import java.util.TimeZone;
 
 import org.jruby.IRuby;
 import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
@@ -206,7 +205,7 @@ public class TimeMetaClass extends ObjectMetaClass {
         calendar.setTimeZone(TimeZone.getTimeZone(RubyTime.UTC));
         byte[] fromAsBytes = null;
         try {
-            fromAsBytes = from.toString().getBytes("iso8859-1");
+            fromAsBytes = from.toString().getBytes("ISO8859_1");
         } catch(final java.io.UnsupportedEncodingException uee) {
             throw getRuntime().newTypeError("marshaled time format differ");
         }

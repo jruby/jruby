@@ -584,6 +584,8 @@ public final class EvaluateVisitor implements NodeVisitor {
             if (iVisited.getCaseNode() != null) {
                 expression = state.begin(iVisited.getCaseNode());
             }
+
+            state.getThreadContext().pollThreadEvents();
             
             Node firstWhenNode = iVisited.getFirstWhenNode();
             while (firstWhenNode != null) {
@@ -638,6 +640,8 @@ public final class EvaluateVisitor implements NodeVisitor {
                         return;
                     }
                 }
+
+                state.getThreadContext().pollThreadEvents();
                 
                 firstWhenNode = whenNode.getNextCase();
             }
@@ -1079,6 +1083,8 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class FalseNodeVisitor implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
             state.setResult(state.runtime.getFalse());
+
+            state.getThreadContext().pollThreadEvents();
     	}
     }
     private static final FalseNodeVisitor falseNodeVisitor = new FalseNodeVisitor();
@@ -1503,10 +1509,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     		for (Iterator i = l.iterator(); i.hasNext();) {
     			state.addInstruction((Node)i.next(), newlineNodeTraceVisitor);
     		}
-
-	        // FIXME: Poll from somewhere else in the code?
-	        state.getThreadContext().pollThreadEvents();
-	        
+            
     		// Newlines flush result (result from previous line is not available in next line...perhaps makes sense)
             state.clearResult();
     	}
@@ -1530,6 +1533,8 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class NextNodeVisitor implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
     		NextNode iVisited = (NextNode)ctx;
+
+            state.getThreadContext().pollThreadEvents();
             
             state.setResult(state.runtime.getNil());
             state.addInstruction(iVisited, nextThrower);
@@ -1634,6 +1639,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             receiver.callMethod(iVisited.getVariableName() + "=", value);
 
             state.setResult(value);
+            state.getThreadContext().pollThreadEvents();
     	}
     }
     private static final OpAsgnNodeVisitor opAsgnNodeVisitor = new OpAsgnNodeVisitor();
@@ -1673,6 +1679,8 @@ public final class EvaluateVisitor implements NodeVisitor {
             state.addBreakableInstruction(iVisited, optNNodeGets);
             state.addRedoMarker(iVisited.getBodyNode());
             state.addNodeInstruction(iVisited.getBodyNode());
+
+            state.getThreadContext().pollThreadEvents();
     	}
     }
     private static final OptNNodeVisitor optNNodeVisitor = new OptNNodeVisitor();
@@ -1700,6 +1708,8 @@ public final class EvaluateVisitor implements NodeVisitor {
     // Collapsed; exception is now an interpreter event trigger
     private static class RedoNodeVisitor implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
+            state.getThreadContext().pollThreadEvents();
+            
             // now used as an interpreter event
             JumpException je = new JumpException(JumpException.JumpType.RedoJump);
             
@@ -1745,6 +1755,8 @@ public final class EvaluateVisitor implements NodeVisitor {
     // Collapsed; exception is now an interpreter event trigger
     private static class RetryNodeVisitor implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
+            state.getThreadContext().pollThreadEvents();
+            
     		JumpException je = new JumpException(JumpException.JumpType.RetryJump);
 
             state.setCurrentException(je);
@@ -1837,6 +1849,8 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class SelfNodeVisitor implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
             state.setResult(state.getSelf());
+
+            state.getThreadContext().pollThreadEvents();
     	}
     }
     private static final SelfNodeVisitor selfNodeVisitor = new SelfNodeVisitor();
@@ -1928,6 +1942,8 @@ public final class EvaluateVisitor implements NodeVisitor {
     private static class TrueNodeVisitor implements Instruction {
     	public void execute(EvaluationState state, InstructionContext ctx) {
             state.setResult(state.runtime.getTrue());
+
+            state.getThreadContext().pollThreadEvents();
     	}
     }
     private static final TrueNodeVisitor trueNodeVisitor = new TrueNodeVisitor();
@@ -1974,6 +1990,8 @@ public final class EvaluateVisitor implements NodeVisitor {
                     
             state.addBreakableInstruction(iVisited, untilConditionCheck);
             state.addNodeInstruction(iVisited.getConditionNode());
+
+            state.getThreadContext().pollThreadEvents();
     	}
     }
     private static final UntilNodeVisitor untilNodeVisitor = new UntilNodeVisitor();
@@ -2029,6 +2047,8 @@ public final class EvaluateVisitor implements NodeVisitor {
                 state.addRedoMarker(iVisited.getBodyNode());
                 state.addNodeInstruction(iVisited.getBodyNode());
             }
+
+            state.getThreadContext().pollThreadEvents();
     	}
     }
     private static final WhileNodeVisitor whileNodeVisitor = new WhileNodeVisitor();

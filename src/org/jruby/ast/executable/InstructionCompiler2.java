@@ -451,8 +451,7 @@ public class InstructionCompiler2 implements NodeVisitor {
         // null class
         mv.visitInsn(Opcodes.POP);
         loadThreadContext();
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, THREADCONTEXT, "getCurrentFrame", "()Lorg/jruby/runtime/Frame;");
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/runtime/Frame", "getSelf", "()Lorg/jruby/runtime/builtin/IRubyObject;");
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, THREADCONTEXT, "getFrameSelf", "()Lorg/jruby/runtime/builtin/IRubyObject;");
         mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBYOBJECT, "getMetaClass", "()Lorg/jruby/RubyClass;");
         mv.visitJumpInsn(Opcodes.GOTO, l2);
         
@@ -503,8 +502,7 @@ public class InstructionCompiler2 implements NodeVisitor {
         mv.visitInsn(Opcodes.DUP);
         
         loadThreadContext();
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, THREADCONTEXT, "getCurrentFrame", "()Lorg/jruby/runtime/Frame;");
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, FRAME, "getSelf", "()Lorg/jruby/runtime/builtin/IRubyObject;");
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, THREADCONTEXT, "getFrameSelf", "()Lorg/jruby/runtime/builtin/IRubyObject;");
         
         Label l1 = new Label();
         Label l2 = new Label();
@@ -627,9 +625,8 @@ public class InstructionCompiler2 implements NodeVisitor {
     public Instruction visitFCallNode(FCallNode iVisited) {
         lineNumber(iVisited);
         loadThreadContext();
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, THREADCONTEXT, "getCurrentFrame", "()Lorg/jruby/runtime/Frame;");
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, FRAME, "getSelf", "()Lorg/jruby/runtime/builtin/IRubyObject;");
-
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, THREADCONTEXT, "getFrameSelf", "()Lorg/jruby/runtime/builtin/IRubyObject;");
+        
         mv.visitLdcInsn(iVisited.getName());
         
         loadThreadContext();
@@ -740,7 +737,7 @@ public class InstructionCompiler2 implements NodeVisitor {
         mv.visitInsn(Opcodes.DUP);
         
         loadThreadContext();
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, THREADCONTEXT, "getCurrentScope", "()Lorg/jruby/runtime/Scope;");
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, THREADCONTEXT, "getFrameScope", "()Lorg/jruby/runtime/Scope;");
         mv.visitInsn(Opcodes.SWAP);
         mv.visitLdcInsn(new Integer(iVisited.getCount()));
         mv.visitInsn(Opcodes.SWAP);
@@ -761,7 +758,7 @@ public class InstructionCompiler2 implements NodeVisitor {
         } else {
             loadThreadContext();
             mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
-                    THREADCONTEXT, "getCurrentScope",
+                    THREADCONTEXT, "getFrameScope",
                     "()Lorg/jruby/runtime/Scope;");
             mv.visitLdcInsn(new Integer(iVisited.getCount()));
             mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/runtime/Scope",

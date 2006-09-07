@@ -8,6 +8,7 @@ test_equal("Fri Dec 12 ", s[0])
 test_equal("Fri", s[1])
 test_equal("Dec", s[2])
 test_equal("12", s[3])
+test_equal(nil, s[4])
 test_equal("1975 14:39", s.post_match)
 test_equal("", s.pre_match)
 
@@ -36,6 +37,7 @@ test_equal(nil, s.getch)
 s = StringScanner.new('test string')
 test_equal(7, s.pos = 7)
 test_equal("ring", s.rest)
+test_exception(RangeError) { s.pos = 20 }
 
 ##### scan ######
 
@@ -66,3 +68,24 @@ test_equal(1, s.skip(/\s+/))
 test_equal(6, s.skip(/\w+/))
 test_equal(nil, s.skip(/./))
 
+##### scan_full, search_full ######
+s = StringScanner.new('test string')
+test_equal(4, s.scan_full(/\w+/, true, false))
+test_equal(4, s.pos)
+test_equal("test", s.matched)
+s.reset
+test_equal("test", s.scan_full(/\w+/, true, true))
+test_equal(4, s.pos)
+s.reset
+test_equal("test", s.scan_full(/\w+/, false, true))
+test_equal(0, s.pos)
+s.reset
+test_equal("test str", s.search_full(/r/, true, true))
+test_equal(8, s.pos)
+s.reset
+test_equal(8, s.search_full(/r/, true, false))
+test_equal(8, s.pos)
+test_equal("r", s.matched)
+s.reset
+test_equal("test str", s.search_full(/r/, false, true))
+test_equal(0, s.pos)

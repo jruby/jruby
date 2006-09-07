@@ -665,4 +665,8 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         }
         output.dumpInt(flags);
     }
+	
+	public Pattern getPattern() {
+		return this.pattern;
+	}
 }

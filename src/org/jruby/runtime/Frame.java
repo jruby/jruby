@@ -131,6 +131,14 @@ public class Frame {
     RubyModule getLastClass() {
         return lastClass;
     }
+    
+    public void setLastClass(RubyModule lastClass) {
+        this.lastClass = lastClass;
+    }
+    
+    public void setLastFunc(String lastFunc) {
+        this.lastFunc = lastFunc;
+    }
 
     /** Getter for property lastFunc.
      * @return Value of property lastFunc.
@@ -188,6 +196,7 @@ public class Frame {
         StringBuffer sb = new StringBuffer(50);
         sb.append(position != null ? position.toString() : "-1");
         sb.append(':');
+        sb.append(lastClass + " " + lastFunc);
         if (lastFunc != null) {
             sb.append("in ");
             sb.append(lastFunc);

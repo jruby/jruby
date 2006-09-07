@@ -55,7 +55,7 @@ public class RubyString extends RubyObject {
     // Default record seperator
     private static final String DEFAULT_RS = "\n";
 
-	private static final String encoding = "iso8859-1";
+	private static final String encoding = "ISO8859_1";
 
 	private StringBuffer value;
     private CharSequence chars;
@@ -192,7 +192,7 @@ public class RubyString extends RubyObject {
 	/** rb_str_new2
 	 *
 	 */
-	public static RubyString newString(IRuby runtime, String str) {
+	public static RubyString newString(IRuby runtime, CharSequence str) {
 		return new RubyString(runtime, str);
 	}
 

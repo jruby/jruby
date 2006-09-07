@@ -84,6 +84,10 @@ public class IOHandlerNull extends IOHandler {
         return buf.length();
     }
 
+    public int syswrite(int c) throws IOException, BadDescriptorException {
+        return 1;
+    }
+
     public IOHandler cloneIOHandler() throws IOException, PipeException, InvalidValueException {
         return new IOHandlerNull(getRuntime(), modes);
     }

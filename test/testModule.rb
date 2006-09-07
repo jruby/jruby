@@ -273,3 +273,19 @@ end
 end
 
 test_equal(:Mod1, Child.new.last_called)
+
+##### JRUBY-104: test super called from within a module-defined initialize #####
+module FooNew
+def initialize(); @inits ||= []; @inits << FooNew; super(); end
+end
+
+class ClassB
+def initialize(); @inits ||= []; @inits << ClassB; end
+end
+
+class ClassA < ClassB
+include FooNew
+def inits; @inits; end
+end
+
+test_equal([FooNew, ClassB], ClassA.new().inits)

@@ -79,6 +79,9 @@ class Socket < BasicSocket
     
     # constants webrick crashes without
     AI_PASSIVE = 1
+
+    # constants Rails > 1.1.4 ActiveRecord's default mysql adapter dies without during scaffold generation
+    SO_KEEPALIVE = 9
     
     # drb needs defined
     TCP_NODELAY = 1

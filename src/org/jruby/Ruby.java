@@ -62,6 +62,7 @@ import org.jruby.libraries.JRubyLibrary;
 import org.jruby.libraries.RbConfigLibrary;
 import org.jruby.libraries.SocketLibrary;
 import org.jruby.libraries.StringIOLibrary;
+import org.jruby.libraries.StringScannerLibrary;
 import org.jruby.libraries.ZlibLibrary;
 import org.jruby.parser.Parser;
 import org.jruby.runtime.Block;
@@ -88,6 +89,7 @@ import org.jruby.runtime.builtin.meta.ProcMetaClass;
 import org.jruby.runtime.builtin.meta.StringMetaClass;
 import org.jruby.runtime.builtin.meta.SymbolMetaClass;
 import org.jruby.runtime.builtin.meta.TimeMetaClass;
+import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.util.BuiltinScript;
 import org.jruby.util.JRubyFile;
@@ -97,7 +99,7 @@ import org.jruby.util.collections.SinglyLinkedList;
  * The jruby runtime.
  */
 public final class Ruby implements IRuby {
-	private static String[] BUILTIN_LIBRARIES = {"fcntl", "yaml", "etc", "nkf", "strscan"};
+	private static String[] BUILTIN_LIBRARIES = {"fcntl", "yaml", "etc", "nkf" };
     
 	private CacheMap cacheMap = new CacheMap();
     private ThreadService threadService = new ThreadService(this);
@@ -429,6 +431,7 @@ public final class Ruby implements IRuby {
         
         loadService.registerBuiltin("jruby.rb", new JRubyLibrary());
         loadService.registerBuiltin("stringio.rb", new StringIOLibrary());
+        loadService.registerBuiltin("strscan.rb", new StringScannerLibrary());
         loadService.registerBuiltin("zlib.rb", new ZlibLibrary());
     }
 
@@ -464,7 +467,7 @@ public final class Ruby implements IRuby {
         RubyBoolean.createFalseClass(this);
         RubyBoolean.createTrueClass(this);
         RubyComparable.createComparable(this);
-        defineModule("Enumerable"); // Impl: src/builtin/enumerable.rb
+        RubyEnumerable.createEnumerableModule(this);
         stringClass = new StringMetaClass(this);
         stringClass.initializeClass();
         new SymbolMetaClass(this).initializeClass();
@@ -539,13 +542,18 @@ public final class Ruby implements IRuby {
         errnoModule = defineModule("Errno");
         
         initErrnoErrors();
+
+        getLoadService().addAutoload("UnboundMethod", new IAutoloadMethod() {
+            public IRubyObject load(IRuby ruby, String name) {
+                return RubyUnboundMethod.defineUnboundMethodClass(ruby);
+            }
+        });
     }
 
     private void initBuiltinClasses() {
     	try {
 	        new BuiltinScript("FalseClass").load(this);
 	        new BuiltinScript("TrueClass").load(this);
-	        new BuiltinScript("Enumerable").load(this);
     	} catch (IOException e) {
     		throw new Error("builtin scripts are missing", e);
     	}

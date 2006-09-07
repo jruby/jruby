@@ -48,7 +48,7 @@ public final class DynamicVariableSet {
 
     // Largest size observed in simple example code was 6, so we use
     // the next power of 2.
-    private static final int INITIAL_SIZE = 8;
+    private static final int INITIAL_SIZE = 4;
 
     private String[] names;
     private IRubyObject[] values;

@@ -153,6 +153,7 @@ public abstract class IOHandler {
     
     public abstract String sysread(int number) throws IOException, BadDescriptorException, EOFException;
     public abstract int syswrite(String buf) throws IOException, BadDescriptorException;
+    public abstract int syswrite(int ch) throws IOException, BadDescriptorException;
     
     public abstract IOHandler cloneIOHandler() throws IOException, PipeException, InvalidValueException;
     public abstract void close() throws IOException, BadDescriptorException;

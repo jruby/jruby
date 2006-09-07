@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2005 David Corbin <dcorbin@users.sourceforge.net>
+ * Copyright (C) 2006 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -25,32 +25,26 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+package org.jruby.internal.runtime.methods;
 
-package org.jruby.test;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.ArrayList;
-
-import org.jruby.Ruby;
-import org.jruby.runtime.load.LoadService;
-
-
-public class TestLoadService extends TestRubyBase {
-
-    private LoadService loadService;
-    public void setUp() {
-        runtime = Ruby.getDefaultInstance();
-        loadService = (LoadService) runtime.getLoadService();
-        
-        loadService.init(new ArrayList());
-    }
-    
-    public void testRequireSocket() {
-        runtime.evalScript("require 'socket'");
-    }
-
-    public void testExtensionLoader() {
-        BasicLibraryTestService.counter = 0;
-        runtime.evalScript("require 'org/jruby/test/basic_library_test'");
-        assertEquals("The library should've have been loaded", BasicLibraryTestService.counter, 1);
-    }
+/**
+ * A MultiStub enables reflection-like Java method invocation, but with the benefits of
+ * direct invocation (or as direct as INVOKEINTERFACE can be). By batching methods in
+ * groups of ten, we also minimize the number of classes necessary to handle all
+ * methods for a target class. 
+ */
+public interface MultiStub {
+    IRubyObject method0(ThreadContext tc, IRubyObject self, IRubyObject[] args);
+    IRubyObject method1(ThreadContext tc, IRubyObject self, IRubyObject[] args);
+    IRubyObject method2(ThreadContext tc, IRubyObject self, IRubyObject[] args);
+    IRubyObject method3(ThreadContext tc, IRubyObject self, IRubyObject[] args);
+    IRubyObject method4(ThreadContext tc, IRubyObject self, IRubyObject[] args);
+    IRubyObject method5(ThreadContext tc, IRubyObject self, IRubyObject[] args);
+    IRubyObject method6(ThreadContext tc, IRubyObject self, IRubyObject[] args);
+    IRubyObject method7(ThreadContext tc, IRubyObject self, IRubyObject[] args);
+    IRubyObject method8(ThreadContext tc, IRubyObject self, IRubyObject[] args);
+    IRubyObject method9(ThreadContext tc, IRubyObject self, IRubyObject[] args);
 }
