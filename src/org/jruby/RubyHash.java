@@ -74,7 +74,10 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     public RubyHash(IRuby runtime, IRubyObject defaultValue) {
-        this(runtime, new HashMap(), defaultValue);
+        super(runtime, runtime.getClass("Hash"));
+        this.valueMap = new HashMap();
+        this.capturedDefaultProc = runtime.getNil();
+        setDefaultValue(defaultValue);
     }
 
     public RubyHash(IRuby runtime, Map valueMap, IRubyObject defaultValue) {
