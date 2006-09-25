@@ -255,7 +255,8 @@ class TCPServer < TCPSocket
   end
   
   def listen(backlog)
-    @javaServerSocketChannel.socket.bind(@socket_address,backlog)
+    # Java's server socket does not allow us to change the backlog after it has already been bound
+    #@javaServerSocketChannel.socket.bind(@socket_address,backlog)
     0
   end
 end

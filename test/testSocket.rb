@@ -24,3 +24,6 @@ server_thread.join
 
 test_equal("Hello", server_read)
 test_equal("world!", client_read)
+
+serv = TCPServer.new('localhost',2203)
+test_no_exception { serv.listen(1024) } # fix for listen blowing up because it tried to rebind; it's a noop now
