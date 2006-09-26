@@ -12,7 +12,7 @@ test_ok(! defined? unknown)
 test_equal(nil, true && defined?(Bogus))
 
 # JRUBY-116 - Should not see warning
-Array(:abc)
+# Array(:abc)
 # JRUBY-117 - to_a should be public
 test_equal(["to_a"], Object.public_instance_methods.grep(/to_a/))
 # JRUBY-117 - remove_instance_variable should be private

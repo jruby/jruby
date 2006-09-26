@@ -52,7 +52,6 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.ICallable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -273,11 +272,6 @@ public class RubyKernel {
     }
 
     public static IRubyObject new_array(IRubyObject recv, IRubyObject object) {
-        ICallable method = recv.getMetaClass().searchMethod("to_a");
-        
-        if (method.getImplementationClass() == recv.getRuntime().getKernel()) {
-                return recv.getRuntime().newArray(recv);
-        }        
         return object.callMethod("to_a");
     }
     
