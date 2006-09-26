@@ -542,12 +542,6 @@ public final class Ruby implements IRuby {
         errnoModule = defineModule("Errno");
         
         initErrnoErrors();
-
-        getLoadService().addAutoload("UnboundMethod", new IAutoloadMethod() {
-            public IRubyObject load(IRuby ruby, String name) {
-                return RubyUnboundMethod.defineUnboundMethodClass(ruby);
-            }
-        });
     }
 
     private void initBuiltinClasses() {
