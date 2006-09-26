@@ -52,6 +52,7 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ICallable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -151,7 +152,7 @@ public class RubyKernel {
         module.defineAlias("eql?", "==");
         module.definePublicModuleFunction("to_s", objectCallbackFactory.getMethod("to_s"));
         module.definePublicModuleFunction("nil?", objectCallbackFactory.getMethod("nil_p"));
-        module.defineModuleFunction("to_a", callbackFactory.getSingletonMethod("to_a"));
+        module.definePublicModuleFunction("to_a", callbackFactory.getSingletonMethod("to_a"));
         module.definePublicModuleFunction("hash", objectCallbackFactory.getMethod("hash"));
         module.definePublicModuleFunction("id", objectCallbackFactory.getMethod("id"));
         module.defineAlias("__id__", "id");
@@ -180,7 +181,7 @@ public class RubyKernel {
         module.definePublicModuleFunction("private_methods", objectCallbackFactory.getMethod("private_methods"));
         module.definePublicModuleFunction("protected_methods", objectCallbackFactory.getMethod("protected_methods"));
         module.definePublicModuleFunction("public_methods", objectCallbackFactory.getOptMethod("public_methods"));
-        module.definePublicModuleFunction("remove_instance_variable", objectCallbackFactory.getMethod("remove_instance_variable", IRubyObject.class));
+        module.defineModuleFunction("remove_instance_variable", objectCallbackFactory.getMethod("remove_instance_variable", IRubyObject.class));
         module.definePublicModuleFunction("respond_to?", objectCallbackFactory.getOptMethod("respond_to"));
         module.definePublicModuleFunction("send", objectCallbackFactory.getOptMethod("send"));
         module.defineAlias("__send__", "send");
@@ -272,6 +273,11 @@ public class RubyKernel {
     }
 
     public static IRubyObject new_array(IRubyObject recv, IRubyObject object) {
+        ICallable method = recv.getMetaClass().searchMethod("to_a");
+        
+        if (method.getImplementationClass() == recv.getRuntime().getKernel()) {
+                return recv.getRuntime().newArray(recv);
+        }        
         return object.callMethod("to_a");
     }
     
