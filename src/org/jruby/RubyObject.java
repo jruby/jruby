@@ -809,7 +809,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
     
     public final int hashCode() {
-    	return RubyNumeric.fix2int(callMethod("hash"));
+    	return (int) RubyNumeric.fix2int(callMethod("hash"));
     }
 
     /** rb_obj_type
