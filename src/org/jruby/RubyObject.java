@@ -474,11 +474,30 @@ public class RubyObject implements Cloneable, IRubyObject {
         throw getRuntime().newTypeError(inspect().toString() + " is not a symbol");
     }
 
-    /** 
-     * Converts this object to type 'targetType' using 'convertMethod' method.
-     * 
-     * @see IRubyObject.convertToType
-	 */
+    /*
+     * @see org.jruby.runtime.builtin.IRubyObject#convertToTypeWithCheck(java.lang.String, java.lang.String)
+     */
+    public IRubyObject convertToTypeWithCheck(String targetType, String convertMethod) {
+        if (targetType.equals(getMetaClass().getName())) {
+            return this;
+        }
+        
+        IRubyObject value = convertToType(targetType, convertMethod, false);
+        if (value.isNil()) {
+            return value;
+        }
+        
+        if (!targetType.equals(value.getMetaClass().getName())) {
+            throw getRuntime().newTypeError(value.getMetaClass().getName() + "#" + convertMethod +
+                    "should return " + targetType);
+        }
+        
+        return value;
+    }
+    
+    /*
+     * @see org.jruby.runtime.builtin.IRubyObject#convertToType(java.lang.String, java.lang.String, boolean)
+     */
     public IRubyObject convertToType(String targetType, String convertMethod, boolean raise) {
         // No need to convert something already of the correct type.
         // XXXEnebo - Could this pass actual class reference instead of String?

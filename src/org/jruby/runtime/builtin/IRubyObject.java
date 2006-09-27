@@ -212,14 +212,24 @@ public interface IRubyObject {
     RubyString convertToString();
 
     /**
-     * Converts this object to type 'targetType' using 'convertMethod' method.
+     * Converts this object to type 'targetType' using 'convertMethod' method (MRI: convert_type).
      * 
      * @param targetType is the type we are trying to convert to
      * @param convertMethod is the method to be called to try and convert to targeType
      * @param raiseOnError will throw an Error if conversion does not work
+     * @return the converted value
      */
     IRubyObject convertToType(String targetType, String convertMethod, boolean raiseOnError);
 
+    /**
+     * Higher level conversion utility similiar to convertToType but it can throw an
+     * additional TypeError during conversion (MRI: rb_check_convert_type).
+     * 
+     * @param targetType is the type we are trying to convert to
+     * @param convertMethod is the method to be called to try and convert to targeType
+     * @return the converted value
+     */
+    IRubyObject convertToTypeWithCheck(String targetType, String convertMethod);
 
 
     /**

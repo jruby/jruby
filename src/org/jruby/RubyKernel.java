@@ -52,6 +52,7 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ICallable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -272,7 +273,24 @@ public class RubyKernel {
     }
 
     public static IRubyObject new_array(IRubyObject recv, IRubyObject object) {
-        return object.callMethod("to_a");
+        IRubyObject value = object.convertToTypeWithCheck("Array", "to_ary");
+        
+        if (value.isNil()) {
+            ICallable method = object.getMetaClass().searchMethod("to_a");
+            
+            if (method.getImplementationClass() == recv.getRuntime().getKernel()) {
+                return recv.getRuntime().newArray(object);
+            }
+            
+            // Strange that Ruby has custom code here and not convertToTypeWithCheck equivalent.
+            value = object.callMethod("to_a");
+            if (value.getMetaClass() != recv.getRuntime().getClass("Array")) {
+                throw recv.getRuntime().newTypeError("`to_a' did not return Array");
+               
+            }
+        }
+        
+        return value;
     }
     
     public static IRubyObject new_float(IRubyObject recv, IRubyObject object) {
