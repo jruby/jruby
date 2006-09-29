@@ -13,7 +13,7 @@
  *
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2004-2006 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -32,15 +32,20 @@ package org.jruby.runtime;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.List;
 
 import org.jruby.RubyModule;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- *
- * @author Anders
+ * FIXME: This version is faster than the previous, but both suffer from a
+ * crucial flaw: It is impossible to create an ObjectSpace with an iterator
+ * that doesn't either: a. hold on to objects that might otherwise be collected
+ * or b. have no way to guarantee that a call to hasNext() will be correct or
+ * that a subsequent call to next() will produce an object. For our purposes,
+ * for now, this may be acceptable.
  */
 public class ObjectSpace {
     private ReferenceQueue deadReferences = new ReferenceQueue();
@@ -51,11 +56,36 @@ public class ObjectSpace {
         top = new WeakReferenceListNode(object, deadReferences, top);
     }
 
-    public Iterator iterator(RubyModule rubyClass) {
-        return new ObjectSpaceIterator(rubyClass);
+    public synchronized Iterator iterator(RubyModule rubyClass) {
+    	final List objList = new ArrayList();
+    	WeakReferenceListNode current = top;
+    	while (current != null) {
+    		IRubyObject obj = (IRubyObject)current.get();
+    	    if (obj != null && obj.isKindOf(rubyClass)) {
+    	    	objList.add(current);
+    	    }
+    	    
+    	    current = current.next;
+    	}
+    	
+        return new Iterator() {
+        	private Iterator iter = objList.iterator();
+        	
+			public boolean hasNext() {
+				return iter.hasNext();
+			}
+
+			public Object next() {
+				return ((WeakReferenceListNode)iter.next()).get();
+			}
+
+			public void remove() {
+				throw new UnsupportedOperationException();
+			}
+        };
     }
 
-    private void cleanup() {
+    private synchronized void cleanup() {
         WeakReferenceListNode reference;
         while ((reference = (WeakReferenceListNode)deadReferences.poll()) != null) {
             reference.remove();
@@ -65,70 +95,24 @@ public class ObjectSpace {
     private class WeakReferenceListNode extends WeakReference {
         public WeakReferenceListNode prev;
         public WeakReferenceListNode next;
-        public WeakReferenceListNode(Object ref, ReferenceQueue queue, WeakReferenceListNode prev) {
+        public WeakReferenceListNode(Object ref, ReferenceQueue queue, WeakReferenceListNode next) {
             super(ref, queue);
             
-            this.prev = prev;
-            if (prev != null) {
-            	prev.next = this;
+            this.next = next;
+            if (next != null) {
+            	next.prev = this;
             }
         }
         
         public void remove() {
-            if (prev != null) {
-                prev.next = next;
-            }
-            if (next != null) {
-                next.prev = prev;
-            }
-        }
-    }
-
-    private class ObjectSpaceIterator implements Iterator {
-        private final RubyModule rubyClass;
-
-        private WeakReferenceListNode nextRef;
-        private IRubyObject nextObj;
-
-        public ObjectSpaceIterator(RubyModule rubyClass) {
-            this.rubyClass = rubyClass;
-            
-            nextRef = top;
-            
-            synchronized (ObjectSpace.this) {
-                prefetch();
-            }
-        }
-
-        public Object next() {
-            if (! hasNext()) {
-                throw new NoSuchElementException();
-            }
-            IRubyObject result = nextObj;
-            prefetch();
-            return result;
-        }
-
-        public boolean hasNext() {
-            return nextRef != null;
-        }
-
-        public void remove() {
-            throw new UnsupportedOperationException();
-        }
-
-        private void prefetch() {
-            while (true) {
-                if (nextRef == null || nextRef.next == null) {
-                    nextRef = null;
-                    return;
-                }
-                nextRef = (WeakReferenceListNode)nextRef.next;
-                nextObj = (IRubyObject) nextRef.get();
-                if (nextObj != null && nextObj.isKindOf(rubyClass)) {
-                    return;
-                }
-            }
+        	synchronized (ObjectSpace.this) {
+	            if (prev != null) {
+	                prev.next = next;
+	            }
+	            if (next != null) {
+	                next.prev = prev;
+	            }
+        	}
         }
     }
 }
