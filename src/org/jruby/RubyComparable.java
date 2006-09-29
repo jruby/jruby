@@ -16,6 +16,8 @@
  * Copyright (C) 2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
+ * Copyright (C) 2006 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -37,33 +39,17 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 /** Implementation of the Comparable module.
  *
- * @author  jpetersen
  */
 public class RubyComparable {
     public static RubyModule createComparable(IRuby runtime) {
         RubyModule comparableModule = runtime.defineModule("Comparable");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyComparable.class);
-        comparableModule.defineMethod(
-            "==",
-            callbackFactory.getSingletonMethod("equal", IRubyObject.class));
-        comparableModule.defineMethod(
-            ">",
-            callbackFactory.getSingletonMethod("op_gt", IRubyObject.class));
-        comparableModule.defineMethod(
-            ">=",
-            callbackFactory.getSingletonMethod("op_ge", IRubyObject.class));
-        comparableModule.defineMethod(
-            "<",
-            callbackFactory.getSingletonMethod("op_lt", IRubyObject.class));
-        comparableModule.defineMethod(
-            "<=",
-            callbackFactory.getSingletonMethod("op_le", IRubyObject.class));
-        comparableModule.defineMethod(
-            "between?",
-            callbackFactory.getSingletonMethod(
-                "between_p",
-                IRubyObject.class,
-                IRubyObject.class));
+        comparableModule.defineMethod("==", callbackFactory.getSingletonMethod("equal", IRubyObject.class));
+        comparableModule.defineMethod(">", callbackFactory.getSingletonMethod("op_gt", IRubyObject.class));
+        comparableModule.defineMethod(">=", callbackFactory.getSingletonMethod("op_ge", IRubyObject.class));
+        comparableModule.defineMethod("<", callbackFactory.getSingletonMethod("op_lt", IRubyObject.class));
+        comparableModule.defineMethod("<=", callbackFactory.getSingletonMethod("op_le", IRubyObject.class));
+        comparableModule.defineMethod("between?", callbackFactory.getSingletonMethod("between_p", IRubyObject.class, IRubyObject.class));
 
         return comparableModule;
     }
@@ -79,45 +65,68 @@ public class RubyComparable {
             	return result;
             }
             
-            if (RubyNumeric.fix2int(result) != 0) {
-                return recv.getRuntime().getFalse();
-            }
-            	
-            return recv.getRuntime().getTrue();
-        } catch (RaiseException rnExcptn) {
-        	RubyException raisedException = rnExcptn.getException();
+            return RubyNumeric.fix2int(result) != 0 ? recv.getRuntime().getFalse() : recv.getRuntime().getTrue(); 
+        } catch (RaiseException e) {
+        	RubyException raisedException = e.getException();
         	if (raisedException.isKindOf(recv.getRuntime().getClass("NoMethodError"))) {
         		return recv.getRuntime().getFalse();
         	} else if (raisedException.isKindOf(recv.getRuntime().getClass("NameError"))) {
         		return recv.getRuntime().getFalse();
         	}
-        	throw rnExcptn;
+        	throw e;
         }
     }
+    
+    
+    private static void cmperr(IRubyObject recv, IRubyObject other) {
+        String message = "comparison of " + recv.getType() + " with " + other.getType() + " failed";
+        throw recv.getRuntime().newArgumentError(message);
+    }
+    
 
     public static RubyBoolean op_gt(IRubyObject recv, IRubyObject other) {
-        return RubyNumeric.fix2int(recv.callMethod("<=>", other)) > 0 ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
+        // <=> may return nil in many circumstances, e.g. 3 <=> NaN
+        IRubyObject tmp = recv.callMethod("<=>", other);
+        
+        if (tmp.isNil()) {
+            cmperr(recv, other);
+        }
+
+        return RubyNumeric.fix2int(tmp) > 0 ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
     }
 
     public static RubyBoolean op_ge(IRubyObject recv, IRubyObject other) {
-        return RubyNumeric.fix2int(recv.callMethod("<=>", other)) >= 0 ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
+        IRubyObject tmp = recv.callMethod("<=>", other);
+        
+        if (tmp.isNil()) {
+            cmperr(recv, other);
+        }
+
+        return RubyNumeric.fix2int(tmp) >= 0 ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
     }
 
     public static RubyBoolean op_lt(IRubyObject recv, IRubyObject other) {
-        return RubyNumeric.fix2int(recv.callMethod("<=>", other)) < 0 ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
+        IRubyObject tmp = recv.callMethod("<=>", other);
+
+        if (tmp.isNil()) {
+            cmperr(recv, other);
+        }
+
+        return RubyNumeric.fix2int(tmp) < 0 ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
     }
 
     public static RubyBoolean op_le(IRubyObject recv, IRubyObject other) {
-        return RubyNumeric.fix2int(recv.callMethod("<=>", other)) <= 0 ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
+        IRubyObject tmp = recv.callMethod("<=>", other);
+
+        if (tmp.isNil()) {
+            cmperr(recv, other);
+        }
+
+        return RubyNumeric.fix2int(tmp) <= 0 ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
     }
 
     public static RubyBoolean between_p(IRubyObject recv, IRubyObject first, IRubyObject second) {
-        if (RubyNumeric.fix2int(recv.callMethod("<=>", first)) < 0) {
-            return recv.getRuntime().getFalse();
-        } else if (RubyNumeric.fix2int(recv.callMethod("<=>", second)) > 0) {
-            return recv.getRuntime().getFalse();
-        } else {
-            return recv.getRuntime().getTrue();
-        }
+        return recv.getRuntime().newBoolean(op_lt(recv, first).isFalse() && 
+                op_gt(recv, second).isFalse());
     }
 }

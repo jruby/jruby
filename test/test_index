@@ -65,6 +65,7 @@ testExpressions.rb
 testEnumerable.rb
 testSocket.rb
 testUnboundMethod.rb
+testComparable.rb
 
 # MRI Ruby tests (from sample/test.rb in Matz's Ruby Interpreter):
 

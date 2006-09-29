@@ -17,6 +17,7 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002-2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -206,13 +207,18 @@ public class RubyNumeric extends RubyObject {
      *
      */
     
-    protected IRubyObject[] getCoerced(IRubyObject other) {
+    protected IRubyObject[] getCoerced(IRubyObject other, boolean error) {
         IRubyObject result;
         
         try {
             result = other.callMethod("coerce", this);
         } catch (RaiseException e) {
-            throw getRuntime().newTypeError(other.getMetaClass().getName() + " can't be coerced into " + getMetaClass().getName());                
+            if (error) {
+                throw getRuntime().newTypeError(other.getMetaClass().getName() + 
+                        " can't be coerced into " + getMetaClass().getName());
+            }
+             
+            return null;
         }
         
         if (!(result instanceof RubyArray) || ((RubyArray)result).getLength() != 2) {
@@ -223,7 +229,7 @@ public class RubyNumeric extends RubyObject {
     }
 
     protected IRubyObject callCoerced(String method, IRubyObject other) {
-        IRubyObject[] args = getCoerced(other);
+        IRubyObject[] args = getCoerced(other, true);
 
         return args[0].callMethod(method, args[1]);
     }

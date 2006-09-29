@@ -19,6 +19,7 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -88,6 +89,18 @@ public class RubyFloat extends RubyNumeric {
         result.defineMethod("/", callbackFactory.getMethod("op_div", IRubyObject.class));
         result.defineMethod("%", callbackFactory.getMethod("op_mod", IRubyObject.class));
         result.defineMethod("**", callbackFactory.getMethod("op_pow", IRubyObject.class));
+        // Although not explicitly documented in the Pickaxe, Ruby 1.8 Float
+        // does have its own implementations of these relational operators.
+        // These appear to be necessary if for no oher reason than proper NaN
+        // handling.
+        result.defineMethod("==", callbackFactory.getMethod("equal", IRubyObject.class));
+        result.defineMethod("<=>", callbackFactory.getMethod("cmp",
+                IRubyObject.class));
+        result.defineMethod(">", callbackFactory.getMethod("op_gt",
+                IRubyObject.class));
+        result.defineMethod(">=", callbackFactory.getMethod("op_ge", IRubyObject.class));
+        result.defineMethod("<", callbackFactory.getMethod("op_lt", IRubyObject.class));
+        result.defineMethod("<=", callbackFactory.getMethod("op_le", IRubyObject.class));
         result.defineMethod("ceil", callbackFactory.getMethod("ceil"));
         result.defineMethod("finite?", callbackFactory.getMethod("finite_p"));
         result.defineMethod("floor", callbackFactory.getMethod("floor"));
@@ -320,4 +333,152 @@ public class RubyFloat extends RubyNumeric {
         return RubyFloat.newFloat(input.getRuntime(),
                                     Double.parseDouble(input.unmarshalString()));
     }
+    
+    /* flo_eq */
+    public IRubyObject equal(IRubyObject other) {
+        if (!(other instanceof RubyNumeric)) {
+            return other.callMethod("==", this);
+        }
+
+        double otherValue = ((RubyNumeric) other).getDoubleValue();
+        
+        if (other instanceof RubyFloat && Double.isNaN(otherValue)) {
+            return getRuntime().getFalse();
+        }
+        
+        return (value == otherValue) ? getRuntime().getTrue() : getRuntime().getFalse();
+    }
+    
+
+    /* flo_cmp */
+    public IRubyObject cmp(IRubyObject other) {
+        if (!(other instanceof RubyNumeric)) {
+            IRubyObject[] tmp = getCoerced(other, false);
+            if (tmp == null) {
+                return getRuntime().getNil();
+            }
+            return tmp[1].callMethod("<=>", tmp[0]);
+        }
+
+        return doubleCompare(((RubyNumeric) other).getDoubleValue());
+    }
+
+    
+    private void cmperr(IRubyObject other) {
+        String message = "comparison of " + this.getType() + " with " + other.getType() + " failed";
+
+        throw this.getRuntime().newArgumentError(message);
+    }
+
+    /* flo_gt */
+    public IRubyObject op_gt(IRubyObject other) {
+        if (Double.isNaN(value)) {
+            return getRuntime().getFalse();
+        }
+
+        if (!(other instanceof RubyNumeric)) {
+            IRubyObject[] tmp = getCoerced(other, false);
+            if (tmp == null) {
+                cmperr(other);
+            }
+            
+            return tmp[1].callMethod("<=>", tmp[0]);
+        }
+        
+        double oth = ((RubyNumeric) other).getDoubleValue();
+        
+        if (other instanceof RubyFloat && Double.isNaN(oth)) { 
+            return getRuntime().getFalse();
+        }
+        
+        return value > oth ? getRuntime().getTrue() : getRuntime().getFalse();
+    }
+    
+    /* flo_ge */
+    public IRubyObject op_ge(IRubyObject other) {
+        if (Double.isNaN(value)) {
+            return getRuntime().getFalse();
+        }
+
+        if (!(other instanceof RubyNumeric)) {
+            IRubyObject[] tmp = getCoerced(other, false);
+            if (tmp == null) {
+                cmperr(other);
+            }
+            
+            return tmp[1].callMethod("<=>", tmp[0]);
+        }
+        
+        double oth = ((RubyNumeric) other).getDoubleValue();
+        
+        if (other instanceof RubyFloat && Double.isNaN(oth)) { 
+            return getRuntime().getFalse();
+        }
+        
+        return value >= oth ? getRuntime().getTrue() : getRuntime().getFalse();
+    }
+
+    /* flo_lt */
+    public IRubyObject op_lt(IRubyObject other) {
+        if (Double.isNaN(value)) {
+            return getRuntime().getFalse();
+        }
+
+        if (!(other instanceof RubyNumeric)) {
+            IRubyObject[] tmp = getCoerced(other, false);
+            if (tmp == null) {
+                cmperr(other);
+            }
+            
+            return tmp[1].callMethod("<=>", tmp[0]);
+        }
+        
+        double oth = ((RubyNumeric) other).getDoubleValue();
+        
+        if (other instanceof RubyFloat && Double.isNaN(oth)) { 
+            return getRuntime().getFalse();
+        }
+        
+        return value < oth ? getRuntime().getTrue() : getRuntime().getFalse();
+    }
+
+    
+    /* flo_le */
+    public IRubyObject op_le(IRubyObject other) {
+        if (Double.isNaN(value)) {
+            return getRuntime().getFalse();
+        }
+
+        if (!(other instanceof RubyNumeric)) {
+            IRubyObject[] tmp = getCoerced(other, false);
+            if (tmp == null) {
+                cmperr(other);
+            }
+            
+            return tmp[1].callMethod("<=>", tmp[0]);
+        }
+        
+        double oth = ((RubyNumeric) other).getDoubleValue();
+        
+        if (other instanceof RubyFloat && Double.isNaN(oth)) { 
+            return getRuntime().getFalse();
+        }
+        
+        return value <= oth ? getRuntime().getTrue() : getRuntime().getFalse();
+    }
+
+    
+    /* dbl_cmp */
+    private IRubyObject doubleCompare(double oth) {
+        if (Double.isNaN(value) || Double.isNaN(oth)) {
+            return getRuntime().getNil();
+        }
+        
+        if (value == oth) {
+            return getRuntime().newFixnum(0);
+        }
+        
+        return value > oth ? getRuntime().newFixnum(1) : getRuntime().newFixnum(-1);
+    }
+    
 }
