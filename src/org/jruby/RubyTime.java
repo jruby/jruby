@@ -87,7 +87,12 @@ public class RubyTime extends RubyObject {
         
         return time;
     }
-
+    
+    public static RubyTime newTime(IRuby runtime, Calendar cal) {
+        RubyTime time = new RubyTime(runtime, runtime.getClass("Time"), cal);
+        
+        return time;
+    }
 
     public IRubyObject initialize_copy(IRubyObject original) {
         if (!(original instanceof RubyTime)) {
@@ -114,6 +119,18 @@ public class RubyTime extends RubyObject {
     
     public RubyBoolean gmt() {
         return getRuntime().newBoolean(cal.getTimeZone().getID().equals(UTC));
+    }
+    
+    public RubyTime getgm() {
+        Calendar newCal = (Calendar)cal.clone();
+        newCal.setTimeZone(TimeZone.getTimeZone(UTC));
+        return newTime(getRuntime(), newCal);
+    }
+    
+    public RubyTime getlocal() {
+        Calendar newCal = (Calendar)cal.clone();
+        newCal.setTimeZone(TimeZone.getDefault());
+        return newTime(getRuntime(), newCal);
     }
 
     public RubyString strftime(IRubyObject format) {

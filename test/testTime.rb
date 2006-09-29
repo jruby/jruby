@@ -47,3 +47,11 @@ test_equal(nil, t == nil)
 
 # Time.utc can accept float values (by turning them into ints)
 test_no_exception { Time::utc(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0) }
+
+# Test getgm/local/utc methods
+local = Time.now
+gmt = local.getgm
+local2 = gmt.getlocal
+utc = local2.getutc
+test_equal(local, local2)
+test_equal(gmt, utc)

@@ -81,7 +81,6 @@ public class TimeMetaClass extends ObjectMetaClass {
             defineSingletonMethod("gm", Arity.optional(), "new_utc"); 
             defineSingletonMethod("_load", Arity.singleArgument(), "s_load"); 
                     
-            // TODO: [JRuby-17] Missing getgm, getlocal, getutc (alias of getgm).
             defineMethod("===", Arity.singleArgument(), "same2");
             defineMethod("+", Arity.singleArgument(), "op_plus"); 
             defineMethod("-", Arity.singleArgument(), "op_minus"); 
@@ -122,6 +121,9 @@ public class TimeMetaClass extends ObjectMetaClass {
             defineMethod("gmt_offset", Arity.noArguments());
             defineAlias("gmtoff", "gmt_offset");
             defineAlias("utc_offset", "gmt_offset");
+            defineMethod("getgm", Arity.noArguments());
+            defineMethod("getlocal", Arity.noArguments());
+            defineAlias("getutc", "getgm");
         }
     };
     
