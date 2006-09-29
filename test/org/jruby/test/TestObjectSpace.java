@@ -74,17 +74,14 @@ public class TestObjectSpace extends TestCase {
         storedFixnums.add(o3);
 
         Iterator strings = os.iterator(runtime.getClass("String"));
-        assertTrue(strings.hasNext());
         assertSame(o4, strings.next());
-        assertTrue(! strings.hasNext());
+        assertEquals(null, strings.next());
 
         Iterator numerics = os.iterator(runtime.getClass("Numeric"));
         for (int i = 0; i < 3; i++) {
-            assertTrue(numerics.hasNext());
             Object item = numerics.next();
             assertTrue(storedFixnums.contains(item));
-            storedFixnums.remove(item);
         }
-        assertTrue(! numerics.hasNext());
+        assertEquals(null, numerics.next());
     }
 }
