@@ -72,11 +72,19 @@ public class ObjectSpace {
         	private Iterator iter = objList.iterator();
         	
 			public boolean hasNext() {
-				return iter.hasNext();
+			    throw new UnsupportedOperationException();
 			}
 
 			public Object next() {
-				return ((WeakReferenceListNode)iter.next()).get();
+                Object obj = null;
+                while (iter.hasNext()) {
+                    WeakReferenceListNode node = (WeakReferenceListNode)iter.next();
+                    
+                    obj = node.get();
+                    
+                    if (obj != null) break;
+                }
+				return obj;
 			}
 
 			public void remove() {
