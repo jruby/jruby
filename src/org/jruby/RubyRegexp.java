@@ -95,10 +95,13 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 		}
 
 		public int flags() {
+            int flags = 0;
 			if (this == UTF8) {
-				return Pattern.UNICODE_CASE;
+				flags |= Pattern.UNICODE_CASE;
 			}
-			return 0;
+            flags |= Pattern.UNIX_LINES;
+            
+			return flags;
 		}
 	}
 	

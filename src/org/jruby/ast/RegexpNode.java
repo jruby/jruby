@@ -81,7 +81,7 @@ public class RegexpNode extends Node implements ILiteralNode {
     
     public Pattern getPattern() {
         if (pattern == null) {
-            pattern = translator.translate(value, options, 0);
+            pattern = translator.translate(value, options, Pattern.UNIX_LINES);
         }
         return pattern;
     }

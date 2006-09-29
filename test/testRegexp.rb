@@ -88,3 +88,6 @@ a = []
   a.push ch if /a#{Regexp.quote ch}b/x =~ "ab" 
 }
 test_ok(a.size == 0)
+
+# test matching \r
+test_equal("\r", /./.match("\r")[0])
