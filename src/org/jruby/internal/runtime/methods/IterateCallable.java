@@ -15,6 +15,7 @@
  * Copyright (C) 2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -31,7 +32,9 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.IRuby;
+import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
@@ -42,12 +45,12 @@ import org.jruby.runtime.callback.Callback;
  */
 public class IterateCallable extends AbstractCallable {
     private Callback callback;
-    private IRubyObject data;
+    private RubyMethod method;
 
-    public IterateCallable(Callback callback, IRubyObject data) {
+    public IterateCallable(Callback callback, RubyMethod method) {
         super(null, null);
         this.callback = callback;
-        this.data = data;
+        this.method = method;
     }
 
     public void preMethod(IRuby runtime, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
@@ -57,10 +60,14 @@ public class IterateCallable extends AbstractCallable {
     }
 
     public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
-        return callback.execute(args[0], new IRubyObject[] { data, receiver });
+        return callback.execute(args[0], new IRubyObject[] { method, receiver });
     }
     
     public ICallable dup() {
-        return new IterateCallable(callback, data);
+        return new IterateCallable(callback, method);
     }       
+    
+    public Arity getArity() {
+        return Arity.createArity((int) method.arity().getLongValue());
+    }
 }

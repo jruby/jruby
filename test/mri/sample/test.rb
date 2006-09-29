@@ -1106,6 +1106,8 @@ ljump_test(true, lambda{break})
 
 test_ok(block.arity == -1)
 test_ok(lambda.arity == -1)
+=end
+
 test_ok(lambda{||}.arity == 0)
 test_ok(lambda{|a|}.arity == 1)
 test_ok(lambda{|a,|}.arity == 1)
@@ -1119,6 +1121,7 @@ marity_test(:test_ok)
 marity_test(:marity_test)
 marity_test(:p)
 
+=begin
 lambda(&method(:test_ok)).call(true)
 lambda(&get_block{|a,n| test_ok(a,n)}).call(true, 2)
 
