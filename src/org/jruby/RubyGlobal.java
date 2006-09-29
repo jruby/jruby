@@ -18,6 +18,7 @@
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2006 Tim Azzopardi <tim@tigerfive.com>
+ * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -50,6 +51,38 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author jpetersen
  */
 public class RubyGlobal {
+    
+    /**
+     * Obligate string-keyed and string-valued hash, used for ENV and ENV_JAVA
+     * 
+     */
+    private static class StringOnlyRubyHash extends RubyHash {
+        
+        public StringOnlyRubyHash(IRuby runtime, Map valueMap, IRubyObject defaultValue) {
+            super(runtime, valueMap, defaultValue);
+        }
+        
+        public IRubyObject aref(IRubyObject key) {
+            if (!key.respondsTo("to_str")) {
+                throw getRuntime().newTypeError("can't convert " + key.getMetaClass() + " into String");
+            }
+
+            return super.aref(key.callMethod("to_str"));
+        }
+
+        public IRubyObject aset(IRubyObject key, IRubyObject value) {
+            if (!key.respondsTo("to_str")) {
+                throw getRuntime().newTypeError("can't convert " + key.getMetaClass() + " into String");
+            }
+            if (!value.respondsTo("to_str") && !value.isNil()) {
+                throw getRuntime().newTypeError("can't convert " + value.getMetaClass() + " into String");
+            }
+
+            return super.aset(key.callMethod("to_str"),
+                    value.isNil() ? getRuntime().getNil() : value.callMethod("to_str"));
+        }
+    }
+    
     public static void createGlobals(IRuby runtime) {
 
         // Version information:
@@ -126,14 +159,16 @@ public class RubyGlobal {
     	}
 		
     	if (environmentVariableMap == null) {
-            // if the environment variables can't be obtainded, define an empty ENV
+            // if the environment variables can't be obtained, define an empty ENV
     		environmentVariableMap = new HashMap();
     	}
-        runtime.defineGlobalConstant("ENV", RubyHash.newHash(runtime, environmentVariableMap, runtime.getNil()));
+        runtime.defineGlobalConstant("ENV", new StringOnlyRubyHash(runtime,
+                environmentVariableMap, runtime.getNil()));
 
         // Define System.getProperties() in ENV_JAVA
-        Map systemProps =  environment.getSystemPropertiesMap(runtime);
-        runtime.defineGlobalConstant("ENV_JAVA", RubyHash.newHash(runtime, systemProps, runtime.getNil()));
+        Map systemProps = environment.getSystemPropertiesMap(runtime);
+        runtime.defineGlobalConstant("ENV_JAVA", new StringOnlyRubyHash(
+                runtime, systemProps, runtime.getNil()));
         
     }
 

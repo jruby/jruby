@@ -1153,7 +1153,6 @@ end
 ITER_TEST4.new.foo(44){55}   
 =end
 
-=begin THIS SECTION HAS ERRORS; UNCOMMENT TO RUN
 test_check "float"
 test_ok(2.6.floor == 2)
 test_ok((-2.6).floor == -3)
@@ -1191,7 +1190,6 @@ nan_test(nan, -1.0/0);
 #test_ok(s == sprintf("%.16e", s.to_f))
 f = 3.7517675036461267e+17
 test_ok(f == sprintf("%.16e", f).to_f)
-=end
 
 test_check "bignum"
 def fact(n)
