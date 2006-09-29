@@ -945,12 +945,12 @@ public class RubyString extends RubyObject {
 
         while (!current.equals(afterEnd)) {
             getRuntime().getCurrentContext().yield(current);
-            if (!excl && current.equals(afterEnd)) {
+            if (!excl && current.equals(end)) {
                 break;
             }
             
             current = (RubyString) current.succ();
-            if (excl && current.equals(afterEnd)) {
+            if (excl && current.equals(end)) {
                 break;
             }
             if (current.length().getLongValue() > end.length().getLongValue()) {

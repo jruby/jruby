@@ -47,5 +47,16 @@ test_member(false, az_excl, 'bb')
 ##### step #####
 test_exception(ArgumentError) { (1..2).step(-1) }
 
+
+# exclusive tests
+r = Range.new('A', 'J', false)
+sum = 0
+r.each {|x| sum += 1}
+test_equal(10, sum)
+
+r = Range.new('A', 'J', true)
+sum = 0
+r.each {|x| sum += 1}
+test_equal(9, sum)
 test_equal(['A','B','C'],Array[*('A'..'C')])
 
