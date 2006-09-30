@@ -76,6 +76,12 @@ test_equal([1, 1], arr)
 test_no_exception { [].unshift(*[]) }
 test_no_exception { [].unshift() }
 
+##### Array#[] #####
+
+test_equal([1], Array[1])
+test_equal([], Array[])
+test_equal([1,2], Array[1,2])
+
 ##### == #####
 class AryTest
   def to_ary; [1,2]; end

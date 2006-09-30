@@ -153,7 +153,7 @@ public class ArrayMetaClass extends ObjectMetaClass {
         RubyArray array = (RubyArray)allocateObject();
         array.setMetaClass(this);
         
-        if (args.length > 1) {
+        if (args.length >= 1) {
             for (int i = 0; i < args.length; i++) {
                 array.add(args[i]);
             }
