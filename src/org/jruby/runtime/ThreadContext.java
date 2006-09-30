@@ -787,6 +787,8 @@ public class ThreadContext {
         getCurrentFrame().newScope(null);
         pushRubyClass(runtime.getObject());
         pushCRef(runtime.getObject());
+        getCurrentFrame().setSelf(runtime.getTopSelf());
+        getCurrentFrame().getEvalState().setSelf(runtime.getTopSelf());
     }
 
     public void preClassEval(String[] localNames, RubyModule type) {
