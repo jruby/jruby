@@ -18,7 +18,7 @@ def fib_test
 
 	last_good = 1
 	current = 1
-	last_bad = 10000000000000000000000000000
+	last_bad = nil
 
 	begin
 		while (true)
@@ -26,7 +26,13 @@ def fib_test
 			
 			last_good = current
 			puts "good: #{last_good}"
-			current = last_good * 2
+			
+			if last_bad
+			  return last_good if last_bad == last_good + 1
+			  current = last_good + (last_bad - last_good) / 2
+			else
+			  current = last_good * 2
+			end
 		end
 	rescue SystemStackError
 	    last_bad = current
