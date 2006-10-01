@@ -926,6 +926,29 @@ public class RubyIO extends RubyObject {
         return getRuntime().getNil();
     }
     
+    public IRubyObject readpartial(IRubyObject[] args) {
+        if(!(handler instanceof IOHandlerNio)) {
+            // cryptic for the uninitiated...
+            throw getRuntime().newNotImplementedError("readpartial only works with Nio based handlers");
+        }
+    	try {
+            String buf = ((IOHandlerNio)handler).readpartial(RubyNumeric.fix2int(args[0]));
+            IRubyObject strbuf = getRuntime().newString((buf == null ? "" : buf));
+            if(args.length > 1) {
+                args[1].callMethod("<<",strbuf);
+                return args[1];
+            } 
+
+            return strbuf;
+        } catch (IOHandler.BadDescriptorException e) {
+            throw getRuntime().newErrnoEBADFError();
+        } catch (EOFException e) {
+            return getRuntime().getNil();
+        } catch (IOException e) {
+            throw getRuntime().newIOError(e.getMessage());
+        }
+    }
+
     public IRubyObject sysread(IRubyObject number) {
         try {
             String buf = handler.sysread(RubyNumeric.fix2int(number));

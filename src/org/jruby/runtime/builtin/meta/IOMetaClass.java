@@ -112,6 +112,7 @@ public class IOMetaClass extends ObjectMetaClass {
 	        defineMethod("printf", Arity.optional());
 	        defineMethod("putc", Arity.singleArgument());
 	        defineMethod("puts", Arity.optional());
+	        defineMethod("readpartial", Arity.optional());
 	        defineMethod("read", Arity.optional());
 	        defineMethod("readchar", Arity.noArguments());
 	        defineMethod("readline", Arity.optional());
