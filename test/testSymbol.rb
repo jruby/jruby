@@ -121,3 +121,7 @@ for pair in pairs
   str, insp = pair
   test_equal(str.intern.inspect, insp)
 end
+
+test_equal(:"abc".inspect, ":abc")
+test_equal(:"abc#{1 + 2 + 3}".inspect, ":abc6")
+test_equal(:"abc#{7 + 8 + 9}#{1 + 2 + 3}".inspect, ":abc246")

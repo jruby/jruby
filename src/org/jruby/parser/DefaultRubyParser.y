@@ -1684,11 +1684,18 @@ sym           : fname
 dsym	      : tSYMBEG xstring_contents tSTRING_END {
                     lexer.setState(LexState.EXPR_END);
 
-		    // In ruby, it seems to be possible to get a
-		    // StrNode (NODE_STR) among other node type.  This 
-		    // is not possible for us.  We will always have a 
-		    // DStrNode (NODE_DSTR).
-		    $$ = new DSymbolNode(getPosition($<ISourcePositionHolder>1), $<DStrNode>2);
+		    // DStrNode: :"some text #{some expression}"
+                    // StrNode: :"some text"
+		    // EvStrNode :"#{some expression}"
+		    DStrNode node;
+
+		    if ($2 instanceof DStrNode) {
+		        node = (DStrNode) $2;
+		    } else {
+		      node = new DStrNode(getPosition($<ISourcePositionHolder>2));
+		      node.add(new ArrayNode(getPosition($<ISourcePositionHolder>2)).add($2));
+                    }
+		    $$ = new DSymbolNode(getPosition($<ISourcePositionHolder>1), node);
 		}
 
 numeric       : tINTEGER {
