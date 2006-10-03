@@ -134,7 +134,7 @@ public class RubyProcess {
             long shiftValue = other.convertToInteger().getLongValue();
             
             
-            return getRuntime().newFixnum(status << shiftValue);
+            return getRuntime().newFixnum(status >> shiftValue);
         }
         
         public IRubyObject to_i() {
