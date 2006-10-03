@@ -108,3 +108,81 @@ class IntClass
 end
 
 test_equal("10", 8.to_s(IntClass.new))
+
+# Duck refers to duck typing.
+# If you include this module and override ==, implement it so that you FIRST check if
+# the other object is of the same class --> if so, compare equality as normal. If not, call
+# operands = self.coerce(other) and return operands[0] == operands[1]
+
+module DuckNumber
+  include Comparable
+
+  # the symbol representing the method which returns the number the object corresponds to
+  NUMBER_METHOD = :score
+  # override this if you want to use some other method to return the numeric presentation
+  def get_number_method
+    NUMBER_METHOD
+  end
+  private :get_number_method
+
+  def coerce(other)
+    case other
+      when Integer
+        [other, self.score]
+      when Float
+        [other, Float(self.score)]
+      when DuckNumber
+        [other.score, self.score]
+      else
+        raise "can not convert #{self.class.to_s} to #{other.class.to_s}"
+    end
+  end
+
+  def to_int
+    self.send(get_number_method)
+  end
+
+  def -@
+    -self.to_int
+  end
+
+  def +@
+    self.to_int
+  end
+
+  [:+, :-, :/, :%, :*, :<=>].each { |operator|
+    module_eval <<-END_DUCK
+      def #{operator.to_s}(other)
+        operands = self.coerce(other)
+        operands[1] #{operator.to_s} operands[0]
+      end
+    END_DUCK
+  }
+end
+
+
+class DuckNumberImpl
+  include DuckNumber
+  attr_accessor :score, :foo
+end
+
+SCORE = 3
+@duck = DuckNumberImpl.new
+@duck.score = SCORE
+@duck.foo   = 12345
+
+test_equal(SCORE,  +@duck)
+test_equal(-SCORE, -@duck)
+
+test_equal(SCORE + 1, 1 + @duck)
+test_equal(SCORE + 1, @duck + 1)
+
+test_equal(SCORE - 1, @duck - 1)
+test_equal(1 - SCORE, -@duck + 1)
+test_equal(1 - SCORE, 1 - @duck)
+
+test_equal(SCORE + SCORE, @duck + @duck)
+
+test_ok(@duck > 1)
+
+        
