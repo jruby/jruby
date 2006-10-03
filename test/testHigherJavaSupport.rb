@@ -239,4 +239,11 @@ if defined? Java
   
   include_class 'java.math.BigDecimal'
   test_equal(BigDecimal, BigDecimal.new("1.23").add(BigDecimal.new("2.34")).class)
+  
+  a = java.util.ArrayList.new
+  test_equal(0, a.size)
+  
+  Currency = Java::java.util.Currency
+  c = Currency.getInstance("USD")
+  test_equal("$", c.symbol)
 end

@@ -16,6 +16,7 @@ JavaUtilities.extend_proxy('java.util.Map') {
 JavaUtilities.extend_proxy('java.lang.Comparable') {
   include Comparable
   def <=>(a)
+    return nil if a.nil?
     compareTo(a)
   end
 }
