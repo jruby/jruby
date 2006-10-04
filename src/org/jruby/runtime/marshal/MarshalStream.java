@@ -111,7 +111,7 @@ public class MarshalStream extends FilterOutputStream {
     	
     	// w_symbol
     	// TODO: handle symlink?
-    	RubySymbol.newSymbol(obj.getRuntime(), obj.getMetaClass().getName()).marshalTo(output);
+    	output.dumpObject(RubySymbol.newSymbol(obj.getRuntime(), obj.getMetaClass().getName()));
     }
     
     public void writeInstanceVars(IRubyObject obj, MarshalStream output) throws IOException {

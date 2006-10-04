@@ -170,3 +170,13 @@ test_equal(x, Marshal.load(Marshal.dump(x)))
 
 x['a'] = 'b'
 #test_equal(x, Marshal.load(Marshal.dump(x)))
+
+class F < Hash
+  def initialize #:nodoc:
+    super
+    @val = { :notice=>true }
+    @val2 = { :notice=>false }
+  end
+end
+
+test_equal(F.new,Marshal.load(Marshal.dump(F.new)))
