@@ -1,12 +1,8 @@
 require "java"
 
-include_class "java.io.FileReader"
-include_class "java.io.BufferedReader"
-
 filename = "./samples/java2.rb"
-
-fr = FileReader.new filename
-br = BufferedReader.new fr
+fr = java.io.FileReader.new filename
+br = java.io.BufferedReader.new fr
 
 s = br.readLine
 

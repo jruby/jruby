@@ -2,11 +2,8 @@ require 'java'
 require 'optparse'
 require 'ostruct'
 
-include_class "java.lang.System"
-include_class("java.lang.Exception") {|p,n| "J" + n }
-include_class "java.io.FileOutputStream"
-include_class "javax.xml.transform.TransformerFactory"
-include_class ["StreamSource", "StreamResult"].map {|e| "javax.xml.transform.stream." + e}
+FileOutputStream = java.io.FileOutputStream
+StreamSource = javax.xml.transform.stream.StreamSource
 
 class XSLTOptions
   def self.parse(args)
@@ -38,15 +35,15 @@ if (ARGV.length < 2 || ARGV.length > 3)
   exit
 end
 
-document =   StreamSource.new(ARGV[0])
-stylesheet = StreamSource.new(ARGV[1])
-output =     ARGV.length == 2 ? System::out : FileOutputStream.new(ARGV[2])
-result =     StreamResult.new(output)
+document = StreamSource.new ARGV[0]
+stylesheet = StreamSource.new ARGV[1]
+output = ARGV.length == 2 ? java.lang.System::out : FileOutputStream.new(ARGV[2])
+result = javax.xml.transform.stream.StreamResult.new output
 
 begin
-  transformer = TransformerFactory.newInstance.newTransformer(stylesheet)
+  transformer = javax.xml.transform.TransformerFactory.newInstance.newTransformer(stylesheet)
   options.parameters.each {|name, value| transformer.setParameter name, value }
   transformer.transform(document, result)
-rescue Exception => e
+rescue java.lang.Exception => e
   puts e
 end

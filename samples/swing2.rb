@@ -1,16 +1,14 @@
-
 # Import Java packages
 require 'java'
 
-include_class "java.awt.event.ActionListener"
-include_class ["JButton", "JFrame", "JLabel", "JOptionPane"].map {|e| "javax.swing." + e}
+JFrame = javax.swing.JFrame
 
 frame = JFrame.new("Hello Swing")
-button = JButton.new("Klick Me!")
+button = javax.swing.JButton.new("Klick Me!")
 
-class ClickAction < ActionListener
+class ClickAction < java.awt.event.ActionListener
   def actionPerformed(evt)
-    JOptionPane.showMessageDialog(nil, "<html>Hello from <b><u>JRuby</u></b>.<br> Button '#{evt.getActionCommand()}' clicked.")
+    javax.swing.JOptionPane.showMessageDialog(nil, "<html>Hello from <b><u>JRuby</u></b>.<br> Button '#{evt.getActionCommand()}' clicked.")
   end
 end
 button.addActionListener(ClickAction.new)
