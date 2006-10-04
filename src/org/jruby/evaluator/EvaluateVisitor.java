@@ -1804,7 +1804,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             RubyClass singletonClass;
 
             if (receiver.isNil()) {
-                singletonClass = state.runtime.getClass("NilClass");
+                singletonClass = state.runtime.getNilClass();
             } else if (receiver == state.runtime.getTrue()) {
                 singletonClass = state.runtime.getClass("True");
             } else if (receiver == state.runtime.getFalse()) {

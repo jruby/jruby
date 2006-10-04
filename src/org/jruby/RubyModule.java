@@ -37,6 +37,7 @@ package org.jruby;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.jruby.internal.runtime.methods.AliasMethod;
@@ -997,17 +998,35 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyArray ancestors() {
-        RubyArray ary = getRuntime().newArray();
-
-        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
-            if (p.isIncluded()) {
-                ary.append(((IncludedModuleWrapper) p).getNonIncludedClass());
-            } else {
-                ary.append(p);
-            }
-        }
+        RubyArray ary = getRuntime().newArray(getAncestorList());
 
         return ary;
+    }
+    
+    public List getAncestorList() {
+        ArrayList list = new ArrayList();
+        
+        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
+            if (p.isIncluded()) {
+                list.add(((IncludedModuleWrapper) p).getNonIncludedClass());
+            } else {
+                list.add(p);
+            }
+        }
+        
+        return list;
+    }
+    
+    public boolean hasModuleInHierarchy(RubyModule type) {
+        // XXX: This check previously used callMethod("==") to check for equality between classes
+        // when scanning the hierarchy. However the == check may be safe; we should only ever have
+        // one instance bound to a given type/constant. If it's found to be unsafe, examine ways
+        // to avoid the == call.
+        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
+            if (p.getNonIncludedClass() == type) return true;
+        }
+        
+        return false;
     }
 
     /** rb_mod_to_s

@@ -86,14 +86,6 @@ public class RubyHash extends RubyObject implements Map {
         this.capturedDefaultProc = runtime.getNil();
         setDefaultValue(defaultValue);
     }
-
-    public static RubyHash nilHash(IRuby runtime) {
-        return new RubyHash(runtime) {
-            public boolean isNil() {
-                return true;
-            }
-        };
-    }
     
     public IRubyObject getDefaultValue(IRubyObject[] args) {
         return defaultValueCallback != null ? defaultValueCallback.execute(this, args) : getRuntime().getNil();
@@ -448,7 +440,7 @@ public class RubyHash extends RubyObject implements Map {
 		return result;
 	}
 
-	public RubyHash reject_bang() {
+	public IRubyObject reject_bang() {
 		modify();
 		boolean isModified = false;
 		for (Iterator iter = keyIterator(); iter.hasNext();) {
@@ -461,7 +453,7 @@ public class RubyHash extends RubyObject implements Map {
 			}
 		}
 
-		return isModified ? this : nilHash(getRuntime()); 
+		return isModified ? this : getRuntime().getNil(); 
 	}
 
 	public RubyHash rb_clear() {

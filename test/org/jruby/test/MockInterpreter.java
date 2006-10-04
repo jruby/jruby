@@ -57,6 +57,14 @@ public final class MockInterpreter extends BaseMockRuby {
     public RubyClass getString() {
         return null;
     }
+    
+    public RubyClass getFixnum() {
+        return null;
+    }
+    
+    public RubyClass getNilClass() {
+        return null;
+    }
 
 	public JavaSupport getJavaSupport() {
 		return new MockJavaSupport(this);

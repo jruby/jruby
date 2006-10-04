@@ -161,6 +161,10 @@ public final class Ruby implements IRuby {
 
     private RubyModule kernelModule;
 
+    private RubyClass nilClass;
+
+    private FixnumMetaClass fixnumClass;
+
     /**
      * Create and initialize a new jruby Runtime.
      */
@@ -224,6 +228,10 @@ public final class Ruby implements IRuby {
     public RubyClass getString() {
         return stringClass;
     }
+    
+    public RubyClass getFixnum() {
+        return fixnumClass;
+    }
 
     /** Returns the "true" instance from the instance pool.
      * @return The "true" instance.
@@ -244,6 +252,10 @@ public final class Ruby implements IRuby {
      */
     public IRubyObject getNil() {
         return nilObject;
+    }
+    
+    public RubyClass getNilClass() {
+        return nilClass;
     }
 
     public RubyModule getModule(String name) {
@@ -457,7 +469,7 @@ public final class Ruby implements IRuby {
 
         RubyClass.createClassClass(classClass);
 
-        RubyNil.createNilClass(this);
+        nilClass = RubyNil.createNilClass(this);
 
         // We cannot define this constant until nil itself was made
         objectClass.defineConstant("NIL", getNil());
@@ -477,7 +489,8 @@ public final class Ruby implements IRuby {
         RubyPrecision.createPrecisionModule(this);
         new NumericMetaClass(this).initializeClass();
         new IntegerMetaClass(this).initializeClass();        
-        new FixnumMetaClass(this).initializeClass();
+        fixnumClass = new FixnumMetaClass(this);
+        fixnumClass.initializeClass();
         new HashMetaClass(this).initializeClass();
         new IOMetaClass(this).initializeClass();
         new ArrayMetaClass(this).initializeClass();

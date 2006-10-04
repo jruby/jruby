@@ -69,6 +69,10 @@ public class BaseMockRuby implements IRuby {
     public RubyClass getString() {
         throw new MockException();
     }
+    
+    public RubyClass getFixnum() {
+        throw new MockException();
+    }
 
 	public RubyBoolean getTrue() {
 		throw new MockException();
@@ -81,6 +85,10 @@ public class BaseMockRuby implements IRuby {
 	public IRubyObject getNil() {
 		throw new MockException();
 	}
+
+    public RubyClass getNilClass() {
+        throw new MockException();
+    }
 
 	public RubyModule getModule(String name) {
 		throw new MockException();

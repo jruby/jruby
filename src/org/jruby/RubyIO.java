@@ -332,13 +332,13 @@ public class RubyIO extends RubyObject {
 
             // Update fileno list with our new handler
             registerIOHandler(handler);
-        } else if (args[0].isKindOf(getRuntime().getClass("String"))) {
+        } else if (args[0].isKindOf(getRuntime().getString())) {
             String path = ((RubyString) args[0]).toString();
             IOModes newModes = null;
 
             if (args.length > 1) {
-                if (!args[1].isKindOf(getRuntime().getClass("String"))) {
-                    throw getRuntime().newTypeError(args[1], getRuntime().getClass("String"));
+                if (!args[1].isKindOf(getRuntime().getString())) {
+                    throw getRuntime().newTypeError(args[1], getRuntime().getString());
                 }
                     
                 newModes = new IOModes(getRuntime(), ((RubyString) args[1]).toString());
@@ -621,7 +621,7 @@ public class RubyIO extends RubyObject {
     public IRubyObject putc(IRubyObject object) {
         int c;
         
-        if (object.isKindOf(getRuntime().getClass("String"))) {
+        if (object.isKindOf(getRuntime().getString())) {
             String value = ((RubyString) object).toString();
             
             if (value.length() > 0) {
@@ -630,7 +630,7 @@ public class RubyIO extends RubyObject {
                 throw getRuntime().newTypeError(
                         "Cannot convert String to Integer");
             }
-        } else if (object.isKindOf(getRuntime().getClass("Fixnum"))){
+        } else if (object.isKindOf(getRuntime().getFixnum())){
             c = RubyNumeric.fix2int(object);
         } else { // What case will this work for?
             c = RubyNumeric.fix2int(object.callMethod("to_i"));
@@ -1050,10 +1050,10 @@ public class RubyIO extends RubyObject {
     public RubyArray readlines(IRubyObject[] args) {
         IRubyObject[] separatorArgument;
         if (args.length > 0) {
-            if (!args[0].isKindOf(getRuntime().getClass("NilClass")) &&
-                !args[0].isKindOf(getRuntime().getClass("String"))) {
+            if (!args[0].isKindOf(getRuntime().getNilClass()) &&
+                !args[0].isKindOf(getRuntime().getString())) {
                 throw getRuntime().newTypeError(args[0], 
-                        getRuntime().getClass("String"));
+                        getRuntime().getString());
             } 
             separatorArgument = new IRubyObject[] { args[0] };
         } else {

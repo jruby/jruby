@@ -33,7 +33,6 @@ package org.jruby.runtime;
 
 import org.jruby.IRuby;
 import org.jruby.RubyModule;
-import org.jruby.ast.Node;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -74,16 +73,6 @@ public class Frame {
         this.iter = iter;
         this.runtime = runtime;
         this.blockArg = blockArg;
-    }
-    
-    public void begin(Node node) {
-        evalState.begin2(node);
-    }
-    
-    public void step() {
-        if (evalState.hasNext()) {
-            evalState.executeNext();
-        }
     }
 
     /** Getter for property args.

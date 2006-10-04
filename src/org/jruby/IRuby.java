@@ -50,6 +50,8 @@ public interface IRuby {
     public RubyModule getKernel();
     
     public RubyClass getString();
+    
+    public RubyClass getFixnum();
 
 	/** Returns the "true" instance from the instance pool.
 	 * @return The "true" instance.
@@ -65,6 +67,11 @@ public interface IRuby {
 	 * @return "nil"
 	 */
 	public IRubyObject getNil();
+    
+    /**
+     * @return The NilClass class
+     */
+    public RubyClass getNilClass();
 
 	public RubyModule getModule(String name);
 

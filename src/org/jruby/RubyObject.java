@@ -171,10 +171,6 @@ public class RubyObject implements Cloneable, IRubyObject {
      * 
      */
     public RubyClass getMetaClass() {
-    	// TODO: Can we assert MetaClass on metaClass here?  This should simplify some callers
-        if (isNil()) {
-            return getRuntime().getClass("NilClass");
-        }
         return metaClass;
     }
 
@@ -256,7 +252,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public boolean isKindOf(RubyModule type) {
-        return getMetaClass().ancestors().includes(type);
+        return getMetaClass().hasModuleInHierarchy(type);
     }
 
     /** rb_singleton_class
