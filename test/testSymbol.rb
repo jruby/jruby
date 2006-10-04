@@ -122,6 +122,10 @@ for pair in pairs
   test_equal(str.intern.inspect, insp)
 end
 
+#test non-symbol strings are quoted when inspected
+test_equal(:"123".inspect, ":\"123\"")
+
+
 test_equal(:"abc".inspect, ":abc")
 test_equal(:"abc#{1 + 2 + 3}".inspect, ":abc6")
 test_equal(:"abc#{7 + 8 + 9}#{1 + 2 + 3}".inspect, ":abc246")

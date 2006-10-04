@@ -164,6 +164,10 @@ public class RubySymbol extends RubyObject {
         output.dumpString(symbol);
     }
     
+    private static boolean isIdentStart(char c) {
+        return ((c >= 'a' && c <= 'z')|| (c >= 'A' && c <= 'Z')
+                || c == '_');
+    }
     private static boolean isIdentChar(char c) {
         return ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z')
                 || c == '_');
@@ -173,8 +177,11 @@ public class RubySymbol extends RubyObject {
         if (s == null || s.length() <= 0) {
             return false;
         } 
-           
-        for (int i = 0; i < s.length(); i++) {
+        
+        if (!isIdentStart(s.charAt(0))) {
+            return false;
+        }
+        for (int i = 1; i < s.length(); i++) {
             if (!isIdentChar(s.charAt(i))) {
                 return false;
             }
@@ -252,7 +259,7 @@ public class RubySymbol extends RubyObject {
             return s.equals("[]") || s.equals("[]=");
         }
         
-        if (!isIdentChar(c)) {
+        if (!isIdentStart(c)) {
             return false;
         }
 
