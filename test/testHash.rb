@@ -63,3 +63,16 @@ end
 test_equal(HashExt, HashExt.new.class)
 test_equal(HashExt, HashExt[:foo => :bar].class)
 
+# make sure hash yields look as expected (copied from MRI iterator test)
+
+class H
+  def each
+    yield [:key, :value]
+  end
+end
+
+[{:key=>:value}, H.new].each {|h|
+  h.each{|a| test_equal([:key, :value], a)}
+  h.each{|*a| test_equal([[:key, :value]], a)}
+  h.each{|k,v| test_equal([:key, :value], [k,v])}
+}

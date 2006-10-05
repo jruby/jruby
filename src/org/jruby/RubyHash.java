@@ -21,6 +21,7 @@
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2006 Ola Bini <Ola.Bini@ki.se>
  * Copyright (C) 2006 Tim Azzopardi <tim@tigerfive.com>
+ * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -326,7 +327,8 @@ public class RubyHash extends RubyObject implements Map {
         for (Iterator iter = entryIterator(); iter.hasNext();) {
             checkRehashing();
             Map.Entry entry = (Map.Entry) iter.next();
-			getRuntime().getCurrentContext().yieldCurrentBlock(getRuntime().newArray((IRubyObject)entry.getKey(), (IRubyObject)entry.getValue()), null, null, true);
+            // getRuntime().getCurrentContext().yieldCurrentBlock(getRuntime().newArray((IRubyObject)entry.getKey(), (IRubyObject)entry.getValue()), null, null, true);
+            getRuntime().getCurrentContext().yield(getRuntime().newArray((IRubyObject)entry.getKey(), (IRubyObject)entry.getValue()));
         }
         return this;
     }
