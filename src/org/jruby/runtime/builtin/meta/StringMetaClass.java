@@ -14,6 +14,7 @@
  * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
+ * Copyright (C) 2006 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -191,6 +192,7 @@ public class StringMetaClass extends ObjectMetaClass {
 	        defineMethod("clone", Arity.noArguments(), "rbClone");
 	        defineMethod("concat", Arity.singleArgument());
 	        defineMethod("count", Arity.optional());
+	        defineMethod("crypt", Arity.singleArgument());
 	        defineMethod("delete", Arity.optional());
 	        defineMethod("delete!", Arity.optional(), "delete_bang");
 	        defineMethod("downcase", Arity.noArguments());

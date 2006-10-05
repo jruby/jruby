@@ -434,3 +434,6 @@ class StringExt < String
 end
 test_equal(StringExt, StringExt.new.class)
 test_equal(StringExt, StringExt.new("test").class)
+
+test_equal("foa3VCPbMb8XQ", "foobar".crypt("foo"))
+
