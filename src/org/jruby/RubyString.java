@@ -686,7 +686,7 @@ public class RubyString extends RubyObject {
 	}
 
 	/* rb_str_substr */
-	private IRubyObject substr(int beg, int len) {
+	public IRubyObject substr(int beg, int len) {
 		int length = getValue().length();
 		if (len < 0 || beg > length) {
 			return getRuntime().getNil();
@@ -702,7 +702,7 @@ public class RubyString extends RubyObject {
 	}
 
 	/* rb_str_replace */
-	private IRubyObject replace(int beg, int len, RubyString replaceWith) {
+	public IRubyObject replace(int beg, int len, RubyString replaceWith) {
 		if (beg + len >= getValue().length()) { 
 			len = getValue().length() - beg;
 		}
