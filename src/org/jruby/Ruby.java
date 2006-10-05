@@ -1265,4 +1265,23 @@ public final class Ruby implements IRuby {
 	public void setDoNotReverseLookupEnabled(boolean b) {
 		doNotReverseLookupEnabled = b;
 	}
+
+    private ThreadLocal inspect = new ThreadLocal();
+    public boolean registerInspecting(Object obj) {
+        java.util.Map val = (java.util.Map)inspect.get();
+        if(null == val) {
+            val = new java.util.IdentityHashMap();
+            inspect.set(val);
+        }
+        if(val.containsKey(obj)) {
+            return false;
+        }
+        val.put(obj,null);
+        return true;
+    }
+
+    public void unregisterInspecting(Object obj) {
+        java.util.Map val = (java.util.Map)inspect.get();
+        val.remove(obj);
+    }
 }
