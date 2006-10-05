@@ -40,6 +40,7 @@ testGC.rb
 testLowerJavaSupport.rb
 testHigherJavaSupport.rb
 testJavaExtensions.rb
+testInstantiatingInterfaces.rb
 testDigest.rb
 testDir.rb
 testVisibility.rb

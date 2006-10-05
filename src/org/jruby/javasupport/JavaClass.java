@@ -168,6 +168,10 @@ public class JavaClass extends JavaObject {
      */
     private Map getMethodsClumped(boolean isStatic) {
         Map map = new HashMap();
+        if(((Class)getValue()).isInterface()) {
+            return map;
+        }
+
         Method methods[] = javaClass().getMethods();
         
         for (int i = 0; i < methods.length; i++) {

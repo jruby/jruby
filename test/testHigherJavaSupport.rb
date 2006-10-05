@@ -247,4 +247,9 @@ if defined? Java
   p = Properties.new
   p.setProperty("a", "b")
   test_equal("b", p.getProperty("a"))
+  
+  class MyBadActionListener < java.awt.event.ActionListener
+  end
+  
+  test_exception(NoMethodError) { MyBadActionListener.new.actionPerformed }
 end

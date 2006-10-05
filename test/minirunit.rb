@@ -61,7 +61,7 @@ def test_no_exception(&proc)
   raised = false
   begin
     proc.call
-  rescue exception
+  rescue Exception => x
     raised = x
   end
   test_ok(!raised, "unexpected exception #{raised}")	

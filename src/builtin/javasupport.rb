@@ -223,6 +223,17 @@ class InterfaceJavaProxy < JavaProxy
       Java.ruby_to_java(send(method.name, *args))
     }
   end
+    
+  def self.impl(*meths, &block)
+    block = lambda {|*args| send(:method_missing, *args) } unless block
+
+    Class.new(self) do
+      define_method(:method_missing) do |name, *args|
+        return block.call(name, *args) if meths.empty? || meths.include?(name)
+        super
+      end
+    end.new
+  end
 end
 
 class ConcreteJavaProxy < JavaProxy
