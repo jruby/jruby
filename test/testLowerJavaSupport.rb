@@ -284,4 +284,8 @@ if defined? Java
   test_ok(character_class.assignable_from?(int_class))
 #  test_ok(! int_class.assignable_from?(nil.type))
 #  test_ok(! character_class.assignable_from?(nil.type))
+  
+  # Check method matching
+  test_equal("int",org.jruby.javasupport.TypeMatcher.new.number(123))
+  test_equal("float",org.jruby.javasupport.TypeMatcher.new.number(123.0))
 end

@@ -309,22 +309,42 @@ module JavaUtilities
     get_proxy_class(java_object.java_class).new_instance_for(java_object)
   end
 
+  def JavaUtilities.primitive_match(t1,t2)
+    if t1.primitive?
+      return case t1.inspect
+             when 'int': ['java.lang.Integer','java.lang.Long','java.lang.Short','java.lang.Character'].include?(t2.inspect)
+             when 'long': ['java.lang.Integer','java.lang.Long','java.lang.Short','java.lang.Character'].include?(t2.inspect)
+             when 'short': ['java.lang.Integer','java.lang.Long','java.lang.Short','java.lang.Character'].include?(t2.inspect)
+             when 'char': ['java.lang.Integer','java.lang.Long','java.lang.Short','java.lang.Character'].include?(t2.inspect)
+             when 'float': ['java.lang.Float','java.lang.Double'].include?(t2.inspect)
+             when 'double': ['java.lang.Float','java.lang.Double'].include?(t2.inspect)
+             when 'boolean': ['java.lang.Boolean'].include?(t2.inspect)
+             else false
+             end
+    end
+    return true
+  end
+  
   def JavaUtilities.matching_method(methods, args)
     arg_types = args.collect {|a| a.java_class }
-    methods.each do |method|
-      types = method.argument_types
+    notfirst = false
+    2.times do
+      methods.each do |method|
+        types = method.argument_types
 
-      # Exact match
-      return method if types == arg_types
+        # Exact match
+        return method if types == arg_types
       
-      # Compatible (by inheritance)
-      if (types.length == arg_types.length)
-        match = true
-        0.upto(types.length - 1) do |i|
-          match = false unless types[i].assignable_from?(arg_types[i])
+        # Compatible (by inheritance)
+        if (types.length == arg_types.length)
+          match = true
+          0.upto(types.length - 1) do |i|
+            match = false unless types[i].assignable_from?(arg_types[i]) && (notfirst || primitive_match(types[i],arg_types[i]))
+          end
+          return method if match
         end
-        return method if match
       end
+      notfirst = true
     end
 
     name = methods.first.kind_of?(Java::JavaConstructor) ? 
