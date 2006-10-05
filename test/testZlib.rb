@@ -25,4 +25,6 @@ test_equal("foo|", z.gets("|"))
 test_equal("bar\n", z.gets)
 z.close
 
-File.unlink(filename)
+require 'fileutils'
+
+FileUtils.rm_f(filename)
