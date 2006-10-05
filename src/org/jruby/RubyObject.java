@@ -916,33 +916,33 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public IRubyObject inspect() {
-        if(getInstanceVariables().size() > 0) {
-            StringBuffer part = new StringBuffer();
-            String cname = getMetaClass().getRealClass().getName();
-            part.append("#<").append(cname).append(":0x");
-            part.append(Integer.toHexString(System.identityHashCode(this)));
-            part.append(" ");
-            if(!getRuntime().registerInspecting(this)) {
-                /* 6:tags 16:addr 1:eos */
-                part.append("...>");
-                return getRuntime().newString(part.toString());
-            }
-            try {
-                String sep = "";
-                for (Iterator iter = instanceVariableNames(); iter.hasNext();) {
-                    String name = (String) iter.next();
-                    part.append(sep);
-                    part.append(name);
-                    part.append("=");
-                    part.append(getInstanceVariable(name).callMethod("inspect"));
-                    sep = ", ";
-                }
-                part.append(">");
-                return getRuntime().newString(part.toString());
-            } finally {
-                getRuntime().unregisterInspecting(this);
-            }
-        }
+//        if(getInstanceVariables().size() > 0) {
+//            StringBuffer part = new StringBuffer();
+//            String cname = getMetaClass().getRealClass().getName();
+//            part.append("#<").append(cname).append(":0x");
+//            part.append(Integer.toHexString(System.identityHashCode(this)));
+//            part.append(" ");
+//            if(!getRuntime().registerInspecting(this)) {
+//                /* 6:tags 16:addr 1:eos */
+//                part.append("...>");
+//                return getRuntime().newString(part.toString());
+//            }
+//            try {
+//                String sep = "";
+//                for (Iterator iter = instanceVariableNames(); iter.hasNext();) {
+//                    String name = (String) iter.next();
+//                    part.append(sep);
+//                    part.append(name);
+//                    part.append("=");
+//                    part.append(getInstanceVariable(name).callMethod("inspect"));
+//                    sep = ", ";
+//                }
+//                part.append(">");
+//                return getRuntime().newString(part.toString());
+//            } finally {
+//                getRuntime().unregisterInspecting(this);
+//            }
+//        }
         return callMethod("to_s");
     }
 
