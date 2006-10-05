@@ -1756,9 +1756,7 @@ module M003; include M002; end
 module M002; include M001; end
 module M003; include M002; end
 
-=begin This test fails
 test_ok(M003.ancestors == [M003, M002, M001])
-=end
 
 =begin Removing marshal tests for now; there are multiple breakages here
 test_check "marshal"

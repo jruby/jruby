@@ -14,6 +14,7 @@
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -119,5 +120,13 @@ public final class IncludedModuleWrapper extends RubyClass {
 
     public boolean isSame(RubyModule module) {
         return delegate.isSame(module);
+    }
+    
+   /**
+    * We don't want to reveal ourselves to Ruby code, so delegate this
+    * operation.
+    */    
+    public RubyFixnum id() {
+        return delegate.id();
     }
 }
