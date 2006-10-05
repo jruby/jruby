@@ -653,4 +653,10 @@ public class BaseMockRuby implements IRuby {
         throw new MockException();
 	}
 
+    public boolean registerInspecting(Object o) {
+        throw new MockException();
+    }
+    public void unregisterInspecting(Object o) {
+        throw new MockException();
+    }
 }

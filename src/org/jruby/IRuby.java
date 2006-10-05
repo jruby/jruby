@@ -368,4 +368,7 @@ public interface IRuby {
 	public boolean isDoNotReverseLookupEnabled();
 
 	public void setDoNotReverseLookupEnabled(boolean b);
+
+    public boolean registerInspecting(Object obj);
+    public void unregisterInspecting(Object obj);
 }

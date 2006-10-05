@@ -916,27 +916,33 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public IRubyObject inspect() {
-        // TODO Review this and either remove the comment, or do it
-        //     if (TYPE(obj) == T_OBJECT
-        // 	&& ROBJECT(obj)->iv_tbl
-        // 	&& ROBJECT(obj)->iv_tbl->num_entries > 0) {
-        // 	VALUE str;
-        // 	char *c;
-        //
-        // 	c = rb_class2name(CLASS_OF(obj));
-        // 	/*if (rb_inspecting_p(obj)) {
-        // 	    str = rb_str_new(0, strlen(c)+10+16+1); /* 10:tags 16:addr 1:eos */
-        // 	    sprintf(RSTRING(str)->ptr, "#<%s:0x%lx ...>", c, obj);
-        // 	    RSTRING(str)->len = strlen(RSTRING(str)->ptr);
-        // 	    return str;
-        // 	}*/
-        // 	str = rb_str_new(0, strlen(c)+6+16+1); /* 6:tags 16:addr 1:eos */
-        // 	sprintf(RSTRING(str)->ptr, "-<%s:0x%lx ", c, obj);
-        // 	RSTRING(str)->len = strlen(RSTRING(str)->ptr);
-        // 	return rb_protect_inspect(inspect_obj, obj, str);
-        //     }
-        //     return rb_funcall(obj, rb_intern("to_s"), 0, 0);
-        // }
+        if(getInstanceVariables().size() > 0) {
+            StringBuffer part = new StringBuffer();
+            String cname = getMetaClass().getRealClass().getName();
+            part.append("#<").append(cname).append(":0x");
+            part.append(Integer.toHexString(System.identityHashCode(this)));
+            part.append(" ");
+            if(!getRuntime().registerInspecting(this)) {
+                /* 6:tags 16:addr 1:eos */
+                part.append("...>");
+                return getRuntime().newString(part.toString());
+            }
+            try {
+                String sep = "";
+                for (Iterator iter = instanceVariableNames(); iter.hasNext();) {
+                    String name = (String) iter.next();
+                    part.append(sep);
+                    part.append(name);
+                    part.append("=");
+                    part.append(getInstanceVariable(name).callMethod("inspect"));
+                    sep = ", ";
+                }
+                part.append(">");
+                return getRuntime().newString(part.toString());
+            } finally {
+                getRuntime().unregisterInspecting(this);
+            }
+        }
         return callMethod("to_s");
     }
 
