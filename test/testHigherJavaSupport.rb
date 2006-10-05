@@ -243,7 +243,8 @@ if defined? Java
   a = java.util.ArrayList.new
   test_equal(0, a.size)
   
-  Currency = Java::java.util.Currency
-  c = Currency.getInstance("USD")
-  test_equal("$", c.symbol)
+  Properties = Java::java.util.Properties
+  p = Properties.new
+  p.setProperty("a", "b")
+  test_equal("b", p.getProperty("a"))
 end
