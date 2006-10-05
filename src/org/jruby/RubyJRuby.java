@@ -37,6 +37,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class RubyJRuby {
     public static RubyModule createJRuby(IRuby runtime) {
+        runtime.getModule("Kernel").callMethod("require",runtime.newString("java"));
         RubyModule comparableModule = runtime.defineModule("JRuby");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyJRuby.class);
         comparableModule.defineModuleFunction("parse", 
