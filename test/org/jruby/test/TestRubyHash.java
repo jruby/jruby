@@ -169,7 +169,7 @@ public class TestRubyHash extends TestRubyBase {
         assertEquals("nil", eval("p $h.default"));
         eval("$h.default = 'missing'");
         assertEquals("\"missing\"", eval("p $h['njet']"));
-        assertEquals("\"missing\"", eval("p $h.default"));
+        assertEquals("nil", eval("p $h.default"));
     }
 
     /**

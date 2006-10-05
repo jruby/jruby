@@ -89,7 +89,7 @@ public class RubyHash extends RubyObject implements Map {
     }
     
     public IRubyObject getDefaultValue(IRubyObject[] args) {
-        return defaultValueCallback != null ? defaultValueCallback.execute(this, args) : getRuntime().getNil();
+        return defaultValueCallback != null && args.length>0 ? defaultValueCallback.execute(this, args) : getRuntime().getNil();
     }
 
     public IRubyObject setDefaultValue(final IRubyObject defaultValue) {
@@ -327,7 +327,6 @@ public class RubyHash extends RubyObject implements Map {
         for (Iterator iter = entryIterator(); iter.hasNext();) {
             checkRehashing();
             Map.Entry entry = (Map.Entry) iter.next();
-            // getRuntime().getCurrentContext().yieldCurrentBlock(getRuntime().newArray((IRubyObject)entry.getKey(), (IRubyObject)entry.getValue()), null, null, true);
             getRuntime().getCurrentContext().yield(getRuntime().newArray((IRubyObject)entry.getKey(), (IRubyObject)entry.getValue()));
         }
         return this;
