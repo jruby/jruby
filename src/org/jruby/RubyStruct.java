@@ -310,7 +310,7 @@ public class RubyStruct extends RubyObject {
     }
 
     public IRubyObject to_s() {
-        return getRuntime().newString("#<" + getMetaClass().getName() + ">");
+        return inspect();
     }
 
     public IRubyObject inspect() {
@@ -320,7 +320,7 @@ public class RubyStruct extends RubyObject {
 
         StringBuffer sb = new StringBuffer(100);
 
-        sb.append("#<").append(getMetaClass().getName()).append(' ');
+        sb.append("#<struct ").append(getMetaClass().getName()).append(' ');
 
         for (int i = 0; i < member.getLength(); i++) {
             if (i > 0) {
