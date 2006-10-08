@@ -89,7 +89,10 @@ public class RubyHash extends RubyObject implements Map {
     }
     
     public IRubyObject getDefaultValue(IRubyObject[] args) {
-        return defaultValueCallback != null && args.length>0 ? defaultValueCallback.execute(this, args) : getRuntime().getNil();
+        if(defaultValueCallback == null || (args.length == 0 && !capturedDefaultProc.isNil())) {
+            return getRuntime().getNil();
+        }
+        return defaultValueCallback.execute(this,args);
     }
 
     public IRubyObject setDefaultValue(final IRubyObject defaultValue) {

@@ -48,6 +48,7 @@ test_equal(20, h.default(2))
 test_equal(nil, h.default)
 
 h.default = 5
+test_equal(5,h.default)
 test_equal(nil, h.default_proc)
 
 test_equal(5, h[12])
