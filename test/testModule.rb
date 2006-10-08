@@ -289,3 +289,9 @@ def inits; @inits; end
 end
 
 test_equal([FooNew, ClassB], ClassA.new().inits)
+
+module Foo
+  Bar = Class.new
+end
+
+test_equal("Foo::Bar",Foo::Bar.name)

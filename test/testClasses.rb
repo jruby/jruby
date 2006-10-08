@@ -25,17 +25,17 @@ module TestClasses
   testClass = Class.new
 
   TestClass = testClass
-  test_equal('TestClass', testClass.name)
+  test_equal('TestClasses::TestClass', testClass.name)
 
   DifferentNameForTestClass = testClass
-  test_equal('TestClass', testClass.name)
+  test_equal('TestClasses::TestClass', testClass.name)
 
   testModule = Module.new
 
   TestModule = testModule
-  test_equal('TestModule', testModule.name)
+  test_equal('TestClasses::TestModule', testModule.name)
 
   DifferentNameForTestModule = testModule
-  test_equal('TestModule', testModule.name)
+  test_equal('TestClasses::TestModule', testModule.name)
 end
 

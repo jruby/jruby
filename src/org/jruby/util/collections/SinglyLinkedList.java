@@ -22,4 +22,8 @@ public class SinglyLinkedList {
     public SinglyLinkedList getNext() {
         return next;
     }
+
+    public void setNext(SinglyLinkedList next) {
+        this.next = next;
+    }
 }

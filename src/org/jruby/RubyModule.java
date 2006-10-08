@@ -99,7 +99,6 @@ public class RubyModule extends RubyObject {
                 parentCRef = runtime.getObject().getCRef();
             }
         }
-        
         this.cref = new SinglyLinkedList(this, parentCRef);
     }
     
@@ -120,6 +119,10 @@ public class RubyModule extends RubyObject {
         }
 
         return (RubyModule)cref.getNext().getValue();
+    }
+
+    public void setParent(RubyModule p) {
+        cref.setNext(p.getCRef());
     }
 
     public Map getMethods() {
@@ -284,6 +287,7 @@ public class RubyModule extends RubyObject {
             RubyModule module = (RubyModule)value;
             if (module.getBaseName() == null) {
                 module.setBaseName(name);
+                module.setParent(this);
             }
         }
         return result;
