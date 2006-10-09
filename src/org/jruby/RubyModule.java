@@ -1557,4 +1557,8 @@ public class RubyModule extends RubyObject {
     public SinglyLinkedList getCRef() {
         return cref;
     }
+
+    public IRubyObject inspect() {
+        return callMethod("to_s");
+    }
 }

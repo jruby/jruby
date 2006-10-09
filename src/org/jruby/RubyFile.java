@@ -277,4 +277,14 @@ public class RubyFile extends RubyIO {
 
 		throw getRuntime().newTypeError("Invalid type for modes");
 	}
+
+    public IRubyObject inspect() {
+        StringBuffer val = new StringBuffer();
+        val.append("#<File:").append(path);
+        if(!isOpen()) {
+            val.append(" (closed)");
+        }
+        val.append(">");
+        return getRuntime().newString(val.toString());
+    }
 }

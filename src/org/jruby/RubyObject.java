@@ -19,6 +19,7 @@
  * Copyright (C) 2004-2006 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2006 Ola Bini <ola.bini@ki.se>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -38,6 +39,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Collections;
 
 import org.jruby.ast.Node;
 import org.jruby.evaluator.EvaluationState;
@@ -150,12 +152,22 @@ public class RubyObject implements Cloneable, IRubyObject {
         return (IRubyObject) getInstanceVariables().remove(name);
     }
 
+    /**
+     * Returns an unmodifiable snapshot of the current state of instance variables.
+     * This method synchronizes access to avoid deadlocks.
+     */
+    public Map getInstanceVariablesSnapshot() {
+        synchronized(getInstanceVariables()) {
+            return Collections.unmodifiableMap(new HashMap(getInstanceVariables()));
+        }
+    }
+
     public Map getInstanceVariables() {
     	// TODO: double checking may or may not be safe enough here
     	if (instanceVariables == null) {
 	    	synchronized (this) {
 	    		if (instanceVariables == null) {
-	    			instanceVariables = new HashMap();
+                            instanceVariables = Collections.synchronizedMap(new HashMap());
 	    		}
 	    	}
     	}
@@ -163,7 +175,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public void setInstanceVariables(Map instanceVariables) {
-        this.instanceVariables = instanceVariables;
+        this.instanceVariables = Collections.synchronizedMap(instanceVariables);
     }
 
     /**
@@ -916,33 +928,34 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public IRubyObject inspect() {
-//        if(getInstanceVariables().size() > 0) {
-//            StringBuffer part = new StringBuffer();
-//            String cname = getMetaClass().getRealClass().getName();
-//            part.append("#<").append(cname).append(":0x");
-//            part.append(Integer.toHexString(System.identityHashCode(this)));
-//            part.append(" ");
-//            if(!getRuntime().registerInspecting(this)) {
-//                /* 6:tags 16:addr 1:eos */
-//                part.append("...>");
-//                return getRuntime().newString(part.toString());
-//            }
-//            try {
-//                String sep = "";
-//                for (Iterator iter = instanceVariableNames(); iter.hasNext();) {
-//                    String name = (String) iter.next();
-//                    part.append(sep);
-//                    part.append(name);
-//                    part.append("=");
-//                    part.append(getInstanceVariable(name).callMethod("inspect"));
-//                    sep = ", ";
-//                }
-//                part.append(">");
-//                return getRuntime().newString(part.toString());
-//            } finally {
-//                getRuntime().unregisterInspecting(this);
-//            }
-//        }
+        if(getInstanceVariables().size() > 0) {
+            StringBuffer part = new StringBuffer();
+            String cname = getMetaClass().getRealClass().getName();
+            part.append("#<").append(cname).append(":0x");
+            part.append(Integer.toHexString(System.identityHashCode(this)));
+            part.append(" ");
+            if(!getRuntime().registerInspecting(this)) {
+                /* 6:tags 16:addr 1:eos */
+                part.append("...>");
+                return getRuntime().newString(part.toString());
+            }
+            try {
+                String sep = "";
+                Map iVars = getInstanceVariablesSnapshot();
+                for (Iterator iter = iVars.keySet().iterator(); iter.hasNext();) {
+                    String name = (String) iter.next();
+                    part.append(sep);
+                    part.append(name);
+                    part.append("=");
+                    part.append(((IRubyObject)(iVars.get(name))).callMethod("inspect"));
+                    sep = ", ";
+                }
+                part.append(">");
+                return getRuntime().newString(part.toString());
+            } finally {
+                getRuntime().unregisterInspecting(this);
+            }
+        }
         return callMethod("to_s");
     }
 
@@ -955,10 +968,8 @@ public class RubyObject implements Cloneable, IRubyObject {
 
     public RubyArray instance_variables() {
         ArrayList names = new ArrayList();
-        Iterator iter = instanceVariableNames();
-        while (iter.hasNext()) {
-            String name = (String) iter.next();
-            names.add(getRuntime().newString(name));
+        for(Iterator iter = getInstanceVariablesSnapshot().keySet().iterator();iter.hasNext();) {
+            names.add(getRuntime().newString((String)iter.next()));
         }
         return getRuntime().newArray(names);
     }
@@ -1171,19 +1182,14 @@ public class RubyObject implements Cloneable, IRubyObject {
         output.write('o');
         RubySymbol classname = RubySymbol.newSymbol(getRuntime(), getMetaClass().getName());
         output.dumpObject(classname);
-
-        output.dumpInt(getInstanceVariables().size());
-        
-        for (Iterator iter = instanceVariableNames(); iter.hasNext();) {
+        Map iVars = getInstanceVariablesSnapshot();
+        output.dumpInt(iVars.size());
+        for (Iterator iter = iVars.keySet().iterator(); iter.hasNext();) {
             String name = (String) iter.next();
-            IRubyObject value = getInstanceVariable(name);
-
-            // Between getting name and retrieving value the instance variable could have been
-            // removed
-            if (value != null) {
-            	output.dumpObject(RubySymbol.newSymbol(getRuntime(), name));
-            	output.dumpObject(value);
-            }
+            IRubyObject value = (IRubyObject)iVars.get(name);
+            
+            output.dumpObject(RubySymbol.newSymbol(getRuntime(), name));
+            output.dumpObject(value);
         }
     }
    
