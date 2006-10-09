@@ -46,7 +46,7 @@ public class FalseNode extends Node implements INameNode {
 
 
     public FalseNode(ISourcePosition position) {
-        super(position);
+        super(position, NodeTypes.FALSENODE);
     }
 
     /**

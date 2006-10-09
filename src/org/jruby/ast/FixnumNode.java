@@ -47,7 +47,7 @@ public class FixnumNode extends Node implements ILiteralNode {
     private final long value;
 
     public FixnumNode(ISourcePosition position, long value) {
-        super(position);
+        super(position, NodeTypes.FIXNUMNODE);
         this.value = value;
     }
 

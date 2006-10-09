@@ -44,7 +44,7 @@ public class RetryNode extends Node {
     static final long serialVersionUID = 4648280998968560181L;
 
     public RetryNode(ISourcePosition position) {
-        super(position);
+        super(position, NodeTypes.RETRYNODE);
     }
 
     /**

@@ -51,7 +51,7 @@ public final class CallNode extends Node {
     private final Node argsNode;
 
     public CallNode(ISourcePosition position, Node receiverNode, String name, Node argsNode) {
-        super(position);
+        super(position, NodeTypes.CALLNODE);
         this.receiverNode = receiverNode;
         this.name = name.intern();
         this.argsNode = argsNode;

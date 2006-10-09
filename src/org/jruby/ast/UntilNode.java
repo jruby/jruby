@@ -47,7 +47,7 @@ public class UntilNode extends Node {
     private final Node bodyNode;
 
     public UntilNode(ISourcePosition position, Node conditionNode, Node bodyNode) {
-        super(position);
+        super(position, NodeTypes.UNTILNODE);
         this.conditionNode = conditionNode;
         this.bodyNode = bodyNode;
     }

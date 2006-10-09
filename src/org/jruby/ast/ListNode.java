@@ -48,9 +48,13 @@ public class ListNode extends Node {
     
     private List list = null;
 
-	public ListNode(ISourcePosition position) {
-		super(position);
-	}
+    public ListNode(ISourcePosition position, int id) {
+        super(position, id);
+    }
+
+    public ListNode(ISourcePosition position) {
+        super(position, NodeTypes.LISTNODE);
+    }
 	
     public ListNode add(Node node) {
         if (list == null) {

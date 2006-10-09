@@ -46,7 +46,7 @@ public class MatchNode extends Node {
     private final Node regexpNode;
 
     public MatchNode(ISourcePosition position, Node regexpNode) {
-        super(position);
+        super(position, NodeTypes.MATCHNODE);
         this.regexpNode = regexpNode;
     }
 

@@ -48,7 +48,7 @@ public class VAliasNode extends Node {
     private String newName;
 
     public VAliasNode(ISourcePosition position, String newName, String oldName) {
-        super(position);
+        super(position, NodeTypes.VALIASNODE);
         this.oldName = oldName.intern();
         this.newName = newName.intern();
     }

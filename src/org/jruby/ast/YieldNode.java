@@ -47,7 +47,7 @@ public class YieldNode extends Node {
     private final boolean checkState;
 
     public YieldNode(ISourcePosition position, Node argsNode, boolean checkState) {
-        super(position);
+        super(position, NodeTypes.YIELDNODE);
         this.argsNode = argsNode;
         this.checkState = checkState;
     }

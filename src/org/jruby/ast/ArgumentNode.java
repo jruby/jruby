@@ -43,7 +43,7 @@ public class ArgumentNode extends Node {
     private String identifier;
     
     public ArgumentNode(ISourcePosition position, String identifier) {
-        super(position);
+        super(position, NodeTypes.ARGUMENTNODE);
         
         this.identifier = identifier.intern();
     }

@@ -46,7 +46,7 @@ public class ForNode extends IterNode {
     static final long serialVersionUID = -8319863477790150586L;
 
     public ForNode(ISourcePosition position, Node varNode, Node bodyNode, Node iterNode) {
-        super(position, varNode, bodyNode, iterNode);
+        super(position, varNode, bodyNode, iterNode, NodeTypes.FORNODE);
     }
 
     /**

@@ -56,7 +56,7 @@ public class ScopeNode extends Node {
     private final Node bodyNode;
 
     public ScopeNode(ISourcePosition position, String[] table, Node bodyNode) {
-        super(position);
+        super(position, NodeTypes.SCOPENODE);
         this.localNames = new String[table.length];
         for (int i = 0; i < table.length; i++) 
             if (table[i] != null)

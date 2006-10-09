@@ -450,14 +450,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     public IRubyObject eval(Node n) {
         //return new EvaluationState(getRuntime(), this).begin(n);
         // need to continue evaluation with a new self, so save the old one (should be a stack?)
-        EvaluationState state = getRuntime().getCurrentContext().getFrameEvalState();
-        IRubyObject oldSelf = state.getSelf();
-        state.setSelf(this);
-        try {
-            return state.begin(n);
-        } finally {
-            state.setSelf(oldSelf);
-        }
+        return EvaluationState.eval(getRuntime().getCurrentContext(), n, this);
     }
 
     public void callInit(IRubyObject[] args) {
@@ -681,8 +674,6 @@ public class RubyObject implements Cloneable, IRubyObject {
         ThreadContext threadContext = getRuntime().getCurrentContext();
         
         ISourcePosition savedPosition = threadContext.getPosition();
-        IRubyObject oldSelf = null;
-        EvaluationState state = null;
         IRubyObject result = getRuntime().getNil();
         
         IRubyObject newSelf = null;
@@ -701,14 +692,8 @@ public class RubyObject implements Cloneable, IRubyObject {
             threadContext.preEvalWithBinding((RubyBinding)scope);            
             newSelf = threadContext.getFrameSelf();
 
-            state = threadContext.getFrameEvalState();
-            oldSelf = state.getSelf();
-            state.setSelf(newSelf);
-            
-            result = state.begin(getRuntime().parse(src.toString(), file));
+            result = EvaluationState.eval(threadContext, getRuntime().parse(src.toString(), file), newSelf);
         } finally {
-            // return the eval state to its original self
-            state.setSelf(oldSelf);
             threadContext.postBoundEvalOrYield();
             
             // restore position
@@ -729,8 +714,6 @@ public class RubyObject implements Cloneable, IRubyObject {
         ISourcePosition savedPosition = threadContext.getPosition();
         // no binding, just eval in "current" frame (caller's frame)
         Iter iter = threadContext.getFrameIter();
-        EvaluationState state = threadContext.getFrameEvalState();
-        IRubyObject oldSelf = state.getSelf();
         IRubyObject result = getRuntime().getNil();
         
         try {
@@ -739,13 +722,8 @@ public class RubyObject implements Cloneable, IRubyObject {
                 threadContext.setFrameIter(threadContext.getPreviousFrameIter());
             }
             
-            state.setSelf(this);
-            
-            result = state.begin(getRuntime().parse(src.toString(), file));
+            result = EvaluationState.eval(threadContext, getRuntime().parse(src.toString(), file), this);
         } finally {
-            // return the eval state to its original self
-            state.setSelf(oldSelf);
-            
             // FIXME: this is broken for Proc, see above
             threadContext.setFrameIter(iter);
             

@@ -45,7 +45,7 @@ public class DSymbolNode extends Node {
 	private final DStrNode node;
 
 	public DSymbolNode(ISourcePosition position, DStrNode node) {
-		super(position);
+		super(position, NodeTypes.DSYMBOLNODE);
 		this.node = node;
 	}
 

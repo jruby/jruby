@@ -53,7 +53,7 @@ public class RegexpNode extends Node implements ILiteralNode {
     private final int options;
     
     public RegexpNode(ISourcePosition position, String value, int options) {
-        super(position);
+        super(position, NodeTypes.REGEXPNODE);
         
         this.value = value;
         this.options = options;

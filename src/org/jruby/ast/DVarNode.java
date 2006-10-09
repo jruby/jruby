@@ -48,7 +48,7 @@ public class DVarNode extends Node {
     private String name;
 
     public DVarNode(ISourcePosition position, String name) {
-        super(position);
+        super(position, NodeTypes.DVARNODE);
         this.name = name.intern();
     }
     

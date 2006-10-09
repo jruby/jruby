@@ -41,7 +41,7 @@ public class SplatNode extends Node {
     private final Node node;
 
     public SplatNode(ISourcePosition position, Node node) {
-        super(position);
+        super(position, NodeTypes.SPLATNODE);
         this.node = node;
     }
 

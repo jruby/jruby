@@ -52,7 +52,7 @@ public class DefnNode extends Node {
     private final Visibility visibility;
     
     public DefnNode(ISourcePosition position, ArgumentNode nameNode, Node argsNode, ScopeNode bodyNode, Visibility visibility) {
-        super(position);
+        super(position, NodeTypes.DEFNNODE);
         
         this.nameNode = nameNode;
         this.argsNode = argsNode;

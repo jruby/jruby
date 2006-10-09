@@ -48,7 +48,7 @@ public class MultipleAsgnNode extends AssignableNode {
     private final Node argsNode;
 
     public MultipleAsgnNode(ISourcePosition position, ListNode headNode, Node argsNode) {
-        super(position);
+        super(position, NodeTypes.MULTIPLEASGNNODE);
         this.headNode = headNode;
         this.argsNode = argsNode;
     }

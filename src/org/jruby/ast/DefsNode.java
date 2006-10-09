@@ -50,7 +50,7 @@ public class DefsNode extends Node {
     private final ScopeNode bodyNode;
 
     public DefsNode(ISourcePosition position, Node receiverNode, String name, Node argsNode, ScopeNode bodyNode) {
-        super(position);
+        super(position, NodeTypes.DEFSNODE);
         this.receiverNode = receiverNode;
         this.name = name.intern();
         this.argsNode = argsNode;

@@ -52,7 +52,7 @@ public class FlipNode extends Node {
     private final int count;
     
     public FlipNode(ISourcePosition position, Node beginNode, Node endNode, boolean exclusive, int count) {
-        super(position);
+        super(position, NodeTypes.FLIPNODE);
         this.beginNode = beginNode;
         this.endNode = endNode;
         this.exclusive = exclusive;

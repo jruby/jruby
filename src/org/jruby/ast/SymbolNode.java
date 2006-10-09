@@ -50,7 +50,7 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode {
 	private String name;
 
 	public SymbolNode(ISourcePosition position, String name) {
-	    super(position);
+	    super(position, NodeTypes.SYMBOLNODE);
 	    this.name = name.intern();
 	}
     

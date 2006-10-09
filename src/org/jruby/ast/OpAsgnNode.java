@@ -51,7 +51,7 @@ public class OpAsgnNode extends Node {
     private String variableNameAsgn;
 
     public OpAsgnNode(ISourcePosition position, Node receiverNode, Node valueNode, String variableName, String methodName) {
-        super(position);
+        super(position, NodeTypes.OPASGNNODE);
         this.receiverNode = receiverNode;
         this.valueNode = valueNode;
         this.variableName = variableName.intern();

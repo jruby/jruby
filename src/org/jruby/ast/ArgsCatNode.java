@@ -43,7 +43,7 @@ public class ArgsCatNode extends Node {
     private final Node secondNode;
 
     public ArgsCatNode(ISourcePosition position, Node firstNode, Node secondNode) {
-        super(position);
+        super(position, NodeTypes.ARGSCATNODE);
         this.firstNode = firstNode;
         this.secondNode = secondNode;
     }

@@ -33,7 +33,6 @@ package org.jruby.runtime;
 
 import org.jruby.IRuby;
 import org.jruby.RubyModule;
-import org.jruby.evaluator.EvaluationState;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -48,7 +47,6 @@ public class Frame {
     private final ISourcePosition position;
     private Iter iter;
     private IRuby runtime;
-    private EvaluationState evalState;
     private Block blockArg;
 
     private Scope scope;
@@ -191,14 +189,6 @@ public class Frame {
             sb.append(lastFunc);
         }
         return sb.toString();
-    }
-
-    EvaluationState getEvalState() {
-        return evalState != null ? evalState : (evalState = new EvaluationState(runtime, self));
-    }
-
-    void setEvalState(EvaluationState evalState) {
-        this.evalState = evalState;
     }
     
     Block getBlockArg() {

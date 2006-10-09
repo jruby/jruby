@@ -47,7 +47,7 @@ public class GlobalVarNode extends Node {
     private String name;
 
     public GlobalVarNode(ISourcePosition position, String name) {
-        super(position);
+        super(position, NodeTypes.GLOBALVARNODE);
         this.name = name.intern();
     }
     

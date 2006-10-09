@@ -49,7 +49,7 @@ public class Colon2Node extends Node implements INameNode {
     private String name;
 
     public Colon2Node(ISourcePosition position, Node leftNode, String name) {
-        super(position);
+        super(position, NodeTypes.COLON2NODE);
         this.leftNode = leftNode;
         this.name = name.intern();
     }

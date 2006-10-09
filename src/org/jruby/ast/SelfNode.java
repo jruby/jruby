@@ -46,7 +46,7 @@ public class SelfNode extends Node implements INameNode {
 
 
     public SelfNode(ISourcePosition position) {
-        super(position);
+        super(position, NodeTypes.SELFNODE);
     }
 
     /**

@@ -49,7 +49,7 @@ public class DotNode extends Node {
     private final boolean exclusive;
 
     public DotNode(ISourcePosition position, Node beginNode, Node endNode, boolean exclusive) {
-        super(position);
+        super(position, NodeTypes.DOTNODE);
         this.beginNode = beginNode;
         this.endNode = endNode;
         this.exclusive = exclusive;

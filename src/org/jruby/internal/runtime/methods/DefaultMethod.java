@@ -43,6 +43,7 @@ import org.jruby.ast.ListNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.ScopeNode;
 import org.jruby.evaluator.AssignmentVisitor;
+import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
@@ -174,7 +175,7 @@ public final class DefaultMethod extends AbstractMethod {
                 for (int i = expectedArgsCount; i < args.length && iter.hasNext(); i++) {
                     //new AssignmentVisitor(new EvaluationState(runtime, receiver)).assign((Node)iter.next(), args[i], true);
    //                  in-frame EvalState should already have receiver set as self, continue to use it
-                    new AssignmentVisitor(context.getFrameEvalState()).assign((Node)iter.next(), args[i], true);
+                    new AssignmentVisitor(context.getFrameSelf()).assign((Node)iter.next(), args[i], true);
                     expectedArgsCount++;
                 }
    
@@ -183,7 +184,7 @@ public final class DefaultMethod extends AbstractMethod {
                     //new EvaluationState(runtime, receiver).begin((Node)iter.next());
                     //EvaluateVisitor.getInstance().eval(receiver.getRuntime(), receiver, (Node)iter.next());
                     // in-frame EvalState should already have receiver set as self, continue to use it
-                    allArgs.add(context.getFrameEvalState().begin((Node)iter.next()));
+                    allArgs.add(EvaluationState.eval(runtime.getCurrentContext(), ((Node)iter.next()), runtime.getCurrentContext().getFrameSelf()));
                 }
             }
         }

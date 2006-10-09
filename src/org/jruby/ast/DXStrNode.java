@@ -45,7 +45,7 @@ public class DXStrNode extends ListNode implements ILiteralNode {
     static final long serialVersionUID = 7165988969190553667L;
 
     public DXStrNode(ISourcePosition position) {
-        super(position);
+        super(position, NodeTypes.DXSTRNODE);
     }
 
     /**

@@ -49,7 +49,7 @@ public class FCallNode extends Node {
     private final Node argsNode;
 
     public FCallNode(ISourcePosition position, String name, Node argsNode) {
-        super(position);
+        super(position, NodeTypes.FCALLNODE);
         this.name = name.intern();
         this.argsNode = argsNode;
     }

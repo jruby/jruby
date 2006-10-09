@@ -52,7 +52,7 @@ public class ZeroArgNode extends Node implements IArityNode {
     static final long serialVersionUID = 6596791950608957025L;
 
     public ZeroArgNode(ISourcePosition position) {
-        super(position);
+        super(position, NodeTypes.ZEROARGNODE);
     }
 
     /**

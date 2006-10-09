@@ -50,7 +50,7 @@ public class InstVarNode extends Node implements IArityNode, INameNode {
     private String name;
 
     public InstVarNode(ISourcePosition position, String name) {
-        super(position);
+        super(position, NodeTypes.INSTVARNODE);
         this.name = name.intern();
     }
     

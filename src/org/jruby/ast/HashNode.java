@@ -48,7 +48,7 @@ public class HashNode extends Node {
     private final ListNode listNode;
     
     public HashNode(ISourcePosition position, ListNode listNode) {
-        super(position);
+        super(position, NodeTypes.HASHNODE);
         this.listNode = listNode;
     }
 

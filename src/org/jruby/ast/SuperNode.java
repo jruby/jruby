@@ -46,7 +46,7 @@ public class SuperNode extends Node {
     private final Node argsNode;
 
     public SuperNode(ISourcePosition position, Node argsNode) {
-        super(position);
+        super(position, NodeTypes.SUPERNODE);
         this.argsNode = argsNode;
     }
 

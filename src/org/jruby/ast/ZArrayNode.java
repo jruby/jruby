@@ -48,7 +48,7 @@ public class ZArrayNode extends Node implements ILiteralNode {
 
 
     public ZArrayNode(ISourcePosition position) {
-        super(position);
+        super(position, NodeTypes.ZARRAYNODE);
     }
 
     /**

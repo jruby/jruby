@@ -45,7 +45,7 @@ public class ZSuperNode extends Node implements IArityNode {
     static final long serialVersionUID = 6109129030317216863L;
 
     public ZSuperNode(ISourcePosition position) {
-        super(position);
+        super(position, NodeTypes.ZSUPERNODE);
     }
 
     /**

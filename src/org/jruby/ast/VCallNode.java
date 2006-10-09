@@ -49,7 +49,7 @@ public class VCallNode extends Node {
     private String name;
 
     public VCallNode(ISourcePosition position, String name) {
-        super(position);
+        super(position, NodeTypes.VCALLNODE);
         this.name = name.intern();
     }
     

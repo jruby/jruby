@@ -45,7 +45,7 @@ public class NilNode extends Node implements INameNode {
     static final long serialVersionUID = -8702073984472296708L;
 
     public NilNode(ISourcePosition position) {
-        super(position);
+        super(position, NodeTypes.NILNODE);
     }
 
     /**

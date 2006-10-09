@@ -51,7 +51,7 @@ public class BlockArgNode extends Node {
     private final int count;
 
     public BlockArgNode(ISourcePosition position, int count) {
-        super(position);
+        super(position, NodeTypes.BLOCKARGNODE);
         this.count = count;
     }
 

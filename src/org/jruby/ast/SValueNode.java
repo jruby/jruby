@@ -40,7 +40,7 @@ public class SValueNode extends Node {
 	private final Node node;
     
     public SValueNode(ISourcePosition position, Node node) {
-        super(position);
+        super(position, NodeTypes.SVALUENODE);
         this.node = node;
     }
 

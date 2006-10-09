@@ -46,7 +46,7 @@ public class TrueNode extends Node implements INameNode {
 
 
     public TrueNode(ISourcePosition position) {
-        super(position);
+        super(position, NodeTypes.TRUENODE);
     }
 
     /**

@@ -50,12 +50,16 @@ public abstract class Node implements ISourcePositionHolder, InstructionContext,
     static final long serialVersionUID = -5962822607672530224L;
     // We define an actual list to get around bug in java integration (1387115)
     static final List EMPTY_LIST = new ArrayList();
+    
+    public final int nodeId;
+    
     public InstructionBundle instruction;
 
     private ISourcePosition position;
 
-    public Node(ISourcePosition position) {
+    public Node(ISourcePosition position, int id) {
         this.position = position;
+        this.nodeId = id;
     }
 
     /**

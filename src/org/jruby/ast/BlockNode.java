@@ -48,7 +48,7 @@ public class BlockNode extends ListNode {
     static final long serialVersionUID = 6070308619613804520L;
     
     public BlockNode(ISourcePosition position) {
-        super(position);
+        super(position, NodeTypes.BLOCKNODE);
     }
 
     /**

@@ -48,7 +48,7 @@ public class StrNode extends Node implements ILiteralNode {
     private final String value;
 
     public StrNode(ISourcePosition position, String value) {
-        super(position);
+        super(position, NodeTypes.STRNODE);
         this.value = value;
     }
 

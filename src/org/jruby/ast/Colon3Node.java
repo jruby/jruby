@@ -53,7 +53,7 @@ public class Colon3Node extends Node implements INameNode {
     private String name;
 
     public Colon3Node(ISourcePosition position, String name) {
-        super(position);
+        super(position, NodeTypes.COLON3NODE);
         this.name = name.intern();
     }
     

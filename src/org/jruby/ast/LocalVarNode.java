@@ -46,7 +46,7 @@ public class LocalVarNode extends Node {
     private final int count;
 
     public LocalVarNode(ISourcePosition position, int count) {
-        super(position);
+        super(position, NodeTypes.LOCALVARNODE);
         this.count = count;
     }
 

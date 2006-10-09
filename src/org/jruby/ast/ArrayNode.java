@@ -46,7 +46,7 @@ public class ArrayNode extends ListNode implements ILiteralNode {
     static final long serialVersionUID = 6279246130032958596L;
 
     public ArrayNode(ISourcePosition position) {
-        super(position);
+        super(position, NodeTypes.ARRAYNODE);
     }
 
     /**

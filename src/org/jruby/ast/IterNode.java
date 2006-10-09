@@ -52,7 +52,14 @@ public class IterNode extends Node {
     private transient ICallable callable;
 
     public IterNode(ISourcePosition position, Node varNode, Node bodyNode, Node iterNode) {
-        super(position);
+        super(position, NodeTypes.ITERNODE);
+        this.varNode = varNode;
+        this.bodyNode = bodyNode;
+        this.iterNode = iterNode;
+    }
+
+    public IterNode(ISourcePosition position, Node varNode, Node bodyNode, Node iterNode, int id) {
+        super(position, id);
         this.varNode = varNode;
         this.bodyNode = bodyNode;
         this.iterNode = iterNode;
