@@ -312,8 +312,9 @@ public class RubyDir extends RubyObject {
      */
     public IRubyObject each() {
         String[] contents = snapshot;
+        ThreadContext context = getRuntime().getCurrentContext();
         for (int i=0; i<contents.length; i++) {
-            getRuntime().getCurrentContext().yield(getRuntime().newString(contents[i]));
+            context.yield(getRuntime().newString(contents[i]));
         }
         return this;
     }

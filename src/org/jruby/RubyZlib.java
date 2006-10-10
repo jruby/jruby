@@ -37,6 +37,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.util.IOInputStream;
@@ -372,9 +373,10 @@ public class RubyZlib {
             if (args.length > 0 && !args[0].isNil()) {
                 sep = args[0].toString();
             }
-            
+
+            ThreadContext context = getRuntime().getCurrentContext();
             while (!isEof()) {
-                getRuntime().getCurrentContext().yield(internalSepGets(sep));
+                context.yield(internalSepGets(sep));
             }
             
             return getRuntime().getNil();
@@ -403,9 +405,10 @@ public class RubyZlib {
 
         public IRubyObject each_byte() throws IOException {
             int value = io.read();
-            
+
+            ThreadContext context = getRuntime().getCurrentContext();
             while (value != -1) {
-                getRuntime().getCurrentContext().yield(getRuntime().newFixnum(value));
+                context.yield(getRuntime().newFixnum(value));
                 value = io.read();
             }
             

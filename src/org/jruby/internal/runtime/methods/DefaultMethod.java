@@ -184,7 +184,7 @@ public final class DefaultMethod extends AbstractMethod {
                     //new EvaluationState(runtime, receiver).begin((Node)iter.next());
                     //EvaluateVisitor.getInstance().eval(receiver.getRuntime(), receiver, (Node)iter.next());
                     // in-frame EvalState should already have receiver set as self, continue to use it
-                    allArgs.add(EvaluationState.eval(runtime.getCurrentContext(), ((Node)iter.next()), runtime.getCurrentContext().getFrameSelf()));
+                    allArgs.add(EvaluationState.eval(context, ((Node)iter.next()), context.getFrameSelf()));
                 }
             }
         }

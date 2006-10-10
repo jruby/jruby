@@ -327,10 +327,11 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     public RubyHash each() {
+        ThreadContext context = getRuntime().getCurrentContext();
         for (Iterator iter = entryIterator(); iter.hasNext();) {
             checkRehashing();
             Map.Entry entry = (Map.Entry) iter.next();
-            getRuntime().getCurrentContext().yield(getRuntime().newArray((IRubyObject)entry.getKey(), (IRubyObject)entry.getValue()));
+            context.yield(getRuntime().newArray((IRubyObject)entry.getKey(), (IRubyObject)entry.getValue()));
         }
         return this;
     }
@@ -342,19 +343,21 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     public RubyHash each_value() {
+        ThreadContext context = getRuntime().getCurrentContext();
 		for (Iterator iter = valueIterator(); iter.hasNext();) {
             checkRehashing();
 			IRubyObject value = (IRubyObject) iter.next();
-			getRuntime().getCurrentContext().yield(value);
+			context.yield(value);
 		}
 		return this;
 	}
 
 	public RubyHash each_key() {
+        ThreadContext context = getRuntime().getCurrentContext();
 		for (Iterator iter = keyIterator(); iter.hasNext();) {
 			checkRehashing();
             IRubyObject key = (IRubyObject) iter.next();
-			getRuntime().getCurrentContext().yield(key);
+			context.yield(key);
 		}
 		return this;
 	}
@@ -447,10 +450,11 @@ public class RubyHash extends RubyObject implements Map {
 	public IRubyObject reject_bang() {
 		modify();
 		boolean isModified = false;
+        ThreadContext context = getRuntime().getCurrentContext();
 		for (Iterator iter = keyIterator(); iter.hasNext();) {
 			IRubyObject key = (IRubyObject) iter.next();
 			IRubyObject value = (IRubyObject) valueMap.get(key);
-			IRubyObject shouldDelete = getRuntime().getCurrentContext().yieldCurrentBlock(getRuntime().newArray(key, value), null, null, true);
+			IRubyObject shouldDelete = context.yieldCurrentBlock(getRuntime().newArray(key, value), null, null, true);
 			if (shouldDelete.isTrue()) {
 				valueMap.remove(key);
 				isModified = true;

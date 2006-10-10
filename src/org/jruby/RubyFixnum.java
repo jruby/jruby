@@ -34,6 +34,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -386,8 +387,9 @@ public class RubyFixnum extends RubyInteger {
     }
 
     public IRubyObject times() {
+        ThreadContext context = getRuntime().getCurrentContext();
         for (long i = 0; i < value; i++) {
-            getRuntime().getCurrentContext().yield(newFixnum(i));
+            context.yield(newFixnum(i));
         }
         return this;
     }

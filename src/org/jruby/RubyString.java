@@ -1557,8 +1557,9 @@ public class RubyString extends RubyObject {
         RubyString afterEnd = stringValue(end.succ());
         RubyString current = beg;
 
+        ThreadContext context = getRuntime().getCurrentContext();
         while (!current.equals(afterEnd)) {
-            getRuntime().getCurrentContext().yield(current);
+            context.yield(current);
             if (!excl && current.equals(end)) {
                 break;
             }
@@ -2211,8 +2212,9 @@ public class RubyString extends RubyObject {
 	public RubyString each_byte() {
 		byte[] lByteValue = toByteArray();
 		int lLength = lByteValue.length;
+        ThreadContext context = getRuntime().getCurrentContext();
 		for (int i = 0; i < lLength; i++) {
-			getRuntime().getCurrentContext().yield(getRuntime().newFixnum(Math.abs(lByteValue[i])));
+			context.yield(getRuntime().newFixnum(Math.abs(lByteValue[i])));
 		}
 		return this;
 	}

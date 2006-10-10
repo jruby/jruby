@@ -84,12 +84,13 @@ public class AssignmentVisitor extends AbstractVisitor {
 	 * @see AbstractVisitor#visitCallNode(CallNode)
 	 */
 	public Instruction visitCallNode(CallNode iVisited) {
-        IRubyObject receiver = EvaluationState.eval(runtime.getCurrentContext(), iVisited.getReceiverNode(), runtime.getCurrentContext().getFrameSelf());
+        ThreadContext context = runtime.getCurrentContext();
+        IRubyObject receiver = EvaluationState.eval(context, iVisited.getReceiverNode(), context.getFrameSelf());
 
         if (iVisited.getArgsNode() == null) { // attribute set.
             receiver.callMethod(iVisited.getName(), new IRubyObject[] {value}, CallType.NORMAL);
         } else { // element set
-            RubyArray args = (RubyArray)EvaluationState.eval(runtime.getCurrentContext(), iVisited.getArgsNode(), runtime.getCurrentContext().getFrameSelf());
+            RubyArray args = (RubyArray)EvaluationState.eval(context, iVisited.getArgsNode(), context.getFrameSelf());
             args.append(value);
             receiver.callMethod(iVisited.getName(), args.toJavaArray(), CallType.NORMAL);
         }
@@ -122,10 +123,11 @@ public class AssignmentVisitor extends AbstractVisitor {
 	 * @see AbstractVisitor#visitConstDeclNode(ConstDeclNode)
 	 */
 	public Instruction visitConstDeclNode(ConstDeclNode iVisited) {
+        ThreadContext context = runtime.getCurrentContext();
 		if (iVisited.getPathNode() == null) {
-			runtime.getCurrentContext().getRubyClass().defineConstant(iVisited.getName(), value);
+			context.getRubyClass().defineConstant(iVisited.getName(), value);
 		} else {
-			((RubyModule) EvaluationState.eval(runtime.getCurrentContext(), iVisited.getPathNode(), runtime.getCurrentContext().getFrameSelf())).defineConstant(iVisited.getName(), value);
+			((RubyModule) EvaluationState.eval(context, iVisited.getPathNode(), context.getFrameSelf())).defineConstant(iVisited.getName(), value);
 		}
 		return null;
 	}

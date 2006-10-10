@@ -186,8 +186,9 @@ public class RubyStringIO extends RubyObject {
 
    public IRubyObject each(IRubyObject[] args) {
        IRubyObject line = gets(args);
+       ThreadContext context = getRuntime().getCurrentContext();
        while (!line.isNil()) {
-           getRuntime().getCurrentContext().yield(line);
+           context.yield(line);
            line = gets(args);
        }
        return this;

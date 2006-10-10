@@ -41,6 +41,7 @@ import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.nio.channels.Channel;
 
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOHandler;
 import org.jruby.util.IOHandlerJavaIO;
@@ -1019,9 +1020,10 @@ public class RubyIO extends RubyObject {
      */
     public IRubyObject each_byte() {
     	try {
+            ThreadContext context = getRuntime().getCurrentContext();
             for (int c = handler.getc(); c != -1; c = handler.getc()) {
                 assert c < 256;
-                getRuntime().getCurrentContext().yield(getRuntime().newFixnum(c));
+                context.yield(getRuntime().newFixnum(c));
             }
 
             return getRuntime().getNil();
@@ -1038,9 +1040,10 @@ public class RubyIO extends RubyObject {
      * <p>Invoke a block for each line.</p>
      */
     public RubyIO each_line(IRubyObject[] args) {
+        ThreadContext context = getRuntime().getCurrentContext();
         for (IRubyObject line = internalGets(args); !line.isNil(); 
         	line = internalGets(args)) {
-            getRuntime().getCurrentContext().yield(line);
+            context.yield(line);
         }
         
         return this;

@@ -725,8 +725,9 @@ public class RubyKernel {
     }
 
     public static IRubyObject loop(IRubyObject recv) {
+        ThreadContext context = recv.getRuntime().getCurrentContext();
         while (true) {
-            recv.getRuntime().getCurrentContext().yield(recv.getRuntime().getNil());
+            context.yield(recv.getRuntime().getNil());
 
             Thread.yield();
         }

@@ -33,6 +33,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /** Implementation of the Integer class.
@@ -65,11 +66,12 @@ public abstract class RubyInteger extends RubyNumeric {
     // TODO: Make callCoerced work in block context...then fix downto, step, and upto.
     public IRubyObject downto(IRubyObject to) {
         RubyNumeric i = this;
+        ThreadContext context = getRuntime().getCurrentContext();
         while (true) {
             if (i.callMethod("<", to).isTrue()) {
                 break;
             }
-            getRuntime().getCurrentContext().yield(i);
+            context.yield(i);
             i = (RubyNumeric) i.callMethod("-", RubyFixnum.one(getRuntime()));
         }
         return this;
@@ -91,11 +93,12 @@ public abstract class RubyInteger extends RubyNumeric {
             cmp = ">";
         }
 
+        ThreadContext context = getRuntime().getCurrentContext();
         while (true) {
             if (i.callMethod(cmp, test).isTrue()) {
                 break;
             }
-            getRuntime().getCurrentContext().yield(i);
+            context.yield(i);
             i = (RubyNumeric) i.callMethod("+", step);
         }
         return this;
@@ -103,11 +106,12 @@ public abstract class RubyInteger extends RubyNumeric {
 
     public IRubyObject times() {
         RubyNumeric i = RubyFixnum.zero(getRuntime());
+        ThreadContext context = getRuntime().getCurrentContext();
         while (true) {
             if (!i.callMethod("<", this).isTrue()) {
                 break;
             }
-            getRuntime().getCurrentContext().yield(i);
+            context.yield(i);
             i = (RubyNumeric) i.callMethod("+", RubyFixnum.one(getRuntime()));
         }
         return this;
@@ -120,11 +124,12 @@ public abstract class RubyInteger extends RubyNumeric {
     public IRubyObject upto(IRubyObject to) {
     	RubyNumeric test = (RubyNumeric) to;
         RubyNumeric i = this;
+        ThreadContext context = getRuntime().getCurrentContext();
         while (true) {
             if (i.callMethod(">", test).isTrue()) {
                 break;
             }
-            getRuntime().getCurrentContext().yield(i);
+            context.yield(i);
             i = (RubyNumeric) i.callMethod("+", RubyFixnum.one(getRuntime()));
         }
         return this;

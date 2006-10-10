@@ -699,8 +699,9 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public IRubyObject each() {
+        ThreadContext context = getRuntime().getCurrentContext();
         for (int i = 0, len = getLength(); i < len; i++) {
-            getRuntime().getCurrentContext().yield(entry(i));
+            context.yield(entry(i));
         }
         return this;
     }
@@ -709,8 +710,9 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public IRubyObject each_index() {
+        ThreadContext context = getRuntime().getCurrentContext();
         for (int i = 0, len = getLength(); i < len; i++) {
-            getRuntime().getCurrentContext().yield(getRuntime().newFixnum(i));
+            context.yield(getRuntime().newFixnum(i));
         }
         return this;
     }
@@ -719,8 +721,9 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public IRubyObject reverse_each() {
+        ThreadContext context = getRuntime().getCurrentContext();
         for (long i = getLength(); i > 0; i--) {
-            getRuntime().getCurrentContext().yield(entry(i - 1));
+            context.yield(entry(i - 1));
         }
         return this;
     }
@@ -1032,8 +1035,9 @@ public class RubyArray extends RubyObject implements List {
      */
     public RubyArray collect_bang() {
         modify();
+        ThreadContext context = getRuntime().getCurrentContext();
         for (int i = 0, len = getLength(); i < len; i++) {
-            list.set(i, getRuntime().getCurrentContext().yield(entry(i)));
+            list.set(i, context.yield(entry(i)));
         }
         return this;
     }
@@ -1077,8 +1081,9 @@ public class RubyArray extends RubyObject implements List {
     public IRubyObject reject_bang() {
         modify();
         IRubyObject retVal = getRuntime().getNil();
+        ThreadContext context = getRuntime().getCurrentContext();
         for (int i = getLength() - 1; i >= 0; i--) {
-            if (getRuntime().getCurrentContext().yield(entry(i)).isTrue()) {
+            if (context.yield(entry(i)).isTrue()) {
                 retVal = (IRubyObject) list.remove(i);
             }
         }

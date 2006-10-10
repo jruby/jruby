@@ -329,16 +329,17 @@ public class RubyRange extends RubyObject {
         if (stepSize <= 0) {
             throw getRuntime().newArgumentError("step can't be negative");
         }
-        
+
+        ThreadContext context = getRuntime().getCurrentContext();
         if (begin instanceof RubyNumeric && end instanceof RubyNumeric) {
             RubyFixnum stepNum = getRuntime().newFixnum(stepSize);
             while (currentObject.callMethod(compareMethod, end).isTrue()) {
-                getRuntime().getCurrentContext().yield(currentObject);
+                context.yield(currentObject);
                 currentObject = currentObject.callMethod("+", stepNum);
             }
         } else {
             while (currentObject.callMethod(compareMethod, end).isTrue()) {
-                getRuntime().getCurrentContext().yield(currentObject);
+                context.yield(currentObject);
                 
                 for (int i = 0; i < stepSize; i++) {
                     currentObject = currentObject.callMethod("succ");

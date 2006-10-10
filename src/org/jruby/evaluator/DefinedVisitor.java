@@ -117,7 +117,8 @@ public class DefinedVisitor extends AbstractVisitor {
      */
     protected Instruction visitNode(Node iVisited) {
         try {
-            EvaluationState.eval(runtime.getCurrentContext(), iVisited, runtime.getCurrentContext().getFrameSelf());
+            ThreadContext context = runtime.getCurrentContext();
+            EvaluationState.eval(context, iVisited, context.getFrameSelf());
             definition = "expression";
         } catch (JumpException jumpExcptn) {
         }
@@ -157,14 +158,15 @@ public class DefinedVisitor extends AbstractVisitor {
 	 */
 	public Instruction visitCallNode(CallNode iVisited) {
 		if (getDefinition(iVisited.getReceiverNode()) != null) {
+            ThreadContext context = runtime.getCurrentContext();
 			try {
-                IRubyObject receiver = EvaluationState.eval(runtime.getCurrentContext(), iVisited.getReceiverNode(), runtime.getCurrentContext().getFrameSelf());
+                IRubyObject receiver = EvaluationState.eval(context, iVisited.getReceiverNode(), context.getFrameSelf());
 				RubyClass metaClass = receiver.getMetaClass();
 				ICallable method = metaClass.searchMethod(iVisited.getName());
 				Visibility visibility = method.getVisibility();
 
 				if (!visibility.isPrivate()
-						&& (!visibility.isProtected() || runtime.getCurrentContext().getFrameSelf()
+						&& (!visibility.isProtected() || context.getFrameSelf()
 								.isKindOf(metaClass.getRealClass()))) {
 					if (metaClass.isMethodBound(iVisited.getName(), false)) {
 						definition = getArgumentDefinition(iVisited
@@ -412,7 +414,8 @@ public class DefinedVisitor extends AbstractVisitor {
 	 */
 	public Instruction visitColon2Node(Colon2Node iVisited) {
 		try {
-            IRubyObject left = EvaluationState.eval(runtime.getCurrentContext(), iVisited.getLeftNode(), runtime.getCurrentContext().getFrameSelf());
+            ThreadContext context = runtime.getCurrentContext();
+            IRubyObject left = EvaluationState.eval(context, iVisited.getLeftNode(), context.getFrameSelf());
 			if (left instanceof RubyModule) {
 				if (((RubyModule) left).getConstantAt(iVisited.getName()) != null) {
 					definition = "constant";

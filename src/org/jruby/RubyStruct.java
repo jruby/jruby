@@ -35,6 +35,7 @@ package org.jruby;
 import java.util.List;
 
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -345,8 +346,9 @@ public class RubyStruct extends RubyObject {
     }
 
     public IRubyObject each() {
+        ThreadContext context = getRuntime().getCurrentContext();
         for (int i = 0; i < values.length; i++) {
-            getRuntime().getCurrentContext().yield(values[i]);
+            context.yield(values[i]);
         }
 
         return this;

@@ -41,6 +41,7 @@ import org.jruby.RubyMatchData;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -83,9 +84,10 @@ public class Split {
 		int beg = 0;
 		int hits = 0;
 		int len = splitee.length();
+        ThreadContext context = runtime.getCurrentContext();
 		while ((beg = pattern.searchAgain(splitee)) > -1) {
 			hits++;
-			RubyMatchData matchData = (RubyMatchData) runtime.getCurrentContext().getBackref();
+			RubyMatchData matchData = (RubyMatchData) context.getBackref();
 			int end = matchData.matchEndPosition();
 
 			// Skip first positive lookahead match

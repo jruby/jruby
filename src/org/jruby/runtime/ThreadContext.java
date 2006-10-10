@@ -317,7 +317,7 @@ public class ThreadContext {
     }
     
     public void setIfBlockAvailable() {
-        pushIter(getRuntime().getCurrentContext().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
+        pushIter(isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
     }
     
     public void clearIfBlockAvailable() {
