@@ -51,25 +51,36 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.SourcePositionFactory;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.UnsynchronizedStack;
 import org.jruby.util.collections.SinglyLinkedList;
 
 /**
  * @author jpetersen
  */
 public class ThreadContext {
+    private final static int INITIAL_SIZE = 50;
+    
     private final IRuby runtime;
 
     private Block blockStack;
-    private UnsynchronizedStack dynamicVarsStack;
+    //private UnsynchronizedStack dynamicVarsStack;
+    private DynamicVariableSet[] dynamicVarsStack = new DynamicVariableSet[INITIAL_SIZE];
+    private int dynamicVarsIndex = -1;
 
     private RubyThread thread;
     
-    private UnsynchronizedStack parentStack;
+    //private UnsynchronizedStack parentStack;
+    private RubyModule[] parentStack = new RubyModule[INITIAL_SIZE];
+    private int parentIndex = -1;
 	
-    private UnsynchronizedStack frameStack;
-    private UnsynchronizedStack iterStack;
-    private UnsynchronizedStack crefStack;
+    //private UnsynchronizedStack frameStack;
+    private Frame[] frameStack = new Frame[INITIAL_SIZE];
+    private int frameIndex = -1;
+    //private UnsynchronizedStack iterStack;
+    private Iter[] iterStack = new Iter[INITIAL_SIZE];
+    private int iterIndex = -1;
+    //private UnsynchronizedStack crefStack;
+    private SinglyLinkedList[] crefStack = new SinglyLinkedList[INITIAL_SIZE];
+    private int crefIndex = -1;
 
     private RubyModule wrapper;
 
@@ -80,12 +91,6 @@ public class ThreadContext {
      */
     public ThreadContext(IRuby runtime) {
         this.runtime = runtime;
-
-        this.dynamicVarsStack = new UnsynchronizedStack();
-        this.frameStack = new UnsynchronizedStack();
-        this.iterStack = new UnsynchronizedStack();
-        this.parentStack = new UnsynchronizedStack();
-        this.crefStack = new UnsynchronizedStack();
 
         pushDynamicVars();
     }
@@ -171,19 +176,76 @@ public class ThreadContext {
     }
 
     public DynamicVariableSet getCurrentDynamicVars() {
-        return (DynamicVariableSet) dynamicVarsStack.peek();
+        return dynamicVarsStack[dynamicVarsIndex];
+    }
+    
+    private void expandDynamicVarsIfNecessary() {
+        if (dynamicVarsIndex + 1 == dynamicVarsStack.length) {
+            int newSize = dynamicVarsStack.length * 2;
+            DynamicVariableSet[] newDynStack = new DynamicVariableSet[newSize];
+            
+            System.arraycopy(dynamicVarsStack, 0, newDynStack, 0, dynamicVarsStack.length);
+            
+            dynamicVarsStack = newDynStack;
+        }
+    }
+    
+    private void expandFramesIfNecessary() {
+        if (frameIndex + 1 == frameStack.length) {
+            int newSize = frameStack.length * 2;
+            Frame[] newFrameStack = new Frame[newSize];
+            
+            System.arraycopy(frameStack, 0, newFrameStack, 0, frameStack.length);
+            
+            frameStack = newFrameStack;
+        }
+    }
+    
+    private void expandParentsIfNecessary() {
+        if (parentIndex + 1 == parentStack.length) {
+            int newSize = parentStack.length * 2;
+            RubyModule[] newParentStack = new RubyModule[newSize];
+            
+            System.arraycopy(parentStack, 0, newParentStack, 0, parentStack.length);
+            
+            parentStack = newParentStack;
+        }
+    }
+    
+    private void expandItersIfNecessary() {
+        if (iterIndex + 1 == iterStack.length) {
+            int newSize = iterStack.length * 2;
+            Iter[] newIterStack = new Iter[newSize];
+            
+            System.arraycopy(iterStack, 0, newIterStack, 0, iterStack.length);
+            
+            iterStack = newIterStack;
+        }
+    }
+    
+    private void expandCrefsIfNecessary() {
+        if (crefIndex + 1 == crefStack.length) {
+            int newSize = crefStack.length * 2;
+            SinglyLinkedList[] newCrefStack = new SinglyLinkedList[newSize];
+            
+            System.arraycopy(crefStack, 0, newCrefStack, 0, crefStack.length);
+            
+            crefStack = newCrefStack;
+        }
     }
 
     private void pushDynamicVars() {
-        dynamicVarsStack.push(new DynamicVariableSet());
+        dynamicVarsStack[++dynamicVarsIndex] = new DynamicVariableSet();
+        expandDynamicVarsIfNecessary();
     }
 
     private void pushDynamicVars(DynamicVariableSet dynVars) {
-        dynamicVarsStack.push(dynVars);
+        dynamicVarsStack[++dynamicVarsIndex] = dynVars;
+        expandDynamicVarsIfNecessary();
     }
 
     private void popDynamicVars() {
-        dynamicVarsStack.pop();
+        dynamicVarsIndex--;
     }
 
     public RubyThread getThread() {
@@ -221,26 +283,27 @@ public class ThreadContext {
     }
     
     private void pushFrame(Frame frame) {
-        frameStack.push(frame);
+        frameStack[++frameIndex] = frame;
+        expandFramesIfNecessary();
     }
     
     private void popFrame() {
-        Frame frame = (Frame)frameStack.pop();
+        Frame frame = (Frame)frameStack[frameIndex--];
 
         setPosition(frame.getPosition());
     }
     
     public Frame getCurrentFrame() {
-        return (Frame)frameStack.peek();
+        return (Frame)frameStack[frameIndex];
     }
     
     public Frame getPreviousFrame() {
-        int size = frameStack.size();
-        return size <= 1 ? null : (Frame) frameStack.get(size - 2);
+        int size = frameIndex + 1;
+        return size <= 1 ? null : (Frame) frameStack[size - 2];
     }
     
     public int getFrameCount() {
-        return frameStack.size();
+        return frameIndex + 1;
     }
     
     public String getFrameLastFunc() {
@@ -271,6 +334,10 @@ public class ThreadContext {
         return getCurrentFrame().getSelf();
     }
     
+    public void setFrameSelf(IRubyObject self) {
+        getCurrentFrame().setSelf(self);
+    }
+    
     public RubyModule getFrameLastClass() {
         return getCurrentFrame().getLastClass();
     }
@@ -289,11 +356,12 @@ public class ThreadContext {
     
     /////////////////////////// ITER MANAGEMENT //////////////////////////
     private Iter popIter() {
-        return (Iter) iterStack.pop();
+        return (Iter) iterStack[iterIndex--];
     }
     
     private void pushIter(Iter iter) {
-        iterStack.push(iter);
+        iterStack[++iterIndex] = iter;
+        expandItersIfNecessary();
     }
     
     public void setNoBlock() {
@@ -337,10 +405,10 @@ public class ThreadContext {
     }
 
     public Iter getCurrentIter() {
-        return (Iter) iterStack.peek();
+        return (Iter) iterStack[iterIndex];
     }
     
-    public UnsynchronizedStack getIterStack() {
+    public Iter[] getIterStack() {
         return iterStack;
     }
 
@@ -471,32 +539,26 @@ public class ThreadContext {
     }
     
     private IRubyObject yieldInternal(Block yieldBlock, IRubyObject value, IRubyObject self, RubyModule klass, boolean aValue) {
-        // block is executed under its own self, so save the old one (use a stack?)
-        try {
-            setCRef(yieldBlock.getCRef());
-            
-            if (klass == null) {
-                self = yieldBlock.getSelf();               
-            }
-            
-            // FIXME: during refactoring, it was determined that all calls to yield are passing false for yieldProc; is this still needed?
-            IRubyObject[] args = getBlockArgs(value, self, false, aValue, yieldBlock);
-            while (true) {
-                try {
-                    // FIXME: is it appropriate to use the current frame's (the block's frame's) lastClass?
-                    IRubyObject result = yieldBlock.getMethod().call(runtime, self, getCurrentFrame().getLastClass(), null, args, false);
-                    
-                    return result;
-                } catch (JumpException je) {
-                    if (je.getJumpType() == JumpException.JumpType.RedoJump) {
-                        // do nothing, allow loop to redo
-                    } else {
-                        throw je;
-                    }
+        if (klass == null) {
+            self = yieldBlock.getSelf();
+        }
+        
+        // FIXME: during refactoring, it was determined that all calls to yield are passing false for yieldProc; is this still needed?
+        IRubyObject[] args = getBlockArgs(value, self, false, aValue, yieldBlock);
+        
+        while (true) {
+            try {
+                // FIXME: is it appropriate to use the current frame's (the block's frame's) lastClass?
+                IRubyObject result = yieldBlock.getMethod().call(runtime, self, getCurrentFrame().getLastClass(), null, args, false);
+                
+                return result;
+            } catch (JumpException je) {
+                if (je.getJumpType() == JumpException.JumpType.RedoJump) {
+                    // do nothing, allow loop to redo
+                } else {
+                    throw je;
                 }
             }
-        } finally {
-            unsetCRef();
         }
     }
 
@@ -533,7 +595,7 @@ public class ThreadContext {
                     //throw runtime.newArgumentError("wrong # of arguments(0 for 1)");
                 }
 
-                new AssignmentVisitor(getFrameSelf()).assign(blockVar, value, yieldProc); 
+                AssignmentVisitor.assign(this, getFrameSelf(), blockVar, value, yieldProc); 
             }
         }
 
@@ -549,7 +611,7 @@ public class ThreadContext {
         Iterator iter = node.getHeadNode() != null ? node.getHeadNode().iterator() : Collections.EMPTY_LIST.iterator();
         for (int i = 0; i < valueLen && iter.hasNext(); i++) {
             Node lNode = (Node) iter.next();
-            new AssignmentVisitor(getFrameSelf()).assign(lNode, value.entry(i), pcall);
+            AssignmentVisitor.assign(this, getFrameSelf(), lNode, value.entry(i), pcall);
         }
 
         if (pcall && iter.hasNext()) {
@@ -561,16 +623,16 @@ public class ThreadContext {
                 // no check for '*'
             } else if (varLen < valueLen) {
                 ArrayList newList = new ArrayList(value.getList().subList(varLen, valueLen));
-                new AssignmentVisitor(getFrameSelf()).assign(node.getArgsNode(), runtime.newArray(newList), pcall);
+                AssignmentVisitor.assign(this, getFrameSelf(), node.getArgsNode(), runtime.newArray(newList), pcall);
             } else {
-                new AssignmentVisitor(getFrameSelf()).assign(node.getArgsNode(), runtime.newArray(0), pcall);
+                AssignmentVisitor.assign(this, getFrameSelf(), node.getArgsNode(), runtime.newArray(0), pcall);
             }
         } else if (pcall && valueLen < varLen) {
             throw runtime.newArgumentError("Wrong # of arguments (" + valueLen + " for " + varLen + ")");
         }
 
         while (iter.hasNext()) {
-            new AssignmentVisitor(getFrameSelf()).assign((Node)iter.next(), runtime.getNil(), pcall);
+            AssignmentVisitor.assign(this, getFrameSelf(), (Node)iter.next(), runtime.getNil(), pcall);
         }
         
         return value;
@@ -603,36 +665,37 @@ public class ThreadContext {
     }
     
     public SinglyLinkedList peekCRef() {
-        return (SinglyLinkedList)crefStack.peek();
+        return (SinglyLinkedList)crefStack[crefIndex];
     }
     
     public void setCRef(SinglyLinkedList newCRef) {
-        crefStack.push(newCRef);
+        crefStack[++crefIndex] = newCRef;
+        expandCrefsIfNecessary();
     }
     
     public void unsetCRef() {
-        crefStack.pop();
+        crefIndex--;
     }
     
     public SinglyLinkedList pushCRef(RubyModule newModule) {
-        if (crefStack.isEmpty()) {
-            crefStack.push(new SinglyLinkedList(newModule, null));
+        if (crefIndex == -1) {
+            crefStack[++crefIndex] = new SinglyLinkedList(newModule, null);
         } else {
-            crefStack.push(new SinglyLinkedList(newModule, (SinglyLinkedList)crefStack.pop()));
+            crefStack[crefIndex] = new SinglyLinkedList(newModule, (SinglyLinkedList)crefStack[crefIndex]);
         }
         
         return (SinglyLinkedList)peekCRef();
     }
     
     public RubyModule popCRef() {
-        assert !crefStack.isEmpty() : "Tried to pop from empty CRef stack";
+        assert !(crefIndex == -1) : "Tried to pop from empty CRef stack";
         
         RubyModule module = (RubyModule)peekCRef().getValue();
         
-        SinglyLinkedList next = ((SinglyLinkedList)crefStack.pop()).getNext();
+        SinglyLinkedList next = ((SinglyLinkedList)crefStack[crefIndex--]).getNext();
         
         if (next != null) {
-            crefStack.push(next);
+            crefStack[++crefIndex] = next;
         }
         
         return module;
@@ -641,17 +704,18 @@ public class ThreadContext {
     public void pushRubyClass(RubyModule currentModule) {
         assert currentModule != null : "Can't push null RubyClass";
         
-        parentStack.push(currentModule);
+        parentStack[++parentIndex] = currentModule;
+        expandParentsIfNecessary();
     }
     
     public RubyModule popRubyClass() {
-        return (RubyModule)parentStack.pop();
+        return (RubyModule)parentStack[parentIndex--];
     }
 	
     public RubyModule getRubyClass() {
-        assert !parentStack.isEmpty() : "Trying to get RubyClass from empty stack";
+        assert !(parentIndex == -1) : "Trying to get RubyClass from empty stack";
         
-        RubyModule parentModule = (RubyModule)parentStack.peek();
+        RubyModule parentModule = (RubyModule)parentStack[parentIndex];
 
         return parentModule.getNonIncludedClass();
     }
@@ -665,7 +729,7 @@ public class ThreadContext {
     }
 
     public IRubyObject getDynamicValue(String name) {
-        IRubyObject result = ((DynamicVariableSet) dynamicVarsStack.peek()).get(name);
+        IRubyObject result = ((DynamicVariableSet) dynamicVarsStack[dynamicVarsIndex]).get(name);
 
         return result == null ? runtime.getNil() : result;
     }
@@ -735,7 +799,7 @@ public class ThreadContext {
      */
     public IRubyObject createBacktrace(int level, boolean nativeException) {
         RubyArray backtrace = runtime.newArray();
-        int traceSize = frameStack.size() - level - 1;
+        int traceSize = frameIndex - level;
         
         if (traceSize <= 0) {
         	return backtrace;
@@ -743,11 +807,11 @@ public class ThreadContext {
         
         if (nativeException) {
             // assert level == 0;
-            addBackTraceElement(backtrace, (Frame) frameStack.get(frameStack.size() - 1), null);
+            addBackTraceElement(backtrace, (Frame) frameStack[frameIndex], null);
         }
         
         for (int i = traceSize; i > 0; i--) {
-            addBackTraceElement(backtrace, (Frame) frameStack.get(i), (Frame) frameStack.get(i-1));
+            addBackTraceElement(backtrace, (Frame) frameStack[i], (Frame) frameStack[i-1]);
         }
     
         return backtrace;

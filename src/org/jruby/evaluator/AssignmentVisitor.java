@@ -42,7 +42,7 @@ import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
-import org.jruby.ast.visitor.AbstractVisitor;
+import org.jruby.ast.NodeTypes;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -51,128 +51,81 @@ import org.jruby.runtime.builtin.IRubyObject;
  * 
  * @author jpetersen
  */
-public class AssignmentVisitor extends AbstractVisitor {
-    private IRubyObject value;
-    private boolean check;
-    private IRubyObject result;
-    private IRubyObject self;
-    private IRuby runtime;
+public class AssignmentVisitor {
+    public static IRubyObject assign(ThreadContext context, IRubyObject self, Node node, IRubyObject value, boolean check) {
+        IRubyObject result = null;
+        IRuby runtime = context.getRuntime();
+        
+        switch (node.nodeId) {
+        case NodeTypes.CALLNODE: {
+            CallNode iVisited = (CallNode)node;
+            
+            IRubyObject receiver = EvaluationState.eval(context, iVisited.getReceiverNode(), context.getFrameSelf());
 
-    public AssignmentVisitor(IRubyObject self) {
-        this.self = self;
-        this.runtime = self.getRuntime();
-    }
-
-    public IRubyObject assign(Node node, IRubyObject aValue, boolean aCheck) {
-        this.value = aValue;
-        this.check = aCheck;
-
-        acceptNode(node);
+            if (iVisited.getArgsNode() == null) { // attribute set.
+                receiver.callMethod(iVisited.getName(), new IRubyObject[] {value}, CallType.NORMAL);
+            } else { // element set
+                RubyArray args = (RubyArray)EvaluationState.eval(context, iVisited.getArgsNode(), context.getFrameSelf());
+                args.append(value);
+                receiver.callMethod(iVisited.getName(), args.toJavaArray(), CallType.NORMAL);
+            }
+            break;
+        }
+        case NodeTypes.CLASSVARASGNNODE: {
+            ClassVarAsgnNode iVisited = (ClassVarAsgnNode)node;
+            context.getRubyClass().setClassVar(iVisited.getName(), value);
+            break;
+        }
+        case NodeTypes.CLASSVARDECLNODE: {
+            ClassVarDeclNode iVisited = (ClassVarDeclNode)node;
+            if (runtime.getVerbose().isTrue()
+                    && context.getRubyClass().isSingleton()) {
+                runtime.getWarnings().warn(iVisited.getPosition(),
+                        "Declaring singleton class variable.");
+            }
+            context.getRubyClass().setClassVar(iVisited.getName(), value);
+            break;
+        }
+        case NodeTypes.CONSTDECLNODE: {
+            ConstDeclNode iVisited = (ConstDeclNode)node;
+            if (iVisited.getPathNode() == null) {
+                context.getRubyClass().defineConstant(iVisited.getName(), value);
+            } else {
+                ((RubyModule) EvaluationState.eval(context, iVisited.getPathNode(), context.getFrameSelf())).defineConstant(iVisited.getName(), value);
+            }
+            break;
+        }
+        case NodeTypes.DASGNNODE: {
+            DAsgnNode iVisited = (DAsgnNode)node;
+            context.getCurrentDynamicVars().set(iVisited.getName(), value);
+            break;
+        }
+        case NodeTypes.GLOBALASGNNODE: {
+            GlobalAsgnNode iVisited = (GlobalAsgnNode)node;
+            runtime.getGlobalVariables().set(iVisited.getName(), value);
+            break;
+        }
+        case NodeTypes.INSTASGNNODE: {
+            InstAsgnNode iVisited = (InstAsgnNode)node;
+            self.setInstanceVariable(iVisited.getName(), value);
+            break;
+        }
+        case NodeTypes.LOCALASGNNODE: {
+            LocalAsgnNode iVisited = (LocalAsgnNode)node;
+            context.getFrameScope().setValue(iVisited.getCount(), value);
+            break;
+        }
+        case NodeTypes.MULTIPLEASGNNODE: {
+            MultipleAsgnNode iVisited = (MultipleAsgnNode)node;
+            if (!(value instanceof RubyArray)) {
+                value = RubyArray.newArray(runtime, value);
+            }
+            result = context
+                    .mAssign(self, iVisited, (RubyArray) value, check);
+            break;
+        }
+        }
 
         return result;
     }
-
-	/**
-	 * @see AbstractVisitor#visitNode(Node)
-	 */
-	protected Instruction visitNode(Node iVisited) {
-		assert false;
-		return null;
-	}
-
-	/**
-	 * @see AbstractVisitor#visitCallNode(CallNode)
-	 */
-	public Instruction visitCallNode(CallNode iVisited) {
-        ThreadContext context = runtime.getCurrentContext();
-        IRubyObject receiver = EvaluationState.eval(context, iVisited.getReceiverNode(), context.getFrameSelf());
-
-        if (iVisited.getArgsNode() == null) { // attribute set.
-            receiver.callMethod(iVisited.getName(), new IRubyObject[] {value}, CallType.NORMAL);
-        } else { // element set
-            RubyArray args = (RubyArray)EvaluationState.eval(context, iVisited.getArgsNode(), context.getFrameSelf());
-            args.append(value);
-            receiver.callMethod(iVisited.getName(), args.toJavaArray(), CallType.NORMAL);
-        }
-		return null;
-	}
-
-	/**
-	 * @see AbstractVisitor#visitClassVarAsgnNode(ClassVarAsgnNode)
-	 */
-	public Instruction visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
-		runtime.getCurrentContext().getRubyClass().setClassVar(iVisited.getName(), value);
-		return null;
-	}
-
-	/**
-	 * @see AbstractVisitor#visitClassVarDeclNode(ClassVarDeclNode)
-	 */
-	public Instruction visitClassVarDeclNode(ClassVarDeclNode iVisited) {
-        ThreadContext tc = runtime.getCurrentContext();
-		if (runtime.getVerbose().isTrue()
-				&& tc.getRubyClass().isSingleton()) {
-            runtime.getWarnings().warn(iVisited.getPosition(),
-					"Declaring singleton class variable.");
-		}
-        tc.getRubyClass().setClassVar(iVisited.getName(), value);
-		return null;
-	}
-
-	/**
-	 * @see AbstractVisitor#visitConstDeclNode(ConstDeclNode)
-	 */
-	public Instruction visitConstDeclNode(ConstDeclNode iVisited) {
-        ThreadContext context = runtime.getCurrentContext();
-		if (iVisited.getPathNode() == null) {
-			context.getRubyClass().defineConstant(iVisited.getName(), value);
-		} else {
-			((RubyModule) EvaluationState.eval(context, iVisited.getPathNode(), context.getFrameSelf())).defineConstant(iVisited.getName(), value);
-		}
-		return null;
-	}
-
-	/**
-	 * @see AbstractVisitor#visitDAsgnNode(DAsgnNode)
-	 */
-	public Instruction visitDAsgnNode(DAsgnNode iVisited) {
-        runtime.getCurrentContext().getCurrentDynamicVars().set(iVisited.getName(), value);
-		return null;
-	}
-
-	/**
-	 * @see AbstractVisitor#visitGlobalAsgnNode(GlobalAsgnNode)
-	 */
-	public Instruction visitGlobalAsgnNode(GlobalAsgnNode iVisited) {
-        runtime.getGlobalVariables().set(iVisited.getName(), value);
-		return null;
-	}
-
-	/**
-	 * @see AbstractVisitor#visitInstAsgnNode(InstAsgnNode)
-	 */
-	public Instruction visitInstAsgnNode(InstAsgnNode iVisited) {
-		self.setInstanceVariable(iVisited.getName(), value);
-		return null;
-	}
-
-	/**
-	 * @see AbstractVisitor#visitLocalAsgnNode(LocalAsgnNode)
-	 */
-	public Instruction visitLocalAsgnNode(LocalAsgnNode iVisited) {
-        runtime.getCurrentContext().getFrameScope().setValue(iVisited.getCount(), value);
-		return null;
-	}
-
-	/**
-	 * @see AbstractVisitor#visitMultipleAsgnNode(MultipleAsgnNode)
-	 */
-	public Instruction visitMultipleAsgnNode(MultipleAsgnNode iVisited) {
-		if (!(value instanceof RubyArray)) {
-			value = RubyArray.newArray(runtime, value);
-		}
-        result = runtime.getCurrentContext()
-				.mAssign(self, iVisited, (RubyArray) value, check);
-		return null;
-	}
 }

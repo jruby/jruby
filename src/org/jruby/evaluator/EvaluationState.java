@@ -915,7 +915,7 @@ public class EvaluationState {
             }
             case NodeTypes.MULTIPLEASGNNODE: {
                 MultipleAsgnNode iVisited = (MultipleAsgnNode) node;
-                return new AssignmentVisitor(self).assign(iVisited, eval(context,
+                return AssignmentVisitor.assign(context, self, iVisited, eval(context,
                         iVisited.getValueNode(), self), false);
             }
             case NodeTypes.NEWLINENODE: {
