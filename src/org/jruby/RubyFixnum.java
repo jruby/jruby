@@ -76,15 +76,15 @@ public class RubyFixnum extends RubyInteger {
     }
 
     public static RubyFixnum zero(IRuby runtime) {
-        return runtime.newFixnum(0);
+        return newFixnum(runtime, 0);
     }
 
     public static RubyFixnum one(IRuby runtime) {
-        return runtime.newFixnum(1);
+        return newFixnum(runtime, 1);
     }
 
     public static RubyFixnum minus_one(IRuby runtime) {
-        return runtime.newFixnum(-1);
+        return newFixnum(runtime, -1);
     }
 
     protected int compareValue(RubyNumeric other) {
@@ -123,7 +123,7 @@ public class RubyFixnum extends RubyInteger {
     }
 
     public RubyFixnum newFixnum(long newValue) {
-        return getRuntime().newFixnum(newValue);
+        return newFixnum(getRuntime(), newValue);
     }
 
     public boolean singletonMethodsAllowed() {
@@ -387,9 +387,10 @@ public class RubyFixnum extends RubyInteger {
     }
 
     public IRubyObject times() {
-        ThreadContext context = getRuntime().getCurrentContext();
+        IRuby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
         for (long i = 0; i < value; i++) {
-            context.yield(newFixnum(i));
+            context.yield(newFixnum(runtime, i));
         }
         return this;
     }
