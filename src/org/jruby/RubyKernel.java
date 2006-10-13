@@ -21,6 +21,7 @@
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Kiel Hodges <jruby-devel@selfsosoft.com>
  * Copyright (C) 2006 Evan Buswell <evan@heron.sytes.net>
+ * Copyright (C) 2006 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -298,6 +299,20 @@ public class RubyKernel {
     }
     
     public static IRubyObject new_integer(IRubyObject recv, IRubyObject object) {
+        if(object instanceof RubyString) {
+            String val = object.toString();
+            if(val.length() > 0 && val.charAt(0) == '0') {
+                if(val.length() > 1) {
+                    if(val.charAt(1) == 'x') {
+                        return recv.getRuntime().newString(val.substring(2)).callMethod("to_i",recv.getRuntime().newFixnum(16));
+                    } else if(val.charAt(1) == 'b') {
+                        return recv.getRuntime().newString(val.substring(2)).callMethod("to_i",recv.getRuntime().newFixnum(2));
+                    } else {
+                        return recv.getRuntime().newString(val.substring(1)).callMethod("to_i",recv.getRuntime().newFixnum(8));
+                    }
+                }
+            }
+        }
         return object.callMethod("to_i");
     }
     

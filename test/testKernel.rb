@@ -42,3 +42,7 @@ test_equal([a], Array(a))
 a = A8.new
 test_equal([a], Array(a))
 test_exception(TypeError) { Array(A9.new) }
+
+test_equal(10,Integer("0xA"))
+test_equal(8,Integer("010"))
+test_equal(2,Integer("0b10"))
