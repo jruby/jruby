@@ -18,6 +18,7 @@
  * Copyright (C) 2002-2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
+ * Copyright (C) 2006 Antti Karanta <Antti.Karanta@napa.fi>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -273,11 +274,11 @@ public class RubyNumeric extends RubyObject {
     }
     
     public IRubyObject cmp(IRubyObject other) {
-    	if (!(other instanceof RubyNumeric)) {
-    		return getRuntime().getNil();
-    	}
-    	
-        return getRuntime().newFixnum(compareValue((RubyNumeric) other));
+        if (other instanceof RubyNumeric) {
+            return getRuntime().newFixnum(compareValue((RubyNumeric) other));
+        }
+
+        return other.respondsTo("to_int") ? callCoerced("<=>", other) : getRuntime().getNil();
     }
 
     public IRubyObject divmod(IRubyObject other) {
