@@ -18,6 +18,7 @@
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004-2006 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -65,6 +66,7 @@ public class RubyFile extends RubyIO {
 	public static final int LOCK_UN = 8;
 	
     protected String path;
+    private FileLock currentLock;
     
 	public RubyFile(IRuby runtime, RubyClass type) {
 	    super(runtime, type);
@@ -126,8 +128,18 @@ public class RubyFile extends RubyIO {
 		}
     }
     
-    private FileLock currentLock;
-	
+    public IRubyObject close() {
+        // Make sure any existing lock is released before we try and close the file
+        if (currentLock != null) {
+            try {
+                currentLock.release();
+            } catch (IOException e) {
+                throw getRuntime().newIOError(e.getMessage());
+            }
+        }
+        return super.close();
+    }
+
 	public IRubyObject flock(IRubyObject lockingConstant) {
         FileChannel fileChannel = handler.getFileChannel();
         int lockMode = (int) ((RubyFixnum) lockingConstant.convertToType("Fixnum", "to_int", 
