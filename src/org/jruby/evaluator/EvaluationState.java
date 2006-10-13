@@ -9,6 +9,7 @@ package org.jruby.evaluator;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.jruby.IRuby;
@@ -1507,21 +1508,53 @@ public class EvaluationState {
         }
 
         if (node instanceof ArrayNode) {
+            ArrayNode argsArrayNode = (ArrayNode)node;
             ISourcePosition position = context.getPosition();
-            ArrayList list = new ArrayList(((ArrayNode) node).size());
+            int size = argsArrayNode.size();
+            IRubyObject[] argsArray = new IRubyObject[size];
+            // avoid using ArrayList unless we absolutely have to
+            List argsList = null;
+            // once we find a splat, stuff remaining args in argsList and combine afterwards
+            boolean hasSplat = false;
+            // index for the beginning of splatted args, used for combination later
+            int splatBegins = 0;
 
-            for (Iterator iter = ((ArrayNode) node).iterator(); iter.hasNext();) {
-                final Node next = (Node) iter.next();
-                if (next instanceof SplatNode) {
-                    list.addAll(((RubyArray) eval(context, next, self)).getList());
+            for (int i = 0; i < size; i++) {
+                Node next = argsArrayNode.get(i);
+                
+                if (hasSplat) {
+                    // once we've found a splat, we switch to an arraylist to handle growing
+                    if (next instanceof SplatNode) {
+                        argsList.addAll(((RubyArray) eval(context, next, self)).getList());
+                    } else {
+                        argsList.add(eval(context, next, self));
+                    }
                 } else {
-                    list.add(eval(context, next, self));
+                    if (next instanceof SplatNode) {
+                        // switch to ArrayList, since we've got splatted args in the list
+                        argsList = new ArrayList();
+                        splatBegins = i;
+                        hasSplat = true;
+                        argsList.addAll(((RubyArray) eval(context, next, self)).getList());
+                    } else {
+                        argsArray[i] = eval(context, next, self);
+                    }
                 }
+            }
+            
+            if (hasSplat) {
+                // we had splatted arguments, combine unsplatted with list
+                IRubyObject[] argsArray2 = (IRubyObject[])argsList.toArray(new IRubyObject[argsList.size()]);
+                IRubyObject[] newArgsArray = new IRubyObject[splatBegins + argsArray2.length];
+                System.arraycopy(argsArray, 0, newArgsArray, 0, splatBegins);
+                System.arraycopy(argsArray2, 0, newArgsArray, splatBegins, argsArray2.length);
+                
+                argsArray = argsArray2;
             }
 
             context.setPosition(position);
 
-            return (IRubyObject[]) list.toArray(new IRubyObject[list.size()]);
+            return argsArray;
         }
 
         return ArgsUtil.arrayify(eval(context, node, self));
