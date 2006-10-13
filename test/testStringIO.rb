@@ -131,3 +131,10 @@ test_equal("HEL\n", n.gets)
 
 n = StringIO.new("123\n456\n789\n")
 test_equal("123\n456\n789\n", n.gets(nil))
+
+n = StringIO.new
+n.puts
+n.rewind
+test_equal("\n", n.gets)
+test_equal(nil, n.gets)
+test_equal(true, n.eof?)
