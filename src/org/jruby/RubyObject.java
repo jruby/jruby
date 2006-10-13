@@ -795,7 +795,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
     
     public final int hashCode() {
-    	return (int) RubyNumeric.fix2int(callMethod("hash"));
+    	return (int) RubyNumeric.fix2long(callMethod("hash"));
     }
 
     /** rb_obj_type
