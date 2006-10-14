@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2006 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Zach Dennis <zdennis@mktec.com>
@@ -32,7 +32,6 @@ package org.jruby.lexer.yacc;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.util.ArrayList;
 
 /**
  * This class is what feeds the lexer.  It is primarily a wrapper around a
@@ -45,20 +44,27 @@ import java.util.ArrayList;
  * @author enebo
  */
 public class LexerSource {
+    private static final int INITIAL_PUSHBACK_SIZE = 100;
+    private static final int INITIAL_LINEWIDTH_SIZE = 2048;
+    
 	// Where we get new positions from.
 	private ISourcePositionFactory positionFactory;
 	
 	// Where we get our newest char's
     private final Reader reader;
     
-    // Our readback buffer.  Note:  StringBuffer's are thread-safe.
-    // We have no requirement in LexerSource.
-    private StringBuffer buf = new StringBuffer(100);
+    // Our readback/pushback buffer.
+    private char buf[] = new char[INITIAL_PUSHBACK_SIZE];
     
-    // How long is every line we have run across.  This makes it
-    // possible for us to unread() past a read() line and still
-    // know what column we are at.
-    private ArrayList lineWidths = new ArrayList();
+    // index of last character in pushback buffer
+    private int bufLength = -1;
+    
+    // How long is every line we have run across.  This makes it possible for us to unread() 
+    // past a read() line and still know what column we are at.
+    private int lineWidths[] = new int[INITIAL_LINEWIDTH_SIZE];
+
+    // index of last line width in line widths list
+    private int lineWidthsLength = -1;
     
     // The name of this source (e.g. a filename: foo.rb)
     private final String sourceName;
@@ -72,8 +78,7 @@ public class LexerSource {
     // How many bytes into the source are we?
     private int offset = 0;
 
-    // Flag to let us now in next read after a newline that we should reset 
-    // column
+    // Flag to let us now in next read after a newline that we should reset column
     private boolean nextCharIsOnANewLine = true;
 	
     /**
@@ -100,12 +105,11 @@ public class LexerSource {
      * @return next character to viewed by the source
      */
     public char read() {
-    	int length = buf.length();
-    	char c;
+        int length = bufLength;
+        char c;
     	
-    	if (length > 0) {
-    		c = buf.charAt(length - 1);
-    		buf.deleteCharAt(length - 1);
+    	if (length >= 0) {
+    		c = buf[bufLength--];
     	} else {
     		c = wrappedRead();
             
@@ -129,8 +133,16 @@ public class LexerSource {
     		line++;
     		// Since we are not reading off of unread buffer we must at the
     		// end of a new line for the first time.  Add it.
-    		if (length < 1) {
-    			lineWidths.add(new Integer(column));
+    		if (length < 0) {
+                lineWidths[++lineWidthsLength] = column;
+                // If we outgrow our lineLength list then grow it
+                if (lineWidthsLength + 1 == lineWidths.length) {
+                    int[] newLineWidths = new int[lineWidths.length + INITIAL_LINEWIDTH_SIZE];
+                        
+                    System.arraycopy(lineWidths, 0, newLineWidths, 0, lineWidths.length);
+                        
+                    lineWidths = newLineWidths;
+                }                
     		}
     		
     		nextCharIsOnANewLine = true;
@@ -151,13 +163,22 @@ public class LexerSource {
     	
             if (c == '\n') {
                 line--;
-                column = ((Integer)lineWidths.get(line)).intValue();
+                column = lineWidths[line];
                 nextCharIsOnANewLine = true;
             } else {
                 column--;
             }
 
-            buf.append(c);
+            buf[++bufLength] = c;
+            // If we outgrow our pushback stack then grow it (this should only happen in
+            // pretty pathological cases).
+            if (bufLength + 1 == buf.length) {
+                char[] newBuf = new char[buf.length + INITIAL_PUSHBACK_SIZE];
+                
+                System.arraycopy(buf, 0, newBuf, 0, buf.length);
+                
+                buf = newBuf;                
+            }
         }
     }
     
@@ -220,7 +241,7 @@ public class LexerSource {
     }
     
     public ISourcePosition getDummyPosition() {
-    	return positionFactory.getDummyPosition();
+        return positionFactory.getDummyPosition();
     }
     
     public ISourcePositionFactory getPositionFactory() {
