@@ -659,4 +659,8 @@ public class BaseMockRuby implements IRuby {
     public void unregisterInspecting(Object o) {
         throw new MockException();
     }
+
+    public boolean isObjectSpaceEnabled() {
+        return true;
+    }
 }

@@ -134,12 +134,13 @@ public class Main {
 			out.println("    -b              benchmark mode, times the script execution");
 			out.println("    -Idirectory     specify $LOAD_PATH directory (may be used more than once)");
 			out.println("    --              optional -- before rubyfile.rb for compatibility with ruby");
+            out.println("    -O              run with ObjectSpace disabled (improves performance)");
             hasPrintedUsage = true;
         }
     }
 
     private int runInterpreter(Reader reader, String filename) {
-        IRuby runtime = Ruby.newInstance(in, out, err);
+        IRuby runtime = Ruby.newInstance(in, out, err, commandline.isObjectSpaceEnabled());
 
         try {
         	runInterpreter(runtime, reader, filename);

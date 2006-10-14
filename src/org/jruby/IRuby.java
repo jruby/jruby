@@ -133,6 +133,8 @@ public interface IRuby {
 
 	public boolean isClassDefined(String name);
 
+    public boolean isObjectSpaceEnabled();
+    
 	/** Getter for property rubyTopSelf.
 	 * @return Value of property rubyTopSelf.
 	 */

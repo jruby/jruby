@@ -63,6 +63,7 @@ public class CommandlineParser {
     private boolean showVersion = false;
     private String[] scriptArguments = null;
     private boolean shouldRunInterpreter = true;
+    private boolean objectSpaceEnabled = true;
 
     public int argumentIndex = 0;
     public int characterIndex = 0;
@@ -117,6 +118,9 @@ public class CommandlineParser {
                 case 'p' :
                     assumePrinting = true;
                     assumeLoop = true;
+                    break;
+                case 'O' :
+                    objectSpaceEnabled = false;
                     break;
                 case 'n' :
                     assumeLoop = true;
@@ -263,5 +267,9 @@ public class CommandlineParser {
 
     public boolean isShouldRunInterpreter() {
         return shouldRunInterpreter;
+    }
+    
+    public boolean isObjectSpaceEnabled() {
+        return objectSpaceEnabled;
     }
 }

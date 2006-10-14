@@ -76,7 +76,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     private boolean taint;
 
 	public RubyObject(IRuby runtime, RubyClass metaClass) {
-        this(runtime, metaClass, true);
+        this(runtime, metaClass, runtime.isObjectSpaceEnabled());
     }
 
     public RubyObject(IRuby runtime, RubyClass metaClass, boolean useObjectSpace) {

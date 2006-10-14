@@ -119,6 +119,7 @@ public final class Ruby implements IRuby {
     private boolean isWithinTrace = false;
     private boolean globalAbortOnExceptionEnabled = false;
     private boolean doNotReverseLookupEnabled = false;
+    private final boolean objectSpaceEnabled;
 
     /** safe-level:
     		0 - strings from streams/environment/ARGV are tainted (default)
@@ -170,9 +171,22 @@ public final class Ruby implements IRuby {
      * Create and initialize a new jruby Runtime.
      */
     private Ruby(InputStream in, PrintStream out, PrintStream err) {
-    	this.in = in;
-    	this.out = out;
-    	this.err = err;
+        this.in = in;
+        this.out = out;
+        this.err = err;
+        
+        objectSpaceEnabled = true;
+    }
+
+    /**
+     * Create and initialize a new jruby Runtime.
+     */
+    private Ruby(InputStream in, PrintStream out, PrintStream err, boolean osEnabled) {
+        this.in = in;
+        this.out = out;
+        this.err = err;
+        
+        objectSpaceEnabled = osEnabled;
     }
 
     /**
@@ -192,11 +206,20 @@ public final class Ruby implements IRuby {
      *
      * @return the JRuby runtime
      */
-    public static IRuby newInstance(InputStream in, PrintStream out, PrintStream err) {
-        Ruby ruby = new Ruby(in, out, err);
+    public static IRuby newInstance(InputStream in, PrintStream out, PrintStream err, boolean osEnabled) {
+        Ruby ruby = new Ruby(in, out, err, osEnabled);
         ruby.init();
         
         return ruby;
+    }
+
+    /**
+     * Returns a default instance of the JRuby runtime.
+     *
+     * @return the JRuby runtime
+     */
+    public static IRuby newInstance(InputStream in, PrintStream out, PrintStream err) {
+        return newInstance(in, out, err, true);
     }
 
     /**
@@ -1285,5 +1308,9 @@ public final class Ruby implements IRuby {
     public void unregisterInspecting(Object obj) {
         java.util.Map val = (java.util.Map)inspect.get();
         val.remove(obj);
+    }
+
+    public boolean isObjectSpaceEnabled() {
+        return objectSpaceEnabled;
     }
 }
