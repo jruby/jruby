@@ -32,3 +32,15 @@ test_no_exception {
 	rescue NoMethodError,RuntimeError =>e
 	end
 }
+
+test_no_exception {
+    begin
+        begin
+            raise "X"
+        rescue NoMethodError
+            test_ok(false)
+        end
+    rescue
+        test_ok(true)
+    end
+}
