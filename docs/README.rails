@@ -1,34 +1,34 @@
-Ruby on Rails works more or less with JRuby 0.9.0.  It is slower than we would
-like, but it gives a good feeling of how well JRuby has been progressing 
-lately.  For reasons still not completely understood Ruby on Rails only works
-properly using Java5 and higher.  It does not currently work with Java 1.4.2.
-We will be looking into this for 0.9.1 release of JRuby.
-
 To get started:
 
 1. Install Rails gem (with dependencies)*:
  % gem install --no-rdoc --no-ri rails
+2. Install ActiveRecord-JDBC gem:
+ % gem install --no-rdoc --no-ri ActiveRecord-JDBC
 2. Generate your Rails application using JRuby
  % jruby ${JRUBY_HOME}/bin/rails my_app
 3. Start Rails: 
  % jruby scripts/server
 
-To use a database connection you need to use an experimental adapter by Nick Sieger.
-This adapter currently has only been tested on MySQL, but it sounds like Nick is trying
-it with additional databases.  To use the JDBC adapter you will need to:
+To get JDBC runing you will need to do one special thing:
+1. Edit config/environment.rb and add "require 'jdbc_adapter'" on a line between
+"require File.join(File.dirname(__FILE__), 'boot')"
+and 
+"Rails::Initializer.run do |config|"
+In time, it sounds like Rails will change in some way to make this unneccesary.
 
-1. download the JDBC activerecord connector from Nick Sieger: 
- % jruby script/plugin install http://svn.caldersphere.net/svn/main/activerecord-jdbc/trunk/activerecord_jdbc/
-2. Add the following line to your conf/environment.rb file
-  config.frameworks -= [:active_record]
-3. Configure your database settings in database.yaml.  Here is a sample:
+To configure using the JDBC driver here is an example config.  It should give
+an idea of how you need to edit config/database.yaml:
   adapter: jdbc
   driver: com.mysql.jdbc.Driver
   url: jdbc:mysql://localhost:3306/cookbook
   username: root
   password: yeahpwhere
-4. Make sure jdbc driver is in your Java CLASSPATH:
+
+Note! Make sure jdbc driver is in your Java CLASSPATH:
+a. Unix sh setting
   export CLASSPATH=/my_path_to/driver.jar
+b. Dos setting
+  set CLASSPATH=c:\foo\bar\driver.java
 
  *If you are explicitly installing an older rails version 1.1.12 or 1.1.13 then you need
  to apply a patch in docs/rails the Rails gem after it has been installed.  As of version
