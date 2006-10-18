@@ -516,10 +516,19 @@ module Gem
 
     # Tests specs for equality (across all attributes).
     def ==(other)
+      other.kind_of?(self.class) && same_attributes?(other)
+    end
+
+    def same_attributes?(other)
       @@attributes.each do |name, default|
         return false unless self.send(name) == other.send(name)
       end
       true
+    end
+    private :same_attributes?
+
+    def hash
+      @name.hash + 13 * @version.hash
     end
     
     # Export methods (YAML and Ruby code) ----------------------------
