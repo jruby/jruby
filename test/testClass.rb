@@ -200,3 +200,10 @@ end
 x = SubClass.new
 test_no_exception { x.foo }
 test_equal([SubClass, BaseClass], $foo_calls)
+
+class NoConstantInInstanceVariables
+  @@b = 4
+  B = 2
+end
+
+test_equal(["@@b"], NoConstantInInstanceVariables.new.class.instance_variables)
