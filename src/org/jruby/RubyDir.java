@@ -138,11 +138,20 @@ public class RubyDir extends RubyObject {
 
     /**
      * Returns an array of filenames matching the specified wildcard pattern
-     * <code>pat</code>.
+     * <code>pat</code>. If a block is given, the array is iterated internally
+     * with each filename is passed to the block in turn. In this case, Nil is
+     * returned.  
      */
-    public static RubyArray glob(IRubyObject recv, RubyString pat) {
+    public static IRubyObject glob(IRubyObject recv, RubyString pat) {
         String pattern = pat.toString();
         String[] files = new Glob(recv.getRuntime().getCurrentDirectory(), pattern).getNames();
+        ThreadContext context = recv.getRuntime().getCurrentContext();
+        if (context.isBlockGiven()) {
+            for (int i = 0; i < files.length; i++) {
+                context.yield(JavaUtil.convertJavaToRuby(recv.getRuntime(), files[i]));
+            }
+            return recv.getRuntime().getNil();
+        }            
         return recv.getRuntime().newArray(JavaUtil.convertJavaArrayToRuby(recv.getRuntime(), files));
     }
 

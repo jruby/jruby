@@ -52,6 +52,17 @@ Dir.glob('./**/testDir_tmp1').each { |f| test_equal(true, File.exist?(f)) }
 File.delete("testDir_2/testDir_tmp1")
 Dir.delete("testDir_2")
 
+# Test that glob handles blocks correctly
+Dir.mkdir("testDir_3")
+open("testDir_3/testDir_tmp1", "w").close
+vals = []
+glob_val = Dir.glob('**/*tmp1'){|f| vals << f}
+test_equal(true, glob_val.nil?)
+test_equal(1, vals.size)
+test_equal(true, File.exists?(vals[0])) unless vals.empty?
+File.delete("testDir_3/testDir_tmp1")
+Dir.delete("testDir_3")
+
 # begin JIRA 31 issues
 
 # works with MRI though not JRuby ('.' gets globbed)
