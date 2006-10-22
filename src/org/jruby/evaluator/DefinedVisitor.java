@@ -195,7 +195,7 @@ public class DefinedVisitor extends AbstractVisitor {
 	 * @see AbstractVisitor#visitVCallNode(VCallNode)
 	 */
 	public Instruction visitVCallNode(VCallNode iVisited) {
-		if (runtime.getCurrentContext().getFrameSelf().getMetaClass().isMethodBound(iVisited.getMethodName(), false)) {
+		if (runtime.getCurrentContext().getFrameSelf().getMetaClass().isMethodBound(iVisited.getName(), false)) {
 			definition = "method";
 		}
 		return null;

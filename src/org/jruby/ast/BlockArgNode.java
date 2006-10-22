@@ -32,6 +32,7 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -45,14 +46,16 @@ import org.jruby.lexer.yacc.ISourcePosition;
  *	in this example c is a BlockArgNode
  * @author  jpetersen
  */
-public class BlockArgNode extends Node {
+public class BlockArgNode extends Node implements INameNode {
     static final long serialVersionUID = 8374824536805365398L;
 
     private final int count;
+    private String name;
 
-    public BlockArgNode(ISourcePosition position, int count) {
+    public BlockArgNode(ISourcePosition position, int count, String name) {
         super(position, NodeTypes.BLOCKARGNODE);
         this.count = count;
+        this.name = name;
     }
 
     /**
@@ -70,9 +73,17 @@ public class BlockArgNode extends Node {
     public int getCount() {
         return count;
     }
-    
+
+    /**
+     * Get the name of this block argument
+     * 
+     * @return it's name
+     */
+    public String getName() {
+        return name;
+    }
+
     public List childNodes() {
         return EMPTY_LIST;
     }
-
 }

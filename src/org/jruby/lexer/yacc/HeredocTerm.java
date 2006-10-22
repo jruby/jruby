@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.lexer.yacc;
 
+import org.jruby.ast.StrNode;
 import org.jruby.parser.Tokens;
 
 
@@ -89,8 +90,10 @@ public class HeredocTerm extends StrTerm {
                 case '$':
                 case '@':
                     src.unread(c);
+                    lexer.setValue(new Token("#" + c, lexer.getPosition()));
                     return Tokens.tSTRING_DVAR;
                 case '{':
+                    lexer.setValue(new Token("#" + c, lexer.getPosition()));
                     return Tokens.tSTRING_DBEG;
                 }
                 buffer.append('#');
@@ -103,7 +106,7 @@ public class HeredocTerm extends StrTerm {
                     throw new SyntaxException(src.getPosition(), "can't find string \"" + eos + "\" anywhere before EOF");
                 }
                 if (c != '\n') {
-                    lexer.yaccValue = new Token(buffer.toString(), lexer.getPosition(null, false));
+                    lexer.yaccValue = new StrNode(lexer.getPosition(), buffer.toString());
                     return Tokens.tSTRING_CONTENT;
                 }
                 buffer.append(src.read());
@@ -119,7 +122,7 @@ public class HeredocTerm extends StrTerm {
 
         src.unreadMany(lastLine);
         lexer.setStrTerm(new StringTerm(-1, '\0', '\0'));
-        lexer.yaccValue = new Token(str.toString(), lexer.getPosition(null, false));
+        lexer.yaccValue = new StrNode(lexer.getPosition(), str.toString());
         return Tokens.tSTRING_CONTENT;
     }
 }

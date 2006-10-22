@@ -1315,7 +1315,7 @@ public class EvaluationState {
             }
             case NodeTypes.VCALLNODE: {
                 VCallNode iVisited = (VCallNode) node;
-                return self.callMethod(iVisited.getMethodName(), IRubyObject.NULL_ARRAY,
+                return self.callMethod(iVisited.getName(), IRubyObject.NULL_ARRAY,
                         CallType.VARIABLE);
             }
             case NodeTypes.WHENNODE:

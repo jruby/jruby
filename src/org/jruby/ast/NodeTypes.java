@@ -101,6 +101,7 @@ public final class NodeTypes {
     public static final int ZARRAYNODE = 97;
     public static final int ZEROARGNODE = 98;
     public static final int ZSUPERNODE = 99;
+    public static final int COMMENTNODE = 100;
     
     private NodeTypes() {}
 }

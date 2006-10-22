@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jruby.ast.BlockNode;
+import org.jruby.ast.CommentNode;
 import org.jruby.ast.Node;
 import org.jruby.lexer.yacc.ISourcePosition;
 
@@ -48,6 +49,7 @@ public class RubyParserResult {
     private List localVariables;
     private InputStream afterEndStream;
     private boolean endSeen;
+    private List commentNodes = new ArrayList();
 
     /**
      * Constructor for RubyParserResult.
@@ -80,6 +82,10 @@ public class RubyParserResult {
         return afterEndStream;
     }
 
+    public List getCommentNodes() {
+        return commentNodes;
+    }
+    
     public Node getAST() {
         return ast;
     }
@@ -113,6 +119,10 @@ public class RubyParserResult {
      */
     public void setLocalVariables(List localVariables) {
         this.localVariables = localVariables;
+    }
+    
+    public void addComment(CommentNode node) {
+        commentNodes.add(node);
     }
     
     public void addBeginNode(Node node) {

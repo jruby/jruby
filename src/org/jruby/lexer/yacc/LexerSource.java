@@ -240,10 +240,6 @@ public class LexerSource {
     	return positionFactory.getPosition(null, false);
     }
     
-    public ISourcePosition getDummyPosition() {
-        return positionFactory.getDummyPosition();
-    }
-    
     public ISourcePositionFactory getPositionFactory() {
         return positionFactory;
     }
@@ -365,7 +361,7 @@ public class LexerSource {
             	
             	// No hex value after the 'x'.
             	if (hexOffset == getColumn()) {
-            	    throw new SyntaxException(getPosition(null, false), "Invalid escape character syntax");
+            	    throw new SyntaxException(getPosition(), "Invalid escape character syntax");
             	}
                 return hexValue;
             case 'b' : // backspace
@@ -374,16 +370,16 @@ public class LexerSource {
                 return ' ';
             case 'M' :
                 if ((c = read()) != '-') {
-                    throw new SyntaxException(getPosition(null, false), "Invalid escape character syntax");
+                    throw new SyntaxException(getPosition(), "Invalid escape character syntax");
                 } else if ((c = read()) == '\\') {
                     return (char) (readEscape() | 0x80);
                 } else if (c == '\0') {
-                    throw new SyntaxException(getPosition(null, false), "Invalid escape character syntax");
+                    throw new SyntaxException(getPosition(), "Invalid escape character syntax");
                 } 
                 return (char) ((c & 0xff) | 0x80);
             case 'C' :
                 if ((c = read()) != '-') {
-                    throw new SyntaxException(getPosition(null, false), "Invalid escape character syntax");
+                    throw new SyntaxException(getPosition(), "Invalid escape character syntax");
                 }
             case 'c' :
                 if ((c = read()) == '\\') {
@@ -391,11 +387,11 @@ public class LexerSource {
                 } else if (c == '?') {
                     return '\u0177';
                 } else if (c == '\0') {
-                    throw new SyntaxException(getPosition(null, false), "Invalid escape character syntax");
+                    throw new SyntaxException(getPosition(), "Invalid escape character syntax");
                 }
                 return (char) (c & 0x9f);
             case '\0' :
-                throw new SyntaxException(getPosition(null, false), "Invalid escape character syntax");
+                throw new SyntaxException(getPosition(), "Invalid escape character syntax");
             default :
                 return c;
         }

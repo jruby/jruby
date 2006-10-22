@@ -128,8 +128,10 @@ public interface Tokens {
     int tASSOC      = DefaultRubyParser.tASSOC;
     int tLPAREN     = DefaultRubyParser.tLPAREN;
     int tLPAREN2     = DefaultRubyParser.tLPAREN2;
+    int tRPAREN     = DefaultRubyParser.tRPAREN;
     int tLPAREN_ARG = DefaultRubyParser.tLPAREN_ARG;
     int tLBRACK     = DefaultRubyParser.tLBRACK;
+    int tRBRACK     = DefaultRubyParser.tRBRACK;
     int tLBRACE     = DefaultRubyParser.tLBRACE;
     int tLBRACE_ARG     = DefaultRubyParser.tLBRACE_ARG;
     int tSTAR       = DefaultRubyParser.tSTAR;
@@ -146,7 +148,8 @@ public interface Tokens {
     int tGT         = DefaultRubyParser.tGT;
     int tCARET      = DefaultRubyParser.tCARET;
     int tBANG       = DefaultRubyParser.tBANG;
-    int tLCURLY       = DefaultRubyParser.tLCURLY;
+    int tLCURLY     = DefaultRubyParser.tLCURLY;
+    int tRCURLY     = DefaultRubyParser.tRCURLY;
     int tPIPE       = DefaultRubyParser.tPIPE;
 
     String[] operators = {"+@", "-@", "**", "<=>", "==", "===", "!=", ">=", "<=", "&&",

@@ -38,6 +38,7 @@ import java.io.Serializable;
  * error/warning information.  An IDE using this may need it though.  This is
  * trivially added if need be.
  * 
+ * @see org.jruby.lexer.yacc.ISourcePosition
  */
 public class SourcePosition implements ISourcePosition, Serializable {
     private static final long serialVersionUID = 3762529027281400377L;
@@ -45,11 +46,12 @@ public class SourcePosition implements ISourcePosition, Serializable {
     // The file of the source
     private final String file;
     
-    // The row of the source
+    // The state/end rows of the source
     private final int startLine;
     private final int endLine;
     
-    private final int startOffset;
+    // The start/end offsets of the source
+    private int startOffset;
     private final int endOffset;
 
     /**
@@ -94,21 +96,23 @@ public class SourcePosition implements ISourcePosition, Serializable {
 	}
 
 	/**
-	 * @return the file of the source
+	 * @see org.jruby.lexer.yacc.ISourcePosition#getFile()
 	 */
     public String getFile() {
         return file;
     }
     
     /**
-     * @return the line a token starts within the source
+     * Not used in interpreter
+     * 
+     * @see org.jruby.lexer.yacc.ISourcePosition#getStartLine()
      */
     public int getStartLine() {
     	return startLine;
     }
 
     /**
-     * @return the line within the source
+     * @see org.jruby.lexer.yacc.ISourcePosition#getEndLine()
      */
     public int getEndLine() {
         return endLine;
@@ -132,14 +136,16 @@ public class SourcePosition implements ISourcePosition, Serializable {
     }
 
     /**
-     * @return something we can use for identity in hashing, etc...
+     * Something we can use for identity in hashing, etc...
+     * 
+     * @see java.lang.Object#hashCode()
      */
     public int hashCode() {
         return file.hashCode() ^ endLine;
     }
 
     /**
-     * @return simple Object.toString() implementation
+     * @see java.lang.Object#toString()
      */
     public String toString() {
         return file + ":[" + startLine + "," + endLine + "]:[" + 
@@ -147,7 +153,16 @@ public class SourcePosition implements ISourcePosition, Serializable {
     }
     
     /**
-     * Not used in interpreter 
+     * @see org.jruby.lexer.yacc.ISourcePosition#adjustStartOffset(int)
+     */
+    public void adjustStartOffset(int relativeValue) {
+        startOffset += relativeValue;
+    }
+    
+    /**
+     * Not used in interpreter
+     * 
+     * @see org.jruby.lexer.yacc.ISourcePosition#getStartOffset()
      */
     public int getStartOffset() {
     	return startOffset;
@@ -155,8 +170,20 @@ public class SourcePosition implements ISourcePosition, Serializable {
     
     /**
      * Not used in interpreter 
+     * 
+     * @see org.jruby.lexer.yacc.ISourcePosition#getEndOffset()
      */
     public int getEndOffset() {
     	return endOffset;
+    }
+    
+    /**
+     * @see org.jruby.lexer.yacc.ISourcePosition#union(ISourcePosition)
+     */
+    public ISourcePosition union(ISourcePosition other) {
+        // Enebo: All AST nodes but IterNode are in ascending order position-wise.  We should not 
+        // need to safe-guard that other is a smaller source position
+        
+        return new SourcePosition(file, startLine, other.getEndLine(), startOffset, other.getEndOffset());
     }
 }

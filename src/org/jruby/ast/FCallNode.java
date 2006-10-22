@@ -34,6 +34,7 @@ package org.jruby.ast;
 import java.io.IOException;
 import java.util.List;
 
+import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -42,7 +43,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  *
  * @author  jpetersen
  */
-public class FCallNode extends Node {
+public class FCallNode extends Node implements INameNode {
     static final long serialVersionUID = 3590332973770104094L;
 
     private String name;

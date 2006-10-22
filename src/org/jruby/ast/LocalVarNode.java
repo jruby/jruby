@@ -32,6 +32,7 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -40,14 +41,16 @@ import org.jruby.lexer.yacc.ISourcePosition;
  *
  * @author  jpetersen
  */
-public class LocalVarNode extends Node {
+public class LocalVarNode extends Node implements INameNode {
     static final long serialVersionUID = 8562701804939317217L;
 
     private final int count;
+    private final String name;
 
-    public LocalVarNode(ISourcePosition position, int count) {
+    public LocalVarNode(ISourcePosition position, int count, String name) {
         super(position, NodeTypes.LOCALVARNODE);
         this.count = count;
+        this.name = name;
     }
 
     /**
@@ -64,6 +67,10 @@ public class LocalVarNode extends Node {
      */
     public int getCount() {
         return count;
+    }
+    
+    public String getName() {
+        return name;
     }
     
     public List childNodes() {

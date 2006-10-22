@@ -37,31 +37,20 @@ public class SourcePositionFactory implements ISourcePositionFactory {
     }
 
     public ISourcePosition getPosition(ISourcePosition startPosition, boolean inclusive) {
-    	int startLine;
-    	int startOffset;
-    	int endLine = source.getLine();
-    	String filename = source.getFilename();
-    	
+
         if (startPosition == null) {
-            startLine = lastPosition.getEndLine();
-            startOffset = lastPosition.getEndOffset();
+            lastPosition = new SourcePosition(source.getFilename(), lastPosition.getEndLine(), 
+                    source.getLine(), lastPosition.getEndOffset(), source.getOffset());
         } else if (inclusive) {
-            startLine = startPosition.getStartLine();
-            startOffset = startPosition.getStartOffset();
+            lastPosition = new SourcePosition(source.getFilename(), startPosition.getStartLine(), 
+                    source.getLine(), startPosition.getStartOffset(), source.getOffset());
         } else {
-            startLine = startPosition.getEndLine();
-            startOffset = startPosition.getEndOffset();
+            lastPosition = new SourcePosition(source.getFilename(), startPosition.getEndLine(), 
+                    source.getLine(), startPosition.getEndOffset(), source.getOffset());
         }
 
-        lastPosition = new SourcePosition(filename, startLine, endLine, startOffset, source.getOffset());
-        
         return lastPosition;
 	}
-    
-    public ISourcePosition getUnion(ISourcePosition first, ISourcePosition second) {
-        return new SourcePosition(first.getFile(), first.getStartLine(), second.getEndLine(),
-                first.getStartOffset(), second.getEndOffset());        
-    }
     
     public ISourcePosition getDummyPosition() {
         return new SourcePosition("", -1, -1, 0, 0);
