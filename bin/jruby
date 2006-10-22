@@ -58,12 +58,12 @@ if [ -z "$JRUBY_OPTS" ] ; then
 fi
 
 if [ -z "$JAVA_HOME" ] ; then
-  echo You must set JAVA_HOME to point at your Java Development Kit installation
-  exit 1
+  JAVA_CMD='java'
 else
   if $cygwin; then
     JAVA_HOME=`cygpath -u "$JAVA_HOME"`
   fi
+  JAVA_CMD="$JAVA_HOME/bin/java"
 fi
 
 JRUBY_SHELL=/bin/sh
@@ -126,7 +126,7 @@ if [ "$1" = "EN_US" ]; then
   shift
 fi
 
-  "$JAVA_HOME/bin/java" $DEBUG -Xmx256m -ea -classpath "$CP" \
+  $JAVA_CMD $DEBUG -Xmx256m -ea -classpath "$CP" \
   "-Djruby.base=$JRUBY_BASE" \
   "-Djruby.home=$JRUBY_HOME" \
   "-Djruby.lib=$JRUBY_BASE/lib" \
