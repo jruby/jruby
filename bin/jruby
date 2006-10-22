@@ -126,7 +126,7 @@ if [ "$1" = "EN_US" ]; then
   shift
 fi
 
-  $JAVA_CMD $DEBUG -Xmx256m -ea -classpath "$CP" \
+  "$JAVA_CMD" $DEBUG -Xmx256m -ea -classpath "$CP" \
   "-Djruby.base=$JRUBY_BASE" \
   "-Djruby.home=$JRUBY_HOME" \
   "-Djruby.lib=$JRUBY_BASE/lib" \
