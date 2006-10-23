@@ -68,3 +68,7 @@ test_equal(true,[ nil, true, 99 ].any?)
 test_equal([[1, 4, 7], [2, 5, 8], [3, 6, 9]],(1..3).zip(a, b))
 test_equal([["cat\n", 1], ["dog", nil]],"cat\ndog".zip([1]))
 test_equal([[1], [2], [3]],(1..3).zip)
+
+test_exception(ArgumentError) {
+  ['a'].grep {/foo/}
+}

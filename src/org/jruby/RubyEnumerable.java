@@ -170,6 +170,7 @@ public class RubyEnumerable {
         }
         public IRubyObject method3(ThreadContext tc, IRubyObject self, IRubyObject[] args) {
             //GREP
+            self.checkArgumentCount(args,1,1);
             List arr = eachToList(tc,self,module);
             List result = new ArrayList();
             IRubyObject pattern = args[0];
