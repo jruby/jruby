@@ -470,6 +470,8 @@ public class RubyString extends RubyObject {
 				sb.append('\\').append('v');
 			} else if (c == '\u0007') {
 				sb.append('\\').append('a');
+			} else if (c == '\u0008') {
+				sb.append('\\').append('b');
 			} else if (c == '\u001B') {
 				sb.append('\\').append('e');
 			} else {

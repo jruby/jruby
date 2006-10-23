@@ -437,3 +437,5 @@ test_equal(StringExt, StringExt.new("test").class)
 
 test_equal("foa3VCPbMb8XQ", "foobar".crypt("foo"))
 
+test_equal("\"\\b\"","\x08".inspect)
+
