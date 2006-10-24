@@ -67,6 +67,7 @@ testEnumerable.rb
 testEnv.rb
 testSocket.rb
 testUnboundMethod.rb
+testYAML.rb
 testComparable.rb
 testInspect.rb
 

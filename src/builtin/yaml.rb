@@ -1,36 +1,37 @@
-
-require 'rbyaml'
-require 'java'
-
-include_class "org.jruby.yaml.JRubyConstructor"
-include_class "org.jruby.util.IOReader"
-include_class "org.jvyaml.ComposerImpl"
-include_class "org.jvyaml.ParserImpl"
-include_class "org.jvyaml.ScannerImpl"
-include_class "org.jvyaml.ResolverImpl"
+require 'java' #needed for the module JavaUtilities, which JavaEmbedUtils have a dependency on
+require 'yaml_internal'
 
 module YAML
-  def self.load( io )
-    if String === io
-      ctor = JRubyConstructor.new(self,ComposerImpl.new(ParserImpl.new(ScannerImpl.new(io)),ResolverImpl.new))
-    else
-      ctor = JRubyConstructor.new(self,ComposerImpl.new(ParserImpl.new(ScannerImpl.new(IOReader.new(io))),ResolverImpl.new))
+  #
+  # YAML::Stream -- for emitting many documents
+  #
+  class Stream
+    include Enumerable
+    attr_accessor :documents, :options
+    def initialize(opts = {})
+      @options = opts
+      @documents = []
     end
-    ctor.getData if ctor.checkData
-  end
-
-  def self.load_file( filepath )
-   File.open( filepath ) do |f|
-      load( f )
+    
+    def [](i)
+      @documents[ i ]
     end
-  end
+    
+    def add(doc)
+      @documents << doc
+    end
 
-  # Make YAML module to act exactly as RbYAML
-  def self.method_missing(name,*args)
-    RbYAML.send(name,*args)
-  end
+    def edit(doc_num,doc)
+      @documents[ doc_num ] = doc
+    end
 
-  def self.const_missing(name)
-    RbYAML.const_get(name)
+    def each(&block)
+      @documents.each(&block)
+    end
+    
+    def emit
+      YAML::dump_all(@documents)
+    end
   end
 end
+  
