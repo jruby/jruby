@@ -198,10 +198,10 @@ public class RubyTime extends RubyObject {
             }
         }
 		long millis_other = (other instanceof RubyTime) ? ((RubyTime) other).getTimeInMillis() : RubyNumeric.num2long(other) * 1000;
-
-		if (millis > millis_other) {
+                long usec_other = (other instanceof RubyTime) ? ((RubyTime)other).usec : 0;
+		if (millis > millis_other || (millis == millis_other && usec > usec_other)) {
 		    return RubyFixnum.one(getRuntime());
-		} else if (millis < millis_other) {
+		} else if (millis < millis_other || (millis == millis_other && usec < usec_other)) {
 		    return RubyFixnum.minus_one(getRuntime());
 		} else {
 		    return RubyFixnum.zero(getRuntime());
@@ -239,6 +239,14 @@ public class RubyTime extends RubyObject {
 
     public RubyInteger usec() {
         return getRuntime().newFixnum(microseconds());
+    }
+
+    public void setMicroseconds(long mic) {
+        long millis = getTimeInMillis() % 1000;
+        long withoutMillis = getTimeInMillis() - millis;
+        withoutMillis += (mic / 1000);
+        cal.setTimeInMillis(withoutMillis);
+        usec = mic % 1000;
     }
     
     public long microseconds() {
