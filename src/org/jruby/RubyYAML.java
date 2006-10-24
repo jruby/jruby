@@ -473,7 +473,7 @@ public class RubyYAML {
                 return args[0].callMethod("scalar",new IRubyObject[]{rt.newString("tag:yaml.org,2002:binary"),rt.newArray(self).callMethod("pack",rt.newString("m")),rt.newString("|")});
             }
             if(((List)self.callMethod("to_yaml_properties")).isEmpty()) {
-                return args[0].callMethod("scalar",new IRubyObject[]{self.callMethod("taguri"),self,self.toString().charAt(0) == ':' ? rt.newString("\"") : self.callMethod("to_yaml_style")});
+                return args[0].callMethod("scalar",new IRubyObject[]{self.callMethod("taguri"),self,self.toString().startsWith(":") ? rt.newString("\"") : self.callMethod("to_yaml_style")});
             }
             
             Map mep = (Map)(new RubyHash(self.getRuntime()));
