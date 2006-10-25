@@ -252,4 +252,20 @@ if defined? Java
   end
   
   test_exception(NoMethodError) { MyBadActionListener.new.actionPerformed }
+
+  #test that mis-spelt fq class names don't stop future fq class names
+  #with same inner-most package
+  test_exception(NameError) { Java::java.til.zip.ZipFile }
+  test_no_exception { Java::java.util.zip.ZipFile }
+
+  #test that sub-packages haven't leaked into other packages
+  test_equal(false, Java::java.respond_to?(:zip))
+  test_equal(false, Java::com.respond_to?(:util))
+
+  #test that sub-packages called [java, javax, com, org] aren't short-circuited
+  #to their top-level conterparts
+  test_ok(!com.equal?(java.flirble.com))
+
+  #test that we get the same package instance on subsequent calls
+  test_ok(com.flirble.equal?(com.flirble))
 end

@@ -13,8 +13,9 @@
 #
 # Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
 # Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
-# Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
+# Copyright (C) 2004-2006 Thomas E Enebo <enebo@acm.org>
 # Copyright (C) 2004 David Corbin <dcorbin@users.sourceforge.net>
+# Copyright (C) 2006 Michael Studman <me@michaelstudman.com>
 # 
 # Alternatively, the contents of this file may be used under the terms of
 # either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -457,7 +458,7 @@ module Java
 
    def method_missing(sym, *args)
      if sym.to_s.downcase[0] == sym.to_s[0]
-       Package.create_package sym, sym
+       Package.create_package sym, sym, Java
      else
        JavaUtilities.get_proxy_class "#{sym}"
      end
@@ -469,16 +470,18 @@ module Java
      @name = name
    end
 
+   def singleton; class << self; self; end; end 
+
    def method_missing(sym, *args)
      if sym.to_s.downcase[0] == sym.to_s[0]
-       self.class.create_package sym, "#{@name}.#{sym}"
+       self.class.create_package sym, "#{@name}.#{sym}", singleton
      else
        JavaUtilities.get_proxy_class "#{@name}.#{sym}"
      end
    end
 
    class << self
-     def create_package(sym, package_name, cls=self)
+     def create_package(sym, package_name, cls)
        package = Java::Package.new package_name
        cls.send(:define_method, sym) { package }
        package
@@ -487,10 +490,12 @@ module Java
  end
 end
 
-Java::Package.create_package(:java, :java, Kernel)
-Java::Package.create_package(:javax, :javax, Kernel)
-Java::Package.create_package(:org, :org, Kernel)
-Java::Package.create_package(:com, :com, Kernel)
+# Create convenience methods for top-level java packages so we do not need to prefix
+# with 'Java::'.  We undef these methods within Package in case we run into 'com.foo.com'.
+[:java, :javax, :com, :org].each do |meth|
+ Java::Package.create_package(meth, meth, Kernel)
+ Java::Package.send(:undef_method, meth)
+end
 
 require 'builtin/java/exceptions'
 require 'builtin/java/collections'
