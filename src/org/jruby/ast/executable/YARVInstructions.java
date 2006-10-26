@@ -36,7 +36,7 @@ public interface YARVInstructions {
     public static final int SETLOCAL = 2;
     public static final int GETSPECIAL = 3;
     public static final int SETSPECIAL = 4;
-    public static final int GETDYAMIC = 5;
+    public static final int GETDYNAMIC = 5;
     public static final int SETDYNAMIC = 6;
     public static final int GETINSTANCEVARIABLE = 7;
     public static final int SETINSTANCEVARIABLE = 8;
