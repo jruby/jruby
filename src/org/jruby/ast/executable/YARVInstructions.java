@@ -69,6 +69,7 @@ public interface YARVInstructions {
     public static final int SWAP = 35;
     public static final int REPUT = 36;
     public static final int TOPN = 37;
+    public static final int SETN = 9999;
     public static final int EMPTSTACK = 38;
     public static final int DEFINEMETHOD = 39;
     public static final int ALIAS = 40;
