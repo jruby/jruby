@@ -152,4 +152,7 @@ public interface YARVInstructions {
     public static final int UNIFIED_DUP_SETLOCAL = 117;
     public static final int UNIFIED_GETLOCAL_GETLOCAL = 118;
     public static final int UNIFIED_GETLOCAL_PUTOBJECT = 119;
+    
+    public static final int FCALL_FLAG = 1;
+    public static final int VCALL_FLAG = 2;
 }
