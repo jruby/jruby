@@ -28,13 +28,21 @@
 package org.jruby.ext;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
+import java.util.List;
+import java.util.Iterator;
+import java.util.Collections;
 
 import org.jruby.IRuby;
 import org.jruby.RubyModule;
+import org.jruby.RubyArray;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.load.Library;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import jline.ConsoleReader;
+import jline.Completor;
+import jline.FileNameCompletor;
+import jline.CandidateListCompletionHandler;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -46,39 +54,37 @@ public class Readline {
         }
     }
 
-    private static Method readlineMeth = null;
-    private static Method addToHistMeth = null;
-    public static void createReadline(IRuby runtime) {
-        try {
-            Class readline = Class.forName("org.gnu.readline.Readline");
-            Class readlineLib = Class.forName("org.gnu.readline.ReadlineLibrary");
-            readline.getMethod("load",new Class[]{readlineLib}).invoke(null,new Object[]{readlineLib.getMethod("byName",new Class[]{String.class}).invoke(null,new Object[]{"GnuReadline"})});
-            readline.getMethod("initReadline",new Class[]{String.class}).invoke(null,new Object[]{"Ruby"});
-            readlineMeth = readline.getMethod("readline",new Class[]{String.class,Boolean.TYPE});
-            addToHistMeth = readline.getMethod("addToHistory",new Class[]{String.class});
+    private static ConsoleReader readline;
+    private static Completor currentCompletor;
 
-            RubyModule mReadline = runtime.defineModule("Readline");
-            CallbackFactory readlinecb = runtime.callbackFactory(Readline.class);
-            mReadline.defineMethod("readline",readlinecb.getSingletonMethod("s_readline",IRubyObject.class,IRubyObject.class));
-            mReadline.module_function(new IRubyObject[]{runtime.newSymbol("readline")});
-            IRubyObject hist = runtime.getObject().callMethod("new");
-            mReadline.setConstant("HISTORY",hist);
-            hist.defineSingletonMethod("push",readlinecb.getSingletonMethod("s_push",IRubyObject.class));
-            hist.defineSingletonMethod("pop",readlinecb.getSingletonMethod("s_pop"));
-        } catch(Exception e) {
-            throw runtime.newLoadError("Missing libreadline-java library; see Readline-HOWTO.txt in docs");
-        }
+    public static void createReadline(IRuby runtime) throws IOException {
+        readline = new ConsoleReader();
+        readline.setUseHistory(false);
+        ((CandidateListCompletionHandler) readline.getCompletionHandler()).setAlwaysIncludeNewline(false);
+        currentCompletor = new RubyFileNameCompletor();
+        readline.addCompletor(currentCompletor);
+        RubyModule mReadline = runtime.defineModule("Readline");
+        CallbackFactory readlinecb = runtime.callbackFactory(Readline.class);
+        mReadline.defineMethod("readline",readlinecb.getSingletonMethod("s_readline",IRubyObject.class,IRubyObject.class));
+        mReadline.module_function(new IRubyObject[]{runtime.newSymbol("readline")});
+        mReadline.defineMethod("completion_append_character=",readlinecb.getSingletonMethod("s_set_completion_append_character",IRubyObject.class));
+        mReadline.module_function(new IRubyObject[]{runtime.newSymbol("completion_append_character=")});
+        mReadline.defineMethod("completion_proc=",readlinecb.getSingletonMethod("s_set_completion_proc",IRubyObject.class));
+        mReadline.module_function(new IRubyObject[]{runtime.newSymbol("completion_proc=")});
+        IRubyObject hist = runtime.getObject().callMethod("new");
+        mReadline.setConstant("HISTORY",hist);
+        hist.defineSingletonMethod("push",readlinecb.getSingletonMethod("s_push",IRubyObject.class));
+        hist.defineSingletonMethod("pop",readlinecb.getSingletonMethod("s_pop"));
+        hist.defineSingletonMethod("to_a",readlinecb.getSingletonMethod("s_hist_to_a"));
     }
 
-    public static IRubyObject s_readline(IRubyObject recv, IRubyObject prompt, IRubyObject add_to_hist) {
+    public static IRubyObject s_readline(IRubyObject recv, IRubyObject prompt, IRubyObject add_to_hist) throws IOException {
         IRubyObject line = recv.getRuntime().getNil();
-        try {
-            String v = (String)readlineMeth.invoke(null,new Object[]{prompt.toString(),new Boolean(add_to_hist.isTrue())});
-            if(null != v) {
-                line = recv.getRuntime().newString(v);
-            }
-        } catch(Exception ioe) {
-            return recv.getRuntime().getNil();
+        String v = readline.readLine(prompt.toString());
+        if(null != v) {
+            if (add_to_hist.isTrue())
+                readline.getHistory().addToHistory(v);
+            line = recv.getRuntime().newString(v);
         }
         if(line.isNil()) {
             return recv.getRuntime().newString("");
@@ -87,11 +93,68 @@ public class Readline {
     }
 
     public static IRubyObject s_push(IRubyObject recv, IRubyObject line) throws Exception {
-        addToHistMeth.invoke(null,new Object[]{line.toString()});
+        readline.getHistory().addToHistory(line.toString());
         return recv.getRuntime().getNil();
     }
 
     public static IRubyObject s_pop(IRubyObject recv) throws Exception {
         return recv.getRuntime().getNil();
     }
+	
+	public static IRubyObject s_hist_to_a(IRubyObject recv) throws Exception {
+		RubyArray histList = recv.getRuntime().newArray();
+		for (Iterator i = readline.getHistory().getHistoryList().iterator(); i.hasNext();) {
+			histList.append(recv.getRuntime().newString((String) i.next()));
+		}
+		return histList;
+	}
+	
+    public static IRubyObject s_set_completion_append_character(IRubyObject recv, IRubyObject achar) throws Exception {
+        return recv.getRuntime().getNil();
+    }
+
+    public static IRubyObject s_set_completion_proc(IRubyObject recv, IRubyObject proc) throws Exception {
+    	if (!proc.respondsTo("call"))
+    		throw recv.getRuntime().newArgumentError("argument must respond to call");
+    	readline.removeCompletor(currentCompletor);
+    	currentCompletor = new ProcCompletor(proc);
+        readline.addCompletor(currentCompletor);
+        return recv.getRuntime().getNil();
+    }
+	
+	// Complete using a Proc object
+    public static class ProcCompletor implements Completor {
+        IRubyObject procCompletor;
+		
+		public ProcCompletor(IRubyObject procCompletor) {
+			this.procCompletor = procCompletor;
+		}
+
+        public int complete(String buffer, int cursor, List candidates) {
+            buffer = buffer.substring(0, cursor);
+            int index = buffer.lastIndexOf(" ");
+            if (index != -1) buffer = buffer.substring(index + 1);
+            IRubyObject comps = procCompletor.callMethod("call", new IRubyObject[] { procCompletor.getRuntime().newString(buffer) }).callMethod("to_a");
+            if (comps instanceof List) {
+                List list = (List) comps;
+                for (Iterator i = ((List) comps).iterator(); i.hasNext();) {
+                    Object obj = i.next();
+                    if (obj != null) candidates.add(obj.toString());
+                }
+                Collections.sort(candidates);
+            }
+            return cursor - buffer.length();
+        }
+    }
+    
+    // Fix FileNameCompletor to work mid-line
+    public static class RubyFileNameCompletor extends FileNameCompletor {
+    	public int complete(String buffer, int cursor, List candidates) {
+    		buffer = buffer.substring(0, cursor);
+            int index = buffer.lastIndexOf(" ");
+            if (index != -1) buffer = buffer.substring(index + 1);
+            return index + 1 + super.complete(buffer, cursor, candidates);
+        }
+   	}
+   	
 }// Readline

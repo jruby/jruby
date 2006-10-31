@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry excluding="**/CVS/*" output="build/classes/test" kind="src" path="test"/>
+	<classpathentry excluding="**/CVS/*" kind="src" output="build/classes/test" path="test"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/bsf.jar"/>
 	<classpathentry kind="lib" path="lib/junit.jar"/>
@@ -9,5 +9,6 @@
 	<classpathentry kind="lib" path="lib/jvyaml.jar"/>
 	<classpathentry kind="lib" path="lib/plaincharset.jar"/>
 	<classpathentry kind="lib" path="lib/asm-2.2.2.jar"/>
+	<classpathentry kind="lib" path="lib/jline-0.9.91-SNAPSHOT.jar"/>
 	<classpathentry kind="output" path="build/classes/jruby"/>
 </classpath>
