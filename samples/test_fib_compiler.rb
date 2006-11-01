@@ -26,22 +26,7 @@ def fib_java(n)
 	  fib_java(n - 2) + fib_java(n - 1)
 	end
 end
-EOS
 
-def fib_iter_ruby(n)
-   i = 0
-   j = 1
-   cur = 1
-   while cur <= n
-     k = i
-     i = j
-     j = k + j
-     cur = cur + 1
-   end
-   i
-end
-
-fib_iter_java_str = <<EOS
 def fib_iter_java(n)
    i = 0
    j = 1
@@ -54,10 +39,7 @@ def fib_iter_java(n)
    end
    i
 end
-EOS
 
-# other tests
-comp_test_str = <<EOS
 def comp_test
   nil
   1111111111111111111111111111111111111111111111111111111111
@@ -74,33 +56,44 @@ def comp_test
 end
 EOS
 
+def fib_iter_ruby(n)
+   i = 0
+   j = 1
+   cur = 1
+   while cur <= n
+     k = i
+     i = j
+     j = k + j
+     cur = cur + 1
+   end
+   i
+end
+
 # parse and compile
 fib_java_n = JRuby.parse(fib_java_str, __FILE__);
-fib_iter_java_n = JRuby.parse(fib_iter_java_str, __FILE__);
-comp_test_n = JRuby.parse(comp_test_str, __FILE__);
 begin
-  fib_java_n.accept(compiler);
-  fib_iter_java_n.accept(compiler);
-  comp_test_n.accept(compiler);
+  compiler.compile(fib_java_n);
 rescue Exception => e
   puts e
   exit(1)
 end
 
-# create the class
-script_class = JRubyClassLoader.new.define_class("MyCompiledScript", compiler.class_writer.to_byte_array())
+# create the classloader
+script_class_loader = JRubyClassLoader.new
 
 # write it out, just for fun
-FileOutputStream.new("MyCompiledScript.class").write(compiler.class_writer.to_byte_array());
+classes = {}
+compiler.class_writers.each do |k,v|
+  FileOutputStream.new("#{k}.class").write(v.to_byte_array())
+  classes[k] = script_class_loader.define_class(k, v.to_byte_array())
+end
 
 # bind method to Kernel#fib_java
-cbf = JRuby.runtime.callback_factory(script_class)
-fib_callback = cbf.get_singleton_method("fib_java", IRubyObject.java_class)
-compiler.define_module_function(JRuby.runtime, "Kernel", "fib_java", fib_callback);
-fib_iter_callback = cbf.get_singleton_method("fib_iter_java", IRubyObject.java_class)
-compiler.define_module_function(JRuby.runtime, "Kernel", "fib_iter_java", fib_iter_callback);
-comp_callback = cbf.get_singleton_method("comp_test", IRubyObject.java_class)
-compiler.define_module_function(JRuby.runtime, "Kernel", "comp_test", comp_callback);
+script_class = classes["MyCompiledScript$MultiStub0"]
+stub = script_class.newInstance
+compiler.define_module_function(JRuby.runtime, "Kernel", "fib_java", stub, 1, org.jruby.runtime.Arity.singleArgument, org.jruby.runtime.Visibility::PUBLIC);
+compiler.define_module_function(JRuby.runtime, "Kernel", "fib_iter_java", stub, 2, org.jruby.runtime.Arity.singleArgument, org.jruby.runtime.Visibility::PUBLIC);
+compiler.define_module_function(JRuby.runtime, "Kernel", "comp_test", stub, 3, org.jruby.runtime.Arity.noArguments, org.jruby.runtime.Visibility::PUBLIC);
 
 # a simple benchmarking function
 def time(str)

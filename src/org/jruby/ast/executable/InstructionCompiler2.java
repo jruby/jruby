@@ -27,7 +27,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast.executable;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 import org.jruby.IRuby;
 import org.jruby.ast.AliasNode;
@@ -125,12 +129,18 @@ import org.jruby.ast.ZArrayNode;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
+import org.jruby.internal.runtime.methods.MultiStub;
+import org.jruby.internal.runtime.methods.MultiStubMethod;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.callback.Callback;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
+
+import com.sun.org.apache.bcel.internal.generic.ACONST_NULL;
 
 public class InstructionCompiler2 implements NodeVisitor {
     private static final String IRUBY = "org/jruby/IRuby";
@@ -163,12 +173,15 @@ public class InstructionCompiler2 implements NodeVisitor {
 
     public InstructionCompiler2(String classname, String sourceName) {
         cv = new ClassWriter(true);
+        classWriters.put(classname, cv);
+        this.classname = classname;
+        this.sourceName = sourceName;
 
         cv.visit(Opcodes.V1_2, Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER,
                 classname, null, "java/lang/Object", null);
         cv.visitSource(sourceName, null);
 
-        mv = cv.visitMethod(Opcodes.ACC_PRIVATE, "<init>", "()V", null, null);
+        mv = cv.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
         mv.visitCode();
         mv.visitVarInsn(Opcodes.ALOAD, 0);
         mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>",
@@ -177,25 +190,45 @@ public class InstructionCompiler2 implements NodeVisitor {
         mv.visitMaxs(1, 1);
         mv.visitEnd();
     }
-
-    public void newMethod(String methodName, String signature, Node node) {
-        mv = cv.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
-                methodName, signature, null, null);
-        mv.visitCode();
-
-        node.accept(this);
-
-        mv.visitMaxs(1, 1); // bogus values, ASM will auto-calculate
-        mv.visitInsn(Opcodes.ARETURN);
-        mv.visitEnd();
-        
-        // clean up state
-        tcLoaded = false;
-        runtimeLoaded = false;
+    
+    public void closeOutMultiStub() {
+        if (currentMultiStub != null) {
+            while (multiStubIndex < 9) {
+                MethodVisitor multiStubMethod = createNewMethod();
+                multiStubMethod.visitCode();
+                multiStubMethod.visitInsn(Opcodes.ACONST_NULL);
+                multiStubMethod.visitInsn(Opcodes.ARETURN);
+                multiStubMethod.visitMaxs(1, 1);
+                multiStubMethod.visitEnd();
+            }
+        }
     }
     
-    public void defineModuleFunction(IRuby runtime, String module, String name, Callback callback) {
-        runtime.getModule("Kernel").definePublicModuleFunction(name, callback);
+    public void defineModuleFunction(IRuby runtime, String module, String name, MultiStub stub, int index, Arity arity, Visibility visibility) {
+        runtime.getModule(module).addMethod(name, new MultiStubMethod(stub, index, runtime.getModule(module), arity, visibility));
+    }
+    
+    public void compile(Node node) {
+        // create method for toplevel of script
+        mv = createNewMethod();
+        mv.visitCode();
+        
+        try {
+            node.accept(this);
+        } catch (NotCompilableException nce) {
+            // TODO: recover somehow? build a pure eval method?
+            throw nce;
+        }
+
+        mv.visitInsn(Opcodes.ACONST_NULL);
+        mv.visitInsn(Opcodes.ARETURN);
+        mv.visitMaxs(1, 1); // automatically calculated by ASM
+        mv.visitEnd();
+        
+        tcLoaded = false;
+        runtimeLoaded = false;
+        
+        closeOutMultiStub();
     }
 
     // finished
@@ -579,11 +612,59 @@ public class InstructionCompiler2 implements NodeVisitor {
     public Instruction visitDefinedNode(DefinedNode iVisited) {
         throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
+    
+    Map classWriters = new HashMap();
+    ClassWriter currentMultiStub = null;
+    int multiStubIndex = -1;
+    int multiStubCount = -1;
+
+    private String classname;
+
+    private String sourceName;
+    
+    public MethodVisitor createNewMethod() {
+        // create a new MultiStub-based method impl and provide the method visitor for it
+        if (currentMultiStub == null || multiStubIndex == 9) {
+            if (currentMultiStub != null) {
+                // FIXME can we end if there's still a method in flight?
+                currentMultiStub.visitEnd();
+            }
+            
+            multiStubCount++;
+            
+            currentMultiStub = new ClassWriter(true);
+            currentMultiStub.visit(Opcodes.V1_2, Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER + Opcodes.ACC_STATIC,
+                    classname + "$MultiStub" + multiStubCount, null, "java/lang/Object", new String[] {"org/jruby/internal/runtime/methods/MultiStub"});
+            cv.visitInnerClass(classname + "$MultiStub" + multiStubCount, classname, "MultiStub" + multiStubCount, Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC);
+            multiStubIndex = 0;
+            classWriters.put(classname + "$MultiStub" + multiStubCount, currentMultiStub);
+            currentMultiStub.visitSource(sourceName, null);
+
+            MethodVisitor stubConstructor = currentMultiStub.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
+            stubConstructor.visitCode();
+            stubConstructor.visitVarInsn(Opcodes.ALOAD, 0);
+            stubConstructor.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>",
+                    "()V");
+            stubConstructor.visitInsn(Opcodes.RETURN);
+            stubConstructor.visitMaxs(1, 1);
+            stubConstructor.visitEnd();
+        } else {
+            multiStubIndex++;
+        }
+        
+        return currentMultiStub.visitMethod(Opcodes.ACC_PUBLIC, "method" + multiStubIndex, "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/runtime/builtin/IRubyObject;[Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;", null, null);
+    }
 
     public Instruction visitDefnNode(DefnNode iVisited) {
         // TODO: build arg list based on number of args, optionals, etc
-        mv = cv.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
-                iVisited.getName(), "(Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;", null, null);
+        MethodVisitor oldMethod = mv;
+        boolean oldTcLoaded = tcLoaded;
+        boolean oldRuntimeLoaded = runtimeLoaded;
+        
+        tcLoaded = false;
+        runtimeLoaded = false;
+        
+        mv = createNewMethod();
         mv.visitCode();
         
         // TODO: this probably isn't always an ArgsNode
@@ -600,8 +681,13 @@ public class InstructionCompiler2 implements NodeVisitor {
         mv.visitInsn(Opcodes.ARETURN);
         mv.visitEnd();
         
-        tcLoaded = false;
-        runtimeLoaded = false;
+        tcLoaded = oldTcLoaded;
+        runtimeLoaded = oldRuntimeLoaded;
+
+        mv = oldMethod;
+        
+        // push something on the stack, since the containing level will want to pop
+        mv.visitInsn(Opcodes.ACONST_NULL);
         
         return null;
     }
@@ -754,7 +840,11 @@ public class InstructionCompiler2 implements NodeVisitor {
         if ((index - 2) < args.getArgsCount()) {
             // load from the incoming params
             // index is 2-based, and our zero is runtime
-            mv.visitVarInsn(Opcodes.ALOAD, index - 1);
+            
+            // load args array
+            mv.visitVarInsn(Opcodes.ALOAD, 3);
+            mv.visitLdcInsn(Integer.valueOf(index - 2));
+            mv.visitInsn(Opcodes.AALOAD);
         } else {
             loadThreadContext();
             mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
@@ -1018,12 +1108,8 @@ public class InstructionCompiler2 implements NodeVisitor {
         mv.visitLineNumber(iVisited.getPosition().getEndLine(), l);
     }
 
-    public ClassWriter getClassWriter() {
-        return cv;
-    }
-    
-    public void setClassWriter(ClassWriter cv) {
-        this.cv = cv;
+    public Map getClassWriters() {
+        return classWriters;
     }
 
     private void setupArgs(Node node) {
@@ -1058,15 +1144,7 @@ public class InstructionCompiler2 implements NodeVisitor {
 
     private void loadThreadContext() {
         // FIXME: make this work correctly for non-static, non-singleton
-        if (tcLoaded) {
-            mv.visitVarInsn(Opcodes.ALOAD, 51);
-            return;
-        }
-        loadRuntime();
-        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, "getCurrentContext", "()Lorg/jruby/runtime/ThreadContext;");
-        mv.visitInsn(Opcodes.DUP);
-        mv.visitVarInsn(Opcodes.ASTORE, 51);
-        tcLoaded = true;
+        mv.visitVarInsn(Opcodes.ALOAD, 1);
     }
 
     private void loadRuntime() {
@@ -1074,9 +1152,10 @@ public class InstructionCompiler2 implements NodeVisitor {
         if (runtimeLoaded) {
             mv.visitVarInsn(Opcodes.ALOAD, 50);
             return;
-        } 
-        mv.visitVarInsn(Opcodes.ALOAD, 0);
-        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBYOBJECT, "getRuntime", "()Lorg/jruby/IRuby;");
+        }
+        // load ThreadContext param
+        mv.visitVarInsn(Opcodes.ALOAD, 1);
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, THREADCONTEXT, "getRuntime", "()Lorg/jruby/IRuby;");
         mv.visitInsn(Opcodes.DUP);
         mv.visitVarInsn(Opcodes.ASTORE, 50);
         runtimeLoaded = true;
