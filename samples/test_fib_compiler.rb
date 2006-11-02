@@ -6,7 +6,7 @@ include_class "java.io.FileOutputStream"
 include_class "org.jruby.util.JRubyClassLoader"
 include_class "org.jruby.runtime.builtin.IRubyObject"
 
-compiler = InstructionCompiler2.new("MyCompiledScript", __FILE__);
+compiler = InstructionCompiler2.new();
 
 # pure ruby version
 def fib_ruby(n)
@@ -76,7 +76,7 @@ end
 # parse and compile
 fib_java_n = JRuby.parse(fib_java_str, __FILE__);
 begin
-  class_and_method = compiler.compile(fib_java_n);
+  class_and_method = compiler.compile("MyCompiledScript", __FILE__, fib_java_n);
 rescue Exception => e
   puts e
   exit(1)
