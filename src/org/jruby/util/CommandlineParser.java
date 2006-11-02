@@ -64,7 +64,7 @@ public class CommandlineParser {
     private String[] scriptArguments = null;
     private boolean shouldRunInterpreter = true;
     private boolean objectSpaceEnabled = true;
-    private boolean compilerEnabled = true;
+    private boolean compilerEnabled = false;
 
     public int argumentIndex = 0;
     public int characterIndex = 0;
