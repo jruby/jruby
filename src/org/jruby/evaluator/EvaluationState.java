@@ -418,7 +418,6 @@ public class EvaluationState {
                 return result;
             }
             case NodeTypes.CLASSVARDECLNODE: {
-    
                 ClassVarDeclNode iVisited = (ClassVarDeclNode) node;
     
                 // FIXME: shouldn't we use cref here?
@@ -433,20 +432,15 @@ public class EvaluationState {
             }
             case NodeTypes.CLASSVARNODE: {
                 ClassVarNode iVisited = (ClassVarNode) node;
-                RubyModule rubyClass = context.getRubyClass();
+                RubyModule rubyClass = (RubyModule) context.peekCRef().getValue();
     
                 if (rubyClass == null) {
-                    return self.getMetaClass().getClassVar(iVisited.getName());
-                } else if (!rubyClass.isSingleton()) {
-                    return rubyClass.getClassVar(iVisited.getName());
-                } else {
-                    RubyModule module = (RubyModule) rubyClass.getInstanceVariable("__attached__");
-    
-                    if (module != null) {
-                        return module.getClassVar(iVisited.getName());
-                    }
+                    rubyClass = self.getMetaClass();
+                } else if (rubyClass.isSingleton()) {
+                    rubyClass = (RubyModule)rubyClass.getInstanceVariable("__attached__");
                 }
-                break;
+                
+                return rubyClass.getClassVar(iVisited.getName());
             }
             case NodeTypes.COLON2NODE: {
                 Colon2Node iVisited = (Colon2Node) node;

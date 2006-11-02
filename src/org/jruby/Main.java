@@ -135,6 +135,7 @@ public class Main {
 			out.println("    -Idirectory     specify $LOAD_PATH directory (may be used more than once)");
 			out.println("    --              optional -- before rubyfile.rb for compatibility with ruby");
             out.println("    -O              run with ObjectSpace disabled (improves performance)");
+            out.println("    -C              pre-compile scripts before running (EXPERIMENTAL)");
             hasPrintedUsage = true;
         }
     }
@@ -174,8 +175,11 @@ public class Main {
     	try {
     		initializeRuntime(runtime, filename);
     		Node parsedScript = getParsedScript(runtime, reader, filename);
-    		runtime.eval(parsedScript);
-    	
+            if (commandline.isCompilerEnabled()) {
+                runtime.compileAndRun(parsedScript);
+            } else {
+                runtime.eval(parsedScript);
+            }    	
     	} finally {
     		runtime.tearDown();
     	}

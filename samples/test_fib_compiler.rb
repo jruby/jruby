@@ -41,17 +41,21 @@ def fib_iter_java(n)
 end
 
 def comp_test
-  nil
-  1111111111111111111111111111111111111111111111111111111111
-  1.0
-  false
-  true
-  [1, 2, 3, 4, 5]
-  "hello"
-  x = 1
-  while (x < 5)
-    puts x
-    x = x + 1
+  begin
+    nil
+    1111111111111111111111111111111111111111111111111111111111
+    1.0
+    false
+    true
+    [1, 2, 3, 4, 5]
+    "hello"
+    x = 1
+    while (x < 5)
+      puts x
+      x = x + 1
+    end
+    @@x = 5
+    p @@x
   end
 end
 EOS
@@ -72,7 +76,7 @@ end
 # parse and compile
 fib_java_n = JRuby.parse(fib_java_str, __FILE__);
 begin
-  compiler.compile(fib_java_n);
+  class_and_method = compiler.compile(fib_java_n);
 rescue Exception => e
   puts e
   exit(1)
@@ -102,6 +106,8 @@ def time(str)
   puts "Time for #{str}: #{Time.now - t}"
 end
 
+p comp_test(nil)
+
 # time interpreted versus compiled
 time("bi-recursive, interpreted") { fib_ruby(30) }
 time("bi-recursive, compiled") { fib_java(30) }
@@ -113,4 +119,3 @@ time("iterative, compiled") { fib_iter_java(500000) }
 time("iterative, interpreted") { fib_iter_ruby(500000) }
 time("iterative, compiled") { fib_iter_java(500000) }
 
-p comp_test(nil)

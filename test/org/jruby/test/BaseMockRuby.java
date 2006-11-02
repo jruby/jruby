@@ -663,4 +663,9 @@ public class BaseMockRuby implements IRuby {
     public boolean isObjectSpaceEnabled() {
         return true;
     }
+
+    public IRubyObject compileAndRun(Node node) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }

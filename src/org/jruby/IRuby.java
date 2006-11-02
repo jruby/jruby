@@ -43,7 +43,9 @@ public interface IRuby {
 	 */
 	public IRubyObject evalScript(String script);
 
-	public IRubyObject eval(Node node);
+    public IRubyObject eval(Node node);
+
+    public IRubyObject compileAndRun(Node node);
 
 	public RubyClass getObject();
     

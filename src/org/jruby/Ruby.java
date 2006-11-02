@@ -49,6 +49,8 @@ import java.util.Random;
 import java.util.Stack;
 
 import org.jruby.ast.Node;
+import org.jruby.ast.executable.InstructionCompiler2;
+import org.jruby.ast.executable.Script;
 import org.jruby.common.RubyWarnings;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
@@ -56,6 +58,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.internal.runtime.ValueAccessor;
+import org.jruby.internal.runtime.methods.MultiStub;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -94,6 +97,7 @@ import org.jruby.runtime.builtin.meta.SymbolMetaClass;
 import org.jruby.runtime.builtin.meta.TimeMetaClass;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.util.BuiltinScript;
+import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.collections.SinglyLinkedList;
 
@@ -242,6 +246,43 @@ public final class Ruby implements IRuby {
         		throw je;
         	}
 		}
+    }
+    
+    public IRubyObject compileAndRun(Node node) {
+        try {
+            ThreadContext tc = getCurrentContext();
+            String classname = node.getPosition().getFile();
+            if (classname.endsWith(".rb")) {
+                classname = classname.substring(0, classname.length() - 3);
+            }
+            InstructionCompiler2 compiler = new InstructionCompiler2();
+            compiler.compile(classname, node.getPosition().getFile(), node);
+            
+            JRubyClassLoader loader = new JRubyClassLoader();
+            Class scriptClass = compiler.loadClasses(loader);
+            
+            Script script = (Script)scriptClass.newInstance();
+            
+            return script.run(tc, tc.getFrameSelf());
+        } catch (JumpException je) {
+            if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
+                return (IRubyObject)je.getSecondaryData();
+            } else {
+                throw je;
+            }
+        } catch (ClassNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return null;
+        } catch (InstantiationException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return null;
+        } catch (IllegalAccessException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return null;
+        }
     }
 
     public RubyClass getObject() {
