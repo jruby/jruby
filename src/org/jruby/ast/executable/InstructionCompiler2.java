@@ -198,6 +198,9 @@ public class InstructionCompiler2 implements NodeVisitor {
     
     public String[] compile(String classname, String sourceName, Node node) {
         cv = new ClassWriter(true);
+        if (classname.startsWith("-e")) {
+            classname = classname.replaceAll("-e", "DashE");
+        }
         classWriters.put(classname, cv);
         this.classname = classname;
         this.sourceName = sourceName;
@@ -701,7 +704,13 @@ public class InstructionCompiler2 implements NodeVisitor {
     }
 
     public Instruction visitConstNode(ConstNode iVisited) {
-        throw new NotCompilableException("Node not supported: " + iVisited.toString());
+        lineNumber(iVisited);
+        
+        loadThreadContext();
+        mv.visitLdcInsn(iVisited.getName());
+        invokeThreadContext("getConstant", "(Ljava/lang/String;)Lorg/jruby/runtime/builtin/IRubyObject;");
+        
+        return null;
     }
 
     public Instruction visitDAsgnNode(DAsgnNode iVisited) {
@@ -1286,7 +1295,36 @@ public class InstructionCompiler2 implements NodeVisitor {
     }
 
     public Instruction visitUntilNode(UntilNode iVisited) {
-        throw new NotCompilableException("Node not supported: " + iVisited.toString());
+        lineNumber(iVisited);
+        
+        // FIXME support next, break, etc
+        
+        // leave nil on the stack when we're done
+        loadRuntime();
+        invokeIRuby("getNil", "()Lorg/jruby/runtime/builtin/IRubyObject;");
+        
+        if (iVisited.getBodyNode() != null) {
+            Label l1 = new Label();
+            Label l2 = new Label();
+            
+            mv.visitLabel(l1);
+            
+            iVisited.getConditionNode().accept(this);
+            invokeIRubyObject("isTrue", "()Z");
+            // conditionally jump end for until
+            mv.visitJumpInsn(Opcodes.IFNE, l2);
+            
+            iVisited.getBodyNode().accept(this);
+            // clear last result
+            mv.visitInsn(Opcodes.POP);
+            
+            // jump back for until
+            mv.visitJumpInsn(Opcodes.GOTO, l1);
+            
+            mv.visitLabel(l2);
+        }
+        
+        return null;
     }
 
     public Instruction visitVAliasNode(VAliasNode iVisited) {
@@ -1294,7 +1332,17 @@ public class InstructionCompiler2 implements NodeVisitor {
     }
 
     public Instruction visitVCallNode(VCallNode iVisited) {
-        throw new NotCompilableException("Node not supported: " + iVisited.toString());
+        lineNumber(iVisited);
+        loadSelf();
+        
+        mv.visitLdcInsn(iVisited.getName());
+
+        mv.visitFieldInsn(Opcodes.GETSTATIC, "org/jruby/runtime/builtin/IRubyObject", "NULL_ARRAY", "[Lorg/jruby/runtime/builtin/IRubyObject;");
+        mv.visitFieldInsn(Opcodes.GETSTATIC, "org/jruby/runtime/CallType", "FUNCTIONAL", "Lorg/jruby/runtime/CallType;");
+        
+        invokeIRubyObject("callMethod", "(Ljava/lang/String;[Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/CallType;)Lorg/jruby/runtime/builtin/IRubyObject;");
+        
+        return null;
     }
 
     public Instruction visitWhenNode(WhenNode iVisited) {
@@ -1373,11 +1421,11 @@ public class InstructionCompiler2 implements NodeVisitor {
     }
 
     private void setupArgs(Node node) {
-        lineNumber(node);
         if (node == null) {
             mv.visitInsn(Opcodes.ICONST_0);
             mv.visitTypeInsn(Opcodes.ANEWARRAY, IRUBYOBJECT);
         } else if (node instanceof ArrayNode) {
+            lineNumber(node);
             int count = ((ArrayNode)node).size();
             mv.visitLdcInsn(new Integer(count));
             mv.visitTypeInsn(Opcodes.ANEWARRAY, IRUBYOBJECT);
