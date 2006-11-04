@@ -109,7 +109,7 @@ public final class DefaultMethod extends AbstractMethod {
 
             traceCall(runtime, receiver, name);
 
-            return receiver.eval(body.getBodyNode());
+            return EvaluationState.eval(context, body.getBodyNode(), receiver);
         } catch (JumpException je) {
         	if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
 	            if (je.getPrimaryData() == this) {
