@@ -51,8 +51,6 @@ public class Scope {
 
     private IRubyObject rubyNil;
 
-    //private List localNames = null;
-	//private List localValues = null;
     private String[] localNames;
     private IRubyObject[] localValues;
 
@@ -125,9 +123,18 @@ public class Scope {
 	    return localValues[count];
 	}
 
-	public void setValue(int count, IRubyObject value) {
-	    localValues[count] = value;
-	}
+    public void setValue(int count, IRubyObject value) {
+        localValues[count] = value;
+    }
+
+    public void setValues(IRubyObject[] values, boolean specialVarsToo) {
+        if (specialVarsToo) {
+            assert values.length == localValues.length;
+            localValues = values;
+        } else {
+            System.arraycopy(values, 0, localValues, 2, values.length);
+        }            
+    }
 
     /**
      * Gets the methodScope.

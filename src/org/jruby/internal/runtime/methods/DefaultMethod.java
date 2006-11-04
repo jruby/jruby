@@ -128,14 +128,13 @@ public final class DefaultMethod extends AbstractMethod {
         int restArg = argsNode.getRestArg();
         boolean hasOptArgs = argsNode.getOptArgs() != null;
 
+        // FIXME: This seems redundant with the arity check in internalCall...is it actually different?
         if (expectedArgsCount > args.length) {
             throw runtime.newArgumentError("Wrong # of arguments(" + args.length + " for " + expectedArgsCount + ")");
         }
 
         if (scope.hasLocalVariables() && expectedArgsCount > 0) {
-            for (int i = 0; i < expectedArgsCount; i++) {
-                scope.setValue(i + 2, args[i]);
-            }
+            scope.setValues(args, false);
         }
 
         // optArgs and restArgs require more work, so isolate them and ArrayList creation here
