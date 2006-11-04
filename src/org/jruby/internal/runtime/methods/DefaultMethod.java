@@ -134,7 +134,11 @@ public final class DefaultMethod extends AbstractMethod {
         }
 
         if (scope.hasLocalVariables() && expectedArgsCount > 0) {
-            scope.setValues(args, false);
+            scope.setValues(args, expectedArgsCount, false);
+//            for (int i = 0; i < expectedArgsCount; i++) {
+//                scope.setValue(i + 2, args[i]);
+//            }
+
         }
 
         // optArgs and restArgs require more work, so isolate them and ArrayList creation here

@@ -127,12 +127,11 @@ public class Scope {
         localValues[count] = value;
     }
 
-    public void setValues(IRubyObject[] values, boolean specialVarsToo) {
+    public void setValues(IRubyObject[] values, int count, boolean specialVarsToo) {
         if (specialVarsToo) {
-            assert values.length == localValues.length;
-            localValues = values;
+            System.arraycopy(values, 0, localValues, 0, count);
         } else {
-            System.arraycopy(values, 0, localValues, 2, values.length);
+            System.arraycopy(values, 0, localValues, 2, count);
         }            
     }
 
