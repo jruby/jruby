@@ -136,7 +136,6 @@ public class Readline {
             if (index != -1) buffer = buffer.substring(index + 1);
             IRubyObject comps = procCompletor.callMethod("call", new IRubyObject[] { procCompletor.getRuntime().newString(buffer) }).callMethod("to_a");
             if (comps instanceof List) {
-                List list = (List) comps;
                 for (Iterator i = ((List) comps).iterator(); i.hasNext();) {
                     Object obj = i.next();
                     if (obj != null) candidates.add(obj.toString());
