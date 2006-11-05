@@ -261,10 +261,10 @@ public class InstructionCompiler2 implements NodeVisitor {
             String key = (String)entry.getKey();
             ClassWriter writer = (ClassWriter)entry.getValue();
             
-            loader.defineClass(key.replace("/", "."), writer.toByteArray());
+            loader.defineClass(key.replaceAll("/", "."), writer.toByteArray());
         }
         
-        return loader.loadClass(classname.replace("/", "."));
+        return loader.loadClass(classname.replaceAll("/", "."));
     }
 
     // finished
@@ -787,17 +787,17 @@ public class InstructionCompiler2 implements NodeVisitor {
         // TODO: this probably isn't always an ArgsNode
         args = (ArgsNode)iVisited.getArgsNode();
         
-        mv.visitLdcInsn(Integer.valueOf(iVisited.getBodyNode().getLocalNames().length));
+        mv.visitLdcInsn(new Integer(iVisited.getBodyNode().getLocalNames().length));
         mv.visitTypeInsn(Opcodes.ANEWARRAY, "org/jruby/runtime/builtin/IRubyObject");
         mv.visitInsn(Opcodes.DUP);
         // FIXME: use constant for index of local vars
         mv.visitVarInsn(Opcodes.ASTORE, 4);
         mv.visitVarInsn(Opcodes.ALOAD, 3);
         mv.visitInsn(Opcodes.SWAP);
-        mv.visitLdcInsn(Integer.valueOf(0));
+        mv.visitLdcInsn(new Integer(0));
         mv.visitInsn(Opcodes.SWAP);
-        mv.visitLdcInsn(Integer.valueOf(0));
-        mv.visitLdcInsn(Integer.valueOf(args.getArity().getValue()));
+        mv.visitLdcInsn(new Integer(0));
+        mv.visitLdcInsn(new Integer(args.getArity().getValue()));
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/System", "arraycopy", "(Ljava/lang/Object;ILjava/lang/Object;II)V");
         
         try {
@@ -862,13 +862,13 @@ public class InstructionCompiler2 implements NodeVisitor {
         mv.visitTypeInsn(Opcodes.NEW, classname + "$MultiStub" + multiStubCount);
         mv.visitInsn(Opcodes.DUP);
         mv.visitMethodInsn(Opcodes.INVOKESPECIAL, classname + "$MultiStub" + multiStubCount, "<init>", "()V");
-        mv.visitLdcInsn(Integer.valueOf(multiStubIndex));
+        mv.visitLdcInsn(new Integer(multiStubIndex));
         getRubyClass();
         // TODO: handle args some way? maybe unnecessary with method compiled?
 //        mv.visitVarInsn(ALOAD, 4);
 //        mv.visitMethodInsn(INVOKEVIRTUAL, "org/jruby/ast/DefnNode", "getArgsNode", "()Lorg/jruby/ast/Node;");
 //        mv.visitTypeInsn(CHECKCAST, "org/jruby/ast/ArgsNode");
-        mv.visitLdcInsn(Integer.valueOf(args.getArity().getValue()));
+        mv.visitLdcInsn(new Integer(args.getArity().getValue()));
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/jruby/runtime/Arity", "createArity", "(I)Lorg/jruby/runtime/Arity;");
         getCurrentVisibility();
         mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "org/jruby/internal/runtime/methods/MultiStubMethod", "<init>", "(Lorg/jruby/internal/runtime/methods/MultiStub;ILorg/jruby/RubyModule;Lorg/jruby/runtime/Arity;Lorg/jruby/runtime/Visibility;)V");
@@ -1083,7 +1083,7 @@ public class InstructionCompiler2 implements NodeVisitor {
         mv.visitVarInsn(Opcodes.ALOAD, 4);
         mv.visitInsn(Opcodes.SWAP);
         // FIXME this should take into account the two special vars and leave room for them
-        mv.visitLdcInsn(Integer.valueOf(iVisited.getCount() - 2));
+        mv.visitLdcInsn(new Integer(iVisited.getCount() - 2));
         mv.visitInsn(Opcodes.SWAP);
         mv.visitInsn(Opcodes.AASTORE);
         
@@ -1109,7 +1109,7 @@ public class InstructionCompiler2 implements NodeVisitor {
 //            
 //            // load args array
 //            mv.visitVarInsn(Opcodes.ALOAD, 3);
-//            mv.visitLdcInsn(Integer.valueOf(index - 2));
+//            mv.visitLdcInsn(new Integer(index - 2));
 //            mv.visitInsn(Opcodes.AALOAD);
 //        } else {
 //            loadThreadContext();
@@ -1121,7 +1121,7 @@ public class InstructionCompiler2 implements NodeVisitor {
         
         // FIXME: better base index?
         mv.visitVarInsn(Opcodes.ALOAD, 4);
-        mv.visitLdcInsn(Integer.valueOf(iVisited.getCount() - 2));
+        mv.visitLdcInsn(new Integer(iVisited.getCount() - 2));
         mv.visitInsn(Opcodes.AALOAD);
 
         return null;
