@@ -12,6 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2006 Damian Steer <pldms@mac.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -46,6 +47,7 @@ import jline.CandidateListCompletionHandler;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
+ * @author <a href="mailto:pldms@mac.com">Damian Steer</a>
  */
 public class Readline {
     public static class Service implements Library {
@@ -60,6 +62,7 @@ public class Readline {
     public static void createReadline(IRuby runtime) throws IOException {
         readline = new ConsoleReader();
         readline.setUseHistory(false);
+        readline.setUsePagination(true);
         ((CandidateListCompletionHandler) readline.getCompletionHandler()).setAlwaysIncludeNewline(false);
         currentCompletor = new RubyFileNameCompletor();
         readline.addCompletor(currentCompletor);
@@ -85,9 +88,6 @@ public class Readline {
             if (add_to_hist.isTrue())
                 readline.getHistory().addToHistory(v);
             line = recv.getRuntime().newString(v);
-        }
-        if(line.isNil()) {
-            return recv.getRuntime().newString("");
         }
         return line;
     }
