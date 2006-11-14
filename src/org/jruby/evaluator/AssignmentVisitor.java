@@ -63,11 +63,11 @@ public class AssignmentVisitor {
             IRubyObject receiver = EvaluationState.eval(context, iVisited.getReceiverNode(), context.getFrameSelf());
 
             if (iVisited.getArgsNode() == null) { // attribute set.
-                receiver.callMethod(iVisited.getName(), new IRubyObject[] {value}, CallType.NORMAL);
+                receiver.callMethod(context, iVisited.getName(), new IRubyObject[] {value}, CallType.NORMAL);
             } else { // element set
                 RubyArray args = (RubyArray)EvaluationState.eval(context, iVisited.getArgsNode(), context.getFrameSelf());
                 args.append(value);
-                receiver.callMethod(iVisited.getName(), args.toJavaArray(), CallType.NORMAL);
+                receiver.callMethod(context, iVisited.getName(), args.toJavaArray(), CallType.NORMAL);
             }
             break;
         }
@@ -97,7 +97,7 @@ public class AssignmentVisitor {
         }
         case NodeTypes.DASGNNODE: {
             DAsgnNode iVisited = (DAsgnNode)node;
-            context.getCurrentDynamicVars().set(iVisited.getName(), value);
+            context.getCurrentScope().setValue(iVisited.getIndex(), value, iVisited.getDepth());
             break;
         }
         case NodeTypes.GLOBALASGNNODE: {
@@ -112,7 +112,11 @@ public class AssignmentVisitor {
         }
         case NodeTypes.LOCALASGNNODE: {
             LocalAsgnNode iVisited = (LocalAsgnNode)node;
-            context.getFrameScope().setValue(iVisited.getCount(), value);
+            
+            //System.out.println("Assigning to " + iVisited.getName() + "@"+ iVisited.getPosition());
+            //context.printScope();
+            context.getCurrentScope().setValue(iVisited.getIndex(), value, iVisited.getDepth());
+            //context.getFrameScope().setValue(iVisited.getIndex(), value);
             break;
         }
         case NodeTypes.MULTIPLEASGNNODE: {
@@ -120,8 +124,7 @@ public class AssignmentVisitor {
             if (!(value instanceof RubyArray)) {
                 value = RubyArray.newArray(runtime, value);
             }
-            result = context
-                    .mAssign(self, iVisited, (RubyArray) value, check);
+            result = context.mAssign(self, iVisited, (RubyArray) value, check);
             break;
         }
         }

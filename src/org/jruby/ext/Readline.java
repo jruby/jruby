@@ -37,6 +37,7 @@ import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.RubyArray;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.load.Library;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -74,7 +75,7 @@ public class Readline {
         mReadline.module_function(new IRubyObject[]{runtime.newSymbol("completion_append_character=")});
         mReadline.defineMethod("completion_proc=",readlinecb.getSingletonMethod("s_set_completion_proc",IRubyObject.class));
         mReadline.module_function(new IRubyObject[]{runtime.newSymbol("completion_proc=")});
-        IRubyObject hist = runtime.getObject().callMethod("new");
+        IRubyObject hist = runtime.getObject().callMethod(runtime.getCurrentContext(), "new");
         mReadline.setConstant("HISTORY",hist);
         hist.defineSingletonMethod("push",readlinecb.getSingletonMethod("s_push",IRubyObject.class));
         hist.defineSingletonMethod("pop",readlinecb.getSingletonMethod("s_pop"));
@@ -134,7 +135,9 @@ public class Readline {
             buffer = buffer.substring(0, cursor);
             int index = buffer.lastIndexOf(" ");
             if (index != -1) buffer = buffer.substring(index + 1);
-            IRubyObject comps = procCompletor.callMethod("call", new IRubyObject[] { procCompletor.getRuntime().newString(buffer) }).callMethod("to_a");
+            ThreadContext context = procCompletor.getRuntime().getCurrentContext();
+            
+            IRubyObject comps = procCompletor.callMethod(context, "call", new IRubyObject[] { procCompletor.getRuntime().newString(buffer) }).callMethod(context, "to_a");
             if (comps instanceof List) {
                 for (Iterator i = ((List) comps).iterator(); i.hasNext();) {
                     Object obj = i.next();

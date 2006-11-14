@@ -68,11 +68,11 @@ public abstract class RubyInteger extends RubyNumeric {
         RubyNumeric i = this;
         ThreadContext context = getRuntime().getCurrentContext();
         while (true) {
-            if (i.callMethod("<", to).isTrue()) {
+            if (i.callMethod(context, "<", to).isTrue()) {
                 break;
             }
             context.yield(i);
-            i = (RubyNumeric) i.callMethod("-", RubyFixnum.one(getRuntime()));
+            i = (RubyNumeric) i.callMethod(context, "-", RubyFixnum.one(getRuntime()));
         }
         return this;
     }
@@ -89,17 +89,17 @@ public abstract class RubyInteger extends RubyNumeric {
         }
 
         String cmp = "<";
-        if (((RubyBoolean) step.callMethod("<", getRuntime().newFixnum(0))).isFalse()) {
+        if (((RubyBoolean) step.callMethod(getRuntime().getCurrentContext(), "<", getRuntime().newFixnum(0))).isFalse()) {
             cmp = ">";
         }
 
         ThreadContext context = getRuntime().getCurrentContext();
         while (true) {
-            if (i.callMethod(cmp, test).isTrue()) {
+            if (i.callMethod(context, cmp, test).isTrue()) {
                 break;
             }
             context.yield(i);
-            i = (RubyNumeric) i.callMethod("+", step);
+            i = (RubyNumeric) i.callMethod(context, "+", step);
         }
         return this;
     }
@@ -108,17 +108,17 @@ public abstract class RubyInteger extends RubyNumeric {
         RubyNumeric i = RubyFixnum.zero(getRuntime());
         ThreadContext context = getRuntime().getCurrentContext();
         while (true) {
-            if (!i.callMethod("<", this).isTrue()) {
+            if (!i.callMethod(context, "<", this).isTrue()) {
                 break;
             }
             context.yield(i);
-            i = (RubyNumeric) i.callMethod("+", RubyFixnum.one(getRuntime()));
+            i = (RubyNumeric) i.callMethod(context, "+", RubyFixnum.one(getRuntime()));
         }
         return this;
     }
 
     public IRubyObject next() {
-        return callMethod("+", RubyFixnum.one(getRuntime()));
+        return callMethod(getRuntime().getCurrentContext(), "+", RubyFixnum.one(getRuntime()));
     }
 
     public IRubyObject upto(IRubyObject to) {
@@ -126,11 +126,11 @@ public abstract class RubyInteger extends RubyNumeric {
         RubyNumeric i = this;
         ThreadContext context = getRuntime().getCurrentContext();
         while (true) {
-            if (i.callMethod(">", test).isTrue()) {
+            if (i.callMethod(context, ">", test).isTrue()) {
                 break;
             }
             context.yield(i);
-            i = (RubyNumeric) i.callMethod("+", RubyFixnum.one(getRuntime()));
+            i = (RubyNumeric) i.callMethod(context, "+", RubyFixnum.one(getRuntime()));
         }
         return this;
     }

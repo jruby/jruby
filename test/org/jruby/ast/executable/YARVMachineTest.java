@@ -33,7 +33,7 @@ public class YARVMachineTest extends TestCase {
         IRuby runtime = Ruby.newInstance(System.in, System.out, System.err);
         ThreadContext context = runtime.getCurrentContext();
         
-        context.getFrameScope().addLocalVariables(new String[] {"zero", "one"});
+        //context.getFrameScope().addLocalVariables(new String[] {"zero", "one"});
         
         assertEquals("Hello, YARV!Hello, YARV!Object", ym.exec(context, runtime.getObject(), iseq).toString());
     }
@@ -85,7 +85,7 @@ public class YARVMachineTest extends TestCase {
         IRuby runtime = Ruby.newInstance(System.in, System.out, System.err);
         ThreadContext context = runtime.getCurrentContext();
         
-        context.getFrameScope().addLocalVariables(new String[] {"n", "i", "j", "cur", "k"});
+        //context.getFrameScope().addLocalVariables(new String[] {"n", "i", "j", "cur", "k"});
         
         assertEquals("55", ym.exec(context, runtime.getObject(), iseq).toString());
         

@@ -329,7 +329,7 @@ public class RubyStruct extends RubyObject {
             }
 
             sb.append(member.entry(i).asSymbol()).append("=");
-            sb.append(values[i].callMethod("inspect"));
+            sb.append(values[i].callMethod(getRuntime().getCurrentContext(), "inspect"));
         }
 
         sb.append('>');

@@ -36,6 +36,7 @@ import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.parser.StaticScope;
 
 /** Represents a singleton method definition.
  *
@@ -47,13 +48,16 @@ public class DefsNode extends Node {
     private final Node receiverNode;
     private String name;
     private final Node argsNode;
-    private final ScopeNode bodyNode;
+    private final StaticScope scope;
+    private final Node bodyNode;
 
-    public DefsNode(ISourcePosition position, Node receiverNode, String name, Node argsNode, ScopeNode bodyNode) {
+    public DefsNode(ISourcePosition position, Node receiverNode, String name, Node argsNode, 
+            StaticScope scope, Node bodyNode) {
         super(position, NodeTypes.DEFSNODE);
         this.receiverNode = receiverNode;
         this.name = name.intern();
         this.argsNode = argsNode;
+        this.scope = scope;
         this.bodyNode = bodyNode;
     }
     
@@ -81,10 +85,20 @@ public class DefsNode extends Node {
     }
 
     /**
-     * Gets the bodyNode.
-     * @return Returns a ScopeNode
+     * Get the static scoping information.
+     * 
+     * @return the scoping info
      */
-    public ScopeNode getBodyNode() {
+    public StaticScope getScope() {
+        return scope;
+    }
+    
+    /**
+     * Gets the body of this definition.
+     * 
+     * @return the contents
+     */
+    public Node getBodyNode() {
         return bodyNode;
     }
 

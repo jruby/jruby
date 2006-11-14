@@ -57,7 +57,7 @@ public class RubyRange extends RubyObject {
     public void init(IRubyObject aBegin, IRubyObject aEnd, RubyBoolean aIsExclusive) {
         if (!(aBegin instanceof RubyFixnum && aEnd instanceof RubyFixnum)) {
             try {
-                aBegin.callMethod("<=>", aEnd);
+                aBegin.callMethod(getRuntime().getCurrentContext(), "<=>", aEnd);
             } catch (RaiseException rExcptn) {
                 throw getRuntime().newArgumentError("bad value for range");
             }
@@ -199,10 +199,10 @@ public class RubyRange extends RubyObject {
     }
     
     public RubyFixnum hash() {
-    
+        ThreadContext context = getRuntime().getCurrentContext();
         long baseHash = (isExclusive ? 1 : 0);
-        long beginHash = ((RubyFixnum) begin.callMethod("hash")).getLongValue();
-        long endHash = ((RubyFixnum) end.callMethod("hash")).getLongValue();
+        long beginHash = ((RubyFixnum) begin.callMethod(context, "hash")).getLongValue();
+        long endHash = ((RubyFixnum) end.callMethod(context, "hash")).getLongValue();
         
         long hash = baseHash;
         hash = hash ^ (beginHash << 1);
@@ -213,8 +213,9 @@ public class RubyRange extends RubyObject {
     }
 
     private IRubyObject asString(String stringMethod) {
-        RubyString begStr = (RubyString) begin.callMethod(stringMethod);
-        RubyString endStr = (RubyString) end.callMethod(stringMethod);
+        ThreadContext context = getRuntime().getCurrentContext();
+        RubyString begStr = (RubyString) begin.callMethod(context, stringMethod);
+        RubyString endStr = (RubyString) end.callMethod(context, stringMethod);
 
         return begStr.cat(isExclusive ? "..." : "..").concat(endStr);
     }
@@ -233,8 +234,9 @@ public class RubyRange extends RubyObject {
 
     public RubyFixnum length() {
         long size = 0;
+        ThreadContext context = getRuntime().getCurrentContext();
 
-        if (begin.callMethod(">", end).isTrue()) {
+        if (begin.callMethod(context, ">", end).isTrue()) {
             return getRuntime().newFixnum(0);
         }
 
@@ -247,12 +249,12 @@ public class RubyRange extends RubyObject {
             IRubyObject currentObject = begin;
 	    String compareMethod = isExclusive ? "<" : "<=";
 
-	    while (currentObject.callMethod(compareMethod, end).isTrue()) {
+	    while (currentObject.callMethod(context, compareMethod, end).isTrue()) {
 		size++;
 		if (currentObject.equals(end)) {
 		    break;
 		}
-		currentObject = currentObject.callMethod("succ");
+		currentObject = currentObject.callMethod(context, "succ");
 	    }
 	}
         return getRuntime().newFixnum(size);
@@ -271,7 +273,7 @@ public class RubyRange extends RubyObject {
     }
 
     public IRubyObject each() {
-        ThreadContext tc = getRuntime().getCurrentContext();
+        ThreadContext context = getRuntime().getCurrentContext();
         
         if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
             long endLong = ((RubyNumeric) end).getLongValue();
@@ -282,36 +284,36 @@ public class RubyRange extends RubyObject {
             }
 
             for (; i < endLong; i++) {
-                tc.yield(getRuntime().newFixnum(i));
+                context.yield(getRuntime().newFixnum(i));
             }
         } else if (begin instanceof RubyString) {
             ((RubyString) begin).upto(end, isExclusive);
         } else if (begin.isKindOf(getRuntime().getClass("Numeric"))) {
             if (!isExclusive) {
-                end = end.callMethod("+", RubyFixnum.one(getRuntime()));
+                end = end.callMethod(context, "+", RubyFixnum.one(getRuntime()));
             }
-            while (begin.callMethod("<", end).isTrue()) {
-                tc.yield(begin);
-                begin = begin.callMethod("+", RubyFixnum.one(getRuntime()));
+            while (begin.callMethod(context, "<", end).isTrue()) {
+                context.yield(begin);
+                begin = begin.callMethod(context, "+", RubyFixnum.one(getRuntime()));
             }
         } else {
             IRubyObject v = begin;
 
             if (isExclusive) {
-                while (v.callMethod("<", end).isTrue()) {
+                while (v.callMethod(context, "<", end).isTrue()) {
                     if (v.equals(end)) {
                         break;
                     }
-                    tc.yield(v);
-                    v = v.callMethod("succ");
+                    context.yield(v);
+                    v = v.callMethod(context, "succ");
                 }
             } else {
-                while (v.callMethod("<=", end).isTrue()) {
-                    tc.yield(v);
+                while (v.callMethod(context, "<=", end).isTrue()) {
+                    context.yield(v);
                     if (v.equals(end)) {
                         break;
                     }
-                    v = v.callMethod("succ");
+                    v = v.callMethod(context, "succ");
                 }
             }
         }
@@ -333,16 +335,16 @@ public class RubyRange extends RubyObject {
         ThreadContext context = getRuntime().getCurrentContext();
         if (begin instanceof RubyNumeric && end instanceof RubyNumeric) {
             RubyFixnum stepNum = getRuntime().newFixnum(stepSize);
-            while (currentObject.callMethod(compareMethod, end).isTrue()) {
+            while (currentObject.callMethod(context, compareMethod, end).isTrue()) {
                 context.yield(currentObject);
-                currentObject = currentObject.callMethod("+", stepNum);
+                currentObject = currentObject.callMethod(context, "+", stepNum);
             }
         } else {
-            while (currentObject.callMethod(compareMethod, end).isTrue()) {
+            while (currentObject.callMethod(context, compareMethod, end).isTrue()) {
                 context.yield(currentObject);
                 
                 for (int i = 0; i < stepSize; i++) {
-                    currentObject = currentObject.callMethod("succ");
+                    currentObject = currentObject.callMethod(context, "succ");
                 }
             }
         }
@@ -354,15 +356,16 @@ public class RubyRange extends RubyObject {
         IRubyObject currentObject = begin;
 	    String compareMethod = isExclusive ? "<" : "<=";
 	    RubyArray array = getRuntime().newArray();
+        ThreadContext context = getRuntime().getCurrentContext();
         
-	    while (currentObject.callMethod(compareMethod, end).isTrue()) {
+	    while (currentObject.callMethod(context, compareMethod, end).isTrue()) {
 	        array.append(currentObject);
 	        
 			if (currentObject.equals(end)) {
 			    break;
 			}
 			
-			currentObject = currentObject.callMethod("succ");
+			currentObject = currentObject.callMethod(context, "succ");
 	    }
 	    
 	    return array;
@@ -373,7 +376,9 @@ public class RubyRange extends RubyObject {
     	String compareMethod = isExclusive ? ">" : ">=";
     	IRubyObject[] arg = new IRubyObject[]{ obj };
     	IRubyObject f = obj.getRuntime().getFalse();
+        ThreadContext context = getRuntime().getCurrentContext();
+        
     	return f.getRuntime().newBoolean(
-    			f != first().callMethod("<=", arg) && f != last().callMethod(compareMethod, arg));
+    			f != first().callMethod(context, "<=", arg) && f != last().callMethod(context, compareMethod, arg));
     }
 }

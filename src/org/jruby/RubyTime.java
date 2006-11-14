@@ -174,7 +174,7 @@ public class RubyTime extends RubyObject {
     }
     
     public IRubyObject same2(IRubyObject other) {
-        return (RubyNumeric.fix2int(callMethod("<=>", other)) == 0) ? getRuntime().getTrue() : getRuntime().getFalse();
+        return (RubyNumeric.fix2int(callMethod(getRuntime().getCurrentContext(), "<=>", other)) == 0) ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
     public IRubyObject op_cmp(IRubyObject other) {
@@ -240,7 +240,7 @@ public class RubyTime extends RubyObject {
     public RubyInteger usec() {
         return getRuntime().newFixnum(microseconds());
     }
-
+    
     public void setMicroseconds(long mic) {
         long millis = getTimeInMillis() % 1000;
         long withoutMillis = getTimeInMillis() - millis;

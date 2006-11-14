@@ -148,7 +148,7 @@ public class RubyException extends RubyObject {
             return getRuntime().newString(getMetaClass().getName());
         }
         message.setTaint(isTaint());
-        return (RubyString) message.callMethod("to_s");
+        return (RubyString) message.callMethod(getRuntime().getCurrentContext(), "to_s");
     }
 
     /** inspects an object and return a kind of debug information

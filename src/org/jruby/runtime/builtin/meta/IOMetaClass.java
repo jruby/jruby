@@ -186,7 +186,7 @@ public class IOMetaClass extends ObjectMetaClass {
             if(!obj.respondsTo("to_io")) {
                 return;
             }
-            ioObj = (RubyIO) obj.callMethod("to_io");
+            ioObj = (RubyIO) obj.callMethod(obj.getRuntime().getCurrentContext(), "to_io");
         } else {
             ioObj = (RubyIO) obj;
         }

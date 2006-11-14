@@ -42,21 +42,21 @@ end
 
 def comp_test
   begin
-    nil
-    1111111111111111111111111111111111111111111111111111111111
-    1.0
-    false
-    true
-    [1, 2, 3, 4, 5]
-    "hello"
-    x = 1
-    while (x < 5)
-      puts x
-      x = x + 1
-    end
+  nil
+  1111111111111111111111111111111111111111111111111111111111
+  1.0
+  false
+  true
+  [1, 2, 3, 4, 5]
+  "hello"
+  x = 1
+  while (x < 5)
+    puts x
+    x = x + 1
+  end
     @@x = 5
     p @@x
-  end
+end
 end
 EOS
 

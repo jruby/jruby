@@ -28,9 +28,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
-import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.runtime.ICallable;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -49,23 +49,23 @@ public class UndefinedMethod extends AbstractMethod {
         super(null, visibility);
     }
     
-    public void preMethod(IRuby runtime, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+    public void preMethod(ThreadContext context, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
         // do nothing
     }
     
-    public void postMethod(IRuby runtime) {
+    public void postMethod(ThreadContext context) {
         // do nothing
     }
 
-    public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * If UndefinedMethod gets invoked, don't do the usual method scoping/framing. It should never be invoked.
      */
-    public IRubyObject call(IRuby runtime, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
-        return internalCall(runtime, receiver, lastClass, name, args, noSuper);
+    public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+        return internalCall(context, receiver, lastClass, name, args, noSuper);
     }
 
     public boolean isUndefined() {

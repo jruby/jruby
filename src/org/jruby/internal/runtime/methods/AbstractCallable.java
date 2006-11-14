@@ -29,11 +29,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
-import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ICallable;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -60,8 +60,8 @@ public abstract class AbstractCallable implements ICallable {
      * are only invoked from within ThreadContext.yield. Eventually TC.yield scoping/framing may be moved into
      * superclass of the two non-methods.
      */
-    public IRubyObject call(IRuby runtime, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
-        return internalCall(runtime, receiver, lastClass, name, args, noSuper);
+    public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+        return internalCall(context, receiver, lastClass, name, args, noSuper);
     }
     
     public String getOriginalName() {

@@ -148,8 +148,8 @@ public class Frame {
         this.self = self;
     }
     
-    void newScope(String[] localNames) {
-        setScope(new Scope(runtime, localNames));
+    public void newScope() {
+        setScope(new Scope());
     }
     
     Scope getScope() {

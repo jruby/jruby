@@ -34,7 +34,6 @@
 package org.jruby;
 
 import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicVariableSet;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.ThreadContext;
@@ -82,8 +81,7 @@ public class RubyBinding extends RubyObject {
             iter = context.getPreviousFrameIter();
         }
 
-        DynamicVariableSet dynVars = context.getCurrentDynamicVars();
-        Block bindingBlock = Block.createBinding(wrapper, iter, frame, dynVars);
+        Block bindingBlock = Block.createBinding(wrapper, iter, frame, context.getCurrentScope());
 
         RubyBinding newBinding = new RubyBinding(runtime, runtime.getClass("Binding"), bindingBlock, context.getRubyClass());
 

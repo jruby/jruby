@@ -63,14 +63,14 @@ public class RubyPrecision {
     }
     
     public static IRubyObject prec(IRubyObject receiver, IRubyObject type) {
-        return type.callMethod("induced_from", receiver);
+        return type.callMethod(receiver.getRuntime().getCurrentContext(), "induced_from", receiver);
     }
 
     public static IRubyObject prec_i(IRubyObject receiver) {
-        return receiver.getRuntime().getClass("Integer").callMethod("induced_from", receiver);
+        return receiver.getRuntime().getClass("Integer").callMethod(receiver.getRuntime().getCurrentContext(), "induced_from", receiver);
     }
 
     public static IRubyObject prec_f(IRubyObject receiver) {
-        return receiver.getRuntime().getClass("Float").callMethod("induced_from", receiver);
+        return receiver.getRuntime().getClass("Float").callMethod(receiver.getRuntime().getCurrentContext(), "induced_from", receiver);
     }
 }

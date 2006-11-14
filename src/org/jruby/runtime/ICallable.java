@@ -29,7 +29,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -43,16 +42,16 @@ public interface ICallable {
     RubyModule getImplementationClass();
     void setImplementationClass(RubyModule implClass);
     
-    void preMethod(IRuby runtime, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper);
-    void postMethod(IRuby runtime);
+    void preMethod(ThreadContext context, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper);
+    void postMethod(ThreadContext context);
 
     Visibility getVisibility();
     void setVisibility(Visibility visibility);
 
     boolean isUndefined();
 
-    IRubyObject call(IRuby runtime, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper);
-    IRubyObject internalCall(IRuby runtime, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper);
+    IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper);
+    IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper);
 
     Arity getArity();
 

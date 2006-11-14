@@ -32,6 +32,7 @@ import java.util.List;
 
 import org.jruby.IRuby;
 import org.jruby.Ruby;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -85,15 +86,16 @@ public class JavaEmbedUtils {
 
         // Create Ruby proxies for any input arguments that are not primitives.
         IRubyObject javaUtilities = runtime.getObject().getConstant("JavaUtilities");
+        ThreadContext context = runtime.getCurrentContext();
         for (int i = 0; i < rubyArgs.length; i++) {
             IRubyObject obj = rubyArgs[i];
 
             if (obj instanceof JavaObject) {
-                rubyArgs[i] = javaUtilities.callMethod("wrap", obj);
+                rubyArgs[i] = javaUtilities.callMethod(context, "wrap", obj);
             }
         }
 
-        IRubyObject result = rubyReceiver.callMethod(method, rubyArgs);
+        IRubyObject result = rubyReceiver.callMethod(context, method, rubyArgs);
 
         return rubyToJava(runtime, result, returnType);
 	}
@@ -115,7 +117,7 @@ public class JavaEmbedUtils {
         }
         IRubyObject result = JavaUtil.convertJavaToRuby(runtime, value);
         if (result instanceof JavaObject) {
-            return runtime.getModule("JavaUtilities").callMethod("wrap", result);
+            return runtime.getModule("JavaUtilities").callMethod(runtime.getCurrentContext(), "wrap", result);
         }
         return result;
     }   

@@ -29,34 +29,37 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.parser;
 
-import java.util.List;
-
+import org.jruby.runtime.DynamicScope;
 
 public class RubyParserConfiguration {
-    private String[] localVariables;
-    private List dynamicVariables;
+    private DynamicScope existingScope = null;
+    private boolean asBlock = false;
 
     /**
-     * Gets the localVariables.
-     * @return Returns a List
+     * If we are performing an eval we should pass existing scope in.
+     * Calling this lets the parser know we need to do this.
+     * 
+     * @param existingScope is the scope that captures new vars, etc...
      */
-    public String[] getLocalVariables() {
-        return localVariables;
+    public void parseAsBlock(DynamicScope existingScope) {
+        this.asBlock = true;
+        this.existingScope = existingScope;
     }
-
+    
     /**
-     * Sets the localVariables.
-     * @param localVariables The localVariables to set
+     * This method returns the appropriate first scope for the parser.
+     * 
+     * @return correct top scope for source to be parsed
      */
-    public void setLocalVariables(String[] localVariables) {
-        this.localVariables = localVariables;
-    }
-
-    public List getDynamicVariables() {
-        return dynamicVariables;
-    }
-
-    public void setDynamicVariables(List dynamicVariables) {
-        this.dynamicVariables = dynamicVariables;
+    public DynamicScope getScope() {
+        if (asBlock) {
+            return existingScope;
+        } 
+        
+        // FIXME: We should really not be creating the dynamic scope for the root
+        // of the AST before parsing.  This makes us end up needing to readjust
+        // this dynamic scope coming out of parse (and for local static scopes it
+        // will always happen because of $~ and $_).
+        return new DynamicScope(new LocalStaticScope(null), existingScope);
     }
 }

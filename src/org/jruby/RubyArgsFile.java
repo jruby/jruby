@@ -31,6 +31,7 @@
 package org.jruby;
 
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class RubyArgsFile extends RubyObject {
@@ -106,15 +107,17 @@ public class RubyArgsFile extends RubyObject {
             return getRuntime().getNil();
         }
         
-        IRubyObject line = currentFile.callMethod("gets", args);
+        ThreadContext context = getRuntime().getCurrentContext();
+        
+        IRubyObject line = currentFile.callMethod(context, "gets", args);
         
         while (line instanceof RubyNil) {
-            currentFile.callMethod("close");
+            currentFile.callMethod(context, "close");
             if (! nextArgsFile()) {
                 currentFile = null;
                 return line;
         	}
-            line = currentFile.callMethod("gets", args);
+            line = currentFile.callMethod(context, "gets", args);
         }
         
         currentLineNumber++;

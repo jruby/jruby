@@ -9,6 +9,7 @@ def short_name(long_name)
 end
 
 def node_string(node)
+  return "#{short_name(node.java_class.name)}" unless node.position
   p = node.position
   "#{short_name(node.java_class.name)},#{p.startLine},#{p.endLine},#{p.startOffset},#{p.endOffset}"
 end
@@ -50,6 +51,7 @@ end
 ########################################################################
 
 list = [
+nil,
 nil, #['NewlineNode',1,2,2,6],
   ['VCallNode',1,1,1,5]
 ]
@@ -59,6 +61,7 @@ puts
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,4],
 ['VCallNode',0,0,0,4],
 ]
@@ -67,6 +70,7 @@ puts
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,6],
 ['FCallNode',0,0,0,6],
   ['ArrayNode',0,0,5,6],
@@ -77,6 +81,7 @@ puts 3
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,9],
 ['FCallNode',0,0,0,9],
   ['ArrayNode',0,0,5,9],
@@ -88,6 +93,7 @@ puts 3, 5
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,5],
 ['FCallNode',0,0,0,6],
   ['ArrayNode',0,0,4,6]
@@ -97,6 +103,7 @@ puts()
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,9],
 ['FCallNode',0,0,0,7],
   ['ArrayNode',0,0,4,7],
@@ -107,6 +114,7 @@ puts(3)
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,10],
 ['FCallNode',0,0,0,10],
   ['ArrayNode',0,0,4,10],
@@ -118,6 +126,7 @@ puts(3, 5)
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,9],
 ['CallNode',0,0,0,9],
   ['ConstNode',0,0,0,5],
@@ -127,6 +136,7 @@ Array.new
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,9],
 ['CallNode',0,0,0,11],
   ['ConstNode',0,0,0,5],
@@ -138,6 +148,7 @@ Array.new 3
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,9],
 ['CallNode',0,0,0,14],
   ['ConstNode',0,0,0,5],
@@ -150,6 +161,7 @@ Array.new 3, 5
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,11],
 ['CallNode',0,0,0,11],
   ['ConstNode',0,0,0,5],
@@ -160,6 +172,7 @@ Array.new()
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,14],
 ['CallNode',0,0,0,14],
   ['ConstNode',0,0,0,5],
@@ -171,6 +184,7 @@ Array.new("a")
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,14],
 ['CallNode',0,0,0,17],
   ['ConstNode',0,0,0,5],
@@ -183,6 +197,7 @@ Array.new("a", 3)
 END
 
 list = [
+nil,
 nil, # ['NewlineNode',0,1,0,25]
 ['CallNode',0,0,0,24],
   ['ConstNode',0,0,0,6],
@@ -197,6 +212,7 @@ String.new "aaa" + "bbb"
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,18]
   ['CallNode',0,0,0,17],
     ['ConstNode',0,0,0,6],
@@ -209,6 +225,7 @@ String.new 5.to_s
 END
 
 list = [
+nil,
 nil, # ['NewlineNode',0,1,0,27],
   ['CallNode',0,0,0,26],
     ['ConstNode',0,0,0,5],
@@ -223,6 +240,7 @@ Array.new String.new(1234)
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,1,13],
   ['OrNode',0,0,0,6],
     ['FixnumNode',0,0,0,1],
@@ -233,6 +251,7 @@ test_tree(list, <<'END', "|| operator")
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,1,13],
   ['AndNode',0,0,0,6],
     ['FixnumNode',0,0,0,1],
@@ -243,6 +262,7 @@ test_tree(list, <<'END', "&& operator")
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,1,13],
   ['CallNode',0,0,0,6],
     ['FixnumNode',0,0,0,1],
@@ -254,6 +274,7 @@ test_tree(list, <<'END', "== operator")
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,1,13],
   ['NotNode',0,0,0,6],
     ['CallNode',0,0,0,6],
@@ -266,6 +287,7 @@ test_tree(list, <<'END', "!= operator")
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,1,13],
   ['NotNode',0,0,0,2],
     ['FixnumNode',0,0,1,2]
@@ -275,6 +297,7 @@ test_tree(list, <<'END', "! operator")
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,1,13],
   ['ZArrayNode',0,0,0,2]
 ]
@@ -283,6 +306,7 @@ test_tree(list, <<'END', "[] ZArray")
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,1,13],
   ['ArrayNode',0,0,0,12],
     ['FixnumNode',0,0,1,3],
@@ -294,6 +318,7 @@ END
 
 list = [
 nil, #['NewlineNode',0,1,1,13],
+nil,
   ['ZArrayNode',0,0,0,4]
 ]
 test_tree(list, <<'END', "%w() ZArray")
@@ -301,6 +326,7 @@ test_tree(list, <<'END', "%w() ZArray")
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,1,13],
   ['ArrayNode',0,0,0,11],
     ['StrNode',0,0,3,5],
@@ -313,6 +339,7 @@ END
 
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,6],
   ['IterNode',0,0,4,6],
     ['FCallNode',0,0,0,6]
@@ -322,6 +349,7 @@ foo {}
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,6],
   ['IterNode',0,1,4,10],
     ['FCallNode',0,1,0,10]
@@ -333,6 +361,7 @@ end
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,6,9],
   ['IterNode',0,0,6,8],
     ['FCallNode',0,0,0,8],
@@ -344,6 +373,7 @@ foo() {}
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,6,9],
   ['IterNode',0,1,6,12],
     ['FCallNode',0,1,0,12],
@@ -356,6 +386,7 @@ end
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,2,6,17],
   ['IterNode',0,1,6,16],
     ['DAsgnNode',0,0,10,11],
@@ -369,6 +400,7 @@ end
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,2,6,19],
   ['IterNode',0,1,6,18],
     ['MultipleAsgnNode',0,0,9,14],
@@ -385,6 +417,7 @@ end
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,2,10,23],
   ['IterNode',0,1,10,22],
     ['MultipleAsgnNode',0,0,13,18],
@@ -403,6 +436,7 @@ end
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,2,10,23],
   ['YieldNode',0,0,0,5],
 ]
@@ -412,6 +446,7 @@ yield
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,2,10,23],
   ['YieldNode',0,0,0,7],
 ]
@@ -421,6 +456,7 @@ yield()
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,2,10,23],
   ['YieldNode',0,0,0,8],
     ['FixnumNode',0,0,6,7]
@@ -431,6 +467,7 @@ yield(1)
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,2,10,23],
   ['ReturnNode',0,0,0,6],
 ]
@@ -440,6 +477,7 @@ return
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,2,10,23],
   ['ReturnNode',0,0,0,8],
     ['FixnumNode',0,0,7,8]
@@ -460,6 +498,7 @@ END
 #END
 
 list = [
+nil,
 nil, #['NewlineNode',0,2,10,23],
   ['ReturnNode',0,0,0,9],
     nil, #['NewlineNode',0,2,10,23],
@@ -471,6 +510,7 @@ return(1)
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,2,10,23],
   ['NextNode',0,0,0,4],
 ]
@@ -480,6 +520,7 @@ next
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,2,10,23],
   ['NextNode',0,0,0,6],
 ]
@@ -490,6 +531,7 @@ nil, #['NewlineNode',0,2,10,23],
 #END
 
 list = [
+nil,
 nil, #['NewlineNode',0,2,10,23],
   ['NextNode',0,0,0,6],
     ['FixnumNode',0,0,5,6]
@@ -500,6 +542,7 @@ next 5
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,2,10,23],
   ['NextNode',0,0,0,7],
     nil, #['NewlineNode',0,2,10,23],
@@ -511,6 +554,7 @@ next(5)
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,2,10,23],
   ['BreakNode',0,0,0,5],
 ]
@@ -520,6 +564,7 @@ break
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,2,10,23],
   ['BreakNode',0,0,0,7],
     ['FixnumNode',0,0,6,7]
@@ -530,6 +575,7 @@ break 5
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,2,10,23],
   ['RedoNode',0,0,0,4],
 ]
@@ -543,6 +589,7 @@ END
 ########################################################################
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,8],
   ['StrNode',0,0,0,8]
 ]
@@ -552,6 +599,7 @@ test_tree(list, <<'END', "' string")
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,8],
   ['StrNode',0,0,0,10]
 ]
@@ -561,6 +609,7 @@ test_tree(list, <<'END', "%q{ string")
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,8],
   ['StrNode',0,0,0,10]
 ]
@@ -570,6 +619,7 @@ test_tree(list, <<'END', "%q[ (something other than {) string")
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,8],
   ['StrNode',0,0,0,10]
 ]
@@ -579,6 +629,7 @@ test_tree(list, <<'END', "%q[ (something other than { 2) string")
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,8],
   ['StrNode',0,0,0,8]
 ]
@@ -588,6 +639,7 @@ test_tree(list, <<'END', "\" string")
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,8],
   ['StrNode',0,0,0,10]
 ]
@@ -597,6 +649,7 @@ test_tree(list, <<'END', "%Q{ string")
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,8],
   ['StrNode',0,0,0,9]
 ]
@@ -606,6 +659,7 @@ test_tree(list, <<'END', "%{ string")
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,8],
   ['DStrNode',0,0,0,17],
     ['StrNode',0,0,0,9],
@@ -628,6 +682,7 @@ test_tree(list, <<'END', "double nested string")
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,8],
   ['DStrNode',0,0,0,24],
     ['StrNode',0,0,0,9],
@@ -643,6 +698,7 @@ test_tree(list, <<'END', "double nested string")
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,8],
   ['XStrNode',0,0,0,8]
 ]
@@ -652,6 +708,7 @@ test_tree(list, <<'END', "simple string")
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,17],
   ['DXStrNode',0,0,0,16],
     ['DStrNode',0,0,0,16],
@@ -666,6 +723,7 @@ test_tree(list, <<'END', "simple string")
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,18],
   ['DStrNode',0,0,0,16],
     ['StrNode',0,0,0,8],
@@ -679,6 +737,7 @@ test_tree(list, <<'END', "eval in string")
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,8],
   ['StrNode',0,2,0,13]
 ]
@@ -690,6 +749,7 @@ HEH
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,8],
   ['StrNode',0,2,0,15]
 ]
@@ -701,6 +761,7 @@ HEH
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,8],
   ['StrNode',0,2,0,23]
 ]
@@ -714,6 +775,7 @@ bar
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,3,0,22],
   ['DStrNode',0,2,0,21],
     ['StrNode',1,1,5,10],  # ENEBO: What should this really be?
@@ -734,11 +796,11 @@ END
 ########################################################################
 
 list = [
+nil,
 nil, #['NewlineNode', 0, 2, 0, 12],
 ['DefnNode', 0, 1, 0, 11],
   ['ArgumentNode', 0, 0, 4, 7],
   nil,#['ArgsNode', 0, 1, 7, 7],  
-  nil #[ScopeNode, 1, 1, 10, 11]
 ]
 
 test_tree(list, <<'EOF', "Simple def")
@@ -747,13 +809,13 @@ end
 EOF
 
 list = [
+nil,
 nil, #['NewlineNode',0,2,0,18],
 ['DefnNode',0,1,0,16],
   ['ArgumentNode',0,0,4,7],
   ['ArgsNode',0,0,7,12],
     ['ListNode',0,0,8,11],
       ['ArgumentNode',0,0,8,11],
-  nil #['ScopeNode',1,1,15,17]
 ]
 
 test_tree(list, <<'EOF', "Simple def with single arg list")
@@ -762,6 +824,7 @@ end
 EOF
 
 list = [
+nil,
 nil, #['NewlineNode',0,2,0,18],
   ['DefnNode',0,1,0,23],
     ['ArgumentNode',0,0,4,7],
@@ -769,7 +832,6 @@ nil, #['NewlineNode',0,2,0,18],
       ['ListNode',0,0,8,11],
         ['ArgumentNode',0,0,8,11],
       ['BlockArgNode',0,0,13,18],
-    nil, #['ScopeNode',1,1,23,23]
 ]
 
 test_tree(list, <<'EOF', "def foo(bar, &bloc) ... end")
@@ -779,13 +841,13 @@ EOF
 
 # Enebo: *rest args do not show up directly in AST?
 list = [
+nil,
 nil, #['NewlineNode',0,2,0,18],
   ['DefnNode',0,1,0,23],
     ['ArgumentNode',0,0,4,7],
     ['ArgsNode',0,0,7,19],
       ['ListNode',0,0,8,11],
         ['ArgumentNode',0,0,8,11],
-    nil, #['ScopeNode',1,1,23,23]
 ]
 
 test_tree(list, <<'EOF', "def foo(bar, *rest) ... end")
@@ -794,10 +856,10 @@ end
 EOF
 
 list = [
+nil,
 nil, #['NewlineNode',0,5,0,70],
   ['ModuleNode',0,4,0,68],
     ['Colon2Node',0,0,7,10],
-    nil, #['ScopeNode',1,3,13,64],
       nil, #['NewlineNode',3,4,64,66],
         ['DefnNode',1,3,13,64],
           ['ArgumentNode',1,1,17,21],
@@ -805,7 +867,6 @@ nil, #['NewlineNode',0,5,0,70],
             ['ListNode',1,1,23,32],
               ['ArgumentNode',1,1,23,26],
               ['ArgumentNode',1,1,28,32],
-          nil, #['ScopeNode',2,2,39,58],
             nil, #['NewlineNode',2,3,39,60],
               ['FCallNode',2,2,39,58],
                 ['ArrayNode',2,2,44,58],
@@ -823,10 +884,10 @@ end
 END
 
 list = [
+nil,
 nil, #['NewlineNode',0,5,0,56],
   ['ClassNode',0,4,0,54],
     ['Colon2Node',0,0,6,7],
-    nil, #['ScopeNode',1,3,14,50],
       nil, #['NewlineNode',1,4,14,52],
         ['DefnNode',1,3,14,50],
           ['ArgumentNode',1,1,18,22],
@@ -834,7 +895,6 @@ nil, #['NewlineNode',0,5,0,56],
             ['ListNode',1,1,24,33],
               ['ArgumentNode',1,1,24,27],
               ['ArgumentNode',1,1,29,33],
-          nil, #['ScopeNode',2,2,40,44],
             nil, #['NewlineNode',2,3,40,46],
               ['TrueNode',2,2,40,44],
     ['ConstNode',0,0,10,11]
@@ -849,17 +909,16 @@ end
 END
   
 list = [
+nil,
 nil, #['NewlineNode',0,4,0,43],
   ['SClassNode',0,3,0,42],
     ['SelfNode',0,0,9,13],
-    nil, #['ScopeNode',1,2,16,38],
       nil, #['NewlineNode',1,3,16,39],
         ['DefnNode',1,2,16,38],
           ['ArgumentNode',1,1,20,25],
           ['ArgsNode',1,1,25,32],
             ['ListNode',1,1,27,31],
               ['ArgumentNode',1,1,27,31],
-          nil, #['ScopeNode',2,2,38,38]
 ]
 
 test_tree(list, <<'END', "singleton class")
@@ -874,6 +933,7 @@ END
 ########################################################################
 
 list = [
+nil,
 nil, #['NewlineNode', 0, 1, 0, 5],
 ['SymbolNode', 0, 0, 0, 4]
 ]
@@ -882,6 +942,7 @@ test_tree(list, <<'EOF', "Simple symbol")
 EOF
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,6],
   ['DSymbolNode',0,0,0,6],
     ['DStrNode',0,0,1,6],
@@ -893,6 +954,7 @@ test_tree(list, <<'EOF', "String-wrapped symbol")
 EOF
 
 list = [
+nil,
 nil, #['NewlineNode,0,1,0,16]
 ['Colon2Node',0,0,0,14],
   ['ConstNode',0,0,0,6]
@@ -902,6 +964,7 @@ Object::Object
 EOF
 
 list = [
+nil,
 nil, #['NewlineNode,0,1,0,9]
 ['Colon3Node',0,0,0,8]
 ]
@@ -912,8 +975,9 @@ EOF
 #### Assignment
 
 list = [
+nil,
 nil, #['NewlineNode,0,1,0,9]
-  ['DAsgnNode',0,0,0,5],
+  ['LocalAsgnNode',0,0,0,5],
     ['FixnumNode',0,0,4,5]
 ]
 test_tree(list, <<'EOF', "simple assignment")
@@ -921,8 +985,9 @@ a = 1
 EOF
 
 list = [
+nil,
 nil, #['NewlineNode,0,1,0,9]
-  ['DAsgnNode',0,0,0,5],
+  ['LocalAsgnNode',0,0,0,5],
     ['FixnumNode',0,0,4,5]
 ]
 # JRUBY-201 needs to be fixed before continuing here
@@ -931,8 +996,9 @@ nil, #['NewlineNode,0,1,0,9]
 #EOF
 
 list = [
+nil,
 nil, #['NewlineNode,0,1,0,9]
-  ['DAsgnNode',0,0,0,9],
+  ['LocalAsgnNode',0,0,0,9],
     ['FCallNode',0,0,4,9],
       ['ArrayNode',0,0,7,9]
 ]
@@ -942,8 +1008,9 @@ EOF
 
 # Enebo: Splat is replacement for array or args cat node so this is ok.
 list = [
+nil,
 nil, #['NewlineNode,0,1,0,9]
-  ['DAsgnNode',0,0,0,13],
+  ['LocalAsgnNode',0,0,0,13],
     ['FCallNode',0,0,4,13],
       ['SplatNode',0,0,7,13],
         ['VCallNode',0,0,9,12]
@@ -953,11 +1020,11 @@ a = foo(*bar)
 EOF
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,9],
   ['DefnNode',0,0,0,25],
     ['ArgumentNode',0,0,4,5],
     ['ArgsNode',0,0,5,11],
-    ['ScopeNode',0,0,25,25],
       nil, #['NewlineNode',0,0,12,25],
         ['FCallNode',0,0,12,21],
           ['SplatNode',0,0,15,21],
@@ -968,8 +1035,9 @@ def a(*bar) foo(*bar) end
 EOF
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,9]
-  ['DAsgnNode',0,0,0,1],
+  ['LocalAsgnNode',0,0,0,1],
     ['RescueNode',0,0,10,22],
       ['RescueBodyNode',0,0,10,22],
         ['FCallNode',0,0,17,22],
@@ -983,6 +1051,7 @@ EOF
 
 # Fixme:  Same as next() and return() issue
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,9]
   ['BeginNode',0,4,0,34],
     ['RescueNode',2,4,12,34],
@@ -1003,6 +1072,7 @@ nil, #['NewlineNode',0,1,0,9]
 #EOF
 
 list = [
+nil,
  nil, #['NewlineNode',0,3,4,21],
   ['CaseNode',0,2,0,20],
     ['VCallNode',0,0,5,9],
@@ -1017,6 +1087,7 @@ list = [
 #EOF
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,9]
   ['IfNode',0,0,0,6],
     ['FixnumNode',0,0,5,6],
@@ -1027,6 +1098,7 @@ test_tree(list, <<'EOF', "1 if 2")
 EOF
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,9]
   ['IfNode',0,0,0,10],
     ['FixnumNode',0,0,9,10],
@@ -1037,6 +1109,7 @@ test_tree(list, <<'EOF', "1 unless 2")
 EOF
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,9]
   ['IfNode',0,1,0,9],
     ['FixnumNode',0,0,3,4]
@@ -1047,6 +1120,7 @@ end
 EOF
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,9]
   ['IfNode',0,1,0,13],
     ['FixnumNode',0,0,7,8]
@@ -1057,12 +1131,14 @@ end
 EOF
 
 list = [
+nil,
 nil, #['NewlineNode',0,1,0,9]
   ['ForNode',0,1,0,14],
-    ['DAsgnNode',0,0,4,5],
+    ['LocalAsgnNode',0,0,4,5],
     ['VCallNode',0,0,9,10]
 ]
 test_tree(list, <<'EOF', "for i in j end")
 for i in j
 end
 EOF
+

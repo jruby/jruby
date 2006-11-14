@@ -78,19 +78,16 @@ public class ReflectedMethod extends AbstractMethod {
         assert method != null;
     }
 
-    public void preMethod(IRuby runtime, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
-        ThreadContext context = runtime.getCurrentContext();
-        
+    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
         context.preReflectedMethodInternalCall(implementationClass, lastClass, recv, name, args, noSuper);
     }
     
-    public void postMethod(IRuby runtime) {
-        ThreadContext context = runtime.getCurrentContext();
-        
+    public void postMethod(ThreadContext context) {
         context.postReflectedMethodInternalCall();
     }
     
-	public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+	public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+        IRuby runtime = context.getRuntime();
         arity.checkArity(runtime, args);
         
         assert receiver != null;

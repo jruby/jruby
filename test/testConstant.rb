@@ -158,7 +158,9 @@ end
 
 # Declare constant outside of class/module
 test_equal(1, Empty::FOOT = 1)
+
 # Declare constant outside of class/module in multi assign
+b, a = 1, 1
 Empty::BART, a = 1, 1
 test_equal(1, Empty::BART)
 # Declare a constant whose value changes scope

@@ -70,15 +70,13 @@ public class ASTSerializer {
     public static void serialize(File input, IAstEncoder encoder) throws IOException {
         Reader reader = new BufferedReader(new FileReader(input));
         RubyParserConfiguration config = new RubyParserConfiguration();
-        config.setLocalVariables(new String[0]);
 
         DefaultRubyParser parser = null;
         RubyParserResult result = null;
         try {
             parser = RubyParserPool.getInstance().borrowParser();
             parser.setWarnings(new NullWarnings());
-            parser.init(config);
-            result = parser.parse(LexerSource.getSource(input.toString(), reader));
+            result = parser.parse(config, LexerSource.getSource(input.toString(), reader));
         } catch (SyntaxException e) {
             // ignore the syntax exception
         } finally {

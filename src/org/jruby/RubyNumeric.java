@@ -37,6 +37,7 @@ package org.jruby;
 import java.math.BigInteger;
 
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -212,7 +213,7 @@ public class RubyNumeric extends RubyObject {
         IRubyObject result;
         
         try {
-            result = other.callMethod("coerce", this);
+            result = other.callMethod(getRuntime().getCurrentContext(), "coerce", this);
         } catch (RaiseException e) {
             if (error) {
                 throw getRuntime().newTypeError(other.getMetaClass().getName() + 
@@ -232,7 +233,7 @@ public class RubyNumeric extends RubyObject {
     protected IRubyObject callCoerced(String method, IRubyObject other) {
         IRubyObject[] args = getCoerced(other, true);
 
-        return args[0].callMethod(method, args[1]);
+        return args[0].callMethod(getRuntime().getCurrentContext(), method, args[1]);
     }
     
     public RubyNumeric asNumeric() {
@@ -270,7 +271,7 @@ public class RubyNumeric extends RubyObject {
     public IRubyObject op_uminus() {
         RubyArray coerce = (RubyArray) coerce(RubyFixnum.zero(getRuntime()));
 
-        return (RubyNumeric) coerce.entry(0).callMethod("-", coerce.entry(1));
+        return (RubyNumeric) coerce.entry(0).callMethod(getRuntime().getCurrentContext(), "-", coerce.entry(1));
     }
     
     public IRubyObject cmp(IRubyObject other) {
@@ -284,7 +285,7 @@ public class RubyNumeric extends RubyObject {
     public IRubyObject divmod(IRubyObject other) {
     	if (other instanceof RubyNumeric) {
     	    RubyNumeric denominator = (RubyNumeric) other;
-            RubyNumeric div = (RubyNumeric) callMethod("/", denominator);
+            RubyNumeric div = (RubyNumeric) callMethod(getRuntime().getCurrentContext(), "/", denominator);
             if (div instanceof RubyFloat) {
                 double d = Math.floor(((RubyFloat) div).getValue());
                 if (((RubyFloat) div).getValue() > d) {
@@ -303,7 +304,7 @@ public class RubyNumeric extends RubyObject {
      */
     public IRubyObject modulo(IRubyObject other) {
     	if (other instanceof RubyNumeric) {
-            return (RubyNumeric) callMethod("%", other);
+            return (RubyNumeric) callMethod(getRuntime().getCurrentContext(), "%", other);
     	}
     	
     	return callCoerced("modulo", other);
@@ -316,11 +317,12 @@ public class RubyNumeric extends RubyObject {
     	if (other instanceof RubyNumeric) {
             IRubyObject mod = modulo(other);
             final RubyNumeric zero = RubyFixnum.zero(getRuntime());
+            ThreadContext context = getRuntime().getCurrentContext();
 
-            if (callMethod("<", zero).isTrue() && other.callMethod(">", zero).isTrue() || 
-                callMethod(">", zero).isTrue() && other.callMethod("<", zero).isTrue()) {
+            if (callMethod(context, "<", zero).isTrue() && other.callMethod(context, ">", zero).isTrue() || 
+                callMethod(context, ">", zero).isTrue() && other.callMethod(context, "<", zero).isTrue()) {
 
-                return (RubyNumeric) mod.callMethod("-", other);
+                return (RubyNumeric) mod.callMethod(context, "-", other);
             }
 
             return mod;
@@ -373,8 +375,9 @@ public class RubyNumeric extends RubyObject {
      *
      */
     public RubyNumeric abs() {
-        if (callMethod("<", RubyFixnum.zero(getRuntime())).isTrue()) {
-            return (RubyNumeric) callMethod("-@");
+        ThreadContext context = getRuntime().getCurrentContext();
+        if (callMethod(context, "<", RubyFixnum.zero(getRuntime())).isTrue()) {
+            return (RubyNumeric) callMethod(context, "-@");
         }
 		return this;
     }
@@ -398,7 +401,7 @@ public class RubyNumeric extends RubyObject {
      *
      */
     public IRubyObject nonzero_p() {
-        if (callMethod("zero?").isTrue()) {
+        if (callMethod(getRuntime().getCurrentContext(), "zero?").isTrue()) {
             return getRuntime().getNil();
         }
         return this;

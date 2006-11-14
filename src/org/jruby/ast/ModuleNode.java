@@ -35,6 +35,7 @@ import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.parser.StaticScope;
 
 /** Represents a module definition.
  *
@@ -44,11 +45,13 @@ public class ModuleNode extends Node implements IScopingNode {
     static final long serialVersionUID = 4938115602547834310L;
 
     private final Node cpath;
-    private final ScopeNode bodyNode;
+    private final StaticScope scope;
+    private final Node bodyNode;
 
-    public ModuleNode(ISourcePosition position, Node cpath, ScopeNode bodyNode) {
+    public ModuleNode(ISourcePosition position, Node cpath, StaticScope scope, Node bodyNode) {
         super(position, NodeTypes.MODULENODE);
         this.cpath = cpath;
+        this.scope = scope;
         this.bodyNode = bodyNode;
     }
 
@@ -61,11 +64,21 @@ public class ModuleNode extends Node implements IScopingNode {
     }
 
     /**
-     * Gets the bodyNode.
-     * @return Returns a ScopeNode
+     * Gets the body of this class.
+     * 
+     * @return the contents
      */
-    public ScopeNode getBodyNode() {
+    public Node getBodyNode() {
         return bodyNode;
+    }
+    
+    /**
+     * Get the static scoping information.
+     * 
+     * @return the scoping info
+     */
+    public StaticScope getScope() {
+        return scope;
     }
 
     /**

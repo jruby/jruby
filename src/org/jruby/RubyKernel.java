@@ -219,7 +219,7 @@ public class RubyKernel {
         }
 
         String name = args[0].asSymbol();
-        String description = recv.callMethod("inspect").toString();
+        String description = recv.callMethod(runtime.getCurrentContext(), "inspect").toString();
         boolean noClass = description.length() > 0 && description.charAt(0) == '#';
         ThreadContext tc = runtime.getCurrentContext();
         Visibility lastVis = tc.getLastVisibility();
@@ -284,7 +284,7 @@ public class RubyKernel {
             }
             
             // Strange that Ruby has custom code here and not convertToTypeWithCheck equivalent.
-            value = object.callMethod("to_a");
+            value = object.callMethod(recv.getRuntime().getCurrentContext(), "to_a");
             if (value.getMetaClass() != recv.getRuntime().getClass("Array")) {
                 throw recv.getRuntime().newTypeError("`to_a' did not return Array");
                
@@ -295,39 +295,42 @@ public class RubyKernel {
     }
     
     public static IRubyObject new_float(IRubyObject recv, IRubyObject object) {
-        return object.callMethod("to_f");
+        return object.callMethod(recv.getRuntime().getCurrentContext(), "to_f");
     }
     
     public static IRubyObject new_integer(IRubyObject recv, IRubyObject object) {
+        ThreadContext context = recv.getRuntime().getCurrentContext();
+        
         if(object instanceof RubyString) {
             String val = object.toString();
             if(val.length() > 0 && val.charAt(0) == '0') {
                 if(val.length() > 1) {
                     if(val.charAt(1) == 'x') {
-                        return recv.getRuntime().newString(val.substring(2)).callMethod("to_i",recv.getRuntime().newFixnum(16));
+                        return recv.getRuntime().newString(val.substring(2)).callMethod(context,"to_i", recv.getRuntime().newFixnum(16));
                     } else if(val.charAt(1) == 'b') {
-                        return recv.getRuntime().newString(val.substring(2)).callMethod("to_i",recv.getRuntime().newFixnum(2));
+                        return recv.getRuntime().newString(val.substring(2)).callMethod(context,"to_i", recv.getRuntime().newFixnum(2));
                     } else {
-                        return recv.getRuntime().newString(val.substring(1)).callMethod("to_i",recv.getRuntime().newFixnum(8));
+                        return recv.getRuntime().newString(val.substring(1)).callMethod(context,"to_i", recv.getRuntime().newFixnum(8));
                     }
                 }
             }
         }
-        return object.callMethod("to_i");
+        return object.callMethod(context, "to_i");
     }
     
     public static IRubyObject new_string(IRubyObject recv, IRubyObject object) {
-        return object.callMethod("to_s");
+        return object.callMethod(recv.getRuntime().getCurrentContext(), "to_s");
     }
     
     
     public static IRubyObject p(IRubyObject recv, IRubyObject[] args) {
         IRubyObject defout = recv.getRuntime().getGlobalVariables().get("$>");
+        ThreadContext context = recv.getRuntime().getCurrentContext();
 
         for (int i = 0; i < args.length; i++) {
             if (args[i] != null) {
-                defout.callMethod("write", args[i].callMethod("inspect"));
-                defout.callMethod("write", recv.getRuntime().newString("\n"));
+                defout.callMethod(context, "write", args[i].callMethod(context, "inspect"));
+                defout.callMethod(context, "write", recv.getRuntime().newString("\n"));
             }
         }
         return recv.getRuntime().getNil();
@@ -335,16 +338,18 @@ public class RubyKernel {
 
     public static IRubyObject puts(IRubyObject recv, IRubyObject[] args) {
         IRubyObject defout = recv.getRuntime().getGlobalVariables().get("$>");
+        ThreadContext context = recv.getRuntime().getCurrentContext();
         
-        defout.callMethod("puts", args);
+        defout.callMethod(context, "puts", args);
 
         return recv.getRuntime().getNil();
     }
 
     public static IRubyObject print(IRubyObject recv, IRubyObject[] args) {
         IRubyObject defout = recv.getRuntime().getGlobalVariables().get("$>");
+        ThreadContext context = recv.getRuntime().getCurrentContext();
 
-        defout.callMethod("print", args);
+        defout.callMethod(context, "print", args);
 
         return recv.getRuntime().getNil();
     }
@@ -358,7 +363,9 @@ public class RubyKernel {
             	args = ArgsUtil.popArray(args);
             }
 
-            defout.callMethod("write", RubyKernel.sprintf(recv, args));
+            ThreadContext context = recv.getRuntime().getCurrentContext();
+
+            defout.callMethod(context, "write", RubyKernel.sprintf(recv, args));
         }
 
         return recv.getRuntime().getNil();
@@ -536,21 +543,10 @@ public class RubyKernel {
     public static RubyArray local_variables(IRubyObject recv) {
         final IRuby runtime = recv.getRuntime();
         RubyArray localVariables = runtime.newArray();
-        ThreadContext tc = runtime.getCurrentContext();
-
-        if (tc.getFrameScope().getLocalNames() != null) {
-            for (int i = 2; i < tc.getFrameScope().getLocalNames().length; i++) {
-				String variableName = (String) tc.getFrameScope().getLocalNames()[i];
-                if (variableName != null) {
-                    localVariables.append(runtime.newString(variableName));
-                }
-            }
-        }
-
-        Iterator dynamicNames = tc.getCurrentDynamicVars().names().iterator();
-        while (dynamicNames.hasNext()) {
-            String name = (String) dynamicNames.next();
-            localVariables.append(runtime.newString(name));
+        
+        String[] names = runtime.getCurrentContext().getCurrentScope().getAllNamesInScope();
+        for (int i = 0; i < names.length; i++) {
+            localVariables.append(runtime.newString(names[i]));
         }
 
         return localVariables;
@@ -574,7 +570,7 @@ public class RubyKernel {
         RubyArray newArgs = recv.getRuntime().newArray(args);
         newArgs.shift();
 
-        return ((StringMetaClass)str.getMetaClass()).format.call(recv.getRuntime(), str, str.getMetaClass(), "%", new IRubyObject[] {newArgs}, false);
+        return ((StringMetaClass)str.getMetaClass()).format.call(recv.getRuntime().getCurrentContext(), str, str.getMetaClass(), "%", new IRubyObject[] {newArgs}, false);
     }
 
     public static IRubyObject raise(IRubyObject recv, IRubyObject[] args) {
@@ -590,6 +586,8 @@ public class RubyKernel {
         }
 
         IRubyObject exception;
+        ThreadContext context = recv.getRuntime().getCurrentContext();
+        
         if (args.length == 1) {
             if (args[0] instanceof RubyString) {
                 throw new RaiseException(RubyException.newInstance(runtime.getClass("RuntimeError"), args));
@@ -598,13 +596,13 @@ public class RubyKernel {
             if (!args[0].respondsTo("exception")) {
                 throw runtime.newTypeError("exception class/object expected");
             }
-            exception = args[0].callMethod("exception");
+            exception = args[0].callMethod(context, "exception");
         } else {
             if (!args[0].respondsTo("exception")) {
                 throw runtime.newTypeError("exception class/object expected");
             }
             
-            exception = args[0].callMethod("exception", args[1]);
+            exception = args[0].callMethod(context, "exception", args[1]);
         }
         
         if (!exception.isKindOf(runtime.getClass("Exception"))) {
@@ -639,7 +637,6 @@ public class RubyKernel {
     }
 
     public static IRubyObject eval(IRubyObject recv, IRubyObject[] args) {
-        IRuby runtime = recv.getRuntime();
         RubyString src = (RubyString) args[0];
         IRubyObject scope = null;
         String file = "(eval)";
@@ -657,17 +654,13 @@ public class RubyKernel {
         //int line = args.length > 3 ? RubyNumeric.fix2int(args[3]) : 1;
 
         src.checkSafeString();
-        ThreadContext tc = runtime.getCurrentContext();
-
-        if (scope == null && tc.getPreviousFrame() != null) {
-            try {
-                tc.preKernelEval();
-                return recv.evalSimple(src, file);
-            } finally {
-                tc.postKernelEval();
-            }
+        ThreadContext context = recv.getRuntime().getCurrentContext();
+        
+        if (scope == null) {
+            scope = recv.getRuntime().newBinding();
         }
-        return recv.evalWithBinding(src, scope, file);
+        
+        return recv.evalWithBinding(context, src, scope, file);
     }
 
     public static IRubyObject caller(IRubyObject recv, IRubyObject[] args) {

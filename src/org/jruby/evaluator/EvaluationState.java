@@ -94,9 +94,9 @@ import org.jruby.ast.RegexpNode;
 import org.jruby.ast.RescueBodyNode;
 import org.jruby.ast.RescueNode;
 import org.jruby.ast.ReturnNode;
+import org.jruby.ast.RootNode;
 import org.jruby.ast.SClassNode;
 import org.jruby.ast.SValueNode;
-import org.jruby.ast.ScopeNode;
 import org.jruby.ast.SplatNode;
 import org.jruby.ast.StrNode;
 import org.jruby.ast.SuperNode;
@@ -118,8 +118,10 @@ import org.jruby.exceptions.JumpException.JumpType;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.WrapperCallable;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -138,8 +140,8 @@ public class EvaluationState {
         IRuby runtime = context.getRuntime();
         
         bigloop: do {
-            if (node == null) return runtime.getNil();
-            
+        if (node == null) return runtime.getNil();
+
             switch (node.nodeId) {
             case NodeTypes.ALIASNODE: {
                 AliasNode iVisited = (AliasNode) node;
@@ -149,7 +151,7 @@ public class EvaluationState {
                 }
     
                 context.getRubyClass().defineAlias(iVisited.getNewName(), iVisited.getOldName());
-                context.getRubyClass().callMethod("method_added", runtime.newSymbol(iVisited.getNewName()));
+                context.getRubyClass().callMethod(context, "method_added", runtime.newSymbol(iVisited.getNewName()));
     
                 return runtime.getNil();
             }
@@ -238,7 +240,6 @@ public class EvaluationState {
                 BlockPassNode iVisited = (BlockPassNode) node;
                 IRubyObject proc = evalInternal(context, iVisited.getBodyNode(), self);
                 
-    
                 if (proc.isNil()) {
                     context.setNoBlock();
                     try {
@@ -312,7 +313,7 @@ public class EvaluationState {
                 // If reciever is self then we do the call the same way as vcall
                 CallType callType = (receiver == self ? CallType.VARIABLE : CallType.NORMAL);
     
-                return receiver.callMethod(iVisited.getName(), args, callType);
+                return receiver.callMethod(context, iVisited.getName(), args, callType);
             }
             case NodeTypes.CASENODE: {
                 CaseNode iVisited = (CaseNode) node;
@@ -353,7 +354,7 @@ public class EvaluationState {
                                 for (int j = 0; j < expressions.getLength(); j++) {
                                     IRubyObject condition = expressions.entry(j);
     
-                                    if ((expression != null && condition.callMethod("===", expression)
+                                    if ((expression != null && condition.callMethod(context, "===", expression)
                                             .isTrue())
                                             || (expression == null && condition.isTrue())) {
                                         node = ((WhenNode) firstWhenNode).getBodyNode();
@@ -365,7 +366,7 @@ public class EvaluationState {
     
                             result = evalInternal(context, tag, self);
     
-                            if ((expression != null && result.callMethod("===", expression).isTrue())
+                            if ((expression != null && result.callMethod(context, "===", expression).isTrue())
                                     || (expression == null && result.isTrue())) {
                                 node = whenNode.getBodyNode();
                                 continue bigloop;
@@ -374,7 +375,7 @@ public class EvaluationState {
                     } else {
                         result = evalInternal(context, whenNode.getExpressionNodes(), self);
     
-                        if ((expression != null && result.callMethod("===", expression).isTrue())
+                        if ((expression != null && result.callMethod(context, "===", expression).isTrue())
                                 || (expression == null && result.isTrue())) {
                             node = ((WhenNode) firstWhenNode).getBodyNode();
                             continue bigloop;
@@ -400,7 +401,7 @@ public class EvaluationState {
                     rubyClass.extendObject(context.getWrapper());
                     rubyClass.includeModule(context.getWrapper());
                 }
-                return evalClassDefinitionBody(context, iVisited.getBodyNode(), rubyClass, self);
+                return evalClassDefinitionBody(context, iVisited.getScope(), iVisited.getBodyNode(), rubyClass, self);
             }
             case NodeTypes.CLASSVARASGNNODE: {
                 ClassVarAsgnNode iVisited = (ClassVarAsgnNode) node;
@@ -418,6 +419,7 @@ public class EvaluationState {
                 return result;
             }
             case NodeTypes.CLASSVARDECLNODE: {
+    
                 ClassVarDeclNode iVisited = (ClassVarDeclNode) node;
     
                 // FIXME: shouldn't we use cref here?
@@ -440,8 +442,8 @@ public class EvaluationState {
                     rubyClass = (RubyModule)rubyClass.getInstanceVariable("__attached__");
                 }
                 
-                return rubyClass.getClassVar(iVisited.getName());
-            }
+                    return rubyClass.getClassVar(iVisited.getName());
+                    }
             case NodeTypes.COLON2NODE: {
                 Colon2Node iVisited = (Colon2Node) node;
                 Node leftNode = iVisited.getLeftNode();
@@ -456,7 +458,7 @@ public class EvaluationState {
                     if (result instanceof RubyModule) {
                         return ((RubyModule) result).getConstantFrom(iVisited.getName());
                     } else {
-                        return result.callMethod(iVisited.getName());
+                        return result.callMethod(context, iVisited.getName());
                     }
                 }
             }
@@ -496,7 +498,9 @@ public class EvaluationState {
                 DAsgnNode iVisited = (DAsgnNode) node;
     
                 IRubyObject result = evalInternal(context, iVisited.getValueNode(), self);
-                context.getCurrentDynamicVars().set(iVisited.getName(), result);
+
+                // System.out.println("DSetting: " + iVisited.getName() + " at index " + iVisited.getIndex() + " and at depth " + iVisited.getDepth() + " and set " + result);
+                context.getCurrentScope().setValue(iVisited.getIndex(), result, iVisited.getDepth());
     
                 return result;
             }
@@ -528,10 +532,12 @@ public class EvaluationState {
                     visibility = Visibility.PRIVATE;
                 }
     
-                DefaultMethod newMethod = new DefaultMethod(containingClass, iVisited.getBodyNode(),
-                        (ArgsNode) iVisited.getArgsNode(), visibility, context.peekCRef());
+                DefaultMethod newMethod = new DefaultMethod(containingClass, iVisited.getScope(), 
+                        iVisited.getBodyNode(), (ArgsNode) iVisited.getArgsNode(), visibility, context.peekCRef());
     
-                iVisited.getBodyNode().accept(new CreateJumpTargetVisitor(newMethod));
+                if (iVisited.getBodyNode() != null) {
+                    iVisited.getBodyNode().accept(new CreateJumpTargetVisitor(newMethod));
+                }
     
                 containingClass.addMethod(name, newMethod);
     
@@ -540,15 +546,15 @@ public class EvaluationState {
                             name,
                             new WrapperCallable(containingClass.getSingletonClass(), newMethod,
                                     Visibility.PUBLIC));
-                    containingClass.callMethod("singleton_method_added", runtime.newSymbol(name));
+                    containingClass.callMethod(context, "singleton_method_added", runtime.newSymbol(name));
                 }
     
                 // 'class << state.self' and 'class << obj' uses defn as opposed to defs
                 if (containingClass.isSingleton()) {
                     ((MetaClass) containingClass).getAttachedObject().callMethod(
-                            "singleton_method_added", runtime.newSymbol(iVisited.getName()));
+                            context, "singleton_method_added", runtime.newSymbol(iVisited.getName()));
                 } else {
-                    containingClass.callMethod("method_added", runtime.newSymbol(name));
+                    containingClass.callMethod(context, "method_added", runtime.newSymbol(name));
                 }
     
                 return runtime.getNil();
@@ -577,14 +583,16 @@ public class EvaluationState {
                     }
                 }
     
-                DefaultMethod newMethod = new DefaultMethod(rubyClass, iVisited.getBodyNode(),
-                        (ArgsNode) iVisited.getArgsNode(), Visibility.PUBLIC, context
-                                .peekCRef());
-    
-                iVisited.getBodyNode().accept(new CreateJumpTargetVisitor(newMethod));
+                DefaultMethod newMethod = new DefaultMethod(rubyClass, iVisited.getScope(), 
+                        iVisited.getBodyNode(), (ArgsNode) iVisited.getArgsNode(), 
+                        Visibility.PUBLIC, context.peekCRef());
+
+                if (iVisited.getBodyNode() != null) {
+                    iVisited.getBodyNode().accept(new CreateJumpTargetVisitor(newMethod));
+                }
     
                 rubyClass.addMethod(iVisited.getName(), newMethod);
-                receiver.callMethod("singleton_method_added", runtime.newSymbol(iVisited.getName()));
+                receiver.callMethod(context, "singleton_method_added", runtime.newSymbol(iVisited.getName()));
     
                 return runtime.getNil();
             }
@@ -631,7 +639,12 @@ public class EvaluationState {
             }
             case NodeTypes.DVARNODE: {
                 DVarNode iVisited = (DVarNode) node;
-                return context.getDynamicValue(iVisited.getName());
+
+                // System.out.println("DGetting: " + iVisited.getName() + " at index " + iVisited.getIndex() + " and at depth " + iVisited.getDepth());
+                IRubyObject obj = context.getCurrentScope().getValue(iVisited.getIndex(), iVisited.getDepth());
+
+                // FIXME: null check is removable once we figure out how to assign to unset named block args
+                return obj == null ? runtime.getNil() : obj;
             }
             case NodeTypes.DXSTRNODE: {
                 DXStrNode iVisited = (DXStrNode) node;
@@ -643,7 +656,7 @@ public class EvaluationState {
                     sb.append(evalInternal(context, iterNode, self).toString());
                 }
     
-                return self.callMethod("`", runtime.newString(sb.toString()));
+                return self.callMethod(context, "`", runtime.newString(sb.toString()));
             }
             case NodeTypes.ENSURENODE: {
                 EnsureNode iVisited = (EnsureNode) node;
@@ -677,7 +690,6 @@ public class EvaluationState {
             case NodeTypes.FCALLNODE: {
                 FCallNode iVisited = (FCallNode) node;
                 
-    
                 context.beginCallArgs();
                 IRubyObject[] args;
                 try {
@@ -686,7 +698,7 @@ public class EvaluationState {
                     context.endCallArgs();
                 }
     
-                return self.callMethod(iVisited.getName(), args, CallType.FUNCTIONAL);
+                return self.callMethod(context, iVisited.getName(), args, CallType.FUNCTIONAL);
             }
             case NodeTypes.FIXNUMNODE: {
                 FixnumNode iVisited = (FixnumNode) node;
@@ -697,31 +709,31 @@ public class EvaluationState {
                 IRubyObject result = runtime.getNil();
     
                 if (iVisited.isExclusive()) {
-                    if (!context.getFrameScope().getValue(iVisited.getCount()).isTrue()) {
+                    if (!context.getCurrentScope().getValue(iVisited.getIndex(), iVisited.getDepth()).isTrue()) {
                         result = evalInternal(context, iVisited.getBeginNode(), self).isTrue() ? runtime.getFalse()
                                 : runtime.getTrue();
-                        context.getFrameScope().setValue(iVisited.getCount(), result);
+                        context.getCurrentScope().setValue(iVisited.getIndex(), result, iVisited.getDepth());
                         return result;
                     } else {
                         if (evalInternal(context, iVisited.getEndNode(), self).isTrue()) {
-                            context.getFrameScope().setValue(iVisited.getCount(), runtime.getFalse());
+                            context.getCurrentScope().setValue(iVisited.getIndex(), runtime.getFalse(), iVisited.getDepth());
                         }
                         return runtime.getTrue();
                     }
                 } else {
-                    if (!context.getFrameScope().getValue(iVisited.getCount()).isTrue()) {
+                    if (!context.getCurrentScope().getValue(iVisited.getIndex(), iVisited.getDepth()).isTrue()) {
                         if (evalInternal(context, iVisited.getBeginNode(), self).isTrue()) {
-                            context.getFrameScope().setValue(
-                                    iVisited.getCount(),
+                            context.getCurrentScope().setValue(
+                                    iVisited.getIndex(),
                                     evalInternal(context, iVisited.getEndNode(), self).isTrue() ? runtime.getFalse()
-                                            : runtime.getTrue());
+                                            : runtime.getTrue(), iVisited.getDepth());
                             return runtime.getTrue();
                         } else {
                             return runtime.getFalse();
                         }
                     } else {
                         if (evalInternal(context, iVisited.getEndNode(), self).isTrue()) {
-                            context.getFrameScope().setValue(iVisited.getCount(), runtime.getFalse());
+                            context.getCurrentScope().setValue(iVisited.getIndex(), runtime.getFalse(), iVisited.getDepth());
                         }
                         return runtime.getTrue();
                     }
@@ -734,9 +746,9 @@ public class EvaluationState {
             case NodeTypes.FORNODE: {
                 ForNode iVisited = (ForNode) node;
                 
-    
-                context.preForLoopEval(Block
-                        .createBlock(iVisited.getVarNode(), iVisited.getCallable(), self));
+                // For nodes do not have to create an addition scope so we just pass null
+                context.preForLoopEval(Block.createBlock(iVisited.getVarNode(), null,
+                        iVisited.getCallable(), self));
     
                 try {
                     while (true) {
@@ -752,7 +764,7 @@ public class EvaluationState {
                                 context.endCallArgs();
                             }
     
-                            return recv.callMethod("each", IRubyObject.NULL_ARRAY, CallType.NORMAL);
+                            return recv.callMethod(context, "each", IRubyObject.NULL_ARRAY, CallType.NORMAL);
                         } catch (JumpException je) {
                             switch (je.getJumpType().getTypeId()) {
                             case JumpType.RETRY:
@@ -844,8 +856,10 @@ public class EvaluationState {
             case NodeTypes.ITERNODE: {
                 IterNode iVisited = (IterNode) node;
                 
-    
-                context.preIterEval(Block.createBlock(iVisited.getVarNode(), iVisited.getCallable(), self));
+                context.preIterEval(Block.createBlock(iVisited.getVarNode(), 
+                        new DynamicScope(iVisited.getScope(), context.getCurrentScope()), 
+                        iVisited.getCallable(), self));
+                
                 try {
                     while (true) {
                         try {
@@ -879,12 +893,19 @@ public class EvaluationState {
             case NodeTypes.LOCALASGNNODE: {
                 LocalAsgnNode iVisited = (LocalAsgnNode) node;
                 IRubyObject result = evalInternal(context, iVisited.getValueNode(), self);
-                context.getFrameScope().setValue(iVisited.getCount(), result);
+                
+                // System.out.println("LSetting: " + iVisited.getName() + " at index " + iVisited.getIndex() + " and at depth " + iVisited.getDepth() + " and set " + result);
+                context.getCurrentScope().setValue(iVisited.getIndex(), result, iVisited.getDepth());
+
                 return result;
             }
             case NodeTypes.LOCALVARNODE: {
                 LocalVarNode iVisited = (LocalVarNode) node;
-                return context.getFrameScope().getValue(iVisited.getCount());
+
+                //System.out.println("DGetting: " + iVisited.getName() + " at index " + iVisited.getIndex() + " and at depth " + iVisited.getDepth());
+                IRubyObject result = context.getCurrentScope().getValue(iVisited.getIndex(), iVisited.getDepth());
+
+                return result == null ? runtime.getNil() : result;
             }
             case NodeTypes.MATCH2NODE: {
                 Match2Node iVisited = (Match2Node) node;
@@ -901,7 +922,7 @@ public class EvaluationState {
                 if (value instanceof RubyString) {
                     return ((RubyRegexp) recv).match(value);
                 } else {
-                    return value.callMethod("=~", recv);
+                    return value.callMethod(context, "=~", recv);
                 }
             }
             case NodeTypes.MATCHNODE: {
@@ -924,7 +945,7 @@ public class EvaluationState {
                 } else {
                     module = enclosingModule.defineModuleUnder(name);
                 }
-                return evalClassDefinitionBody(context, iVisited.getBodyNode(), module, self);
+                return evalClassDefinitionBody(context, iVisited.getScope(), iVisited.getBodyNode(), module, self);
             }
             case NodeTypes.MULTIPLEASGNNODE: {
                 MultipleAsgnNode iVisited = (MultipleAsgnNode) node;
@@ -985,7 +1006,7 @@ public class EvaluationState {
             case NodeTypes.OPASGNNODE: {
                 OpAsgnNode iVisited = (OpAsgnNode) node;
                 IRubyObject receiver = evalInternal(context, iVisited.getReceiverNode(), self);
-                IRubyObject value = receiver.callMethod(iVisited.getVariableName());
+                IRubyObject value = receiver.callMethod(context, iVisited.getVariableName());
     
                 if (iVisited.getOperatorName().equals("||")) {
                     if (value.isTrue()) {
@@ -998,11 +1019,11 @@ public class EvaluationState {
                     }
                     value = evalInternal(context, iVisited.getValueNode(), self);
                 } else {
-                    value = value.callMethod(iVisited.getOperatorName(), evalInternal(context,
+                    value = value.callMethod(context, iVisited.getOperatorName(), evalInternal(context,
                             iVisited.getValueNode(), self));
                 }
     
-                receiver.callMethod(iVisited.getVariableName() + "=", value);
+                receiver.callMethod(context, iVisited.getVariableName() + "=", value);
     
                 context.pollThreadEvents();
     
@@ -1028,7 +1049,7 @@ public class EvaluationState {
     
                 IRubyObject[] args = setupArgs(context, iVisited.getArgsNode(), self);
     
-                IRubyObject firstValue = receiver.callMethod("[]", args);
+                IRubyObject firstValue = receiver.callMethod(context, "[]", args);
     
                 if (iVisited.getOperatorName().equals("||")) {
                     if (firstValue.isTrue()) {
@@ -1041,14 +1062,14 @@ public class EvaluationState {
                     }
                     firstValue = evalInternal(context, iVisited.getValueNode(), self);
                 } else {
-                    firstValue = firstValue.callMethod(iVisited.getOperatorName(), evalInternal(context, iVisited
+                    firstValue = firstValue.callMethod(context, iVisited.getOperatorName(), evalInternal(context, iVisited
                                     .getValueNode(), self));
                 }
     
                 IRubyObject[] expandedArgs = new IRubyObject[args.length + 1];
                 System.arraycopy(args, 0, expandedArgs, 0, args.length);
                 expandedArgs[expandedArgs.length - 1] = firstValue;
-                return receiver.callMethod("[]=", expandedArgs);
+                return receiver.callMethod(context, "[]=", expandedArgs);
             }
             case NodeTypes.OPTNNODE: {
                 OptNNode iVisited = (OptNNode) node;
@@ -1119,7 +1140,7 @@ public class EvaluationState {
                     try {
                         // Execute rescue block
                         IRubyObject result = evalInternal(context, iVisited.getBodyNode(), self);
-    
+
                         // If no exception is thrown execute else block
                         if (iVisited.getElseNode() != null) {
                             if (iVisited.getRescueNode() == null) {
@@ -1127,7 +1148,7 @@ public class EvaluationState {
                             }
                             result = evalInternal(context, iVisited.getElseNode(), self);
                         }
-    
+
                         return result;
                     } catch (RaiseException raiseJump) {
                         RubyException raisedException = raiseJump.getException();
@@ -1135,9 +1156,9 @@ public class EvaluationState {
                         // falsely set $! to nil and this sets it back to something valid.  This should 
                         // get fixed at the same time we address bug #1296484.
                         runtime.getGlobalVariables().set("$!", raisedException);
-    
+
                         RescueBodyNode rescueNode = iVisited.getRescueNode();
-    
+
                         while (rescueNode != null) {
                             Node  exceptionNodes = rescueNode.getExceptionNodes();
                             ListNode exceptionNodesList;
@@ -1166,7 +1187,7 @@ public class EvaluationState {
                             
                             rescueNode = rescueNode.getOptRescueNode();
                         }
-    
+
                         // no takers; bubble up
                         throw raiseJump;
                     } finally {
@@ -1195,6 +1216,28 @@ public class EvaluationState {
     
                 throw je;
             }
+            case NodeTypes.ROOTNODE: {
+                RootNode iVisited = (RootNode) node;
+                DynamicScope scope = iVisited.getScope();
+                
+                // Serialization killed our dynamic scope.  We can just create an empty one
+                // since serialization cannot serialize an eval (which is the only thing
+                // which is capable of having a non-empty dynamic scope).
+                if (scope == null) {
+                    scope = new DynamicScope(iVisited.getStaticScope(), null);
+                }
+                
+                // Each root node has a top-level scope that we need to push
+                context.preRootNode(scope);
+                
+                // FIXME: Wire up BEGIN and END nodes
+
+                try {
+                    return eval(context, iVisited.getBodyNode(), self);
+                } finally {
+                    context.postRootNode();
+                }
+            }
             case NodeTypes.SCLASSNODE: {
                 SClassNode iVisited = (SClassNode) node;
                 IRubyObject receiver = evalInternal(context, iVisited.getReceiverNode(), self);
@@ -1222,18 +1265,7 @@ public class EvaluationState {
                     singletonClass.includeModule(context.getWrapper());
                 }
     
-                return evalClassDefinitionBody(context, iVisited.getBodyNode(), singletonClass, self);
-            }
-            case NodeTypes.SCOPENODE: {
-                ScopeNode iVisited = (ScopeNode) node;
-                
-    
-                context.preScopedBody(iVisited.getLocalNames());
-                try {
-                    return evalInternal(context, iVisited.getBodyNode(), self);
-                } finally {
-                    context.postScopedBody();
-                }
+                return evalClassDefinitionBody(context, iVisited.getScope(), iVisited.getBodyNode(), singletonClass, self);
             }
             case NodeTypes.SELFNODE:
                 return self;
@@ -1330,8 +1362,8 @@ public class EvaluationState {
             }
             case NodeTypes.VCALLNODE: {
                 VCallNode iVisited = (VCallNode) node;
-                return self.callMethod(iVisited.getName(), IRubyObject.NULL_ARRAY,
-                        CallType.VARIABLE);
+                return self.callMethod(context, iVisited.getName(),
+                        IRubyObject.NULL_ARRAY, CallType.VARIABLE);
             }
             case NodeTypes.WHENNODE:
                 assert false;
@@ -1367,7 +1399,7 @@ public class EvaluationState {
             }
             case NodeTypes.XSTRNODE: {
                 XStrNode iVisited = (XStrNode) node;
-                return self.callMethod("`", runtime.newString(iVisited.getValue()));
+                return self.callMethod(context, "`", runtime.newString(iVisited.getValue()));
             }
             case NodeTypes.YIELDNODE: {
                 YieldNode iVisited = (YieldNode) node;
@@ -1396,7 +1428,7 @@ public class EvaluationState {
             }
             }
         } while (true);
-    }
+        }
 
     private static IRubyObject aryToAry(IRubyObject value) {
         if (value instanceof RubyArray) {
@@ -1413,17 +1445,17 @@ public class EvaluationState {
     /** Evaluates the body in a class or module definition statement.
      *
      */
-    private static IRubyObject evalClassDefinitionBody(ThreadContext context, ScopeNode iVisited, RubyModule type,
-            IRubyObject self) {
+    private static IRubyObject evalClassDefinitionBody(ThreadContext context, StaticScope scope, 
+            Node bodyNode, RubyModule type, IRubyObject self) {
         IRuby runtime = context.getRuntime();
-        context.preClassEval(iVisited.getLocalNames(), type);
+        context.preClassEval(scope, type);
 
         try {
             if (isTrace(runtime)) {
                 callTraceFunction(context, "class", type);
             }
 
-            return evalInternal(context, iVisited.getBodyNode(), type);
+            return evalInternal(context, bodyNode, type);
         } finally {
             context.postClassEval();
 
@@ -1432,7 +1464,7 @@ public class EvaluationState {
             }
         }
     }
-
+    
     private static RubyClass getSuperClassFromNode(ThreadContext context, Node superNode, IRubyObject self) {
         if (superNode == null) {
             return null;
@@ -1610,7 +1642,7 @@ public class EvaluationState {
             if (!args[i].isKindOf(runtime.getClass("Module"))) {
                 throw runtime.newTypeError("class or module required for rescue clause");
             }
-            if (args[i].callMethod("===", currentException).isTrue()) return true;
+            if (args[i].callMethod(context, "===", currentException).isTrue()) return true;
         }
         return false;
     }

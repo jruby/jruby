@@ -819,7 +819,6 @@ $z = 0
 test_ok($x[22] == 44)
 test_ok($z == 0)
 
-=begin THIS SECTION HAS ERRORS; UNCOMMENT TO RUN
 test_check "iterator"
 
 test_ok(!iterator?)
@@ -940,6 +939,8 @@ end
 $x = [[1,2],[3,4],[5,6]]
 test_ok($x.iter_test1{|x|x} == $x.iter_test2{|x|x})
 
+=begin THIS SECTION HAS ERRORS; UNCOMMENT TO RUN
+
 class IterTest
   def initialize(e); @body = e; end
 
@@ -960,6 +961,7 @@ end
 test_ok(IterTest.new(nil).method(:f).to_proc.call([1]) == [1])
 m = /\w+/.match("abc")
 test_ok(IterTest.new(nil).method(:f).to_proc.call([m]) == [m])
+
 
 IterTest.new([0]).each0 {|x| test_ok(x == 0)}
 IterTest.new([1]).each1 {|x| test_ok(x == 1)}
@@ -983,6 +985,7 @@ IterTest.new([[8]]).each8 {|x| test_ok(x == [8])}
 
 IterTest.new([[0,0]]).each0 {|x| test_ok(x == [0,0])}
 IterTest.new([[8,8]]).each8 {|x| test_ok(x == [8,8])}
+=end
 
 def m
   test_ok(block_given?)
@@ -1044,10 +1047,11 @@ argument_test(true, get_block{|a,|})
 argument_test(true, get_block{|a,|}, 1,2)
 
 argument_test(true, get_block(&lambda{||}))
+=begin THIS SECTION HAS ERRORS; UNCOMMENT TO RUN
 argument_test(false, get_block(&lambda{||}),1)
 argument_test(true, get_block(&lambda{|a,|}),1)
 argument_test(false, get_block(&lambda{|a,|}),1,2)
-
+=end
 block = get_block{11}
 test_ok(block.class == Proc)
 test_ok(block.to_proc.class == Proc)
@@ -1106,8 +1110,6 @@ ljump_test(true, lambda{break})
 
 test_ok(block.arity == -1)
 test_ok(lambda.arity == -1)
-=end
-
 test_ok(lambda{||}.arity == 0)
 test_ok(lambda{|a|}.arity == 1)
 test_ok(lambda{|a,|}.arity == 1)
@@ -1121,10 +1123,10 @@ marity_test(:test_ok)
 marity_test(:marity_test)
 marity_test(:p)
 
-=begin
 lambda(&method(:test_ok)).call(true)
 lambda(&get_block{|a,n| test_ok(a,n)}).call(true, 2)
 
+=begin
 class ITER_TEST1
    def a
      block_given?
@@ -1451,7 +1453,6 @@ test_ok(aaa(1, 2) == [1, 2])
 test_ok(aaa(1, 2, 3, 4) == [1, 2, 3, 4])
 test_ok(aaa(1, *[2, 3, 4]) == [1, 2, 3, 4])
 
-=begin THIS SECTION HAS ERRORS; UNCOMMENT TO RUN
 test_check "proc"
 $proc = proc{|i| i}
 test_ok($proc.call(2) == 2)
@@ -1511,9 +1512,7 @@ if defined? Process.kill
   end
   test_ok(x && /Interrupt/ =~ x.message)
 end
-=end
 
-=begin THIS SECTION HAS ERRORS; UNCOMMENT TO RUN
 test_check "eval"
 test_ok(eval("") == nil)
 $bad=false
@@ -1817,7 +1816,7 @@ test.bar = 47
 test_ok(test.bar == 47)
 
 test_check "variable"
-=begin we do not implement $$ correctly yet (or possibly ever...but we should fake it)
+=begin Running from command-line works but not ant test?
 test_ok($$.instance_of?(Fixnum))
 
 # read-only variable

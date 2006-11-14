@@ -87,7 +87,7 @@ public class FixnumMetaClass extends IntegerMetaClass {
     public RubyInteger induced_from(IRubyObject number) {
     	// TODO: Remove once asNumeric in RubyObject tries to convert
         if (number instanceof RubySymbol) {
-            return (RubyInteger) number.callMethod("to_i");
+            return (RubyInteger) number.callMethod(getRuntime().getCurrentContext(), "to_i");
         } 
 
         return ((IntegerMetaClass) getRuntime().getClass("Integer")).induced_from(number);

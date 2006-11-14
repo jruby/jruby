@@ -233,7 +233,7 @@ public class RubyModule extends RubyObject {
         if (module == null) {
             module = this;
         }
-        
+
         return module.setInstanceVariable(name, value, CVAR_TAINT_ERROR, CVAR_FREEZE_ERROR);
     }
 
@@ -613,7 +613,7 @@ public class RubyModule extends RubyObject {
             break;
         }
         
-        return callMethod("const_missing", RubySymbol.newSymbol(getRuntime(), name));
+        return callMethod(getRuntime().getCurrentContext(), "const_missing", RubySymbol.newSymbol(getRuntime(), name));
     }
     
     /**
@@ -766,6 +766,7 @@ public class RubyModule extends RubyObject {
         }
         final String variableName = "@" + name;
 		final IRuby runtime = getRuntime();
+        ThreadContext context = getRuntime().getCurrentContext();
         if (readable) {
             defineMethod(name, new Callback() {
                 public IRubyObject execute(IRubyObject self, IRubyObject[] args) {
@@ -780,7 +781,7 @@ public class RubyModule extends RubyObject {
                     return Arity.noArguments();
                 }
             });
-            callMethod("method_added", RubySymbol.newSymbol(getRuntime(), name));
+            callMethod(context, "method_added", RubySymbol.newSymbol(getRuntime(), name));
         }
         if (writeable) {
             name = name + "=";
@@ -799,7 +800,7 @@ public class RubyModule extends RubyObject {
                     return Arity.singleArgument();
                 }
             });
-            callMethod("method_added", RubySymbol.newSymbol(getRuntime(), name));
+            callMethod(context, "method_added", RubySymbol.newSymbol(getRuntime(), name));
         }
     }
 
@@ -918,12 +919,14 @@ public class RubyModule extends RubyObject {
         addMethod(name, newMethod);
 
         RubySymbol symbol = RubySymbol.newSymbol(getRuntime(), name);
+        ThreadContext context = getRuntime().getCurrentContext();
+        
         if (tc.getPreviousVisibility().isModuleFunction()) {
             getSingletonClass().addMethod(name, new WrapperCallable(getSingletonClass(), newMethod, Visibility.PUBLIC));
-            callMethod("singleton_method_added", symbol);
+            callMethod(context, "singleton_method_added", symbol);
         }
 
-        callMethod("method_added", symbol);
+        callMethod(context, "method_added", symbol);
 
         return body;
     }
@@ -1425,9 +1428,11 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyModule include(IRubyObject[] modules) {
+        ThreadContext context = getRuntime().getCurrentContext();
+        
         for (int i = modules.length - 1; i >= 0; i--) {
-            modules[i].callMethod("append_features", this);
-            modules[i].callMethod("included", this);
+            modules[i].callMethod(context, "append_features", this);
+            modules[i].callMethod(context, "included", this);
         }
 
         return this;
@@ -1484,9 +1489,11 @@ public class RubyModule extends RubyObject {
         if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
             throw getRuntime().newSecurityError("Insecure: can't change method visibility");
         }
+        
+        ThreadContext context = getRuntime().getCurrentContext();
 
         if (args.length == 0) {
-            getRuntime().getCurrentContext().setCurrentVisibility(Visibility.MODULE_FUNCTION);
+            context.setCurrentVisibility(Visibility.MODULE_FUNCTION);
         } else {
             setMethodVisibility(args, Visibility.PRIVATE);
 
@@ -1495,7 +1502,7 @@ public class RubyModule extends RubyObject {
                 ICallable method = searchMethod(name);
                 assert !method.isUndefined() : "undefined method '" + name + "'";
                 getSingletonClass().addMethod(name, new WrapperCallable(getSingletonClass(), method, Visibility.PUBLIC));
-                callMethod("singleton_method_added", RubySymbol.newSymbol(getRuntime(), name));
+                callMethod(context, "singleton_method_added", RubySymbol.newSymbol(getRuntime(), name));
             }
         }
         return this;
@@ -1559,6 +1566,6 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject inspect() {
-        return callMethod("to_s");
+        return callMethod(getRuntime().getCurrentContext(), "to_s");
     }
 }

@@ -63,7 +63,7 @@ public class MetaClass extends RubyClass {
     }
     
     public void methodAdded(RubySymbol symbol) {
-        getAttachedObject().callMethod("singleton_method_added", symbol);
+        getAttachedObject().callMethod(getRuntime().getCurrentContext(), "singleton_method_added", symbol);
     }
 
     public IRubyObject getAttachedObject() {

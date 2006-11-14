@@ -121,7 +121,7 @@ public class RubyMarshal {
             if (in instanceof RubyIO) {
                 rawInput = ((RubyIO) in).getInStream();
             } else if (in.respondsTo("to_str")) {
-                RubyString inString = (RubyString) in.callMethod("to_str");
+                RubyString inString = (RubyString) in.callMethod(recv.getRuntime().getCurrentContext(), "to_str");
                 rawInput = new ByteArrayInputStream(inString.toByteArray());
             } else {
                 throw recv.getRuntime().newTypeError("instance of IO needed");

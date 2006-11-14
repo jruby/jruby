@@ -41,6 +41,7 @@ import org.jruby.RubyString;
 import org.jruby.RubyString.StringMethod;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.PrintfFormat;
@@ -73,13 +74,15 @@ public class StringMetaClass extends ObjectMetaClass {
             if (args[0] instanceof RubyString) {
                 return getRuntime().newFixnum(self.cmp((RubyString) args[0]));
             }
+            
+            ThreadContext context = self.getRuntime().getCurrentContext();
                 
             if (args[0].respondsTo("to_str") && args[0].respondsTo("<=>")) {
-                IRubyObject tmp = args[0].callMethod("<=>", self);
+                IRubyObject tmp = args[0].callMethod(context, "<=>", self);
 
                 if (!tmp.isNil()) {
-                    return tmp instanceof RubyFixnum ? tmp.callMethod("-") :
-                        getRuntime().newFixnum(0).callMethod("-", tmp);
+                    return tmp instanceof RubyFixnum ? tmp.callMethod(context, "-") :
+                        getRuntime().newFixnum(0).callMethod(context, "-", tmp);
                 }
             }
             
@@ -106,7 +109,7 @@ public class StringMetaClass extends ObjectMetaClass {
     public StringMethod veryEqual = new StringMethod(this, Arity.singleArgument(), Visibility.PUBLIC) {
         public IRubyObject invoke(RubyString self, IRubyObject[] args) {
             IRubyObject other = args[0];
-            IRubyObject truth = self.callMethod("==", other);
+            IRubyObject truth = self.callMethod(self.getRuntime().getCurrentContext(), "==", other);
             
             return truth == self.getRuntime().getNil() ? self.getRuntime().getFalse() : truth;
         }

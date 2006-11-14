@@ -260,7 +260,7 @@ public class RubyThread extends RubyObject {
             IRubyObject raiseException = receivedException;
             receivedException = null;
             RubyModule kernelModule = getRuntime().getModule("Kernel");
-            kernelModule.callMethod("raise", raiseException);
+            kernelModule.callMethod(getRuntime().getCurrentContext(), "raise", raiseException);
         }
     }
 

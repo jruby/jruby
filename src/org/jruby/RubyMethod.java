@@ -115,7 +115,7 @@ public class RubyMethod extends RubyObject {
         tc.setIfBlockAvailable();
         try {
             // FIXME: should lastClass be implementation module for a Method?
-            return method.call(getRuntime(), receiver, implementationModule, methodName, args, false);
+            return method.call(tc, receiver, implementationModule, methodName, args, false);
         } finally {
             tc.clearIfBlockAvailable();
         }
@@ -136,8 +136,8 @@ public class RubyMethod extends RubyObject {
     	CallbackFactory f = getRuntime().callbackFactory(RubyMethod.class);
 		IRuby r = getRuntime();
         ThreadContext tc = r.getCurrentContext();
-        tc.preToProc(Block.createBlock(null, new IterateCallable(f.getBlockMethod("bmcall"), this), r.getTopSelf()));
-		
+        tc.preToProc(Block.createBlock(null, tc.getCurrentScope().cloneScope(), new IterateCallable(f.getBlockMethod("bmcall"), this), r.getTopSelf()));
+        
 		try {
 		    while (true) {
 		        try {

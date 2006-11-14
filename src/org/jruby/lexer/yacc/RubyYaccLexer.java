@@ -43,9 +43,9 @@ import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FloatNode;
 import org.jruby.ast.NthRefNode;
 import org.jruby.common.IRubyWarnings;
-import org.jruby.parser.BlockNamesElement;
-import org.jruby.parser.LocalNamesElement;
+import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.ParserSupport;
+import org.jruby.parser.StaticScope;
 import org.jruby.parser.Tokens;
 import org.jruby.util.IdUtil;
 import org.jruby.util.PrintfFormat;
@@ -1525,10 +1525,12 @@ public class RubyYaccLexer {
 
             // Lame: parsing logic made it into lexer in ruby...So we
             // are emulating
+            // FIXME:  I believe this is much simpler now...
+            StaticScope scope = parserSupport.getCurrentScope();
             if (IdUtil.getVarType(tempVal) != IdUtil.LOCAL_VAR &&
-                ((((LocalNamesElement) parserSupport.getLocalNames().peek()).isInBlock() && 
-                ((BlockNamesElement) parserSupport.getBlockNames().peek()).isDefined(tempVal)) ||
-				((LocalNamesElement) parserSupport.getLocalNames().peek()).isLocalRegistered(tempVal))) {
+                    scope instanceof BlockStaticScope && 
+                    ((scope.isDefined(tempVal) >= 0) ||
+                    (scope.getLocalScope().isDefined(tempVal) >= 0))) {
                 lex_state = LexState.EXPR_END;
             }
 

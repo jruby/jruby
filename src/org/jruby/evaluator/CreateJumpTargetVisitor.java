@@ -79,7 +79,6 @@ import org.jruby.ast.RescueNode;
 import org.jruby.ast.ReturnNode;
 import org.jruby.ast.SClassNode;
 import org.jruby.ast.SValueNode;
-import org.jruby.ast.ScopeNode;
 import org.jruby.ast.SplatNode;
 import org.jruby.ast.ToAryNode;
 import org.jruby.ast.UntilNode;
@@ -416,11 +415,6 @@ public class CreateJumpTargetVisitor extends AbstractVisitor {
 	public Instruction visitSClassNode(SClassNode iVisited) {
 		// FIXME
 		visit(iVisited.getReceiverNode());
-		visit(iVisited.getBodyNode());
-		return null;
-	}
-
-	public Instruction visitScopeNode(ScopeNode iVisited) {
 		visit(iVisited.getBodyNode());
 		return null;
 	}

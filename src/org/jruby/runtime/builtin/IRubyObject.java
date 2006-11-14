@@ -46,6 +46,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.ast.Node;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.marshal.MarshalStream;
 
@@ -75,16 +76,17 @@ public interface IRubyObject {
     Map getInstanceVariables();
     Map getInstanceVariablesSnapshot();
 
-    IRubyObject callMethod(RubyModule context, String name, IRubyObject[] args, CallType callType);
+    IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, String name, IRubyObject[] args, CallType callType);
     
-    IRubyObject callMethod(String name, IRubyObject[] args, CallType callType);
+    IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, CallType callType);
     
     /**
      * RubyMethod funcall.
+     * @param context TODO
      * @param string
      * @return RubyObject
      */
-    IRubyObject callMethod(String string);
+    IRubyObject callMethod(ThreadContext context, String string);
 
     /**
      * RubyMethod isNil.
@@ -108,11 +110,12 @@ public interface IRubyObject {
 
     /**
      * RubyMethod funcall.
+     * @param context TODO
      * @param string
      * @param arg
      * @return RubyObject
      */
-    IRubyObject callMethod(String string, IRubyObject arg);
+    IRubyObject callMethod(ThreadContext context, String string, IRubyObject arg);
 
     /**
      * RubyMethod getRubyClass.
@@ -160,11 +163,12 @@ public interface IRubyObject {
 
     /**
      * RubyMethod callMethod.
+     * @param context TODO
      * @param method
      * @param rubyArgs
      * @return IRubyObject
      */
-    IRubyObject callMethod(String method, IRubyObject[] rubyArgs);
+    IRubyObject callMethod(ThreadContext context, String method, IRubyObject[] rubyArgs);
 
     /**
      * RubyMethod eval.
@@ -176,21 +180,23 @@ public interface IRubyObject {
     /**
      * Evaluate the given string under the specified binding object. If the binding is not a Proc or Binding object
      * (RubyProc or RubyBinding) throw an appropriate type error.
+     * @param context TODO
      * @param evalString The string containing the text to be evaluated
      * @param binding The binding object under which to perform the evaluation
      * @param file The filename to use when reporting errors during the evaluation
      * @return An IRubyObject result from the evaluation
      */
-    IRubyObject evalWithBinding(IRubyObject evalString, IRubyObject binding, String file);
+    IRubyObject evalWithBinding(ThreadContext context, IRubyObject evalString, IRubyObject binding, String file);
 
     /**
      * Evaluate the given string.
+     * @param context TODO
      * @param evalString The string containing the text to be evaluated
-     * @param binding The binding object under which to perform the evaluation
      * @param file The filename to use when reporting errors during the evaluation
+     * @param binding The binding object under which to perform the evaluation
      * @return An IRubyObject result from the evaluation
      */
-    IRubyObject evalSimple(IRubyObject evalString, String file);
+    IRubyObject evalSimple(ThreadContext context, IRubyObject evalString, String file);
 
     /**
      * RubyMethod extendObject.

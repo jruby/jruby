@@ -268,7 +268,7 @@ public class RubyFixnum extends RubyInteger {
 
     public IRubyObject op_or(IRubyObject other) {
         if (other instanceof RubyBignum) {
-            return (RubyInteger) other.callMethod("|", this);
+            return (RubyInteger) other.callMethod(getRuntime().getCurrentContext(), "|", this);
         } else if (other instanceof RubyNumeric) {
             return newFixnum(value | ((RubyNumeric) other).getLongValue());
         }
@@ -326,7 +326,7 @@ public class RubyFixnum extends RubyInteger {
 
     public IRubyObject op_xor(IRubyObject other) {
         if (other instanceof RubyBignum) {
-            return (RubyInteger) other.callMethod("^", this);
+            return (RubyInteger) other.callMethod(getRuntime().getCurrentContext(), "^", this);
         } else if (other instanceof RubyNumeric) {
             return newFixnum(value ^ ((RubyNumeric) other).getLongValue());
         }

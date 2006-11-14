@@ -52,12 +52,12 @@ public class IOReader extends Reader {
 
     public void close() throws IOException {
         if(io.respondsTo("close")) {
-            io.callMethod("close");
+            io.callMethod(io.getRuntime().getCurrentContext(), "close");
         }
     }
 
     public int read(final char[] arr, final int off, final int len) {
-        final IRubyObject read = io.callMethod("read",io.getRuntime().newFixnum(len));
+        final IRubyObject read = io.callMethod(io.getRuntime().getCurrentContext(),"read", io.getRuntime().newFixnum(len));
         if(read.isNil() || ((RubyString)read).getValue().length() == 0) {
             return -1;
         } else {

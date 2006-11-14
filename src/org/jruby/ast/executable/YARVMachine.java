@@ -4,7 +4,6 @@ import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
-import org.jruby.ast.CallNode;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -31,10 +30,13 @@ public class YARVMachine {
             case YARVInstructions.NOP:
                 break;
             case YARVInstructions.GETLOCAL:
-                stack[++stackTop] = context.getFrameScope().getValue(((Integer)bytecodes[ip].operands[0]).intValue());
+                // ENEBO: Not sure if this is correct since a local can have a depth (now that 
+                // block and local vars are in same list).
+                stack[++stackTop] = context.getCurrentScope().getValue(((Integer)bytecodes[ip].operands[0]).intValue(), 0);
                 break;
             case YARVInstructions.SETLOCAL:
-                context.getFrameScope().setValue(((Integer)bytecodes[ip].operands[0]).intValue(), (IRubyObject)stack[stackTop--]);
+                // ENEBO: Not sure if this is correct since a local can have a depth
+                context.getCurrentScope().setValue(((Integer)bytecodes[ip].operands[0]).intValue(), (IRubyObject)stack[stackTop--], 0);
                 break;
             case YARVInstructions.GETSPECIAL:
                 break;
@@ -123,7 +125,7 @@ public class YARVMachine {
             }
             case YARVInstructions.TOSTRING:
                 // TODO: do not call to_s if it's already a string...
-                stack[stackTop] = ((IRubyObject)stack[stackTop]).callMethod("to_s");
+                stack[stackTop] = ((IRubyObject)stack[stackTop]).callMethod(context, "to_s");
                 break;
             case YARVInstructions.TOREGEXP:
                 break;
@@ -224,7 +226,7 @@ public class YARVMachine {
 
                 assert receiver.getMetaClass() != null : receiver.getClass().getName();
                 
-                stack[++stackTop] = receiver.callMethod(name, args, callType);
+                stack[++stackTop] = receiver.callMethod(context, name, args, callType);
                 break;
             }
             case YARVInstructions.INVOKESUPER: break;

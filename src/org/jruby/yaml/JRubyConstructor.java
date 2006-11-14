@@ -196,7 +196,7 @@ public class JRubyConstructor extends ConstructorImpl {
         final Map vars = (Map)(ctor.constructMapping(node));
         for(final Iterator iter = vars.keySet().iterator();iter.hasNext();) {
             final IRubyObject key = (IRubyObject)iter.next();
-            oo.callMethod("[]=",new IRubyObject[]{key,(IRubyObject)vars.get(key)});
+            oo.callMethod(oo.getRuntime().getCurrentContext(),"[]=", new IRubyObject[]{key,(IRubyObject)vars.get(key)});
         }
         return oo;
     }
@@ -214,7 +214,7 @@ public class JRubyConstructor extends ConstructorImpl {
         final RubyObject oo = (RubyObject)theCls.allocate();
         final List vars = (List)(ctor.constructSequence(node));
         for(final Iterator iter = vars.iterator();iter.hasNext();) {
-            oo.callMethod("<<",new IRubyObject[]{(IRubyObject)iter.next()});;
+            oo.callMethod(oo.getRuntime().getCurrentContext(),"<<", new IRubyObject[]{(IRubyObject)iter.next()});;
         }
         return oo;
     }

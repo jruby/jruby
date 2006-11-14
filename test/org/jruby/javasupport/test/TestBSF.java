@@ -60,6 +60,7 @@ public class TestBSF extends RubyTestCase {
     	    manager.exec("ruby", "(java)", 1, 1, loadScript(RUBY_SCRIPT));
     	} catch (BSFException e) {
             fail("Unable to initialize BSF: " + e);
+            e.getTargetException().printStackTrace();
     	}
 	}
 	

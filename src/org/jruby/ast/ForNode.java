@@ -14,7 +14,7 @@
  * Copyright (C) 2001-2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2001-2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2006 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -35,18 +35,20 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
- * a For statement.
- * this is almost equivalent to an iternode (the difference being the visibility of the
- * local variables defined in the iterator).
+ * A 'for' statement.  This is implemented using iter and that is how MRI does things,
+ * but 'for's do not have their own stack, so doing this way is mildly painful.
  * 
  * @see IterNode
- * @author  jpetersen
  */
 public class ForNode extends IterNode {
     static final long serialVersionUID = -8319863477790150586L;
 
     public ForNode(ISourcePosition position, Node varNode, Node bodyNode, Node iterNode) {
-        super(position, varNode, bodyNode, iterNode, NodeTypes.FORNODE);
+        // For nodes do not have their own scope so we pass null to indicate this.
+        // 'For's are implemented as blocks in evaluation, but they have no scope so we
+        // just deal with this lack of scope throughout its lifespan.  We should probably
+        // change the way this works to get rid of multiple null checks.
+        super(position, varNode, null, bodyNode, iterNode, NodeTypes.FORNODE);
     }
 
     /**

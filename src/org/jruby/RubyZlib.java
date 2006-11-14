@@ -219,7 +219,7 @@ public class RubyZlib {
 
         public static IRubyObject open(IRubyObject recv, RubyString filename) throws IOException {
             RubyObject proc = (recv.getRuntime().getCurrentContext().isBlockGiven()) ? (RubyObject)recv.getRuntime().newProc() : (RubyObject)recv.getRuntime().getNil();
-            RubyGzipReader io = newInstance(recv,new IRubyObject[]{recv.getRuntime().getClass("File").callMethod("open",new IRubyObject[]{filename,recv.getRuntime().newString("rb")})});
+            RubyGzipReader io = newInstance(recv,new IRubyObject[]{recv.getRuntime().getClass("File").callMethod(recv.getRuntime().getCurrentContext(),"open", new IRubyObject[]{filename,recv.getRuntime().newString("rb")})});
             
             return RubyGzipFile.wrap(recv, io, proc);
         }
@@ -431,6 +431,7 @@ public class RubyZlib {
         public static IRubyObject open(IRubyObject recv, IRubyObject[] args) throws IOException {
             IRubyObject level = recv.getRuntime().getNil();
             IRubyObject strategy = recv.getRuntime().getNil();
+            ThreadContext context = recv.getRuntime().getCurrentContext();
             if (args.length>1) {
                 level = args[1];
                 if (args.length>2) {
@@ -438,8 +439,8 @@ public class RubyZlib {
                 }
             }
 
-            RubyObject proc = (recv.getRuntime().getCurrentContext().isBlockGiven()) ? (RubyObject)recv.getRuntime().newProc() : (RubyObject)recv.getRuntime().getNil();
-            RubyGzipWriter io = newInstance(recv,new IRubyObject[]{recv.getRuntime().getClass("File").callMethod("open",new IRubyObject[]{args[0],recv.getRuntime().newString("wb")}),level,strategy});
+            RubyObject proc = (context.isBlockGiven()) ? (RubyObject)recv.getRuntime().newProc() : (RubyObject)recv.getRuntime().getNil();
+            RubyGzipWriter io = newInstance(recv,new IRubyObject[]{recv.getRuntime().getClass("File").callMethod(context,"open", new IRubyObject[]{args[0],recv.getRuntime().newString("wb")}),level,strategy});
             return RubyGzipFile.wrap(recv, io, proc);
         }
 

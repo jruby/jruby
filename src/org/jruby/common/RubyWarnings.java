@@ -49,7 +49,7 @@ public class RubyWarnings implements IRubyWarnings {
         buffer.append(position.getFile()).append(':').append(position.getEndLine()).append(' ');
         buffer.append("warning: ").append(message).append('\n');
         IRubyObject errorStream = runtime.getGlobalVariables().get("$stderr");
-        errorStream.callMethod("write", runtime.newString(buffer.toString()));
+        errorStream.callMethod(runtime.getCurrentContext(), "write", runtime.newString(buffer.toString()));
     }
 
     public boolean isVerbose() {

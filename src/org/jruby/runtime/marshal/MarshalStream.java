@@ -168,7 +168,7 @@ public class MarshalStream extends FilterOutputStream {
         out.write(TYPE_USERDEF);
         dumpObject(RubySymbol.newSymbol(runtime, value.getMetaClass().getName()));
 
-        RubyString marshaled = (RubyString) value.callMethod("_dump", runtime.newFixnum(depthLimit)); 
+        RubyString marshaled = (RubyString) value.callMethod(runtime.getCurrentContext(), "_dump", runtime.newFixnum(depthLimit)); 
         dumpString(marshaled.toString());
     }
 
@@ -176,7 +176,7 @@ public class MarshalStream extends FilterOutputStream {
         out.write(TYPE_USRMARSHAL);
         dumpObject(RubySymbol.newSymbol(runtime, value.getMetaClass().getName()));
 
-        IRubyObject marshaled =  value.callMethod("marshal_dump"); 
+        IRubyObject marshaled =  value.callMethod(runtime.getCurrentContext(), "marshal_dump"); 
         dumpObject(marshaled);
     }
 

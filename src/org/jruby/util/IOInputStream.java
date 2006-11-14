@@ -62,7 +62,7 @@ public class IOInputStream extends InputStream {
     }
     
     public int read() throws IOException {
-        IRubyObject readValue = io.callMethod("read", numOne);
+        IRubyObject readValue = io.callMethod(io.getRuntime().getCurrentContext(), "read", numOne);
         int returnValue = -1;
         if (!readValue.isNil()) {
             returnValue = readValue.toString().charAt(0);
@@ -71,7 +71,7 @@ public class IOInputStream extends InputStream {
     }
 
     public int read(byte[] b) throws IOException {
-        IRubyObject readValue = io.callMethod("read", this.io.getRuntime().newFixnum(b.length));
+        IRubyObject readValue = io.callMethod(io.getRuntime().getCurrentContext(), "read", this.io.getRuntime().newFixnum(b.length));
         int returnValue = -1;
         if (!readValue.isNil()) {
             final String str = readValue.toString();
@@ -82,7 +82,7 @@ public class IOInputStream extends InputStream {
     }
 
     public int read(byte[] b, int off, int len) throws IOException {
-        IRubyObject readValue = io.callMethod("read", io.getRuntime().newFixnum(len));
+        IRubyObject readValue = io.callMethod(io.getRuntime().getCurrentContext(), "read", io.getRuntime().newFixnum(len));
         int returnValue = -1;
         if (!readValue.isNil()) {
             String str = readValue.toString();

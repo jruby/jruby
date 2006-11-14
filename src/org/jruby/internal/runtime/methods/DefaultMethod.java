@@ -41,14 +41,13 @@ import org.jruby.RubyModule;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.Node;
-import org.jruby.ast.ScopeNode;
 import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ICallable;
-import org.jruby.runtime.Scope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -58,58 +57,50 @@ import org.jruby.util.collections.SinglyLinkedList;
  *
  */
 public final class DefaultMethod extends AbstractMethod {
-    private ScopeNode body;
+    private StaticScope staticScope;
+    private Node body;
     private ArgsNode argsNode;
     private SinglyLinkedList cref;
 
-    public DefaultMethod(RubyModule implementationClass, ScopeNode body, ArgsNode argsNode, 
-        Visibility visibility, SinglyLinkedList cref) {
+    public DefaultMethod(RubyModule implementationClass, StaticScope staticScope, Node body, 
+            ArgsNode argsNode, Visibility visibility, SinglyLinkedList cref) {
         super(implementationClass, visibility);
         this.body = body;
+        this.staticScope = staticScope;
         this.argsNode = argsNode;
 		this.cref = cref;
 		
-		assert body != null;
 		assert argsNode != null;
     }
     
-    public void preMethod(IRuby runtime, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
-        ThreadContext context = runtime.getCurrentContext();
-        
-        context.preDefMethodInternalCall(lastClass, recv, name, args, noSuper, cref);
+    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+        context.preDefMethodInternalCall(lastClass, recv, name, args, noSuper, cref, staticScope);
     }
     
-    public void postMethod(IRuby runtime) {
-        ThreadContext context = runtime.getCurrentContext();
-        
+    public void postMethod(ThreadContext context) {
         context.postDefMethodInternalCall();
     }
 
     /**
      * @see AbstractCallable#call(IRuby, IRubyObject, String, IRubyObject[], boolean)
      */
-    public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
     	assert args != null;
+        IRuby runtime = context.getRuntime();
 
-        ThreadContext context = runtime.getCurrentContext();
-        
-        Scope scope = context.getFrameScope();
-        if (body.getLocalNames() != null) {
-            scope.resetLocalVariables(body.getLocalNames());
-        }
-        
         if (argsNode.getBlockArgNode() != null && context.isBlockGiven()) {
-            scope.setValue(argsNode.getBlockArgNode().getCount(), runtime.newProc());
+            // We pass depth zero since we know this only applies to newly created local scope
+            context.getCurrentScope().setValue(argsNode.getBlockArgNode().getCount(), runtime.newProc(), 0);
         }
 
         try {
-            prepareArguments(context, runtime, scope, receiver, args);
+            prepareArguments(context, runtime, receiver, args);
             
             getArity().checkArity(runtime, args);
 
-            traceCall(runtime, receiver, name);
+            traceCall(context, runtime, receiver, name);
 
-            return EvaluationState.eval(context, body.getBodyNode(), receiver);
+            return EvaluationState.eval(context, body, receiver);
         } catch (JumpException je) {
         	if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
 	            if (je.getPrimaryData() == this) {
@@ -118,11 +109,11 @@ public final class DefaultMethod extends AbstractMethod {
         	}
        		throw je;
         } finally {
-            traceReturn(runtime, receiver, name);
+            traceReturn(context, runtime, receiver, name);
         }
     }
 
-    private void prepareArguments(ThreadContext context, IRuby runtime, Scope scope, IRubyObject receiver, IRubyObject[] args) {
+    private void prepareArguments(ThreadContext context, IRuby runtime, IRubyObject receiver, IRubyObject[] args) {
         int expectedArgsCount = argsNode.getArgsCount();
 
         int restArg = argsNode.getRestArg();
@@ -133,23 +124,20 @@ public final class DefaultMethod extends AbstractMethod {
             throw runtime.newArgumentError("Wrong # of arguments(" + args.length + " for " + expectedArgsCount + ")");
         }
 
-        if (scope.hasLocalVariables() && expectedArgsCount > 0) {
-            scope.setValues(args, expectedArgsCount, false);
-//            for (int i = 0; i < expectedArgsCount; i++) {
-//                scope.setValue(i + 2, args[i]);
-//            }
-
+        // Bind 'normal' parameter values to the local scope for this method.
+        if (expectedArgsCount > 0) {
+            context.getCurrentScope().setArgValues(args, expectedArgsCount);
         }
 
         // optArgs and restArgs require more work, so isolate them and ArrayList creation here
         if (hasOptArgs || restArg != -1) {
-            args = prepareOptOrRestArgs(context, runtime, scope, args, expectedArgsCount, restArg, hasOptArgs);
+            args = prepareOptOrRestArgs(context, runtime, args, expectedArgsCount, restArg, hasOptArgs);
         }
         
         context.setFrameArgs(args);
     }
 
-    private IRubyObject[] prepareOptOrRestArgs(ThreadContext context, IRuby runtime, Scope scope, IRubyObject[] args, int expectedArgsCount, int restArg, boolean hasOptArgs) {
+    private IRubyObject[] prepareOptOrRestArgs(ThreadContext context, IRuby runtime, IRubyObject[] args, int expectedArgsCount, int restArg, boolean hasOptArgs) {
         if (restArg == -1 && hasOptArgs) {
             int opt = expectedArgsCount + argsNode.getOptArgs().size();
 
@@ -170,44 +158,49 @@ public final class DefaultMethod extends AbstractMethod {
             allArgs.add(args[i]);
         }
         
-        if (scope.hasLocalVariables()) {
-            if (hasOptArgs) {
-                ListNode optArgs = argsNode.getOptArgs();
+        if (hasOptArgs) {
+            ListNode optArgs = argsNode.getOptArgs();
    
-                Iterator iter = optArgs.iterator();
-                for (int i = expectedArgsCount; i < args.length && iter.hasNext(); i++) {
-                    //new AssignmentVisitor(new EvaluationState(runtime, receiver)).assign((Node)iter.next(), args[i], true);
-   //                  in-frame EvalState should already have receiver set as self, continue to use it
-                    AssignmentVisitor.assign(context, context.getFrameSelf(), (Node)iter.next(), args[i], true);
-                    expectedArgsCount++;
-                }
+            Iterator iter = optArgs.iterator();
+            for (int i = expectedArgsCount; i < args.length && iter.hasNext(); i++) {
+                //new AssignmentVisitor(new EvaluationState(runtime, receiver)).assign((Node)iter.next(), args[i], true);
+                // in-frame EvalState should already have receiver set as self, continue to use it
+                AssignmentVisitor.assign(context, context.getFrameSelf(), (Node)iter.next(), args[i], true);
+                expectedArgsCount++;
+            }
    
-                // assign the default values, adding to the end of allArgs
-                while (iter.hasNext()) {
-                    //new EvaluationState(runtime, receiver).begin((Node)iter.next());
-                    //EvaluateVisitor.getInstance().eval(receiver.getRuntime(), receiver, (Node)iter.next());
-                    // in-frame EvalState should already have receiver set as self, continue to use it
-                    allArgs.add(EvaluationState.eval(context, ((Node)iter.next()), context.getFrameSelf()));
-                }
+            // assign the default values, adding to the end of allArgs
+            while (iter.hasNext()) {
+                //new EvaluationState(runtime, receiver).begin((Node)iter.next());
+                //EvaluateVisitor.getInstance().eval(receiver.getRuntime(), receiver, (Node)iter.next());
+                // in-frame EvalState should already have receiver set as self, continue to use it
+                allArgs.add(EvaluationState.eval(context, ((Node)iter.next()), context.getFrameSelf()));
             }
         }
         
         // build an array from *rest type args, also adding to allArgs
         
+        // ENEBO: Does this next comment still need to be done since I killed hasLocalVars:
         // move this out of the scope.hasLocalVariables() condition to deal
         // with anonymous restargs (* versus *rest)
+        
+        
         // none present ==> -1
         // named restarg ==> >=0
         // anonymous restarg ==> -2
         if (restArg != -1) {
-            RubyArray array = runtime.newArray(args.length - expectedArgsCount);
             for (int i = expectedArgsCount; i < args.length; i++) {
-                array.append(args[i]);
                 allArgs.add(args[i]);
             }
+
             // only set in scope if named
             if (restArg >= 0) {
-                scope.setValue(restArg, array);
+                RubyArray array = runtime.newArray(args.length - expectedArgsCount);
+                for (int i = expectedArgsCount; i < args.length; i++) {
+                    array.append(args[i]);
+                }
+
+                context.getCurrentScope().setValue(restArg, array, 0);
             }
         }
         
@@ -215,22 +208,22 @@ public final class DefaultMethod extends AbstractMethod {
         return args;
     }
 
-    private void traceReturn(IRuby runtime, IRubyObject receiver, String name) {
+    private void traceReturn(ThreadContext context, IRuby runtime, IRubyObject receiver, String name) {
         if (runtime.getTraceFunction() == null) {
             return;
         }
 
-        ISourcePosition position = runtime.getCurrentContext().getPreviousFramePosition();
+        ISourcePosition position = context.getPreviousFramePosition();
         runtime.callTraceFunction("return", position, receiver, name, getImplementationClass()); // XXX
     }
 
-    private void traceCall(IRuby runtime, IRubyObject receiver, String name) {
+    private void traceCall(ThreadContext context, IRuby runtime, IRubyObject receiver, String name) {
         if (runtime.getTraceFunction() == null) {
             return;
         }
 
-		ISourcePosition position = body.getBodyNode() != null ? 
-            body.getBodyNode().getPosition() : body.getPosition();  
+		ISourcePosition position = body != null ? 
+                body.getPosition() : context.getPosition(); 
 
 		runtime.callTraceFunction("call", position, receiver, name, getImplementationClass()); // XXX
     }
@@ -240,6 +233,6 @@ public final class DefaultMethod extends AbstractMethod {
     }
     
     public ICallable dup() {
-        return new DefaultMethod(getImplementationClass(), body, argsNode, getVisibility(), cref);
+        return new DefaultMethod(getImplementationClass(), staticScope, body, argsNode, getVisibility(), cref);
     }	
 }

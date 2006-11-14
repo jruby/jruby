@@ -279,5 +279,5 @@ public class CommandlineParser {
     
     public boolean isCompilerEnabled() {
         return compilerEnabled;
-    }
+}
 }

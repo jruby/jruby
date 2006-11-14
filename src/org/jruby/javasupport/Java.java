@@ -103,7 +103,7 @@ public class Java {
         } else if (object instanceof RubyBoolean) {
             javaObject = Boolean.valueOf(object.isTrue());
         } else if (object instanceof RubyTime) {
-            long milliseconds = ((RubyNumeric) object.callMethod("to_i")).getLongValue();
+            long milliseconds = ((RubyNumeric) object.callMethod(recv.getRuntime().getCurrentContext(), "to_i")).getLongValue();
 
             javaObject = new Date(milliseconds);
         } else {
@@ -122,7 +122,7 @@ public class Java {
 
         //if (object.isKindOf(recv.getRuntime().getModule("Java").getClass("JavaObject"))) {
         if (object instanceof JavaObject) {
-    		return recv.getRuntime().getModule("JavaUtilities").callMethod("wrap", object);
+    		return recv.getRuntime().getModule("JavaUtilities").callMethod(recv.getRuntime().getCurrentContext(), "wrap", object);
     	}
 
 		return object;
@@ -134,7 +134,7 @@ public class Java {
      */
     public static IRubyObject ruby_to_java(final IRubyObject recv, IRubyObject object) {
     	if (object.respondsTo("to_java_object")) {
-    		return object.callMethod("to_java_object");
+    		return object.callMethod(recv.getRuntime().getCurrentContext(), "to_java_object");
     	}
     	
     	return primitive_to_java(recv, object);

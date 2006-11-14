@@ -73,33 +73,34 @@ public class RubyEnumerable {
 
     private static class RubyFirstArrayComparator implements Comparator {
         public int compare(Object o1, Object o2) {
-            return RubyFixnum.fix2int((((IRubyObject[])o1)[0].callMethod("<=>",((IRubyObject[])o2)[0])));
+            IRubyObject obj1 = ((IRubyObject[])o1)[0];
+            return RubyFixnum.fix2int((((IRubyObject[])o1)[0].callMethod(obj1.getRuntime().getCurrentContext(),"<=>", ((IRubyObject[])o2)[0])));
         }
     }
     private static class RubyYieldComparator implements Comparator {
-        private final ThreadContext tc;
+        private final ThreadContext context;
         private final IRuby runtime;
-        public RubyYieldComparator(ThreadContext tc) {
-            this.tc = tc;
-            this.runtime = tc.getRuntime();
+        public RubyYieldComparator(ThreadContext context) {
+            this.context = context;
+            this.runtime = context.getRuntime();
         }
         public int compare(Object o1, Object o2) {
-            return RubyFixnum.fix2int(tc.yield(runtime.newArray((IRubyObject)o1,(IRubyObject)o2)));
+            return RubyFixnum.fix2int(context.yield(runtime.newArray((IRubyObject)o1,(IRubyObject)o2)));
         }
     }
 
-    public static IRubyObject callEach(ThreadContext tc, IRubyObject self, RubyModule module, BlockCallback bc) {
-        Iter bef = tc.getFrameIter();
-        tc.preBlockPassEval(new CallBlock(self,module,Arity.noArguments(),bc,tc));
-        IRubyObject ret = self.callMethod("each");
-        tc.postBlockPassEval();
-        tc.setFrameIter(bef);
+    public static IRubyObject callEach(ThreadContext context, IRubyObject self, RubyModule module, BlockCallback bc) {
+        Iter bef = context.getFrameIter();
+        context.preBlockPassEval(new CallBlock(self,module,Arity.noArguments(),bc,context));
+        IRubyObject ret = self.callMethod(context, "each");
+        context.postBlockPassEval();
+        context.setFrameIter(bef);
         return ret;
     }
 
-    public static List eachToList(ThreadContext tc, IRubyObject self, RubyModule module) {
-        ListAddBlockCallback ladc = new ListAddBlockCallback(tc.getRuntime());
-        callEach(tc,self,module,ladc);
+    public static List eachToList(ThreadContext context, IRubyObject self, RubyModule module) {
+        ListAddBlockCallback ladc = new ListAddBlockCallback(context.getRuntime());
+        callEach(context,self,module,ladc);
         return ladc.getList();
     }
 
@@ -136,29 +137,29 @@ public class RubyEnumerable {
             this.partition = new MultiStubMethod(RubyEnumerableStub0.this,9,recv,Arity.noArguments(), Visibility.PUBLIC);
         }
 
-        public IRubyObject method0(ThreadContext tc, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method0(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             //TO_A
-            return tc.getRuntime().newArray(eachToList(tc,self,module));
+            return context.getRuntime().newArray(eachToList(context,self,module));
         }
-        public IRubyObject method1(final ThreadContext tc, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method1(final ThreadContext context, IRubyObject self, IRubyObject[] args) {
             //SORT
-            if(!tc.isBlockGiven()) {
-                IRubyObject res = self.callMethod("to_a");
-                return res.callMethod("sort");
+            if(!context.isBlockGiven()) {
+                IRubyObject res = self.callMethod(context, "to_a");
+                return res.callMethod(context, "sort");
             } else {
-                final List arr = eachToList(tc,self,module);
-                Collections.sort(arr, new RubyYieldComparator(tc));
-                return tc.getRuntime().newArray(arr);
+                final List arr = eachToList(context,self,module);
+                Collections.sort(arr, new RubyYieldComparator(context));
+                return context.getRuntime().newArray(arr);
             }
         }
-        public IRubyObject method2(ThreadContext tc, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method2(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             //SORT_BY
-            List result = eachToList(tc,self,module);
+            List result = eachToList(context,self,module);
             IRubyObject[][] secResult = new IRubyObject[result.size()][2];
             int ix = 0;
             for(Iterator iter = result.iterator();iter.hasNext();ix++) {
                 IRubyObject iro = (IRubyObject)iter.next();
-                secResult[ix][0] = tc.yield(iro);
+                secResult[ix][0] = context.yield(iro);
                 secResult[ix][1] = iro;
             }
             Arrays.sort(secResult, new RubyFirstArrayComparator());
@@ -166,77 +167,77 @@ public class RubyEnumerable {
             for(int i=0,j=result2.length;i<j;i++) {
                 result2[i] = secResult[i][1];
             }
-            return tc.getRuntime().newArray(result2);
+            return context.getRuntime().newArray(result2);
         }
-        public IRubyObject method3(ThreadContext tc, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method3(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             //GREP
             self.checkArgumentCount(args,1,1);
-            List arr = eachToList(tc,self,module);
+            List arr = eachToList(context,self,module);
             List result = new ArrayList();
             IRubyObject pattern = args[0];
-            if(!tc.isBlockGiven()) {
+            if(!context.isBlockGiven()) {
                 for(Iterator iter = arr.iterator();iter.hasNext();) {
                     IRubyObject item = (IRubyObject)iter.next();
-                    if(pattern.callMethod("===",item).isTrue()) {
+                    if(pattern.callMethod(context,"===", item).isTrue()) {
                         result.add(item);
                     }
                 }                
             } else {
                 for(Iterator iter = arr.iterator();iter.hasNext();) {
                     IRubyObject item = (IRubyObject)iter.next();
-                    if(pattern.callMethod("===",item).isTrue()) {
-                        result.add(tc.yield(item));
+                    if(pattern.callMethod(context,"===", item).isTrue()) {
+                        result.add(context.yield(item));
                     }
                 }                
             }
-            return tc.getRuntime().newArray(result);
+            return context.getRuntime().newArray(result);
         }
-        public IRubyObject method4(ThreadContext tc, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method4(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             //DETECT
-            List arr = eachToList(tc,self,module);
+            List arr = eachToList(context,self,module);
             for(Iterator iter = arr.iterator();iter.hasNext();) {
                 IRubyObject element = (IRubyObject)iter.next();
-                if(tc.yield(element).isTrue()) {
+                if(context.yield(element).isTrue()) {
                     return element;
                 }                
             }
             if(args.length > 0 && args[0] instanceof RubyProc) {
                 return ((RubyProc)args[0]).call(new IRubyObject[0]);
             }
-            return tc.getRuntime().getNil();
+            return context.getRuntime().getNil();
         }
-        public IRubyObject method5(ThreadContext tc, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method5(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             //SELECT
-            List arr = eachToList(tc,self,module);
+            List arr = eachToList(context,self,module);
             List result = new ArrayList(arr.size());
             for(Iterator iter = arr.iterator();iter.hasNext();) {
                 IRubyObject element = (IRubyObject)iter.next();
-                if(tc.yield(element).isTrue()) {
+                if(context.yield(element).isTrue()) {
                     result.add(element);
                 }                
             }
-            return tc.getRuntime().newArray(result);
+            return context.getRuntime().newArray(result);
         }
-        public IRubyObject method6(ThreadContext tc, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method6(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             //REJECT
-            List arr = eachToList(tc,self,module);
+            List arr = eachToList(context,self,module);
             List result = new ArrayList(arr.size());
             for(Iterator iter = arr.iterator();iter.hasNext();) {
                 IRubyObject element = (IRubyObject)iter.next();
-                if(!tc.yield(element).isTrue()) {
+                if(!context.yield(element).isTrue()) {
                     result.add(element);
                 }                
             }
-            return tc.getRuntime().newArray(result);
+            return context.getRuntime().newArray(result);
         }
-        public IRubyObject method7(ThreadContext tc, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method7(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             //COLLECT
-            List arr = eachToList(tc,self,module);
+            List arr = eachToList(context,self,module);
             IRubyObject[] result = new IRubyObject[arr.size()];
-            if(tc.isBlockGiven()) {
+            if(context.isBlockGiven()) {
                 int i=0;
                 for(Iterator iter = arr.iterator();iter.hasNext();) {
-                    result[i++] = tc.yield((IRubyObject)iter.next());
+                    result[i++] = context.yield((IRubyObject)iter.next());
                 }
             } else {
                 int i=0;
@@ -244,42 +245,42 @@ public class RubyEnumerable {
                     result[i++] = (IRubyObject)iter.next();
                 }
             }
-            return tc.getRuntime().newArray(result);
+            return context.getRuntime().newArray(result);
         }
-        public IRubyObject method8(ThreadContext tc, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method8(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             //INJECT
             IRubyObject result = null;
             if(args.length > 0) {
                 result = args[0];
             }
-            List arr = eachToList(tc,self,module);
+            List arr = eachToList(context,self,module);
             for(Iterator iter = arr.iterator();iter.hasNext();) {
                 IRubyObject item = (IRubyObject)iter.next();
                 if(result == null) {
                     result = item;
                 } else {
-                    result = tc.yield(tc.getRuntime().newArray(result,item));
+                    result = context.yield(context.getRuntime().newArray(result,item));
                 }
             }
             if(null == result) {
-                return tc.getRuntime().getNil();
+                return context.getRuntime().getNil();
             }
             return result;
         }
-        public IRubyObject method9(ThreadContext tc, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method9(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             //PARTITION
-            List arr = eachToList(tc,self,module);
+            List arr = eachToList(context,self,module);
             List arr_true = new ArrayList(arr.size()/2);
             List arr_false = new ArrayList(arr.size()/2);
             for(Iterator iter = arr.iterator();iter.hasNext();) {
                 IRubyObject item = (IRubyObject)iter.next();
-                if(tc.yield(item).isTrue()) {
+                if(context.yield(item).isTrue()) {
                     arr_true.add(item);
                 } else {
                     arr_false.add(item);
                 }
             }
-            return tc.getRuntime().newArray(tc.getRuntime().newArray(arr_true),tc.getRuntime().newArray(arr_false));
+            return context.getRuntime().newArray(context.getRuntime().newArray(arr_true),context.getRuntime().newArray(arr_false));
         }
     }
 
@@ -310,84 +311,84 @@ public class RubyEnumerable {
             this.group_by = new MultiStubMethod(RubyEnumerableStub1.this,7,recv,Arity.noArguments(), Visibility.PUBLIC);
         }
 
-        public IRubyObject method0(ThreadContext tc, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method0(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             //EACH_WITH_INDEX
             int index = 0;
-            List arr = eachToList(tc,self,module);
-            IRuby rt = tc.getRuntime();
+            List arr = eachToList(context,self,module);
+            IRuby rt = context.getRuntime();
             for(Iterator iter = arr.iterator();iter.hasNext();) {
-                tc.yield(rt.newArray((IRubyObject)iter.next(),rt.newFixnum(index++)));
+                context.yield(rt.newArray((IRubyObject)iter.next(),rt.newFixnum(index++)));
             }
             return self;
         }
-        public IRubyObject method1(ThreadContext tc, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method1(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             //INCLUDE?
-            List arr = eachToList(tc,self,module);
+            List arr = eachToList(context,self,module);
             for(Iterator iter = arr.iterator();iter.hasNext();) {
-                if(args[0].callMethod("==",(IRubyObject)iter.next()).isTrue()) {
-                    return tc.getRuntime().getTrue();
+                if(args[0].callMethod(context,"==", (IRubyObject)iter.next()).isTrue()) {
+                    return context.getRuntime().getTrue();
                 }
             }
-            return tc.getRuntime().getFalse();
+            return context.getRuntime().getFalse();
         }
-        public IRubyObject method2(final ThreadContext tc, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method2(final ThreadContext context, IRubyObject self, IRubyObject[] args) {
             //MAX
             IRubyObject result = null;
-            List arr = eachToList(tc,self,module);
+            List arr = eachToList(context,self,module);
 
-            if(tc.isBlockGiven()) {
+            if(context.isBlockGiven()) {
                 for(Iterator iter = arr.iterator();iter.hasNext();) {
                     IRubyObject item = (IRubyObject)iter.next();
-                    if(result == null || (tc.yield(tc.getRuntime().newArray(item,result)).callMethod(">", RubyFixnum.zero(tc.getRuntime()))).isTrue()) {
+                    if(result == null || (context.yield(context.getRuntime().newArray(item,result)).callMethod(context, ">", RubyFixnum.zero(context.getRuntime()))).isTrue()) {
                         result = item;
                     }
                 }
             } else {
                 for(Iterator iter = arr.iterator();iter.hasNext();) {
                     IRubyObject item = (IRubyObject)iter.next();
-                    if(result == null || item.callMethod("<=>",result).callMethod(">", RubyFixnum.zero(tc.getRuntime())).isTrue()) {
+                    if(result == null || item.callMethod(context,"<=>", result).callMethod(context, ">", RubyFixnum.zero(context.getRuntime())).isTrue()) {
                         result = item;
                     }
                 }
             }
             if(null == result) {
-                return tc.getRuntime().getNil();
+                return context.getRuntime().getNil();
             }
             return result;
         }
-        public IRubyObject method3(ThreadContext tc, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method3(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             //MIN
             IRubyObject result = null;
-            List arr = eachToList(tc,self,module);
+            List arr = eachToList(context,self,module);
 
-            if(tc.isBlockGiven()) {
+            if(context.isBlockGiven()) {
                 for(Iterator iter = arr.iterator();iter.hasNext();) {
                     IRubyObject item = (IRubyObject)iter.next();
-                    if(result == null || (tc.yield(tc.getRuntime().newArray(item,result)).callMethod("<", RubyFixnum.zero(tc.getRuntime()))).isTrue()) {
+                    if(result == null || (context.yield(context.getRuntime().newArray(item,result)).callMethod(context, "<", RubyFixnum.zero(context.getRuntime()))).isTrue()) {
                         result = item;
                     }
                 }
             } else {
                 for(Iterator iter = arr.iterator();iter.hasNext();) {
                     IRubyObject item = (IRubyObject)iter.next();
-                    if(result == null || item.callMethod("<=>",result).callMethod("<", RubyFixnum.zero(tc.getRuntime())).isTrue()) {
+                    if(result == null || item.callMethod(context,"<=>", result).callMethod(context, "<", RubyFixnum.zero(context.getRuntime())).isTrue()) {
                         result = item;
                     }
                 }
             }
             if(null == result) {
-                return tc.getRuntime().getNil();
+                return context.getRuntime().getNil();
             }
             return result;
         }
-        public IRubyObject method4(ThreadContext tc, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method4(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             //ALL?
             boolean all = true;
-            List arr = eachToList(tc,self,module);
+            List arr = eachToList(context,self,module);
 
-            if(tc.isBlockGiven()) {
+            if(context.isBlockGiven()) {
                 for(Iterator iter = arr.iterator();iter.hasNext();) {
-                    if(!tc.yield((IRubyObject)iter.next()).isTrue()) {
+                    if(!context.yield((IRubyObject)iter.next()).isTrue()) {
                         all = false;
                         break;
                     }
@@ -400,16 +401,16 @@ public class RubyEnumerable {
                     }
                 }
             }
-            return all ? tc.getRuntime().getTrue() : tc.getRuntime().getFalse();
+            return all ? context.getRuntime().getTrue() : context.getRuntime().getFalse();
         }
-        public IRubyObject method5(ThreadContext tc, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method5(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             //ANY?
             boolean any = false;
-            List arr = eachToList(tc,self,module);
+            List arr = eachToList(context,self,module);
 
-            if(tc.isBlockGiven()) {
+            if(context.isBlockGiven()) {
                 for(Iterator iter = arr.iterator();iter.hasNext();) {
-                    if(tc.yield((IRubyObject)iter.next()).isTrue()) {
+                    if(context.yield((IRubyObject)iter.next()).isTrue()) {
                         any = true;
                         break;
                     }
@@ -422,60 +423,60 @@ public class RubyEnumerable {
                     }
                 }
             }
-            return any ? tc.getRuntime().getTrue() : tc.getRuntime().getFalse();
+            return any ? context.getRuntime().getTrue() : context.getRuntime().getFalse();
         }
-        public IRubyObject method6(ThreadContext tc, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method6(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             //ZIP
-            List arr = eachToList(tc,self,module);
+            List arr = eachToList(context,self,module);
             int ix = 0;
             List zip = new ArrayList(arr.size());
             int aLen = args.length+1;
-            if(tc.isBlockGiven()) {
+            if(context.isBlockGiven()) {
                 for(Iterator iter = arr.iterator();iter.hasNext();) {
                     IRubyObject elem = (IRubyObject)iter.next();
                     List array = new ArrayList(aLen);
                     array.add(elem);
                     for(int i=0,j=args.length;i<j;i++) {
-                        array.add(args[i].callMethod("[]",tc.getRuntime().newFixnum(ix)));
+                        array.add(args[i].callMethod(context,"[]", context.getRuntime().newFixnum(ix)));
                     }
-                    tc.yield(tc.getRuntime().newArray(array));
+                    context.yield(context.getRuntime().newArray(array));
                     ix++;
                 }
-                return tc.getRuntime().getNil();
+                return context.getRuntime().getNil();
             } else {
                 for(Iterator iter = arr.iterator();iter.hasNext();) {
                     IRubyObject elem = (IRubyObject)iter.next();
                     List array = new ArrayList(aLen);
                     array.add(elem);
                     for(int i=0,j=args.length;i<j;i++) {
-                        array.add(args[i].callMethod("[]",tc.getRuntime().newFixnum(ix)));
+                        array.add(args[i].callMethod(context,"[]", context.getRuntime().newFixnum(ix)));
                     }
-                    zip.add(tc.getRuntime().newArray(array));
+                    zip.add(context.getRuntime().newArray(array));
                     ix++;
                 }
             }
-            return tc.getRuntime().newArray(zip);
+            return context.getRuntime().newArray(zip);
         }
-        public IRubyObject method7(ThreadContext tc, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method7(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             //GROUP_BY
-            List arr = eachToList(tc,self,module);
+            List arr = eachToList(context,self,module);
             Map results = new HashMap(arr.size());
             for(Iterator iter = arr.iterator();iter.hasNext();) {
                 IRubyObject item = (IRubyObject)iter.next();
-                IRubyObject key = tc.yield(item);
+                IRubyObject key = context.yield(item);
                 IRubyObject curr = (IRubyObject)results.get(key);
                 if(curr == null) {
-                    curr = tc.getRuntime().newArray();
+                    curr = context.getRuntime().newArray();
                     results.put(key,curr);
                 }
-                curr.callMethod("<<",item);
+                curr.callMethod(context,"<<", item);
             }
-            return new RubyHash(tc.getRuntime(),results,tc.getRuntime().getNil());
+            return new RubyHash(context.getRuntime(),results,context.getRuntime().getNil());
         }
-        public IRubyObject method8(ThreadContext tc, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method8(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             return null;
         }
-        public IRubyObject method9(ThreadContext tc, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method9(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             return null;
         }
     }

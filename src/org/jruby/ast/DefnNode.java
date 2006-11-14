@@ -36,6 +36,7 @@ import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Visibility;
 
 /**
@@ -48,14 +49,17 @@ public class DefnNode extends Node {
 
     private final ArgumentNode nameNode;
     private final Node argsNode;
-    private final ScopeNode bodyNode;
+    private final StaticScope scope;
+    private final Node bodyNode;
     private final Visibility visibility;
     
-    public DefnNode(ISourcePosition position, ArgumentNode nameNode, Node argsNode, ScopeNode bodyNode, Visibility visibility) {
+    public DefnNode(ISourcePosition position, ArgumentNode nameNode, Node argsNode, 
+            StaticScope scope, Node bodyNode, Visibility visibility) {
         super(position, NodeTypes.DEFNNODE);
         
         this.nameNode = nameNode;
         this.argsNode = argsNode;
+        this.scope = scope;
         this.bodyNode = bodyNode;
         this.visibility = visibility;
     }
@@ -73,10 +77,20 @@ public class DefnNode extends Node {
     }
 
     /**
-     * Gets the bodyNode.
-     * @return Returns a ScopeNode
+     * Get the static scoping information.
+     * 
+     * @return the scoping info
      */
-    public ScopeNode getBodyNode() {
+    public StaticScope getScope() {
+        return scope;
+    }
+    
+    /**
+     * Gets the body of this class.
+     * 
+     * @return the contents
+     */
+    public Node getBodyNode() {
         return bodyNode;
     }
 

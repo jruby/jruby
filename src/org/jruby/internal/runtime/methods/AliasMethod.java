@@ -30,9 +30,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
-import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.runtime.ICallable;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -58,17 +58,17 @@ public class AliasMethod extends AbstractMethod {
     	return oldName;
     }
 
-    public void preMethod(IRuby runtime, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
     	// FIXME: using implementationClass may not be right, since the alias may be found in an included module
-        oldMethod.preMethod(runtime, implementationClass, recv, name, args, noSuper);
+        oldMethod.preMethod(context, implementationClass, recv, name, args, noSuper);
     }
 
-    public void postMethod(IRuby runtime) {
-        oldMethod.postMethod(runtime);
+    public void postMethod(ThreadContext context) {
+        oldMethod.postMethod(context);
     }
 
-    public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
-        return oldMethod.internalCall(runtime, receiver, lastClass, oldName, args, noSuper);
+    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+        return oldMethod.internalCall(context, receiver, lastClass, oldName, args, noSuper);
     }
 
     public ICallable dup() {

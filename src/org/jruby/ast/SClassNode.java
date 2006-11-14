@@ -35,6 +35,7 @@ import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.parser.StaticScope;
 
 /** Singleton class definition.
  * 
@@ -50,11 +51,13 @@ public class SClassNode extends Node {
     static final long serialVersionUID = -3706492163082062224L;
 
     private final Node receiverNode;
-    private final ScopeNode bodyNode;
+    private final StaticScope scope;
+    private final Node bodyNode;
 
-    public SClassNode(ISourcePosition position, Node recvNode, ScopeNode bodyNode) {
+    public SClassNode(ISourcePosition position, Node recvNode, StaticScope scope, Node bodyNode) {
         super(position, NodeTypes.SCLASSNODE);
         this.receiverNode = recvNode;
+        this.scope = scope;
         this.bodyNode = bodyNode;
     }
 
@@ -67,11 +70,21 @@ public class SClassNode extends Node {
     }
 
     /**
-     * Gets the bodyNode.
-     * @return Returns a ScopeNode
+     * Gets the body of this class.
+     * 
+     * @return the contents
      */
-    public ScopeNode getBodyNode() {
+    public Node getBodyNode() {
         return bodyNode;
+    }
+    
+    /**
+     * Gets the scope of this class
+     * 
+     * @return the scope
+     */
+    public StaticScope getScope() {
+        return scope;
     }
 
     /**

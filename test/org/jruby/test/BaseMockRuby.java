@@ -36,6 +36,7 @@ import org.jruby.parser.Parser;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.ThreadContext;
@@ -665,6 +666,16 @@ public class BaseMockRuby implements IRuby {
     }
 
     public IRubyObject compileAndRun(Node node) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public Node parse(Reader content, String file, DynamicScope scope) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public Node parse(String content, String file, DynamicScope scope) {
         // TODO Auto-generated method stub
         return null;
     }

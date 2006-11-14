@@ -37,7 +37,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class RubyJRuby {
     public static RubyModule createJRuby(IRuby runtime) {
-        runtime.getModule("Kernel").callMethod("require",runtime.newString("java"));
+        runtime.getModule("Kernel").callMethod(runtime.getCurrentContext(),"require", runtime.newString("java"));
         RubyModule comparableModule = runtime.defineModule("JRuby");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyJRuby.class);
         comparableModule.defineModuleFunction("parse", 
@@ -56,6 +56,6 @@ public class RubyJRuby {
         RubyString content = arg1.convertToString();
         RubyString filename = arg2.convertToString();
         return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), 
-            recv.getRuntime().parse(content.toString(), filename.toString())));
+            recv.getRuntime().parse(content.toString(), filename.toString(), null)));
     }
 }

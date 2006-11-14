@@ -112,7 +112,7 @@ public class RubyClass extends RubyModule {
         if (superType == null) {
             superType = getRuntime().getObject();
         }
-        superType.callMethod("inherited", this);
+        superType.callMethod(getRuntime().getCurrentContext(), "inherited", this);
     }
 
     /** rb_singleton_class_clone

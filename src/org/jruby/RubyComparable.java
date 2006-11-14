@@ -59,7 +59,7 @@ public class RubyComparable {
             if (recv == other) {
                 return recv.getRuntime().getTrue();
             }
-            IRubyObject result = recv.callMethod("<=>", other);
+            IRubyObject result = recv.callMethod(recv.getRuntime().getCurrentContext(), "<=>", other);
             
             if (result.isNil()) {
             	return result;
@@ -86,7 +86,7 @@ public class RubyComparable {
 
     public static RubyBoolean op_gt(IRubyObject recv, IRubyObject other) {
         // <=> may return nil in many circumstances, e.g. 3 <=> NaN
-        IRubyObject tmp = recv.callMethod("<=>", other);
+        IRubyObject tmp = recv.callMethod(recv.getRuntime().getCurrentContext(), "<=>", other);
         
         if (tmp.isNil()) {
             cmperr(recv, other);
@@ -96,7 +96,7 @@ public class RubyComparable {
     }
 
     public static RubyBoolean op_ge(IRubyObject recv, IRubyObject other) {
-        IRubyObject tmp = recv.callMethod("<=>", other);
+        IRubyObject tmp = recv.callMethod(recv.getRuntime().getCurrentContext(), "<=>", other);
         
         if (tmp.isNil()) {
             cmperr(recv, other);
@@ -106,7 +106,7 @@ public class RubyComparable {
     }
 
     public static RubyBoolean op_lt(IRubyObject recv, IRubyObject other) {
-        IRubyObject tmp = recv.callMethod("<=>", other);
+        IRubyObject tmp = recv.callMethod(recv.getRuntime().getCurrentContext(), "<=>", other);
 
         if (tmp.isNil()) {
             cmperr(recv, other);
@@ -116,7 +116,7 @@ public class RubyComparable {
     }
 
     public static RubyBoolean op_le(IRubyObject recv, IRubyObject other) {
-        IRubyObject tmp = recv.callMethod("<=>", other);
+        IRubyObject tmp = recv.callMethod(recv.getRuntime().getCurrentContext(), "<=>", other);
 
         if (tmp.isNil()) {
             cmperr(recv, other);

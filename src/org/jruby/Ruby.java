@@ -74,11 +74,11 @@ import org.jruby.parser.Parser;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.meta.ArrayMetaClass;
 import org.jruby.runtime.builtin.meta.BignumMetaClass;
@@ -232,22 +232,23 @@ public final class Ruby implements IRuby {
      * Evaluates a script and returns a RubyObject.
      */
     public IRubyObject evalScript(String script) {
-        return eval(parse(script, "<script>"));
+        return eval(parse(script, "<script>", getCurrentContext().getCurrentScope()));
     }
 
     public IRubyObject eval(Node node) {
         try {
             ThreadContext tc = getCurrentContext();
+            
             return EvaluationState.eval(tc, node, tc.getFrameSelf());
         } catch (JumpException je) {
         	if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
 	            return (IRubyObject)je.getSecondaryData();
-        	} else {
-        		throw je;
-        	}
+        	} 
+
+            throw je;
 		}
     }
-    
+
     public IRubyObject compileAndRun(Node node) {
         try {
             ThreadContext tc = getCurrentContext();
@@ -732,16 +733,12 @@ public final class Ruby implements IRuby {
         globalVariables.defineReadonly(name, new ValueAccessor(value));
     }
 
-    public Node parse(Reader content, String file) {
-        return parser.parse(file, content);
+    public Node parse(Reader content, String file, DynamicScope scope) {
+        return parser.parse(file, content, scope);
     }
 
-    public Node parse(String content, String file) {
-        return parser.parse(file, content);
-    }
-
-    public Parser getParser() {
-        return parser;
+    public Node parse(String content, String file, DynamicScope scope) {
+        return parser.parse(file, content, scope);
     }
 
     public ThreadService getThreadService() {
@@ -797,11 +794,11 @@ public final class Ruby implements IRuby {
             return;
         }
 
-        RubyArray backtrace = (RubyArray) excp.callMethod("backtrace");
+        ThreadContext tc = getCurrentContext();
+        RubyArray backtrace = (RubyArray) excp.callMethod(tc, "backtrace");
 
         PrintStream errorStream = getErrorStream();
 		if (backtrace.isNil()) {
-            ThreadContext tc = getCurrentContext();
             
             if (tc.getSourceFile() != null) {
                 errorStream.print(tc.getPosition());
@@ -901,10 +898,7 @@ public final class Ruby implements IRuby {
                 self.extendObject(context.getRubyClass());
             }
 
-            /* default visibility is private at loading toplevel */
-            context.setCurrentVisibility(Visibility.PRIVATE);
-
-        	Node node = parse(source, scriptName);
+        	Node node = parse(source, scriptName, null);
             self.eval(node);
         } catch (JumpException je) {
         	if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
@@ -930,15 +924,13 @@ public final class Ruby implements IRuby {
                 
                 context.preNodeEval(null, objectClass, self);
             } else {
+
                 /* load in anonymous module as toplevel */
                 context.preNodeEval(RubyModule.newModule(this, null), context.getWrapper(), self);
                 
                 self = getTopSelf().rbClone();
                 self.extendObject(context.getRubyClass());
             }
-            
-            /* default visibility is private at loading toplevel */
-            context.setCurrentVisibility(Visibility.PRIVATE);
             
             self.eval(node);
         } catch (JumpException je) {

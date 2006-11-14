@@ -59,6 +59,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 
@@ -249,7 +250,9 @@ public class JavaClass extends JavaObject {
         Callback method = new Callback() {
             public IRubyObject execute(IRubyObject self, IRubyObject[] args) {
                 IRubyObject[] argsArray = new IRubyObject[args.length + 1];
-                argsArray[0] = self.callMethod("java_object");
+                ThreadContext context = self.getRuntime().getCurrentContext();
+                
+                argsArray[0] = self.callMethod(context, "java_object");
                 RubyArray argsAsArray = getRuntime().newArray();
                 for (int j = 0; j < args.length; j++) {
                     argsArray[j+1] = Java.ruby_to_java(proxy, args[j]);
@@ -257,8 +260,8 @@ public class JavaClass extends JavaObject {
                 }
 
                 IRubyObject[] mmArgs = new IRubyObject[] {methods, argsAsArray};
-                IRubyObject result = javaUtilities.callMethod("matching_method", mmArgs);
-                return Java.java_to_ruby(self, result.callMethod("invoke", argsArray));
+                IRubyObject result = javaUtilities.callMethod(context, "matching_method", mmArgs);
+                return Java.java_to_ruby(self, result.callMethod(context, "invoke", argsArray));
             }
 
             public Arity getArity() {

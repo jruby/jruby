@@ -29,9 +29,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
-import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -51,13 +51,13 @@ public abstract class AbstractMethod extends AbstractCallable {
         }
     }
 
-    public IRubyObject call(IRuby runtime, IRubyObject recv, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
-        preMethod(runtime, lastClass, recv, name, args, noSuper);
+    public IRubyObject call(ThreadContext context, IRubyObject recv, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+        preMethod(context, lastClass, recv, name, args, noSuper);
 
         try {
-            return internalCall(runtime, recv, lastClass, name, args, noSuper);
+            return internalCall(context, recv, lastClass, name, args, noSuper);
         } finally {
-            postMethod(runtime);
+            postMethod(context);
         }
     }
     

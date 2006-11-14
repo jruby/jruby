@@ -16,10 +16,10 @@ import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.parser.Parser;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.ThreadContext;
@@ -163,11 +163,25 @@ public interface IRuby {
 	 */
 	public void defineReadonlyVariable(String name, IRubyObject value);
 
-	public Node parse(Reader content, String file);
+    /**
+     * Parse the source specified by the reader and return an AST
+     * 
+     * @param content to be parsed
+     * @param file the name of the file to be used in warnings/errors
+     * @param scope that this content is being parsed under
+     * @return the top of the AST
+     */
+	public Node parse(Reader content, String file, DynamicScope scope);
 
-	public Node parse(String content, String file);
-
-    public Parser getParser();
+    /**
+     * Parse the source specified by the string and return an AST
+     * 
+     * @param content to be parsed
+     * @param file the name of the file to be used in warnings/errors
+     * @param scope that this content is being parsed under
+     * @return the top of the AST
+     */
+	public Node parse(String content, String file, DynamicScope scope);
 
 	public ThreadService getThreadService();
 

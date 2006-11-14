@@ -51,23 +51,20 @@ public class CallbackMethod extends AbstractMethod {
         this.callback = callback;
     }
 
-    public void preMethod(IRuby runtime, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
-        ThreadContext context = runtime.getCurrentContext();
-        
+    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
         context.preReflectedMethodInternalCall(implementationClass, lastClass, recv, name, args, noSuper);
     }
     
-    public void postMethod(IRuby runtime) {
-        ThreadContext context = runtime.getCurrentContext();
-        
+    public void postMethod(ThreadContext context) {
         context.postReflectedMethodInternalCall();
     }
 
-    public IRubyObject internalCall(IRuby runtime, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
     	assert args != null;
+        IRuby runtime = context.getRuntime();
         
         if (runtime.getTraceFunction() != null) {
-            ISourcePosition position = runtime.getCurrentContext().getPreviousFramePosition();
+            ISourcePosition position = context.getPreviousFramePosition();
 
             runtime.callTraceFunction("c-call", position, receiver, name, getImplementationClass()); // XXX
             try {

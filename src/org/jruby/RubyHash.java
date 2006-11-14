@@ -217,6 +217,8 @@ public class RubyHash extends RubyObject implements Map {
         final StringBuffer sb = new StringBuffer("{");
         boolean firstEntry = true;
         
+        ThreadContext context = getRuntime().getCurrentContext();
+        
         for (Iterator iter = valueMap.entrySet().iterator(); iter.hasNext(); ) {
             Map.Entry entry = (Map.Entry) iter.next();
             IRubyObject key = (IRubyObject) entry.getKey();
@@ -224,8 +226,9 @@ public class RubyHash extends RubyObject implements Map {
             if (!firstEntry) {
                 sb.append(sep);
             }
-            sb.append(key.callMethod("inspect")).append(arrow);
-            sb.append(value.callMethod("inspect"));
+            
+            sb.append(key.callMethod(context, "inspect")).append(arrow);
+            sb.append(value.callMethod(context, "inspect"));
             firstEntry = false;
         }
         sb.append("}");
@@ -295,7 +298,7 @@ public class RubyHash extends RubyObject implements Map {
     public IRubyObject aref(IRubyObject key) {
         IRubyObject value = (IRubyObject) valueMap.get(key);
 
-        return value != null ? value : callMethod("default", new IRubyObject[] {key});
+        return value != null ? value : callMethod(getRuntime().getCurrentContext(), "default", new IRubyObject[] {key});
     }
 
     public IRubyObject fetch(IRubyObject[] args) {

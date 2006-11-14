@@ -51,14 +51,14 @@ public class IOWriter extends Writer {
     }
 
     public void close() throws IOException {
-        io.callMethod("close");
+        io.callMethod(io.getRuntime().getCurrentContext(), "close");
     }
 
     public void flush() throws IOException {
-        io.callMethod("flush");
+        io.callMethod(io.getRuntime().getCurrentContext(), "flush");
     }
 
     public void write(char[] cbuf, int off, int len) {
-        io.callMethod("write",io.getRuntime().newString(String.valueOf(cbuf,off,len)));
+        io.callMethod(io.getRuntime().getCurrentContext(),"write", io.getRuntime().newString(String.valueOf(cbuf,off,len)));
     }
 }// IOWriter

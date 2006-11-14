@@ -93,7 +93,6 @@ import org.jruby.ast.RetryNode;
 import org.jruby.ast.ReturnNode;
 import org.jruby.ast.SClassNode;
 import org.jruby.ast.SValueNode;
-import org.jruby.ast.ScopeNode;
 import org.jruby.ast.SelfNode;
 import org.jruby.ast.SplatNode;
 import org.jruby.ast.StarNode;
@@ -266,8 +265,7 @@ program       : {
                           support.checkUselessStatement($2);
                       }
                   }
-                  support.getResult().setAST(support.appendToBlock(support.getResult().getAST(), $2));
-                  support.updateTopLocalVariables();
+                  support.getResult().setAST(support.addRootNode($2));
               }
 
 bodystmt      : compstmt opt_rescue opt_else opt_ensure {
@@ -348,17 +346,17 @@ stmt          : kALIAS fitem {
                   if (support.isInDef() || support.isInSingle()) {
                       yyerror("BEGIN in method");
                   }
-                  support.getLocalNames().push(new LocalNamesElement());
+		  support.pushLocalScope();
               } tLCURLY compstmt tRCURLY {
-                  support.getResult().addBeginNode(new ScopeNode(getPosition($1, true), ((LocalNamesElement) support.getLocalNames().peek()).getNamesArray(), $4));
-                  support.getLocalNames().pop();
+                  support.getResult().addBeginNode(support.getCurrentScope(), $4);
+                  support.popCurrentScope();
                   $$ = null; //XXX 0;
               }
               | klEND tLCURLY compstmt tRCURLY {
                   if (support.isInDef() || support.isInSingle()) {
                       yyerror("END in method; use at_exit");
                   }
-                  support.getResult().addEndNode(new IterNode(support.union($2, $4), null, new PostExeNode(getPosition($1)), $3));
+                  support.getResult().addEndNode(new IterNode(support.union($2, $4), null, null, new PostExeNode(getPosition($1)), $3));
                   $$ = null;
               }
               | lhs '=' command_call {
@@ -463,10 +461,10 @@ block_command : block_call
               }
 
 cmd_brace_block	: tLBRACE_ARG {
-                    support.getBlockNames().push(new BlockNamesElement());
+                    support.pushBlockScope();
 		} opt_block_var compstmt tRCURLY {
-                    $$ = new IterNode(getPosition($1), $3, $4, null);
-                    support.getBlockNames().pop();
+                    $$ = new IterNode(getPosition($1), $3, support.getCurrentScope(), $4, null);
+                    support.popCurrentScope();
 		}
 
 command       : operation command_args  %prec tLOWEST {
@@ -1117,10 +1115,10 @@ primary       : literal
                   if (support.isInDef() || support.isInSingle()) {
                       yyerror("class definition in method body");
                   }
-                  support.getLocalNames().push(new LocalNamesElement());
+		  support.pushLocalScope();
               } bodystmt kEND {
-                  $$ = new ClassNode(support.union($1, $6), $2, new ScopeNode(getPosition($5), ((LocalNamesElement) support.getLocalNames().peek()).getNamesArray(), $5), $3);
-                  support.getLocalNames().pop();
+                  $$ = new ClassNode(support.union($1, $6), $2, support.getCurrentScope(), $5, $3);
+                  support.popCurrentScope();
               }
               | kCLASS tLSHFT expr {
                   $$ = new Boolean(support.isInDef());
@@ -1128,10 +1126,10 @@ primary       : literal
               } term {
                   $$ = new Integer(support.getInSingle());
                   support.setInSingle(0);
-                  support.getLocalNames().push(new LocalNamesElement());
+		  support.pushLocalScope();
               } bodystmt kEND {
-                  $$ = new SClassNode(support.union($1, $8), $3, new ScopeNode(getPosition($7), ((LocalNamesElement) support.getLocalNames().peek()).getNamesArray(), $7));
-                  support.getLocalNames().pop();
+                  $$ = new SClassNode(support.union($1, $8), $3, support.getCurrentScope(), $7);
+                  support.popCurrentScope();
                   support.setInDef($<Boolean>4.booleanValue());
                   support.setInSingle($<Integer>6.intValue());
               }
@@ -1139,29 +1137,29 @@ primary       : literal
                   if (support.isInDef() || support.isInSingle()) { 
                       yyerror("module definition in method body");
                   }
-                  support.getLocalNames().push(new LocalNamesElement());
+		  support.pushLocalScope();
               } bodystmt kEND {
-                  $$ = new ModuleNode(support.union($1, $5), $2, new ScopeNode(getPosition($4), ((LocalNamesElement) support.getLocalNames().peek()).getNamesArray(), $4));
-                  support.getLocalNames().pop();
+                  $$ = new ModuleNode(support.union($1, $5), $2, support.getCurrentScope(), $4);
+                  support.popCurrentScope();
               }
 	      | kDEF fname {
                   support.setInDef(true);
-                  support.getLocalNames().push(new LocalNamesElement());
+		  support.pushLocalScope();
               } f_arglist bodystmt kEND {
                     /* NOEX_PRIVATE for toplevel */
-                  $$ = new DefnNode(support.union($1, $6), new ArgumentNode($2.getPosition(), (String) $2.getValue()), $4, new ScopeNode(getPosition($5), ((LocalNamesElement) support.getLocalNames().peek()).getNamesArray(), $5), Visibility.PRIVATE);
-                  support.getLocalNames().pop();
+                  $$ = new DefnNode(support.union($1, $6), new ArgumentNode($2.getPosition(), (String) $2.getValue()), $4, support.getCurrentScope(), $5, Visibility.PRIVATE);
+                  support.popCurrentScope();
                   support.setInDef(false);
               }
               | kDEF singleton dot_or_colon {
                   lexer.setState(LexState.EXPR_FNAME);
               } fname {
                   support.setInSingle(support.getInSingle() + 1);
-                  support.getLocalNames().push(new LocalNamesElement());
+		  support.pushLocalScope();
                   lexer.setState(LexState.EXPR_END); /* force for args */
               } f_arglist bodystmt kEND {
-                  $$ = new DefsNode(support.union($1, $9), $2, (String) $5.getValue(), $7, new ScopeNode(getPosition(null), ((LocalNamesElement) support.getLocalNames().peek()).getNamesArray(), $8));
-                  support.getLocalNames().pop();
+                  $$ = new DefsNode(support.union($1, $9), $2, (String) $5.getValue(), $7, support.getCurrentScope(), $8);
+                  support.popCurrentScope();
                   support.setInSingle(support.getInSingle() - 1);
               }
               | kBREAK {
@@ -1221,10 +1219,10 @@ opt_block_var : none
               }
 
 do_block      : kDO_BLOCK {
-                  support.getBlockNames().push(new BlockNamesElement());
+                  support.pushBlockScope();
 	      } opt_block_var compstmt kEND {
-                  $$ = new IterNode(support.union($1, $5), $3, $4, null);
-                  support.getBlockNames().pop();
+                  $$ = new IterNode(support.union($1, $5), $3, support.getCurrentScope(), $4, null);
+                  support.popCurrentScope();
               }
 
 block_call    : command do_block {
@@ -1262,16 +1260,16 @@ method_call   : operation paren_args {
 
 // IterNode:brace_block - block invocation argument (foo >{...}< | foo >do end<) [!null]
 brace_block   : tLCURLY {
-                  support.getBlockNames().push(new BlockNamesElement());
+                  support.pushBlockScope();
 	      } opt_block_var compstmt tRCURLY {
-                  $$ = new IterNode(support.union($1, $5), $3, $4, null);
-                  support.getBlockNames().pop();
+                  $$ = new IterNode(support.union($1, $5), $3, support.getCurrentScope(), $4, null);
+                  support.popCurrentScope();
               }
               | kDO {
-                  support.getBlockNames().push(new BlockNamesElement());
+                  support.pushBlockScope();
 	      } opt_block_var compstmt kEND {
-	          $$ = new IterNode(support.union($1, $5), $3, $4, null);
-                  support.getBlockNames().pop();
+                  $$ = new IterNode(support.union($1, $5), $3, support.getCurrentScope(), $4, null);
+                  support.popCurrentScope();
               }
 
 case_body     : kWHEN when_args then compstmt cases {
@@ -1607,11 +1605,11 @@ f_norm_arg     : tCONSTANT {
                    String identifier = (String) $1.getValue();
                    if (IdUtil.getVarType(identifier) != IdUtil.LOCAL_VAR) {
                        yyerror("formal argument must be local variable");
-                   } else if (((LocalNamesElement) support.getLocalNames().peek()).isLocalRegistered(identifier)) {
+                   } else if (support.getCurrentScope().getLocalScope().isDefined(identifier) >= 0) {
                        yyerror("duplicate argument name");
                    }
-		   // Register new local var or die trying (side-effect)
-                   ((LocalNamesElement) support.getLocalNames().peek()).getLocalIndex(identifier);
+
+		   support.getCurrentScope().getLocalScope().addVariable(identifier);
                    $$ = $1;
                }
 
@@ -1630,10 +1628,10 @@ f_opt          : tIDENTIFIER '=' arg_value {
 
                    if (IdUtil.getVarType(identifier) != IdUtil.LOCAL_VAR) {
                        yyerror("formal argument must be local variable");
-                   } else if (((LocalNamesElement) support.getLocalNames().peek()).isLocalRegistered(identifier)) {
+                   } else if (support.getCurrentScope().getLocalScope().isDefined(identifier) >= 0) {
                        yyerror("duplicate optional argument name");
                    }
-		   ((LocalNamesElement) support.getLocalNames().peek()).getLocalIndex(identifier);
+		   support.getCurrentScope().getLocalScope().addVariable(identifier);
                    $$ = support.assignable($1, $3);
               }
 
@@ -1651,10 +1649,10 @@ f_rest_arg    : restarg_mark tIDENTIFIER {
 
                   if (IdUtil.getVarType(identifier) != IdUtil.LOCAL_VAR) {
                       yyerror("rest argument must be local variable");
-                  } else if (((LocalNamesElement) support.getLocalNames().peek()).isLocalRegistered(identifier)) {
+                   } else if (support.getCurrentScope().getLocalScope().isDefined(identifier) >= 0) {
                       yyerror("duplicate rest argument name");
                   }
-		  $1.setValue(new Integer(((LocalNamesElement) support.getLocalNames().peek()).getLocalIndex(identifier)));
+		  $1.setValue(new Integer(support.getCurrentScope().getLocalScope().addVariable(identifier)));
                   $$ = $1;
               }
               | restarg_mark {
@@ -1669,10 +1667,10 @@ f_block_arg   : blkarg_mark tIDENTIFIER {
 
                   if (IdUtil.getVarType(identifier) != IdUtil.LOCAL_VAR) {
                       yyerror("block argument must be local variable");
-                  } else if (((LocalNamesElement) support.getLocalNames().peek()).isLocalRegistered(identifier)) {
+		  } else if (support.getCurrentScope().getLocalScope().isDefined(identifier) >= 0) {
                       yyerror("duplicate block argument name");
                   }
-                  $$ = new BlockArgNode(support.union($1, $2), ((LocalNamesElement) support.getLocalNames().peek()).getLocalIndex(identifier), identifier);
+                  $$ = new BlockArgNode(support.union($1, $2), support.getCurrentScope().getLocalScope().addVariable(identifier), identifier);
               }
 
 opt_f_block_arg: ',' f_block_arg {
@@ -1755,8 +1753,9 @@ none_block_pass: /* none */ {
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
      */
-    public RubyParserResult parse(LexerSource source) {
+    public RubyParserResult parse(RubyParserConfiguration configuration, LexerSource source) {
         support.reset();
+        support.setConfiguration(configuration);
         support.setResult(new RubyParserResult());
         
         lexer.reset();
@@ -1772,10 +1771,6 @@ none_block_pass: /* none */ {
         }
         
         return support.getResult();
-    }
-
-    public void init(RubyParserConfiguration configuration) {
-        support.setConfiguration(configuration);
     }
 
     // +++

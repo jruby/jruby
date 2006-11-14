@@ -49,14 +49,16 @@ public class FlipNode extends Node {
     private final Node beginNode;
     private final Node endNode;
     private final boolean exclusive;
-    private final int count;
+    // A scoped location of this variable (high 16 bits is how many scopes down and low 16 bits
+    // is what index in the right scope to set the value.
+    private final int location;
     
-    public FlipNode(ISourcePosition position, Node beginNode, Node endNode, boolean exclusive, int count) {
+    public FlipNode(ISourcePosition position, Node beginNode, Node endNode, boolean exclusive, int location) {
         super(position, NodeTypes.FLIPNODE);
         this.beginNode = beginNode;
         this.endNode = endNode;
         this.exclusive = exclusive;
-        this.count = count;
+        this.location = location;
     }
 
     /**
@@ -95,11 +97,22 @@ public class FlipNode extends Node {
     }
 
     /**
-     * Gets the count.
-     * @return Returns a int
+     * How many scopes should we burrow down to until we need to set the block variable value.
+     * 
+     * @return 0 for current scope, 1 for one down, ...
      */
-    public int getCount() {
-        return count;
+    public int getDepth() {
+        return location >> 16;
+    }
+    
+    /**
+     * Gets the index within the scope construct that actually holds the eval'd value
+     * of this local variable
+     * 
+     * @return Returns an int offset into storage structure
+     */
+    public int getIndex() {
+        return location & 0xffff;
     }
     
     public List childNodes() {

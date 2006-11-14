@@ -108,11 +108,11 @@ public class JRubyRepresenter extends SafeRepresenterImpl {
         }
 
         public String taguri() {
-            return data.callMethod("taguri").toString();
+            return data.callMethod(data.getRuntime().getCurrentContext(), "taguri").toString();
         }
 
         public Node toYamlNode(final Representer representer) throws IOException {
-            Object val = data.callMethod("to_yaml_node", JavaEmbedUtils.javaToRuby(data.getRuntime(),representer));
+            Object val = data.callMethod(data.getRuntime().getCurrentContext(), "to_yaml_node", JavaEmbedUtils.javaToRuby(data.getRuntime(),representer));
             if(val instanceof Node) {
                 return (Node)val;
             } else if(val instanceof IRubyObject) {

@@ -138,7 +138,7 @@ public class RubyFloat extends RubyNumeric {
         if (number instanceof RubyFloat) {
             return (RubyFloat) number;
         } else if (number instanceof RubyInteger) {
-            return (RubyFloat) number.callMethod("to_f");
+            return (RubyFloat) number.callMethod(number.getRuntime().getCurrentContext(), "to_f");
         } else {
             throw recv.getRuntime().newTypeError("failed to convert " + number.getMetaClass() + " into Float");
         }
@@ -337,7 +337,7 @@ public class RubyFloat extends RubyNumeric {
     /* flo_eq */
     public IRubyObject equal(IRubyObject other) {
         if (!(other instanceof RubyNumeric)) {
-            return other.callMethod("==", this);
+            return other.callMethod(getRuntime().getCurrentContext(), "==", this);
         }
 
         double otherValue = ((RubyNumeric) other).getDoubleValue();
@@ -357,7 +357,7 @@ public class RubyFloat extends RubyNumeric {
             if (tmp == null) {
                 return getRuntime().getNil();
             }
-            return tmp[1].callMethod("<=>", tmp[0]);
+            return tmp[1].callMethod(getRuntime().getCurrentContext(), "<=>", tmp[0]);
         }
 
         return doubleCompare(((RubyNumeric) other).getDoubleValue());
@@ -382,7 +382,7 @@ public class RubyFloat extends RubyNumeric {
                 cmperr(other);
             }
             
-            return tmp[1].callMethod("<=>", tmp[0]);
+            return tmp[1].callMethod(getRuntime().getCurrentContext(), "<=>", tmp[0]);
         }
         
         double oth = ((RubyNumeric) other).getDoubleValue();
@@ -406,7 +406,7 @@ public class RubyFloat extends RubyNumeric {
                 cmperr(other);
             }
             
-            return tmp[1].callMethod("<=>", tmp[0]);
+            return tmp[1].callMethod(getRuntime().getCurrentContext(), "<=>", tmp[0]);
         }
         
         double oth = ((RubyNumeric) other).getDoubleValue();
@@ -430,7 +430,7 @@ public class RubyFloat extends RubyNumeric {
                 cmperr(other);
             }
             
-            return tmp[1].callMethod("<=>", tmp[0]);
+            return tmp[1].callMethod(getRuntime().getCurrentContext(), "<=>", tmp[0]);
         }
         
         double oth = ((RubyNumeric) other).getDoubleValue();
@@ -455,7 +455,7 @@ public class RubyFloat extends RubyNumeric {
                 cmperr(other);
             }
             
-            return tmp[1].callMethod("<=>", tmp[0]);
+            return tmp[1].callMethod(getRuntime().getCurrentContext(), "<=>", tmp[0]);
         }
         
         double oth = ((RubyNumeric) other).getDoubleValue();
