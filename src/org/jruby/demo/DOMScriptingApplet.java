@@ -1,31 +1,14 @@
 package org.jruby.demo;
 
 import java.applet.Applet;
-import java.awt.Color;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-
-import netscape.javascript.JSObject;
-
 import org.jruby.IRuby;
 import org.jruby.Ruby;
-import org.jruby.javasupport.JavaEmbedUtils;
-import org.jruby.runtime.builtin.IRubyObject;
-
-import com.sun.java.browser.dom.DOMService;
-import com.sun.java.browser.dom.DOMUnsupportedException;
 
 public class DOMScriptingApplet extends Applet {
 
