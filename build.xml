@@ -132,7 +132,7 @@
 
 
 	  <target name="jar-complete" depends="serialize" description="Create the jruby.jar file">
-	    <jar destfile="${lib.dir}/jruby.jar">
+	    <jar destfile="${lib.dir}/jruby-complete.jar">
 	      <fileset dir="${jruby.classes.dir}">
 	        <include name="**/*.class"/>
 		<include name="**/*.properties"/>
