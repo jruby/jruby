@@ -132,21 +132,27 @@
 
 
 	  <target name="jar-complete" depends="serialize" description="Create the jruby.jar file">
-	    <jar destfile="${lib.dir}/jruby-complete.jar">
+        <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${lib.dir}/jarjar-0.7.jar"/>
+	    <jarjar destfile="${lib.dir}/jruby-complete.jar">
 	      <fileset dir="${jruby.classes.dir}">
 	        <include name="**/*.class"/>
-		<include name="**/*.properties"/>
-		<include name="**/*.rb.ast.ser"/>
+		    <include name="**/*.properties"/>
+		    <include name="**/*.rb.ast.ser"/>
 	        <exclude name="org/jruby/util/ant/**/*.class"/>
 	      </fileset>
-	        <fileset dir="${basedir}/lib/ruby/1.8">
-	          <include name="**/*.rb"/>
-	        </fileset>
+	      <fileset dir="${basedir}/lib/ruby/1.8">
+	        <include name="**/*.rb"/>
+	      </fileset>
+          <zipfileset src="${lib.dir}/asm-2.2.2.jar"/>
+          <zipfileset src="${lib.dir}/jline-0.9.91-SNAPSHOT.jar"/>
+          <zipfileset src="${lib.dir}/bsf.jar"/>
+          <zipfileset src="${lib.dir}/jvyaml.jar"/>
+          <zipfileset src="${lib.dir}/plaincharset.jar"/>
 	      <manifest>
 	        <attribute name="Built-By" value="${user.name}"/>
 	        <attribute name="Main-Class" value="org.jruby.Main"/>
 	      </manifest>
-	    </jar>
+	    </jarjar>
 	  </target>
 
 
