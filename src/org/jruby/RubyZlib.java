@@ -36,6 +36,8 @@ import java.util.ArrayList;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import org.jruby.exceptions.RaiseException;
+
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -66,7 +68,7 @@ public class RubyZlib {
         gzfile.defineMethod("close", callbackFactory.getMethod("close"));
         gzfile.defineMethod("level", callbackFactory.getMethod("level"));
         gzfile.defineMethod("sync=", callbackFactory.getMethod("set_sync", IRubyObject.class));
-
+        
         RubyClass gzreader = result.defineClassUnder("GzipReader", gzfile);
         gzreader.includeModule(runtime.getModule("Enumerable"));
         CallbackFactory callbackFactory2 = runtime.callbackFactory(RubyGzipReader.class);
@@ -90,6 +92,9 @@ public class RubyZlib {
         gzreader.defineMethod("eof?", callbackFactory2.getMethod("eof_p"));
         gzreader.defineMethod("gets", callbackFactory2.getOptMethod("gets"));
         gzreader.defineMethod("tell", callbackFactory2.getMethod("tell"));
+        
+        RubyClass zlibError = result.defineClassUnder("Error", runtime.getClass("StandardError"));
+        gzreader.defineClassUnder("Error", zlibError);
 
         RubyClass gzwriter = result.defineClassUnder("GzipWriter", gzfile);
         CallbackFactory callbackFactory3 = runtime.callbackFactory(RubyGzipWriter.class);
@@ -123,7 +128,7 @@ public class RubyZlib {
                 }
                 return recv.getRuntime().getNil();
             }
-            
+
             return io;
         }
 
@@ -231,9 +236,16 @@ public class RubyZlib {
         private int line;
         private InputStream io;
         
-        public IRubyObject initialize(IRubyObject io) throws IOException {
+        public IRubyObject initialize(IRubyObject io) {
             realIo = io;
-            this.io = new GZIPInputStream(new IOInputStream(io));
+            try {
+                this.io = new GZIPInputStream(new IOInputStream(io));
+            } catch (IOException e) {
+                IRuby runtime = io.getRuntime();
+                RubyClass errorClass = runtime.getModule("Zlib").getClass("GzipReader").getClass("Error");
+                throw new RaiseException(RubyException.newException(runtime, errorClass, e.getMessage()));
+            }
+
             line = 1;
             
             return this;

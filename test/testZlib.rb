@@ -28,3 +28,13 @@ z.close
 require 'fileutils'
 
 FileUtils.rm_f(filename)
+
+require 'stringio'
+
+corrupt = StringIO.new
+corrupt.write('borkborkbork')
+begin
+  Zlib::GzipReader.new(corrupt)
+  fail()
+rescue Zlib::GzipReader::Error
+end
