@@ -64,6 +64,7 @@ testSuper.rb
 testZlib.rb
 testExpressions.rb
 testEnumerable.rb
+testEnumerator.rb
 testEnv.rb
 testSocket.rb
 testUnboundMethod.rb
