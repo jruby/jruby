@@ -20,6 +20,7 @@
  * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2006 Ola Bini <Ola.Bini@ki.se>
+ * Copyright (C) 2006 Daniel Berger <djberg96@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -353,21 +354,27 @@ public class RubyArray extends RubyObject implements List {
     }
 
     private boolean flatten(List array) {
-        return flatten(array, new IdentitySet());
+        return flatten(array, new IdentitySet(), null, -1);
     }
 
-    private boolean flatten(List array, IdentitySet visited) {
+    private boolean flatten(List array, IdentitySet visited, List toModify, int index) {
         if (visited.contains(array)) {
             throw getRuntime().newArgumentError("tried to flatten recursive array");
         }
         visited.add(array);
         boolean isModified = false;
         for (int i = array.size() - 1; i >= 0; i--) {
-            if (array.get(i) instanceof RubyArray) {
-                List ary2 = ((RubyArray) array.remove(i)).getList();
-                flatten(ary2, visited);
-                array.addAll(i, ary2);
+            Object elem = array.get(i);
+            if (elem instanceof RubyArray) {
+                if (toModify == null) { // This is the array to flatten
+                    array.remove(i);
+                    flatten(((RubyArray) elem).getList(), visited, array, i);
+                } else { // Sub-array, recurse
+                    flatten(((RubyArray) elem).getList(), visited, toModify, index);
+                }
                 isModified = true;
+            } else if (toModify != null) { // Add sub-list element to flattened array
+                toModify.add(index, elem);
             }
         }
         visited.remove(array);

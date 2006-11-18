@@ -94,6 +94,15 @@ end
 test_equal(ArrayExt, ArrayExt.new.class)
 test_equal(ArrayExt, ArrayExt[:foo, :bar].class)
 
+##### flatten #####
+a = [2,[3,[4]]]
+test_equal([1,2,3,4],[1,a].flatten)
+test_equal([2,[3,[4]]],a)
+a = [[1,2,[3,[4],[5]],6,[7,[8]]],9]
+test_equal([1,2,3,4,5,6,7,8,9],a.flatten)
+test_ok(a.flatten!,"We did flatten")
+test_ok(!a.flatten!,"We didn't flatten")
+
 ##### splat test #####
 class ATest
   def to_a; 1; end
