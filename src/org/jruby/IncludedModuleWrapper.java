@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2006 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
@@ -79,6 +79,10 @@ public final class IncludedModuleWrapper extends RubyClass {
     }
 
     public boolean isIncluded() {
+        return true;
+    }
+    
+    public boolean isImmediate() {
         return true;
     }
 

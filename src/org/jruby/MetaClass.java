@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2006 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -39,6 +39,10 @@ public class MetaClass extends RubyClass {
     }
  
     public boolean isSingleton() {
+        return true;
+    }
+    
+    public boolean isImmediate() {
         return true;
     }
 
