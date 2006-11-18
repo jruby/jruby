@@ -46,3 +46,11 @@ test_exception(TypeError) { Array(A9.new) }
 test_equal(10,Integer("0xA"))
 test_equal(8,Integer("010"))
 test_equal(2,Integer("0b10"))
+
+
+#Previously Kernel.raise, Kernel.sprintf, Kernel.iterator? & Kernel.exec were all made private
+#as they were aliased rather than defined. Checking that this is no longer the case
+test_exception(RuntimeError) { Kernel.raise }
+test_no_exception { Kernel.sprintf "Helllo" }
+test_no_exception { Kernel.iterator? }
+test_no_exception { Kernel.exec "echo hello" }

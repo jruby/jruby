@@ -105,7 +105,7 @@ public class RubyKernel {
         module.defineModuleFunction("gsub", callbackFactory.getOptSingletonMethod("gsub"));
         module.defineModuleFunction("gsub!", callbackFactory.getOptSingletonMethod("gsub_bang"));
         // TODO: Add deprecation to Kernel#iterator? (maybe formal deprecation mech.)
-        module.defineAlias("iterator?", "block_given?");
+        module.defineModuleFunction("iterator?", callbackFactory.getSingletonMethod("block_given"));
         module.defineModuleFunction("lambda", callbackFactory.getSingletonMethod("proc"));
         module.defineModuleFunction("load", callbackFactory.getOptSingletonMethod("load"));
         module.defineModuleFunction("local_variables", callbackFactory.getSingletonMethod("local_variables"));
@@ -119,7 +119,7 @@ public class RubyKernel {
         module.defineModuleFunction("proc", callbackFactory.getSingletonMethod("proc"));
         // TODO: implement Kernel#putc
         module.defineModuleFunction("puts", callbackFactory.getOptSingletonMethod("puts"));
-        module.defineAlias("raise", "fail");
+        module.defineModuleFunction("raise", callbackFactory.getOptSingletonMethod("raise"));
         module.defineModuleFunction("rand", callbackFactory.getOptSingletonMethod("rand"));
         module.defineModuleFunction("readline", callbackFactory.getOptSingletonMethod("readline"));
         module.defineModuleFunction("readlines", callbackFactory.getOptSingletonMethod("readlines"));
@@ -129,14 +129,14 @@ public class RubyKernel {
         module.defineModuleFunction("set_trace_func", callbackFactory.getSingletonMethod("set_trace_func", IRubyObject.class));
         module.defineModuleFunction("sleep", callbackFactory.getSingletonMethod("sleep", IRubyObject.class));
         module.defineModuleFunction("split", callbackFactory.getOptSingletonMethod("split"));
-        module.defineAlias("sprintf", "format");
+        module.defineModuleFunction("sprintf", callbackFactory.getOptSingletonMethod("sprintf"));
         module.defineModuleFunction("srand", callbackFactory.getOptSingletonMethod("srand"));
         module.defineModuleFunction("sub", callbackFactory.getOptSingletonMethod("sub"));
         module.defineModuleFunction("sub!", callbackFactory.getOptSingletonMethod("sub_bang"));
         // Skipping: Kernel#syscall (too system dependent)
         module.defineModuleFunction("system", callbackFactory.getOptSingletonMethod("system"));
         // TODO: Implement Kernel#exec differently?
-        module.defineAlias("exec", "system");
+        module.defineModuleFunction("exec", callbackFactory.getOptSingletonMethod("system"));
         // TODO: Implement Kernel#test (partial impl)
         module.defineModuleFunction("throw", callbackFactory.getOptSingletonMethod("rbThrow"));
         // TODO: Implement Kernel#trace_var
