@@ -314,7 +314,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject const_missing(IRubyObject name) {
         /* Uninitialized constant */
         if (this != getRuntime().getObject()) {
-            throw getRuntime().newNameError("uninitialized constant " + name.asSymbol() + " at " + getName());
+            throw getRuntime().newNameError("uninitialized constant " + getName() + "::" + name.asSymbol());
         } 
 
         throw getRuntime().newNameError("uninitialized constant " + name.asSymbol());

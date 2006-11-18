@@ -37,5 +37,41 @@ module TestClasses
 
   DifferentNameForTestModule = testModule
   test_equal('TestClasses::TestModule', testModule.name)
+
+  def TestClasses.virtual
+    class << self
+      self
+    end
+  end
 end
 
+begin
+  class X < Foo::Bar
+  end
+  fail
+rescue NameError => e
+  test_equal("uninitialized constant Foo", e.to_s)
+end
+
+begin
+  class X < TestClasses::Bar
+  end
+  fail
+rescue NameError => e
+  test_equal("uninitialized constant TestClasses::Bar", e.to_s)
+end
+
+begin
+  class X < Class
+  end
+  fail
+rescue TypeError => e
+  test_equal("can't make subclass of Class", e.to_s)
+end
+
+begin 
+  class X < TestClasses.virtual
+  end
+rescue TypeError => e
+  test_equal("can't make subclass of virtual class", e.to_s)
+end

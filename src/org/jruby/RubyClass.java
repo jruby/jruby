@@ -276,7 +276,16 @@ public class RubyClass extends RubyModule {
     }
 
     public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
-        RubyClass newClass = new RubyClass(runtime, runtime.getClass("Class"), this, parentCRef, name);
+        RubyClass classClass = runtime.getClass("Class");
+        
+        // Cannot subclass 'Class' or metaclasses
+        if (this == classClass) {
+            throw runtime.newTypeError("can't make subclass of Class");
+        } else if (this instanceof MetaClass) {
+            throw runtime.newTypeError("can't make subclass of virtual class");
+        }
+
+        RubyClass newClass = new RubyClass(runtime, classClass, this, parentCRef, name);
 
         newClass.makeMetaClass(getMetaClass(), newClass.getCRef());
         newClass.inheritedBy(this);

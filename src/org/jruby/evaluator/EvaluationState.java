@@ -391,7 +391,8 @@ public class EvaluationState {
             }
             case NodeTypes.CLASSNODE: {
                 ClassNode iVisited = (ClassNode) node;
-                RubyClass superClass = getSuperClassFromNode(context, iVisited.getSuperNode(), self);
+                Node superNode = iVisited.getSuperNode();
+                RubyClass superClass = superNode == null ? null : (RubyClass) evalInternal(context, superNode, self);
                 Node classNameNode = iVisited.getCPath();
                 String name = ((INameNode) classNameNode).getName();
                 RubyModule enclosingClass = getEnclosingModule(context, classNameNode, self);
@@ -1465,27 +1466,6 @@ public class EvaluationState {
         }
     }
     
-    private static RubyClass getSuperClassFromNode(ThreadContext context, Node superNode, IRubyObject self) {
-        if (superNode == null) {
-            return null;
-        }
-        RubyClass superClazz;
-        IRuby runtime = context.getRuntime();
-        try {
-            superClazz = (RubyClass) evalInternal(context, superNode, self);
-        } catch (Exception e) {
-            if (superNode instanceof INameNode) {
-                String name = ((INameNode) superNode).getName();
-                throw runtime.newTypeError("undefined superclass '" + name + "'");
-            }
-            throw runtime.newTypeError("superclass undefined");
-        }
-        if (superClazz instanceof MetaClass) {
-            throw runtime.newTypeError("can't make subclass of virtual class");
-        }
-        return superClazz;
-    }
-
     /**
      * Helper method.
      *
