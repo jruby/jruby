@@ -80,7 +80,13 @@ public class TimeMetaClass extends ObjectMetaClass {
             defineSingletonMethod("utc", Arity.optional(), "new_utc"); 
             defineSingletonMethod("gm", Arity.optional(), "new_utc"); 
             defineSingletonMethod("_load", Arity.singleArgument(), "s_load"); 
-                    
+            
+            // To override Comparable with faster String ones
+            defineMethod(">=", Arity.singleArgument(), "op_ge");
+            defineMethod(">", Arity.singleArgument(), "op_gt");
+            defineMethod("<=", Arity.singleArgument(), "op_le");
+            defineMethod("<", Arity.singleArgument(), "op_lt");
+            
             defineMethod("===", Arity.singleArgument(), "same2");
             defineMethod("+", Arity.singleArgument(), "op_plus"); 
             defineMethod("-", Arity.singleArgument(), "op_minus"); 

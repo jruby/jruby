@@ -140,7 +140,53 @@ public class RubyTime extends RubyObject {
 
         return getRuntime().newString(result);
     }
+    
+    public IRubyObject op_ge(IRubyObject other) {
+        if (other instanceof RubyTime) {
+            return getRuntime().newBoolean(cmp((RubyTime) other) >= 0);
+        }
+        
+        return RubyComparable.op_ge(this, other);
+    }
+    
+    public IRubyObject op_gt(IRubyObject other) {
+        if (other instanceof RubyTime) {
+            return getRuntime().newBoolean(cmp((RubyTime) other) > 0);
+        }
+        
+        return RubyComparable.op_gt(this, other);
+    }
+    
+    public IRubyObject op_le(IRubyObject other) {
+        if (other instanceof RubyTime) {
+            return getRuntime().newBoolean(cmp((RubyTime) other) <= 0);
+        }
+        
+        return RubyComparable.op_le(this, other);
+    }
+    
+    public IRubyObject op_lt(IRubyObject other) {
+        if (other instanceof RubyTime) {
+            return getRuntime().newBoolean(cmp((RubyTime) other) < 0);
+        }
+        
+        return RubyComparable.op_lt(this, other);
+    }
+    
+    private int cmp(RubyTime other) {
+        long millis = getTimeInMillis();
+		long millis_other = other.getTimeInMillis();
+        long usec_other = other.usec;
+        
+		if (millis > millis_other || (millis == millis_other && usec > usec_other)) {
+		    return 1;
+		} else if (millis < millis_other || (millis == millis_other && usec < usec_other)) {
+		    return -1;
+		} 
 
+        return 0;
+    }
+    
     public IRubyObject op_plus(IRubyObject other) {
         long time = getTimeInMillis();
 
@@ -178,11 +224,15 @@ public class RubyTime extends RubyObject {
     }
 
     public IRubyObject op_cmp(IRubyObject other) {
-        long millis = getTimeInMillis();
-        
         if (other.isNil()) {
         	return other;
         }
+        
+        if (other instanceof RubyTime) {
+            return getRuntime().newFixnum(cmp((RubyTime) other));
+        }
+        
+        long millis = getTimeInMillis();
         
         if (other instanceof RubyFloat || other instanceof RubyBignum) {
             double time = millis / 1000.0;
@@ -193,19 +243,20 @@ public class RubyTime extends RubyObject {
                 return RubyFixnum.one(getRuntime());
             } else if (time < time_other) {
                 return RubyFixnum.minus_one(getRuntime());
-            } else {
-                return RubyFixnum.zero(getRuntime());
             }
+
+            return RubyFixnum.zero(getRuntime());
         }
-		long millis_other = (other instanceof RubyTime) ? ((RubyTime) other).getTimeInMillis() : RubyNumeric.num2long(other) * 1000;
-                long usec_other = (other instanceof RubyTime) ? ((RubyTime)other).usec : 0;
-		if (millis > millis_other || (millis == millis_other && usec > usec_other)) {
+        
+		long millis_other = RubyNumeric.num2long(other) * 1000;
+
+        if (millis > millis_other || (millis == millis_other && usec > 0)) {
 		    return RubyFixnum.one(getRuntime());
-		} else if (millis < millis_other || (millis == millis_other && usec < usec_other)) {
+		} else if (millis < millis_other || (millis == millis_other && usec < 0)) {
 		    return RubyFixnum.minus_one(getRuntime());
-		} else {
-		    return RubyFixnum.zero(getRuntime());
 		}
+
+        return RubyFixnum.zero(getRuntime());
     }
 
     public RubyString asctime() {
