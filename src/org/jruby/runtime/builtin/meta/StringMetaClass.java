@@ -180,6 +180,12 @@ public class StringMetaClass extends ObjectMetaClass {
             addMethod("hash", hash);
             addMethod("to_s", to_s);
             
+            // To override Comparable with faster String ones
+            defineMethod(">=", Arity.singleArgument(), "op_ge");
+            defineMethod(">", Arity.singleArgument(), "op_gt");
+            defineMethod("<=", Arity.singleArgument(), "op_le");
+            defineMethod("<", Arity.singleArgument(), "op_lt");
+            
 	        defineMethod("[]", Arity.optional(), "aref");
 	        defineMethod("[]=", Arity.optional(), "aset");
 	        defineMethod("=~", Arity.singleArgument(), "match");

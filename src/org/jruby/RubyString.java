@@ -160,7 +160,7 @@ public class RubyString extends RubyObject {
 		return (RubyString) (obj instanceof RubyString ? obj : 
 			obj.callMethod(obj.getRuntime().getCurrentContext(), "to_s"));
 	}
-
+    
 	/** rb_str_cmp
 	 *
 	 */
@@ -336,6 +336,38 @@ public class RubyString extends RubyObject {
         return this;
 	}
 
+    public IRubyObject op_ge(IRubyObject other) {
+        if (other instanceof RubyString) {
+            return getRuntime().newBoolean(cmp((RubyString) other) >= 0);
+        }
+        
+        return RubyComparable.op_ge(this, other);
+    }
+    
+    public IRubyObject op_gt(IRubyObject other) {
+        if (other instanceof RubyString) {
+            return getRuntime().newBoolean(cmp((RubyString) other) > 0);
+        }
+        
+        return RubyComparable.op_gt(this, other);
+    }
+    
+    public IRubyObject op_le(IRubyObject other) {
+        if (other instanceof RubyString) {
+            return getRuntime().newBoolean(cmp((RubyString) other) <= 0);
+        }
+        
+        return RubyComparable.op_le(this, other);
+    }
+    
+    public IRubyObject op_lt(IRubyObject other) {
+        if (other instanceof RubyString) {
+            return getRuntime().newBoolean(cmp((RubyString) other) < 0);
+        }
+        
+        return RubyComparable.op_lt(this, other);
+    }
+    
 	/** rb_str_upcase
 	 *
 	 */
