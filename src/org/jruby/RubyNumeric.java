@@ -257,6 +257,38 @@ public class RubyNumeric extends RubyObject {
     public IRubyObject rbClone() {
         return this;
     }
+    
+    public IRubyObject op_ge(IRubyObject other) {
+        if (other instanceof RubyNumeric) {
+            return getRuntime().newBoolean(compareValue((RubyNumeric) other) >= 0);
+        } 
+        
+        return RubyComparable.op_ge(this, other);
+    }
+    
+    public IRubyObject op_gt(IRubyObject other) {
+        if (other instanceof RubyNumeric) {
+            return getRuntime().newBoolean(compareValue((RubyNumeric) other) > 0);
+        } 
+        
+        return RubyComparable.op_gt(this, other);
+    }
+
+    public IRubyObject op_le(IRubyObject other) {
+        if (other instanceof RubyNumeric) {
+            return getRuntime().newBoolean(compareValue((RubyNumeric) other) <= 0);
+        } 
+        
+        return RubyComparable.op_le(this, other);
+    }
+    
+    public IRubyObject op_lt(IRubyObject other) {
+        if (other instanceof RubyNumeric) {
+            return getRuntime().newBoolean(compareValue((RubyNumeric) other) < 0);
+        } 
+        
+        return RubyComparable.op_lt(this, other);
+    }
 
     /** num_uplus
      *

@@ -75,6 +75,12 @@ public class NumericMetaClass extends ObjectMetaClass {
 	        defineMethod("round", Arity.noArguments());
 	        defineMethod("truncate", Arity.noArguments());
 	        defineMethod("zero?", Arity.noArguments(), "zero_p");
+            
+            // Add relational operators that are faster than comparable's implementations
+            defineMethod(">=", Arity.singleArgument(), "op_ge");
+            defineMethod(">", Arity.singleArgument(), "op_gt");
+            defineMethod("<=", Arity.singleArgument(), "op_le");
+            defineMethod("<", Arity.singleArgument(), "op_lt");
 	        
 	        defineSingletonMethod("new", Arity.optional(), "newInstance"); 
 	    }
