@@ -49,7 +49,7 @@ public class XStrNode extends Node implements ILiteralNode {
 
     public XStrNode(ISourcePosition position, String value) {
         super(position, NodeTypes.XSTRNODE);
-        this.value = value;
+        this.value = (value == null ? "" : value);
     }
 
     /**
