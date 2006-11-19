@@ -54,6 +54,8 @@ public interface IRuby {
     public RubyClass getString();
     
     public RubyClass getFixnum();
+    
+    public IRubyObject getTmsStruct();
 
 	/** Returns the "true" instance from the instance pool.
 	 * @return The "true" instance.
@@ -128,6 +130,8 @@ public interface IRuby {
     public String getCurrentDirectory();
     
     public void setCurrentDirectory(String dir);
+    
+    public long getStartTime();
     
     public InputStream getIn();
     public PrintStream getOut();

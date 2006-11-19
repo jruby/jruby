@@ -679,4 +679,12 @@ public class BaseMockRuby implements IRuby {
         // TODO Auto-generated method stub
         return null;
     }
+    
+    public IRubyObject getTmsStruct() {
+        return null;
+    }
+    
+    public long getStartTime() {
+        return 0;
+    }
 }

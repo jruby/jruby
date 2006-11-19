@@ -149,6 +149,9 @@ public final class Ruby implements IRuby {
     
     // former java.lang.System concepts now internalized for MVM
     private String currentDirectory = JRubyFile.getFileProperty("user.dir");
+    
+    private long startTime = System.currentTimeMillis();
+    
     private InputStream in;
     private PrintStream out;
     private PrintStream err;
@@ -173,6 +176,8 @@ public final class Ruby implements IRuby {
     private RubyClass nilClass;
 
     private FixnumMetaClass fixnumClass;
+    
+    private IRubyObject tmsStruct;
 
     /**
      * Create and initialize a new jruby Runtime.
@@ -301,6 +306,10 @@ public final class Ruby implements IRuby {
     
     public RubyClass getFixnum() {
         return fixnumClass;
+    }
+    
+    public IRubyObject getTmsStruct() {
+        return tmsStruct;
     }
 
     /** Returns the "true" instance from the instance pool.
@@ -569,7 +578,16 @@ public final class Ruby implements IRuby {
         new ArrayMetaClass(this).initializeClass();
         
         Java.createJavaModule(this);
-        RubyStruct.createStructClass(this);
+        RubyClass structClass = RubyStruct.createStructClass(this);
+        
+        tmsStruct = RubyStruct.newInstance(structClass,
+                new IRubyObject[] {
+            newString("Tms"),
+            newSymbol("utime"),
+            newSymbol("stime"),
+            newSymbol("cutime"),
+            newSymbol("cstime")});
+        
         RubyFloat.createFloatClass(this);
         
         new BignumMetaClass(this).initializeClass();
@@ -1351,5 +1369,9 @@ public final class Ruby implements IRuby {
 
     public boolean isObjectSpaceEnabled() {
         return objectSpaceEnabled;
+    }
+
+    public long getStartTime() {
+        return startTime;
     }
 }
