@@ -137,7 +137,27 @@ public class RubySymbol extends RubyObject {
     }
 
     public RubyFixnum hash() {
-        return getRuntime().newFixnum(symbol.hashCode());
+        return getRuntime().newFixnum(hashCode());
+    }
+    
+    public int hashCode() {
+        return symbol.hashCode();
+    }
+    
+    public boolean equals(Object other) {
+        if (other == this) {
+            return true;
+        }
+        
+        if (other instanceof RubySymbol) {
+            RubySymbol sym = (RubySymbol)other;
+            
+            if (sym.symbol == symbol) {
+                return true;
+            }
+        }
+        
+        return false;
     }
     
     public IRubyObject to_sym() {

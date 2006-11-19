@@ -145,7 +145,27 @@ public class RubyString extends RubyObject {
 	}
 
     public RubyFixnum hash() {
-        return getRuntime().newFixnum(toString().hashCode());
+        return getRuntime().newFixnum(hashCode());
+    }
+    
+    public int hashCode() {
+        return toString().hashCode();
+    }
+    
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        
+        if (other instanceof RubyString) {
+            RubyString string = (RubyString)other;
+            
+            if (string.toString().equals(toString())) {
+                return true;
+            }
+        }
+        
+        return false;
     }
     
     // Common enough check to make it a convenience method.
