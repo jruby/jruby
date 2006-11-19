@@ -1485,6 +1485,10 @@ dsym	       : tSYMBEG xstring_contents tSTRING_END {
 		   // EvStrNode :"#{some expression}"
 		   DStrNode node;
 
+                   if ($2 == null) {
+                       yyerror("empty symbol literal");
+                   }
+
 		   if ($2 instanceof DStrNode) {
 		       node = (DStrNode) $2;
 		   } else {

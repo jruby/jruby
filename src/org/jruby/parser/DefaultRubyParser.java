@@ -2897,6 +2897,10 @@ case 406:
 */
 		   DStrNode node;
 
+                   if (((Node)yyVals[-1+yyTop]) == null) {
+                       yyerror("empty symbol literal");
+                   }
+
 		   if (((Node)yyVals[-1+yyTop]) instanceof DStrNode) {
 		       node = (DStrNode) ((Node)yyVals[-1+yyTop]);
 		   } else {
