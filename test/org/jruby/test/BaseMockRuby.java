@@ -284,7 +284,7 @@ public class BaseMockRuby implements IRuby {
 
 	}
 
-	public void callTraceFunction(String event, ISourcePosition position,
+	public void callTraceFunction(ThreadContext context, String event, ISourcePosition position,
 			IRubyObject self, String name, IRubyObject type) {
 		throw new MockException();
 

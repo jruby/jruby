@@ -103,12 +103,8 @@ public class RaiseException extends JumpException {
         runtime.getGlobalVariables().set("$!", newException);
 
         if (runtime.getTraceFunction() != null) {
-            runtime.callTraceFunction(
-                "return",
-                context.getPosition(),
-                context.getFrameSelf(),
-                context.getFrameLastFunc(),
-                context.getFrameLastClass());
+            runtime.callTraceFunction(context, "return", context.getPosition(),
+                    context.getFrameSelf(), context.getFrameLastFunc(), context.getFrameLastClass());
         }
 
         this.exception = newException;

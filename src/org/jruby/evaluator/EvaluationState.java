@@ -1480,7 +1480,7 @@ public class EvaluationState {
         IRuby runtime = context.getRuntime();
         String name = context.getFrameLastFunc();
         RubyModule type = context.getFrameLastClass();
-        runtime.callTraceFunction(event, context.getPosition(), zelf, name, type);
+        runtime.callTraceFunction(context, event, context.getPosition(), zelf, name, type);
     }
 
     private static IRubyObject splatValue(IRubyObject value) {

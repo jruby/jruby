@@ -58,7 +58,6 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.internal.runtime.ValueAccessor;
-import org.jruby.internal.runtime.methods.MultiStub;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -123,7 +122,6 @@ public final class Ruby implements IRuby {
     private Random random = new Random();
 
     private RubyProc traceFunction;
-    private boolean isWithinTrace = false;
     private boolean globalAbortOnExceptionEnabled = false;
     private boolean doNotReverseLookupEnabled = false;
     private final boolean objectSpaceEnabled;
@@ -986,40 +984,31 @@ public final class Ruby implements IRuby {
      * MRI: eval.c - call_trace_func
      *
      */
-    public synchronized void callTraceFunction(
-        String event,
-        ISourcePosition position,
-        IRubyObject self,
-        String name,
-        IRubyObject type) {
-        if (!isWithinTrace && traceFunction != null) {
-            ThreadContext tc = getCurrentContext();
-            isWithinTrace = true;
+    public void callTraceFunction(ThreadContext context, String event, ISourcePosition position, 
+            IRubyObject self, String name, IRubyObject type) {
+        if (traceFunction == null) return;
 
-            ISourcePosition savePosition = tc.getPosition();
+        if (!context.isWithinTrace()) {
+            context.setWithinTrace(true);
+
+            ISourcePosition savePosition = context.getPosition();
             String file = position.getFile();
 
-            if (file == null) {
-                file = "(ruby)";
-            }
-            if (type == null) {
-				type = getFalse();
-			}
-            tc.preTrace();
+            if (file == null) file = "(ruby)";
+            if (type == null) type = getFalse(); 
+
+            context.preTrace();
 
             try {
-                traceFunction
-                    .call(new IRubyObject[] {
-                        newString(event),
-                        newString(file),
+                traceFunction.call(new IRubyObject[] { newString(event), newString(file),
                         newFixnum(position.getEndLine()),
                         name != null ? RubySymbol.newSymbol(this, name) : getNil(),
-                        self != null ? self: getNil(),
+                        self != null ? self : getNil(),
                         type });
             } finally {
-                tc.postTrace();
-                tc.setPosition(savePosition);
-                isWithinTrace = false;
+                context.postTrace();
+                context.setPosition(savePosition);
+                context.setWithinTrace(false);
             }
         }
     }

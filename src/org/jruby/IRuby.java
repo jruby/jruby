@@ -238,7 +238,7 @@ public interface IRuby {
 	 * MRI: eval.c - call_trace_func
 	 *
 	 */
-	public void callTraceFunction(String event, ISourcePosition position,
+	public void callTraceFunction(ThreadContext context, String event, ISourcePosition position,
 			IRubyObject self, String name, IRubyObject type);
 
 	public RubyProc getTraceFunction();

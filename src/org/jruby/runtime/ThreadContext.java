@@ -62,6 +62,9 @@ public class ThreadContext {
     
     private final IRuby runtime;
 
+    // Is this thread currently with in a function trace? 
+    private boolean isWithinTrace;
+
     private Block blockStack;
 
     private RubyThread thread;
@@ -1084,5 +1087,25 @@ public class ThreadContext {
 
     public void postRootNode() {
         popScope();
+    }
+
+    /**
+     * Is this thread actively tracing at this moment.
+     * 
+     * @return true if so
+     * @see org.jruby.IRuby#callTraceFunction(String, ISourcePosition, IRubyObject, String, IRubyObject)
+     */
+    public boolean isWithinTrace() {
+        return isWithinTrace;
+    }
+
+    /**
+     * Set whether we are actively tracing or not on this thread.
+     * 
+     * @param isWithinTrace true is so
+     * @see org.jruby.IRuby#callTraceFunction(String, ISourcePosition, IRubyObject, String, IRubyObject)
+     */
+    public void setWithinTrace(boolean isWithinTrace) {
+        this.isWithinTrace = isWithinTrace;
     }
 }

@@ -214,7 +214,7 @@ public final class DefaultMethod extends AbstractMethod {
         }
 
         ISourcePosition position = context.getPreviousFramePosition();
-        runtime.callTraceFunction("return", position, receiver, name, getImplementationClass()); // XXX
+        runtime.callTraceFunction(context, "return", position, receiver, name, getImplementationClass());
     }
 
     private void traceCall(ThreadContext context, IRuby runtime, IRubyObject receiver, String name) {
@@ -225,7 +225,7 @@ public final class DefaultMethod extends AbstractMethod {
 		ISourcePosition position = body != null ? 
                 body.getPosition() : context.getPosition(); 
 
-		runtime.callTraceFunction("call", position, receiver, name, getImplementationClass()); // XXX
+		runtime.callTraceFunction(context, "call", position, receiver, name, getImplementationClass());
     }
 
     public Arity getArity() {
