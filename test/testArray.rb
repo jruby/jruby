@@ -110,3 +110,15 @@ end
 
 proc { |a| test_equal(1, a) }.call(*1)
 test_exception(TypeError) { proc { |a| }.call(*ATest.new) }
+
+#### index test ####
+class AlwaysEqual
+  def ==(arg)
+    true
+  end
+end
+
+array_of_alwaysequal = [AlwaysEqual.new]
+# this should pass because index should call AlwaysEqual#== when searching
+test_equal(0, array_of_alwaysequal.index("foo"))
+test_equal(0, array_of_alwaysequal.rindex("foo"))

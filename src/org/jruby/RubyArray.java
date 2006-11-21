@@ -966,8 +966,9 @@ public class RubyArray extends RubyObject implements List {
      */
     public IRubyObject index(IRubyObject obj) {
         ThreadContext context = getRuntime().getCurrentContext();
-        for (int i = 0, len = getLength(); i < len; i++) {
-            if (obj.callMethod(context, "==", entry(i)).isTrue()) {
+        int len = getLength();
+        for (int i = 0; i < len; i++) {
+            if (entry(i).callMethod(context, "==", obj).isTrue()) {
                 return getRuntime().newFixnum(i);
             }
         }
@@ -980,7 +981,7 @@ public class RubyArray extends RubyObject implements List {
     public IRubyObject rindex(IRubyObject obj) {
         ThreadContext context = getRuntime().getCurrentContext();
         for (int i = getLength() - 1; i >= 0; i--) {
-            if (obj.callMethod(context, "==", entry(i)).isTrue()) {
+            if (entry(i).callMethod(context, "==", obj).isTrue()) {
                 return getRuntime().newFixnum(i);
             }
         }
