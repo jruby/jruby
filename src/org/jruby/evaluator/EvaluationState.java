@@ -135,6 +135,162 @@ public class EvaluationState {
             throw context.getRuntime().newSystemStackError("stack level too deep");
         }
     }
+    
+    private static String getArgumentDefinition(ThreadContext context, Node node, String type, IRubyObject self) {
+        if (node == null) return type;
+            
+        if (node instanceof ArrayNode) {
+            for (Iterator iter = ((ArrayNode)node).iterator(); iter.hasNext(); ) {
+                if (getDefinition(context, (Node)iter.next(), self) == null) return null;
+            }
+        } else if (getDefinition(context, node, self) == null) {
+            return null;
+        }
+
+        return type;
+    }
+
+    private static String getDefinition(ThreadContext context, Node node, IRubyObject self) {
+        if (node == null) return "expression";
+        
+        switch(node.nodeId) {
+        case NodeTypes.BACKREFNODE:
+            return "$" + ((BackRefNode) node).getType();
+        case NodeTypes.CALLNODE: {
+            CallNode iVisited = (CallNode) node;
+            
+            if (getDefinition(context, iVisited.getReceiverNode(), self) != null) {
+                try {
+                    IRubyObject receiver = eval(context, iVisited.getReceiverNode(), self);
+                    RubyClass metaClass = receiver.getMetaClass();
+                    ICallable method = metaClass.searchMethod(iVisited.getName());
+                    Visibility visibility = method.getVisibility();
+
+                    if (!visibility.isPrivate() && 
+                            (!visibility.isProtected() || self.isKindOf(metaClass.getRealClass()))) {
+                        if (metaClass.isMethodBound(iVisited.getName(), false)) {
+                            return getArgumentDefinition(context, iVisited.getArgsNode(), "method", self);
+                        }
+                    }
+                } catch (JumpException excptn) {
+                }
+            }
+
+            return null;
+        }
+        case NodeTypes.CLASSVARASGNNODE: case NodeTypes.CLASSVARDECLNODE: case NodeTypes.CONSTDECLNODE:
+        case NodeTypes.DASGNNODE: case NodeTypes.GLOBALASGNNODE: case NodeTypes.LOCALASGNNODE:
+        case NodeTypes.MULTIPLEASGNNODE: case NodeTypes.OPASGNNODE: case NodeTypes.OPELEMENTASGNNODE:
+            return "assignment";
+            
+        case NodeTypes.CLASSVARNODE: {
+            ClassVarNode iVisited = (ClassVarNode) node;
+            
+            if (context.getRubyClass() == null && self.getMetaClass().isClassVarDefined(iVisited.getName())) {
+                return "class_variable";
+            } else if (!context.getRubyClass().isSingleton() && context.getRubyClass().isClassVarDefined(iVisited.getName())) {
+                return "class_variable";
+            } 
+              
+            RubyModule module = (RubyModule) context.getRubyClass().getInstanceVariable("__attached__");
+            if (module != null && module.isClassVarDefined(iVisited.getName())) return "class_variable"; 
+
+            return null;
+        }
+        case NodeTypes.COLON2NODE: {
+            Colon2Node iVisited = (Colon2Node) node;
+            
+            try {
+                IRubyObject left = EvaluationState.eval(context, iVisited.getLeftNode(), self);
+                if (left instanceof RubyModule &&
+                        ((RubyModule) left).getConstantAt(iVisited.getName()) != null) {
+                    return "constant";
+                } else if (left.getMetaClass().isMethodBound(iVisited.getName(), true)) {
+                    return "method";
+                }
+            } catch (JumpException excptn) {
+            }
+            
+            return null;
+        }
+        case NodeTypes.CONSTNODE:
+            if (context.getConstantDefined(((ConstNode) node).getName())) {
+                return "constant";
+            }
+            return null;
+        case NodeTypes.DVARNODE:
+            return "local-variable(in-block)";
+        case NodeTypes.FALSENODE:
+            return "false";
+        case NodeTypes.FCALLNODE: {
+            FCallNode iVisited = (FCallNode) node;
+            if (self.getMetaClass().isMethodBound(iVisited.getName(), false)) {
+                return getArgumentDefinition(context, iVisited.getArgsNode(), "method", self);
+            }
+            
+            return null;
+        }
+        case NodeTypes.GLOBALVARNODE:
+            if (context.getRuntime().getGlobalVariables().isDefined(((GlobalVarNode) node).getName())) {
+                return "global-variable";
+            }
+            return null;
+        case NodeTypes.INSTVARNODE:
+            if (self.getInstanceVariable(((InstVarNode) node).getName()) != null) {
+                return "instance-variable";
+            }
+            return null;
+        case NodeTypes.LOCALVARNODE:
+            return "local-variable";
+        case NodeTypes.MATCH2NODE: case NodeTypes.MATCH3NODE:
+            return "method";
+        case NodeTypes.NILNODE:
+            return "nil";
+        case NodeTypes.NTHREFNODE:
+            return "$" + ((NthRefNode) node).getMatchNumber();
+        case NodeTypes.SELFNODE:
+            return "state.getSelf()";
+        case NodeTypes.SUPERNODE: {
+            SuperNode iVisited = (SuperNode) node;
+            String lastMethod = context.getFrameLastFunc();
+            RubyModule lastClass = context.getFrameLastClass();
+            if (lastMethod != null && lastClass != null && 
+                    lastClass.getSuperClass().isMethodBound(lastMethod, false)) {
+                return getArgumentDefinition(context, iVisited.getArgsNode(), "super", self);
+            }
+            
+            return null;
+        }
+        case NodeTypes.TRUENODE:
+            return "true";
+        case NodeTypes.VCALLNODE: {
+            VCallNode iVisited = (VCallNode) node;
+            if (self.getMetaClass().isMethodBound(iVisited.getName(), false)) {
+                return "method";
+            }
+            
+            return null;
+        }
+        case NodeTypes.YIELDNODE:
+            return context.isBlockGiven() ? "yield" : null;
+        case NodeTypes.ZSUPERNODE: {
+            String lastMethod = context.getFrameLastFunc();
+            RubyModule lastClass = context.getFrameLastClass();
+            if (lastMethod != null && lastClass != null && 
+                    lastClass.getSuperClass().isMethodBound(lastMethod, false)) {
+                return "super";
+            }
+            return null;
+        }
+        default:
+            try {
+                EvaluationState.eval(context, node, self);
+                return "expression";
+            } catch (JumpException jumpExcptn) {}
+        }
+        
+        return null;
+    }
 
     private static IRubyObject evalInternal(ThreadContext context, Node node, IRubyObject self) {
         IRuby runtime = context.getRuntime();
@@ -507,9 +663,9 @@ public class EvaluationState {
             }
             case NodeTypes.DEFINEDNODE: {
                 DefinedNode iVisited = (DefinedNode) node;
-                String def = new DefinedVisitor(runtime).getDefinition(iVisited.getExpressionNode());
-                if (def != null) {
-                    return runtime.newString(def);
+                String definition = getDefinition(context, iVisited.getExpressionNode(), self);
+                if (definition != null) {
+                    return runtime.newString(definition);
                 } else {
                     return runtime.getNil();
                 }
@@ -1032,7 +1188,7 @@ public class EvaluationState {
             }
             case NodeTypes.OPASGNORNODE: {
                 OpAsgnOrNode iVisited = (OpAsgnOrNode) node;
-                String def = new DefinedVisitor(runtime).getDefinition(iVisited.getFirstNode());
+                String def = getDefinition(context, iVisited.getFirstNode(), self);
     
                 IRubyObject result = runtime.getNil();
                 if (def != null) {

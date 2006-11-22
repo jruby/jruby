@@ -75,3 +75,19 @@ begin
 rescue TypeError => e
   test_equal("can't make subclass of virtual class", e.to_s)
 end
+
+class MockObject
+  def self.mock methodName
+    define_method "showBug" do 
+      @results ||= {}
+      @results["C"] = "Z"
+      fail "Hash should have something" if @results == {}
+      @results ||= {}
+      fail "||= destroyed a perfectly good hash" if @results == {}
+    end
+  end
+  mock :foo
+end
+
+mock = MockObject.new
+mock.showBug 

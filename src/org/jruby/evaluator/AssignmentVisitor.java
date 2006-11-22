@@ -60,12 +60,12 @@ public class AssignmentVisitor {
         case NodeTypes.CALLNODE: {
             CallNode iVisited = (CallNode)node;
             
-            IRubyObject receiver = EvaluationState.eval(context, iVisited.getReceiverNode(), context.getFrameSelf());
+            IRubyObject receiver = EvaluationState.eval(context, iVisited.getReceiverNode(), self);
 
             if (iVisited.getArgsNode() == null) { // attribute set.
                 receiver.callMethod(context, iVisited.getName(), new IRubyObject[] {value}, CallType.NORMAL);
             } else { // element set
-                RubyArray args = (RubyArray)EvaluationState.eval(context, iVisited.getArgsNode(), context.getFrameSelf());
+                RubyArray args = (RubyArray)EvaluationState.eval(context, iVisited.getArgsNode(), self);
                 args.append(value);
                 receiver.callMethod(context, iVisited.getName(), args.toJavaArray(), CallType.NORMAL);
             }
@@ -91,7 +91,7 @@ public class AssignmentVisitor {
             if (iVisited.getPathNode() == null) {
                 context.getRubyClass().defineConstant(iVisited.getName(), value);
             } else {
-                ((RubyModule) EvaluationState.eval(context, iVisited.getPathNode(), context.getFrameSelf())).defineConstant(iVisited.getName(), value);
+                ((RubyModule) EvaluationState.eval(context, iVisited.getPathNode(), self)).defineConstant(iVisited.getName(), value);
             }
             break;
         }
@@ -116,7 +116,6 @@ public class AssignmentVisitor {
             //System.out.println("Assigning to " + iVisited.getName() + "@"+ iVisited.getPosition());
             //context.printScope();
             context.getCurrentScope().setValue(iVisited.getIndex(), value, iVisited.getDepth());
-            //context.getFrameScope().setValue(iVisited.getIndex(), value);
             break;
         }
         case NodeTypes.MULTIPLEASGNNODE: {
