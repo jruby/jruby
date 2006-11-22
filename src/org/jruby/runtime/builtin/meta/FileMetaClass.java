@@ -496,8 +496,6 @@ public class FileMetaClass extends IOMetaClass {
 	    file.openInternal(path, modes);
 
         if (fileMode != null) {
-            // FIXME: the mode is getting garbled coming in here, so this is disabled for now
-            puts(fileMode);
             chmod(new IRubyObject[] {fileMode, pathString});
         }
 
