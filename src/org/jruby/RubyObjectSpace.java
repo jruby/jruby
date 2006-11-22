@@ -58,12 +58,14 @@ public class RubyObjectSpace {
     // FIXME: Figure out feasibility of this...
     public static IRubyObject define_finalizer(IRubyObject recv, IRubyObject[] args) {
         // Put in to fake tempfile.rb out.
+        recv.getRuntime().getWarnings().warn("JRuby does not currently support defining finalizers");
         return recv;
     }
 
     // FIXME: Figure out feasibility of this...
     public static IRubyObject undefine_finalizer(IRubyObject recv, IRubyObject[] args) {
         // Put in to fake other stuff out.
+        recv.getRuntime().getWarnings().warn("JRuby does not currently support defining finalizers");
         return recv;
     }
     
