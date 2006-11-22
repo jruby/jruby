@@ -329,15 +329,25 @@ public class RubyHash extends RubyObject implements Map {
         return getRuntime().newBoolean(valueMap.containsValue(value));
     }
 
-    public RubyHash each() {
+	public RubyHash each() {
+		return eachInternal(false);
+	}
+
+	public RubyHash each_pair() {
+		return eachInternal(true);
+	}
+
+    protected RubyHash eachInternal(boolean aValue) {
         ThreadContext context = getRuntime().getCurrentContext();
         for (Iterator iter = entryIterator(); iter.hasNext();) {
             checkRehashing();
             Map.Entry entry = (Map.Entry) iter.next();
-            context.yield(getRuntime().newArray((IRubyObject)entry.getKey(), (IRubyObject)entry.getValue()));
+            context.yieldCurrentBlock(getRuntime().newArray((IRubyObject)entry.getKey(), (IRubyObject)entry.getValue()), null, null, aValue);
         }
         return this;
     }
+
+	
 
     private void checkRehashing() {
         if (isRehashing) {

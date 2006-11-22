@@ -39,6 +39,7 @@ public class HashMetaClass extends ObjectMetaClass {
 			defineMethod("delete", Arity.singleArgument());
 			defineMethod("delete_if", Arity.noArguments());
 			defineMethod("each", Arity.noArguments());
+			defineMethod("each_pair", Arity.noArguments());
 			defineMethod("each_value", Arity.noArguments());
 			defineMethod("each_key", Arity.noArguments());
 	        defineMethod("empty?", Arity.noArguments(), "empty_p");
@@ -65,8 +66,7 @@ public class HashMetaClass extends ObjectMetaClass {
 	        defineMethod("update", Arity.singleArgument());
 			defineMethod("values", Arity.noArguments(), "rb_values");
 	        defineMethod("values_at", Arity.optional());
-	        
-			defineAlias("each_pair", "each");
+
 	        defineAlias("has_key?", "include?");
 			defineAlias("indexes", "indices");
 	        defineAlias("key?", "include?");
