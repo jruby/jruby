@@ -393,4 +393,7 @@ public interface IRuby {
 
     public boolean registerInspecting(Object obj);
     public void unregisterInspecting(Object obj);
+
+    public void setEncoding(String encoding);
+    public String getEncoding();
 }

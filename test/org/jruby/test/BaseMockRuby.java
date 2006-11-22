@@ -687,4 +687,7 @@ public class BaseMockRuby implements IRuby {
     public long getStartTime() {
         return 0;
     }
+    
+    public void setEncoding(String encoding) {}
+    public String getEncoding() { return null; }
 }

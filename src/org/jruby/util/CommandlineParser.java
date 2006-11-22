@@ -65,6 +65,7 @@ public class CommandlineParser {
     private boolean shouldRunInterpreter = true;
     private boolean objectSpaceEnabled = true;
     private boolean compilerEnabled = false;
+    private String encoding = "ISO8859_1";
 
     public int argumentIndex = 0;
     public int characterIndex = 0;
@@ -142,6 +143,17 @@ public class CommandlineParser {
                 case 'w' :
                     verbose = true;
                     break;
+                case 'K':
+                    // FIXME: No argument seems to work for -K in MRI plus this should not
+                    // siphon off additional args 'jruby -K ~/scripts/foo'.  Also better error
+                    // processing.
+                    String eArg = grabValue("provide a value for -K");
+                    
+                    if ("u".equals(eArg) || "U".equals(eArg) || "UTF8".equals(eArg)) {
+                        encoding = "UTF-8";
+                    }
+                    
+                    break;
                 case '-' :
                     if (argument.equals("--version")) {
                         setShowVersion(true);
@@ -204,10 +216,10 @@ public class CommandlineParser {
             if (hasInlineScript()) {
                 return new StringReader(inlineScript());
             } else if (isSourceFromStdin()) {
-                return new InputStreamReader(System.in, "ISO8859_1");
+                return new InputStreamReader(System.in, encoding);
             } else {
                 File file = new File(getScriptFileName());
-                return new BufferedReader(new InputStreamReader(new FileInputStream(file), "ISO8859_1"));
+                return new BufferedReader(new InputStreamReader(new FileInputStream(file), encoding));
             }
         } catch (IOException e) {
             throw new MainExitException(1, "Error opening script file: " + e.getMessage());
@@ -279,5 +291,9 @@ public class CommandlineParser {
     
     public boolean isCompilerEnabled() {
         return compilerEnabled;
-}
+    }
+    
+    public String getEncoding() {
+        return encoding;
+    }
 }

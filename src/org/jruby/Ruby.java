@@ -125,6 +125,12 @@ public final class Ruby implements IRuby {
     private boolean globalAbortOnExceptionEnabled = false;
     private boolean doNotReverseLookupEnabled = false;
     private final boolean objectSpaceEnabled;
+    
+    /**
+     * What encoding should we read source files in as...
+     * @see org.jruby.util.CommandlineParser#processArgument()
+     */
+    private String encoding = "ISO8859_1";
 
     /** safe-level:
     		0 - strings from streams/environment/ARGV are tainted (default)
@@ -1362,5 +1368,13 @@ public final class Ruby implements IRuby {
 
     public long getStartTime() {
         return startTime;
+    }
+
+    public void setEncoding(String encoding) {
+        this.encoding = encoding;
+    }
+    
+    public String getEncoding() {
+        return encoding;
     }
 }

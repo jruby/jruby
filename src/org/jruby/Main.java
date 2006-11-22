@@ -108,7 +108,7 @@ public class Main {
             now = System.currentTimeMillis();
         }
 
-        int status = runInterpreter(commandline.getScriptSource(), commandline.displayedFileName());
+        int status = runInterpreter(commandline);
 
         if (commandline.isBenchmarking()) {
             out.println("Runtime: " + (System.currentTimeMillis() - now) + " ms");
@@ -140,8 +140,11 @@ public class Main {
         }
     }
 
-    private int runInterpreter(Reader reader, String filename) {
+    private int runInterpreter(CommandlineParser commandline) {
+        Reader reader = commandline.getScriptSource();
+        String filename = commandline.displayedFileName();
         IRuby runtime = Ruby.newInstance(in, out, err, commandline.isObjectSpaceEnabled());
+        runtime.setEncoding(commandline.getEncoding());
 
         try {
         	runInterpreter(runtime, reader, filename);

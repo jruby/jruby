@@ -46,7 +46,7 @@ public class ExternalScript implements Library {
 
     public void load(IRuby runtime) {
         try {
-            Reader reader = new BufferedReader(new InputStreamReader(resource.getURL().openStream(), "ISO8859_1"));
+            Reader reader = new BufferedReader(new InputStreamReader(resource.getURL().openStream(), runtime.getEncoding()));
             runtime.loadScript(resource.getName(), reader, false);
             reader.close();
         } catch (IOException e) {
