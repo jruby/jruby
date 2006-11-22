@@ -250,6 +250,10 @@ public class RubyNumeric extends RubyObject {
 
         return getRuntime().newArray(other.convertToFloat(), convertToFloat());
     }
+    
+    public IRubyObject to_int() {
+        return callMethod(getRuntime().getCurrentContext(), "to_i", IRubyObject.NULL_ARRAY);
+    }
 
     /** num_clone
      *
