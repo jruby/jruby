@@ -495,17 +495,19 @@ public class FileMetaClass extends IOMetaClass {
 
 	    file.openInternal(path, modes);
 
-	    if (tryToYield && tc.isBlockGiven()) {
+        if (fileMode != null) {
+            // FIXME: the mode is getting garbled coming in here, so this is disabled for now
+            puts(fileMode);
+            chmod(new IRubyObject[] {fileMode, pathString});
+        }
+
+        if (tryToYield && tc.isBlockGiven()) {
             IRubyObject value = getRuntime().getNil();
 	        try {
 	            value = tc.yield(file);
 	        } finally {
 	            file.close();
 	        }
-            
-            if (fileMode != null) {
-                chmod(new IRubyObject[] {fileMode, pathString});
-            }
 	        
 	        return value;
 	    }
