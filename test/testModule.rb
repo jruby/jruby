@@ -295,3 +295,13 @@ module Foo
 end
 
 test_equal("Foo::Bar",Foo::Bar.name)
+
+Fred = Module.new do
+  def meth1
+     "hello" 
+  end
+end
+
+a = "my string"
+a.extend(Fred)
+test_equal("hello", a.meth1)
