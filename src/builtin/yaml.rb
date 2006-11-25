@@ -127,20 +127,6 @@ module YAML
     #
     class Omap < ::Array
         yaml_as "tag:yaml.org,2002:omap"
-        def yaml_initialize( tag, val )
-            if Array === val
-                val.each do |v|
-                    if Hash === v
-                        concat( v.to_a )		# Convert the map to a sequence
-                    else
-                        raise YAML::Error, "Invalid !omap entry: " + val.inspect
-                    end
-                end
-            else
-                raise YAML::Error, "Invalid !omap: " + val.inspect
-            end
-            self
-        end
         def self.[]( *vals )
             o = Omap.new
             0.step( vals.length - 1, 2 ) do |i|
@@ -166,15 +152,56 @@ module YAML
         def is_complex_yaml?
             true
         end
-        def to_yaml( opts = {} )
-            YAML::quick_emit( self.object_id, opts ) do |out|
-                out.seq( taguri, to_yaml_style ) do |seq|
-                    self.each do |v|
-                        seq.add( Hash[ *v ] )
-                    end
-                end
-            end
+        def to_yaml_node(repr)
+          sequ = []
+          self.each do |v|
+            sequ << Hash[ *v ]
+          end
+          
+          repr.seq(taguri,sequ,to_yaml_style)
         end
+    end
+
+    
+        #
+    # Builtin collection: !pairs
+    #
+    class Pairs < ::Array
+        yaml_as "tag:yaml.org,2002:pairs"
+        def self.[]( *vals )
+            p = Pairs.new
+            0.step( vals.length - 1, 2 ) { |i|
+                p[vals[i]] = vals[i+1]
+            }
+            p
+        end
+        def []( k )
+            self.assoc( k ).to_a
+        end
+        def []=( k, val )
+            self << [ k, val ] 
+            val
+        end
+        def has_key?( k )
+            self.assoc( k ) ? true : false
+        end
+        def is_complex_yaml?
+            true
+        end
+        def to_yaml_node(repr)
+          sequ = []
+          self.each do |v|
+            sequ << Hash[ *v ]
+          end
+          repr.seq(taguri,sequ,to_yaml_style)
+        end
+    end
+
+    #
+    # Builtin collection: !set
+    #
+    class Set < ::Hash
+        yaml_as "tag:yaml.org,2002:set"
     end
 end
   

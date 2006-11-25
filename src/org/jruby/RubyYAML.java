@@ -571,7 +571,7 @@ public class RubyYAML {
             return args[0].callMethod(context,"scalar", new IRubyObject[]{self.callMethod(context, "taguri"),self.callMethod(context, "to_s"),self.callMethod(context, "to_yaml_style")});
         }
         public IRubyObject method7(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-            return self.getRuntime().newString("tag:yaml.org,2002:timestamp");
+            return self.getRuntime().newString("tag:yaml.org,2002:timestamp#ymd");
         }
         public IRubyObject method8(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             return self.getRuntime().newString("tag:yaml.org,2002:int");
