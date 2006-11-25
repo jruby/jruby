@@ -89,3 +89,17 @@ test_equal("r", s.matched)
 s.reset
 test_equal("test str", s.search_full(/r/, false, true))
 test_equal(0, s.pos)
+
+##### JRUBY-214: arg 0 should have to_str called if not String ######
+class Foo
+  attr :to_str_called
+  def to_str
+    @to_str_called = true
+    "bar"
+  end
+end
+f = Foo.new
+test_no_exception { StringScanner.new(f)  }
+test_ok(f.to_str_called)
+
+test_exception(TypeError) { StringScanner.new(Object.new) }

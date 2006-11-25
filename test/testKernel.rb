@@ -47,6 +47,16 @@ test_equal(10,Integer("0xA"))
 test_equal(8,Integer("010"))
 test_equal(2,Integer("0b10"))
 
+# JRUBY-214 - load should call to_str on arg 0
+class Foo
+  def to_str
+    "test/requireTarget.rb"
+  end
+end
+
+test_no_exception { load Foo.new }
+test_exception(TypeError) { load Object.new }
+
 
 #Previously Kernel.raise, Kernel.sprintf, Kernel.iterator? & Kernel.exec were all made private
 #as they were aliased rather than defined. Checking that this is no longer the case

@@ -56,17 +56,38 @@ test_equal(4, io.pos)
 io.rewind
 test_equal("fbar", io.gets)
 
+# JRUBY-214: new's arg 0 should have to_str called if not String, else TypeError is thrown
+test_exception(TypeError) { StringIO.new(Object.new) }
+
 StringIO.open("foo"){|io| 
   test_equal("foo", io.string)
 }
 
-###### close, close_read?, close_write? ######
+# JRUBY-214: open's arg 0 should have to_str called if not String, else TypeError is thrown
+test_exception(TypeError) { StringIO.open(Object.new){|io|} }
+
+###### close, reopen, close_read?, close_write? ######
 s = StringIO.open("A")
 test_equal(false, s.closed?)
 s.close_read
 test_equal(false, s.closed?)
 s.close_write
 test_equal(true, s.closed?)
+s.reopen("B")
+test_equal(false, s.closed?)
+
+# JRUBY-214: reopen's arg 0 should have to_str called if not String, else TypeError is thrown
+s = StringIO.open("A")
+s.close_read
+s.close_write
+test_exception(TypeError) { s.reopen(Object.new) }
+class Foo
+  def to_str
+    "abc"
+  end
+end
+test_no_exception { s.reopen(Foo.new) }
+test_equal("abc", s.read(3))
 
 ###### fcntl ######
 test_exception(NotImplementedError) { StringIO.new("").fcntl() }
@@ -77,6 +98,12 @@ test_equal(false, io.eof?)
 test_equal("A", io.read(1))
 test_equal(true, io.eof?)
 test_equal(nil, io.read(1))
+
+#JRUBY-114: read with buffer sets buffer to value read (previously appended to buffer)
+io = StringIO.new("A")
+buf = "abc"
+test_equal("A", io.read(1, buf))
+test_equal("A", buf)
 
 ###### write ######
 
@@ -138,3 +165,5 @@ n.rewind
 test_equal("\n", n.gets)
 test_equal(nil, n.gets)
 test_equal(true, n.eof?)
+
+n = StringIO.new

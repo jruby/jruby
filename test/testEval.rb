@@ -69,3 +69,14 @@ test_equal "bar: hi", g.result("hi")
 
 test_equal "foo: bye", f.result("bye")
 test_equal "bar: bye", g.result("bye")
+
+# JRUBY-214 - eval should call to_str on arg 0
+class Bar
+  def to_str
+    "magic_number"
+  end
+end
+magic_number = 1
+test_equal(magic_number, eval(Bar.new))
+
+test_exception(TypeError) { eval(Object.new) }

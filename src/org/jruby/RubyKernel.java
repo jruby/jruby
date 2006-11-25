@@ -632,13 +632,13 @@ public class RubyKernel {
     }
 
     public static IRubyObject load(IRubyObject recv, IRubyObject[] args) {
-        RubyString file = (RubyString)args[0];
+        RubyString file = args[0].convertToString();
         recv.getRuntime().getLoadService().load(file.toString());
         return recv.getRuntime().getTrue();
     }
 
     public static IRubyObject eval(IRubyObject recv, IRubyObject[] args) {
-        RubyString src = (RubyString) args[0];
+        RubyString src = args[0].convertToString();
         IRubyObject scope = null;
         String file = "(eval)";
         
