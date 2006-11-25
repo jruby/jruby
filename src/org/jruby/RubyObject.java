@@ -509,13 +509,23 @@ public class RubyObject implements Cloneable, IRubyObject {
         if (!respondsTo(convertMethod)) {
             if (raise) {
                 throw getRuntime().newTypeError(
-                    "cannot convert " + getMetaClass().getName() + " into " + targetType);
-                // FIXME nil, true and false instead of NilClass, TrueClass, FalseClass;
+                    "can't convert " + trueFalseNil(getMetaClass().getName()) + " into " + trueFalseNil(targetType));
             } 
 
             return getRuntime().getNil();
         }
         return callMethod(getRuntime().getCurrentContext(), convertMethod);
+    }
+
+    private String trueFalseNil(String v) {
+        if("TrueClass".equals(v)) {
+            return "true";
+        } else if("FalseClass".equals(v)) {
+            return "false";
+        } else if("NilClass".equals(v)) {
+            return "nil";
+        }
+        return v;
     }
 
     public RubyArray convertToArray() {
