@@ -30,19 +30,17 @@ package org.jruby.ext.openssl;
 import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyModule;
+import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyProc;
-
 import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.builtin.IRubyObject;
-
 import org.jruby.ext.openssl.x509store.Function2;
+import org.jruby.ext.openssl.x509store.X509AuxCertificate;
 import org.jruby.ext.openssl.x509store.X509_STORE;
 import org.jruby.ext.openssl.x509store.X509_STORE_CTX;
-import org.jruby.ext.openssl.x509store.X509AuxCertificate;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>

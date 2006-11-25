@@ -28,31 +28,26 @@
 package org.jruby.ext.openssl;
 
 import java.io.ByteArrayOutputStream;
-
-import java.math.BigInteger;
-
-import java.security.SignatureException;
-import java.security.spec.InvalidKeySpecException;
+import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.InvalidKeyException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
+import java.security.SignatureException;
 
 import javax.security.auth.x500.X500Principal;
 
-import org.bouncycastle.jce.PKCS10CertificationRequest;
-
-import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.DERInteger;
 import org.bouncycastle.asn1.DEROutputStream;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
+import org.bouncycastle.jce.PKCS10CertificationRequest;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>

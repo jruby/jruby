@@ -27,26 +27,21 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERIA5String;
+import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-
 import org.bouncycastle.jce.netscape.NetscapeCertRequest;
-
-import org.jvyaml.util.Base64Coder;
-
 import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
-
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jvyaml.util.Base64Coder;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>

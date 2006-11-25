@@ -29,32 +29,27 @@ package org.jruby.ext.openssl;
 
 import java.io.StringReader;
 import java.io.StringWriter;
-
+import java.security.KeyFactory;
+import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.KeyPair;
-import java.security.KeyFactory;
 import java.security.interfaces.DSAParams;
-import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.DSAPrivateKey;
+import java.security.interfaces.DSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-
-import org.jruby.IRuby;
-import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyModule;
-import org.jruby.RubyObject;
-
-import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.builtin.IRubyObject;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.DERInteger;
 import org.bouncycastle.asn1.DERSequence;
-
+import org.jruby.IRuby;
+import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyModule;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.openssl.x509store.PEM;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>

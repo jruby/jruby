@@ -28,36 +28,31 @@
 package org.jruby.ext.openssl;
 
 import java.security.MessageDigest;
-
-import java.util.List;
 import java.util.Iterator;
+import java.util.List;
 
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERIA5String;
-import org.bouncycastle.asn1.DERBoolean;
 import org.bouncycastle.asn1.DERBitString;
-import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERString;
+import org.bouncycastle.asn1.DERBoolean;
+import org.bouncycastle.asn1.DERIA5String;
+import org.bouncycastle.asn1.DERInteger;
 import org.bouncycastle.asn1.DERObject;
+import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERString;
 import org.bouncycastle.asn1.DERUnknownTag;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
-
 import org.jruby.IRuby;
-import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
-
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ThreadContext;
@@ -225,7 +220,6 @@ public class X509Extensions {
                     }
                     String v = nstr.toString();
                     byte[] arr = new byte[v.length()/2];
-                    String cur = null;
                     for(int i=0;i<v.length();i+=2) {
                         arr[i/2] = (byte)Integer.parseInt(v.substring(i,i+2),16);
                     }

@@ -28,16 +28,10 @@
 package org.jruby.ext.openssl;
 
 import java.io.IOException;
-import java.io.FileInputStream;
-
 import java.nio.ByteBuffer;
-import java.nio.channels.Channel;
-import java.nio.channels.SocketChannel;
-import java.nio.channels.Selector;
 import java.nio.channels.SelectionKey;
-
-import java.security.KeyStore;
-
+import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 
 import javax.net.ssl.SSLContext;
@@ -45,16 +39,12 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLSession;
 
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.TrustManagerFactory;
-
 import org.jruby.IRuby;
-import org.jruby.RubyModule;
 import org.jruby.RubyClass;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyIO;
+import org.jruby.RubyModule;
+import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
-
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
@@ -105,10 +95,6 @@ public class SSLSocket extends RubyObject {
     private SSLEngine engine;
     private SocketChannel c = null;
 
-    private ByteBuffer bIn = null;
-    private ByteBuffer bTo = null;
-    private ByteBuffer bOut = null;
-
     private ByteBuffer peerAppData;
     private ByteBuffer peerNetData;
     private ByteBuffer netData;
@@ -146,7 +132,7 @@ public class SSLSocket extends RubyObject {
             ThreadContext tc = getRuntime().getCurrentContext();
             SSLContext ctx = SSLContext.getInstance("SSL");
             IRubyObject store = callMethod(tc,"context").callMethod(tc,"cert_store");
-            IRubyObject vmode = callMethod(tc,"context").callMethod(tc,"verify_mode");
+            callMethod(tc,"context").callMethod(tc,"verify_mode");
 
             if(store.isNil()) {
                 ctx.init(new javax.net.ssl.KeyManager[]{((org.jruby.ext.openssl.SSLContext)callMethod(tc,"context")).getKM()},new javax.net.ssl.TrustManager[]{((org.jruby.ext.openssl.SSLContext)callMethod(tc,"context")).getTM()},null);

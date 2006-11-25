@@ -27,33 +27,28 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
-import java.security.PublicKey;
-import java.security.Signature;
-
-import java.util.List;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.List;
 
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.DERObject;
+import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.DERString;
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
-
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.DERSet;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERString;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DERObject;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>

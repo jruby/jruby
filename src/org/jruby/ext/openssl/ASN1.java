@@ -28,49 +28,45 @@
 package org.jruby.ext.openssl;
 
 import java.math.BigInteger;
-
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
- 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Calendar;
-import java.util.List;
-import java.util.Map;
+import java.util.Date;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
-import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DERString;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERUTF8String;
-import org.bouncycastle.asn1.DERTaggedObject;
-import org.bouncycastle.asn1.DERNull;
-import org.bouncycastle.asn1.DERSet;
-import org.bouncycastle.asn1.DERUTCTime;
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERBoolean;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERBitString;
+import org.bouncycastle.asn1.DERBoolean;
 import org.bouncycastle.asn1.DEREncodableVector;
-
+import org.bouncycastle.asn1.DERInteger;
+import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.DERString;
+import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.DERUTCTime;
+import org.bouncycastle.asn1.DERUTF8String;
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
-import org.jruby.RubyObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
-import org.jruby.RubySymbol;
+import org.jruby.RubyObject;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.RubyTime;
-
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ThreadContext;

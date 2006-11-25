@@ -27,29 +27,21 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Set;
-import java.util.HashSet;
-
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-import java.security.Key;
 import java.security.MessageDigest;
-import java.security.spec.KeySpec;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.SecretKeyFactory;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import javax.crypto.spec.IvParameterSpec;
 
 import org.jruby.IRuby;
-import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
-
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;

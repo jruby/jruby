@@ -30,8 +30,6 @@ package org.jruby.ext.openssl;
 import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.RubyObject;
-
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 

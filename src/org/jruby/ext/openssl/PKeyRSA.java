@@ -29,41 +29,35 @@ package org.jruby.ext.openssl;
 
 import java.io.StringReader;
 import java.io.StringWriter;
-
 import java.math.BigInteger;
-
-import java.security.KeyPair;
 import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.KeyPairGenerator;
-import java.security.interfaces.RSAPublicKey;
 import java.security.interfaces.RSAPrivateCrtKey;
+import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.RSAPublicKeySpec;
-import java.security.spec.X509EncodedKeySpec;
 import java.security.spec.RSAKeyGenParameterSpec;
 import java.security.spec.RSAPrivateCrtKeySpec;
+import java.security.spec.RSAPublicKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.Cipher;
 
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.DERInteger;
+import org.bouncycastle.asn1.DERSequence;
 import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
-import org.jruby.RubyObject;
 import org.jruby.RubyNumeric;
-
 import org.jruby.exceptions.RaiseException;
+import org.jruby.ext.openssl.x509store.PEM;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERInteger;
-
-import org.jruby.ext.openssl.x509store.PEM;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>

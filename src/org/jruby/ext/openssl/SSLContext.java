@@ -27,27 +27,24 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
-import java.util.List;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Iterator;
-
-import java.security.cert.CertificateException;
+import java.util.List;
 
 import javax.net.ssl.SSLEngine;
 
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
-import org.jruby.RubyModule;
 import org.jruby.RubyClass;
-import org.jruby.RubyObject;
+import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
-
-import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.builtin.IRubyObject;
-
+import org.jruby.RubyObject;
 import org.jruby.ext.openssl.x509store.X509AuxCertificate;
 import org.jruby.ext.openssl.x509store.X509_STORE;
 import org.jruby.ext.openssl.x509store.X509_STORE_CTX;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>

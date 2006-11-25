@@ -29,20 +29,25 @@ package org.jruby.ext.openssl;
 
 import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
-
 import java.math.BigInteger;
-
 import java.security.cert.CertificateFactory;
-
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Iterator;
 import java.util.Hashtable;
-import java.util.Set;
+import java.util.Iterator;
+import java.util.List;
 
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.DERBoolean;
+import org.bouncycastle.asn1.DEREncodable;
+import org.bouncycastle.asn1.DERInteger;
+import org.bouncycastle.asn1.DERObject;
+import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.x509.X509V2CRLGenerator;
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -50,24 +55,11 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyTime;
-
 import org.jruby.exceptions.RaiseException;
+import org.jruby.ext.openssl.x509store.PEM;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.DEREncodable;
-import org.bouncycastle.asn1.DERBoolean;
-import org.bouncycastle.asn1.DERObject;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERTaggedObject;
-import org.bouncycastle.x509.X509V2CRLGenerator;
-
-import org.jruby.ext.openssl.x509store.PEM;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>

@@ -28,6 +28,7 @@
 package org.jruby.ext.openssl;
 
 import java.security.Key;
+
 import javax.crypto.SecretKey;
 
 /**

@@ -28,43 +28,35 @@
 package org.jruby.ext.openssl;
 
 import java.io.ByteArrayInputStream;
-import java.io.StringWriter;
 import java.io.InputStreamReader;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Iterator;
-import java.util.Collection;
-
+import java.io.StringWriter;
 import java.security.PrivateKey;
 import java.security.cert.CertStore;
 import java.security.cert.CollectionCertStoreParameters;
 import java.security.cert.X509Certificate;
-
-import org.jruby.IRuby;
-import org.jruby.RubyArray;
-import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyNumeric;
-import org.jruby.RubyModule;
-import org.jruby.RubyObject;
-import org.jruby.RubyProc;
-
-import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.builtin.IRubyObject;
-
-import org.jruby.ext.openssl.x509store.PEM;
-import org.jruby.ext.openssl.x509store.X509AuxCertificate;
-import org.jruby.ext.openssl.x509store.X509_STORE_CTX;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.cms.ContentInfo;
+import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.CMSSignedDataGenerator;
-import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
+import org.jruby.IRuby;
+import org.jruby.RubyArray;
+import org.jruby.RubyClass;
+import org.jruby.RubyModule;
+import org.jruby.RubyNumeric;
+import org.jruby.RubyObject;
+import org.jruby.ext.openssl.x509store.PEM;
+import org.jruby.ext.openssl.x509store.X509AuxCertificate;
+import org.jruby.ext.openssl.x509store.X509_STORE_CTX;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -161,7 +153,6 @@ public class PKCS7 extends RubyObject {
 
         X509AuxCertificate x509 = ((X509Cert)cert).getAuxCert();
         PrivateKey pkey = ((PKey)key).getPrivateKey();
-        int flg = flags.isNil() ? 0 : RubyNumeric.fix2int(flags);
         String in = data.toString();
         List x509s = null;
         if(!certs.isNil()) {
@@ -324,11 +315,9 @@ public class PKCS7 extends RubyObject {
             store = args[1];
         }
         
-        int flg = flags.isNil() ? 0 : RubyNumeric.fix2int(flags);
         if(indata.isNil()) {
             indata = getInstanceVariable("@data");
         }
-        String ind = indata.isNil() ? null : indata.toString();
         List x509s = null;
         if(!certs.isNil()) {
             x509s = new ArrayList();

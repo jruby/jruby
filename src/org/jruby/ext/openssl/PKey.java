@@ -27,15 +27,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
-import java.security.PublicKey;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.Signature;
 
 import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
-
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 

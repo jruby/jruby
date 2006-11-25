@@ -27,17 +27,15 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
 import org.jruby.IRuby;
-import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
-
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
