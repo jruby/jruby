@@ -47,8 +47,6 @@ public class JRubySerializer extends SerializerImpl {
     }
 
     protected boolean ignoreAnchor(Node node) {
-        return "tag:yaml.org,2002:null".equals(node.getTag()) || 
-            ("tag:yaml.org,2002:seq".equals(node.getTag()) && ((java.util.List)node.getValue()).isEmpty()) ||
-            ("tag:yaml.org,2002:map".equals(node.getTag()) && ((java.util.Map)node.getValue()).isEmpty());
+        return true;
     }
 }// JRubySerializer
