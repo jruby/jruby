@@ -198,3 +198,7 @@ class F < Hash
 end
 
 test_equal(F.new,Marshal.load(Marshal.dump(F.new)))
+
+test_equal(4, Marshal::MAJOR_VERSION)
+test_equal(8, Marshal::MINOR_VERSION)
+
