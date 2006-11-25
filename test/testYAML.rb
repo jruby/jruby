@@ -51,13 +51,23 @@ test_equal("--- !ruby/object:TestBean\nvalue: 13\nkey: 42\n", TestBean.new(13,42
 test_equal(TestBean.new(13,42),YAML.load("--- !ruby/object:TestBean \nvalue: 13\nkey: 42\n"))
 
 TestStruct = Struct.new(:foo,:bar)
-test_equal("--- !ruby/struct:TestStruct\nfoo: 13\nbar: 42\n", TestStruct.new(13,42).to_yaml)
+test_ok(["--- !ruby/struct:TestStruct\nfoo: 13\nbar: 42\n","--- !ruby/struct:TestStruct\nbar: 42\nfoo: 13\n"].include?(TestStruct.new(13,42).to_yaml))
 test_equal("--- !ruby/exception:StandardError\nmessage: foobar\n", StandardError.new("foobar").to_yaml)
 
 test_equal("--- :foo\n", :foo.to_yaml)
 
-test_equal("--- !ruby/range\nbegin: 1\nend: 3\nexcl: false\n", (1..3).to_yaml)
-test_equal("--- !ruby/range\nbegin: 1\nend: 3\nexcl: true\n", (1...3).to_yaml)
+test_ok(["--- !ruby/range\nbegin: 1\nend: 3\nexcl: false\n",
+         "--- !ruby/range\nbegin: 1\nexcl: false\nend: 3\n",
+         "--- !ruby/range\nend: 3\nbegin: 1\nexcl: false\n",
+         "--- !ruby/range\nend: 3\nexcl: false\nbegin: 1\n",
+         "--- !ruby/range\nexcl: false\nbegin: 1\nend: 3\n",
+         "--- !ruby/range\nexcl: false\nend: 3\nbegin: 1\n"].include?((1..3).to_yaml))
+test_ok(["--- !ruby/range\nbegin: 1\nend: 3\nexcl: true\n",
+         "--- !ruby/range\nbegin: 1\nexcl: true\nend: 3\n",
+         "--- !ruby/range\nend: 3\nbegin: 1\nexcl: true\n",
+         "--- !ruby/range\nend: 3\ntrue: false\nbegin: 1\n",
+         "--- !ruby/range\nexcl: true\nbegin: 1\nend: 3\n",
+         "--- !ruby/range\nexcl: true\nend: 3\nbegin: 1\n"].include?((1...3).to_yaml))
 
 test_equal("--- !ruby/regexp /^abc/\n", /^abc/.to_yaml)
 
