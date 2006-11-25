@@ -20,6 +20,7 @@
  * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
+ * Copyright (C) 2006 Michael Studman <codehaus@michaelstudman.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -829,20 +830,19 @@ public final class Ruby implements IRuby {
         }
 
         ThreadContext tc = getCurrentContext();
-        RubyArray backtrace = (RubyArray) excp.callMethod(tc, "backtrace");
+        IRubyObject backtrace = excp.callMethod(tc, "backtrace");
 
         PrintStream errorStream = getErrorStream();
-		if (backtrace.isNil()) {
-            
+        if (backtrace.isNil() || !(backtrace instanceof RubyArray)) {
             if (tc.getSourceFile() != null) {
                 errorStream.print(tc.getPosition());
             } else {
                 errorStream.print(tc.getSourceLine());
             }
-        } else if (backtrace.getLength() == 0) {
+        } else if (((RubyArray) backtrace).getLength() == 0) {
             printErrorPos(errorStream);
         } else {
-            IRubyObject mesg = backtrace.first(IRubyObject.NULL_ARRAY);
+            IRubyObject mesg = ((RubyArray) backtrace).first(IRubyObject.NULL_ARRAY);
 
             if (mesg.isNil()) {
                 printErrorPos(errorStream);
@@ -884,9 +884,7 @@ public final class Ruby implements IRuby {
             }
         }
 
-        if (!backtrace.isNil()) {
-            excp.printBacktrace(errorStream);
-        }
+        excp.printBacktrace(errorStream);
 	}
 
 	private void printErrorPos(PrintStream errorStream) {

@@ -377,7 +377,6 @@ public class SSLSocket extends RubyObject {
         //        System.err.println("WARNING: unimplemented method called: SSLSocket#sysread");
         checkArgumentCount(args,1,2);
         int len = RubyNumeric.fix2int(args[0]);
-        byte[] bs = new byte[len];
         IRubyObject str = args.length == 2 ? args[1] : getRuntime().newString("");
         if(len == 0) {
             return str;

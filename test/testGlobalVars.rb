@@ -25,3 +25,40 @@ test_exception(SecurityError) { $SAFE = 3; $SAFE = 2 }
 
 # Make sure ENV exists (TODO: add tests for env var support, once it works)
 test_equal(nil, ENV['BOGUS_VARIABLE'])
+
+# Make sure $@ == nil if $! is not nil and $!.backtrace is an array
+class MyWobblyError < StandardError
+    def initialize(backtrace) ; @backtrace = backtrace ; end
+    def backtrace ; @backtrace ; end
+end
+
+begin
+    raise MyWobblyError.new(nil)
+rescue
+    test_ok($@ == nil)
+end
+
+begin
+    raise MyWobblyError.new("abc")
+rescue
+    test_ok($@ == nil)
+end
+
+#inconsistent with set_backtrace but it's what MRI does
+begin
+    raise MyWobblyError.new(["abc", 123])
+rescue
+    test_ok($@ != nil)
+end
+
+begin
+    raise MyWobblyError.new(["abc", "123"])
+rescue
+    test_ok($@ != nil)
+end
+
+begin
+    raise MyWobblyError.new([])
+rescue
+    test_ok($@ != nil)
+end

@@ -34,18 +34,20 @@ import java.util.List;
 
 import junit.framework.TestCase;
 
+import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyException;
 import org.jruby.RubyString;
 
 public class TestRubyException extends TestCase {
 
-	private BaseMockRuby interpreter;
+	private IRuby interpreter;
 	private RubyException exception;
 
 	public void setUp() {
-		interpreter = new MockInterpreter();
-		exception = new RubyException(interpreter, null, "test");
+		interpreter = Ruby.getDefaultInstance();
+		exception = new RubyException(interpreter, interpreter.getClass("StandardError"), "test");
 	}
 
 	public void testPrintBacktraceWithHiddenLevels() throws Exception {
@@ -67,13 +69,24 @@ public class TestRubyException extends TestCase {
 		assertEquals(expectedTraceLine(RubyException.TRACE_HEAD + 1), lines[RubyException.TRACE_HEAD]);
 	}
 
+	public void testPrintNilBacktrace() throws Exception {
+	    exception.set_backtrace(interpreter.getNil());
+		
+		String[] lines = printError();
+		
+		assertEquals(0, lines.length);
+	}
+
 	private String[] printError() {
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(2048);
 		PrintStream stream = new PrintStream(byteArrayOutputStream);
 		exception.printBacktrace(stream);
 		String output = new String(byteArrayOutputStream.toByteArray());
-		String[] lines = output.split("\n");
-		return lines;
+		if (output.trim().length() == 0) {
+		    return new String[0];
+	    } else {
+		    return output.split("\n");
+        }
 	}
 
 	private void setBackTrace(int lineCount) {
@@ -82,7 +95,7 @@ public class TestRubyException extends TestCase {
 			traceLines.add(RubyString.newString(interpreter, testLine(i)));
 		exception.set_backtrace(RubyArray.newArray(interpreter, traceLines));
 	}
-
+	
 	private String expectedTraceLine(int index) {
 		return "\tfrom " + testLine(index);
 	}

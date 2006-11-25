@@ -15,11 +15,12 @@
  * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2002-2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2002-2006 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Joey Gibson <joey@joeygibson.com>
  * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 David Corbin <dcorbin@users.sf.net>
+ * Copyright (C) 2006 Michael Studman <codehaus@michaelstudman.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -58,11 +59,8 @@ public class RubyException extends RubyObject {
 
     public RubyException(IRuby runtime, RubyClass rubyClass, String message) {
         super(runtime, rubyClass);
-        if (message == null) {
-            this.message = runtime.getNil();
-        } else {
-            this.message = runtime.newString(message);
-        }
+        
+        this.message = message == null ? runtime.getNil() : runtime.newString(message);
     }
 
     public static RubyClass createExceptionClass(IRuby runtime) {
@@ -116,31 +114,29 @@ public class RubyException extends RubyObject {
     }
 
     public IRubyObject backtrace() {
-        if (backtrace == null) {
-            return getRuntime().getNil();
+        return backtrace == null ? getRuntime().getNil() : backtrace; 
+    }
+
+    public IRubyObject set_backtrace(IRubyObject obj) {
+        if (obj.isNil()) {
+            backtrace = null;
+        } else if (!isArrayOfStrings(obj)) {
+            throw getRuntime().newTypeError("backtrace must be Array of String");
+        } else {
+            backtrace = (RubyArray) obj;
         }
-        return backtrace;
+        return backtrace();
     }
-
-    public RubyArray set_backtrace(IRubyObject obj) {
-        backtrace = obj.convertToArray();
-        
-        return backtrace;
-    }
-
+    
     public RubyException exception(IRubyObject[] args) {
         switch (args.length) {
             case 0 :
                 return this;
             case 1 :
-                if (args[0] == this) {
-                    return this;
-                }
-                return newInstance(getMetaClass(), args);
+                return args[0] == this ? this : newInstance(getMetaClass(), args); 
             default :
                 throw getRuntime().newArgumentError("Wrong argument count");
         }
-
     }
 
     public IRubyObject to_s() {
@@ -157,39 +153,49 @@ public class RubyException extends RubyObject {
      */
     public IRubyObject inspect() {
         RubyModule rubyClass = getMetaClass();
-
         RubyString exception = RubyString.stringValue(this);
 
         if (exception.getValue().length() == 0) {
             return getRuntime().newString(rubyClass.getName());
         }
-        StringBuffer sb = new StringBuffer();
-        sb.append("#<");
-        sb.append(rubyClass.getName());
-        sb.append(": ");
-        sb.append(exception.getValue());
-        sb.append(">");
+        StringBuffer sb = new StringBuffer("#<");
+        sb.append(rubyClass.getName()).append(": ").append(exception.getValue()).append(">");
         return getRuntime().newString(sb.toString());
     }
 
 	public void printBacktrace(PrintStream errorStream) {
-		IRubyObject[] elements = ((RubyArray) backtrace()).toJavaArray();
+	    IRubyObject backtrace = callMethod(getRuntime().getCurrentContext(), "backtrace");
+	    if (!backtrace.isNil() && backtrace instanceof RubyArray) {
+    		IRubyObject[] elements = ((RubyArray)backtrace.convertToArray()).toJavaArray();
 	
-		for (int i = 1; i < elements.length; i++) {
-		    IRubyObject stackTraceLine = elements[i];
-			if (stackTraceLine instanceof RubyString) {
-		        printStackTraceLine(errorStream, stackTraceLine);
-		    }
+    		for (int i = 1; i < elements.length; i++) {
+    		    IRubyObject stackTraceLine = elements[i];
+    			if (stackTraceLine instanceof RubyString) {
+    		        printStackTraceLine(errorStream, stackTraceLine);
+    		    }
 	
-		    if (i == RubyException.TRACE_HEAD && elements.length > RubyException.TRACE_MAX) {
-		        int hiddenLevels = elements.length - RubyException.TRACE_HEAD - RubyException.TRACE_TAIL;
-				errorStream.print("\t ... " + hiddenLevels + " levels...\n");
-		        i = elements.length - RubyException.TRACE_TAIL;
-		    }
+    		    if (i == RubyException.TRACE_HEAD && elements.length > RubyException.TRACE_MAX) {
+    		        int hiddenLevels = elements.length - RubyException.TRACE_HEAD - RubyException.TRACE_TAIL;
+    				errorStream.print("\t ... " + hiddenLevels + " levels...\n");
+    		        i = elements.length - RubyException.TRACE_TAIL;
+    		    }
+    		}
 		}
 	}
 
 	private void printStackTraceLine(PrintStream errorStream, IRubyObject stackTraceLine) {
 		errorStream.print("\tfrom " + stackTraceLine + '\n');
 	}
+	
+    private boolean isArrayOfStrings(IRubyObject backtrace) {
+        if (!(backtrace instanceof RubyArray)) return false; 
+            
+        IRubyObject[] elements = ((RubyArray) backtrace).toJavaArray();
+        
+        for (int i = 0 ; i < elements.length ; i++) {
+            if (!(elements[i] instanceof RubyString)) return false;
+        }
+            
+        return true;
+    }
 }

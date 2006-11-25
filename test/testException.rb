@@ -44,3 +44,34 @@ test_no_exception {
         test_ok(true)
     end
 }
+
+begin
+    e = StandardError.new
+    e.set_backtrace("abc")
+rescue TypeError => e
+    test_ok(true)
+end
+
+begin
+    e = StandardError.new
+    e.set_backtrace(123)
+rescue TypeError => e
+    test_ok(true)
+end
+
+begin
+    e = StandardError.new
+    e.set_backtrace(["abc", 123])
+rescue TypeError => e
+    test_ok(true)
+end
+
+test_no_exception {
+    e = StandardError.new
+    e.set_backtrace(["abc", "123"])
+}
+
+test_no_exception {
+    e = StandardError.new
+    e.set_backtrace(nil)
+}
