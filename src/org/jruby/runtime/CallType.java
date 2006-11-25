@@ -32,15 +32,21 @@ package org.jruby.runtime;
 // FIXME replace with enum in Java 5.0
 public final class CallType {
     // Call with explicit receiver
-    public static final CallType NORMAL = new CallType();
+    public static final CallType NORMAL = new CallType("NORMAL");
     // Call with implicit receiver (self)
-    public static final CallType FUNCTIONAL = new CallType();
+    public static final CallType FUNCTIONAL = new CallType("FUNCTIONAL");
     // Call to a super-method
-    public static final CallType SUPER = new CallType();
+    public static final CallType SUPER = new CallType("SUPER");
     // Call without any arguments
-    public static final CallType VARIABLE = new CallType();
+    public static final CallType VARIABLE = new CallType("VARIABLE");
 
-    private CallType() {
+    private final String name;
+    private CallType(String name) {
+        this.name = name;
         // nobody should create a CallType
+    }
+
+    public String toString() {
+        return "CallType." + name;
     }
 }

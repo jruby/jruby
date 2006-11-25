@@ -840,10 +840,10 @@ public class RubyIO extends RubyObject {
 
         // Fixme: Only F_SETFL is current supported
         if (realCmd == 1L) {  // cmd is F_SETFL
-            boolean block = false;
+            boolean block = true;
             
             if((realArg & IOModes.NONBLOCK) == IOModes.NONBLOCK) {
-                block = true;
+                block = false;
             }
             
  	    if(!(handler instanceof IOHandlerNio)) {

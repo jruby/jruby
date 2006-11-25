@@ -50,14 +50,15 @@ public class IOHandlerProcess extends IOHandlerJavaIO {
         if (process == null) {
         	throw new IOException("Null process");
         }
-        
+
         this.process = process;
-        this.input = new BufferedInputStream(process.getInputStream());
+        this.input = process.getInputStream();
         this.output = process.getOutputStream();
         
         isOpen = true;
 
         this.modes = modes;
+        this.isSync = true;
         fileno = RubyIO.getNewFileno();
     }
     
@@ -84,6 +85,7 @@ public class IOHandlerProcess extends IOHandlerJavaIO {
         output.close();
         
         // TODO: to destroy or not destroy the process?
+        process.destroy();
         process = null;
     }
 

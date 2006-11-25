@@ -202,6 +202,12 @@ public class LoadService {
                     break;
                 }
             }
+            if(library == null) {
+                library = findLibrary(file);
+                if(library != null) {
+                    loadName = file;
+                }
+            }
             //        }   
 
         library = tryLoadExtension(library,file);

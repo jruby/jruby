@@ -69,6 +69,8 @@ import org.jruby.libraries.StringScannerLibrary;
 import org.jruby.libraries.ZlibLibrary;
 import org.jruby.libraries.YamlLibrary;
 import org.jruby.libraries.EnumeratorLibrary;
+import org.jruby.ext.openssl.RubyOpenSSL;
+import org.jruby.libraries.DigestLibrary;
 import org.jruby.ext.Readline;
 import org.jruby.parser.Parser;
 import org.jruby.runtime.Block;
@@ -530,6 +532,13 @@ public final class Ruby implements IRuby {
         loadService.registerBuiltin("yaml_internal.rb", new YamlLibrary());
         loadService.registerBuiltin("enumerator.rb", new EnumeratorLibrary());
         loadService.registerBuiltin("readline.rb", new Readline.Service());
+        loadService.registerBuiltin("openssl.so", new RubyOpenSSL.Service());
+        loadService.registerBuiltin("digest.so", new DigestLibrary());
+        loadService.registerBuiltin("digest.rb", new DigestLibrary());
+        loadService.registerBuiltin("digest/md5.rb", new DigestLibrary.MD5());
+        loadService.registerBuiltin("digest/rmd160.rb", new DigestLibrary.RMD160());
+        loadService.registerBuiltin("digest/sha1.rb", new DigestLibrary.SHA1());
+        loadService.registerBuiltin("digest/sha2.rb", new DigestLibrary.SHA2());
     }
 
     private void initCoreClasses() {
@@ -707,6 +716,7 @@ public final class Ruby implements IRuby {
         createSysErr(IErrno.ESRCH, "ESRCH");       
         createSysErr(IErrno.ECONNREFUSED, "ECONNREFUSED");
         createSysErr(IErrno.ECONNRESET, "ECONNRESET");
+        createSysErr(IErrno.EADDRINUSE, "EADDRINUSE");
     }
 
     /**

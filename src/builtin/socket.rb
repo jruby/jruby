@@ -236,6 +236,8 @@ class TCPServer < TCPSocket
     super @javaServerSocketChannel, nil
   rescue UnknownHostException => e
     raise SocketError.new("getaddrinfo: Name or service not known")
+  rescue java.net.BindException
+    raise Errno::EADDRINUSE
   end
   
   def self.open(*args)
@@ -251,7 +253,7 @@ class TCPServer < TCPSocket
   end
   
   def close
-    TCPSocket.new(@javaServerSocketChannel.accept, nil)
+    @javaServerSocketChannel.close
   end
   
   def listen(backlog)

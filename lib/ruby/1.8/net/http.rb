@@ -1,8 +1,8 @@
 #
 # = net/http.rb
 #
-# Copyright (c) 1999-2005 Yukihiro Matsumoto
-# Copyright (c) 1999-2005 Minero Aoki
+# Copyright (c) 1999-2006 Yukihiro Matsumoto
+# Copyright (c) 1999-2006 Minero Aoki
 # Copyright (c) 2001 GOTOU Yuuzou
 # 
 # Written and maintained by Minero Aoki <aamine@loveruby.net>.
@@ -99,7 +99,7 @@ module Net   #:nodoc:
   #     req = Net::HTTP::Post.new(url.path)
   #     req.basic_auth 'jack', 'pass'
   #     req.set_form_data({'from'=>'2005-01-01', 'to'=>'2005-03-31'}, ';')
-  #     res = Net::HTTP.new(url.host, url.port).start { http.request(req) }
+  #     res = Net::HTTP.new(url.host, url.port).start {|http| http.request(req) }
   #     case res
   #     when Net::HTTPSuccess, Net::HTTPRedirection
   #       # OK
@@ -280,7 +280,7 @@ module Net   #:nodoc:
     # :stopdoc:
     Revision = %q$Revision$.split[1]
     HTTPVersion = '1.1'
-    @newimpl = true    # for backward compatability
+    @newimpl = true
     # :startdoc:
 
     # Turns on net/http 1.2 (ruby 1.8) features.
@@ -523,10 +523,8 @@ module Net   #:nodoc:
 
     # returns true if use SSL/TLS with HTTP.
     def use_ssl?
-      @use_ssl
+      false   # redefined in net/https
     end
-
-    alias use_ssl use_ssl?   #:nodoc: obsolete
 
     # Opens TCP connection and HTTP session.
     # 
@@ -835,6 +833,10 @@ module Net   #:nodoc:
     #       end
     #     }
     #
+    # You should set Content-Type: header field for POST.
+    # If no Content-Type: field given, this method uses
+    # "application/x-www-form-urlencoded" by default.
+    #
     def post(path, data, initheader = nil, dest = nil, &block) # :yield: +body_segment+
       res = nil
       request(Post.new(path, initheader), data) {|r|
@@ -845,7 +847,6 @@ module Net   #:nodoc:
         res.value
         return res, res.body
       end
-
       res
     end
 
@@ -1158,7 +1159,7 @@ module Net   #:nodoc:
         @header.delete key.downcase
         return val
       end
-      @header[key.downcase] = Array(val).map {|s| s.to_str }
+      @header[key.downcase] = [val]
     end
 
     # [Ruby 1.8.3]
@@ -1178,9 +1179,9 @@ module Net   #:nodoc:
     #
     def add_field(key, val)
       if @header.key?(key.downcase)
-        @header[key.downcase].concat Array(val)
+        @header[key.downcase].push val
       else
-        @header[key.downcase] = Array(val).dup
+        @header[key.downcase] = [val]
       end
     end
 
@@ -1365,35 +1366,60 @@ module Net   #:nodoc:
       r.end - r.begin
     end
 
+    # Returns a content type string such as "text/html".
+    # This method returns nil if Content-Type: header field does not exist.
     def content_type
-      "#{main_type()}/#{sub_type()}"
+      return nil unless main_type()
+      if sub_type()
+      then "#{main_type()}/#{sub_type()}"
+      else main_type()
+      end
     end
 
+    # Returns a content type string such as "text".
+    # This method returns nil if Content-Type: header field does not exist.
     def main_type
       return nil unless @header['content-type']
       self['Content-Type'].split(';').first.to_s.split('/')[0].to_s.strip
     end
     
+    # Returns a content type string such as "html".
+    # This method returns nil if Content-Type: header field does not exist
+    # or sub-type is not given (e.g. "Content-Type: text").
     def sub_type
       return nil unless @header['content-type']
-      self['Content-Type'].split(';').first.to_s.split('/')[1].to_s.strip
+      main, sub = *self['Content-Type'].split(';').first.to_s.split('/')
+      return nil unless sub
+      sub.strip
     end
 
+    # Returns content type parameters as a Hash as like
+    # {"charset" => "iso-2022-jp"}.
     def type_params
       result = {}
-      self['Content-Type'].to_s.split(';')[1..-1].each do |param|
+      list = self['Content-Type'].to_s.split(';')
+      list.shift
+      list.each do |param|
         k, v = *param.split('=', 2)
         result[k.strip] = v.strip
       end
       result
     end
 
+    # Set Content-Type: header field by +type+ and +params+.
+    # +type+ must be a String, +params+ must be a Hash.
     def set_content_type(type, params = {})
       @header['content-type'] = [type + params.map{|k,v|"; #{k}=#{v}"}.join('')]
     end
 
     alias content_type= set_content_type
 
+    # Set header fields and a body from HTML form data.
+    # +params+ should be a Hash containing HTML form data.
+    # Optional argument +sep+ means data record separator.
+    #
+    # This method also set Content-Type: header field to
+    # application/x-www-form-urlencoded.
     def set_form_data(params, sep = '&')
       self.body = params.map {|k,v| "#{urlencode(k.to_s)}=#{urlencode(v.to_s)}" }.join(sep)
       self.content_type = 'application/x-www-form-urlencoded'
@@ -1506,20 +1532,17 @@ module Net   #:nodoc:
     def send_request_with_body(sock, ver, path, body)
       self.content_length = body.length
       delete 'Transfer-Encoding'
-      unless content_type()
-        warn 'net/http: warning: Content-Type did not set; using application/x-www-form-urlencoded' if $VERBOSE
-        set_content_type 'application/x-www-form-urlencoded'
-      end
+      supply_default_content_type
       write_header sock, ver, path
       sock.write body
     end
 
     def send_request_with_body_stream(sock, ver, path, f)
-      raise ArgumentError, "Content-Length not given and Transfer-Encoding is not `chunked'" unless content_length() or chunked?
-      unless content_type()
-        warn 'net/http: warning: Content-Type did not set; using application/x-www-form-urlencoded' if $VERBOSE
-        set_content_type 'application/x-www-form-urlencoded'
+      unless content_length() or chunked?
+        raise ArgumentError,
+            "Content-Length not given and Transfer-Encoding is not `chunked'"
       end
+      supply_default_content_type
       write_header sock, ver, path
       if chunked?
         while s = f.read(1024)
@@ -1531,6 +1554,12 @@ module Net   #:nodoc:
           sock.write s
         end
       end
+    end
+
+    def supply_default_content_type
+      return if content_type()
+      warn 'net/http: warning: Content-Type did not set; using application/x-www-form-urlencoded' if $VERBOSE
+      set_content_type 'application/x-www-form-urlencoded'
     end
 
     def write_header(sock, ver, path)
@@ -1964,7 +1993,7 @@ module Net   #:nodoc:
       '416' => HTTPRequestedRangeNotSatisfiable,
       '417' => HTTPExpectationFailed,
 
-      '501' => HTTPInternalServerError,
+      '500' => HTTPInternalServerError,
       '501' => HTTPNotImplemented,
       '502' => HTTPBadGateway,
       '503' => HTTPServiceUnavailable,

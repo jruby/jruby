@@ -51,6 +51,7 @@ public class RubyBasicSocket extends RubyIO {
         
         try {
             handler = new IOHandlerNio(getRuntime(), socketChannel);
+            handler.setIsSync(true);
     	} catch (IOException e) {
             throw getRuntime().newIOError(e.getMessage());
         }

@@ -27,6 +27,16 @@
     <exclude unless="bsf.present" name="org/jruby/javasupport/bsf/**/*.java"/>
     <exclude unless="jdk1.4+" name="**/XmlAstMarshal.java"/>
     <exclude unless="jdk1.4+" name="**/AstPersistenceDelegates.java"/>
+    <exclude name="org/jruby/ext/openssl/**/*.java"/>
+    <exclude name="org/jruby/ext/openssl/**/*.java"/>
+    <include name="org/jruby/ext/openssl/RubyOpenSSL.java"/>
+    <include name="org/jruby/ext/openssl/OpenSSLFake.java"/>
+  </patternset>
+
+  <patternset id="java.openssl.src.pattern">
+    <include if="build.openssl" name="org/jruby/ext/openssl/**/*.java"/>
+    <exclude name="org/jruby/ext/openssl/RubyOpenSSL.java"/>
+    <exclude name="org/jruby/ext/openssl/OpenSSLFake.java"/>
   </patternset>
 
   <patternset id="ruby.src.pattern">
@@ -53,6 +63,7 @@
     <mkdir dir="${build.dir}"/>
     <mkdir dir="${classes.dir}"/>
     <mkdir dir="${jruby.classes.dir}"/>
+    <mkdir dir="${jruby.openssl.classes.dir}"/>
     <mkdir dir="${test.classes.dir}"/>
     <mkdir dir="${test.results.dir}"/>
     <mkdir dir="${html.test.results.dir}"/>
@@ -67,11 +78,19 @@
     <available property="jdk1.5+" classname="java.lang.StringBuilder"/>
     <available property="bsf.present" classname="org.apache.bsf.BSFManager"
                classpathref="build.classpath"/>
+    <available property="bc.present" classname="org.bouncycastle.jce.provider.BouncyCastleProvider"
+               classpathref="build.classpath"/>
     <available property="junit.present" classname="junit.framework.TestCase"
                classpathref="build.classpath"/>
     <available property="cglib.present" 
                classname="net.sf.cglib.reflect.FastClass"
                classpathref="build.classpath"/>
+    <condition property="build.openssl">
+      <and>
+        <isset property="bc.present"/>
+        <isset property="jdk1.5+"/>
+      </and>
+    </condition>
   </target>
 
   <target name="compile.tasks" depends="prepare"
@@ -90,13 +109,25 @@
     </copy>
   </target>
 
-  <target name="compile" depends="compile.tasks, check-for-optional-packages"
-          description="Compile the source files for the project.">
+  <target name="compile-jruby" depends="compile.tasks, check-for-optional-packages">
     <javac destdir="${jruby.classes.dir}" debug="true" source="${javac.version}">
        <classpath refid="build.classpath"/>
        <src path="${src.dir}"/>
        <patternset refid="java.src.pattern"/>
     </javac>
+  </target>
+
+  <target name="compile-openssl" if="build.openssl" depends="compile-jruby">
+    <javac destdir="${jruby.openssl.classes.dir}" debug="true" source="${javac.version}">
+       <classpath refid="build.classpath"/>
+       <classpath path="${jruby.classes.dir}"/>
+       <src path="${src.dir}"/>
+       <patternset refid="java.openssl.src.pattern"/>
+    </javac>
+  </target>
+
+  <target name="compile" depends="compile-jruby,compile-openssl"
+          description="Compile the source files for the project.">
   </target>
 
   <target name="serialize" depends="compile"
@@ -115,7 +146,7 @@
     </jruby-serialize>
   </target>
 
-  <target name="jar" depends="serialize" description="Create the jruby.jar file">
+  <target name="jar-jruby" depends="serialize">
     <jar destfile="${lib.dir}/jruby.jar">
       <fileset dir="${jruby.classes.dir}">
         <include name="**/*.class"/>
@@ -191,6 +222,17 @@
 	      </manifest>
 	    </jar>
 	  </target>
+
+  <target name="jar-openssl" depends="serialize,jar-jruby" if="build.openssl">
+    <jar destfile="${lib.dir}/jruby-openssl.jar">
+      <fileset dir="${jruby.openssl.classes.dir}">
+        <include name="**/*.class"/>
+      </fileset>
+    </jar>
+  </target>
+
+  <target name="jar" depends="jar-jruby,jar-openssl" description="Create the jruby.jar file">
+  </target>
 
   <target name="jar.standalone" depends="serialize, serialize.rubylib, jar"
 	  description="Create a standalone jruby.jar file using libraries from RUBY_HOME/lib/ruby/1.8"/>
@@ -333,6 +375,7 @@
   <target name="clean" depends="init" description="clean almost everything">
     <delete dir="${build.dir}"/>
     <delete file="${lib.dir}/jruby.jar" quiet="true"/>
+    <delete file="${lib.dir}/jruby-openssl.jar" quiet="true"/>
     <delete dir="${api.docs.dir}"/>
   </target>
 </project>

@@ -218,7 +218,7 @@ public class RubyTime extends RubyObject {
 
 		return newTime;
     }
-    
+
     public IRubyObject same2(IRubyObject other) {
         return (RubyNumeric.fix2int(callMethod(getRuntime().getCurrentContext(), "<=>", other)) == 0) ? getRuntime().getTrue() : getRuntime().getFalse();
     }

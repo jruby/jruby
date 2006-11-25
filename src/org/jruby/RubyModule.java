@@ -289,6 +289,9 @@ public class RubyModule extends RubyObject {
                 module.setBaseName(name);
                 module.setParent(this);
             }
+            /*
+            module.setParent(this);
+            */
         }
         return result;
     }

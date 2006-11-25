@@ -107,6 +107,8 @@ public class RubyThread extends RubyObject {
                 callbackFactory.getMethod("isStopped"));
         threadClass.defineMethod("wakeup", 
                 callbackFactory.getMethod("wakeup"));
+        //        threadClass.defineMethod("value", 
+        //                callbackFactory.getMethod("value"));
         threadClass.defineMethod("kill", 
                 callbackFactory.getMethod("kill"));
         threadClass.defineMethod("exit",

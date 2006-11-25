@@ -341,6 +341,7 @@ public class IOMetaClass extends ObjectMetaClass {
     	String command = cmdObj.toString();
         ThreadContext tc = runtime.getCurrentContext();
 
+        /*
     	// only r works so throw error if anything else specified.
         if (args.length >= 2) {
             String mode = args[1].convertToString().toString();
@@ -348,12 +349,12 @@ public class IOMetaClass extends ObjectMetaClass {
                 throw runtime.newNotImplementedError("only 'r' currently supported");
             }
         }
-    	
+    	*/
     	try {
     		//TODO Unify with runInShell()
 	    	Process process;
 	    	String shell = System.getProperty("jruby.shell");
-	        if (shell != null) {
+                if (shell != null) {
 	            String shellSwitch = "-c";
 	            if (!shell.endsWith("sh")) {
 	                shellSwitch = "/c";
@@ -361,7 +362,7 @@ public class IOMetaClass extends ObjectMetaClass {
 	            process = Runtime.getRuntime().exec(new String[] { shell, shellSwitch, command });
 	        } else {
 	            process = Runtime.getRuntime().exec(command);
-	        }
+                }
 	    	
 	    	RubyIO io = new RubyIO(runtime, process);
 	    	
