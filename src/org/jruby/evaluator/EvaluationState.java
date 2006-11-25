@@ -1404,9 +1404,9 @@ public class EvaluationState {
                 if (receiver.isNil()) {
                     singletonClass = runtime.getNilClass();
                 } else if (receiver == runtime.getTrue()) {
-                    singletonClass = runtime.getClass("True");
+                    singletonClass = runtime.getClass("TrueClass");
                 } else if (receiver == runtime.getFalse()) {
-                    singletonClass = runtime.getClass("False");
+                    singletonClass = runtime.getClass("FalseClass");
                 } else {
                     if (runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
                         throw runtime.newSecurityError("Insecure: can't extend object.");
