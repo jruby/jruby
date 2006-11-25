@@ -104,6 +104,24 @@ test_marshal("[\a:\ahi;\000", [:hi, :hi])
 o = Object.new
 test_marshal("[\ao:\013Object\000@\006", [o, o])
 
+test_exception(ArgumentError) {
+  Marshal.load("\004\bu:\026SomeUnknownClassX\nhello")
+}
+
+module UM
+  class UserMarshal
+    def _dump(depth)
+      "hello"
+    end
+  end
+end
+begin
+  Marshal.load("\004\bu:\024UM::UserMarshal\nhello")
+  test_fail
+rescue TypeError => e
+  test_equal("class UM::UserMarshal needs to have method `_load'", e.message)
+end
+
 # Unmarshaling
 
 object = Marshal.load(MARSHAL_HEADER + "o:\025MarshalTestClass\006:\t@foo\"\010bar")

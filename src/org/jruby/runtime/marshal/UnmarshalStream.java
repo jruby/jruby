@@ -48,6 +48,7 @@ import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -252,9 +253,20 @@ public class UnmarshalStream extends FilterInputStream {
     private IRubyObject userUnmarshal() throws IOException {
         String className = unmarshalObject().asSymbol();
         String marshaled = unmarshalString();
-        RubyModule classInstance = runtime.getModule(className);
-        IRubyObject result = classInstance.callMethod(
-                getRuntime().getCurrentContext(),
+        RubyModule classInstance;
+        try {
+            classInstance = runtime.getClassFromPath(className);
+        } catch (RaiseException e) {
+            if (e.getException().getType() == runtime.getModule("NameError")) {
+                throw runtime.newArgumentError("undefined class/module " + className);
+            } 
+                
+            throw e;
+        }
+        if (!classInstance.respondsTo("_load")) {
+            throw runtime.newTypeError("class " + classInstance.getName() + " needs to have method `_load'");
+        }
+        IRubyObject result = classInstance.callMethod(getRuntime().getCurrentContext(),
             "_load", runtime.newString(marshaled));
         registerLinkTarget(result);
         return result;
