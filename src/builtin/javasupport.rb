@@ -118,26 +118,21 @@ class JavaProxy
     
     def setup_constants
       fields = java_class.fields
-      constants = fields.select {|field|
-        field.static? and field.final? and JavaUtilities.valid_constant_name?(field.name)
-      }.each {|constant|
-        const_set(constant.name, Java.java_to_ruby(constant.static_value))
-      }
-      naughty_constants = fields.select {|field|
-        field.static? and field.final? and !JavaUtilities.valid_constant_name?(field.name)
-      }
+      class_methods = java_class.java_class_methods.collect! { |m| m.name } 
 
-      class_methods = java_class.java_class_methods.collect! { |m| m.name }
-
-      naughty_constants.each do |constant|
-        name = constant.name
-        # Do not add any constants that has same-name class method
-        next if class_methods.detect {|m| m == name }
-
-        class_eval do
-          singleton_class.send(:define_method, name) do |*args|
-            Java.java_to_ruby(java_class.field(name).static_value)
+      fields.each do |field|
+        if field.static? and field.final? and JavaUtilities.valid_constant_name?(field.name)
+          const_set(field.name, Java.java_to_ruby(field.static_value))
+        elsif (field.static? and field.final? and !JavaUtilities.valid_constant_name?(field.name)) or
+            (field.public? and field.static? and !field.final? && !JavaUtilities.valid_constant_name?(field.name))
+            
+          next if class_methods.detect {|m| m == field.name } 
+          class_eval do
+            singleton_class.send(:define_method, field.name) do |*args|
+              Java.java_to_ruby(java_class.field(field.name).static_value)
+            end
           end
+
         end
       end
     end
