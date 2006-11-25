@@ -72,3 +72,5 @@ test_equal([[1], [2], [3]],(1..3).zip)
 test_exception(ArgumentError) {
   ['a'].grep {/foo/}
 }
+
+test_equal([Array],[['foo']].map {|a|a.class})

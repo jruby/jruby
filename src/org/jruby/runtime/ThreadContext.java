@@ -623,43 +623,41 @@ public class ThreadContext {
 
     private IRubyObject[] getBlockArgs(IRubyObject value, IRubyObject self, boolean yieldProc, boolean aValue, Block currentBlock) {
         Node blockVar = currentBlock.getVar();
-        if (blockVar != null) {
-            if (blockVar instanceof ZeroArgNode) {
-                // Better not have arguments for a no-arg block.
-                if (yieldProc && arrayLength(value) != 0) { 
-                    throw runtime.newArgumentError("wrong # of arguments(" + 
-                            ((RubyArray)value).getLength() + "for 0)");
-                }
-            } else if (blockVar instanceof MultipleAsgnNode) {
-                if (!aValue) {
-                    value = sValueToMRHS(value, ((MultipleAsgnNode)blockVar).getHeadNode());
-                }
-
-                value = mAssign(self, (MultipleAsgnNode)blockVar, (RubyArray)value, yieldProc);
-            } else {
-                if (aValue) {
-                    int length = arrayLength(value);
-                
-                    if (length == 0) {
-                        value = runtime.getNil();
-                    } else if (length == 1) {
-                        value = ((RubyArray)value).first(IRubyObject.NULL_ARRAY);
-                    } else {
-                        // XXXEnebo - Should be warning not error.
-                        //throw runtime.newArgumentError("wrong # of arguments(" + 
-                        //        length + "for 1)");
-                    }
-                } else if (value == null) { 
-                    // XXXEnebo - Should be warning not error.
-                    //throw runtime.newArgumentError("wrong # of arguments(0 for 1)");
-                }
-
-                AssignmentVisitor.assign(this, getFrameSelf(), blockVar, value, yieldProc); 
-            }
+        //FIXME: block arg handling is mucked up in strange ways and NEED to
+        // be fixed. Especially with regard to Enumerable. See RubyEnumerable#eachToList too.
+        if(blockVar == null) {
+            return new IRubyObject[]{value};
         }
+        if (blockVar instanceof ZeroArgNode) {
+            // Better not have arguments for a no-arg block.
+            if (yieldProc && arrayLength(value) != 0) { 
+                throw runtime.newArgumentError("wrong # of arguments(" + 
+                                               ((RubyArray)value).getLength() + "for 0)");
+            }
+        } else if (blockVar instanceof MultipleAsgnNode) {
+            if (!aValue) {
+                value = sValueToMRHS(value, ((MultipleAsgnNode)blockVar).getHeadNode());
+            }
 
-        IRubyObject[] args = ArgsUtil.arrayify(value);
-        return args;
+            value = mAssign(self, (MultipleAsgnNode)blockVar, (RubyArray)value, yieldProc);
+        } else {
+            if (aValue) {
+                int length = arrayLength(value);
+                
+                if (length == 0) {
+                    value = runtime.getNil();
+                } else if (length == 1) {
+                    value = ((RubyArray)value).first(IRubyObject.NULL_ARRAY);
+                } else {
+                    runtime.getWarnings().warn("multiple values for a block parameter (" + length + " for 1)");
+                }
+            } else if (value == null) { 
+                runtime.getWarnings().warn("multiple values for a block parameter (0 for 1)");
+            }
+
+            AssignmentVisitor.assign(this, getFrameSelf(), blockVar, value, yieldProc); 
+        }
+        return ArgsUtil.arrayify(value);
     }
     
     public IRubyObject mAssign(IRubyObject self, MultipleAsgnNode node, RubyArray value, boolean pcall) {
