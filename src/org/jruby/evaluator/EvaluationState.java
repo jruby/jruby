@@ -768,7 +768,17 @@ public class EvaluationState {
                     sb.append(evalInternal(context, iterNode, self).toString());
                 }
     
-                return RubyRegexp.newRegexp(runtime, sb.toString(), iVisited.getOptions(), null);
+                String lang = null;
+                int opts = iVisited.getOptions();
+                if((opts & 16) != 0) { // param n
+                    lang = "n";
+                } else if((opts & 48) != 0) { // param s
+                    lang = "s";
+                } else if((opts & 64) != 0) { // param s
+                    lang = "u";
+                }
+
+                return RubyRegexp.newRegexp(runtime, sb.toString(), iVisited.getOptions(), lang);
             }
             case NodeTypes.DSTRNODE: {
                 DStrNode iVisited = (DStrNode) node;
@@ -1282,9 +1292,17 @@ public class EvaluationState {
             }
             case NodeTypes.REGEXPNODE: {
                 RegexpNode iVisited = (RegexpNode) node;
-    
-                // FIXME: don't pass null
-                return RubyRegexp.newRegexp(runtime, iVisited.getPattern(), null);
+                String lang = null;
+                int opts = iVisited.getOptions();
+                if((opts & 16) != 0) { // param n
+                    lang = "n";
+                } else if((opts & 48) != 0) { // param s
+                    lang = "s";
+                } else if((opts & 64) != 0) { // param s
+                    lang = "u";
+                }
+
+                return RubyRegexp.newRegexp(runtime, iVisited.getPattern(), lang);
             }
             case NodeTypes.RESCUEBODYNODE: {
                 RescueBodyNode iVisited = (RescueBodyNode) node;

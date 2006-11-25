@@ -62,10 +62,10 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 	 */
 
 	public static final class Code {
-		private static final Code NIL = new Code(null);
-		private static final Code NONE = new Code("none");
-		private static final Code UTF8 = new Code("utf8");
-		private static final Code SJIS = new Code("sjis");
+		public static final Code NIL = new Code(null);
+		public static final Code NONE = new Code("none");
+		public static final Code UTF8 = new Code("utf8");
+		public static final Code SJIS = new Code("sjis");
 
 		private String kcode;
 
@@ -107,7 +107,11 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 	
     private Pattern pattern;
     private Code code;
-	
+
+    Code getCode() {
+        return code;
+    }
+
 	// lastTarget and matcher currently only used by searchAgain
 	private String lastTarget = null;
 	private Matcher matcher = null;
@@ -563,6 +567,14 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             }
         }
         sb.append('/');
+
+        if(code == Code.NONE) {
+            sb.append('n');
+        } else if(code == Code.UTF8) {
+            sb.append('u');
+        } else if(code == Code.SJIS) {
+            sb.append('s');
+        }
   
         if ((pattern.flags() & Pattern.CASE_INSENSITIVE) > 0) {
             sb.append('i');

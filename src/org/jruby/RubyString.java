@@ -1219,12 +1219,28 @@ public class RubyString extends RubyObject {
 		}
 		RubyRegexp pat = RubyRegexp.regexpValue(args[0]);
 
-		if (pat.search(toString(), 0) >= 0) {
+                String intern = toString();
+                boolean utf8 = pat.getCode() == RubyRegexp.Code.UTF8;
+
+                if(utf8) {
+                    try {
+                        intern = new String(toString().getBytes("PLAIN"),"UTF8");
+                    } catch(Exception e) {
+                    }
+                }
+
+		if (pat.search(intern, 0) >= 0) {
 			RubyMatchData match = (RubyMatchData) tc.getBackref();
 			RubyString newStr = match.pre_match();
 			newStr.append(iter ? tc.yield(match.group(0)) : pat.regsub(repl, match));
 			newStr.append(match.post_match());
 			newStr.setTaint(isTaint() || repl.isTaint());
+                        if(utf8) {
+                            try {
+                                newStr.setValue(new String(newStr.toString().getBytes("UTF8"),"ISO8859_1"));
+                            } catch(Exception e) {
+                            }
+                        }
 			if (bang) {
 				replace(newStr);
 				return this;
