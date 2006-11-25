@@ -22,6 +22,7 @@
  * Copyright (C) 2005 Kiel Hodges <jruby-devel@selfsosoft.com>
  * Copyright (C) 2006 Evan Buswell <evan@heron.sytes.net>
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2006 Michael Studman <codehaus@michaelstudman.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -674,8 +675,10 @@ public class RubyKernel {
     }
 
     public static IRubyObject rbCatch(IRubyObject recv, IRubyObject tag) {
+        ThreadContext context = recv.getRuntime().getCurrentContext();
         try {
-            return recv.getRuntime().getCurrentContext().yield(tag);
+            context.pushCatch(tag.asSymbol());
+            return context.yield(tag);
         } catch (JumpException je) {
         	if (je.getJumpType() == JumpException.JumpType.ThrowJump) {
 	            if (je.getPrimaryData().equals(tag.asSymbol())) {
@@ -683,21 +686,33 @@ public class RubyKernel {
 	            }
         	}
        		throw je;
+        } finally {
+       		context.popCatch();
         }
     }
 
     public static IRubyObject rbThrow(IRubyObject recv, IRubyObject[] args) {
         IRuby runtime = recv.getRuntime();
-        JumpException je = new JumpException(JumpException.JumpType.ThrowJump);
+
         String tag = args[0].asSymbol();
-        IRubyObject value = args.length > 1 ? args[1] : recv.getRuntime().getNil();
-        RubyException nameException = new RubyException(runtime, runtime.getClass("NameError"), "uncaught throw '" + tag + '\'');
-        
-        je.setPrimaryData(tag);
-        je.setSecondaryData(value);
-        je.setTertiaryData(nameException);
-        
-        throw je;
+        String[] catches = runtime.getCurrentContext().getActiveCatches();
+
+        String message = "uncaught throw '" + tag + '\'';
+
+        //Ordering of array traversal not important, just intuitive
+        for (int i = catches.length - 1 ; i >= 0 ; i--) {
+            if (tag.equals(catches[i])) {
+                //Catch active, throw for catch to handle
+                JumpException je = new JumpException(JumpException.JumpType.ThrowJump);
+
+                je.setPrimaryData(tag);
+                je.setSecondaryData(args.length > 1 ? args[1] : runtime.getNil());
+                throw je;
+            }
+        }
+
+        //No catch active for this throw
+        throw runtime.newNameError(message);
     }
 
     public static IRubyObject trap(IRubyObject recv, IRubyObject[] args) {

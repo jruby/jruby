@@ -54,3 +54,79 @@ test_exception(RuntimeError) { Kernel.raise }
 test_no_exception { Kernel.sprintf "Helllo" }
 test_no_exception { Kernel.iterator? }
 test_no_exception { Kernel.exec "echo hello" }
+
+test_no_exception {
+    catch :fred do
+        throw :fred
+    end
+}
+
+test_exception(NameError) {
+    catch :fred do
+        throw :wilma
+    end
+}
+
+# test that NameError is raised at the throw, not at the catch
+test_no_exception {
+    catch :fred do
+        begin
+            throw :wilma
+            test_fail("NameError should have been raised")
+        rescue NameError => e
+            test_ok(true)
+        end
+    end
+}
+
+test_no_exception {
+    catch :fred1 do
+        catch :fred2 do
+            catch :fred3 do
+                throw :fred1
+                test_fail("should have jumped to fred1 catch")
+            end
+            test_fail("should have jumped to fred1 catch")
+        end
+    end
+}    
+
+test_no_exception {
+    catch :fred1 do
+        catch :fred2 do
+            catch :fred3 do
+                throw :fred2
+                test_fail("should have jumped to fred2 catch")
+            end
+        end
+    end
+}
+
+test_exception(NameError) {
+    catch :fred1 do
+        catch :fred2 do
+            catch :fred1 do
+                throw :fred2
+                test_fail("should have jumped to after fred2 catch")
+            end
+            test_fail("should have jumped to after fred2 catch")
+        end
+        test_ok(true)
+        throw :wilma
+    end
+}
+
+test_exception(NameError) {
+    throw :wilma
+}
+
+test_exception(NameError) {
+    catch :fred1 do
+        catch :fred2 do
+            catch :fred3 do
+            end
+        end
+    end
+    throw :fred2
+    test_fail("catch stack should have been cleaned up")
+}

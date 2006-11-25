@@ -42,7 +42,6 @@ import org.apache.bsf.BSFManager;
 import org.apache.bsf.util.BSFEngineImpl;
 import org.apache.bsf.util.BSFFunctions;
 import org.jruby.IRuby;
-import org.jruby.RubyException;
 import org.jruby.ast.Node;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
@@ -169,7 +168,7 @@ public class JRubyEngine extends BSFEngineImpl {
 	    	if (je.getJumpType() == JumpException.JumpType.RaiseJump) {
 	            runtime.printError(((RaiseException)je).getException());
 	    	} else if (je.getJumpType() == JumpException.JumpType.ThrowJump) {
-	            runtime.printError((RubyException)je.getTertiaryData());
+	            runtime.getErrorStream().println("internal error: throw jump caught");
 	    	} else if (je.getJumpType() == JumpException.JumpType.BreakJump) {
 	            runtime.getErrorStream().println("break without block.");
 	        } else if (je.getJumpType() == JumpException.JumpType.ReturnJump) {

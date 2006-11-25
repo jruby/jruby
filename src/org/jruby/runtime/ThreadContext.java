@@ -16,6 +16,7 @@
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2006 Michael Studman <codehaus@michaelstudman.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -87,6 +88,9 @@ public class ThreadContext {
     // to implement closures.
     private DynamicScope[] scopeStack = new DynamicScope[INITIAL_SIZE];
     private int scopeIndex = -1;
+    
+    private String[] catchStack = new String[INITIAL_SIZE];
+    private int catchIndex = -1;
 
     private RubyModule wrapper;
 
@@ -281,6 +285,34 @@ public class ThreadContext {
 
     public void setLastline(IRubyObject value) {
         getCurrentScope().setLastLine(value);
+    }
+    
+    //////////////////// CATCH MANAGEMENT ////////////////////////
+    private void expandCatchIfNecessary() {
+        if (catchIndex + 1 == catchStack.length) {
+            int newSize = catchStack.length * 2;
+            String[] newCatchStack = new String[newSize];
+    
+            System.arraycopy(catchStack, 0, newCatchStack, 0, catchStack.length);
+            catchStack = newCatchStack;
+        }
+    }
+    
+    public void pushCatch(String catchSymbol) {
+        catchStack[++catchIndex] = catchSymbol;
+        expandCatchIfNecessary();
+    }
+
+    public void popCatch() {
+        catchIndex--;
+    }
+
+    public String[] getActiveCatches() {
+        if (catchIndex < 0) return new String[0];
+
+        String[] activeCatches = new String[catchIndex + 1];
+        System.arraycopy(catchStack, 0, activeCatches, 0, catchIndex + 1);
+        return activeCatches;
     }
     
     //////////////////// FRAME MANAGEMENT ////////////////////////
