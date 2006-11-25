@@ -1061,7 +1061,9 @@ public class RubyModule extends RubyObject {
         ArrayList list = new ArrayList();
         
         for (RubyModule p = this; p != null; p = p.getSuperClass()) {
-            list.add(p.getNonIncludedClass());
+            if(!p.isSingleton()) {
+                list.add(p.getNonIncludedClass());
+            }
         }
         
         return list;
