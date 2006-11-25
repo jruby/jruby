@@ -32,9 +32,7 @@ package org.jruby.runtime;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 import org.jruby.RubyModule;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -50,6 +48,35 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class ObjectSpace {
     private ReferenceQueue deadReferences = new ReferenceQueue();
     private WeakReferenceListNode top;
+
+    private ReferenceQueue deadIdentityReferences = new ReferenceQueue();
+    private final Map identities = new HashMap();
+    private long maxId = 4; // Highest reserved id
+
+    public long createId(IRubyObject object) {
+        synchronized (identities) {
+            cleanIdentities();
+            maxId += 2; // id must always be even
+            identities.put(Long.valueOf(maxId), new IdReference(object, maxId, deadIdentityReferences));
+            return maxId;
+        }
+    }
+
+    public IRubyObject id2ref(long id) {
+        synchronized (identities) {
+            cleanIdentities();
+            IdReference reference = (IdReference) identities.get(Long.valueOf(id));
+            if (reference == null)
+                return null;
+            return (IRubyObject) reference.get();
+        }
+    }
+
+    private void cleanIdentities() {
+        IdReference ref;
+        while ((ref = (IdReference) deadIdentityReferences.poll()) != null)
+            identities.remove(Long.valueOf(ref.id()));
+    }
 
     public synchronized void add(IRubyObject object) {
         cleanup();
@@ -121,6 +148,19 @@ public class ObjectSpace {
 	                next.prev = prev;
 	            }
         	}
+        }
+    }
+
+    private static class IdReference extends WeakReference {
+        private final long id;
+
+        public IdReference(IRubyObject object, long id, ReferenceQueue queue) {
+            super(object, queue);
+            this.id = id;
+        }
+
+        public long id() {
+            return id;
         }
     }
 }

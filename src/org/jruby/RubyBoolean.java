@@ -75,7 +75,11 @@ public class RubyBoolean extends RubyObject {
 		return !value;
 	}
 
-	public static RubyClass createFalseClass(IRuby runtime) {
+    public RubyFixnum id() {
+        return getRuntime().newFixnum(value ? 2 : 0);
+    }
+
+    public static RubyClass createFalseClass(IRuby runtime) {
 		RubyClass falseClass = runtime.defineClass("FalseClass", runtime.getObject());
 
 		falseClass.defineMethod("type", runtime.callbackFactory(RubyBoolean.class).getMethod("type"));

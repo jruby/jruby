@@ -37,6 +37,7 @@ import junit.framework.TestCase;
 
 import org.jruby.IRuby;
 import org.jruby.Ruby;
+import org.jruby.RubyString;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -46,38 +47,56 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class TestObjectSpace extends TestCase {
 
     private IRuby runtime;
+    private ObjectSpace target;
 
     public TestObjectSpace(String name) {
         super(name);
     }
 
-    public void setUp() {
+    public void setUp() throws Exception {
+        super.setUp();
         runtime = Ruby.getDefaultInstance();
+        target = new ObjectSpace();
+    }
+
+    public void testIdentities() {
+        RubyString o1 = runtime.newString("hey");
+        RubyString o2 = runtime.newString("ho");
+
+        long id1 = target.createId(o1);
+        long id2 = target.createId(o2);
+
+        assertEquals("id of normal objects must be even", 0, id1 % 2);
+        assertEquals("id of normal objects must be even", 0, id2 % 2);
+        assertTrue("normal ids must be bigger than reserved values", id1 > 4);
+        assertTrue("normal ids must be bigger than reserved values", id2 > 4);
+        
+        assertSame(o1, target.id2ref(id1));
+        assertSame(o2, target.id2ref(id2));
+        assertNull(target.id2ref(4711));
     }
 
     public void testObjectSpace() {
-        ObjectSpace os = new ObjectSpace();
-
         IRubyObject o1 = runtime.newFixnum(10);
         IRubyObject o2 = runtime.newFixnum(20);
         IRubyObject o3 = runtime.newFixnum(30);
         IRubyObject o4 = runtime.newString("hello");
 
-        os.add(o1);
-        os.add(o2);
-        os.add(o3);
-        os.add(o4);
+        target.add(o1);
+        target.add(o2);
+        target.add(o3);
+        target.add(o4);
 
         List storedFixnums = new ArrayList(3);
         storedFixnums.add(o1);
         storedFixnums.add(o2);
         storedFixnums.add(o3);
 
-        Iterator strings = os.iterator(runtime.getString());
+        Iterator strings = target.iterator(runtime.getString());
         assertSame(o4, strings.next());
         assertEquals(null, strings.next());
 
-        Iterator numerics = os.iterator(runtime.getClass("Numeric"));
+        Iterator numerics = target.iterator(runtime.getClass("Numeric"));
         for (int i = 0; i < 3; i++) {
             Object item = numerics.next();
             assertTrue(storedFixnums.contains(item));

@@ -72,6 +72,7 @@ testYAML.rb
 testComparable.rb
 testInspect.rb
 testProcess.rb
+testObjectSpace.rb
 
 # MRI Ruby tests (from sample/test.rb in Matz's Ruby Interpreter):
 

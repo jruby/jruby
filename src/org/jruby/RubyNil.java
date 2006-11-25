@@ -177,4 +177,8 @@ public class RubyNil extends RubyObject {
 	public IRubyObject taint() {
 		return this;
 	}
+
+    public RubyFixnum id() {
+        return getRuntime().newFixnum(4);
+    }
 }
