@@ -31,6 +31,7 @@
 package org.jruby.yaml;
 
 import java.util.Date;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -151,6 +152,14 @@ public class JRubyConstructor extends ConstructorImpl {
         return ((JRubyConstructor)ctor).runtime.newTime(((Date)SafeConstructorImpl.constructYamlTimestamp(ctor,node)).getTime());
     }
 
+    public static Object constructYamlTimestampYMD(final Constructor ctor, final Node node) {
+        Date d = (Date)SafeConstructorImpl.constructYamlTimestamp(ctor,node);
+        Calendar c = Calendar.getInstance();
+        c.setTime(d);
+        IRuby runtime = ((JRubyConstructor)ctor).runtime;
+        return runtime.getClass("Date").callMethod(runtime.getCurrentContext(),"new",new IRubyObject[]{runtime.newFixnum(c.get(Calendar.YEAR)),runtime.newFixnum(c.get(Calendar.MONTH)+1),runtime.newFixnum(c.get(Calendar.DAY_OF_MONTH)),});
+    }
+
     public static Object constructYamlInt(final Constructor ctor, final Node node) {
         return ((JRubyConstructor)ctor).runtime.newFixnum(((Long)SafeConstructorImpl.constructYamlInt(ctor,node)).longValue());
     }
@@ -262,7 +271,7 @@ public class JRubyConstructor extends ConstructorImpl {
             });
         addConstructor("tag:yaml.org,2002:timestamp#ymd",new YamlConstructor() {
                 public Object call(final Constructor self, final Node node) {
-                    return constructYamlTimestamp(self,node);
+                    return constructYamlTimestampYMD(self,node);
                 }
             });
         addConstructor("tag:yaml.org,2002:str",new YamlConstructor() {
