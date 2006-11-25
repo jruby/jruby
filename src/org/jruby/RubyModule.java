@@ -957,7 +957,12 @@ public class RubyModule extends RubyObject {
     	// should.  The C version of Ruby may also do this (special checks in rb_alias for Module
     	// makes me think this).
         // TODO cnutter: Shouldn't new modules have Module as their superclass?
-        return new RubyModule(runtime, runtime.getClass("Module"), null, parentCRef, name);
+        RubyModule newModule = new RubyModule(runtime, runtime.getClass("Module"), null, parentCRef, name);
+        ThreadContext tc = runtime.getCurrentContext();
+        if (tc.isBlockGiven()) {
+            tc.yieldCurrentBlock(null, newModule, newModule, false);
+        }
+        return newModule;
     }
     
     public RubyString name() {
