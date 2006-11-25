@@ -93,22 +93,24 @@ public class ThreadService {
     
     public synchronized RubyThread[] getActiveRubyThreads() {
     	// all threads in ruby thread group plus main thread
+
+        synchronized(rubyThreadList) {
+            List rtList = new ArrayList(rubyThreadList.size());
         
-        List rtList = new ArrayList(rubyThreadList.size());
-        
-        for (Iterator iter = rubyThreadList.iterator(); iter.hasNext();) {
-            Thread t = (Thread)iter.next();
+            for (Iterator iter = rubyThreadList.iterator(); iter.hasNext();) {
+                Thread t = (Thread)iter.next();
             
-            if (!t.isAlive()) continue;
+                if (!t.isAlive()) continue;
             
-            RubyThread rt = getRubyThreadFromThread(t);
-            rtList.add(rt);
-        }
+                RubyThread rt = getRubyThreadFromThread(t);
+                rtList.add(rt);
+            }
         
-        RubyThread[] rubyThreads = new RubyThread[rtList.size()];
-        rtList.toArray(rubyThreads);
+            RubyThread[] rubyThreads = new RubyThread[rtList.size()];
+            rtList.toArray(rubyThreads);
     	
-    	return rubyThreads;
+            return rubyThreads;
+        }
     }
     
     public ThreadGroup getRubyThreadGroup() {
