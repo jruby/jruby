@@ -92,6 +92,10 @@ public class RubyNumeric extends RubyObject {
         return (int) val;
     }
 
+    public static RubyInteger str2inum(IRuby runtime, RubyString str, int base) {
+        return str2inum(runtime,str,base,false);
+    }
+
     /**
      * Converts a string representation of an integer to the integer value. 
      * Parsing starts at the beginning of the string (after leading and 
@@ -111,13 +115,17 @@ public class RubyNumeric extends RubyObject {
      * @param base  the expected base of the number (2, 8, 10 or 16), or 0 
      *              if the method should determine the base automatically 
      *              (defaults to 10).
+     * @param raise if the string is not a valid integer, raise error, otherwise return 0
      * @return  a RubyFixnum or (if necessary) a RubyBignum representing 
      *          the result of the conversion, which will be zero if the 
      *          conversion failed.
      */
-    public static RubyInteger str2inum(IRuby runtime, RubyString str, int base) {
+    public static RubyInteger str2inum(IRuby runtime, RubyString str, int base, boolean raise) {
         StringBuffer sbuf = new StringBuffer(str.toString().trim());
         if (sbuf.length() == 0) {
+            if(raise) {
+                throw runtime.newArgumentError("invalid value for Integer: " + str.callMethod(runtime.getCurrentContext(),"inspect").toString());
+            }
             return RubyFixnum.zero(runtime);
         }
         int pos = 0;
@@ -129,6 +137,9 @@ public class RubyNumeric extends RubyObject {
             sbuf.deleteCharAt(pos);
         }
         if (pos == sbuf.length()) {
+            if(raise) {
+                throw runtime.newArgumentError("invalid value for Integer: " + str.callMethod(runtime.getCurrentContext(),"inspect").toString());
+            }
             return RubyFixnum.zero(runtime);
         }
         if (sbuf.charAt(pos) == '0') {
@@ -161,15 +172,29 @@ public class RubyNumeric extends RubyObject {
             }
         }
         if (!digitsFound) {
+            if(raise) {
+                throw runtime.newArgumentError("invalid value for Integer: " + str.callMethod(runtime.getCurrentContext(),"inspect").toString());
+            }
             return RubyFixnum.zero(runtime);
         }
         try {
             long l = Long.parseLong(sbuf.substring(0, pos), radix);
             return runtime.newFixnum(l);
         } catch (NumberFormatException ex) {
-            BigInteger bi = new BigInteger(sbuf.substring(0, pos), radix);
-            return new RubyBignum(runtime, bi);
+            try {
+                BigInteger bi = new BigInteger(sbuf.substring(0, pos), radix);
+                return new RubyBignum(runtime, bi);
+            } catch(NumberFormatException e) {
+                if(raise) {
+                    throw runtime.newArgumentError("invalid value for Integer: " + str.callMethod(runtime.getCurrentContext(),"inspect").toString());
+                }
+                return RubyFixnum.zero(runtime);
+            }
         }
+    }
+
+    public static RubyFloat str2fnum(IRuby runtime, RubyString arg) {
+        return str2fnum(runtime,arg,false);
     }
 
     /**
@@ -181,15 +206,19 @@ public class RubyNumeric extends RubyObject {
      * 
      * @param runtime  the ruby runtime
      * @param arg   the string to be converted
+     * @param raise if the string is not a valid float, raise error, otherwise return 0.0
      * @return  a RubyFloat representing the result of the conversion, which
      *          will be 0.0 if the conversion failed.
      */
-    public static RubyFloat str2fnum(IRuby runtime, RubyString arg) {
+    public static RubyFloat str2fnum(IRuby runtime, RubyString arg, boolean raise) {
         String str = arg.toString().trim();
         double d = 0.0;
         int pos = str.length();
         for (int i = 0; i < pos; i++) {
             if ("0123456789eE+-.".indexOf(str.charAt(i)) == -1) {
+                if(raise) {
+                    throw runtime.newArgumentError("invalid value for Float(): " + arg.callMethod(runtime.getCurrentContext(),"inspect").toString());
+                }
                 pos = i + 1;
                 break;
             }
@@ -198,6 +227,9 @@ public class RubyNumeric extends RubyObject {
             try {
                 d = Double.parseDouble(str.substring(0, pos));
             } catch (NumberFormatException ex) {
+                if(raise) {
+                    throw runtime.newArgumentError("invalid value for Float(): " + arg.callMethod(runtime.getCurrentContext(),"inspect").toString());
+                }
                 continue;
             }
             break;

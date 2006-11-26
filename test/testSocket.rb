@@ -13,9 +13,19 @@ server_thread = Thread.new do
   sock.close
 end
 
-sleep(1) # artificial delay and not guaranteed to allow server_thread to start listening; better way?
-
-socket = TCPSocket.new("localhost",2202)
+# Makes sure we actually get the server thread started, but not wait for ever either.
+rc = 0
+begin
+  socket = TCPSocket.new("localhost",2202) 
+rescue 
+  rc += 1
+  if rc < 10
+    sleep 1
+    retry
+  else
+    raise
+  end
+end
 
 socket.write "Hello"
 client_read = socket.read(6)

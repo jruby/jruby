@@ -296,7 +296,11 @@ public class RubyKernel {
     }
     
     public static IRubyObject new_float(IRubyObject recv, IRubyObject object) {
-        return object.callMethod(recv.getRuntime().getCurrentContext(), "to_f");
+        if(object instanceof RubyString) {
+            return RubyNumeric.str2fnum(recv.getRuntime(),(RubyString)object,true);
+        } else {
+            return object.callMethod(recv.getRuntime().getCurrentContext(), "to_f");
+        }
     }
     
     public static IRubyObject new_integer(IRubyObject recv, IRubyObject object) {
@@ -307,16 +311,17 @@ public class RubyKernel {
             if(val.length() > 0 && val.charAt(0) == '0') {
                 if(val.length() > 1) {
                     if(val.charAt(1) == 'x') {
-                        return recv.getRuntime().newString(val.substring(2)).callMethod(context,"to_i", recv.getRuntime().newFixnum(16));
+                        return RubyNumeric.str2inum(recv.getRuntime(),recv.getRuntime().newString(val.substring(2)),16,true);
                     } else if(val.charAt(1) == 'b') {
-                        return recv.getRuntime().newString(val.substring(2)).callMethod(context,"to_i", recv.getRuntime().newFixnum(2));
+                        return RubyNumeric.str2inum(recv.getRuntime(),recv.getRuntime().newString(val.substring(2)),2,true);
                     } else {
-                        return recv.getRuntime().newString(val.substring(1)).callMethod(context,"to_i", recv.getRuntime().newFixnum(8));
+                        return RubyNumeric.str2inum(recv.getRuntime(),recv.getRuntime().newString(val.substring(1)),8,true);
                     }
                 }
             }
+            return RubyNumeric.str2inum(recv.getRuntime(),(RubyString)object,10,true);
         }
-        return object.callMethod(context, "to_i");
+        return object.callMethod(context,"to_i");
     }
     
     public static IRubyObject new_string(IRubyObject recv, IRubyObject object) {

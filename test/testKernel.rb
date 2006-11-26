@@ -47,6 +47,17 @@ test_equal(10,Integer("0xA"))
 test_equal(8,Integer("010"))
 test_equal(2,Integer("0b10"))
 
+test_equal(1.0,Float("1"))
+test_equal(10.0,Float("1e1"))
+
+test_exception(ArgumentError) { Integer("abc") }
+test_exception(ArgumentError) { Integer("x10") }
+test_exception(ArgumentError) { Integer("xxxx10000000000000000000000000000000000000000000000000000") }
+
+test_exception(ArgumentError) { Float("abc") }
+test_exception(ArgumentError) { Float("x10") }
+test_exception(ArgumentError) { Float("xxxx10000000000000000000000000000000000000000000000000000") }
+
 # JRUBY-214 - load should call to_str on arg 0
 class Foo
   def to_str
