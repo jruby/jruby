@@ -319,4 +319,19 @@ public interface IRubyObject {
     boolean singletonMethodsAllowed();
 
 	Iterator instanceVariableNames();
+
+    /**
+     * rb_scan_args
+     *
+     * This method will take the arguments specified, fill in an array and return it filled
+     * with nils for every argument not provided. It's guaranteed to always return a new array.
+     * 
+     * @param runtime the JRuby runtime
+     * @param args the arguments to check
+     * @param required the amount of required arguments
+     * @param optional the amount of optional arguments
+     * @return a new array containing all arguments provided, and nils in those spots not provided.
+     * 
+     */
+    IRubyObject[] scanArgs(IRuby runtime, IRubyObject[] args, int required, int optional);
 }
