@@ -661,6 +661,7 @@ public class RubyYaccLexer {
                     } else {
                         c = Tokens.tSTAR2;
                     }
+                    yaccValue = new Token("*", getPosition());
                 }
                 if (lex_state == LexState.EXPR_FNAME ||
                     lex_state == LexState.EXPR_DOT) {
@@ -668,7 +669,6 @@ public class RubyYaccLexer {
                 } else {
                     lex_state = LexState.EXPR_BEG;
                 }
-                yaccValue = new Token("*", getPosition());
                 return c;
 
             case '!':
