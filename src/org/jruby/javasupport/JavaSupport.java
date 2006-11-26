@@ -66,7 +66,7 @@ public class JavaSupport {
             }
             return result;
         } catch (ClassNotFoundException cnfExcptn) {
-            throw runtime.newNameError("cannot load Java class " + className);
+            throw runtime.newNameError("cannot load Java class " + className, className);
         }
     }
     

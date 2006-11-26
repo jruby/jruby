@@ -515,7 +515,8 @@ public class ThreadContext {
     	Frame frame = getCurrentFrame();
     	
         if (frame.getLastClass() == null) {
-            throw runtime.newNameError("superclass method '" + frame.getLastFunc() + "' must be enabled by enableSuper().");
+            String name = frame.getLastFunc();
+            throw runtime.newNameError("superclass method '" + name + "' must be enabled by enableSuper().", name);
         }
         setNoBlockIfNoBlock();
         try {

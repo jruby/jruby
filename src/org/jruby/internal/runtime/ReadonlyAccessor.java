@@ -54,6 +54,6 @@ public class ReadonlyAccessor implements IAccessor {
     public IRubyObject setValue(IRubyObject newValue) {
         assert newValue != null;
 
-        throw newValue.getRuntime().newNameError(name + " is a read-only variable");
+        throw newValue.getRuntime().newNameError(name + " is a read-only variable", name);
     }
 }

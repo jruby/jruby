@@ -99,3 +99,13 @@ test_ok(TypeError < StandardError)
 test_ok(ZeroDivisionError < StandardError)
 test_ok(SystemExit < Exception)
 test_ok(SystemStackError < Exception)
+
+n = NameError.new
+test_equal("NameError", n.message)
+test_equal(nil, n.name)
+n = NameError.new("foo")
+test_equal("foo", n.message)
+test_equal(nil, n.name)
+n = NameError.new("foo", "bar")
+test_equal("foo", n.message)
+test_equal("bar", n.name)

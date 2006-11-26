@@ -337,9 +337,9 @@ public interface IRuby {
 
     public RaiseException newNotImplementedError(String message);
 
-    public RaiseException newNoMethodError(String message);
+    public RaiseException newNoMethodError(String message, String name);
 
-    public RaiseException newNameError(String message);
+    public RaiseException newNameError(String message, String name);
 
     public RaiseException newLocalJumpError(String message);
 

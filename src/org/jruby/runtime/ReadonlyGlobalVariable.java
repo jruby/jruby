@@ -39,6 +39,6 @@ public class ReadonlyGlobalVariable extends GlobalVariable {
     }
 
     public IRubyObject set(IRubyObject value) {
-        throw runtime.newNameError(name() + " is a read-only variable");
+        throw runtime.newNameError(name() + " is a read-only variable", name());
     }
 }

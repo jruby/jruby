@@ -348,7 +348,7 @@ public class RubyObject implements Cloneable, IRubyObject {
             !(name.equals("method_missing") ||
               method.isCallableFrom(context.getFrameSelf(), callType))) {
             if (callType == CallType.SUPER) {
-                throw getRuntime().newNameError("super: no superclass method '" + name + "'");
+                throw getRuntime().newNameError("super: no superclass method '" + name + "'", name);
             }
 
             // store call information so method_missing impl can use it
@@ -400,7 +400,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     	String varName = var.asSymbol();
 
     	if (!varName.startsWith("@")) {
-    		throw getRuntime().newNameError("`" + varName + "' is not allowable as an instance variable name");
+    		throw getRuntime().newNameError("`" + varName + "' is not allowable as an instance variable name", varName);
     	}
 
     	IRubyObject variable = getInstanceVariable(varName);
@@ -417,7 +417,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     	String varName = var.asSymbol();
 
     	if (!varName.startsWith("@")) {
-    		throw getRuntime().newNameError("`" + varName + "' is not allowable as an instance variable name");
+    		throw getRuntime().newNameError("`" + varName + "' is not allowable as an instance variable name", varName);
     	}
 
     	return setInstanceVariable(var.asSymbol(), value);
@@ -1105,9 +1105,9 @@ public class RubyObject implements Cloneable, IRubyObject {
             noClass ? "" : ":", noClass ? "" : getType().getName()});
 
         if (lastCallType == CallType.VARIABLE) {
-        	throw getRuntime().newNameError(msg);
+        	throw getRuntime().newNameError(msg, name);
         }
-        throw getRuntime().newNoMethodError(msg);
+        throw getRuntime().newNoMethodError(msg, name);
     }
 
     /**
@@ -1161,7 +1161,7 @@ public class RubyObject implements Cloneable, IRubyObject {
        String id = name.asSymbol();
 
        if (!IdUtil.isInstanceVariable(id)) {
-           throw getRuntime().newNameError("wrong instance variable name " + id);
+           throw getRuntime().newNameError("wrong instance variable name " + id, id);
        }
        if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
            throw getRuntime().newSecurityError("Insecure: can't remove instance variable");
@@ -1173,7 +1173,7 @@ public class RubyObject implements Cloneable, IRubyObject {
            return variable;
        }
 
-       throw getRuntime().newNameError("instance variable " + id + " not defined");
+       throw getRuntime().newNameError("instance variable " + id + " not defined", id);
    }
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {

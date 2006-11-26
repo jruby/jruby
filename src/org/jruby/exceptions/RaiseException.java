@@ -37,10 +37,7 @@ package org.jruby.exceptions;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import org.jruby.IRuby;
-import org.jruby.NativeException;
-import org.jruby.RubyClass;
-import org.jruby.RubyException;
+import org.jruby.*;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -50,8 +47,7 @@ public class RaiseException extends JumpException {
 	private RubyException exception;
 
     public RaiseException(RubyException actException) {
-    	super(JumpType.RaiseJump);
-        setException(actException, false);
+    	this(actException, false);
     }
 
     public RaiseException(IRuby runtime, RubyClass excptnClass, String msg, boolean nativeException) {
@@ -61,7 +57,12 @@ public class RaiseException extends JumpException {
         }
         setException((RubyException) excptnClass.callMethod(runtime.getCurrentContext(), "new", excptnClass.getRuntime().newString(msg)), nativeException);
     }
-    
+
+    public RaiseException(RubyException exception, boolean isNativeException) {
+        super(JumpType.RaiseJump);
+        setException(exception, isNativeException);
+    }
+
     public static RaiseException createNativeRaiseException(IRuby runtime, Throwable cause) {
         NativeException nativeException = new NativeException(runtime, runtime.getClass(NativeException.CLASS_NAME), cause);
         return new RaiseException(cause, nativeException);

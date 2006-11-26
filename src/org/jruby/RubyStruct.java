@@ -40,6 +40,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.IdUtil;
+import org.jruby.exceptions.RaiseException;
 
 /**
  * @author  jpetersen
@@ -88,7 +89,7 @@ public class RubyStruct extends RubyObject {
         RubyClass structClass = type.getRuntime().getClass("Struct");
 
         while (type != null && type != structClass) {
-        	IRubyObject variable = type.getInstanceVariable(name);
+            IRubyObject variable = type.getInstanceVariable(name);
             if (variable != null) {
                 return variable;
             }
@@ -104,7 +105,7 @@ public class RubyStruct extends RubyObject {
     }
 
     private void modify() {
-    	testFrozen("Struct is frozen");
+        testFrozen("Struct is frozen");
 
         if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
             throw getRuntime().newSecurityError("Insecure: can't modify struct");
@@ -124,7 +125,7 @@ public class RubyStruct extends RubyObject {
             }
         }
 
-        throw getRuntime().newNameError(name + " is not struct member");
+        throw notStructMemberError(name);
     }
 
     private IRubyObject getByName(String name) {
@@ -138,7 +139,7 @@ public class RubyStruct extends RubyObject {
             }
         }
 
-        throw getRuntime().newNameError(name + " is not struct member");
+        throw notStructMemberError(name);
     }
 
     // Struct methods
@@ -167,7 +168,7 @@ public class RubyStruct extends RubyObject {
             newStruct = new RubyClass((RubyClass) recv);
         } else {
             if (!IdUtil.isConstant(name)) {
-                throw recv.getRuntime().newNameError("identifier " + name + " needs to be constant");
+                throw recv.getRuntime().newNameError("identifier " + name + " needs to be constant", name);
             }
             newStruct = ((RubyClass) recv).defineClassUnder(name, (RubyClass) recv);
         }
@@ -176,7 +177,7 @@ public class RubyStruct extends RubyObject {
         newStruct.setInstanceVariable("__member__", member);
 
         CallbackFactory callbackFactory = recv.getRuntime().callbackFactory(RubyStruct.class);
-		newStruct.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod("newStruct"));
+        newStruct.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod("newStruct"));
         newStruct.defineSingletonMethod("[]", callbackFactory.getOptSingletonMethod("newStruct"));
         newStruct.defineSingletonMethod("members", callbackFactory.getSingletonMethod("members"));
 
@@ -262,7 +263,11 @@ public class RubyStruct extends RubyObject {
             }
         }
 
-        throw getRuntime().newNameError(name + " is not struct member");
+        throw notStructMemberError(name);
+    }
+
+    private RaiseException notStructMemberError(String name) {
+        return getRuntime().newNameError(name + " is not struct member", name);
     }
 
     public IRubyObject get() {
@@ -278,7 +283,7 @@ public class RubyStruct extends RubyObject {
             }
         }
 
-        throw getRuntime().newNameError(name + " is not struct member");
+        throw notStructMemberError(name);
     }
 
     public IRubyObject rbClone() {
@@ -286,10 +291,10 @@ public class RubyStruct extends RubyObject {
 
         clone.values = new IRubyObject[values.length];
         System.arraycopy(values, 0, clone.values, 0, values.length);
-        
+
         clone.setFrozen(this.isFrozen());
         clone.setTaint(this.isTaint());
-        
+
         return clone;
     }
 
@@ -416,7 +421,7 @@ public class RubyStruct extends RubyObject {
         RubySymbol className = (RubySymbol) input.unmarshalObject();
         RubyClass rbClass = pathToClass(runtime, className.asSymbol());
         if (rbClass == null) {
-            throw runtime.newNameError("uninitialized constant " + className);
+            throw runtime.newNameError("uninitialized constant " + className, className.asSymbol());
         }
 
         int size = input.unmarshalInt();

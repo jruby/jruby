@@ -631,7 +631,7 @@ public final class Ruby implements IRuby {
         RubyClass runtimeError = defineClass("RuntimeError", standardError);
         RubyClass ioError = defineClass("IOError", standardError);
         RubyClass scriptError = defineClass("ScriptError", exceptionClass);
-        RubyClass nameError = defineClass("NameError", standardError);
+        RubyClass nameError = RubyNameError.createNameErrorClass(this, standardError);
         RubyClass rangeError = defineClass("RangeError", standardError);
         defineClass("SystemExit", exceptionClass);
         defineClass("Fatal", exceptionClass);
@@ -1220,12 +1220,12 @@ public final class Ruby implements IRuby {
     	return newRaiseException(getClass("NotImplementedError"), message);
     }
 
-    public RaiseException newNoMethodError(String message) {
-    	return newRaiseException(getClass("NoMethodError"), message);
+    public RaiseException newNoMethodError(String message, String name) {
+        return new RaiseException(new RubyNameError(this, this.getClass("NoMethodError"), message, name), true);
     }
 
-    public RaiseException newNameError(String message) {
-    	return newRaiseException(getClass("NameError"), message);
+    public RaiseException newNameError(String message, String name) {
+        return new RaiseException(new RubyNameError(this, this.getClass("NameError"), message, name), true);
     }
 
     public RaiseException newLocalJumpError(String message) {

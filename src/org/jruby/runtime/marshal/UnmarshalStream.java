@@ -257,7 +257,7 @@ public class UnmarshalStream extends FilterInputStream {
         try {
             classInstance = runtime.getClassFromPath(className);
         } catch (RaiseException e) {
-            if (e.getException().getType() == runtime.getModule("NameError")) {
+            if (e.getException().isKindOf(runtime.getModule("NameError"))) {
                 throw runtime.newArgumentError("undefined class/module " + className);
             } 
                 

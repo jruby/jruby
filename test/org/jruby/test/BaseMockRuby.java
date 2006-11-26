@@ -504,12 +504,12 @@ public class BaseMockRuby implements IRuby {
 		
 	}
 
-	public RaiseException newNoMethodError(String message) {
+	public RaiseException newNoMethodError(String message, String name) {
 		throw new MockException();
 		
 	}
 
-	public RaiseException newNameError(String message) {
+	public RaiseException newNameError(String message, String name) {
 		throw new MockException();
 		
 	}

@@ -105,7 +105,8 @@ public class JavaMethod extends JavaCallable {
             Method method = javaClass.getMethod(methodName, argumentTypes);
             return create(runtime, method);
         } catch (NoSuchMethodException e) {
-            throw runtime.newNameError("undefined method '" + methodName + "' for class '" + javaClass.getName() + "'");
+            throw runtime.newNameError("undefined method '" + methodName + "' for class '" + javaClass.getName() + "'",
+                    methodName);
         }
     }
 
@@ -114,7 +115,8 @@ public class JavaMethod extends JavaCallable {
             Method method = javaClass.getDeclaredMethod(methodName, argumentTypes);
             return create(runtime, method);
         } catch (NoSuchMethodException e) {
-            throw runtime.newNameError("undefined method '" + methodName + "' for class '" + javaClass.getName() + "'");
+            throw runtime.newNameError("undefined method '" + methodName + "' for class '" + javaClass.getName() + "'",
+                    methodName);
         }
     }
 

@@ -1460,8 +1460,9 @@ public class EvaluationState {
                 
     
                 if (context.getFrameLastClass() == null) {
-                    throw runtime.newNameError("Superclass method '" + context.getFrameLastFunc()
-                            + "' disabled.");
+                    String name = context.getFrameLastFunc();
+                    throw runtime.newNameError("Superclass method '" + name
+                            + "' disabled.", name);
                 }
     
                 context.beginCallArgs();
@@ -1595,8 +1596,9 @@ public class EvaluationState {
                 
     
                 if (context.getFrameLastClass() == null) {
-                    throw runtime.newNameError("superclass method '" + context.getFrameLastFunc()
-                            + "' disabled");
+                    String name = context.getFrameLastFunc();
+                    throw runtime.newNameError("superclass method '" + name
+                            + "' disabled", name);
                 }
     
                 return context.callSuper(context.getFrameArgs());
