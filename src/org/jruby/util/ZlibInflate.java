@@ -43,7 +43,7 @@ public class ZlibInflate {
 
     public ZlibInflate(IRubyObject caller) {
         super();
-        flater = new Inflater();
+        flater = new Inflater(true);
         collected = new StringBuffer();
         runtime = caller.getRuntime();
     }
@@ -55,6 +55,10 @@ public class ZlibInflate {
         zstream.finish();
         zstream.close();
         return result;
+    }
+
+    public Inflater getInflater() {
+        return flater;
     }
 
     public void append(IRubyObject obj) {
@@ -98,6 +102,7 @@ public class ZlibInflate {
     }
 
     public void finish() {
+        flater.end();
     }
     
     public void close() {

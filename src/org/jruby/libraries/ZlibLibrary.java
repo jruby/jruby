@@ -37,6 +37,5 @@ import org.jruby.util.BuiltinScript;
 public class ZlibLibrary implements Library {
     public void load(final IRuby runtime) throws IOException {
         RubyZlib.createZlibModule(runtime);
-        new BuiltinScript("zlib").load(runtime);
     }
 }

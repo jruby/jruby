@@ -1202,13 +1202,13 @@ public class RubyObject implements Cloneable, IRubyObject {
     /**
      * @see org.jruby.runtime.builtin.IRubyObject#scanArgs()
      */
-    public IRubyObject[] scanArgs(IRuby runtime, IRubyObject[] args, int required, int optional) {
+    public IRubyObject[] scanArgs(IRubyObject[] args, int required, int optional) {
         int total = required+optional;
         int real = checkArgumentCount(args,required,total);
         IRubyObject[] narr = new IRubyObject[total];
         System.arraycopy(args,0,narr,0,real);
         for(int i=real; i<total; i++) {
-            narr[i] = runtime.getNil();
+            narr[i] = getRuntime().getNil();
         }
         return narr;
     }

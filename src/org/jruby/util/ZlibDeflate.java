@@ -54,7 +54,7 @@ public class ZlibDeflate {
 
     public ZlibDeflate(IRubyObject caller, int level, int win_bits, int memlevel, int strategy) {
         super();
-        flater = new Deflater(level);
+        flater = new Deflater(level,true);
         flater.setStrategy(strategy);
         collected = new StringBuffer();
         runtime = caller.getRuntime();
@@ -63,10 +63,14 @@ public class ZlibDeflate {
     public static IRubyObject s_deflate(IRubyObject caller, String str, int level) 
     	throws UnsupportedEncodingException, DataFormatException, IOException {
         ZlibDeflate zstream = new ZlibDeflate(caller, level, MAX_WBITS, DEF_MEM_LEVEL, Deflater.DEFAULT_STRATEGY);
-        IRubyObject result = zstream.deflate(str, new Long(FINISH));
+        IRubyObject result = zstream.deflate(str, FINISH);
         zstream.close();
         
         return result;
+    }
+
+    public Deflater getDeflater() {
+        return flater;
     }
 
     public void append(IRubyObject obj) throws IOException, UnsupportedEncodingException {
@@ -88,13 +92,11 @@ public class ZlibDeflate {
         return str;
     }
 
-    public IRubyObject flush(Long flush) throws IOException {
+    public IRubyObject flush(int flush) throws IOException {
         return deflate("", flush);
     }
 
-    public IRubyObject deflate(String str, Long flush_x) throws IOException {
-        int flush = flush_x.intValue();
-        
+    public IRubyObject deflate(String str, int flush) throws IOException {
         if (null == str) {
             StringBuffer result = new StringBuffer();
             byte[] outp = new byte[1024];
@@ -127,12 +129,23 @@ public class ZlibDeflate {
                 return runtime.newString(result.toString());
             }
             
-            return runtime.getNil();
+            return runtime.newString("");
         }
     }
     
-    public void finish() {
+    public IRubyObject finish() throws Exception {
+        StringBuffer result = new StringBuffer();
+        byte[] outp = new byte[1024];
+        byte[] buf = collected.toString().getBytes("ISO8859_1");
+        collected = new StringBuffer();
+        flater.setInput(buf);
         flater.finish();
+        int resultLength = -1;
+        while (!flater.finished() && resultLength != 0) {
+            resultLength = flater.deflate(outp);
+            result.append(new String(outp, 0, resultLength,"ISO-8859-1"));
+        }
+        return runtime.newString(result.toString());
     }
     
     public void close() {
