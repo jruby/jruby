@@ -149,7 +149,7 @@ public class JRubyConstructor extends ConstructorImpl {
     }
 
     public static Object constructYamlTimestamp(final Constructor ctor, final Node node) {
-        return ((JRubyConstructor)ctor).runtime.newTime(((Date)SafeConstructorImpl.constructYamlTimestamp(ctor,node)).getTime());
+        return ((JRubyConstructor)ctor).runtime.newTime(((Date)SafeConstructorImpl.constructYamlTimestamp(ctor,node)).getTime()).callMethod(((JRubyConstructor)ctor).runtime.getCurrentContext(),"utc");
     }
 
     public static Object constructYamlTimestampYMD(final Constructor ctor, final Node node) {
