@@ -42,3 +42,12 @@ test_equal(5, a1.x)
 # Struct::Tms
 tms = Struct::Tms.new(0, 0, 0, 0)
 test_ok(tms != nil)
+
+# Struct creation with a block
+a = Struct.new(:foo, :bar) {
+  def hello
+    "hello"
+  end
+}
+
+test_equal("hello", a.new(0, 0).hello)

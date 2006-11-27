@@ -187,6 +187,11 @@ public class RubyStruct extends RubyObject {
             newStruct.defineMethod(memberName, callbackFactory.getMethod("get"));
             newStruct.defineMethod(memberName + "=", callbackFactory.getMethod("set", IRubyObject.class));
         }
+        
+        ThreadContext context = recv.getRuntime().getCurrentContext();
+        if (context.isBlockGiven()) {
+            recv.getRuntime().getCurrentContext().yieldCurrentBlock(null, newStruct, newStruct, false);
+        }
 
         return newStruct;
     }
