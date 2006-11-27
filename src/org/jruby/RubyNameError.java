@@ -53,7 +53,7 @@ public class RubyNameError extends RubyException {
     }
 
     protected RubyNameError(IRuby runtime, RubyClass exceptionClass) {
-        this(runtime, exceptionClass, "NameError");
+        this(runtime, exceptionClass, exceptionClass.getName().toString());
     }
 
     public RubyNameError(IRuby runtime, RubyClass exceptionClass, String message) {
@@ -67,7 +67,7 @@ public class RubyNameError extends RubyException {
     
     public static RubyNameError newRubyNameError(IRubyObject recv, IRubyObject[] args) {
         IRuby runtime = recv.getRuntime();
-        RubyNameError newError = new RubyNameError(runtime, runtime.getClass("NameError"));
+        RubyNameError newError = new RubyNameError(runtime, (RubyClass)recv);
         newError.callInit(args);
         return newError;
     }
