@@ -193,10 +193,8 @@ public class RubyClass extends RubyModule {
             superClass = runtime.getObject();
         }
 
-        RubyClass newClass = superClass.subclass();
         ThreadContext tc = runtime.getCurrentContext();
-
-        newClass.makeMetaClass(superClass.getMetaClass(), tc.peekCRef());
+        RubyClass newClass = superClass.newSubClass(null,tc.peekCRef());
 
         // call "initialize" method
         newClass.callInit(args);

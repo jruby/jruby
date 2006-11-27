@@ -64,7 +64,6 @@ public class ObjectMetaClass extends AbstractMetaClass {
     protected ObjectMetaClass(String name, Class builtinClass, RubyClass superClass, SinglyLinkedList parentCRef) {
         super(superClass.getRuntime(), superClass.getRuntime().getClass("Class"), superClass, parentCRef, name);
 
-        assert name != null;
         assert builtinClass != null;
         //assert RubyObject.class.isAssignableFrom(builtinClass) || RubyObject.class == builtinClass: "builtinClass have to be a subclass of RubyObject.";
         assert superClass != null;
@@ -74,7 +73,9 @@ public class ObjectMetaClass extends AbstractMetaClass {
         makeMetaClass(superClass.getMetaClass(), getCRef());
         inheritedBy(superClass);
 
-        ((RubyModule)parentCRef.getValue()).setConstant(name, this);
+        if(name != null) {
+            ((RubyModule)parentCRef.getValue()).setConstant(name, this);
+        }
     }
     
     protected class ObjectMeta extends Meta {
