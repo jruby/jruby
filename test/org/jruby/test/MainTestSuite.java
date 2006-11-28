@@ -71,6 +71,7 @@ public class MainTestSuite extends TestSuite {
         suite.addTest(new TestSuite(TestRegexpTranslator.class));
         suite.addTest(new TestSuite(TestAdoptedThreading.class));
         suite.addTest(new TestSuite(TestRubyArray.class));
+        suite.addTest(new TestSuite(TestVariableCreation.class));
         return suite;
     }
 }
