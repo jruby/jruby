@@ -63,8 +63,8 @@ public class TestObjectSpace extends TestCase {
         RubyString o1 = runtime.newString("hey");
         RubyString o2 = runtime.newString("ho");
 
-        long id1 = target.createId(o1);
-        long id2 = target.createId(o2);
+        long id1 = target.idOf(o1);
+        long id2 = target.idOf(o2);
 
         assertEquals("id of normal objects must be even", 0, id1 % 2);
         assertEquals("id of normal objects must be even", 0, id2 % 2);
@@ -94,13 +94,13 @@ public class TestObjectSpace extends TestCase {
 
         Iterator strings = target.iterator(runtime.getString());
         assertSame(o4, strings.next());
-        assertEquals(null, strings.next());
+        assertNull(strings.next());
 
         Iterator numerics = target.iterator(runtime.getClass("Numeric"));
         for (int i = 0; i < 3; i++) {
             Object item = numerics.next();
             assertTrue(storedFixnums.contains(item));
         }
-        assertEquals(null, numerics.next());
+        assertNull(numerics.next());
     }
 }

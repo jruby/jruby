@@ -35,12 +35,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Collections;
-
 import org.jruby.ast.Node;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
@@ -59,6 +53,12 @@ import org.jruby.util.IdUtil;
 import org.jruby.util.PrintfFormat;
 import org.jruby.util.collections.SinglyLinkedList;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 /**
  *
  * @author  jpetersen
@@ -74,9 +74,6 @@ public class RubyObject implements Cloneable, IRubyObject {
     // The two properties frozen and taint
     private boolean frozen;
     private boolean taint;
-
-    // Object identity, initialized on demand
-    private long id = 0;
 
     public RubyObject(IRuby runtime, RubyClass metaClass) {
         this(runtime, metaClass, runtime.isObjectSpaceEnabled());
@@ -799,12 +796,9 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public synchronized RubyFixnum id() {
-        if (id == 0) {
-            id = getRuntime().getObjectSpace().createId(this);
-        }
-        return getRuntime().newFixnum(id);
+        return getRuntime().newFixnum(getRuntime().getObjectSpace().idOf(this));
     }
-
+    
     public RubyFixnum hash() {
         return getRuntime().newFixnum(System.identityHashCode(this));
     }

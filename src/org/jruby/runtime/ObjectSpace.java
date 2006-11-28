@@ -30,12 +30,17 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
-import java.util.*;
-
 import org.jruby.RubyModule;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.WeakIdentityHashMap;
+
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * FIXME: This version is faster than the previous, but both suffer from a
@@ -51,17 +56,29 @@ public class ObjectSpace {
 
     private ReferenceQueue deadIdentityReferences = new ReferenceQueue();
     private final Map identities = new HashMap();
+    private final Map identitiesByObject = new WeakIdentityHashMap();
+
     private long maxId = 4; // Highest reserved id
 
-    public long createId(IRubyObject object) {
+    public long idOf(IRubyObject rubyObject) {
         synchronized (identities) {
-            cleanIdentities();
-            maxId += 2; // id must always be even
-            identities.put(Long.valueOf(maxId), new IdReference(object, maxId, deadIdentityReferences));
-            return maxId;
+            Long longId = (Long) identitiesByObject.get(rubyObject);
+            if (longId == null) {
+                longId = createId(rubyObject);
+            }
+            return longId.longValue();
         }
     }
 
+    private Long createId(IRubyObject object) {
+        cleanIdentities();
+        maxId += 2; // id must always be even
+        Long longMaxId = new Long(maxId);
+        identities.put(longMaxId, new IdReference(object, maxId, deadIdentityReferences));
+        identitiesByObject.put(object, longMaxId);
+        return longMaxId;
+    }
+    
     public IRubyObject id2ref(long id) {
         synchronized (identities) {
             cleanIdentities();
@@ -126,28 +143,28 @@ public class ObjectSpace {
             reference.remove();
         }
     }
-    
+
     private class WeakReferenceListNode extends WeakReference {
         public WeakReferenceListNode prev;
         public WeakReferenceListNode next;
         public WeakReferenceListNode(Object ref, ReferenceQueue queue, WeakReferenceListNode next) {
             super(ref, queue);
-            
+
             this.next = next;
             if (next != null) {
-            	next.prev = this;
+                next.prev = this;
             }
         }
-        
+
         public void remove() {
-        	synchronized (ObjectSpace.this) {
-	            if (prev != null) {
-	                prev.next = next;
-	            }
-	            if (next != null) {
-	                next.prev = prev;
-	            }
-        	}
+            synchronized (ObjectSpace.this) {
+                if (prev != null) {
+                    prev.next = next;
+                }
+                if (next != null) {
+                    next.prev = prev;
+                }
+            }
         }
     }
 
