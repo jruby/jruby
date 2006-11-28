@@ -872,12 +872,14 @@ public class RubyKernel {
     	private PrintStream out;
     	private PrintStream err;
     	private int result;
+    	private File dir;
     	
-    	public InProcessScript(String[] argArray, InputStream in, PrintStream out, PrintStream err) {
+    	public InProcessScript(String[] argArray, InputStream in, PrintStream out, PrintStream err, File dir) {
     		this.argArray = argArray;
     		this.in = in;
     		this.out = out;
     		this.err = err;
+    		this.dir = dir;
     	}
 
 		public int getResult() {
@@ -889,7 +891,13 @@ public class RubyKernel {
 		}
 		
         public void run() {
-            result = new Main(in, out, err).run(argArray);
+            String oldDir = System.getProperty("user.dir");
+            try {
+                System.setProperty("user.dir", dir.getAbsolutePath());
+                result = new Main(in, out, err).run(argArray);
+            } finally {
+                System.setProperty("user.dir", oldDir);
+            }
         }
     }
 
@@ -900,6 +908,7 @@ public class RubyKernel {
             rawArgs[0] = runtime.newString(repairDirSeps(rawArgs[0].toString()));
             Process aProcess = null;
             InProcessScript ipScript = null;
+            File pwd = new File(runtime.evalScript("Dir.pwd").toString());
             
             if (isRubyCommand(rawArgs[0].toString())) {
                 List args = parseCommandLine(rawArgs);
@@ -913,7 +922,7 @@ public class RubyKernel {
                 args.subList(startIndex,args.size()).toArray(argArray);
 
                 // FIXME: Where should we get in and err from?
-                ipScript = new InProcessScript(argArray, System.in, redirect, redirect);
+                ipScript = new InProcessScript(argArray, System.in, redirect, redirect, pwd);
                 
                 // execute ruby command in-process
                 ipScript.start();
@@ -926,7 +935,7 @@ public class RubyKernel {
                 argArray[0] = shell;
                 argArray[1] = shellSwitch;
                 argArray[2] = rawArgs[0].toString();
-                aProcess = Runtime.getRuntime().exec(argArray);
+                aProcess = Runtime.getRuntime().exec(argArray, new String[]{}, pwd);
             } else {
                 // execute command directly, no wildcard expansion
                 if (rawArgs.length > 1) {
@@ -934,9 +943,9 @@ public class RubyKernel {
                     for (int i=0;i<rawArgs.length;i++) {
                         argArray[i] = rawArgs[i].toString();
                     }
-                    aProcess = Runtime.getRuntime().exec(argArray);
+                    aProcess = Runtime.getRuntime().exec(argArray, new String[]{}, pwd);
                 } else {
-                    aProcess = Runtime.getRuntime().exec(rawArgs[0].toString());
+                    aProcess = Runtime.getRuntime().exec(rawArgs[0].toString(), new String[]{}, pwd);
                 }
             }
             

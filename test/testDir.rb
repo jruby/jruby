@@ -78,3 +78,22 @@ Dir['.']
 
 # end JIRA 31 issues
 
+# begin http://jira.codehaus.org/browse/JRUBY-300
+java_test_classes = File.expand_path(File.dirname(__FILE__) + '/../build/classes/test')
+Dir.mkdir("testDir_4") unless File.exist?("testDir_4")
+Dir.chdir("testDir_4") do
+  pwd = `ruby -e "puts Dir.pwd"`
+  test_equal("testDir_4", pwd.split("/")[-1].strip)
+
+  pwd = `jruby -e "puts Dir.pwd"`
+  test_equal("testDir_4", pwd.split("/")[-1].strip)
+
+  pwd = `java -cp #{java_test_classes} org.jruby.util.Pwd`
+  test_equal("testDir_4", pwd.split("/")[-1].strip)
+end
+Dir.chdir("testDir_4")
+pwd = `java -cp #{java_test_classes} org.jruby.util.Pwd`
+test_equal("testDir_4", pwd.split("/")[-1].strip)
+Dir.chdir("..")
+Dir.delete("testDir_4")
+# end http://jira.codehaus.org/browse/JRUBY-300
