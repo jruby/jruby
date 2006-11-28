@@ -217,7 +217,7 @@ public class EvaluationState {
                 } else if (left.getMetaClass().isMethodBound(iVisited.getName(), true)) {
                     return "method";
                 }
-            } catch (RaiseException excptn) {}
+            } catch (JumpException excptn) {}
             
             return null;
         }
