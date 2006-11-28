@@ -141,16 +141,25 @@ public class EvaluationState {
             
         if (node instanceof ArrayNode) {
             for (Iterator iter = ((ArrayNode)node).iterator(); iter.hasNext(); ) {
-                if (getDefinition(context, (Node)iter.next(), self) == null) return null;
+                if (getDefinitionInner(context, (Node)iter.next(), self) == null) return null;
             }
-        } else if (getDefinition(context, node, self) == null) {
+        } else if (getDefinitionInner(context, node, self) == null) {
             return null;
         }
 
         return type;
     }
-
+    
     private static String getDefinition(ThreadContext context, Node node, IRubyObject self) {
+        try {
+            context.setWithinDefined(true);
+            return getDefinitionInner(context, node, self);
+        } finally {
+            context.setWithinDefined(false);
+        }
+    }
+    
+    private static String getDefinitionInner(ThreadContext context, Node node, IRubyObject self) {
         if (node == null) return "expression";
         
         switch(node.nodeId) {
@@ -159,7 +168,7 @@ public class EvaluationState {
         case NodeTypes.CALLNODE: {
             CallNode iVisited = (CallNode) node;
             
-            if (getDefinition(context, iVisited.getReceiverNode(), self) != null) {
+            if (getDefinitionInner(context, iVisited.getReceiverNode(), self) != null) {
                 try {
                     IRubyObject receiver = eval(context, iVisited.getReceiverNode(), self);
                     RubyClass metaClass = receiver.getMetaClass();
@@ -208,8 +217,7 @@ public class EvaluationState {
                 } else if (left.getMetaClass().isMethodBound(iVisited.getName(), true)) {
                     return "method";
                 }
-            } catch (JumpException excptn) {
-            }
+            } catch (RaiseException excptn) {}
             
             return null;
         }

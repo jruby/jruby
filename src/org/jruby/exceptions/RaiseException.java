@@ -100,8 +100,10 @@ public class RaiseException extends JumpException {
     protected void setException(RubyException newException, boolean nativeException) {
         IRuby runtime = newException.getRuntime();
         ThreadContext context = runtime.getCurrentContext();
-        
-        runtime.getGlobalVariables().set("$!", newException);
+
+        if (!context.isWithinDefined()) {
+            runtime.getGlobalVariables().set("$!", newException);
+        }
 
         if (runtime.getTraceFunction() != null) {
             runtime.callTraceFunction(context, "return", context.getPosition(),

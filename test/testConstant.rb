@@ -179,4 +179,6 @@ Empty::CONST_FOO = begin
    end
 test_equal(false, Empty::CONST_FOO)
 
-
+$! = nil
+defined? NoSuchThing::ToTestSideEffect
+test_equal(nil, $!)

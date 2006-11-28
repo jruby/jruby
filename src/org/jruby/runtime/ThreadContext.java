@@ -65,6 +65,9 @@ public class ThreadContext {
 
     // Is this thread currently with in a function trace? 
     private boolean isWithinTrace;
+    
+    // Is this thread currently doing an defined? defined should set things like $!
+    private boolean isWithinDefined;
 
     private Block blockStack;
 
@@ -821,7 +824,6 @@ public class ThreadContext {
           }
           cbase = cbase.getNext();
         } while (cbase != null);
-
         
         //System.out.println("CREF is " + state.threadContext.getCRef().getValue());  
         return ((RubyModule) peekCRef().getValue()).getConstant(name);
@@ -1146,5 +1148,23 @@ public class ThreadContext {
      */
     public void setWithinTrace(boolean isWithinTrace) {
         this.isWithinTrace = isWithinTrace;
+    }
+    
+    /**
+     * Is this thread actively in defined? at the moment.
+     * 
+     * @return true if within defined?
+     */
+    public boolean isWithinDefined() {
+        return isWithinDefined;
+    }
+    
+    /**
+     * Set whether we are actively within defined? or not.
+     * 
+     * @param isWithinDefined true if so
+     */
+    public void setWithinDefined(boolean isWithinDefined) {
+        this.isWithinDefined = isWithinDefined;
     }
 }
