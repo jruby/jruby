@@ -34,17 +34,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import org.jruby.IRuby;
 import org.jruby.RubyThread;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.util.collections.WeakHashSet;
 
 public class ThreadService {
     private IRuby runtime;
     private ThreadContext mainContext;
     private ThreadLocal localContext;
     private ThreadGroup rubyThreadGroup;
-    private List rubyThreadList;
+    private Set rubyThreadList;
     private Thread mainThread;
     private RubyThread criticalThread;
 
@@ -53,7 +55,7 @@ public class ThreadService {
         this.mainContext = new ThreadContext(runtime);
         this.localContext = new ThreadLocal();
         this.rubyThreadGroup = new ThreadGroup("Ruby Threads#" + runtime.hashCode());
-        this.rubyThreadList = Collections.synchronizedList(new ArrayList());
+        this.rubyThreadList = Collections.synchronizedSet(new WeakHashSet());
         
         // Must be called from main thread (it is currently, but this bothers me)
         mainThread = Thread.currentThread();
