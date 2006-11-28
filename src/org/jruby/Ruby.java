@@ -657,8 +657,10 @@ public final class Ruby implements IRuby {
         NativeException.createClass(this, runtimeError);
         systemCallError = defineClass("SystemCallError", standardError);
         errnoModule = defineModule("Errno");
-        
+       
         initErrnoErrors();
+
+        defineClass("Data",objectClass);
     }
 
     private void initBuiltinClasses() {
