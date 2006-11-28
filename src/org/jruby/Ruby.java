@@ -70,6 +70,7 @@ import org.jruby.libraries.StringScannerLibrary;
 import org.jruby.libraries.ZlibLibrary;
 import org.jruby.libraries.YamlLibrary;
 import org.jruby.libraries.EnumeratorLibrary;
+import org.jruby.libraries.BigDecimalLibrary;
 import org.jruby.ext.openssl.RubyOpenSSL;
 import org.jruby.libraries.DigestLibrary;
 import org.jruby.ext.Readline;
@@ -540,6 +541,7 @@ public final class Ruby implements IRuby {
         loadService.registerBuiltin("digest/rmd160.rb", new DigestLibrary.RMD160());
         loadService.registerBuiltin("digest/sha1.rb", new DigestLibrary.SHA1());
         loadService.registerBuiltin("digest/sha2.rb", new DigestLibrary.SHA2());
+        loadService.registerBuiltin("bigdecimal.rb", new BigDecimalLibrary());
     }
 
     private void initCoreClasses() {

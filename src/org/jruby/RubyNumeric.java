@@ -96,6 +96,10 @@ public class RubyNumeric extends RubyObject {
         return str2inum(runtime,str,base,false);
     }
 
+    public static RubyNumeric int2fix(IRuby runtime, long val) {
+        return RubyFixnum.newFixnum(runtime,val);
+    }
+
     /**
      * Converts a string representation of an integer to the integer value. 
      * Parsing starts at the beginning of the string (after leading and 
