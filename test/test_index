@@ -27,6 +27,7 @@ testException2.rb
 testFile.rb
 testFileTest.rb
 testIO.rb
+testIconv.rb
 testThread.rb
 testMarshal.rb
 testBackquote.rb
