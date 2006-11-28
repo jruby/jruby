@@ -152,7 +152,11 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     }
 
     public void initialize(String regex, int options) {
-        pattern = REGEXP_TRANSLATOR.translate(regex, options, code.flags());
+        try {
+            pattern = REGEXP_TRANSLATOR.translate(regex, options, code.flags());
+        } catch(java.util.regex.PatternSyntaxException e) {
+            throw getRuntime().newSyntaxError(e.getMessage());
+        }
     }
 
     public static String escapeSpecialChars(String original) {
@@ -224,7 +228,6 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         } else {
         	code = Code.create(getRuntime(), null);
         }
-
         initialize(pat, opts);
         return getRuntime().getNil();
     }

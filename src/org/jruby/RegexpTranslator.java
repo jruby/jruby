@@ -19,17 +19,11 @@ public class RegexpTranslator {
     private static final Pattern OCTAL_MISSING_ZERO_PATTERN = Pattern.compile("\\\\([1-7][0-7]{1,2})");
     private static final Pattern POSIX_NAME = Pattern.compile("\\[:(\\w+):\\]");
     
-    public Pattern translate(String regex, int options, int javaRegexFlags) {
+    public Pattern translate(String regex, int options, int javaRegexFlags) throws PatternSyntaxException {
     	javaRegexFlags |= translateFlags(options);
 		regex = translatePattern(regex, (javaRegexFlags & Pattern.COMMENTS) != 0);
 
-		// If we return null, rather than die this ends up generating a TypeError (which is better
-		// than crashing).
-		try {
-			return Pattern.compile(regex, javaRegexFlags);
-		} catch (PatternSyntaxException e) {}
-		
-		return null;
+                return Pattern.compile(regex, javaRegexFlags);
 	}
     
     // We do not check for pathological case of [:foo:] outside of [] (bug 1475096).

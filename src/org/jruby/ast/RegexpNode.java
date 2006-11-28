@@ -79,7 +79,7 @@ public class RegexpNode extends Node implements ILiteralNode {
         return value;
     }
     
-    public Pattern getPattern() {
+    public Pattern getPattern() throws java.util.regex.PatternSyntaxException {
         if (pattern == null) {
             pattern = translator.translate(value, options, Pattern.UNIX_LINES);
         }

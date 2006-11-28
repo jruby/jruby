@@ -1309,8 +1309,11 @@ public class EvaluationState {
                 } else if((opts & 64) != 0) { // param s
                     lang = "u";
                 }
-
-                return RubyRegexp.newRegexp(runtime, iVisited.getPattern(), lang);
+                try {
+                    return RubyRegexp.newRegexp(runtime, iVisited.getPattern(), lang);
+                } catch(java.util.regex.PatternSyntaxException e) {
+                    throw runtime.newSyntaxError(e.getMessage());
+                }
             }
             case NodeTypes.RESCUEBODYNODE: {
                 RescueBodyNode iVisited = (RescueBodyNode) node;
