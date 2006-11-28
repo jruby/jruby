@@ -519,9 +519,10 @@ public class FileMetaClass extends IOMetaClass {
         oldNameString.checkSafeString();
         newNameString.checkSafeString();
         JRubyFile oldFile = JRubyFile.create(getRuntime().getCurrentDirectory(),oldNameString.toString());
-        
-        if (!oldFile.exists()) {
-        	throw getRuntime().newErrnoENOENTError("No such file: " + oldNameString);
+        JRubyFile newFile = JRubyFile.create(getRuntime().getCurrentDirectory(),newNameString.toString());
+
+        if (!oldFile.exists() || !newFile.getParentFile().exists()) {
+        	throw getRuntime().newErrnoENOENTError("No such file or directory - " + oldNameString + " or " + newNameString);
         }
         oldFile.renameTo(JRubyFile.create(getRuntime().getCurrentDirectory(),newNameString.toString()));
         
