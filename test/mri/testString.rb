@@ -3,7 +3,6 @@ require 'test/minirunit'
 test_check "string & char"
 
 test_ok("abcd" == "abcd")
-test_ok("abcd" =~ "abcd")
 test_ok("abcd" === "abcd")
 # compile time string concatenation
 test_ok("ab" "cd" == "abcd")

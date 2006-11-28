@@ -439,3 +439,4 @@ test_equal("foa3VCPbMb8XQ", "foobar".crypt("foo"))
 
 test_equal("\"\\b\"","\x08".inspect)
 
+test_exception(TypeError) { "this" =~ "that" }

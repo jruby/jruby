@@ -300,7 +300,7 @@ public class RubyString extends RubyObject {
 		if (other instanceof RubyRegexp) {
 			return ((RubyRegexp) other).match(this);
 		} else if (other instanceof RubyString) {
-			return RubyRegexp.newRegexp((RubyString) other, 0, null).match(this);
+                    throw getRuntime().newTypeError("type mismatch: String given");
 		}
 		return other.callMethod(getRuntime().getCurrentContext(), "=~", this);
 	}
