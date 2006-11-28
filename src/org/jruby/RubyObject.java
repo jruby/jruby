@@ -1206,4 +1206,20 @@ public class RubyObject implements Cloneable, IRubyObject {
         }
         return narr;
     }
+
+    private transient Object dataStruct;
+
+    /**
+     * @see org.jruby.runtime.builtin.IRubyObject#dataWrapStruct()
+     */
+    public synchronized void dataWrapStruct(Object obj) {
+        this.dataStruct = obj;
+    }
+
+    /**
+     * @see org.jruby.runtime.builtin.IRubyObject#dataGetStruct()
+     */
+    public synchronized Object dataGetStruct() {
+        return dataStruct;
+    }
 }

@@ -333,4 +333,23 @@ public interface IRubyObject {
      * 
      */
     IRubyObject[] scanArgs(IRubyObject[] args, int required, int optional);
+
+    /**
+     * Our version of Data_Wrap_Struct.
+     *
+     * This method will just set a private pointer to the object provided. This pointer is transient
+     * and will not be accessible from Ruby.
+     *
+     * @param obj the object to wrap
+     */
+    void dataWrapStruct(Object obj);
+
+    /**
+     * Our version of Data_Get_Struct.
+     *
+     * Returns a wrapped data value if there is one, otherwise returns null.
+     *
+     * @return the object wrapped.
+     */
+    Object dataGetStruct();
 }
