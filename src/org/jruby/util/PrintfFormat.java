@@ -663,13 +663,15 @@ public class PrintfFormat {
                 case 'S':
                     s2 = printSFormat(String.valueOf(s));
                     break;
-                case 'c':
-                case 'C':
                 case 'd':
                 case 'D':
                 case 'i':
                 case 'I':
                     s2 = printDFormat((long)s);
+                    break;
+                case 'c':
+                case 'C':
+                    s2 = printCFormat((char)s);
                     break;
                 default :
                     throw new IllegalArgumentException("Cannot format a double with a format using a " + conversionCharacter + " conversion character.");
