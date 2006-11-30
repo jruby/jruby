@@ -225,7 +225,9 @@ public abstract class AbstractMetaClass extends RubyClass {
 				.getCurrentContext().peekCRef());
 		inheritedBy(superClass);
 
-		((RubyModule)parentCRef.getValue()).setConstant(name, this);
+                if(name != null) {
+                    ((RubyModule)parentCRef.getValue()).setConstant(name, this);
+                }
 
 		if (init) {
 			getMeta().initializeClass();
