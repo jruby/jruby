@@ -85,9 +85,12 @@ else
    CP_DELIMETER=":"
 fi
 
-for i in "$JRUBY_HOME"/lib/*.jar; do
-  CP=$CP$CP_DELIMETER$i
-done
+# add necessary jars for command-line execution
+CP=$CP$CP_DELIMETER"$JRUBY_HOME"/lib/asm-2.2.2.jar
+CP=$CP$CP_DELIMETER"$JRUBY_HOME"/lib/jline-0.9.91-SNAPSHOT.jar
+CP=$CP$CP_DELIMETER"$JRUBY_HOME"/lib/jruby.jar
+CP=$CP$CP_DELIMETER"$JRUBY_HOME"/lib/jvyaml.jar
+CP=$CP$CP_DELIMETER"$JRUBY_HOME"/lib/plaincharset.jar
 
 # ----- Set Up JRUBY_BASE If Necessary -------------------------------------
 
