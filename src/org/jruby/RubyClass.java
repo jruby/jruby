@@ -288,7 +288,9 @@ public class RubyClass extends RubyModule {
         newClass.makeMetaClass(getMetaClass(), newClass.getCRef());
         newClass.inheritedBy(this);
 
-        ((RubyModule)parentCRef.getValue()).setConstant(name, newClass);
+        if(null != name) {
+            ((RubyModule)parentCRef.getValue()).setConstant(name, newClass);
+        }
 
         return newClass;
     }
