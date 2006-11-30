@@ -222,7 +222,7 @@ public class IOMetaClass extends ObjectMetaClass {
                 // read
                 for (Iterator i = ((RubyArray) args[0]).getList().iterator(); i.hasNext(); ) {
                     IRubyObject obj = (IRubyObject) i.next();
-                    registerSelect(selector, obj, SelectionKey.OP_READ|SelectionKey.OP_ACCEPT|SelectionKey.OP_CONNECT);
+                    registerSelect(selector, obj, SelectionKey.OP_READ|SelectionKey.OP_ACCEPT);
                 }
             }
             if (args.length > 1 && !args[1].isNil()) {
@@ -274,14 +274,11 @@ public class IOMetaClass extends ObjectMetaClass {
                     w.add(key.attachment());
                 }
             }
-            List ret = new ArrayList();
-            ret.add(RubyArray.newArray(runtime, r));
-            ret.add(RubyArray.newArray(runtime, w));
-            ret.add(RubyArray.newArray(runtime, e));
+            
             // make all sockets blocking as configured again
             for (Iterator i = selector.keys().iterator(); i.hasNext(); ) {
                 SelectionKey key = (SelectionKey) i.next();
- 		SelectableChannel channel = key.channel();
+                SelectableChannel channel = key.channel();
                 synchronized(channel.blockingLock()) {
                     boolean blocking = ((RubyIO) key.attachment()).getBlocking();
                     key.cancel();
@@ -289,6 +286,17 @@ public class IOMetaClass extends ObjectMetaClass {
                 }
             }
             selector.close();
+
+            if (r.size() == 0 && w.size() == 0 && e.size() == 0) {
+                return runtime.getNil();
+            }
+            
+            List ret = new ArrayList();
+            
+            ret.add(RubyArray.newArray(runtime, r));
+            ret.add(RubyArray.newArray(runtime, w));
+            ret.add(RubyArray.newArray(runtime, e));
+
             return RubyArray.newArray(runtime, ret);
         } catch(IOException e) {
             throw runtime.newIOError(e.getMessage());
