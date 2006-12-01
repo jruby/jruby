@@ -167,15 +167,10 @@ public class RubyProcess {
     }
 
     public static IRubyObject pid(IRubyObject recv) {
-        String v = java.lang.management.ManagementFactory.getRuntimeMXBean().getName();
-        return recv.getRuntime().newFixnum(Integer.parseInt(v.substring(0,v.indexOf('@'))));
+        return recv.getRuntime().newFixnum(0);
     }
 
     public static IRubyObject kill(IRubyObject recv, IRubyObject[] args) throws Exception {
-        if(args.length == 2 && RubyNumeric.fix2int(args[1]) != 0) {
-            Runtime.getRuntime().exec("kill -9 " + args[1].toString()).waitFor();
-        }
-
         return recv.getRuntime().getNil();
     }
 }

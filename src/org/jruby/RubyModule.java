@@ -404,7 +404,6 @@ public class RubyModule extends RubyObject {
     public void defineMethod(String name, Callback method) {
         Visibility visibility = name.equals("initialize") ?
                 Visibility.PRIVATE : Visibility.PUBLIC;
-
         addMethod(name, new CallbackMethod(this, method, visibility));
     }
 

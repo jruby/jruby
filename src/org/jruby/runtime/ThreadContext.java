@@ -260,7 +260,7 @@ public class ThreadContext {
     }
     
     public void popScope() {
-        scopeIndex--;
+        scopeStack[scopeIndex--] = null;
     }
 
     private void expandScopesIfNecessary() {
@@ -418,7 +418,9 @@ public class ThreadContext {
     
     /////////////////////////// ITER MANAGEMENT //////////////////////////
     private Iter popIter() {
-        return (Iter) iterStack[iterIndex--];
+        Iter ret = (Iter) iterStack[iterIndex];
+        iterStack[iterIndex--] = null;
+        return ret;
     }
     
     private void pushIter(Iter iter) {
@@ -735,7 +737,7 @@ public class ThreadContext {
     }
     
     public void unsetCRef() {
-        crefIndex--;
+        crefStack[crefIndex--] = null;
     }
     
     public SinglyLinkedList pushCRef(RubyModule newModule) {
@@ -757,6 +759,8 @@ public class ThreadContext {
         
         if (next != null) {
             crefStack[++crefIndex] = next;
+        } else {
+            crefStack[crefIndex+1] = null;
         }
         
         return module;
@@ -770,7 +774,9 @@ public class ThreadContext {
     }
     
     public RubyModule popRubyClass() {
-        return (RubyModule)parentStack[parentIndex--];
+        RubyModule ret = (RubyModule)parentStack[parentIndex];
+        parentStack[parentIndex--] = null;
+        return ret;
     }
 	
     public RubyModule getRubyClass() {
