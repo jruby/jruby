@@ -92,7 +92,7 @@ public class ObjectSpace {
     private void cleanIdentities() {
         IdReference ref;
         while ((ref = (IdReference) deadIdentityReferences.poll()) != null)
-            identities.remove(long Long(ref.id()));
+            identities.remove(new Long(ref.id()));
     }
 
     public synchronized void add(IRubyObject object) {
