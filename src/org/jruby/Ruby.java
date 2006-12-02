@@ -100,6 +100,7 @@ import org.jruby.runtime.builtin.meta.ProcMetaClass;
 import org.jruby.runtime.builtin.meta.StringMetaClass;
 import org.jruby.runtime.builtin.meta.SymbolMetaClass;
 import org.jruby.runtime.builtin.meta.TimeMetaClass;
+import org.jruby.runtime.load.Library;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.util.BuiltinScript;
 import org.jruby.util.JRubyClassLoader;
@@ -519,7 +520,12 @@ public final class Ruby implements IRuby {
 
     private void initLibraries() {
         loadService = new LoadService(this);
-        loadService.registerBuiltin("java.rb", new BuiltinScript("javasupport"));
+        loadService.registerBuiltin("java.rb", new Library() {
+                public void load(IRuby runtime) throws IOException {
+                    Java.createJavaModule(runtime);
+                    new BuiltinScript("javasupport").load(runtime);
+                }
+            });
         loadService.registerBuiltin("socket.rb", new SocketLibrary());
         loadService.registerBuiltin("rbconfig.rb", new RbConfigLibrary());
 
@@ -595,7 +601,6 @@ public final class Ruby implements IRuby {
         new IOMetaClass(this).initializeClass();
         new ArrayMetaClass(this).initializeClass();
         
-        Java.createJavaModule(this);
         RubyClass structClass = RubyStruct.createStructClass(this);
         
         tmsStruct = RubyStruct.newInstance(structClass,
