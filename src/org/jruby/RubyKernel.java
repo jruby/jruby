@@ -199,7 +199,7 @@ public class RubyKernel {
         return recv.getRuntime().pushExitBlock(recv.getRuntime().newProc());
     }
 
-    public static IRubyObject autoload(IRubyObject recv, IRubyObject symbol, final IRubyObject file) {
+    public static IRubyObject autoload(final IRubyObject recv, IRubyObject symbol, final IRubyObject file) {
         final LoadService loadService = recv.getRuntime().getLoadService();
         loadService.addAutoload(symbol.asSymbol(), new IAutoloadMethod() {
             /**
@@ -207,7 +207,7 @@ public class RubyKernel {
              */
             public IRubyObject load(IRuby runtime, String name) {
                 loadService.require(file.toString());
-                return runtime.getObject().getConstant(name);
+                return ((RubyModule)recv).getConstant(name);
             }
         });
         return recv;
