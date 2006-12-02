@@ -31,6 +31,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
 import org.jruby.ast.Node;
+import org.jruby.ast.CallNode;
 import org.jruby.ast.types.IArityNode;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.runtime.Arity;
@@ -80,7 +81,10 @@ public class EvaluateCallable extends AbstractCallable {
             return Arity.optional();
         } else if (node instanceof IArityNode) {
             return ((IArityNode) node).getArity();
-        } 
+        } else if (node instanceof CallNode) {
+            return Arity.singleArgument();
+        }
+
 
         throw new Error("unexpected type " + node.getClass() + " at " + node.getPosition());
     }
