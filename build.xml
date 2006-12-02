@@ -377,6 +377,8 @@
     <delete dir="${build.dir}"/>
     <delete file="${lib.dir}/jruby.jar" quiet="true"/>
     <delete file="${lib.dir}/jruby-openssl.jar" quiet="true"/>
+    <delete file="${lib.dir}/jruby-complete.jar" quiet="true"/>
+    <delete file="${lib.dir}/jruby-applet.jar" quiet="true"/>
     <delete dir="${api.docs.dir}"/>
   </target>
 </project>
