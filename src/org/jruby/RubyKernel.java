@@ -85,7 +85,7 @@ public class RubyKernel {
         // TODO: Implement Kernel#abort
         module.defineModuleFunction("at_exit", callbackFactory.getSingletonMethod("at_exit"));
         module.defineModuleFunction("autoload", callbackFactory.getSingletonMethod("autoload", IRubyObject.class, IRubyObject.class));
-        // TODO: Implement Kernel#autoload?
+        module.definePublicModuleFunction("autoload?", callbackFactory.getSingletonMethod("autoload_p", IRubyObject.class));
         module.defineModuleFunction("binding", callbackFactory.getSingletonMethod("binding"));
         module.defineModuleFunction("block_given?", callbackFactory.getSingletonMethod("block_given"));
         // TODO: Implement Kernel#callcc
@@ -199,15 +199,39 @@ public class RubyKernel {
         return recv.getRuntime().pushExitBlock(recv.getRuntime().newProc());
     }
 
+    public static IRubyObject autoload_p(final IRubyObject recv, IRubyObject symbol) {
+        String name = symbol.asSymbol();
+        if(recv instanceof RubyModule) {
+            name = ((RubyModule)recv).getName() + "::" + name;
+        }
+        IAutoloadMethod m = recv.getRuntime().getLoadService().autoloadFor(name);
+        if(m == null) {
+            return recv.getRuntime().getNil();
+        } else {
+            return recv.getRuntime().newString(m.file());
+        }
+    }
+
     public static IRubyObject autoload(final IRubyObject recv, IRubyObject symbol, final IRubyObject file) {
         final LoadService loadService = recv.getRuntime().getLoadService();
-        loadService.addAutoload(symbol.asSymbol(), new IAutoloadMethod() {
+        final String baseName = symbol.asSymbol();
+        String nm = baseName;
+        if(recv instanceof RubyModule) {
+            nm = ((RubyModule)recv).getName() + "::" + nm;
+        }
+        loadService.addAutoload(nm, new IAutoloadMethod() {
+                public String file() {
+                    return file.toString();
+                }
             /**
              * @see org.jruby.runtime.load.IAutoloadMethod#load(IRuby, String)
              */
             public IRubyObject load(IRuby runtime, String name) {
                 loadService.require(file.toString());
-                return ((RubyModule)recv).getConstant(name);
+                if(recv instanceof RubyModule) {
+                    return ((RubyModule)recv).getConstant(baseName);
+                }
+                return runtime.getObject().getConstant(baseName);
             }
         });
         return recv;

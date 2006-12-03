@@ -592,7 +592,7 @@ public class RubyModule extends RubyObject {
                 IRubyObject constant = p.getConstantAt(name);
 
                 if (constant == null) {
-                    if (getRuntime().getLoadService().autoload(name) != null) {
+                    if (getRuntime().getLoadService().autoload(p.getName() + "::" + name) != null) {
                         continue;
                     }
                 }

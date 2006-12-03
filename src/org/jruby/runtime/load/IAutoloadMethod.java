@@ -35,5 +35,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author jpetersen
  */
 public interface IAutoloadMethod {
+    public String file();
     public IRubyObject load(IRuby runtime, String name);
 }

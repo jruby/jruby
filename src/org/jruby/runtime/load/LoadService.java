@@ -310,6 +310,10 @@ public class LoadService {
         return autoloadMap.containsKey(name);
     }
 
+    public IAutoloadMethod autoloadFor(String name) {
+        return (IAutoloadMethod)autoloadMap.get(name);
+    }
+
     public IRubyObject autoload(String name) {
         IAutoloadMethod loadMethod = (IAutoloadMethod)autoloadMap.remove(name);
         if (loadMethod != null) {
