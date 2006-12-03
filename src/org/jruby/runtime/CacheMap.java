@@ -27,13 +27,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.WeakHashMap;
 import java.util.Iterator;
-import java.util.List;
+import java.util.Set;
 import java.util.Map;
 
 import org.jruby.RubyModule;
+import org.jruby.util.collections.WeakHashSet;
 
 /**
  * This class represents mappings between methods that have been cached and the classes which
@@ -51,7 +51,7 @@ import org.jruby.RubyModule;
  * call this is responsible for synchronization.
  */
 public class CacheMap {
-	Map mappings = new HashMap();
+	Map mappings = new WeakHashMap();
 
 	/**
 	 * Add another class to the list of classes which are caching the method.
@@ -60,10 +60,10 @@ public class CacheMap {
 	 * @param module which is caching method
 	 */
 	public void add(ICallable method, RubyModule module) {
-		List classList = (List) mappings.get(method);
+		Set classList = (Set) mappings.get(method);
 		
 		if (classList == null) {
-			classList = new ArrayList();
+			classList = new WeakHashSet();
 			mappings.put(method, classList);
 		}
 		
@@ -79,7 +79,7 @@ public class CacheMap {
 	 * @param method to remove all caches of
 	 */
 	public void remove(String name, ICallable method) {
-		List classList = (List) mappings.remove(method);
+		Set classList = (Set) mappings.remove(method);
 		
 		// Removed method has never been used so it has not been cached
 		if (classList == null) {
@@ -87,7 +87,10 @@ public class CacheMap {
 		}
 		
 		for(Iterator iter = classList.iterator(); iter.hasNext();) {
-			((RubyModule) iter.next()).removeCachedMethod(name);
+			RubyModule module = (RubyModule) iter.next();
+            if (module != null) {
+                module.removeCachedMethod(name);
+            }
 		}
 	}
 }

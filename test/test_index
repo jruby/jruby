@@ -75,6 +75,7 @@ testInspect.rb
 testProcess.rb
 testObjectSpace.rb
 testNoMethodError.rb
+testCacheMapLeak.rb
 
 # MRI Ruby tests (from sample/test.rb in Matz's Ruby Interpreter):
 
