@@ -305,3 +305,16 @@ end
 a = "my string"
 a.extend(Fred)
 test_equal("hello", a.meth1)
+
+# Chain of includes deals with method cache flush
+module MT_A
+  def foo
+  end
+end
+module MT_B
+  include MT_A
+  alias :foo_x :foo
+end
+class MT_C
+  include MT_B
+end

@@ -392,7 +392,8 @@ public class RubyModule extends RubyObject {
         if (changed) {
             // MRI seems to blow away its cache completely after an include; is
             // what we're doing here really safe?
-            for (Iterator iter = ((RubyModule) arg).getMethods().keySet().iterator();
+            List methodNames = new ArrayList(((RubyModule) arg).getMethods().keySet());
+            for (Iterator iter = methodNames.iterator();
                  iter.hasNext();) {
                 String methodName = (String) iter.next();
                 getRuntime().getCacheMap().remove(methodName, searchMethod(methodName));
