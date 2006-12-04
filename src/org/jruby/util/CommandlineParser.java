@@ -105,7 +105,11 @@ public class CommandlineParser {
                     shouldRunInterpreter = false;
                     break;
                 case 'I' :
-                    loadPaths.add(grabValue(" -I must be followed by a directory name to add to lib path"));
+                    String s = grabValue(" -I must be followed by a directory name to add to lib path");
+                    String[] ls = s.split(":");
+                    for(int i=0;i<ls.length;i++) {
+                        loadPaths.add(ls[i]);
+                    }
                     break FOR;
                 case 'r' :
                     requiredLibraries.add(grabValue("-r must be followed by a package to require"));
