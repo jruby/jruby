@@ -669,10 +669,12 @@ public class RubyModule extends RubyObject {
         if (type == null) {
             return (RubyClass) setConstant(name,
                     getRuntime().defineClassUnder(name, superClazz, cref));
-        }
+        } 
 
         if (!(type instanceof RubyClass)) {
             throw getRuntime().newTypeError(name + " is not a class.");
+        } else if (superClazz != null && ((RubyClass) type).getSuperClass().getRealClass() != superClazz) {
+            throw getRuntime().newTypeError("superclass mismatch for class " + name);
         }
 
         return (RubyClass) type;
