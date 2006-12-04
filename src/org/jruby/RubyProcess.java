@@ -92,7 +92,7 @@ public class RubyProcess {
         process.defineModuleFunction("times", processCallbackFactory.getSingletonMethod("times"));
         
         // Process::Status methods  
-//        process_status.defineMethod("==", process_statusCallbackFactory.getMethod("op_eq"));
+        process_status.defineMethod("==", process_statusCallbackFactory.getMethod("op_eq", IRubyObject.class));
 //        process_status.defineMethod("&", process_statusCallbackFactory.getMethod("op_and"));
         process_status.defineMethod(">>", process_statusCallbackFactory.getMethod("rightshift_op", IRubyObject.class));
         process_status.defineMethod("to_i", process_statusCallbackFactory.getMethod("to_i"));
@@ -137,6 +137,10 @@ public class RubyProcess {
             return getRuntime().newFixnum(status >> shiftValue);
         }
         
+        public IRubyObject op_eq(IRubyObject other) {
+            return other.callMethod(getRuntime().getCurrentContext(),"==",this.to_i());
+        }
+
         public IRubyObject to_i() {
             return exitstatus();
         }
