@@ -884,7 +884,7 @@ public class RubyKernel {
         String [] spaceDelimitedTokens = command.split(" ", 2);
         String [] slashDelimitedTokens = spaceDelimitedTokens[0].split("/");
         String finalToken = slashDelimitedTokens[slashDelimitedTokens.length-1];
-        if (finalToken.indexOf("ruby") != -1 || finalToken.endsWith(".rb"))
+        if (finalToken.indexOf("ruby") != -1 || finalToken.endsWith(".rb") || finalToken.indexOf("irb") != -1)
             return true;
         else
             return false;
@@ -925,7 +925,13 @@ public class RubyKernel {
         }
     }
 
+    public static int runInShell(IRuby runtime, IRubyObject[] rawArgs) {
+        return runInShell(runtime,rawArgs,runtime.getOutputStream());
+    }
+
     public static int runInShell(IRuby runtime, IRubyObject[] rawArgs, OutputStream output) {
+        OutputStream error = runtime.getErrorStream();
+        InputStream input = runtime.getInputStream();
         try {
             // startup scripts set jruby.shell to /bin/sh for Unix, cmd.exe for Windows
             String shell = System.getProperty("jruby.shell");
@@ -936,17 +942,17 @@ public class RubyKernel {
             
             if (isRubyCommand(rawArgs[0].toString())) {
                 List args = parseCommandLine(rawArgs);
-                PrintStream redirect = new PrintStream(output);
                 String command = (String)args.get(0);
 
-                String[] argArray = new String[args.size()-1];
                 // snip off ruby or jruby command from list of arguments
                 // leave alone if the command is the name of a script
                 int startIndex = command.endsWith(".rb") ? 0 : 1;
-                args.subList(startIndex,args.size()).toArray(argArray);
-
-                // FIXME: Where should we get in and err from?
-                ipScript = new InProcessScript(argArray, System.in, redirect, redirect, pwd);
+                if(command.trim().endsWith("irb")) {
+                    startIndex = 0;
+                    args.set(0,System.getProperty("jruby.home") + File.separator + "bin" + File.separator + "jirb");
+                }
+                String[] argArray = (String[])args.subList(startIndex,args.size()).toArray(new String[0]);
+                ipScript = new InProcessScript(argArray, runtime.getInputStream(), new PrintStream(output), new PrintStream(runtime.getErrorStream()), pwd);
                 
                 // execute ruby command in-process
                 ipScript.start();
@@ -974,32 +980,7 @@ public class RubyKernel {
             }
             
             if (aProcess != null) {
-                InputStream processOutput = aProcess.getInputStream();
-                
-                // Fairly innefficient impl, but readLine is unable to tell
-                // whether the last line in a process ended with a newline or not.
-                int b;
-                boolean crSeen = false;
-                while ((b = processOutput.read()) != -1) {
-                    if (b == '\r') {
-                        crSeen = true;
-                    } else {
-                        if (crSeen) {
-                            if (b != '\n') {
-                                output.write('\r');
-                            }
-                            crSeen = false;
-                        }
-                        output.write(b);
-                    }
-                }
-                if (crSeen) {
-                    output.write('\r');
-                }
-                aProcess.getErrorStream().close();
-                aProcess.getOutputStream().close();
-                processOutput.close();
-                
+                handleStreams(aProcess,input,output,error);
                 return aProcess.waitFor();
             } else if (ipScript != null) {
             	return ipScript.getResult();
@@ -1011,6 +992,56 @@ public class RubyKernel {
         } catch (InterruptedException e) {
             throw runtime.newThreadError("unexpected interrupt");
         }
+    }
+    
+    private static void handleStreams(Process p, InputStream in, OutputStream out, OutputStream err) throws IOException {
+        InputStream pOut = p.getInputStream();
+        InputStream pErr = p.getErrorStream();
+        OutputStream pIn = p.getOutputStream();
+
+        boolean done = false;
+        int b;
+        boolean proc = false;
+        while(!done) {
+            if(pOut.available() > 0) {
+                byte[] input = new byte[pOut.available()];
+                if((b = pOut.read(input)) == -1) {
+                    done = true;
+                } else {
+                    out.write(input);
+                }
+                proc = true;
+            }
+            if(pErr.available() > 0) {
+                byte[] input = new byte[pErr.available()];
+                if((b = pErr.read(input)) != -1) {
+                    err.write(input);
+                }
+                proc = true;
+            }
+            if(in.available() > 0) {
+                byte[] input = new byte[in.available()];
+                if((b = in.read(input)) != -1) {
+                    pIn.write(input);
+                }
+                proc = true;
+            }
+            if(!proc) {
+                if((b = pOut.read()) == -1) {
+                    if((b = pErr.read()) == -1) {
+                        done = true;
+                    } else {
+                        err.write(b);
+                    }
+                } else {
+                    out.write(b);
+                }
+            }
+            proc = false;
+        }
+        pOut.close();
+        pErr.close();
+        pIn.close();
     }
 
     public static RubyInteger srand(IRubyObject recv, IRubyObject[] args) {
@@ -1056,8 +1087,7 @@ public class RubyKernel {
 
     public static RubyBoolean system(IRubyObject recv, IRubyObject[] args) {
         IRuby runtime = recv.getRuntime();
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        int resultCode = runInShell(runtime, args, output);
+        int resultCode = runInShell(runtime, args);
         recv.getRuntime().getGlobalVariables().set("$?", RubyProcess.RubyStatus.newProcessStatus(runtime, resultCode));
         return runtime.newBoolean(resultCode == 0);
     }
