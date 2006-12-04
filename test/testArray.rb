@@ -122,3 +122,26 @@ array_of_alwaysequal = [AlwaysEqual.new]
 # this should pass because index should call AlwaysEqual#== when searching
 test_equal(0, array_of_alwaysequal.index("foo"))
 test_equal(0, array_of_alwaysequal.rindex("foo"))
+
+#### <=>
+
+test_equal(0, [] <=> [])
+test_equal(0, [1] <=> [1])
+test_equal(-1, [1] <=> [2])
+test_equal(1, [2] <=> [1])
+test_equal(1, [1] <=> [])
+test_equal(-1, [] <=> [1])
+
+test_equal(0, [1, 1] <=> [1, 1])
+test_equal(-1, [1, 1] <=> [1, 2])
+
+test_equal(1, [1,6,1] <=> [1,5,0,1])
+test_equal(-1, [1,5,0,1] <=> [1,6,1])
+
+class BadComparator
+  def <=>(other)
+    "hello"
+  end
+end
+
+test_equal("hello", [BadComparator.new] <=> [BadComparator.new])

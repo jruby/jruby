@@ -1127,21 +1127,18 @@ public class RubyArray extends RubyObject implements List {
         RubyArray ary = other.convertToArray();
         int otherLen = ary.getLength();
         int len = getLength();
-
-        if (len != otherLen) {
-            return (len > otherLen) ? RubyFixnum.one(getRuntime()) : RubyFixnum.minus_one(getRuntime());
-        }
-
+        int minCommon = Math.min(len, otherLen);
         ThreadContext context = getRuntime().getCurrentContext();
-
-        for (int i = 0; i < len; i++) {
+        RubyClass fixnumClass = getRuntime().getClass("Fixnum");
+        for (int i = 0; i < minCommon; i++) {
         	IRubyObject result = entry(i).callMethod(context, "<=>", ary.entry(i));
-        	
-        	if (result.isNil() || ((RubyFixnum)result).getLongValue() != 0) {
+            if (! result.isKindOf(fixnumClass) || RubyFixnum.fix2int(result) != 0) {
                 return result;
             }
         }
-
+        if (len != otherLen) {
+            return len < otherLen ? RubyFixnum.minus_one(getRuntime()) : RubyFixnum.one(getRuntime());
+        }
         return RubyFixnum.zero(getRuntime());
     }
 
