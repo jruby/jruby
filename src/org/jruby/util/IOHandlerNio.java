@@ -121,13 +121,11 @@ public class IOHandlerNio extends IOHandler {
         checkBuffered();
 	
         ByteBuffer buffer = ByteBuffer.allocate(length);
-	int bytes_read = 0;
-        do {
-            bytes_read = ((ReadableByteChannel) channel).read(buffer);
-            if (bytes_read < 0) {
-                throw new EOFException();
-            }
-        } while (blocking && (bytes_read == 0));
+        int bytes_read = 0;
+        bytes_read = ((ReadableByteChannel) channel).read(buffer);
+        if (bytes_read < 0) {
+            throw new EOFException();
+        }
 
         byte[] ret;
         if (buffer.hasRemaining()) {
