@@ -254,10 +254,11 @@ public class RubyYAML {
         }
         public IRubyObject method2(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             //yaml_load_file
-            IRubyObject io = self.getRuntime().getClass("File").callMethod(context,"open", args[0]);
-            self.callMethod(context,"load", io);
+            IRubyObject io = self.getRuntime().getClass("File").callMethod(context,"open", new IRubyObject[]{args[0],self.getRuntime().newString("r")});
+            IRubyObject val = self.callMethod(context,"load", io);
             io.callMethod(context, "close");
-            return io;
+            return val;
+
         }
         public IRubyObject method3(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             //yaml_dump_all
@@ -377,7 +378,12 @@ public class RubyYAML {
             return args[0].callMethod(context,"map", new IRubyObject[]{self.callMethod(context, "taguri"),self,self.callMethod(context, "to_yaml_style")});
         }
         public IRubyObject method1(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-            return self.getRuntime().newString("tag:yaml.org,2002:map");
+            String className = self.getType().getName();
+            if("Hash".equals(className)) {
+                return self.getRuntime().newString("tag:yaml.org,2002:map");
+            } else {
+                return self.getRuntime().newString("tag:yaml.org,2002:map:" + className);
+            }
         }
         public IRubyObject method2(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             return self.callMethod(context, "instance_variables").callMethod(context, "sort");
@@ -407,7 +413,12 @@ public class RubyYAML {
             return args[0].callMethod(context,"seq", new IRubyObject[]{self.callMethod(context, "taguri"),self,self.callMethod(context, "to_yaml_style")});
         }
         public IRubyObject method9(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-            return self.getRuntime().newString("tag:yaml.org,2002:seq");
+            String className = self.getType().getName();
+            if("Array".equals(className)) {
+                return self.getRuntime().newString("tag:yaml.org,2002:seq");
+            } else {
+                return self.getRuntime().newString("tag:yaml.org,2002:seq:" + className);
+            }
         }
     }
 
