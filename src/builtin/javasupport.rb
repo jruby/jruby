@@ -494,3 +494,4 @@ end
 
 require 'builtin/java/exceptions'
 require 'builtin/java/collections'
+require 'builtin/java/interfaces'
