@@ -39,6 +39,7 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.Selector;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Channel;
+import java.nio.channels.Pipe;
 
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
@@ -85,6 +86,7 @@ public class IOMetaClass extends ObjectMetaClass {
 	        defineSingletonMethod("readlines", Arity.optional());
 	        defineSingletonMethod("popen", Arity.optional());
             defineSingletonMethod("select", Arity.optional());
+			defineSingletonMethod("pipe", Arity.noArguments());
 	
 	        defineMethod("<<", Arity.singleArgument(), "addString");
 			defineMethod("binmode", Arity.noArguments());
@@ -390,4 +392,14 @@ public class IOMetaClass extends ObjectMetaClass {
         	throw runtime.newThreadError("unexpected interrupt");
         }
     }
+
+	// NIO based pipe
+	public IRubyObject pipe() throws Exception {
+		IRuby runtime = getRuntime();
+		Pipe pipe = Pipe.open();
+		return runtime.newArray(new IRubyObject[]{
+			new RubyIO(runtime, pipe.source()),
+			new RubyIO(runtime, pipe.sink())
+			});
+	}
 }
