@@ -830,7 +830,12 @@ public final class Ruby implements IRuby {
     }
 
     public PrintStream getErrorStream() {
-        return new PrintStream(((RubyIO) getGlobalVariables().get("$stderr")).getOutStream());
+        java.io.OutputStream os = ((RubyIO) getGlobalVariables().get("$stderr")).getOutStream();
+        if(null != os) {
+            return new PrintStream(os);
+        } else {
+            return new PrintStream(new org.jruby.util.SwallowingOutputStream());
+        }
     }
 
     public InputStream getInputStream() {
