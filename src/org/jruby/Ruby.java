@@ -217,7 +217,13 @@ public final class Ruby implements IRuby {
      * @return the JRuby runtime
      */
     public static IRuby getDefaultInstance() {
-        Ruby ruby = new Ruby(System.in, System.out, System.err);
+        Ruby ruby;
+        if(System.getProperty("jruby.objectspace.enabled") != null) {
+            ruby = new Ruby(System.in, System.out, System.err, Boolean.getBoolean("jruby.objectspace.enabled"));
+        } else {
+            ruby = new Ruby(System.in, System.out, System.err);
+        }
+
         ruby.init();
         
         return ruby;
