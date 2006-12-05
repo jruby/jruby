@@ -60,6 +60,7 @@ public class CommandlineParser {
     private boolean processLineEnds = false;
     private boolean split = false;
     private boolean verbose = false;
+    private boolean debug = false;
     private boolean showVersion = false;
     private String[] scriptArguments = null;
     private boolean shouldRunInterpreter = true;
@@ -137,6 +138,10 @@ public class CommandlineParser {
                 case 'a' :
                     split = true;
                     break;
+                case 'd' :
+                    debug = true;
+                    verbose = true;
+                    break;
                 case 'l' :
                     processLineEnds = true;
                     break;
@@ -162,6 +167,10 @@ public class CommandlineParser {
                     if (argument.equals("--version")) {
                         setShowVersion(true);
                         break FOR;
+                    } else if(argument.equals("--debug")) {
+                        debug = true;
+                        verbose = true;
+                        break;
                     } else {
                         if (argument.equals("--")) {
                             // ruby interpreter compatibilty 
@@ -270,6 +279,10 @@ public class CommandlineParser {
 
     public boolean isVerbose() {
         return verbose;
+    }
+
+    public boolean isDebug() {
+        return debug;
     }
 
     public boolean isShowVersion() {

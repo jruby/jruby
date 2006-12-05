@@ -167,6 +167,7 @@ public final class Ruby implements IRuby {
     private PrintStream err;
     
     private IRubyObject verbose;
+    private IRubyObject debug;
 
     // Java support
     private JavaSupport javaSupport;
@@ -501,6 +502,7 @@ public final class Ruby implements IRuby {
         falseObject = new RubyBoolean(this, false);
 
         verbose = falseObject;
+        debug = falseObject;
         
         javaSupport = new JavaSupport(this);
         
@@ -758,6 +760,20 @@ public final class Ruby implements IRuby {
      */
     public void setVerbose(IRubyObject verbose) {
         this.verbose = verbose;
+    }
+
+	/** Getter for property isDebug.
+     * @return Value of property isDebug.
+     */
+    public IRubyObject getDebug() {
+        return debug;
+    }
+
+    /** Setter for property isDebug.
+     * @param debug New value of property isDebug.
+     */
+    public void setDebug(IRubyObject debug) {
+        this.debug = debug;
     }
 
     public JavaSupport getJavaSupport() {

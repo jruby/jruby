@@ -169,6 +169,10 @@ public class BaseMockRuby implements IRuby {
 		throw new MockException();
 	}
 
+	public IRubyObject getDebug() {
+		throw new MockException();
+	}
+
 	public boolean isBlockGiven() {
 		throw new MockException();
 	}
@@ -181,6 +185,10 @@ public class BaseMockRuby implements IRuby {
 	public void setVerbose(IRubyObject verbose) {
 		throw new MockException();
 
+	}
+
+	public void setDebug(IRubyObject debug) {
+		throw new MockException();
 	}
 
 	public Visibility getCurrentVisibility() {

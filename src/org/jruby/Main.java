@@ -134,6 +134,8 @@ public class Main {
 			out.println("    -b              benchmark mode, times the script execution");
 			out.println("    -Idirectory     specify $LOAD_PATH directory (may be used more than once)");
 			out.println("    --              optional -- before rubyfile.rb for compatibility with ruby");
+            out.println("    -d              set debugging flags (set $DEBUG to true)");
+            out.println("    -v              print version number, then turn on verbose mode");
             out.println("    -O              run with ObjectSpace disabled (improves performance)");
             out.println("    -C              pre-compile scripts before running (EXPERIMENTAL)");
             hasPrintedUsage = true;
@@ -203,8 +205,11 @@ public class Main {
     private void initializeRuntime(final IRuby runtime, String filename) {
         IRubyObject argumentArray = runtime.newArray(JavaUtil.convertJavaArrayToRuby(runtime, commandline.getScriptArguments()));
         runtime.setVerbose(runtime.newBoolean(commandline.isVerbose()));
+        runtime.setDebug(runtime.newBoolean(commandline.isDebug()));
 
         defineGlobalVERBOSE(runtime);
+        defineGlobalDEBUG(runtime);
+
         runtime.getObject().setConstant("$VERBOSE", 
         		commandline.isVerbose() ? runtime.getTrue() : runtime.getNil());
         runtime.defineGlobalConstant("ARGV", argumentArray);
@@ -242,6 +247,26 @@ public class Main {
                 return newValue;
             }
         });
+    }
+
+    private void defineGlobalDEBUG(final IRuby runtime) {
+        IAccessor d = new IAccessor() {
+            public IRubyObject getValue() {
+                return runtime.getDebug();
+            }
+            
+            public IRubyObject setValue(IRubyObject newValue) {
+                if (newValue.isNil()) {
+                    runtime.setDebug(newValue);
+                } else {
+                    runtime.setDebug(runtime.newBoolean(newValue != runtime.getFalse()));
+                }
+            	
+                return newValue;
+            }
+            };
+        runtime.getGlobalVariables().define("$DEBUG", d);
+        runtime.getGlobalVariables().define("$-d", d);
     }
 
     private void defineGlobal(IRuby runtime, String name, boolean value) {

@@ -156,6 +156,16 @@ public interface IRuby {
 	 */
 	public void setVerbose(IRubyObject verbose);
 
+    /** Getter for property isDebug.
+	 * @return Value of property isDebug.
+	 */
+	public IRubyObject getDebug();
+
+	/** Setter for property isDebug.
+	 * @param verbose New value of property isDebug.
+	 */
+	public void setDebug(IRubyObject debug);
+
     public JavaSupport getJavaSupport();
 
     /** Defines a global variable
