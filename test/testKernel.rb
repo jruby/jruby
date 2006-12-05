@@ -74,7 +74,9 @@ test_exception(TypeError) { load Object.new }
 test_exception(RuntimeError) { Kernel.raise }
 test_no_exception { Kernel.sprintf "Helllo" }
 test_no_exception { Kernel.iterator? }
-test_no_exception { Kernel.exec "echo hello" }
+if File.exists?("/bin/true")
+  test_no_exception { Kernel.exec "/bin/true" }
+end
 
 test_no_exception {
     catch :fred do

@@ -84,5 +84,3 @@ test_equal("--- true\n", true.to_yaml)
 test_equal("--- false\n", false.to_yaml)
 
 test_equal("--- \n", nil.to_yaml)
-
-puts
