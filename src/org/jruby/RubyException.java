@@ -133,7 +133,12 @@ public class RubyException extends RubyObject {
             case 0 :
                 return this;
             case 1 :
-                return args[0] == this ? this : newInstance(getMetaClass(), args); 
+                if(args[0] == this) {
+                    return this;
+                }
+                RubyException ret = (RubyException)rbClone();
+                ret.initialize(args); // This looks wrong, but it's the way MRI does it.
+                return ret;
             default :
                 throw getRuntime().newArgumentError("Wrong argument count");
         }
@@ -197,5 +202,13 @@ public class RubyException extends RubyObject {
         }
             
         return true;
+    }
+
+    protected IRubyObject doClone() {
+        IRubyObject newObject = new RubyException(getRuntime(),getMetaClass().getRealClass());
+        if (newObject.getType() != getMetaClass().getRealClass()) {
+            throw getRuntime().newTypeError("wrong instance allocation");
+        }
+        return newObject;
     }
 }
