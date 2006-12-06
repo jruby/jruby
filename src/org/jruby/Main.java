@@ -173,6 +173,12 @@ public class Main {
         	} else {
         		throw je;
         	}
+        } catch(MainExitException e) {
+            if(e.isAborted()) {
+                return e.getStatus();
+            } else {
+                throw e;
+            }
         }
     }
     

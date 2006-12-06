@@ -35,6 +35,7 @@ import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ICallable;
@@ -107,6 +108,9 @@ public class ReflectedMethod extends AbstractMethod {
             	// allow it to bubble up
             	throw (ThreadKill) e.getTargetException();
             } else if (e.getTargetException() instanceof Exception) {
+                if(e.getTargetException() instanceof MainExitException) {
+                    throw (RuntimeException)e.getTargetException();
+                }
                 runtime.getJavaSupport().handleNativeException(e.getTargetException());
                 return runtime.getNil();
             } else {

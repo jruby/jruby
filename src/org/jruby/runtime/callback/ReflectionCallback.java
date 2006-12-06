@@ -36,6 +36,7 @@ import java.lang.reflect.Method;
 
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -147,6 +148,9 @@ public class ReflectionCallback implements Callback {
             	// allow it to bubble up
             	throw (ThreadKill) e.getTargetException();
             } else if (e.getTargetException() instanceof Exception) {
+                if(e.getTargetException() instanceof MainExitException) {
+                    throw (RuntimeException)e.getTargetException();
+                }
                 recv.getRuntime().getJavaSupport().handleNativeException(e.getTargetException());
                 return recv.getRuntime().getNil();
             } else {

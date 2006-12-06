@@ -30,11 +30,20 @@ public class MainExitException extends RuntimeException {
 	private static final long serialVersionUID = -8585821821150293755L;
 	boolean usageError;
 	int status;
-	
+    private boolean aborted;
+
+
 	public MainExitException(int status, String message) {
 		super(message);
 		
 		this.status = status;
+	}
+
+	public MainExitException(int status, boolean aborted) {
+		super("aborted");
+		
+		this.status = status;
+        this.aborted = aborted;
 	}
 
 	public int getStatus() {
@@ -45,6 +54,14 @@ public class MainExitException extends RuntimeException {
 		this.status = status;
 	}
 
+    public void setAborted(boolean aborted) {
+        this.aborted = aborted;
+    }
+
+    public boolean isAborted() {
+        return this.aborted;
+    }
+
 	public boolean isUsageError() {
 		return usageError;
 	}
@@ -52,4 +69,8 @@ public class MainExitException extends RuntimeException {
 	public void setUsageError(boolean usageError) {
 		this.usageError = usageError;
 	}
+
+    public Throwable fillInStackTrace() {
+        return this;
+    }    
 }
