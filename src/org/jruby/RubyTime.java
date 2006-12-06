@@ -54,7 +54,6 @@ public class RubyTime extends RubyObject {
 	private Calendar cal;
     private long usec;
 
-    private static final RubyDateFormat rubyDateFormat = new RubyDateFormat("-", Locale.US);
     private static final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("-", Locale.US);
 
     public RubyTime(IRuby runtime, RubyClass rubyClass) {
@@ -134,6 +133,7 @@ public class RubyTime extends RubyObject {
     }
 
     public RubyString strftime(IRubyObject format) {
+        final RubyDateFormat rubyDateFormat = new RubyDateFormat("-", Locale.US);
         rubyDateFormat.setCalendar(cal);
         rubyDateFormat.applyPattern(format.toString());
         String result = rubyDateFormat.format(cal.getTime());
