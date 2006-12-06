@@ -16,6 +16,7 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2006 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -48,6 +49,7 @@ public class Frame {
     private Iter iter;
     private IRuby runtime;
     private Block blockArg;
+    private boolean callingZSuper;
 
     private Scope scope;
     
@@ -193,5 +195,13 @@ public class Frame {
     
     Block getBlockArg() {
         return blockArg;
+    }
+
+    public boolean getCallingZSuper() {
+        return callingZSuper;
+    }
+
+    public void setCallingZSuper(boolean callingZSuper) {
+        this.callingZSuper = callingZSuper;
     }
 }

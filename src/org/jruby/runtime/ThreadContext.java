@@ -17,6 +17,7 @@
  * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2006 Michael Studman <codehaus@michaelstudman.com>
+ * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -328,7 +329,8 @@ public class ThreadContext {
     
     private void pushCallFrame(IRubyObject self, IRubyObject[] args, 
             String lastFunc, RubyModule lastClass) {
-        pushFrame(new Frame(this, self, args, lastFunc, lastClass, getPosition(), getCurrentIter(), getCurrentBlock()));
+        Iter iter = getCurrentFrame().getCallingZSuper() ? getCurrentFrame().getIter() : getCurrentIter();
+        pushFrame(new Frame(this, self, args, lastFunc, lastClass, getPosition(), iter, getCurrentBlock()));        
     }
     
     private void pushFrame() {
@@ -548,9 +550,11 @@ public class ThreadContext {
         getFrameScope().setVisibility(vis);
     }
 
-    public IRubyObject callSuper(IRubyObject[] args) {
-    	Frame frame = getCurrentFrame();
-    	
+    public IRubyObject callSuper(IRubyObject[] args, boolean zSuper) {
+        Frame frame = getCurrentFrame();
+        
+        frame.setCallingZSuper(zSuper);        
+        
         if (frame.getLastClass() == null) {
             String name = frame.getLastFunc();
             throw runtime.newNameError("superclass method '" + name + "' must be enabled by enableSuper().", name);
@@ -568,7 +572,14 @@ public class ThreadContext {
                                    frame.getLastFunc(), args, CallType.SUPER);
         } finally {
             clearNoBlock();
+            // must reset to false after calling so there's no screwy handling
+            // of other calls from this frame
+            frame.setCallingZSuper(false);            
         }
+    }    
+
+    public IRubyObject callSuper(IRubyObject[] args) {
+        return callSuper(args, false);
     }
 
     public IRubyObject yield(IRubyObject value) {

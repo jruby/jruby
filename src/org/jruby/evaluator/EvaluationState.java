@@ -1612,7 +1612,7 @@ public class EvaluationState {
                             + "' disabled", name);
                 }
     
-                return context.callSuper(context.getFrameArgs());
+                return context.callSuper(context.getFrameArgs(), true);
             }
             }
         } while (true);

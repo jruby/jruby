@@ -1123,7 +1123,7 @@ marity_test(:p)
 lambda(&method(:test_ok)).call(true)
 lambda(&get_block{|a,n| test_ok(a,n)}).call(true, 2)
 
-=begin
+
 class ITER_TEST1
    def a
      block_given?
@@ -1153,7 +1153,6 @@ class ITER_TEST4 < ITER_TEST3
 end
 
 ITER_TEST4.new.foo(44){55}   
-=end
 
 test_check "float"
 test_ok(2.6.floor == 2)
