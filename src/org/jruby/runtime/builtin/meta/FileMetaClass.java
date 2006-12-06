@@ -140,7 +140,7 @@ public class FileMetaClass extends IOMetaClass {
             constants.setConstant("LOCK_UN", runtime.newFixnum(RubyFile.LOCK_UN));
 	
 	        // TODO Singleton methods: atime, blockdev?, chardev?, chown, ctime, directory? 
-	        // TODO Singleton methods: executable?, executable_real?, extname,
+	        // TODO Singleton methods: executable?, executable_real?, 
 	        // TODO Singleton methods: ftype, grpowned?, lchmod, lchown, link, mtime, owned?
 	        // TODO Singleton methods: pipe?, readlink, setgid?, setuid?, socket?, 
 	        // TODO Singleton methods: stat, sticky?, symlink, symlink?, umask, utime
@@ -153,6 +153,7 @@ public class FileMetaClass extends IOMetaClass {
 	        defineSingletonMethod("delete", Arity.optional(), "unlink");
 			defineSingletonMethod("dirname", Arity.singleArgument());
 	        defineSingletonMethod("expand_path", Arity.optional());
+			defineSingletonMethod("extname", Arity.singleArgument());
             defineSingletonMethod("fnmatch", Arity.optional());
             defineSingletonMethod("fnmatch?", Arity.optional(), "fnmatch");
 			defineSingletonMethod("join", Arity.optional());
@@ -317,6 +318,17 @@ public class FileMetaClass extends IOMetaClass {
 			return getRuntime().newString("/");
 		}
 		return getRuntime().newString(name.substring(0, index)).infectBy(filename);
+	}
+
+	public IRubyObject extname(IRubyObject arg) {
+		RubyString filename = RubyString.stringValue(arg);
+		String name = filename.toString();
+        int ix = name.lastIndexOf(".");
+        if(ix == -1) {
+            return getRuntime().newString("");
+        } else {
+            return getRuntime().newString(name.substring(ix));
+        }
 	}
     
     public IRubyObject expand_path(IRubyObject[] args) {
