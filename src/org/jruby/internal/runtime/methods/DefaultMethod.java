@@ -38,6 +38,7 @@ import java.util.Iterator;
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
+import org.jruby.RubyProc;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.Node;
@@ -87,10 +88,13 @@ public final class DefaultMethod extends AbstractMethod {
     public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
     	assert args != null;
         IRuby runtime = context.getRuntime();
+        RubyProc blockArg = null;
 
         if (argsNode.getBlockArgNode() != null && context.isBlockGiven()) {
             // We pass depth zero since we know this only applies to newly created local scope
-            context.getCurrentScope().setValue(argsNode.getBlockArgNode().getCount(), runtime.newProc(), 0);
+            blockArg = runtime.newProc();
+            blockArg.getBlock().isLambda = context.getCurrentBlock().isLambda;
+            context.getCurrentScope().setValue(argsNode.getBlockArgNode().getCount(), blockArg, 0);
         }
 
         try {

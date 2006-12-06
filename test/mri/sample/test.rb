@@ -1044,11 +1044,9 @@ argument_test(true, get_block{|a,|})
 argument_test(true, get_block{|a,|}, 1,2)
 
 argument_test(true, get_block(&lambda{||}))
-=begin THIS SECTION HAS ERRORS; UNCOMMENT TO RUN
 argument_test(false, get_block(&lambda{||}),1)
 argument_test(true, get_block(&lambda{|a,|}),1)
 argument_test(false, get_block(&lambda{|a,|}),1,2)
-=end
 block = get_block{11}
 test_ok(block.class == Proc)
 test_ok(block.to_proc.class == Proc)
