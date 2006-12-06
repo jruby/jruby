@@ -1014,17 +1014,22 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     // TODO: This is almost RubyModule#instance_methods on the metaClass.  Perhaps refactor.
-    public RubyArray singleton_methods() {
+    public RubyArray singleton_methods(IRubyObject[] args) {
+        boolean all = true;
+        if(checkArgumentCount(args,0,1) == 1) {
+            all = args[0].isTrue();
+        }
+
         RubyArray result = getRuntime().newArray();
 
-        for (RubyClass type = getMetaClass(); type != null && type instanceof MetaClass;
+        for (RubyClass type = getMetaClass(); type != null && ((type instanceof MetaClass) || (all && type.isIncluded()));
              type = type.getSuperClass()) {
         	for (Iterator iter = type.getMethods().entrySet().iterator(); iter.hasNext(); ) {
                 Map.Entry entry = (Map.Entry) iter.next();
                 ICallable method = (ICallable) entry.getValue();
 
                 // We do not want to capture cached methods
-                if (method.getImplementationClass() != type) {
+                if (method.getImplementationClass() != type && !(all && type.isIncluded())) {
                 	continue;
                 }
 

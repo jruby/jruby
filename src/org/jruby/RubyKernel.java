@@ -188,7 +188,7 @@ public class RubyKernel {
         module.definePublicModuleFunction("respond_to?", objectCallbackFactory.getOptMethod("respond_to"));
         module.definePublicModuleFunction("send", objectCallbackFactory.getOptMethod("send"));
         module.defineAlias("__send__", "send");
-        module.definePublicModuleFunction("singleton_methods", objectCallbackFactory.getMethod("singleton_methods"));
+        module.definePublicModuleFunction("singleton_methods", objectCallbackFactory.getOptMethod("singleton_methods"));
         module.definePublicModuleFunction("taint", objectCallbackFactory.getMethod("taint"));
         module.definePublicModuleFunction("tainted?", objectCallbackFactory.getMethod("tainted"));
         module.definePublicModuleFunction("untaint", objectCallbackFactory.getMethod("untaint"));
