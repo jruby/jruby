@@ -11,8 +11,9 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -26,17 +27,33 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.javasupport.test;
-
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
-public class JavaSupportTestSuite extends TestSuite {
-
-        public static Test suite() {
-            TestSuite suite = new TestSuite();
-            suite.addTest(new TestSuite(TestBSF.class));
-            suite.addTest(new TestSuite(TestNativeException.class));
-            return suite;
-        }
+package org.jruby.javasupport.test; 
+ 
+import org.jruby.Ruby;
+import org.jruby.test.TestRubyBase;
+ 
+public class TestNativeException extends TestRubyBase { 
+	public TestNativeException(String name) { 
+		super(name); 
+	} 
+	
+	public void setUp() { 
+		runtime = Ruby.getDefaultInstance();
+	} 
+	
+	public void tearDown() { 
+		super.tearDown(); 
+	} 
+	
+	public void testCauseIsProxied() throws Exception { 
+		String result = eval(
+			"require 'java'\n" +
+			"include_class('java.io.File') { 'JFile' }\n" +
+			"begin\n" +
+			"  JFile.new(nil)\n" +
+			"rescue Exception => e\n" +
+			"end\n" +
+			"p e.cause.respond_to?(:print_stack_trace)"); 
+		assertEquals("Bug: [ JRUBY-106 ]", "true", result); 
+	} 
 }

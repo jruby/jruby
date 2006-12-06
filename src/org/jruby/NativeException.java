@@ -57,7 +57,9 @@ public class NativeException extends RubyException {
     }
     
     public IRubyObject cause() {
-        return JavaObject.wrap(getRuntime(), cause);
+        return getRuntime().getModule("JavaUtilities").callMethod(getRuntime().getCurrentContext(),
+            "wrap",
+            JavaObject.wrap(getRuntime(), cause));
     }
     
     public IRubyObject backtrace() {
