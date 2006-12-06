@@ -939,8 +939,6 @@ end
 $x = [[1,2],[3,4],[5,6]]
 test_ok($x.iter_test1{|x|x} == $x.iter_test2{|x|x})
 
-=begin THIS SECTION HAS ERRORS; UNCOMMENT TO RUN
-
 class IterTest
   def initialize(e); @body = e; end
 
@@ -985,7 +983,6 @@ IterTest.new([[8]]).each8 {|x| test_ok(x == [8])}
 
 IterTest.new([[0,0]]).each0 {|x| test_ok(x == [0,0])}
 IterTest.new([[8,8]]).each8 {|x| test_ok(x == [8,8])}
-=end
 
 def m
   test_ok(block_given?)

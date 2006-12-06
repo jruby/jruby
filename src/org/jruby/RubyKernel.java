@@ -82,7 +82,9 @@ public class RubyKernel {
         module.defineModuleFunction("Integer", callbackFactory.getSingletonMethod("new_integer", IRubyObject.class));
         module.defineModuleFunction("String", callbackFactory.getSingletonMethod("new_string", IRubyObject.class));
         module.defineModuleFunction("`", callbackFactory.getSingletonMethod("backquote", IRubyObject.class));
-        // TODO: Implement Kernel#abort
+        // TODO: Implement Kernel#abort. Can be done by throwing 
+        // an exception that derives from Throwable, and is catched in Main, only. 
+        // Or possibly in Ruby.
         module.defineModuleFunction("at_exit", callbackFactory.getSingletonMethod("at_exit"));
         module.defineModuleFunction("autoload", callbackFactory.getSingletonMethod("autoload", IRubyObject.class, IRubyObject.class));
         module.definePublicModuleFunction("autoload?", callbackFactory.getSingletonMethod("autoload_p", IRubyObject.class));
