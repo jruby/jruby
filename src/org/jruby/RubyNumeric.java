@@ -268,7 +268,6 @@ public class RubyNumeric extends RubyObject {
 
     protected IRubyObject callCoerced(String method, IRubyObject other) {
         IRubyObject[] args = getCoerced(other, true);
-
         return args[0].callMethod(getRuntime().getCurrentContext(), method, args[1]);
     }
     
