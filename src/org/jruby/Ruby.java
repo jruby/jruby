@@ -512,11 +512,11 @@ public final class Ruby implements IRuby {
 
         initCoreClasses();
 
-        RubyGlobal.createGlobals(this);
-
         topSelf = TopSelfFactory.createTopSelf(this);
 
         tc.preInitBuiltinClasses(objectClass, topSelf);
+
+        RubyGlobal.createGlobals(this);
 
         initBuiltinClasses();
         
