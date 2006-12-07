@@ -54,7 +54,7 @@ public class ZlibDeflate {
 
     public ZlibDeflate(IRubyObject caller, int level, int win_bits, int memlevel, int strategy) {
         super();
-        flater = new Deflater(level,true);
+        flater = new Deflater(level,false);
         flater.setStrategy(strategy);
         collected = new StringBuffer();
         runtime = caller.getRuntime();

@@ -43,7 +43,7 @@ public class ZlibInflate {
 
     public ZlibInflate(IRubyObject caller) {
         super();
-        flater = new Inflater(true);
+        flater = new Inflater(false);
         collected = new StringBuffer();
         runtime = caller.getRuntime();
     }
