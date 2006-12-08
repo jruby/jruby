@@ -121,6 +121,8 @@ module IRB
     @CONF[:LC_MESSAGES].load("irb/error.rb")
   rescue LoadError
     # ignore; when running from within an archive (JRuby's "complete" jar) this won't load
+  rescue
+    # happens with applet TODO: probably should make this more robust
   end
 
   FEATURE_IOPT_CHANGE_VERSION = "1.9.0"

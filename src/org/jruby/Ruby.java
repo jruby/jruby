@@ -44,6 +44,7 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.security.AccessControlException;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Random;
@@ -158,7 +159,7 @@ public final class Ruby implements IRuby {
     private IRubyObject topSelf;
     
     // former java.lang.System concepts now internalized for MVM
-    private String currentDirectory = JRubyFile.getFileProperty("user.dir");
+    private String currentDirectory;
     
     private long startTime = System.currentTimeMillis();
     
@@ -199,6 +200,13 @@ public final class Ruby implements IRuby {
         this.err = err;
         
         objectSpaceEnabled = true;
+        
+        try {
+            currentDirectory = JRubyFile.getFileProperty("user.dir");
+        } catch (AccessControlException accessEx) {
+            // default to "/" as current dir for applets (which can't read from FS anyway)
+            currentDirectory = "/";
+        }
     }
 
     /**
@@ -210,6 +218,13 @@ public final class Ruby implements IRuby {
         this.err = err;
         
         objectSpaceEnabled = osEnabled;
+        
+        try {
+            currentDirectory = JRubyFile.getFileProperty("user.dir");
+        } catch (AccessControlException accessEx) {
+            // default to "/" as current dir for applets (which can't read from FS anyway)
+            currentDirectory = "/";
+        }
     }
 
     /**

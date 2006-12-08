@@ -36,6 +36,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -136,27 +137,33 @@ public class LoadService {
       for (Iterator iter = additionalDirectories.iterator(); iter.hasNext();) {
         addPath((String) iter.next());
       }
-      if (runtime.getSafeLevel() == 0) {
-        String jrubyLib = System.getProperty("jruby.lib");
-        if (jrubyLib != null) {
-          addPath(jrubyLib);
-        }
-      }
       
-      String jrubyHome = System.getProperty("jruby.home");
-      if (jrubyHome != null) {
-        char sep = '/';
-        String rubyDir = jrubyHome + sep + "lib" + sep + "ruby" + sep;
-        
-        addPath(rubyDir + "site_ruby" + sep + Constants.RUBY_MAJOR_VERSION);
-        addPath(rubyDir + "site_ruby" + sep + Constants.RUBY_MAJOR_VERSION + sep + "java");
-        addPath(rubyDir + "site_ruby");
-        addPath(rubyDir + Constants.RUBY_MAJOR_VERSION);
-        addPath(rubyDir + Constants.RUBY_MAJOR_VERSION + sep + "java");
-        
-        // Added to make sure we find default distribution files within jar file.
-        // TODO: Either make jrubyHome become the jar file or allow "classpath-only" paths
-        addPath("lib" + sep + "ruby" + sep + Constants.RUBY_MAJOR_VERSION);
+      // wrap in try/catch for security exceptions in an applet
+      try {
+          if (runtime.getSafeLevel() == 0) {
+              String jrubyLib = System.getProperty("jruby.lib");
+              if (jrubyLib != null) {
+                  addPath(jrubyLib);
+              }
+          }
+          
+          String jrubyHome = System.getProperty("jruby.home");
+          if (jrubyHome != null) {
+              char sep = '/';
+              String rubyDir = jrubyHome + sep + "lib" + sep + "ruby" + sep;
+              
+              addPath(rubyDir + "site_ruby" + sep + Constants.RUBY_MAJOR_VERSION);
+              addPath(rubyDir + "site_ruby" + sep + Constants.RUBY_MAJOR_VERSION + sep + "java");
+              addPath(rubyDir + "site_ruby");
+              addPath(rubyDir + Constants.RUBY_MAJOR_VERSION);
+              addPath(rubyDir + Constants.RUBY_MAJOR_VERSION + sep + "java");
+              
+              // Added to make sure we find default distribution files within jar file.
+              // TODO: Either make jrubyHome become the jar file or allow "classpath-only" paths
+              addPath("lib" + sep + "ruby" + sep + Constants.RUBY_MAJOR_VERSION);
+          }
+      } catch (AccessControlException accessEx) {
+          // ignore, we're in an applet and can't access filesystem anyway
       }
       
       if (runtime.getSafeLevel() == 0) {
@@ -339,17 +346,15 @@ public class LoadService {
      * @return the correct file
      */
     private LoadServiceResource findFile(String name) {
-        //        try {
-            if (name.startsWith("jar:")) {
-                try {
-                    return new LoadServiceResource(new URL(name), name);
-                } catch (MalformedURLException e) {
-                    throw runtime.newIOErrorFromException(e);
-                }
+        if (name.startsWith("jar:")) {
+            try {
+                return new LoadServiceResource(new URL(name), name);
+            } catch (MalformedURLException e) {
+                throw runtime.newIOErrorFromException(e);
             }
+        }
 
-            //            ClassLoader classLoader = Thread.currentThread().getContextClassLoader(); 
-
+        try {
             JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(),name);
             if(file.isFile() && file.isAbsolute()) {
                 try {
@@ -358,45 +363,48 @@ public class LoadService {
                     throw runtime.newIOErrorFromException(e);
                 }
             }
-                        
-            ClassLoader classLoader = runtime.getJavaSupport().getJavaClassLoader();
-            String xname = name.replace('\\', '/');
-            
-            // Look in classpath next (we do not use File as a test since UNC names will match)
-            // Note: Jar resources must always begin with an '/'.
-            if (xname.charAt(0) == '/') {
-                URL loc = classLoader.getResource(xname);
+        } catch (AccessControlException accessEx) {
+            // ignore, applet security
+        } catch (IllegalArgumentException illArgEx) {
+        }
 
-                // Make sure this is not a directory or unavailable in some way
-                if (isRequireable(loc)) {
-                	return new LoadServiceResource(loc, loc.getPath());
-                }
+        ClassLoader classLoader = runtime.getJavaSupport().getJavaClassLoader();
+        String xname = name.replace('\\', '/');
+
+        // Look in classpath next (we do not use File as a test since UNC names will match)
+        // Note: Jar resources must always begin with an '/'.
+        if (xname.charAt(0) == '/') {
+            URL loc = classLoader.getResource(xname);
+
+            // Make sure this is not a directory or unavailable in some way
+            if (isRequireable(loc)) {
+                return new LoadServiceResource(loc, loc.getPath());
             }
-            
-            for (Iterator pathIter = loadPath.iterator(); pathIter.hasNext();) {
-                String entry = pathIter.next().toString();
-                if (entry.startsWith("jar:")) {
-                    JarFile current = (JarFile)jarFiles.get(entry);
-                    if(null == current) {
-                        try {
-                            current = new JarFile(entry.substring(4));
-                            jarFiles.put(entry,current);
-                        } catch (FileNotFoundException ignored) {
-                        } catch (IOException e) {
-                            throw runtime.newIOErrorFromException(e);
-                        }
-                    }
-                    if (current.getJarEntry(name) != null) {
-                        try {
-                            return new LoadServiceResource(new URL(entry + name), entry + name);
-                        } catch (MalformedURLException e) {
-                            throw runtime.newIOErrorFromException(e);
-                        }
-                    }
-                } 
+        }
 
-                //               	// Load from local filesystem
-                //                NormalizedFile current = (NormalizedFile)new NormalizedFile(entry, name).getAbsoluteFile();
+        for (Iterator pathIter = loadPath.iterator(); pathIter.hasNext();) {
+            String entry = pathIter.next().toString();
+            if (entry.startsWith("jar:")) {
+                JarFile current = (JarFile)jarFiles.get(entry);
+                if(null == current) {
+                    try {
+                        current = new JarFile(entry.substring(4));
+                        jarFiles.put(entry,current);
+                    } catch (FileNotFoundException ignored) {
+                    } catch (IOException e) {
+                        throw runtime.newIOErrorFromException(e);
+                    }
+                }
+                if (current.getJarEntry(name) != null) {
+                    try {
+                        return new LoadServiceResource(new URL(entry + name), entry + name);
+                    } catch (MalformedURLException e) {
+                        throw runtime.newIOErrorFromException(e);
+                    }
+                }
+            } 
+
+            try {
                 JRubyFile current = JRubyFile.create(JRubyFile.create(runtime.getCurrentDirectory(),entry).getAbsolutePath(), name);
                 if (current.isFile()) {
                     try {
@@ -405,24 +413,26 @@ public class LoadService {
                         throw runtime.newIOErrorFromException(e);
                     }
                 }
-                
-                // otherwise, try to load from classpath (Note: Jar resources always uses '/')
-                URL loc = classLoader.getResource(entry.replace('\\', '/') + "/" + xname);
-
-                // Make sure this is not a directory or unavailable in some way
-                if (isRequireable(loc)) {
-                	return new LoadServiceResource(loc, loc.getPath());
-                }
+            } catch (AccessControlException accessEx) {
+                // ignore, we're in an applet
+            } catch (IllegalArgumentException illArgEx) {
+                // ignore; Applet under windows has issues with current dir = "/"
             }
 
-            // Try to load from classpath without prefix. "A/b.rb" will not load as 
-            // "./A/b.rb" in a jar file. (Note: Jar resources always uses '/')
-            URL loc = classLoader.getResource(xname);
+            // otherwise, try to load from classpath (Note: Jar resources always uses '/')
+            URL loc = classLoader.getResource(entry.replace('\\', '/') + "/" + xname);
 
-            return isRequireable(loc) ? new LoadServiceResource(loc, loc.getPath()) : null;
-            //        } catch (MalformedURLException e) {
-            //            throw runtime.newIOErrorFromException(e);
-            //        }
+            // Make sure this is not a directory or unavailable in some way
+            if (isRequireable(loc)) {
+                return new LoadServiceResource(loc, loc.getPath());
+            }
+        }
+
+        // Try to load from classpath without prefix. "A/b.rb" will not load as 
+        // "./A/b.rb" in a jar file. (Note: Jar resources always uses '/')
+        URL loc = classLoader.getResource(xname);
+
+        return isRequireable(loc) ? new LoadServiceResource(loc, loc.getPath()) : null;
     }
     
     /* Directories and unavailable resources are not able to open a stream. */
@@ -433,8 +443,8 @@ public class LoadService {
         	}
         	
         	try {
-                    loc.openConnection();
-                    return true;
+                loc.openConnection();
+                return true;
             } catch (Exception e) {}
         }
         return false;

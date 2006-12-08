@@ -94,10 +94,14 @@ public class Main {
     }
     
     public int run(String[] args) {
-        commandline = new CommandlineParser(this, args);
+        commandline = new CommandlineParser(args);
+        commandline.processArguments(true);
 
         if (commandline.isShowVersion()) {
             showVersion();
+        }
+        if (commandline.shouldPrintUsage()) {
+            printUsage();
         }
         if (! commandline.shouldRunInterpreter()) {
             return 0;
@@ -226,7 +230,7 @@ public class Main {
         defineGlobal(runtime, "$-l", commandline.isProcessLineEnds());
         runtime.getGlobalVariables().defineReadonly("$*", new ValueAccessor(argumentArray));
         // TODO this is a fake cause we have no real process number in Java
-        runtime.getGlobalVariables().defineReadonly("$$", new ValueAccessor(runtime.newFixnum(runtime.hashCode())));
+        runtime.getGlobalVariables().defineReadonly("$$", new ValueAccessor(runtime.newFixnum(System.identityHashCode(runtime))));
         runtime.defineVariable(new RubyGlobal.StringGlobalVariable(runtime, "$0", runtime.newString(filename)));
         runtime.getLoadService().init(commandline.loadPaths());
         Iterator iter = commandline.requiredLibraries().iterator();

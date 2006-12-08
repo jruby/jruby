@@ -30,6 +30,7 @@ package org.jruby.environment;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.security.AccessControlException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -65,32 +66,39 @@ public class OSEnvironment {
     * @throws OSEnvironmentReaderExcepton
     */  
     public Map getEnvironmentVariableMap(IRuby runtime) {
-        String jrubyEnvMethod = System.getProperty("jruby.env.method");
-
-        IOSEnvironmentReader reader;
+        Map envs = null;
         
-        if (jrubyEnvMethod == null || jrubyEnvMethod.length() < 1) {
-            // Try to get environment from Java5 System.getenv()
-            reader = getAccessibleOSEnvironment(runtime, OSEnvironmentReaderFromJava5SystemGetenv.class.getName());
-            // not Java5 so try getting environment using Runtime exec
-            if (reader == null) {
-                reader = getAccessibleOSEnvironment(runtime, OSEnvironmentReaderFromRuntimeExec.class.getName());
-                //runtime.getWarnings().warn("Getting environment variables using Runtime Exec");
-            }  else {
-                //runtime.getWarnings().warn("Getting environment variables using Java5 System.getenv()");
+        // try/catch to fall back on empty env when security disallows environment var access (like in an applet)
+        try {
+            String jrubyEnvMethod = System.getProperty("jruby.env.method");
+            
+            IOSEnvironmentReader reader;
+            
+            if (jrubyEnvMethod == null || jrubyEnvMethod.length() < 1) {
+                // Try to get environment from Java5 System.getenv()
+                reader = getAccessibleOSEnvironment(runtime, OSEnvironmentReaderFromJava5SystemGetenv.class.getName());
+                // not Java5 so try getting environment using Runtime exec
+                if (reader == null) {
+                    reader = getAccessibleOSEnvironment(runtime, OSEnvironmentReaderFromRuntimeExec.class.getName());
+                    //runtime.getWarnings().warn("Getting environment variables using Runtime Exec");
+                }  else {
+                    //runtime.getWarnings().warn("Getting environment variables using Java5 System.getenv()");
+                }
+            } else {
+                // get environment from jruby command line property supplied class
+                runtime.getWarnings().warn("Getting environment variables using command line defined method: " + jrubyEnvMethod);
+                reader = getAccessibleOSEnvironment(runtime, jrubyEnvMethod);
+                
+                envs = null;
+                if (reader != null) {
+                    Map variables = null;
+                    variables = reader.getVariables(runtime);
+                    envs = getAsMapOfRubyStrings(runtime,  variables.entrySet());
+                }
             }
-        } else {
-            // get environment from jruby command line property supplied class
-            runtime.getWarnings().warn("Getting environment variables using command line defined method: " + jrubyEnvMethod);
-            reader = getAccessibleOSEnvironment(runtime, jrubyEnvMethod);            
-        }
-
-    	Map envs = null;
-
-        if (reader != null) {
-        	Map variables = null;
-        	variables = reader.getVariables(runtime);
-			envs = getAsMapOfRubyStrings(runtime,  variables.entrySet());
+        } catch (AccessControlException accessEx) {
+            // default to empty env
+            envs = new HashMap();
         }
         
         return envs;
@@ -103,7 +111,12 @@ public class OSEnvironment {
      * @return the java system properties as a Map<RubyString,RubyString>.
      */
     public Map getSystemPropertiesMap(IRuby runtime) {
-        return getAsMapOfRubyStrings(runtime, System.getProperties().entrySet());
+        try {
+            return getAsMapOfRubyStrings(runtime, System.getProperties().entrySet());
+        } catch (AccessControlException accessEx) {
+            // default to empty env
+            return new HashMap();
+        }
     }
     
     

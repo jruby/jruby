@@ -43,12 +43,11 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jruby.Main;
 import org.jruby.exceptions.MainExitException;
 
 public class CommandlineParser {
     private final String[] arguments;
-    private Main main;
+    //private Main main;
 
     private ArrayList loadPaths = new ArrayList();
     private StringBuffer inlineScript = new StringBuffer();
@@ -64,6 +63,7 @@ public class CommandlineParser {
     private boolean showVersion = false;
     private String[] scriptArguments = null;
     private boolean shouldRunInterpreter = true;
+    private boolean shouldPrintUsage = false;
     private boolean objectSpaceEnabled = true;
     private boolean compilerEnabled = false;
     private String encoding = "ISO8859_1";
@@ -71,23 +71,25 @@ public class CommandlineParser {
     public int argumentIndex = 0;
     public int characterIndex = 0;
 
-    public CommandlineParser(Main main, String[] arguments) {
+    public CommandlineParser(String[] arguments) {
         this.arguments = arguments;
-        this.main = main;
-        processArguments();
     }
 
-    private void processArguments() {
-        while (argumentIndex < arguments.length && isInterpreterArgument(arguments[argumentIndex])) {
-            processArgument();
-            argumentIndex++;
-        }
-        if (! hasInlineScript()) {
-            if (argumentIndex < arguments.length) {
-                setScriptFileName(arguments[argumentIndex]); //consume the file name
+    public void processArguments(boolean withInterpreterArguments) {
+        if (withInterpreterArguments) {
+            while (argumentIndex < arguments.length && isInterpreterArgument(arguments[argumentIndex])) {
+                processArgument();
                 argumentIndex++;
             }
+            
+            if (! hasInlineScript()) {
+                if (argumentIndex < arguments.length) {
+                    setScriptFileName(arguments[argumentIndex]); //consume the file name
+                    argumentIndex++;
+                }
+            }
         }
+        
         // Remaining arguments are for the script itself
         scriptArguments = new String[arguments.length - argumentIndex];
         System.arraycopy(arguments, argumentIndex, getScriptArguments(), 0, getScriptArguments().length);
@@ -102,7 +104,7 @@ public class CommandlineParser {
         FOR : for (characterIndex = 1; characterIndex < argument.length(); characterIndex++) {
             switch (argument.charAt(characterIndex)) {
                 case 'h' :
-                    main.printUsage();
+                    shouldPrintUsage = true;
                     shouldRunInterpreter = false;
                     break;
                 case 'I' :
@@ -218,6 +220,10 @@ public class CommandlineParser {
 
     public boolean shouldRunInterpreter() {
         return isShouldRunInterpreter();
+    }
+
+    public boolean shouldPrintUsage() {
+        return shouldPrintUsage;
     }
 
     private boolean isSourceFromStdin() {

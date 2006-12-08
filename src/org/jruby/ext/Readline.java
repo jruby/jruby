@@ -45,6 +45,7 @@ import jline.ConsoleReader;
 import jline.Completor;
 import jline.FileNameCompletor;
 import jline.CandidateListCompletionHandler;
+import jline.History;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -59,14 +60,12 @@ public class Readline {
 
     private static ConsoleReader readline;
     private static Completor currentCompletor;
+    private static History history;
 
     public static void createReadline(IRuby runtime) throws IOException {
-        readline = new ConsoleReader();
-        readline.setUseHistory(false);
-        readline.setUsePagination(true);
-        ((CandidateListCompletionHandler) readline.getCompletionHandler()).setAlwaysIncludeNewline(false);
-        currentCompletor = new RubyFileNameCompletor();
-        readline.addCompletor(currentCompletor);
+        history = new History();
+        currentCompletor = null;
+        
         RubyModule mReadline = runtime.defineModule("Readline");
         CallbackFactory readlinecb = runtime.callbackFactory(Readline.class);
         mReadline.defineMethod("readline",readlinecb.getSingletonMethod("s_readline",IRubyObject.class,IRubyObject.class));
@@ -81,8 +80,37 @@ public class Readline {
         hist.defineSingletonMethod("pop",readlinecb.getSingletonMethod("s_pop"));
         hist.defineSingletonMethod("to_a",readlinecb.getSingletonMethod("s_hist_to_a"));
     }
-
+    
+    // We lazily initialise this in case Readline.readline has been overriden in ruby (s_readline)
+    protected static void initReadline() throws IOException {
+        readline = new ConsoleReader();
+        readline.setUseHistory(false);
+        readline.setUsePagination(true);
+        ((CandidateListCompletionHandler) readline.getCompletionHandler()).setAlwaysIncludeNewline(false);
+        if (currentCompletor == null) {
+            currentCompletor = new RubyFileNameCompletor();
+            readline.addCompletor(currentCompletor);
+        }
+        history = readline.getHistory();
+        readline.setHistory(history);
+    }
+    
+    public static History getHistory() {
+        return history;
+    }
+    
+    public static void setCompletor(Completor completor) {
+        if (readline != null) readline.removeCompletor(currentCompletor);
+        currentCompletor = completor;
+        if (readline != null) readline.addCompletor(currentCompletor);
+    }
+    
+    public static Completor getCompletor() {
+        return currentCompletor;
+    }
+    
     public static IRubyObject s_readline(IRubyObject recv, IRubyObject prompt, IRubyObject add_to_hist) throws IOException {
+        if (readline == null) initReadline(); // not overridden, let's go
         IRubyObject line = recv.getRuntime().getNil();
         String v = readline.readLine(prompt.toString());
         if(null != v) {
@@ -94,7 +122,7 @@ public class Readline {
     }
 
     public static IRubyObject s_push(IRubyObject recv, IRubyObject line) throws Exception {
-        readline.getHistory().addToHistory(line.toString());
+        history.addToHistory(line.toString());
         return recv.getRuntime().getNil();
     }
 
@@ -104,7 +132,7 @@ public class Readline {
 	
 	public static IRubyObject s_hist_to_a(IRubyObject recv) throws Exception {
 		RubyArray histList = recv.getRuntime().newArray();
-		for (Iterator i = readline.getHistory().getHistoryList().iterator(); i.hasNext();) {
+		for (Iterator i = history.getHistoryList().iterator(); i.hasNext();) {
 			histList.append(recv.getRuntime().newString((String) i.next()));
 		}
 		return histList;
@@ -117,9 +145,7 @@ public class Readline {
     public static IRubyObject s_set_completion_proc(IRubyObject recv, IRubyObject proc) throws Exception {
     	if (!proc.respondsTo("call"))
     		throw recv.getRuntime().newArgumentError("argument must respond to call");
-    	readline.removeCompletor(currentCompletor);
-    	currentCompletor = new ProcCompletor(proc);
-        readline.addCompletor(currentCompletor);
+		setCompletor(new ProcCompletor(proc));
         return recv.getRuntime().getNil();
     }
 	
