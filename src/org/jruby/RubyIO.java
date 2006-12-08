@@ -181,6 +181,24 @@ public class RubyIO extends RubyObject {
         registerIOHandler(handler);
     }
     
+    public RubyIO(IRuby runtime, InputStream inputStream) {
+        super(runtime, runtime.getClass("IO"));
+        
+        if (inputStream == null) {
+            throw runtime.newIOError("Opening invalid stream");
+        }
+        
+        try {
+            handler = new IOHandlerUnseekable(runtime, inputStream, null);
+        } catch (IOException e) {
+            throw runtime.newIOError(e.getMessage());
+        }
+        
+        modes = handler.getModes();
+        
+        registerIOHandler(handler);
+    }
+    
     public RubyIO(IRuby runtime, Channel channel) {
         super(runtime, runtime.getClass("IO"));
         
