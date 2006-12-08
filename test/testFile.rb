@@ -152,3 +152,10 @@ test_ok(stat2.file?)
 test_equal("directory", stat.ftype)
 test_equal("file", stat2.ftype)
 test_ok(stat2.readable?)
+
+# Test File.symlink? if possible
+system("ln -s build.xml build.xml.link")
+if File.exist? "build.xml.link"
+  test_ok(File.symlink?("build.xml.link"))
+  File.delete("build.xml.link")
+end

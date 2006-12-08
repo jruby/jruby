@@ -569,8 +569,28 @@ public class FileMetaClass extends IOMetaClass {
     }
     
     public IRubyObject symlink_p(IRubyObject arg1) {
-    	// FIXME if possible, make this return something real (Java's lack of support for symlinks notwithstanding)
-    	return getRuntime().getFalse();
+    	RubyString filename = RubyString.stringValue(arg1);
+        
+        JRubyFile file = JRubyFile.create(getRuntime().getCurrentDirectory(), filename.toString());
+        
+        try {
+            // Only way to determine symlink is to compare canonical and absolute files
+            // However symlinks in containing path must not produce false positives, so we check that first
+            File absoluteParent = file.getAbsoluteFile().getParentFile();
+            File canonicalParent = file.getAbsoluteFile().getParentFile().getCanonicalFile();
+
+            if (canonicalParent.getAbsolutePath().equals(absoluteParent.getAbsolutePath())) {
+                // parent doesn't change when canonicalized, compare absolute and canonical file directly
+                return file.getAbsolutePath().equals(file.getCanonicalPath()) ? getRuntime().getFalse() : getRuntime().getTrue();
+            }
+
+            // directory itself has symlinks (canonical != absolute), so build new path with canonical parent and compare
+            file = JRubyFile.create(getRuntime().getCurrentDirectory(), canonicalParent.getAbsolutePath() + "/" + file.getName());
+            return file.getAbsolutePath().equals(file.getCanonicalPath()) ? getRuntime().getFalse() : getRuntime().getTrue();
+        } catch (IOException ioe) {
+            // problem canonicalizing the file; nothing we can do but return false
+            return getRuntime().getFalse();
+        }
     }
 
     // Can we produce IOError which bypasses a close?
