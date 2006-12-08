@@ -162,7 +162,7 @@ public class Block implements StackElement {
         // We clone dynamic scope because this will be a new instance of a block.  Any previously
         // captured instances of this block may still be around and we do not want to start
         // overwriting those values when we create a new one.
-        Block newBlock = new Block(var, method, self, frame, cref, scope, klass, iter, dynamicScope.cloneScope());
+        Block newBlock = new Block(var, method, self, frame, cref, scope, klass, iter, ((dynamicScope == null)?null:dynamicScope.cloneScope()));
         
         newBlock.isLambda = isLambda;
 
