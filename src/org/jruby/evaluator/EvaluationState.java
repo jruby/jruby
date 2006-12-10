@@ -728,18 +728,28 @@ public class EvaluationState {
                 DefsNode iVisited = (DefsNode) node;
                 IRubyObject receiver = evalInternal(context, iVisited.getReceiverNode(), self);
     
-                if (runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
-                    throw runtime.newSecurityError("Insecure; can't define singleton method.");
-                }
-                if (receiver.isFrozen()) {
-                    throw runtime.newFrozenError("object");
-                }
-                if (!receiver.singletonMethodsAllowed()) {
-                    throw runtime.newTypeError("can't define singleton method \"" + iVisited.getName()
-                            + "\" for " + receiver.getType());
-                }
+                RubyClass rubyClass;
     
-                RubyClass rubyClass = receiver.getSingletonClass();
+                if (receiver.isNil()) {
+                    rubyClass = runtime.getNilClass();
+                } else if (receiver == runtime.getTrue()) {
+                    rubyClass = runtime.getClass("TrueClass");
+                } else if (receiver == runtime.getFalse()) {
+                    rubyClass = runtime.getClass("FalseClass");
+                } else {
+                    if (runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
+                        throw runtime.newSecurityError("Insecure; can't define singleton method.");
+                    }
+                    if (receiver.isFrozen()) {
+                        throw runtime.newFrozenError("object");
+                    }
+                    if (!receiver.singletonMethodsAllowed()) {
+                        throw runtime.newTypeError("can't define singleton method \"" + iVisited.getName()
+                                                   + "\" for " + receiver.getType());
+                    }
+    
+                    rubyClass = receiver.getSingletonClass();
+                }
     
                 if (runtime.getSafeLevel() >= 4) {
                     ICallable method = (ICallable) rubyClass.getMethods().get(iVisited.getName());
