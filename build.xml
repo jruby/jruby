@@ -71,19 +71,25 @@
     <mkdir dir="${api.docs.dir}"/>
   </target>
 
-  <target name="check-for-optional-packages"
+  <target name="check-for-optional-java4-packages"
           description="check if specific libs and versions are avaiable"
           depends="init">
     <available property="jdk1.4+" classname="java.lang.CharSequence"/>
     <available property="jdk1.5+" classname="java.lang.StringBuilder"/>
     <available property="bsf.present" classname="org.apache.bsf.BSFManager"
                classpathref="build.classpath"/>
-    <available property="bc.present" classname="org.bouncycastle.jce.provider.BouncyCastleProvider"
-               classpathref="build.classpath"/>
     <available property="junit.present" classname="junit.framework.TestCase"
                classpathref="build.classpath"/>
     <available property="cglib.present" 
                classname="net.sf.cglib.reflect.FastClass"
+               classpathref="build.classpath"/>
+  </target>
+
+  <target name="check-for-optional-packages" if="jdk1.5+"
+          description="check if specific libs and versions are avaiable"
+          depends="check-for-optional-java4-packages">
+    <available property="bc.present" 
+               classname="org.bouncycastle.jce.provider.BouncyCastleProvider"
                classpathref="build.classpath"/>
     <condition property="build.openssl">
       <and>
