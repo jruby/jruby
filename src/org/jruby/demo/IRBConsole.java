@@ -31,7 +31,7 @@ public class IRBConsole extends JFrame {
         final IRBConsole console = new IRBConsole("JRuby IRB Console");
         PipedInputStream pipeIn = new PipedInputStream();
         
-        console.setLayout(new BorderLayout());
+        console.getContentPane().setLayout(new BorderLayout());
         console.setSize(700, 600);
         
         JEditorPane text = new JTextPane();
@@ -47,7 +47,7 @@ public class IRBConsole extends JFrame {
         JScrollPane pane = new JScrollPane();
         pane.setViewportView(text);
         pane.setBorder(BorderFactory.createLineBorder(Color.darkGray));
-        console.add(pane);
+        console.getContentPane().add(pane);
         console.validate();
         
         TextAreaReadline tar = new TextAreaReadline(text, " Welcome to the JRuby IRB Console \n\n");
