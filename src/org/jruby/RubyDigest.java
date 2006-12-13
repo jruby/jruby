@@ -44,8 +44,8 @@ public class RubyDigest {
         CallbackFactory basecb = runtime.callbackFactory(Base.class);
         
         cDigestBase.defineSingletonMethod("new",basecb.getOptSingletonMethod("newInstance"));
-        cDigestBase.defineSingletonMethod("digest",basecb.getSingletonMethod("s_digest",RubyString.class));
-        cDigestBase.defineSingletonMethod("hexdigest",basecb.getSingletonMethod("s_hexdigest",RubyString.class));
+        cDigestBase.defineSingletonMethod("digest",basecb.getSingletonMethod("s_digest",IRubyObject.class));
+        cDigestBase.defineSingletonMethod("hexdigest",basecb.getSingletonMethod("s_hexdigest",IRubyObject.class));
 
         cDigestBase.defineMethod("initialize",basecb.getOptMethod("initialize"));
         cDigestBase.defineMethod("initialize_copy",basecb.getMethod("initialize_copy",IRubyObject.class));
@@ -118,7 +118,7 @@ public class RubyDigest {
             result.callInit(args);
             return result;
         }
-        public static IRubyObject s_digest(IRubyObject recv, RubyString str) {
+        public static IRubyObject s_digest(IRubyObject recv, IRubyObject str) {
             String name = ((RubyClass)recv).getClassVar("metadata").toString();
             try {
                 MessageDigest md = MessageDigest.getInstance(name);
@@ -129,7 +129,7 @@ public class RubyDigest {
                 throw recv.getRuntime().newNotImplementedError("Unsupported digest algorithm (" + name + ")");
             }
         }
-        public static IRubyObject s_hexdigest(IRubyObject recv, RubyString str) {
+        public static IRubyObject s_hexdigest(IRubyObject recv, IRubyObject str) {
             String name = ((RubyClass)recv).getClassVar("metadata").toString();
             try {
                 MessageDigest md = MessageDigest.getInstance(name);
