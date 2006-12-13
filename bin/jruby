@@ -91,6 +91,9 @@ CP=$CP$CP_DELIMETER"$JRUBY_HOME"/lib/jline-0.9.91-SNAPSHOT.jar
 CP=$CP$CP_DELIMETER"$JRUBY_HOME"/lib/jruby.jar
 CP=$CP$CP_DELIMETER"$JRUBY_HOME"/lib/jvyaml.jar
 CP=$CP$CP_DELIMETER"$JRUBY_HOME"/lib/plaincharset.jar
+CP=$CP$CP_DELIMETER"$JRUBY_HOME"/lib/jruby-openssl.jar
+CP=$CP$CP_DELIMETER"$JRUBY_HOME"/lib/bcprov-jdk15-134.jar
+CP=$CP$CP_DELIMETER"$JRUBY_HOME"/lib/bcmail-jdk15-134.jar
 
 # ----- Set Up JRUBY_BASE If Necessary -------------------------------------
 
