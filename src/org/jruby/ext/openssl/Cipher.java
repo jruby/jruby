@@ -163,7 +163,7 @@ public class Cipher extends RubyObject {
 
     public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
         Cipher result = new Cipher(recv.getRuntime(), (RubyClass)recv);
-        result.callMethod(recv.getRuntime().getCurrentContext(),"initialize",args);
+        result.callInit(args);
         return result;
     }
 
