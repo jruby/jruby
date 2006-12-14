@@ -29,7 +29,10 @@ package org.jruby.ext.openssl;
 
 import java.io.IOException;
 
+import java.lang.reflect.InvocationTargetException;
+
 import org.jruby.IRuby;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.load.Library;
 
 /**
@@ -49,6 +52,13 @@ public class RubyOpenSSL {
             }
             try {
                 c.getMethod("createOpenSSL",new Class[]{IRuby.class}).invoke(null,new Object[]{runtime});
+            } catch(InvocationTargetException e) {
+                Throwable t = e.getTargetException();
+                if(t instanceof RuntimeException) {
+                    throw (RuntimeException)t;
+                } else {
+                    throw new RuntimeException(t);
+                }
             } catch(Exception e) {
             }
         }
