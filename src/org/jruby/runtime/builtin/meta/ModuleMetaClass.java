@@ -86,7 +86,7 @@ public class ModuleMetaClass extends ObjectMetaClass {
 	        definePrivateMethod("private", Arity.optional(), "rbPrivate");
 	        definePrivateMethod("remove_class_variable", Arity.singleArgument());
 	        definePrivateMethod("remove_const", Arity.singleArgument());
-	        definePrivateMethod("remove_method", Arity.singleArgument());
+	        definePrivateMethod("remove_method", Arity.optional());
 	        definePrivateMethod("undef_method", Arity.singleArgument());
 	
 	        defineSingletonMethod("nesting", Arity.noArguments());

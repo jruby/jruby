@@ -1561,8 +1561,10 @@ public class RubyModule extends RubyObject {
         return specificEval(this, args);
     }
 
-    public RubyModule remove_method(IRubyObject name) {
-        removeMethod(name.asSymbol());
+    public RubyModule remove_method(IRubyObject[] args) {
+        for(int i=0;i<args.length;i++) {
+            removeMethod(args[i].asSymbol());
+        }
         return this;
     }
 
