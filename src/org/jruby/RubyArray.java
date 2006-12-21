@@ -574,6 +574,9 @@ public class RubyArray extends RubyObject implements List {
 
             return begLen == null ? newArray(getRuntime()) : subseq(begLen[0], begLen[1]);
         }
+        if(args[0] instanceof RubySymbol) {
+            throw getRuntime().newTypeError("Symbol as array index");
+        }
         return entry(args[0].convertToInteger().getLongValue());
     }
 
