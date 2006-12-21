@@ -1,5 +1,7 @@
 require 'test/minirunit'
 
+test_ok(ENV['HOME'] || ENV['APPDATA'], "Reading external environment")
+
 #test_check('test_bracket')
 test_equal(nil, ENV['test'])
 test_equal(nil, ENV['TEST'])

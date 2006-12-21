@@ -88,13 +88,13 @@ public class OSEnvironment {
                 // get environment from jruby command line property supplied class
                 runtime.getWarnings().warn("Getting environment variables using command line defined method: " + jrubyEnvMethod);
                 reader = getAccessibleOSEnvironment(runtime, jrubyEnvMethod);
-                
-                envs = null;
-                if (reader != null) {
-                    Map variables = null;
-                    variables = reader.getVariables(runtime);
-                    envs = getAsMapOfRubyStrings(runtime,  variables.entrySet());
-                }
+            }
+            
+            envs = null;
+            if (reader != null) {
+                Map variables = null;
+                variables = reader.getVariables(runtime);
+                envs = getAsMapOfRubyStrings(runtime,  variables.entrySet());
             }
         } catch (AccessControlException accessEx) {
             // default to empty env
