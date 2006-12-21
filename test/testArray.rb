@@ -82,6 +82,20 @@ test_equal([1], Array[1])
 test_equal([], Array[])
 test_equal([1,2], Array[1,2])
 
+##### insert ####
+
+a = [10, 11]
+a.insert(1, 12)
+test_equal([10, 12, 11], a)
+a = []
+a.insert(-1, 10)
+test_equal([10], a)
+a.insert(-2, 11)
+test_equal([11, 10], a)
+a = [10]
+a.insert(-1, 11)
+test_equal([10, 11], a)
+
 ##### == #####
 class AryTest
   def to_ary; [1,2]; end

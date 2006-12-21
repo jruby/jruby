@@ -214,7 +214,7 @@ public class RubyArray extends RubyObject implements List {
     	
     	// too negative of an offset will throw an IndexError
     	long offset = args[0].convertToInteger().getLongValue();
-    	if (offset < 0 && getLength() + offset < 0) {
+    	if (offset < 0 && getLength() + offset < -1) {
     		throw getRuntime().newIndexError("index " + 
     				(getLength() + offset) + " out of array");
     	}
