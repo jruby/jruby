@@ -169,7 +169,11 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     public IRubyObject initialize(IRubyObject[] args) {
-        this.value = new BigDecimal(args[0].toString());
+        String ss = args[0].toString();
+        if(ss.trim().equals("")) {
+            ss = "0";
+        }
+        this.value = new BigDecimal(ss);
         return this;
     }
 
