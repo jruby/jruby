@@ -471,7 +471,7 @@ public class RubyBigDecimal extends RubyNumeric {
             String after = null;
             if(ix != -1) {
                 whole = unscaled.substring(0,ix);
-                after = unscaled.substring(ix+1);
+                after = unscaled.substring(ix);
             }
             int signum = value.signum();
             StringBuffer build = new StringBuffer();
