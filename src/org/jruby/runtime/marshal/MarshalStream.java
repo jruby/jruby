@@ -143,6 +143,8 @@ public class MarshalStream extends FilterOutputStream {
             return false;
         } else if (value instanceof RubyFixnum) {
             return false;
+        } else if (value instanceof RubyFloat) {
+            return false;
         }
         return true;
     }
