@@ -48,6 +48,7 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -89,11 +90,18 @@ public final class DefaultMethod extends AbstractMethod {
     	assert args != null;
         IRuby runtime = context.getRuntime();
         RubyProc blockArg = null;
+                
 
         if (argsNode.getBlockArgNode() != null && context.isBlockGiven()) {
+            Block block = context.getCurrentBlock();
+            if (block.getBlockObject() instanceof RubyProc) {
+                blockArg = (RubyProc)block.getBlockObject();
+            }
+            else {
+                blockArg = runtime.newProc();
+                blockArg.getBlock().isLambda = block.isLambda;
+            }
             // We pass depth zero since we know this only applies to newly created local scope
-            blockArg = runtime.newProc();
-            blockArg.getBlock().isLambda = context.getCurrentBlock().isLambda;
             context.getCurrentScope().setValue(argsNode.getBlockArgNode().getCount(), blockArg, 0);
         }
 

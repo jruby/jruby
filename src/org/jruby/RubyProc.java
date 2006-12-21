@@ -81,7 +81,7 @@ public class RubyProc extends RubyObject {
         newProc.block = block.cloneBlock();
         newProc.wrapper = tc.getWrapper();
         newProc.block.isLambda = isLambda;
-        block.setBlockObject(newProc);
+        newProc.block.setBlockObject(newProc);
 
         return newProc;
     }

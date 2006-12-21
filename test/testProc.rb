@@ -16,3 +16,10 @@ j = 0; for i in 1..3 do j += i end; test_equal(6, j)
 j = 0; for $i in 1..3 do j += $i end; test_equal(6, j)
 j = 0; for i, k in {1=>2, 3=>4} do j += i + k end; test_equal(10, j)
 
+# procs aren't unecessarily cloned when passed to functions
+def test_same_proc(obj_id, &p)
+    test_equal(obj_id, p.__id__)
+end
+
+abc_proc = proc { :abc }
+test_same_proc(abc_proc.__id__, &abc_proc)
