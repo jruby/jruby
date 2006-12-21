@@ -133,7 +133,7 @@ public class JRubyConstructor extends ConstructorImpl {
 
     public static Object constructYamlStr(final Constructor ctor, final Node node) {
         final org.jruby.RubyString str = (org.jruby.RubyString)((JRubyConstructor)ctor).constructRubyScalar(node);
-        return str.getValue().length() == 0 ? str.getRuntime().getNil() : str;
+        return (str.getValue().length() == 0 && ((org.jvyaml.nodes.ScalarNode)node).getStyle() == 0) ? str.getRuntime().getNil() : str;
     }
 
     public static Object constructYamlSeq(final Constructor ctor, final Node node) {
