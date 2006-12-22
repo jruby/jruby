@@ -31,6 +31,8 @@
 package org.jruby.ast;
 
 import java.util.List;
+import org.jruby.IRuby;
+import org.jruby.RubyFixnum;
 
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
@@ -45,6 +47,7 @@ public class FixnumNode extends Node implements ILiteralNode {
     static final long serialVersionUID = 2236565825959274729L;
 
     private final long value;
+    private RubyFixnum fixnum;
 
     public FixnumNode(ISourcePosition position, long value) {
         super(position, NodeTypes.FIXNUMNODE);
@@ -61,6 +64,13 @@ public class FixnumNode extends Node implements ILiteralNode {
      */
     public long getValue() {
         return value;
+    }
+    
+    public RubyFixnum getFixnum(IRuby runtime) {
+        if (fixnum == null) {
+            return fixnum = RubyFixnum.newFixnum(runtime, value);
+        }
+        return fixnum;
     }
     
     public List childNodes() {

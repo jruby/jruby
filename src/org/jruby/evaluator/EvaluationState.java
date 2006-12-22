@@ -18,6 +18,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyKernel;
@@ -723,7 +724,7 @@ public class EvaluationState {
             }
             case NodeTypes.FIXNUMNODE: {
                 FixnumNode iVisited = (FixnumNode) node;
-                return runtime.newFixnum(iVisited.getValue());
+                return iVisited.getFixnum(runtime);
             }
             case NodeTypes.FLIPNODE: {
                 FlipNode iVisited = (FlipNode) node;
