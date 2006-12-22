@@ -193,29 +193,21 @@ public class LoadService {
     public void smartLoad(String file) {
         Library library = null;
         String loadName = file;
-        // This isn't needed, since the require call strips known extensions.
-        /*        if (suffixPattern.matcher(file).matches()) {
-            // known extension specified specified, try without suffixes
-            library = findLibrary(file);
+        
+        // nothing yet, try suffixes
+        for (int i = 0; i < suffixes.length; i++) {
+            library = findLibrary(file + suffixes[i]);
+            if (library != null) {
+                loadName = file + suffixes[i];
+                break;
+            }
         }
-        */
-
-        //        if (library == null) {
-            // nothing yet, try suffixes
-            for (int i = 0; i < suffixes.length; i++) {
-                library = findLibrary(file + suffixes[i]);
-                if (library != null) {
-                    loadName = file + suffixes[i];
-                    break;
-                }
+        if(library == null) {
+            library = findLibrary(file);
+            if(library != null) {
+                loadName = file;
             }
-            if(library == null) {
-                library = findLibrary(file);
-                if(library != null) {
-                    loadName = file;
-                }
-            }
-            //        }   
+        }
 
         library = tryLoadExtension(library,file);
 
