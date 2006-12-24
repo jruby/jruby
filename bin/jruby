@@ -132,6 +132,11 @@ if [ "$1" = "EN_US" ]; then
   shift
 fi
 
+if [ "$1" = "SERVER" ]; then
+  DEBUG="-server"
+  shift
+fi
+
   "$JAVA_CMD" $DEBUG -Xmx256m -Xss1024k -ea -classpath "$CP" \
   "-Djruby.base=$JRUBY_BASE" \
   "-Djruby.home=$JRUBY_HOME" \
