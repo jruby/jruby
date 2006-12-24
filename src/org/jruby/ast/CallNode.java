@@ -44,12 +44,13 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * 
  * @author  jpetersen
  */
-public final class CallNode extends Node implements INameNode {
+public final class CallNode extends Node implements INameNode, BlockAcceptingNode {
     static final long serialVersionUID = -1993752395320088525L;
 
     private final Node receiverNode;
     private String name;
     private final Node argsNode;
+    private IterNode iterNode;
 
     public CallNode(ISourcePosition position, Node receiverNode, String name, Node argsNode) {
         super(position, NodeTypes.CALLNODE);
@@ -71,6 +72,14 @@ public final class CallNode extends Node implements INameNode {
      **/
     public Instruction accept(NodeVisitor iVisitor) {
         return iVisitor.visitCallNode(this);
+    }
+    
+    public IterNode getIterNode() {
+        return iterNode;
+    }
+    
+    public void setIterNode(IterNode iterNode) {
+        this.iterNode = iterNode;
     }
 
     /**

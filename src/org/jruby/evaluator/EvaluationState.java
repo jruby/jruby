@@ -35,6 +35,7 @@ import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BeginNode;
 import org.jruby.ast.BignumNode;
 import org.jruby.ast.BinaryOperatorNode;
+import org.jruby.ast.BlockAcceptingNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.BreakNode;
@@ -299,22 +300,54 @@ public class EvaluationState {
             }
             case NodeTypes.CALLNODE: {
                 CallNode iVisited = (CallNode) node;
+                IterNode iterNode = iVisited.getIterNode();
     
-                context.beginCallArgs();
-                IRubyObject receiver = null;
-                IRubyObject[] args = null;
-                try {
-                    receiver = evalInternal(context, iVisited.getReceiverNode(), self);
-                    args = setupArgs(context, iVisited.getArgsNode(), self);
-                } finally {
-                    context.endCallArgs();
-                }
+                IRubyObject receiver = evalInternal(context, iVisited.getReceiverNode(), self);
+                IRubyObject[] args = setupArgs(context, iVisited.getArgsNode(), self);
                 
                 assert receiver.getMetaClass() != null : receiver.getClass().getName();
                 // If reciever is self then we do the call the same way as vcall
                 CallType callType = (receiver == self ? CallType.VARIABLE : CallType.NORMAL);
     
-                return receiver.callMethod(context, iVisited.getName(), args, callType);
+                // if no block passed, do a simple call
+                if (iterNode == null) {
+                    return receiver.callMethod(context, iVisited.getName(), args, callType);
+                }
+                
+                // if block passed, prepare the block and then do the call, handling breaks and retries correctly
+                context.preIterEval(Block.createBlock(iterNode.getVarNode(), 
+                        new DynamicScope(iterNode.getScope(), context.getCurrentScope()), 
+                        iterNode.getCallable(), self));
+                
+                try {
+                    while (true) {
+                        try {
+                            context.setBlockAvailable();
+                            return receiver.callMethod(context, iVisited.getName(), args, callType);
+                        } catch (JumpException je) {
+                            switch (je.getJumpType().getTypeId()) {
+                            case JumpType.RETRY:
+                                // allow loop to retry
+                                break;
+                            default:
+                                throw je;
+                            }
+                        } finally {
+                            context.clearBlockAvailable();
+                        }
+                    }
+                } catch (JumpException je) {
+                    switch (je.getJumpType().getTypeId()) {
+                    case JumpType.BREAK:
+                        IRubyObject breakValue = (IRubyObject) je.getPrimaryData();
+    
+                        return breakValue == null ? runtime.getNil() : breakValue;
+                    default:
+                        throw je;
+                    }
+                } finally {
+                    context.postIterEval();
+                }
             }
             case NodeTypes.CASENODE: {
                 CaseNode iVisited = (CaseNode) node;
@@ -711,16 +744,49 @@ public class EvaluationState {
             }
             case NodeTypes.FCALLNODE: {
                 FCallNode iVisited = (FCallNode) node;
+                IterNode iterNode = iVisited.getIterNode();
                 
-                context.beginCallArgs();
-                IRubyObject[] args;
-                try {
-                    args = setupArgs(context, iVisited.getArgsNode(), self);
-                } finally {
-                    context.endCallArgs();
-                }
+                IRubyObject[] args = setupArgs(context, iVisited.getArgsNode(), self);
     
-                return self.callMethod(context, iVisited.getName(), args, CallType.FUNCTIONAL);
+                // if no block passed, do a simple call
+                if (iterNode == null) {
+                    return self.callMethod(context, iVisited.getName(), args, CallType.FUNCTIONAL);
+                }
+                
+                // if block passed, prepare the block and then do the call, handling breaks and retries correctly
+                context.preIterEval(Block.createBlock(iterNode.getVarNode(), 
+                        new DynamicScope(iterNode.getScope(), context.getCurrentScope()), 
+                        iterNode.getCallable(), self));
+                
+                try {
+                    while (true) {
+                        try {
+                            context.setBlockAvailable();
+                            return self.callMethod(context, iVisited.getName(), args, CallType.FUNCTIONAL);
+                        } catch (JumpException je) {
+                            switch (je.getJumpType().getTypeId()) {
+                            case JumpType.RETRY:
+                                // allow loop to retry
+                                break;
+                            default:
+                                throw je;
+                            }
+                        } finally {
+                            context.clearBlockAvailable();
+                        }
+                    }
+                } catch (JumpException je) {
+                    switch (je.getJumpType().getTypeId()) {
+                    case JumpType.BREAK:
+                        IRubyObject breakValue = (IRubyObject) je.getPrimaryData();
+    
+                        return breakValue == null ? runtime.getNil() : breakValue;
+                    default:
+                        throw je;
+                    }
+                } finally {
+                    context.postIterEval();
+                }
             }
             case NodeTypes.FIXNUMNODE: {
                 FixnumNode iVisited = (FixnumNode) node;
@@ -878,6 +944,16 @@ public class EvaluationState {
             case NodeTypes.ITERNODE: {
                 IterNode iVisited = (IterNode) node;
                 
+                // new-style handling of blocks, for nodes that support it
+                // don't process the block until it's needed, to avoid nasty iter tricks
+                if (iVisited.getIterNode() instanceof BlockAcceptingNode) {
+                    ((BlockAcceptingNode)iVisited.getIterNode()).setIterNode(iVisited);
+                    
+                    node = iVisited.getIterNode();
+                    continue bigloop;
+                } 
+                
+                // otherwise do it the same as the old way
                 context.preIterEval(Block.createBlock(iVisited.getVarNode(), 
                         new DynamicScope(iVisited.getScope(), context.getCurrentScope()), 
                         iVisited.getCallable(), self));
