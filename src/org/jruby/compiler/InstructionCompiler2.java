@@ -167,14 +167,6 @@ public class InstructionCompiler2 implements NodeVisitor {
     private String classname;
 
     private String sourceName;
-    
-    public class NotCompilableException extends RuntimeException {
-        private static final long serialVersionUID = 8481162670192366492L;
-
-        public NotCompilableException(String message) {
-            super(message);
-        }
-    }
 
     public InstructionCompiler2() {
     }
@@ -262,7 +254,7 @@ public class InstructionCompiler2 implements NodeVisitor {
             ClassWriter writer = (ClassWriter)entry.getValue();
             
             loader.defineClass(key.replaceAll("/", "."), writer.toByteArray());
-    }
+        }
 
         return loader.loadClass(classname.replaceAll("/", "."));
     }
@@ -1096,14 +1088,6 @@ public class InstructionCompiler2 implements NodeVisitor {
         mv.visitInsn(Opcodes.SWAP);
         mv.visitInsn(Opcodes.AASTORE);
         
-//        loadThreadContext();
-//        invokeThreadContext("getFrameScope", "()Lorg/jruby/runtime/Scope;");
-//        mv.visitInsn(Opcodes.SWAP);
-//        mv.visitLdcInsn(new Integer(iVisited.getCount()));
-//        mv.visitInsn(Opcodes.SWAP);
-//        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/runtime/Scope", "setValue", "(ILorg/jruby/runtime/builtin/IRubyObject;)V");
-
-        
         return null;
     }
 
@@ -1112,7 +1096,7 @@ public class InstructionCompiler2 implements NodeVisitor {
         // check if it's an argument
         int index = iVisited.getIndex();
         
-        if ((index - 2) < args.getArgsCount()) {
+        if (args != null && (index - 2) < args.getArgsCount()) {
             // load from the incoming params
             // index is 2-based, and our zero is runtime
             
@@ -1121,18 +1105,9 @@ public class InstructionCompiler2 implements NodeVisitor {
             mv.visitLdcInsn(new Integer(index - 2));
             mv.visitInsn(Opcodes.AALOAD);
         } else {
-        //    loadThreadContext();
-        //    invokeThreadContext("getCurrentScope", "()Lorg/jruby/runtime/DynamicScope;");
-        //    mv.visitLdcInsn(new Integer(iVisited.getIndex()));
-        //    mv.visitLdcInsn(new Integer(iVisited.getDepth()));
-        //    mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/runtime/DynamicScope",
-        //            "getValue", "(II)Lorg/jruby/runtime/builtin/IRubyObject;");
-        //}
-        
-        // FIXME: better base index?
-        mv.visitVarInsn(Opcodes.ALOAD, 4);
-        mv.visitLdcInsn(new Integer(iVisited.getIndex()));
-        mv.visitInsn(Opcodes.AALOAD);
+            mv.visitVarInsn(Opcodes.ALOAD, 4);
+            mv.visitLdcInsn(new Integer(iVisited.getIndex()));
+            mv.visitInsn(Opcodes.AALOAD);
         }
         return null;
     }
@@ -1250,6 +1225,11 @@ public class InstructionCompiler2 implements NodeVisitor {
     }
     
     public Instruction visitRootNode(RootNode iVisited) {
+        mv.visitLdcInsn(new Integer(iVisited.getStaticScope().getNumberOfVariables()));
+        mv.visitTypeInsn(Opcodes.ANEWARRAY, "org/jruby/runtime/builtin/IRubyObject");
+        // FIXME: use constant for index of local vars
+        mv.visitVarInsn(Opcodes.ASTORE, 4);
+        
         iVisited.getBodyNode().accept(this);
         
         return null;

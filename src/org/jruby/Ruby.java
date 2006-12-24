@@ -291,12 +291,20 @@ public final class Ruby implements IRuby {
     public IRubyObject compileAndRun(Node node) {
         try {
             ThreadContext tc = getCurrentContext();
-            String classname = node.getPosition().getFile();
-            if (classname.endsWith(".rb")) {
-                classname = classname.substring(0, classname.length() - 3);
-            }
+            ISourcePosition position = node.getPosition();
             InstructionCompiler2 compiler = new InstructionCompiler2();
-            compiler.compile(classname, node.getPosition().getFile(), node);
+            String classname = null;
+            
+            if (position != null) {
+                classname = node.getPosition().getFile();
+                if (classname.endsWith(".rb")) {
+                    classname = classname.substring(0, classname.length() - 3);
+                }
+                compiler.compile(classname, position.getFile(), node);
+            } else {
+                classname = "EVAL";
+                compiler.compile(classname, "EVAL", node);
+            }
             
             JRubyClassLoader loader = new JRubyClassLoader();
             Class scriptClass = compiler.loadClasses(loader);
