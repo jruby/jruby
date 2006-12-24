@@ -62,10 +62,8 @@ public class Block implements StackElement {
 
     private Block next;
 
-    public static Block createBlock(Node var, DynamicScope dynamicScope, ICallable method, 
+    public static Block createBlock(ThreadContext context, Node var, DynamicScope dynamicScope, ICallable method, 
             IRubyObject self) {
-        ThreadContext context = self.getRuntime().getCurrentContext();
-
         return new Block(var,
                          method,
                          self,

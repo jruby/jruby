@@ -315,7 +315,7 @@ public class EvaluationState {
                 }
                 
                 // if block passed, prepare the block and then do the call, handling breaks and retries correctly
-                context.preIterEval(Block.createBlock(iterNode.getVarNode(), 
+                context.preIterEval(Block.createBlock(context, iterNode.getVarNode(), 
                         new DynamicScope(iterNode.getScope(), context.getCurrentScope()), 
                         iterNode.getCallable(), self));
                 
@@ -754,7 +754,7 @@ public class EvaluationState {
                 }
                 
                 // if block passed, prepare the block and then do the call, handling breaks and retries correctly
-                context.preIterEval(Block.createBlock(iterNode.getVarNode(), 
+                context.preIterEval(Block.createBlock(context, iterNode.getVarNode(), 
                         new DynamicScope(iterNode.getScope(), context.getCurrentScope()), 
                         iterNode.getCallable(), self));
                 
@@ -835,7 +835,7 @@ public class EvaluationState {
                 ForNode iVisited = (ForNode) node;
                 
                 // For nodes do not have to create an addition scope so we just pass null
-                context.preForLoopEval(Block.createBlock(iVisited.getVarNode(), null,
+                context.preForLoopEval(Block.createBlock(context, iVisited.getVarNode(), null,
                         iVisited.getCallable(), self));
     
                 try {
@@ -954,7 +954,7 @@ public class EvaluationState {
                 } 
                 
                 // otherwise do it the same as the old way
-                context.preIterEval(Block.createBlock(iVisited.getVarNode(), 
+                context.preIterEval(Block.createBlock(context, iVisited.getVarNode(), 
                         new DynamicScope(iVisited.getScope(), context.getCurrentScope()), 
                         iVisited.getCallable(), self));
                 
