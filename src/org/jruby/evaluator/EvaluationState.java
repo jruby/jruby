@@ -590,10 +590,6 @@ public class EvaluationState {
                 DefaultMethod newMethod = new DefaultMethod(containingClass, iVisited.getScope(), 
                         iVisited.getBodyNode(), (ArgsNode) iVisited.getArgsNode(), visibility, context.peekCRef());
     
-                if (iVisited.getBodyNode() != null) {
-                    CreateJumpTargetVisitor.setJumpTarget(newMethod, iVisited.getBodyNode());
-                }
-    
                 containingClass.addMethod(name, newMethod);
     
                 if (context.getCurrentVisibility().isModuleFunction()) {
@@ -651,10 +647,6 @@ public class EvaluationState {
                 DefaultMethod newMethod = new DefaultMethod(rubyClass, iVisited.getScope(), 
                         iVisited.getBodyNode(), (ArgsNode) iVisited.getArgsNode(), 
                         Visibility.PUBLIC, context.peekCRef());
-
-                if (iVisited.getBodyNode() != null) {
-                    CreateJumpTargetVisitor.setJumpTarget(newMethod, iVisited.getBodyNode());
-                }
     
                 rubyClass.addMethod(iVisited.getName(), newMethod);
                 receiver.callMethod(context, "singleton_method_added", runtime.newSymbol(iVisited.getName()));

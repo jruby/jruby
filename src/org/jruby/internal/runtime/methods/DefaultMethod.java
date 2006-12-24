@@ -43,6 +43,7 @@ import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.Node;
 import org.jruby.evaluator.AssignmentVisitor;
+import org.jruby.evaluator.CreateJumpTargetVisitor;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -63,6 +64,7 @@ public final class DefaultMethod extends AbstractMethod {
     private Node body;
     private ArgsNode argsNode;
     private SinglyLinkedList cref;
+    private boolean hasBeenTargeted = false;
 
     public DefaultMethod(RubyModule implementationClass, StaticScope staticScope, Node body, 
             ArgsNode argsNode, Visibility visibility, SinglyLinkedList cref) {
@@ -90,7 +92,11 @@ public final class DefaultMethod extends AbstractMethod {
     	assert args != null;
         IRuby runtime = context.getRuntime();
         RubyProc blockArg = null;
-                
+        
+        if (!hasBeenTargeted) {
+            CreateJumpTargetVisitor.setJumpTarget(this, body);
+            hasBeenTargeted = true;
+        }
 
         if (argsNode.getBlockArgNode() != null && context.isBlockGiven()) {
             Block block = context.getCurrentBlock();
