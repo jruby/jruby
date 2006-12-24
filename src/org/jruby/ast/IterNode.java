@@ -31,13 +31,18 @@
 package org.jruby.ast;
 
 import java.util.List;
+import org.jruby.RubyModule;
 
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
+import org.jruby.internal.runtime.methods.AbstractCallable;
 import org.jruby.internal.runtime.methods.EvaluateCallable;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ICallable;
+import org.jruby.runtime.NilCallable;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Represents a block.  
@@ -66,6 +71,11 @@ public class IterNode extends Node {
         this.scope = scope;
         this.bodyNode = bodyNode;
         this.iterNode = iterNode;
+        
+        // if body and var are null, don't both with a heavyweight callable
+        if (bodyNode == null && varNode == null) {
+            callable = NilCallable.NIL_CALLABLE;
+        }
     }
 
     /**
@@ -117,6 +127,10 @@ public class IterNode extends Node {
     }
 
     public ICallable getCallable() {
-        return callable == null ? callable = new EvaluateCallable(bodyNode, varNode) : callable;
+        if (callable == null) {
+            callable = new EvaluateCallable(bodyNode, varNode);
+        }
+        
+        return callable;
     }
 }
