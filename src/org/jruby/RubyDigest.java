@@ -59,7 +59,7 @@ public class RubyDigest {
     }
 
     public static void createDigestMD5(IRuby runtime) {
-        runtime.getModule("Kernel").callMethod(runtime.getCurrentContext(),"require",runtime.newString("digest.so"));
+        runtime.getLoadService().require("digest.so");
         RubyModule mDigest = runtime.getModule("Digest");
         RubyClass cDigestBase = mDigest.getClass("Base");
         RubyClass cDigest_MD5 = mDigest.defineClassUnder("MD5",cDigestBase);
@@ -67,7 +67,7 @@ public class RubyDigest {
     }
 
     public static void createDigestRMD160(IRuby runtime) {
-        runtime.getModule("Kernel").callMethod(runtime.getCurrentContext(),"require",runtime.newString("digest.so"));
+        runtime.getLoadService().require("digest.so");
         RubyModule mDigest = runtime.getModule("Digest");
         RubyClass cDigestBase = mDigest.getClass("Base");
         RubyClass cDigest_RMD160 = mDigest.defineClassUnder("RMD160",cDigestBase);
@@ -75,7 +75,7 @@ public class RubyDigest {
     }
 
     public static void createDigestSHA1(IRuby runtime) {
-        runtime.getModule("Kernel").callMethod(runtime.getCurrentContext(),"require",runtime.newString("digest.so"));
+        runtime.getLoadService().require("digest.so");
         RubyModule mDigest = runtime.getModule("Digest");
         RubyClass cDigestBase = mDigest.getClass("Base");
         RubyClass cDigest_SHA1 = mDigest.defineClassUnder("SHA1",cDigestBase);
@@ -88,7 +88,7 @@ public class RubyDigest {
         } catch(NoSuchAlgorithmException e) {
             throw runtime.newLoadError("SHA2 not supported");
         }
-        runtime.getModule("Kernel").callMethod(runtime.getCurrentContext(),"require",runtime.newString("digest.so"));
+        runtime.getLoadService().require("digest.so");
         RubyModule mDigest = runtime.getModule("Digest");
         RubyClass cDigestBase = mDigest.getClass("Base");
         RubyClass cDigest_SHA2_256 = mDigest.defineClassUnder("SHA256",cDigestBase);
