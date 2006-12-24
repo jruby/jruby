@@ -51,7 +51,7 @@ import java.util.Random;
 import java.util.Stack;
 
 import org.jruby.ast.Node;
-import org.jruby.ast.executable.InstructionCompiler2;
+import org.jruby.compiler.InstructionCompiler2;
 import org.jruby.ast.executable.Script;
 import org.jruby.common.RubyWarnings;
 import org.jruby.evaluator.EvaluationState;

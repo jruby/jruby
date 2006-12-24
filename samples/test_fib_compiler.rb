@@ -1,7 +1,7 @@
 require 'java'
 require 'jruby'
 
-include_class "org.jruby.ast.executable.InstructionCompiler2"
+include_class "org.jruby.compiler.InstructionCompiler2"
 include_class "java.io.FileOutputStream"
 include_class "org.jruby.util.JRubyClassLoader"
 include_class "org.jruby.runtime.builtin.IRubyObject"
