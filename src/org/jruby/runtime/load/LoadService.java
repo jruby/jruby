@@ -126,8 +126,8 @@ public class LoadService {
     private static final Pattern allPattern = Pattern.compile("^(.*)\\.(rb|rb\\.ast\\.ser|so|o|dll|jar)$");
 
     private final List loadPath = new ArrayList();
-    private final Set loadedFeatures = new HashSet();
-    private final Set loadedFeaturesInternal = new HashSet();
+    private final Set loadedFeatures = Collections.synchronizedSet(new HashSet());
+    private final Set loadedFeaturesInternal = Collections.synchronizedSet(new HashSet());
     private final Map builtinLibraries = new HashMap();
 
     private final Map jarFiles = new HashMap();
@@ -165,6 +165,11 @@ public class LoadService {
         } catch (AccessControlException accessEx) {
           // ignore, we're in an applet and can't access filesystem anyway
         }
+        
+        // "." dir is used for relative path loads from a given file, as in require '../foo/bar'
+        if (runtime.getSafeLevel() == 0) {
+            addPath(".");
+        }
     }
 
     private void addPath(String path) {
@@ -189,13 +194,13 @@ public class LoadService {
         }
     }
 
-    public void smartLoad(String file) {
+    public boolean smartLoad(String file) {
         Library library = null;
         String loadName = file;
         String[] extensionsToSearch = null;
         
         // if an extension is specified, try more targetted searches
-        if (file.indexOf('.') >= 0) {
+        if (file.lastIndexOf('.') > file.lastIndexOf('/')) {
             Matcher matcher = null;
             if ((matcher = sourcePattern.matcher(file)).matches()) {
                 // source extensions
@@ -245,31 +250,27 @@ public class LoadService {
             throw runtime.newLoadError("no such file to load -- " + file);
         }
         
+        if (loadedFeaturesInternal.contains(loadName)) {
+            return false;
+        }
+        
         // attempt to load the found library
-        synchronized (this) {
-            try {
-                loadedFeaturesInternal.add(file);
-                loadedFeatures.add(runtime.newString(loadName));
+        try {
+            loadedFeaturesInternal.add(loadName);
+            loadedFeatures.add(runtime.newString(loadName));
 
-                library.load(runtime);
-            } catch (IOException e) {
-                loadedFeaturesInternal.remove(file);
-                loadedFeatures.remove(runtime.newString(loadName));
+            library.load(runtime);
+            return true;
+        } catch (IOException e) {
+            loadedFeaturesInternal.remove(loadName);
+            loadedFeatures.remove(runtime.newString(loadName));
 
-                throw runtime.newLoadError("IO error -- " + file);
-            }
+            throw runtime.newLoadError("IO error -- " + file);
         }
     }
 
     public boolean require(String file) {
-        String filestr = allPattern.matcher(file).replaceAll("$1");
-        
-        if (loadedFeaturesInternal.contains(filestr)) {
-            return false;
-        }
-        
-        smartLoad(filestr);
-        return true;
+        return smartLoad(file);
     }
 
     public List getLoadPath() {
