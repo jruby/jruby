@@ -49,6 +49,12 @@ RoomTest.new.testObject
 obj = java.lang.Object.new
 result = nil
 test_no_exception {
-    result = obj.java_object.synchronized { "foo" }
+    result = obj.synchronized { "foo" }
 }
 test_equal("foo", result)
+test_exception {
+    obj.wait 1
+}
+test_no_exception {
+    obj.synchronized { obj.wait 1 }
+}
