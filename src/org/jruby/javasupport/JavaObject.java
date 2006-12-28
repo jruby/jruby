@@ -117,6 +117,8 @@ public class JavaObject extends RubyObject {
             callbackFactory.getMethod("java_class"));
         result.defineMethod("java_proxy?", 
             callbackFactory.getMethod("is_java_proxy"));
+        result.defineMethod("synchronized",
+            callbackFactory.getMethod("ruby_synchronized"));
         result.defineMethod("length", 
             callbackFactory.getMethod("length"));
         result.defineMethod("[]", 
@@ -188,5 +190,12 @@ public class JavaObject extends RubyObject {
     
     public IRubyObject is_java_proxy() {
         return getRuntime().getTrue();
+    }
+
+    public IRubyObject ruby_synchronized() {
+        Object lock = getValue();
+        synchronized (lock != null ? lock : NULL_LOCK) {
+            return getRuntime().getCurrentContext().yield(null);
+        }
     }
 }

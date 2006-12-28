@@ -183,6 +183,10 @@ class JavaProxy
   def to_java_object
     java_object
   end
+
+  def synchronized
+    java_object.synchronized { yield }
+  end
 end
 
 class ArrayJavaProxy < JavaProxy
