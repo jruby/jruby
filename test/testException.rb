@@ -75,3 +75,27 @@ test_no_exception {
     e = StandardError.new
     e.set_backtrace(nil)
 }
+
+begin
+  raise 'Something bad'
+rescue
+  begin
+    test_ok(true)
+  rescue
+    test_ok(false)
+  end
+  test_ok($!, 'Global exception ($!) should not be nil')
+  test_ok($!.to_s.eql?('Something bad'), "Global exceptions should be 'Something bad', but is '#{$!}'")
+end
+
+begin
+  raise 'Something bad'
+rescue
+  begin
+    raise 'Something else bad'
+  rescue
+    test_ok(true)
+  end
+  test_ok($!, 'Global exception ($!) should not be nil')
+  test_ok($!.to_s.eql?('Something bad'), "Global exceptions should be 'Something bad', but is '#{$!}'")
+end

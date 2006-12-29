@@ -1258,6 +1258,8 @@ public class EvaluationState {
             case NodeTypes.RESCUENODE: {
                 RescueNode iVisited = (RescueNode)node;
                 RescuedBlock : while (true) {
+                    IRubyObject globalExceptionState = runtime.getGlobalVariables().get("$!");
+                    boolean anotherExceptionRaised = false;
                     try {
                         // Execute rescue block
                         IRubyObject result = evalInternal(context, iVisited.getBodyNode(), self);
@@ -1301,6 +1303,7 @@ public class EvaluationState {
                                         continue RescuedBlock;
                                         
                                     } else {
+                                        anotherExceptionRaised = true;
                                         throw je;
                                     }
                                 }
@@ -1313,7 +1316,8 @@ public class EvaluationState {
                         throw raiseJump;
                     } finally {
                         // clear exception when handled or retried
-                        runtime.getGlobalVariables().set("$!", runtime.getNil());
+                        if (!anotherExceptionRaised)
+                            runtime.getGlobalVariables().set("$!", globalExceptionState);
                     }
                 }
             }
