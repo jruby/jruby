@@ -69,16 +69,13 @@ public class RubyMethod extends RubyObject {
     	
 		CallbackFactory callbackFactory = runtime.callbackFactory(RubyMethod.class);
         
-		methodClass.defineMethod("arity", 
-				callbackFactory.getMethod("arity"));
-		methodClass.defineMethod("to_proc", 
-				callbackFactory.getMethod("to_proc"));
-		methodClass.defineMethod("unbind", 
-				callbackFactory.getMethod("unbind"));
-		methodClass.defineMethod("call", 
-				callbackFactory.getOptMethod("call"));
-		methodClass.defineMethod("[]", 
-				callbackFactory.getOptMethod("call"));
+		methodClass.defineMethod("arity", callbackFactory.getMethod("arity"));
+		methodClass.defineMethod("to_proc", callbackFactory.getMethod("to_proc"));
+		methodClass.defineMethod("unbind", callbackFactory.getMethod("unbind"));
+		methodClass.defineMethod("call", callbackFactory.getOptMethod("call"));
+		methodClass.defineMethod("[]", callbackFactory.getOptMethod("call"));
+        methodClass.defineMethod("inspect", callbackFactory.getMethod("inspect"));
+        methodClass.defineMethod("to_s", callbackFactory.getMethod("inspect"));
 
 		return methodClass;
     }
@@ -198,6 +195,13 @@ public class RubyMethod extends RubyObject {
         unboundMethod.infectBy(this);
         
         return unboundMethod;
+    }
+    
+    public IRubyObject inspect() {
+        String cname = getMetaClass().getRealClass().getName();
+        RubyString str = getRuntime().newString("#<" + cname + ": " + originModule.getName() + "#" + methodName + ">");
+        str.setTaint(isTaint());
+        return str;
     }
 }
 
