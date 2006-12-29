@@ -112,7 +112,7 @@ public class CommandlineParser {
                     break;
                 case 'I' :
                     String s = grabValue(" -I must be followed by a directory name to add to lib path");
-                    String[] ls = s.split(":");
+                    String[] ls = s.split(java.io.File.pathSeparator);
                     for(int i=0;i<ls.length;i++) {
                         loadPaths.add(ls[i]);
                     }
