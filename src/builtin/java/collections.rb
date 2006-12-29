@@ -40,6 +40,9 @@ JavaUtilities.extend_proxy('java.util.Collection') {
     nw.removeAll(oth)
     nw
   end
+  def length
+    self.size
+  end
 }
 
 
