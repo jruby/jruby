@@ -55,35 +55,35 @@ public class NumericMetaClass extends ObjectMetaClass {
 	    protected void initializeClass() {
 	        includeModule(getRuntime().getModule("Comparable"));
 	
-	        defineMethod("+@", Arity.noArguments(), "op_uplus");
-	        defineMethod("-@", Arity.noArguments(), "op_uminus");
-	        defineMethod("<=>", Arity.singleArgument(), "cmp");
-	        defineMethod("==", Arity.singleArgument(), "equal");
-	        defineMethod("equal?", Arity.singleArgument(), "veryEqual");
-	        defineMethod("===", Arity.singleArgument(), "equal");
-	        defineMethod("abs", Arity.noArguments());
-	        defineMethod("ceil", Arity.noArguments());
-	        defineMethod("coerce", Arity.singleArgument());
-	        defineMethod("clone", Arity.noArguments(), "rbClone");
-	        defineMethod("divmod", Arity.singleArgument(), "divmod");
-	        defineMethod("eql?", Arity.singleArgument(), "eql");
-	        defineMethod("floor", Arity.noArguments());
-	        defineMethod("integer?", Arity.noArguments(), "int_p");
-	        defineMethod("modulo", Arity.singleArgument());
-	        defineMethod("nonzero?", Arity.noArguments(), "nonzero_p");
-	        defineMethod("remainder", Arity.singleArgument());
-	        defineMethod("round", Arity.noArguments());
-	        defineMethod("truncate", Arity.noArguments());
-	        defineMethod("to_int", Arity.noArguments());
-	        defineMethod("zero?", Arity.noArguments(), "zero_p");
+	        defineFastMethod("+@", Arity.noArguments(), "op_uplus");
+	        defineFastMethod("-@", Arity.noArguments(), "op_uminus");
+	        defineFastMethod("<=>", Arity.singleArgument(), "cmp");
+	        defineFastMethod("==", Arity.singleArgument(), "equal");
+	        defineFastMethod("equal?", Arity.singleArgument(), "veryEqual");
+	        defineFastMethod("===", Arity.singleArgument(), "equal");
+	        defineFastMethod("abs", Arity.noArguments());
+	        defineFastMethod("ceil", Arity.noArguments());
+	        defineFastMethod("coerce", Arity.singleArgument());
+	        defineFastMethod("clone", Arity.noArguments(), "rbClone");
+	        defineFastMethod("divmod", Arity.singleArgument(), "divmod");
+	        defineFastMethod("eql?", Arity.singleArgument(), "eql");
+	        defineFastMethod("floor", Arity.noArguments());
+	        defineFastMethod("integer?", Arity.noArguments(), "int_p");
+	        defineFastMethod("modulo", Arity.singleArgument());
+	        defineFastMethod("nonzero?", Arity.noArguments(), "nonzero_p");
+	        defineFastMethod("remainder", Arity.singleArgument());
+	        defineFastMethod("round", Arity.noArguments());
+	        defineFastMethod("truncate", Arity.noArguments());
+	        defineFastMethod("to_int", Arity.noArguments());
+	        defineFastMethod("zero?", Arity.noArguments(), "zero_p");
             
             // Add relational operators that are faster than comparable's implementations
-            defineMethod(">=", Arity.singleArgument(), "op_ge");
-            defineMethod(">", Arity.singleArgument(), "op_gt");
-            defineMethod("<=", Arity.singleArgument(), "op_le");
-            defineMethod("<", Arity.singleArgument(), "op_lt");
+            defineFastMethod(">=", Arity.singleArgument(), "op_ge");
+            defineFastMethod(">", Arity.singleArgument(), "op_gt");
+            defineFastMethod("<=", Arity.singleArgument(), "op_le");
+            defineFastMethod("<", Arity.singleArgument(), "op_lt");
 	        
-	        defineSingletonMethod("new", Arity.optional(), "newInstance"); 
+	        defineFastSingletonMethod("new", Arity.optional(), "newInstance"); 
 	    }
     };
     

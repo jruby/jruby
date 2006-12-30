@@ -35,6 +35,7 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.IterateCallable;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -54,7 +55,7 @@ public class RubyMethod extends RubyObject {
     protected String methodName;
     protected RubyModule originModule;
     protected String originName;
-    protected ICallable method;
+    protected DynamicMethod method;
     protected IRubyObject receiver;
 
     protected RubyMethod(IRuby runtime, RubyClass rubyClass) {
@@ -69,13 +70,13 @@ public class RubyMethod extends RubyObject {
     	
 		CallbackFactory callbackFactory = runtime.callbackFactory(RubyMethod.class);
         
-		methodClass.defineMethod("arity", callbackFactory.getMethod("arity"));
+		methodClass.defineFastMethod("arity", callbackFactory.getMethod("arity"));
 		methodClass.defineMethod("to_proc", callbackFactory.getMethod("to_proc"));
 		methodClass.defineMethod("unbind", callbackFactory.getMethod("unbind"));
 		methodClass.defineMethod("call", callbackFactory.getOptMethod("call"));
 		methodClass.defineMethod("[]", callbackFactory.getOptMethod("call"));
-        methodClass.defineMethod("inspect", callbackFactory.getMethod("inspect"));
-        methodClass.defineMethod("to_s", callbackFactory.getMethod("inspect"));
+        methodClass.defineFastMethod("inspect", callbackFactory.getMethod("inspect"));
+        methodClass.defineFastMethod("to_s", callbackFactory.getMethod("inspect"));
 
 		return methodClass;
     }
@@ -85,7 +86,7 @@ public class RubyMethod extends RubyObject {
         String methodName,
         RubyModule originModule,
         String originName,
-        ICallable method,
+        DynamicMethod method,
         IRubyObject receiver) {
         IRuby runtime = implementationModule.getRuntime();
         RubyMethod newMethod = new RubyMethod(runtime, runtime.getClass("Method"));

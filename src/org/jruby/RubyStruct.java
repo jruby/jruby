@@ -67,20 +67,20 @@ public class RubyStruct extends RubyObject {
         structClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
         structClass.defineMethod("clone", callbackFactory.getMethod("rbClone"));
 
-        structClass.defineMethod("==", callbackFactory.getMethod("equal", IRubyObject.class));
+        structClass.defineFastMethod("==", callbackFactory.getMethod("equal", IRubyObject.class));
 
-        structClass.defineMethod("to_s", callbackFactory.getMethod("to_s"));
-        structClass.defineMethod("inspect", callbackFactory.getMethod("inspect"));
-        structClass.defineMethod("to_a", callbackFactory.getMethod("to_a"));
-        structClass.defineMethod("values", callbackFactory.getMethod("to_a"));
-        structClass.defineMethod("size", callbackFactory.getMethod("size"));
-        structClass.defineMethod("length", callbackFactory.getMethod("size"));
+        structClass.defineFastMethod("to_s", callbackFactory.getMethod("to_s"));
+        structClass.defineFastMethod("inspect", callbackFactory.getMethod("inspect"));
+        structClass.defineFastMethod("to_a", callbackFactory.getMethod("to_a"));
+        structClass.defineFastMethod("values", callbackFactory.getMethod("to_a"));
+        structClass.defineFastMethod("size", callbackFactory.getMethod("size"));
+        structClass.defineFastMethod("length", callbackFactory.getMethod("size"));
 
         structClass.defineMethod("each", callbackFactory.getMethod("each"));
-        structClass.defineMethod("[]", callbackFactory.getMethod("aref", IRubyObject.class));
-        structClass.defineMethod("[]=", callbackFactory.getMethod("aset", IRubyObject.class, IRubyObject.class));
+        structClass.defineFastMethod("[]", callbackFactory.getMethod("aref", IRubyObject.class));
+        structClass.defineFastMethod("[]=", callbackFactory.getMethod("aset", IRubyObject.class, IRubyObject.class));
 
-        structClass.defineMethod("members", callbackFactory.getMethod("members"));
+        structClass.defineFastMethod("members", callbackFactory.getMethod("members"));
 
         return structClass;
     }

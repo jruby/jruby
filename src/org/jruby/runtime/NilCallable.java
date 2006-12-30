@@ -18,23 +18,16 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author headius
  */
 public class NilCallable extends AbstractCallable{
-    public static final NilCallable NIL_CALLABLE = new NilCallable(null);
+    public static final NilCallable NIL_CALLABLE = new NilCallable();
     
-    public NilCallable(Visibility visibility) {
-        super(visibility);
+    public NilCallable() {
     }
 
-    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject call(ThreadContext context, IRubyObject receiver, IRubyObject[] args) {
         return context.getRuntime().getNil();
     }
 
     public ICallable dup() {
         return this;
-    }
-
-    public void preMethod(ThreadContext context, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
-    }
-
-    public void postMethod(ThreadContext context) {
     }
 }

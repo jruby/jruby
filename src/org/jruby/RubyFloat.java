@@ -83,39 +83,39 @@ public class RubyFloat extends RubyNumeric {
         RubyClass result = runtime.defineClass("Float", runtime.getClass("Numeric"));
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyFloat.class);
         
-        result.defineMethod("+", callbackFactory.getMethod("op_plus", IRubyObject.class));
-        result.defineMethod("-", callbackFactory.getMethod("op_minus", IRubyObject.class));
-        result.defineMethod("*", callbackFactory.getMethod("op_mul", IRubyObject.class));
-        result.defineMethod("/", callbackFactory.getMethod("op_div", IRubyObject.class));
-        result.defineMethod("%", callbackFactory.getMethod("op_mod", IRubyObject.class));
-        result.defineMethod("**", callbackFactory.getMethod("op_pow", IRubyObject.class));
+        result.defineFastMethod("+", callbackFactory.getMethod("op_plus", IRubyObject.class));
+        result.defineFastMethod("-", callbackFactory.getMethod("op_minus", IRubyObject.class));
+        result.defineFastMethod("*", callbackFactory.getMethod("op_mul", IRubyObject.class));
+        result.defineFastMethod("/", callbackFactory.getMethod("op_div", IRubyObject.class));
+        result.defineFastMethod("%", callbackFactory.getMethod("op_mod", IRubyObject.class));
+        result.defineFastMethod("**", callbackFactory.getMethod("op_pow", IRubyObject.class));
         // Although not explicitly documented in the Pickaxe, Ruby 1.8 Float
         // does have its own implementations of these relational operators.
         // These appear to be necessary if for no oher reason than proper NaN
         // handling.
-        result.defineMethod("==", callbackFactory.getMethod("equal", IRubyObject.class));
-        result.defineMethod("<=>", callbackFactory.getMethod("cmp",
+        result.defineFastMethod("==", callbackFactory.getMethod("equal", IRubyObject.class));
+        result.defineFastMethod("<=>", callbackFactory.getMethod("cmp",
                 IRubyObject.class));
-        result.defineMethod(">", callbackFactory.getMethod("op_gt",
+        result.defineFastMethod(">", callbackFactory.getMethod("op_gt",
                 IRubyObject.class));
-        result.defineMethod(">=", callbackFactory.getMethod("op_ge", IRubyObject.class));
-        result.defineMethod("<", callbackFactory.getMethod("op_lt", IRubyObject.class));
-        result.defineMethod("<=", callbackFactory.getMethod("op_le", IRubyObject.class));
-        result.defineMethod("ceil", callbackFactory.getMethod("ceil"));
-        result.defineMethod("finite?", callbackFactory.getMethod("finite_p"));
-        result.defineMethod("floor", callbackFactory.getMethod("floor"));
-        result.defineMethod("hash", callbackFactory.getMethod("hash"));
-        result.defineMethod("infinite?", callbackFactory.getMethod("infinite_p"));
-        result.defineMethod("nan?", callbackFactory.getMethod("nan_p"));
-        result.defineMethod("round", callbackFactory.getMethod("round"));
-        result.defineMethod("to_i", callbackFactory.getMethod("to_i"));
+        result.defineFastMethod(">=", callbackFactory.getMethod("op_ge", IRubyObject.class));
+        result.defineFastMethod("<", callbackFactory.getMethod("op_lt", IRubyObject.class));
+        result.defineFastMethod("<=", callbackFactory.getMethod("op_le", IRubyObject.class));
+        result.defineFastMethod("ceil", callbackFactory.getMethod("ceil"));
+        result.defineFastMethod("finite?", callbackFactory.getMethod("finite_p"));
+        result.defineFastMethod("floor", callbackFactory.getMethod("floor"));
+        result.defineFastMethod("hash", callbackFactory.getMethod("hash"));
+        result.defineFastMethod("infinite?", callbackFactory.getMethod("infinite_p"));
+        result.defineFastMethod("nan?", callbackFactory.getMethod("nan_p"));
+        result.defineFastMethod("round", callbackFactory.getMethod("round"));
+        result.defineFastMethod("to_i", callbackFactory.getMethod("to_i"));
         result.defineAlias("to_int", "to_i");
-        result.defineMethod("to_f", callbackFactory.getMethod("to_f"));
-        result.defineMethod("to_s", callbackFactory.getMethod("to_s"));
-        result.defineMethod("truncate", callbackFactory.getMethod("truncate"));
+        result.defineFastMethod("to_f", callbackFactory.getMethod("to_f"));
+        result.defineFastMethod("to_s", callbackFactory.getMethod("to_s"));
+        result.defineFastMethod("truncate", callbackFactory.getMethod("truncate"));
 
         result.getMetaClass().undefineMethod("new");
-        result.defineSingletonMethod("induced_from", callbackFactory.getSingletonMethod("induced_from", IRubyObject.class));
+        result.defineFastSingletonMethod("induced_from", callbackFactory.getSingletonMethod("induced_from", IRubyObject.class));
         return result;
     }
 

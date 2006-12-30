@@ -147,37 +147,37 @@ public class FileMetaClass extends IOMetaClass {
 	
 	        extendObject(runtime.getModule("FileTest"));
 	        
-			defineSingletonMethod("basename", Arity.optional());
-            defineSingletonMethod("chmod", Arity.required(2));
-            defineSingletonMethod("chown", Arity.required(2));
-	        defineSingletonMethod("delete", Arity.optional(), "unlink");
-			defineSingletonMethod("dirname", Arity.singleArgument());
-	        defineSingletonMethod("expand_path", Arity.optional());
-			defineSingletonMethod("extname", Arity.singleArgument());
-            defineSingletonMethod("fnmatch", Arity.optional());
-            defineSingletonMethod("fnmatch?", Arity.optional(), "fnmatch");
-			defineSingletonMethod("join", Arity.optional());
-	        defineSingletonMethod("lstat", Arity.singleArgument());
-            defineSingletonMethod("mtime", Arity.singleArgument());
+			defineFastSingletonMethod("basename", Arity.optional());
+            defineFastSingletonMethod("chmod", Arity.required(2));
+            defineFastSingletonMethod("chown", Arity.required(2));
+	        defineFastSingletonMethod("delete", Arity.optional(), "unlink");
+			defineFastSingletonMethod("dirname", Arity.singleArgument());
+	        defineFastSingletonMethod("expand_path", Arity.optional());
+			defineFastSingletonMethod("extname", Arity.singleArgument());
+            defineFastSingletonMethod("fnmatch", Arity.optional());
+            defineFastSingletonMethod("fnmatch?", Arity.optional(), "fnmatch");
+			defineFastSingletonMethod("join", Arity.optional());
+	        defineFastSingletonMethod("lstat", Arity.singleArgument());
+            defineFastSingletonMethod("mtime", Arity.singleArgument());
 	        defineSingletonMethod("open", Arity.optional());
-	        defineSingletonMethod("rename", Arity.twoArguments());
-            defineSingletonMethod("size?", Arity.singleArgument(), "size_p");
-			defineSingletonMethod("split", Arity.singleArgument());
-	        defineSingletonMethod("stat", Arity.singleArgument(), "lstat");
-	        defineSingletonMethod("symlink?", Arity.singleArgument(), "symlink_p");
-			defineSingletonMethod("truncate", Arity.twoArguments());
-			defineSingletonMethod("utime", Arity.optional());
-	        defineSingletonMethod("unlink", Arity.optional());
+	        defineFastSingletonMethod("rename", Arity.twoArguments());
+            defineFastSingletonMethod("size?", Arity.singleArgument(), "size_p");
+			defineFastSingletonMethod("split", Arity.singleArgument());
+	        defineFastSingletonMethod("stat", Arity.singleArgument(), "lstat");
+	        defineFastSingletonMethod("symlink?", Arity.singleArgument(), "symlink_p");
+			defineFastSingletonMethod("truncate", Arity.twoArguments());
+			defineFastSingletonMethod("utime", Arity.optional());
+	        defineFastSingletonMethod("unlink", Arity.optional());
 			
 	        // TODO: Define instance methods: atime, chmod, chown, ctime, lchmod, lchown, lstat, mtime
 			//defineMethod("flock", Arity.singleArgument());
-            defineMethod("chmod", Arity.required(1));
-            defineMethod("chown", Arity.required(1));
+            defineFastMethod("chmod", Arity.required(1));
+            defineFastMethod("chown", Arity.required(1));
 			defineMethod("initialize", Arity.optional());
-			defineMethod("path", Arity.noArguments());
-	        defineMethod("stat", Arity.noArguments());
-			defineMethod("truncate", Arity.singleArgument());
-			defineMethod("flock", Arity.singleArgument());
+			defineFastMethod("path", Arity.noArguments());
+	        defineFastMethod("stat", Arity.noArguments());
+			defineFastMethod("truncate", Arity.singleArgument());
+			defineFastMethod("flock", Arity.singleArgument());
 			
 	        RubyFileStat.createFileStatClass(runtime);
 	    }

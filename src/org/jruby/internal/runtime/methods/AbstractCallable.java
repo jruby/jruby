@@ -42,63 +42,10 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author  jpetersen
  */
 public abstract class AbstractCallable implements ICallable {
-    protected RubyModule implementationClass;
-    protected Visibility visibility;
-    
-    protected AbstractCallable(RubyModule implementationClass, Visibility visibility) {
-        this.implementationClass = implementationClass;
-        this.visibility = visibility;
-    }
-    
-    protected AbstractCallable(Visibility visibility) {
-        this.visibility = visibility;
-    }
-    
-    /**
-     * The base behavior is to do no scope/frame manipulation at all, depending on the caller. Methods (via
-     * AbstractMethod) add their own behavior for scoping/framing, and non-methods (Evaluate/IterateCallable)
-     * are only invoked from within ThreadContext.yield. Eventually TC.yield scoping/framing may be moved into
-     * superclass of the two non-methods.
-     */
-    public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
-        return internalCall(context, receiver, lastClass, name, args, noSuper);
-    }
-    
-    public String getOriginalName() {
-    	return null;
-    }
-    
-    public RubyModule getImplementationClass() {
-        return implementationClass;
-    }
-
-    public void setImplementationClass(RubyModule implClass) {
-        implementationClass = implClass;
-    }
-
-    public Visibility getVisibility() {
-        return visibility;
-    }
-
-    public void setVisibility(Visibility visibility) {
-        this.visibility = visibility;
-    }
-
-    public boolean isUndefined() {
-        return false;
+    protected AbstractCallable() {
     }
 
     public Arity getArity() {
         return Arity.optional();
-    }
-
-    public boolean isCallableFrom(IRubyObject caller, CallType callType) {
-        // default to true
-        return true;
-    }
-    
-    // default to false; only non-kernel module methods need implementer
-    public boolean needsImplementer() {
-        return false;
     }
 }

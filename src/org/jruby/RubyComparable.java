@@ -44,12 +44,12 @@ public class RubyComparable {
     public static RubyModule createComparable(IRuby runtime) {
         RubyModule comparableModule = runtime.defineModule("Comparable");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyComparable.class);
-        comparableModule.defineMethod("==", callbackFactory.getSingletonMethod("equal", IRubyObject.class));
-        comparableModule.defineMethod(">", callbackFactory.getSingletonMethod("op_gt", IRubyObject.class));
-        comparableModule.defineMethod(">=", callbackFactory.getSingletonMethod("op_ge", IRubyObject.class));
-        comparableModule.defineMethod("<", callbackFactory.getSingletonMethod("op_lt", IRubyObject.class));
-        comparableModule.defineMethod("<=", callbackFactory.getSingletonMethod("op_le", IRubyObject.class));
-        comparableModule.defineMethod("between?", callbackFactory.getSingletonMethod("between_p", IRubyObject.class, IRubyObject.class));
+        comparableModule.defineFastMethod("==", callbackFactory.getSingletonMethod("equal", IRubyObject.class));
+        comparableModule.defineFastMethod(">", callbackFactory.getSingletonMethod("op_gt", IRubyObject.class));
+        comparableModule.defineFastMethod(">=", callbackFactory.getSingletonMethod("op_ge", IRubyObject.class));
+        comparableModule.defineFastMethod("<", callbackFactory.getSingletonMethod("op_lt", IRubyObject.class));
+        comparableModule.defineFastMethod("<=", callbackFactory.getSingletonMethod("op_le", IRubyObject.class));
+        comparableModule.defineFastMethod("between?", callbackFactory.getSingletonMethod("between_p", IRubyObject.class, IRubyObject.class));
 
         return comparableModule;
     }

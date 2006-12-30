@@ -48,23 +48,16 @@ public class EvaluateCallable extends AbstractCallable {
     private final Node node;
     private final Arity arity;
 
-    private EvaluateCallable(Node node, Visibility visibility, Arity arity) {
-        super(null, visibility);
+    private EvaluateCallable(Node node, Arity arity) {
         this.node = node;
         this.arity = arity;
     }
 
     public EvaluateCallable(Node node, Node vars) {
-    	this(node, null, procArityOf(vars));
-    }
-    
-    public void preMethod(ThreadContext context, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
-    }
-    
-    public void postMethod(ThreadContext context) {
+    	this(node, procArityOf(vars));
     }
 
-    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject call(ThreadContext context, IRubyObject receiver, IRubyObject[] args) {
         return EvaluationState.eval(context, node, receiver);
     }
 
@@ -90,6 +83,6 @@ public class EvaluateCallable extends AbstractCallable {
     }
     
     public ICallable dup() {
-        return new EvaluateCallable(node, getVisibility(), arity);
+        return new EvaluateCallable(node, arity);
     }
 }

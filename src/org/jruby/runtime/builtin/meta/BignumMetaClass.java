@@ -44,29 +44,29 @@ public class BignumMetaClass extends ObjectMetaClass {
 
 	protected class BignumMeta extends Meta {
 		protected void initializeClass() {
-	        defineMethod("~", Arity.noArguments(), "op_invert");
-	        defineMethod("&", Arity.singleArgument(), "op_and");
-	        defineMethod("<<", Arity.singleArgument(), "op_lshift");
-	        defineMethod("%", Arity.singleArgument(), "op_mod");
-	        defineMethod("+", Arity.singleArgument(), "op_plus");
-	        defineMethod("*", Arity.singleArgument(), "op_mul");
-	        defineMethod("**", Arity.singleArgument(), "op_pow");
-	        defineMethod("-", Arity.singleArgument(), "op_minus");
-	        defineMethod("modulo", Arity.singleArgument(), "op_mod");
-	        defineMethod("/", Arity.singleArgument(), "op_div");
-	        defineMethod(">>", Arity.singleArgument(), "op_rshift");
-	        defineMethod("|", Arity.singleArgument(), "op_or");
-	        defineMethod("^", Arity.singleArgument(), "op_xor");
-	        defineMethod("-@", Arity.noArguments(), "op_uminus");
-	        defineMethod("[]", Arity.singleArgument(), "aref");
-	        defineMethod("coerce", Arity.singleArgument(), "coerce");
-	        defineMethod("remainder", Arity.singleArgument(), "remainder");
-	        defineMethod("hash", Arity.noArguments(), "hash");
-	        defineMethod("size", Arity.noArguments(), "size");
-	        defineMethod("quo", Arity.singleArgument(), "quo");
-	        defineMethod("to_f", Arity.noArguments(), "to_f");
-	        defineMethod("to_i", Arity.noArguments(), "to_i");
-	        defineMethod("to_s", Arity.optional(), "to_s");
+	        defineFastMethod("~", Arity.noArguments(), "op_invert");
+	        defineFastMethod("&", Arity.singleArgument(), "op_and");
+	        defineFastMethod("<<", Arity.singleArgument(), "op_lshift");
+	        defineFastMethod("%", Arity.singleArgument(), "op_mod");
+	        defineFastMethod("+", Arity.singleArgument(), "op_plus");
+	        defineFastMethod("*", Arity.singleArgument(), "op_mul");
+	        defineFastMethod("**", Arity.singleArgument(), "op_pow");
+	        defineFastMethod("-", Arity.singleArgument(), "op_minus");
+	        defineFastMethod("modulo", Arity.singleArgument(), "op_mod");
+	        defineFastMethod("/", Arity.singleArgument(), "op_div");
+	        defineFastMethod(">>", Arity.singleArgument(), "op_rshift");
+	        defineFastMethod("|", Arity.singleArgument(), "op_or");
+	        defineFastMethod("^", Arity.singleArgument(), "op_xor");
+	        defineFastMethod("-@", Arity.noArguments(), "op_uminus");
+	        defineFastMethod("[]", Arity.singleArgument(), "aref");
+	        defineFastMethod("coerce", Arity.singleArgument(), "coerce");
+	        defineFastMethod("remainder", Arity.singleArgument(), "remainder");
+	        defineFastMethod("hash", Arity.noArguments(), "hash");
+	        defineFastMethod("size", Arity.noArguments(), "size");
+	        defineFastMethod("quo", Arity.singleArgument(), "quo");
+	        defineFastMethod("to_f", Arity.noArguments(), "to_f");
+	        defineFastMethod("to_i", Arity.noArguments(), "to_i");
+	        defineFastMethod("to_s", Arity.optional(), "to_s");
 		}
 	};
 	

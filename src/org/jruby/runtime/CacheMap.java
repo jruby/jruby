@@ -59,7 +59,7 @@ public class CacheMap {
 	 * @param method which is cached
 	 * @param module which is caching method
 	 */
-	public void add(ICallable method, RubyModule module) {
+	public void add(DynamicMethod method, RubyModule module) {
 		Set classList = (Set) mappings.get(method);
 		
 		if (classList == null) {
@@ -78,7 +78,7 @@ public class CacheMap {
 	 * @param name of the method to remove
 	 * @param method to remove all caches of
 	 */
-	public void remove(String name, ICallable method) {
+	public void remove(String name, DynamicMethod method) {
 		Set classList = (Set) mappings.remove(method);
 		
 		// Removed method has never been used so it has not been cached

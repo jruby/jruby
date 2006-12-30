@@ -43,19 +43,19 @@ public class RubyDigest {
 
         CallbackFactory basecb = runtime.callbackFactory(Base.class);
         
-        cDigestBase.defineSingletonMethod("new",basecb.getOptSingletonMethod("newInstance"));
-        cDigestBase.defineSingletonMethod("digest",basecb.getSingletonMethod("s_digest",IRubyObject.class));
-        cDigestBase.defineSingletonMethod("hexdigest",basecb.getSingletonMethod("s_hexdigest",IRubyObject.class));
+        cDigestBase.defineFastSingletonMethod("new",basecb.getOptSingletonMethod("newInstance"));
+        cDigestBase.defineFastSingletonMethod("digest",basecb.getSingletonMethod("s_digest",IRubyObject.class));
+        cDigestBase.defineFastSingletonMethod("hexdigest",basecb.getSingletonMethod("s_hexdigest",IRubyObject.class));
 
         cDigestBase.defineMethod("initialize",basecb.getOptMethod("initialize"));
         cDigestBase.defineMethod("initialize_copy",basecb.getMethod("initialize_copy",IRubyObject.class));
-        cDigestBase.defineMethod("clone",basecb.getMethod("rbClone"));
-        cDigestBase.defineMethod("update",basecb.getMethod("update",IRubyObject.class));
-        cDigestBase.defineMethod("<<",basecb.getMethod("update",IRubyObject.class));
-        cDigestBase.defineMethod("digest",basecb.getMethod("digest"));
-        cDigestBase.defineMethod("hexdigest",basecb.getMethod("hexdigest"));
-        cDigestBase.defineMethod("to_s",basecb.getMethod("hexdigest"));
-        cDigestBase.defineMethod("==",basecb.getMethod("eq",IRubyObject.class));
+        cDigestBase.defineFastMethod("clone",basecb.getMethod("rbClone"));
+        cDigestBase.defineFastMethod("update",basecb.getMethod("update",IRubyObject.class));
+        cDigestBase.defineFastMethod("<<",basecb.getMethod("update",IRubyObject.class));
+        cDigestBase.defineFastMethod("digest",basecb.getMethod("digest"));
+        cDigestBase.defineFastMethod("hexdigest",basecb.getMethod("hexdigest"));
+        cDigestBase.defineFastMethod("to_s",basecb.getMethod("hexdigest"));
+        cDigestBase.defineFastMethod("==",basecb.getMethod("eq",IRubyObject.class));
     }
 
     public static void createDigestMD5(IRuby runtime) {

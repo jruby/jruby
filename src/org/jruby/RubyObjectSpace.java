@@ -46,8 +46,8 @@ public class RubyObjectSpace {
         RubyModule objectSpaceModule = runtime.defineModule("ObjectSpace");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyObjectSpace.class);
         objectSpaceModule.defineModuleFunction("each_object", callbackFactory.getOptSingletonMethod("each_object"));
-        objectSpaceModule.defineModuleFunction("garbage_collect", callbackFactory.getSingletonMethod("garbage_collect"));
-        objectSpaceModule.defineModuleFunction("_id2ref", callbackFactory.getSingletonMethod("id2ref", RubyFixnum.class));
+        objectSpaceModule.defineFastModuleFunction("garbage_collect", callbackFactory.getSingletonMethod("garbage_collect"));
+        objectSpaceModule.defineFastModuleFunction("_id2ref", callbackFactory.getSingletonMethod("id2ref", RubyFixnum.class));
         objectSpaceModule.defineModuleFunction("define_finalizer", 
         		callbackFactory.getOptSingletonMethod("define_finalizer"));
         objectSpaceModule.defineModuleFunction("undefine_finalizer", 

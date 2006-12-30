@@ -35,6 +35,7 @@ import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -43,10 +44,10 @@ import org.jruby.runtime.callback.Callback;
 
 /**
  */
-public class CallbackMethod extends AbstractMethod {
+public class FullFunctionCallbackMethod extends AbstractMethod {
     private Callback callback;
 
-    public CallbackMethod(RubyModule implementationClass, Callback callback, Visibility visibility) {
+    public FullFunctionCallbackMethod(RubyModule implementationClass, Callback callback, Visibility visibility) {
         super(implementationClass, visibility);
         this.callback = callback;
     }
@@ -84,7 +85,7 @@ public class CallbackMethod extends AbstractMethod {
         return getCallback().getArity();
     }
     
-    public ICallable dup() {
-        return new CallbackMethod(getImplementationClass(), callback, getVisibility());
+    public DynamicMethod dup() {
+        return new FullFunctionCallbackMethod(getImplementationClass(), callback, getVisibility());
     }
 }

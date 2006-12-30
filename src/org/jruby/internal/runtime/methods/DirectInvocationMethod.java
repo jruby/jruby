@@ -29,6 +29,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -59,7 +60,7 @@ public abstract class DirectInvocationMethod extends AbstractMethod implements C
 		return arity;
 	}
 
-	public ICallable dup() {
+	public DynamicMethod dup() {
 		try {
 			DirectInvocationMethod dim = (DirectInvocationMethod)clone();
 			return dim;

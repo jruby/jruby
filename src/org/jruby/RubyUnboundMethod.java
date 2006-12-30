@@ -29,6 +29,7 @@
 package org.jruby;
 
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -48,7 +49,7 @@ public class RubyUnboundMethod extends RubyMethod {
         String methodName,
         RubyModule originModule,
         String originName,
-        ICallable method) {
+        DynamicMethod method) {
         RubyUnboundMethod newMethod = new RubyUnboundMethod(implementationModule.getRuntime());
 
         newMethod.implementationModule = implementationModule;

@@ -68,25 +68,25 @@ public class RubyException extends RubyObject {
     	
 		CallbackFactory callbackFactory = runtime.callbackFactory(RubyException.class);
         
-		exceptionClass.defineSingletonMethod("new", 
+		exceptionClass.defineFastSingletonMethod("new", 
 				callbackFactory.getOptSingletonMethod("newInstance"));		
-		exceptionClass.defineSingletonMethod("exception", 
+		exceptionClass.defineFastSingletonMethod("exception", 
 				callbackFactory.getOptSingletonMethod("newInstance"));		
 		exceptionClass.defineMethod("initialize",
 			callbackFactory.getOptMethod("initialize"));
-		exceptionClass.defineMethod("exception", 
+		exceptionClass.defineFastMethod("exception", 
 			callbackFactory.getOptMethod("exception"));
-		exceptionClass.defineMethod("to_s", 
+		exceptionClass.defineFastMethod("to_s", 
 			callbackFactory.getMethod("to_s"));
-		exceptionClass.defineMethod("to_str", 
+		exceptionClass.defineFastMethod("to_str", 
 			callbackFactory.getMethod("to_s"));
-		exceptionClass.defineMethod("message", 
+		exceptionClass.defineFastMethod("message", 
 			callbackFactory.getMethod("to_s"));
-		exceptionClass.defineMethod("inspect", 
+		exceptionClass.defineFastMethod("inspect", 
 			callbackFactory.getMethod("inspect"));
-		exceptionClass.defineMethod("backtrace", 
+		exceptionClass.defineFastMethod("backtrace", 
 			callbackFactory.getMethod("backtrace"));		
-		exceptionClass.defineMethod("set_backtrace", 
+		exceptionClass.defineFastMethod("set_backtrace", 
 			callbackFactory.getMethod("set_backtrace", IRubyObject.class));		
 
 		return exceptionClass;

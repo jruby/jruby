@@ -31,6 +31,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
+import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -40,14 +41,14 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author  jpetersen
  */
 public class AliasMethod extends AbstractMethod {
-    private ICallable oldMethod;
+    private DynamicMethod oldMethod;
     private String oldName;
 
     /*
      * This code used to try and optimize the case of when oldMethod is an aliasMethod.
      * This seems a little overkill.
      */
-    public AliasMethod(ICallable oldMethod, String oldName) {
+    public AliasMethod(DynamicMethod oldMethod, String oldName) {
         super(oldMethod.getImplementationClass(), oldMethod.getVisibility());
 
         this.oldName = oldName;
@@ -71,7 +72,7 @@ public class AliasMethod extends AbstractMethod {
         return oldMethod.internalCall(context, receiver, lastClass, oldName, args, noSuper);
     }
 
-    public ICallable dup() {
+    public DynamicMethod dup() {
         return new AliasMethod(oldMethod, oldName);
     }
     

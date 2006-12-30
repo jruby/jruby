@@ -29,6 +29,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -95,7 +96,7 @@ public class MultiStubMethod extends AbstractMethod implements
         return arity;
     }
 
-    public ICallable dup() {
+    public DynamicMethod dup() {
         try {
             MultiStubMethod msm = (MultiStubMethod)clone();
             return msm;

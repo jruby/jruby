@@ -32,6 +32,7 @@ package org.jruby.internal.runtime.methods;
 import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
+import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -69,7 +70,7 @@ public class ProcMethod extends AbstractMethod {
         return proc.call(args, self);
     }
     
-    public ICallable dup() {
+    public DynamicMethod dup() {
         return new ProcMethod(getImplementationClass(), proc, getVisibility());
     }
 }

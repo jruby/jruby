@@ -45,8 +45,8 @@ public class ProcMetaClass extends ObjectMetaClass {
 
 	protected class ProcMeta extends Meta {
 		protected void initializeClass() {
-			defineMethod("arity", Arity.noArguments(), "arity");
-			defineMethod("binding", Arity.noArguments(), "binding");
+			defineFastMethod("arity", Arity.noArguments(), "arity");
+			defineFastMethod("binding", Arity.noArguments(), "binding");
 			defineMethod("call", Arity.optional(), "call");
 			defineAlias("[]", "call");
 			defineMethod("to_proc", Arity.noArguments(), "to_proc");

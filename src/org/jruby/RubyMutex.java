@@ -43,9 +43,9 @@ public class RubyMutex extends RubyObject {
         RubyClass mutexClass =
                 runtime.defineClass("Mutex", runtime.getObject());
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyMutex.class);
-        mutexClass.defineMethod("lock", callbackFactory.getMethod("lock"));
-        mutexClass.defineMethod("unlock", callbackFactory.getMethod("unlock"));
-        mutexClass.defineMethod("locked?", callbackFactory.getMethod("locked_p"));
+        mutexClass.defineFastMethod("lock", callbackFactory.getMethod("lock"));
+        mutexClass.defineFastMethod("unlock", callbackFactory.getMethod("unlock"));
+        mutexClass.defineFastMethod("locked?", callbackFactory.getMethod("locked_p"));
     }
 
     public RubyMutex lock() {

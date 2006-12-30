@@ -32,6 +32,7 @@ package org.jruby.internal.runtime.methods;
 import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.RubyUnboundMethod;
+import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -68,7 +69,7 @@ public class MethodMethod extends AbstractMethod {
         return method.bind(receiver).call(args);
     }
     
-    public ICallable dup() {
+    public DynamicMethod dup() {
         return new MethodMethod(getImplementationClass(), method, getVisibility());
     }
 }

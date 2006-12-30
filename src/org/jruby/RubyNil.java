@@ -54,20 +54,20 @@ public class RubyNil extends RubyObject {
     public static RubyClass createNilClass(IRuby runtime) {
         RubyClass nilClass = runtime.defineClass("NilClass", runtime.getObject());
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyNil.class);
-        nilClass.defineMethod("type", callbackFactory.getSingletonMethod("type"));
-        nilClass.defineMethod("to_i", callbackFactory.getSingletonMethod("to_i"));
-        nilClass.defineMethod("to_s", callbackFactory.getSingletonMethod("to_s"));
-        nilClass.defineMethod("to_a", callbackFactory.getSingletonMethod("to_a"));
-        nilClass.defineMethod("to_f", callbackFactory.getSingletonMethod("to_f"));
-        nilClass.defineMethod("inspect", callbackFactory.getSingletonMethod("inspect"));
+        nilClass.defineFastMethod("type", callbackFactory.getSingletonMethod("type"));
+        nilClass.defineFastMethod("to_i", callbackFactory.getSingletonMethod("to_i"));
+        nilClass.defineFastMethod("to_s", callbackFactory.getSingletonMethod("to_s"));
+        nilClass.defineFastMethod("to_a", callbackFactory.getSingletonMethod("to_a"));
+        nilClass.defineFastMethod("to_f", callbackFactory.getSingletonMethod("to_f"));
+        nilClass.defineFastMethod("inspect", callbackFactory.getSingletonMethod("inspect"));
         
-        nilClass.defineMethod("&", callbackFactory.getSingletonMethod("op_and", IRubyObject.class));
-        nilClass.defineMethod("|", callbackFactory.getSingletonMethod("op_or", IRubyObject.class));
-        nilClass.defineMethod("^", callbackFactory.getSingletonMethod("op_xor", IRubyObject.class));
-        nilClass.defineMethod("nil?", callbackFactory.getMethod("nil_p"));
-        nilClass.defineMethod("id", callbackFactory.getSingletonMethod("id"));
-        nilClass.defineMethod("taint", callbackFactory.getMethod("taint"));
-        nilClass.defineMethod("freeze", callbackFactory.getMethod("freeze"));
+        nilClass.defineFastMethod("&", callbackFactory.getSingletonMethod("op_and", IRubyObject.class));
+        nilClass.defineFastMethod("|", callbackFactory.getSingletonMethod("op_or", IRubyObject.class));
+        nilClass.defineFastMethod("^", callbackFactory.getSingletonMethod("op_xor", IRubyObject.class));
+        nilClass.defineFastMethod("nil?", callbackFactory.getMethod("nil_p"));
+        nilClass.defineFastMethod("id", callbackFactory.getSingletonMethod("id"));
+        nilClass.defineFastMethod("taint", callbackFactory.getMethod("taint"));
+        nilClass.defineFastMethod("freeze", callbackFactory.getMethod("freeze"));
 
         nilClass.getMetaClass().undefineMethod("new");
         

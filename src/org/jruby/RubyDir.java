@@ -67,36 +67,36 @@ public class RubyDir extends RubyObject {
 
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyDir.class);
 
-		dirClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
+		dirClass.defineFastSingletonMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
         dirClass.defineSingletonMethod("glob", callbackFactory.getSingletonMethod("glob", RubyString.class));
-        dirClass.defineSingletonMethod("entries", callbackFactory.getSingletonMethod("entries", RubyString.class));
+        dirClass.defineFastSingletonMethod("entries", callbackFactory.getSingletonMethod("entries", RubyString.class));
         dirClass.defineSingletonMethod("[]", callbackFactory.getSingletonMethod("glob", RubyString.class));
         // dirClass.defineAlias("[]", "glob");
         dirClass.defineSingletonMethod("chdir", callbackFactory.getOptSingletonMethod("chdir"));
-        dirClass.defineSingletonMethod("chroot", callbackFactory.getSingletonMethod("chroot", RubyString.class));
+        dirClass.defineFastSingletonMethod("chroot", callbackFactory.getSingletonMethod("chroot", RubyString.class));
         //dirClass.defineSingletonMethod("delete", callbackFactory.getSingletonMethod(RubyDir.class, "delete", RubyString.class));
         dirClass.defineSingletonMethod("foreach", callbackFactory.getSingletonMethod("foreach", RubyString.class));
-        dirClass.defineSingletonMethod("getwd", callbackFactory.getSingletonMethod("getwd"));
-        dirClass.defineSingletonMethod("pwd", callbackFactory.getSingletonMethod("getwd"));
+        dirClass.defineFastSingletonMethod("getwd", callbackFactory.getSingletonMethod("getwd"));
+        dirClass.defineFastSingletonMethod("pwd", callbackFactory.getSingletonMethod("getwd"));
         // dirClass.defineAlias("pwd", "getwd");
-        dirClass.defineSingletonMethod("mkdir", callbackFactory.getOptSingletonMethod("mkdir"));
+        dirClass.defineFastSingletonMethod("mkdir", callbackFactory.getOptSingletonMethod("mkdir"));
         dirClass.defineSingletonMethod("open", callbackFactory.getSingletonMethod("open", RubyString.class));
-        dirClass.defineSingletonMethod("rmdir", callbackFactory.getSingletonMethod("rmdir", RubyString.class));
-        dirClass.defineSingletonMethod("unlink", callbackFactory.getSingletonMethod("rmdir", RubyString.class));
-        dirClass.defineSingletonMethod("delete", callbackFactory.getSingletonMethod("rmdir", RubyString.class));
+        dirClass.defineFastSingletonMethod("rmdir", callbackFactory.getSingletonMethod("rmdir", RubyString.class));
+        dirClass.defineFastSingletonMethod("unlink", callbackFactory.getSingletonMethod("rmdir", RubyString.class));
+        dirClass.defineFastSingletonMethod("delete", callbackFactory.getSingletonMethod("rmdir", RubyString.class));
         // dirClass.defineAlias("unlink", "rmdir");
         // dirClass.defineAlias("delete", "rmdir");
 
-        dirClass.defineMethod("close", callbackFactory.getMethod("close"));
+        dirClass.defineFastMethod("close", callbackFactory.getMethod("close"));
         dirClass.defineMethod("each", callbackFactory.getMethod("each"));
-        dirClass.defineMethod("entries", callbackFactory.getMethod("entries"));
-        dirClass.defineMethod("path", callbackFactory.getMethod("path"));
-        dirClass.defineMethod("tell", callbackFactory.getMethod("tell"));
+        dirClass.defineFastMethod("entries", callbackFactory.getMethod("entries"));
+        dirClass.defineFastMethod("path", callbackFactory.getMethod("path"));
+        dirClass.defineFastMethod("tell", callbackFactory.getMethod("tell"));
         dirClass.defineAlias("pos", "tell");
-        dirClass.defineMethod("seek", callbackFactory.getMethod("seek", RubyFixnum.class));
-        dirClass.defineMethod("pos=", callbackFactory.getMethod("setPos", RubyFixnum.class));
-        dirClass.defineMethod("read", callbackFactory.getMethod("read"));
-        dirClass.defineMethod("rewind", callbackFactory.getMethod("rewind"));
+        dirClass.defineFastMethod("seek", callbackFactory.getMethod("seek", RubyFixnum.class));
+        dirClass.defineFastMethod("pos=", callbackFactory.getMethod("setPos", RubyFixnum.class));
+        dirClass.defineFastMethod("read", callbackFactory.getMethod("read"));
+        dirClass.defineFastMethod("rewind", callbackFactory.getMethod("rewind"));
 		dirClass.defineMethod("initialize", callbackFactory.getMethod("initialize", RubyString.class));
 
         return dirClass;

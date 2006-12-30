@@ -48,18 +48,11 @@ public class IterateCallable extends AbstractCallable {
     private RubyMethod method;
 
     public IterateCallable(Callback callback, RubyMethod method) {
-        super(null, null);
         this.callback = callback;
         this.method = method;
     }
 
-    public void preMethod(ThreadContext context, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
-    }
-    
-    public void postMethod(ThreadContext context) {
-    }
-
-    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject call(ThreadContext context, IRubyObject receiver, IRubyObject[] args) {
         return callback.execute(args[0], new IRubyObject[] { method, receiver });
     }
     

@@ -27,7 +27,7 @@ public class ClassMetaClass extends ObjectMetaClass {
 	        defineMethod("new", Arity.optional(), "newInstance");
 	        defineMethod("superclass", Arity.noArguments(), "superclass");
 	
-	        defineSingletonMethod("new", Arity.optional(), "newClass");
+	        defineFastSingletonMethod("new", Arity.optional(), "newClass");
 	        defineSingletonMethod("inherited", Arity.singleArgument());
 	        
 	        undefineMethod("module_function");

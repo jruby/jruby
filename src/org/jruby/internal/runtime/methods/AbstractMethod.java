@@ -30,7 +30,9 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -39,12 +41,15 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author  jpetersen
  */
-public abstract class AbstractMethod extends AbstractCallable {
+public abstract class AbstractMethod implements DynamicMethod {
+    protected RubyModule implementationClass;
+    protected Visibility visibility;
     private boolean implIsClass;
     private boolean implIsKernel;
     
     protected AbstractMethod(RubyModule implementationClass, Visibility visibility) {
-        super(implementationClass, visibility);
+        this.visibility = visibility;
+        this.implementationClass = implementationClass;
         if (implementationClass != null) {
             this.implIsClass = implementationClass.isClass();
             this.implIsKernel = implementationClass.equals(implementationClass.getRuntime().getKernel());
@@ -79,5 +84,33 @@ public abstract class AbstractMethod extends AbstractCallable {
     
     public boolean needsImplementer() {
         return !(implIsClass || implIsKernel);
+    }
+    
+    public String getOriginalName() {
+    	return null;
+    }
+    
+    public RubyModule getImplementationClass() {
+        return implementationClass;
+    }
+
+    public void setImplementationClass(RubyModule implClass) {
+        implementationClass = implClass;
+    }
+
+    public Visibility getVisibility() {
+        return visibility;
+    }
+
+    public void setVisibility(Visibility visibility) {
+        this.visibility = visibility;
+    }
+
+    public boolean isUndefined() {
+        return false;
+    }
+
+    public Arity getArity() {
+        return Arity.optional();
     }
 }

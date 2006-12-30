@@ -58,17 +58,18 @@ public class IntegerMetaClass extends NumericMetaClass {
 		protected void initializeClass() {
 	        includeModule(getRuntime().getModule("Precision"));
 	        
-	        defineMethod("chr", Arity.noArguments());
+	        defineFastMethod("chr", Arity.noArguments());
 	        defineMethod("downto",  Arity.singleArgument());
-	        defineMethod("integer?", Arity.noArguments(), "int_p");
-	        defineMethod("next",  Arity.noArguments());
-	        defineMethod("step", Arity.twoArguments());
+	        defineFastMethod("integer?", Arity.noArguments(), "int_p");
+	        defineFastMethod("next",  Arity.noArguments());
+	        // FIXME: What is this? It's not documented in 1.8.5 RI docs
+            defineMethod("step", Arity.twoArguments());
 	        defineAlias("succ", "next");
 	        defineMethod("times", Arity.noArguments());
 	        defineMethod("upto", Arity.singleArgument());
 	        
 	        getSingletonClass().undefineMethod("new");
-	        defineSingletonMethod("induced_from",  Arity.singleArgument());
+	        defineFastSingletonMethod("induced_from",  Arity.singleArgument());
 		}
     };
     

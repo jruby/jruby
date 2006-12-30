@@ -11,8 +11,11 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
+ * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -28,61 +31,59 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
+import org.jruby.IRuby;
 import org.jruby.RubyModule;
+import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callback.Callback;
 
 /**
- * 
- * @author jpetersen
  */
-public class UndefinedMethod extends AbstractMethod {
-    private static final UndefinedMethod instance = new UndefinedMethod(Visibility.PUBLIC);
+public class SimpleCallbackMethod extends AbstractMethod {
+    private Callback callback;
 
-    /**
-     * Constructor for UndefinedMethod.
-     * @param visibility
-     */
-    private UndefinedMethod(Visibility visibility) {
-        super(null, visibility);
+    public SimpleCallbackMethod(RubyModule implementationClass, Callback callback, Visibility visibility) {
+        super(implementationClass, visibility);
+        this.callback = callback;
     }
-    
-    public void preMethod(ThreadContext context, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
-        // do nothing
+
+    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
     }
     
     public void postMethod(ThreadContext context) {
-        // do nothing
     }
 
     public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
-        throw new UnsupportedOperationException();
+    	assert args != null;
+        IRuby runtime = context.getRuntime();
+        
+        if (runtime.getTraceFunction() != null) {
+            ISourcePosition position = context.getPreviousFramePosition();
+
+            runtime.callTraceFunction(context, "c-call", position, receiver, name, getImplementationClass());
+            try {
+                return callback.execute(receiver, args);
+            } finally {
+                runtime.callTraceFunction(context, "c-return", position, receiver, name, getImplementationClass());
+            }
+        }
+		return callback.execute(receiver, args);
     }
 
-    /**
-     * If UndefinedMethod gets invoked, don't do the usual method scoping/framing. It should never be invoked.
-     */
-    public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
-        return internalCall(context, receiver, lastClass, name, args, noSuper);
+    public Callback getCallback() {
+        return callback;
     }
 
-    public boolean isUndefined() {
-        return true;
+    public Arity getArity() {
+        return getCallback().getArity();
     }
     
-    // Dup is not really a dup, but this is a singleton so it hardly matters.
     public DynamicMethod dup() {
-        return instance;
-    }
-
-    /**
-     * Returns the instance.
-     * @return UndefinedMethod
-     */
-    public static UndefinedMethod getInstance() {
-        return instance;
+        return new SimpleCallbackMethod(getImplementationClass(), callback, getVisibility());
     }
 }

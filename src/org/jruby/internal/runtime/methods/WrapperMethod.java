@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
+import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ICallable;
@@ -39,50 +40,37 @@ import org.jruby.runtime.builtin.IRubyObject;
  * 
  * @author jpetersen
  */
-public class UndefinedMethod extends AbstractMethod {
-    private static final UndefinedMethod instance = new UndefinedMethod(Visibility.PUBLIC);
+public class WrapperMethod extends AbstractMethod {
+    private DynamicMethod method;
 
     /**
-     * Constructor for UndefinedMethod.
+     * Constructor for WrapperCallable.
      * @param visibility
      */
-    private UndefinedMethod(Visibility visibility) {
-        super(null, visibility);
+    public WrapperMethod(RubyModule implementationClass, DynamicMethod method, Visibility visibility) {
+        super(implementationClass, visibility);
+        this.method = method;
     }
-    
-    public void preMethod(ThreadContext context, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
-        // do nothing
+
+    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
     }
     
     public void postMethod(ThreadContext context) {
-        // do nothing
-    }
-
-    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * If UndefinedMethod gets invoked, don't do the usual method scoping/framing. It should never be invoked.
-     */
-    public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
-        return internalCall(context, receiver, lastClass, name, args, noSuper);
-    }
-
-    public boolean isUndefined() {
-        return true;
     }
     
-    // Dup is not really a dup, but this is a singleton so it hardly matters.
-    public DynamicMethod dup() {
-        return instance;
+    public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+        return method.call(context, receiver, lastClass, name, args, noSuper);
     }
 
     /**
-     * Returns the instance.
-     * @return UndefinedMethod
+     * @see org.jruby.runtime.ICallable#call(IRuby, IRubyObject, String, IRubyObject[], boolean)
      */
-    public static UndefinedMethod getInstance() {
-        return instance;
+    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+        assert false;
+        return null;
+    }
+    
+    public DynamicMethod dup() {
+        return new WrapperMethod(getImplementationClass(), method, getVisibility());
     }
 }

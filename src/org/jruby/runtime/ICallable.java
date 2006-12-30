@@ -38,25 +38,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 // TODO: Consider making this be an interface that will have immutable concrete implementations
 public interface ICallable {
-	String getOriginalName();
-    RubyModule getImplementationClass();
-    void setImplementationClass(RubyModule implClass);
-    
-    void preMethod(ThreadContext context, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper);
-    void postMethod(ThreadContext context);
-
-    Visibility getVisibility();
-    void setVisibility(Visibility visibility);
-
-    boolean isUndefined();
-
-    IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper);
-    IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper);
+    IRubyObject call(ThreadContext context, IRubyObject receiver, IRubyObject[] args);
 
     Arity getArity();
 
     ICallable dup();
-    boolean isCallableFrom(IRubyObject caller, CallType callType);
-    
-    boolean needsImplementer();
 }

@@ -128,25 +128,25 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         regexpClass.defineConstant("EXTENDED", runtime.newFixnum(RE_OPTION_EXTENDED));
         regexpClass.defineConstant("MULTILINE", runtime.newFixnum(RE_OPTION_MULTILINE));
 
-        regexpClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
-        regexpClass.defineMethod("clone", callbackFactory.getMethod("rbClone"));
-        regexpClass.defineMethod("==", callbackFactory.getMethod("equal", IRubyObject.class));
-        regexpClass.defineMethod("===", callbackFactory.getMethod("match", IRubyObject.class));
-        regexpClass.defineMethod("=~", callbackFactory.getMethod("match", IRubyObject.class));
-        regexpClass.defineMethod("~", callbackFactory.getMethod("match2"));
-        regexpClass.defineMethod("match", callbackFactory.getMethod("match_m", IRubyObject.class));
-        regexpClass.defineMethod("inspect", callbackFactory.getMethod("inspect"));
-        regexpClass.defineMethod("source", callbackFactory.getMethod("source"));
-        regexpClass.defineMethod("casefold?", callbackFactory.getMethod("casefold"));
-        regexpClass.defineMethod("kcode", callbackFactory.getMethod("kcode"));
-        regexpClass.defineMethod("to_s", callbackFactory.getMethod("to_s"));
+        regexpClass.defineFastMethod("initialize", callbackFactory.getOptMethod("initialize"));
+        regexpClass.defineFastMethod("clone", callbackFactory.getMethod("rbClone"));
+        regexpClass.defineFastMethod("==", callbackFactory.getMethod("equal", IRubyObject.class));
+        regexpClass.defineFastMethod("===", callbackFactory.getMethod("match", IRubyObject.class));
+        regexpClass.defineFastMethod("=~", callbackFactory.getMethod("match", IRubyObject.class));
+        regexpClass.defineFastMethod("~", callbackFactory.getMethod("match2"));
+        regexpClass.defineFastMethod("match", callbackFactory.getMethod("match_m", IRubyObject.class));
+        regexpClass.defineFastMethod("inspect", callbackFactory.getMethod("inspect"));
+        regexpClass.defineFastMethod("source", callbackFactory.getMethod("source"));
+        regexpClass.defineFastMethod("casefold?", callbackFactory.getMethod("casefold"));
+        regexpClass.defineFastMethod("kcode", callbackFactory.getMethod("kcode"));
+        regexpClass.defineFastMethod("to_s", callbackFactory.getMethod("to_s"));
 
-        regexpClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
-        regexpClass.defineSingletonMethod("compile", callbackFactory.getOptSingletonMethod("newInstance"));
-        regexpClass.defineSingletonMethod("quote", callbackFactory.getSingletonMethod("quote", RubyString.class));
-        regexpClass.defineSingletonMethod("escape", callbackFactory.getSingletonMethod("quote", RubyString.class));
-        regexpClass.defineSingletonMethod("last_match", callbackFactory.getSingletonMethod("last_match_s"));
-        regexpClass.defineSingletonMethod("union", callbackFactory.getOptSingletonMethod("union"));
+        regexpClass.defineFastSingletonMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
+        regexpClass.defineFastSingletonMethod("compile", callbackFactory.getOptSingletonMethod("newInstance"));
+        regexpClass.defineFastSingletonMethod("quote", callbackFactory.getSingletonMethod("quote", RubyString.class));
+        regexpClass.defineFastSingletonMethod("escape", callbackFactory.getSingletonMethod("quote", RubyString.class));
+        regexpClass.defineFastSingletonMethod("last_match", callbackFactory.getSingletonMethod("last_match_s"));
+        regexpClass.defineFastSingletonMethod("union", callbackFactory.getOptSingletonMethod("union"));
 
         return regexpClass;
     }

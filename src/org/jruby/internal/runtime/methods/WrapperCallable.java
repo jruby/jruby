@@ -46,25 +46,18 @@ public class WrapperCallable extends AbstractCallable {
      * Constructor for WrapperCallable.
      * @param visibility
      */
-    public WrapperCallable(RubyModule implementationClass, ICallable callable, Visibility visibility) {
-        super(implementationClass, visibility);
+    public WrapperCallable(ICallable callable) {
         this.callable = callable;
-    }
-
-    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
-    }
-    
-    public void postMethod(ThreadContext context) {
     }
 
     /**
      * @see org.jruby.runtime.ICallable#call(IRuby, IRubyObject, String, IRubyObject[], boolean)
      */
-    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
-        return callable.call(context, receiver, lastClass, name, args, noSuper);
+    public IRubyObject call(ThreadContext context, IRubyObject receiver, IRubyObject[] args) {
+        return callable.call(context, receiver, args);
     }
     
     public ICallable dup() {
-        return new WrapperCallable(getImplementationClass(), callable, getVisibility());
+        return new WrapperCallable(callable);
     }
 }

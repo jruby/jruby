@@ -28,6 +28,7 @@
 package org.jruby.runtime;
 
 import org.jruby.RubyModule;
+import org.jruby.internal.runtime.methods.AbstractCallable;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.internal.runtime.methods.AbstractMethod;
@@ -45,7 +46,15 @@ public class CallBlock extends Block {
     private ThreadContext tc;
 
     public CallBlock(IRubyObject self, RubyModule imClass, Arity arity, BlockCallback callback, ThreadContext ctx) {
-        super(null,new CallMethod(imClass,Visibility.PUBLIC,callback),self,ctx.getCurrentFrame(),ctx.peekCRef(),new Scope(),ctx.getRubyClass(),Iter.ITER_PRE,ctx.getCurrentScope());
+        super(null,
+                new CallMethod(callback),
+                self,
+                ctx.getCurrentFrame(),
+                ctx.peekCRef(),
+                new Scope(),
+                ctx.getRubyClass(),
+                Iter.ITER_PRE,
+                ctx.getCurrentScope());
         this.arity = arity;
         this.callback = callback;
         this.self = self;
@@ -65,26 +74,18 @@ public class CallBlock extends Block {
         return arity;
     }
 
-    public static class CallMethod extends AbstractMethod {
+    public static class CallMethod extends AbstractCallable {
         private BlockCallback callback;
-        public CallMethod(RubyModule implementationClass, Visibility visibility, BlockCallback callback) {
-            super(implementationClass, visibility);
+        public CallMethod(BlockCallback callback) {
             this.callback = callback;
         }
-        public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
-            context.preMethodCall(implementationClass, lastClass, recv, name, args, noSuper);
-        }
-    
-        public void postMethod(ThreadContext context) {
-            context.postMethodCall();
-        }
 
-        public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+        public IRubyObject call(ThreadContext context, IRubyObject receiver, IRubyObject[] args) {
             return callback.call(args,receiver);
         }
 
         public ICallable dup() {
-            return new CallMethod(getImplementationClass(), getVisibility(),callback);
+            return new CallMethod(callback);
         }
     }    
 }

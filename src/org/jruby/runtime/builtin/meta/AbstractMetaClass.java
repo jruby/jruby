@@ -30,7 +30,8 @@ package org.jruby.runtime.builtin.meta;
 import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.internal.runtime.methods.ReflectedMethod;
+import org.jruby.internal.runtime.methods.SimpleReflectedMethod;
+import org.jruby.internal.runtime.methods.FullFunctionReflectedMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -251,17 +252,43 @@ public abstract class AbstractMetaClass extends RubyClass {
 		Visibility visibility = name.equals("initialize") ? Visibility.PRIVATE
 				: Visibility.PUBLIC;
 
-		addMethod(name, new ReflectedMethod(this, builtinClass, java_name,
+		addMethod(name, new FullFunctionReflectedMethod(this, builtinClass, java_name,
 				arity, visibility));
 	}
 
 	public void definePrivateMethod(String name, Arity arity) {
-		addMethod(name, new ReflectedMethod(this, builtinClass, name, arity,
+		addMethod(name, new FullFunctionReflectedMethod(this, builtinClass, name, arity,
 				Visibility.PRIVATE));
 	}
 
 	public void definePrivateMethod(String name, Arity arity, String java_name) {
-		addMethod(name, new ReflectedMethod(this, builtinClass, java_name,
+		addMethod(name, new FullFunctionReflectedMethod(this, builtinClass, java_name,
+				arity, Visibility.PRIVATE));
+	}
+
+	public void defineFastMethod(String name, Arity arity) {
+		defineFastMethod(name, arity, name);
+	}
+
+	public void defineFastMethod(String name, Arity arity, String java_name) {
+		assert name != null;
+		assert arity != null;
+		assert java_name != null;
+
+		Visibility visibility = name.equals("initialize") ? Visibility.PRIVATE
+				: Visibility.PUBLIC;
+
+		addMethod(name, new SimpleReflectedMethod(this, builtinClass, java_name,
+				arity, visibility));
+	}
+
+	public void defineFastPrivateMethod(String name, Arity arity) {
+		addMethod(name, new SimpleReflectedMethod(this, builtinClass, name, arity,
+				Visibility.PRIVATE));
+	}
+
+	public void defineFastPrivateMethod(String name, Arity arity, String java_name) {
+		addMethod(name, new SimpleReflectedMethod(this, builtinClass, java_name,
 				arity, Visibility.PRIVATE));
 	}
 
@@ -279,7 +306,25 @@ public abstract class AbstractMetaClass extends RubyClass {
 
 		getSingletonClass().addMethod(
 				name,
-				new ReflectedMethod(this, getClass(), java_name, arity,
+				new FullFunctionReflectedMethod(this, getClass(), java_name, arity,
+						visibility));
+	}
+
+	public void defineFastSingletonMethod(String name, Arity arity) {
+		defineSingletonMethod(name, arity, name);
+	}
+
+	public void defineFastSingletonMethod(String name, Arity arity, String java_name) {
+		assert name != null;
+		assert arity != null;
+		assert java_name != null;
+
+		Visibility visibility = name.equals("initialize") ? Visibility.PRIVATE
+				: Visibility.PUBLIC;
+
+		getSingletonClass().addMethod(
+				name,
+				new SimpleReflectedMethod(this, getClass(), java_name, arity,
 						visibility));
 	}
 

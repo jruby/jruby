@@ -61,7 +61,7 @@ public class RubyFileStat extends RubyObject {
         //        fileStatClass.defineMethod("<=>", callbackFactory.getMethod(""));
         //        fileStateClass.includeModule(runtime.getModule("Comparable"));
         //        fileStatClass.defineMethod("atime", callbackFactory.getMethod(""));
-        fileStatClass.defineMethod("blksize", callbackFactory.getMethod("blksize"));
+        fileStatClass.defineFastMethod("blksize", callbackFactory.getMethod("blksize"));
         //        fileStatClass.defineMethod("blockdev?", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("blocks", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("chardev?", callbackFactory.getMethod(""));
@@ -69,16 +69,16 @@ public class RubyFileStat extends RubyObject {
         //        fileStatClass.defineMethod("dev", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("dev_major", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("dev_minor", callbackFactory.getMethod(""));
-        fileStatClass.defineMethod("directory?", callbackFactory.getMethod("directory_p"));
+        fileStatClass.defineFastMethod("directory?", callbackFactory.getMethod("directory_p"));
         //        fileStatClass.defineMethod("executable?", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("executable_real?", callbackFactory.getMethod(""));
-        fileStatClass.defineMethod("file?", callbackFactory.getMethod("file_p"));
-        fileStatClass.defineMethod("ftype", callbackFactory.getMethod("ftype"));
+        fileStatClass.defineFastMethod("file?", callbackFactory.getMethod("file_p"));
+        fileStatClass.defineFastMethod("ftype", callbackFactory.getMethod("ftype"));
         //        fileStatClass.defineMethod("gid", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("grpowned?", callbackFactory.getMethod(""));
-        fileStatClass.defineMethod("ino", callbackFactory.getMethod("ino"));
-        fileStatClass.defineMethod("mode", callbackFactory.getMethod("mode"));
-        fileStatClass.defineMethod("mtime", callbackFactory.getMethod("mtime"));
+        fileStatClass.defineFastMethod("ino", callbackFactory.getMethod("ino"));
+        fileStatClass.defineFastMethod("mode", callbackFactory.getMethod("mode"));
+        fileStatClass.defineFastMethod("mtime", callbackFactory.getMethod("mtime"));
         //        fileStatClass.defineMethod("nlink", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("owned?", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("pipe?", callbackFactory.getMethod(""));
@@ -89,13 +89,13 @@ public class RubyFileStat extends RubyObject {
         //        fileStatClass.defineMethod("readable_real?", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("setgid?", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("setuid?", callbackFactory.getMethod(""));
-        fileStatClass.defineMethod("size", callbackFactory.getMethod("size"));
+        fileStatClass.defineFastMethod("size", callbackFactory.getMethod("size"));
         //        fileStatClass.defineMethod("size?", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("socket?", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("sticky?", callbackFactory.getMethod(""));
-        fileStatClass.defineMethod("symlink?", callbackFactory.getMethod("symlink_p"));
+        fileStatClass.defineFastMethod("symlink?", callbackFactory.getMethod("symlink_p"));
         //        fileStatClass.defineMethod("uid", callbackFactory.getMethod(""));
-        fileStatClass.defineMethod("writable?", callbackFactory.getMethod("writable"));
+        fileStatClass.defineFastMethod("writable?", callbackFactory.getMethod("writable"));
         //        fileStatClass.defineMethod("writable_real?", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("zero?", callbackFactory.getMethod(""));
     	

@@ -61,9 +61,19 @@ public class RubyString extends RubyObject {
 	private StringBuffer value;
     private CharSequence chars;
 	
+    /**
+     * All instances of StringMethod currently can be invoked "fast" so we override
+     * pre/post to do nothing here
+     */
     public static abstract class StringMethod extends DirectInvocationMethod {
         public StringMethod(RubyModule implementationClass, Arity arity, Visibility visibility) {
             super(implementationClass, arity, visibility);
+        }
+
+        public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+        }
+
+        public void postMethod(ThreadContext context) {
         }
         
         public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {

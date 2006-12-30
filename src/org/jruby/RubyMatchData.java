@@ -58,20 +58,20 @@ public class RubyMatchData extends RubyObject {
 
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyMatchData.class);
 
-        matchDataClass.defineMethod("captures", callbackFactory.getMethod("captures"));
-        matchDataClass.defineMethod("clone", callbackFactory.getMethod("rbClone"));
-        matchDataClass.defineMethod("inspect", callbackFactory.getMethod("inspect"));
-        matchDataClass.defineMethod("size", callbackFactory.getMethod("size"));
-        matchDataClass.defineMethod("length", callbackFactory.getMethod("size"));
-        matchDataClass.defineMethod("offset", callbackFactory.getMethod("offset", RubyFixnum.class));
-        matchDataClass.defineMethod("begin", callbackFactory.getMethod("begin", RubyFixnum.class));
-        matchDataClass.defineMethod("end", callbackFactory.getMethod("end", RubyFixnum.class));
-        matchDataClass.defineMethod("to_a", callbackFactory.getMethod("to_a"));
-        matchDataClass.defineMethod("[]", callbackFactory.getOptMethod("aref"));
-        matchDataClass.defineMethod("pre_match", callbackFactory.getMethod("pre_match"));
-        matchDataClass.defineMethod("post_match", callbackFactory.getMethod("post_match"));
-        matchDataClass.defineMethod("to_s", callbackFactory.getMethod("to_s"));
-        matchDataClass.defineMethod("string", callbackFactory.getMethod("string"));
+        matchDataClass.defineFastMethod("captures", callbackFactory.getMethod("captures"));
+        matchDataClass.defineFastMethod("clone", callbackFactory.getMethod("rbClone"));
+        matchDataClass.defineFastMethod("inspect", callbackFactory.getMethod("inspect"));
+        matchDataClass.defineFastMethod("size", callbackFactory.getMethod("size"));
+        matchDataClass.defineFastMethod("length", callbackFactory.getMethod("size"));
+        matchDataClass.defineFastMethod("offset", callbackFactory.getMethod("offset", RubyFixnum.class));
+        matchDataClass.defineFastMethod("begin", callbackFactory.getMethod("begin", RubyFixnum.class));
+        matchDataClass.defineFastMethod("end", callbackFactory.getMethod("end", RubyFixnum.class));
+        matchDataClass.defineFastMethod("to_a", callbackFactory.getMethod("to_a"));
+        matchDataClass.defineFastMethod("[]", callbackFactory.getOptMethod("aref"));
+        matchDataClass.defineFastMethod("pre_match", callbackFactory.getMethod("pre_match"));
+        matchDataClass.defineFastMethod("post_match", callbackFactory.getMethod("post_match"));
+        matchDataClass.defineFastMethod("to_s", callbackFactory.getMethod("to_s"));
+        matchDataClass.defineFastMethod("string", callbackFactory.getMethod("string"));
 
         matchDataClass.getMetaClass().undefineMethod("new");
 

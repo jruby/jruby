@@ -61,15 +61,15 @@ public class SymbolMetaClass extends ObjectMetaClass {
 		public void initializeClass() {
             addMethod("==", equal);
             
-	        defineMethod("clone", Arity.noArguments(), "rbClone");
-	        defineMethod("freeze", Arity.noArguments()); 
-	        defineMethod("hash", Arity.noArguments()); 
-	        defineMethod("inspect", Arity.noArguments());
-	        defineMethod("taint", Arity.noArguments());
-	        defineMethod("to_i", Arity.noArguments());
-	        defineMethod("to_s", Arity.noArguments());
-            defineMethod("to_sym", Arity.noArguments());
-            defineSingletonMethod("all_symbols", Arity.noArguments());
+	        defineFastMethod("clone", Arity.noArguments(), "rbClone");
+	        defineFastMethod("freeze", Arity.noArguments()); 
+	        defineFastMethod("hash", Arity.noArguments()); 
+	        defineFastMethod("inspect", Arity.noArguments());
+	        defineFastMethod("taint", Arity.noArguments());
+	        defineFastMethod("to_i", Arity.noArguments());
+	        defineFastMethod("to_s", Arity.noArguments());
+            defineFastMethod("to_sym", Arity.noArguments());
+            defineFastSingletonMethod("all_symbols", Arity.noArguments());
             defineAlias("dup", "clone");
 	        defineAlias("id2name", "to_s");
 	        defineAlias("to_int", "to_i");

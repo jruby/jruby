@@ -47,32 +47,32 @@ public class FixnumMetaClass extends IntegerMetaClass {
 	
 	protected class FixnumMeta extends Meta {
 		protected void initializeClass() {
-		        defineMethod("quo", Arity.singleArgument());
-		        defineMethod("to_f", Arity.noArguments());
-		        defineMethod("to_i", Arity.noArguments());
-		        defineMethod("to_s", Arity.optional());
-		        defineMethod("taint", Arity.noArguments());
-		        defineMethod("freeze", Arity.noArguments());
-		        defineMethod("<<", Arity.singleArgument(), "op_lshift");
-		        defineMethod(">>", Arity.singleArgument(), "op_rshift");
-		        defineMethod("+", Arity.singleArgument(), "op_plus");
-		        defineMethod("-", Arity.singleArgument(), "op_minus");
-		        defineMethod("*", Arity.singleArgument(), "op_mul");
-		        defineMethod("/", Arity.singleArgument(), "op_div");
+		        defineFastMethod("quo", Arity.singleArgument());
+		        defineFastMethod("to_f", Arity.noArguments());
+		        defineFastMethod("to_i", Arity.noArguments());
+		        defineFastMethod("to_s", Arity.optional());
+		        defineFastMethod("taint", Arity.noArguments());
+		        defineFastMethod("freeze", Arity.noArguments());
+		        defineFastMethod("<<", Arity.singleArgument(), "op_lshift");
+		        defineFastMethod(">>", Arity.singleArgument(), "op_rshift");
+		        defineFastMethod("+", Arity.singleArgument(), "op_plus");
+		        defineFastMethod("-", Arity.singleArgument(), "op_minus");
+		        defineFastMethod("*", Arity.singleArgument(), "op_mul");
+		        defineFastMethod("/", Arity.singleArgument(), "op_div");
 		        defineAlias("div", "/");
-		        defineMethod("%", Arity.singleArgument(), "op_mod");
-		        defineMethod("**", Arity.singleArgument(), "op_pow");
-		        defineMethod("&", Arity.singleArgument(), "op_and");
-		        defineMethod("|", Arity.singleArgument(), "op_or");
-		        defineMethod("^", Arity.singleArgument(), "op_xor");
-		        defineMethod("size", Arity.noArguments());
-		        defineMethod("[]", Arity.singleArgument(), "aref");
-		        defineMethod("hash", Arity.noArguments());
-		        defineMethod("id2name", Arity.noArguments());
-		        defineMethod("~", Arity.noArguments(), "invert");
-		        defineMethod("id", Arity.noArguments());
+		        defineFastMethod("%", Arity.singleArgument(), "op_mod");
+		        defineFastMethod("**", Arity.singleArgument(), "op_pow");
+		        defineFastMethod("&", Arity.singleArgument(), "op_and");
+		        defineFastMethod("|", Arity.singleArgument(), "op_or");
+		        defineFastMethod("^", Arity.singleArgument(), "op_xor");
+		        defineFastMethod("size", Arity.noArguments());
+		        defineFastMethod("[]", Arity.singleArgument(), "aref");
+		        defineFastMethod("hash", Arity.noArguments());
+		        defineFastMethod("id2name", Arity.noArguments());
+		        defineFastMethod("~", Arity.noArguments(), "invert");
+		        defineFastMethod("id", Arity.noArguments());
 	
-		        defineSingletonMethod("induced_from", Arity.singleArgument(), "induced_from");
+		        defineFastSingletonMethod("induced_from", Arity.singleArgument(), "induced_from");
 		}
 	};
 	

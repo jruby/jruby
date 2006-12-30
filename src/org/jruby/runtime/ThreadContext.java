@@ -656,8 +656,7 @@ public class ThreadContext {
         
         while (true) {
             try {
-                // FIXME: is it appropriate to use the current frame's (the block's frame's) lastClass?
-                IRubyObject result = yieldBlock.getMethod().call(runtime.getCurrentContext(), self, getCurrentFrame().getLastClass(), null, args, false);
+                IRubyObject result = yieldBlock.getMethod().call(runtime.getCurrentContext(), self, args);
                 
                 return result;
             } catch (JumpException je) {

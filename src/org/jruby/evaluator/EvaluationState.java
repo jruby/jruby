@@ -139,10 +139,12 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.JumpException.JumpType;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.WrapperCallable;
+import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.ThreadContext;
@@ -595,7 +597,7 @@ public class EvaluationState {
                 if (context.getCurrentVisibility().isModuleFunction()) {
                     containingClass.getSingletonClass().addMethod(
                             name,
-                            new WrapperCallable(containingClass.getSingletonClass(), newMethod,
+                            new WrapperMethod(containingClass.getSingletonClass(), newMethod,
                                     Visibility.PUBLIC));
                     containingClass.callMethod(context, "singleton_method_added", runtime.newSymbol(name));
                 }
@@ -1593,7 +1595,7 @@ public class EvaluationState {
                 try {
                     IRubyObject receiver = eval(context, iVisited.getReceiverNode(), self);
                     RubyClass metaClass = receiver.getMetaClass();
-                    ICallable method = metaClass.searchMethod(iVisited.getName());
+                    DynamicMethod method = metaClass.searchMethod(iVisited.getName());
                     Visibility visibility = method.getVisibility();
 
                     if (!visibility.isPrivate() && 

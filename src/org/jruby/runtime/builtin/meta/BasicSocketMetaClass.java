@@ -58,6 +58,7 @@ public class BasicSocketMetaClass extends IOMetaClass {
 
     protected class BasicSocketMeta extends Meta {
     	protected void initializeClass() {
+            // FIXME: shouldn't this be private?
             defineMethod("initialize", Arity.singleArgument());
             defineMethod("send", Arity.optional(), "write_send");
             defineMethod("recv", Arity.optional());

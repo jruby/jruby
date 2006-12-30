@@ -28,13 +28,13 @@ public class HashMetaClass extends ObjectMetaClass {
 		protected void initializeClass() {
 	        includeModule(getRuntime().getModule("Enumerable"));
 	
-	        defineMethod("==", Arity.singleArgument(), "equal");
-	        defineMethod("[]", Arity.singleArgument(), "aref");
-	        defineMethod("[]=", Arity.twoArguments(), "aset");
-			defineMethod("clear", Arity.noArguments(), "rb_clear");
-			defineMethod("clone", Arity.noArguments(), "rbClone");
-			defineMethod("default", Arity.optional(), "getDefaultValue");
-            defineMethod("default_proc", Arity.noArguments()); 
+	        defineFastMethod("==", Arity.singleArgument(), "equal");
+	        defineFastMethod("[]", Arity.singleArgument(), "aref");
+	        defineFastMethod("[]=", Arity.twoArguments(), "aset");
+			defineFastMethod("clear", Arity.noArguments(), "rb_clear");
+			defineFastMethod("clone", Arity.noArguments(), "rbClone");
+			defineFastMethod("default", Arity.optional(), "getDefaultValue");
+            defineFastMethod("default_proc", Arity.noArguments()); 
 			defineMethod("default=", Arity.singleArgument(), "setDefaultValue");
 			defineMethod("delete", Arity.singleArgument());
 			defineMethod("delete_if", Arity.noArguments());
@@ -42,30 +42,30 @@ public class HashMetaClass extends ObjectMetaClass {
 			defineMethod("each_pair", Arity.noArguments());
 			defineMethod("each_value", Arity.noArguments());
 			defineMethod("each_key", Arity.noArguments());
-	        defineMethod("empty?", Arity.noArguments(), "empty_p");
+	        defineFastMethod("empty?", Arity.noArguments(), "empty_p");
 	        defineMethod("fetch", Arity.optional());
-	        defineMethod("has_value?", Arity.singleArgument(), "has_value");
-	        defineMethod("index", Arity.singleArgument());
-	        defineMethod("indices", Arity.optional());
+	        defineFastMethod("has_value?", Arity.singleArgument(), "has_value");
+	        defineFastMethod("index", Arity.singleArgument());
+	        defineFastMethod("indices", Arity.optional());
 	        defineMethod("initialize", Arity.optional());
-	        defineMethod("inspect", Arity.noArguments());
-			defineMethod("invert", Arity.noArguments());
-	        defineMethod("include?", Arity.singleArgument(), "has_key");
-			defineMethod("keys", Arity.noArguments());
+	        defineFastMethod("inspect", Arity.noArguments());
+			defineFastMethod("invert", Arity.noArguments());
+	        defineFastMethod("include?", Arity.singleArgument(), "has_key");
+			defineFastMethod("keys", Arity.noArguments());
 	        defineMethod("merge", Arity.singleArgument());
-	        defineMethod("rehash", Arity.noArguments());
+	        defineFastMethod("rehash", Arity.noArguments());
 			defineMethod("reject", Arity.noArguments());
 			defineMethod("reject!", Arity.noArguments(), "reject_bang");
-	        defineMethod("replace", Arity.singleArgument());
-			defineMethod("shift", Arity.noArguments());
-	        defineMethod("size", Arity.noArguments(), "rb_size");
+	        defineFastMethod("replace", Arity.singleArgument());
+			defineFastMethod("shift", Arity.noArguments());
+	        defineFastMethod("size", Arity.noArguments(), "rb_size");
 			defineMethod("sort", Arity.noArguments());
-	        defineMethod("to_a", Arity.noArguments());
-	        defineMethod("to_hash", Arity.noArguments());
-	        defineMethod("to_s", Arity.noArguments());
+	        defineFastMethod("to_a", Arity.noArguments());
+	        defineFastMethod("to_hash", Arity.noArguments());
+	        defineFastMethod("to_s", Arity.noArguments());
 	        defineMethod("update", Arity.singleArgument());
-			defineMethod("values", Arity.noArguments(), "rb_values");
-	        defineMethod("values_at", Arity.optional());
+			defineFastMethod("values", Arity.noArguments(), "rb_values");
+	        defineFastMethod("values_at", Arity.optional());
 
 	        defineAlias("has_key?", "include?");
 			defineAlias("indexes", "indices");
@@ -77,7 +77,7 @@ public class HashMetaClass extends ObjectMetaClass {
 	        defineAlias("value?", "has_value?");
 	        
 	        defineSingletonMethod("new", Arity.optional(), "newInstance");
-	        defineSingletonMethod("[]", Arity.optional(), "create");
+	        defineFastSingletonMethod("[]", Arity.optional(), "create");
 		}
 	};
 	

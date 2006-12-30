@@ -42,7 +42,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.ICallable;
+import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -97,7 +97,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     /*
      *  Is object immediate (def: Fixnum, Symbol, true, false, nil?).
      */
-     public boolean isImmediate() {
+    public boolean isImmediate() {
     	return false;
     }
 
@@ -293,7 +293,14 @@ public class RubyObject implements Cloneable, IRubyObject {
         getSingletonClass().defineMethod(name, method);
     }
 
-    public void addSingletonMethod(String name, ICallable method) {
+    /** rb_define_singleton_method
+     *
+     */
+    public void defineFastSingletonMethod(String name, Callback method) {
+        getSingletonClass().defineFastMethod(name, method);
+    }
+
+    public void addSingletonMethod(String name, DynamicMethod method) {
         getSingletonClass().addMethod(name, method);
     }
 
@@ -337,7 +344,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, String name,
             IRubyObject[] args, CallType callType) {
         assert args != null;
-        ICallable method = null;
+        DynamicMethod method = null;
 
         method = rubyclass.searchMethod(name);
 
@@ -1028,7 +1035,7 @@ public class RubyObject implements Cloneable, IRubyObject {
              type = type.getSuperClass()) {
         	for (Iterator iter = type.getMethods().entrySet().iterator(); iter.hasNext(); ) {
                 Map.Entry entry = (Map.Entry) iter.next();
-                ICallable method = (ICallable) entry.getValue();
+                DynamicMethod method = (DynamicMethod) entry.getValue();
 
                 // We do not want to capture cached methods
                 if (method.getImplementationClass() != type && !(all && type.isIncluded())) {
