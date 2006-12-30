@@ -21,6 +21,7 @@
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * Copyright (C) 2006 Michael Studman <codehaus@michaelstudman.com>
+ * Copyright (C) 2006 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -104,6 +105,7 @@ import org.jruby.runtime.builtin.meta.SymbolMetaClass;
 import org.jruby.runtime.builtin.meta.TimeMetaClass;
 import org.jruby.runtime.load.Library;
 import org.jruby.runtime.load.LoadService;
+import org.jruby.runtime.load.Library;
 import org.jruby.util.BuiltinScript;
 import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.JRubyFile;
@@ -192,33 +194,33 @@ public final class Ruby implements IRuby {
     
     private IRubyObject tmsStruct;
 
+    private Profile profile;
+
     /**
      * Create and initialize a new jruby Runtime.
      */
     private Ruby(InputStream in, PrintStream out, PrintStream err) {
-        this.in = in;
-        this.out = out;
-        this.err = err;
-        
-        objectSpaceEnabled = true;
-        
-        try {
-            currentDirectory = JRubyFile.getFileProperty("user.dir");
-        } catch (AccessControlException accessEx) {
-            // default to "/" as current dir for applets (which can't read from FS anyway)
-            currentDirectory = "/";
-        }
+        this(in,out,err,true,Profile.DEFAULT);
     }
 
     /**
      * Create and initialize a new jruby Runtime.
      */
     private Ruby(InputStream in, PrintStream out, PrintStream err, boolean osEnabled) {
+        this(in,out,err,osEnabled,Profile.DEFAULT);
+    }
+
+    /**
+     * Create and initialize a new jruby Runtime.
+     */
+    private Ruby(InputStream in, PrintStream out, PrintStream err, boolean osEnabled, Profile profile) {
         this.in = in;
         this.out = out;
         this.err = err;
         
         objectSpaceEnabled = osEnabled;
+
+        this.profile = profile;
         
         try {
             currentDirectory = JRubyFile.getFileProperty("user.dir");
@@ -251,8 +253,8 @@ public final class Ruby implements IRuby {
      *
      * @return the JRuby runtime
      */
-    public static IRuby newInstance(InputStream in, PrintStream out, PrintStream err, boolean osEnabled) {
-        Ruby ruby = new Ruby(in, out, err, osEnabled);
+    public static IRuby newInstance(InputStream in, PrintStream out, PrintStream err, boolean osEnabled, Profile profile) {
+        Ruby ruby = new Ruby(in, out, err, osEnabled, profile);
         ruby.init();
         
         return ruby;
@@ -263,8 +265,26 @@ public final class Ruby implements IRuby {
      *
      * @return the JRuby runtime
      */
+    public static IRuby newInstance(InputStream in, PrintStream out, PrintStream err, Profile profile) {
+        return newInstance(in,out,err,true,profile);
+    }
+
+    /**
+     * Returns a default instance of the JRuby runtime.
+     *
+     * @return the JRuby runtime
+     */
+    public static IRuby newInstance(InputStream in, PrintStream out, PrintStream err, boolean osEnabled) {
+        return newInstance(in,out,err,osEnabled,Profile.DEFAULT);
+    }
+
+    /**
+     * Returns a default instance of the JRuby runtime.
+     *
+     * @return the JRuby runtime
+     */
     public static IRuby newInstance(InputStream in, PrintStream out, PrintStream err) {
-        return newInstance(in, out, err, true);
+        return newInstance(in, out, err, true, Profile.DEFAULT);
     }
 
     /**
@@ -552,37 +572,45 @@ public final class Ruby implements IRuby {
 
     private void initLibraries() {
         loadService = new LoadService(this);
-        loadService.registerBuiltin("java.rb", new Library() {
+        registerBuiltin("java.rb", new Library() {
                 public void load(IRuby runtime) throws IOException {
                     Java.createJavaModule(runtime);
                     new BuiltinScript("javasupport").load(runtime);
                 }
             });
-        loadService.registerBuiltin("socket.rb", new SocketLibrary());
-        loadService.registerBuiltin("rbconfig.rb", new RbConfigLibrary());
+
+        registerBuiltin("socket.rb", new SocketLibrary());
+        registerBuiltin("rbconfig.rb", new RbConfigLibrary());
 
         for (int i=0; i<BUILTIN_LIBRARIES.length; i++) {
-        	loadService.registerRubyBuiltin(BUILTIN_LIBRARIES[i]);
+            if(profile.allowBuiltin(BUILTIN_LIBRARIES[i])) {
+                loadService.registerRubyBuiltin(BUILTIN_LIBRARIES[i]);
+            }
         }
         
-        
-        loadService.registerBuiltin("jruby.rb", new JRubyLibrary());
-        loadService.registerBuiltin("iconv.rb", new IConvLibrary());
-        loadService.registerBuiltin("stringio.rb", new StringIOLibrary());
-        loadService.registerBuiltin("strscan.rb", new StringScannerLibrary());
-        loadService.registerBuiltin("zlib.rb", new ZlibLibrary());
-        loadService.registerBuiltin("yaml_internal.rb", new YamlLibrary());
-        loadService.registerBuiltin("enumerator.rb", new EnumeratorLibrary());
-        loadService.registerBuiltin("generator_internal.rb", new Generator.Service());
-        loadService.registerBuiltin("readline.rb", new Readline.Service());
-        loadService.registerBuiltin("openssl.so", new RubyOpenSSL.Service());
-        loadService.registerBuiltin("digest.so", new DigestLibrary());
-        loadService.registerBuiltin("digest.rb", new DigestLibrary());
-        loadService.registerBuiltin("digest/md5.rb", new DigestLibrary.MD5());
-        loadService.registerBuiltin("digest/rmd160.rb", new DigestLibrary.RMD160());
-        loadService.registerBuiltin("digest/sha1.rb", new DigestLibrary.SHA1());
-        loadService.registerBuiltin("digest/sha2.rb", new DigestLibrary.SHA2());
-        loadService.registerBuiltin("bigdecimal.rb", new BigDecimalLibrary());
+        registerBuiltin("jruby.rb", new JRubyLibrary());
+        registerBuiltin("iconv.rb", new IConvLibrary());
+        registerBuiltin("stringio.rb", new StringIOLibrary());
+        registerBuiltin("strscan.rb", new StringScannerLibrary());
+        registerBuiltin("zlib.rb", new ZlibLibrary());
+        registerBuiltin("yaml_internal.rb", new YamlLibrary());
+        registerBuiltin("enumerator.rb", new EnumeratorLibrary());
+        registerBuiltin("generator_internal.rb", new Generator.Service());
+        registerBuiltin("readline.rb", new Readline.Service());
+        registerBuiltin("openssl.so", new RubyOpenSSL.Service());
+        registerBuiltin("digest.so", new DigestLibrary());
+        registerBuiltin("digest.rb", new DigestLibrary());
+        registerBuiltin("digest/md5.rb", new DigestLibrary.MD5());
+        registerBuiltin("digest/rmd160.rb", new DigestLibrary.RMD160());
+        registerBuiltin("digest/sha1.rb", new DigestLibrary.SHA1());
+        registerBuiltin("digest/sha2.rb", new DigestLibrary.SHA2());
+        registerBuiltin("bigdecimal.rb", new BigDecimalLibrary());
+    }
+
+    private void registerBuiltin(String nm, Library lib) {
+        if(profile.allowBuiltin(nm)) {
+            loadService.registerBuiltin(nm,lib);
+        }
     }
 
     private void initCoreClasses() {
@@ -621,88 +649,212 @@ public final class Ruby implements IRuby {
         stringClass = new StringMetaClass(this);
         stringClass.initializeClass();
         new SymbolMetaClass(this).initializeClass();
-        RubyThreadGroup.createThreadGroupClass(this);
-        RubyThread.createThreadClass(this);
-        RubyException.createExceptionClass(this);
+        if(profile.allowClass("ThreadGroup")) {
+            RubyThreadGroup.createThreadGroupClass(this);
+        }
+        if(profile.allowClass("Thread")) {
+            RubyThread.createThreadClass(this);
+        }
+        if(profile.allowClass("Exception")) {
+            RubyException.createExceptionClass(this);
+        }
         
-        RubyPrecision.createPrecisionModule(this);
-        new NumericMetaClass(this).initializeClass();
-        new IntegerMetaClass(this).initializeClass();        
-        fixnumClass = new FixnumMetaClass(this);
-        fixnumClass.initializeClass();
+        if(profile.allowModule("Precision")) {
+            RubyPrecision.createPrecisionModule(this);
+        }
+
+        if(profile.allowClass("Numeric")) {
+            new NumericMetaClass(this).initializeClass();
+        }
+        if(profile.allowClass("Fixnum")) {
+            new IntegerMetaClass(this).initializeClass();        
+            fixnumClass = new FixnumMetaClass(this);
+            fixnumClass.initializeClass();
+        }
         new HashMetaClass(this).initializeClass();
         new IOMetaClass(this).initializeClass();
         new ArrayMetaClass(this).initializeClass();
         
-        RubyClass structClass = RubyStruct.createStructClass(this);
+        RubyClass structClass = null;
+        if(profile.allowClass("Struct")) {
+            structClass = RubyStruct.createStructClass(this);
+        }
         
-        tmsStruct = RubyStruct.newInstance(structClass,
-                new IRubyObject[] {
-            newString("Tms"),
-            newSymbol("utime"),
-            newSymbol("stime"),
-            newSymbol("cutime"),
-            newSymbol("cstime")});
+        if(profile.allowClass("Tms")) {
+            tmsStruct = RubyStruct.newInstance(structClass,
+                                               new IRubyObject[] {
+                                                   newString("Tms"),
+                                                   newSymbol("utime"),
+                                                   newSymbol("stime"),
+                                                   newSymbol("cutime"),
+                                                   newSymbol("cstime")});
+        }
         
-        RubyFloat.createFloatClass(this);
+        if(profile.allowClass("Float")) {
+            RubyFloat.createFloatClass(this);
+        }        
+
+        if(profile.allowClass("Bignum")) {
+            new BignumMetaClass(this).initializeClass();
+        }
+        if(profile.allowClass("Binding")) {
+            new BindingMetaClass(this).initializeClass();
+        }
+
+        if(profile.allowModule("Math")) {
+            RubyMath.createMathModule(this); // depends on all numeric types
+        }
+        if(profile.allowClass("Regexp")) {
+            RubyRegexp.createRegexpClass(this);
+        }
+        if(profile.allowClass("Range")) {
+            RubyRange.createRangeClass(this);
+        }
+        if(profile.allowModule("ObjectSpace")) {
+            RubyObjectSpace.createObjectSpaceModule(this);
+        }
+        if(profile.allowModule("GC")) {
+            RubyGC.createGCModule(this);
+        }
+
+        if(profile.allowClass("Proc")) {
+            new ProcMetaClass(this).initializeClass();
+        }
+
+        if(profile.allowClass("Method")) {
+            RubyMethod.createMethodClass(this);
+        }
+
+        if(profile.allowClass("MatchData")) {
+            RubyMatchData.createMatchDataClass(this);
+        }
+        if(profile.allowModule("Marshal")) {
+            RubyMarshal.createMarshalModule(this);
+        }
+
+        if(profile.allowClass("Dir")) {
+            RubyDir.createDirClass(this);
+        }
+
+        if(profile.allowModule("FileTest")) {
+            RubyFileTest.createFileTestModule(this);
+        }
+
+        if(profile.allowClass("File")) {
+            new FileMetaClass(this).initializeClass(); // depends on IO, FileTest
+        }
+
+        if(profile.allowModule("Process")) {
+            RubyProcess.createProcessModule(this);
+        }
+        if(profile.allowClass("Time")) {
+            new TimeMetaClass(this).initializeClass();
+        }
+        if(profile.allowClass("UnboundMethod")) {
+            RubyUnboundMethod.defineUnboundMethodClass(this);
+        }
         
-        new BignumMetaClass(this).initializeClass();
-        new BindingMetaClass(this).initializeClass();
-        
-        RubyMath.createMathModule(this); // depends on all numeric types
-        RubyRegexp.createRegexpClass(this);
-        RubyRange.createRangeClass(this);
-        RubyObjectSpace.createObjectSpaceModule(this);
-        RubyGC.createGCModule(this);
-        
-        new ProcMetaClass(this).initializeClass();
-        
-        RubyMethod.createMethodClass(this);
-        RubyMatchData.createMatchDataClass(this);
-        RubyMarshal.createMarshalModule(this);
-        RubyDir.createDirClass(this);
-        RubyFileTest.createFileTestModule(this);
-        
-        new FileMetaClass(this).initializeClass(); // depends on IO, FileTest
-        
-        RubyProcess.createProcessModule(this);
-        new TimeMetaClass(this).initializeClass();
-        RubyUnboundMethod.defineUnboundMethodClass(this);
         RubyClass exceptionClass = getClass("Exception");
-        RubyClass standardError = defineClass("StandardError", exceptionClass);
-        RubyClass runtimeError = defineClass("RuntimeError", standardError);
-        RubyClass ioError = defineClass("IOError", standardError);
-        RubyClass scriptError = defineClass("ScriptError", exceptionClass);
-        RubyClass nameError = RubyNameError.createNameErrorClass(this, standardError);
-        RubyClass rangeError = defineClass("RangeError", standardError);
-        defineClass("SystemExit", exceptionClass);
-        defineClass("Fatal", exceptionClass);
-        defineClass("Interrupt", exceptionClass);
-        defineClass("SignalException", exceptionClass);
-        defineClass("TypeError", standardError);
-        defineClass("ArgumentError", standardError);
-        defineClass("IndexError", standardError);
-        defineClass("SyntaxError", scriptError);
-        defineClass("LoadError", scriptError);
-        defineClass("NotImplementedError", scriptError);
-        defineClass("NoMethodError", nameError);
-        defineClass("SecurityError", standardError);
-        defineClass("NoMemoryError", exceptionClass);
-        defineClass("RegexpError", standardError);
-        defineClass("EOFError", ioError);
-        defineClass("LocalJumpError", standardError);
-        defineClass("ThreadError", standardError);
-        defineClass("SystemStackError", exceptionClass);
-        defineClass("ZeroDivisionError", standardError);
+        RubyClass standardError = null;
+        RubyClass runtimeError = null;
+        RubyClass ioError = null;
+        RubyClass scriptError = null;
+        RubyClass nameError = null;
+        RubyClass rangeError = null;
+        if(profile.allowClass("StandardError")) {
+            standardError = defineClass("StandardError", exceptionClass);
+        }
+        if(profile.allowClass("RuntimeError")) {
+            runtimeError = defineClass("RuntimeError", standardError);
+        }
+        if(profile.allowClass("IOError")) {
+            ioError = defineClass("IOError", standardError);
+        }
+        if(profile.allowClass("ScriptError")) {
+            scriptError = defineClass("ScriptError", exceptionClass);
+        }
+        if(profile.allowClass("NameError")) {
+            nameError = RubyNameError.createNameErrorClass(this, standardError);
+        }
+        if(profile.allowClass("RangeError")) {
+            rangeError = defineClass("RangeError", standardError);
+        }
+        if(profile.allowClass("SystemExit")) {
+            defineClass("SystemExit", exceptionClass);
+        }
+        if(profile.allowClass("Fatal")) {
+            defineClass("Fatal", exceptionClass);
+        }
+        if(profile.allowClass("Interrupt")) {
+            defineClass("Interrupt", exceptionClass);
+        }
+        if(profile.allowClass("SignalException")) {
+            defineClass("SignalException", exceptionClass);
+        }
+        if(profile.allowClass("TypeError")) {
+            defineClass("TypeError", standardError);
+        }
+        if(profile.allowClass("ArgumentError")) {
+            defineClass("ArgumentError", standardError);
+        }
+        if(profile.allowClass("IndexError")) {
+            defineClass("IndexError", standardError);
+        }
+        if(profile.allowClass("SyntaxError")) {
+            defineClass("SyntaxError", scriptError);
+        }
+        if(profile.allowClass("LoadError")) {
+            defineClass("LoadError", scriptError);
+        }
+        if(profile.allowClass("NotImplementedError")) {
+            defineClass("NotImplementedError", scriptError);
+        }
+        if(profile.allowClass("NoMethodError")) {
+            defineClass("NoMethodError", nameError);
+        }
+        if(profile.allowClass("SecurityError")) {
+            defineClass("SecurityError", standardError);
+        }
+        if(profile.allowClass("NoMemoryError")) {
+            defineClass("NoMemoryError", exceptionClass);
+        }
+        if(profile.allowClass("RegexpError")) {
+            defineClass("RegexpError", standardError);
+        }
+        if(profile.allowClass("EOFError")) {
+            defineClass("EOFError", ioError);
+        }
+        if(profile.allowClass("LocalJumpError")) {
+            defineClass("LocalJumpError", standardError);
+        }
+        if(profile.allowClass("ThreadError")) {
+            defineClass("ThreadError", standardError);
+        }
+        if(profile.allowClass("SystemStackError")) {
+            defineClass("SystemStackError", exceptionClass);
+        }
+        if(profile.allowClass("ZeroDivisionError")) {
+            defineClass("ZeroDivisionError", standardError);
+        }
         // FIXME: Actually this somewhere
-        defineClass("FloatDomainError", rangeError);
-        NativeException.createClass(this, runtimeError);
-        systemCallError = defineClass("SystemCallError", standardError);
-        errnoModule = defineModule("Errno");
+        if(profile.allowClass("FloatDomainError")) {
+            defineClass("FloatDomainError", rangeError);
+        }
+        if(profile.allowClass("NativeException")) {
+            NativeException.createClass(this, runtimeError);
+        }
+        if(profile.allowClass("SystemCallError")) {
+            systemCallError = defineClass("SystemCallError", standardError);
+        }
+        if(profile.allowModule("Errno")) {
+            errnoModule = defineModule("Errno");
+        }
        
         initErrnoErrors();
 
-        defineClass("Data",objectClass);
+        if(profile.allowClass("Data")) {
+            defineClass("Data",objectClass);
+        }
     }
 
     private void initBuiltinClasses() {
@@ -770,7 +922,9 @@ public final class Ruby implements IRuby {
      * @param name of the error to define.
      **/
     private void createSysErr(int i, String name) {
-        errnoModule.defineClassUnder(name, systemCallError).defineConstant("Errno", newFixnum(i));
+        if(profile.allowClass(name)) {
+            errnoModule.defineClassUnder(name, systemCallError).defineConstant("Errno", newFixnum(i));
+        }
     }
     
 	/** Getter for property isVerbose.
@@ -1447,5 +1601,9 @@ public final class Ruby implements IRuby {
     
     public String getEncoding() {
         return encoding;
+    }
+
+    public Profile getProfile() {
+        return profile;
     }
 }

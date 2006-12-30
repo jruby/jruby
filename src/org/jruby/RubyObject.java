@@ -97,7 +97,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     /*
      *  Is object immediate (def: Fixnum, Symbol, true, false, nil?).
      */
-    public boolean isImmediate() {
+     public boolean isImmediate() {
     	return false;
     }
 
@@ -920,10 +920,9 @@ public class RubyObject implements Cloneable, IRubyObject {
             String cname = getMetaClass().getRealClass().getName();
             part.append("#<").append(cname).append(":0x");
             part.append(Integer.toHexString(System.identityHashCode(this)));
-            part.append(" ");
             if(!getRuntime().registerInspecting(this)) {
                 /* 6:tags 16:addr 1:eos */
-                part.append("...>");
+                part.append(" ...>");
                 return getRuntime().newString(part.toString());
             }
             try {
@@ -931,11 +930,14 @@ public class RubyObject implements Cloneable, IRubyObject {
                 Map iVars = getInstanceVariablesSnapshot();
                 for (Iterator iter = iVars.keySet().iterator(); iter.hasNext();) {
                     String name = (String) iter.next();
-                    part.append(sep);
-                    part.append(name);
-                    part.append("=");
-                    part.append(((IRubyObject)(iVars.get(name))).callMethod(getRuntime().getCurrentContext(), "inspect"));
-                    sep = ", ";
+                    if(name.startsWith("@")) {
+                        part.append(" ");
+                        part.append(sep);
+                        part.append(name);
+                        part.append("=");
+                        part.append(((IRubyObject)(iVars.get(name))).callMethod(getRuntime().getCurrentContext(), "inspect"));
+                        sep = ",";
+                    }
                 }
                 part.append(">");
                 return getRuntime().newString(part.toString());

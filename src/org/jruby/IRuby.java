@@ -406,4 +406,6 @@ public interface IRuby {
 
     public void setEncoding(String encoding);
     public String getEncoding();
+
+    public Profile getProfile();
 }

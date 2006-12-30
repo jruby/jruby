@@ -90,7 +90,7 @@ public class RubyThread extends RubyObject {
         threadClass.defineMethod("group", 
                 callbackFactory.getMethod("group"));
         threadClass.defineMethod("join", 
-                callbackFactory.getMethod("join"));
+                callbackFactory.getOptMethod("join"));
         threadClass.defineMethod("key?", 
                 callbackFactory.getMethod("has_key", IRubyObject.class));
         threadClass.defineMethod("priority", 
@@ -383,7 +383,7 @@ public class RubyThread extends RubyObject {
         return threadImpl.isAlive() ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
-    public RubyThread join() {
+    public RubyThread join(IRubyObject[] args) {
         if (isCurrent()) {
             throw getRuntime().newThreadError("thread tried to join itself");
         }

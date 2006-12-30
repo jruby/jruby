@@ -24,6 +24,7 @@ import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.RubyTime;
+import org.jruby.Profile;
 import org.jruby.RubySymbol.SymbolTable;
 import org.jruby.ast.Node;
 import org.jruby.common.RubyWarnings;
@@ -698,4 +699,8 @@ public class BaseMockRuby implements IRuby {
     
     public void setEncoding(String encoding) {}
     public String getEncoding() { return null; }
+
+    public Profile getProfile() {
+        return null;
+    }
 }

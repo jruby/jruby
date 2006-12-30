@@ -109,6 +109,8 @@ public interface IRubyObject {
      */
     boolean isFrozen();
 
+    boolean isImmediate();
+
     /**
      * RubyMethod funcall.
      * @param context TODO
