@@ -1135,7 +1135,7 @@ public class EvaluationState {
                             iVisited.getValueNode(), self));
                 }
     
-                receiver.callMethod(context, iVisited.getVariableName() + "=", value);
+                receiver.callMethod(context, iVisited.getVariableNameAsgn(), value);
     
                 context.pollThreadEvents();
     
