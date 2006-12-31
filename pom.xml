@@ -16,9 +16,9 @@
   </issueManagement>
 
   <scm>
-    <connection>scm:svn:http://svn.codehaus.org/jruby/trunk/jruby/</connection>
-    <developerConnection>scm:svn:https://svn.codehaus.org/jruby/trunk/jruby/</developerConnection>
-    <url>http://svn.codehaus.org/jruby/trunk/jruby/</url>
+    <connection>scm:svn:http://svn.codehaus.org/jruby</connection>
+    <developerConnection>scm:svn:https://svn.codehaus.org/jruby</developerConnection>
+    <url>http://svn.codehaus.org/jruby</url>
   </scm>
 
   <licenses>
@@ -42,29 +42,39 @@
     <repository>
       <id>codehaus-jruby-repository</id>
       <name>JRuby Central Repository</name>
-      <url>dav:https://dav.codehaus.org/repository/jruby/</url>
+      <url>dav:https://dav.codehaus.org/repository/jruby</url>
     </repository>
     <snapshotRepository>
       <id>codehaus-jruby-snapshot-repository</id>
       <name>JRuby Central Development Repository</name>
-      <url>dav:https://dav.codehaus.org/snapshots.repository/jruby/</url>
+      <url>dav:https://dav.codehaus.org/snapshots.repository/jruby</url>
     </snapshotRepository>
     <site>
       <id>codehaus-jruby-site</id>
       <name>JRuby Maven site</name>
-      <url>dav:https://dav.codehaus.org/jruby/info/</url>
+      <url>dav:https://dav.codehaus.org/jruby/info</url>
     </site>
   </distributionManagement>
   <developers>
     <developer>
       <id>headius</id>
       <name>Charles Nutter</name>
-      <email>headius@headius.com</email>
+      <email>charles.o.nutter@sun.com</email>
     </developer>
     <developer>
       <id>enebo</id>
       <name>Thomas Enebo</name>
       <email>enebo@acm.org</email>
+    </developer>
+    <developer>
+      <id>olabini</id>
+      <name>Ola Bini</name>
+      <email>ola.bini@ki.se</email>
+    </developer>
+    <developer>
+      <id>nsieger</id>
+      <name>Nick Sieger</name>
+      <email>nicksieger@gmail.com</email>
     </developer>
   </developers>
 
