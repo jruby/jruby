@@ -212,27 +212,34 @@ public class RubyHash extends RubyObject implements Map {
     }
     
     public IRubyObject inspect() {
-        final String sep = ", ";
-        final String arrow = "=>";
-        final StringBuffer sb = new StringBuffer("{");
-        boolean firstEntry = true;
-        
-        ThreadContext context = getRuntime().getCurrentContext();
-        
-        for (Iterator iter = valueMap.entrySet().iterator(); iter.hasNext(); ) {
-            Map.Entry entry = (Map.Entry) iter.next();
-            IRubyObject key = (IRubyObject) entry.getKey();
-            IRubyObject value = (IRubyObject) entry.getValue();
-            if (!firstEntry) {
-                sb.append(sep);
-            }
-            
-            sb.append(key.callMethod(context, "inspect")).append(arrow);
-            sb.append(value.callMethod(context, "inspect"));
-            firstEntry = false;
+        if(!getRuntime().registerInspecting(this)) {
+            return getRuntime().newString("{...}");
         }
-        sb.append("}");
-        return getRuntime().newString(sb.toString());
+        try {
+            final String sep = ", ";
+            final String arrow = "=>";
+            final StringBuffer sb = new StringBuffer("{");
+            boolean firstEntry = true;
+        
+            ThreadContext context = getRuntime().getCurrentContext();
+        
+            for (Iterator iter = valueMap.entrySet().iterator(); iter.hasNext(); ) {
+                Map.Entry entry = (Map.Entry) iter.next();
+                IRubyObject key = (IRubyObject) entry.getKey();
+                IRubyObject value = (IRubyObject) entry.getValue();
+                if (!firstEntry) {
+                    sb.append(sep);
+                }
+            
+                sb.append(key.callMethod(context, "inspect")).append(arrow);
+                sb.append(value.callMethod(context, "inspect"));
+                firstEntry = false;
+            }
+            sb.append("}");
+            return getRuntime().newString(sb.toString());
+        } finally {
+            getRuntime().unregisterInspecting(this);
+        }
     }
 
     public RubyFixnum rb_size() {
@@ -256,7 +263,14 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     public IRubyObject to_s() {
-        return to_a().to_s();
+        if(!getRuntime().registerInspecting(this)) {
+            return getRuntime().newString("{...}");
+        }
+        try {
+            return to_a().to_s();
+        } finally {
+            getRuntime().unregisterInspecting(this);
+        }
     }
 
 	public IRubyObject rbClone() {

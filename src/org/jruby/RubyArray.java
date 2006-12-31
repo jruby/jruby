@@ -631,22 +631,29 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public IRubyObject inspect() {
-        int length = getLength();
+        if(!getRuntime().registerInspecting(this)) {
+            return getRuntime().newString("[...]");
+        }
+        try {
+            int length = getLength();
 
-        if (length == 0) {
-            return getRuntime().newString("[]");
-        }
-        RubyString result = getRuntime().newString("[");
-        RubyString separator = getRuntime().newString(", ");
-        ThreadContext context = getRuntime().getCurrentContext();
-        for (int i = 0; i < length; i++) {
-            if (i > 0) {
-                result.append(separator);
+            if (length == 0) {
+                return getRuntime().newString("[]");
             }
-            result.append(entry(i).callMethod(context, "inspect"));
+            RubyString result = getRuntime().newString("[");
+            RubyString separator = getRuntime().newString(", ");
+            ThreadContext context = getRuntime().getCurrentContext();
+            for (int i = 0; i < length; i++) {
+                if (i > 0) {
+                    result.append(separator);
+                }
+                result.append(entry(i).callMethod(context, "inspect"));
+            }
+            result.cat("]");
+            return result;
+        } finally {
+            getRuntime().unregisterInspecting(this);
         }
-        result.cat("]");
-        return result;
     }
 
     /** rb_ary_first
@@ -758,7 +765,7 @@ public class RubyArray extends RubyObject implements List {
             if (tmp instanceof RubyString) {
                 // do nothing
             } else if (tmp instanceof RubyArray) {
-                tmp = ((RubyArray) tmp).join(sep);
+                tmp = ((RubyArray) tmp).to_s_join(sep);
             } else {
                 tmp = RubyString.objAsString(tmp);
             }
@@ -786,14 +793,32 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public IRubyObject to_s() {
-        IRubyObject separatorObject = getRuntime().getGlobalVariables().get("$,");
-        RubyString separator;
-        if (separatorObject.isNil()) {
-            separator = getRuntime().newString("");
-        } else {
-            separator = RubyString.stringValue(separatorObject);
+        if(!getRuntime().registerInspecting(this)) {
+            return getRuntime().newString("[...]");
         }
-        return join(separator);
+        try {
+            IRubyObject separatorObject = getRuntime().getGlobalVariables().get("$,");
+            RubyString separator;
+            if (separatorObject.isNil()) {
+                separator = getRuntime().newString("");
+            } else {
+                separator = RubyString.stringValue(separatorObject);
+            }
+            return join(separator);
+        } finally {
+            getRuntime().unregisterInspecting(this);
+        }
+    }
+
+    private IRubyObject to_s_join(RubyString sep) {
+        if(!getRuntime().registerInspecting(this)) {
+            return getRuntime().newString("[...]");
+        }
+        try {
+            return join(sep);
+        } finally {
+            getRuntime().unregisterInspecting(this);
+        }
     }
 
     /** rb_ary_to_a
