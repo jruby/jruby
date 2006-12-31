@@ -80,3 +80,18 @@ magic_number = 1
 test_equal(magic_number, eval(Bar.new))
 
 test_exception(TypeError) { eval(Object.new) }
+
+# JRUBY-386 tests
+# need at least one arg
+test_exception(ArgumentError) { eval }
+test_exception(ArgumentError) {self.class.module_eval}
+test_exception(ArgumentError) {self.class.class_eval}
+test_exception(ArgumentError) {3.instance_eval}
+
+# args must respond to #to_str
+test_exception(TypeError) {eval 3}
+test_exception(TypeError) {self.class.module_eval 3}
+test_exception(TypeError) {self.class.class_eval 4}
+test_exception(TypeError) {3.instance_eval 4}
+
+

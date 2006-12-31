@@ -23,6 +23,7 @@
  * Copyright (C) 2006 Evan Buswell <evan@heron.sytes.net>
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
  * Copyright (C) 2006 Michael Studman <codehaus@michaelstudman.com>
+ * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -56,7 +57,6 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.DynamicMethod;
-import org.jruby.runtime.ICallable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -676,6 +676,10 @@ public class RubyKernel {
     }
 
     public static IRubyObject eval(IRubyObject recv, IRubyObject[] args) {
+        if (args == null || args.length == 0) {
+            throw recv.getRuntime().newArgumentError(args.length, 1);
+        }
+            
         RubyString src = args[0].convertToString();
         IRubyObject scope = null;
         String file = "(eval)";
