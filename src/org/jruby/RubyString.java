@@ -398,6 +398,10 @@ public class RubyString extends RubyObject {
         return RubyComparable.op_lt(this, other);
     }
     
+    public IRubyObject op_eql(IRubyObject other) {
+        return equals(other) ? other.getRuntime().getTrue() : other.getRuntime().getFalse();
+    }
+    
 	/** rb_str_upcase
 	 *
 	 */

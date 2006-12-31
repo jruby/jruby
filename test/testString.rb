@@ -453,4 +453,8 @@ class MyString
   end
 end
 
+# String#== should call other.==(str) when other respond_to "to_str"
 test_equal("foo", MyString.new)
+
+# ...but .eql? should still fail, since it only does a strict comparison between strings
+test_ok(!"foo".eql?(MyString.new))

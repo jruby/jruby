@@ -189,6 +189,8 @@ public class StringMetaClass extends ObjectMetaClass {
             defineFastMethod("<=", Arity.singleArgument(), "op_le");
             defineFastMethod("<", Arity.singleArgument(), "op_lt");
             
+            defineFastMethod("eql?", Arity.singleArgument(), "op_eql");
+            
 	        defineFastMethod("[]", Arity.optional(), "aref");
 	        defineFastMethod("[]=", Arity.optional(), "aset");
 	        defineFastMethod("=~", Arity.singleArgument(), "match");
@@ -265,7 +267,6 @@ public class StringMetaClass extends ObjectMetaClass {
 	
 	        defineAlias("<<", "concat");
 	        defineAlias("each", "each_line");
-	        defineAlias("eql?", "==");
 	        defineAlias("intern", "to_sym");
 	        defineAlias("next", "succ");
 	        defineAlias("next!", "succ!");
