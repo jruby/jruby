@@ -344,8 +344,12 @@
           description="Creates the Java API docs">
     <javadoc destdir="${api.docs.dir}" author="true" version="true" use="true" 
              windowtitle="JRuby API" source="${javac.version}">
-      <fileset dir="${src.dir}"/>
-      <fileset dir="${test.dir}"/>
+      <fileset dir="${src.dir}">
+      	<include name="**/*.java"/>
+      </fileset>
+      <fileset dir="${test.dir}">
+		<include name="**/*.java"/>
+      </fileset>
       <doctitle><![CDATA[<h1>JRuby</h1>]]></doctitle>
       <bottom><![CDATA[<i>Copyright &#169; 2002-2006 JRuby Team. All Rights Reserved.</i>]]></bottom>
     </javadoc>
