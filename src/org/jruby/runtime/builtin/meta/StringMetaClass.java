@@ -97,6 +97,9 @@ public class StringMetaClass extends ObjectMetaClass {
             if (other == self) {
                 return self.getRuntime().getTrue();
             } else if (!(other instanceof RubyString)) {
+                if (other.respondsTo("to_str")) {
+                    return other.callMethod(self.getRuntime().getCurrentContext(), "==", self);
+                }
                 return self.getRuntime().getFalse();
             }
             /* use Java implementation if both different String instances */

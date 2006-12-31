@@ -440,3 +440,17 @@ test_equal("foa3VCPbMb8XQ", "foobar".crypt("foo"))
 test_equal("\"\\b\"","\x08".inspect)
 
 test_exception(TypeError) { "this" =~ "that" }
+
+class MyString
+  include Comparable
+
+  def to_str
+    "foo"
+  end
+
+  def <=>(other)
+    return "foo".<=>(other)
+  end
+end
+
+test_equal("foo", MyString.new)
