@@ -87,10 +87,9 @@ public class Readline {
         readline.setUseHistory(false);
         readline.setUsePagination(true);
         ((CandidateListCompletionHandler) readline.getCompletionHandler()).setAlwaysIncludeNewline(false);
-        if (currentCompletor == null) {
+        if (currentCompletor == null)
             currentCompletor = new RubyFileNameCompletor();
-            readline.addCompletor(currentCompletor);
-        }
+        readline.addCompletor(currentCompletor);
         history = readline.getHistory();
         readline.setHistory(history);
     }
