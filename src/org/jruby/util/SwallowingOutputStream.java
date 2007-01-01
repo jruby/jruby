@@ -28,7 +28,6 @@
 package org.jruby.util;
 
 import java.io.OutputStream;
-import java.io.IOException;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>

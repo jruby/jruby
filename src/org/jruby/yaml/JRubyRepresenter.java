@@ -37,7 +37,6 @@ import org.jruby.RubyHash;
 
 import org.jruby.runtime.builtin.IRubyObject;
 
-import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaEmbedUtils;
 
 import org.jvyaml.SafeRepresenterImpl;

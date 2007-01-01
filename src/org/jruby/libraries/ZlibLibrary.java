@@ -32,7 +32,6 @@ import java.io.IOException;
 import org.jruby.RubyZlib;
 import org.jruby.IRuby;
 import org.jruby.runtime.load.Library;
-import org.jruby.util.BuiltinScript;
 
 public class ZlibLibrary implements Library {
     public void load(final IRuby runtime) throws IOException {

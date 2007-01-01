@@ -30,7 +30,6 @@ package org.jruby;
 
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.DynamicMethod;
-import org.jruby.runtime.ICallable;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**

@@ -31,7 +31,6 @@ import java.io.IOException;
 
 import org.jruby.IRuby;
 import org.jruby.runtime.load.Library;
-import org.jruby.util.BuiltinScript;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>

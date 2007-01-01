@@ -32,7 +32,6 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyMethod;
-import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.ThreadContext;
