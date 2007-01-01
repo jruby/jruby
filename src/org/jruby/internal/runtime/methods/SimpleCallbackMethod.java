@@ -58,6 +58,11 @@ public class SimpleCallbackMethod extends AbstractMethod {
     }
 
     public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+        assert false;
+        return null;
+    }
+
+    public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
     	assert args != null;
         IRuby runtime = context.getRuntime();
         

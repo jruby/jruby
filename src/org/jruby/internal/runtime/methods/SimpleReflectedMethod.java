@@ -80,14 +80,17 @@ public class SimpleReflectedMethod extends AbstractMethod {
     }
 
     public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
-        context.preReflectedMethodInternalCall(implementationClass, lastClass, recv, name, args, noSuper);
     }
     
     public void postMethod(ThreadContext context) {
-        context.postReflectedMethodInternalCall();
     }
     
 	public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+        assert false;
+        return null;
+    }
+    
+	public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
         IRuby runtime = context.getRuntime();
         arity.checkArity(runtime, args);
         

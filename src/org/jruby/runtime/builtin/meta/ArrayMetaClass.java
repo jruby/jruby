@@ -99,7 +99,7 @@ public class ArrayMetaClass extends ObjectMetaClass {
 	        defineFastMethod("replace", Arity.singleArgument(), "replace");
 	        defineFastMethod("reverse", Arity.noArguments());
 	        defineFastMethod("reverse!", Arity.noArguments(), "reverse_bang");
-	        defineFastMethod("reverse_each", Arity.noArguments());
+	        defineMethod("reverse_each", Arity.noArguments());
 	        defineFastMethod("rindex", Arity.singleArgument());
 	        defineFastMethod("shift", Arity.noArguments());
 	        defineMethod("sort", Arity.noArguments());
@@ -121,7 +121,7 @@ public class ArrayMetaClass extends ObjectMetaClass {
 	        defineAlias("map!", "collect!");
 	
 	        defineSingletonMethod("new", Arity.optional(), "newInstance");
-	        defineFastSingletonMethod("[]", Arity.optional(), "create");
+	        defineSingletonMethod("[]", Arity.optional(), "create");
 		}
 	};
 
