@@ -253,7 +253,11 @@ public class RubyFile extends RubyIO {
         
         return getRuntime().newFixnum(0);
     }
-	
+
+    public IRubyObject ctime() {
+        return getRuntime().newTime(JRubyFile.create(getRuntime().getCurrentDirectory(),this.path).getParentFile().lastModified());
+    }
+
 	public RubyString path() {
 		return getRuntime().newString(path);
 	}

@@ -139,7 +139,7 @@ public class FileMetaClass extends IOMetaClass {
             constants.setConstant("LOCK_NB", runtime.newFixnum(RubyFile.LOCK_NB));
             constants.setConstant("LOCK_UN", runtime.newFixnum(RubyFile.LOCK_UN));
 	
-	        // TODO Singleton methods: atime, blockdev?, chardev?, chown, ctime, directory? 
+	        // TODO Singleton methods: atime, blockdev?, chardev?, chown, directory? 
 	        // TODO Singleton methods: executable?, executable_real?, 
 	        // TODO Singleton methods: ftype, grpowned?, lchmod, lchown, link, mtime, owned?
 	        // TODO Singleton methods: pipe?, readlink, setgid?, setuid?, socket?, 
@@ -159,6 +159,7 @@ public class FileMetaClass extends IOMetaClass {
 			defineFastSingletonMethod("join", Arity.optional());
 	        defineFastSingletonMethod("lstat", Arity.singleArgument());
             defineFastSingletonMethod("mtime", Arity.singleArgument());
+            defineFastSingletonMethod("ctime", Arity.singleArgument());
 	        defineSingletonMethod("open", Arity.optional());
 	        defineFastSingletonMethod("rename", Arity.twoArguments());
             defineFastSingletonMethod("size?", Arity.singleArgument(), "size_p");
@@ -169,10 +170,11 @@ public class FileMetaClass extends IOMetaClass {
 			defineFastSingletonMethod("utime", Arity.optional());
 	        defineFastSingletonMethod("unlink", Arity.optional());
 			
-	        // TODO: Define instance methods: atime, chmod, chown, ctime, lchmod, lchown, lstat, mtime
+	        // TODO: Define instance methods: atime, chmod, chown, lchmod, lchown, lstat, mtime
 			//defineMethod("flock", Arity.singleArgument());
             defineFastMethod("chmod", Arity.required(1));
             defineFastMethod("chown", Arity.required(1));
+            defineFastMethod("ctime", Arity.noArguments());
 			defineMethod("initialize", Arity.optional());
 			defineFastMethod("path", Arity.noArguments());
 	        defineFastMethod("stat", Arity.noArguments());
@@ -477,6 +479,11 @@ public class FileMetaClass extends IOMetaClass {
     	RubyString name = RubyString.stringValue(filename);
     	
         return getRuntime().newRubyFileStat(JRubyFile.create(getRuntime().getCurrentDirectory(),name.toString()));
+    }
+
+    public IRubyObject ctime(IRubyObject filename) {
+        RubyString name = RubyString.stringValue(filename);
+        return getRuntime().newTime(JRubyFile.create(getRuntime().getCurrentDirectory(),name.toString()).getParentFile().lastModified());
     }
     
     public IRubyObject mtime(IRubyObject filename) {
