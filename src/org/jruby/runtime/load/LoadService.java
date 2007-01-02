@@ -441,7 +441,7 @@ public class LoadService {
             String entry = pathIter.next().toString();
 
             // if entry starts with a slash, skip it since classloader resources never start with a /
-            if (entry.charAt(0) == '/') continue;
+            if (entry.charAt(0) == '/' || (entry.length() > 1 && entry.charAt(1) == ':')) continue;
             
             // otherwise, try to load from classpath (Note: Jar resources always uses '/')
             URL loc = classLoader.getResource(entry + "/" + name);
@@ -453,7 +453,7 @@ public class LoadService {
         }
 
         // if name starts with a / we're done (classloader resources won't load with an initial /)
-        if (name.charAt(0) == '/') return null;
+        if (name.charAt(0) == '/' || (name.length() > 1 && name.charAt(1) == ':')) return null;
         
         // Try to load from classpath without prefix. "A/b.rb" will not load as 
         // "./A/b.rb" in a jar file.
