@@ -274,7 +274,7 @@ public class RubyBignum extends RubyInteger {
 
     public IRubyObject op_xor(IRubyObject other) {
     	if (other instanceof RubyNumeric) {
-            return new RubyBignum(getRuntime(), value.xor(bigIntValue((RubyNumeric) other)));
+            return bigNorm(getRuntime(), value.xor(bigIntValue((RubyNumeric) other)));
     	}
     	
     	return callCoerced("^", other);
