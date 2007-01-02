@@ -50,6 +50,7 @@ public class RubyFileStat extends RubyObject {
     private RubyString ftype;
     private RubyFixnum mode;
     private RubyTime mtime;
+    private RubyTime ctime;
     private RubyBoolean isReadable;
     private RubyBoolean isWritable;
     private RubyFixnum size;
@@ -65,7 +66,7 @@ public class RubyFileStat extends RubyObject {
         //        fileStatClass.defineMethod("blockdev?", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("blocks", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("chardev?", callbackFactory.getMethod(""));
-        //        fileStatClass.defineMethod("ctime", callbackFactory.getMethod(""));
+        fileStatClass.defineMethod("ctime", callbackFactory.getMethod("ctime"));
         //        fileStatClass.defineMethod("dev", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("dev_major", callbackFactory.getMethod(""));
         //        fileStatClass.defineMethod("dev_minor", callbackFactory.getMethod(""));
@@ -125,6 +126,7 @@ public class RubyFileStat extends RubyObject {
     	}
     	mode = runtime.newFixnum(baseMode);
         mtime = runtime.newTime(file.lastModified());
+        ctime = runtime.newTime(file.getParentFile().lastModified());
         isReadable = runtime.newBoolean(file.canRead());
         isWritable = runtime.newBoolean(file.canWrite());
         size = runtime.newFixnum(file.length());
@@ -159,6 +161,10 @@ public class RubyFileStat extends RubyObject {
     
     public IRubyObject mtime() {
         return mtime;
+    }
+
+    public IRubyObject ctime() {
+        return ctime;
     }
     
     public IRubyObject readable_p() {
