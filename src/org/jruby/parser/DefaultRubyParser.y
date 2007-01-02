@@ -558,16 +558,16 @@ mlhs_node     : variable {
                   $$ = support.assignable($1, null);
               }
               | primary_value '[' aref_args tRBRACK {
-                  $$ = support.getElementAssignmentNode($1, $3);
+                  $$ = support.aryset($1, $3);
               }
               | primary_value tDOT tIDENTIFIER {
-                  $$ = support.getAttributeAssignmentNode($1, (String) $3.getValue());
+                  $$ = support.attrset($1, (String) $3.getValue());
               }
               | primary_value tCOLON2 tIDENTIFIER {
-                  $$ = support.getAttributeAssignmentNode($1, (String) $3.getValue());
+                  $$ = support.attrset($1, (String) $3.getValue());
               }
               | primary_value tDOT tCONSTANT {
-                  $$ = support.getAttributeAssignmentNode($1, (String) $3.getValue());
+                  $$ = support.attrset($1, (String) $3.getValue());
               }
  	      | primary_value tCOLON2 tCONSTANT {
                   if (support.isInDef() || support.isInSingle()) {
@@ -593,16 +593,16 @@ lhs           : variable {
                   $$ = support.assignable($1, null);
               }
               | primary_value '[' aref_args tRBRACK {
-                  $$ = support.getElementAssignmentNode($1, $3);
+                  $$ = support.aryset($1, $3);
               }
               | primary_value tDOT tIDENTIFIER {
-                  $$ = support.getAttributeAssignmentNode($1, (String) $3.getValue());
+                  $$ = support.attrset($1, (String) $3.getValue());
               }
               | primary_value tCOLON2 tIDENTIFIER {
-                  $$ = support.getAttributeAssignmentNode($1, (String) $3.getValue());
+                  $$ = support.attrset($1, (String) $3.getValue());
  	      }
               | primary_value tDOT tCONSTANT {
-                  $$ = support.getAttributeAssignmentNode($1, (String) $3.getValue());
+                  $$ = support.attrset($1, (String) $3.getValue());
               }
    	      | primary_value tCOLON2 tCONSTANT {
                   if (support.isInDef() || support.isInSingle()) {

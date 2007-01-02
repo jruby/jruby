@@ -11,3 +11,9 @@ test_equal('one', @@a)
 test_equal('one', @b)
 @b ||= 'two'
 test_equal('one', @b)
+
+def foo=(arg)
+  "bar"
+end
+
+test_equal("baz", self.foo = "baz")

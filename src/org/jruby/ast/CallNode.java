@@ -44,12 +44,12 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * 
  * @author  jpetersen
  */
-public final class CallNode extends Node implements INameNode, BlockAcceptingNode {
+public final class CallNode extends Node implements INameNode, IArgumentNode, BlockAcceptingNode {
     static final long serialVersionUID = -1993752395320088525L;
 
     private final Node receiverNode;
     private String name;
-    private final Node argsNode;
+    private Node argsNode;
     private IterNode iterNode;
 
     public CallNode(ISourcePosition position, Node receiverNode, String name, Node argsNode) {
@@ -83,12 +83,20 @@ public final class CallNode extends Node implements INameNode, BlockAcceptingNod
     }
 
     /**
-     * Gets the argsNode.
-	 * argsNode representing the method's arguments' value for this call.
+     * Gets the argsNode representing the method's arguments' value for this call.
      * @return argsNode
      */
     public Node getArgsNode() {
         return argsNode;
+    }
+
+    /**
+     * Set the argsNode
+     * 
+     * @param argsNode set the arguments for this node.
+     */
+    public void setArgsNode(Node argsNode) {
+        this.argsNode = argsNode;
     }
 
     /**

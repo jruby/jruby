@@ -51,6 +51,7 @@ import org.jruby.ast.AliasNode;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArrayNode;
+import org.jruby.ast.AttrAssignNode;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BeginNode;
 import org.jruby.ast.BignumNode;
@@ -216,6 +217,21 @@ public class EvaluationState {
                 //                case NodeTypes.ASSIGNABLENODE:
                 //                EvaluateVisitor.assignableNodeVisitor.execute(this, node);
                 //                break;
+            case NodeTypes.ATTRASSIGNNODE: {
+                AttrAssignNode iVisited = (AttrAssignNode) node;
+    
+                IRubyObject receiver = evalInternal(context, iVisited.getReceiverNode(), self);
+                IRubyObject[] args = setupArgs(context, iVisited.getArgsNode(), self);
+                
+                assert receiver.getMetaClass() != null : receiver.getClass().getName();
+                
+                // If reciever is self then we do the call the same way as vcall
+                CallType callType = (receiver == self ? CallType.VARIABLE : CallType.NORMAL);
+    
+                receiver.callMethod(context, iVisited.getName(), args, callType);
+                
+                return args[args.length - 1]; 
+            }
             case NodeTypes.BACKREFNODE: {
                 BackRefNode iVisited = (BackRefNode) node;
                 IRubyObject backref = context.getBackref();
@@ -1585,6 +1601,28 @@ public class EvaluationState {
         if (node == null) return "expression";
         
         switch(node.nodeId) {
+        case NodeTypes.ATTRASSIGNNODE: {
+            AttrAssignNode iVisited = (AttrAssignNode) node;
+            
+            if (getDefinitionInner(context, iVisited.getReceiverNode(), self) != null) {
+                try {
+                    IRubyObject receiver = eval(context, iVisited.getReceiverNode(), self);
+                    RubyClass metaClass = receiver.getMetaClass();
+                    DynamicMethod method = metaClass.searchMethod(iVisited.getName());
+                    Visibility visibility = method.getVisibility();
+
+                    if (!visibility.isPrivate() && 
+                            (!visibility.isProtected() || self.isKindOf(metaClass.getRealClass()))) {
+                        if (metaClass.isMethodBound(iVisited.getName(), false)) {
+                            return getArgumentDefinition(context, iVisited.getArgsNode(), "assignment", self);
+                        }
+                    }
+                } catch (JumpException excptn) {
+                }
+            }
+
+            return null;
+        }
         case NodeTypes.BACKREFNODE:
             return "$" + ((BackRefNode) node).getType();
         case NodeTypes.CALLNODE: {

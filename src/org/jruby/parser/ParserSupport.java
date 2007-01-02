@@ -40,9 +40,12 @@ import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.AssignableNode;
+import org.jruby.ast.AttrAssignNode;
 import org.jruby.ast.BackRefNode;
+import org.jruby.ast.BeginNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.BlockPassNode;
+import org.jruby.ast.BreakNode;
 import org.jruby.ast.CallNode;
 import org.jruby.ast.ClassVarAsgnNode;
 import org.jruby.ast.ClassVarDeclNode;
@@ -60,6 +63,8 @@ import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FlipNode;
 import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.GlobalVarNode;
+import org.jruby.ast.IArgumentNode;
+import org.jruby.ast.IfNode;
 import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.InstVarNode;
 import org.jruby.ast.ListNode;
@@ -71,6 +76,7 @@ import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.NewlineNode;
 import org.jruby.ast.NilNode;
 import org.jruby.ast.Node;
+import org.jruby.ast.NodeTypes;
 import org.jruby.ast.NthRefNode;
 import org.jruby.ast.OptNNode;
 import org.jruby.ast.OrNode;
@@ -84,9 +90,6 @@ import org.jruby.ast.SuperNode;
 import org.jruby.ast.TrueNode;
 import org.jruby.ast.YieldNode;
 import org.jruby.ast.types.ILiteralNode;
-import org.jruby.ast.visitor.BreakStatementVisitor;
-import org.jruby.ast.visitor.ExpressionVisitor;
-import org.jruby.ast.visitor.UselessStatementVisitor;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
@@ -102,9 +105,6 @@ public class ParserSupport {
     // Parser states:
     private StaticScope currentScope;
     
-    // We can reuse one expression visitor per parse since each parser thread uses its own.
-    private ExpressionVisitor expressionVisitor = new ExpressionVisitor();
-
     // Is the parser current within a singleton (value is number of nested singletons)
     private int inSingleton;
     
@@ -305,7 +305,7 @@ public class ParserSupport {
             head = new BlockNode(head.getPosition()).add(head);
         }
 
-        if (warnings.isVerbose() && new BreakStatementVisitor().isBreakStatement(((ListNode) head).getLast())) {
+        if (warnings.isVerbose() && isBreakStatement(((ListNode) head).getLast())) {
             warnings.warning(tail.getPosition(), "Statement not reached.");
         }
 
@@ -336,16 +336,30 @@ public class ParserSupport {
         return getOperatorCallNode(firstNode, "=~", secondNode);
     }
 
-    public Node getElementAssignmentNode(Node recv, Node idx) {
-        checkExpression(recv);
+    /**
+     * Define an array set condition so we can return lhs
+     * 
+     * @param receiver array being set
+     * @param index node which should evalute to index of array set
+     * @return an AttrAssignNode
+     */
+    public Node aryset(Node receiver, Node index) {
+        checkExpression(receiver);
 
-        return new CallNode(recv.getPosition(), recv, "[]=", idx);
+        return new AttrAssignNode(receiver.getPosition(), receiver, "[]=", index);
     }
 
-    public Node getAttributeAssignmentNode(Node recv, String name) {
-        checkExpression(recv);
+    /**
+     * Define an attribute set condition so we can return lhs
+     * 
+     * @param receiver object which contains attribute
+     * @param name of the attribute being set
+     * @return an AttrAssignNode
+     */
+    public Node attrset(Node receiver, String name) {
+        checkExpression(receiver);
 
-        return new CallNode(recv.getPosition(), recv, name + "=", null);
+        return new AttrAssignNode(receiver.getPosition(), receiver, name + "=", null);
     }
 
     public void backrefAssignError(Node node) {
@@ -368,18 +382,17 @@ public class ParserSupport {
         checkExpression(rhs);
         if (lhs instanceof AssignableNode) {
     	    ((AssignableNode) lhs).setValueNode(rhs);
-        } else if (lhs instanceof CallNode) {
-			CallNode lCallLHS = (CallNode) lhs;
-			Node lArgs = lCallLHS.getArgsNode();
-
-			if (lArgs == null) {
-				lArgs = new ArrayNode(lhs.getPosition());
-				newNode = new CallNode(lCallLHS.getPosition(), lCallLHS.getReceiverNode(), lCallLHS.getName(), lArgs);
-			} else if (!(lArgs instanceof ListNode)) {
-				lArgs = new ArrayNode(lhs.getPosition()).add(lArgs);
-				newNode = new CallNode(lCallLHS.getPosition(), lCallLHS.getReceiverNode(), lCallLHS.getName(), lArgs);
-			}
-            ((ListNode)lArgs).add(rhs);
+        } else if (lhs instanceof IArgumentNode) {
+            Node argsNode = ((IArgumentNode) lhs).getArgsNode();
+            
+            if (argsNode == null) {
+                argsNode = new ArrayNode(lhs.getPosition());
+                ((IArgumentNode) lhs).setArgsNode(argsNode);
+            } else if (!(argsNode instanceof ListNode)) {
+                argsNode = new ArrayNode(lhs.getPosition()).add(argsNode);
+                ((IArgumentNode) lhs).setArgsNode(argsNode);
+            }
+            ((ListNode)argsNode).add(rhs);
         }
         
         return newNode;
@@ -399,16 +412,128 @@ public class ParserSupport {
         return node;
     }
 
+    /**
+     * Is the supplied node a break/control statement?
+     * 
+     * @param node to be checked
+     * @return true if a control node, false otherwise
+     */
+    public boolean isBreakStatement(Node node) {
+        breakLoop: do {
+            if (node == null) return false;
+
+            switch (node.nodeId) {
+            case NodeTypes.NEWLINENODE:
+                node = ((NewlineNode) node).getNextNode();
+                continue breakLoop;
+            case NodeTypes.BREAKNODE: case NodeTypes.NEXTNODE: case NodeTypes.REDONODE:
+            case NodeTypes.RETRYNODE: case NodeTypes.RETURNNODE:
+                return true;
+            default:
+                return false;
+            }
+        } while (true);                    
+    }
+
+    /**
+     * Does this node represent an expression?
+     * @param node to be checked
+     * @return true if an expression, false otherwise
+     */
     public void checkExpression(Node node) {
-        if (!expressionVisitor.isExpression(node)) {
+        if (!isExpression(node)) {
             warnings.warning(node.getPosition(), "void value expression");
         }
     }
+    
+    private boolean isExpression(Node node) {
+        expressionLoop: do {
+            if (node == null) return true;
+            
+            switch (node.nodeId) {
+            case NodeTypes.BEGINNODE:
+                node = ((BeginNode) node).getBodyNode();
+                continue expressionLoop;
+            case NodeTypes.BLOCKNODE:
+                node = ((BlockNode) node).getLast();
+                continue expressionLoop;
+            case NodeTypes.BREAKNODE:
+                node = ((BreakNode) node).getValueNode();
+                continue expressionLoop;
+            case NodeTypes.CLASSNODE: case NodeTypes.DEFNNODE: case NodeTypes.DEFSNODE:
+            case NodeTypes.MODULENODE: case NodeTypes.NEXTNODE: case NodeTypes.REDONODE:
+            case NodeTypes.RETRYNODE: case NodeTypes.RETURNNODE: case NodeTypes.UNTILNODE:
+            case NodeTypes.WHILENODE:
+                return false;
+            case NodeTypes.IFNODE:
+                return isExpression(((IfNode) node).getThenBody()) &&
+                  isExpression(((IfNode) node).getElseBody());
+            case NodeTypes.NEWLINENODE:
+                node = ((NewlineNode) node).getNextNode();
+                continue expressionLoop;
+            default: // Node
+                return true;
+            }
+        } while (true);
+    }
 
+    private void handleUselessWarn(Node node, String useless) {
+        warnings.warn(node.getPosition(), "Useless use of " + useless + " in void context.");
+    }
+
+    /**
+     * Check to see if current node is an useless statement.  If useless a warning if printed.
+     * 
+     * @param node to be checked.
+     */
     public void checkUselessStatement(Node node) {
-        if (warnings.isVerbose()) {
-            new UselessStatementVisitor(warnings).acceptNode(node);
-        }
+        if (!warnings.isVerbose()) return;
+        
+        uselessLoop: do {
+            if (node == null) return;
+            
+            switch (node.nodeId) {
+            case NodeTypes.NEWLINENODE:
+                node = ((NewlineNode) node).getNextNode();
+                continue uselessLoop;
+            case NodeTypes.CALLNODE: {
+                String name = ((CallNode) node).getName().intern();
+                
+                if (name == "+" || name == "-" || name == "*" || name == "/" || name == "%" || 
+                    name == "**" || name == "+@" || name == "-@" || name == "|" || name == "^" || 
+                    name == "&" || name == "<=>" || name == ">" || name == ">=" || name == "<" || 
+                    name == "<=" || name == "==" || name == "!=") {
+                    handleUselessWarn(node, name);
+                }
+                return;
+            }
+            case NodeTypes.BACKREFNODE: case NodeTypes.DVARNODE: case NodeTypes.GLOBALVARNODE:
+            case NodeTypes.LOCALVARNODE: case NodeTypes.NTHREFNODE: case NodeTypes.CLASSVARNODE:
+            case NodeTypes.INSTVARNODE:
+                handleUselessWarn(node, "a variable"); return;
+            case NodeTypes.CONSTNODE:
+                handleUselessWarn(node, "a constant"); return;
+            case NodeTypes.BIGNUMNODE: case NodeTypes.DREGEXPNODE: case NodeTypes.DSTRNODE:
+            case NodeTypes.FIXNUMNODE: case NodeTypes.FLOATNODE: case NodeTypes.REGEXPNODE:
+            case NodeTypes.STRNODE: case NodeTypes.SYMBOLNODE:
+                handleUselessWarn(node, "a literal"); return;
+            case NodeTypes.CLASSNODE: case NodeTypes.COLON2NODE:
+                handleUselessWarn(node, "::"); return;
+            case NodeTypes.DOTNODE:
+                handleUselessWarn(node, ((DotNode) node).isExclusive() ? "..." : ".."); return;
+            case NodeTypes.DEFINEDNODE:
+                handleUselessWarn(node, "defined?"); return;
+            case NodeTypes.FALSENODE:
+                handleUselessWarn(node, "false"); return;
+            case NodeTypes.NILNODE: 
+                handleUselessWarn(node, "nil"); return;
+            case NodeTypes.SELFNODE:
+                handleUselessWarn(node, "self"); return;
+            case NodeTypes.TRUENODE:
+                handleUselessWarn(node, "true"); return;
+            default: return;
+            }
+        } while (true);
     }
 
     /**

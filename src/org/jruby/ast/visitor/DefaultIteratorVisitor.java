@@ -14,7 +14,7 @@
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2007 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -38,6 +38,7 @@ import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArrayNode;
+import org.jruby.ast.AttrAssignNode;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BeginNode;
 import org.jruby.ast.BignumNode;
@@ -171,7 +172,6 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 		return null;
 	}
 
-	// XXXEnebo - Just guessed.
 	public Instruction visitArgsCatNode(ArgsCatNode iVisited) {
 		iVisited.accept(_Payload);
 		if (iVisited.getFirstNode() != null) {
@@ -183,7 +183,18 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 		return null;
 	}
 
-	public Instruction visitArrayNode(ArrayNode iVisited) {
+    /** @fixme iteration not correctly defined */
+    public Instruction visitAttrAssignNode(AttrAssignNode iVisited) {
+        iVisited.accept(_Payload);
+        // FIXME
+        /*
+         * for (Node node = iVisited.getArgsNode(); node != null; node =
+         * node.getNextNode()) { node.getHeadNode().accept(this); }
+         */
+        return null;
+    }
+
+    public Instruction visitArrayNode(ArrayNode iVisited) {
 		iVisited.accept(_Payload);
 		Iterator iterator = iVisited.iterator();
 		while (iterator.hasNext()) {

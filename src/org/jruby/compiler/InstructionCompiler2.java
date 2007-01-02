@@ -37,6 +37,7 @@ import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArrayNode;
+import org.jruby.ast.AttrAssignNode;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BeginNode;
 import org.jruby.ast.BignumNode;
@@ -398,6 +399,63 @@ public class InstructionCompiler2 implements NodeVisitor {
             }
             i++;
         }
+    }
+    
+    // FIXME: I just copied logic for CallNode, but the return for this should be lhs of assignment
+    public Instruction visitAttrAssignNode(AttrAssignNode iVisited) {
+        lineNumber(iVisited);
+        loadThreadContext(); // [tc]
+        invokeThreadContext("beginCallArgs", "()V"); // []
+        
+        // TODO: try finally around this
+        // recv
+        iVisited.getReceiverNode().accept(this); // [recv]
+        
+        // args
+        setupArgs(iVisited.getArgsNode()); // [recv, args]
+
+        loadThreadContext(); // [recv, args, tc]
+        invokeThreadContext("endCallArgs", "()V"); // [recv, args]
+        
+        // dup recv for CallType check
+        mv.visitInsn(Opcodes.SWAP); 
+        mv.visitInsn(Opcodes.DUP); // [args, recv, recv]
+        
+        loadThreadContext();
+        invokeThreadContext("getFrameSelf", "()Lorg/jruby/runtime/builtin/IRubyObject;"); // [args, recv, recv, frameSelf]
+        
+        Label l1 = new Label();
+        Label l2 = new Label();
+        
+        // choose CallType appropriately
+        mv.visitJumpInsn(Opcodes.IF_ACMPEQ, l1); // [args, recv]
+        mv.visitFieldInsn(Opcodes.GETSTATIC, "org/jruby/runtime/CallType", "NORMAL", "Lorg/jruby/runtime/CallType;");
+        mv.visitJumpInsn(Opcodes.GOTO, l2);
+        mv.visitLabel(l1);
+        mv.visitFieldInsn(Opcodes.GETSTATIC, "org/jruby/runtime/CallType", "VARIABLE", "Lorg/jruby/runtime/CallType;");
+        mv.visitLabel(l2);
+        
+        // [args, recv, calltype]
+        
+        // swap recv and args on stack
+        mv.visitInsn(Opcodes.SWAP); // [args, calltype, recv]
+        
+        loadThreadContext(); // [args, calltype, recv, tc]
+        mv.visitInsn(Opcodes.DUP2_X2); // [recv, tc, args, calltype, recv, tc]
+        mv.visitInsn(Opcodes.POP2); // [recv, tc, args, calltype]
+        
+        // name to callMethod
+        mv.visitLdcInsn(iVisited.getName()); // [recv, tc, args, calltype, name]
+        
+        // put name under args and calltype
+        mv.visitInsn(Opcodes.DUP_X2); // [recv, tc, name, args, calltype, name]
+        
+        // pop name on top
+        mv.visitInsn(Opcodes.POP); // [recv, name, args, calltype]
+        
+        invokeIRubyObject("callMethod", "(Lorg/jruby/runtime/ThreadContext;Ljava/lang/String;[Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/CallType;)Lorg/jruby/runtime/builtin/IRubyObject;");
+        
+        return null;
     }
 
     public Instruction visitBackRefNode(BackRefNode iVisited) {
