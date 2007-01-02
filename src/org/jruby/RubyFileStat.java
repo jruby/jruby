@@ -41,8 +41,8 @@ import org.jruby.util.JRubyFile;
  * Implements File::Stat
  */
 public class RubyFileStat extends RubyObject {
-    private static final int READ = 222;
-    private static final int WRITE = 444;
+    private static final int READ = 0222;
+    private static final int WRITE = 0444;
 
     private RubyFixnum blksize;
     private RubyBoolean isDirectory;
