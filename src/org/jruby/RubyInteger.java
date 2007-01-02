@@ -60,19 +60,29 @@ public abstract class RubyInteger extends RubyNumeric {
         if (getLongValue() < 0 || getLongValue() > 0xff) {
             throw getRuntime().newRangeError(this.toString() + " out of char range");
         }
-        return getRuntime().newString(new String(new char[] {(char) getLongValue()}));
+        return getRuntime().newString(new String(new char[] { (char) getLongValue() }));
     }
 
     // TODO: Make callCoerced work in block context...then fix downto, step, and upto.
     public IRubyObject downto(IRubyObject to) {
-        RubyNumeric i = this;
         ThreadContext context = getRuntime().getCurrentContext();
-        while (true) {
-            if (i.callMethod(context, "<", to).isTrue()) {
-                break;
+
+        if (this instanceof RubyFixnum && to instanceof RubyFixnum) {
+            RubyFixnum toFixnum = (RubyFixnum) to;
+            long toValue = toFixnum.getLongValue();
+            for (long i = getLongValue(); i >= toValue; i--) {
+                context.yield(RubyFixnum.newFixnum(getRuntime(), i));
             }
-            context.yield(i);
-            i = (RubyNumeric) i.callMethod(context, "-", RubyFixnum.one(getRuntime()));
+        } else {
+            RubyNumeric i = this;
+
+            while (true) {
+                if (i.callMethod(context, "<", to).isTrue()) {
+                    break;
+                }
+                context.yield(i);
+                i = (RubyNumeric) i.callMethod(context, "-", RubyFixnum.one(getRuntime()));
+            }
         }
         return this;
     }
@@ -105,32 +115,56 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     public IRubyObject times() {
-        RubyNumeric i = RubyFixnum.zero(getRuntime());
         ThreadContext context = getRuntime().getCurrentContext();
-        while (true) {
-            if (!i.callMethod(context, "<", this).isTrue()) {
-                break;
+
+        if (this instanceof RubyFixnum) {
+
+            long value = getLongValue();
+            for (long i = 0; i < value; i++) {
+                context.yield(RubyFixnum.newFixnum(getRuntime(), i));
             }
-            context.yield(i);
-            i = (RubyNumeric) i.callMethod(context, "+", RubyFixnum.one(getRuntime()));
+        } else {
+            RubyNumeric i = RubyFixnum.zero(getRuntime());
+            while (true) {
+                if (!i.callMethod(context, "<", this).isTrue()) {
+                    break;
+                }
+                context.yield(i);
+                i = (RubyNumeric) i.callMethod(context, "+", RubyFixnum.one(getRuntime()));
+            }
         }
+
         return this;
     }
 
     public IRubyObject next() {
-        return callMethod(getRuntime().getCurrentContext(), "+", RubyFixnum.one(getRuntime()));
+        if (this instanceof RubyFixnum) {
+            return RubyFixnum.newFixnum(getRuntime(), getLongValue() + 1L);
+        } else {
+            return callMethod(getRuntime().getCurrentContext(), "+", RubyFixnum.one(getRuntime()));
+        }
     }
 
     public IRubyObject upto(IRubyObject to) {
-    	RubyNumeric test = (RubyNumeric) to;
-        RubyNumeric i = this;
         ThreadContext context = getRuntime().getCurrentContext();
-        while (true) {
-            if (i.callMethod(context, ">", test).isTrue()) {
-                break;
+
+        if (this instanceof RubyFixnum && to instanceof RubyFixnum) {
+
+            RubyFixnum toFixnum = (RubyFixnum) to;
+            long toValue = toFixnum.getLongValue();
+            for (long i = getLongValue(); i <= toValue; i++) {
+                context.yield(RubyFixnum.newFixnum(getRuntime(), i));
             }
-            context.yield(i);
-            i = (RubyNumeric) i.callMethod(context, "+", RubyFixnum.one(getRuntime()));
+        } else {
+            RubyNumeric i = this;
+
+            while (true) {
+                if (i.callMethod(context, ">", to).isTrue()) {
+                    break;
+                }
+                context.yield(i);
+                i = (RubyNumeric) i.callMethod(context, "+", RubyFixnum.one(getRuntime()));
+            }
         }
         return this;
     }

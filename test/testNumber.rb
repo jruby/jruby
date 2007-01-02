@@ -190,3 +190,58 @@ test_ok(1 <= @duck)
 
 # test Numeric#to_int
 test_equal(1234, 1234.to_int)
+
+# for Fixnum operations - fast version
+
+a = 0
+10.times do |i|
+    a+=i
+end
+
+test_equal(a,45)
+
+a = 0
+10.upto(20) do |i|
+    a+=i
+end
+
+test_equal(a,165)
+
+a = 0
+20.downto(10) do |i|
+    a+=i
+end
+
+test_equal(a,165)
+
+test_equal(0.next,1)
+
+# for Bignum operations - slow version
+
+big = 10000000000000000000
+
+test_equal(big.class,Bignum)
+
+a = 0
+big.times do |i|
+    a+=i
+    break if i > 10
+end
+
+test_equal(a,66)
+
+a = 0
+big.upto(big+10) do |i|
+    a += i
+end
+
+test_equal(a,110000000000000000055)
+
+a = 0
+big.downto(big-10) do |i|
+    a += i
+end
+
+test_equal(a,109999999999999999945)
+
+test_equal(big.next,big + 1)
