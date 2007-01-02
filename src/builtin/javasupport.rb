@@ -269,23 +269,24 @@ module JavaUtilities
     java_class = Java::JavaClass.for_name(java_class) if java_class.kind_of?(String)
     class_id = java_class.id
 
-    unless @proxy_classes[class_id]
-      if java_class.interface?
-        base_type = InterfaceJavaProxy
-      elsif java_class.array?
-        base_type = ArrayJavaProxy
-      else
-        base_type = ConcreteJavaProxy
-      end
+    java_class.synchronized do
+      unless @proxy_classes[class_id]
+        if java_class.interface?
+          base_type = InterfaceJavaProxy
+        elsif java_class.array?
+          base_type = ArrayJavaProxy
+        else
+          base_type = ConcreteJavaProxy
+        end
       
-      proxy_class = Class.new(base_type) { self.java_class = java_class }
-      @proxy_classes[class_id] = proxy_class
-      # We do not setup the proxy before we register it so that same-typed constants do
-      # not try and create a fresh proxy class and go into an infinite loop
-      proxy_class.setup
-      @proxy_extenders.each {|e| e.extend_proxy(proxy_class)}
+        proxy_class = Class.new(base_type) { self.java_class = java_class }
+        @proxy_classes[class_id] = proxy_class
+        # We do not setup the proxy before we register it so that same-typed constants do
+        # not try and create a fresh proxy class and go into an infinite loop
+        proxy_class.setup
+        @proxy_extenders.each {|e| e.extend_proxy(proxy_class)}
+      end
     end
-
     @proxy_classes[class_id]
   end
 

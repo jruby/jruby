@@ -70,7 +70,7 @@ public class JavaClass extends JavaObject {
         super(runtime, (RubyClass) runtime.getModule("Java").getClass("JavaClass"), javaClass);
     }
     
-    public static JavaClass get(IRuby runtime, Class klass) {
+    public static synchronized JavaClass get(IRuby runtime, Class klass) {
         JavaClass javaClass = runtime.getJavaSupport().getJavaClassFromCache(klass);
         if (javaClass == null) {
             javaClass = new JavaClass(runtime, klass);
@@ -158,7 +158,7 @@ public class JavaClass extends JavaObject {
         return result;
     }
     
-    public static JavaClass for_name(IRubyObject recv, IRubyObject name) {
+    public static synchronized JavaClass for_name(IRubyObject recv, IRubyObject name) {
         String className = name.asSymbol();
         Class klass = recv.getRuntime().getJavaSupport().loadJavaClass(className);
         return JavaClass.get(recv.getRuntime(), klass);
