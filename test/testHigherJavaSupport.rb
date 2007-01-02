@@ -1,8 +1,6 @@
 require 'test/minirunit'
 test_check "High-level Java Support"
 
-if defined? Java
-
   require 'java'
 
   module TestJavaSupport
@@ -268,4 +266,26 @@ if defined? Java
 
   #test that we get the same package instance on subsequent calls
   test_ok(com.flirble.equal?(com.flirble))
-end
+
+  # test that multiple threads including classes don't step on each other
+  threads = []
+  50.times {
+    threads << Thread.new do
+      Thread.stop
+      include_class "java.lang.System"
+      include_class "java.lang.Runtime"
+      Thread.current[:time] = System.currentTimeMillis
+      Thread.current[:mem] = Runtime.getRuntime.freeMemory
+    end
+  }
+
+  # wakeup all threads
+  threads.each {|t| t.run}
+  # join each to let them run
+  threads.each {|t| t.join }
+  # confirm they all successfully called currentTimeMillis and freeMemory
+  threads.each do |t|
+    test_ok(t[:time] != nil)
+    test_ok(t[:mem] != nil)
+  end
+

@@ -2,9 +2,6 @@ require 'test/minirunit'
 require 'java'
 test_check "Low-level Java Support"
 
-if defined? Java
-
-
 #    test_equal(nil, TestHelper.getNull())
 
     # Test casting:
@@ -288,4 +285,4 @@ if defined? Java
   # Check method matching
   test_equal("int",org.jruby.javasupport.TypeMatcher.new.number(123))
   test_equal("float",org.jruby.javasupport.TypeMatcher.new.number(123.0))
-end
+
