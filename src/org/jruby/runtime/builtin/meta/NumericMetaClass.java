@@ -76,6 +76,7 @@ public class NumericMetaClass extends ObjectMetaClass {
 	        defineFastMethod("truncate", Arity.noArguments());
 	        defineFastMethod("to_int", Arity.noArguments());
 	        defineFastMethod("zero?", Arity.noArguments(), "zero_p");
+            defineMethod("step", Arity.required(1), "step");
             
             // Add relational operators that are faster than comparable's implementations
             defineFastMethod(">=", Arity.singleArgument(), "op_ge");

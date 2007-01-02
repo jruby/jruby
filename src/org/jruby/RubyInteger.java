@@ -91,29 +91,6 @@ public abstract class RubyInteger extends RubyNumeric {
         return getRuntime().getTrue();
     }
 
-    public IRubyObject step(IRubyObject to, IRubyObject step) {
-    	RubyNumeric test = (RubyNumeric) to;
-        RubyNumeric i = this;
-        if (((RubyNumeric) step).getLongValue() == 0) {
-            throw getRuntime().newArgumentError("step cannot be 0");
-        }
-
-        String cmp = "<";
-        if (((RubyBoolean) step.callMethod(getRuntime().getCurrentContext(), "<", getRuntime().newFixnum(0))).isFalse()) {
-            cmp = ">";
-        }
-
-        ThreadContext context = getRuntime().getCurrentContext();
-        while (true) {
-            if (i.callMethod(context, cmp, test).isTrue()) {
-                break;
-            }
-            context.yield(i);
-            i = (RubyNumeric) i.callMethod(context, "+", step);
-        }
-        return this;
-    }
-
     public IRubyObject times() {
         ThreadContext context = getRuntime().getCurrentContext();
 

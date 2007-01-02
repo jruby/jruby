@@ -245,3 +245,52 @@ end
 test_equal(a,109999999999999999945)
 
 test_equal(big.next,big + 1)
+
+# Fixnum
+
+a = 0
+
+10.step(20) do |i|
+    a+=i
+end
+
+test_equal(a,165)
+
+a = 0
+10.step(20,3) do |i|
+    a+=i
+end
+
+test_equal(a,58)
+
+a = 0
+
+20.step(10,-3) do |i|
+    a+=i
+end
+
+test_equal(a,62)
+
+# Float
+a = 0.0
+
+10.0.step(12.0) do |i|
+    a+=i
+end
+
+test_equal(a,33.0)
+
+a = 0.0
+10.0.step(12.0,0.3) do |i|
+    a+=i
+end
+
+test_equal(a,76.3)
+
+a = 0.0
+12.0.step(10.0,-0.3) do |i|
+    a+=i
+end
+
+test_equal(a,77.7)
+

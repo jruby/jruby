@@ -62,8 +62,6 @@ public class IntegerMetaClass extends NumericMetaClass {
 	        defineMethod("downto",  Arity.singleArgument());
 	        defineFastMethod("integer?", Arity.noArguments(), "int_p");
 	        defineFastMethod("next",  Arity.noArguments());
-	        // FIXME: What is this? It's not documented in 1.8.5 RI docs
-            defineMethod("step", Arity.twoArguments());
 	        defineAlias("succ", "next");
 	        defineMethod("times", Arity.noArguments());
 	        defineMethod("upto", Arity.singleArgument());

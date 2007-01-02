@@ -47,6 +47,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 //   that instance in a numeric operation should generate an ArgumentError. Doing
 //   this seems so pathological I do not see the need to fix this now.
 public class RubyNumeric extends RubyObject {
+    
+    public static double DBL_EPSILON=2.2204460492503131e-16;
 
     public RubyNumeric(IRuby runtime, RubyClass metaClass) {
         super(runtime, metaClass);
@@ -452,6 +454,90 @@ public class RubyNumeric extends RubyObject {
         }
 		return this;
     }
+    
+    public IRubyObject step(IRubyObject[]args) {
+        checkArgumentCount(args, 1, 2);
+        
+        IRubyObject to = args[0];
+        IRubyObject step;
+        
+        if(args.length == 1){ 
+            step = RubyFixnum.one(getRuntime());
+        }else{
+            step = args[1];
+        }
+        
+        ThreadContext context = getRuntime().getCurrentContext();
+        if (this instanceof RubyFixnum && to instanceof RubyFixnum && step instanceof RubyFixnum) {
+            long value = getLongValue();
+            long end = ((RubyFixnum) to).getLongValue();
+            long diff = ((RubyFixnum) step).getLongValue();
+
+            if (diff == 0) {
+                throw getRuntime().newArgumentError("step cannot be 0");
+            }
+            if (diff > 0) {
+                for (long i = value; i <= end; i += diff) {
+                    context.yield(RubyFixnum.newFixnum(getRuntime(), i));
+                }
+            } else {
+                for (long i = value; i >= end; i += diff) {
+                    context.yield(RubyFixnum.newFixnum(getRuntime(), i));
+                }
+            }
+        } else if (this instanceof RubyFloat && to instanceof RubyFloat && step instanceof RubyFloat) {
+            double beg = ((RubyFloat) this).getDoubleValue();
+            double end = ((RubyFloat) to).getDoubleValue();
+            double unit = ((RubyFloat) step).getDoubleValue();
+
+            if (unit == 0) {
+                throw getRuntime().newArgumentError("step cannot be 0");
+            }           
+            
+            final double epsilon = DBL_EPSILON;
+            double n = (end - beg)/unit;
+            double err = (Math.abs(beg) + Math.abs(end) + Math.abs(end-beg)) / Math.abs(unit) * epsilon;
+            
+            if (err>0.5) {
+                err=0.5;            
+            }
+            n = Math.floor(n + err) + 1;
+            
+            for(double i = 0; i < n; i++){
+                context.yield(RubyFloat.newFloat(getRuntime(), i * unit + beg));
+            }
+
+        } else {
+            RubyNumeric test = (RubyNumeric) to;
+            RubyNumeric i = this;
+            
+            if(step instanceof RubyFloat){
+                if (((RubyFloat)step).getDoubleValue() == 0){   
+                    throw getRuntime().newArgumentError("step cannot be 0");
+                }
+            } else {
+                if (((RubyNumeric) step).getLongValue() == 0) {
+                    throw getRuntime().newArgumentError("step cannot be 0");
+                }
+            }
+
+            String cmp = "<";
+            if (((RubyBoolean) step.callMethod(getRuntime().getCurrentContext(), "<", getRuntime()
+                    .newFixnum(0))).isFalse()) {
+                cmp = ">";
+            }
+
+            while (true) {
+                if (i.callMethod(context, cmp, test).isTrue()) {
+                    break;
+                }
+                context.yield(i);
+                i = (RubyNumeric) i.callMethod(context, "+", step);
+            }
+        }
+        return this;
+    }
+    
 
     /** num_int_p
      *
