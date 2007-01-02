@@ -300,7 +300,8 @@ public final class Ruby implements IRuby {
             return EvaluationState.eval(tc, node, tc.getFrameSelf());
         } catch (JumpException je) {
         	if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
-	            return (IRubyObject)je.getSecondaryData();
+                throw newLocalJumpError("unexpected return");
+                //	            return (IRubyObject)je.getSecondaryData();
         	} 
 
             throw je;
