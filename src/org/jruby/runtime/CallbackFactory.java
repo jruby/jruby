@@ -33,6 +33,7 @@ package org.jruby.runtime;
 
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.callback.ReflectionCallbackFactory;
+import org.jruby.runtime.callback.InvocationCallbackFactory;
 
 /**
  * Helper class to build Callback method.
@@ -122,7 +123,19 @@ public abstract class CallbackFactory {
     **/
     public abstract Callback getOptMethod(String method);
 
+    private static boolean reflection = false;
+
+    static {
+        if(System.getProperty("jruby.reflection") != null && Boolean.getBoolean("jruby.reflection")) {
+            reflection = true;
+        }
+    }
+
     public static CallbackFactory createFactory(Class type) {
-        return new ReflectionCallbackFactory(type);
+        if(reflection) {
+            return new ReflectionCallbackFactory(type);
+        } else {
+            return new InvocationCallbackFactory(type);
+        }
     }
 }

@@ -32,6 +32,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.SimpleReflectedMethod;
 import org.jruby.internal.runtime.methods.FullFunctionReflectedMethod;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -190,6 +191,8 @@ public abstract class AbstractMetaClass extends RubyClass {
 	}
 
 	protected Class builtinClass;
+    protected CallbackFactory fact;
+    protected CallbackFactory sfact;
 
 	// Only for other core modules/classes
 	protected AbstractMetaClass(IRuby runtime, RubyClass metaClass,
