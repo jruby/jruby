@@ -405,4 +405,31 @@
     </delete>
     <delete dir="${api.docs.dir}"/>
   </target>
+  
+  <target name="profile-gem-install-rake" depends="jar" description="Profile a local gem installation of Rake">
+    <fail unless="netbeans.home">This target can only run inside the NetBeans IDE.</fail>
+
+    <nbprofiledirect>
+        <classpath> <pathelement location="... specify ..."/> </classpath>
+    </nbprofiledirect>
+
+    <java classname="org.jruby.Main" maxmemory="256M" fork="true">
+      <classpath>
+      	<pathelement location="${jruby.instrumented.classes.dir}" />
+        <path refid="build.classpath"/>
+        <pathelement path="${lib.dir}/jruby.jar"/>
+        <pathelement path="${test.classes.dir}"/>
+        <pathelement path="${test.dir}/requireTest.jar"/>
+      </classpath>
+      <jvmarg value="-Djruby.base=${basedir}"/>
+      <jvmarg value="-Djruby.home=${basedir}"/>
+      <jvmarg value="-Djruby.lib=${lib.dir}"/>
+      <jvmarg value="-Djruby.shell=/bin/sh"/>
+      <jvmarg value="-Djruby.script=jruby"/>
+      <jvmarg value="${profiler.info.jvmargs.agent}"/>
+      <arg value="bin/gem"/>
+      <arg value="install"/>
+      <arg value="lib/ruby/gems/1.8/cache/rake-0.7.1.gem"/>
+    </java>
+  </target>
 </project>
