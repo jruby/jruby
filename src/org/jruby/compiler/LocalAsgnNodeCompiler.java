@@ -44,7 +44,7 @@ public class LocalAsgnNodeCompiler implements NodeCompiler {
     }
 
     public void compile(Node node, Compiler context) {
-        context.lineNumber(node);
+        context.lineNumber(node.getPosition());
         
         LocalAsgnNode localAsgnNode = (LocalAsgnNode)node;
         

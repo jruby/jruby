@@ -29,6 +29,7 @@
 package org.jruby.compiler;
 
 import org.jruby.ast.Node;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 
@@ -84,7 +85,7 @@ public interface Compiler {
      * being compiled. The compiler may use this information to create debugging
      * information in a bytecode-format-dependent way.
      */
-    public void lineNumber(Node node);
+    public void lineNumber(ISourcePosition node);
     
     /**
      * Invoke the named method as a "function", i.e. as a method on the current "self"
@@ -92,7 +93,7 @@ public interface Compiler {
      * to the compiler has prepared the exact number of argument values necessary for this
      * call. Those values will be consumed, and the result of the call will be generated.
      */
-    public void invokeDynamicFunction(String name, int argCount);
+    public void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs);
     
     /**
      * Assigns the previous value to a local variable at the specified index, consuming
@@ -104,8 +105,27 @@ public interface Compiler {
     
     public void retrieveLocalVariable(int index);
     
+    public void retrieveSelf();
+    
     /**
      * Generate a new "Fixnum" value.
      */
     public void createNewFixnum(long value);
+    
+    /**
+     * Generate a new "String" value.
+     */
+    public void createNewString(String value);
+    
+    /**
+     * Combine the top <pre>elementCount</pre> elements into a single element, generally
+     * an array or similar construct. The specified number of elements are consumed and
+     * an aggregate element remains.
+     * 
+     * @param elementCount The number of elements to consume
+     */
+    public void createNewArray(Object[] elementArray, ArrayCallback callback);
+    
+    
+    public void performBooleanBranch(BranchCallback trueBranch, BranchCallback falseBranch);
 }

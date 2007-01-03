@@ -33,7 +33,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Stack;
 import org.jruby.ast.Node;
-import org.jruby.ast.RootNode;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.JRubyClassLoader;
 import org.objectweb.asm.ClassVisitor;
@@ -280,29 +279,71 @@ public class StandardASMCompiler implements Compiler {
         }
     }
     
-    public void lineNumber(Node node) {
-        if (lastLine == (lastLine = node.getPosition().getEndLine())) return; // did not change lines for this node, don't bother relabeling
+    public void lineNumber(ISourcePosition position) {
+        if (lastLine == (lastLine = position.getEndLine())) return; // did not change lines for this node, don't bother relabeling
         
         Label l = new Label();
         MethodVisitor mv = getMethodVisitor();
         mv.visitLabel(l);
-        mv.visitLineNumber(node.getPosition().getEndLine(), l);
+        mv.visitLineNumber(position.getEndLine(), l);
     }
     
-    public void invokeDynamicFunction(String name, int argCount) {
-        if (argCount == 0) {
-            loadSelf();
-            loadThreadContext();
-            
-            MethodVisitor mv = getMethodVisitor();
+    public void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs) {
+        MethodVisitor mv = getMethodVisitor();
+        String callType = null;
+        String callSig = "(Lorg/jruby/runtime/ThreadContext;Ljava/lang/String;[Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/CallType;)Lorg/jruby/runtime/builtin/IRubyObject;";
+        
+        if (hasArgs) {
+            if (hasReceiver) {
+                // receiver already present
+
+                loadThreadContext();
+                // put under args
+                mv.visitInsn(Opcodes.SWAP);
+                
+                // FIXME: if calling against "self", this should be VARIABLE
+                callType = "NORMAL";
+            } else {
+                // no receiver present, use self
+                loadSelf();
+                // put self under args
+                mv.visitInsn(Opcodes.SWAP);
+                
+                loadThreadContext();
+                // put under args
+                mv.visitInsn(Opcodes.SWAP);
+                
+                callType = "FUNCTIONAL";
+            }
 
             mv.visitLdcInsn(name);
+            // put under args
+            mv.visitInsn(Opcodes.SWAP);
+        } else {
+            if (hasReceiver) {
+                // receiver already present
+                
+                loadThreadContext();
+                
+                callType = "FUNCTIONAL";
+            } else {
+                // no receiver present, use self
+                loadSelf();
+                
+                loadThreadContext();
+                
+                callType = "VARIABLE";
+            }
 
+            mv.visitLdcInsn(name);
+                
+            // empty args list
             mv.visitFieldInsn(Opcodes.GETSTATIC, "org/jruby/runtime/builtin/IRubyObject", "NULL_ARRAY", "[Lorg/jruby/runtime/builtin/IRubyObject;");
-            mv.visitFieldInsn(Opcodes.GETSTATIC, "org/jruby/runtime/CallType", "FUNCTIONAL", "Lorg/jruby/runtime/CallType;");
-
-            invokeIRubyObject("callMethod", "(Lorg/jruby/runtime/ThreadContext;Ljava/lang/String;[Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/CallType;)Lorg/jruby/runtime/builtin/IRubyObject;");
         }
+
+        mv.visitFieldInsn(Opcodes.GETSTATIC, "org/jruby/runtime/CallType", callType, "Lorg/jruby/runtime/CallType;");
+
+        invokeIRubyObject("callMethod", callSig);
     }
 
     private void invokeIRubyObject(String methodName, String signature) {
@@ -323,6 +364,10 @@ public class StandardASMCompiler implements Compiler {
     
     public void consumeCurrentValue() {
         getMethodVisitor().visitInsn(Opcodes.POP);
+    }
+    
+    public void retrieveSelf() {
+        loadSelf();
     }
     
     public void assignLocalVariable(int index) {
@@ -371,6 +416,56 @@ public class StandardASMCompiler implements Compiler {
         mv.visitLdcInsn(new Long(value));
         
         invokeIRuby("newFixnum", "(J)Lorg/jruby/RubyFixnum;");
+    }
+    
+    public void createNewString(String value) {
+        MethodVisitor mv = getMethodVisitor();
+        
+        loadRuntime();
+        mv.visitLdcInsn(value);
+        
+        invokeIRuby("newString", "(Ljava/lang/String;)Lorg/jruby/RubyString;");
+    }
+    
+    public void createNewArray(Object[] sourceArray, ArrayCallback callback) {
+        buildObjectArray(IRUBYOBJECT, sourceArray, callback);
+    }
+    
+    private void buildObjectArray(String type, Object[] sourceArray, ArrayCallback callback) {
+        MethodVisitor mv = getMethodVisitor();
+        
+        mv.visitLdcInsn(new Integer(sourceArray.length));
+        mv.visitTypeInsn(Opcodes.ANEWARRAY, type);
+        
+        for (int i = 0; i < sourceArray.length; i++) {
+            mv.visitInsn(Opcodes.DUP);
+            mv.visitLdcInsn(new Integer(i));
+            
+            callback.nextValue(this, sourceArray, i);
+            
+            mv.visitInsn(Opcodes.AASTORE);
+            i++;
+        }
+    }
+    
+    public void performBooleanBranch(BranchCallback trueBranch, BranchCallback falseBranch) {
+        Label afterJmp = new Label();
+        Label falseJmp = new Label();
+        
+        MethodVisitor mv = getMethodVisitor();
+        
+        // call isTrue on the result
+        invokeIRubyObject("isTrue", "()Z");
+        
+        mv.visitJumpInsn(Opcodes.IFEQ, falseJmp); // EQ == 0 (i.e. false)
+        trueBranch.branch(this);
+        mv.visitJumpInsn(Opcodes.GOTO, afterJmp);
+
+        // FIXME: optimize for cases where we have no false branch
+        mv.visitLabel(falseJmp);
+        falseBranch.branch(this);
+
+        mv.visitLabel(afterJmp);
     }
 
     private void invokeThreadContext(String methodName, String signature) {

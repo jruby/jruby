@@ -42,10 +42,10 @@ public class VCallNodeCompiler implements NodeCompiler {
     }
 
     public void compile(Node node, Compiler context) {
-        context.lineNumber(node);
+        context.lineNumber(node.getPosition());
         
         VCallNode vcallNode = (VCallNode)node;
         
-        context.invokeDynamicFunction(vcallNode.getName(), 0);
+        context.invokeDynamic(vcallNode.getName(), false, false);
     }
 }

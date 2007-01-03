@@ -44,7 +44,7 @@ public class BlockNodeCompiler implements NodeCompiler {
     }
 
     public void compile(Node node, Compiler context) {
-        context.lineNumber(node);
+        context.lineNumber(node.getPosition());
         
         BlockNode blockNode = (BlockNode)node;
         

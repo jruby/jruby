@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2007 Charles O Nutter <headius@headius.com>
  *  
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -29,41 +29,24 @@
 package org.jruby.compiler;
 
 import org.jruby.ast.Node;
-import org.jruby.ast.NodeTypes;
+import org.jruby.ast.StrNode;
 
 /**
  *
  * @author headius
  */
-public class NodeCompilerFactory {
-    public static NodeCompiler getCompiler(Node node) {
-        switch (node.nodeId) {
-            case NodeTypes.ARRAYNODE:
-                return new ArrayNodeCompiler();
-            case NodeTypes.BLOCKNODE:
-                return new BlockNodeCompiler();
-            case NodeTypes.CALLNODE:
-                return new CallNodeCompiler();
-            case NodeTypes.FCALLNODE:
-                return new FCallNodeCompiler();
-            case NodeTypes.FIXNUMNODE:
-                return new FixnumNodeCompiler();
-            case NodeTypes.IFNODE:
-                return new IfNodeCompiler();
-            case NodeTypes.LOCALASGNNODE:
-                return new LocalAsgnNodeCompiler();
-            case NodeTypes.LOCALVARNODE:
-                return new LocalVarNodeCompiler();
-            case NodeTypes.NEWLINENODE:
-                return new NewlineNodeCompiler();
-            case NodeTypes.ROOTNODE:
-                return new RootNodeCompiler();
-            case NodeTypes.STRNODE:
-                return new StringNodeCompiler();
-            case NodeTypes.VCALLNODE:
-                return new VCallNodeCompiler();
-        }
-        
-        throw new NotCompilableException("Can't compile node: " + node);
+public class StringNodeCompiler implements NodeCompiler {
+    
+    /** Creates a new instance of StringNodeCompiler */
+    public StringNodeCompiler() {
     }
+    
+    public void compile(Node node, Compiler context) {
+        context.lineNumber(node.getPosition());
+        
+        StrNode strNode = (StrNode)node;
+        
+        context.createNewString(strNode.getValue());
+    }
+    
 }
