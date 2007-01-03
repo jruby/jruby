@@ -1,0 +1,104 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <parent>
+    <groupId>org.jruby</groupId>
+    <artifactId>shared</artifactId>
+    <version>0.9.3-SNAPSHOT</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.jruby</groupId>
+  <artifactId>jruby</artifactId>
+  <packaging>jar</packaging>
+  <version>0.9.3-SNAPSHOT</version>
+  <name>JRuby</name>
+
+  <dependencies>
+    <dependency>
+      <groupId>bouncycastle</groupId>
+      <artifactId>bcprov-jdk15</artifactId>
+      <version>134</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/../../lib/bcprov-jdk15-134.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>bouncycastle</groupId>
+      <artifactId>bcmail-jdk15</artifactId>
+      <version>134</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/../../lib/bcmail-jdk15-134.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>jline</groupId>
+      <artifactId>jline</artifactId>
+      <version>0.9.91-SNAPSHOT</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/../../lib/jline-0.9.91-SNAPSHOT.jar</systemPath>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <sourceDirectory>${project.basedir}/../../src</sourceDirectory> 
+    <testSourceDirectory>${project.basedir}/../../test</testSourceDirectory> 
+    <resources> 
+      <resource> 
+        <directory>${project.basedir}/../../src</directory> 
+        <includes> 
+          <include>**/*.rb</include> 
+          <include>**/*.properties</include> 
+        </includes> 
+      </resource> 
+    </resources> 
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>1.5</source>
+          <target>1.5</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>unjar-deps</id>
+            <phase>process-resources</phase>
+            <configuration>
+              <tasks>
+                <unjar src="${project.basedir}/../../lib/plaincharset.jar" dest="${project.build.outputDirectory}"/>
+                <unjar src="${project.basedir}/../../lib/jvyaml.jar" dest="${project.build.outputDirectory}"/>
+                <delete file="${project.build.outputDirectory}/META-INF/MANIFEST.MF"/>
+              </tasks>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>serialize</id>
+            <phase>process-classes</phase>
+            <configuration>
+              <tasks>
+                <taskdef name="jruby-serialize" classname="org.jruby.util.ant.JRubySerialize">
+                  <classpath path="${project.build.outputDirectory}"/>
+                </taskdef>
+                <jruby-serialize destdir="${project.build.outputDirectory}">
+                  <fileset dir="${project.build.sourceDirectory}">
+                    <include name="**/*.rb"/>
+                  </fileset>
+                </jruby-serialize>
+              </tasks>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+

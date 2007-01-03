@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.jruby</groupId>
-  <artifactId>jruby</artifactId>
-  <packaging>jar</packaging>
+  <artifactId>shared</artifactId>
+  <packaging>pom</packaging>
   <version>0.9.3-SNAPSHOT</version>
-  <name>JRuby</name>
+  <name>JRuby Shared</name>
   <url>http://www.jruby.org/</url>
   <description>A 1.8.5 compatible Ruby interpreter written in 100% pure Java</description>
 
@@ -98,42 +98,21 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>jvyaml</groupId>
-      <artifactId>jvyaml</artifactId>
-      <version>0.2.1</version>
-      <scope>system</scope>
-      <systemPath>${basedir}/lib/jvyaml.jar</systemPath>
-    </dependency>
-    <dependency>
       <groupId>asm</groupId>
       <artifactId>asm</artifactId>
       <version>2.2.2</version>
       <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>bouncycastle</groupId>
-      <artifactId>bcprov-jdk15</artifactId>
-      <version>134</version>
-      <scope>system</scope>
-      <systemPath>${basedir}/lib/bcprov-jdk15-134.jar</systemPath>
-    </dependency>
-    <dependency>
-      <groupId>bouncycastle</groupId>
-      <artifactId>bcmail-jdk15</artifactId>
-      <version>134</version>
-      <scope>system</scope>
-      <systemPath>${basedir}/lib/bcmail-jdk15-134.jar</systemPath>
-    </dependency>
-    <dependency>
-      <groupId>jline</groupId>
-      <artifactId>jline</artifactId>
-      <version>0.9.91-SNAPSHOT</version>
-      <scope>system</scope>
-      <systemPath>${basedir}/lib/jline-0.9.91-SNAPSHOT.jar</systemPath>
-    </dependency>
   </dependencies>
 
+  <modules>
+    <module>maven/jruby-jdk14</module>
+    <module>maven/jruby</module>
+    <module>maven/jruby-complete</module>
+  </modules>
+
   <build>
+    <defaultGoal>install</defaultGoal>
     <extensions>
       <extension>
         <groupId>org.apache.maven.wagon</groupId>
@@ -141,63 +120,15 @@
         <version>1.0-beta-1</version>
       </extension>
     </extensions>
-    <sourceDirectory>src</sourceDirectory>
-    <testSourceDirectory>test</testSourceDirectory>
-    <outputDirectory>build/classes</outputDirectory>
-    <testOutputDirectory>build/test-classes</testOutputDirectory>
-    <directory>build</directory>
-    <resources>
-      <resource>
-        <directory>src</directory>
-        <includes>
-          <include>**/*.rb</include>
-          <include>**/*.properties</include>
-        </includes>
-      </resource>
-    </resources>
     <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <source>1.4</source>
-          <target>1.4</target>
-        </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>process-classes</phase>
-            <configuration>
-              <tasks>
-                <unjar src="${basedir}/lib/plaincharset.jar" dest="${project.build.outputDirectory}"/>
-                <unjar src="${basedir}/lib/jvyaml.jar" dest="${project.build.outputDirectory}"/>
-                <delete file="${project.build.outputDirectory}/META-INF/MANIFEST.MF"/>
-                <taskdef name="jruby-serialize" classname="org.jruby.util.ant.JRubySerialize">
-                  <classpath path="${project.build.outputDirectory}"/>
-                </taskdef>
-                <jruby-serialize destdir="${project.build.outputDirectory}">
-                  <fileset dir="${project.build.sourceDirectory}">
-                    <include name="**/*.rb"/>
-                  </fileset>
-                </jruby-serialize>
-              </tasks>
-            </configuration>
-            <goals>
-              <goal>run</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
           <archive>
             <manifest>
-              <mainClass>org.jruby.Main</mainClass>
-              <packageName>org.jruby</packageName>
+              <mainClass>${jruby.main.class}</mainClass>
+              <packageName>${jruby.package}</packageName>
             </manifest>
           </archive>
         </configuration>
@@ -229,5 +160,18 @@
       </plugin>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+      <id>jruby-properties</id>
+      <activation>
+        <activeByDefault/>
+      </activation>
+      <properties>
+        <jruby.package>org.jruby</jruby.package>
+        <jruby.main.class>org.jruby.Main</jruby.main.class>
+        <jruby.src.root>${basedir}</jruby.src.root>
+      </properties>
+    </profile>
+  </profiles>
 </project>
 
