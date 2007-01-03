@@ -4,11 +4,13 @@ require 'test/minirunit'
 StandardASMCompiler = org.jruby.compiler.StandardASMCompiler
 NodeCompilerFactory = org.jruby.compiler.NodeCompilerFactory
 
-asgnFixnumNode = JRuby.parse("a = 5; a", "EVAL")
-asgnStringNode = JRuby.parse("a = 'hello'; a", "EVAL")
-fcallNode = JRuby.parse("foo('bar')", "EVAL")
-callNode = JRuby.parse("'bar'.capitalize", "EVAL")
-ifNode = JRuby.parse("if 1 == 1; 2; else; 3; end", "EVAL")
+asgnFixnumCode = JRuby.parse("a = 5; a", "EVAL")
+asgnStringCode = JRuby.parse("a = 'hello'; a", "EVAL")
+fcallCode = JRuby.parse("foo('bar')", "EVAL")
+callCode = JRuby.parse("'bar'.capitalize", "EVAL")
+ifCode = JRuby.parse("if 1 == 1; 2; else; 3; end", "EVAL")
+unlessCode = JRuby.parse("unless 1 == 1; 2; else; 3; end", "EVAL")
+whileCode = JRuby.parse("a = 0; while a < 5; a = a + 2; end; a", "EVAL")
 
 def compile_to_class(node)
   context = StandardASMCompiler.new(node)
@@ -24,16 +26,18 @@ def compile_and_run(node)
 end
 
 test_no_exception {
-  compile_to_class(asgnFixnumNode);
+  compile_to_class(asgnFixnumCode);
 }
 
-test_equal(5, compile_and_run(asgnFixnumNode))
-test_equal('hello', compile_and_run(asgnStringNode))
+test_equal(5, compile_and_run(asgnFixnumCode))
+test_equal('hello', compile_and_run(asgnStringCode))
 
 def foo(arg)
   arg + '2'
 end
 
-test_equal('bar2', compile_and_run(fcallNode))
-test_equal('Bar', compile_and_run(callNode))
-test_equal(2, compile_and_run(ifNode));
+test_equal('bar2', compile_and_run(fcallCode))
+test_equal('Bar', compile_and_run(callCode))
+test_equal(2, compile_and_run(ifCode))
+test_equal(3, compile_and_run(unlessCode))
+test_equal(6, compile_and_run(whileCode))

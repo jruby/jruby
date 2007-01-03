@@ -62,6 +62,8 @@ public class NodeCompilerFactory {
                 return new StringNodeCompiler();
             case NodeTypes.VCALLNODE:
                 return new VCallNodeCompiler();
+            case NodeTypes.WHILENODE:
+                return new WhileNodeCompiler();
         }
         
         throw new NotCompilableException("Can't compile node: " + node);

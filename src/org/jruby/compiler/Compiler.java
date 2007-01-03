@@ -128,4 +128,6 @@ public interface Compiler {
     
     
     public void performBooleanBranch(BranchCallback trueBranch, BranchCallback falseBranch);
+    
+    public void performBooleanLoop(BranchCallback condition, BranchCallback body, boolean checkFirst);
 }

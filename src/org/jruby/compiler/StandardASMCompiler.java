@@ -362,6 +362,11 @@ public class StandardASMCompiler implements Compiler {
         getMethodVisitor().visitVarInsn(Opcodes.ALOAD, RUNTIME_INDEX);
     }
     
+    public void loadNil() {
+        loadRuntime();
+        invokeIRuby("getNil", "()Lorg/jruby/runtime/builtin/IRubyObject;");
+    }
+    
     public void consumeCurrentValue() {
         getMethodVisitor().visitInsn(Opcodes.POP);
     }
@@ -466,6 +471,43 @@ public class StandardASMCompiler implements Compiler {
         falseBranch.branch(this);
 
         mv.visitLabel(afterJmp);
+    }
+    
+    public void performBooleanLoop(BranchCallback condition, BranchCallback body, boolean checkFirst) {
+        // FIXME: handle next/continue, break, etc
+        MethodVisitor mv = getMethodVisitor();
+        
+        Label endJmp = new Label();
+        if (checkFirst) {
+            // calculate condition
+            condition.branch(this);
+            // call isTrue on the result
+            invokeIRubyObject("isTrue", "()Z");
+        
+            mv.visitJumpInsn(Opcodes.IFEQ, endJmp); // EQ == 0 (i.e. false)
+        }
+
+        Label topJmp = new Label();
+
+        mv.visitLabel(topJmp);
+            
+        body.branch(this);
+        
+        // clear result after each loop
+        mv.visitInsn(Opcodes.POP);
+
+        // calculate condition
+        condition.branch(this);
+        // call isTrue on the result
+        invokeIRubyObject("isTrue", "()Z");
+
+        mv.visitJumpInsn(Opcodes.IFNE, topJmp); // NE == nonzero (i.e. true)
+        
+        if (checkFirst) {
+            mv.visitLabel(endJmp);
+        }
+        
+        loadNil();
     }
 
     private void invokeThreadContext(String methodName, String signature) {
