@@ -595,12 +595,12 @@ public class EvaluationState {
                 }
     
                 String name = iVisited.getName();
-                if (containingClass == runtime.getObject() && name.equals("initialize")) {
+                if (containingClass == runtime.getObject() && name == "initialize") {
                     runtime.getWarnings().warn("redefining Object#initialize may cause infinite loop");
                 }
     
                 Visibility visibility = context.getCurrentVisibility();
-                if (name.equals("initialize") || visibility.isModuleFunction()) {
+                if (name == "initialize" || visibility.isModuleFunction()) {
                     visibility = Visibility.PRIVATE;
                 }
     
@@ -1135,12 +1135,12 @@ public class EvaluationState {
                 IRubyObject receiver = evalInternal(context, iVisited.getReceiverNode(), self);
                 IRubyObject value = receiver.callMethod(context, iVisited.getVariableName());
     
-                if (iVisited.getOperatorName().equals("||")) {
+                if (iVisited.getOperatorName() == "||") {
                     if (value.isTrue()) {
                         return value;
                     }
                     value = evalInternal(context, iVisited.getValueNode(), self);
-                } else if (iVisited.getOperatorName().equals("&&")) {
+                } else if (iVisited.getOperatorName() == "&&") {
                     if (!value.isTrue()) {
                         return value;
                     }
@@ -1178,12 +1178,12 @@ public class EvaluationState {
     
                 IRubyObject firstValue = receiver.callMethod(context, "[]", args);
     
-                if (iVisited.getOperatorName().equals("||")) {
+                if (iVisited.getOperatorName() == "||") {
                     if (firstValue.isTrue()) {
                         return firstValue;
                     }
                     firstValue = evalInternal(context, iVisited.getValueNode(), self);
-                } else if (iVisited.getOperatorName().equals("&&")) {
+                } else if (iVisited.getOperatorName() == "&&") {
                     if (!firstValue.isTrue()) {
                         return firstValue;
                     }
