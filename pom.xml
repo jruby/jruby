@@ -164,12 +164,11 @@
     <profile>
       <id>jruby-properties</id>
       <activation>
-        <activeByDefault/>
+        <activeByDefault>true</activeByDefault>
       </activation>
       <properties>
         <jruby.package>org.jruby</jruby.package>
         <jruby.main.class>org.jruby.Main</jruby.main.class>
-        <jruby.src.root>${basedir}</jruby.src.root>
       </properties>
     </profile>
   </profiles>
