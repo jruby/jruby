@@ -279,7 +279,8 @@ test_check "High-level Java Support"
     end
   }
 
-  # wakeup all threads
+  # wait for threads to all stop, then wake them up
+  threads.each {|t| Thread.pass until t.stop?}
   threads.each {|t| t.run}
   # join each to let them run
   threads.each {|t| t.join }
