@@ -668,7 +668,7 @@ public class EvaluationState {
                 }
     
                 if (runtime.getSafeLevel() >= 4) {
-                    ICallable method = (ICallable) rubyClass.getMethods().get(iVisited.getName());
+                    Object method = rubyClass.getMethods().get(iVisited.getName());
                     if (method != null) {
                         throw runtime.newSecurityError("Redefining method prohibited.");
                     }
