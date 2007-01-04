@@ -34,9 +34,11 @@ import java.util.Map;
 import java.util.Stack;
 import org.jruby.ast.Node;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.parser.StaticScope;
 import org.jruby.util.JRubyClassLoader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -50,15 +52,22 @@ public class StandardASMCompiler implements Compiler {
     private static final String IRUBY = "org/jruby/IRuby";
     private static final String IRUBYOBJECT = "org/jruby/runtime/builtin/IRubyObject";
     
+    private static final String MULTISTUB_SIGNATURE =
+            "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/runtime/builtin/IRubyObject;[Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/BlockCallback2;)Lorg/jruby/runtime/builtin/IRubyObject;";
+    private static final String CLOSURE_SIGNATURE =
+            "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/runtime/builtin/IRubyObject;[Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;";
+    
     private static final int THREADCONTEXT_INDEX = 1;
     private static final int SELF_INDEX = 2;
     private static final int ARGS_INDEX = 3;
-    private static final int RUNTIME_INDEX = 4;
-    private static final int LOCAL_VARS_INDEX = 5;
+    private static final int CLOSURE_INDEX = 4;
+    private static final int RUNTIME_INDEX = 5;
+    private static final int LOCAL_VARS_INDEX = 6;
     
     private Stack classVisitors = new Stack();
     private Stack methodVisitors = new Stack();
     private Stack arities = new Stack();
+    private Stack scopeStarts = new Stack();
     
     private String classname;
     private String sourcename;
@@ -67,6 +76,7 @@ public class StandardASMCompiler implements Compiler {
     ClassWriter currentMultiStub = null;
     int multiStubIndex = -1;
     int multiStubCount = -1;
+    int innerIndex = 1;
     
     int lastLine = -1;
     
@@ -150,6 +160,14 @@ public class StandardASMCompiler implements Compiler {
         return ((Integer)arities.pop()).intValue();
     }
     
+    public void pushScopeStart(Label start) {
+        scopeStarts.push(start);
+    }
+    
+    public Label popScopeStart() {
+        return (Label)scopeStarts.pop();
+    }
+    
     public void startScript() {
         ClassVisitor cv = new ClassWriter(true);
         
@@ -176,11 +194,14 @@ public class StandardASMCompiler implements Compiler {
         mv.visitTypeInsn(Opcodes.NEW, stubName);
         mv.visitInsn(Opcodes.DUP);
         mv.visitMethodInsn(Opcodes.INVOKESPECIAL, stubName, "<init>", "()V");
+        
+        // invoke method0 with threadcontext, self, args (null), and block (null)
         mv.visitVarInsn(Opcodes.ALOAD, THREADCONTEXT_INDEX);
         mv.visitVarInsn(Opcodes.ALOAD, SELF_INDEX);
         mv.visitInsn(Opcodes.ACONST_NULL);
+        mv.visitInsn(Opcodes.ACONST_NULL);
         
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, stubName, methodName, "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/runtime/builtin/IRubyObject;[Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, stubName, methodName, MULTISTUB_SIGNATURE);
         mv.visitInsn(Opcodes.ARETURN);
         mv.visitMaxs(1, 1);
         mv.visitEnd();
@@ -230,7 +251,7 @@ public class StandardASMCompiler implements Compiler {
             multiStubIndex++;
         }
         
-        MethodVisitor newMethod = currentMultiStub.visitMethod(Opcodes.ACC_PUBLIC, "method" + multiStubIndex, "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/runtime/builtin/IRubyObject;[Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;", null, null);
+        MethodVisitor newMethod = currentMultiStub.visitMethod(Opcodes.ACC_PUBLIC, "method" + multiStubIndex, MULTISTUB_SIGNATURE, null, null);
         pushMethodVisitor(newMethod);
         
         newMethod.visitCode();
@@ -238,13 +259,19 @@ public class StandardASMCompiler implements Compiler {
         // logic to start off the root node's code with local var slots and all
         newMethod.visitLdcInsn(new Integer(localVarCount));
         newMethod.visitTypeInsn(Opcodes.ANEWARRAY, "org/jruby/runtime/builtin/IRubyObject");
-        // FIXME: use constant for index of local vars
+        
+        // store the local vars in a local variable
         newMethod.visitVarInsn(Opcodes.ASTORE, LOCAL_VARS_INDEX);
         
         // set up a local IRuby variable
         newMethod.visitVarInsn(Opcodes.ALOAD, THREADCONTEXT_INDEX);
         invokeThreadContext("getRuntime", "()Lorg/jruby/IRuby;");
         newMethod.visitVarInsn(Opcodes.ASTORE, RUNTIME_INDEX);
+        
+        // visit a label to start scoping for local vars in this method
+        Label start = new Label();
+        newMethod.visitLabel(start);
+        pushScopeStart(start);
         
         // push down the argument count of this method
         pushArity(arity);
@@ -258,6 +285,14 @@ public class StandardASMCompiler implements Compiler {
         MethodVisitor mv = (MethodVisitor)token;
         // return last value from execution
         mv.visitInsn(Opcodes.ARETURN);
+        
+        // end of variable scope
+        Label end = new Label();
+        mv.visitLabel(end);
+        
+        // local variable for lvars array
+        mv.visitLocalVariable("lvars", "[L" + IRUBYOBJECT + ";", null, popScopeStart(), end, LOCAL_VARS_INDEX);
+        
         mv.visitMaxs(1, 1); // automatically calculated by ASM
         mv.visitEnd();
         
@@ -269,7 +304,7 @@ public class StandardASMCompiler implements Compiler {
         if (currentMultiStub != null) {
             while (multiStubIndex < 9) {
                 multiStubIndex++;
-                MethodVisitor multiStubMethod = currentMultiStub.visitMethod(Opcodes.ACC_PUBLIC, "method" + multiStubIndex, "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/runtime/builtin/IRubyObject;[Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;", null, null);
+                MethodVisitor multiStubMethod = currentMultiStub.visitMethod(Opcodes.ACC_PUBLIC, "method" + multiStubIndex, MULTISTUB_SIGNATURE, null, null);
                 multiStubMethod.visitCode();
                 multiStubMethod.visitInsn(Opcodes.ACONST_NULL);
                 multiStubMethod.visitInsn(Opcodes.ARETURN);
@@ -521,6 +556,116 @@ public class StandardASMCompiler implements Compiler {
         }
         
         loadNil();
+    }
+    
+    public void createNewClosure(StaticScope scope, ClosureCallback body) {
+        ClassVisitor closureVisitor = new ClassWriter(true);
+        FieldVisitor fv;
+        MethodVisitor method;
+
+        String closureClassName = classname + "$Closure" + innerIndex;
+        String closureClassShortName = "Closure" + innerIndex;
+        innerIndex++;
+        
+        closureVisitor.visit(Opcodes.V1_4, Opcodes.ACC_SUPER, closureClassName, null, "java/lang/Object", new String[] { "org/jruby/runtime/BlockCallback2" });
+        pushClassVisitor(closureVisitor);
+        classWriters.put(closureClassName, closureVisitor);
+        
+        closureVisitor.visitSource(sourcename, null);
+        
+        // closure is an inner class
+        closureVisitor.visitInnerClass(closureClassName, null, closureClassShortName, Opcodes.ACC_PRIVATE);
+        innerIndex++;
+
+        // this$0 field points at the containing class
+        // val$variables points at the containing scope's instance variables
+        fv = closureVisitor.visitField(Opcodes.ACC_FINAL + Opcodes.ACC_SYNTHETIC, "this$0", "L" + classname + ";", null, null);
+        fv = closureVisitor.visitField(Opcodes.ACC_FINAL + Opcodes.ACC_SYNTHETIC, "val$variables", "[L" + IRUBYOBJECT +";", null, null);
+        fv.visitEnd();
+        
+        ///////////////////////////////////////////
+        // constructor for closure object
+        // note that this accepts an array of IRubyObject; this is the
+        // local variables from the containing scope. The current compiler won't work
+        // with more than a single containing scope
+        method = closureVisitor.visitMethod(0, "<init>", "(L" + classname + ";[L" + IRUBYOBJECT + ";)V", null, null);
+        method.visitCode();
+        Label l0 = new Label();
+        method.visitLabel(l0);
+        method.visitLineNumber(7, l0);
+        
+        // store the containing "this"
+        // FIXME: need to do some stack magic here to support nested closures
+        method.visitVarInsn(Opcodes.ALOAD, 0);
+        method.visitVarInsn(Opcodes.ALOAD, 1);
+        method.visitFieldInsn(Opcodes.PUTFIELD, closureClassName, "this$0", "L" + classname + ";");
+        
+        // store the containing scope's local variables
+        method.visitVarInsn(Opcodes.ALOAD, 0);
+        method.visitVarInsn(Opcodes.ALOAD, 2);
+        method.visitFieldInsn(Opcodes.PUTFIELD, closureClassName, "val$variables", "[L" + IRUBYOBJECT +";");
+        
+        // call super constructor
+        method.visitVarInsn(Opcodes.ALOAD, 0);
+        method.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V");
+        method.visitInsn(Opcodes.RETURN);
+        Label l1 = new Label();
+        method.visitLabel(l1);
+        method.visitLocalVariable("this", "L" + closureClassName + ";", null, l0, l1, 0);
+        method.visitMaxs(1,1);
+        method.visitEnd();
+        
+        ////////////////////////////
+        // closure implementation
+        method = closureVisitor.visitMethod(Opcodes.ACC_PUBLIC, "call", CLOSURE_SIGNATURE, null, null);
+        pushMethodVisitor(method);
+        
+        method.visitCode();
+        
+        // logic to start off the closure with dvar slots
+        method.visitLdcInsn(new Integer(scope.getNumberOfVariables()));
+        method.visitTypeInsn(Opcodes.ANEWARRAY, "org/jruby/runtime/builtin/IRubyObject");
+        
+        // store the dvars in a local variable
+        method.visitVarInsn(Opcodes.ASTORE, LOCAL_VARS_INDEX);
+        
+        // set up local variables for containing scopes
+        // containing scope's local vars are stored in LOCAL_VARS_INDEX + <depth>
+        // where <depth> is the number of scopes we are away from that.
+        // Eventually this will want to handle multiple nested scopes
+        method.visitFieldInsn(Opcodes.GETFIELD, closureClassName, "val$variables", "[L" + IRUBYOBJECT +";");
+        method.visitVarInsn(Opcodes.ASTORE, LOCAL_VARS_INDEX + 1);
+        
+        // set up a local IRuby variable
+        method.visitVarInsn(Opcodes.ALOAD, THREADCONTEXT_INDEX);
+        invokeThreadContext("getRuntime", "()Lorg/jruby/IRuby;");
+        method.visitVarInsn(Opcodes.ASTORE, RUNTIME_INDEX);
+        
+        // start of scoping for closure's vars
+        Label start = new Label();
+        method.visitLabel(start);
+        
+        // visit the body of the closure
+        body.compile(this);
+        
+        method.visitInsn(Opcodes.ARETURN);
+        
+        // end of scoping for closure's vars
+        Label end = new Label();
+        method.visitLabel(end);
+        method.visitLocalVariable("this", "Lorg/jruby/FooBar$1$Figlet;", null, start, end, 0);
+        method.visitLocalVariable("dvars" + closureClassShortName, "[L" + IRUBYOBJECT + ";", null, start, end, LOCAL_VARS_INDEX);
+        // in the future this should be indexed by depth and have no distinction
+        // between lvars and dvars
+        method.visitLocalVariable("lvars" + closureClassShortName, "[L" + IRUBYOBJECT + ";", null, start, end, LOCAL_VARS_INDEX + 1);
+        method.visitMaxs(1, 1);
+        method.visitEnd();
+        
+        popMethodVisitor();
+
+        closureVisitor.visitEnd();
+
+        popClassVisitor();
     }
 
     private void invokeThreadContext(String methodName, String signature) {

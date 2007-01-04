@@ -79,6 +79,7 @@ testCacheMapLeak.rb
 testPipe.rb
 testSplat.rb
 testBigDecimal.rb
+testCompiler.rb
 
 # MRI Ruby tests (from sample/test.rb in Matz's Ruby Interpreter):
 

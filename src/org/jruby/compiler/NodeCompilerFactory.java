@@ -50,6 +50,8 @@ public class NodeCompilerFactory {
                 return new FixnumNodeCompiler();
             case NodeTypes.IFNODE:
                 return new IfNodeCompiler();
+            case NodeTypes.ITERNODE:
+                return new IterNodeCompiler();
             case NodeTypes.LOCALASGNNODE:
                 return new LocalAsgnNodeCompiler();
             case NodeTypes.LOCALVARNODE:

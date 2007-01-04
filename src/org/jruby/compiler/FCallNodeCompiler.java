@@ -10,6 +10,7 @@
 package org.jruby.compiler;
 
 import org.jruby.ast.FCallNode;
+import org.jruby.ast.IterNode;
 import org.jruby.ast.Node;
 
 /**
@@ -29,6 +30,29 @@ public class FCallNodeCompiler implements NodeCompiler {
         
         if (fcallNode.getIterNode() == null) {
             // no block, go for simple version
+            if (fcallNode.getArgsNode() != null) {
+                // args compiler processes args and results in an args array for invocation
+                NodeCompiler argsCompiler = NodeCompilerFactory.getArgumentsCompiler(fcallNode.getArgsNode());
+                
+                argsCompiler.compile(fcallNode.getArgsNode(), context);
+
+                context.invokeDynamic(fcallNode.getName(), false, true);
+            } else {
+                context.invokeDynamic(fcallNode.getName(), false, false);
+            }
+        } else {
+            final IterNode iterNode = fcallNode.getIterNode();
+
+            // create the closure class and instantiate it
+            ClosureCallback closureBody = new ClosureCallback() {
+                public void compile(Compiler context) {
+                    NodeCompilerFactory.getCompiler(iterNode.getBodyNode()).compile(iterNode.getBodyNode(), context);
+                }
+            };
+            
+            context.createNewClosure(iterNode.getScope(), closureBody);
+
+            // NOT YET CREATING THE CLOSURE or passing it or handling it...etc
             if (fcallNode.getArgsNode() != null) {
                 // args compiler processes args and results in an args array for invocation
                 NodeCompiler argsCompiler = NodeCompilerFactory.getArgumentsCompiler(fcallNode.getArgsNode());

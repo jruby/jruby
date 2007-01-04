@@ -30,6 +30,7 @@ package org.jruby.compiler;
 
 import org.jruby.ast.Node;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.parser.StaticScope;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 
@@ -135,4 +136,6 @@ public interface Compiler {
     public void performBooleanBranch(BranchCallback trueBranch, BranchCallback falseBranch);
     
     public void performBooleanLoop(BranchCallback condition, BranchCallback body, boolean checkFirst);
+    
+    public void createNewClosure(StaticScope scope, ClosureCallback body);
 }
