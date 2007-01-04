@@ -294,5 +294,10 @@ end
 
 test_equal(a,77.7)
 
-#Creating a singleton from Fixnum should yield: "TypeError: no virtual class for Fixnum"
+# no singleton methods on numerics
+
+[10.0, 10, 1000000000000000000000000000].each do |num|
+	test_exception(TypeError) { class << num ; def amethod ; end ; end }
+	test_exception(TypeError) { def num.amethod ; end }
+end#Creating a singleton from Fixnum should yield: "TypeError: no virtual class for Fixnum"
 test_exception(TypeError) { class << 10 ; end }

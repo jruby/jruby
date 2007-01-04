@@ -29,7 +29,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.RubyModule;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**

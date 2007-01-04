@@ -608,7 +608,15 @@ public class EvaluationState {
                 if (name == "initialize" || visibility.isModuleFunction()) {
                     visibility = Visibility.PRIVATE;
                 }
-    
+                
+                if (containingClass.isSingleton()) {
+                    IRubyObject attachedObject = ((MetaClass) containingClass).getAttachedObject();
+                    
+                    if (!attachedObject.singletonMethodsAllowed()) {
+                        throw runtime.newTypeError("can't define singleton method \"" + 
+                                iVisited.getName() + "\" for " + attachedObject.getType());
+                    }
+                }    
                 DefaultMethod newMethod = new DefaultMethod(containingClass, iVisited.getScope(), 
                         iVisited.getBodyNode(), (ArgsNode) iVisited.getArgsNode(), visibility, context.peekCRef());
     

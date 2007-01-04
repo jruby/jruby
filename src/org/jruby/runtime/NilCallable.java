@@ -9,7 +9,6 @@
 
 package org.jruby.runtime;
 
-import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.AbstractCallable;
 import org.jruby.runtime.builtin.IRubyObject;
 

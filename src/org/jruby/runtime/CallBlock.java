@@ -31,8 +31,6 @@ import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.AbstractCallable;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import org.jruby.internal.runtime.methods.AbstractMethod;
-
 /**
  * A Block implemented using a Java-based BlockCallback implementation
  * rather than with an ICallable. For lightweight block logic within

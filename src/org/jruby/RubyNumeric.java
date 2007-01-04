@@ -599,4 +599,8 @@ public class RubyNumeric extends RubyObject {
     public RubyFloat convertToFloat() {
         return getRuntime().newFloat(getDoubleValue());
     }
+
+	public boolean singletonMethodsAllowed() {
+		return false;
+	}
 }

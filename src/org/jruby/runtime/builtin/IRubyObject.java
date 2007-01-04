@@ -38,7 +38,6 @@ import java.util.Map;
 
 import org.jruby.MetaClass;
 import org.jruby.IRuby;
-import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFloat;

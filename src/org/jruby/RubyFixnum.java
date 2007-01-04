@@ -146,10 +146,6 @@ public class RubyFixnum extends RubyInteger {
         return newFixnum(getRuntime(), newValue);
     }
 
-    public boolean singletonMethodsAllowed() {
-        return false;
-    }
-
     public RubyNumeric multiplyWith(RubyFixnum other) {
         long otherValue = other.getLongValue();
         if (otherValue == 0) {
