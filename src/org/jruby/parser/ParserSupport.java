@@ -38,6 +38,7 @@ import java.util.Iterator;
 
 import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsCatNode;
+import org.jruby.ast.ArgsPushNode;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.AttrAssignNode;
@@ -370,6 +371,13 @@ public class ParserSupport {
         }
     }
 
+    public Node arg_add(ISourcePosition position, Node node1, Node node2) {
+        if (node1 == null) return new ArrayNode(position, node2);
+        if (node1 instanceof ArrayNode) return ((ArrayNode) node1).add(node2);
+        
+        return new ArgsPushNode(position, node1, node2);
+    }
+    
 	/**
 	 * @fixme position
 	 **/
@@ -383,16 +391,9 @@ public class ParserSupport {
         if (lhs instanceof AssignableNode) {
     	    ((AssignableNode) lhs).setValueNode(rhs);
         } else if (lhs instanceof IArgumentNode) {
-            Node argsNode = ((IArgumentNode) lhs).getArgsNode();
+            IArgumentNode invokableNode = (IArgumentNode) lhs;
             
-            if (argsNode == null) {
-                argsNode = new ArrayNode(lhs.getPosition());
-                ((IArgumentNode) lhs).setArgsNode(argsNode);
-            } else if (!(argsNode instanceof ListNode)) {
-                argsNode = new ArrayNode(lhs.getPosition()).add(argsNode);
-                ((IArgumentNode) lhs).setArgsNode(argsNode);
-            }
-            ((ListNode)argsNode).add(rhs);
+            invokableNode.setArgsNode(arg_add(lhs.getPosition(), invokableNode.getArgsNode(), rhs));
         }
         
         return newNode;

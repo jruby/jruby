@@ -27,10 +27,8 @@
 
 package org.jruby.evaluator;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import org.jruby.IRuby;
@@ -50,6 +48,7 @@ import org.jruby.RubyString;
 import org.jruby.ast.AliasNode;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArgsNode;
+import org.jruby.ast.ArgsPushNode;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.AttrAssignNode;
 import org.jruby.ast.BackRefNode;
@@ -195,6 +194,12 @@ public class EvaluationState {
                 RubyArray list = args instanceof RubyArray ? (RubyArray) args : runtime.newArray(args);
     
                 return list.concat(secondArgs);
+            }
+            case NodeTypes.ARGSPUSHNODE: {
+                ArgsPushNode iVisited = (ArgsPushNode) node;
+                
+                RubyArray args = (RubyArray) evalInternal(context, iVisited.getFirstNode(), self).dup();
+                return args.append(evalInternal(context, iVisited.getSecondNode(), self));
             }
                 //                case NodeTypes.ARGSNODE:
                 //                EvaluateVisitor.argsNodeVisitor.execute(this, node);
@@ -1852,55 +1857,17 @@ public class EvaluationState {
         return (RubyArray) newValue;
     }
 
-    private static IRubyObject[] setupArgs(ThreadContext context, Node node,
-            IRubyObject self) {
-        if (node == null) {
-            return IRubyObject.NULL_ARRAY;
-        }
+    private static IRubyObject[] setupArgs(ThreadContext context, Node node, IRubyObject self) {
+        if (node == null) return IRubyObject.NULL_ARRAY;
 
         if (node instanceof ArrayNode) {
-            ArrayNode argsArrayNode = (ArrayNode)node;
+            ArrayNode argsArrayNode = (ArrayNode) node;
             ISourcePosition position = context.getPosition();
             int size = argsArrayNode.size();
             IRubyObject[] argsArray = new IRubyObject[size];
-            // avoid using ArrayList unless we absolutely have to
-            List argsList = null;
-            // once we find a splat, stuff remaining args in argsList and combine afterwards
-            boolean hasSplat = false;
-            // index for the beginning of splatted args, used for combination later
-            int splatBegins = 0;
 
             for (int i = 0; i < size; i++) {
-                Node next = argsArrayNode.get(i);
-                
-                if (hasSplat) {
-                    // once we've found a splat, we switch to an arraylist to handle growing
-                    if (next instanceof SplatNode) {
-                        argsList.addAll(((RubyArray) evalInternal(context, next, self)).getList());
-                    } else {
-                        argsList.add(evalInternal(context, next, self));
-                    }
-                } else {
-                    if (next instanceof SplatNode) {
-                        // switch to ArrayList, since we've got splatted args in the list
-                        argsList = new ArrayList();
-                        splatBegins = i;
-                        hasSplat = true;
-                        argsList.addAll(((RubyArray) evalInternal(context, next, self)).getList());
-                    } else {
-                        argsArray[i] = evalInternal(context, next, self);
-                    }
-                }
-            }
-            
-            if (hasSplat) {
-                // we had splatted arguments, combine unsplatted with list
-                IRubyObject[] argsArray2 = (IRubyObject[])argsList.toArray(new IRubyObject[argsList.size()]);
-                IRubyObject[] newArgsArray = new IRubyObject[splatBegins + argsArray2.length];
-                System.arraycopy(argsArray, 0, newArgsArray, 0, splatBegins);
-                System.arraycopy(argsArray2, 0, newArgsArray, splatBegins, argsArray2.length);
-                
-                argsArray = argsArray2;
+                argsArray[i] = evalInternal(context, argsArrayNode.get(i), self);
             }
 
             context.setPosition(position);

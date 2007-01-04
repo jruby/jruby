@@ -36,6 +36,7 @@ import org.jruby.ast.AliasNode;
 import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArgsNode;
+import org.jruby.ast.ArgsPushNode;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.AttrAssignNode;
 import org.jruby.ast.BackRefNode;
@@ -399,6 +400,10 @@ public class InstructionCompiler2 implements NodeVisitor {
             }
             i++;
         }
+    }
+    
+    public Instruction visitArgsPushNode(ArgsPushNode iVisited) {
+        throw new NotCompilableException("Node not supported: " + iVisited.toString());
     }
     
     // FIXME: I just copied logic for CallNode, but the return for this should be lhs of assignment

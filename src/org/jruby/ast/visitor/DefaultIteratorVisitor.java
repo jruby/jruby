@@ -37,6 +37,7 @@ import org.jruby.ast.AliasNode;
 import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArgsNode;
+import org.jruby.ast.ArgsPushNode;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.AttrAssignNode;
 import org.jruby.ast.BackRefNode;
@@ -183,6 +184,17 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 		return null;
 	}
 
+    public Instruction visitArgsPushNode(ArgsPushNode iVisited) {
+        iVisited.accept(_Payload);
+        if (iVisited.getFirstNode() != null) {
+            iVisited.getFirstNode().accept(this);
+        }
+        if (iVisited.getSecondNode() != null) {
+            iVisited.getSecondNode().accept(this);
+        }
+        return null;
+    }
+    
     /** @fixme iteration not correctly defined */
     public Instruction visitAttrAssignNode(AttrAssignNode iVisited) {
         iVisited.accept(_Payload);

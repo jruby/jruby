@@ -132,6 +132,7 @@ public final class NodeTypes {
     public static final int COMMENTNODE = 100;
     public static final int ROOTNODE = 101;
     public static final int ATTRASSIGNNODE = 102;
+    public static final int ARGSPUSHNODE = 103;
     
     private NodeTypes() {}
 }
