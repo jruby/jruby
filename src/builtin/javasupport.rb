@@ -192,8 +192,14 @@ end
 class ArrayJavaProxy < JavaProxy
   include Enumerable
 
-  def initialize(size)
-    self.java_object = java_class.component_type.new_array(size)
+  class << self  
+    alias_method :new_proxy, :new
+
+    def new(size)
+      proxy = new_proxy
+      proxy.java_object = proxy.java_class.component_type.new_array(size)
+      proxy
+    end
   end
 
   def length()
@@ -217,11 +223,17 @@ class ArrayJavaProxy < JavaProxy
 end
 
 class InterfaceJavaProxy < JavaProxy
-  def initialize
-    self.java_object = Java.new_proxy_instance(self.class.java_class) { |proxy, method, *args|
-      args.collect! { |arg| Java.java_to_ruby(arg) }
-      Java.ruby_to_java(send(method.name, *args))
-    }
+  class << self  
+    alias_method :new_proxy, :new
+
+    def new(*args)
+      proxy = new_proxy(*args)
+      proxy.java_object = Java.new_proxy_instance(proxy.class.java_class) { |proxy2, method, *args|
+        args.collect! { |arg| Java.java_to_ruby(arg) }
+        Java.ruby_to_java(proxy.send(method.name, *args))
+      }
+      proxy
+    end
   end
     
   def self.impl(*meths, &block)
@@ -237,12 +249,18 @@ class InterfaceJavaProxy < JavaProxy
 end
 
 class ConcreteJavaProxy < JavaProxy
-  def initialize(*args)
-    constructors = java_class.constructors.select {|c| c.arity == args.length }
-    raise NameError.new("wrong # of arguments for constructor") if constructors.empty?
-    args.collect! { |v| Java.ruby_to_java(v) }
-    self.java_object = JavaUtilities.matching_method(constructors, args).new_instance(*args)
-  end
+  class << self  
+    alias_method :new_proxy, :new
+
+    def new(*args)
+      proxy = new_proxy
+      constructors = proxy.java_class.constructors.select {|c| c.arity == args.length }
+      raise NameError.new("wrong # of arguments for constructor") if constructors.empty?
+      args.collect! { |v| Java.ruby_to_java(v) }
+      proxy.java_object = JavaUtilities.matching_method(constructors, args).new_instance(*args)
+      proxy
+    end
+  end 
 end
 
 module JavaUtilities

@@ -290,3 +290,11 @@ test_check "High-level Java Support"
     test_ok(t[:mem] != nil)
   end
 
+  class NSCT < javax.xml.namespace.NamespaceContext
+    # JRUBY-66: No super here...make sure we still work.
+    def initialize(arg); end
+    def getNamespaceURI(prefix); 'ape:sex'; end
+  end
+
+  # No error is a pass here for JRUBY-66
+  javax.xml.xpath.XPathFactory.newInstance.newXPath.setNamespaceContext(NSCT.new(1))
