@@ -138,4 +138,6 @@ public interface Compiler {
     public void performBooleanLoop(BranchCallback condition, BranchCallback body, boolean checkFirst);
     
     public void createNewClosure(StaticScope scope, ClosureCallback body);
+    
+    public void defineNewMethod(String name, int arity, int localVarCount, ClosureCallback body);
 }

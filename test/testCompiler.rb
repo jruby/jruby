@@ -15,6 +15,8 @@ whileCode = JRuby.parse("a = 0; while a < 5; a = a + 2; end; a", "EVAL")
 
 iterBasic = JRuby.parse("foo2('baz') { 4 }", "EVAL");
 
+defBasic = JRuby.parse("def foo3(arg); arg + '2'; end", "EVAL")
+
 def compile_to_class(node)
   context = StandardASMCompiler.new(node)
   NodeCompilerFactory.getCompiler(node).compile(node, context)
@@ -50,3 +52,6 @@ test_equal(2, compile_and_run(ifCode))
 test_equal(3, compile_and_run(unlessCode))
 test_equal(6, compile_and_run(whileCode))
 test_equal('baz', compile_and_run(iterBasic))
+
+compile_and_run(defBasic)
+test_equal('hello2', foo3('hello'))

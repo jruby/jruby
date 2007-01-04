@@ -44,6 +44,8 @@ public class NodeCompilerFactory {
                 return new BlockNodeCompiler();
             case NodeTypes.CALLNODE:
                 return new CallNodeCompiler();
+            case NodeTypes.DEFNNODE:
+                return new DefnNodeCompiler();
             case NodeTypes.FCALLNODE:
                 return new FCallNodeCompiler();
             case NodeTypes.FIXNUMNODE:

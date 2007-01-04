@@ -233,7 +233,7 @@ public class StandardASMCompiler implements Compiler {
             ClassVisitor cv = getClassVisitor();
             currentMultiStub = new org.objectweb.asm.ClassWriter(true);
             currentMultiStub.visit(Opcodes.V1_2, Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER + Opcodes.ACC_STATIC,
-                    classname + "$MultiStub" + multiStubCount, null, "java/lang/Object", new String[] {"org/jruby/internal/runtime/methods/MultiStub"});
+                    classname + "$MultiStub" + multiStubCount, null, "java/lang/Object", new String[] {"org/jruby/internal/runtime/methods/MultiStub2"});
             cv.visitInnerClass(classname + "$MultiStub" + multiStubCount, classname, "MultiStub" + multiStubCount, Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC);
             multiStubIndex = 0;
             classWriters.put(classname + "$MultiStub" + multiStubCount, currentMultiStub);
@@ -676,5 +676,216 @@ public class StandardASMCompiler implements Compiler {
     private void invokeIRuby(String methodName, String signature) {
         MethodVisitor mv = getMethodVisitor();
         mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, methodName, signature);
+    }
+    
+    private void getRubyClass() {
+        loadSelf();
+        // FIXME: This doesn't seem *quite* right. If actually within a class...end, is self.getMetaClass the correct class? should be self, no?
+        invokeIRubyObject("getMetaClass", "()Lorg/jruby/RubyClass;");
+    }
+
+    private void newTypeError(String error) {
+        loadRuntime();
+        getMethodVisitor().visitLdcInsn(error);
+        invokeIRuby("newTypeError", "(Ljava/lang/String;)Lorg/jruby/exceptions/RaiseException;");
+    }
+
+    private void getCurrentVisibility() {
+        loadThreadContext();
+        invokeThreadContext("getCurrentVisibility", "()Lorg/jruby/runtime/Visibility;");
+    }
+    
+    private void println() {
+        MethodVisitor mv = getMethodVisitor();
+        
+        mv.visitInsn(Opcodes.DUP);
+        mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+        mv.visitInsn(Opcodes.SWAP);
+        
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/Object;)V");
+    }
+    
+    public void defineNewMethod(String name, int arity, int localVarCount, ClosureCallback body) {
+        // TODO: build arg list based on number of args, optionals, etc
+        beginMethod(arity, localVarCount);
+        
+        MethodVisitor mv = getMethodVisitor();
+
+        mv.visitCode();
+        
+        // arraycopy arguments into local vars array
+        mv.visitVarInsn(Opcodes.ALOAD, ARGS_INDEX);
+        mv.visitLdcInsn(new Integer(0));
+        mv.visitVarInsn(Opcodes.ALOAD, LOCAL_VARS_INDEX);
+        mv.visitLdcInsn(new Integer(0));
+        mv.visitLdcInsn(new Integer(arity));
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/System", "arraycopy", "(Ljava/lang/Object;ILjava/lang/Object;II)V");
+        
+        // callback to fill in method body
+        body.compile(this);
+
+        endMethod(mv);
+        
+        // return to previous method
+        mv = getMethodVisitor();
+        
+        // method compiled, add to class
+        getRubyClass();
+        
+        Label classAvailable = new Label();
+        // if class is null, throw error
+        mv.visitJumpInsn(Opcodes.IFNONNULL, classAvailable);
+        newTypeError("No class to add method.");
+        mv.visitInsn(Opcodes.ATHROW);
+        
+        mv.visitLabel(classAvailable);
+        
+        // only do Object#initialize check if necessary
+        // this warns the user if they try to redefine initialize on Object, which would be bad
+        if (name.equals("initialize")) {
+            Label notObjectClass = new Label();
+    
+            // get class, compare to Object
+            getRubyClass();
+            loadRuntime();
+            invokeIRuby("getObject", "()Lorg/jruby/RubyClass;");
+            
+            // if class == Object
+            mv.visitJumpInsn(Opcodes.IF_ACMPNE, notObjectClass);
+            loadRuntime();
+            
+            // display warning about redefining Object#initialize
+            invokeIRuby("getWarnings", "()Lorg/jruby/common/RubyWarnings;");
+            mv.visitLdcInsn("redefining Object#initialize may cause infinite loop");
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/common/RubyWarnings", "warn", "(Ljava/lang/String;)V");
+        
+            mv.visitLabel(notObjectClass);
+        }
+        
+        // TODO: fix this section for initialize visibility
+//        mv.visitLdcInsn(iVisited.getName());
+//        mv.visitLdcInsn("initialize");
+//        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z");
+//        Label l341 = new Label();
+//        mv.visitJumpInsn(Opcodes.IFNE, l341);
+//        getCurrentVisibility();
+//        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/runtime/Visibility", "isModuleFunction", "()Z");
+//        Label l342 = new Label();
+//        mv.visitJumpInsn(Opcodes.IFEQ, l342);
+//        mv.visitLabel(l341);
+//        mv.visitFieldInsn(Opcodes.GETSTATIC, "org/jruby/runtime/Visibility", "PRIVATE", "Lorg/jruby/runtime/Visibility;");
+//        mv.visitVarInsn(ASTORE, 7);
+//        mv.visitLabel(l342);
+        
+        // Create a new method object to call the stub, passing it a new instance of our
+        // current multistub and the appropriate index to call
+        
+        // get the class we're binding it to (this is the receiver for the addMethod
+        // call way down below...)
+        getRubyClass();
+        
+        // method name for addMethod call
+        mv.visitLdcInsn(name);
+        
+        // new MultiStubMethod2
+        mv.visitTypeInsn(Opcodes.NEW, "org/jruby/internal/runtime/methods/MultiStubMethod2");
+        mv.visitInsn(Opcodes.DUP);
+        
+        { // this section sets up the parameters to the MultiStubMethod2 constructor
+            // new multistub object
+            mv.visitTypeInsn(Opcodes.NEW, classname + "$MultiStub" + multiStubCount);
+            mv.visitInsn(Opcodes.DUP);
+            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, classname + "$MultiStub" + multiStubCount, "<init>", "()V");
+
+            // index for stub method
+            mv.visitLdcInsn(new Integer(multiStubIndex));
+
+            // implementingClass parameter
+            getRubyClass();
+
+            // TODO: handle args some way? maybe unnecessary with method compiled?
+    //        mv.visitVarInsn(ALOAD, 4);
+    //        mv.visitMethodInsn(INVOKEVIRTUAL, "org/jruby/ast/DefnNode", "getArgsNode", "()Lorg/jruby/ast/Node;");
+    //        mv.visitTypeInsn(CHECKCAST, "org/jruby/ast/ArgsNode");
+            mv.visitLdcInsn(new Integer(arity));
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/jruby/runtime/Arity", "createArity", "(I)Lorg/jruby/runtime/Arity;");
+            getCurrentVisibility();
+        }
+        
+        // invoke MultiStubMethod2 constructor
+        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "org/jruby/internal/runtime/methods/MultiStubMethod2", "<init>", "(Lorg/jruby/internal/runtime/methods/MultiStub2;ILorg/jruby/RubyModule;Lorg/jruby/runtime/Arity;Lorg/jruby/runtime/Visibility;)V");
+
+        // add the method to the class, and we're set!
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/RubyModule", "addMethod", "(Ljava/lang/String;Lorg/jruby/runtime/DynamicMethod;)V");
+
+        // FIXME: this part is for invoking method_added or singleton_method_added
+//        Label l345 = new Label();
+//        mv.visitLabel(l345);
+//        mv.visitLineNumber(538, l345);
+//        loadThreadContext();
+//        mv.visitMethodInsn(INVOKEVIRTUAL, "org/jruby/runtime/ThreadContext", "getCurrentVisibility", "()Lorg/jruby/runtime/Visibility;");
+//        mv.visitMethodInsn(INVOKEVIRTUAL, "org/jruby/runtime/Visibility", "isModuleFunction", "()Z");
+//        Label l346 = new Label();
+//        mv.visitJumpInsn(IFEQ, l346);
+//        Label l347 = new Label();
+//        mv.visitLabel(l347);
+//        mv.visitLineNumber(539, l347);
+//        mv.visitVarInsn(ALOAD, 5);
+//        mv.visitMethodInsn(INVOKEVIRTUAL, "org/jruby/RubyModule", "getSingletonClass", "()Lorg/jruby/MetaClass;");
+//        mv.visitLdcInsn(iVisited.getName());
+//        mv.visitTypeInsn(NEW, "org/jruby/internal/runtime/methods/WrapperCallable");
+//        mv.visitInsn(DUP);
+//        mv.visitVarInsn(ALOAD, 5);
+//        mv.visitMethodInsn(INVOKEVIRTUAL, "org/jruby/RubyModule", "getSingletonClass", "()Lorg/jruby/MetaClass;");
+//        mv.visitVarInsn(ALOAD, 8);
+//        mv.visitFieldInsn(GETSTATIC, "org/jruby/runtime/Visibility", "PUBLIC", "Lorg/jruby/runtime/Visibility;");
+//        mv.visitMethodInsn(INVOKESPECIAL, "org/jruby/internal/runtime/methods/WrapperCallable", "<init>", "(Lorg/jruby/RubyModule;Lorg/jruby/runtime/ICallable;Lorg/jruby/runtime/Visibility;)V");
+//        mv.visitMethodInsn(INVOKEVIRTUAL, "org/jruby/MetaClass", "addMethod", "(Ljava/lang/String;Lorg/jruby/runtime/ICallable;)V");
+//        Label l348 = new Label();
+//        mv.visitLabel(l348);
+//        mv.visitLineNumber(543, l348);
+//        mv.visitVarInsn(ALOAD, 5);
+//        mv.visitLdcInsn("singleton_method_added");
+//        loadRuntime();
+//        mv.visitLdcInsn(iVisited.getName());
+//        invokeIRuby("newSymbol", "(Ljava/lang/String;)Lorg/jruby/RubySymbol;");
+//        mv.visitMethodInsn(INVOKEVIRTUAL, "org/jruby/RubyModule", "callMethod", "(Lorg/jruby/runtime/ThreadContext;Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
+//        mv.visitInsn(POP);
+//        mv.visitLabel(l346);
+//        mv.visitLineNumber(547, l346);
+//        mv.visitVarInsn(ALOAD, 5);
+//        mv.visitMethodInsn(INVOKEVIRTUAL, "org/jruby/RubyModule", "isSingleton", "()Z");
+//        Label l349 = new Label();
+//        mv.visitJumpInsn(IFEQ, l349);
+//        Label l350 = new Label();
+//        mv.visitLabel(l350);
+//        mv.visitLineNumber(548, l350);
+//        mv.visitVarInsn(ALOAD, 5);
+//        mv.visitTypeInsn(CHECKCAST, "org/jruby/MetaClass");
+//        mv.visitMethodInsn(INVOKEVIRTUAL, "org/jruby/MetaClass", "getAttachedObject", "()Lorg/jruby/runtime/builtin/IRubyObject;");
+//        mv.visitLdcInsn("singleton_method_added");
+//        loadRuntime();
+//        mv.visitVarInsn(ALOAD, 4);
+//        mv.visitMethodInsn(INVOKEVIRTUAL, "org/jruby/ast/DefnNode", "getName", "()Ljava/lang/String;");
+//        invokeIRuby("newSymbol", "(Ljava/lang/String;)Lorg/jruby/RubySymbol;");
+//        mv.visitMethodInsn(INVOKEINTERFACE, "org/jruby/runtime/builtin/IRubyObject", "callMethod", "(Lorg/jruby/runtime/ThreadContext;Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
+//        mv.visitInsn(POP);
+//        Label l351 = new Label();
+//        mv.visitJumpInsn(GOTO, l351);
+//        mv.visitLabel(l349);
+//        mv.visitLineNumber(551, l349);
+//        mv.visitVarInsn(ALOAD, 5);
+//        mv.visitLdcInsn("method_added");
+//        loadRuntime();
+//        mv.visitLdcInsn(iVisited.getName());
+//        invokeIRuby("newSymbol", "(Ljava/lang/String;)Lorg/jruby/RubySymbol;");
+//        mv.visitMethodInsn(INVOKEVIRTUAL, "org/jruby/RubyModule", "callMethod", "(Lorg/jruby/runtime/ThreadContext;Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
+//        mv.visitInsn(POP);
+//        mv.visitLabel(l351);
+//        mv.visitLineNumber(554, l351);
+        
+        // don't leave the stack hanging!
+        loadRuntime();
+        invokeIRuby("getNil", "()Lorg/jruby/runtime/builtin/IRubyObject;");
     }
 }
