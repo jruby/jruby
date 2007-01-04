@@ -4,21 +4,17 @@ require 'benchmark'
 StandardASMCompiler = org.jruby.compiler.StandardASMCompiler
 NodeCompilerFactory = org.jruby.compiler.NodeCompilerFactory
 
-fib_iter_code = <<EOS
+fib_code = <<EOS
 def fib(n)
-  i = 0
-  j = 1
-  cur = 1
-  while cur <= n
-    k = i
-    i = j
-    j = k + j
-    cur = cur + 1
+  if n < 2
+    n
+  else
+    fib(n - 2) + fib(n - 1)
   end
 end
 EOS
 
-fib_iter = JRuby.parse(fib_iter_code, "EVAL")
+fib_node = JRuby.parse(fib_code, "EVAL")
 
 def compile_to_class(node)
   context = StandardASMCompiler.new(node)
@@ -34,11 +30,10 @@ def compile_and_run(node)
 end
 
 # causes fib method to be defined
-compile_and_run(fib_iter)
+compile_and_run(fib_node)
 
-puts Benchmark.measure { fib(300000) }
-puts Benchmark.measure { fib(300000) }
-puts Benchmark.measure { fib(300000) }
-puts Benchmark.measure { fib(300000) }
-puts Benchmark.measure { fib(300000) }
-
+puts Benchmark.measure { fib(30) }
+puts Benchmark.measure { fib(30) }
+puts Benchmark.measure { fib(30) }
+puts Benchmark.measure { fib(30) }
+puts Benchmark.measure { fib(30) }

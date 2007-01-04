@@ -56,11 +56,9 @@ public class MultiStubMethod2 extends AbstractMethod implements
     }
 
     public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
-        context.preReflectedMethodInternalCall(implementationClass, lastClass, recv, name, args, noSuper);
     }
     
     public void postMethod(ThreadContext context) {
-        context.postReflectedMethodInternalCall();
     }
     
     // FIXME: once we pass block as a paramter, fix this to pass it through to the stubs

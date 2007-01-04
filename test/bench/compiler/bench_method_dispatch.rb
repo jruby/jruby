@@ -5,6 +5,7 @@ StandardASMCompiler = org.jruby.compiler.StandardASMCompiler
 NodeCompilerFactory = org.jruby.compiler.NodeCompilerFactory
 
 control_code = <<EOS
+def control
   a = 5; 
   i = 0;
   while i < 100000
@@ -20,9 +21,11 @@ control_code = <<EOS
     a; a; a; a; a; a; a; a; a; a;
     i = i + 1;
   end
+end
 EOS
 
 test_code = <<EOS
+def test
   a = 5; 
   i = 0;
   while i < 100000
@@ -38,10 +41,11 @@ test_code = <<EOS
     a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i; a.to_i;
     i = i + 1;
   end
+end
 EOS
 
-control = JRuby.parse(control_code, "EVAL")
-test = JRuby.parse(test_code, "EVAL")
+control_node = JRuby.parse(control_code, "EVAL")
+test_node = JRuby.parse(test_code, "EVAL")
 
 def compile_to_class(node)
   context = StandardASMCompiler.new(node)
@@ -56,15 +60,19 @@ def compile_and_run(node)
   cls.new_instance.run(JRuby.runtime.current_context, JRuby.runtime.top_self)
 end
 
+compile_and_run(control_node)
+compile_and_run(test_node)
+
 puts "Control"
-puts Benchmark.measure { compile_and_run(control) }
-puts Benchmark.measure { compile_and_run(control) }
-puts Benchmark.measure { compile_and_run(control) }
-puts Benchmark.measure { compile_and_run(control) }
-puts Benchmark.measure { compile_and_run(control) }
+puts Benchmark.measure { control }
+puts Benchmark.measure { control }
+puts Benchmark.measure { control }
+puts Benchmark.measure { control }
+puts Benchmark.measure { control }
+
 puts "Test"
-puts Benchmark.measure { compile_and_run(test) }
-puts Benchmark.measure { compile_and_run(test) }
-puts Benchmark.measure { compile_and_run(test) }
-puts Benchmark.measure { compile_and_run(test) }
-puts Benchmark.measure { compile_and_run(test) }
+puts Benchmark.measure { test }
+puts Benchmark.measure { test }
+puts Benchmark.measure { test }
+puts Benchmark.measure { test }
+puts Benchmark.measure { test }
