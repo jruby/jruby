@@ -294,3 +294,5 @@ end
 
 test_equal(a,77.7)
 
+#Creating a singleton from Fixnum should yield: "TypeError: no virtual class for Fixnum"
+test_exception(TypeError) { class << 10 ; end }

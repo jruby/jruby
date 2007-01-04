@@ -1397,7 +1397,9 @@ public class EvaluationState {
                     singletonClass = runtime.getClass("TrueClass");
                 } else if (receiver == runtime.getFalse()) {
                     singletonClass = runtime.getClass("FalseClass");
-                } else {
+				} else if (receiver.getMetaClass() == runtime.getFixnum() || receiver.getMetaClass() == runtime.getClass("Symbol")) {
+					throw runtime.newTypeError("no virtual class for " + receiver.getMetaClass().getBaseName());
+				} else {
                     if (runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
                         throw runtime.newSecurityError("Insecure: can't extend object.");
                     }

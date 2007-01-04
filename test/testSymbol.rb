@@ -129,3 +129,6 @@ test_equal(:"123".inspect, ":\"123\"")
 test_equal(:"abc".inspect, ":abc")
 test_equal(:"abc#{1 + 2 + 3}".inspect, ":abc6")
 test_equal(:"abc#{7 + 8 + 9}#{1 + 2 + 3}".inspect, ":abc246")
+
+#Creating a singleton from Symbol should yield: "TypeError: no virtual class for Symbol"
+test_exception(TypeError) { class << :abc ; end }
