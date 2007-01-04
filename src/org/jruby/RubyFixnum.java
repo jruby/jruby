@@ -234,7 +234,17 @@ public class RubyFixnum extends RubyInteger {
     }
 
     public IRubyObject op_minus(IRubyObject other) {
-        if (other instanceof RubyFloat) {
+        if(other instanceof RubyFixnum) {
+            long otherValue = ((RubyNumeric) other).getLongValue();
+            long result = value - otherValue;
+            
+            if ((value <= 0 && otherValue >= 0 && (result > 0 || result < -MAX)) || 
+                (value >= 0 && otherValue <= 0 && (result < 0 || result > MAX))) {
+                return RubyBignum.newBignum(getRuntime(), value).op_minus(other);
+            }
+            
+            return newFixnum(result);
+        } else if (other instanceof RubyFloat) {
             return RubyFloat.newFloat(getRuntime(), getDoubleValue()).op_minus(other);
         } else if (other instanceof RubyBignum) {
             return RubyBignum.newBignum(getRuntime(), value).op_minus(other);
@@ -293,17 +303,20 @@ public class RubyFixnum extends RubyInteger {
     }
 
     public IRubyObject op_plus(IRubyObject other) {
-        if (other instanceof RubyFloat) {
-            return getRuntime().newFloat(getDoubleValue() + ((RubyFloat)other).getDoubleValue());
-        } else if (other instanceof RubyFixnum) {
+        if(other instanceof RubyFixnum) {
             long otherValue = ((RubyFixnum)other).getLongValue();
             long result = value + otherValue;
-            if (other instanceof RubyBignum ||
-                (value < 0 && otherValue < 0 && (result > 0 || result < -MAX)) || 
+            if((value < 0 && otherValue < 0 && (result > 0 || result < -MAX)) || 
                 (value > 0 && otherValue > 0 && (result < 0 || result > MAX))) {
                 return RubyBignum.newBignum(getRuntime(), value).op_plus(other);
             }
             return newFixnum(result);
+        }
+        if(other instanceof RubyBignum) {
+            return RubyBignum.newBignum(getRuntime(), value).op_plus(other);
+        }
+        if(other instanceof RubyFloat) {
+            return getRuntime().newFloat(getDoubleValue() + ((RubyFloat)other).getDoubleValue());
         }
         return callCoerced("+", other);
     }
