@@ -295,6 +295,7 @@ public class StandardASMCompiler implements Compiler {
         
         if (hasArgs) {
             if (hasReceiver) {
+                // Call with args
                 // receiver already present
 
                 loadThreadContext();
@@ -304,6 +305,7 @@ public class StandardASMCompiler implements Compiler {
                 // FIXME: if calling against "self", this should be VARIABLE
                 callType = "NORMAL";
             } else {
+                // FCall
                 // no receiver present, use self
                 loadSelf();
                 // put self under args
@@ -321,12 +323,14 @@ public class StandardASMCompiler implements Compiler {
             mv.visitInsn(Opcodes.SWAP);
         } else {
             if (hasReceiver) {
+                // Call with no args
                 // receiver already present
                 
                 loadThreadContext();
                 
                 callType = "FUNCTIONAL";
             } else {
+                // VCall
                 // no receiver present, use self
                 loadSelf();
                 
@@ -432,7 +436,17 @@ public class StandardASMCompiler implements Compiler {
         invokeIRuby("newString", "(Ljava/lang/String;)Lorg/jruby/RubyString;");
     }
     
-    public void createNewArray(Object[] sourceArray, ArrayCallback callback) {
+    public void createNewArray() {
+        MethodVisitor mv = getMethodVisitor();
+        
+        loadRuntime();
+        // put under object array already present
+        mv.visitInsn(Opcodes.SWAP);
+        
+        invokeIRuby("newArray", "([Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/RubyArray;");
+    }
+    
+    public void createObjectArray(Object[] sourceArray, ArrayCallback callback) {
         buildObjectArray(IRUBYOBJECT, sourceArray, callback);
     }
     
@@ -449,7 +463,6 @@ public class StandardASMCompiler implements Compiler {
             callback.nextValue(this, sourceArray, i);
             
             mv.visitInsn(Opcodes.AASTORE);
-            i++;
         }
     }
     

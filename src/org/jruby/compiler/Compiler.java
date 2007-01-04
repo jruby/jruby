@@ -124,8 +124,13 @@ public interface Compiler {
      * 
      * @param elementCount The number of elements to consume
      */
-    public void createNewArray(Object[] elementArray, ArrayCallback callback);
-    
+    public void createObjectArray(Object[] elementArray, ArrayCallback callback);
+
+    /**
+     * Given an aggregated set of objects (likely created through a call to createObjectArray)
+     * create a Ruby array object.
+     */
+    public void createNewArray();
     
     public void performBooleanBranch(BranchCallback trueBranch, BranchCallback falseBranch);
     

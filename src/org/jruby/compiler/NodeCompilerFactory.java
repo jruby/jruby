@@ -68,4 +68,13 @@ public class NodeCompilerFactory {
         
         throw new NotCompilableException("Can't compile node: " + node);
     }
+    
+    public static NodeCompiler getArgumentsCompiler(Node node) {
+        switch (node.nodeId) {
+            case NodeTypes.ARRAYNODE:
+                return new ArrayNodeArgsCompiler();
+        }
+        
+        throw new NotCompilableException("Can't compile node: " + node);
+    }
 }

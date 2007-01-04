@@ -31,7 +31,7 @@ public class FCallNodeCompiler implements NodeCompiler {
             // no block, go for simple version
             if (fcallNode.getArgsNode() != null) {
                 // args compiler processes args and results in an args array for invocation
-                NodeCompiler argsCompiler = NodeCompilerFactory.getCompiler(fcallNode.getArgsNode());
+                NodeCompiler argsCompiler = NodeCompilerFactory.getArgumentsCompiler(fcallNode.getArgsNode());
                 
                 argsCompiler.compile(fcallNode.getArgsNode(), context);
 

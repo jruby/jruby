@@ -35,7 +35,7 @@ public class CallNodeCompiler implements NodeCompiler {
             
             if (callNode.getArgsNode() != null) {
                 // args compiler processes args and results in an args array for invocation
-                NodeCompiler argsCompiler = NodeCompilerFactory.getCompiler(callNode.getArgsNode());
+                NodeCompiler argsCompiler = NodeCompilerFactory.getArgumentsCompiler(callNode.getArgsNode());
                 
                 argsCompiler.compile(callNode.getArgsNode(), context);
 

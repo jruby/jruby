@@ -6,6 +6,7 @@ NodeCompilerFactory = org.jruby.compiler.NodeCompilerFactory
 
 asgnFixnumCode = JRuby.parse("a = 5; a", "EVAL")
 asgnStringCode = JRuby.parse("a = 'hello'; a", "EVAL")
+arrayCode = JRuby.parse("['hello', 5, ['foo', 6]]", "EVAL")
 fcallCode = JRuby.parse("foo('bar')", "EVAL")
 callCode = JRuby.parse("'bar'.capitalize", "EVAL")
 ifCode = JRuby.parse("if 1 == 1; 2; else; 3; end", "EVAL")
@@ -36,6 +37,7 @@ def foo(arg)
   arg + '2'
 end
 
+test_equal(['hello', 5, ['foo', 6]], compile_and_run(arrayCode))
 test_equal('bar2', compile_and_run(fcallCode))
 test_equal('Bar', compile_and_run(callCode))
 test_equal(2, compile_and_run(ifCode))

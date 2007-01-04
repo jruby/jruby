@@ -1,7 +1,7 @@
 /*
- * ArrayNodeCompiler.java
+ * ArrayNodeArgsCompiler.java
  *
- * Created on January 3, 2007, 2:58 PM
+ * Created on January 3, 2007, 6:51 PM
  *
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
@@ -9,7 +9,6 @@
 
 package org.jruby.compiler;
 
-import java.util.Iterator;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.Node;
 
@@ -17,10 +16,10 @@ import org.jruby.ast.Node;
  *
  * @author headius
  */
-public class ArrayNodeCompiler implements NodeCompiler {
+public class ArrayNodeArgsCompiler implements NodeCompiler {
     
-    /** Creates a new instance of ArrayNodeCompiler */
-    public ArrayNodeCompiler() {
+    /** Creates a new instance of ArrayNodeArgsCompiler */
+    public ArrayNodeArgsCompiler() {
     }
     
     public void compile(Node node, Compiler context) {
@@ -36,6 +35,7 @@ public class ArrayNodeCompiler implements NodeCompiler {
         };
         
         context.createObjectArray(arrayNode.childNodes().toArray(), callback);
-        context.createNewArray();
+        // leave as a normal array
     }
+    
 }
