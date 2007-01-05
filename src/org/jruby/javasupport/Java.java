@@ -103,9 +103,7 @@ public class Java {
         } else if (object instanceof RubyBoolean) {
             javaObject = Boolean.valueOf(object.isTrue());
         } else if (object instanceof RubyTime) {
-            long milliseconds = ((RubyNumeric) object.callMethod(recv.getRuntime().getCurrentContext(), "to_i")).getLongValue();
-
-            javaObject = new Date(milliseconds);
+            javaObject = ((RubyTime)object).getJavaDate();
         } else {
             javaObject = object;
         }
