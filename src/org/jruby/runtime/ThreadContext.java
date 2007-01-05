@@ -329,7 +329,12 @@ public class ThreadContext {
     
     private void pushCallFrame(IRubyObject self, IRubyObject[] args, 
             String lastFunc, RubyModule lastClass) {
-        Iter iter = getCurrentFrame().getCallingZSuper() ? getCurrentFrame().getIter() : getCurrentIter();
+        Iter iter = null;
+        if(getCurrentFrame().getCallingZSuper()) {
+            iter = (!getCurrentIter().isNot()) ? getCurrentIter() : getCurrentFrame().getIter();
+        } else {
+            iter = getCurrentIter();
+        }
         pushFrame(new Frame(this, self, args, lastFunc, lastClass, getPosition(), iter, getCurrentBlock()));        
     }
     
