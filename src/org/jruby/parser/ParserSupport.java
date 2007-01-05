@@ -360,7 +360,8 @@ public class ParserSupport {
     public Node attrset(Node receiver, String name) {
         checkExpression(receiver);
 
-        return new AttrAssignNode(receiver.getPosition(), receiver, name + "=", null);
+        return new CallNode(receiver.getPosition(), receiver, name + "=", null);
+        //return new AttrAssignNode(receiver.getPosition(), receiver, name + "=", null);
     }
 
     public void backrefAssignError(Node node) {
