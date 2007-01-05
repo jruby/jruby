@@ -37,6 +37,7 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 
 import org.jruby.TestRegexpTranslator;
+import org.jruby.ast.executable.YARVMachineTest;
 import org.jruby.javasupport.TestJavaClass;
 import org.jruby.javasupport.test.JavaSupportTestSuite;
 import org.jruby.runtime.callback.TestReflectionCallback;
@@ -72,6 +73,7 @@ public class MainTestSuite extends TestSuite {
         suite.addTest(new TestSuite(TestAdoptedThreading.class));
         suite.addTest(new TestSuite(TestRubyArray.class));
         suite.addTest(new TestSuite(TestVariableCreation.class));
+        suite.addTest(new TestSuite(YARVMachineTest.class));
         return suite;
     }
 }

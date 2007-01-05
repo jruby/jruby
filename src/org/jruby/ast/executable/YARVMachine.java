@@ -4,7 +4,9 @@ import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -18,12 +20,13 @@ public class YARVMachine {
         }
     }
     
-    public IRubyObject exec(ThreadContext context, IRubyObject self, Instruction[] bytecodes) {
+    public IRubyObject exec(ThreadContext context, IRubyObject self, StaticScope scope, Instruction[] bytecodes) {
         IRubyObject[] stack = new IRubyObject[50];
         int stackTop = 0;
         stack[stackTop] = context.getRuntime().getNil();
         int ip = 0;
         IRuby runtime = context.getRuntime();
+        context.preRootNode(new DynamicScope(scope, null));
         
         yarvloop: while (ip < bytecodes.length) {
             switch (bytecodes[ip].bytecode) {
