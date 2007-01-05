@@ -21,6 +21,10 @@ testFloat.rb
 testBlock.rb
 testRange.rb
 testString.rb
+testStringScanStress.rb
+testStringEachLineStress.rb
+testStringGsubStress.rb
+testStringSplitStress.rb
 testStringChomp.rb
 testException.rb
 testException2.rb

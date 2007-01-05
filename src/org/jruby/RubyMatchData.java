@@ -118,9 +118,17 @@ public class RubyMatchData extends RubyObject {
         if (n < 0 || n >= getSize() || begin[(int) n] == -1) {
             return getRuntime().getNil();
         }
-
+        // Fix for JRUBY-97: Temporary fix pending 
+        // decision on UTF8-based string implementation.
+        // String#substring reuses the storage of the original string
+        // <http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4513622> 
+        // Wrapping the String#substring in new String prevents this.
+        // This wrapping alone was enough to fix the failing test cases in
+        // JRUBY-97, but at the same time the testcase remained very slow
+        // The additional minor optimizations to RubyString as part of the fix
+        // dramatically improve the performance. 
         return getRuntime().newString(
-        		str.substring(begin[(int) n], end[(int) n]));
+        		new String(str.substring(begin[(int) n], end[(int) n])));
     }
 
     public int matchStartPosition() {

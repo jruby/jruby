@@ -60,6 +60,7 @@ public class RubyString extends RubyObject {
 
 	private StringBuffer value;
     private CharSequence chars;
+	private String stringValue; // remember toString value
 	
     /**
      * All instances of StringMethod currently can be invoked "fast" so we override
@@ -103,9 +104,21 @@ public class RubyString extends RubyObject {
 	public Class getJavaClass() {
 		return String.class;
 	}
-
+	
+	/**
+	 * Remembers toString value, which is expensive for StringBuffer.
+	 */
 	public String toString() {
-		return getValue().toString();
+		if (stringValue == null) 
+			stringValue = getValue().toString();
+		return stringValue;
+	}
+	
+	/**
+	 * This string has been changed, so invalidate stringValue.
+	 */
+	private void stringMutated() {
+		stringValue = null;
 	}
 
 	public static String bytesToString(byte[] bytes) {
@@ -251,6 +264,7 @@ public class RubyString extends RubyObject {
     
 	public RubyString cat(CharSequence str) {
         getMutableValue().append(str);
+        stringMutated();
 		return this;
 	}
 
@@ -276,6 +290,7 @@ public class RubyString extends RubyObject {
 
 	public RubyString reverse_bang() {
         getMutableValue().reverse();
+        stringMutated();
 		return this;
 	}
 
@@ -471,7 +486,7 @@ public class RubyString extends RubyObject {
                 string.setCharAt(i, Character.toLowerCase(c));
             }
         }
-
+        if (changesMade) stringMutated();
         return changesMade ? this : getRuntime().getNil(); 
 	}
 
@@ -495,7 +510,7 @@ public class RubyString extends RubyObject {
 	    String insert = stringArg.convertToString().toString();
 	    
 	    getMutableValue().insert(index, insert);
-	    
+	    stringMutated();
 	    return this;
 	}
 
@@ -1303,6 +1318,12 @@ public class RubyString extends RubyObject {
 		String str = toString();
 		IRubyObject newStr;
 		int offset = 0;
+
+        // Fix for JRUBY-97: Temporary fix pending 
+        // decision on UTF8-based string implementation.
+		// Move toString() call outside loop.
+		String toString = toString();
+		
 		while (beg >= 0) {
 			match = (RubyMatchData) tc.getBackref();
 			sbuf.append(str.substring(offset, beg));
@@ -1310,7 +1331,7 @@ public class RubyString extends RubyObject {
 			taint |= newStr.isTaint();
             sbuf.append(newStr.toString());
 			offset = match.matchEndPosition();
-			beg = pat.search(toString(), offset == beg ? beg + 1 : offset);
+			beg = pat.search(toString, offset == beg ? beg + 1 : offset);
 		}
 
 		sbuf.append(str.substring(offset, str.length()));
@@ -1407,7 +1428,7 @@ public class RubyString extends RubyObject {
         
         getMutableValue().delete(beg, beg + len);
         getMutableValue().insert(beg, replaceWith.toString());
-        
+        stringMutated();
 		return infectBy(replaceWith); 
 	}
 
@@ -1523,7 +1544,8 @@ public class RubyString extends RubyObject {
 				throw getRuntime().newIndexError("string index out of bounds");
 			}
 			if (args[1] instanceof RubyFixnum) {
-                getMutableValue().setCharAt(idx, (char) RubyNumeric.fix2int(args[1])); 
+                getMutableValue().setCharAt(idx, (char) RubyNumeric.fix2int(args[1]));
+                stringMutated();
 			} else {
 				replace(idx, 1, stringValue(args[1]));
 			}
@@ -1616,7 +1638,7 @@ public class RubyString extends RubyObject {
             // zzz -> aaaa
             sbuf.insert(pos, isDigit(c) ? '1' : (isLower(c) ? 'a' : 'A'));
         }
-
+        stringMutated();
         return this;
 	}
 
@@ -1730,10 +1752,15 @@ public class RubyString extends RubyObject {
 		RubyRegexp pattern = RubyRegexp.regexpValue(arg);
 		int start = 0;
         ThreadContext tc = getRuntime().getCurrentContext();
-        
+
+        // Fix for JRUBY-97: Temporary fix pending 
+        // decision on UTF8-based string implementation.
+		// Move toString() call outside loop.
+		String toString = toString();
+
 		if (!tc.isBlockGiven()) {
 			RubyArray ary = getRuntime().newArray();
-			while (pattern.search(toString(), start) != -1) {
+			while (pattern.search(toString, start) != -1) {
 				RubyMatchData md = (RubyMatchData) tc.getBackref();
                 ary.append(md.getSize() == 1 ? md.group(0) : md.subseq(1, md.getSize()));
 
@@ -1746,7 +1773,7 @@ public class RubyString extends RubyObject {
 			return ary;
 		}
 
-		while (pattern.search(toString(), start) != -1) {
+		while (pattern.search(toString, start) != -1) {
 			RubyMatchData md = (RubyMatchData) tc.getBackref();
             tc.yield(md.getSize() == 1 ? md.group(0) : md.subseq(1, md.getSize()));
 
@@ -1871,6 +1898,7 @@ public class RubyString extends RubyObject {
         } 
         
         getMutableValue().delete(end, getValue().length());
+        stringMutated();
 		return this;
 	}
 
@@ -1924,6 +1952,7 @@ public class RubyString extends RubyObject {
             }
             
             getMutableValue().delete(end - removeCount + 1, getValue().length());
+            stringMutated();
             return this;
         }
 
@@ -1941,12 +1970,14 @@ public class RubyString extends RubyObject {
             }
             
             getMutableValue().delete(end - removeCount + 1, getValue().length());
+            stringMutated();
             return this;
         }
         
         // Uncommon case of str.chomp!("xxx")
         if (toString().endsWith(separator)) {
             getMutableValue().delete(getValue().length() - separator.length(), getValue().length());
+            stringMutated();
             return this;
         }
 		return getRuntime().getNil();
@@ -2279,7 +2310,12 @@ public class RubyString extends RubyObject {
 		int start = 0;
         ThreadContext tc = getRuntime().getCurrentContext();
         
-		while (pat.search(toString(), start) != -1) {
+        // Fix for JRUBY-97: Temporary fix pending 
+        // decision on UTF8-based string implementation.
+		// Move toString() call outside loop.
+		String toString = toString();
+		
+		while (pat.search(toString, start) != -1) {
 			RubyMatchData md = (RubyMatchData) tc.getBackref();
 			tc.yield(md.group(0));
 			start = md.matchEndPosition();
@@ -2362,6 +2398,7 @@ public class RubyString extends RubyObject {
     public void setValue(CharSequence value) {
         this.chars = value;
         this.value = null;
+        stringMutated();
     }
 
     /**
