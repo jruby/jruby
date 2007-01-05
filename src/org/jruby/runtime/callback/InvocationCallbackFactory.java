@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.callback;
 
+import org.jruby.util.JRubyClassLoader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -36,13 +37,8 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class InvocationCallbackFactory extends CallbackFactory implements Opcodes {
-    public static class InvokeClassLoader extends ClassLoader {
-        public static final InvokeClassLoader INSTANCE = new InvokeClassLoader();
-
-        public Class define(String name, byte[] code) throws ClassFormatError {
-            return defineClass(name,code,0,code.length);
-        }
-    }
+    // FIXME: This needs to eventually cooperate with classloading stuff runtime-wide
+    private static JRubyClassLoader CLASSLOADER_INSTANCE = new JRubyClassLoader();
 
     private final Class type;
     private final String typePath;
@@ -90,7 +86,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
 
     private Class tryClass(String name) {
         try {
-            return Class.forName(name,true,InvokeClassLoader.INSTANCE);
+            return Class.forName(name,true,CLASSLOADER_INSTANCE);
         } catch(Exception e) {
             return null;
         }
@@ -116,7 +112,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         mv.visitEnd();
         cw.visitEnd();
         byte[] code = cw.toByteArray();
-        return InvokeClassLoader.INSTANCE.define(name, code);
+        return CLASSLOADER_INSTANCE.defineClass(name, code);
     }
 
     public Callback getMethod(String method) {
