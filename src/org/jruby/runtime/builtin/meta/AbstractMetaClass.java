@@ -32,7 +32,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.SimpleReflectedMethod;
 import org.jruby.internal.runtime.methods.FullFunctionReflectedMethod;
-import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -191,8 +191,7 @@ public abstract class AbstractMetaClass extends RubyClass {
 	}
 
 	protected Class builtinClass;
-    protected CallbackFactory fact;
-    protected CallbackFactory sfact;
+    protected MethodFactory mfactory = MethodFactory.createFactory();
 
 	// Only for other core modules/classes
 	protected AbstractMetaClass(IRuby runtime, RubyClass metaClass,
@@ -255,17 +254,17 @@ public abstract class AbstractMetaClass extends RubyClass {
 		Visibility visibility = name.equals("initialize") ? Visibility.PRIVATE
 				: Visibility.PUBLIC;
 
-		addMethod(name, new FullFunctionReflectedMethod(this, builtinClass, java_name,
+		addMethod(name, mfactory.getFullMethod(this, builtinClass, java_name,
 				arity, visibility));
 	}
 
 	public void definePrivateMethod(String name, Arity arity) {
-		addMethod(name, new FullFunctionReflectedMethod(this, builtinClass, name, arity,
+		addMethod(name, mfactory.getFullMethod(this, builtinClass, name, arity,
 				Visibility.PRIVATE));
 	}
 
 	public void definePrivateMethod(String name, Arity arity, String java_name) {
-		addMethod(name, new FullFunctionReflectedMethod(this, builtinClass, java_name,
+		addMethod(name, mfactory.getFullMethod(this, builtinClass, java_name,
 				arity, Visibility.PRIVATE));
 	}
 
@@ -281,17 +280,17 @@ public abstract class AbstractMetaClass extends RubyClass {
 		Visibility visibility = name.equals("initialize") ? Visibility.PRIVATE
 				: Visibility.PUBLIC;
 
-		addMethod(name, new SimpleReflectedMethod(this, builtinClass, java_name,
+		addMethod(name, mfactory.getSimpleMethod(this, builtinClass, java_name,
 				arity, visibility));
 	}
 
 	public void defineFastPrivateMethod(String name, Arity arity) {
-		addMethod(name, new SimpleReflectedMethod(this, builtinClass, name, arity,
+		addMethod(name, mfactory.getSimpleMethod(this, builtinClass, name, arity,
 				Visibility.PRIVATE));
 	}
 
 	public void defineFastPrivateMethod(String name, Arity arity, String java_name) {
-		addMethod(name, new SimpleReflectedMethod(this, builtinClass, java_name,
+		addMethod(name, mfactory.getSimpleMethod(this, builtinClass, java_name,
 				arity, Visibility.PRIVATE));
 	}
 
@@ -309,7 +308,7 @@ public abstract class AbstractMetaClass extends RubyClass {
 
 		getSingletonClass().addMethod(
 				name,
-				new FullFunctionReflectedMethod(this, getClass(), java_name, arity,
+				mfactory.getFullMethod(this, getClass(), java_name, arity,
 						visibility));
 	}
 
@@ -327,7 +326,7 @@ public abstract class AbstractMetaClass extends RubyClass {
 
 		getSingletonClass().addMethod(
 				name,
-				new SimpleReflectedMethod(this, getClass(), java_name, arity,
+				mfactory.getSimpleMethod(this, getClass(), java_name, arity,
 						visibility));
 	}
 

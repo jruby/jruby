@@ -121,4 +121,12 @@ public final class Arity implements Serializable {
     public int hashCode() {
         return value;
     }
+
+    public String toString() {
+        if(isFixed()) {
+            return "Fixed" + required();
+        } else {
+            return "Opt";
+        }
+    }
 }
