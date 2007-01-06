@@ -148,6 +148,8 @@ public class AssignmentVisitor {
             result = multiAssign(context, self, iVisited, (RubyArray) value, check);
             break;
         }
+        default:
+            throw new RuntimeException("Invalid node encountered in interpreter: \"" + node.getClass().getName() + "\", please report this at www.jruby.org");
         }
 
         return result;

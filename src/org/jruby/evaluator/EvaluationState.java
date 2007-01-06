@@ -1584,6 +1584,8 @@ public class EvaluationState {
     
                 return context.callSuper(context.getFrameArgs(), true);
             }
+            default:
+                throw new RuntimeException("Invalid node encountered in interpreter: \"" + node.getClass().getName() + "\", please report this at www.jruby.org");
             }
         } while (true);
     }
