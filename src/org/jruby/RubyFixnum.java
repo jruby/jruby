@@ -46,7 +46,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 public class RubyFixnum extends RubyInteger {
     private long value;
     private static final int BIT_SIZE = 64;
-    public static final long MAX = (1L<<(BIT_SIZE - 2)) - 1;
+    public static final long MAX = (1L<<(BIT_SIZE - 1)) - 1;
     public static final long MIN = -1 * MAX - 1;
     private static final long MAX_MARSHAL_FIXNUM = (1L << 30) - 1;
 
