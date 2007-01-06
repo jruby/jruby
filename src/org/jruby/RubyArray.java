@@ -1023,6 +1023,7 @@ public class RubyArray extends RubyObject implements List {
             result[i] = entry(RubyNumeric.fix2int(args[i]));
             taint |= result[i].isTaint();
         }
+        // TODO: Why was is calling create, which used to skip array initialization?
         IRubyObject ary = ((ArrayMetaClass) getMetaClass()).create(result);
         ary.setTaint(taint);
         return ary;

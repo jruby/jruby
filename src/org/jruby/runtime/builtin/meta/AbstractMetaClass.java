@@ -34,6 +34,7 @@ import org.jruby.internal.runtime.methods.SimpleReflectedMethod;
 import org.jruby.internal.runtime.methods.FullFunctionReflectedMethod;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
@@ -195,27 +196,27 @@ public abstract class AbstractMetaClass extends RubyClass {
 
 	// Only for other core modules/classes
 	protected AbstractMetaClass(IRuby runtime, RubyClass metaClass,
-			RubyClass superClass, SinglyLinkedList parentCRef, String name,
+			RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef, String name,
 			Class builtinClass) {
-		super(runtime, metaClass, superClass, parentCRef, name);
+		super(runtime, metaClass, superClass, allocator, parentCRef, name);
 
 		this.builtinClass = builtinClass;
 	}
 
-	protected AbstractMetaClass(String name, Class builtinClass, RubyClass superClass) {
-		this(name, builtinClass, superClass, superClass.getRuntime().getClass(
+	protected AbstractMetaClass(String name, Class builtinClass, RubyClass superClass, ObjectAllocator allocator) {
+		this(name, builtinClass, superClass, allocator, superClass.getRuntime().getClass(
 				"Object").getCRef(), true);
 	}
 
 	protected AbstractMetaClass(String name, Class builtinClass, RubyClass superClass,
-            SinglyLinkedList parentCRef) {
-		this(name, builtinClass, superClass, parentCRef, false);
+            ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+		this(name, builtinClass, superClass, allocator, parentCRef, false);
 	}
 
 	protected AbstractMetaClass(String name, Class builtinClass, RubyClass superClass,
-            SinglyLinkedList parentCRef, boolean init) {
+            ObjectAllocator allocator, SinglyLinkedList parentCRef, boolean init) {
 		super(superClass.getRuntime(), superClass.getRuntime()
-				.getClass("Class"), superClass, parentCRef, name);
+				.getClass("Class"), superClass, allocator, parentCRef, name);
 
 		assert name != null;
 		assert builtinClass != null;
@@ -238,8 +239,8 @@ public abstract class AbstractMetaClass extends RubyClass {
 	}
 
 	public AbstractMetaClass(IRuby runtime, RubyClass metaClass, RubyClass superClass,
-            SinglyLinkedList parentCRef, String name) {
-		super(runtime, metaClass, superClass, parentCRef, name);
+            ObjectAllocator allocator, SinglyLinkedList parentCRef, String name) {
+		super(runtime, metaClass, superClass, allocator, parentCRef, name);
 	}
 
 	public void defineMethod(String name, Arity arity) {

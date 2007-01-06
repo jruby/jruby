@@ -48,25 +48,18 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public class TimeMetaClass extends ObjectMetaClass {
     public TimeMetaClass(IRuby runtime) {
-        super("Time", RubyTime.class, runtime.getObject());
-    }
-        
-    public TimeMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
-        super(name, RubyTime.class, superClass, parentCRef);
+        super("Time", RubyTime.class, runtime.getObject(), TIME_ALLOCATOR);
     }
 
-    public TimeMetaClass(String name, Class clazz, RubyClass superClass) {
-        super(name, clazz, superClass);
-    }
-
-    public TimeMetaClass(String name, Class clazz, RubyClass superClass, SinglyLinkedList parentCRef) {
-        super(name, clazz, superClass, parentCRef);
+    public TimeMetaClass(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+        super(name, RubyTime.class, superClass, allocator, parentCRef);
     }
     
     protected class TimeMeta extends Meta {
@@ -139,16 +132,18 @@ public class TimeMetaClass extends ObjectMetaClass {
     }
         
     public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
-        return new NumericMetaClass(name, this, parentCRef);
+        return new TimeMetaClass(name, this, TIME_ALLOCATOR, parentCRef);
     }
 
-    protected IRubyObject allocateObject() {
-        RubyTime instance = new RubyTime(getRuntime(), this);
+    private static ObjectAllocator TIME_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            RubyTime instance = new RubyTime(runtime, klass);
 
-        instance.setMetaClass(this);
-        
-        return instance;
-    }
+            instance.setMetaClass(klass);
+
+            return instance;
+        }
+    };
     
     public IRubyObject s_new() {
         RubyTime time = new RubyTime(getRuntime(), this);

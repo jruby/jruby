@@ -41,6 +41,7 @@ import org.jruby.RubyString;
 import org.jruby.RubyString.StringMethod;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -49,11 +50,11 @@ import org.jruby.util.collections.SinglyLinkedList;
 
 public class StringMetaClass extends ObjectMetaClass {
     public StringMetaClass(IRuby runtime) {
-        super("String", RubyString.class, runtime.getObject());
+        super("String", RubyString.class, runtime.getObject(), STRING_ALLOCATOR);
     }
 
-    private StringMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
-        super(name, RubyString.class, superClass, parentCRef);
+    private StringMetaClass(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+        super(name, RubyString.class, superClass, allocator, parentCRef);
     }
 
     public StringMethod hash = new StringMethod(this, Arity.noArguments(), Visibility.PUBLIC) {
@@ -280,12 +281,16 @@ public class StringMetaClass extends ObjectMetaClass {
     }
 
     public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
-        return new StringMetaClass(name, this, parentCRef);
+        return new StringMetaClass(name, this, STRING_ALLOCATOR, parentCRef);
     }
 
-    protected IRubyObject allocateObject() {
-        RubyString newString = getRuntime().newString("");
-		newString.setMetaClass(this);
-		return newString;
-    }
+    private static ObjectAllocator STRING_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            RubyString newString = runtime.newString("");
+            
+            newString.setMetaClass(klass);
+            
+            return newString;
+        }
+    };
 }

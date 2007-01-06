@@ -33,16 +33,17 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public class FixnumMetaClass extends IntegerMetaClass {
 	public FixnumMetaClass(IRuby runtime) {
-		super("Fixnum", RubyFixnum.class, runtime.getClass("Integer"));
+		super("Fixnum", RubyFixnum.class, runtime.getClass("Integer"), FIXNUM_ALLOCATOR);
 	}
 	
-	public FixnumMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
-		super(name, RubyFixnum.class, superClass, parentCRef);
+	public FixnumMetaClass(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+		super(name, RubyFixnum.class, superClass, allocator, parentCRef);
 	}
 	
 	protected class FixnumMeta extends Meta {
@@ -81,7 +82,7 @@ public class FixnumMetaClass extends IntegerMetaClass {
 	}
 
 	public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
-        return new FixnumMetaClass(name, this, parentCRef);
+        return new FixnumMetaClass(name, this, FIXNUM_ALLOCATOR, parentCRef);
 	}
 
     public RubyInteger induced_from(IRubyObject number) {
@@ -93,5 +94,13 @@ public class FixnumMetaClass extends IntegerMetaClass {
         return ((IntegerMetaClass) getRuntime().getClass("Integer")).induced_from(number);
     }
 
+    private static ObjectAllocator FIXNUM_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            RubyFixnum instance = runtime.newFixnum(0);
 
+            instance.setMetaClass(klass);
+
+            return instance;
+        }
+    };
 }

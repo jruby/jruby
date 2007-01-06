@@ -30,16 +30,17 @@ package org.jruby.runtime.builtin.meta;
 import org.jruby.IRuby;
 import org.jruby.RubyBinding;
 import org.jruby.RubyClass;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public class BindingMetaClass extends ObjectMetaClass {
     public BindingMetaClass(IRuby runtime) {
-        super("Binding", RubyBinding.class, runtime.getObject());
+        super("Binding", RubyBinding.class, runtime.getObject(), BINDING_ALLOCATOR);
     }
     
-	public BindingMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
-		super(name, RubyBinding.class, superClass, parentCRef);
+	public BindingMetaClass(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+		super(name, RubyBinding.class, superClass, allocator, parentCRef);
 	}
 
 	protected class BindingMeta extends Meta {
@@ -52,22 +53,16 @@ public class BindingMetaClass extends ObjectMetaClass {
 	}
 	
 	public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
-		return new BindingMetaClass(name, this, parentCRef);
+		return new BindingMetaClass(name, this, BINDING_ALLOCATOR, parentCRef);
 	}
 
-	protected IRubyObject allocateObject() {
-        RubyBinding instance = getRuntime().newBinding();
-        
-		instance.setMetaClass(this);
-		
-		return instance;
-	}
+    private static ObjectAllocator BINDING_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            RubyBinding instance = runtime.newBinding();
 
-    public IRubyObject newInstance(IRubyObject[] args) {
-        RubyBinding instance = RubyBinding.newBinding(getRuntime());
-        
-        instance.callInit(args);
-       
-        return instance;
-    }
+            instance.setMetaClass(klass);
+
+            return instance;
+        }
+    };
 }

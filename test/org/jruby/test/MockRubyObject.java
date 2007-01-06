@@ -12,7 +12,8 @@ public class MockRubyObject extends RubyObject {
 	private static class TestMeta extends RubyClass {
 
 		protected TestMeta(IRuby runtime) {
-			super(runtime, runtime.getObject());
+            // This null doesn't feel right
+			super(runtime, runtime.getObject(), null);
 		}
 	}
 	

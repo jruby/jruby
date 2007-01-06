@@ -12,16 +12,17 @@ import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public class HashMetaClass extends ObjectMetaClass {
     public HashMetaClass(IRuby runtime) {
-        super("Hash", RubyHash.class, runtime.getObject());
+        super("Hash", RubyHash.class, runtime.getObject(), HASH_ALLOCATOR);
     }
     
-	public HashMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
-		super(name, RubyHash.class, superClass, parentCRef);
+	public HashMetaClass(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+		super(name, RubyHash.class, superClass, allocator, parentCRef);
 	}
 
 	protected class HashMeta extends Meta {
@@ -86,20 +87,23 @@ public class HashMetaClass extends ObjectMetaClass {
 	}
 	
 	public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
-		return new HashMetaClass(name, this, parentCRef);
+		return new HashMetaClass(name, this, HASH_ALLOCATOR, parentCRef);
 	}
 
-	protected IRubyObject allocateObject() {
-        RubyHash instance = new RubyHash(getRuntime());
-        
-		instance.setMetaClass(this);
-		
-		return instance;
-	}
+    private static ObjectAllocator HASH_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            RubyHash instance = new RubyHash(runtime);
+
+            instance.setMetaClass(klass);
+
+            return instance;
+        }
+    };
 
     public IRubyObject newInstance(IRubyObject[] args) {
+        // FIXME: This is pretty ugly, but I think it's being done to capture the block. Confirm that.
     	IRuby runtime = getRuntime();
-        RubyHash hash = (RubyHash)allocateObject();
+        RubyHash hash = (RubyHash)HASH_ALLOCATOR.allocate(runtime, this);
 
         // A block to represent 'default' value for unknown values
         if (runtime.getCurrentContext().isBlockGiven()) {
@@ -113,7 +117,7 @@ public class HashMetaClass extends ObjectMetaClass {
     }
     
     public IRubyObject create(IRubyObject[] args) {
-        RubyHash hash = (RubyHash)allocateObject();
+        RubyHash hash = (RubyHash)HASH_ALLOCATOR.allocate(getRuntime(), this);
 
         if (args.length == 1) {
             hash.setValueMap(new HashMap(((RubyHash) args[0]).getValueMap()));

@@ -34,17 +34,18 @@ import org.jruby.RubyClass;
 import org.jruby.RubySymbol;
 import org.jruby.RubySymbol.SymbolMethod;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public class SymbolMetaClass extends ObjectMetaClass {
     public SymbolMetaClass(IRuby runtime) {
-        super("Symbol", RubySymbol.class, runtime.getObject());
+        super("Symbol", RubySymbol.class, runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
     }
     
-	public SymbolMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
-		super(name, RubySymbol.class, superClass, parentCRef);
+	public SymbolMetaClass(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+		super(name, RubySymbol.class, superClass, allocator, parentCRef);
 	}
 
     public SymbolMethod equal = new SymbolMethod(this, Arity.singleArgument(), Visibility.PUBLIC) {
@@ -83,11 +84,10 @@ public class SymbolMetaClass extends ObjectMetaClass {
 	}
 	
 	public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
-		return new SymbolMetaClass(name, this, parentCRef);
+		return new SymbolMetaClass(name, this, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, parentCRef);
 	}
     
     public IRubyObject all_symbols() {
         return getRuntime().newArray(getRuntime().getSymbolTable().all_symbols());
     }
-
 }

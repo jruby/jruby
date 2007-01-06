@@ -163,9 +163,10 @@ public class RubyStruct extends RubyObject {
         }
 
         RubyClass newStruct;
+        RubyClass superClass = (RubyClass)recv;
 
         if (name == null) {
-            newStruct = new RubyClass((RubyClass) recv);
+            newStruct = new RubyClass(superClass, superClass.getAllocator());
         } else {
             if (!IdUtil.isConstant(name)) {
                 throw recv.getRuntime().newNameError("identifier " + name + " needs to be constant", name);

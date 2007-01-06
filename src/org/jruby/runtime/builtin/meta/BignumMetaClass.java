@@ -27,19 +27,22 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.builtin.meta;
 
+import java.math.BigInteger;
 import org.jruby.IRuby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public class BignumMetaClass extends ObjectMetaClass {
     public BignumMetaClass(IRuby runtime) {
-        super("Bignum", RubyBignum.class, runtime.getClass("Integer"));
+        super("Bignum", RubyBignum.class, runtime.getClass("Integer"), BIGNUM_ALLOCATOR);
     }
     
-	public BignumMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
-		super(name, RubyBignum.class, superClass, parentCRef);
+	public BignumMetaClass(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+		super(name, RubyBignum.class, superClass, allocator, parentCRef);
 	}
 
 	protected class BignumMeta extends Meta {
@@ -75,6 +78,16 @@ public class BignumMetaClass extends ObjectMetaClass {
 	}
 	
 	public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
-		return new BignumMetaClass(name, this, parentCRef);
+		return new BignumMetaClass(name, this, BIGNUM_ALLOCATOR, parentCRef);
 	}
+    
+    public static ObjectAllocator BIGNUM_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            RubyBignum instance = RubyBignum.newBignum(runtime, BigInteger.ZERO);
+            
+            instance.setMetaClass(klass);
+            
+            return instance;
+        }
+    };
 }

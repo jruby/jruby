@@ -11,28 +11,17 @@ import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public class ModuleMetaClass extends ObjectMetaClass {
 	public ModuleMetaClass(IRuby runtime, RubyClass superClass) {
-		super(runtime, null, superClass, runtime.getObject().getCRef(), "Module", RubyModule.class);
+		super(runtime, null, superClass, MODULE_ALLOCATOR, runtime.getObject().getCRef(), "Module", RubyModule.class);
 	}
-
-    public ModuleMetaClass(IRuby runtime) {
-        super("Module", RubyModule.class, runtime.getObject());
-    }
     
-	public ModuleMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
-		super(name, RubyModule.class, superClass, parentCRef);
-	}
-	
-	protected ModuleMetaClass(String name, Class builtinClass, RubyClass superClass) {
-		super(name, builtinClass, superClass);
-	}
-	
-	protected ModuleMetaClass(String name, Class builtinClass, RubyClass superClass, SinglyLinkedList parentCRef) {
-		super(name, builtinClass, superClass, parentCRef);
+	public ModuleMetaClass(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+		super(name, RubyModule.class, superClass, allocator, parentCRef);
 	}
 
 	protected class ModuleMeta extends Meta {
@@ -98,16 +87,18 @@ public class ModuleMetaClass extends ObjectMetaClass {
 	}
 	
 	public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
-		return new ModuleMetaClass(name, this, parentCRef);
+		return new ModuleMetaClass(name, this, MODULE_ALLOCATOR, parentCRef);
 	}
 
-	protected IRubyObject allocateObject() {
-        RubyModule instance = RubyModule.newModule(getRuntime(), null);
-        
-		instance.setMetaClass(this);
-		
-		return instance;
-	}
+    private static ObjectAllocator MODULE_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            RubyModule instance = RubyModule.newModule(runtime, null);
+
+            instance.setMetaClass(klass);
+
+            return instance;
+        }
+    };
     
     protected void defineModuleFunction(String name, Arity arity) {
         definePrivateMethod(name, arity);

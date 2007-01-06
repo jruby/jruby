@@ -34,24 +34,25 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyInteger;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public class IntegerMetaClass extends NumericMetaClass {
 	public IntegerMetaClass(IRuby runtime) {
-        super("Integer", RubyInteger.class, runtime.getClass("Numeric"));
+        super("Integer", RubyInteger.class, runtime.getClass("Numeric"), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 	}
 	
-	public IntegerMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
-        super(name, RubyInteger.class, superClass, parentCRef);
+	public IntegerMetaClass(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+        super(name, RubyInteger.class, superClass, allocator, parentCRef);
     }
 	
-    public IntegerMetaClass(String name, Class clazz, RubyClass superClass) {
-    	super(name, clazz, superClass);
+    public IntegerMetaClass(String name, Class clazz, RubyClass superClass, ObjectAllocator allocator) {
+    	super(name, clazz, superClass, allocator);
     }
 
-    public IntegerMetaClass(String name, Class clazz, RubyClass superClass, SinglyLinkedList parentCRef) {
-    	super(name, clazz, superClass, parentCRef);
+    public IntegerMetaClass(String name, Class clazz, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+    	super(name, clazz, superClass, allocator, parentCRef);
     }
     
     protected class IntegerMeta extends Meta {
@@ -76,12 +77,7 @@ public class IntegerMetaClass extends NumericMetaClass {
     }
 
 	public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
-        return new IntegerMetaClass(name, this, parentCRef);
-	}
-
-	// This cannot be allocated directly
-	protected IRubyObject allocateObject() {
-		return null;
+        return new IntegerMetaClass(name, this, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, parentCRef);
 	}
 	
     public RubyInteger induced_from(IRubyObject number) {

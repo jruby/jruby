@@ -33,6 +33,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
 
@@ -44,25 +45,25 @@ import org.jruby.util.collections.SinglyLinkedList;
 public class ObjectMetaClass extends AbstractMetaClass {
     // Only for creating ObjectMetaClass directly
     public ObjectMetaClass(IRuby runtime) {
-    	super(runtime, null /*Would be Class if it existed yet */, null, null, "Object");
+    	super(runtime, null /*Would be Class if it existed yet */, null, OBJECT_ALLOCATOR, null, "Object");
     	
     	this.builtinClass = RubyObject.class;
     }
     
     // Only for other core modules/classes
-    protected ObjectMetaClass(IRuby runtime, RubyClass metaClass, RubyClass superClass, 
+    protected ObjectMetaClass(IRuby runtime, RubyClass metaClass, RubyClass superClass, ObjectAllocator allocator, 
             SinglyLinkedList parentCRef, String name, Class builtinClass) {
-    	super(runtime, metaClass, superClass, parentCRef, name);
+    	super(runtime, metaClass, superClass, allocator, parentCRef, name);
     	
     	this.builtinClass = builtinClass;
     }
     
-    protected ObjectMetaClass(String name, Class builtinClass, RubyClass superClass) {
-        this(name, builtinClass, superClass, superClass.getRuntime().getClass("Object").getCRef());
+    protected ObjectMetaClass(String name, Class builtinClass, RubyClass superClass, ObjectAllocator allocator) {
+        this(name, builtinClass, superClass, allocator, superClass.getRuntime().getClass("Object").getCRef());
     }
 
-    protected ObjectMetaClass(String name, Class builtinClass, RubyClass superClass, SinglyLinkedList parentCRef) {
-        super(superClass.getRuntime(), superClass.getRuntime().getClass("Class"), superClass, parentCRef, name);
+    protected ObjectMetaClass(String name, Class builtinClass, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+        super(superClass.getRuntime(), superClass.getRuntime().getClass("Class"), superClass, allocator, parentCRef, name);
 
         assert builtinClass != null;
         //assert RubyObject.class.isAssignableFrom(builtinClass) || RubyObject.class == builtinClass: "builtinClass have to be a subclass of RubyObject.";
@@ -88,14 +89,15 @@ public class ObjectMetaClass extends AbstractMetaClass {
     protected Meta getMeta() {
     	return new ObjectMeta();
     }
+    
+    private static ObjectAllocator OBJECT_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            IRubyObject instance = new RubyObject(runtime, klass);
+            instance.setMetaClass(klass);
 
-	protected IRubyObject allocateObject() {
-        RubyObject instance = new RubyObject(getRuntime(), this);
-        
-		instance.setMetaClass(this);
-		
-		return instance;
-	}
+            return instance;
+        }
+    };
     
     public void initializeClass() {
         getMeta().initializeClass();

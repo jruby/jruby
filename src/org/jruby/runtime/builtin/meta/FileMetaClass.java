@@ -49,6 +49,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOModes;
@@ -65,11 +66,11 @@ public class FileMetaClass extends IOMetaClass {
     public static final PrintfFormat OCTAL_FORMATTER = new PrintfFormat("%o"); 
     
     public FileMetaClass(IRuby runtime) {
-        super("File", RubyFile.class, runtime.getClass("IO"));
+        super("File", RubyFile.class, runtime.getClass("IO"), FILE_ALLOCATOR);
     }
 
-    public FileMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
-        super(name, RubyFile.class, superClass, parentCRef);
+    public FileMetaClass(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+        super(name, RubyFile.class, superClass, allocator, parentCRef);
     }
 
     protected class FileMeta extends Meta {
@@ -190,12 +191,18 @@ public class FileMetaClass extends IOMetaClass {
     }
 
 	public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
-		return new FileMetaClass(name, this, parentCRef);
+		return new FileMetaClass(name, this, FILE_ALLOCATOR, parentCRef);
 	}
-
-	public IRubyObject allocateObject() {
-		return new RubyFile(getRuntime(), this);
-	}
+    
+    private static ObjectAllocator FILE_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            RubyFile instance = new RubyFile(runtime, klass);
+            
+            instance.setMetaClass(klass);
+            
+            return instance;
+        }
+    };
 	
     public IRubyObject basename(IRubyObject[] args) {
     	checkArgumentCount(args, 1, 2);

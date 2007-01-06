@@ -31,16 +31,17 @@ import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyProc;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public class ProcMetaClass extends ObjectMetaClass {
     public ProcMetaClass(IRuby runtime) {
-        super("Proc", RubyProc.class, runtime.getObject());
+        super("Proc", RubyProc.class, runtime.getObject(), PROC_ALLOCATOR);
     }
     
-	public ProcMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
-		super(name, RubyProc.class, superClass, parentCRef);
+	public ProcMetaClass(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+		super(name, RubyProc.class, superClass, allocator, parentCRef);
 	}
 
 	protected class ProcMeta extends Meta {
@@ -50,8 +51,6 @@ public class ProcMetaClass extends ObjectMetaClass {
 			defineMethod("call", Arity.optional(), "call");
 			defineAlias("[]", "call");
 			defineMethod("to_proc", Arity.noArguments(), "to_proc");
-	
-	        defineSingletonMethod("new", Arity.optional(), "newInstance"); 
 		}
 	};
 	
@@ -60,22 +59,16 @@ public class ProcMetaClass extends ObjectMetaClass {
 	}
 	
 	public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
-		return new ProcMetaClass(name, this, parentCRef);
+		return new ProcMetaClass(name, this, PROC_ALLOCATOR, parentCRef);
 	}
+    
+    private static ObjectAllocator PROC_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            RubyProc instance = runtime.newProc();
 
-	protected IRubyObject allocateObject() {
-        RubyProc instance = getRuntime().newProc();
-        
-		instance.setMetaClass(this);
-		
-		return instance;
-	}
+            instance.setMetaClass(klass);
 
-    public IRubyObject newInstance(IRubyObject[] args) {
-        IRubyObject instance = allocateObject();
-        
-        instance.callInit(args);
-       
-        return instance;
-    }
+            return instance;
+        }
+    };
 }

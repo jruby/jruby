@@ -31,16 +31,17 @@ import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public class ArrayMetaClass extends ObjectMetaClass {
     public ArrayMetaClass(IRuby runtime) {
-        super("Array", RubyArray.class, runtime.getObject());
+        super("Array", RubyArray.class, runtime.getObject(), ARRAY_ALLOCATOR);
     }
     
-	public ArrayMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
-		super(name, RubyArray.class, superClass, parentCRef);
+	public ArrayMetaClass(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+		super(name, RubyArray.class, superClass, allocator, parentCRef);
 	}
 
 	protected class ArrayMeta extends Meta {
@@ -130,29 +131,23 @@ public class ArrayMetaClass extends ObjectMetaClass {
 	}
 	
 	public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
-		return new ArrayMetaClass(name, this, parentCRef);
+		return new ArrayMetaClass(name, this, ARRAY_ALLOCATOR, parentCRef);
 	}
+    
+    private static ObjectAllocator ARRAY_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            // FIXME: not sure how much I like this call back to the runtime...
+            RubyArray instance = runtime.newArray();
 
-	protected IRubyObject allocateObject() {
-        RubyArray instance = getRuntime().newArray();
-        
-		instance.setMetaClass(this);
-		
-		return instance;
-	}
+            instance.setMetaClass(klass);
 
-    public IRubyObject newInstance(IRubyObject[] args) {
-        RubyArray instance = (RubyArray)allocateObject();
-        
-        instance.setMetaClass(this);
-        instance.callInit(args);
-       
-        return instance;
-    }
+            return instance;
+        }
+    };
     
     public IRubyObject create(IRubyObject[] args) {
-        RubyArray array = (RubyArray)allocateObject();
-        array.setMetaClass(this);
+        // FIXME: Why is this calling allocate directly instead of the normal newInstance process? Performance?
+        RubyArray array = (RubyArray)ARRAY_ALLOCATOR.allocate(getRuntime(), this);
         
         if (args.length >= 1) {
             for (int i = 0; i < args.length; i++) {

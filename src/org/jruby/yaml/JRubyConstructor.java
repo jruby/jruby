@@ -182,7 +182,7 @@ public class JRubyConstructor extends ConstructorImpl {
             }
         }
         final RubyClass theCls = (RubyClass)objClass;
-        final RubyObject oo = (RubyObject)theCls.allocate();
+        final RubyObject oo = (RubyObject)theCls.getAllocator().allocate(runtime, theCls);
         final Map vars = (Map)(ctor.constructMapping(node));
         for(final Iterator iter = vars.keySet().iterator();iter.hasNext();) {
             final IRubyObject key = (IRubyObject)iter.next();
@@ -201,7 +201,7 @@ public class JRubyConstructor extends ConstructorImpl {
             }
         }
         final RubyClass theCls = (RubyClass)objClass;
-        final RubyObject oo = (RubyObject)theCls.allocate();
+        final RubyObject oo = (RubyObject)theCls.getAllocator().allocate(runtime, theCls);
         final Map vars = (Map)(ctor.constructMapping(node));
         for(final Iterator iter = vars.keySet().iterator();iter.hasNext();) {
             final IRubyObject key = (IRubyObject)iter.next();
@@ -220,7 +220,7 @@ public class JRubyConstructor extends ConstructorImpl {
             }
         }
         final RubyClass theCls = (RubyClass)objClass;
-        final RubyObject oo = (RubyObject)theCls.allocate();
+        final RubyObject oo = (RubyObject)theCls.getAllocator().allocate(runtime, theCls);
         final List vars = (List)(ctor.constructSequence(node));
         for(final Iterator iter = vars.iterator();iter.hasNext();) {
             oo.callMethod(oo.getRuntime().getCurrentContext(),"<<", new IRubyObject[]{(IRubyObject)iter.next()});;

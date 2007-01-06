@@ -49,6 +49,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyIO;
 import org.jruby.RubyKernel;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOHandler;
@@ -57,19 +58,19 @@ import org.jruby.util.collections.SinglyLinkedList;
 public class IOMetaClass extends ObjectMetaClass {
 
     public IOMetaClass(IRuby runtime) {
-        this("IO", RubyIO.class, runtime.getObject());
+        this("IO", RubyIO.class, runtime.getObject(), IO_ALLOCATOR);
     }
 
-    public IOMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
-        this(name, RubyIO.class, superClass, parentCRef);
+    public IOMetaClass(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+        this(name, RubyIO.class, superClass, allocator, parentCRef);
     }
     
-    public IOMetaClass(String name, Class clazz, RubyClass superClass) {
-    	super(name, clazz, superClass);
+    public IOMetaClass(String name, Class clazz, RubyClass superClass, ObjectAllocator allocator) {
+    	super(name, clazz, superClass, allocator);
     }
 
-    public IOMetaClass(String name, Class clazz, RubyClass superClass, SinglyLinkedList parentCRef) {
-    	super(name, clazz, superClass, parentCRef);
+    public IOMetaClass(String name, Class clazz, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+    	super(name, clazz, superClass, allocator, parentCRef);
     }
 
     protected class IOMeta extends Meta {
@@ -146,12 +147,14 @@ public class IOMetaClass extends ObjectMetaClass {
     }
 
     public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
-        return new IOMetaClass(name, this, parentCRef);
+        return new IOMetaClass(name, this, IO_ALLOCATOR, parentCRef);
     }
-
-    public IRubyObject allocateObject() {
-        return new RubyIO(getRuntime(), this); 
-    }
+    
+    private static ObjectAllocator IO_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return new RubyIO(runtime, klass); 
+        }
+    };
 
     /** rb_io_s_foreach
      * 

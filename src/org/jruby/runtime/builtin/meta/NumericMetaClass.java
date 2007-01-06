@@ -31,24 +31,25 @@ import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyNumeric;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public class NumericMetaClass extends ObjectMetaClass {
 	public NumericMetaClass(IRuby runtime) {
-        super("Numeric", RubyNumeric.class, runtime.getObject());
+        super("Numeric", RubyNumeric.class, runtime.getObject(), NUMERIC_ALLOCATOR);
     }
 	    
-	public NumericMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
-        super(name, RubyNumeric.class, superClass, parentCRef);
+	public NumericMetaClass(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+        super(name, RubyNumeric.class, superClass, allocator, parentCRef);
     }
 
-    public NumericMetaClass(String name, Class clazz, RubyClass superClass) {
-    	super(name, clazz, superClass);
+    public NumericMetaClass(String name, Class clazz, RubyClass superClass, ObjectAllocator allocator) {
+    	super(name, clazz, superClass, allocator);
     }
 
-    public NumericMetaClass(String name, Class clazz, RubyClass superClass, SinglyLinkedList parentCRef) {
-    	super(name, clazz, superClass, parentCRef);
+    public NumericMetaClass(String name, Class clazz, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+    	super(name, clazz, superClass, allocator, parentCRef);
     }
     
     protected class NumericMeta extends Meta {
@@ -93,14 +94,17 @@ public class NumericMetaClass extends ObjectMetaClass {
     }
 		
     public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
-        return new NumericMetaClass(name, this, parentCRef);
+        // FIXME: this and the other newSubClass impls should be able to defer to the default impl
+        return new NumericMetaClass(name, this, NUMERIC_ALLOCATOR, parentCRef);
     }
 
-	protected IRubyObject allocateObject() {
-		RubyNumeric instance = getRuntime().newNumeric();
+    private static ObjectAllocator NUMERIC_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            RubyNumeric instance = runtime.newNumeric();
 
-		instance.setMetaClass(this);
-		
-        return instance;
-    }
+            instance.setMetaClass(klass);
+
+            return instance;
+        }
+    };
 }

@@ -29,13 +29,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public class MetaClass extends RubyClass {
 
-    public MetaClass(IRuby runtime, RubyClass superClass, SinglyLinkedList parentCRef) {
-        super(runtime, runtime.getClass("Class"), superClass, parentCRef, null);
+    public MetaClass(IRuby runtime, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+        super(runtime, runtime.getClass("Class"), superClass, allocator, parentCRef, null);
     }
  
     public boolean isSingleton() {

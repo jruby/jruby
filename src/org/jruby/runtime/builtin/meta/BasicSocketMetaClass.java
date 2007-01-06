@@ -34,6 +34,7 @@ import org.jruby.RubyBasicSocket;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyBoolean;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Arity;
 import org.jruby.util.collections.SinglyLinkedList;
@@ -41,19 +42,19 @@ import org.jruby.util.collections.SinglyLinkedList;
 public class BasicSocketMetaClass extends IOMetaClass {
 
     public BasicSocketMetaClass(IRuby runtime) {
-        super("BasicSocket", RubyBasicSocket.class, runtime.getClass("IO")); 
+        super("BasicSocket", RubyBasicSocket.class, runtime.getClass("IO"), BASICSOCKET_ALLOCATOR); 
     }
 
-    public BasicSocketMetaClass(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
-        this(name, RubyBasicSocket.class, superClass, parentCRef);
+    public BasicSocketMetaClass(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+        this(name, RubyBasicSocket.class, superClass, allocator, parentCRef);
     }
     
-    public BasicSocketMetaClass(String name, Class clazz, RubyClass superClass) {
-    	super(name, clazz, superClass);
+    public BasicSocketMetaClass(String name, Class clazz, RubyClass superClass, ObjectAllocator allocator) {
+    	super(name, clazz, superClass, allocator);
     }
     
-    public BasicSocketMetaClass(String name, Class clazz, RubyClass superClass, SinglyLinkedList parentCRef) {
-        super(name, clazz, superClass, parentCRef);
+    public BasicSocketMetaClass(String name, Class clazz, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+        super(name, clazz, superClass, allocator, parentCRef);
     }
 
     protected class BasicSocketMeta extends Meta {
@@ -84,7 +85,7 @@ public class BasicSocketMetaClass extends IOMetaClass {
     }
 
     public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
-        return new BasicSocketMetaClass(name, this, parentCRef);
+        return new BasicSocketMetaClass(name, this, BASICSOCKET_ALLOCATOR, parentCRef);
     }
 
     public RubyClass newSubClass(String name, RubyModule parent) {
@@ -93,8 +94,14 @@ public class BasicSocketMetaClass extends IOMetaClass {
         
         return basicSocketMetaClass;
     }
-    
-    public IRubyObject allocateObject() {
-        return new RubyBasicSocket(getRuntime(), this); 
-    }
+
+    private static ObjectAllocator BASICSOCKET_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            RubyBasicSocket instance = new RubyBasicSocket(runtime, klass);
+
+            instance.setMetaClass(klass);
+
+            return instance;
+        }
+    };
 }

@@ -846,7 +846,8 @@ public class RubyObject implements Cloneable, IRubyObject {
     // Hack: allow RubyModule and RubyClass to override the allocation and return the the correct Java instance
     // Cloning a class object doesn't work otherwise and I don't really understand why --sma
     protected IRubyObject doClone() {
-    	return getMetaClass().getRealClass().allocate();
+        RubyClass realClass = getMetaClass().getRealClass();
+    	return realClass.getAllocator().allocate(getRuntime(), realClass);
     }
 
     public IRubyObject display(IRubyObject[] args) {
