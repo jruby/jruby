@@ -115,7 +115,7 @@ public class RubyProc extends RubyObject {
         		block.arity().checkArity(getRuntime(), args);
         	}
         	
-        	return block.call(args, self);
+        	return block.call(context, args, self);
         } catch (JumpException je) {
         	if (je.getJumpType() == JumpException.JumpType.BreakJump) {
         		if (block.isLambda) {

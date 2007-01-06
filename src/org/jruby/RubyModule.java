@@ -990,7 +990,7 @@ public class RubyModule extends RubyObject {
         RubyModule newModule = new RubyModule(runtime, runtime.getClass("Module"), null, parentCRef, name);
         ThreadContext tc = runtime.getCurrentContext();
         if (tc.isBlockGiven()) {
-            tc.yieldCurrentBlock(null, newModule, newModule, false);
+            tc.getFrameBlock().yield(tc, null, newModule, newModule, false);
         }
         return newModule;
     }

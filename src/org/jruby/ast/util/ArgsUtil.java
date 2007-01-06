@@ -31,6 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast.util;
 
+import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -40,7 +41,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public final class ArgsUtil {
     
-    public static IRubyObject[] arrayify(IRubyObject value) {
+    public static IRubyObject[] convertToJavaArray(IRubyObject value) {
         if (value == null) {
         	return IRubyObject.NULL_ARRAY;
         }
@@ -50,6 +51,36 @@ public final class ArgsUtil {
         }
         
         return new IRubyObject[] { value };
+    }
+
+    /**
+     * This name may be a bit misleading, since this also attempts to coerce
+     * array behavior using to_ary.
+     * 
+     * @param runtime The JRuby runtime
+     * @param value The value to convert
+     * @param coerce Whether to coerce using to_ary or just wrap with an array
+     */
+    public static RubyArray convertToRubyArray(IRuby runtime, IRubyObject value, boolean coerce) {
+        if (value == null) {
+            return runtime.newArray(0);
+        }
+        
+        if (!coerce) {
+            // don't attempt to coerce to array, just wrap and return
+            return runtime.newArray(value);
+        }
+        
+        // FIXME: I don't like this, but all consumers of this method do the same cast.
+        IRubyObject newValue = value.convertToType("Array", "to_ary", false);
+
+        if (newValue.isNil()) {
+            return runtime.newArray(value);
+        }
+        
+        // empirically it appears that to_ary coersions always return array or nil, so this
+        // should always be an array by now.
+        return (RubyArray)newValue;
     }
     
     /**

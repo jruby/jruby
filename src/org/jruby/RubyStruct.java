@@ -190,7 +190,7 @@ public class RubyStruct extends RubyObject {
         
         ThreadContext context = recv.getRuntime().getCurrentContext();
         if (context.isBlockGiven()) {
-            recv.getRuntime().getCurrentContext().yieldCurrentBlock(null, newStruct, newStruct, false);
+            context.getFrameBlock().yield(context, null, newStruct, newStruct, false);
         }
 
         return newStruct;

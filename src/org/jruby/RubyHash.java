@@ -356,7 +356,7 @@ public class RubyHash extends RubyObject implements Map {
         for (Iterator iter = entryIterator(); iter.hasNext();) {
             checkRehashing();
             Map.Entry entry = (Map.Entry) iter.next();
-            context.yieldCurrentBlock(getRuntime().newArray((IRubyObject)entry.getKey(), (IRubyObject)entry.getValue()), null, null, aValue);
+            context.getFrameBlockOrRaise().yield(context, getRuntime().newArray((IRubyObject)entry.getKey(), (IRubyObject)entry.getValue()), null, null, aValue);
         }
         return this;
     }
@@ -481,7 +481,7 @@ public class RubyHash extends RubyObject implements Map {
 		for (Iterator iter = keyIterator(); iter.hasNext();) {
 			IRubyObject key = (IRubyObject) iter.next();
 			IRubyObject value = (IRubyObject) valueMap.get(key);
-			IRubyObject shouldDelete = context.yieldCurrentBlock(getRuntime().newArray(key, value), null, null, true);
+			IRubyObject shouldDelete = context.getFrameBlockOrRaise().yield(context, getRuntime().newArray(key, value), null, null, true);
 			if (shouldDelete.isTrue()) {
 				valueMap.remove(key);
 				isModified = true;

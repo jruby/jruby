@@ -29,6 +29,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.evaluator;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
@@ -44,6 +47,7 @@ import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.NodeTypes;
+import org.jruby.ast.StarNode;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -141,11 +145,48 @@ public class AssignmentVisitor {
             if (!(value instanceof RubyArray)) {
                 value = RubyArray.newArray(runtime, value);
             }
-            result = context.mAssign(self, iVisited, (RubyArray) value, check);
+            result = multiAssign(context, self, iVisited, (RubyArray) value, check);
             break;
         }
         }
 
         return result;
+    }
+    
+    public static IRubyObject multiAssign(ThreadContext context, IRubyObject self, MultipleAsgnNode node, RubyArray value, boolean callAsProc) {
+        IRuby runtime = context.getRuntime();
+        // Assign the values.
+        int valueLen = value.getLength();
+        int varLen = node.getHeadNode() == null ? 0 : node.getHeadNode().size();
+        
+        Iterator iter = node.getHeadNode() != null ? node.getHeadNode().iterator() : Collections.EMPTY_LIST.iterator();
+        for (int i = 0; i < valueLen && iter.hasNext(); i++) {
+            Node lNode = (Node) iter.next();
+            assign(context, self, lNode, value.entry(i), callAsProc);
+        }
+
+        if (callAsProc && iter.hasNext()) {
+            throw runtime.newArgumentError("Wrong # of arguments (" + valueLen + " for " + varLen + ")");
+        }
+
+        Node argsNode = node.getArgsNode();
+        if (argsNode != null) {
+            if (argsNode instanceof StarNode) {
+                // no check for '*'
+            } else if (varLen < valueLen) {
+                ArrayList newList = new ArrayList(value.getList().subList(varLen, valueLen));
+                assign(context, self, argsNode, runtime.newArray(newList), callAsProc);
+            } else {
+                assign(context, self, argsNode, runtime.newArray(0), callAsProc);
+            }
+        } else if (callAsProc && valueLen < varLen) {
+            throw runtime.newArgumentError("Wrong # of arguments (" + valueLen + " for " + varLen + ")");
+        }
+
+        while (iter.hasNext()) {
+            assign(context, self, (Node)iter.next(), runtime.getNil(), callAsProc);
+        }
+        
+        return value;
     }
 }

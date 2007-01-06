@@ -1566,10 +1566,9 @@ public class EvaluationState {
                 if (iVisited.getArgsNode() == null) {
                     result = null;
                 }
-    
-                return  context.yieldCurrentBlock(result, null, null,
-                        iVisited.getCheckState());
                 
+                return context.getFrameBlockOrRaise().yield(context, result, null, null, iVisited.getCheckState());
+                                
             }
             case NodeTypes.ZARRAYNODE: {
                 return runtime.newArray();
@@ -1885,7 +1884,7 @@ public class EvaluationState {
             return argsArray;
         }
 
-        return ArgsUtil.arrayify(evalInternal(context, node, self));
+        return ArgsUtil.convertToJavaArray(evalInternal(context, node, self));
     }
 
     private static RubyModule getEnclosingModule(ThreadContext context, Node node, IRubyObject self) {

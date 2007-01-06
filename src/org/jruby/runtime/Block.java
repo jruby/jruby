@@ -32,8 +32,14 @@
 package org.jruby.runtime;
 
 import org.jruby.IRuby;
+import org.jruby.RubyArray;
 import org.jruby.RubyModule;
+import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
+import org.jruby.ast.NodeTypes;
+import org.jruby.ast.util.ArgsUtil;
+import org.jruby.evaluator.AssignmentVisitor;
+import org.jruby.exceptions.JumpException;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
@@ -44,7 +50,7 @@ import org.jruby.util.collections.StackElement;
  * @author  jpetersen
  */
 public class Block implements StackElement {
-    private Node var;
+    private Node varNode;
     private ICallable method;
     private IRubyObject self;
     private Frame frame;
@@ -62,9 +68,9 @@ public class Block implements StackElement {
 
     private Block next;
 
-    public static Block createBlock(ThreadContext context, Node var, DynamicScope dynamicScope, ICallable method, 
+    public static Block createBlock(ThreadContext context, Node varNode, DynamicScope dynamicScope, ICallable method, 
             IRubyObject self) {
-        return new Block(var,
+        return new Block(varNode,
                          method,
                          self,
                          context.getCurrentFrame(),
@@ -76,7 +82,7 @@ public class Block implements StackElement {
     }
 
     public Block(
-        Node var,
+        Node varNode,
         ICallable method,
         IRubyObject self,
         Frame frame,
@@ -88,7 +94,7 @@ public class Block implements StackElement {
     	
         //assert method != null;
 
-        this.var = var;
+        this.varNode = varNode;
         this.method = method;
         this.self = self;
         this.frame = frame;
@@ -136,9 +142,8 @@ public class Block implements StackElement {
                 context.getRubyClass(), iter, extraScope);
     }
 
-    public IRubyObject call(IRubyObject[] args, IRubyObject replacementSelf) {
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf) {
         IRuby runtime = self.getRuntime();
-        ThreadContext context = runtime.getCurrentContext();
 
         Block newBlock;
         
@@ -153,14 +158,124 @@ public class Block implements StackElement {
             }
         }
 
-        return context.yieldSpecificBlock(newBlock, runtime.newArray(args), null, null, true);
+        context.preProcBlockCall();
+        try {
+            return newBlock.yield(context, runtime.newArray(args), null, null, true);
+        } finally {
+            context.postProcBlockCall();
+        }
+    }
+
+    /**
+     * Yield to this block, usually passed to the current call.
+     * 
+     * @param value The value to yield, either a single value or an array of values
+     * @param self The current self
+     * @param klass
+     * @param yieldProc
+     * @param aValue
+     * @return
+     */
+    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean aValue) {
+        IRuby runtime = context.getRuntime();
+        
+        if (klass == null) {
+            self = getSelf();
+        }
+        
+        context.preYieldSpecificBlock(this, klass);
+
+        try {
+            
+            // FIXME: during refactoring, it was determined that all calls to yield are passing false for yieldProc; is this still needed?
+            IRubyObject[] args = getBlockArgs(context, value, self, false, aValue, getVarNode());
+        
+            // This while loop is for restarting the block call in case a 'redo' fires.
+            while (true) {
+                try {
+                    IRubyObject result = method.call(context, self, args);
+
+                    return result;
+                } catch (JumpException je) {
+                    if (je.getJumpType() == JumpException.JumpType.RedoJump) {
+                        // do nothing, allow loop to redo
+                    } else {
+                        throw je;
+                    }
+                }
+            }
+            
+        } catch (JumpException je) {
+        	if (je.getJumpType() == JumpException.JumpType.NextJump) {
+                
+                // A 'next' is like a local return from the block, ending this call or yield.
+	            IRubyObject nextValue = (IRubyObject)je.getPrimaryData();
+                
+	            return nextValue == null ? runtime.getNil() : nextValue;
+        	} else {
+        		throw je;
+        	}
+        } finally {
+            context.postYield(this);
+        }
+    }
+
+    private IRubyObject[] getBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self, boolean callAsProc, boolean valueIsArray, Node varNode) {
+        //FIXME: block arg handling is mucked up in strange ways and NEED to
+        // be fixed. Especially with regard to Enumerable. See RubyEnumerable#eachToList too.
+        if(varNode == null) {
+            return new IRubyObject[]{value};
+        }
+        
+        IRuby runtime = self.getRuntime();
+        
+        switch (varNode.nodeId) {
+            case NodeTypes.ZEROARGNODE:
+                // Better not have arguments for a no-arg block.
+                if (callAsProc && arrayLength(value) != 0) { 
+                    throw runtime.newArgumentError("wrong # of arguments(" + 
+                                                   ((RubyArray)value).getLength() + "for 0)");
+                }
+                break;
+            case NodeTypes.MULTIPLEASGNNODE:
+                if (!valueIsArray) {
+                    value = ArgsUtil.convertToRubyArray(runtime, value, ((MultipleAsgnNode)varNode).getHeadNode() != null);
+                }
+
+                value = AssignmentVisitor.multiAssign(context, self, (MultipleAsgnNode)varNode, (RubyArray)value, callAsProc);
+                break;
+            default:
+                if (valueIsArray) {
+                    int length = arrayLength(value);
+
+                    switch (length) {
+                        case 0:
+                            value = runtime.getNil();
+                            break;
+                        case 1:
+                            value = ((RubyArray)value).first(IRubyObject.NULL_ARRAY);
+                            break;
+                        default:
+                            runtime.getWarnings().warn("multiple values for a block parameter (" + length + " for 1)");
+                    }
+                } else if (value == null) { 
+                    runtime.getWarnings().warn("multiple values for a block parameter (0 for 1)");
+                }
+
+                AssignmentVisitor.assign(context, self, varNode, value, callAsProc);
+        }
+        return ArgsUtil.convertToJavaArray(value);
+    }
+    
+    private int arrayLength(IRubyObject node) {
+        return node instanceof RubyArray ? ((RubyArray)node).getLength() : 0;
     }
 
     public Block cloneBlock() {
         // We clone dynamic scope because this will be a new instance of a block.  Any previously
         // captured instances of this block may still be around and we do not want to start
         // overwriting those values when we create a new one.
-        Block newBlock = new Block(var, method, self, frame, cref, scope, klass, iter, ((dynamicScope == null)?null:dynamicScope.cloneScope()));
+        Block newBlock = new Block(varNode, method, self, frame, cref, scope, klass, iter, ((dynamicScope == null)?null:dynamicScope.cloneScope()));
         
         newBlock.isLambda = isLambda;
 
@@ -275,10 +390,10 @@ public class Block implements StackElement {
     }
 
     /**
-     * Gets the var.
+     * Gets the variable node for the block.
      * @return Returns a Node
      */
-    public Node getVar() {
-        return var;
+    public Node getVarNode() {
+        return varNode;
     }
 }

@@ -57,7 +57,7 @@ public class RubyEnumerable {
         public ListAddBlockCallback(IRuby runtime) {
             this.runtime = runtime;
         }
-        public IRubyObject call(IRubyObject[] iargs, IRubyObject iself) {
+        public IRubyObject call(ThreadContext context, IRubyObject[] iargs, IRubyObject iself) {
             if(iargs.length > 1) {
                 arr.add(runtime.newArray(iargs));
             } else {

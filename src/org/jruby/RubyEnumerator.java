@@ -135,7 +135,7 @@ public class RubyEnumerator extends RubyObject {
             this.slice = RubyArray.newArray(runtime, sliceSize);
         }
 
-        public IRubyObject call(IRubyObject[] args, IRubyObject replacementSelf) {
+        public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf) {
             if (args.length > 1) {
                 slice.append(RubyArray.newArray(runtime, args));
             } else {
@@ -144,7 +144,7 @@ public class RubyEnumerator extends RubyObject {
 
             if (slice.getLength() == sliceSize) {
                 //no need to dup slice as we create a new one momentarily
-                clientBlock.call(new IRubyObject[] { slice }, null);
+                clientBlock.call(context, new IRubyObject[] { slice }, null);
 
                 slice = RubyArray.newArray(runtime, sliceSize);
             }
@@ -159,8 +159,8 @@ public class RubyEnumerator extends RubyObject {
         }
 
         /** Pass slice dregs on to client blcok */
-        public void yieldLeftovers() {
-            clientBlock.call(new IRubyObject[] { slice }, null);
+        public void yieldLeftovers(ThreadContext context) {
+            clientBlock.call(context, new IRubyObject[] { slice }, null);
         }
     }
 
@@ -179,7 +179,7 @@ public class RubyEnumerator extends RubyObject {
             this.cont = RubyArray.newArray(runtime, contSize);
         }
 
-        public IRubyObject call(IRubyObject[] args, IRubyObject replacementSelf) {
+        public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf) {
             if (cont.getLength() == contSize) {
                 cont.shift();
             }
@@ -192,7 +192,7 @@ public class RubyEnumerator extends RubyObject {
 
             if (cont.getLength() == contSize) {
                 //dup so we are in control of the array
-                clientBlock.call(new IRubyObject[] { cont.dup() }, null);
+                clientBlock.call(context, new IRubyObject[] { cont.dup() }, null);
             }
 
             return runtime.getNil();
@@ -286,7 +286,7 @@ public class RubyEnumerator extends RubyObject {
             RubyEnumerable.callEach(tc, self, self.getMetaClass(), sliceBlock);
 
             if (sliceBlock.hasLeftovers()) {
-                sliceBlock.yieldLeftovers();
+                sliceBlock.yieldLeftovers(tc);
             }
 
             return runtime.getNil();

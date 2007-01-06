@@ -664,7 +664,7 @@ public class RubyObject implements Cloneable, IRubyObject {
                 try {
                     IRubyObject valueInYield = args[0];
                     IRubyObject selfInYield = args[0];
-                    return context.yieldCurrentBlock(valueInYield, selfInYield, context.getRubyClass(), false);
+                    return context.getFrameBlockOrRaise().yield(context, valueInYield, selfInYield, context.getRubyClass(), false);
                     //TODO: Should next and return also catch here?
                 } catch (JumpException je) {
                 	if (je.getJumpType() == JumpException.JumpType.BreakJump) {

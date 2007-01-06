@@ -44,6 +44,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyThread;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
+import org.jruby.ast.NodeTypes;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.ZeroArgNode;
 import org.jruby.ast.util.ArgsUtil;
@@ -170,7 +171,7 @@ public class ThreadContext {
         return previous.isBlockGiven();
     }
     
-    private void restoreBlockState(Block block, RubyModule klass) {
+    public void restoreBlockState(Block block, RubyModule klass) {
         //System.out.println("IN RESTORE BLOCK (" + block.getDynamicScope() + ")");
         pushFrame(block.getFrame());
 
@@ -398,6 +399,18 @@ public class ThreadContext {
         return getCurrentFrame().getSelf();
     }
     
+    public Block getFrameBlock() {
+        return getCurrentFrame().getBlockArg();
+    }
+    
+    public Block getFrameBlockOrRaise() {
+        if (! isBlockGiven()) {
+            throw runtime.newLocalJumpError("yield called out of block");
+        }
+        
+        return getCurrentFrame().getBlockArg();
+    }
+    
     public void setFrameSelf(IRubyObject self) {
         getCurrentFrame().setSelf(self);
     }
@@ -587,187 +600,14 @@ public class ThreadContext {
         return callSuper(args, false);
     }
 
-    public IRubyObject yield(IRubyObject value) {
-        return yieldCurrentBlock(value, null, null, false);
-    }
-
     /**
      * Yield to the block passed to the current frame.
      * 
      * @param value The value to yield, either a single value or an array of values
-     * @param self The current self
-     * @param klass
-     * @param yieldProc
-     * @param aValue
-     * @return
+     * @return The result of the yield
      */
-    public IRubyObject yieldCurrentBlock(IRubyObject value, IRubyObject self, RubyModule klass, boolean aValue) {
-        if (! isBlockGiven()) {
-            throw runtime.newLocalJumpError("yield called out of block");
-        }
-        
-        Block currentBlock = preYieldCurrentBlock(klass);
-
-        try {
-            return yieldInternal(currentBlock, value, self, klass, aValue);
-        } catch (JumpException je) {
-        	if (je.getJumpType() == JumpException.JumpType.NextJump) {
-	            IRubyObject nextValue = (IRubyObject)je.getPrimaryData();
-	            return nextValue == null ? runtime.getNil() : nextValue;
-        	} else {
-        		throw je;
-        	}
-        } finally {
-            postYield(currentBlock);
-        }
-    }
-
-    /**
-     * Yield to a specific block.
-     * 
-     * @param yieldBlock The block to which to yield
-     * @param value
-     * @param self
-     * @param klass
-     * @param yieldProc
-     * @param aValue
-     * @return
-     */
-    public IRubyObject yieldSpecificBlock(Block yieldBlock, IRubyObject value, IRubyObject self, RubyModule klass, boolean aValue) {
-        preProcBlockCall();
-        preYieldSpecificBlock(yieldBlock, klass);
-        try {
-            return yieldInternal(yieldBlock, value, self, klass, aValue);
-        } catch (JumpException je) {
-            if (je.getJumpType() == JumpException.JumpType.NextJump) {
-                IRubyObject nextValue = (IRubyObject)je.getPrimaryData();
-                return nextValue == null ? runtime.getNil() : nextValue;
-            } else {
-                throw je;
-            }
-        } finally {
-            postYield(yieldBlock);
-            postProcBlockCall();
-        }
-    }
-    
-    private IRubyObject yieldInternal(Block yieldBlock, IRubyObject value, IRubyObject self, RubyModule klass, boolean aValue) {
-        if (klass == null) {
-            self = yieldBlock.getSelf();
-        }
-        
-        // FIXME: during refactoring, it was determined that all calls to yield are passing false for yieldProc; is this still needed?
-        IRubyObject[] args = getBlockArgs(value, self, false, aValue, yieldBlock);
-        
-        while (true) {
-            try {
-                IRubyObject result = yieldBlock.getMethod().call(runtime.getCurrentContext(), self, args);
-                
-                return result;
-            } catch (JumpException je) {
-                if (je.getJumpType() == JumpException.JumpType.RedoJump) {
-                    // do nothing, allow loop to redo
-                } else {
-                    throw je;
-                }
-            }
-        }
-    }
-
-    private IRubyObject[] getBlockArgs(IRubyObject value, IRubyObject self, boolean yieldProc, boolean aValue, Block currentBlock) {
-        Node blockVar = currentBlock.getVar();
-        //FIXME: block arg handling is mucked up in strange ways and NEED to
-        // be fixed. Especially with regard to Enumerable. See RubyEnumerable#eachToList too.
-        if(blockVar == null) {
-            return new IRubyObject[]{value};
-        }
-        if (blockVar instanceof ZeroArgNode) {
-            // Better not have arguments for a no-arg block.
-            if (yieldProc && arrayLength(value) != 0) { 
-                throw runtime.newArgumentError("wrong # of arguments(" + 
-                                               ((RubyArray)value).getLength() + "for 0)");
-            }
-        } else if (blockVar instanceof MultipleAsgnNode) {
-            if (!aValue) {
-                value = sValueToMRHS(value, ((MultipleAsgnNode)blockVar).getHeadNode());
-            }
-
-            value = mAssign(self, (MultipleAsgnNode)blockVar, (RubyArray)value, yieldProc);
-        } else {
-            if (aValue) {
-                int length = arrayLength(value);
-                
-                if (length == 0) {
-                    value = runtime.getNil();
-                } else if (length == 1) {
-                    value = ((RubyArray)value).first(IRubyObject.NULL_ARRAY);
-                } else {
-                    runtime.getWarnings().warn("multiple values for a block parameter (" + length + " for 1)");
-                }
-            } else if (value == null) { 
-                runtime.getWarnings().warn("multiple values for a block parameter (0 for 1)");
-            }
-
-            AssignmentVisitor.assign(this, getFrameSelf(), blockVar, value, yieldProc); 
-        }
-        return ArgsUtil.arrayify(value);
-    }
-    
-    public IRubyObject mAssign(IRubyObject self, MultipleAsgnNode node, RubyArray value, boolean pcall) {
-        // Assign the values.
-        int valueLen = value.getLength();
-        int varLen = node.getHeadNode() == null ? 0 : node.getHeadNode().size();
-        
-        Iterator iter = node.getHeadNode() != null ? node.getHeadNode().iterator() : Collections.EMPTY_LIST.iterator();
-        for (int i = 0; i < valueLen && iter.hasNext(); i++) {
-            Node lNode = (Node) iter.next();
-            AssignmentVisitor.assign(this, getFrameSelf(), lNode, value.entry(i), pcall);
-        }
-
-        if (pcall && iter.hasNext()) {
-            throw runtime.newArgumentError("Wrong # of arguments (" + valueLen + " for " + varLen + ")");
-        }
-
-        if (node.getArgsNode() != null) {
-            if (node.getArgsNode() instanceof StarNode) {
-                // no check for '*'
-            } else if (varLen < valueLen) {
-                ArrayList newList = new ArrayList(value.getList().subList(varLen, valueLen));
-                AssignmentVisitor.assign(this, getFrameSelf(), node.getArgsNode(), runtime.newArray(newList), pcall);
-            } else {
-                AssignmentVisitor.assign(this, getFrameSelf(), node.getArgsNode(), runtime.newArray(0), pcall);
-            }
-        } else if (pcall && valueLen < varLen) {
-            throw runtime.newArgumentError("Wrong # of arguments (" + valueLen + " for " + varLen + ")");
-        }
-
-        while (iter.hasNext()) {
-            AssignmentVisitor.assign(this, getFrameSelf(), (Node)iter.next(), runtime.getNil(), pcall);
-        }
-        
-        return value;
-    }
-
-    private IRubyObject sValueToMRHS(IRubyObject value, Node leftHandSide) {
-        if (value == null) {
-            return runtime.newArray(0);
-        }
-        
-        if (leftHandSide == null) {
-            return runtime.newArray(value);
-        }
-        
-        IRubyObject newValue = value.convertToType("Array", "to_ary", false);
-
-        if (newValue.isNil()) {
-            return runtime.newArray(value);
-        }
-        
-        return newValue;
-    }
-    
-    private int arrayLength(IRubyObject node) {
-        return node instanceof RubyArray ? ((RubyArray)node).getLength() : 0;
+    public IRubyObject yield(IRubyObject value) {
+        return getFrameBlockOrRaise().yield(this, value, null, null, false);
     }
 
     public void pollThreadEvents() {
@@ -1143,16 +983,8 @@ public class ThreadContext {
     public void postProcBlockCall() {
         clearInBlock();
     }
-
-    private Block preYieldCurrentBlock(RubyModule klass) {
-        Block currentBlock = getCurrentFrame().getBlockArg();
-
-        restoreBlockState(currentBlock, klass);
-
-        return currentBlock;
-    }
     
-    private void preYieldSpecificBlock(Block specificBlock, RubyModule klass) {
+    public void preYieldSpecificBlock(Block specificBlock, RubyModule klass) {
         restoreBlockState(specificBlock, klass);
     }
 
