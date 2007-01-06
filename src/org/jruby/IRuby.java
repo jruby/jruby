@@ -39,6 +39,15 @@ public interface IRuby {
 	 */
 	public CacheMap getCacheMap();
 
+    /**
+     * The contents of the runtimeInformation map are dumped with the JVM exits if
+     * JRuby has been invoked via the Main class. Otherwise these contents can be used
+     * by embedders to track development-time runtime information such as profiling
+     * or logging data during execution.
+     * 
+     * @return the runtimeInformation map
+     * @see org.jruby.Main#runInterpreter
+     */
     public Map getRuntimeInformation();
     
 	/**

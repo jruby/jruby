@@ -502,7 +502,10 @@ public final class Ruby implements IRuby {
     public CacheMap getCacheMap() {
         return cacheMap;
     }
-    
+
+    /**
+     * @see org.jruby.IRuby#getRuntimeInformation
+     */
     public Map getRuntimeInformation() {
         return runtimeInformation == null ? runtimeInformation = new Hashtable() : runtimeInformation;
     }

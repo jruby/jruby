@@ -150,6 +150,9 @@ public class Main {
         final IRuby runtime = Ruby.newInstance(in, out, err, commandline.isObjectSpaceEnabled());
         runtime.setEncoding(commandline.getEncoding());
         
+        // Add a shutdown hook that dumps the contents of the runtimeInformation map.
+        // This map can be used at development-time to log profiling information
+        // that must be updated as the execution runs.
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {
                 if (!runtime.getRuntimeInformation().isEmpty()) {
