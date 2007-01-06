@@ -307,7 +307,9 @@ public final class Ruby implements IRuby {
         	} 
 
             throw je;
-		}
+		} finally {
+            getObjectSpace().finishFinalizers();
+        }
     }
 
     public IRubyObject compileAndRun(Node node) {

@@ -43,6 +43,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFloat;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.ast.Node;
 import org.jruby.runtime.CallType;
@@ -353,4 +354,6 @@ public interface IRubyObject {
      * @return the object wrapped.
      */
     Object dataGetStruct();
+
+    RubyFixnum id();
 }

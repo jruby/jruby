@@ -31,6 +31,7 @@
 package org.jruby.runtime;
 
 import org.jruby.RubyModule;
+import org.jruby.RubyProc;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.WeakIdentityHashMap;
 
@@ -95,6 +96,110 @@ public class ObjectSpace {
             identities.remove(new Long(ref.id()));
     }
 
+    private Map finalizers = new HashMap();
+    private Map weakRefs = new HashMap();
+    private List finalizersToRun = new ArrayList();
+
+    private Thread finalizerThread = new Thread(new Runnable() {
+            public void run() {
+                synchronized(finalizersToRun) {
+                    while(true) {
+                        while(finalizersToRun.isEmpty()) {
+                            try {
+                                finalizersToRun.wait();
+                            } catch(InterruptedException e) {
+                            }
+                        }
+                        while(!finalizersToRun.isEmpty()) {
+                            ((Runnable)finalizersToRun.remove(0)).run();
+                        }
+                    }
+                }
+            }
+        });
+
+    {
+        finalizerThread.setDaemon(true);
+        finalizerThread.start();
+    }
+
+
+    private class FinalizerEntry implements Runnable {
+        private long id;
+        private RubyProc proc;
+        private IRubyObject fid;
+        public FinalizerEntry(IRubyObject obj, long id, RubyProc proc) {
+            this.id = id;
+            this.proc = proc;
+            this.fid = proc.getRuntime().newFixnum(id);
+            synchronized(ObjectSpace.this) {
+                FinalizerWeakReferenceListNode node = new FinalizerWeakReferenceListNode(obj,deadReferences,top,this);
+                Long key = new Long(id);
+                List refl = (List)weakRefs.get(key);
+                if(null == refl) {
+                    refl = new ArrayList();
+                    weakRefs.put(key,refl);
+                }
+                refl.add(node);
+                top = node;
+            }
+        }
+
+        public void finalize(FinalizerWeakReferenceListNode obj) {
+            synchronized(ObjectSpace.this) {
+                List refl = (List)weakRefs.get(new Long(id));
+                refl.remove(obj);
+                obj.setRan();
+            }
+            finalize();
+        }
+
+        public void finalize() {
+            synchronized(finalizersToRun) {
+                finalizersToRun.add(this);
+                finalizersToRun.notifyAll();
+            }
+        }
+
+        public void run() {
+            proc.call(new IRubyObject[]{fid});
+        }
+    }
+
+    public void finishFinalizers() {
+        for(Iterator iter = finalizers.keySet().iterator();iter.hasNext();) {
+            Object key = iter.next();
+            for(Iterator iter2 = ((List)finalizers.get(key)).iterator();iter2.hasNext();) {
+                ((FinalizerEntry)iter2.next()).finalize();
+            }
+        } 
+        synchronized(finalizersToRun) {
+            while(!finalizersToRun.isEmpty()) {
+                finalizersToRun.notifyAll();
+            }
+        } 
+    }
+
+    public synchronized void addFinalizer(IRubyObject obj, long id, RubyProc proc) {
+        List fins = (List)finalizers.get(new Long(id));
+        if(fins == null) {
+            fins = new ArrayList();
+            finalizers.put(new Long(id),fins);
+        }
+        fins.add(new FinalizerEntry(obj,id,proc));
+    }    
+
+    public synchronized void removeFinalizers(long id) {
+        finalizers.remove(new Long(id));
+        List refl = (List)weakRefs.get(new Long(id));
+        if(null != refl) {
+            for(Iterator iter = refl.iterator();iter.hasNext();) {
+                ((FinalizerWeakReferenceListNode)(iter.next())).setRan();
+            }
+        }
+        weakRefs.remove(new Long(id));
+    }
+
     public synchronized void add(IRubyObject object) {
         cleanup();
         top = new WeakReferenceListNode(object, deadReferences, top);
@@ -123,7 +228,11 @@ public class ObjectSpace {
                 Object obj = null;
                 while (iter.hasNext()) {
                     WeakReferenceListNode node = (WeakReferenceListNode)iter.next();
-                    
+
+                    if(node instanceof FinalizerWeakReferenceListNode) {
+                        continue;
+                    }
+
                     obj = node.get();
                     
                     if (obj != null) break;
@@ -165,6 +274,24 @@ public class ObjectSpace {
                     next.prev = prev;
                 }
             }
+        }
+    }
+
+    private class FinalizerWeakReferenceListNode extends WeakReferenceListNode {
+        private FinalizerEntry entry;
+        private boolean ran = false;
+        public FinalizerWeakReferenceListNode(Object ref, ReferenceQueue queue, WeakReferenceListNode next, FinalizerEntry entry) {
+            super(ref, queue, next);
+            this.entry = entry;
+        }
+        public void remove() {
+            super.remove();
+            if(!ran) {
+                entry.finalize(this);
+            }
+        }
+        public void setRan() {
+            this.ran = true;
         }
     }
 

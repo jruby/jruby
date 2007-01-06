@@ -56,17 +56,26 @@ public class RubyObjectSpace {
         return objectSpaceModule;
     }
 
-    // FIXME: Figure out feasibility of this...
     public static IRubyObject define_finalizer(IRubyObject recv, IRubyObject[] args) {
-        // Put in to fake tempfile.rb out.
-        recv.getRuntime().getWarnings().warn("JRuby does not currently support defining finalizers");
+        RubyProc proc = null;
+        if(recv.checkArgumentCount(args,1,2) == 2) {
+            if(args[1] instanceof RubyProc) {
+                proc = (RubyProc)args[1];
+            } else {
+                proc = (RubyProc)args[1].convertToType("Proc","to_proc",true);
+            }
+        } else {
+            proc = (RubyProc)RubyProc.newProc(recv.getRuntime(),false);
+        }
+        IRubyObject obj = args[0];
+        long id = RubyNumeric.fix2long(obj.id());
+        recv.getRuntime().getObjectSpace().addFinalizer(obj,id,proc);
         return recv;
     }
 
-    // FIXME: Figure out feasibility of this...
     public static IRubyObject undefine_finalizer(IRubyObject recv, IRubyObject[] args) {
-        // Put in to fake other stuff out.
-        recv.getRuntime().getWarnings().warn("JRuby does not currently support defining finalizers");
+        recv.checkArgumentCount(args,1,1);
+        recv.getRuntime().getObjectSpace().removeFinalizers(RubyNumeric.fix2long(args[0].id()));
         return recv;
     }
 
