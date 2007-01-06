@@ -7,6 +7,7 @@ import java.io.PrintStream;
 import java.io.Reader;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.jruby.ast.Node;
@@ -38,6 +39,8 @@ public interface IRuby {
 	 */
 	public CacheMap getCacheMap();
 
+    public Map getRuntimeInformation();
+    
 	/**
 	 * Evaluates a script and returns a RubyObject.
 	 */

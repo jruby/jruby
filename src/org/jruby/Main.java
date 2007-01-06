@@ -147,8 +147,21 @@ public class Main {
     private int runInterpreter(CommandlineParser commandline) {
         Reader reader = commandline.getScriptSource();
         String filename = commandline.displayedFileName();
-        IRuby runtime = Ruby.newInstance(in, out, err, commandline.isObjectSpaceEnabled());
+        final IRuby runtime = Ruby.newInstance(in, out, err, commandline.isObjectSpaceEnabled());
         runtime.setEncoding(commandline.getEncoding());
+        
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            public void run() {
+                if (!runtime.getRuntimeInformation().isEmpty()) {
+                    System.err.println("Runtime information dump:");
+                
+                    for (Iterator iter = runtime.getRuntimeInformation().keySet().iterator(); iter.hasNext();) {
+                        Object key = iter.next();
+                        System.err.println("[" + key + "]: " + runtime.getRuntimeInformation().get(key));
+                    }
+                }
+            }
+        });
 
         try {
         	runInterpreter(runtime, reader, filename);

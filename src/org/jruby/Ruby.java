@@ -48,6 +48,7 @@ import java.io.StringReader;
 import java.security.AccessControlException;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Stack;
 
@@ -118,6 +119,7 @@ public final class Ruby implements IRuby {
     
 	private CacheMap cacheMap = new CacheMap();
     private ThreadService threadService = new ThreadService(this);
+    private Hashtable runtimeInformation;
 
     private int stackTraces = 0;
 
@@ -499,6 +501,10 @@ public final class Ruby implements IRuby {
      */
     public CacheMap getCacheMap() {
         return cacheMap;
+    }
+    
+    public Map getRuntimeInformation() {
+        return runtimeInformation == null ? runtimeInformation = new Hashtable() : runtimeInformation;
     }
 
     /** rb_define_global_const

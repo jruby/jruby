@@ -7,6 +7,7 @@ import java.io.PrintStream;
 import java.io.Reader;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.jruby.IRuby;
@@ -701,6 +702,10 @@ public class BaseMockRuby implements IRuby {
     public String getEncoding() { return null; }
 
     public Profile getProfile() {
+        return null;
+    }
+    
+    public Map getRuntimeInformation() {
         return null;
     }
 }
