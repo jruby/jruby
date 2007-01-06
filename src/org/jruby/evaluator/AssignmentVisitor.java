@@ -32,6 +32,7 @@ package org.jruby.evaluator;
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
+import org.jruby.ast.AttrAssignNode;
 import org.jruby.ast.CallNode;
 import org.jruby.ast.ClassVarAsgnNode;
 import org.jruby.ast.ClassVarDeclNode;
@@ -57,6 +58,23 @@ public class AssignmentVisitor {
         IRuby runtime = context.getRuntime();
         
         switch (node.nodeId) {
+        case NodeTypes.ATTRASSIGNNODE: {
+            AttrAssignNode iVisited = (AttrAssignNode) node;
+            
+            IRubyObject receiver = EvaluationState.eval(context, iVisited.getReceiverNode(), self);
+            
+            // If reciever is self then we do the call the same way as vcall
+            CallType callType = (receiver == self ? CallType.VARIABLE : CallType.NORMAL);
+
+            if (iVisited.getArgsNode() == null) { // attribute set.
+                receiver.callMethod(context, iVisited.getName(), new IRubyObject[] {value}, callType);
+            } else { // element set
+                RubyArray args = (RubyArray)EvaluationState.eval(context, iVisited.getArgsNode(), self);
+                args.append(value);
+                receiver.callMethod(context, iVisited.getName(), args.toJavaArray(), callType);
+            }
+            break;
+        }
         case NodeTypes.CALLNODE: {
             CallNode iVisited = (CallNode)node;
             
