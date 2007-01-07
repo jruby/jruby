@@ -307,8 +307,6 @@ public final class Ruby implements IRuby {
         	} 
 
             throw je;
-		} finally {
-            getObjectSpace().finishFinalizers();
         }
     }
 
@@ -1300,6 +1298,7 @@ public final class Ruby implements IRuby {
             
             proc.call(IRubyObject.NULL_ARRAY);
         }
+        getObjectSpace().finishFinalizers();
     }
     
     // new factory methods ------------------------------------------------------------------------
