@@ -105,7 +105,11 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     }
 
     private String getReturnName(Class type, String method, Class[] args) throws Exception {
-        return ci(type.getMethod(method,args).getReturnType());
+        String t = ci(type.getMethod(method,args).getReturnType());
+        if("void".equalsIgnoreCase(t)) {
+            throw new IllegalArgumentException("Method " + method + " has a void return type. This is not allowed in JRuby.");
+        }
+        return t;
     }
 
     private DynamicMethod getMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility, String sup) {
@@ -155,6 +159,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             }
             
             return (DynamicMethod)c.getConstructor(new Class[]{RubyModule.class, Arity.class, Visibility.class}).newInstance(new Object[]{implementationClass,arity,visibility});
+        } catch(IllegalArgumentException e) {
+            throw e;
         } catch(Exception e) {
             return null;
         }

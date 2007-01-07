@@ -68,7 +68,11 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     }
 
     private String getReturnName(String method, Class[] args) throws Exception {
-        return type.getMethod(method,args).getReturnType().getName().replace('.','/');
+        String t = type.getMethod(method,args).getReturnType().getName().replace('.','/');
+        if("void".equalsIgnoreCase(t)) {
+            throw new IllegalArgumentException("Method " + method + " has a void return type. This is not allowed in JRuby.");
+        }
+        return t;
     }
 
     private ClassWriter createCtor(String namePath) throws Exception {
@@ -132,6 +136,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
             InvocationCallback ic = (InvocationCallback)c.newInstance();
             ic.setArity(Arity.noArguments());
             return ic;
+        } catch(IllegalArgumentException e) {
+            throw e;
         } catch(Exception e) {
             return null;
         }
@@ -158,6 +164,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
             InvocationCallback ic = (InvocationCallback)c.newInstance();
             ic.setArity(Arity.singleArgument());
             return ic;
+        } catch(IllegalArgumentException e) {
+            throw e;
         } catch(Exception e) {
             return null;
         }
@@ -188,6 +196,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
             InvocationCallback ic = (InvocationCallback)c.newInstance();
             ic.setArity(Arity.twoArguments());
             return ic;
+        } catch(IllegalArgumentException e) {
+            throw e;
         } catch(Exception e) {
             return null;
         }
@@ -222,6 +232,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
             InvocationCallback ic = (InvocationCallback)c.newInstance();
             ic.setArity(Arity.fixed(3));
             return ic;
+        } catch(IllegalArgumentException e) {
+            throw e;
         } catch(Exception e) {
             return null;
         }
@@ -244,6 +256,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
             InvocationCallback ic = (InvocationCallback)c.newInstance();
             ic.setArity(Arity.noArguments());
             return ic;
+        } catch(IllegalArgumentException e) {
+            throw e;
         } catch(Exception e) {
             return null;
         }
@@ -270,8 +284,9 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
             InvocationCallback ic = (InvocationCallback)c.newInstance();
             ic.setArity(Arity.singleArgument());
             return ic;
+        } catch(IllegalArgumentException e) {
+            throw e;
         } catch(Exception e) {
-            e.printStackTrace();
             return null;
         }
     }
@@ -301,8 +316,9 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
             InvocationCallback ic = (InvocationCallback)c.newInstance();
             ic.setArity(Arity.twoArguments());
             return ic;
+        } catch(IllegalArgumentException e) {
+            throw e;
         } catch(Exception e) {
-            e.printStackTrace();
             return null;
         }
     }
@@ -336,8 +352,9 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
             InvocationCallback ic = (InvocationCallback)c.newInstance();
             ic.setArity(Arity.fixed(3));
             return ic;
+        } catch(IllegalArgumentException e) {
+            throw e;
         } catch(Exception e) {
-            e.printStackTrace();
             return null;
         }
     }
@@ -372,6 +389,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
             InvocationCallback ic = (InvocationCallback)c.newInstance();
             ic.setArity(Arity.optional());
             return ic;
+        } catch(IllegalArgumentException e) {
+            throw e;
         } catch(Exception e) {
             return null;
         }
@@ -397,6 +416,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
             InvocationCallback ic = (InvocationCallback)c.newInstance();
             ic.setArity(Arity.optional());
             return ic;
+        } catch(IllegalArgumentException e) {
+            throw e;
         } catch(Exception e) {
             return null;
         }
