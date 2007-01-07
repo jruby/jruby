@@ -104,14 +104,18 @@ public class ObjectSpace {
             public void run() {
                 synchronized(finalizersToRun) {
                     while(true) {
-                        while(finalizersToRun.isEmpty()) {
-                            try {
-                                finalizersToRun.wait();
-                            } catch(InterruptedException e) {
+                        try {
+                            while(finalizersToRun.isEmpty()) {
+                                try {
+                                    finalizersToRun.wait();
+                                } catch(InterruptedException e) {
+                                }
                             }
-                        }
-                        while(!finalizersToRun.isEmpty()) {
-                            ((Runnable)finalizersToRun.remove(0)).run();
+                            while(!finalizersToRun.isEmpty()) {
+                                ((Runnable)finalizersToRun.remove(0)).run();
+                            }
+                        } catch(Exception e) {
+                            //Swallow, since there's no useful action to take here.
                         }
                     }
                 }
