@@ -32,7 +32,6 @@ package org.jruby.runtime.builtin.meta;
 import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubySymbol;
-import org.jruby.RubySymbol.SymbolMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Visibility;
@@ -47,20 +46,10 @@ public class SymbolMetaClass extends ObjectMetaClass {
 	public SymbolMetaClass(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
 		super(name, RubySymbol.class, superClass, allocator, parentCRef);
 	}
-
-    public SymbolMethod equal = new SymbolMethod(this, Arity.singleArgument(), Visibility.PUBLIC) {
-        public IRubyObject invoke(RubySymbol self, IRubyObject[] args) {
-            IRubyObject other = args[0];
-            
-            // Symbol table ensures only one instance for every name,
-            // so object identity is enough to compare symbols.
-            return self.getRuntime().newBoolean(self == other);
-        }
-    };
-
+    
 	protected class SymbolMeta extends Meta {
 		public void initializeClass() {
-            addMethod("==", equal);
+            defineFastMethod("==", Arity.singleArgument(), "equal");
             
 	        defineFastMethod("clone", Arity.noArguments(), "rbClone");
 	        defineFastMethod("freeze", Arity.noArguments()); 

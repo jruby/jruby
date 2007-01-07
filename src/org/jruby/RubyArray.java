@@ -1452,9 +1452,8 @@ public class RubyArray extends RubyObject implements List {
             }
 
             if (o1 instanceof RubyString && o2 instanceof RubyString) {
-                StringMetaClass stringMC = (StringMetaClass)((RubyObject)o1).getMetaClass();
                 return RubyNumeric.fix2int(
-                        stringMC.op_cmp.call(stringMC.getRuntime().getCurrentContext(), (RubyString)o1, stringMC, "<=>", new IRubyObject[] {(RubyString)o2}, false));
+                        ((RubyString)o1).op_cmp((RubyString)o2));
             }
 
             return RubyNumeric.fix2int(obj1.callMethod(obj1.getRuntime().getCurrentContext(), "<=>", obj2));

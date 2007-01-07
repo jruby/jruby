@@ -36,7 +36,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import org.jruby.internal.runtime.methods.DirectInvocationMethod;
+import java.util.Locale;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -61,31 +62,6 @@ public class RubyString extends RubyObject {
 	private StringBuffer value;
     private CharSequence chars;
 	private String stringValue; // remember toString value
-	
-    /**
-     * All instances of StringMethod currently can be invoked "fast" so we override
-     * pre/post to do nothing here
-     */
-    public static abstract class StringMethod extends DirectInvocationMethod {
-        public StringMethod(RubyModule implementationClass, Arity arity, Visibility visibility) {
-            super(implementationClass, arity, visibility);
-        }
-
-        public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
-        }
-
-        public void postMethod(ThreadContext context) {
-        }
-        
-        public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
-            RubyString s = (RubyString)receiver;
-            
-            return invoke(s, args);
-        }
-        
-        public abstract IRubyObject invoke(RubyString target, IRubyObject[] args);
-        
-    };
     
     // @see IRuby.newString(...)
 	private RubyString(IRuby runtime, CharSequence value) {
@@ -166,6 +142,95 @@ public class RubyString extends RubyObject {
 	public static boolean isPrint(char c) {
 		return c >= 0x20 && c <= 0x7E;
 	}
+    
+    public IRubyObject to_s() {
+        return this;
+    }
+    
+    /* rb_str_cmp_m */
+    public IRubyObject op_cmp(IRubyObject other) {
+        if (other instanceof RubyString) {
+            return getRuntime().newFixnum(cmp((RubyString)other));
+        }
+
+        // FIXME: This code does not appear to be applicable for <=> according to ri.
+        // ri docs claim the other operand *must* be a String.
+        /*ThreadContext context = getRuntime().getCurrentContext();
+
+        if (other.respondsTo("to_str") && other.respondsTo("<=>")) {
+            IRubyObject tmp = other.callMethod(context, "<=>", this);
+
+            if (!tmp.isNil()) {
+                return tmp instanceof RubyFixnum ? tmp.callMethod(context, "-") :
+                    getRuntime().newFixnum(0).callMethod(context, "-", tmp);
+            }
+        }*/
+
+        return getRuntime().getNil();
+    }
+
+    public IRubyObject equal(IRubyObject other) {
+        IRuby runtime = getRuntime();
+        if (other == this) {
+            return runtime.getTrue();
+        } else if (!(other instanceof RubyString)) {
+            if (other.respondsTo("to_str")) {
+                return other.callMethod(runtime.getCurrentContext(), "==", this);
+            }
+            return runtime.getFalse();
+        }
+        /* use Java implementation if both different String instances */
+        return runtime.newBoolean(
+                toString().equals(((RubyString) other).toString()));
+    }
+    
+    public IRubyObject veryEqual(IRubyObject other) {
+        IRuby runtime = getRuntime();
+        IRubyObject truth = callMethod(runtime.getCurrentContext(), "==", other);
+            
+        return truth == runtime.getNil() ? runtime.getFalse() : truth;
+    }
+
+    public IRubyObject op_plus(IRubyObject other) {
+        RubyString str = RubyString.stringValue(other);
+
+        return (RubyString) newString(toString() + str.toString()).infectBy(str);
+    }
+
+    public IRubyObject op_mul(IRubyObject other) {
+        RubyInteger otherInteger =
+                (RubyInteger) other.convertType(RubyInteger.class, "Integer", "to_i");
+        long len = otherInteger.getLongValue();
+
+        if (len < 0) {
+            throw getRuntime().newArgumentError("negative argument");
+        }
+
+        if (len > 0 && Long.MAX_VALUE / len < getValue().length()) {
+            throw getRuntime().newArgumentError("argument too big");
+        }
+        StringBuffer sb = new StringBuffer((int) (getValue().length() * len));
+
+        for (int i = 0; i < len; i++) {
+            sb.append(getValue());
+        }
+
+        RubyString newString = newString(sb.toString());
+        newString.setTaint(isTaint());
+        return newString;
+    }
+
+    public IRubyObject format(IRubyObject arg) {
+        // FIXME: Should we make this work with platform's locale, or continue hardcoding US?
+        if (arg instanceof RubyArray) {
+            Object[] args2 = new Object[((RubyArray) arg).getLength()];
+            for (int i = 0; i < args2.length; i++) {
+                args2[i] = JavaUtil.convertRubyToJava(((RubyArray) arg).entry(i));
+            }
+            return getRuntime().newString(new PrintfFormat(Locale.US, toString()).sprintf(args2));
+        }
+        return getRuntime().newString(new PrintfFormat(Locale.US, toString()).sprintf(JavaUtil.convertRubyToJava(arg)));
+    }
 
     public RubyFixnum hash() {
         return getRuntime().newFixnum(hashCode());
@@ -315,7 +380,7 @@ public class RubyString extends RubyObject {
 		RubyString thisLCString = getRuntime().newString(toString().toLowerCase());
 		RubyString lcString = getRuntime().newString(stringValue(other).toString().toLowerCase());
 
-		return ((StringMetaClass)thisLCString.getMetaClass()).op_cmp.call(getRuntime().getCurrentContext(), thisLCString, thisLCString.getMetaClass(), "<=>", new IRubyObject[] {lcString}, false);
+		return thisLCString.op_cmp(lcString);
 	}
     
 	/** rb_str_match

@@ -10,7 +10,6 @@ import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
-import org.jruby.libraries.RubySocket.SocketMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Visibility;
@@ -22,12 +21,6 @@ public class SocketMetaClass extends BasicSocketMetaClass {
 	public SocketMetaClass(IRuby runtime) {
 		super("Socket", RubySocket.class, runtime.getClass("BasicSocket"), SOCKET_ALLOCATOR);
 	}
-	
-    public SocketMethod gethostname = new SocketMethod(this, Arity.singleArgument(), Visibility.PUBLIC) {
-        public IRubyObject invoke(RubySocket self, IRubyObject[] args) {
-        	return self.getRuntime().getNil();
-        }
-    };
     
     protected class SocketMeta extends Meta {
 	    protected void initializeClass() {

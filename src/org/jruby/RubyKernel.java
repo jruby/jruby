@@ -609,7 +609,7 @@ public class RubyKernel {
         RubyArray newArgs = recv.getRuntime().newArray(args);
         newArgs.shift();
 
-        return ((StringMetaClass)str.getMetaClass()).format.call(recv.getRuntime().getCurrentContext(), str, str.getMetaClass(), "%", new IRubyObject[] {newArgs}, false);
+        return str.format(newArgs);
     }
 
     public static IRubyObject raise(IRubyObject recv, IRubyObject[] args) {

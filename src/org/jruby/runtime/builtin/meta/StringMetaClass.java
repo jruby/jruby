@@ -38,7 +38,6 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyString;
-import org.jruby.RubyString.StringMethod;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
@@ -57,132 +56,19 @@ public class StringMetaClass extends ObjectMetaClass {
         super(name, RubyString.class, superClass, allocator, parentCRef);
     }
 
-    public StringMethod hash = new StringMethod(this, Arity.noArguments(), Visibility.PUBLIC) {
-        public IRubyObject invoke(RubyString self, IRubyObject[] args) {
-            return self.getRuntime().newFixnum(self.toString().hashCode());
-        }
-    };
-    
-    public StringMethod to_s = new StringMethod(this, Arity.noArguments(), Visibility.PUBLIC) {
-        public IRubyObject invoke(RubyString self, IRubyObject[] args) {
-            return self;
-        }
-    };
-    
-    /* rb_str_cmp_m */
-    public StringMethod op_cmp = new StringMethod(this, Arity.singleArgument(), Visibility.PUBLIC) {
-        public IRubyObject invoke(RubyString self, IRubyObject[] args) {
-            if (args[0] instanceof RubyString) {
-                return getRuntime().newFixnum(self.cmp((RubyString) args[0]));
-            }
-            
-            ThreadContext context = self.getRuntime().getCurrentContext();
-                
-            if (args[0].respondsTo("to_str") && args[0].respondsTo("<=>")) {
-                IRubyObject tmp = args[0].callMethod(context, "<=>", self);
-
-                if (!tmp.isNil()) {
-                    return tmp instanceof RubyFixnum ? tmp.callMethod(context, "-") :
-                        getRuntime().newFixnum(0).callMethod(context, "-", tmp);
-                }
-            }
-            
-            return getRuntime().getNil();
-        }
-    };
-
-    public StringMethod equal = new StringMethod(this, Arity.singleArgument(), Visibility.PUBLIC) {
-        public IRubyObject invoke(RubyString self, IRubyObject[] args) {
-            IRubyObject other = args[0];
-            
-            if (other == self) {
-                return self.getRuntime().getTrue();
-            } else if (!(other instanceof RubyString)) {
-                if (other.respondsTo("to_str")) {
-                    return other.callMethod(self.getRuntime().getCurrentContext(), "==", self);
-                }
-                return self.getRuntime().getFalse();
-            }
-            /* use Java implementation if both different String instances */
-            return self.getRuntime().newBoolean(
-                    self.toString().equals(((RubyString) other).toString()));
-            
-        }
-    };
-    
-    public StringMethod veryEqual = new StringMethod(this, Arity.singleArgument(), Visibility.PUBLIC) {
-        public IRubyObject invoke(RubyString self, IRubyObject[] args) {
-            IRubyObject other = args[0];
-            IRubyObject truth = self.callMethod(self.getRuntime().getCurrentContext(), "==", other);
-            
-            return truth == self.getRuntime().getNil() ? self.getRuntime().getFalse() : truth;
-        }
-    };
-
-    public StringMethod op_plus = new StringMethod(this, Arity.singleArgument(), Visibility.PUBLIC) {
-        public IRubyObject invoke(RubyString self, IRubyObject[] args) {
-            IRubyObject other = args[0];
-            RubyString str = RubyString.stringValue(other);
-            
-            return (RubyString) self.newString(self.toString() + str.toString()).infectBy(str);
-        }
-    };
-
-    public StringMethod op_mul = new StringMethod(this, Arity.singleArgument(), Visibility.PUBLIC) {
-        public IRubyObject invoke(RubyString self, IRubyObject[] args) {
-            IRubyObject other = args[0];
-            
-            RubyInteger otherInteger =
-                    (RubyInteger) other.convertType(RubyInteger.class, "Integer", "to_i");
-            long len = otherInteger.getLongValue();
-    
-            if (len < 0) {
-                throw self.getRuntime().newArgumentError("negative argument");
-            }
-    
-            if (len > 0 && Long.MAX_VALUE / len < self.getValue().length()) {
-                throw self.getRuntime().newArgumentError("argument too big");
-            }
-            StringBuffer sb = new StringBuffer((int) (self.getValue().length() * len));
-    
-            for (int i = 0; i < len; i++) {
-                sb.append(self.getValue());
-            }
-    
-            RubyString newString = self.newString(sb.toString());
-            newString.setTaint(self.isTaint());
-            return newString;
-        }
-    };
-
-    public StringMethod format = new StringMethod(this, Arity.singleArgument(), Visibility.PUBLIC) {
-        public IRubyObject invoke(RubyString self, IRubyObject[] args) {
-            IRubyObject arg = args[0];
-            
-            if (arg instanceof RubyArray) {
-                Object[] args2 = new Object[((RubyArray) arg).getLength()];
-                for (int i = 0; i < args2.length; i++) {
-                    args2[i] = JavaUtil.convertRubyToJava(((RubyArray) arg).entry(i));
-                }
-                return self.getRuntime().newString(new PrintfFormat(Locale.US, self.toString()).sprintf(args2));
-            }
-            return self.getRuntime().newString(new PrintfFormat(Locale.US, self.toString()).sprintf(JavaUtil.convertRubyToJava(arg)));
-        }
-    };
-
     protected class StringMeta extends Meta {
 	    protected void initializeClass() {
 	        includeModule(getRuntime().getModule("Comparable"));
 	        includeModule(getRuntime().getModule("Enumerable"));
 	
-            addMethod("<=>", op_cmp);
-            addMethod("==", equal);
-            addMethod("===", veryEqual);
-            addMethod("+", op_plus);
-            addMethod("*", op_mul);
-            addMethod("%", format);
-            addMethod("hash", hash);
-            addMethod("to_s", to_s);
+            defineFastMethod("<=>", Arity.singleArgument(), "op_cmp");
+            defineFastMethod("==", Arity.singleArgument(), "equal");
+            defineFastMethod("===", Arity.singleArgument(), "veryEqual");
+            defineFastMethod("+", Arity.singleArgument(), "op_plus");
+            defineFastMethod("*", Arity.singleArgument(), "op_mul");
+            defineFastMethod("%", Arity.singleArgument(), "format");
+            defineFastMethod("hash", Arity.noArguments(), "hash");
+            defineFastMethod("to_s", Arity.noArguments(), "to_s");
             
             // To override Comparable with faster String ones
             defineFastMethod(">=", Arity.singleArgument(), "op_ge");

@@ -38,7 +38,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.jruby.internal.runtime.methods.DirectInvocationMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -56,21 +55,6 @@ public class RubySymbol extends RubyObject {
 
     private final String symbol;
     private final int id;
-
-    public static abstract class SymbolMethod extends DirectInvocationMethod {
-        public SymbolMethod(RubyModule implementationClass, Arity arity, Visibility visibility) {
-            super(implementationClass, arity, visibility);
-        }
-        
-        public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
-            RubySymbol s = (RubySymbol)receiver;
-            
-            return invoke(s, args);
-        }
-        
-        public abstract IRubyObject invoke(RubySymbol target, IRubyObject[] args);
-        
-    };
     
     private RubySymbol(IRuby runtime, String symbol) {
         super(runtime, runtime.getClass("Symbol"));
@@ -121,6 +105,12 @@ public class RubySymbol extends RubyObject {
             }
         }
         return result;
+    }
+
+    public IRubyObject equal(IRubyObject other) {
+        // Symbol table ensures only one instance for every name,
+        // so object identity is enough to compare symbols.
+        return RubyBoolean.newBoolean(getRuntime(), this == other);
     }
 
     public RubyFixnum to_i() {
