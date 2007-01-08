@@ -36,16 +36,16 @@ if [ -z "$JRUBY_HOME" ] ; then
     ls=`ls -ld "$PRG"`
     link=`expr "$ls" : '.*-> \(.*\)$'`
     if expr "$link" : '.*/.*' > /dev/null; then
-	PRG="$link"
+    PRG="$link"
     else
-	PRG="`dirname $PRG`/$link"
+    PRG="`dirname $PRG`/$link"
     fi
   done
   
   JRUBY_HOME_1=`dirname "$PRG"`           # the ./bin dir
   JRUBY_HOME_1=`dirname "$JRUBY_HOME_1"`  # the . dir
   if [ -d "${JRUBY_HOME_1}/lib" ] ; then 
-	JRUBY_HOME="${JRUBY_HOME_1}"
+    JRUBY_HOME="${JRUBY_HOME_1}"
   fi
 else
   if $cygwin; then
@@ -86,14 +86,13 @@ else
 fi
 
 # add necessary jars for command-line execution
-CP=$CP$CP_DELIMETER"$JRUBY_HOME"/lib/asm-2.2.2.jar
-CP=$CP$CP_DELIMETER"$JRUBY_HOME"/lib/jline-0.9.91-SNAPSHOT.jar
-CP=$CP$CP_DELIMETER"$JRUBY_HOME"/lib/jruby.jar
-CP=$CP$CP_DELIMETER"$JRUBY_HOME"/lib/jvyaml.jar
-CP=$CP$CP_DELIMETER"$JRUBY_HOME"/lib/plaincharset.jar
-CP=$CP$CP_DELIMETER"$JRUBY_HOME"/lib/jruby-openssl.jar
-CP=$CP$CP_DELIMETER"$JRUBY_HOME"/lib/bcprov-jdk15-134.jar
-CP=$CP$CP_DELIMETER"$JRUBY_HOME"/lib/bcmail-jdk15-134.jar
+for j in $JRUBY_HOME/lib/*.jar; do
+    if [ "$CP" ]; then
+        CP="$CP$CP_DELIMETER$j"
+    else
+        CP="$j"
+    fi
+done
 
 # ----- Set Up JRUBY_BASE If Necessary -------------------------------------
 
@@ -137,12 +136,12 @@ if [ "$1" = "SERVER" ]; then
   shift
 fi
 
-  "$JAVA_CMD" $DEBUG -Xmx256m -Xss1024k -ea -classpath "$CP" \
-  "-Djruby.base=$JRUBY_BASE" \
-  "-Djruby.home=$JRUBY_HOME" \
-  "-Djruby.lib=$JRUBY_BASE/lib" \
-  -Djruby.script=jruby \
-  "-Djruby.shell=$JRUBY_SHELL" \
-  $EN_US \
-  org.jruby.Main $JRUBY_OPTS "$@" 
+"$JAVA_CMD" $DEBUG -Xmx256m -Xss1024k -ea -classpath "$CP" \
+"-Djruby.base=$JRUBY_BASE" \
+"-Djruby.home=$JRUBY_HOME" \
+"-Djruby.lib=$JRUBY_BASE/lib" \
+-Djruby.script=jruby \
+"-Djruby.shell=$JRUBY_SHELL" \
+$EN_US \
+org.jruby.Main $JRUBY_OPTS "$@" 
 

@@ -71,6 +71,14 @@
                 <unjar src="${project.basedir}/../../lib/plaincharset.jar" dest="${project.build.outputDirectory}"/>
                 <unjar src="${project.basedir}/../../lib/jvyaml.jar" dest="${project.build.outputDirectory}"/>
                 <delete file="${project.build.outputDirectory}/META-INF/MANIFEST.MF"/>
+                <mkdir dir="${project.build.outputDirectory}/META-INF/jruby.home"/>
+                <copy todir="${project.build.outputDirectory}/META-INF/jruby.home">
+                  <fileset dir="${project.basedir}/../..">
+                    <include name="bin/*"/>
+                    <include name="lib/ruby/gems/**/*"/>
+                    <include name="lib/ruby/site_ruby/**/*"/>
+                  </fileset>
+                </copy>
               </tasks>
             </configuration>
             <goals>
@@ -87,7 +95,7 @@
                 </taskdef>
                 <jruby-serialize destdir="${project.build.outputDirectory}">
                   <fileset dir="${project.build.sourceDirectory}">
-                    <include name="**/*.rb"/>
+                    <include name="builtin/**/*.rb"/>
                   </fileset>
                 </jruby-serialize>
               </tasks>
@@ -106,9 +114,13 @@
                 <delete file="${project.build.directory}/${project.build.finalName}.jar"/>
                 <jarjar destfile="${project.build.directory}/${project.build.finalName}.jar">
                   <fileset dir="${project.build.outputDirectory}">
+                    <include name="META-INF/jruby.home/**/*"/>
+                    <include name="META-INF/**/*"/>
                     <include name="**/*.class"/>
                     <include name="**/*.properties"/>
+                    <include name="**/*.rb"/>
                     <include name="**/*.rb.ast.ser"/>
+                    <exclude name="builtin/**/*.rb"/>
                     <exclude name="org/jruby/util/ant/**/*.class"/>
                   </fileset>
                   <fileset dir="${project.basedir}/../../lib/ruby/1.8">
