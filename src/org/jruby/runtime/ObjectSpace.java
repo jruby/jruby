@@ -96,35 +96,40 @@ public class ObjectSpace {
             identities.remove(new Long(ref.id()));
     }
 
-    private Map finalizers = new HashMap();
-    private Map weakRefs = new HashMap();
-    private List finalizersToRun = new ArrayList();
-
-    private Thread finalizerThread = new Thread(new Runnable() {
-            public void run() {
-                synchronized(finalizersToRun) {
-                    while(true) {
-                        try {
-                            while(finalizersToRun.isEmpty()) {
-                                try {
-                                    finalizersToRun.wait();
-                                } catch(InterruptedException e) {
-                                }
-                            }
-                            while(!finalizersToRun.isEmpty()) {
-                                ((Runnable)finalizersToRun.remove(0)).run();
-                            }
-                        } catch(Exception e) {
-                            //Swallow, since there's no useful action to take here.
-                        }
-                    }
-                }
-            }
-        });
+    private Map finalizers         = new HashMap();
+    private Map weakRefs           = new HashMap();
+    private List finalizersToRun   = new ArrayList();
+    private Thread finalizerThread = new FinalizerThread();
 
     {
-        finalizerThread.setDaemon(true);
         finalizerThread.start();
+    }
+
+    private class FinalizerThread extends Thread {
+        public FinalizerThread() {
+            super("Ruby Finalizer Thread");
+            setDaemon(true);
+        }
+        public void run() {
+            while(true) {
+                try {
+                    synchronized(finalizersToRun) {
+                        while(finalizersToRun.isEmpty()) {
+                            try {
+                                finalizersToRun.wait();
+                            } catch(InterruptedException e) {
+                            }
+                        }
+                        while(!finalizersToRun.isEmpty()) {
+                            ((Runnable)finalizersToRun.remove(0)).run();
+                        }
+                        finalizersToRun.notify();
+                    }
+                } catch(Exception e) {
+                    //Swallow, since there's no useful action to take here.
+                }
+            }
+        }
     }
 
 
@@ -179,7 +184,12 @@ public class ObjectSpace {
         } 
         synchronized(finalizersToRun) {
             while(!finalizersToRun.isEmpty()) {
-                finalizersToRun.notifyAll();
+                finalizersToRun.notify();
+                try {
+                    finalizersToRun.wait();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
             }
         } 
     }
