@@ -109,6 +109,7 @@ import org.jruby.runtime.load.LoadService;
 import org.jruby.util.BuiltinScript;
 import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.JRubyFile;
+import org.jruby.util.NormalizedFile;
 import org.jruby.util.collections.SinglyLinkedList;
 
 /**
@@ -196,6 +197,8 @@ public final class Ruby implements IRuby {
     private IRubyObject tmsStruct;
 
     private Profile profile;
+
+    private String jrubyHome;
 
     /**
      * Create and initialize a new jruby Runtime.
@@ -1616,4 +1619,13 @@ public final class Ruby implements IRuby {
     public Profile getProfile() {
         return profile;
     }
+
+    public String getJRubyHome() {
+        if (jrubyHome == null) {
+            jrubyHome = System.getProperty("jruby.home", System.getProperty("user.home") + "/.jruby");
+            new NormalizedFile(jrubyHome).mkdirs();
+        }
+        return jrubyHome;
+    }
+
 }

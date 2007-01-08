@@ -420,4 +420,6 @@ public interface IRuby {
     public String getEncoding();
 
     public Profile getProfile();
+    
+    public String getJRubyHome();
 }

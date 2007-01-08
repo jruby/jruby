@@ -708,4 +708,8 @@ public class BaseMockRuby implements IRuby {
     public Map getRuntimeInformation() {
         return null;
     }
+    
+    public String getJRubyHome() {
+        return null;
+    }
 }

@@ -148,7 +148,7 @@ public class LoadService {
 
         // wrap in try/catch for security exceptions in an applet
         try {
-          String jrubyHome = System.getProperty("jruby.home");
+          String jrubyHome = runtime.getJRubyHome();
           if (jrubyHome != null) {
               char sep = '/';
               String rubyDir = jrubyHome + sep + "lib" + sep + "ruby" + sep;

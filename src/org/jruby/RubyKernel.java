@@ -962,7 +962,7 @@ public class RubyKernel {
                 int startIndex = command.endsWith(".rb") ? 0 : 1;
                 if(command.trim().endsWith("irb")) {
                     startIndex = 0;
-                    args.set(0,System.getProperty("jruby.home") + File.separator + "bin" + File.separator + "jirb");
+                    args.set(0,runtime.getJRubyHome() + File.separator + "bin" + File.separator + "jirb");
                 }
                 String[] argArray = (String[])args.subList(startIndex,args.size()).toArray(new String[0]);
                 ipScript = new InProcessScript(argArray, runtime.getInputStream(), new PrintStream(output), new PrintStream(runtime.getErrorStream()), pwd);

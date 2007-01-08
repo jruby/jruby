@@ -14,7 +14,8 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Charles O Nutter
- * 
+ * Copyright (C) 2006 Nick Sieger
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -54,33 +55,33 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "ruby_version", versionParts[0] + '.' + versionParts[1]);
         setConfig(configHash, "arch", "java");
 
-        setConfig(configHash, "bindir", new NormalizedFile(System.getProperty("jruby.home"), "bin").getAbsolutePath());
-        setConfig(configHash, "RUBY_INSTALL_NAME", System.getProperty("jruby.script").replace('\\', '/'));
-        setConfig(configHash, "ruby_install_name", System.getProperty("jruby.script").replace('\\', '/'));
-        setConfig(configHash, "SHELL", System.getProperty("jruby.shell").replace('\\', '/'));
-        setConfig(configHash, "prefix", new NormalizedFile(System.getProperty("jruby.home")).getAbsolutePath());
-        
+        setConfig(configHash, "bindir", new NormalizedFile(runtime.getJRubyHome(), "bin").getAbsolutePath());
+        setConfig(configHash, "RUBY_INSTALL_NAME", jruby_script());
+        setConfig(configHash, "ruby_install_name", jruby_script());
+        setConfig(configHash, "SHELL", jruby_shell());
+        setConfig(configHash, "prefix", new NormalizedFile(runtime.getJRubyHome()).getAbsolutePath());
+
         String libdir = System.getProperty("jruby.lib");
         if (libdir == null) {
-        	libdir = new NormalizedFile(System.getProperty("jruby.home"), "lib").getAbsolutePath();
+            libdir = new NormalizedFile(runtime.getJRubyHome(), "lib").getAbsolutePath();
         } else {
             libdir = new NormalizedFile(libdir).getAbsolutePath();
         }
-        
+
         setConfig(configHash, "libdir", libdir);
-        setConfig(configHash, "rubylibdir", 	new NormalizedFile(libdir, "ruby/1.8").getAbsolutePath());
-        setConfig(configHash, "sitedir", 		new NormalizedFile(libdir, "ruby/site_ruby").getAbsolutePath());
-        setConfig(configHash, "sitelibdir", 	new NormalizedFile(libdir, "ruby/site_ruby/1.8").getAbsolutePath());
-        setConfig(configHash, "sitearchdir", 	new NormalizedFile(libdir, "ruby/site_ruby/1.8/java").getAbsolutePath());
+        setConfig(configHash, "rubylibdir",     new NormalizedFile(libdir, "ruby/1.8").getAbsolutePath());
+        setConfig(configHash, "sitedir",        new NormalizedFile(libdir, "ruby/site_ruby").getAbsolutePath());
+        setConfig(configHash, "sitelibdir",     new NormalizedFile(libdir, "ruby/site_ruby/1.8").getAbsolutePath());
+        setConfig(configHash, "sitearchdir",    new NormalizedFile(libdir, "ruby/site_ruby/1.8/java").getAbsolutePath());
         setConfig(configHash, "configure_args", "");
-        setConfig(configHash, "datadir", new NormalizedFile(System.getProperty("jruby.home"), "share").getAbsolutePath());
-        setConfig(configHash, "mandir", new NormalizedFile(System.getProperty("jruby.home"), "man").getAbsolutePath());
-        setConfig(configHash, "sysconfdir", new NormalizedFile(System.getProperty("jruby.home"), "etc").getAbsolutePath());
-        
+        setConfig(configHash, "datadir", new NormalizedFile(runtime.getJRubyHome(), "share").getAbsolutePath());
+        setConfig(configHash, "mandir", new NormalizedFile(runtime.getJRubyHome(), "man").getAbsolutePath());
+        setConfig(configHash, "sysconfdir", new NormalizedFile(runtime.getJRubyHome(), "etc").getAbsolutePath());
+
         if (isWindows()) {
-        	setConfig(configHash, "EXEEXT", ".exe");
+            setConfig(configHash, "EXEEXT", ".exe");
         } else {
-        	setConfig(configHash, "EXEEXT", "");
+            setConfig(configHash, "EXEEXT", "");
         }
     }
 
@@ -88,8 +89,16 @@ public class RbConfigLibrary implements Library {
         IRuby runtime = configHash.getRuntime();
         configHash.aset(runtime.newString(key), runtime.newString(value));
     }
-    
+
     private static boolean isWindows() {
-    	return System.getProperty("os.name", "").startsWith("Windows");
+        return System.getProperty("os.name", "").startsWith("Windows");
+    }
+
+    private String jruby_script() {
+        return System.getProperty("jruby.script", isWindows() ? "jruby.bat" : "jruby").replace('\\', '/');
+    }
+
+    private String jruby_shell() {
+        return System.getProperty("jruby.shell", isWindows() ? "cmd.exe" : "/bin/sh").replace('\\', '/');
     }
 }
