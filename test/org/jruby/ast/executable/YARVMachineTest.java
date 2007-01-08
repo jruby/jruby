@@ -15,62 +15,62 @@ import junit.framework.TestCase;
 
 public class YARVMachineTest extends TestCase {
     Instruction[] simpleTest = {
-            new Instruction(YARVInstructions.PUTSTRING, new Object[] {"Hello, YARV!"}),
-            new Instruction(YARVInstructions.DUP, null),
-            new Instruction(YARVInstructions.SETLOCAL, new Object[] {new Integer(0)}),
-            new Instruction(YARVInstructions.GETLOCAL, new Object[] {new Integer(0)}),
-            new Instruction(YARVInstructions.POP, null),
-            new Instruction(YARVInstructions.SETLOCAL, new Object[] {new Integer(1)}),
-            new Instruction(YARVInstructions.PUTOBJECT, new Object[] {Boolean.TRUE}),
-            new Instruction(YARVInstructions.BRANCHIF, new Object[] {new Integer(10)}),
-            new Instruction(YARVInstructions.PUTSTRING, new Object[] {"Wrong String"}),
-            new Instruction(YARVInstructions.JUMP, new Object[] {new Integer(11)}),
-            new Instruction(YARVInstructions.GETLOCAL, new Object[] {new Integer(1)}),
-            new Instruction(YARVInstructions.PUTOBJECT, new Object[] {new Long(2)}),
-            new Instruction(YARVInstructions.SEND, new Object[] {"*", new Integer(1), null, new Integer(0)}),
-            new Instruction(YARVInstructions.SEND, new Object[] {"to_s", new Integer(0), null, new Integer(YARVInstructions.VCALL_FLAG)}),
-            new Instruction(YARVInstructions.SEND, new Object[] {"+", new Integer(1), null, new Integer(0)})
+            new Instruction(YARVInstructions.PUTSTRING, "Hello, YARV!"),
+            new Instruction(YARVInstructions.DUP),
+            new Instruction(YARVInstructions.SETLOCAL, 0),
+            new Instruction(YARVInstructions.GETLOCAL, 0),
+            new Instruction(YARVInstructions.POP),
+            new Instruction(YARVInstructions.SETLOCAL, 1),
+            new Instruction(YARVInstructions.PUTOBJECT, true),
+            new Instruction(YARVInstructions.BRANCHIF, 10),
+            new Instruction(YARVInstructions.PUTSTRING, "Wrong String"),
+            new Instruction(YARVInstructions.JUMP, 11),
+            new Instruction(YARVInstructions.GETLOCAL, 1),
+            new Instruction(YARVInstructions.PUTOBJECT, 2),
+            new Instruction(YARVInstructions.SEND, "*", 1, null, 0),
+            new Instruction(YARVInstructions.SEND, "to_s", 0, null, YARVInstructions.VCALL_FLAG),
+            new Instruction(YARVInstructions.SEND, "+", 1, null, 0)
     };
     
     Instruction[] fib = {
             // local var n declared (argument)
-            new Instruction(YARVInstructions.PUTOBJECT, new Object[] {new Long(10)}), // fib index
-            new Instruction(YARVInstructions.SETLOCAL, new Object[] {new Integer(0)}),
+            new Instruction(YARVInstructions.PUTOBJECT, 10), // fib index
+            new Instruction(YARVInstructions.SETLOCAL, 0),
             // method begins here
             // local var i declared
-            new Instruction(YARVInstructions.PUTOBJECT, new Object[] {new Long(0)}),
-            new Instruction(YARVInstructions.SETLOCAL, new Object[] {new Integer(1)}),
+            new Instruction(YARVInstructions.PUTOBJECT, 0),
+            new Instruction(YARVInstructions.SETLOCAL, 1),
             // local var j declared
-            new Instruction(YARVInstructions.PUTOBJECT, new Object[] {new Long(1)}),
-            new Instruction(YARVInstructions.SETLOCAL, new Object[] {new Integer(2)}),
+            new Instruction(YARVInstructions.PUTOBJECT, 1),
+            new Instruction(YARVInstructions.SETLOCAL, 2),
             // local var cur declared
-            new Instruction(YARVInstructions.PUTOBJECT, new Object[] {new Long(1)}),
-            new Instruction(YARVInstructions.SETLOCAL, new Object[] {new Integer(3)}),
+            new Instruction(YARVInstructions.PUTOBJECT, 1),
+            new Instruction(YARVInstructions.SETLOCAL, 3),
             // while begins here, instruction 8
-            new Instruction(YARVInstructions.GETLOCAL, new Object[] {new Integer(3)}),
-            new Instruction(YARVInstructions.GETLOCAL, new Object[] {new Integer(0)}),
-            new Instruction(YARVInstructions.SEND, new Object[] {"<=", new Integer(1), null, new Integer(0)}),
-            new Instruction(YARVInstructions.BRANCHUNLESS, new Object[] {new Integer(25)}),
+            new Instruction(YARVInstructions.GETLOCAL, 3),
+            new Instruction(YARVInstructions.GETLOCAL, 0),
+            new Instruction(YARVInstructions.SEND, "<=", 1, null, 0),
+            new Instruction(YARVInstructions.BRANCHUNLESS, 25),
             // local var k declared, k = i
-            new Instruction(YARVInstructions.GETLOCAL, new Object[] {new Integer(1)}),
-            new Instruction(YARVInstructions.SETLOCAL, new Object[] {new Integer(4)}),
+            new Instruction(YARVInstructions.GETLOCAL, 1),
+            new Instruction(YARVInstructions.SETLOCAL, 4),
             // i = j
-            new Instruction(YARVInstructions.GETLOCAL, new Object[] {new Integer(2)}),
-            new Instruction(YARVInstructions.SETLOCAL, new Object[] {new Integer(1)}),
+            new Instruction(YARVInstructions.GETLOCAL, 2),
+            new Instruction(YARVInstructions.SETLOCAL, 1),
             // j = k + j
-            new Instruction(YARVInstructions.GETLOCAL, new Object[] {new Integer(4)}),
-            new Instruction(YARVInstructions.GETLOCAL, new Object[] {new Integer(2)}),
-            new Instruction(YARVInstructions.SEND, new Object[] {"+", new Integer(1), null, new Integer(0)}),
-            new Instruction(YARVInstructions.SETLOCAL, new Object[] {new Integer(2)}),
+            new Instruction(YARVInstructions.GETLOCAL, 4),
+            new Instruction(YARVInstructions.GETLOCAL, 2),
+            new Instruction(YARVInstructions.SEND, "+", 1, null, 0),
+            new Instruction(YARVInstructions.SETLOCAL, 2),
             // cur = cur + 1
-            new Instruction(YARVInstructions.GETLOCAL, new Object[] {new Integer(3)}),
-            new Instruction(YARVInstructions.PUTOBJECT, new Object[] {new Long(1)}),
-            new Instruction(YARVInstructions.SEND, new Object[] {"+", new Integer(1), null, new Integer(0)}),
-            new Instruction(YARVInstructions.SETLOCAL, new Object[] {new Integer(3)}),
+            new Instruction(YARVInstructions.GETLOCAL, 3),
+            new Instruction(YARVInstructions.PUTOBJECT, 1),
+            new Instruction(YARVInstructions.SEND, "+", 1, null, 0),
+            new Instruction(YARVInstructions.SETLOCAL, 3),
             // end while
-            new Instruction(YARVInstructions.JUMP, new Object[] {new Integer(8)}),
+            new Instruction(YARVInstructions.JUMP, 8),
             // return i, instruction 25
-            new Instruction(YARVInstructions.GETLOCAL, new Object[] {new Integer(1)})
+            new Instruction(YARVInstructions.GETLOCAL, 1)
     };
 
     public void testSimpleExecution() {
@@ -96,7 +96,7 @@ public class YARVMachineTest extends TestCase {
         assertEquals("55", ym.exec(context, runtime.getObject(), scope, fib).toString());
         
         // change n to 5000
-        fib[0] = new Instruction(YARVInstructions.PUTOBJECT, new Object[] {new Long(5000)});
+        fib[0] = new Instruction(YARVInstructions.PUTOBJECT, 5000);
         
         IRubyObject fib5k = ym.exec(context, runtime.getObject(), scope, fib);
         assertEquals("38789684543883256337019163083259053120821277146462451061605972148955501390440370" +

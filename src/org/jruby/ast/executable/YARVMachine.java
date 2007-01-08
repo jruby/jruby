@@ -13,10 +13,40 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class YARVMachine {
     public static class Instruction {
         final int bytecode;
-        final Object[] operands;
-        public Instruction(int bytecode, Object[] operands) {
+        String s_op0;
+        boolean b_op0;
+        boolean has_b = false;
+        long l_op0;
+        int i_op1;
+        Instruction[] ins_op2;
+        int i_op3;
+
+        public Instruction(int bytecode) {
             this.bytecode = bytecode;
-            this.operands = operands;
+        }
+
+        public Instruction(int bytecode, String op) {
+            this.bytecode = bytecode;
+            this.s_op0 = op;
+        }
+
+        public Instruction(int bytecode, long op) {
+            this.bytecode = bytecode;
+            this.l_op0 = op;
+        }
+
+        public Instruction(int bytecode, boolean op) {
+            this.bytecode = bytecode;
+            this.b_op0 = op;
+            this.has_b = true;
+        }
+
+        public Instruction(int bytecode, String op, int op1, Instruction[] op2, int op3) {
+            this.bytecode = bytecode;
+            this.s_op0 = op;
+            this.i_op1 = op1;
+            this.ins_op2 = op2;
+            this.i_op3 = op3;
         }
     }
     
@@ -35,11 +65,11 @@ public class YARVMachine {
             case YARVInstructions.GETLOCAL:
                 // ENEBO: Not sure if this is correct since a local can have a depth (now that 
                 // block and local vars are in same list).
-                stack[++stackTop] = context.getCurrentScope().getValue(((Integer)bytecodes[ip].operands[0]).intValue(), 0);
+                stack[++stackTop] = context.getCurrentScope().getValue((int)bytecodes[ip].l_op0, 0);
                 break;
             case YARVInstructions.SETLOCAL:
                 // ENEBO: Not sure if this is correct since a local can have a depth
-                context.getCurrentScope().setValue(((Integer)bytecodes[ip].operands[0]).intValue(), (IRubyObject)stack[stackTop--], 0);
+                context.getCurrentScope().setValue((int)bytecodes[ip].l_op0, (IRubyObject)stack[stackTop--], 0);
                 break;
             case YARVInstructions.GETSPECIAL:
                 break;
@@ -50,14 +80,14 @@ public class YARVMachine {
             case YARVInstructions.SETDYNAMIC:
                 break;
             case YARVInstructions.GETINSTANCEVARIABLE:
-                stack[++stackTop] = self.getInstanceVariable((String)bytecodes[ip].operands[0]);
+                stack[++stackTop] = self.getInstanceVariable(bytecodes[ip].s_op0);
                 break;
             case YARVInstructions.SETINSTANCEVARIABLE:
-                self.setInstanceVariable((String)bytecodes[ip].operands[0], (IRubyObject)stack[stackTop--]);
+                self.setInstanceVariable(bytecodes[ip].s_op0, (IRubyObject)stack[stackTop--]);
                 break;
             case YARVInstructions.GETCLASSVARIABLE: {
                 RubyModule rubyClass = context.getRubyClass();
-                String name = (String)bytecodes[ip].operands[0];
+                String name = bytecodes[ip].s_op0;
     
                 if (rubyClass == null) {
                     stack[++stackTop] = self.getMetaClass().getClassVar(name);
@@ -83,14 +113,14 @@ public class YARVMachine {
                     rubyClass = (RubyModule) rubyClass.getInstanceVariable("__attached__");
                 }
     
-                rubyClass.setClassVar((String)bytecodes[ip].operands[0], (IRubyObject)stack[stackTop--]);
+                rubyClass.setClassVar(bytecodes[ip].s_op0, (IRubyObject)stack[stackTop--]);
                 break;
             }
             case YARVInstructions.GETCONSTANT:
-                stack[stackTop] = ((RubyModule)stack[stackTop]).getConstant((String)bytecodes[ip].operands[0]);
+                stack[stackTop] = ((RubyModule)stack[stackTop]).getConstant(bytecodes[ip].s_op0);
                 break;
             case YARVInstructions.SETCONSTANT:
-                ((RubyModule)stack[stackTop--]).setConstant((String)bytecodes[ip].operands[0], (IRubyObject)stack[stackTop--]);
+                ((RubyModule)stack[stackTop--]).setConstant(bytecodes[ip].s_op0, (IRubyObject)stack[stackTop--]);
                 break;
             case YARVInstructions.GETGLOBAL:
                 break;
@@ -107,33 +137,32 @@ public class YARVMachine {
                 break;
             case YARVInstructions.PUTOBJECT:
                 // TODO: needs to avoid using ifs
-                if (bytecodes[ip].operands[0] == Boolean.TRUE) {
-                    stack[++stackTop] = runtime.getTrue();
-                } else if (bytecodes[ip].operands[0] == Boolean.FALSE) {
-                    stack[++stackTop] = runtime.getFalse();
-                } else if (bytecodes[ip].operands[0] instanceof Long) {
-                    stack[++stackTop] = runtime.newFixnum(((Long)bytecodes[ip].operands[0]).longValue());
+                if(bytecodes[ip].has_b) {
+                    stack[++stackTop] = bytecodes[ip].b_op0 ? runtime.getTrue() : runtime.getFalse();
+                } else {
+                    stack[++stackTop] = runtime.newFixnum(bytecodes[ip].l_op0);
                 }
                 break;
             case YARVInstructions.PUTSTRING:
-                stack[++stackTop] = context.getRuntime().newString((String)bytecodes[ip].operands[0]);
+                stack[++stackTop] = context.getRuntime().newString(bytecodes[ip].s_op0);
                 break;
             case YARVInstructions.CONCATSTRINGS: {
                 StringBuffer concatter = new StringBuffer();
-                for (int i = 0; i < ((Integer)bytecodes[ip].operands[0]).intValue(); i++) {
+                for (int i = 0; i < bytecodes[ip].l_op0; i++) {
                     concatter.append(((RubyString)stack[stackTop--]).toString());
                 }
                 stack[++stackTop] = context.getRuntime().newString(concatter.toString());
                 break;
             }
             case YARVInstructions.TOSTRING:
-                // TODO: do not call to_s if it's already a string...
-                stack[stackTop] = ((IRubyObject)stack[stackTop]).callMethod(context, "to_s");
+                if(!(stack[stackTop] instanceof RubyString)) {
+                    stack[stackTop] = ((IRubyObject)stack[stackTop]).callMethod(context, "to_s");
+                }
                 break;
             case YARVInstructions.TOREGEXP:
                 break;
             case YARVInstructions.NEWARRAY: {
-                int size = ((Integer)bytecodes[ip].operands[0]).intValue();
+                int size = (int)bytecodes[ip].l_op0;
                 RubyArray array = context.getRuntime().newArray();
                 for (int i = size - 1; i >= 0; i--) {
                     array.set(i, stack[stackTop--]);
@@ -166,7 +195,7 @@ public class YARVMachine {
                 stackTop++;
                 break;
             case YARVInstructions.DUPN: {
-                int size = ((Integer)bytecodes[ip].operands[0]).intValue();
+                int size = (int)bytecodes[ip].l_op0;
                 for (int i = 0; i < size; i++) {
                     stack[stackTop + 1] = stack[stackTop - size];
                     stackTop++;
@@ -180,13 +209,13 @@ public class YARVMachine {
             case YARVInstructions.REPUT:
                 break;
             case YARVInstructions.TOPN: {
-                int n = ((Integer)bytecodes[ip].operands[0]).intValue();
+                int n = (int)bytecodes[ip].l_op0;
                 IRubyObject o = stack[stackTop - n];
                 stack[++stackTop] = o;
                 break;
             }
             case YARVInstructions.SETN: {
-                int n = ((Integer)bytecodes[ip].operands[0]).intValue();
+                int n = (int)bytecodes[ip].l_op0;
                 stack[stackTop - n] = stack[stackTop];
                 break;
             }
@@ -202,12 +231,13 @@ public class YARVMachine {
             case YARVInstructions.DEFINECLASS: break;
             case YARVInstructions.SEND: {
                 context.beginCallArgs();
-                String name = (String)bytecodes[ip].operands[0];
+                String name = bytecodes[ip].s_op0;
                 IRubyObject receiver = null;
-                IRubyObject[] args = new IRubyObject[((Integer)bytecodes[ip].operands[1]).intValue()];
-                Instruction[] blockBytecodes = (Instruction[])bytecodes[ip].operands[2];
+                IRubyObject[] args = new IRubyObject[bytecodes[ip].i_op1];
+
+                Instruction[] blockBytecodes = bytecodes[ip].ins_op2;
                 // TODO: block stuff
-                int flags = ((Integer)bytecodes[ip].operands[3]).intValue();
+                int flags = bytecodes[ip].i_op3;
                 CallType callType;
                 
                 if ((flags & YARVInstructions.VCALL_FLAG) == 0) {
@@ -238,18 +268,18 @@ public class YARVMachine {
             case YARVInstructions.FINISH: break;
             case YARVInstructions.THROW: break;
             case YARVInstructions.JUMP:
-                ip = ((Integer)bytecodes[ip].operands[0]).intValue();
+                ip = (int)bytecodes[ip].l_op0;
                 continue yarvloop;
             case YARVInstructions.BRANCHIF:
                 if (stack[stackTop--].isTrue()) {
-                    ip = ((Integer)bytecodes[ip].operands[0]).intValue();
+                    ip = (int)bytecodes[ip].l_op0;
                 } else {
                     ip++;
                 }
                 continue yarvloop;
             case YARVInstructions.BRANCHUNLESS:
                 if (!stack[stackTop--].isTrue()) {
-                    ip = ((Integer)bytecodes[ip].operands[0]).intValue();
+                    ip = (int)bytecodes[ip].l_op0;
                 } else {
                     ip++;
                 }
