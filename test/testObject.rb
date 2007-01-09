@@ -63,3 +63,25 @@ test_equal(3,a3.length)
 test_ok(a3.include?('one'))
 test_ok(a3.include?('two'))
 test_ok(a3.include?('three'))
+
+class TestClz
+  def call_private_bad; self.private_method; end
+  def call_private_good; private_method; end
+  private
+  def private_method; 1; end
+end
+  
+class PrivateSetter
+  def foo
+    self.setter=:bar
+  end
+
+  private
+  def setter= arg
+  end
+end
+
+test_exception(NoMethodError) { TestClz.new.private_method }
+test_exception(NoMethodError) { TestClz.new.call_private_bad }
+test_equal 1, TestClz.new.call_private_good
+test_no_exception { PrivateSetter.new.foo }

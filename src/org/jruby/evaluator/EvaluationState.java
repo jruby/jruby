@@ -349,8 +349,8 @@ public class EvaluationState {
                 IRubyObject[] args = setupArgs(context, iVisited.getArgsNode(), self);
                 
                 assert receiver.getMetaClass() != null : receiver.getClass().getName();
-                // If reciever is self then we do the call the same way as vcall
-                CallType callType = (receiver == self ? CallType.VARIABLE : CallType.NORMAL);
+
+                CallType callType = CallType.NORMAL;
     
                 // if no block passed, do a simple call
                 if (iterNode == null) {
