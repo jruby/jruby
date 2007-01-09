@@ -19,7 +19,7 @@
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
+ * Copyright (C) 2006-2007 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -874,10 +874,10 @@ public class RubyModule extends RubyObject {
             if (this == method.getImplementationClass()) {
                 method.setVisibility(visibility);
             } else {
-                final ThreadContext context = getRuntime().getCurrentContext();
                 addMethod(name, new FullFunctionCallbackMethod(this, new Callback() {
                     public IRubyObject execute(IRubyObject self, IRubyObject[] args) {
-                        return context.callSuper(context.getFrameArgs());
+                        ThreadContext tc = self.getRuntime().getCurrentContext();
+                        return tc.callSuper(tc.getFrameArgs());
                     }
 
                     public Arity getArity() {
