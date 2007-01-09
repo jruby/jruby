@@ -34,6 +34,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.lexer.yacc;
 
+import java.io.IOException;
+
 import java.math.BigInteger;
 
 import org.jruby.ast.BackRefNode;
@@ -118,7 +120,7 @@ public class RubyYaccLexer {
      * 
      * @return true if not at end of file (EOF).
      */
-    public boolean advance() {
+    public boolean advance() throws IOException {
         return (token = yylex()) != EOF;
     }
     
@@ -218,7 +220,7 @@ public class RubyYaccLexer {
         this.yaccValue = yaccValue;
     }
 
-    private boolean isNext_identchar() {
+    private boolean isNext_identchar() throws IOException {
         char c = src.read();
         src.unread(c);
 
@@ -241,7 +243,7 @@ public class RubyYaccLexer {
 	 * @param s to be matched against
      * @return string if string matches, null otherwise
      */ 
-    private String isNextNoCase(String s) {
+    private String isNextNoCase(String s) throws IOException {
     	StringBuffer buf = new StringBuffer();
     	
         for (int i = 0; i < s.length(); i++) {
@@ -289,7 +291,7 @@ public class RubyYaccLexer {
      * @param c first character the the quote construct
      * @return a token that specifies the quote type
      */
-    private int parseQuote(char c) {
+    private int parseQuote(char c) throws IOException {
         char begin, end;
         boolean shortHand;
         
@@ -363,7 +365,7 @@ public class RubyYaccLexer {
         }
     }
     
-    private int hereDocumentIdentifier() {
+    private int hereDocumentIdentifier() throws IOException {
         char c = src.read(); 
         int term;
 
@@ -435,7 +437,7 @@ public class RubyYaccLexer {
      * @param c last character read from lexer source
      * @return newline or eof value 
      */
-    protected int readComment(char c) {
+    protected int readComment(char c) throws IOException {
         ISourcePosition startPosition = src.getPosition();
         tokenBuffer.setLength(0);
         tokenBuffer.append(c);
@@ -581,7 +583,7 @@ public class RubyYaccLexer {
      *
      *@return    Description of the Returned Value
      */
-    private int yylex() {
+    private int yylex() throws IOException {
         char c;
         boolean spaceSeen = false;
         boolean commandState;
@@ -1546,7 +1548,7 @@ public class RubyYaccLexer {
      *@param c The first character of the number.
      *@return A int constant wich represents a token.
      */
-    private int parseNumber(char c) {
+    private int parseNumber(char c) throws IOException {
         lex_state = LexState.EXPR_END;
 
         tokenBuffer.setLength(0);

@@ -50,7 +50,7 @@ public class StringTerm extends StrTerm {
         this.nest = 0;
     }
 
-    public int parseString(final RubyYaccLexer lexer, LexerSource src) {
+    public int parseString(final RubyYaccLexer lexer, LexerSource src) throws java.io.IOException {
         char c;
         int space = 0;
 
@@ -111,7 +111,7 @@ public class StringTerm extends StrTerm {
         return Tokens.tSTRING_CONTENT;
     }
 
-    private int parseRegexpFlags(final LexerSource src) {
+    private int parseRegexpFlags(final LexerSource src) throws java.io.IOException {
         char kcode = 0;
         int options = 0;
         char c;
@@ -158,7 +158,7 @@ public class StringTerm extends StrTerm {
         return options | kcode;
     }
 
-    public char parseStringIntoBuffer(LexerSource src, StringBuffer buffer) {
+    public char parseStringIntoBuffer(LexerSource src, StringBuffer buffer) throws java.io.IOException {
         char c;
 
         while ((c = src.read()) != RubyYaccLexer.EOF) {
@@ -230,7 +230,7 @@ public class StringTerm extends StrTerm {
     }
 
     // Was a goto in original ruby lexer
-    private void escaped(LexerSource src, StringBuffer buffer) {
+    private void escaped(LexerSource src, StringBuffer buffer) throws java.io.IOException {
         char c;
 
         switch (c = src.read()) {
@@ -244,7 +244,7 @@ public class StringTerm extends StrTerm {
         }
     }
 
-    private void parseEscapeIntoBuffer(LexerSource src, StringBuffer buffer) {
+    private void parseEscapeIntoBuffer(LexerSource src, StringBuffer buffer) throws java.io.IOException {
         char c;
 
         switch (c = src.read()) {

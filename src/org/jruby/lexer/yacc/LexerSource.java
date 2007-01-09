@@ -104,7 +104,7 @@ public class LexerSource {
      * 
      * @return next character to viewed by the source
      */
-    public char read() {
+    public char read() throws IOException {
         int length = bufLength;
         char c;
     	
@@ -182,7 +182,7 @@ public class LexerSource {
         }
     }
     
-    public boolean peek(char to) {
+    public boolean peek(char to) throws IOException {
         char c = read();
         unread(c);
         return c == to;
@@ -250,8 +250,7 @@ public class LexerSource {
      * 
      * @return the current char or EOF (at EOF or on error)
      */
-    private char wrappedRead() {
-        try {
+    private char wrappedRead() throws IOException {
             int c = reader.read();
         	
             // If \r\n then just pass along \n (windows)
@@ -270,9 +269,7 @@ public class LexerSource {
             }
         	
             return c != -1 ? (char) c : '\0';
-        } catch (IOException e) {
-            return 0;
-        }
+
     }
     
     /**
@@ -286,7 +283,7 @@ public class LexerSource {
         return new LexerSource(name, content);
     }
 
-    public String readLine() {
+    public String readLine() throws IOException {
         StringBuffer sb = new StringBuffer(80);
         for (char c = read(); c != '\n' && c != '\0'; c = read()) {
             sb.append(c);
@@ -301,7 +298,7 @@ public class LexerSource {
         }
     }
 
-    public boolean matchString(String match, boolean indent) {
+    public boolean matchString(String match, boolean indent) throws IOException {
         int length = match.length();
         StringBuffer buffer = new StringBuffer(length + 20);
         
@@ -331,7 +328,7 @@ public class LexerSource {
         return getColumn() == 1;
     }
 
-    public char readEscape() {
+    public char readEscape() throws IOException {
         char c = read();
 
         switch (c) {
@@ -397,7 +394,7 @@ public class LexerSource {
         }
     }
 
-    private char scanHex(int count) {
+    private char scanHex(int count) throws IOException {
     	char value = '\0';
 
     	for (int i = 0; i < count; i++) {
@@ -415,7 +412,7 @@ public class LexerSource {
     	return value;
     }
 
-    private char scanOct(int count) {
+    private char scanOct(int count) throws IOException {
     	char value = '\0';
 
     	for (int i = 0; i < count; i++) {
@@ -439,7 +436,7 @@ public class LexerSource {
      * @param anOffset is location past current position to get char at
      * @return character index positions ahead of source location or EOF
      */
-    public char getCharAt(int anOffset) {
+    public char getCharAt(int anOffset) throws IOException {
     	StringBuffer buffer = new StringBuffer(anOffset);
     
     	// read next offset chars
@@ -463,14 +460,18 @@ public class LexerSource {
     }
 
     public String toString() {
-        StringBuffer buffer = new StringBuffer(20);
-        for (int i = 0; i < 20; i++) {
-            buffer.append(read());
+        try {
+            StringBuffer buffer = new StringBuffer(20);
+            for (int i = 0; i < 20; i++) {
+                buffer.append(read());
+            }
+            for (int i = 0; i < 20; i++) {
+                unread(buffer.charAt(buffer.length() - i - 1));
+            }
+            buffer.append(" ...");
+            return buffer.toString();
+        } catch(Exception e) {
+            return null;
         }
-        for (int i = 0; i < 20; i++) {
-            unread(buffer.charAt(buffer.length() - i - 1));
-        }
-        buffer.append(" ...");
-        return buffer.toString();
     }
 }

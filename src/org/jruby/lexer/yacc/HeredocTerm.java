@@ -42,7 +42,7 @@ public class HeredocTerm extends StrTerm {
         this.lastLine = lastLine;
     }
     
-    public int parseString(RubyYaccLexer lexer, LexerSource src) {
+    public int parseString(RubyYaccLexer lexer, LexerSource src) throws java.io.IOException {
         char c;
         boolean indent = (func & RubyYaccLexer.STR_FUNC_INDENT) != 0;
         StringBuffer str = new StringBuffer();
