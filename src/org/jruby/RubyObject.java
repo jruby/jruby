@@ -404,7 +404,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     public IRubyObject instance_variable_get(IRubyObject var) {
     	String varName = var.asSymbol();
 
-    	if (!varName.startsWith("@")) {
+    	if (!IdUtil.isInstanceVariable(varName)) {
     		throw getRuntime().newNameError("`" + varName + "' is not allowable as an instance variable name", varName);
     	}
 
@@ -421,7 +421,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     public IRubyObject instance_variable_set(IRubyObject var, IRubyObject value) {
     	String varName = var.asSymbol();
 
-    	if (!varName.startsWith("@")) {
+    	if (!IdUtil.isInstanceVariable(varName)) {
     		throw getRuntime().newNameError("`" + varName + "' is not allowable as an instance variable name", varName);
     	}
 
@@ -943,7 +943,7 @@ public class RubyObject implements Cloneable, IRubyObject {
                 Map iVars = getInstanceVariablesSnapshot();
                 for (Iterator iter = iVars.keySet().iterator(); iter.hasNext();) {
                     String name = (String) iter.next();
-                    if(name.startsWith("@")) {
+                    if(IdUtil.isInstanceVariable(name)) {
                         part.append(" ");
                         part.append(sep);
                         part.append(name);
@@ -969,20 +969,13 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
 
-    /**
-     * rb_is_instance_id and is_instance_id
-     */
-    private static boolean isInstanceId(String name) {
-        return name.length() > 0 && name.charAt(0) == '@' && (name.length() < 2 || name.charAt(1) != '@');
-    }
-
     public RubyArray instance_variables() {
         ArrayList names = new ArrayList();
         for(Iterator iter = getInstanceVariablesSnapshot().keySet().iterator();iter.hasNext();) {
             String name = (String) iter.next();
 
             // Do not include constants which also get stored in instance var list in classes.
-            if (isInstanceId(name)) {
+            if (IdUtil.isInstanceVariable(name)) {
                 names.add(getRuntime().newString(name));
             }
         }

@@ -54,23 +54,38 @@ public final class IdUtil {
         
         return Character.isUpperCase(c) ? CONSTANT : LOCAL_VAR;
     }
-    
+
+    /**
+     * rb_is_const_id and is_const_id
+     */    
 	public static boolean isConstant(String id) {
 	    return Character.isUpperCase(id.charAt(0));
     }
 
+    /**
+     * rb_is_class_id and is_class_id
+     */    
 	public static boolean isClassVariable(String id) {
-	    return id.charAt(0) == '@' && id.charAt(1) == '@';
+	    return id.length()>1 && id.charAt(0) == '@' && id.charAt(1) == '@';
     }
 
+    /**
+     * rb_is_instance_id and is_instance_id
+     */    
 	public static boolean isInstanceVariable(String id) {
-	    return id.charAt(0) == '@' && id.charAt(1) != '@';
+	    return id.length()>0 && id.charAt(0) == '@' && (id.length() < 2 || id.charAt(1) != '@');
     }
     
+    /**
+     * rb_is_global_id and is_global_id
+     */    
     public static boolean isGlobal(String id) {
-        return id.charAt(0) == '$';
+        return id.length()>0 && id.charAt(0) == '$';
     }
     
+    /**
+     * rb_is_local_id and is_local_id
+     */    
 	public static boolean isLocal(String id) {
 	    return !isGlobal(id) && !isClassVariable(id) && !isInstanceVariable(id) && !isConstant(id);
     }
