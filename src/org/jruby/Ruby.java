@@ -462,8 +462,7 @@ public final class Ruby implements IRuby {
         RubyModule module = (RubyModule) tc.getRubyClass().getConstantAt(name);
         
         if (module == null) {
-            module = (RubyModule) tc.getRubyClass().setConstant(name, 
-            		defineModule(name)); 
+            module = defineModule(name);
         } else if (getSafeLevel() >= 4) {
         	throw newSecurityError("Extending module prohibited.");
         }
@@ -651,9 +650,6 @@ public final class Ruby implements IRuby {
 
         nilClass = RubyNil.createNilClass(this);
 
-        // We cannot define this constant until nil itself was made
-        objectClass.defineConstant("NIL", getNil());
-        
         // Pre-create the core classes we know we will get referenced by starting up the runtime.
         RubyBoolean.createFalseClass(this);
         RubyBoolean.createTrueClass(this);

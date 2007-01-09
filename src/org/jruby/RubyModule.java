@@ -282,6 +282,10 @@ public class RubyModule extends RubyObject {
      * @see RubyObject#setInstanceVariable(String, IRubyObject, String, String)
      */
     public IRubyObject setConstant(String name, IRubyObject value) {
+        if(getConstantAt(name) != null) {
+            getRuntime().getWarnings().warn("already initialized constant " + name);
+        }
+
         IRubyObject result = setInstanceVariable(name, value, "Insecure: can't set constant",
                 "class/module");
 
@@ -700,8 +704,7 @@ public class RubyModule extends RubyObject {
         ObjectAllocator allocator = superClazz == null ? getRuntime().getObject().getAllocator() : superClazz.getAllocator();
 
         if (type == null) {
-            return (RubyClass) setConstant(name,
-                    getRuntime().defineClassUnder(name, superClazz, allocator, cref));
+            return getRuntime().defineClassUnder(name, superClazz, allocator, cref);
         } 
 
         if (!(type instanceof RubyClass)) {
@@ -720,8 +723,7 @@ public class RubyModule extends RubyObject {
         IRubyObject type = getConstantAt(name);
 
         if (type == null) {
-            return (RubyClass) setConstant(name,
-                    getRuntime().defineClassUnder(name, superClazz, allocator, cref));
+            return getRuntime().defineClassUnder(name, superClazz, allocator, cref);
         }
 
         if (!(type instanceof RubyClass)) {
@@ -737,8 +739,7 @@ public class RubyModule extends RubyObject {
         IRubyObject type = getConstantAt(name);
 
         if (type == null) {
-            return (RubyModule) setConstant(name,
-                    getRuntime().defineModuleUnder(name, cref));
+            return getRuntime().defineModuleUnder(name, cref);
         }
 
         if (!(type instanceof RubyModule)) {
