@@ -75,8 +75,9 @@ import org.jruby.libraries.ZlibLibrary;
 import org.jruby.libraries.YamlLibrary;
 import org.jruby.libraries.EnumeratorLibrary;
 import org.jruby.libraries.BigDecimalLibrary;
-import org.jruby.ext.openssl.RubyOpenSSL;
 import org.jruby.libraries.DigestLibrary;
+import org.jruby.libraries.ThreadLibrary;
+import org.jruby.ext.openssl.RubyOpenSSL;
 import org.jruby.ext.Generator;
 import org.jruby.ext.Readline;
 import org.jruby.parser.Parser;
@@ -609,6 +610,7 @@ public final class Ruby implements IRuby {
         registerBuiltin("enumerator.rb", new EnumeratorLibrary());
         registerBuiltin("generator_internal.rb", new Generator.Service());
         registerBuiltin("readline.rb", new Readline.Service());
+        registerBuiltin("thread.so", new ThreadLibrary());
         registerBuiltin("openssl.so", new RubyOpenSSL.Service());
         registerBuiltin("digest.so", new DigestLibrary());
         registerBuiltin("digest.rb", new DigestLibrary());
