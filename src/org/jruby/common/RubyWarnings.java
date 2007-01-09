@@ -43,6 +43,10 @@ public class RubyWarnings implements IRubyWarnings {
 
     public void warn(ISourcePosition position, String message) {
     	assert position != null;
+
+        if(runtime.getVerbose().isNil()) {
+            return;
+        }
     	
         StringBuffer buffer = new StringBuffer(100);
 
