@@ -210,7 +210,14 @@ test_check "High-level Java Support"
   # JString already included and it is the same proxy, so do not throw an error
   # (e.g. intent of include_class already satisfied)
   test_no_exception() do
-  	include_class("java.lang.String") {|package,name| "J#{name}" }
+    begin
+      old_stream = $stderr.dup
+      $stderr.reopen(RUBY_PLATFORM =~ /mswin/ ? 'NUL:' : '/dev/null')
+      $stderr.sync = true
+      include_class("java.lang.String") {|package,name| "J#{name}" }
+    ensure
+      $stderr.reopen(old_stream)
+    end
   end
   
   # Test java.util.Date <=> Time implicit conversion
@@ -268,7 +275,15 @@ test_check "High-level Java Support"
   test_ok(com.flirble.equal?(com.flirble))
 
   # test that multiple threads including classes don't step on each other
+  # we swallow the output to $stderr, so testers don't have to see the 
+  # warnings about redefining constants over and over again.
   threads = []
+
+begin
+ old_stream = $stderr.dup
+ $stderr.reopen(RUBY_PLATFORM =~ /mswin/ ? 'NUL:' : '/dev/null')
+ $stderr.sync = true
+
   50.times {
     threads << Thread.new do
       Thread.stop
@@ -285,6 +300,10 @@ test_check "High-level Java Support"
   # join each to let them run
   threads.each {|t| t.join }
   # confirm they all successfully called currentTimeMillis and freeMemory
+ensure
+ $stderr.reopen(old_stream)
+end
+  
   threads.each do |t|
     test_ok(t[:time] != nil)
     test_ok(t[:mem] != nil)

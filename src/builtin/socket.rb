@@ -224,7 +224,6 @@ class TCPServer < TCPSocket
   include_class('java.net.InetAddress')
   include_class('java.net.UnknownHostException')
   include_class('java.net.InetSocketAddress')
-  include_class('java.net.UnknownHostException')
 
   def initialize(hostname, port) 
     hostname ||= '0.0.0.0'
