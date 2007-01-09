@@ -29,6 +29,10 @@ package org.jruby.runtime.callback;
 
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.ThreadKill;
+import org.jruby.exceptions.MainExitException;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -38,11 +42,23 @@ public abstract class InvocationCallback implements Callback {
 
     public IRubyObject execute(IRubyObject recv, IRubyObject[] oargs) {
         arity.checkArity(recv.getRuntime(), oargs);
-        return call(recv, oargs);
+        try {
+            return call(recv, oargs);
+        } catch(RaiseException e) {
+            throw e;
+        } catch(JumpException e) {
+            throw e;
+        } catch(ThreadKill e) {
+            throw e;
+        } catch(MainExitException e) {
+            throw e;
+        } catch(Exception e) {
+            recv.getRuntime().getJavaSupport().handleNativeException(e);
+            return recv.getRuntime().getNil();
+        }
     }
 
     public abstract IRubyObject call(Object receiver, Object[] args);
-
 
     public void setArity(Arity arity) {
         this.arity = arity;

@@ -159,10 +159,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             }
             
             return (DynamicMethod)c.getConstructor(new Class[]{RubyModule.class, Arity.class, Visibility.class}).newInstance(new Object[]{implementationClass,arity,visibility});
-        } catch(IllegalArgumentException e) {
-            throw e;
         } catch(Exception e) {
-            return null;
+            throw implementationClass.getRuntime().newLoadError(e.getMessage());
         }
     }
 

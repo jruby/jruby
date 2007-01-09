@@ -34,6 +34,10 @@ import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.ThreadKill;
+import org.jruby.exceptions.MainExitException;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -56,7 +60,20 @@ public abstract class FullInvocationMethod extends AbstractMethod {
 	public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
         IRuby runtime = context.getRuntime();
         arity.checkArity(runtime, args);
-        return call(receiver,args);
+        try {
+            return call(receiver,args);
+        } catch(RaiseException e) {
+            throw e;
+        } catch(JumpException e) {
+            throw e;
+        } catch(ThreadKill e) {
+            throw e;
+        } catch(MainExitException e) {
+            throw e;
+        } catch(Exception e) {
+            receiver.getRuntime().getJavaSupport().handleNativeException(e);
+            return receiver.getRuntime().getNil();
+        }
     }
 
     public abstract IRubyObject call(IRubyObject receiver, IRubyObject[] args);
