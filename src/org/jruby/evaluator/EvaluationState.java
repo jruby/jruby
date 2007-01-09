@@ -605,14 +605,14 @@ public class EvaluationState {
                 if (containingClass == null) {
                     throw runtime.newTypeError("No class to add method.");
                 }
-    
+
                 String name = iVisited.getName();
                 if (containingClass == runtime.getObject() && name == "initialize") {
                     runtime.getWarnings().warn("redefining Object#initialize may cause infinite loop");
                 }
     
                 Visibility visibility = context.getCurrentVisibility();
-                if (name == "initialize" || visibility.isModuleFunction()) {
+                if (name == "initialize" || visibility.isModuleFunction() || context.isTopLevel()) {
                     visibility = Visibility.PRIVATE;
                 }
                 

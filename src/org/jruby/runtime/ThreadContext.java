@@ -674,6 +674,10 @@ public class ThreadContext {
         return parentModule.getNonIncludedClass();
     }
 
+    public boolean isTopLevel() {
+        return parentIndex == 0;
+    }
+
     public RubyModule getWrapper() {
         return wrapper;
     }
