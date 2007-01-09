@@ -75,6 +75,7 @@ public class RubyArray extends RubyObject implements List {
     
     public RubyArray(IRuby runtime, RubyClass klass) {
         super(runtime, klass);
+        list = new ArrayList(16);
     }
 
     /** Getter for property list.
