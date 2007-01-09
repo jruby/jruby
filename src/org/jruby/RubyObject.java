@@ -968,13 +968,21 @@ public class RubyObject implements Cloneable, IRubyObject {
         return getRuntime().newBoolean(type() == type);
     }
 
+
+    /**
+     * rb_is_instance_id and is_instance_id
+     */
+    private static boolean isInstanceId(String name) {
+        return name.length() > 0 && name.charAt(0) == '@' && (name.length() < 2 || name.charAt(1) != '@');
+    }
+
     public RubyArray instance_variables() {
         ArrayList names = new ArrayList();
         for(Iterator iter = getInstanceVariablesSnapshot().keySet().iterator();iter.hasNext();) {
             String name = (String) iter.next();
 
             // Do not include constants which also get stored in instance var list in classes.
-            if (!Character.isUpperCase(name.charAt(0))) {
+            if (isInstanceId(name)) {
                 names.add(getRuntime().newString(name));
             }
         }

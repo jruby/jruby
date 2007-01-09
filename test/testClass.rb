@@ -206,4 +206,4 @@ class NoConstantInInstanceVariables
   B = 2
 end
 
-test_equal(["@@b"], NoConstantInInstanceVariables.new.class.instance_variables)
+test_equal([], NoConstantInInstanceVariables.new.class.instance_variables)
