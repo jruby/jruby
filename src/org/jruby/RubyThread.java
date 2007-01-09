@@ -40,6 +40,7 @@ import org.jruby.exceptions.ThreadKill;
 import org.jruby.internal.runtime.NativeThread;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -74,7 +75,10 @@ public class RubyThread extends RubyObject {
     private RubyThread joinedByCriticalThread;
     
     public static RubyClass createThreadClass(IRuby runtime) {
-        RubyClass threadClass = runtime.defineClass("Thread", runtime.getObject());
+        // FIXME: In order for Thread to play well with the standard 'new' behavior,
+        // it must provide an allocator that can create empty object instances which
+        // initialize then fills with appropriate data.
+        RubyClass threadClass = runtime.defineClass("Thread", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyThread.class);
 
         threadClass.defineFastMethod("[]", 

@@ -38,6 +38,7 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.charset.UnmappableCharacterException;
 
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class RubyIconv extends RubyObject {
@@ -47,17 +48,23 @@ public class RubyIconv extends RubyObject {
     public RubyIconv(IRuby runtime, RubyClass type) {
         super(runtime, type);
     }
+    
+    private static ObjectAllocator ICONV_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return new RubyIconv(runtime, klass);
+        }
+    };
 
     public static void createIconv(IRuby runtime) {
-        RubyClass iconvClass = runtime.defineClass("Iconv", runtime.getObject());
+        RubyClass iconvClass = runtime.defineClass("Iconv", runtime.getObject(), ICONV_ALLOCATOR);
 
-        iconvClass.defineClassUnder("IllegalEncoding", runtime.getClass("ArgumentError"));
-        iconvClass.defineClassUnder("IllegalSequence", runtime.getClass("ArgumentError"));
-        iconvClass.defineClassUnder("InvalidCharacter", runtime.getClass("ArgumentError"));
+        RubyClass argumentError = runtime.getClass("ArgumentError");
+        iconvClass.defineClassUnder("IllegalEncoding", argumentError, argumentError.getAllocator());
+        iconvClass.defineClassUnder("IllegalSequence", argumentError, argumentError.getAllocator());
+        iconvClass.defineClassUnder("InvalidCharacter", argumentError, argumentError.getAllocator());
         
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyIconv.class);
 
-        iconvClass.defineFastSingletonMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
         iconvClass.defineFastSingletonMethod("iconv", callbackFactory.getOptSingletonMethod("iconv"));
         iconvClass.defineFastSingletonMethod("conv", callbackFactory.getOptSingletonMethod("conv"));
         
@@ -95,12 +102,6 @@ public class RubyIconv extends RubyObject {
         //fromEncoding = args[1].convertToString().toString();
         
         return this;
-    }
-    
-    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-        RubyIconv result = new RubyIconv(recv.getRuntime(), (RubyClass)recv);
-        result.callInit(args);
-        return result;
     }
 
     public static IRubyObject iconv(IRubyObject recv, IRubyObject[] args) {

@@ -36,6 +36,7 @@
 package org.jruby;
 
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -80,7 +81,7 @@ public class RubyFloat extends RubyNumeric {
     }
 
     public static RubyClass createFloatClass(IRuby runtime) {
-        RubyClass result = runtime.defineClass("Float", runtime.getClass("Numeric"));
+        RubyClass result = runtime.defineClass("Float", runtime.getClass("Numeric"), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyFloat.class);
         
         result.defineFastMethod("+", callbackFactory.getMethod("op_plus", IRubyObject.class));

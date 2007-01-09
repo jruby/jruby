@@ -34,6 +34,7 @@
 package org.jruby;
 
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -53,7 +54,8 @@ public class RubyMatchData extends RubyObject {
     }
 
     public static RubyClass createMatchDataClass(IRuby runtime) {
-        RubyClass matchDataClass = runtime.defineClass("MatchData", runtime.getObject());
+        // TODO: Is NOT_ALLOCATABLE_ALLOCATOR ok here, since you can't actually instanriate MatchData directly?
+        RubyClass matchDataClass = runtime.defineClass("MatchData", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.defineGlobalConstant("MatchingData", matchDataClass);
 
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyMatchData.class);

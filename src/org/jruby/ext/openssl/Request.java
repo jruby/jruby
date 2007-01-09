@@ -47,6 +47,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -54,14 +55,19 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class Request extends RubyObject {
+    private static ObjectAllocator REQUEST_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return new Request(runtime, klass);
+        }
+    };
+    
     public static void createRequest(IRuby runtime, RubyModule mX509) {
-        RubyClass cRequest = mX509.defineClassUnder("Request",runtime.getObject());
-
-        mX509.defineClassUnder("RequestError",runtime.getModule("OpenSSL").getClass("OpenSSLError"));
+        RubyClass cRequest = mX509.defineClassUnder("Request",runtime.getObject(),REQUEST_ALLOCATOR);
+        RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
+        mX509.defineClassUnder("RequestError",openSSLError,openSSLError.getAllocator());
 
         CallbackFactory reqcb = runtime.callbackFactory(Request.class);
 
-        cRequest.defineSingletonMethod("new",reqcb.getOptSingletonMethod("newInstance"));
         cRequest.defineMethod("initialize",reqcb.getOptMethod("_initialize"));
         cRequest.defineMethod("initialize_copy",reqcb.getMethod("initialize_copy",IRubyObject.class));
         cRequest.defineMethod("clone",reqcb.getMethod("rbClone"));
@@ -81,12 +87,6 @@ public class Request extends RubyObject {
         cRequest.defineMethod("attributes",reqcb.getMethod("attributes"));
         cRequest.defineMethod("attributes=",reqcb.getMethod("set_attributes",IRubyObject.class));
         cRequest.defineMethod("add_attribute",reqcb.getMethod("add_attribute",IRubyObject.class));
-    }
-
-    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-        Request result = new Request(recv.getRuntime(), (RubyClass)recv);
-        result.callInit(args);
-        return result;
     }
 
     private IRubyObject version;

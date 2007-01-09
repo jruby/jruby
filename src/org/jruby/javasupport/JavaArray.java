@@ -37,6 +37,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class JavaArray extends JavaObject {
@@ -47,7 +48,9 @@ public class JavaArray extends JavaObject {
     }
 
     public static RubyClass createJavaArrayClass(IRuby runtime, RubyModule javaModule) {
-        return javaModule.defineClassUnder("JavaArray", javaModule.getClass("JavaObject"));
+        // FIXME: NOT_ALLOCATABLE_ALLOCATOR is probably not right here, since we might
+        // eventually want JavaArray to be marshallable. JRUBY-414
+        return javaModule.defineClassUnder("JavaArray", javaModule.getClass("JavaObject"), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
     }
 
     public RubyFixnum length() {

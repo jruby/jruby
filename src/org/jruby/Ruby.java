@@ -86,6 +86,7 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.IAccessor;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -425,16 +426,16 @@ public final class Ruby implements IRuby {
      * MRI: rb_define_class / rb_define_class_id
      *
      */
-    public RubyClass defineClass(String name, RubyClass superClass) {
-        return defineClassUnder(name, superClass, objectClass.getCRef());
+    public RubyClass defineClass(String name, RubyClass superClass, ObjectAllocator allocator) {
+        return defineClassUnder(name, superClass, allocator, objectClass.getCRef());
     }
     
-    public RubyClass defineClassUnder(String name, RubyClass superClass, SinglyLinkedList parentCRef) {
+    public RubyClass defineClassUnder(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
         if (superClass == null) {
             superClass = objectClass;
         }
 
-        return superClass.newSubClass(name, parentCRef);
+        return superClass.newSubClass(name, allocator, parentCRef);
     }
     
     /** rb_define_module / rb_define_module_id
@@ -774,89 +775,89 @@ public final class Ruby implements IRuby {
         RubyClass nameError = null;
         RubyClass rangeError = null;
         if(profile.allowClass("StandardError")) {
-            standardError = defineClass("StandardError", exceptionClass);
+            standardError = defineClass("StandardError", exceptionClass, exceptionClass.getAllocator());
         }
         if(profile.allowClass("RuntimeError")) {
-            runtimeError = defineClass("RuntimeError", standardError);
+            runtimeError = defineClass("RuntimeError", standardError, standardError.getAllocator());
         }
         if(profile.allowClass("IOError")) {
-            ioError = defineClass("IOError", standardError);
+            ioError = defineClass("IOError", standardError, standardError.getAllocator());
         }
         if(profile.allowClass("ScriptError")) {
-            scriptError = defineClass("ScriptError", exceptionClass);
+            scriptError = defineClass("ScriptError", exceptionClass, exceptionClass.getAllocator());
         }
         if(profile.allowClass("NameError")) {
             nameError = RubyNameError.createNameErrorClass(this, standardError);
         }
         if(profile.allowClass("RangeError")) {
-            rangeError = defineClass("RangeError", standardError);
+            rangeError = defineClass("RangeError", standardError, standardError.getAllocator());
         }
         if(profile.allowClass("SystemExit")) {
-            defineClass("SystemExit", exceptionClass);
+            defineClass("SystemExit", exceptionClass, exceptionClass.getAllocator());
         }
         if(profile.allowClass("Fatal")) {
-            defineClass("Fatal", exceptionClass);
+            defineClass("Fatal", exceptionClass, exceptionClass.getAllocator());
         }
         if(profile.allowClass("Interrupt")) {
-            defineClass("Interrupt", exceptionClass);
+            defineClass("Interrupt", exceptionClass, exceptionClass.getAllocator());
         }
         if(profile.allowClass("SignalException")) {
-            defineClass("SignalException", exceptionClass);
+            defineClass("SignalException", exceptionClass, exceptionClass.getAllocator());
         }
         if(profile.allowClass("TypeError")) {
-            defineClass("TypeError", standardError);
+            defineClass("TypeError", standardError, standardError.getAllocator());
         }
         if(profile.allowClass("ArgumentError")) {
-            defineClass("ArgumentError", standardError);
+            defineClass("ArgumentError", standardError, standardError.getAllocator());
         }
         if(profile.allowClass("IndexError")) {
-            defineClass("IndexError", standardError);
+            defineClass("IndexError", standardError, standardError.getAllocator());
         }
         if(profile.allowClass("SyntaxError")) {
-            defineClass("SyntaxError", scriptError);
+            defineClass("SyntaxError", scriptError, scriptError.getAllocator());
         }
         if(profile.allowClass("LoadError")) {
-            defineClass("LoadError", scriptError);
+            defineClass("LoadError", scriptError, scriptError.getAllocator());
         }
         if(profile.allowClass("NotImplementedError")) {
-            defineClass("NotImplementedError", scriptError);
+            defineClass("NotImplementedError", scriptError, scriptError.getAllocator());
         }
         if(profile.allowClass("NoMethodError")) {
-            defineClass("NoMethodError", nameError);
+            defineClass("NoMethodError", nameError, nameError.getAllocator());
         }
         if(profile.allowClass("SecurityError")) {
-            defineClass("SecurityError", standardError);
+            defineClass("SecurityError", standardError, standardError.getAllocator());
         }
         if(profile.allowClass("NoMemoryError")) {
-            defineClass("NoMemoryError", exceptionClass);
+            defineClass("NoMemoryError", exceptionClass, exceptionClass.getAllocator());
         }
         if(profile.allowClass("RegexpError")) {
-            defineClass("RegexpError", standardError);
+            defineClass("RegexpError", standardError, standardError.getAllocator());
         }
         if(profile.allowClass("EOFError")) {
-            defineClass("EOFError", ioError);
+            defineClass("EOFError", ioError, ioError.getAllocator());
         }
         if(profile.allowClass("LocalJumpError")) {
-            defineClass("LocalJumpError", standardError);
+            defineClass("LocalJumpError", standardError, standardError.getAllocator());
         }
         if(profile.allowClass("ThreadError")) {
-            defineClass("ThreadError", standardError);
+            defineClass("ThreadError", standardError, standardError.getAllocator());
         }
         if(profile.allowClass("SystemStackError")) {
-            defineClass("SystemStackError", exceptionClass);
+            defineClass("SystemStackError", exceptionClass, exceptionClass.getAllocator());
         }
         if(profile.allowClass("ZeroDivisionError")) {
-            defineClass("ZeroDivisionError", standardError);
+            defineClass("ZeroDivisionError", standardError, standardError.getAllocator());
         }
         // FIXME: Actually this somewhere
         if(profile.allowClass("FloatDomainError")) {
-            defineClass("FloatDomainError", rangeError);
+            defineClass("FloatDomainError", rangeError, rangeError.getAllocator());
         }
         if(profile.allowClass("NativeException")) {
             NativeException.createClass(this, runtimeError);
         }
         if(profile.allowClass("SystemCallError")) {
-            systemCallError = defineClass("SystemCallError", standardError);
+            systemCallError = defineClass("SystemCallError", standardError, standardError.getAllocator());
         }
         if(profile.allowModule("Errno")) {
             errnoModule = defineModule("Errno");
@@ -865,7 +866,7 @@ public final class Ruby implements IRuby {
         initErrnoErrors();
 
         if(profile.allowClass("Data")) {
-            defineClass("Data",objectClass);
+            defineClass("Data", objectClass, objectClass.getAllocator());
         }
     }
 
@@ -935,7 +936,7 @@ public final class Ruby implements IRuby {
      **/
     private void createSysErr(int i, String name) {
         if(profile.allowClass(name)) {
-            errnoModule.defineClassUnder(name, systemCallError).defineConstant("Errno", newFixnum(i));
+            errnoModule.defineClassUnder(name, systemCallError, systemCallError.getAllocator()).defineConstant("Errno", newFixnum(i));
         }
     }
     

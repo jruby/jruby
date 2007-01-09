@@ -31,6 +31,7 @@ import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
@@ -120,9 +121,10 @@ public class ArrayMetaClass extends ObjectMetaClass {
 	        defineAlias("indexes", "indices");
 	        defineAlias("filter", "collect!");
 	        defineAlias("map!", "collect!");
+            
+            CallbackFactory arrayCB = getRuntime().callbackFactory(ArrayMetaClass.class);
 	
-	        defineSingletonMethod("new", Arity.optional(), "newInstance");
-	        defineSingletonMethod("[]", Arity.optional(), "create");
+            defineSingletonMethod("[]", arrayCB.getOptSingletonMethod("create"));
 		}
 	};
 
@@ -136,18 +138,14 @@ public class ArrayMetaClass extends ObjectMetaClass {
     
     private static ObjectAllocator ARRAY_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(IRuby runtime, RubyClass klass) {
-            // FIXME: not sure how much I like this call back to the runtime...
-            RubyArray instance = runtime.newArray();
-
-            instance.setMetaClass(klass);
-
-            return instance;
+            return new RubyArray(runtime, klass);
         }
     };
     
-    public IRubyObject create(IRubyObject[] args) {
-        // FIXME: Why is this calling allocate directly instead of the normal newInstance process? Performance?
-        RubyArray array = (RubyArray)ARRAY_ALLOCATOR.allocate(getRuntime(), this);
+    public static IRubyObject create(IRubyObject klass, IRubyObject[] args) {
+        // FIXME: Why is this calling newArray directly instead of the normal newInstance process? Performance?
+        RubyArray array = (RubyArray)((RubyClass)klass).allocate();
+        array.callInit(IRubyObject.NULL_ARRAY);
         
         if (args.length >= 1) {
             for (int i = 0; i < args.length; i++) {

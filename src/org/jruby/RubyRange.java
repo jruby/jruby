@@ -38,6 +38,7 @@ package org.jruby;
 
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -67,9 +68,15 @@ public class RubyRange extends RubyObject {
         this.end = aEnd;
         this.isExclusive = aIsExclusive.isTrue();
     }
+    
+    private static ObjectAllocator RANGE_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return new RubyRange(runtime, klass);
+        }
+    };
 
     public static RubyClass createRangeClass(IRuby runtime) {
-        RubyClass result = runtime.defineClass("Range", runtime.getObject());
+        RubyClass result = runtime.defineClass("Range", runtime.getObject(), RANGE_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyRange.class);
         
         result.includeModule(runtime.getModule("Enumerable"));
@@ -94,8 +101,9 @@ public class RubyRange extends RubyObject {
 		// We override Enumerable#member? since ranges in 1.8.1 are continuous.
 		result.defineAlias("member?", "include?");
         result.defineAlias("===", "include?");
-		
-		result.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
+        
+		CallbackFactory classCB = runtime.callbackFactory(RubyClass.class);
+		result.defineSingletonMethod("new", classCB.getOptMethod("newInstance"));
         
         return result;
     }
@@ -162,15 +170,6 @@ public class RubyRange extends RubyObject {
 		}
 
         return new long[] { beginLong, Math.max(endLong - beginLong, 0L) };
-    }
-
-    // public Range methods
-    public static RubyRange newInstance(IRubyObject recv, IRubyObject[] args) {
-    	RubyRange range = new RubyRange(recv.getRuntime(),(RubyClass)recv);
-    	
-    	range.initialize(args);
-    	
-    	return range;
     }
 
     public static RubyRange newRange(IRuby runtime, IRubyObject begin, IRubyObject end, boolean isExclusive) {

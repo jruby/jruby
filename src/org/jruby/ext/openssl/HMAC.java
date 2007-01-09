@@ -36,19 +36,26 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class HMAC extends RubyObject {
+    private static ObjectAllocator HMAC_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return new HMAC(runtime, klass);
+        }
+    };
+    
     public static void createHMAC(IRuby runtime, RubyModule ossl) {
-        RubyClass cHMAC = ossl.defineClassUnder("HMAC",runtime.getObject());
-        ossl.defineClassUnder("HMACError",ossl.getClass("OpenSSLError"));
+        RubyClass cHMAC = ossl.defineClassUnder("HMAC",runtime.getObject(),HMAC_ALLOCATOR);
+        RubyClass openSSLError = ossl.getClass("OpenSSLError");
+        ossl.defineClassUnder("HMACError",openSSLError,openSSLError.getAllocator());
         
         CallbackFactory hmaccb = runtime.callbackFactory(HMAC.class);
 
-        cHMAC.defineSingletonMethod("new",hmaccb.getOptSingletonMethod("newInstance"));
         cHMAC.defineSingletonMethod("digest",hmaccb.getSingletonMethod("s_digest",IRubyObject.class,IRubyObject.class,IRubyObject.class));
         cHMAC.defineSingletonMethod("hexdigest",hmaccb.getSingletonMethod("s_hexdigest",IRubyObject.class,IRubyObject.class,IRubyObject.class));
         cHMAC.defineMethod("initialize",hmaccb.getMethod("initialize",IRubyObject.class,IRubyObject.class));
@@ -60,12 +67,6 @@ public class HMAC extends RubyObject {
         cHMAC.defineMethod("hexdigest",hmaccb.getMethod("hexdigest"));
         cHMAC.defineMethod("inspect",hmaccb.getMethod("hexdigest"));
         cHMAC.defineMethod("to_s",hmaccb.getMethod("hexdigest"));
-    }
-
-    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-        HMAC result = new HMAC(recv.getRuntime(), (RubyClass)recv);
-        result.callInit(args);
-        return result;
     }
 
     public static IRubyObject s_digest(IRubyObject recv, IRubyObject digest, IRubyObject kay, IRubyObject data) {

@@ -38,6 +38,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.Iter;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.load.Library;
@@ -57,7 +58,8 @@ public class Generator {
     }
 
     public static void createGenerator(IRuby runtime) throws IOException {
-        RubyClass cGen = runtime.defineClass("Generator",runtime.getObject());
+        // FIXME: Is NOT_ALLOCATABLE_ALLOCATOR ok here. Confirm. JRUBY-415
+        RubyClass cGen = runtime.defineClass("Generator",runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         cGen.includeModule(runtime.getModule("Enumerable"));
 
         GenStub0 gstub = new GenStub0();

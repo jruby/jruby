@@ -42,14 +42,17 @@ import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class JavaConstructor extends JavaCallable {
     private Constructor constructor;
 
     public static RubyClass createJavaConstructorClass(IRuby runtime, RubyModule javaModule) {
+        // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here, since we don't intend for people to monkey with
+        // this type and it can't be marshalled. Confirm. JRUBY-415
         RubyClass result =
-                javaModule.defineClassUnder("JavaConstructor", runtime.getObject());
+                javaModule.defineClassUnder("JavaConstructor", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(JavaConstructor.class);
 
         JavaCallable.registerRubyMethods(runtime, result, JavaConstructor.class);

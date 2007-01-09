@@ -56,19 +56,26 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class X509Name extends RubyObject {
+    private static ObjectAllocator X509NAME_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return new X509Name(runtime, klass);
+        }
+    };
+    
     public static void createX509Name(IRuby runtime, RubyModule mX509) {
-        RubyClass cX509Name = mX509.defineClassUnder("Name",runtime.getObject());
-        mX509.defineClassUnder("NameError",runtime.getModule("OpenSSL").getClass("OpenSSLError"));
+        RubyClass cX509Name = mX509.defineClassUnder("Name",runtime.getObject(),X509NAME_ALLOCATOR);
+        RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
+        mX509.defineClassUnder("NameError",openSSLError,openSSLError.getAllocator());
 
         CallbackFactory namecb = runtime.callbackFactory(X509Name.class);
 
-        cX509Name.defineSingletonMethod("new",namecb.getOptSingletonMethod("newInstance"));
         cX509Name.defineMethod("initialize",namecb.getOptMethod("initialize"));
         cX509Name.defineMethod("add_entry",namecb.getOptMethod("add_entry"));
         cX509Name.defineMethod("to_s",namecb.getOptMethod("_to_s"));
@@ -101,12 +108,6 @@ public class X509Name extends RubyObject {
     public static final int RFC2253 = 17892119;
     public static final int ONELINE = 8520479;
     public static final int MULTILINE = 44302342;
-
-    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-        X509Name result = new X509Name(recv.getRuntime(), (RubyClass)recv);
-        result.callInit(args);
-        return result;
-    }
 
     public X509Name(IRuby runtime, RubyClass type) {
         super(runtime,type);

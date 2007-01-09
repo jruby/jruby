@@ -28,6 +28,7 @@
 package org.jruby.ext.openssl;
 
 import org.jruby.IRuby;
+import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 
 /**
@@ -36,7 +37,8 @@ import org.jruby.RubyModule;
 public class SSL {
     public static void createSSL(IRuby runtime, RubyModule ossl) {
         RubyModule mSSL = ossl.defineModuleUnder("SSL");
-        mSSL.defineClassUnder("SSLError",ossl.getClass("OpenSSLError"));
+        RubyClass openSSLError = ossl.getClass("OpenSSLError");
+        mSSL.defineClassUnder("SSLError",openSSLError,openSSLError.getAllocator());
 
         SSLContext.createSSLContext(runtime,mSSL);
         SSLSocket.createSSLSocket(runtime,mSSL);

@@ -40,6 +40,7 @@ import java.util.regex.Pattern;
 
 import org.jruby.parser.ReOptions;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.util.PrintfFormat;
@@ -116,12 +117,24 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 	private String lastTarget = null;
 	private Matcher matcher = null;
 
-    public RubyRegexp(IRuby runtime) {
-        super(runtime, runtime.getClass("Regexp"));
+    public RubyRegexp(IRuby runtime, RubyClass klass) {
+        super(runtime, klass);
     }
 
+    private RubyRegexp(IRuby runtime) {
+        super(runtime, runtime.getClass("Regexp"));
+    }
+    
+    private static ObjectAllocator REGEXP_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            RubyRegexp instance = new RubyRegexp(runtime, klass);
+            
+            return instance;
+        }
+    };
+
     public static RubyClass createRegexpClass(IRuby runtime) {
-        RubyClass regexpClass = runtime.defineClass("Regexp", runtime.getObject());
+        RubyClass regexpClass = runtime.defineClass("Regexp", runtime.getObject(), REGEXP_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyRegexp.class);
         
         regexpClass.defineConstant("IGNORECASE", runtime.newFixnum(RE_OPTION_IGNORECASE));
@@ -204,9 +217,13 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     }
     
     public static RubyRegexp newInstance(IRubyObject recv, IRubyObject[] args) {
-        RubyRegexp re = new RubyRegexp(recv.getRuntime());
-        re.setMetaClass((RubyClass) recv);
-        re.initialize(args);
+        IRuby runtime = recv.getRuntime();
+        RubyClass klass = (RubyClass)recv;
+        
+        RubyRegexp re = (RubyRegexp)klass.allocate();
+        
+        re.callInit(args);
+        
         return re;
     }
 
@@ -687,4 +704,5 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 	public Pattern getPattern() {
 		return this.pattern;
 	}
+
 }

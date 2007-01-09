@@ -48,6 +48,7 @@ import org.jruby.RubyObject;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -55,15 +56,20 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class SSLSocket extends RubyObject {
+    private static ObjectAllocator SSLSOCKET_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return new SSLSocket(runtime, klass);
+        }
+    };
+    
     public static void createSSLSocket(IRuby runtime, RubyModule mSSL) {
-        RubyClass cSSLSocket = mSSL.defineClassUnder("SSLSocket",runtime.getObject());
+        RubyClass cSSLSocket = mSSL.defineClassUnder("SSLSocket",runtime.getObject(),SSLSOCKET_ALLOCATOR);
 
         cSSLSocket.attr_accessor(new IRubyObject[]{runtime.newSymbol("io")});
         cSSLSocket.attr_accessor(new IRubyObject[]{runtime.newSymbol("context")});
         cSSLSocket.attr_accessor(new IRubyObject[]{runtime.newSymbol("sync_close")});
 
         CallbackFactory sockcb = runtime.callbackFactory(SSLSocket.class);
-        cSSLSocket.defineSingletonMethod("new",sockcb.getOptSingletonMethod("newInstance"));
         cSSLSocket.defineAlias("to_io","io");
         cSSLSocket.defineMethod("initialize",sockcb.getOptMethod("_initialize"));
         cSSLSocket.defineMethod("connect",sockcb.getMethod("connect"));
@@ -77,12 +83,6 @@ public class SSLSocket extends RubyObject {
         cSSLSocket.defineMethod("cipher",sockcb.getMethod("cipher"));
         cSSLSocket.defineMethod("state",sockcb.getMethod("state"));
         cSSLSocket.defineMethod("pending",sockcb.getMethod("pending"));
-    }
-
-    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-        SSLSocket result = new SSLSocket(recv.getRuntime(), (RubyClass)recv);
-        result.callInit(args);
-        return result;
     }
 
     private RubyClass sslError;

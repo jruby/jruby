@@ -28,6 +28,7 @@
 package org.jruby.ext.openssl;
 
 import org.jruby.IRuby;
+import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 
 /**
@@ -36,7 +37,8 @@ import org.jruby.RubyModule;
 public class OpenSSLReal {
     public static void createOpenSSL(IRuby runtime) {
         RubyModule ossl = runtime.defineModule("OpenSSL");
-        ossl.defineClassUnder("OpenSSLError",runtime.getClass("StandardError"));
+        RubyClass standardError = runtime.getClass("StandardError");
+        ossl.defineClassUnder("OpenSSLError",standardError,standardError.getAllocator());
 
         ASN1.createASN1(runtime, ossl);
         Digest.createDigest(runtime, ossl);

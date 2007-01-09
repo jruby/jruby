@@ -35,6 +35,7 @@ package org.jruby;
 import java.util.List;
 
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -58,7 +59,9 @@ public class RubyStruct extends RubyObject {
     }
 
     public static RubyClass createStructClass(IRuby runtime) {
-        RubyClass structClass = runtime.defineClass("Struct", runtime.getObject());
+        // TODO: NOT_ALLOCATABLE_ALLOCATOR may be ok here, but it's unclear how Structs
+        // work with marshalling. Confirm behavior and ensure we're doing this correctly. JRUBY-415
+        RubyClass structClass = runtime.defineClass("Struct", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyStruct.class);
         structClass.includeModule(runtime.getModule("Enumerable"));
 
@@ -171,7 +174,7 @@ public class RubyStruct extends RubyObject {
             if (!IdUtil.isConstant(name)) {
                 throw recv.getRuntime().newNameError("identifier " + name + " needs to be constant", name);
             }
-            newStruct = ((RubyClass) recv).defineClassUnder(name, (RubyClass) recv);
+            newStruct = superClass.defineClassUnder(name, superClass, superClass.getAllocator());
         }
 
         newStruct.setInstanceVariable("__size__", member.length());

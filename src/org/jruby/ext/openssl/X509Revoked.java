@@ -32,19 +32,26 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class X509Revoked extends RubyObject {
+    private static ObjectAllocator X509REVOKED_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return new X509Revoked(runtime, klass);
+        }
+    };
+    
     public static void createX509Revoked(IRuby runtime, RubyModule mX509) {
-        RubyClass cX509Rev = mX509.defineClassUnder("Revoked",runtime.getObject());
-        mX509.defineClassUnder("RevokedError",runtime.getModule("OpenSSL").getClass("OpenSSLError"));
+        RubyClass cX509Rev = mX509.defineClassUnder("Revoked",runtime.getObject(),X509REVOKED_ALLOCATOR);
+        RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
+        mX509.defineClassUnder("RevokedError",openSSLError,openSSLError.getAllocator());
 
         CallbackFactory revcb = runtime.callbackFactory(X509Revoked.class);
 
-        cX509Rev.defineSingletonMethod("new",revcb.getOptSingletonMethod("newInstance"));
         cX509Rev.defineMethod("initialize",revcb.getOptMethod("_initialize"));
         cX509Rev.defineMethod("serial",revcb.getMethod("serial"));
         cX509Rev.defineMethod("serial=",revcb.getMethod("set_serial",IRubyObject.class));
@@ -53,12 +60,6 @@ public class X509Revoked extends RubyObject {
         cX509Rev.defineMethod("extensions",revcb.getMethod("extensions"));
         cX509Rev.defineMethod("extensions=",revcb.getMethod("set_extensions",IRubyObject.class));
         cX509Rev.defineMethod("add_extension",revcb.getMethod("add_extension",IRubyObject.class));
-    }
-
-    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-        IRubyObject result = new X509Revoked(recv.getRuntime(), (RubyClass)recv);
-        result.callInit(args);
-        return result;
     }
 
     private IRubyObject serial;

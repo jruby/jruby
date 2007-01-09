@@ -49,19 +49,26 @@ import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.openssl.x509store.PEM;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class PKeyDSA extends PKey {
+    private static ObjectAllocator PKEYDSA_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return new PKeyDSA(runtime, klass);
+        }
+    };
+    
     public static void createPKeyDSA(IRuby runtime, RubyModule mPKey) {
-        RubyClass cDSA = mPKey.defineClassUnder("DSA",mPKey.getClass("PKey"));
-        mPKey.defineClassUnder("DSAError",mPKey.getClass("PKeyError"));
+        RubyClass cDSA = mPKey.defineClassUnder("DSA",mPKey.getClass("PKey"),PKEYDSA_ALLOCATOR);
+        RubyClass pkeyError = mPKey.getClass("PKeyError");
+        mPKey.defineClassUnder("DSAError",pkeyError,pkeyError.getAllocator());
         
         CallbackFactory dsacb = runtime.callbackFactory(PKeyDSA.class);
 
-        cDSA.defineSingletonMethod("new",dsacb.getOptSingletonMethod("newInstance"));
         cDSA.defineMethod("initialize",dsacb.getOptMethod("initialize"));
 
         cDSA.defineMethod("public?",dsacb.getMethod("public_p"));
@@ -74,12 +81,6 @@ public class PKeyDSA extends PKey {
         cDSA.defineMethod("to_s",dsacb.getOptMethod("export"));
         cDSA.defineMethod("syssign",dsacb.getMethod("syssign",IRubyObject.class));
         cDSA.defineMethod("sysverify",dsacb.getMethod("sysverify",IRubyObject.class,IRubyObject.class));
-    }
-
-    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-        PKeyDSA result = new PKeyDSA(recv.getRuntime(), (RubyClass)recv);
-        result.callInit(args);
-        return result;
     }
 
     public PKeyDSA(IRuby runtime, RubyClass type) {

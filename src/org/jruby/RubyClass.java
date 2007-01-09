@@ -80,7 +80,7 @@ public class RubyClass extends RubyModule {
         this.runtime = runtime;
     }
     
-    public IRubyObject allocate() {
+    public final IRubyObject allocate() {
         return getAllocator().allocate(getRuntime(), this);
     }
     
@@ -201,7 +201,7 @@ public class RubyClass extends RubyModule {
      *
      */
     public IRubyObject newInstance(IRubyObject[] args) {
-        IRubyObject obj = (IRubyObject)getAllocator().allocate(getRuntime(), this);
+        IRubyObject obj = (IRubyObject)allocate();
         obj.callInit(args);
         return obj;
     }
@@ -229,7 +229,8 @@ public class RubyClass extends RubyModule {
         }
 
         ThreadContext tc = runtime.getCurrentContext();
-        RubyClass newClass = superClass.newSubClass(null,tc.peekCRef());
+        // use allocator of superclass, since this will be a pure Ruby class
+        RubyClass newClass = superClass.newSubClass(null, superClass.getAllocator(),tc.peekCRef());
 
         // call "initialize" method
         newClass.callInit(args);
@@ -274,7 +275,7 @@ public class RubyClass extends RubyModule {
         return (RubyClass) RubyModule.unmarshalFrom(output);
     }
 
-    public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
+    public RubyClass newSubClass(String name, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
         RubyClass classClass = runtime.getClass("Class");
         
         // Cannot subclass 'Class' or metaclasses
@@ -284,7 +285,7 @@ public class RubyClass extends RubyModule {
             throw runtime.newTypeError("can't make subclass of virtual class");
         }
 
-        RubyClass newClass = new RubyClass(runtime, classClass, this, getAllocator(), parentCRef, name);
+        RubyClass newClass = new RubyClass(runtime, classClass, this, allocator, parentCRef, name);
 
         newClass.makeMetaClass(getMetaClass(), newClass.getCRef());
         newClass.inheritedBy(this);

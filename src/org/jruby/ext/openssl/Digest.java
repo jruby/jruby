@@ -35,16 +35,24 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class Digest extends RubyObject {
+    private static ObjectAllocator DIGEST_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return new Digest(runtime, klass);
+        }
+    };
+    
     public static void createDigest(IRuby runtime, RubyModule ossl) {
         RubyModule mDigest = ossl.defineModuleUnder("Digest");
-        RubyClass cDigest = mDigest.defineClassUnder("Digest",runtime.getObject());
-        mDigest.defineClassUnder("DigestError",ossl.getClass("OpenSSLError"));
+        RubyClass cDigest = mDigest.defineClassUnder("Digest",runtime.getObject(),DIGEST_ALLOCATOR);
+        RubyClass openSSLError = ossl.getClass("OpenSSLError");
+        mDigest.defineClassUnder("DigestError",openSSLError,openSSLError.getAllocator());
 
         CallbackFactory digestcb = runtime.callbackFactory(Digest.class);
 
@@ -81,7 +89,7 @@ public class Digest extends RubyObject {
     }
 
     public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-        Digest result = new Digest(recv.getRuntime(), (RubyClass)recv);
+        Digest result = (Digest)((RubyClass)recv).allocate();
         if(!(recv.toString().equals("OpenSSL::Digest::Digest"))) {
             try {
                 result.name = recv.toString();

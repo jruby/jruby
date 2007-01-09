@@ -22,6 +22,7 @@ import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.GlobalVariable;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -103,9 +104,9 @@ public interface IRuby {
 	 * MRI: rb_define_class / rb_define_class_id
 	 *
 	 */
-	public RubyClass defineClass(String name, RubyClass superClass);
+	public RubyClass defineClass(String name, RubyClass superClass, ObjectAllocator allocator);
 
-	public RubyClass defineClassUnder(String name, RubyClass superClass, SinglyLinkedList parentCRef);
+	public RubyClass defineClassUnder(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef);
 
 	/** rb_define_module / rb_define_module_id
 	 *

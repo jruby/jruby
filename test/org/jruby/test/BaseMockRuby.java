@@ -40,6 +40,7 @@ import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.GlobalVariable;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -101,11 +102,11 @@ public class BaseMockRuby implements IRuby {
 		throw new MockException();
 	}
 
-	public RubyClass defineClass(String name, RubyClass superClass) {
+	public RubyClass defineClass(String name, RubyClass superClass, ObjectAllocator allocator) {
 		throw new MockException();
 	}
 
-	public RubyClass defineClassUnder(String name, RubyClass superClass,
+	public RubyClass defineClassUnder(String name, RubyClass superClass, ObjectAllocator allocator,
             SinglyLinkedList parentCRef) {
 		throw new MockException();
 	}

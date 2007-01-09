@@ -629,7 +629,7 @@ public class RubyKernel {
         
         if (args.length == 1) {
             if (args[0] instanceof RubyString) {
-                throw new RaiseException(RubyException.newInstance(runtime.getClass("RuntimeError"), args));
+                throw new RaiseException((RubyException)runtime.getClass("RuntimeError").newInstance(args));
             }
             
             if (!args[0].respondsTo("exception")) {

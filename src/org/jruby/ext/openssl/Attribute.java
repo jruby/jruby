@@ -37,32 +37,33 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class Attribute extends RubyObject {
+    private static ObjectAllocator ATTRIBUTE_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return new Attribute(runtime, klass);
+        }
+    };
+    
     public static void createAttribute(IRuby runtime, RubyModule mX509) {
-        RubyClass cAttribute = mX509.defineClassUnder("Attribute",runtime.getObject());
+        RubyClass cAttribute = mX509.defineClassUnder("Attribute",runtime.getObject(), ATTRIBUTE_ALLOCATOR);
 
-        mX509.defineClassUnder("AttributeError",runtime.getModule("OpenSSL").getClass("OpenSSLError"));
+        RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
+        mX509.defineClassUnder("AttributeError",openSSLError, openSSLError.getAllocator());
 
         CallbackFactory attrcb = runtime.callbackFactory(Attribute.class);
 
-        cAttribute.defineSingletonMethod("new",attrcb.getOptSingletonMethod("newInstance"));
         cAttribute.defineMethod("initialize",attrcb.getOptMethod("_initialize"));
         cAttribute.defineMethod("to_der",attrcb.getMethod("to_der"));
         cAttribute.defineMethod("oid",attrcb.getMethod("oid"));
         cAttribute.defineMethod("oid=",attrcb.getMethod("set_oid",IRubyObject.class));
         cAttribute.defineMethod("value",attrcb.getMethod("value"));
         cAttribute.defineMethod("value=",attrcb.getMethod("set_value",IRubyObject.class));
-    }
-
-    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-        Attribute result = new Attribute(recv.getRuntime(), (RubyClass)recv);
-        result.callInit(args);
-        return result;
     }
 
     public Attribute(IRuby runtime, RubyClass type) {

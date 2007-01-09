@@ -33,6 +33,7 @@ package org.jruby;
 import java.math.BigDecimal;
 
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -40,8 +41,14 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision: 1.2 $
  */
 public class RubyBigDecimal extends RubyNumeric {
+    private static final ObjectAllocator BIGDECIMAL_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return new RubyBigDecimal(runtime, klass);
+        }
+    };
+    
     public static RubyClass createBigDecimal(IRuby runtime) {
-        RubyClass result = runtime.defineClass("BigDecimal",runtime.getClass("Numeric"));
+        RubyClass result = runtime.defineClass("BigDecimal",runtime.getClass("Numeric"), BIGDECIMAL_ALLOCATOR);
 
         result.setConstant("ROUND_DOWN",RubyNumeric.int2fix(runtime,BigDecimal.ROUND_DOWN));
         result.setConstant("SIGN_POSITIVE_INFINITE",RubyNumeric.int2fix(runtime,3));
@@ -68,8 +75,8 @@ public class RubyBigDecimal extends RubyNumeric {
 
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyBigDecimal.class);
 
-        runtime.getModule("Kernel").defineModuleFunction("BigDecimal",callbackFactory.getOptSingletonMethod("newCreate"));
-        result.defineFastSingletonMethod("new", callbackFactory.getOptSingletonMethod("newCreate"));
+        runtime.getModule("Kernel").defineModuleFunction("BigDecimal",callbackFactory.getOptSingletonMethod("newInstance"));
+        result.defineFastSingletonMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
         result.defineFastSingletonMethod("ver", callbackFactory.getSingletonMethod("ver"));
         result.defineSingletonMethod("_load", callbackFactory.getSingletonMethod("_load",IRubyObject.class));
         result.defineFastSingletonMethod("double_fig", callbackFactory.getSingletonMethod("double_fig"));
@@ -130,18 +137,22 @@ public class RubyBigDecimal extends RubyNumeric {
 
     private BigDecimal value;
 
-    public RubyBigDecimal(IRuby runtime) {
-        this(runtime, new BigDecimal("0"));
+    public RubyBigDecimal(IRuby runtime, RubyClass klass) {
+        super(runtime, klass);
     }
 
     public RubyBigDecimal(IRuby runtime, BigDecimal value) {
-        super(runtime,runtime.getClass("BigDecimal"));
+        super(runtime, runtime.getClass("BigDecimal"));
         this.value = value;
     }
 
-    public static RubyBigDecimal newCreate(IRubyObject recv, IRubyObject[] args) {
-        RubyBigDecimal result = new RubyBigDecimal(recv.getRuntime());
+    public static RubyBigDecimal newInstance(IRubyObject recv, IRubyObject[] args) {
+        RubyClass klass = (RubyClass)recv;
+        
+        RubyBigDecimal result = (RubyBigDecimal)klass.allocate();
+        
         result.callInit(args);
+        
         return result;
     }
 
@@ -297,7 +308,7 @@ public class RubyBigDecimal extends RubyNumeric {
         if(other instanceof RubyFloat) {
             obj = getRuntime().newArray(other,to_f());
         } else {
-            obj = getRuntime().newArray(newCreate(other,new IRubyObject[]{other.callMethod(getRuntime().getCurrentContext(),"to_s")}),this);
+            obj = getRuntime().newArray(newInstance(other,new IRubyObject[]{other.callMethod(getRuntime().getCurrentContext(),"to_s")}),this);
         }
         return obj;
     }

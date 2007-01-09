@@ -33,6 +33,7 @@
 package org.jruby;
 
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyFile;
 
@@ -57,7 +58,8 @@ public class RubyFileStat extends RubyObject {
     private RubyBoolean isSymlink;
 
     public static RubyClass createFileStatClass(IRuby runtime) {
-        final RubyClass fileStatClass = runtime.getClass("File").defineClassUnder("Stat",runtime.getObject());
+        // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
+        final RubyClass fileStatClass = runtime.getClass("File").defineClassUnder("Stat",runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         final CallbackFactory callbackFactory = runtime.callbackFactory(RubyFileStat.class);
         //        fileStatClass.defineMethod("<=>", callbackFactory.getMethod(""));
         //        fileStateClass.includeModule(runtime.getModule("Comparable"));

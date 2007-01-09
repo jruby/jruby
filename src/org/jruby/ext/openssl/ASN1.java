@@ -69,6 +69,7 @@ import org.jruby.RubySymbol;
 import org.jruby.RubyTime;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -244,7 +245,8 @@ public class ASN1 {
     
     public static void createASN1(IRuby runtime, RubyModule ossl) {
         RubyModule mASN1 = ossl.defineModuleUnder("ASN1");
-        mASN1.defineClassUnder("ASN1Error",ossl.getClass("OpenSSLError"));
+        RubyClass openSSLError = ossl.getClass("OpenSSLError");
+        mASN1.defineClassUnder("ASN1Error",openSSLError, openSSLError.getAllocator());
 
         CallbackFactory asncb = runtime.callbackFactory(ASN1.class);
         mASN1.defineSingletonMethod("traverse",asncb.getSingletonMethod("traverse",IRubyObject.class));
@@ -262,25 +264,22 @@ public class ASN1 {
             }
         }
 
-        RubyClass cASN1Data = mASN1.defineClassUnder("ASN1Data",runtime.getObject());
+        RubyClass cASN1Data = mASN1.defineClassUnder("ASN1Data",runtime.getObject(), runtime.getObject().getAllocator());
         cASN1Data.attr_accessor(new IRubyObject[]{runtime.newString("value"),runtime.newString("tag"),runtime.newString("tag_class")});
         CallbackFactory asn1datacb = runtime.callbackFactory(ASN1Data.class);
-        cASN1Data.defineSingletonMethod("new",asn1datacb.getOptSingletonMethod("newInstance"));
         cASN1Data.defineMethod("initialize",asn1datacb.getOptMethod("initialize"));
         cASN1Data.defineMethod("to_der",asn1datacb.getMethod("to_der"));
 
-        RubyClass cASN1Primitive = mASN1.defineClassUnder("Primitive",cASN1Data);
+        RubyClass cASN1Primitive = mASN1.defineClassUnder("Primitive",cASN1Data, cASN1Data.getAllocator());
         cASN1Primitive.attr_accessor(new IRubyObject[]{runtime.newString("tagging")});
         CallbackFactory primcb = runtime.callbackFactory(ASN1Primitive.class);
-        cASN1Primitive.defineSingletonMethod("new",primcb.getOptSingletonMethod("newInstance"));
         cASN1Primitive.defineMethod("initialize",primcb.getOptMethod("initialize"));
         cASN1Primitive.defineMethod("to_der",primcb.getMethod("to_der"));
 
-        RubyClass cASN1Constructive = mASN1.defineClassUnder("Constructive",cASN1Data);
+        RubyClass cASN1Constructive = mASN1.defineClassUnder("Constructive",cASN1Data,cASN1Data.getAllocator());
         cASN1Constructive.includeModule(runtime.getModule("Enumerable"));
         cASN1Constructive.attr_accessor(new IRubyObject[]{runtime.newString("tagging")});
         CallbackFactory concb = runtime.callbackFactory(ASN1Constructive.class);
-        cASN1Constructive.defineSingletonMethod("new",concb.getOptSingletonMethod("newInstance"));
         cASN1Constructive.defineMethod("initialize",concb.getOptMethod("initialize"));
         cASN1Constructive.defineMethod("to_der",concb.getMethod("to_der"));
         cASN1Constructive.defineMethod("each",concb.getMethod("each"));
@@ -308,28 +307,28 @@ public class ASN1 {
         mASN1.defineSingletonMethod("Sequence",asncb.getOptSingletonMethod("fact_Sequence"));
         mASN1.defineSingletonMethod("Set",asncb.getOptSingletonMethod("fact_Set"));
 
-        mASN1.defineClassUnder("Boolean",cASN1Primitive);
-        mASN1.defineClassUnder("Integer",cASN1Primitive);
-        mASN1.defineClassUnder("Enumerated",cASN1Primitive);
-        RubyClass cASN1BitString = mASN1.defineClassUnder("BitString",cASN1Primitive);
-        mASN1.defineClassUnder("OctetString",cASN1Primitive);
-        mASN1.defineClassUnder("UTF8String",cASN1Primitive);
-        mASN1.defineClassUnder("NumericString",cASN1Primitive);
-        mASN1.defineClassUnder("PrintableString",cASN1Primitive);
-        mASN1.defineClassUnder("T61String",cASN1Primitive);
-        mASN1.defineClassUnder("VideotexString",cASN1Primitive);
-        mASN1.defineClassUnder("IA5String",cASN1Primitive);
-        mASN1.defineClassUnder("GraphicString",cASN1Primitive);
-        mASN1.defineClassUnder("ISO64String",cASN1Primitive);
-        mASN1.defineClassUnder("GeneralString",cASN1Primitive);
-        mASN1.defineClassUnder("UniversalString",cASN1Primitive);
-        mASN1.defineClassUnder("BMPString",cASN1Primitive);
-        mASN1.defineClassUnder("Null",cASN1Primitive);
-        RubyClass cASN1ObjectId = mASN1.defineClassUnder("ObjectId",cASN1Primitive);
-        mASN1.defineClassUnder("UTCTime",cASN1Primitive);
-        mASN1.defineClassUnder("GeneralizedTime",cASN1Primitive);
-        mASN1.defineClassUnder("Sequence",cASN1Constructive);
-        mASN1.defineClassUnder("Set",cASN1Constructive);
+        mASN1.defineClassUnder("Boolean",cASN1Primitive,cASN1Primitive.getAllocator());
+        mASN1.defineClassUnder("Integer",cASN1Primitive,cASN1Primitive.getAllocator());
+        mASN1.defineClassUnder("Enumerated",cASN1Primitive,cASN1Primitive.getAllocator());
+        RubyClass cASN1BitString = mASN1.defineClassUnder("BitString",cASN1Primitive,cASN1Primitive.getAllocator());
+        mASN1.defineClassUnder("OctetString",cASN1Primitive,cASN1Primitive.getAllocator());
+        mASN1.defineClassUnder("UTF8String",cASN1Primitive,cASN1Primitive.getAllocator());
+        mASN1.defineClassUnder("NumericString",cASN1Primitive,cASN1Primitive.getAllocator());
+        mASN1.defineClassUnder("PrintableString",cASN1Primitive,cASN1Primitive.getAllocator());
+        mASN1.defineClassUnder("T61String",cASN1Primitive,cASN1Primitive.getAllocator());
+        mASN1.defineClassUnder("VideotexString",cASN1Primitive,cASN1Primitive.getAllocator());
+        mASN1.defineClassUnder("IA5String",cASN1Primitive,cASN1Primitive.getAllocator());
+        mASN1.defineClassUnder("GraphicString",cASN1Primitive,cASN1Primitive.getAllocator());
+        mASN1.defineClassUnder("ISO64String",cASN1Primitive,cASN1Primitive.getAllocator());
+        mASN1.defineClassUnder("GeneralString",cASN1Primitive,cASN1Primitive.getAllocator());
+        mASN1.defineClassUnder("UniversalString",cASN1Primitive,cASN1Primitive.getAllocator());
+        mASN1.defineClassUnder("BMPString",cASN1Primitive,cASN1Primitive.getAllocator());
+        mASN1.defineClassUnder("Null",cASN1Primitive,cASN1Primitive.getAllocator());
+        RubyClass cASN1ObjectId = mASN1.defineClassUnder("ObjectId",cASN1Primitive,cASN1Primitive.getAllocator());
+        mASN1.defineClassUnder("UTCTime",cASN1Primitive,cASN1Primitive.getAllocator());
+        mASN1.defineClassUnder("GeneralizedTime",cASN1Primitive,cASN1Primitive.getAllocator());
+        mASN1.defineClassUnder("Sequence",cASN1Constructive,cASN1Constructive.getAllocator());
+        mASN1.defineClassUnder("Set",cASN1Constructive,cASN1Constructive.getAllocator());
 
         cASN1ObjectId.defineSingletonMethod("register",asncb.getOptSingletonMethod("objectid_register"));
         cASN1ObjectId.defineMethod("sn",asncb.getSingletonMethod("objectid_sn"));
@@ -576,11 +575,6 @@ public class ASN1 {
     }
 
     public static class ASN1Data extends RubyObject {
-        public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-            ASN1Data result = new ASN1Data(recv.getRuntime(), (RubyClass)recv);
-            result.callInit(args);
-            return result;
-        }
 
         public ASN1Data(IRuby runtime, RubyClass type) {
             super(runtime,type);
@@ -673,12 +667,6 @@ public class ASN1 {
     }
 
     public static class ASN1Primitive extends ASN1Data {
-        public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-            ASN1Data result = new ASN1Primitive(recv.getRuntime(), (RubyClass)recv);
-            result.callInit(args);
-            return result;
-        }
-
         public ASN1Primitive(IRuby runtime, RubyClass type) {
             super(runtime,type);
         }
@@ -800,12 +788,6 @@ public class ASN1 {
     }
 
     public static class ASN1Constructive extends ASN1Data {
-        public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-            ASN1Data result = new ASN1Constructive(recv.getRuntime(), (RubyClass)recv);
-            result.callInit(args);
-            return result;
-        }
-
         public ASN1Constructive(IRuby runtime, RubyClass type) {
             super(runtime,type);
         }

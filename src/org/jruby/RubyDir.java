@@ -38,6 +38,7 @@ import java.util.List;
 
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Glob;
@@ -59,15 +60,20 @@ public class RubyDir extends RubyObject {
     public RubyDir(IRuby runtime, RubyClass type) {
         super(runtime, type);
     }
+    
+    private static ObjectAllocator DIR_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return new RubyDir(runtime, klass);
+        }
+    };
 
     public static RubyClass createDirClass(IRuby runtime) {
-        RubyClass dirClass = runtime.defineClass("Dir", runtime.getObject());
+        RubyClass dirClass = runtime.defineClass("Dir", runtime.getObject(), DIR_ALLOCATOR);
 
         dirClass.includeModule(runtime.getModule("Enumerable"));
 
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyDir.class);
 
-		dirClass.defineFastSingletonMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
         dirClass.defineSingletonMethod("glob", callbackFactory.getSingletonMethod("glob", RubyString.class));
         dirClass.defineFastSingletonMethod("entries", callbackFactory.getSingletonMethod("entries", RubyString.class));
         dirClass.defineSingletonMethod("[]", callbackFactory.getSingletonMethod("glob", RubyString.class));
@@ -100,12 +106,6 @@ public class RubyDir extends RubyObject {
 		dirClass.defineMethod("initialize", callbackFactory.getMethod("initialize", RubyString.class));
 
         return dirClass;
-    }
-
-    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-        RubyDir result = new RubyDir(recv.getRuntime(), (RubyClass)recv);
-        result.callInit(args);
-        return result;
     }
 
     /**
@@ -243,8 +243,8 @@ public class RubyDir extends RubyObject {
     public static IRubyObject foreach(IRubyObject recv, RubyString path) {
         path.checkSafeString();
 
-        RubyDir dir = (RubyDir) newInstance(recv.getRuntime().getClass("Dir"),
-                                            new IRubyObject[] { path });
+        RubyClass dirClass = recv.getRuntime().getClass("Dir");
+        RubyDir dir = (RubyDir) dirClass.newInstance(new IRubyObject[] { path });
         
         dir.each();
         return recv.getRuntime().getNil();
@@ -287,7 +287,7 @@ public class RubyDir extends RubyObject {
      */
     public static IRubyObject open(IRubyObject recv, RubyString path) {
         RubyDir directory = 
-            (RubyDir) newInstance(recv.getRuntime().getClass("Dir"),
+            (RubyDir) recv.getRuntime().getClass("Dir").newInstance(
                     new IRubyObject[] { path });
 
         ThreadContext tc = recv.getRuntime().getCurrentContext();

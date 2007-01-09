@@ -12,6 +12,7 @@ import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
@@ -76,9 +77,11 @@ public class HashMetaClass extends ObjectMetaClass {
 	        defineAlias("merge!", "update");
 	        defineAlias("store", "[]=");
 	        defineAlias("value?", "has_value?");
+            
+            CallbackFactory hashCB = getRuntime().callbackFactory(HashMetaClass.class);
 	        
-	        defineSingletonMethod("new", Arity.optional(), "newInstance");
-	        defineFastSingletonMethod("[]", Arity.optional(), "create");
+            defineSingletonMethod("new", hashCB.getOptSingletonMethod("newInstance"));
+            defineFastSingletonMethod("[]", hashCB.getOptSingletonMethod("create"));
 		}
 	};
 	
@@ -100,29 +103,30 @@ public class HashMetaClass extends ObjectMetaClass {
         }
     };
 
-    public IRubyObject newInstance(IRubyObject[] args) {
+    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
         // FIXME: This is pretty ugly, but I think it's being done to capture the block. Confirm that.
-    	IRuby runtime = getRuntime();
-        RubyHash hash = (RubyHash)HASH_ALLOCATOR.allocate(runtime, this);
+    	IRuby runtime = recv.getRuntime();
+        RubyHash hash = (RubyHash)((RubyClass)recv).allocate();
 
         // A block to represent 'default' value for unknown values
         if (runtime.getCurrentContext().isBlockGiven()) {
         	hash.setDefaultProc(runtime.newProc());
         }
         
-        hash.setMetaClass(this);
         hash.callInit(args);
         
         return hash;
     }
     
-    public IRubyObject create(IRubyObject[] args) {
-        RubyHash hash = (RubyHash)HASH_ALLOCATOR.allocate(getRuntime(), this);
+    public static IRubyObject create(IRubyObject recv, IRubyObject[] args) {
+        IRuby runtime = recv.getRuntime();
+        RubyClass klass = (RubyClass)recv;
+        RubyHash hash = (RubyHash)klass.allocate();
 
         if (args.length == 1) {
             hash.setValueMap(new HashMap(((RubyHash) args[0]).getValueMap()));
         } else if (args.length % 2 != 0) {
-            throw getRuntime().newArgumentError("odd number of args for Hash");
+            throw runtime.newArgumentError("odd number of args for Hash");
         } else {
             for (int i = 0; i < args.length; i += 2) {
                 hash.aset(args[i], args[i + 1]);

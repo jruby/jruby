@@ -32,17 +32,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.util.IOHandler;
 
 public class RubyStringIO extends RubyObject {
+    private static ObjectAllocator STRINGIO_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return new RubyStringIO(runtime, klass);
+        }
+    };
+    
     public static RubyClass createStringIOClass(final IRuby runtime) {
-        final RubyClass stringIOClass = runtime.defineClass("StringIO",runtime.getObject());
+        final RubyClass stringIOClass = runtime.defineClass("StringIO", runtime.getObject(), STRINGIO_ALLOCATOR);
+        
         final CallbackFactory callbackFactory = runtime.callbackFactory(RubyStringIO.class);
+        
         stringIOClass.defineSingletonMethod("open", callbackFactory.getOptSingletonMethod("open"));
-        stringIOClass.defineFastSingletonMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
         stringIOClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
         stringIOClass.defineFastMethod("<<", callbackFactory.getMethod("append",IRubyObject.class));
         stringIOClass.defineFastMethod("binmode", callbackFactory.getMethod("binmode"));
@@ -99,12 +107,6 @@ public class RubyStringIO extends RubyObject {
         return stringIOClass;
     }
 
-    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-        RubyStringIO result = new RubyStringIO(recv.getRuntime());
-        result.callInit(args);
-        return result;
-    }
-
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args) {
         RubyString str = recv.getRuntime().newString("");
         IRubyObject mode = recv.getRuntime().getNil();
@@ -114,7 +116,7 @@ public class RubyStringIO extends RubyObject {
                 mode = args[1];
             }
         }
-        RubyStringIO strio = (RubyStringIO)newInstance(recv,new IRubyObject[]{str,mode});
+        RubyStringIO strio = (RubyStringIO)((RubyClass)recv).newInstance(new IRubyObject[]{str,mode});
         IRubyObject val = strio;
         ThreadContext tc = recv.getRuntime().getCurrentContext();
         
@@ -129,8 +131,8 @@ public class RubyStringIO extends RubyObject {
     }
 
 
-    protected RubyStringIO(IRuby runtime) {
-        super(runtime, runtime.getClass("StringIO"));
+    protected RubyStringIO(IRuby runtime, RubyClass klass) {
+        super(runtime, klass);
     }
 
     private long pos = 0L;

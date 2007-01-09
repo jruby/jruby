@@ -56,16 +56,18 @@ import org.jruby.ext.openssl.x509store.PEM;
 import org.jruby.ext.openssl.x509store.X509AuxCertificate;
 import org.jruby.ext.openssl.x509store.X509_STORE_CTX;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
-public class PKCS7 extends RubyObject {
+public class PKCS7 extends RubyObject {    
     public static void createPKCS7(IRuby runtime, RubyModule mOSSL) {
         RubyModule mPKCS7 = mOSSL.defineModuleUnder("PKCS7");
-        mPKCS7.defineClassUnder("PKCS7Error",runtime.getModule("OpenSSL").getClass("OpenSSLError"));
-        RubyClass cPKCS7 = mPKCS7.defineClassUnder("PKCS7",runtime.getObject());
+        RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
+        mPKCS7.defineClassUnder("PKCS7Error",openSSLError,openSSLError.getAllocator());
+        RubyClass cPKCS7 = mPKCS7.defineClassUnder("PKCS7",runtime.getObject(),runtime.getObject().getAllocator());
 
         cPKCS7.attr_accessor(new IRubyObject[]{runtime.newSymbol("data"),runtime.newSymbol("error_string")});
 
@@ -115,12 +117,6 @@ public class PKCS7 extends RubyObject {
         mPKCS7.setConstant("BINARY",runtime.newFixnum(128));
         mPKCS7.setConstant("NOATTR",runtime.newFixnum(256));
         mPKCS7.setConstant("NOSMIMECAP",runtime.newFixnum(512));
-    }
-
-    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-        IRubyObject result = new PKCS7(recv.getRuntime(), (RubyClass)recv);
-        result.callInit(args);
-        return result;
     }
 
     public static IRubyObject read_smime(IRubyObject recv, IRubyObject arg) {
@@ -387,23 +383,22 @@ public class PKCS7 extends RubyObject {
     }
 
     public static class SignerInfo extends RubyObject {
+        private static ObjectAllocator SIGNERINFO_ALLOCATOR = new ObjectAllocator() {
+            public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+                return new SignerInfo(runtime, klass);
+            }
+        };
+    
         public static void createSignerInfo(IRuby runtime, RubyModule mPKCS7) {
-            RubyClass cPKCS7Signer = mPKCS7.defineClassUnder("SignerInfo",runtime.getObject());
+            RubyClass cPKCS7Signer = mPKCS7.defineClassUnder("SignerInfo",runtime.getObject(),SIGNERINFO_ALLOCATOR);
             mPKCS7.defineConstant("Signer",cPKCS7Signer);
 
             CallbackFactory p7scb = runtime.callbackFactory(SignerInfo.class);
-            cPKCS7Signer.defineSingletonMethod("new",p7scb.getOptSingletonMethod("newInstance"));
             cPKCS7Signer.defineMethod("initialize",p7scb.getMethod("initialize",IRubyObject.class,IRubyObject.class,IRubyObject.class));
             cPKCS7Signer.defineMethod("issuer",p7scb.getMethod("issuer"));
             cPKCS7Signer.defineMethod("name",p7scb.getMethod("issuer"));
             cPKCS7Signer.defineMethod("serial",p7scb.getMethod("serial"));
             cPKCS7Signer.defineMethod("signed_time",p7scb.getMethod("signed_time"));
-        }
-
-        public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-            IRubyObject result = new SignerInfo(recv.getRuntime(), (RubyClass)recv);
-            result.callInit(args);
-            return result;
         }
 
         public SignerInfo(IRuby runtime, RubyClass type) {
@@ -432,21 +427,20 @@ public class PKCS7 extends RubyObject {
     }
 
     public static class RecipientInfo extends RubyObject {
+        private static ObjectAllocator RECIPIENTINFO_ALLOCATOR = new ObjectAllocator() {
+            public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+                return new RecipientInfo(runtime, klass);
+            }
+        };
+    
         public static void createRecipientInfo(IRuby runtime, RubyModule mPKCS7) {
-            RubyClass cPKCS7Recipient = mPKCS7.defineClassUnder("RecipientInfo",runtime.getObject());
+            RubyClass cPKCS7Recipient = mPKCS7.defineClassUnder("RecipientInfo",runtime.getObject(),RECIPIENTINFO_ALLOCATOR);
 
             CallbackFactory p7rcb = runtime.callbackFactory(RecipientInfo.class);
-            cPKCS7Recipient.defineSingletonMethod("new",p7rcb.getOptSingletonMethod("newInstance"));
             cPKCS7Recipient.defineMethod("initialize",p7rcb.getMethod("initialize",IRubyObject.class));
             cPKCS7Recipient.defineMethod("issuer",p7rcb.getMethod("issuer"));
             cPKCS7Recipient.defineMethod("serial",p7rcb.getMethod("serial"));
             cPKCS7Recipient.defineMethod("enc_key",p7rcb.getMethod("enc_key"));
-        }
-
-        public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-            IRubyObject result = new RecipientInfo(recv.getRuntime(), (RubyClass)recv);
-            result.callInit(args);
-            return result;
         }
 
         public RecipientInfo(IRuby runtime, RubyClass type) {

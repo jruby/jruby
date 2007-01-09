@@ -39,6 +39,7 @@ import java.util.zip.GZIPOutputStream;
 import org.jruby.exceptions.RaiseException;
 
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -56,10 +57,10 @@ public class RubyZlib {
     public static RubyModule createZlibModule(IRuby runtime) {
         RubyModule result = runtime.defineModule("Zlib");
 
-        RubyClass gzfile = result.defineClassUnder("GzipFile", runtime.getObject());
+        RubyClass gzfile = result.defineClassUnder("GzipFile", runtime.getObject(), RubyGzipFile.GZIPFILE_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyGzipFile.class);
         gzfile.defineSingletonMethod("wrap", callbackFactory.getSingletonMethod("wrap", RubyGzipFile.class, IRubyObject.class));
-        gzfile.defineSingletonMethod("new", callbackFactory.getSingletonMethod("newCreate"));
+        gzfile.defineSingletonMethod("new", callbackFactory.getSingletonMethod("newInstance"));
         gzfile.defineMethod("os_code", callbackFactory.getMethod("os_code"));
         gzfile.defineMethod("closed?", callbackFactory.getMethod("closed_p"));
         gzfile.defineMethod("orig_name", callbackFactory.getMethod("orig_name"));
@@ -73,11 +74,12 @@ public class RubyZlib {
         gzfile.defineMethod("level", callbackFactory.getMethod("level"));
         gzfile.defineMethod("sync=", callbackFactory.getMethod("set_sync", IRubyObject.class));
         
-        RubyClass gzreader = result.defineClassUnder("GzipReader", gzfile);
+        CallbackFactory classCB = runtime.callbackFactory(RubyClass.class);
+        RubyClass gzreader = result.defineClassUnder("GzipReader", gzfile, RubyGzipReader.GZIPREADER_ALLOCATOR);
         gzreader.includeModule(runtime.getModule("Enumerable"));
         CallbackFactory callbackFactory2 = runtime.callbackFactory(RubyGzipReader.class);
         gzreader.defineSingletonMethod("open", callbackFactory2.getSingletonMethod("open", RubyString.class));
-        gzreader.defineSingletonMethod("new", callbackFactory2.getOptSingletonMethod("newCreate"));
+        gzreader.defineSingletonMethod("new", classCB.getOptMethod("newInstance"));
         gzreader.defineMethod("initialize", callbackFactory2.getMethod("initialize", IRubyObject.class));
         gzreader.defineMethod("rewind", callbackFactory2.getMethod("rewind"));
         gzreader.defineMethod("lineno", callbackFactory2.getMethod("lineno"));
@@ -97,13 +99,14 @@ public class RubyZlib {
         gzreader.defineMethod("gets", callbackFactory2.getOptMethod("gets"));
         gzreader.defineMethod("tell", callbackFactory2.getMethod("tell"));
         
-        RubyClass zlibError = result.defineClassUnder("Error", runtime.getClass("StandardError"));
-        gzreader.defineClassUnder("Error", zlibError);
+        RubyClass standardError = runtime.getClass("StandardError");
+        RubyClass zlibError = result.defineClassUnder("Error", standardError, standardError.getAllocator());
+        gzreader.defineClassUnder("Error", zlibError, zlibError.getAllocator());
 
-        RubyClass gzwriter = result.defineClassUnder("GzipWriter", gzfile);
+        RubyClass gzwriter = result.defineClassUnder("GzipWriter", gzfile, RubyGzipWriter.GZIPWRITER_ALLOCATOR);
         CallbackFactory callbackFactory3 = runtime.callbackFactory(RubyGzipWriter.class);
         gzwriter.defineSingletonMethod("open", callbackFactory3.getOptSingletonMethod("open"));
-        gzwriter.defineSingletonMethod("new", callbackFactory3.getOptSingletonMethod("newCreate"));
+        gzwriter.defineSingletonMethod("new", classCB.getOptMethod("newInstance"));
         gzwriter.defineMethod("initialize", callbackFactory3.getOptMethod("initialize2"));
         gzwriter.defineMethod("<<", callbackFactory3.getMethod("append", IRubyObject.class));
         gzwriter.defineMethod("printf", callbackFactory3.getOptMethod("printf"));
@@ -167,20 +170,21 @@ public class RubyZlib {
         result.defineModuleFunction("crc32",cf.getOptSingletonMethod("crc32"));
         result.defineModuleFunction("crc_table",cf.getSingletonMethod("crc_table"));
 
-        result.defineClassUnder("StreamEnd",zlibError);
-        result.defineClassUnder("StreamError",zlibError);
-        result.defineClassUnder("BufError",zlibError);
-        result.defineClassUnder("NeedDict",zlibError);
-        result.defineClassUnder("MemError",zlibError);
-        result.defineClassUnder("VersionError",zlibError);
-        result.defineClassUnder("DataError",zlibError);
+        result.defineClassUnder("StreamEnd",zlibError, zlibError.getAllocator());
+        result.defineClassUnder("StreamError",zlibError, zlibError.getAllocator());
+        result.defineClassUnder("BufError",zlibError, zlibError.getAllocator());
+        result.defineClassUnder("NeedDict",zlibError, zlibError.getAllocator());
+        result.defineClassUnder("MemError",zlibError, zlibError.getAllocator());
+        result.defineClassUnder("VersionError",zlibError, zlibError.getAllocator());
+        result.defineClassUnder("DataError",zlibError, zlibError.getAllocator());
 
-        RubyClass gzError = gzfile.defineClassUnder("Error",zlibError);
-        gzfile.defineClassUnder("CRCError",gzError);
-        gzfile.defineClassUnder("NoFooter",gzError);
-        gzfile.defineClassUnder("LengthError",gzError);
+        RubyClass gzError = gzfile.defineClassUnder("Error",zlibError, zlibError.getAllocator());
+        gzfile.defineClassUnder("CRCError",gzError, gzError.getAllocator());
+        gzfile.defineClassUnder("NoFooter",gzError, gzError.getAllocator());
+        gzfile.defineClassUnder("LengthError",gzError, gzError.getAllocator());
 
-        RubyClass zstream = result.defineClassUnder("ZStream", runtime.getObject());
+        // ZStream actually *isn't* allocatable
+        RubyClass zstream = result.defineClassUnder("ZStream", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         CallbackFactory zstreamcb = runtime.callbackFactory(ZStream.class);
         zstream.defineMethod("initialize",zstreamcb.getMethod("initialize"));
         zstream.defineMethod("flush_next_out",zstreamcb.getMethod("flush_next_out"));
@@ -200,10 +204,11 @@ public class RubyZlib {
         zstream.defineMethod("total_in",zstreamcb.getMethod("total_in"));
         zstream.defineMethod("finished?",zstreamcb.getMethod("finished_p"));
         zstream.defineMethod("close",zstreamcb.getMethod("close"));
+        zstream.undefineMethod("new");
 
-        RubyClass infl = result.defineClassUnder("Inflate", zstream);
+        RubyClass infl = result.defineClassUnder("Inflate", zstream, Inflate.INFLATE_ALLOCATOR);
         CallbackFactory inflcb = runtime.callbackFactory(Inflate.class);
-        infl.defineSingletonMethod("new",inflcb.getOptSingletonMethod("newInstance"));
+        CallbackFactory classcb = runtime.callbackFactory(RubyClass.class);
         infl.defineSingletonMethod("inflate",inflcb.getSingletonMethod("s_inflate",IRubyObject.class));
         infl.defineMethod("initialize",inflcb.getOptMethod("_initialize"));
         infl.defineMethod("<<",inflcb.getMethod("append",IRubyObject.class));
@@ -212,9 +217,8 @@ public class RubyZlib {
         infl.defineMethod("inflate",inflcb.getMethod("inflate",IRubyObject.class));
         infl.defineMethod("sync",inflcb.getMethod("sync",IRubyObject.class));
 
-        RubyClass defl = result.defineClassUnder("Deflate", zstream);
+        RubyClass defl = result.defineClassUnder("Deflate", zstream, Deflate.DEFLATE_ALLOCATOR);
         CallbackFactory deflcb = runtime.callbackFactory(Deflate.class);
-        defl.defineSingletonMethod("new",deflcb.getOptSingletonMethod("newInstance"));
         defl.defineSingletonMethod("deflate",deflcb.getOptSingletonMethod("s_deflate"));
         defl.defineMethod("initialize",deflcb.getOptMethod("_initialize"));
         defl.defineMethod("<<",deflcb.getMethod("append",IRubyObject.class));
@@ -408,11 +412,11 @@ public class RubyZlib {
     }
 
     public static class Inflate extends ZStream {
-        public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-            IRubyObject result = new Inflate(recv.getRuntime(), (RubyClass)recv);
-            result.callInit(args);
-            return result;
-        }
+        protected static ObjectAllocator INFLATE_ALLOCATOR = new ObjectAllocator() {
+            public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+                return new Inflate(runtime, klass);
+            }
+        };
 
         public static IRubyObject s_inflate(IRubyObject recv, IRubyObject string) throws Exception {
             return ZlibInflate.s_inflate(recv,string.toString());
@@ -489,11 +493,11 @@ public class RubyZlib {
     }
 
     public static class Deflate extends ZStream {
-        public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-            IRubyObject result = new Deflate(recv.getRuntime(), (RubyClass)recv);
-            result.callInit(args);
-            return result;
-        }
+        protected static ObjectAllocator DEFLATE_ALLOCATOR = new ObjectAllocator() {
+            public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+                return new Deflate(runtime, klass);
+            }
+        };
 
         public static IRubyObject s_deflate(IRubyObject recv, IRubyObject[] args) throws Exception {
             args = recv.scanArgs(args,1,1);
@@ -613,10 +617,20 @@ public class RubyZlib {
 
             return io;
         }
+        
+        protected static ObjectAllocator GZIPFILE_ALLOCATOR = new ObjectAllocator() {
+            public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+                return new RubyGzipFile(runtime, klass);
+            }
+        };
 
-        public static RubyGzipFile newCreate(IRubyObject recv) {
-            RubyGzipFile result = new RubyGzipFile(recv.getRuntime(), (RubyClass) recv);
+        public static RubyGzipFile newInstance(IRubyObject recv) {
+            RubyClass klass = (RubyClass)recv;
+            
+            RubyGzipFile result = (RubyGzipFile)klass.allocate();
+            
             result.callInit(new IRubyObject[0]);
+            
             return result;
         }
 
@@ -692,14 +706,16 @@ public class RubyZlib {
     }
 
     public static class RubyGzipReader extends RubyGzipFile {
+        protected static ObjectAllocator GZIPREADER_ALLOCATOR = new ObjectAllocator() {
+            public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+                return new RubyGzipReader(runtime, klass);
+            }
+        };
+        
         private static RubyGzipReader newInstance(IRubyObject recv, IRubyObject[] args) {
-            RubyGzipReader result = new RubyGzipReader(recv.getRuntime(), recv.getRuntime().getModule("Zlib").getClass("GzipReader"));
-            result.callInit(args);
-            return result;
-        }
-
-        public static RubyGzipReader newCreate(IRubyObject recv, IRubyObject[] args) {
-            RubyGzipReader result = new RubyGzipReader(recv.getRuntime(), (RubyClass)recv);
+            RubyClass klass = (RubyClass)recv;
+            
+            RubyGzipReader result = (RubyGzipReader)klass.allocate();
             result.callInit(args);
             return result;
         }
@@ -911,17 +927,20 @@ public class RubyZlib {
     }
 
     public static class RubyGzipWriter extends RubyGzipFile {
-        private static RubyGzipWriter newInstance(IRubyObject recv, IRubyObject[] args) {
-            RubyGzipWriter result = new RubyGzipWriter(recv.getRuntime(), recv.getRuntime().getModule("Zlib").getClass("GzipWriter"));
+        protected static ObjectAllocator GZIPWRITER_ALLOCATOR = new ObjectAllocator() {
+            public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+                return new RubyGzipWriter(runtime, klass);
+            }
+        };
+        
+        private static RubyGzipWriter newGzipWriter(IRubyObject recv, IRubyObject[] args) {
+            RubyClass klass = (RubyClass)recv;
+            
+            RubyGzipWriter result = (RubyGzipWriter)klass.allocate();
             result.callInit(args);
             return result;
         }
 
-        public static RubyGzipWriter newCreate(IRubyObject recv, IRubyObject[] args) {
-            RubyGzipWriter result = new RubyGzipWriter(recv.getRuntime(), (RubyClass)recv);
-            result.callInit(args);
-            return result;
-        }
         public static IRubyObject open(IRubyObject recv, IRubyObject[] args) throws IOException {
             IRubyObject level = recv.getRuntime().getNil();
             IRubyObject strategy = recv.getRuntime().getNil();
@@ -934,7 +953,7 @@ public class RubyZlib {
             }
 
             RubyObject proc = (context.isBlockGiven()) ? (RubyObject)recv.getRuntime().newProc() : (RubyObject)recv.getRuntime().getNil();
-            RubyGzipWriter io = newInstance(recv,new IRubyObject[]{recv.getRuntime().getClass("File").callMethod(context,"open", new IRubyObject[]{args[0],recv.getRuntime().newString("wb")}),level,strategy});
+            RubyGzipWriter io = newGzipWriter(recv,new IRubyObject[]{recv.getRuntime().getClass("File").callMethod(context,"open", new IRubyObject[]{args[0],recv.getRuntime().newString("wb")}),level,strategy});
             return RubyGzipFile.wrap(recv, io, proc);
         }
 
@@ -1002,7 +1021,7 @@ public class RubyZlib {
         }
         
         public IRubyObject puts(IRubyObject[] args) throws IOException {
-            RubyStringIO sio = (RubyStringIO)RubyStringIO.newInstance(this, new IRubyObject[0]);
+            RubyStringIO sio = (RubyStringIO)getRuntime().getClass("StringIO").newInstance(new IRubyObject[0]);
             sio.puts(args);
             write(sio.string());
             

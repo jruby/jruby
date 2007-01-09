@@ -40,6 +40,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jvyaml.util.Base64Coder;
 
@@ -47,13 +48,19 @@ import org.jvyaml.util.Base64Coder;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class NetscapeSPKI extends RubyObject {
+    private static ObjectAllocator NETSCAPESPKI_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return new NetscapeSPKI(runtime, klass);
+        }
+    };
+    
     public static void createNetscapeSPKI(IRuby runtime, RubyModule ossl) {
         RubyModule mNetscape = ossl.defineModuleUnder("Netscape");
-        RubyClass cSPKI = mNetscape.defineClassUnder("SPKI",runtime.getObject());
-        mNetscape.defineClassUnder("SPKIError",ossl.getClass("OpenSSLError"));
+        RubyClass cSPKI = mNetscape.defineClassUnder("SPKI",runtime.getObject(),NETSCAPESPKI_ALLOCATOR);
+        RubyClass openSSLError = ossl.getClass("OpenSSLError");
+        mNetscape.defineClassUnder("SPKIError",openSSLError,openSSLError.getAllocator());
 
         CallbackFactory spkicb = runtime.callbackFactory(NetscapeSPKI.class);
-        cSPKI.defineSingletonMethod("new",spkicb.getOptSingletonMethod("newInstance"));
         cSPKI.defineMethod("initialize",spkicb.getOptMethod("_initialize"));
         cSPKI.defineMethod("to_der",spkicb.getMethod("to_der"));
         cSPKI.defineMethod("to_pem",spkicb.getMethod("to_pem"));
@@ -65,12 +72,6 @@ public class NetscapeSPKI extends RubyObject {
         cSPKI.defineMethod("verify",spkicb.getMethod("verify",IRubyObject.class));
         cSPKI.defineMethod("challenge",spkicb.getMethod("challenge"));
         cSPKI.defineMethod("challenge=",spkicb.getMethod("set_challenge",IRubyObject.class));
-    }
-
-    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-        NetscapeSPKI result = new NetscapeSPKI(recv.getRuntime(), (RubyClass)recv);
-        result.callInit(args);
-        return result;
     }
 
     public NetscapeSPKI(IRuby runtime, RubyClass type) {

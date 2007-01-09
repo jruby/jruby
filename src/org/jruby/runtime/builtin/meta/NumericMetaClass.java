@@ -31,6 +31,7 @@ import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyNumeric;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
@@ -84,8 +85,6 @@ public class NumericMetaClass extends ObjectMetaClass {
             defineFastMethod(">", Arity.singleArgument(), "op_gt");
             defineFastMethod("<=", Arity.singleArgument(), "op_le");
             defineFastMethod("<", Arity.singleArgument(), "op_lt");
-	        
-	        defineFastSingletonMethod("new", Arity.optional(), "newInstance"); 
 	    }
     };
     

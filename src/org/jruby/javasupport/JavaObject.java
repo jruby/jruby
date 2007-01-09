@@ -40,6 +40,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -89,7 +90,9 @@ public class JavaObject extends RubyObject {
     }
 
     public static RubyClass createJavaObjectClass(IRuby runtime, RubyModule javaModule) {
-    	RubyClass result = javaModule.defineClassUnder("JavaObject", runtime.getObject());
+        // FIXME: Ideally JavaObject instances should be marshallable, which means that
+        // the JavaObject metaclass should have an appropriate allocator. JRUBY-414
+    	RubyClass result = javaModule.defineClassUnder("JavaObject", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
     	registerRubyMethods(runtime, result);
 

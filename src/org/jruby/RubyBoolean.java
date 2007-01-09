@@ -31,6 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.marshal.MarshalStream;
 
 /**
@@ -80,7 +81,7 @@ public class RubyBoolean extends RubyObject {
     }
 
     public static RubyClass createFalseClass(IRuby runtime) {
-		RubyClass falseClass = runtime.defineClass("FalseClass", runtime.getObject());
+		RubyClass falseClass = runtime.defineClass("FalseClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
 		falseClass.defineFastMethod("type", runtime.callbackFactory(RubyBoolean.class).getMethod("type"));
 
@@ -90,7 +91,7 @@ public class RubyBoolean extends RubyObject {
 	}
 
 	public static RubyClass createTrueClass(IRuby runtime) {
-		RubyClass trueClass = runtime.defineClass("TrueClass", runtime.getObject());
+		RubyClass trueClass = runtime.defineClass("TrueClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
 		trueClass.defineFastMethod("type", runtime.callbackFactory(RubyBoolean.class).getMethod("type"));
 

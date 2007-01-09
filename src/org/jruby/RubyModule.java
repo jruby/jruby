@@ -50,6 +50,7 @@ import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.DynamicMethod;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -692,11 +693,15 @@ public class RubyModule extends RubyObject {
     }
 
     public RubyClass defineOrGetClassUnder(String name, RubyClass superClazz) {
+        // This method is intended only for defining new classes in Ruby code,
+        // so it uses the allocator of the specified superclass or default to
+        // the Object allocator. It should NOT be used to define classes that require a native allocator.
         IRubyObject type = getConstantAt(name);
+        ObjectAllocator allocator = superClazz == null ? getRuntime().getObject().getAllocator() : superClazz.getAllocator();
 
         if (type == null) {
             return (RubyClass) setConstant(name,
-                    getRuntime().defineClassUnder(name, superClazz, cref));
+                    getRuntime().defineClassUnder(name, superClazz, allocator, cref));
         } 
 
         if (!(type instanceof RubyClass)) {
@@ -711,12 +716,12 @@ public class RubyModule extends RubyObject {
     /** rb_define_class_under
      *
      */
-    public RubyClass defineClassUnder(String name, RubyClass superClazz) {
+    public RubyClass defineClassUnder(String name, RubyClass superClazz, ObjectAllocator allocator) {
         IRubyObject type = getConstantAt(name);
 
         if (type == null) {
             return (RubyClass) setConstant(name,
-                    getRuntime().defineClassUnder(name, superClazz, cref));
+                    getRuntime().defineClassUnder(name, superClazz, allocator, cref));
         }
 
         if (!(type instanceof RubyClass)) {

@@ -1,6 +1,7 @@
 package org.jruby;
 
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.StringScanner;
 
@@ -11,12 +12,17 @@ import org.jruby.util.StringScanner;
 public class RubyStringScanner extends RubyObject {
 	
 	private StringScanner scanner;
+    
+    private static ObjectAllocator STRINGSCANNER_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return new RubyStringScanner(runtime, klass);
+        }
+    };
 	
 	public static RubyClass createScannerClass(final IRuby runtime) {
-		RubyClass scannerClass = runtime.defineClass("StringScanner",runtime.getObject());
+		RubyClass scannerClass = runtime.defineClass("StringScanner", runtime.getObject(), STRINGSCANNER_ALLOCATOR);
 		CallbackFactory callbackFactory = runtime.callbackFactory(RubyStringScanner.class);
 		
-		scannerClass.defineFastSingletonMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
 		scannerClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
 		scannerClass.defineFastMethod("<<", callbackFactory.getMethod("concat", IRubyObject.class));
 		scannerClass.defineFastMethod("concat", callbackFactory.getMethod("concat", IRubyObject.class));
@@ -64,12 +70,6 @@ public class RubyStringScanner extends RubyObject {
 		
 		return scannerClass;
 	}
-	
-	public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-        RubyStringScanner result = new RubyStringScanner(recv.getRuntime(),(RubyClass)recv);
-        result.callInit(args);
-        return result;
-    }
 	
 	protected RubyStringScanner(IRuby runtime, RubyClass type) {
 		super(runtime, type);

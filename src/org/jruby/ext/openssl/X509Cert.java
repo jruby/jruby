@@ -57,6 +57,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.openssl.x509store.PEM;
 import org.jruby.ext.openssl.x509store.X509AuxCertificate;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -64,12 +65,18 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class X509Cert extends RubyObject {
+    private static ObjectAllocator X509CERT_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return new X509Cert(runtime, klass);
+        }
+    };
+    
     public static void createX509Cert(IRuby runtime, RubyModule mX509) {
-        RubyClass cX509Cert = mX509.defineClassUnder("Certificate",runtime.getObject());
-        mX509.defineClassUnder("CertificateError",runtime.getModule("OpenSSL").getClass("OpenSSLError"));
+        RubyClass cX509Cert = mX509.defineClassUnder("Certificate",runtime.getObject(),X509CERT_ALLOCATOR);
+        RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
+        mX509.defineClassUnder("CertificateError",openSSLError,openSSLError.getAllocator());
 
         CallbackFactory certcb = runtime.callbackFactory(X509Cert.class);
-        cX509Cert.defineSingletonMethod("new",certcb.getOptSingletonMethod("newInstance"));
         cX509Cert.defineMethod("initialize",certcb.getOptMethod("_initialize"));
         cX509Cert.defineMethod("initialize_copy",certcb.getMethod("initialize_copy",IRubyObject.class));
         cX509Cert.defineMethod("clone",certcb.getMethod("rbClone"));
@@ -99,12 +106,6 @@ public class X509Cert extends RubyObject {
         cX509Cert.defineMethod("extensions=",certcb.getMethod("set_extensions",IRubyObject.class));
         cX509Cert.defineMethod("add_extension",certcb.getMethod("add_extension",IRubyObject.class));
         cX509Cert.defineMethod("inspect",certcb.getMethod("inspect"));
-    }
-
-    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-        X509Cert result = new X509Cert(recv.getRuntime(), (RubyClass)recv);
-        result.callInit(args);
-        return result;
     }
 
     public X509Cert(IRuby runtime, RubyClass type) {

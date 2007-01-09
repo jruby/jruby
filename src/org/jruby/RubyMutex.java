@@ -31,17 +31,25 @@
 package org.jruby;
 
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class RubyMutex extends RubyObject {
     private boolean isLocked = false;
 
-    public RubyMutex(IRuby runtime) {
-        super(runtime, runtime.getClass("Mutex"));
+    public RubyMutex(IRuby runtime, RubyClass klass) {
+        super(runtime, klass);
     }
+    
+    private static ObjectAllocator MUTEX_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return new RubyMutex(runtime, klass);
+        }
+    };
 
     public static void createMutexClass(IRuby runtime) {
         RubyClass mutexClass =
-                runtime.defineClass("Mutex", runtime.getObject());
+                runtime.defineClass("Mutex", runtime.getObject(), MUTEX_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyMutex.class);
         mutexClass.defineFastMethod("lock", callbackFactory.getMethod("lock"));
         mutexClass.defineFastMethod("unlock", callbackFactory.getMethod("unlock"));

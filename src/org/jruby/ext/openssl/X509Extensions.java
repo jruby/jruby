@@ -63,11 +63,11 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class X509Extensions {
     public static void createX509Ext(IRuby runtime, RubyModule mX509) {
-        RubyClass cX509ExtFactory = mX509.defineClassUnder("ExtensionFactory",runtime.getObject());
-        mX509.defineClassUnder("ExtensionError",runtime.getModule("OpenSSL").getClass("OpenSSLError"));
+        RubyClass cX509ExtFactory = mX509.defineClassUnder("ExtensionFactory",runtime.getObject(),runtime.getObject().getAllocator());
+        RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
+        mX509.defineClassUnder("ExtensionError",openSSLError,openSSLError.getAllocator());
         
         CallbackFactory extfcb = runtime.callbackFactory(ExtensionFactory.class);
-        cX509ExtFactory.defineSingletonMethod("new",extfcb.getOptSingletonMethod("newInstance"));
         cX509ExtFactory.defineMethod("initialize",extfcb.getOptMethod("initialize"));
 
         cX509ExtFactory.attr_reader(new IRubyObject[]{runtime.newString("issuer_certificate"),runtime.newString("subject_certificate"),
@@ -80,9 +80,8 @@ public class X509Extensions {
         cX509ExtFactory.defineMethod("config=",extfcb.getMethod("set_config",IRubyObject.class));
         cX509ExtFactory.defineMethod("create_ext",extfcb.getOptMethod("create_ext"));
 
-        RubyClass cX509Ext = mX509.defineClassUnder("Extension",runtime.getObject());
+        RubyClass cX509Ext = mX509.defineClassUnder("Extension",runtime.getObject(),runtime.getObject().getAllocator());
         CallbackFactory extcb = runtime.callbackFactory(Extension.class);
-        cX509Ext.defineSingletonMethod("new",extcb.getOptSingletonMethod("newInstance"));
         cX509Ext.defineMethod("initialize",extcb.getOptMethod("_initialize"));
         cX509Ext.defineMethod("oid=",extcb.getMethod("set_oid",IRubyObject.class));
         cX509Ext.defineMethod("value=",extcb.getMethod("set_value",IRubyObject.class));
@@ -94,12 +93,6 @@ public class X509Extensions {
     }
 
     public static class ExtensionFactory extends RubyObject {
-        public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-            ExtensionFactory result = new ExtensionFactory(recv.getRuntime(), (RubyClass)recv);
-            result.callInit(args);
-            return result;
-        }
-
         public ExtensionFactory(IRuby runtime, RubyClass type) {
             super(runtime,type);
         }
@@ -387,12 +380,6 @@ public class X509Extensions {
     }
 
     public static class Extension extends RubyObject {
-        public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-            Extension result = new Extension(recv.getRuntime(), (RubyClass)recv);
-            result.callInit(args);
-            return result;
-        }
-
         public Extension(IRuby runtime, RubyClass type) {
             super(runtime,type);
         }

@@ -44,22 +44,29 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class Cipher extends RubyObject {
+    private static ObjectAllocator CIPHER_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return new Cipher(runtime, klass);
+        }
+    };
+    
     public static void createCipher(IRuby runtime, RubyModule ossl) {
         RubyModule mCipher = ossl.defineModuleUnder("Cipher");
-        RubyClass cCipher = mCipher.defineClassUnder("Cipher",runtime.getObject());
+        RubyClass cCipher = mCipher.defineClassUnder("Cipher",runtime.getObject(), CIPHER_ALLOCATOR);
 
-        mCipher.defineClassUnder("CipherError",ossl.getClass("OpenSSLError"));
+        RubyClass openSSLError = ossl.getClass("OpenSSLError");
+        mCipher.defineClassUnder("CipherError",openSSLError,openSSLError.getAllocator());
 
         CallbackFactory ciphercb = runtime.callbackFactory(Cipher.class);
 
         mCipher.defineSingletonMethod("ciphers",ciphercb.getSingletonMethod("ciphers"));
-        cCipher.defineSingletonMethod("new",ciphercb.getOptSingletonMethod("newInstance"));
         cCipher.defineMethod("initialize",ciphercb.getMethod("initialize",IRubyObject.class));
         cCipher.defineMethod("initialize_copy",ciphercb.getMethod("initialize_copy",IRubyObject.class));
         cCipher.defineMethod("clone",ciphercb.getMethod("rbClone"));
@@ -159,12 +166,6 @@ public class Cipher extends RubyObject {
             }
         }
         return recv.getRuntime().newArray(ciphers);
-    }
-
-    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-        Cipher result = new Cipher(recv.getRuntime(), (RubyClass)recv);
-        result.callInit(args);
-        return result;
     }
 
     private RubyClass ciphErr;

@@ -36,6 +36,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -44,12 +45,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 public abstract class PKey extends RubyObject {
     public static void createPKey(IRuby runtime, RubyModule ossl) {
         RubyModule mPKey = ossl.defineModuleUnder("PKey");
-        RubyClass cPKey = mPKey.defineClassUnder("PKey",runtime.getObject());
-        mPKey.defineClassUnder("PKeyError",ossl.getClass("OpenSSLError"));
+        // PKey is abstract
+        RubyClass cPKey = mPKey.defineClassUnder("PKey",runtime.getObject(),ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        RubyClass openSSLError = ossl.getClass("OpenSSLError");
+        mPKey.defineClassUnder("PKeyError",openSSLError,openSSLError.getAllocator());
         
         CallbackFactory pkeycb = runtime.callbackFactory(PKey.class);
 
-        cPKey.defineSingletonMethod("new",pkeycb.getSingletonMethod("newInstance"));
         cPKey.defineMethod("initialize",pkeycb.getMethod("initialize"));
         cPKey.defineMethod("sign",pkeycb.getMethod("sign",IRubyObject.class,IRubyObject.class));
         cPKey.defineMethod("verify",pkeycb.getMethod("verify",IRubyObject.class,IRubyObject.class,IRubyObject.class));
@@ -57,10 +59,6 @@ public abstract class PKey extends RubyObject {
         PKeyRSA.createPKeyRSA(runtime,mPKey);
         PKeyDSA.createPKeyDSA(runtime,mPKey);
         //        createPKeyDH(runtime,mPKey);
-    }
-
-    public static IRubyObject newInstance(IRubyObject recv) {
-        throw recv.getRuntime().newNotImplementedError("OpenSSL::PKey::PKey is an abstract class.");
     }
 
     public PKey(IRuby runtime, RubyClass type) {

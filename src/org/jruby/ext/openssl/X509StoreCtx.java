@@ -42,16 +42,22 @@ import org.jruby.ext.openssl.x509store.X509AuxCertificate;
 import org.jruby.ext.openssl.x509store.X509_STORE;
 import org.jruby.ext.openssl.x509store.X509_STORE_CTX;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class X509StoreCtx extends RubyObject {
+    private static ObjectAllocator X509STORECTX_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return new X509StoreCtx(runtime, klass);
+        }
+    };
+    
     public static void createX509StoreCtx(IRuby runtime, RubyModule mX509) {
-        RubyClass cX509StoreContext = mX509.defineClassUnder("StoreContext",runtime.getObject());
+        RubyClass cX509StoreContext = mX509.defineClassUnder("StoreContext",runtime.getObject(),X509STORECTX_ALLOCATOR);
         CallbackFactory storectxcb = runtime.callbackFactory(X509StoreCtx.class);
-        cX509StoreContext.defineSingletonMethod("new",storectxcb.getOptSingletonMethod("newInstance"));
         cX509StoreContext.defineMethod("initialize",storectxcb.getOptMethod("_initialize"));
         cX509StoreContext.defineMethod("verify",storectxcb.getMethod("verify"));
         cX509StoreContext.defineMethod("chain",storectxcb.getMethod("chain"));
@@ -66,12 +72,6 @@ public class X509StoreCtx extends RubyObject {
         cX509StoreContext.defineMethod("purpose=",storectxcb.getMethod("set_purpose",IRubyObject.class));
         cX509StoreContext.defineMethod("trust=",storectxcb.getMethod("set_trust",IRubyObject.class));
         cX509StoreContext.defineMethod("time=",storectxcb.getMethod("set_time",IRubyObject.class));
-    }
-
-    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-        IRubyObject result = new X509StoreCtx(recv.getRuntime(), (RubyClass)recv);
-        result.callInit(args);
-        return result;
     }
 
     private X509_STORE_CTX ctx;

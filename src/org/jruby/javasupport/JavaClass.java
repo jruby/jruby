@@ -60,6 +60,7 @@ import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
@@ -80,7 +81,12 @@ public class JavaClass extends JavaObject {
     }
 
     public static RubyClass createJavaClassClass(IRuby runtime, RubyModule javaModule) {
-        RubyClass result = javaModule.defineClassUnder("JavaClass", javaModule.getClass("JavaObject")); 
+        // FIXME: Determine if a real allocator is needed here. Do people want to extend
+        // JavaClass? Do we want them to do that? Can you Class.new(JavaClass)? Should
+        // you be able to?
+        // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here, since we don't intend for people to monkey with
+        // this type and it can't be marshalled. Confirm. JRUBY-415
+        RubyClass result = javaModule.defineClassUnder("JavaClass", javaModule.getClass("JavaObject"), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR); 
 
     	CallbackFactory callbackFactory = runtime.callbackFactory(JavaClass.class);
         

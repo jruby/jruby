@@ -36,6 +36,7 @@ import org.jruby.internal.runtime.methods.IterateCallable;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.DynamicMethod;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -65,7 +66,8 @@ public class RubyMethod extends RubyObject {
      * 
      */
     public static RubyClass createMethodClass(IRuby runtime) {
-		RubyClass methodClass = runtime.defineClass("Method", runtime.getObject());
+        // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
+		RubyClass methodClass = runtime.defineClass("Method", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
     	
 		CallbackFactory callbackFactory = runtime.callbackFactory(RubyMethod.class);
         

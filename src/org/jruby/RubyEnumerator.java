@@ -33,6 +33,7 @@ import org.jruby.internal.runtime.methods.NoopMultiStub;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 
@@ -50,11 +51,17 @@ public class RubyEnumerator extends RubyObject {
     
     /** args to each method */
     private IRubyObject[] methodArgs;
+    
+    private static ObjectAllocator ENUMERATOR_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return new RubyEnumerator(runtime, klass);
+        }
+    };
 
     public static void defineEnumerator(IRuby runtime) {
         RubyModule enumerableModule = runtime.getModule("Enumerable");
         RubyClass object = runtime.getObject();
-        RubyClass enumeratorClass = enumerableModule.defineClassUnder("Enumerator", object);
+        RubyClass enumeratorClass = enumerableModule.defineClassUnder("Enumerator", object, ENUMERATOR_ALLOCATOR);
         RubyEnumeratorStub0 enumeratorStub = RubyEnumeratorStub0.createStub(enumeratorClass, object, enumerableModule);
 
         enumeratorClass.includeModule(enumerableModule);
@@ -245,9 +252,11 @@ public class RubyEnumerator extends RubyObject {
 
         /** Enumerable::Enumerator#new */
         public IRubyObject method0(ThreadContext tc, IRubyObject self, IRubyObject[] args) {
-            RubyEnumerator result = new RubyEnumerator(runtime, (RubyClass)self);
+            RubyClass klass = (RubyClass)self;
             
-            result.callMethod(tc, "initialize", args);
+            RubyEnumerator result = (RubyEnumerator)klass.allocate();
+            
+            result.callInit(args);
             
             return result;
         }

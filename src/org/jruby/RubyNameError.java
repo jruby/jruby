@@ -28,6 +28,7 @@
 
 package org.jruby;
 
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.CallbackFactory;
 
@@ -36,9 +37,15 @@ import org.jruby.runtime.CallbackFactory;
  */
 public class RubyNameError extends RubyException {
     private IRubyObject name;
+    
+    private static ObjectAllocator NAMEERROR_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return new RubyNameError(runtime, klass);
+        }
+    };
 
     public static RubyClass createNameErrorClass(IRuby runtime, RubyClass standardErrorClass) {
-        RubyClass nameErrorClass = runtime.defineClass("NameError", standardErrorClass);
+        RubyClass nameErrorClass = runtime.defineClass("NameError", standardErrorClass, NAMEERROR_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyNameError.class);
         
         nameErrorClass.defineFastSingletonMethod("new", 
@@ -66,9 +73,12 @@ public class RubyNameError extends RubyException {
     }
     
     public static RubyNameError newRubyNameError(IRubyObject recv, IRubyObject[] args) {
-        IRuby runtime = recv.getRuntime();
-        RubyNameError newError = new RubyNameError(runtime, (RubyClass)recv);
+        RubyClass klass = (RubyClass)recv;
+        
+        RubyNameError newError = (RubyNameError)klass.allocate();
+        
         newError.callInit(args);
+        
         return newError;
     }
 

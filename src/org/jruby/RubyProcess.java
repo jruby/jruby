@@ -29,6 +29,7 @@
 package org.jruby;
 
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 
@@ -41,7 +42,8 @@ public class RubyProcess {
     public static RubyModule createProcessModule(IRuby runtime) {
         RubyModule process = runtime.defineModule("Process");
         
-        RubyModule process_status = process.defineClassUnder("Status", runtime.getObject()); 
+        // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
+        RubyModule process_status = process.defineClassUnder("Status", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR); 
 
         CallbackFactory processCallbackFactory = runtime.callbackFactory(RubyProcess.class);
         CallbackFactory process_statusCallbackFactory = runtime.callbackFactory(RubyProcess.RubyStatus.class);

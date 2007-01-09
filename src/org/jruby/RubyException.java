@@ -39,6 +39,7 @@ package org.jruby;
 import java.io.PrintStream;
 
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -62,16 +63,26 @@ public class RubyException extends RubyObject {
         
         this.message = message == null ? runtime.getNil() : runtime.newString(message);
     }
+    
+    private static ObjectAllocator EXCEPTION_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            RubyException instance = new RubyException(runtime, klass);
+            
+            // for future compatibility as constructors move toward not accepting metaclass?
+            instance.setMetaClass(klass);
+            
+            return instance;
+        }
+    };
 
     public static RubyClass createExceptionClass(IRuby runtime) {
-		RubyClass exceptionClass = runtime.defineClass("Exception", runtime.getObject());
+		RubyClass exceptionClass = runtime.defineClass("Exception", runtime.getObject(), EXCEPTION_ALLOCATOR);
     	
 		CallbackFactory callbackFactory = runtime.callbackFactory(RubyException.class);
-        
-		exceptionClass.defineFastSingletonMethod("new", 
-				callbackFactory.getOptSingletonMethod("newInstance"));		
-		exceptionClass.defineFastSingletonMethod("exception", 
-				callbackFactory.getOptSingletonMethod("newInstance"));		
+        CallbackFactory classCB = runtime.callbackFactory(RubyClass.class);
+        // TODO: could this just  be an alias for new?
+        exceptionClass.defineFastSingletonMethod("exception", 
+            classCB.getOptMethod("newInstance"));		
 		exceptionClass.defineMethod("initialize",
 			callbackFactory.getOptMethod("initialize"));
 		exceptionClass.defineFastMethod("exception", 
@@ -94,16 +105,6 @@ public class RubyException extends RubyObject {
 
     public static RubyException newException(IRuby runtime, RubyClass excptnClass, String msg) {
         return new RubyException(runtime, excptnClass, msg);
-    }
-
-    // Exception methods
-
-    public static RubyException newInstance(IRubyObject recv, IRubyObject[] args) {
-        RubyException newException = new RubyException(recv.getRuntime(), (RubyClass) recv);
-
-        newException.callInit(args);
-
-        return newException;
     }
 
     public IRubyObject initialize(IRubyObject[] args) {

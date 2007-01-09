@@ -30,6 +30,7 @@ package org.jruby;
 
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.DynamicMethod;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -61,8 +62,9 @@ public class RubyUnboundMethod extends RubyMethod {
     }
 
     public static RubyClass defineUnboundMethodClass(IRuby runtime) {
+        // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
         RubyClass newClass = 
-        	runtime.defineClass("UnboundMethod", runtime.getClass("Method"));
+        	runtime.defineClass("UnboundMethod", runtime.getClass("Method"), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyUnboundMethod.class);
         newClass.defineMethod("[]", callbackFactory.getOptMethod("call"));

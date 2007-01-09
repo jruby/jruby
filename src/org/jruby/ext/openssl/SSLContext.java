@@ -44,6 +44,7 @@ import org.jruby.ext.openssl.x509store.X509AuxCertificate;
 import org.jruby.ext.openssl.x509store.X509_STORE;
 import org.jruby.ext.openssl.x509store.X509_STORE_CTX;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -56,23 +57,22 @@ public class SSLContext extends RubyObject {
     "verify_callback", "options", "cert_store", "extra_chain_cert",
     "client_cert_cb", "tmp_dh_callback", "session_id_context"};
 
+    private static ObjectAllocator SSLCONTEXT_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return new SSLContext(runtime, klass);
+        }
+    };
+    
     public static void createSSLContext(IRuby runtime, RubyModule mSSL) {
-        RubyClass cSSLContext = mSSL.defineClassUnder("SSLContext",runtime.getObject());
+        RubyClass cSSLContext = mSSL.defineClassUnder("SSLContext",runtime.getObject(),SSLCONTEXT_ALLOCATOR);
         for(int i=0;i<ctx_attrs.length;i++) {
             cSSLContext.attr_accessor(new IRubyObject[]{runtime.newSymbol(ctx_attrs[i])});
         }
 
         CallbackFactory ctxcb = runtime.callbackFactory(SSLContext.class);
-        cSSLContext.defineSingletonMethod("new",ctxcb.getOptSingletonMethod("newInstance"));
         cSSLContext.defineMethod("initialize",ctxcb.getOptMethod("initialize"));
         cSSLContext.defineMethod("ciphers",ctxcb.getMethod("ciphers"));
         cSSLContext.defineMethod("ciphers=",ctxcb.getMethod("set_ciphers",IRubyObject.class));
-    }
-
-    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-        SSLContext result = new SSLContext(recv.getRuntime(), (RubyClass)recv);
-        result.callInit(args);
-        return result;
     }
 
     public SSLContext(IRuby runtime, RubyClass type) {

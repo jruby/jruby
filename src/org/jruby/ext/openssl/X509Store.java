@@ -40,21 +40,28 @@ import org.jruby.ext.openssl.x509store.X509AuxCertificate;
 import org.jruby.ext.openssl.x509store.X509_STORE;
 import org.jruby.ext.openssl.x509store.X509_STORE_CTX;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class X509Store extends RubyObject {
+    private static ObjectAllocator X509STORE_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return new X509Store(runtime, klass);
+        }
+    };
+    
     public static void createX509Store(IRuby runtime, RubyModule mX509) {
-        RubyClass cX509Store = mX509.defineClassUnder("Store",runtime.getObject());
-        mX509.defineClassUnder("StoreError",runtime.getModule("OpenSSL").getClass("OpenSSLError"));
+        RubyClass cX509Store = mX509.defineClassUnder("Store",runtime.getObject(),X509STORE_ALLOCATOR);
+        RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
+        mX509.defineClassUnder("StoreError",openSSLError,openSSLError.getAllocator());
         cX509Store.attr_accessor(new IRubyObject[]{runtime.newSymbol("verify_callback"),runtime.newSymbol("error"),
                                                    runtime.newSymbol("error_string"),runtime.newSymbol("chain")});
 
         CallbackFactory storecb = runtime.callbackFactory(X509Store.class);
 
-        cX509Store.defineSingletonMethod("new",storecb.getOptSingletonMethod("newInstance"));
         cX509Store.defineMethod("initialize",storecb.getOptMethod("_initialize"));
         cX509Store.defineMethod("verify_callback=",storecb.getMethod("set_verify_callback",IRubyObject.class));
         cX509Store.defineMethod("flags=",storecb.getMethod("set_flags",IRubyObject.class));
@@ -69,12 +76,6 @@ public class X509Store extends RubyObject {
         cX509Store.defineMethod("verify",storecb.getOptMethod("verify"));
         
         X509StoreCtx.createX509StoreCtx(runtime, mX509);
-    }
-
-    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-        IRubyObject result = new X509Store(recv.getRuntime(), (RubyClass)recv);
-        result.callInit(args);
-        return result;
     }
 
     private RubyClass cStoreError;

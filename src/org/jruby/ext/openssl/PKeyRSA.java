@@ -57,19 +57,26 @@ import org.jruby.RubyNumeric;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.openssl.x509store.PEM;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class PKeyRSA extends PKey {
+    private static ObjectAllocator PKEYRSA_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return new PKeyRSA(runtime, klass);
+        }
+    };
+    
     public static void createPKeyRSA(IRuby runtime, RubyModule mPKey) {
-        RubyClass cRSA = mPKey.defineClassUnder("RSA",mPKey.getClass("PKey"));
-        mPKey.defineClassUnder("RSAError",mPKey.getClass("PKeyError"));
+        RubyClass cRSA = mPKey.defineClassUnder("RSA",mPKey.getClass("PKey"),PKEYRSA_ALLOCATOR);
+        RubyClass pkeyError = mPKey.getClass("PKeyError");
+        mPKey.defineClassUnder("RSAError",pkeyError,pkeyError.getAllocator());
         
         CallbackFactory rsacb = runtime.callbackFactory(PKeyRSA.class);
 
-        cRSA.defineSingletonMethod("new",rsacb.getOptSingletonMethod("newInstance"));
         cRSA.defineMethod("initialize",rsacb.getOptMethod("initialize"));
         cRSA.defineMethod("public?",rsacb.getMethod("public_p"));
         cRSA.defineMethod("private?",rsacb.getMethod("private_p"));
@@ -88,12 +95,6 @@ public class PKeyRSA extends PKey {
         cRSA.setConstant("NO_PADDING",runtime.newFixnum(3));
         cRSA.setConstant("PKCS1_OAEP_PADDING",runtime.newFixnum(4));
    }
-
-    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-        PKeyRSA result = new PKeyRSA(recv.getRuntime(), (RubyClass)recv);
-        result.callInit(args);
-        return result;
-    }
 
     public PKeyRSA(IRuby runtime, RubyClass type) {
         super(runtime,type);

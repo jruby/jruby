@@ -38,7 +38,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class Config {
     public static void createConfig(IRuby runtime, RubyModule ossl) {
-        RubyClass cConfig = ossl.defineClassUnder("Config", runtime.getObject());
+        RubyClass cConfig = ossl.defineClassUnder("Config", runtime.getObject(), runtime.getObject().getAllocator());
         CallbackFactory confcb = runtime.callbackFactory(Config.class);
         cConfig.defineSingletonMethod("parse",confcb.getOptSingletonMethod("parse"));
     }

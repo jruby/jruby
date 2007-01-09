@@ -58,6 +58,7 @@ import org.jruby.RubyTime;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.openssl.x509store.PEM;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -65,13 +66,19 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class X509CRL extends RubyObject {
+    private static ObjectAllocator X509CRL_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return new X509CRL(runtime, klass);
+        }
+    };
+    
     public static void createX509CRL(IRuby runtime, RubyModule mX509) {
-        RubyClass cX509CRL = mX509.defineClassUnder("CRL",runtime.getObject());
-        mX509.defineClassUnder("CRLError",runtime.getModule("OpenSSL").getClass("OpenSSLError"));
+        RubyClass cX509CRL = mX509.defineClassUnder("CRL",runtime.getObject(),X509CRL_ALLOCATOR);
+        RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
+        mX509.defineClassUnder("CRLError",openSSLError,openSSLError.getAllocator());
 
         CallbackFactory crlcb = runtime.callbackFactory(X509CRL.class);
 
-        cX509CRL.defineSingletonMethod("new",crlcb.getOptSingletonMethod("newInstance"));
         cX509CRL.defineMethod("initialize",crlcb.getOptMethod("_initialize"));
         cX509CRL.defineMethod("initialize_copy",crlcb.getMethod("initialize_copy",IRubyObject.class));
         cX509CRL.defineMethod("clone",crlcb.getMethod("rbClone"));
@@ -99,12 +106,6 @@ public class X509CRL extends RubyObject {
         cX509CRL.defineMethod("extensions",crlcb.getMethod("extensions"));
         cX509CRL.defineMethod("extensions=",crlcb.getMethod("set_extensions",IRubyObject.class));
         cX509CRL.defineMethod("add_extension",crlcb.getMethod("add_extension",IRubyObject.class));
-    }
-
-    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-        IRubyObject result = new X509CRL(recv.getRuntime(), (RubyClass)recv);
-        result.callInit(args);
-        return result;
     }
 
     private IRubyObject version;

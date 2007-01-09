@@ -69,8 +69,12 @@ public class RubyArray extends RubyObject implements List {
     private boolean tmpLock;
 
 	private RubyArray(IRuby runtime, List list) {
-		super(runtime, runtime.getClass("Array"));
+		this(runtime, runtime.getClass("Array"));
         this.list = list;
+    }
+    
+    public RubyArray(IRuby runtime, RubyClass klass) {
+        super(runtime, klass);
     }
 
     /** Getter for property list.
@@ -1024,7 +1028,7 @@ public class RubyArray extends RubyObject implements List {
             taint |= result[i].isTaint();
         }
         // TODO: Why was is calling create, which used to skip array initialization?
-        IRubyObject ary = ((ArrayMetaClass) getMetaClass()).create(result);
+        IRubyObject ary = ArrayMetaClass.create(getMetaClass(), result);
         ary.setTaint(taint);
         return ary;
     }

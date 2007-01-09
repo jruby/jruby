@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -47,7 +48,7 @@ public class RubyThreadGroup extends RubyObject {
     private boolean enclosed = false;
 
     public static RubyClass createThreadGroupClass(IRuby runtime) {
-        RubyClass threadGroupClass = runtime.defineClass("ThreadGroup", runtime.getObject());
+        RubyClass threadGroupClass = runtime.defineClass("ThreadGroup", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyThreadGroup.class);
         
         threadGroupClass.defineMethod("add",

@@ -31,6 +31,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -39,7 +40,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class RubyDigest {
     public static void createDigest(IRuby runtime) {
         RubyModule mDigest = runtime.defineModule("Digest");
-        RubyClass cDigestBase = mDigest.defineClassUnder("Base",runtime.getObject());
+        RubyClass cDigestBase = mDigest.defineClassUnder("Base",runtime.getObject(), Base.BASE_ALLOCATOR);
 
         CallbackFactory basecb = runtime.callbackFactory(Base.class);
         
@@ -62,7 +63,7 @@ public class RubyDigest {
         runtime.getLoadService().require("digest.so");
         RubyModule mDigest = runtime.getModule("Digest");
         RubyClass cDigestBase = mDigest.getClass("Base");
-        RubyClass cDigest_MD5 = mDigest.defineClassUnder("MD5",cDigestBase);
+        RubyClass cDigest_MD5 = mDigest.defineClassUnder("MD5",cDigestBase,cDigestBase.getAllocator());
         cDigest_MD5.setClassVar("metadata",runtime.newString("MD5"));
     }
 
@@ -70,7 +71,7 @@ public class RubyDigest {
         runtime.getLoadService().require("digest.so");
         RubyModule mDigest = runtime.getModule("Digest");
         RubyClass cDigestBase = mDigest.getClass("Base");
-        RubyClass cDigest_RMD160 = mDigest.defineClassUnder("RMD160",cDigestBase);
+        RubyClass cDigest_RMD160 = mDigest.defineClassUnder("RMD160",cDigestBase,cDigestBase.getAllocator());
         cDigest_RMD160.setClassVar("metadata",runtime.newString("RIPEMD160"));
     }
 
@@ -78,7 +79,7 @@ public class RubyDigest {
         runtime.getLoadService().require("digest.so");
         RubyModule mDigest = runtime.getModule("Digest");
         RubyClass cDigestBase = mDigest.getClass("Base");
-        RubyClass cDigest_SHA1 = mDigest.defineClassUnder("SHA1",cDigestBase);
+        RubyClass cDigest_SHA1 = mDigest.defineClassUnder("SHA1",cDigestBase,cDigestBase.getAllocator());
         cDigest_SHA1.setClassVar("metadata",runtime.newString("SHA1"));
     }
 
@@ -91,15 +92,21 @@ public class RubyDigest {
         runtime.getLoadService().require("digest.so");
         RubyModule mDigest = runtime.getModule("Digest");
         RubyClass cDigestBase = mDigest.getClass("Base");
-        RubyClass cDigest_SHA2_256 = mDigest.defineClassUnder("SHA256",cDigestBase);
+        RubyClass cDigest_SHA2_256 = mDigest.defineClassUnder("SHA256",cDigestBase,cDigestBase.getAllocator());
         cDigest_SHA2_256.setClassVar("metadata",runtime.newString("SHA-256"));
-        RubyClass cDigest_SHA2_384 = mDigest.defineClassUnder("SHA384",cDigestBase);
+        RubyClass cDigest_SHA2_384 = mDigest.defineClassUnder("SHA384",cDigestBase,cDigestBase.getAllocator());
         cDigest_SHA2_384.setClassVar("metadata",runtime.newString("SHA-384"));
-        RubyClass cDigest_SHA2_512 = mDigest.defineClassUnder("SHA512",cDigestBase);
+        RubyClass cDigest_SHA2_512 = mDigest.defineClassUnder("SHA512",cDigestBase,cDigestBase.getAllocator());
         cDigest_SHA2_512.setClassVar("metadata",runtime.newString("SHA-512"));
     }
 
     public static class Base extends RubyObject {
+        protected static ObjectAllocator BASE_ALLOCATOR = new ObjectAllocator() {
+            public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+                return new Base(runtime, klass);
+            }
+        };
+        
         public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
             if(recv == recv.getRuntime().getModule("Digest").getClass("Base")) {
                 throw recv.getRuntime().newNotImplementedError("Digest::Base is an abstract class");
@@ -109,7 +116,9 @@ public class RubyDigest {
                 throw recv.getRuntime().newNotImplementedError("the " + recv + "() function is unimplemented on this machine");
             }
 
-            Base result = new Base(recv.getRuntime(), (RubyClass)recv);
+            RubyClass klass = (RubyClass)recv;
+            
+            Base result = (Base)klass.allocate();
             try {
                 result.setAlgorithm(((RubyClass)recv).getClassVar("metadata"));
             } catch(NoSuchAlgorithmException e) {

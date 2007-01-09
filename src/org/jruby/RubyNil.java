@@ -33,6 +33,7 @@
 package org.jruby;
 
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -50,9 +51,15 @@ public class RubyNil extends RubyObject {
 	public IRuby getRuntime() {
 		return runtime;
 	}
+    
+    public static ObjectAllocator NIL_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return runtime.getNil();
+        }
+    };
 	
     public static RubyClass createNilClass(IRuby runtime) {
-        RubyClass nilClass = runtime.defineClass("NilClass", runtime.getObject());
+        RubyClass nilClass = runtime.defineClass("NilClass", runtime.getObject(), NIL_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyNil.class);
         nilClass.defineFastMethod("type", callbackFactory.getSingletonMethod("type"));
         nilClass.defineFastMethod("to_i", callbackFactory.getSingletonMethod("to_i"));
