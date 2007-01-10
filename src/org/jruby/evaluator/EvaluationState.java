@@ -354,13 +354,7 @@ public class EvaluationState {
     
                 // if no block passed, do a simple call
                 if (iterNode == null) {
-                    try {
                     return receiver.callMethod(context, iVisited.getName(), args, callType);
-                    } catch (ClassCastException cce) {
-                        cce.printStackTrace();
-                        System.out.println(receiver.getClass());
-                        System.out.println(iVisited.getName());
-                    }
                 }
                 
                 // if block passed, prepare the block and then do the call, handling breaks and retries correctly
