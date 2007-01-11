@@ -61,6 +61,7 @@ public class CommandlineParser {
     private boolean verbose = false;
     private boolean debug = false;
     private boolean showVersion = false;
+    private boolean endOfArguments = false;
     private String[] scriptArguments = null;
     private boolean shouldRunInterpreter = true;
 
@@ -97,8 +98,8 @@ public class CommandlineParser {
         System.arraycopy(arguments, argumentIndex, getScriptArguments(), 0, getScriptArguments().length);
     }
 
-    private static boolean isInterpreterArgument(String argument) {
-        return argument.charAt(0) == '-';
+    private boolean isInterpreterArgument(String argument) {
+        return argument.charAt(0) == '-' && !endOfArguments;
     }
 
     private void processArgument() {
@@ -175,11 +176,23 @@ public class CommandlineParser {
                         debug = true;
                         verbose = true;
                         break;
+                    } else if (argument.equals("--help")) {
+                        main.printUsage();
+                        shouldRunInterpreter = false;
+                        break;
+                    } else if (argument.equals("--command")) {
+                        requiredLibraries.add("jruby/commands");
+                        characterIndex = argument.length();
+                        inlineScript.append(grabValue("provide a command to execute"));
+                        inlineScript.append("\n");
+                        endOfArguments = true;
+                        break;
                     } else {
                         if (argument.equals("--")) {
                             // ruby interpreter compatibilty 
                             // Usage: ruby [switches] [--] [programfile] [arguments])
-                            break FOR;
+                            endOfArguments = true;
+                            break;
                         }                    	
                     }
                 default :

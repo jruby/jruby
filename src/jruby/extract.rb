@@ -53,11 +53,3 @@ module JRuby
     end
   end
 end
-
-def to
-  JRuby::Extract.new(ARGV.first).extract
-end
-
-def to_home
-  JRuby::Extract.new.extract
-end
