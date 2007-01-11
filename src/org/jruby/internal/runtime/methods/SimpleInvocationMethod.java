@@ -29,6 +29,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.IRuby;
 import org.jruby.RubyModule;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
@@ -60,9 +61,7 @@ public abstract class SimpleInvocationMethod extends AbstractMethod {
         return null;
     }
     
-	public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
-        IRuby runtime = context.getRuntime();
-        arity.checkArity(runtime, args);
+    private IRubyObject wrap(IRuby runtime, IRubyObject receiver, IRubyObject[] args) {
         try {
             return call(receiver,args);
         } catch(RaiseException e) {
@@ -74,9 +73,26 @@ public abstract class SimpleInvocationMethod extends AbstractMethod {
         } catch(MainExitException e) {
             throw e;
         } catch(Exception e) {
-            receiver.getRuntime().getJavaSupport().handleNativeException(e);
-            return receiver.getRuntime().getNil();
+            runtime.getJavaSupport().handleNativeException(e);
+            return runtime.getNil();
+        }        
+    }
+
+	public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+        IRuby runtime = context.getRuntime();
+        arity.checkArity(runtime, args);
+
+        if(runtime.getTraceFunction() != null) {
+            ISourcePosition position = context.getPreviousFramePosition();
+
+            runtime.callTraceFunction(context, "c-call", position, receiver, name, getImplementationClass());
+            try {
+                return wrap(runtime,receiver,args);
+            } finally {
+                runtime.callTraceFunction(context, "c-return", position, receiver, name, getImplementationClass());
+            }
         }
+        return wrap(runtime,receiver,args);
     }
 
     public abstract IRubyObject call(IRubyObject receiver, IRubyObject[] args);

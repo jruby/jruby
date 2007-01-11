@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.callback;
 
+import org.jruby.IRuby;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.exceptions.RaiseException;
@@ -41,9 +42,10 @@ public abstract class InvocationCallback implements Callback {
     private Arity arity;
 
     public IRubyObject execute(IRubyObject recv, IRubyObject[] oargs) {
-        arity.checkArity(recv.getRuntime(), oargs);
+        IRuby runtime = recv.getRuntime();
+        arity.checkArity(runtime, oargs);
         try {
-            return call(recv, oargs);
+            return call(recv,oargs);
         } catch(RaiseException e) {
             throw e;
         } catch(JumpException e) {
@@ -53,9 +55,9 @@ public abstract class InvocationCallback implements Callback {
         } catch(MainExitException e) {
             throw e;
         } catch(Exception e) {
-            recv.getRuntime().getJavaSupport().handleNativeException(e);
-            return recv.getRuntime().getNil();
-        }
+            runtime.getJavaSupport().handleNativeException(e);
+            return runtime.getNil();
+        }        
     }
 
     public abstract IRubyObject call(Object receiver, Object[] args);
