@@ -61,6 +61,15 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "SHELL", jruby_shell());
         setConfig(configHash, "prefix", new NormalizedFile(runtime.getJRubyHome()).getAbsolutePath());
 
+        setConfig(configHash, "host_os", System.getProperty("os.name"));
+        setConfig(configHash, "LIBRUBY", "jruby");
+        setConfig(configHash, "LIBRUBY_SO", "jruby");
+        setConfig(configHash, "target", "java");
+        setConfig(configHash, "build", "java");
+        setConfig(configHash, "host_vendor", System.getProperty("java.vendor"));
+        setConfig(configHash, "host_cpu", System.getProperty("os.arch"));
+        setConfig(configHash, "target_cpu", System.getProperty("os.arch"));
+
         String libdir = System.getProperty("jruby.lib");
         if (libdir == null) {
             libdir = new NormalizedFile(runtime.getJRubyHome(), "lib").getAbsolutePath();
