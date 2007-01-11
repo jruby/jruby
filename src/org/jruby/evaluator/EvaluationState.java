@@ -351,7 +351,7 @@ public class EvaluationState {
                 assert receiver.getMetaClass() != null : receiver.getClass().getName();
 
                 CallType callType = CallType.NORMAL;
-    
+
                 // if no block passed, do a simple call
                 if (iterNode == null) {
                     return receiver.callMethod(context, iVisited.getName(), args, callType);
@@ -644,7 +644,7 @@ public class EvaluationState {
             case NodeTypes.DEFSNODE: {
                 DefsNode iVisited = (DefsNode) node;
                 IRubyObject receiver = evalInternal(context, iVisited.getReceiverNode(), self);
-    
+
                 RubyClass rubyClass;
     
                 if (receiver.isNil()) {
@@ -1086,6 +1086,7 @@ public class EvaluationState {
                 } else {
                     module = enclosingModule.defineModuleUnder(name);
                 }
+
                 return evalClassDefinitionBody(context, iVisited.getScope(), iVisited.getBodyNode(), module, self);
             }
             case NodeTypes.MULTIPLEASGNNODE: {

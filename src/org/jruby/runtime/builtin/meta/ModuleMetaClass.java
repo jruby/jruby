@@ -92,11 +92,7 @@ public class ModuleMetaClass extends ObjectMetaClass {
 
     private static ObjectAllocator MODULE_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(IRuby runtime, RubyClass klass) {
-            RubyModule instance = RubyModule.newModule(runtime, null);
-
-            instance.setMetaClass(klass);
-
-            return instance;
+            return RubyModule.newModule(runtime, null);
         }
     };
     

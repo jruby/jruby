@@ -318,3 +318,13 @@ end
 class MT_C
   include MT_B
 end
+
+# Make sure that the self-object inside a block to new instance of Module evals correctly.
+
+x = Module.new do
+  def self.foo
+    "1"
+  end
+end
+
+test_ok x.methods.include?("foo")
