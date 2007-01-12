@@ -28,6 +28,7 @@
 package org.jruby.runtime;
 
 import org.jruby.RubyModule;
+import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.AbstractCallable;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -36,7 +37,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * rather than with an ICallable. For lightweight block logic within
  * Java code.
  */
-public class CallBlock extends Block {
+public class CallBlock extends InterpretedBlock {
     private Arity arity;
     private BlockCallback callback;
     private IRubyObject self;
@@ -64,7 +65,35 @@ public class CallBlock extends Block {
         return callback.call(context, args, replacementSelf);
     }
 
-    public Block cloneBlock() {
+    /**
+     * Yield to this block, usually passed to the current call.
+     * 
+     * @param value The value to yield, either a single value or an array of values
+     * @param self The current self
+     * @param klass
+     * @param yieldProc
+     * @param aValue
+     * @return
+     */
+    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean aValue) {
+        // FIXME: during refactoring, it was determined that all calls to yield are passing false for yieldProc; is this still needed?
+        IRubyObject[] args = new IRubyObject[]{value};
+
+        // This while loop is for restarting the block call in case a 'redo' fires.
+        while (true) {
+            try {
+                return callback.call(context, args, self);
+            } catch (JumpException je) {
+                if (je.getJumpType() == JumpException.JumpType.RedoJump) {
+                    // do nothing, allow loop to redo
+                } else {
+                    throw je;
+                }
+            }
+        }
+    }
+
+    public InterpretedBlock cloneBlock() {
         return new CallBlock(self,imClass,arity,callback,tc);
     }
 
