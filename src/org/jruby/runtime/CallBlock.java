@@ -37,7 +37,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * rather than with an ICallable. For lightweight block logic within
  * Java code.
  */
-public class CallBlock extends InterpretedBlock {
+public class CallBlock extends Block {
     private Arity arity;
     private BlockCallback callback;
     private IRubyObject self;
@@ -93,7 +93,7 @@ public class CallBlock extends InterpretedBlock {
         }
     }
 
-    public InterpretedBlock cloneBlock() {
+    public Block cloneBlock() {
         return new CallBlock(self,imClass,arity,callback,tc);
     }
 
