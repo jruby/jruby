@@ -305,7 +305,7 @@ public interface IRuby {
 
 	public RubyBoolean newBoolean(boolean value);
 
-	public RubyFileStat newRubyFileStat(File file);
+	public RubyFileStat newRubyFileStat(String file);
 
 	public RubyFixnum newFixnum(long value);
 

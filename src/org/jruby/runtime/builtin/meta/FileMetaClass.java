@@ -484,8 +484,7 @@ public class FileMetaClass extends IOMetaClass {
 
     public IRubyObject lstat(IRubyObject filename) {
     	RubyString name = RubyString.stringValue(filename);
-    	
-        return getRuntime().newRubyFileStat(JRubyFile.create(getRuntime().getCurrentDirectory(),name.toString()));
+        return getRuntime().newRubyFileStat(name.toString());
     }
 
     public IRubyObject ctime(IRubyObject filename) {

@@ -1333,8 +1333,8 @@ public final class Ruby implements IRuby {
     	return RubyBoolean.newBoolean(this, value);
     }
     
-    public RubyFileStat newRubyFileStat(File file) {
-    	return new RubyFileStat(this, JRubyFile.create(currentDirectory,file.getPath()));
+    public RubyFileStat newRubyFileStat(String file) {
+        return (RubyFileStat)getClass("File").getClass("Stat").callMethod(getCurrentContext(),"new",newString(file));
     }
     
     public RubyFixnum newFixnum(long value) {

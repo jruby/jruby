@@ -371,7 +371,7 @@ public class BaseMockRuby implements IRuby {
 		
 	}
 
-	public RubyFileStat newRubyFileStat(File file) {
+	public RubyFileStat newRubyFileStat(String file) {
 		throw new MockException();
 		
 	}

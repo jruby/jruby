@@ -57,10 +57,18 @@ public class RubyFileStat extends RubyObject {
     private RubyFixnum size;
     private RubyBoolean isSymlink;
 
+    private static ObjectAllocator ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return new RubyFileStat(runtime, klass);
+        }
+    };
+
     public static RubyClass createFileStatClass(IRuby runtime) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
-        final RubyClass fileStatClass = runtime.getClass("File").defineClassUnder("Stat",runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        final RubyClass fileStatClass = runtime.getClass("File").defineClassUnder("Stat",runtime.getObject(), ALLOCATOR);
         final CallbackFactory callbackFactory = runtime.callbackFactory(RubyFileStat.class);
+
+        fileStatClass.defineFastMethod("initialize",callbackFactory.getMethod("initialize", IRubyObject.class));
         //        fileStatClass.defineMethod("<=>", callbackFactory.getMethod(""));
         //        fileStateClass.includeModule(runtime.getModule("Comparable"));
         //        fileStatClass.defineMethod("atime", callbackFactory.getMethod(""));
@@ -105,8 +113,14 @@ public class RubyFileStat extends RubyObject {
         return fileStatClass;
     }
 
-    protected RubyFileStat(IRuby runtime, JRubyFile file) {
-        super(runtime, runtime.getClass("File").getClass("Stat"));
+    protected RubyFileStat(IRuby runtime, RubyClass clazz) {
+        super(runtime, clazz);
+
+    }
+
+    public IRubyObject initialize(IRubyObject fname) {
+        IRuby runtime = getRuntime();
+        JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(),fname.toString());
 
         if(!file.exists()) {
             throw runtime.newErrnoENOENTError("No such file or directory - " + file.getPath());
@@ -134,6 +148,7 @@ public class RubyFileStat extends RubyObject {
         size = runtime.newFixnum(file.length());
         // We cannot determine this in Java, so we will always return false (better than blowing up)
         isSymlink = runtime.getFalse();
+        return this;
     }
     
     public RubyFixnum blksize() {

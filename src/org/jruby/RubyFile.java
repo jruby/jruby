@@ -263,7 +263,7 @@ public class RubyFile extends RubyIO {
 	}
 
 	public IRubyObject stat() {
-        return getRuntime().newRubyFileStat(JRubyFile.create(getRuntime().getCurrentDirectory(),path));
+        return getRuntime().newRubyFileStat(path);
 	}
 	
     public IRubyObject truncate(IRubyObject arg) {
