@@ -181,6 +181,7 @@ public class Block implements StackElement {
         
         if (klass == null) {
             self = getSelf();
+            frame.setSelf(self);
         }
         
         context.preYieldSpecificBlock(this, klass);

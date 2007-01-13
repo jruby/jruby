@@ -239,7 +239,7 @@ public class RubyClass extends RubyModule {
         newClass.inheritedBy(superClass);
 
 		if (tc.isBlockGiven()) {
-            tc.getFrameBlock().yield(tc, null, newClass, newClass, false);
+            newClass.module_eval(NULL_ARRAY);
 		}
 
 		return newClass;

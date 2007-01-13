@@ -328,3 +328,12 @@ x = Module.new do
 end
 
 test_ok x.methods.include?("foo")
+
+# Make sure that the self object will fire correctly with super, when using define_method
+Aaaa = Class.new(Dir) { 
+  define_method(:initialize) do |*args| 
+    super(*args) 
+  end 
+}
+
+test_no_exception { Aaaa.new("/") }
