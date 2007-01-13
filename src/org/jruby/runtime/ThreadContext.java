@@ -674,6 +674,17 @@ public class ThreadContext {
         return parentModule.getNonIncludedClass();
     }
 
+    public RubyModule getBindingRubyClass() {
+        RubyModule parentModule = null;
+        if(parentIndex == 0) {
+            parentModule = (RubyModule)parentStack[parentIndex];
+        } else {
+            parentModule = (RubyModule)parentStack[parentIndex-1];
+
+        }
+        return parentModule.getNonIncludedClass();
+    }
+
     public boolean isTopLevel() {
         return parentIndex == 0;
     }

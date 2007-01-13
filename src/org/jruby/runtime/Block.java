@@ -136,10 +136,9 @@ public class Block implements StackElement {
                 dynamicScope.setBindingScope(extraScope);
             }
         } 
-        
         // FIXME: Ruby also saves wrapper, which we do not
         return new Block(null, null, frame.getSelf(), frame, context.peekCRef(), frame.getScope(), 
-                context.getRubyClass(), iter, extraScope);
+                context.getBindingRubyClass(), iter, extraScope);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf) {
