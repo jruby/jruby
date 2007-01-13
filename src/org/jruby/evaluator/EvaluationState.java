@@ -1905,7 +1905,7 @@ public class EvaluationState {
         }
 
         if (enclosingModule == null) {
-            enclosingModule = context.getRubyClass();
+            enclosingModule = (RubyModule) context.peekCRef().getValue();
         }
 
         return enclosingModule;
