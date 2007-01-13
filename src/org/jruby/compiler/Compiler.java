@@ -135,9 +135,25 @@ public interface Compiler {
     
     public void performBooleanBranch(BranchCallback trueBranch, BranchCallback falseBranch);
     
+    public void performLogicalAnd(BranchCallback longBranch);
+    
+    public void performLogicalOr(BranchCallback longBranch);
+    
     public void performBooleanLoop(BranchCallback condition, BranchCallback body, boolean checkFirst);
     
     public void createNewClosure(StaticScope scope, ClosureCallback body);
     
     public void defineNewMethod(String name, int arity, int localVarCount, ClosureCallback body);
+    
+    public void retrieveConstant(String name);
+    
+    public void loadFalse();
+    
+    public void loadTrue();
+    
+    public void loadNil();
+    
+    public void retrieveInstanceVariable(String name);
+    
+    public void assignInstanceVariable(String name);
 }

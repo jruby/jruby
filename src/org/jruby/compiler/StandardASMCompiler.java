@@ -28,6 +28,9 @@
 
 package org.jruby.compiler;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -35,6 +38,7 @@ import java.util.Stack;
 import org.jruby.ast.Node;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.util.JRubyClassLoader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -56,6 +60,8 @@ public class StandardASMCompiler implements Compiler {
             "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/runtime/builtin/IRubyObject;[Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/BlockCallback2;)Lorg/jruby/runtime/builtin/IRubyObject;";
     private static final String CLOSURE_SIGNATURE =
             "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/runtime/builtin/IRubyObject;[Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;";
+    private static final String RUN_SIGNATURE = 
+            "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;";
     
     private static final int THREADCONTEXT_INDEX = 1;
     private static final int SELF_INDEX = 2;
@@ -114,6 +120,36 @@ public class StandardASMCompiler implements Compiler {
         }
 
         return jcl.loadClass(classname.replaceAll("/", "."));
+    }
+    
+    public void writeClass(File destination) throws IOException {
+        for (Iterator iter = classWriters.entrySet().iterator(); iter.hasNext();) {
+            Map.Entry entry = (Map.Entry)iter.next();
+            String key = (String)entry.getKey();
+            ClassWriter writer = (ClassWriter)entry.getValue();
+            
+            writeClass(key, destination, writer);
+        }
+    }
+    
+    private void writeClass(String classname, File destination, ClassWriter writer) throws IOException {
+        String fullname = classname + ".class";
+        String filename = null;
+        String path = null;
+        if (fullname.lastIndexOf("/") == -1) {
+            filename = fullname;
+            path = "";
+        } else {
+            filename = fullname.substring(fullname.lastIndexOf("/") + 1);
+            path = fullname.substring(0, fullname.lastIndexOf("/"));
+        }
+        // create dir if necessary
+        File pathfile = new File(destination, path);
+        pathfile.mkdirs();
+
+        FileOutputStream out = new FileOutputStream(new File(pathfile, filename));
+
+        out.write(writer.toByteArray());
     }
     
     public String getClassname() {
@@ -190,7 +226,7 @@ public class StandardASMCompiler implements Compiler {
         // root method of a script is always in stub0, method0
         String stubName = classname + "$MultiStub0";
         String methodName = "method0";
-        MethodVisitor mv = getClassVisitor().visitMethod(Opcodes.ACC_PUBLIC, "run", "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;", null, null);
+        MethodVisitor mv = getClassVisitor().visitMethod(Opcodes.ACC_PUBLIC, "run", RUN_SIGNATURE, null, null);
         mv.visitTypeInsn(Opcodes.NEW, stubName);
         mv.visitInsn(Opcodes.DUP);
         mv.visitMethodInsn(Opcodes.INVOKESPECIAL, stubName, "<init>", "()V");
@@ -203,6 +239,25 @@ public class StandardASMCompiler implements Compiler {
         
         mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, stubName, methodName, MULTISTUB_SIGNATURE);
         mv.visitInsn(Opcodes.ARETURN);
+        mv.visitMaxs(1, 1);
+        mv.visitEnd();
+
+        // add main impl
+        // root method of a script is always in stub0, method0
+        mv = getClassVisitor().visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "main", "([Ljava/lang/String;)V", null, null);
+        mv.visitTypeInsn(Opcodes.NEW, classname);
+        mv.visitInsn(Opcodes.DUP);
+        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, classname, "<init>", "()V");
+        
+        // invoke run with threadcontext and topself
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/jruby/Ruby", "getDefaultInstance", "()Lorg/jruby/IRuby;");
+        mv.visitInsn(Opcodes.DUP);
+        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, "getCurrentContext", "()Lorg/jruby/runtime/ThreadContext;");
+        mv.visitInsn(Opcodes.SWAP);
+        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, "getTopSelf", "()Lorg/jruby/runtime/builtin/IRubyObject;");
+        
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, classname, "run", RUN_SIGNATURE);
+        mv.visitInsn(Opcodes.RETURN);
         mv.visitMaxs(1, 1);
         mv.visitEnd();
     }
@@ -327,6 +382,9 @@ public class StandardASMCompiler implements Compiler {
         MethodVisitor mv = getMethodVisitor();
         String callType = null;
         String callSig = "(Lorg/jruby/runtime/ThreadContext;Ljava/lang/String;[Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/CallType;)Lorg/jruby/runtime/builtin/IRubyObject;";
+        String callSigIndexed = "(Lorg/jruby/runtime/ThreadContext;BLjava/lang/String;[Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/CallType;)Lorg/jruby/runtime/builtin/IRubyObject;";
+        
+        byte index = MethodIndex.getIndex(name);
         
         if (hasArgs) {
             if (hasReceiver) {
@@ -353,6 +411,13 @@ public class StandardASMCompiler implements Compiler {
                 callType = "FUNCTIONAL";
             }
 
+            if (index != 0) {
+                // load method index
+                mv.visitLdcInsn(new Byte(index));
+                // put under args
+                mv.visitInsn(Opcodes.SWAP);
+            }
+
             mv.visitLdcInsn(name);
             // put under args
             mv.visitInsn(Opcodes.SWAP);
@@ -374,6 +439,12 @@ public class StandardASMCompiler implements Compiler {
                 callType = "VARIABLE";
             }
 
+            
+            if (index != 0) {
+                // load method index
+                mv.visitLdcInsn(new Byte(index));
+            }
+
             mv.visitLdcInsn(name);
                 
             // empty args list
@@ -382,7 +453,11 @@ public class StandardASMCompiler implements Compiler {
 
         mv.visitFieldInsn(Opcodes.GETSTATIC, "org/jruby/runtime/CallType", callType, "Lorg/jruby/runtime/CallType;");
 
-        invokeIRubyObject("callMethod", callSig);
+        if (index != 0) {
+            invokeIRubyObject("callMethod", callSigIndexed);
+        } else {
+            invokeIRubyObject("callMethod", callSig);
+        }
     }
 
     private void invokeIRubyObject(String methodName, String signature) {
@@ -437,6 +512,7 @@ public class StandardASMCompiler implements Compiler {
     public void retrieveLocalVariable(int index) {
         MethodVisitor mv = getMethodVisitor();
         
+    
         // check if it's an argument
         if ((index - 2) < Math.abs(getArity())) {
             // load from the incoming params
@@ -451,6 +527,15 @@ public class StandardASMCompiler implements Compiler {
             mv.visitLdcInsn(new Integer(index));
             mv.visitInsn(Opcodes.AALOAD);
         }
+    }
+    
+    public void retrieveConstant(String name) {
+        MethodVisitor mv = getMethodVisitor();
+    
+        // FIXME this doesn't work right yet since TC.getConstant depends on TC state
+        loadThreadContext();
+        mv.visitLdcInsn(name);
+        invokeThreadContext("getConstant", "(Ljava/lang/String;)Lorg/jruby/runtime/builtin/IRubyObject;");
     }
     
     public void createNewFixnum(long value) {
@@ -519,6 +604,44 @@ public class StandardASMCompiler implements Compiler {
         falseBranch.branch(this);
 
         mv.visitLabel(afterJmp);
+    }
+    
+    public void performLogicalAnd(BranchCallback longBranch) {
+        Label afterJmp = new Label();
+        Label falseJmp = new Label();
+        
+        MethodVisitor mv = getMethodVisitor();
+        
+        // dup it since we need to return appropriately if it's false
+        mv.visitInsn(Opcodes.DUP);
+        
+        // call isTrue on the result
+        invokeIRubyObject("isTrue", "()Z");
+        
+        mv.visitJumpInsn(Opcodes.IFEQ, falseJmp); // EQ == 0 (i.e. false)
+        // pop the extra result and replace with the send part of the AND
+        mv.visitInsn(Opcodes.POP);
+        longBranch.branch(this);
+        mv.visitLabel(falseJmp);
+    }
+    
+    public void performLogicalOr(BranchCallback longBranch) {
+        Label afterJmp = new Label();
+        Label falseJmp = new Label();
+        
+        MethodVisitor mv = getMethodVisitor();
+        
+        // dup it since we need to return appropriately if it's false
+        mv.visitInsn(Opcodes.DUP);
+        
+        // call isTrue on the result
+        invokeIRubyObject("isTrue", "()Z");
+        
+        mv.visitJumpInsn(Opcodes.IFNE, falseJmp); // EQ == 0 (i.e. false)
+        // pop the extra result and replace with the send part of the AND
+        mv.visitInsn(Opcodes.POP);
+        longBranch.branch(this);
+        mv.visitLabel(falseJmp);
     }
     
     public void performBooleanLoop(BranchCallback condition, BranchCallback body, boolean checkFirst) {
@@ -887,5 +1010,48 @@ public class StandardASMCompiler implements Compiler {
         // don't leave the stack hanging!
         loadRuntime();
         invokeIRuby("getNil", "()Lorg/jruby/runtime/builtin/IRubyObject;");
+    }
+    
+    public void loadFalse() {
+        loadRuntime();
+        invokeIRuby("getFalse", "()Lorg/jruby/RubyBoolean;");
+    }
+    
+    public void loadTrue() {
+        loadRuntime();
+        invokeIRuby("getTrue", "()Lorg/jruby/RubyBoolean;");
+    }
+    
+    public void retrieveInstanceVariable(String name) {
+        loadSelf();
+        
+        MethodVisitor mv = getMethodVisitor();
+        
+        mv.visitLdcInsn(name);
+        invokeIRubyObject("getInstanceVariable", "(Ljava/lang/String;)Lorg/jruby/runtime/builtin/IRubyObject;");
+        
+        // check if it's null; if so, load nil
+        mv.visitInsn(Opcodes.DUP);
+        Label notNull = new Label();
+        mv.visitJumpInsn(Opcodes.IFNONNULL, notNull);
+        
+        // pop the dup'ed null
+        mv.visitInsn(Opcodes.POP);
+        // replace it with nil
+        loadNil();
+        
+        mv.visitLabel(notNull);
+    }
+    
+    public void assignInstanceVariable(String name) {
+        MethodVisitor mv = getMethodVisitor();
+        
+        loadSelf();
+        mv.visitInsn(Opcodes.SWAP);
+        
+        mv.visitLdcInsn(name);
+        mv.visitInsn(Opcodes.SWAP);
+        
+        invokeIRubyObject("setInstanceVariable", "(Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
     }
 }

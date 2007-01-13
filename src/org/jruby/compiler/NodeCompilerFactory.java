@@ -38,32 +38,49 @@ import org.jruby.ast.NodeTypes;
 public class NodeCompilerFactory {
     public static NodeCompiler getCompiler(Node node) {
         switch (node.nodeId) {
+            case NodeTypes.ANDNODE:
+                return new AndNodeCompiler();
             case NodeTypes.ARRAYNODE:
                 return new ArrayNodeCompiler();
             case NodeTypes.BLOCKNODE:
                 return new BlockNodeCompiler();
             case NodeTypes.CALLNODE:
                 return new CallNodeCompiler();
+            // FIXME: Disabled until constants can be looked up without TC state
+            //case NodeTypes.CONSTNODE:
+            //    return new ConstNodeCompiler();
             case NodeTypes.DEFNNODE:
                 return new DefnNodeCompiler();
+            case NodeTypes.FALSENODE:
+                return new FalseNodeCompiler();
             case NodeTypes.FCALLNODE:
                 return new FCallNodeCompiler();
             case NodeTypes.FIXNUMNODE:
                 return new FixnumNodeCompiler();
             case NodeTypes.IFNODE:
                 return new IfNodeCompiler();
-            case NodeTypes.ITERNODE:
-                return new IterNodeCompiler();
+            case NodeTypes.INSTASGNNODE:
+                return new InstAsgnNodeCompiler();
+            case NodeTypes.INSTVARNODE:
+                return new InstVarNodeCompiler();
+            //case NodeTypes.ITERNODE:
+            //    return new IterNodeCompiler();
             case NodeTypes.LOCALASGNNODE:
                 return new LocalAsgnNodeCompiler();
             case NodeTypes.LOCALVARNODE:
                 return new LocalVarNodeCompiler();
             case NodeTypes.NEWLINENODE:
                 return new NewlineNodeCompiler();
+            case NodeTypes.NILNODE:
+                return new NilNodeCompiler();
+            case NodeTypes.ORNODE:
+                return new OrNodeCompiler();
             case NodeTypes.ROOTNODE:
                 return new RootNodeCompiler();
             case NodeTypes.STRNODE:
                 return new StringNodeCompiler();
+            case NodeTypes.TRUENODE:
+                return new TrueNodeCompiler();
             case NodeTypes.VCALLNODE:
                 return new VCallNodeCompiler();
             case NodeTypes.WHILENODE:
