@@ -1,0 +1,184 @@
+package org.jruby.maven;
+
+import org.apache.maven.plugin.AbstractMojo;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.DependencyResolutionRequiredException;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.project.MavenProject;
+import org.apache.tools.ant.BuildEvent;
+import org.apache.tools.ant.BuildListener;
+import org.apache.tools.ant.Project;
+import org.apache.tools.ant.taskdefs.Java;
+import org.apache.tools.ant.types.Commandline.Argument;
+import org.apache.tools.ant.types.Environment.Variable;
+import org.apache.tools.ant.types.Path;
+import org.apache.tools.ant.types.Reference;
+import org.codehaus.plexus.util.StringUtils;
+
+/**
+ * Base for all JRuby mojos.
+ */
+public abstract class AbstractJRubyMojo extends AbstractMojo {
+
+    /**
+     * @parameter expression="${project}"
+     */
+    protected MavenProject mavenProject;
+
+    /**
+     * @parameter expression="${project.basedir}"
+     * @required
+     */
+    protected File launchDirectory;
+    
+    /**
+     * @parameter expression="${project.build.directory}"
+     */
+    protected String jrubyHome;
+
+    /**
+     * The plugin dependencies.
+     *
+     * @parameter expression="${plugin.artifacts}"
+     * @required
+     * @readonly
+     */
+    private List artifacts;
+    
+    protected Java jruby(String[] args) throws MojoExecutionException {
+        launchDirectory.mkdirs();
+        Java java = new Java();
+        try {
+            java.setProject(getProject());
+        } catch (DependencyResolutionRequiredException e) {
+            throw new MojoExecutionException("error resolving dependencies", e);
+        }
+
+        java.setClassname("org.jruby.Main");
+        java.setFailonerror(true);
+        java.setFork(true);
+        java.setDir(launchDirectory);
+
+        Argument arg = java.createJvmarg();
+        arg.setValue("-Xmx256m");
+
+        Variable v = new Variable();
+        v.setKey("jruby.home");
+        v.setValue(jrubyHome);        
+        java.addSysproperty(v);
+
+        Path p = java.createClasspath();
+        p.setRefid(new Reference("maven.plugin.classpath"));
+
+        for (int i = 0; i < args.length; i++) {
+            arg = java.createArg();
+            arg.setValue(args[i]);
+        }        
+
+        return java;
+    }
+    
+    protected void ensureGems(String[] gemNames) throws MojoExecutionException {
+        List args = new ArrayList();
+        args.add("--command");
+        args.add("maybe_install_gems");
+        for (int i = 0; i < gemNames.length; i++) {
+            args.add(gemNames[i]);
+        }
+
+        Java jruby = jruby((String[]) args.toArray(new String[args.size()]));
+        jruby.execute();
+    }
+
+    protected void ensureGem(String gemName) throws MojoExecutionException {
+        ensureGems(new String[] {gemName});
+    }
+
+    protected Project getProject() throws DependencyResolutionRequiredException {
+        Project project = new Project();
+        project.setBaseDir(mavenProject.getBasedir());
+        project.addBuildListener(new LogAdapter());
+        List list = new ArrayList( artifacts.size() );
+        
+        for (Iterator i = artifacts.iterator(); i.hasNext();) {
+            Artifact a = (Artifact) i.next();
+            File file = a.getFile();
+            if ( file == null ) {
+                throw new DependencyResolutionRequiredException( a );
+            }
+            list.add( file.getPath() );
+        }
+
+        Path p = new Path(project);
+        p.setPath(StringUtils.join(list.iterator(), File.pathSeparator));
+        project.addReference("maven.plugin.classpath", p);
+        return project;
+    }
+
+    public class LogAdapter implements BuildListener {
+        public void buildStarted(BuildEvent event) {
+            log(event);
+        }
+
+        public void buildFinished(BuildEvent event) {
+            log(event);
+        }
+
+        public void targetStarted(BuildEvent event) {
+            log(event);
+        }
+
+        public void targetFinished(BuildEvent event) {
+            log(event);
+        }
+
+        public void taskStarted(BuildEvent event) {
+            log(event);
+        }
+
+        public void taskFinished(BuildEvent event) {
+            log(event);
+        }
+
+        public void messageLogged(BuildEvent event) {
+            log(event);
+        }
+
+        private void log(BuildEvent event) {
+            int priority = event.getPriority();
+            Log log = getLog();
+            switch (priority) {
+            case Project.MSG_ERR:
+                log.error(event.getMessage());
+                break;
+
+            case Project.MSG_WARN:
+                log.warn(event.getMessage());
+                break;
+
+            case Project.MSG_INFO:
+                log.info(event.getMessage());
+                break;
+
+            case Project.MSG_VERBOSE:
+                log.debug(event.getMessage());
+                break;
+
+            case Project.MSG_DEBUG:
+                log.debug(event.getMessage());
+                break;
+
+            default:
+                log.info(event.getMessage());
+            break;
+            }
+        }
+    }
+}

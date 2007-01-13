@@ -30,6 +30,26 @@ else
   end  
 end
 
+def maybe_install_gems
+  require 'jruby/extract'
+  JRuby::Extract.new.extract unless File.exist?(Config::CONFIG['bindir'] + "/jruby")
+  require 'rubygems'
+  ARGV.delete_if do |g|
+    begin
+      require_gem g
+      puts "#{g} already installed"
+      true
+    rescue Gem::LoadError
+      false
+    end
+  end
+  unless ARGV.empty?
+    ARGV.unshift "install"
+    ARGV << "-y" << "--no-ri" << "--no-rdoc"
+    gem
+  end 
+end
+
 def extract
   require 'jruby/extract'
   JRuby::Extract.new(ARGV.first).extract
