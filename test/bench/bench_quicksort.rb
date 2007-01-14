@@ -12,8 +12,6 @@ def quicksort(l)
   end
 end
 
-load "bench_quicksort_data.rb"
-
 Benchmark.bm(25) { |b|
   b.report("500-element quicksort") { quicksort($small_array) }
   b.report("500k-element quicksort") { quicksort($big_array) }
