@@ -395,7 +395,6 @@ public class StandardASMCompiler implements Compiler {
                 // put under args
                 mv.visitInsn(Opcodes.SWAP);
                 
-                // FIXME: if calling against "self", this should be VARIABLE
                 callType = "NORMAL";
             } else {
                 // FCall
