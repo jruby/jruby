@@ -37,9 +37,9 @@ public abstract class AbstractJRubyMojo extends AbstractMojo {
      * @required
      */
     protected File launchDirectory;
-    
+
     /**
-     * @parameter expression="${project.build.directory}"
+     * @parameter expression="${jruby.home}"
      */
     protected String jrubyHome;
 
@@ -51,7 +51,7 @@ public abstract class AbstractJRubyMojo extends AbstractMojo {
      * @readonly
      */
     private List artifacts;
-    
+
     protected Java jruby(String[] args) throws MojoExecutionException {
         launchDirectory.mkdirs();
         Java java = new Java();
@@ -69,10 +69,12 @@ public abstract class AbstractJRubyMojo extends AbstractMojo {
         Argument arg = java.createJvmarg();
         arg.setValue("-Xmx256m");
 
-        Variable v = new Variable();
-        v.setKey("jruby.home");
-        v.setValue(jrubyHome);        
-        java.addSysproperty(v);
+        if (jrubyHome != null) {
+            Variable v = new Variable();
+            v.setKey("jruby.home");
+            v.setValue(jrubyHome);
+            java.addSysproperty(v);
+        }
 
         Path p = java.createClasspath();
         p.setRefid(new Reference("maven.plugin.classpath"));
@@ -80,11 +82,11 @@ public abstract class AbstractJRubyMojo extends AbstractMojo {
         for (int i = 0; i < args.length; i++) {
             arg = java.createArg();
             arg.setValue(args[i]);
-        }        
+        }
 
         return java;
     }
-    
+
     protected void ensureGems(String[] gemNames) throws MojoExecutionException {
         List args = new ArrayList();
         args.add("--command");
@@ -105,15 +107,15 @@ public abstract class AbstractJRubyMojo extends AbstractMojo {
         Project project = new Project();
         project.setBaseDir(mavenProject.getBasedir());
         project.addBuildListener(new LogAdapter());
-        List list = new ArrayList( artifacts.size() );
-        
+        List list = new ArrayList(artifacts.size());
+
         for (Iterator i = artifacts.iterator(); i.hasNext();) {
             Artifact a = (Artifact) i.next();
             File file = a.getFile();
-            if ( file == null ) {
-                throw new DependencyResolutionRequiredException( a );
+            if (file == null) {
+                throw new DependencyResolutionRequiredException(a);
             }
-            list.add( file.getPath() );
+            list.add(file.getPath());
         }
 
         Path p = new Path(project);

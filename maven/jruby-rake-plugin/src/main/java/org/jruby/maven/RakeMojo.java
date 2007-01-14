@@ -14,9 +14,9 @@ import org.apache.tools.ant.taskdefs.Java;
  */
 public class RakeMojo extends AbstractJRubyMojo {
     /**
-     * @parameter expression="Rakefile"
+     * @parameter
      */
-    private String rakefile;
+    private String rakefile = null;
     
     /**
      * @parameter expression="${project.build.directory}"
@@ -35,6 +35,7 @@ public class RakeMojo extends AbstractJRubyMojo {
     private String args = null;
 
     public void execute() throws MojoExecutionException {
+        outputDirectory.mkdirs();
         ensureGem("rake");
         List allArgs = new ArrayList();
         allArgs.add("--command");
@@ -50,6 +51,9 @@ public class RakeMojo extends AbstractJRubyMojo {
             }
             allArgs.add("-f");
             allArgs.add(scriptFile.getPath());
+        } else if (rakefile != null) {
+            allArgs.add("-f");
+            allArgs.add(rakefile);
         }
         allArgs.addAll(Arrays.asList(args.split("\\s+")));
         Java jruby = jruby((String[]) allArgs.toArray(new String[allArgs.size()]));
