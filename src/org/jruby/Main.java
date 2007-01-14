@@ -81,16 +81,19 @@ public class Main {
 
     public static void main(String[] args) {
     	Main main = new Main();
-    	
+    	int status = 0;
     	try {
-    		main.run(args);
+    		status = main.run(args);
     	} catch (MainExitException mee) {
     		main.err.println(mee.getMessage());
     		if (mee.isUsageError()) {
     			main.printUsage();
     		}
-    		System.exit(mee.getStatus());
+    		status = mee.getStatus();
     	}
+        if(status != 0) {
+            System.exit(status);
+        }
     }
     
     public int run(String[] args) {
@@ -172,7 +175,6 @@ public class Main {
         } catch (JumpException je) {
         	if (je.getJumpType() == JumpException.JumpType.RaiseJump) {
         		RubyException raisedException = ((RaiseException)je).getException();
-        		
         		if (raisedException.isKindOf(runtime.getClass("SystemExit"))) {
                 	RubyFixnum status = (RubyFixnum)raisedException.getInstanceVariable("status");
                 	
