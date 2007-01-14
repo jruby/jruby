@@ -56,6 +56,9 @@ import org.jruby.ast.Node;
 import org.jruby.compiler.InstructionCompiler2;
 import org.jruby.ast.executable.Script;
 import org.jruby.common.RubyWarnings;
+import org.jruby.compiler.NodeCompilerFactory;
+import org.jruby.compiler.NotCompilableException;
+import org.jruby.compiler.StandardASMCompiler;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
@@ -322,28 +325,17 @@ public final class Ruby implements IRuby {
 
     public IRubyObject compileAndRun(Node node) {
         try {
-            ThreadContext tc = getCurrentContext();
-            ISourcePosition position = node.getPosition();
-            InstructionCompiler2 compiler = new InstructionCompiler2();
-            String classname = null;
+            // do the compile
+            StandardASMCompiler compiler = new StandardASMCompiler(node);
+            NodeCompilerFactory.getCompiler(node).compile(node, compiler);
             
-            if (position != null) {
-                classname = node.getPosition().getFile();
-                if (classname.endsWith(".rb")) {
-                    classname = classname.substring(0, classname.length() - 3);
-                }
-                compiler.compile(classname, position.getFile(), node);
-            } else {
-                classname = "EVAL";
-                compiler.compile(classname, "EVAL", node);
-            }
-            
-            JRubyClassLoader loader = new JRubyClassLoader();
-            Class scriptClass = compiler.loadClasses(loader);
+            Class scriptClass = compiler.loadClass();
             
             Script script = (Script)scriptClass.newInstance();
-            
-            return script.run(tc, tc.getFrameSelf());
+            return script.run(getCurrentContext(), getTopSelf());
+        } catch (NotCompilableException nce) {
+            System.err.println("Error -- Not compileable: " + nce.getMessage());
+            return null;
         } catch (JumpException je) {
             if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
                 return (IRubyObject)je.getSecondaryData();
