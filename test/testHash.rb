@@ -12,6 +12,13 @@ test_equal(2, h[1])
 test_equal(300, h[3])
 test_equal(400, h[4])
 
+num = 0
+h1 = { "a" => 100, "b" => 200 }
+h2 = { "b" => 254, "c" => 300 }
+h1.merge!(h2) {|k,o,n| num += 1; o+n }
+test_equal(h1,{"a"=>100, "b"=>454, "c"=>300})
+test_equal(num, 1)
+
 h = {1=>2,3=>4}
 test_exception(IndexError) { h.fetch(10) }
 test_equal(2, h.fetch(1))

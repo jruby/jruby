@@ -512,7 +512,21 @@ public class RubyHash extends RubyObject implements Map {
         modify();
         RubyHash freshElementsHash =
             (RubyHash) freshElements.convertType(RubyHash.class, "Hash", "to_hash");
-        valueMap.putAll(freshElementsHash.valueMap);
+        ThreadContext ctx = getRuntime().getCurrentContext();
+        if(ctx.isBlockGiven()) {
+            Map other = freshElementsHash.valueMap;
+            for(Iterator iter = other.keySet().iterator();iter.hasNext();) {
+                IRubyObject key = (IRubyObject)iter.next();
+                IRubyObject oval = (IRubyObject)valueMap.get(key);
+                if(null == oval) {
+                    valueMap.put(key,other.get(key));
+                } else {
+                    valueMap.put(key,ctx.yield(getRuntime().newArray(new IRubyObject[]{key,oval,(IRubyObject)other.get(key)})));
+                }
+            }
+        } else {
+            valueMap.putAll(freshElementsHash.valueMap);
+        }
         return this;
     }
     
