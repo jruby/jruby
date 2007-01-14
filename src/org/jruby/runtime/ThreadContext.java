@@ -458,7 +458,6 @@ public class ThreadContext {
         bindingFrameIndex--;
     }
 
-
     public int currentBindingFrame() {
         if(bindingFrameIndex == -1) {
             return 0;
@@ -789,17 +788,17 @@ public class ThreadContext {
         RubyArray backtrace = runtime.newArray();
         int base = currentBindingFrame();
         int traceSize = frameIndex - level;
-        
+
         if (traceSize <= 0) {
         	return backtrace;
         }
-        
+
         if (nativeException) {
             // assert level == 0;
             addBackTraceElement(backtrace, (Frame) frameStack[frameIndex], null);
         }
         
-        for (int i = traceSize; i > currentBindingFrame(); i--) {
+        for (int i = traceSize; i > base; i--) {
             addBackTraceElement(backtrace, (Frame) frameStack[i], (Frame) frameStack[i-1]);
         }
     

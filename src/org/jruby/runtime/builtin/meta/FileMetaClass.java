@@ -378,7 +378,11 @@ public class FileMetaClass extends IOMetaClass {
 		}
 
         if (new File(relativePath).isAbsolute()) {
-            return getRuntime().newString(relativePath);
+            try {
+                return getRuntime().newString(new File(relativePath).getCanonicalPath());
+            } catch(IOException e) {
+                return getRuntime().newString(relativePath);
+            }
         }
 
         String cwd = getRuntime().getCurrentDirectory();

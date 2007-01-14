@@ -1148,6 +1148,11 @@ public final class Ruby implements IRuby {
     }
 
     public void loadScript(String scriptName, Reader source, boolean wrap) {
+        File f = new File(scriptName);
+        if(f.exists() && !f.isAbsolute() && !scriptName.startsWith("./")) {
+            scriptName = "./" + scriptName;
+        }
+
         IRubyObject self = getTopSelf();
 
         ThreadContext context = getCurrentContext();
