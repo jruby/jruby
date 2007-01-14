@@ -312,7 +312,9 @@ public final class Ruby implements IRuby {
         	if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
                 throw newLocalJumpError("unexpected return");
                 //	            return (IRubyObject)je.getSecondaryData();
-        	} 
+        	} else if(je.getJumpType() == JumpException.JumpType.BreakJump) {
+                throw newLocalJumpError("unexpected break");
+            }
 
             throw je;
         }
