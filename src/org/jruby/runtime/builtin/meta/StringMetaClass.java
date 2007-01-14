@@ -40,6 +40,7 @@ import org.jruby.RubyInteger;
 import org.jruby.RubyString;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -50,10 +51,12 @@ import org.jruby.util.collections.SinglyLinkedList;
 public class StringMetaClass extends ObjectMetaClass {
     public StringMetaClass(IRuby runtime) {
         super("String", RubyString.class, runtime.getObject(), STRING_ALLOCATOR);
+        this.index = ClassIndex.STRING;
     }
 
     private StringMetaClass(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
         super(name, RubyString.class, superClass, allocator, parentCRef);
+        this.index = ClassIndex.STRING;
     }
 
     protected class StringMeta extends Meta {

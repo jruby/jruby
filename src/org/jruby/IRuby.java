@@ -22,6 +22,7 @@ import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.GlobalVariable;
+import org.jruby.runtime.MethodSelectorTable;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.ThreadContext;
@@ -50,6 +51,8 @@ public interface IRuby {
      * @see org.jruby.Main#runInterpreter
      */
     public Map getRuntimeInformation();
+    
+    public MethodSelectorTable getSelectorTable();
     
 	/**
 	 * Evaluates a script and returns a RubyObject.

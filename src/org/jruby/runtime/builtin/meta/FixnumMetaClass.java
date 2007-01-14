@@ -33,6 +33,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
@@ -40,10 +41,12 @@ import org.jruby.util.collections.SinglyLinkedList;
 public class FixnumMetaClass extends IntegerMetaClass {
 	public FixnumMetaClass(IRuby runtime) {
 		super("Fixnum", RubyFixnum.class, runtime.getClass("Integer"), FIXNUM_ALLOCATOR);
+        this.index = ClassIndex.FIXNUM;
 	}
 	
 	public FixnumMetaClass(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
 		super(name, RubyFixnum.class, superClass, allocator, parentCRef);
+        this.index = ClassIndex.FIXNUM;
 	}
 	
 	protected class FixnumMeta extends Meta {

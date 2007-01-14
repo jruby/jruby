@@ -87,6 +87,7 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.IAccessor;
+import org.jruby.runtime.MethodSelectorTable;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.ThreadContext;
@@ -120,9 +121,10 @@ import org.jruby.util.collections.SinglyLinkedList;
 public final class Ruby implements IRuby {
 	private static String[] BUILTIN_LIBRARIES = {"fcntl", "yaml", "etc", "nkf" };
     
-	private CacheMap cacheMap = new CacheMap();
+	private CacheMap cacheMap = new CacheMap(this);
     private ThreadService threadService = new ThreadService(this);
     private Hashtable runtimeInformation;
+    private final MethodSelectorTable selectorTable;
 
     private int stackTraces = 0;
 
@@ -223,6 +225,7 @@ public final class Ruby implements IRuby {
         this.in = in;
         this.out = out;
         this.err = err;
+        this.selectorTable = new MethodSelectorTable();
         
         objectSpaceEnabled = osEnabled;
 
@@ -512,6 +515,10 @@ public final class Ruby implements IRuby {
      */
     public Map getRuntimeInformation() {
         return runtimeInformation == null ? runtimeInformation = new Hashtable() : runtimeInformation;
+    }
+    
+    public MethodSelectorTable getSelectorTable() {
+        return selectorTable;
     }
 
     /** rb_define_global_const

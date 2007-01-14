@@ -38,6 +38,7 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.MethodIndex;
 
 /**
  * A method or operator call.
@@ -51,12 +52,14 @@ public final class CallNode extends Node implements INameNode, IArgumentNode, Bl
     private String name;
     private Node argsNode;
     private IterNode iterNode;
+    public final int index;
 
     public CallNode(ISourcePosition position, Node receiverNode, String name, Node argsNode) {
         super(position, NodeTypes.CALLNODE);
         this.receiverNode = receiverNode;
         this.name = name.intern();
         this.argsNode = argsNode;
+        this.index = MethodIndex.getIndex(this.name);
     }
     
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {

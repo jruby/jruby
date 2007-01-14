@@ -36,6 +36,8 @@ package org.jruby;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import org.jruby.runtime.CallType;
+import org.jruby.runtime.ThreadContext;
 
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -50,12 +52,31 @@ public class RubyBignum extends RubyInteger {
     private static final long MAX = (1L<<(BIT_SIZE - 2)) - 1;
     private static final BigInteger LONG_MAX = BigInteger.valueOf(MAX);
     private static final BigInteger LONG_MIN = BigInteger.valueOf(-MAX-1);
+    
+    public static final byte OP_PLUS_SWITCHVALUE = 1;
+    public static final byte OP_MINUS_SWITCHVALUE = 2;
+    public static final byte OP_LT_SWITCHVALUE = 3;
 
     private final BigInteger value;
 
     public RubyBignum(IRuby runtime, BigInteger value) {
         super(runtime, runtime.getClass("Bignum"));
         this.value = value;
+    }
+    
+    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, byte switchvalue, String name,
+            IRubyObject[] args, CallType callType) {
+        switch (switchvalue) {
+            case OP_PLUS_SWITCHVALUE:
+                return op_plus(args[0]);
+            case OP_MINUS_SWITCHVALUE:
+                return op_minus(args[0]);
+            case OP_LT_SWITCHVALUE:
+                return op_lt(args[0]);
+            case 0:
+            default:
+                return super.callMethod(context, rubyclass, name, args, callType);
+        }
     }
 
     public double getDoubleValue() {

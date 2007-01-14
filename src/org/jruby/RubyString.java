@@ -39,6 +39,7 @@ package org.jruby;
 import java.util.Locale;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -58,6 +59,16 @@ public class RubyString extends RubyObject {
     private static final String DEFAULT_RS = "\n";
 
 	private static final String encoding = "ISO8859_1";
+    
+    public static final byte OP_PLUS_SWITCHVALUE = 1;
+    public static final byte OP_LT_SWITCHVALUE = 2;
+    public static final byte AREF_SWITCHVALUE = 3;
+    public static final byte ASET_SWITCHVALUE = 4;
+    public static final byte NIL_P_SWITCHVALUE = 5;
+    public static final byte EQUALEQUAL_SWITCHVALUE = 6;
+    public static final byte OP_GE_SWITCHVALUE = 7;
+    public static final byte OP_LSHIFT_SWITCHVALUE = 8;
+    public static final byte EMPTY_P_SWITCHVALUE = 9;
 
 	private StringBuffer value;
     private CharSequence chars;
@@ -76,6 +87,33 @@ public class RubyString extends RubyObject {
         // defer creation of StringBuffer until needed
         chars = value;
 	}
+    
+    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, byte switchvalue, String name,
+            IRubyObject[] args, CallType callType) {
+        switch (switchvalue) {
+            case OP_PLUS_SWITCHVALUE:
+                return op_plus(args[0]);
+            case OP_LT_SWITCHVALUE:
+                return op_lt(args[0]);
+            case AREF_SWITCHVALUE:
+                return aref(args);
+            case ASET_SWITCHVALUE:
+                return aset(args);
+            case NIL_P_SWITCHVALUE:
+                return nil_p();
+            case EQUALEQUAL_SWITCHVALUE:
+                return equal(args[0]);
+            case OP_GE_SWITCHVALUE:
+                return op_ge(args[0]);
+            case OP_LSHIFT_SWITCHVALUE:
+                return concat(args[0]);
+            case EMPTY_P_SWITCHVALUE:
+                return empty();
+            case 0:
+            default:
+                return super.callMethod(context, rubyclass, name, args, callType);
+        }
+    }
 
 	public Class getJavaClass() {
 		return String.class;

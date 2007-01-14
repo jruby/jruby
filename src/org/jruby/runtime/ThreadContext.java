@@ -737,6 +737,32 @@ public class ThreadContext {
         return ((RubyModule) peekCRef().getValue()).getConstant(name);
     }
 
+    public IRubyObject getConstant(String name, RubyModule module) {
+        //RubyModule self = state.threadContext.getRubyClass();
+        SinglyLinkedList cbase = module.getCRef();
+        IRubyObject result = null;
+        
+        // flipped from while to do to search current class first
+        do {
+          RubyModule klass = (RubyModule) cbase.getValue();
+          
+          // Not sure how this can happen
+          //if (NIL_P(klass)) return rb_const_get(CLASS_OF(self), id);
+          result = klass.getConstantAt(name);
+          if (result == null) {
+              if (runtime.getLoadService().autoload(name) != null) {
+                  continue;
+              }
+          } else {
+              return result;
+          }
+          cbase = cbase.getNext();
+        } while (cbase != null);
+        
+        //System.out.println("CREF is " + state.threadContext.getCRef().getValue());  
+        return ((RubyModule) peekCRef().getValue()).getConstant(name);
+    }
+
     private void addBackTraceElement(RubyArray backtrace, Frame frame, Frame previousFrame) {
         StringBuffer sb = new StringBuffer(100);
         ISourcePosition position = frame.getPosition();

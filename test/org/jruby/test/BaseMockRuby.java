@@ -40,6 +40,7 @@ import org.jruby.runtime.CacheMap;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.GlobalVariable;
+import org.jruby.runtime.MethodSelectorTable;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.ThreadContext;
@@ -711,6 +712,10 @@ public class BaseMockRuby implements IRuby {
     }
     
     public String getJRubyHome() {
+        return null;
+    }
+    
+    public MethodSelectorTable getSelectorTable() {
         return null;
     }
 }

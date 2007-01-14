@@ -72,6 +72,8 @@ public class RubyModule extends RubyObject {
 
     // superClass may be null.
     private RubyClass superClass;
+    
+    public int index;
 
     // Containing class...The parent of Object is null. Object should always be last in chain.
     //public RubyModule parentModule;

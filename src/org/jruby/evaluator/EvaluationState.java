@@ -146,6 +146,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ICallable;
+import org.jruby.runtime.MethodSelectorTable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -354,7 +355,17 @@ public class EvaluationState {
 
                 // if no block passed, do a simple call
                 if (iterNode == null) {
-                    return receiver.callMethod(context, iVisited.getName(), args, callType);
+                    RubyModule module = receiver.getMetaClass();
+                    if (module.index != 0) {
+                         return receiver.callMethod(
+                                context,
+                                module,
+                                runtime.getSelectorTable().table[module.index][iVisited.index],
+                                iVisited.getName(),
+                                args,
+                                callType);
+                    }
+                    return receiver.callMethod(context, module, iVisited.getName(), args, callType);
                 }
                 
                 // if block passed, prepare the block and then do the call, handling breaks and retries correctly

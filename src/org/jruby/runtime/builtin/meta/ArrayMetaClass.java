@@ -32,6 +32,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
@@ -39,10 +40,12 @@ import org.jruby.util.collections.SinglyLinkedList;
 public class ArrayMetaClass extends ObjectMetaClass {
     public ArrayMetaClass(IRuby runtime) {
         super("Array", RubyArray.class, runtime.getObject(), ARRAY_ALLOCATOR);
+        this.index = ClassIndex.ARRAY;
     }
     
 	public ArrayMetaClass(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
 		super(name, RubyArray.class, superClass, allocator, parentCRef);
+        this.index = ClassIndex.ARRAY;
 	}
 
 	protected class ArrayMeta extends Meta {

@@ -65,34 +65,6 @@ public class CallBlock extends Block {
         return callback.call(context, args, replacementSelf);
     }
 
-    /**
-     * Yield to this block, usually passed to the current call.
-     * 
-     * @param value The value to yield, either a single value or an array of values
-     * @param self The current self
-     * @param klass
-     * @param yieldProc
-     * @param aValue
-     * @return
-     */
-    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean aValue) {
-        // FIXME: during refactoring, it was determined that all calls to yield are passing false for yieldProc; is this still needed?
-        IRubyObject[] args = new IRubyObject[]{value};
-
-        // This while loop is for restarting the block call in case a 'redo' fires.
-        while (true) {
-            try {
-                return callback.call(context, args, self);
-            } catch (JumpException je) {
-                if (je.getJumpType() == JumpException.JumpType.RedoJump) {
-                    // do nothing, allow loop to redo
-                } else {
-                    throw je;
-                }
-            }
-        }
-    }
-
     public Block cloneBlock() {
         return new CallBlock(self,imClass,arity,callback,tc);
     }

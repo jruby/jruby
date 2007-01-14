@@ -31,6 +31,7 @@ import java.util.WeakHashMap;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Map;
+import org.jruby.IRuby;
 
 import org.jruby.RubyModule;
 import org.jruby.util.collections.WeakHashSet;
@@ -51,7 +52,12 @@ import org.jruby.util.collections.WeakHashSet;
  * call this is responsible for synchronization.
  */
 public class CacheMap {
-	Map mappings = new WeakHashMap();
+	private final Map mappings = new WeakHashMap();
+    private final IRuby runtime;
+    
+    public CacheMap(IRuby runtime) {
+        this.runtime = runtime;
+    }
 
 	/**
 	 * Add another class to the list of classes which are caching the method.
@@ -90,6 +96,10 @@ public class CacheMap {
 			RubyModule module = (RubyModule) iter.next();
             if (module != null) {
                 module.removeCachedMethod(name);
+                
+                if (module.index != 0) {
+                    runtime.getSelectorTable().table[module.index][MethodIndex.getIndex(name)] = 0;
+                }
             }
 		}
 	}

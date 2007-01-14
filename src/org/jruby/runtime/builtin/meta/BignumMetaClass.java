@@ -32,6 +32,7 @@ import org.jruby.IRuby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
@@ -39,10 +40,12 @@ import org.jruby.util.collections.SinglyLinkedList;
 public class BignumMetaClass extends ObjectMetaClass {
     public BignumMetaClass(IRuby runtime) {
         super("Bignum", RubyBignum.class, runtime.getClass("Integer"), BIGNUM_ALLOCATOR);
+        this.index = ClassIndex.BIGNUM;
     }
     
 	public BignumMetaClass(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
 		super(name, RubyBignum.class, superClass, allocator, parentCRef);
+        this.index = ClassIndex.BIGNUM;
 	}
 
 	protected class BignumMeta extends Meta {

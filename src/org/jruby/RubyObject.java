@@ -45,6 +45,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.Iter;
+import org.jruby.runtime.MethodSelectorTable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -339,6 +340,28 @@ public class RubyObject implements Cloneable, IRubyObject {
         return callMethod(context, getMetaClass(), name, args, callType);
     }
 
+    /**
+     *
+     */
+    public IRubyObject callMethod(ThreadContext context, byte methodIndex, String name,
+            IRubyObject[] args, CallType callType) {
+        RubyModule module = getMetaClass();
+        
+        if (module.index != 0) {
+            return callMethod(context, module, getRuntime().getSelectorTable().table[module.index][methodIndex], name, args, callType);
+        } else {
+            return callMethod(context, module, name, args, callType);
+        }
+    }
+
+    /**
+     *
+     */
+    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, byte switchvalue, String name,
+            IRubyObject[] args, CallType callType) {
+        return callMethod(context, rubyclass, name, args, callType);
+    }
+    
     /**
      *
      */

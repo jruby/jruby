@@ -42,6 +42,8 @@ import org.jruby.RubyProc;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.Node;
+import org.jruby.compiler.NodeCompilerFactory;
+import org.jruby.compiler.StandardASMCompiler;
 import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.evaluator.CreateJumpTargetVisitor;
 import org.jruby.evaluator.EvaluationState;
@@ -54,6 +56,7 @@ import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callback.InvocationCallbackFactory;
 import org.jruby.util.collections.SinglyLinkedList;
 
 /**
@@ -65,7 +68,14 @@ public final class DefaultMethod extends AbstractMethod {
     private ArgsNode argsNode;
     private SinglyLinkedList cref;
     private boolean hasBeenTargeted = false;
+    private int callCount = 0;
+    private DynamicMethod compiledMethod;
+    private static final int COMPILE_COUNT = 50;
+    private boolean compiledFast = false;
 
+    // change to true to enable JIT compilation
+    private static final boolean JIT_ENABLED = false;
+    
     public DefaultMethod(RubyModule implementationClass, StaticScope staticScope, Node body, 
             ArgsNode argsNode, Visibility visibility, SinglyLinkedList cref) {
         super(implementationClass, visibility);
@@ -88,8 +98,26 @@ public final class DefaultMethod extends AbstractMethod {
     /**
      * @see AbstractCallable#call(IRuby, IRubyObject, String, IRubyObject[], boolean)
      */
+    // FIXME: This is commented out because problems were found compiling methods that call protected code.
+    // because eliminating the pre/post does not change the "self" on the current frame, this caused
+    // visibility to be a larger problem. We must revisit this to examine how to avoid this trap for visibility checks.
+    /*public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+        if (compiledMethod != null) {
+            return compiledMethod.call(context, receiver, lastClass, name, args, noSuper);
+        } else {
+            return super.call(context, receiver, lastClass, name, args, noSuper);
+        }
+    }*/
+
+    /**
+     * @see AbstractCallable#call(IRuby, IRubyObject, String, IRubyObject[], boolean)
+     */
     public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
     	assert args != null;
+        if (JIT_ENABLED && compiledMethod != null) {
+            return compiledMethod.call(context, receiver, lastClass, name, args, noSuper);
+        }
+        
         IRuby runtime = context.getRuntime();
         RubyProc blockArg = null;
         
@@ -99,6 +127,9 @@ public final class DefaultMethod extends AbstractMethod {
         }
 
         if (argsNode.getBlockArgNode() != null && context.isBlockGiven()) {
+            // do not attempt to compile; we don't handle blocks yet
+            callCount = -1;
+            
             Block block = context.getCurrentBlock();
             if (block.getBlockObject() instanceof RubyProc) {
                 blockArg = (RubyProc)block.getBlockObject();
@@ -118,6 +149,31 @@ public final class DefaultMethod extends AbstractMethod {
 
             traceCall(context, runtime, receiver, name);
 
+            if (JIT_ENABLED && callCount >= 0 && getArity().isFixed()) {
+                callCount++;
+                if (callCount == COMPILE_COUNT) {
+                    try {
+                        String cleanName = name.replace("?", "_p").replace("!","_b").replace("<", "_lt").replace(">", "_gt").replace("=", "_eq");
+                        cleanName = cleanName.replace("[]", "_aref");
+                        StandardASMCompiler compiler = new StandardASMCompiler(cleanName + hashCode(), body.getPosition().getFile());
+                        compiler.startScript();
+                        Object methodToken = compiler.beginMethod(getArity().getValue(), staticScope.getNumberOfVariables());
+                        NodeCompilerFactory.getCompiler(body).compile(body, compiler);
+                        compiler.endMethod(methodToken);
+                        compiler.endScript();
+                        Class sourceClass = compiler.loadClass();
+                        Class stubClass = sourceClass.getClassLoader().loadClass(cleanName + hashCode() + "$MultiStub0");
+                        MultiStub2 ms2 = (MultiStub2)stubClass.newInstance();
+                        DynamicMethod method = new MultiStubMethod2(ms2, 0, getImplementationClass(), getArity(), getVisibility());
+                        this.compiledMethod = method;
+                        System.out.println("compiled: " + getImplementationClass().getBaseName() + "." + name);
+                    } catch (Exception e) {
+                        //e.printStackTrace();
+                    } finally {
+                        callCount = -1;
+                    }
+                }
+            }
             return EvaluationState.eval(context, body, receiver);
         } catch (JumpException je) {
         	if (je.getJumpType() == JumpException.JumpType.ReturnJump) {

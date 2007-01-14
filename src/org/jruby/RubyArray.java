@@ -52,6 +52,7 @@ import java.util.Set;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.ConversionIterator;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.meta.ArrayMetaClass;
@@ -67,6 +68,16 @@ import org.jruby.util.collections.IdentitySet;
 public class RubyArray extends RubyObject implements List {
     private List list;
     private boolean tmpLock;
+    public static final byte OP_PLUS_SWITCHVALUE = 1;
+    public static final byte AREF_SWITCHVALUE = 2;
+    public static final byte ASET_SWITCHVALUE = 3;
+    public static final byte POP_SWITCHVALUE = 4;
+    public static final byte PUSH_SWITCHVALUE = 5;
+    public static final byte NIL_P_SWITCHVALUE = 6;
+    public static final byte EQUALEQUAL_SWITCHVALUE = 7;
+    public static final byte UNSHIFT_SWITCHVALUE = 8;
+    public static final byte OP_LSHIFT_SWITCHVALUE = 9;
+    public static final byte EMPTY_P_SWITCHVALUE = 10;
 
 	private RubyArray(IRuby runtime, List list) {
 		this(runtime, runtime.getClass("Array"));
@@ -76,6 +87,35 @@ public class RubyArray extends RubyObject implements List {
     public RubyArray(IRuby runtime, RubyClass klass) {
         super(runtime, klass);
         list = new ArrayList(16);
+    }
+    
+    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, byte switchvalue, String name,
+            IRubyObject[] args, CallType callType) {
+        switch (switchvalue) {
+            case OP_PLUS_SWITCHVALUE:
+                return op_plus(args[0]);
+            case AREF_SWITCHVALUE:
+                return aref(args);
+            case ASET_SWITCHVALUE:
+                return aset(args);
+            case POP_SWITCHVALUE:
+                return pop();
+            case PUSH_SWITCHVALUE:
+                return push(args);
+            case NIL_P_SWITCHVALUE:
+                return nil_p();
+            case EQUALEQUAL_SWITCHVALUE:
+                return array_op_equal(args[0]);
+            case UNSHIFT_SWITCHVALUE:
+                return unshift(args);
+            case OP_LSHIFT_SWITCHVALUE:
+                return append(args[0]);
+            case EMPTY_P_SWITCHVALUE:
+                return empty_p();
+            case 0:
+            default:
+                return super.callMethod(context, rubyclass, name, args, callType);
+        }
     }
 
     /** Getter for property list.

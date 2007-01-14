@@ -34,6 +34,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -49,6 +50,10 @@ public class RubyFixnum extends RubyInteger {
     public static final long MAX = (1L<<(BIT_SIZE - 1)) - 1;
     public static final long MIN = -1 * MAX - 1;
     private static final long MAX_MARSHAL_FIXNUM = (1L << 30) - 1;
+    
+    public static final byte OP_PLUS_SWITCHVALUE = 1;
+    public static final byte OP_MINUS_SWITCHVALUE = 2;
+    public static final byte OP_LT_SWITCHVALUE = 3;
 
     public RubyFixnum(IRuby runtime) {
         this(runtime, 0);
@@ -57,6 +62,21 @@ public class RubyFixnum extends RubyInteger {
     public RubyFixnum(IRuby runtime, long value) {
         super(runtime, runtime.getFixnum());
         this.value = value;
+    }
+    
+    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, byte switchvalue, String name,
+            IRubyObject[] args, CallType callType) {
+        switch (switchvalue) {
+            case OP_PLUS_SWITCHVALUE:
+                return op_plus(args[0]);
+            case OP_MINUS_SWITCHVALUE:
+                return op_minus(args[0]);
+            case OP_LT_SWITCHVALUE:
+                return op_lt(args[0]);
+            case 0:
+            default:
+                return super.callMethod(context, rubyclass, name, args, callType);
+        }
     }
     
     public boolean isImmediate() {
