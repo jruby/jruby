@@ -36,6 +36,7 @@ package org.jruby;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 
@@ -68,10 +69,13 @@ public class RubyBignum extends RubyInteger {
             IRubyObject[] args, CallType callType) {
         switch (switchvalue) {
             case OP_PLUS_SWITCHVALUE:
+                Arity.singleArgument().checkArity(context.getRuntime(), args);
                 return op_plus(args[0]);
             case OP_MINUS_SWITCHVALUE:
+                Arity.singleArgument().checkArity(context.getRuntime(), args);
                 return op_minus(args[0]);
             case OP_LT_SWITCHVALUE:
+                Arity.singleArgument().checkArity(context.getRuntime(), args);
                 return op_lt(args[0]);
             case 0:
             default:

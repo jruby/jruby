@@ -52,6 +52,7 @@ import java.util.Set;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.ConversionIterator;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -93,24 +94,34 @@ public class RubyArray extends RubyObject implements List {
             IRubyObject[] args, CallType callType) {
         switch (switchvalue) {
             case OP_PLUS_SWITCHVALUE:
+                Arity.singleArgument().checkArity(context.getRuntime(), args);
                 return op_plus(args[0]);
             case AREF_SWITCHVALUE:
+                Arity.optional().checkArity(context.getRuntime(), args);
                 return aref(args);
             case ASET_SWITCHVALUE:
+                Arity.optional().checkArity(context.getRuntime(), args);
                 return aset(args);
             case POP_SWITCHVALUE:
+                Arity.noArguments().checkArity(context.getRuntime(), args);
                 return pop();
             case PUSH_SWITCHVALUE:
+                Arity.optional().checkArity(context.getRuntime(), args);
                 return push(args);
             case NIL_P_SWITCHVALUE:
+                Arity.noArguments().checkArity(context.getRuntime(), args);
                 return nil_p();
             case EQUALEQUAL_SWITCHVALUE:
+                Arity.singleArgument().checkArity(context.getRuntime(), args);
                 return array_op_equal(args[0]);
             case UNSHIFT_SWITCHVALUE:
+                Arity.optional().checkArity(context.getRuntime(), args);
                 return unshift(args);
             case OP_LSHIFT_SWITCHVALUE:
+                Arity.singleArgument().checkArity(context.getRuntime(), args);
                 return append(args[0]);
             case EMPTY_P_SWITCHVALUE:
+                Arity.noArguments().checkArity(context.getRuntime(), args);
                 return empty_p();
             case 0:
             default:
