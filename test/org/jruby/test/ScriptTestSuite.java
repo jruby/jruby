@@ -61,7 +61,7 @@ public class ScriptTestSuite extends TestSuite {
     public static Test suite() throws java.io.IOException {
         TestSuite suite = new TestSuite();
 
-        File testIndex = new File("test/test_index");
+        File testIndex = new File(TEST_INDEX);
 
         if (! testIndex.canRead()) {
             // Since we don't have any other error reporting mechanism, we
@@ -99,21 +99,6 @@ public class ScriptTestSuite extends TestSuite {
         
         return runtime;
     }
-
-
-    private static class FailingTest extends TestCase {
-        private final String message;
-
-        public FailingTest(String name, String message) {
-            super(name);
-            this.message = message;
-        }
-
-        public void runTest() throws Throwable {
-            fail(message);
-        }
-    }
-
 
     private static class ScriptTest extends TestCase {
         private final IRuby runtime;

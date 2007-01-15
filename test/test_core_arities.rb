@@ -2,7 +2,7 @@ require 'test/unit'
 
 # Test that core class methods are correctly raising errors for incorrect call
 # arities.
-class TestArities < Test::Unit::TestCase
+class TestCoreArities < Test::Unit::TestCase
   def assert_argerr(&b)
     assert_raises(ArgumentError, &b)
   end
