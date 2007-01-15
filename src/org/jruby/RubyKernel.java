@@ -24,6 +24,7 @@
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
  * Copyright (C) 2006 Michael Studman <codehaus@michaelstudman.com>
  * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
+ * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -946,8 +947,7 @@ public class RubyKernel {
         OutputStream error = runtime.getErrorStream();
         InputStream input = runtime.getInputStream();
         try {
-            // startup scripts set jruby.shell to /bin/sh for Unix, cmd.exe for Windows
-            String shell = System.getProperty("jruby.shell");
+            String shell = runtime.evalScript("require 'rbconfig'; Config::CONFIG['SHELL']").toString();
             rawArgs[0] = runtime.newString(repairDirSeps(rawArgs[0].toString()));
             Process aProcess = null;
             InProcessScript ipScript = null;
@@ -965,7 +965,7 @@ public class RubyKernel {
                     args.set(0,runtime.getJRubyHome() + File.separator + "bin" + File.separator + "jirb");
                 }
                 String[] argArray = (String[])args.subList(startIndex,args.size()).toArray(new String[0]);
-                ipScript = new InProcessScript(argArray, runtime.getInputStream(), new PrintStream(output), new PrintStream(runtime.getErrorStream()), pwd);
+                ipScript = new InProcessScript(argArray, input, new PrintStream(output), new PrintStream(error), pwd);
                 
                 // execute ruby command in-process
                 ipScript.start();

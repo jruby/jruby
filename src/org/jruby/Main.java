@@ -70,35 +70,25 @@ public class Main {
     private PrintStream err;
     
     public Main(InputStream in, PrintStream out, PrintStream err) {
-    	this.in = in;
-    	this.out = out;
-    	this.err = err;
+        this.in = in;
+        this.out = out;
+        this.err = err;
     }
     
     public Main() {
-    	this(System.in, System.out, System.err);
+        this(System.in, System.out, System.err);
     }
 
     public static void main(String[] args) {
-    	Main main = new Main();
-    	int status = 0;
-    	try {
-    		status = main.run(args);
-    	} catch (MainExitException mee) {
-    		main.err.println(mee.getMessage());
-    		if (mee.isUsageError()) {
-    			main.printUsage();
-    		}
-    		status = mee.getStatus();
-    	}
-        if(status != 0) {
+        Main main = new Main();
+        int status = main.run(args);
+        if (status != 0) {
             System.exit(status);
         }
     }
     
     public int run(String[] args) {
         commandline = new CommandlineParser(this, args);
-
 
         if (commandline.isShowVersion()) {
             showVersion();
@@ -113,7 +103,17 @@ public class Main {
             now = System.currentTimeMillis();
         }
 
-        int status = runInterpreter(commandline);
+        int status;
+
+        try {
+            status = runInterpreter(commandline);
+        } catch (MainExitException mee) {
+            err.println(mee.getMessage());
+            if (mee.isUsageError()) {
+                printUsage();
+            }
+            status = mee.getStatus();
+        }
 
         if (commandline.isBenchmarking()) {
             out.println("Runtime: " + (System.currentTimeMillis() - now) + " ms");
@@ -134,15 +134,16 @@ public class Main {
 
     public void printUsage() {
         if (!hasPrintedUsage) {
-			out.println("Usage: jruby [switches] [--] [rubyfile.rb] [arguments]");
-			out.println("    -e 'command'    one line of script. Several -e's allowed. Omit [programfile]");
-			out.println("    -b              benchmark mode, times the script execution");
-			out.println("    -Idirectory     specify $LOAD_PATH directory (may be used more than once)");
-			out.println("    --              optional -- before rubyfile.rb for compatibility with ruby");
+            out.println("Usage: jruby [switches] [--] [rubyfile.rb] [arguments]");
+            out.println("    -e 'command'    one line of script. Several -e's allowed. Omit [programfile]");
+            out.println("    -b              benchmark mode, times the script execution");
+            out.println("    -Idirectory     specify $LOAD_PATH directory (may be used more than once)");
+            out.println("    --              optional -- before rubyfile.rb for compatibility with ruby");
             out.println("    -d              set debugging flags (set $DEBUG to true)");
             out.println("    -v              print version number, then turn on verbose mode");
             out.println("    -O              run with ObjectSpace disabled (improves performance)");
             out.println("    -C              pre-compile scripts before running (EXPERIMENTAL)");
+            out.println("    --command word  Execute ruby-related shell command (i.e., irb, gem)");
             hasPrintedUsage = true;
         }
     }
@@ -170,29 +171,29 @@ public class Main {
         });
 
         try {
-        	runInterpreter(runtime, reader, filename);
-        	return 0;
+            runInterpreter(runtime, reader, filename);
+            return 0;
         } catch (JumpException je) {
-        	if (je.getJumpType() == JumpException.JumpType.RaiseJump) {
-        		RubyException raisedException = ((RaiseException)je).getException();
-        		if (raisedException.isKindOf(runtime.getClass("SystemExit"))) {
-                	RubyFixnum status = (RubyFixnum)raisedException.getInstanceVariable("status");
-                	
+            if (je.getJumpType() == JumpException.JumpType.RaiseJump) {
+                RubyException raisedException = ((RaiseException)je).getException();
+                if (raisedException.isKindOf(runtime.getClass("SystemExit"))) {
+                    RubyFixnum status = (RubyFixnum)raisedException.getInstanceVariable("status");
+                    
                     if (status != null) {
                         return RubyNumeric.fix2int(status);
                     } else {
                         return 0;
                     }
-        		} else {
-		            runtime.printError(raisedException);
-		            return 1;
-        		}
-        	} else if (je.getJumpType() == JumpException.JumpType.ThrowJump) {
-	            runtime.printError((RubyException)je.getTertiaryData());
-	            return 1;
-        	} else {
-        		throw je;
-        	}
+                } else {
+                    runtime.printError(raisedException);
+                    return 1;
+                }
+            } else if (je.getJumpType() == JumpException.JumpType.ThrowJump) {
+                runtime.printError((RubyException)je.getTertiaryData());
+                return 1;
+            } else {
+                throw je;
+            }
         } catch(MainExitException e) {
             if(e.isAborted()) {
                 return e.getStatus();
@@ -203,17 +204,17 @@ public class Main {
     }
     
     private void runInterpreter(IRuby runtime, Reader reader, String filename) {
-    	try {
-    		initializeRuntime(runtime, filename);
-    		Node parsedScript = getParsedScript(runtime, reader, filename);
+        try {
+            initializeRuntime(runtime, filename);
+            Node parsedScript = getParsedScript(runtime, reader, filename);
             if (commandline.isCompilerEnabled()) {
                 runtime.compileAndRun(parsedScript);
             } else {
-    		runtime.eval(parsedScript);
-            }    	
-    	} finally {
-    		runtime.tearDown();
-    	}
+            runtime.eval(parsedScript);
+            }       
+        } finally {
+            runtime.tearDown();
+        }
     }
 
     private Node getParsedScript(IRuby runtime, Reader reader, String filename) {
@@ -237,7 +238,7 @@ public class Main {
         defineGlobalDEBUG(runtime);
 
         runtime.getObject().setConstant("$VERBOSE", 
-        		commandline.isVerbose() ? runtime.getTrue() : runtime.getNil());
+                commandline.isVerbose() ? runtime.getTrue() : runtime.getNil());
         runtime.defineGlobalConstant("ARGV", argumentArray);
 
         defineGlobal(runtime, "$-p", commandline.isAssumePrinting());
@@ -269,7 +270,7 @@ public class Main {
                 } else {
                     runtime.setVerbose(runtime.newBoolean(newValue != runtime.getFalse()));
                 }
-            	
+                
                 return newValue;
             }
         });
@@ -287,7 +288,7 @@ public class Main {
                 } else {
                     runtime.setDebug(runtime.newBoolean(newValue != runtime.getFalse()));
                 }
-            	
+                
                 return newValue;
             }
             };

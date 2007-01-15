@@ -54,13 +54,15 @@ public abstract class AbstractJRubyMojo extends AbstractMojo {
 
     protected Java jruby(String[] args) throws MojoExecutionException {
         launchDirectory.mkdirs();
-        Java java = new Java();
+        Project project = null;;
         try {
-            java.setProject(getProject());
+            project = getProject();
         } catch (DependencyResolutionRequiredException e) {
             throw new MojoExecutionException("error resolving dependencies", e);
         }
 
+        Java java = new Java();
+        java.setProject(project);
         java.setClassname("org.jruby.Main");
         java.setFailonerror(true);
         java.setFork(true);
@@ -78,6 +80,12 @@ public abstract class AbstractJRubyMojo extends AbstractMojo {
 
         Path p = java.createClasspath();
         p.setRefid(new Reference("maven.plugin.classpath"));
+
+        Variable classpath = new Variable();
+        p = (Path) project.getReference("maven.plugin.classpath");
+        classpath.setKey("JRUBY_PARENT_CLASSPATH");
+        classpath.setValue(p.toString());
+        java.addEnv(classpath);
 
         for (int i = 0; i < args.length; i++) {
             arg = java.createArg();
