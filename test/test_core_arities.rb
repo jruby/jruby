@@ -36,6 +36,5 @@ class TestArities < Test::Unit::TestCase
     assert_argerr { "".>=(1,2) }
     assert_argerr { "".<<(1,2) }
     assert_argerr { "".empty?(1) }
-    flunk
   end
 end
