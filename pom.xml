@@ -109,6 +109,7 @@
     <module>maven/jruby-jdk14</module>
     <module>maven/jruby</module>
     <module>maven/jruby-complete</module>
+    <module>maven/jruby-rake-plugin</module>
   </modules>
 
   <build>
