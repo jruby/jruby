@@ -67,6 +67,7 @@ public class CommandlineParser {
 
     private boolean objectSpaceEnabled = true;
     private boolean compilerEnabled = false;
+    private boolean yarv = false;
     private String encoding = "ISO8859_1";
 
     public int argumentIndex = 0;
@@ -136,6 +137,9 @@ public class CommandlineParser {
                     break;
                 case 'C' :
                     compilerEnabled = true;
+                    break;
+                case 'y' :
+                    yarv = true;
                     break;
                 case 'n' :
                     assumeLoop = true;
@@ -325,6 +329,10 @@ public class CommandlineParser {
     
     public boolean isCompilerEnabled() {
         return compilerEnabled;
+    }
+
+    public boolean isYARVEnabled() {
+        return yarv;
     }
     
     public String getEncoding() {

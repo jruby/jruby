@@ -1,5 +1,8 @@
 package org.jruby.ast.executable;
 
+import java.util.Map;
+import java.util.HashMap;
+
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
@@ -11,6 +14,117 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class YARVMachine {
+    private static final Map INSTS = new HashMap();
+    static {
+        INSTS.put("nop",new Integer(0));
+        INSTS.put("getlocal", new Integer(1));
+        INSTS.put("setlocal", new Integer(2));
+        INSTS.put("getspecial", new Integer(3));
+        INSTS.put("setspecial", new Integer(4));
+        INSTS.put("getdynamic", new Integer(5));
+        INSTS.put("setdynamic", new Integer(6));
+        INSTS.put("getinstancevariable", new Integer(7));
+        INSTS.put("setinstancevariable", new Integer(8));
+        INSTS.put("getclassvariable", new Integer(9));
+        INSTS.put("setclassvariable", new Integer(10));
+        INSTS.put("getconstant", new Integer(11));
+        INSTS.put("setconstant", new Integer(12));
+        INSTS.put("getglobal", new Integer(13));
+        INSTS.put("setglobal", new Integer(14));
+        INSTS.put("putnil", new Integer(15));
+        INSTS.put("putself", new Integer(16));
+        INSTS.put("putundef", new Integer(17));
+        INSTS.put("putobject", new Integer(18));
+        INSTS.put("putstring", new Integer(19));
+        INSTS.put("concatstrings", new Integer(20));
+        INSTS.put("tostring", new Integer(21));
+        INSTS.put("toregexp", new Integer(22));
+        INSTS.put("newarray", new Integer(23));
+        INSTS.put("duparray", new Integer(24));
+        INSTS.put("expandarray", new Integer(25));
+        INSTS.put("concatarray", new Integer(26));
+        INSTS.put("splatarray", new Integer(27));
+        INSTS.put("checkincludearray", new Integer(28));
+        INSTS.put("newhash", new Integer(29));
+        INSTS.put("newrange", new Integer(30));
+        INSTS.put("putnot", new Integer(31));
+        INSTS.put("pop", new Integer(32));
+        INSTS.put("dup", new Integer(33));
+        INSTS.put("dupn", new Integer(34));
+        INSTS.put("swap", new Integer(35));
+        INSTS.put("reput", new Integer(36));
+        INSTS.put("topn", new Integer(37));
+        INSTS.put("setn", new Integer(38));
+        INSTS.put("emptstack", new Integer(39));
+        INSTS.put("definemethod", new Integer(40));
+        INSTS.put("alias", new Integer(41));
+        INSTS.put("undef", new Integer(42));
+        INSTS.put("defined", new Integer(43));
+        INSTS.put("postexe", new Integer(44));
+        INSTS.put("trace", new Integer(45));
+        INSTS.put("defineclass", new Integer(46));
+        INSTS.put("send", new Integer(47));
+        INSTS.put("invokesuper", new Integer(48));
+        INSTS.put("invokeblock", new Integer(49));
+        INSTS.put("leave", new Integer(50));
+        INSTS.put("finish", new Integer(51));
+        INSTS.put("throw", new Integer(52));
+        INSTS.put("jump", new Integer(53));
+        INSTS.put("branchif", new Integer(54));
+        INSTS.put("branchunless", new Integer(55));
+        INSTS.put("getinlinecache", new Integer(56));
+        INSTS.put("onceinlinecache", new Integer(57));
+        INSTS.put("setinlinecache", new Integer(58));
+        INSTS.put("opt_case_dispatch", new Integer(59));
+        INSTS.put("opt_checkenv", new Integer(60));
+        INSTS.put("opt_plus", new Integer(61));
+        INSTS.put("opt_minus", new Integer(62));
+        INSTS.put("opt_mult", new Integer(63));
+        INSTS.put("opt_div", new Integer(64));
+        INSTS.put("opt_mod", new Integer(65));
+        INSTS.put("opt_eq", new Integer(66));
+        INSTS.put("opt_lt", new Integer(67));
+        INSTS.put("opt_le", new Integer(68));
+        INSTS.put("opt_ltlt", new Integer(69));
+        INSTS.put("opt_aref", new Integer(70));
+        INSTS.put("opt_aset", new Integer(71));
+        INSTS.put("opt_length", new Integer(72));
+        INSTS.put("opt_succ", new Integer(73));
+        INSTS.put("opt_regexpmatch1", new Integer(74));
+        INSTS.put("opt_regexpmatch2", new Integer(75));
+        INSTS.put("opt_call_native_compiled", new Integer(76));
+        INSTS.put("bitblt", new Integer(77));
+        INSTS.put("answer", new Integer(78));
+    }
+
+    public static int instruction(String name) {
+        return ((Integer)INSTS.get(name)).intValue();
+    }
+
+    public static class InstructionSequence {
+        String magic;
+        int major;
+        int minor;
+        int format_type;
+        Object misc;
+        String name;
+        String filename;
+        Object[] line;
+        String type;
+
+        String[] locals;
+
+        int args_argc;
+        int args_arg_opts;
+        String[] args_opt_labels;
+        int args_rest;
+        int args_block;
+
+        Object[] exception;
+
+        Instruction[] body;
+    }
+
     public static class Instruction {
         final int bytecode;
         String s_op0;

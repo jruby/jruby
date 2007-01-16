@@ -52,6 +52,7 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.CommandlineParser;
+import org.jruby.ast.executable.YARVCompiledRunner;
 
 /**
  * Class used to launch the interpreter.
@@ -143,6 +144,7 @@ public class Main {
             out.println("    -v              print version number, then turn on verbose mode");
             out.println("    -O              run with ObjectSpace disabled (improves performance)");
             out.println("    -C              pre-compile scripts before running (EXPERIMENTAL)");
+            out.println("    -y              read a YARV-compiled Ruby script and run that (EXPERIMENTAL)");
             out.println("    --command word  Execute ruby-related shell command (i.e., irb, gem)");
             hasPrintedUsage = true;
         }
@@ -206,12 +208,20 @@ public class Main {
     private void runInterpreter(IRuby runtime, Reader reader, String filename) {
         try {
             initializeRuntime(runtime, filename);
-            Node parsedScript = getParsedScript(runtime, reader, filename);
-            if (commandline.isCompilerEnabled()) {
-                runtime.compileAndRun(parsedScript);
+            if(commandline.isYARVEnabled()) {
+                if(filename.endsWith(".rbc")) {
+                    new YARVCompiledRunner(runtime,reader,filename).run();
+                } else {
+                    System.err.println("Can't YARV-compile Ruby yet");
+                }
             } else {
-            runtime.eval(parsedScript);
-            }       
+                Node parsedScript = getParsedScript(runtime, reader, filename);
+                if (commandline.isCompilerEnabled()) {
+                    runtime.compileAndRun(parsedScript);
+                } else {
+                    runtime.eval(parsedScript);
+                }       
+            }
         } finally {
             runtime.tearDown();
         }
