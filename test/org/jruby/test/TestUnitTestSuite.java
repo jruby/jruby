@@ -16,6 +16,7 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import junit.framework.TestCase;
 import junit.framework.*;
 import org.jruby.IRuby;
@@ -100,17 +101,33 @@ public class TestUnitTestSuite extends TestCase {
             err.close();
             printOut.close();
             printErr.close();
+            
+            in = null;
+            out = null;
+            err = null;
+            printOut = null;
+            printErr = null;
+            runtime = null;
         }
 
         private void setupInterpreter(IRuby runtime) {
             runtime.getLoadService().init(new ArrayList());
             runtime.defineGlobalConstant("ARGV", runtime.newArray());
-            runtime.defineGlobalConstant("FAILURES", runtime.newArray());
         }
 
 		private String scriptName() {
 			return new File(TEST_DIR + File.separator + filename).getPath();
 		}
+        
+        private String pretty(List list) {
+            StringBuffer prettyOut = new StringBuffer();
+
+            for (Iterator iter = list.iterator(); iter.hasNext();) {
+                prettyOut.append(iter.next().toString());
+            }
+            
+            return prettyOut.toString();
+        }
 
         public void runTest() throws Throwable {
         	StringBuffer script = new StringBuffer();
@@ -125,7 +142,7 @@ public class TestUnitTestSuite extends TestCase {
                 script.append("runner = Test::Unit::UI::JUnit::TestRunner.new(eval('" + classname + "'.split('_').each {|s| s.capitalize! }.join))\n");
                 script.append("runner.start\n");
                 script.append("runner.faults\n");
-                System.out.println(script);
+                
                 RubyArray faults = (RubyArray)runtime.evalScript(script.toString());
                 
                 if (!faults.isEmpty()) {
@@ -139,7 +156,7 @@ public class TestUnitTestSuite extends TestCase {
                     fail(faultString.toString());
                 }
             } catch (RaiseException re) {
-                fail("Faults encountered running " + scriptName() + ", complete output follows:\n" + re.getException().message + "\n" + re.getException().backtrace());
+                fail("Faults encountered running " + scriptName() + ", complete output follows:\n" + re.getException().message + "\n" + pretty(((RubyArray)re.getException().backtrace()).getList()));
             }
         }
     }
