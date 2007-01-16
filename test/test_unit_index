@@ -1,3 +1,7 @@
 # This file contains a list of test/unit test case files to execute as part of the build/test cycle.
 
 test_core_arities
+
+# Rubicon tests
+
+rubicon/test_array

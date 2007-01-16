@@ -118,14 +118,18 @@ public class TestUnitTestSuite extends TestCase {
             try {
                 script.append("require 'test/junit_testrunner.rb'\n");
                 script.append("require '" + scriptName() + "'\n");
-                script.append("runner = Test::Unit::UI::JUnit::TestRunner.new(eval('" + filename + "'.split('_').each {|s| s.capitalize! }.join))\n");
+                String classname = filename;
+                if (classname.lastIndexOf('/') != -1) {
+                    classname = filename.substring(filename.lastIndexOf('/') + 1);
+                }
+                script.append("runner = Test::Unit::UI::JUnit::TestRunner.new(eval('" + classname + "'.split('_').each {|s| s.capitalize! }.join))\n");
                 script.append("runner.start\n");
                 script.append("runner.faults\n");
-                
+                System.out.println(script);
                 RubyArray faults = (RubyArray)runtime.evalScript(script.toString());
-                StringBuffer faultString = new StringBuffer("Faults encountered in " + scriptName() + ", complete output follows:\n");
                 
                 if (!faults.isEmpty()) {
+                    StringBuffer faultString = new StringBuffer("Faults encountered running " + scriptName() + ", complete output follows:\n");
                     for (Iterator iter = faults.iterator(); iter.hasNext();) {
                         String fault = iter.next().toString();
                         
@@ -135,7 +139,7 @@ public class TestUnitTestSuite extends TestCase {
                     fail(faultString.toString());
                 }
             } catch (RaiseException re) {
-                fail("Faults encountered in " + scriptName() + ", complete output follows:\n" + re.getException().message + "\n" + re.getException().backtrace());
+                fail("Faults encountered running " + scriptName() + ", complete output follows:\n" + re.getException().message + "\n" + re.getException().backtrace());
             }
         }
     }
