@@ -17,7 +17,7 @@ import java.io.StringReader;
 import org.jruby.ast.Node;
 import org.jruby.compiler.NodeCompilerFactory;
 import org.jruby.compiler.NotCompilableException;
-import org.jruby.compiler.StandardASMCompiler;
+import org.jruby.compiler.impl.StandardASMCompiler;
 
 /**
  *

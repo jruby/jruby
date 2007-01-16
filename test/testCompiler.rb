@@ -1,7 +1,7 @@
 require 'jruby'
 require 'test/minirunit'
 
-StandardASMCompiler = org.jruby.compiler.StandardASMCompiler
+StandardASMCompiler = org.jruby.compiler.impl.StandardASMCompiler
 NodeCompilerFactory = org.jruby.compiler.NodeCompilerFactory
 
 asgnFixnumCode = JRuby.parse("a = 5; a", "EVAL")

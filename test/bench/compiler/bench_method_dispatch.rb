@@ -1,7 +1,7 @@
 require 'jruby'
 require 'benchmark'
 
-StandardASMCompiler = org.jruby.compiler.StandardASMCompiler
+StandardASMCompiler = org.jruby.compiler.impl.StandardASMCompiler
 NodeCompilerFactory = org.jruby.compiler.NodeCompilerFactory
 
 control_code = <<EOS

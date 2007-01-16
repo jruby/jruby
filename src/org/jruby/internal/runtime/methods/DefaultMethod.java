@@ -43,7 +43,7 @@ import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.Node;
 import org.jruby.compiler.NodeCompilerFactory;
-import org.jruby.compiler.StandardASMCompiler;
+import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.evaluator.CreateJumpTargetVisitor;
 import org.jruby.evaluator.EvaluationState;

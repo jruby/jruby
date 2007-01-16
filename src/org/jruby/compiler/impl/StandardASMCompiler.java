@@ -26,7 +26,7 @@
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 
-package org.jruby.compiler;
+package org.jruby.compiler.impl;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -36,6 +36,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Stack;
 import org.jruby.ast.Node;
+import org.jruby.compiler.*;
+import org.jruby.compiler.Compiler;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.MethodIndex;

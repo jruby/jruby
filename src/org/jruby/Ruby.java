@@ -58,7 +58,7 @@ import org.jruby.ast.executable.Script;
 import org.jruby.common.RubyWarnings;
 import org.jruby.compiler.NodeCompilerFactory;
 import org.jruby.compiler.NotCompilableException;
-import org.jruby.compiler.StandardASMCompiler;
+import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
