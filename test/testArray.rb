@@ -159,3 +159,5 @@ class BadComparator
 end
 
 test_equal("hello", [BadComparator.new] <=> [BadComparator.new])
+
+test_exception(SystemStackError) { a = []; a << a; a <=> a }

@@ -156,7 +156,6 @@ public class EvaluationState {
         try {
             return evalInternal(context, node, self);
         } catch (StackOverflowError sfe) {
-            sfe.printStackTrace();
             throw context.getRuntime().newSystemStackError("stack level too deep");
         }
     }
