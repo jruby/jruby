@@ -40,18 +40,25 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.Block;
+import org.jruby.util.collections.SinglyLinkedList;
 
 public abstract class CompiledMethod extends AbstractMethod {
     private Arity arity;
-    public CompiledMethod(RubyModule implementationClass, Arity arity, Visibility visibility) {
+    private SinglyLinkedList cref;
+    
+    public CompiledMethod(RubyModule implementationClass, Arity arity, Visibility visibility, SinglyLinkedList cref) {
     	super(implementationClass, visibility);
         this.arity = arity;
+        this.cref = cref;
     }
 
     public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+        // needed for const lookups to work
+        context.preCompiledMethod(implementationClass, cref);
     }
     
     public void postMethod(ThreadContext context) {
+        context.postCompiledMethod();
     }
     
 	public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {

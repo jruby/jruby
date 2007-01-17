@@ -684,6 +684,12 @@ public class StandardASMCompiler implements Compiler {
         // FIXME: This doesn't seem *quite* right. If actually within a class...end, is self.getMetaClass the correct class? should be self, no?
         invokeIRubyObject("getMetaClass", "()Lorg/jruby/RubyClass;");
     }
+    
+    private void getCRef() {
+        loadThreadContext();
+        // FIXME: This doesn't seem *quite* right. If actually within a class...end, is self.getMetaClass the correct class? should be self, no?
+        invokeThreadContext("peekCRef", "()Lorg/jruby/util/collections/SinglyLinkedList;");
+    }
 
     private void newTypeError(String error) {
         loadRuntime();
@@ -804,9 +810,10 @@ public class StandardASMCompiler implements Compiler {
             mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/jruby/runtime/Arity", "createArity", "(I)Lorg/jruby/runtime/Arity;");
             
             getCurrentVisibility();
+            getCRef();
             
             // create CompiledMethod object from Factory
-            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/runtime/MethodFactory", "getCompiledMethod", "(Lorg/jruby/RubyModule;Ljava/lang/Class;Ljava/lang/String;Lorg/jruby/runtime/Arity;Lorg/jruby/runtime/Visibility;)Lorg/jruby/runtime/DynamicMethod;");
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/runtime/MethodFactory", "getCompiledMethod", "(Lorg/jruby/RubyModule;Ljava/lang/Class;Ljava/lang/String;Lorg/jruby/runtime/Arity;Lorg/jruby/runtime/Visibility;Lorg/jruby/util/collections/SinglyLinkedList;)Lorg/jruby/runtime/DynamicMethod;");
 
             // TODO: handle args some way? maybe unnecessary with method compiled?
     //        mv.visitVarInsn(ALOAD, 4);

@@ -56,7 +56,6 @@ import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callback.InvocationCallbackFactory;
 import org.jruby.util.collections.SinglyLinkedList;
 
 /**
@@ -101,13 +100,19 @@ public final class DefaultMethod extends AbstractMethod {
     // FIXME: This is commented out because problems were found compiling methods that call protected code.
     // because eliminating the pre/post does not change the "self" on the current frame, this caused
     // visibility to be a larger problem. We must revisit this to examine how to avoid this trap for visibility checks.
-    /*public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
-        if (compiledMethod != null) {
-            return compiledMethod.call(context, receiver, lastClass, name, args, noSuper);
+    public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+        if (jitCompiledScript != null) {
+            try {
+                context.preCompiledMethod(implementationClass, cref);
+                // FIXME: pass block when available
+                return jitCompiledScript.run(context, receiver, args, null);
+            } finally {
+                context.postCompiledMethod();
+            }
         } else {
             return super.call(context, receiver, lastClass, name, args, noSuper);
         }
-    }*/
+    }
 
     /**
      * @see AbstractCallable#call(IRuby, IRubyObject, String, IRubyObject[], boolean)
@@ -149,7 +154,10 @@ public final class DefaultMethod extends AbstractMethod {
 
             traceCall(context, runtime, receiver, name);
 
-            runJIT(runtime, name);
+            if (JIT_ENABLED) {
+                runJIT(runtime, name);
+            }
+            
             return EvaluationState.eval(context, body, receiver);
         } catch (JumpException je) {
         	if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
@@ -164,7 +172,7 @@ public final class DefaultMethod extends AbstractMethod {
     }
     
     private void runJIT(IRuby runtime, String name) {
-        if (JIT_ENABLED && callCount >= 0 && getArity().isFixed()) {
+        if (callCount >= 0 && getArity().isFixed()) {
             callCount++;
             if (callCount >= COMPILE_COUNT) {
                 try {

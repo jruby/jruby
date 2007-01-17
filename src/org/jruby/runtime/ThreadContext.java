@@ -42,14 +42,6 @@ import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyThread;
-import org.jruby.ast.MultipleAsgnNode;
-import org.jruby.ast.Node;
-import org.jruby.ast.NodeTypes;
-import org.jruby.ast.StarNode;
-import org.jruby.ast.ZeroArgNode;
-import org.jruby.ast.util.ArgsUtil;
-import org.jruby.evaluator.AssignmentVisitor;
-import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.SourcePositionFactory;
 import org.jruby.parser.LocalStaticScope;
@@ -886,6 +878,16 @@ public class ThreadContext {
         popScope();
         popFrame();
         clearInBlock();
+        unsetCRef();
+    }
+    
+    public void preCompiledMethod(RubyModule implementationClass, SinglyLinkedList cref) {
+        pushRubyClass(implementationClass);
+        setCRef(cref);
+    }
+    
+    public void postCompiledMethod() {
+        popRubyClass();
         unsetCRef();
     }
     

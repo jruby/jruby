@@ -51,13 +51,13 @@ def compile_to_class(node)
   context = StandardASMCompiler.new(node)
   NodeCompilerFactory.getCompiler(node).compile(node, context)
 
-  context.loadClass
+  context.loadClass(JRuby.runtime)
 end
 
 def compile_and_run(node)
   cls = compile_to_class(node)
 
-  cls.new_instance.run(JRuby.runtime.current_context, JRuby.runtime.top_self)
+  cls.new_instance.run(JRuby.runtime.current_context, JRuby.runtime.top_self, nil, nil)
 end
 
 compile_and_run(control_node)

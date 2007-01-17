@@ -46,9 +46,8 @@ public class NodeCompilerFactory {
                 return new BlockNodeCompiler();
             case NodeTypes.CALLNODE:
                 return new CallNodeCompiler();
-            // FIXME: Disabled until constants can be looked up without TC state
-            //case NodeTypes.CONSTNODE:
-            //    return new ConstNodeCompiler();
+            case NodeTypes.CONSTNODE:
+                return new ConstNodeCompiler();
             case NodeTypes.DEFNNODE:
                 return new DefnNodeCompiler();
             case NodeTypes.FALSENODE:
