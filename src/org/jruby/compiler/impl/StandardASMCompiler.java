@@ -226,6 +226,7 @@ public class StandardASMCompiler implements Compiler {
         // invoke run with threadcontext and topself
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/jruby/Ruby", "getDefaultInstance", "()Lorg/jruby/IRuby;");
         mv.visitInsn(Opcodes.DUP);
+        
         mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, "getCurrentContext", "()Lorg/jruby/runtime/ThreadContext;");
         mv.visitInsn(Opcodes.SWAP);
         mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, "getTopSelf", "()Lorg/jruby/runtime/builtin/IRubyObject;");
@@ -800,7 +801,8 @@ public class StandardASMCompiler implements Compiler {
             // get method factory
             mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/jruby/runtime/MethodFactory", "createFactory", "()Lorg/jruby/runtime/MethodFactory;");
             getRubyClass();
-            mv.visitLdcInsn(classname);
+            mv.visitLdcInsn(classname.replace("/", "."));
+
             mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Class", "forName", "(Ljava/lang/String;)Ljava/lang/Class;");
             // this is the actual name of the compiled method, for calling in the generated Method object
             mv.visitLdcInsn(methodName);
