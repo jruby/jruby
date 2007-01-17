@@ -35,6 +35,12 @@ public class WhileNodeCompiler implements NodeCompiler {
         
         BranchCallback body = new BranchCallback() {
             public void branch(Compiler context) {
+                // this could probably be more efficient, and just avoid popping values for each loop
+                // when no values are being generated
+                if (whileNode.getBodyNode() == null) {
+                    context.loadNil();
+                    return;
+                }
                 NodeCompilerFactory.getCompiler(whileNode.getBodyNode()).compile(whileNode.getBodyNode(), context);
             }
         };

@@ -939,4 +939,42 @@ public class StandardASMCompiler implements Compiler {
         
         invokeIRubyObject("setInstanceVariable", "(Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
     }
+    
+    public void retrieveGlobalVariable(String name) {
+        loadRuntime();
+        
+        MethodVisitor mv = getMethodVisitor();
+        
+        invokeIRuby("getGlobalVariables", "()Lorg/jruby/internal/runtime/GlobalVariables;");
+        mv.visitLdcInsn(name);
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/internal/runtime/GlobalVariables", "get", "(Ljava/lang/String;)Lorg/jruby/runtime/builtin/IRubyObject;");
+    }
+    
+    public void assignGlobalVariable(String name) {
+        loadRuntime();
+        
+        MethodVisitor mv = getMethodVisitor();
+        
+        invokeIRuby("getGlobalVariables", "()Lorg/jruby/internal/runtime/GlobalVariables;");
+        mv.visitInsn(Opcodes.SWAP);
+        mv.visitLdcInsn(name);
+        mv.visitInsn(Opcodes.SWAP);
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/internal/runtime/GlobalVariables", "set", "(Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
+    }
+    
+    public void negateCurrentValue() {
+        MethodVisitor mv = getMethodVisitor();
+        
+        invokeIRubyObject("isTrue", "()Z");
+        Label isTrue = new Label();
+        Label end = new Label();
+        mv.visitJumpInsn(Opcodes.IFNE, isTrue);
+        loadRuntime();
+        invokeIRuby("getTrue", "()Lorg/jruby/RubyBoolean;");
+        mv.visitJumpInsn(Opcodes.GOTO, end);
+        mv.visitLabel(isTrue);
+        loadRuntime();
+        invokeIRuby("getFalse", "()Lorg/jruby/RubyBoolean;");
+        mv.visitLabel(end);
+    }
 }

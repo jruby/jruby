@@ -12,6 +12,7 @@ callCode = JRuby.parse("'bar'.capitalize", "EVAL5")
 ifCode = JRuby.parse("if 1 == 1; 2; else; 3; end", "EVAL6")
 unlessCode = JRuby.parse("unless 1 == 1; 2; else; 3; end", "EVAL7")
 whileCode = JRuby.parse("a = 0; while a < 5; a = a + 2; end; a", "EVAL8")
+whileNoBody = JRuby.parse("$foo = false; def flip; $foo = !$foo; $foo; end; while flip; end", "EVAL8_1")
 andCode = JRuby.parse("1 && 2", "EVAL9");
 andShortCode = JRuby.parse("nil && 3", "EVAL10");
 
@@ -53,6 +54,9 @@ test_equal('Bar', compile_and_run(callCode))
 test_equal(2, compile_and_run(ifCode))
 test_equal(3, compile_and_run(unlessCode))
 test_equal(6, compile_and_run(whileCode))
+#test_no_exception {
+    test_equal(nil, compile_and_run(whileNoBody))
+#}
 #test_equal('baz', compile_and_run(iterBasic))
 compile_and_run(defBasic)
 test_equal('hello2', foo3('hello'))

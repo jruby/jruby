@@ -73,7 +73,10 @@ public class NativeException extends RubyException {
         StackTraceElement[] stackTrace = cause.getStackTrace();
         for (int i=stackTrace.length-1; i>=0; i--) {
             StackTraceElement element = stackTrace[i];
-            String line = element.toString();
+            if (element.getClassName().indexOf("org.jruby") != -1) {
+                continue;
+            }
+            String line = element.getFileName() + ":" + element.getLineNumber() + ":in `" + element.getClassName() + "." + element.getMethodName() + "'";
             RubyString string = runtime.newString(line);
             array.unshift(string);
         }

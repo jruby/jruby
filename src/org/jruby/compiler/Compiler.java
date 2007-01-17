@@ -28,11 +28,8 @@
 
 package org.jruby.compiler;
 
-import org.jruby.ast.Node;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.MethodVisitor;
 
 /**
  * Compiler represents the current state of a compiler and all appropriate
@@ -156,4 +153,10 @@ public interface Compiler {
     public void retrieveInstanceVariable(String name);
     
     public void assignInstanceVariable(String name);
+    
+    public void assignGlobalVariable(String name);
+    
+    public void retrieveGlobalVariable(String name);
+    
+    public void negateCurrentValue();
 }

@@ -56,6 +56,10 @@ public class NodeCompilerFactory {
                 return new FCallNodeCompiler();
             case NodeTypes.FIXNUMNODE:
                 return new FixnumNodeCompiler();
+            case NodeTypes.GLOBALASGNNODE:
+                return new GlobalAsgnNodeCompiler();
+            case NodeTypes.GLOBALVARNODE:
+                return new GlobalVarNodeCompiler();
             case NodeTypes.IFNODE:
                 return new IfNodeCompiler();
             case NodeTypes.INSTASGNNODE:
@@ -72,6 +76,8 @@ public class NodeCompilerFactory {
                 return new NewlineNodeCompiler();
             case NodeTypes.NILNODE:
                 return new NilNodeCompiler();
+            case NodeTypes.NOTNODE:
+                return new NotNodeCompiler();
             case NodeTypes.ORNODE:
                 return new OrNodeCompiler();
             case NodeTypes.ROOTNODE:
