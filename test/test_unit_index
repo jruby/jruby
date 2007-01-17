@@ -1,9 +1,17 @@
-# This file contains a list of test/unit test case files to execute as part of the build/test cycle.
-
-test_core_arities
-
-# Rubicon tests
-
+#openssl/test_asn1
+#openssl/test_cipher
+#openssl/test_digest
+#openssl/test_hmac
+#openssl/test_ns_spki
+#openssl/test_pair
+#openssl/test_pkey_rsa
+#openssl/test_ssl
+#openssl/test_x509cert
+#openssl/test_x509crl
+#openssl/test_x509ext
+#openssl/test_x509name
+#openssl/test_x509req
+#openssl/test_x509store
 rubicon/test_access_control
 rubicon/test_array
 rubicon/test_assignment
@@ -29,8 +37,8 @@ rubicon/test_integer
 rubicon/test_match_data
 rubicon/test_math
 rubicon/test_method
-rubicon/test_module_private
 rubicon/test_module
+rubicon/test_module_private
 rubicon/test_nil_class
 rubicon/test_numeric
 rubicon/test_object
@@ -43,3 +51,15 @@ rubicon/test_struct
 rubicon/test_symbol
 rubicon/test_thread_group
 rubicon/test_true_class
+#test_array
+#test_backquote
+#test_block
+test_case
+test_comparable
+#test_compiler
+test_core_arities
+#test_digest2
+test_dup_clone_taint_freeze
+#test_openssl
+test_primitive_to_java
+test_zlib
