@@ -28,16 +28,18 @@ module JRuby
     def extract
       entries.each do |entry|
         if entry.name =~ %r"^META-INF/jruby.home/"
-          path = write_entry entry
+          path = write_entry entry, entry.name.sub(%r{META-INF/jruby.home/},'')
           FileUtils.chmod 0755, path if entry.name =~ %r"jruby.home/bin/"
+        elsif entry.name =~ %r"\.rb$"
+          write_entry entry, "lib/ruby/1.8/#{entry.name}"
         end
       end
       puts "copying #{@this_archive} to #{@destination}/lib"
       FileUtils.cp(@this_archive, "#{@destination}/lib")
     end
     
-    def write_entry(entry)
-      entry_path = "#{@destination.sub(%r{/$},'')}/#{entry.name.sub(%r{META-INF/jruby.home/},'')}"
+    def write_entry(entry, name)
+      entry_path = "#{@destination.sub(%r{/$},'')}/#{name}"
       puts "creating #{entry_path}"
       FileUtils.mkdir_p(File.dirname(entry_path))
       instream = @zip.getInputStream(entry)
