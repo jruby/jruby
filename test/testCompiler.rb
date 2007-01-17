@@ -4,26 +4,26 @@ require 'test/minirunit'
 StandardASMCompiler = org.jruby.compiler.impl.StandardASMCompiler
 NodeCompilerFactory = org.jruby.compiler.NodeCompilerFactory
 
-asgnFixnumCode = JRuby.parse("a = 5; a", "EVAL")
-asgnStringCode = JRuby.parse("a = 'hello'; a", "EVAL")
-arrayCode = JRuby.parse("['hello', 5, ['foo', 6]]", "EVAL")
-fcallCode = JRuby.parse("foo('bar')", "EVAL")
-callCode = JRuby.parse("'bar'.capitalize", "EVAL")
-ifCode = JRuby.parse("if 1 == 1; 2; else; 3; end", "EVAL")
-unlessCode = JRuby.parse("unless 1 == 1; 2; else; 3; end", "EVAL")
-whileCode = JRuby.parse("a = 0; while a < 5; a = a + 2; end; a", "EVAL")
-andCode = JRuby.parse("1 && 2", "EVAL");
-andShortCode = JRuby.parse("nil && 3", "EVAL");
+asgnFixnumCode = JRuby.parse("a = 5; a", "EVAL1")
+asgnStringCode = JRuby.parse("a = 'hello'; a", "EVAL2")
+arrayCode = JRuby.parse("['hello', 5, ['foo', 6]]", "EVAL3")
+fcallCode = JRuby.parse("foo('bar')", "EVAL4")
+callCode = JRuby.parse("'bar'.capitalize", "EVAL5")
+ifCode = JRuby.parse("if 1 == 1; 2; else; 3; end", "EVAL6")
+unlessCode = JRuby.parse("unless 1 == 1; 2; else; 3; end", "EVAL7")
+whileCode = JRuby.parse("a = 0; while a < 5; a = a + 2; end; a", "EVAL8")
+andCode = JRuby.parse("1 && 2", "EVAL9");
+andShortCode = JRuby.parse("nil && 3", "EVAL10");
 
-iterBasic = JRuby.parse("foo2('baz') { 4 }", "EVAL");
+iterBasic = JRuby.parse("foo2('baz') { 4 }", "EVAL11");
 
-defBasic = JRuby.parse("def foo3(arg); arg + '2'; end", "EVAL")
+defBasic = JRuby.parse("def foo3(arg); arg + '2'; end", "EVAL12")
 
 def compile_to_class(node)
   context = StandardASMCompiler.new(node)
   NodeCompilerFactory.getCompiler(node).compile(node, context)
 
-  context.loadClass
+  context.loadClass(JRuby.runtime)
 end
 
 def compile_and_run(node)
@@ -54,7 +54,6 @@ test_equal(2, compile_and_run(ifCode))
 test_equal(3, compile_and_run(unlessCode))
 test_equal(6, compile_and_run(whileCode))
 #test_equal('baz', compile_and_run(iterBasic))
-
 compile_and_run(defBasic)
 test_equal('hello2', foo3('hello'))
 

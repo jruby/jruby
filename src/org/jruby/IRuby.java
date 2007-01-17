@@ -28,6 +28,7 @@ import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadService;
+import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public interface IRuby {
@@ -183,6 +184,8 @@ public interface IRuby {
 	public void setDebug(IRubyObject debug);
 
     public JavaSupport getJavaSupport();
+    
+    public JRubyClassLoader getJRubyClassLoader();
 
     /** Defines a global variable
 	 */

@@ -184,6 +184,8 @@ public final class Ruby implements IRuby {
 
     // Java support
     private JavaSupport javaSupport;
+    // FIXME: THIS IS WRONG. We need to correct the classloading problems.
+    private static JRubyClassLoader jrubyClassLoader = new JRubyClassLoader(Ruby.class.getClassLoader());
 
     private Parser parser = new Parser(this);
 
@@ -329,7 +331,7 @@ public final class Ruby implements IRuby {
             StandardASMCompiler compiler = new StandardASMCompiler(node);
             NodeCompilerFactory.getCompiler(node).compile(node, compiler);
             
-            Class scriptClass = compiler.loadClass();
+            Class scriptClass = compiler.loadClass(this);
             
             Script script = (Script)scriptClass.newInstance();
             return script.run(getCurrentContext(), getTopSelf());
@@ -970,6 +972,10 @@ public final class Ruby implements IRuby {
     public JavaSupport getJavaSupport() {
         return javaSupport;
     }
+    
+    public JRubyClassLoader getJRubyClassLoader() {
+        return jrubyClassLoader;
+    }
 
     /** Defines a global variable
      */
@@ -1278,7 +1284,7 @@ public final class Ruby implements IRuby {
     }
 
     public CallbackFactory callbackFactory(Class type) {
-        return CallbackFactory.createFactory(type);
+        return CallbackFactory.createFactory(this, type);
     }
 
     /**

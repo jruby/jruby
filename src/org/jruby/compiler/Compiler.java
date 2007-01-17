@@ -65,7 +65,7 @@ public interface Compiler {
      * @return An Object that represents the method within this compiler. Used in calls to
      * endMethod once compilation for this method is completed.
      */
-    public Object beginMethod(int arity, int localVarCount);
+    public Object beginMethod(String friendlyName, int arity, int localVarCount);
     
     /**
      * End compilation for the method associated with the specified token. This should

@@ -31,6 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import org.jruby.IRuby;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.callback.ReflectionCallbackFactory;
 import org.jruby.runtime.callback.InvocationCallbackFactory;
@@ -131,11 +132,11 @@ public abstract class CallbackFactory {
         }
     }
 
-    public static CallbackFactory createFactory(Class type) {
+    public static CallbackFactory createFactory(IRuby runtime, Class type) {
         if(reflection) {
             return new ReflectionCallbackFactory(type);
         } else {
-            return new InvocationCallbackFactory(type);
+            return new InvocationCallbackFactory(runtime, type);
         }
     }
 }

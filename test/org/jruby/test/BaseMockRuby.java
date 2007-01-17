@@ -48,6 +48,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.util.collections.SinglyLinkedList;
+import org.jruby.util.JRubyClassLoader;
 
 public class BaseMockRuby implements IRuby {
 
@@ -623,6 +624,10 @@ public class BaseMockRuby implements IRuby {
 	}
 
 	public JavaSupport getJavaSupport() {
+		throw new MockException();
+	}
+
+	public JRubyClassLoader getJRubyClassLoader() {
 		throw new MockException();
 	}
 

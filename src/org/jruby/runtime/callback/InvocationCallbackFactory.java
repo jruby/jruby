@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.callback;
 
+import org.jruby.IRuby;
 import org.jruby.util.JRubyClassLoader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
@@ -37,11 +38,10 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class InvocationCallbackFactory extends CallbackFactory implements Opcodes {
-    // FIXME: This needs to eventually cooperate with classloading stuff runtime-wide
-    private static JRubyClassLoader CLASSLOADER_INSTANCE = new JRubyClassLoader();
 
     private final Class type;
     private final String typePath;
+    private final IRuby runtime;
 
     private final static String SUPER_CLASS = InvocationCallback.class.getName().replace('.','/');
     private final static String CALL_SIG = "(Ljava/lang/Object;[Ljava/lang/Object;)Lorg/jruby/runtime/builtin/IRubyObject;";
@@ -62,9 +62,10 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         return "L" + p(n) + ";";
     }
 
-    public InvocationCallbackFactory(Class type) {
+    public InvocationCallbackFactory(IRuby runtime, Class type) {
         this.type = type;
         this.typePath = p(type);
+        this.runtime = runtime;
     }
 
     private String getReturnName(String method, Class[] args) throws Exception {
@@ -90,7 +91,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
 
     private Class tryClass(String name) {
         try {
-            return Class.forName(name,true,CLASSLOADER_INSTANCE);
+            return Class.forName(name,true,runtime.getJRubyClassLoader());
         } catch(Exception e) {
             return null;
         }
@@ -116,7 +117,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         mv.visitEnd();
         cw.visitEnd();
         byte[] code = cw.toByteArray();
-        return CLASSLOADER_INSTANCE.defineClass(name, code);
+        return runtime.getJRubyClassLoader().defineClass(name, code);
     }
 
     public Callback getMethod(String method) {

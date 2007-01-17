@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Stack;
+import org.jruby.IRuby;
 import org.jruby.ast.Node;
 import org.jruby.compiler.*;
 import org.jruby.compiler.Compiler;
@@ -58,21 +59,21 @@ public class StandardASMCompiler implements Compiler {
     private static final String IRUBY = "org/jruby/IRuby";
     private static final String IRUBYOBJECT = "org/jruby/runtime/builtin/IRubyObject";
     
-    private static final String MULTISTUB_SIGNATURE =
-            "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/runtime/builtin/IRubyObject;[Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/BlockCallback2;)Lorg/jruby/runtime/builtin/IRubyObject;";
+    private static final String METHOD_SIGNATURE =
+            "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/runtime/builtin/IRubyObject;[Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/Block;)Lorg/jruby/runtime/builtin/IRubyObject;";
     private static final String CLOSURE_SIGNATURE =
             "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/runtime/builtin/IRubyObject;[Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;";
     private static final String RUN_SIGNATURE = 
             "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;";
     
-    private static final int THREADCONTEXT_INDEX = 1;
-    private static final int SELF_INDEX = 2;
-    private static final int ARGS_INDEX = 3;
-    private static final int CLOSURE_INDEX = 4;
-    private static final int RUNTIME_INDEX = 5;
-    private static final int LOCAL_VARS_INDEX = 6;
+    private static final int THREADCONTEXT_INDEX = 0;
+    private static final int SELF_INDEX = 1;
+    private static final int ARGS_INDEX = 2;
+    private static final int CLOSURE_INDEX = 3;
+    private static final int RUNTIME_INDEX = 4;
+    private static final int LOCAL_VARS_INDEX = 5;
     
-    private Stack classVisitors = new Stack();
+    //private Stack classVisitors = new Stack();
     private Stack methodVisitors = new Stack();
     private Stack arities = new Stack();
     private Stack scopeStarts = new Stack();
@@ -80,9 +81,10 @@ public class StandardASMCompiler implements Compiler {
     private String classname;
     private String sourcename;
     
-    Map classWriters = new HashMap();
+    //Map classWriters = new HashMap();
+    private ClassWriter classWriter;
     ClassWriter currentMultiStub = null;
-    int multiStubIndex = -1;
+    int methodIndex = -1;
     int multiStubCount = -1;
     int innerIndex = 1;
     
@@ -105,33 +107,22 @@ public class StandardASMCompiler implements Compiler {
             }
             sourcename = position.getFile();
         } else {
-            classname = "EVAL";
-            sourcename = "EVAL";
+            // must generate unique classnames for evals, since they could be generated many times in a given run
+            classname = "EVAL" + hashCode();
+            sourcename = "EVAL" + hashCode();
         }
     }
     
-    public Class loadClass() throws ClassNotFoundException {
-        JRubyClassLoader jcl = new JRubyClassLoader();
+    public Class loadClass(IRuby runtime) throws ClassNotFoundException {
+        JRubyClassLoader jcl = runtime.getJRubyClassLoader();
         
-        for (Iterator iter = classWriters.entrySet().iterator(); iter.hasNext();) {
-            Map.Entry entry = (Map.Entry)iter.next();
-            String key = (String)entry.getKey();
-            ClassWriter writer = (ClassWriter)entry.getValue();
-            
-            jcl.defineClass(key.replaceAll("/", "."), writer.toByteArray());
-        }
+        jcl.defineClass(classname.replaceAll("/", "."), classWriter.toByteArray());
 
         return jcl.loadClass(classname.replaceAll("/", "."));
     }
     
     public void writeClass(File destination) throws IOException {
-        for (Iterator iter = classWriters.entrySet().iterator(); iter.hasNext();) {
-            Map.Entry entry = (Map.Entry)iter.next();
-            String key = (String)entry.getKey();
-            ClassWriter writer = (ClassWriter)entry.getValue();
-            
-            writeClass(key, destination, writer);
-        }
+        writeClass(classname, destination, classWriter);
     }
     
     private void writeClass(String classname, File destination, ClassWriter writer) throws IOException {
@@ -163,23 +154,15 @@ public class StandardASMCompiler implements Compiler {
     }
 
     public ClassVisitor getClassVisitor() {
-        return (ClassVisitor)classVisitors.peek();
+        return classWriter;
     }
 
     public MethodVisitor getMethodVisitor() {
         return (MethodVisitor)methodVisitors.peek();
     }
 
-    public ClassVisitor popClassVisitor() {
-        return (ClassVisitor)classVisitors.pop();
-    }
-
     public MethodVisitor popMethodVisitor() {
         return (MethodVisitor)methodVisitors.pop();
-    }
-
-    public void pushClassVisitor(ClassVisitor cv) {
-        classVisitors.push(cv);
     }
 
     public void pushMethodVisitor(MethodVisitor mv) {
@@ -207,49 +190,37 @@ public class StandardASMCompiler implements Compiler {
     }
     
     public void startScript() {
-        ClassVisitor cv = new ClassWriter(true);
-        
-        // put into classwriter map for later generation/loading
-        classWriters.put(classname, cv);
-        
-        pushClassVisitor(cv);
+        classWriter = new ClassWriter(true);
         
         // Create the class with the appropriate class name and source file
-        cv.visit(Opcodes.V1_2, Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER, classname, null, "java/lang/Object", new String[] {"org/jruby/ast/executable/Script"});
-        cv.visitSource(sourcename, null);
+        classWriter.visit(Opcodes.V1_2, Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER, classname, null, "java/lang/Object", new String[] {"org/jruby/ast/executable/Script"});
+        classWriter.visitSource(sourcename, null);
         
         createConstructor();
     }
     
     public void endScript() {
-        closeOutMultiStub();
-
-        // add Script#run impl
-        // root method of a script is always in stub0, method0
-        String stubName = classname + "$MultiStub0";
-        String methodName = "method0";
+        // add Script#run impl, used for running this script with a specified threadcontext and self
+        // root method of a script is always in __load__ method
+        String methodName = "__file__";
         MethodVisitor mv = getClassVisitor().visitMethod(Opcodes.ACC_PUBLIC, "run", RUN_SIGNATURE, null, null);
-        mv.visitTypeInsn(Opcodes.NEW, stubName);
-        mv.visitInsn(Opcodes.DUP);
-        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, stubName, "<init>", "()V");
+        mv.visitCode();
         
-        // invoke method0 with threadcontext, self, args (null), and block (null)
-        mv.visitVarInsn(Opcodes.ALOAD, THREADCONTEXT_INDEX);
-        mv.visitVarInsn(Opcodes.ALOAD, SELF_INDEX);
+        // invoke __file__ with threadcontext, self, args (null), and block (null)
+        mv.visitVarInsn(Opcodes.ALOAD, THREADCONTEXT_INDEX + 1);
+        mv.visitVarInsn(Opcodes.ALOAD, SELF_INDEX + 1);
         mv.visitInsn(Opcodes.ACONST_NULL);
         mv.visitInsn(Opcodes.ACONST_NULL);
         
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, stubName, methodName, MULTISTUB_SIGNATURE);
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC, classname, methodName, METHOD_SIGNATURE);
         mv.visitInsn(Opcodes.ARETURN);
         mv.visitMaxs(1, 1);
         mv.visitEnd();
 
-        // add main impl
+        // add main impl, used for detached or command-line execution of this script with a new runtime
         // root method of a script is always in stub0, method0
         mv = getClassVisitor().visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "main", "([Ljava/lang/String;)V", null, null);
-        mv.visitTypeInsn(Opcodes.NEW, classname);
-        mv.visitInsn(Opcodes.DUP);
-        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, classname, "<init>", "()V");
+        mv.visitCode();
         
         // invoke run with threadcontext and topself
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/jruby/Ruby", "getDefaultInstance", "()Lorg/jruby/IRuby;");
@@ -258,7 +229,7 @@ public class StandardASMCompiler implements Compiler {
         mv.visitInsn(Opcodes.SWAP);
         mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, "getTopSelf", "()Lorg/jruby/runtime/builtin/IRubyObject;");
         
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, classname, "run", RUN_SIGNATURE);
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC, classname, "run", RUN_SIGNATURE);
         mv.visitInsn(Opcodes.RETURN);
         mv.visitMaxs(1, 1);
         mv.visitEnd();
@@ -277,38 +248,8 @@ public class StandardASMCompiler implements Compiler {
         mv.visitEnd();
     }
 
-    public Object beginMethod(int arity, int localVarCount) {
-        // create a new MultiStub-based method impl and provide the method visitor for it
-        if (currentMultiStub == null || multiStubIndex == 9) {
-            if (currentMultiStub != null) {
-                // FIXME can we end if there's still a method in flight?
-                currentMultiStub.visitEnd();
-            }
-            
-            multiStubCount++;
-            
-            ClassVisitor cv = getClassVisitor();
-            currentMultiStub = new org.objectweb.asm.ClassWriter(true);
-            currentMultiStub.visit(Opcodes.V1_2, Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER + Opcodes.ACC_STATIC,
-                    classname + "$MultiStub" + multiStubCount, null, "java/lang/Object", new String[] {"org/jruby/internal/runtime/methods/MultiStub2"});
-            cv.visitInnerClass(classname + "$MultiStub" + multiStubCount, classname, "MultiStub" + multiStubCount, Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC);
-            multiStubIndex = 0;
-            classWriters.put(classname + "$MultiStub" + multiStubCount, currentMultiStub);
-            currentMultiStub.visitSource(sourcename, null);
-
-            MethodVisitor stubConstructor = currentMultiStub.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
-            stubConstructor.visitCode();
-            stubConstructor.visitVarInsn(Opcodes.ALOAD, 0);
-            stubConstructor.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>",
-                    "()V");
-            stubConstructor.visitInsn(Opcodes.RETURN);
-            stubConstructor.visitMaxs(1, 1);
-            stubConstructor.visitEnd();
-        } else {
-            multiStubIndex++;
-        }
-        
-        MethodVisitor newMethod = currentMultiStub.visitMethod(Opcodes.ACC_PUBLIC, "method" + multiStubIndex, MULTISTUB_SIGNATURE, null, null);
+    public Object beginMethod(String friendlyName, int arity, int localVarCount) {
+        MethodVisitor newMethod = getClassVisitor().visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, friendlyName, METHOD_SIGNATURE, null, null);
         pushMethodVisitor(newMethod);
         
         newMethod.visitCode();
@@ -355,20 +296,6 @@ public class StandardASMCompiler implements Compiler {
         
         popMethodVisitor();
         popArity();
-    }
-    
-    public void closeOutMultiStub() {
-        if (currentMultiStub != null) {
-            while (multiStubIndex < 9) {
-                multiStubIndex++;
-                MethodVisitor multiStubMethod = currentMultiStub.visitMethod(Opcodes.ACC_PUBLIC, "method" + multiStubIndex, MULTISTUB_SIGNATURE, null, null);
-                multiStubMethod.visitCode();
-                multiStubMethod.visitInsn(Opcodes.ACONST_NULL);
-                multiStubMethod.visitInsn(Opcodes.ARETURN);
-                multiStubMethod.visitMaxs(1, 1);
-                multiStubMethod.visitEnd();
-            }
-        }
     }
     
     public void lineNumber(ISourcePosition position) {
@@ -683,65 +610,16 @@ public class StandardASMCompiler implements Compiler {
     }
     
     public void createNewClosure(StaticScope scope, ClosureCallback body) {
+        // FIXME: This isn't quite done yet; waiting to have full support for passing closures so we can test it
         ClassVisitor closureVisitor = new ClassWriter(true);
         FieldVisitor fv;
         MethodVisitor method;
 
-        String closureClassName = classname + "$Closure" + innerIndex;
-        String closureClassShortName = "Closure" + innerIndex;
-        innerIndex++;
-        
-        closureVisitor.visit(Opcodes.V1_4, Opcodes.ACC_SUPER, closureClassName, null, "java/lang/Object", new String[] { "org/jruby/runtime/BlockCallback2" });
-        pushClassVisitor(closureVisitor);
-        classWriters.put(closureClassName, closureVisitor);
-        
-        closureVisitor.visitSource(sourcename, null);
-        
-        // closure is an inner class
-        closureVisitor.visitInnerClass(closureClassName, null, closureClassShortName, Opcodes.ACC_PRIVATE);
-        innerIndex++;
-
-        // this$0 field points at the containing class
-        // val$variables points at the containing scope's instance variables
-        fv = closureVisitor.visitField(Opcodes.ACC_FINAL + Opcodes.ACC_SYNTHETIC, "this$0", "L" + classname + ";", null, null);
-        fv = closureVisitor.visitField(Opcodes.ACC_FINAL + Opcodes.ACC_SYNTHETIC, "val$variables", "[L" + IRUBYOBJECT +";", null, null);
-        fv.visitEnd();
-        
-        ///////////////////////////////////////////
-        // constructor for closure object
-        // note that this accepts an array of IRubyObject; this is the
-        // local variables from the containing scope. The current compiler won't work
-        // with more than a single containing scope
-        method = closureVisitor.visitMethod(0, "<init>", "(L" + classname + ";[L" + IRUBYOBJECT + ";)V", null, null);
-        method.visitCode();
-        Label l0 = new Label();
-        method.visitLabel(l0);
-        method.visitLineNumber(7, l0);
-        
-        // store the containing "this"
-        // FIXME: need to do some stack magic here to support nested closures
-        method.visitVarInsn(Opcodes.ALOAD, 0);
-        method.visitVarInsn(Opcodes.ALOAD, 1);
-        method.visitFieldInsn(Opcodes.PUTFIELD, closureClassName, "this$0", "L" + classname + ";");
-        
-        // store the containing scope's local variables
-        method.visitVarInsn(Opcodes.ALOAD, 0);
-        method.visitVarInsn(Opcodes.ALOAD, 2);
-        method.visitFieldInsn(Opcodes.PUTFIELD, closureClassName, "val$variables", "[L" + IRUBYOBJECT +";");
-        
-        // call super constructor
-        method.visitVarInsn(Opcodes.ALOAD, 0);
-        method.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V");
-        method.visitInsn(Opcodes.RETURN);
-        Label l1 = new Label();
-        method.visitLabel(l1);
-        method.visitLocalVariable("this", "L" + closureClassName + ";", null, l0, l1, 0);
-        method.visitMaxs(1,1);
-        method.visitEnd();
+        String closureMethodName = "closure" + innerIndex;
         
         ////////////////////////////
         // closure implementation
-        method = closureVisitor.visitMethod(Opcodes.ACC_PUBLIC, "call", CLOSURE_SIGNATURE, null, null);
+        method = closureVisitor.visitMethod(Opcodes.ACC_PUBLIC, closureMethodName, CLOSURE_SIGNATURE, null, null);
         pushMethodVisitor(method);
         
         method.visitCode();
@@ -757,7 +635,7 @@ public class StandardASMCompiler implements Compiler {
         // containing scope's local vars are stored in LOCAL_VARS_INDEX + <depth>
         // where <depth> is the number of scopes we are away from that.
         // Eventually this will want to handle multiple nested scopes
-        method.visitFieldInsn(Opcodes.GETFIELD, closureClassName, "val$variables", "[L" + IRUBYOBJECT +";");
+        //method.visitFieldInsn(Opcodes.GETFIELD, closureClassName, "val$variables", "[L" + IRUBYOBJECT +";");
         method.visitVarInsn(Opcodes.ASTORE, LOCAL_VARS_INDEX + 1);
         
         // set up a local IRuby variable
@@ -778,18 +656,14 @@ public class StandardASMCompiler implements Compiler {
         Label end = new Label();
         method.visitLabel(end);
         method.visitLocalVariable("this", "Lorg/jruby/FooBar$1$Figlet;", null, start, end, 0);
-        method.visitLocalVariable("dvars" + closureClassShortName, "[L" + IRUBYOBJECT + ";", null, start, end, LOCAL_VARS_INDEX);
+        //method.visitLocalVariable("dvars" + closureClassShortName, "[L" + IRUBYOBJECT + ";", null, start, end, LOCAL_VARS_INDEX);
         // in the future this should be indexed by depth and have no distinction
         // between lvars and dvars
-        method.visitLocalVariable("lvars" + closureClassShortName, "[L" + IRUBYOBJECT + ";", null, start, end, LOCAL_VARS_INDEX + 1);
+        //method.visitLocalVariable("lvars" + closureClassShortName, "[L" + IRUBYOBJECT + ";", null, start, end, LOCAL_VARS_INDEX + 1);
         method.visitMaxs(1, 1);
         method.visitEnd();
         
         popMethodVisitor();
-
-        closureVisitor.visitEnd();
-
-        popClassVisitor();
     }
 
     private void invokeThreadContext(String methodName, String signature) {
@@ -831,7 +705,9 @@ public class StandardASMCompiler implements Compiler {
     
     public void defineNewMethod(String name, int arity, int localVarCount, ClosureCallback body) {
         // TODO: build arg list based on number of args, optionals, etc
-        beginMethod(arity, localVarCount);
+        ++methodIndex;
+        String methodName = name + "__" + methodIndex;
+        beginMethod(methodName, arity, localVarCount);
         
         MethodVisitor mv = getMethodVisitor();
 
@@ -911,33 +787,29 @@ public class StandardASMCompiler implements Compiler {
         // method name for addMethod call
         mv.visitLdcInsn(name);
         
-        // new MultiStubMethod2
-        mv.visitTypeInsn(Opcodes.NEW, "org/jruby/internal/runtime/methods/MultiStubMethod2");
-        mv.visitInsn(Opcodes.DUP);
-        
-        { // this section sets up the parameters to the MultiStubMethod2 constructor
-            // new multistub object
-            mv.visitTypeInsn(Opcodes.NEW, classname + "$MultiStub" + multiStubCount);
-            mv.visitInsn(Opcodes.DUP);
-            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, classname + "$MultiStub" + multiStubCount, "<init>", "()V");
-
-            // index for stub method
-            mv.visitLdcInsn(new Integer(multiStubIndex));
-
-            // implementingClass parameter
+        { // this section sets up the parameters to the CompiledMethod constructor
+            // get method factory
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/jruby/runtime/MethodFactory", "createFactory", "()Lorg/jruby/runtime/MethodFactory;");
             getRubyClass();
+            mv.visitLdcInsn(classname);
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Class", "forName", "(Ljava/lang/String;)Ljava/lang/Class;");
+            // this is the actual name of the compiled method, for calling in the generated Method object
+            mv.visitLdcInsn(methodName);
+            
+            // load arity
+            mv.visitLdcInsn(new Integer(arity));
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/jruby/runtime/Arity", "createArity", "(I)Lorg/jruby/runtime/Arity;");
+            
+            getCurrentVisibility();
+            
+            // create CompiledMethod object from Factory
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/runtime/MethodFactory", "getCompiledMethod", "(Lorg/jruby/RubyModule;Ljava/lang/Class;Ljava/lang/String;Lorg/jruby/runtime/Arity;Lorg/jruby/runtime/Visibility;)Lorg/jruby/runtime/DynamicMethod;");
 
             // TODO: handle args some way? maybe unnecessary with method compiled?
     //        mv.visitVarInsn(ALOAD, 4);
     //        mv.visitMethodInsn(INVOKEVIRTUAL, "org/jruby/ast/DefnNode", "getArgsNode", "()Lorg/jruby/ast/Node;");
     //        mv.visitTypeInsn(CHECKCAST, "org/jruby/ast/ArgsNode");
-            mv.visitLdcInsn(new Integer(arity));
-            mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/jruby/runtime/Arity", "createArity", "(I)Lorg/jruby/runtime/Arity;");
-            getCurrentVisibility();
         }
-        
-        // invoke MultiStubMethod2 constructor
-        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "org/jruby/internal/runtime/methods/MultiStubMethod2", "<init>", "(Lorg/jruby/internal/runtime/methods/MultiStub2;ILorg/jruby/RubyModule;Lorg/jruby/runtime/Arity;Lorg/jruby/runtime/Visibility;)V");
 
         // add the method to the class, and we're set!
         mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/RubyModule", "addMethod", "(Ljava/lang/String;Lorg/jruby/runtime/DynamicMethod;)V");

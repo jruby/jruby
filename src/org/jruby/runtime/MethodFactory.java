@@ -38,6 +38,7 @@ import org.jruby.internal.runtime.methods.InvocationMethodFactory;
 public abstract class MethodFactory {
     public abstract DynamicMethod getFullMethod(RubyModule implementationClass, Class type, String methodName, Arity arity, Visibility visibility);
     public abstract DynamicMethod getSimpleMethod(RubyModule implementationClass, Class type, String methodName, Arity arity, Visibility visibility);
+    public abstract DynamicMethod getCompiledMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility);
 
     private static boolean reflection = false;
 

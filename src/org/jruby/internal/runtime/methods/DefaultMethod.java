@@ -157,11 +157,11 @@ public final class DefaultMethod extends AbstractMethod {
                         cleanName = cleanName.replace("[]", "_aref");
                         StandardASMCompiler compiler = new StandardASMCompiler(cleanName + hashCode(), body.getPosition().getFile());
                         compiler.startScript();
-                        Object methodToken = compiler.beginMethod(getArity().getValue(), staticScope.getNumberOfVariables());
+                        Object methodToken = compiler.beginMethod(cleanName, getArity().getValue(), staticScope.getNumberOfVariables());
                         NodeCompilerFactory.getCompiler(body).compile(body, compiler);
                         compiler.endMethod(methodToken);
                         compiler.endScript();
-                        Class sourceClass = compiler.loadClass();
+                        Class sourceClass = compiler.loadClass(runtime);
                         Class stubClass = sourceClass.getClassLoader().loadClass(cleanName + hashCode() + "$MultiStub0");
                         MultiStub2 ms2 = (MultiStub2)stubClass.newInstance();
                         DynamicMethod method = new MultiStubMethod2(ms2, 0, getImplementationClass(), getArity(), getVisibility());

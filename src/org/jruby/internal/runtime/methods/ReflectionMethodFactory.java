@@ -45,4 +45,9 @@ public class ReflectionMethodFactory extends MethodFactory {
     public DynamicMethod getSimpleMethod(RubyModule implementationClass, Class type, String methodName, Arity arity, Visibility visibility) {
         return new SimpleReflectedMethod(implementationClass,type,methodName,arity,visibility);
     }
+
+    public DynamicMethod getCompiledMethod(RubyModule implementationClass, Class type, String methodName, Arity arity, Visibility visibility) {
+        assert false: "Not yet implemented";
+        return null;
+    }
 }// ReflectionMethodFactory
