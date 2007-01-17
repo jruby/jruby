@@ -34,6 +34,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 
 import org.jruby.IRuby;
 import org.jruby.RubyFile;
@@ -43,6 +44,7 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -54,6 +56,9 @@ public class YARVCompiledRunner implements Runnable {
     private YARVMachine ym;
 
     private YARVMachine.InstructionSequence iseq;
+
+    private Map jumps = new IdentityHashMap();
+    private Map labels = new HashMap();
 
     public YARVCompiledRunner(IRuby runtime, Reader reader, String filename) {
         this.runtime = runtime;
@@ -71,19 +76,21 @@ public class YARVCompiledRunner implements Runnable {
             throw new RuntimeException("Couldn't read from source",e);
         }
     }
-
+    
     public void run() {
         YARVMachine ym = new YARVMachine();
         ThreadContext context = runtime.getCurrentContext();
         StaticScope scope = new LocalStaticScope(null);
         scope.setVariables(iseq.locals);
-        ym.exec(context, runtime.getObject(), scope, iseq.body);
+        ym.exec(context, runtime.getObject(), new DynamicScope(scope,null), iseq.body);
     }
 
     private YARVMachine.InstructionSequence transformIntoSequence(IRubyObject arr) {
         if(!(arr instanceof RubyArray)) {
             throw new RuntimeException("Error when reading compiled YARV file");
         }
+        labels.clear();
+        jumps.clear();
 
         YARVMachine.InstructionSequence seq = new YARVMachine.InstructionSequence();
         Iterator internal = (((RubyArray)arr).getList()).iterator();
@@ -102,26 +109,42 @@ public class YARVCompiledRunner implements Runnable {
         seq.line = new Object[0]; internal.next();
         seq.type = internal.next().toString();
         seq.locals = toStringArray((IRubyObject)internal.next());
-        List arglist = ((RubyArray)internal.next()).getList();
-        seq.args_argc = RubyNumeric.fix2int((IRubyObject)arglist.get(0));
-        seq.args_arg_opts = RubyNumeric.fix2int((IRubyObject)arglist.get(1));
-        seq.args_opt_labels = toStringArray((IRubyObject)arglist.get(2));
-        seq.args_rest = RubyNumeric.fix2int((IRubyObject)arglist.get(3));
-        seq.args_block = RubyNumeric.fix2int((IRubyObject)arglist.get(4));
-        seq.exception = new Object[0]; internal.next();
+        IRubyObject argo = (IRubyObject)internal.next();
+        if(argo instanceof RubyArray) {
+            List arglist = ((RubyArray)argo).getList();
+            seq.args_argc = RubyNumeric.fix2int((IRubyObject)arglist.get(0));
+            seq.args_arg_opts = RubyNumeric.fix2int((IRubyObject)arglist.get(1));
+            seq.args_opt_labels = toStringArray((IRubyObject)arglist.get(2));
+            seq.args_rest = RubyNumeric.fix2int((IRubyObject)arglist.get(3));
+            seq.args_block = RubyNumeric.fix2int((IRubyObject)arglist.get(4));
+        } else {
+            seq.args_argc = RubyNumeric.fix2int(argo);
+        }
+
+        seq.exception = getExceptionInformation((IRubyObject)internal.next());
 
         List bodyl = ((RubyArray)internal.next()).getList();
         YARVMachine.Instruction[] body = new YARVMachine.Instruction[bodyl.size()];
+        int real=0;
         int i=0;
         for(Iterator iter = bodyl.iterator();iter.hasNext();i++) {
             IRubyObject is = (IRubyObject)iter.next();
             if(is instanceof RubyArray) {
-                body[i] = intoInstruction((RubyArray)is);
+                body[real] = intoInstruction((RubyArray)is,real,seq);
+                real++;
             } else if(is instanceof RubySymbol) {
-                body[i] = intoLabel(is);
+                labels.put(is.toString(), new Integer(real+1));
             }
         }
-        seq.body = body;
+        YARVMachine.Instruction[] nbody = new YARVMachine.Instruction[real];
+        System.arraycopy(body,0,nbody,0,real);
+        seq.body = nbody;
+
+        for(Iterator iter = jumps.keySet().iterator();iter.hasNext();) {
+            YARVMachine.Instruction k = (YARVMachine.Instruction)iter.next();
+            k.l_op0 = ((Integer)labels.get(jumps.get(k))).intValue() - 1;
+        }
+
         return seq;
     }
 
@@ -139,25 +162,41 @@ public class YARVCompiledRunner implements Runnable {
         }
     }
 
-    private YARVMachine.Instruction intoInstruction(RubyArray obj) {
+    private YARVMachine.Instruction intoInstruction(RubyArray obj, int n, YARVMachine.InstructionSequence iseq) {
         List internal = obj.getList();
         String name = internal.get(0).toString();
         int instruction = YARVMachine.instruction(name);
         YARVMachine.Instruction i = new YARVMachine.Instruction(instruction);
         if(internal.size() > 1) {
             IRubyObject first = (IRubyObject)internal.get(1);
-            if(first instanceof RubyString) {
+            if(instruction == YARVInstructions.GETLOCAL || instruction == YARVInstructions.SETLOCAL) {
+                i.l_op0 = (iseq.locals.length + 1) - RubyNumeric.fix2long(first);
+            } else if(first instanceof RubyString) {
                 i.s_op0 = first.toString();
+            } else if(first instanceof RubyNumeric) {
+                i.l_op0 = RubyNumeric.fix2long(first);
             } else if(instruction == YARVInstructions.SEND) {
                 i.s_op0 = first.toString();
                 i.i_op1 = RubyNumeric.fix2int((IRubyObject)internal.get(2));
                 i.i_op3 = RubyNumeric.fix2int((IRubyObject)internal.get(4));
             }
+            if(instruction == YARVInstructions.DEFINEMETHOD) {
+                i.iseq_op = transformIntoSequence((IRubyObject)internal.get(2));
+            }
+            if(isJump(instruction)) {
+                i.index = n;
+                jumps.put(i, internal.get(1).toString());
+            }
         }
         return i;
     }
 
-    private YARVMachine.Instruction intoLabel(IRubyObject obj) {
-        return null;
+    private boolean isJump(int i) {
+        return i == YARVInstructions.JUMP || i == YARVInstructions.BRANCHIF || i == YARVInstructions.BRANCHUNLESS;
+    }
+
+    private Object[] getExceptionInformation(IRubyObject obj) {
+        //        System.err.println(obj.callMethod(runtime.getCurrentContext(),"inspect"));
+        return new Object[0];
     }
 }// YARVCompiledRunner

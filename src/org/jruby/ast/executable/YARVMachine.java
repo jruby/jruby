@@ -7,11 +7,16 @@ import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
+import org.jruby.MetaClass;
 import org.jruby.parser.StaticScope;
+import org.jruby.parser.LocalStaticScope;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.internal.runtime.methods.YARVMethod;
+import org.jruby.internal.runtime.methods.WrapperMethod;
 
 public class YARVMachine {
     private static final Map INSTS = new HashMap();
@@ -114,15 +119,15 @@ public class YARVMachine {
 
         String[] locals;
 
-        int args_argc;
-        int args_arg_opts;
-        String[] args_opt_labels;
-        int args_rest;
-        int args_block;
+        public int args_argc;
+        public int args_arg_opts;
+        public String[] args_opt_labels;
+        public int args_rest;
+        public int args_block;
 
         Object[] exception;
 
-        Instruction[] body;
+        public Instruction[] body;
     }
 
     public static class Instruction {
@@ -132,8 +137,11 @@ public class YARVMachine {
         boolean has_b = false;
         long l_op0;
         int i_op1;
-        Instruction[] ins_op2;
+        InstructionSequence iseq_op;
+        Instruction[] ins_op;
         int i_op3;
+
+        int index;
 
         public Instruction(int bytecode) {
             this.bytecode = bytecode;
@@ -142,6 +150,12 @@ public class YARVMachine {
         public Instruction(int bytecode, String op) {
             this.bytecode = bytecode;
             this.s_op0 = op;
+        }
+
+        public Instruction(int bytecode, String op, InstructionSequence op1) {
+            this.bytecode = bytecode;
+            this.s_op0 = op;
+            this.iseq_op = op1;
         }
 
         public Instruction(int bytecode, long op) {
@@ -159,18 +173,22 @@ public class YARVMachine {
             this.bytecode = bytecode;
             this.s_op0 = op;
             this.i_op1 = op1;
-            this.ins_op2 = op2;
+            this.ins_op = op2;
             this.i_op3 = op3;
         }
     }
     
     public IRubyObject exec(ThreadContext context, IRubyObject self, StaticScope scope, Instruction[] bytecodes) {
+        return exec(context,self, new DynamicScope(scope,null),bytecodes);
+    }
+
+    public IRubyObject exec(ThreadContext context, IRubyObject self, DynamicScope scope, Instruction[] bytecodes) {
         IRubyObject[] stack = new IRubyObject[50];
         int stackTop = 0;
         stack[stackTop] = context.getRuntime().getNil();
         int ip = 0;
         IRuby runtime = context.getRuntime();
-        context.preRootNode(new DynamicScope(scope, null));
+        context.preRootNode(scope);
         
         yarvloop: while (ip < bytecodes.length) {
             switch (bytecodes[ip].bytecode) {
@@ -186,12 +204,16 @@ public class YARVMachine {
                 context.getCurrentScope().setValue((int)bytecodes[ip].l_op0, (IRubyObject)stack[stackTop--], 0);
                 break;
             case YARVInstructions.GETSPECIAL:
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
                 break;
             case YARVInstructions.SETSPECIAL:
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
                 break;
             case YARVInstructions.GETDYNAMIC:
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
                 break;
             case YARVInstructions.SETDYNAMIC:
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
                 break;
             case YARVInstructions.GETINSTANCEVARIABLE:
                 stack[++stackTop] = self.getInstanceVariable(bytecodes[ip].s_op0);
@@ -237,8 +259,10 @@ public class YARVMachine {
                 ((RubyModule)stack[stackTop--]).setConstant(bytecodes[ip].s_op0, (IRubyObject)stack[stackTop--]);
                 break;
             case YARVInstructions.GETGLOBAL:
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
                 break;
             case YARVInstructions.SETGLOBAL:
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
                 break;
             case YARVInstructions.PUTNIL:
                 stack[++stackTop] = context.getRuntime().getNil();
@@ -248,6 +272,7 @@ public class YARVMachine {
                 break;
             case YARVInstructions.PUTUNDEF:
                 // ko1 said this is going away
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
                 break;
             case YARVInstructions.PUTOBJECT:
                 // TODO: needs to avoid using ifs
@@ -274,6 +299,7 @@ public class YARVMachine {
                 }
                 break;
             case YARVInstructions.TOREGEXP:
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
                 break;
             case YARVInstructions.NEWARRAY: {
                 int size = (int)bytecodes[ip].l_op0;
@@ -285,21 +311,29 @@ public class YARVMachine {
                 break;
             }
             case YARVInstructions.DUPARRAY:
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
                 break;
             case YARVInstructions.EXPANDARRAY:
                 // masgn array to values
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
                 break;
             case YARVInstructions.CONCATARRAY:
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
                 break;
             case YARVInstructions.SPLATARRAY:
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
                 break;
             case YARVInstructions.CHECKINCLUDEARRAY:
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
                 break;
             case YARVInstructions.NEWHASH:
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
                 break;
             case YARVInstructions.NEWRANGE:
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
                 break;
             case YARVInstructions.PUTNOT:
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
                 break;
             case YARVInstructions.POP:
                 stackTop--;
@@ -321,6 +355,7 @@ public class YARVMachine {
                 stack[stackTop] = stack[stackTop - 1];
                 stack[stackTop - 1] = stack[stackTop + 1];
             case YARVInstructions.REPUT:
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
                 break;
             case YARVInstructions.TOPN: {
                 int n = (int)bytecodes[ip].l_op0;
@@ -336,29 +371,87 @@ public class YARVMachine {
             case YARVInstructions.EMPTSTACK:
                 stackTop = 0;
                 break;
-            case YARVInstructions.DEFINEMETHOD: break;
-            case YARVInstructions.ALIAS: break;
-            case YARVInstructions.UNDEF: break;
-            case YARVInstructions.DEFINED: break;
-            case YARVInstructions.POSTEXE: break;
-            case YARVInstructions.TRACE: break;
-            case YARVInstructions.DEFINECLASS: break;
+            case YARVInstructions.DEFINEMETHOD: 
+                RubyModule containingClass = context.getRubyClass();
+    
+                if (containingClass == null) {
+                    throw runtime.newTypeError("No class to add method.");
+                }
+
+                String mname = bytecodes[ip].iseq_op.name;
+                if (containingClass == runtime.getObject() && mname == "initialize") {
+                    runtime.getWarnings().warn("redefining Object#initialize may cause infinite loop");
+                }
+    
+                Visibility visibility = context.getCurrentVisibility();
+                if (mname == "initialize" || visibility.isModuleFunction() || context.isTopLevel()) {
+                    visibility = Visibility.PRIVATE;
+                }
+                
+                if (containingClass.isSingleton()) {
+                    IRubyObject attachedObject = ((MetaClass) containingClass).getAttachedObject();
+                    
+                    if (!attachedObject.singletonMethodsAllowed()) {
+                        throw runtime.newTypeError("can't define singleton method \"" + 
+                                mname + "\" for " + attachedObject.getType());
+                    }
+                }
+
+                StaticScope sco = new LocalStaticScope(null);
+                sco.setVariables(bytecodes[ip].iseq_op.locals);
+                YARVMethod newMethod = new YARVMethod(containingClass, bytecodes[ip].iseq_op, sco, visibility, context.peekCRef());
+
+                containingClass.addMethod(mname, newMethod);
+    
+                if (context.getCurrentVisibility().isModuleFunction()) {
+                    containingClass.getSingletonClass().addMethod(
+                            mname,
+                            new WrapperMethod(containingClass.getSingletonClass(), newMethod,
+                                    Visibility.PUBLIC));
+                    containingClass.callMethod(context, "singleton_method_added", runtime.newSymbol(mname));
+                }
+    
+                // 'class << state.self' and 'class << obj' uses defn as opposed to defs
+                if (containingClass.isSingleton()) {
+                    ((MetaClass) containingClass).getAttachedObject().callMethod(
+                            context, "singleton_method_added", runtime.newSymbol(mname));
+                } else {
+                    containingClass.callMethod(context, "method_added", runtime.newSymbol(mname));
+                }
+                stack[++stackTop] = runtime.getNil();
+                break;
+            case YARVInstructions.ALIAS: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+                break;
+            case YARVInstructions.UNDEF: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+                break;
+            case YARVInstructions.DEFINED: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+                break;
+            case YARVInstructions.POSTEXE: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+                break;
+            case YARVInstructions.TRACE: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+                break;
+            case YARVInstructions.DEFINECLASS: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+                break;
             case YARVInstructions.SEND: {
                 context.beginCallArgs();
                 String name = bytecodes[ip].s_op0;
                 IRubyObject receiver = null;
                 IRubyObject[] args = new IRubyObject[bytecodes[ip].i_op1];
 
-                Instruction[] blockBytecodes = bytecodes[ip].ins_op2;
+                Instruction[] blockBytecodes = bytecodes[ip].ins_op;
                 // TODO: block stuff
                 int flags = bytecodes[ip].i_op3;
                 CallType callType;
-                
+                for (int i = args.length; i > 0; i--) {
+                    args[i-1] = stack[stackTop--];
+                }
                 if ((flags & YARVInstructions.VCALL_FLAG) == 0) {
-                    for (int i = args.length - 1; i >= 0; i--) {
-                        args[i] = stack[stackTop--];
-                    }
-                    
                     if ((flags & YARVInstructions.FCALL_FLAG) == 0) {
                         receiver = stack[stackTop--];
                         callType = CallType.NORMAL;
@@ -370,17 +463,24 @@ public class YARVMachine {
                     receiver = self;
                     callType = CallType.VARIABLE;
                 }
-
                 assert receiver.getMetaClass() != null : receiver.getClass().getName();
-                
                 stack[++stackTop] = receiver.callMethod(context, name, args, callType);
                 break;
             }
-            case YARVInstructions.INVOKESUPER: break;
-            case YARVInstructions.INVOKEBLOCK: break;
-            case YARVInstructions.LEAVE: break;
-            case YARVInstructions.FINISH: break;
-            case YARVInstructions.THROW: break;
+            case YARVInstructions.INVOKESUPER: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+                break;
+            case YARVInstructions.INVOKEBLOCK: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+                break;
+            case YARVInstructions.LEAVE:
+                return stack[stackTop];
+            case YARVInstructions.FINISH: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+                break;
+            case YARVInstructions.THROW: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+                break;
             case YARVInstructions.JUMP:
                 ip = (int)bytecodes[ip].l_op0;
                 continue yarvloop;
@@ -398,29 +498,75 @@ public class YARVMachine {
                     ip++;
                 }
                 continue yarvloop;
-            case YARVInstructions.GETINLINECACHE: break;
-            case YARVInstructions.ONCEINLINECACHE: break;
-            case YARVInstructions.SETINLINECACHE: break;
-            case YARVInstructions.OPT_CASE_DISPATCH: break;
-            case YARVInstructions.OPT_CHECKENV: break;
-            case YARVInstructions.OPT_PLUS: break;
-            case YARVInstructions.OPT_MINUS: break;
-            case YARVInstructions.OPT_MULT: break;
-            case YARVInstructions.OPT_DIV: break;
-            case YARVInstructions.OPT_MOD: break;
-            case YARVInstructions.OPT_EQ: break;
-            case YARVInstructions.OPT_LT: break;
-            case YARVInstructions.OPT_LE: break;
-            case YARVInstructions.OPT_LTLT: break;
-            case YARVInstructions.OPT_AREF: break;
-            case YARVInstructions.OPT_ASET: break;
-            case YARVInstructions.OPT_LENGTH: break;
-            case YARVInstructions.OPT_SUCC: break;
-            case YARVInstructions.OPT_REGEXPMATCH1: break;
-            case YARVInstructions.OPT_REGEXPMATCH2: break;
-            case YARVInstructions.OPT_CALL_NATIVE_COMPILED: break;
-            case YARVInstructions.BITBLT: break;
-            case YARVInstructions.ANSWER: break;
+            case YARVInstructions.GETINLINECACHE: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+                break;
+            case YARVInstructions.ONCEINLINECACHE: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+                break;
+            case YARVInstructions.SETINLINECACHE: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+break;
+            case YARVInstructions.OPT_CASE_DISPATCH: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+break;
+            case YARVInstructions.OPT_CHECKENV: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+break;
+            case YARVInstructions.OPT_PLUS: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+break;
+            case YARVInstructions.OPT_MINUS: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+break;
+            case YARVInstructions.OPT_MULT: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+break;
+            case YARVInstructions.OPT_DIV: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+break;
+            case YARVInstructions.OPT_MOD: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+break;
+            case YARVInstructions.OPT_EQ: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+break;
+            case YARVInstructions.OPT_LT:
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+break;
+            case YARVInstructions.OPT_LE: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+break;
+            case YARVInstructions.OPT_LTLT: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+break;
+            case YARVInstructions.OPT_AREF: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+break;
+            case YARVInstructions.OPT_ASET: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+break;
+            case YARVInstructions.OPT_LENGTH: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+break;
+            case YARVInstructions.OPT_SUCC: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+break;
+            case YARVInstructions.OPT_REGEXPMATCH1: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+break;
+            case YARVInstructions.OPT_REGEXPMATCH2:
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+break;
+            case YARVInstructions.OPT_CALL_NATIVE_COMPILED: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+break;
+            case YARVInstructions.BITBLT: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+break;
+            case YARVInstructions.ANSWER: 
+                System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
+break;
             case YARVInstructions.GETLOCAL_OP_2: break;
             case YARVInstructions.GETLOCAL_OP_3: break;
             case YARVInstructions.GETLOCAL_OP_4: break;
