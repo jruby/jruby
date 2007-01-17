@@ -29,7 +29,7 @@ end
 def compile_and_run(node)
   cls = compile_to_class(node)
 
-  cls.new_instance.run(JRuby.runtime.current_context, JRuby.runtime.top_self)
+  cls.new_instance.run(JRuby.runtime.current_context, JRuby.runtime.top_self, nil, nil)
 end
 
 test_no_exception {

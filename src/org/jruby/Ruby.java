@@ -334,7 +334,8 @@ public final class Ruby implements IRuby {
             Class scriptClass = compiler.loadClass(this);
             
             Script script = (Script)scriptClass.newInstance();
-            return script.run(getCurrentContext(), getTopSelf());
+            // FIXME: Pass something better for args and block here?
+            return script.run(getCurrentContext(), getTopSelf(), IRubyObject.NULL_ARRAY, null);
         } catch (NotCompilableException nce) {
             System.err.println("Error -- Not compileable: " + nce.getMessage());
             return null;

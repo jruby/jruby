@@ -34,7 +34,6 @@ package org.jruby.internal.runtime.methods;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
@@ -42,6 +41,7 @@ import org.jruby.RubyProc;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.Node;
+import org.jruby.ast.executable.Script;
 import org.jruby.compiler.NodeCompilerFactory;
 import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.evaluator.AssignmentVisitor;
@@ -69,9 +69,9 @@ public final class DefaultMethod extends AbstractMethod {
     private SinglyLinkedList cref;
     private boolean hasBeenTargeted = false;
     private int callCount = 0;
-    private DynamicMethod compiledMethod;
     private static final int COMPILE_COUNT = 50;
     private boolean compiledFast = false;
+    private Script jitCompiledScript;
 
     // change to true to enable JIT compilation
     private static final boolean JIT_ENABLED = false;
@@ -114,8 +114,8 @@ public final class DefaultMethod extends AbstractMethod {
      */
     public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
     	assert args != null;
-        if (JIT_ENABLED && compiledMethod != null) {
-            return compiledMethod.call(context, receiver, lastClass, name, args, noSuper);
+        if (JIT_ENABLED && jitCompiledScript != null) {
+            return jitCompiledScript.run(context, receiver, args, null);
         }
         
         IRuby runtime = context.getRuntime();
@@ -149,31 +149,7 @@ public final class DefaultMethod extends AbstractMethod {
 
             traceCall(context, runtime, receiver, name);
 
-            if (JIT_ENABLED && callCount >= 0 && getArity().isFixed()) {
-                callCount++;
-                if (callCount == COMPILE_COUNT) {
-                    try {
-                        String cleanName = name.replace("?", "_p").replace("!","_b").replace("<", "_lt").replace(">", "_gt").replace("=", "_eq");
-                        cleanName = cleanName.replace("[]", "_aref");
-                        StandardASMCompiler compiler = new StandardASMCompiler(cleanName + hashCode(), body.getPosition().getFile());
-                        compiler.startScript();
-                        Object methodToken = compiler.beginMethod(cleanName, getArity().getValue(), staticScope.getNumberOfVariables());
-                        NodeCompilerFactory.getCompiler(body).compile(body, compiler);
-                        compiler.endMethod(methodToken);
-                        compiler.endScript();
-                        Class sourceClass = compiler.loadClass(runtime);
-                        Class stubClass = sourceClass.getClassLoader().loadClass(cleanName + hashCode() + "$MultiStub0");
-                        MultiStub2 ms2 = (MultiStub2)stubClass.newInstance();
-                        DynamicMethod method = new MultiStubMethod2(ms2, 0, getImplementationClass(), getArity(), getVisibility());
-                        this.compiledMethod = method;
-                        System.out.println("compiled: " + getImplementationClass().getBaseName() + "." + name);
-                    } catch (Exception e) {
-                        //e.printStackTrace();
-                    } finally {
-                        callCount = -1;
-                    }
-                }
-            }
+            runJIT(runtime, name);
             return EvaluationState.eval(context, body, receiver);
         } catch (JumpException je) {
         	if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
@@ -184,6 +160,31 @@ public final class DefaultMethod extends AbstractMethod {
        		throw je;
         } finally {
             traceReturn(context, runtime, receiver, name);
+        }
+    }
+    
+    private void runJIT(IRuby runtime, String name) {
+        if (JIT_ENABLED && callCount >= 0 && getArity().isFixed()) {
+            callCount++;
+            if (callCount >= COMPILE_COUNT) {
+                try {
+                    String cleanName = name.replace("?", "_p").replace("!","_b").replace("<", "_lt").replace(">", "_gt").replace("=", "_eq");
+                    cleanName = cleanName.replace("[]", "_aref");
+                    StandardASMCompiler compiler = new StandardASMCompiler(cleanName + hashCode(), body.getPosition().getFile());
+                    compiler.startScript();
+                    Object methodToken = compiler.beginMethod("__file__", getArity().getValue(), staticScope.getNumberOfVariables());
+                    NodeCompilerFactory.getCompiler(body).compile(body, compiler);
+                    compiler.endMethod(methodToken);
+                    compiler.endScript();
+                    Class sourceClass = compiler.loadClass(runtime);
+                    jitCompiledScript = (Script)sourceClass.newInstance();
+                    System.out.println("compiled: " + getImplementationClass().getBaseName() + "." + name);
+                } catch (Exception e) {
+                    //e.printStackTrace();
+                } finally {
+                    callCount = -1;
+                }
+            }
         }
     }
 

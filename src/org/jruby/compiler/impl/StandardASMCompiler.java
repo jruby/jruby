@@ -60,8 +60,6 @@ public class StandardASMCompiler implements Compiler {
             "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/runtime/builtin/IRubyObject;[Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/Block;)Lorg/jruby/runtime/builtin/IRubyObject;";
     private static final String CLOSURE_SIGNATURE =
             "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/runtime/builtin/IRubyObject;[Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;";
-    private static final String RUN_SIGNATURE = 
-            "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;";
     
     private static final int THREADCONTEXT_INDEX = 0;
     private static final int SELF_INDEX = 1;
@@ -200,14 +198,15 @@ public class StandardASMCompiler implements Compiler {
         // add Script#run impl, used for running this script with a specified threadcontext and self
         // root method of a script is always in __load__ method
         String methodName = "__file__";
-        MethodVisitor mv = getClassVisitor().visitMethod(Opcodes.ACC_PUBLIC, "run", RUN_SIGNATURE, null, null);
+        MethodVisitor mv = getClassVisitor().visitMethod(Opcodes.ACC_PUBLIC, "run", METHOD_SIGNATURE, null, null);
         mv.visitCode();
         
         // invoke __file__ with threadcontext, self, args (null), and block (null)
+        // These are all +1 because run is an instance method where others are static
         mv.visitVarInsn(Opcodes.ALOAD, THREADCONTEXT_INDEX + 1);
         mv.visitVarInsn(Opcodes.ALOAD, SELF_INDEX + 1);
-        mv.visitInsn(Opcodes.ACONST_NULL);
-        mv.visitInsn(Opcodes.ACONST_NULL);
+        mv.visitVarInsn(Opcodes.ALOAD, ARGS_INDEX + 1);
+        mv.visitVarInsn(Opcodes.ALOAD, CLOSURE_INDEX + 1);
         
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, classname, methodName, METHOD_SIGNATURE);
         mv.visitInsn(Opcodes.ARETURN);
@@ -219,14 +218,21 @@ public class StandardASMCompiler implements Compiler {
         mv = getClassVisitor().visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "main", "([Ljava/lang/String;)V", null, null);
         mv.visitCode();
         
+        // new instance to invoke run against
+        mv.visitTypeInsn(Opcodes.NEW, classname);
+        mv.visitInsn(Opcodes.DUP);
+        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, classname, "<init>", "()V");
+        
         // invoke run with threadcontext and topself
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/jruby/Ruby", "getDefaultInstance", "()Lorg/jruby/IRuby;");
         mv.visitInsn(Opcodes.DUP);
         mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, "getCurrentContext", "()Lorg/jruby/runtime/ThreadContext;");
         mv.visitInsn(Opcodes.SWAP);
         mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, "getTopSelf", "()Lorg/jruby/runtime/builtin/IRubyObject;");
+        mv.visitInsn(Opcodes.ACONST_NULL);
+        mv.visitInsn(Opcodes.ACONST_NULL);
         
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC, classname, "run", RUN_SIGNATURE);
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, classname, "run", METHOD_SIGNATURE);
         mv.visitInsn(Opcodes.RETURN);
         mv.visitMaxs(1, 1);
         mv.visitEnd();
