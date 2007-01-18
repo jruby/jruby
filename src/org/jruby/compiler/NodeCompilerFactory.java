@@ -88,6 +88,8 @@ public class NodeCompilerFactory {
                 return new OrNodeCompiler();
             case NodeTypes.ROOTNODE:
                 return new RootNodeCompiler();
+            case NodeTypes.SELFNODE:
+                return new SelfNodeCompiler();
             case NodeTypes.STRNODE:
                 return new StringNodeCompiler();
             case NodeTypes.TRUENODE:
