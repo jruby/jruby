@@ -31,15 +31,36 @@ package org.jruby.compiler.impl;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.Stack;
 import org.jruby.IRuby;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyBoolean;
+import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyModule;
+import org.jruby.RubyString;
 import org.jruby.ast.Node;
+import org.jruby.ast.executable.Script;
+import org.jruby.common.RubyWarnings;
 import org.jruby.compiler.*;
 import org.jruby.compiler.Compiler;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.CallType;
+import org.jruby.runtime.DynamicMethod;
+import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyClassLoader;
+import org.jruby.util.collections.SinglyLinkedList;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
@@ -52,14 +73,14 @@ import org.objectweb.asm.Opcodes;
  * @author headius
  */
 public class StandardASMCompiler implements Compiler {
-    private static final String THREADCONTEXT = "org/jruby/runtime/ThreadContext";
-    private static final String IRUBY = "org/jruby/IRuby";
-    private static final String IRUBYOBJECT = "org/jruby/runtime/builtin/IRubyObject";
+    private static final String THREADCONTEXT = p(ThreadContext.class);
+    private static final String IRUBY = p(IRuby.class);
+    private static final String IRUBYOBJECT = p(IRubyObject.class);
     
     private static final String METHOD_SIGNATURE =
-            "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/runtime/builtin/IRubyObject;[Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/Block;)Lorg/jruby/runtime/builtin/IRubyObject;";
+            sig(IRubyObject.class, new Class[] { ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class });
     private static final String CLOSURE_SIGNATURE =
-            "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/runtime/builtin/IRubyObject;[Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;";
+            sig(IRubyObject.class, new Class[] { ThreadContext.class, IRubyObject.class, IRubyObject[].class });
     
     private static final int THREADCONTEXT_INDEX = 0;
     private static final int SELF_INDEX = 1;
@@ -108,12 +129,118 @@ public class StandardASMCompiler implements Compiler {
         }
     }
     
+    /**
+     * Creates a dotted class name from a path/package name
+     */
+    private static String c(String p) {
+        return p.replace("/", ".");
+    }
+
+    /**
+     * Creates a class path name, from a Class.
+     */
+    private static String p(Class n) {
+        return n.getName().replace('.','/');
+    }
+
+    /**
+     * Creates a class identifier of form Labc/abc;, from a Class.
+     */
+    private static String ci(Class n) {
+        if (n.isArray()) {
+            n = n.getComponentType();
+            if (n.isPrimitive()) {
+                if (n == Byte.TYPE) {
+                    return "[B";
+                } else if (n == Boolean.TYPE) {
+                    return "[Z";
+                } else if (n == Integer.TYPE) {
+                    return "[I";
+                } else if (n == Double.TYPE) {
+                    return "[D";
+                } else if (n == Long.TYPE) {
+                    return "[J";
+                } else {
+                    throw new RuntimeException("Unrecognized type in compiler: " + n.getName());
+                }
+            } else {
+                return "[L" + p(n) + ";";
+            }
+        } else {
+            if (n.isPrimitive()) {
+                if (n == Byte.TYPE) {
+                    return "B";
+                } else if (n == Boolean.TYPE) {
+                    return "Z";
+                } else if (n == Integer.TYPE) {
+                    return "I";
+                } else if (n == Double.TYPE) {
+                    return "D";
+                } else if (n == Long.TYPE) {
+                    return "J";
+                } else if (n == Void.TYPE) {
+                    return "V";
+                } else {
+                    throw new RuntimeException("Unrecognized type in compiler: " + n.getName());
+                }
+            } else {
+                return "L" + p(n) + ";";
+            }
+        }
+    }
+    
+    /**
+     * Create a method signature from the given param types and return values
+     */
+    private static String sig(Class retval, Class[] params) {
+        StringBuffer signature = new StringBuffer("(");
+        
+        for (int i = 0; i < params.length; i++) {
+            signature.append(ci(params[i]));
+        }
+        
+        signature.append(")").append(ci(retval));
+        
+        return signature.toString();
+    }
+    
+    /**
+     * Create a method signature with just a return value
+     */
+    private static String sig(Class retval) {
+        StringBuffer signature = new StringBuffer("()");
+        
+        signature.append(ci(retval));
+        
+        return signature.toString();
+    }
+    
+    // TODO: Wouldn't it be nice to replace this all with a single varargs?
+    private static Class[] params(Class a) {
+        return new Class[] {a};
+    }
+    private static Class[] params(Class a, Class b) {
+        return new Class[] {a,b};
+    }
+    private static Class[] params(Class a, Class b, Class c) {
+        return new Class[] {a,b,c};
+    }
+    private static Class[] params(Class a, Class b, Class c, Class d) {
+        return new Class[] {a,b,c,d};
+    }
+    private static Class[] params(Class a, Class b, Class c, Class d, Class e) {
+        return new Class[] {a,b,c,d,e};
+    }
+    private static Class[] params(Class a, Class b, Class c, Class d, Class e, Class f) {
+        return new Class[] {a,b,c,d,e,f};
+    }
+    
     public Class loadClass(IRuby runtime) throws ClassNotFoundException {
         JRubyClassLoader jcl = runtime.getJRubyClassLoader();
         
-        jcl.defineClass(classname.replaceAll("/", "."), classWriter.toByteArray());
+        jcl.defineClass(c(classname), classWriter.toByteArray());
 
-        return jcl.loadClass(classname.replaceAll("/", "."));
+        return jcl.loadClass(c(classname));
     }
     
     public void writeClass(File destination) throws IOException {
@@ -188,7 +315,7 @@ public class StandardASMCompiler implements Compiler {
         classWriter = new ClassWriter(true);
         
         // Create the class with the appropriate class name and source file
-        classWriter.visit(Opcodes.V1_2, Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER, classname, null, "java/lang/Object", new String[] {"org/jruby/ast/executable/Script"});
+        classWriter.visit(Opcodes.V1_2, Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER, classname, null, p(Object.class), new String[] {p(Script.class)});
         classWriter.visitSource(sourcename, null);
         
         createConstructor();
@@ -215,21 +342,21 @@ public class StandardASMCompiler implements Compiler {
 
         // add main impl, used for detached or command-line execution of this script with a new runtime
         // root method of a script is always in stub0, method0
-        mv = getClassVisitor().visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "main", "([Ljava/lang/String;)V", null, null);
+        mv = getClassVisitor().visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "main", sig(Void.TYPE, params(String[].class)), null, null);
         mv.visitCode();
         
         // new instance to invoke run against
         mv.visitTypeInsn(Opcodes.NEW, classname);
         mv.visitInsn(Opcodes.DUP);
-        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, classname, "<init>", "()V");
+        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, classname, "<init>", sig(Void.TYPE));
         
         // invoke run with threadcontext and topself
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/jruby/Ruby", "getDefaultInstance", "()Lorg/jruby/IRuby;");
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC, p(Ruby.class), "getDefaultInstance", sig(IRuby.class));
         mv.visitInsn(Opcodes.DUP);
         
-        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, "getCurrentContext", "()Lorg/jruby/runtime/ThreadContext;");
+        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, "getCurrentContext", sig(ThreadContext.class));
         mv.visitInsn(Opcodes.SWAP);
-        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, "getTopSelf", "()Lorg/jruby/runtime/builtin/IRubyObject;");
+        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, "getTopSelf", sig(IRubyObject.class));
         mv.visitInsn(Opcodes.ACONST_NULL);
         mv.visitInsn(Opcodes.ACONST_NULL);
         
@@ -245,8 +372,8 @@ public class StandardASMCompiler implements Compiler {
         MethodVisitor mv = cv.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
         mv.visitCode();
         mv.visitVarInsn(Opcodes.ALOAD, 0);
-        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>",
-                "()V");
+        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, p(Object.class), "<init>",
+                sig(Void.TYPE));
         mv.visitInsn(Opcodes.RETURN);
         mv.visitMaxs(1, 1);
         mv.visitEnd();
@@ -260,14 +387,14 @@ public class StandardASMCompiler implements Compiler {
         
         // logic to start off the root node's code with local var slots and all
         newMethod.visitLdcInsn(new Integer(localVarCount));
-        newMethod.visitTypeInsn(Opcodes.ANEWARRAY, "org/jruby/runtime/builtin/IRubyObject");
+        newMethod.visitTypeInsn(Opcodes.ANEWARRAY, p(IRubyObject.class));
         
         // store the local vars in a local variable
         newMethod.visitVarInsn(Opcodes.ASTORE, LOCAL_VARS_INDEX);
         
         // set up a local IRuby variable
         newMethod.visitVarInsn(Opcodes.ALOAD, THREADCONTEXT_INDEX);
-        invokeThreadContext("getRuntime", "()Lorg/jruby/IRuby;");
+        invokeThreadContext("getRuntime", sig(IRuby.class));
         newMethod.visitVarInsn(Opcodes.ASTORE, RUNTIME_INDEX);
         
         // visit a label to start scoping for local vars in this method
@@ -293,7 +420,7 @@ public class StandardASMCompiler implements Compiler {
         mv.visitLabel(end);
         
         // local variable for lvars array
-        mv.visitLocalVariable("lvars", "[L" + IRUBYOBJECT + ";", null, popScopeStart(), end, LOCAL_VARS_INDEX);
+        mv.visitLocalVariable("lvars", ci(IRubyObject[].class), null, popScopeStart(), end, LOCAL_VARS_INDEX);
         
         mv.visitMaxs(1, 1); // automatically calculated by ASM
         mv.visitEnd();
@@ -314,8 +441,8 @@ public class StandardASMCompiler implements Compiler {
     public void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs) {
         MethodVisitor mv = getMethodVisitor();
         String callType = null;
-        String callSig = "(Lorg/jruby/runtime/ThreadContext;Ljava/lang/String;[Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/CallType;)Lorg/jruby/runtime/builtin/IRubyObject;";
-        String callSigIndexed = "(Lorg/jruby/runtime/ThreadContext;BLjava/lang/String;[Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/CallType;)Lorg/jruby/runtime/builtin/IRubyObject;";
+        String callSig = sig(IRubyObject.class, params(ThreadContext.class, String.class, IRubyObject[].class, CallType.class));
+        String callSigIndexed = sig(IRubyObject.class, params(ThreadContext.class, Byte.TYPE, String.class, IRubyObject[].class, CallType.class));
         
         byte index = MethodIndex.getIndex(name);
         
@@ -380,10 +507,10 @@ public class StandardASMCompiler implements Compiler {
             mv.visitLdcInsn(name);
                 
             // empty args list
-            mv.visitFieldInsn(Opcodes.GETSTATIC, "org/jruby/runtime/builtin/IRubyObject", "NULL_ARRAY", "[Lorg/jruby/runtime/builtin/IRubyObject;");
+            mv.visitFieldInsn(Opcodes.GETSTATIC, p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
         }
 
-        mv.visitFieldInsn(Opcodes.GETSTATIC, "org/jruby/runtime/CallType", callType, "Lorg/jruby/runtime/CallType;");
+        mv.visitFieldInsn(Opcodes.GETSTATIC, p(CallType.class), callType, ci(CallType.class));
 
         if (index != 0) {
             invokeIRubyObject("callMethod", callSigIndexed);
@@ -410,7 +537,7 @@ public class StandardASMCompiler implements Compiler {
     
     public void loadNil() {
         loadRuntime();
-        invokeIRuby("getNil", "()Lorg/jruby/runtime/builtin/IRubyObject;");
+        invokeIRuby("getNil", sig(IRubyObject.class));
     }
     
     public void consumeCurrentValue() {
@@ -467,7 +594,7 @@ public class StandardASMCompiler implements Compiler {
         // FIXME this doesn't work right yet since TC.getConstant depends on TC state
         loadThreadContext();
         mv.visitLdcInsn(name);
-        invokeThreadContext("getConstant", "(Ljava/lang/String;)Lorg/jruby/runtime/builtin/IRubyObject;");
+        invokeThreadContext("getConstant", sig(IRubyObject.class, params(String.class)));
     }
     
     public void createNewFixnum(long value) {
@@ -476,7 +603,7 @@ public class StandardASMCompiler implements Compiler {
         loadRuntime();
         mv.visitLdcInsn(new Long(value));
         
-        invokeIRuby("newFixnum", "(J)Lorg/jruby/RubyFixnum;");
+        invokeIRuby("newFixnum", sig(RubyFixnum.class, params(Long.TYPE)));
     }
     
     public void createNewString(String value) {
@@ -485,7 +612,7 @@ public class StandardASMCompiler implements Compiler {
         loadRuntime();
         mv.visitLdcInsn(value);
         
-        invokeIRuby("newString", "(Ljava/lang/String;)Lorg/jruby/RubyString;");
+        invokeIRuby("newString", sig(RubyString.class, params(String.class)));
     }
     
     public void createNewArray() {
@@ -495,7 +622,7 @@ public class StandardASMCompiler implements Compiler {
         // put under object array already present
         mv.visitInsn(Opcodes.SWAP);
         
-        invokeIRuby("newArray", "([Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/RubyArray;");
+        invokeIRuby("newArray", sig(RubyArray.class, params(IRubyObject[].class)));
     }
     
     public void createObjectArray(Object[] sourceArray, ArrayCallback callback) {
@@ -517,6 +644,12 @@ public class StandardASMCompiler implements Compiler {
             mv.visitInsn(Opcodes.AASTORE);
         }
     }
+    /**
+     * Invoke IRubyObject.isTrue
+     */
+    private void isTrue() {
+        invokeIRubyObject("isTrue", sig(Boolean.TYPE));
+    }
     
     public void performBooleanBranch(BranchCallback trueBranch, BranchCallback falseBranch) {
         Label afterJmp = new Label();
@@ -525,7 +658,7 @@ public class StandardASMCompiler implements Compiler {
         MethodVisitor mv = getMethodVisitor();
         
         // call isTrue on the result
-        invokeIRubyObject("isTrue", "()Z");
+        isTrue();
         
         mv.visitJumpInsn(Opcodes.IFEQ, falseJmp); // EQ == 0 (i.e. false)
         trueBranch.branch(this);
@@ -548,7 +681,7 @@ public class StandardASMCompiler implements Compiler {
         mv.visitInsn(Opcodes.DUP);
         
         // call isTrue on the result
-        invokeIRubyObject("isTrue", "()Z");
+        isTrue();
         
         mv.visitJumpInsn(Opcodes.IFEQ, falseJmp); // EQ == 0 (i.e. false)
         // pop the extra result and replace with the send part of the AND
@@ -567,7 +700,7 @@ public class StandardASMCompiler implements Compiler {
         mv.visitInsn(Opcodes.DUP);
         
         // call isTrue on the result
-        invokeIRubyObject("isTrue", "()Z");
+        isTrue();
         
         mv.visitJumpInsn(Opcodes.IFNE, falseJmp); // EQ == 0 (i.e. false)
         // pop the extra result and replace with the send part of the AND
@@ -585,7 +718,7 @@ public class StandardASMCompiler implements Compiler {
             // calculate condition
             condition.branch(this);
             // call isTrue on the result
-            invokeIRubyObject("isTrue", "()Z");
+            isTrue();
         
             mv.visitJumpInsn(Opcodes.IFEQ, endJmp); // EQ == 0 (i.e. false)
         }
@@ -602,7 +735,7 @@ public class StandardASMCompiler implements Compiler {
         // calculate condition
         condition.branch(this);
         // call isTrue on the result
-        invokeIRubyObject("isTrue", "()Z");
+        isTrue();
 
         mv.visitJumpInsn(Opcodes.IFNE, topJmp); // NE == nonzero (i.e. true)
         
@@ -630,7 +763,7 @@ public class StandardASMCompiler implements Compiler {
         
         // logic to start off the closure with dvar slots
         method.visitLdcInsn(new Integer(scope.getNumberOfVariables()));
-        method.visitTypeInsn(Opcodes.ANEWARRAY, "org/jruby/runtime/builtin/IRubyObject");
+        method.visitTypeInsn(Opcodes.ANEWARRAY, p(IRubyObject.class));
         
         // store the dvars in a local variable
         method.visitVarInsn(Opcodes.ASTORE, LOCAL_VARS_INDEX);
@@ -644,7 +777,7 @@ public class StandardASMCompiler implements Compiler {
         
         // set up a local IRuby variable
         method.visitVarInsn(Opcodes.ALOAD, THREADCONTEXT_INDEX);
-        invokeThreadContext("getRuntime", "()Lorg/jruby/IRuby;");
+        invokeThreadContext("getRuntime", sig(IRuby.class));
         method.visitVarInsn(Opcodes.ASTORE, RUNTIME_INDEX);
         
         // start of scoping for closure's vars
@@ -683,34 +816,34 @@ public class StandardASMCompiler implements Compiler {
     private void getRubyClass() {
         loadSelf();
         // FIXME: This doesn't seem *quite* right. If actually within a class...end, is self.getMetaClass the correct class? should be self, no?
-        invokeIRubyObject("getMetaClass", "()Lorg/jruby/RubyClass;");
+        invokeIRubyObject("getMetaClass", sig(RubyClass.class));
     }
     
     private void getCRef() {
         loadThreadContext();
         // FIXME: This doesn't seem *quite* right. If actually within a class...end, is self.getMetaClass the correct class? should be self, no?
-        invokeThreadContext("peekCRef", "()Lorg/jruby/util/collections/SinglyLinkedList;");
+        invokeThreadContext("peekCRef", sig(SinglyLinkedList.class));
     }
 
     private void newTypeError(String error) {
         loadRuntime();
         getMethodVisitor().visitLdcInsn(error);
-        invokeIRuby("newTypeError", "(Ljava/lang/String;)Lorg/jruby/exceptions/RaiseException;");
+        invokeIRuby("newTypeError", sig(RaiseException.class, params(String.class)));
     }
 
     private void getCurrentVisibility() {
         loadThreadContext();
-        invokeThreadContext("getCurrentVisibility", "()Lorg/jruby/runtime/Visibility;");
+        invokeThreadContext("getCurrentVisibility", sig(Visibility.class));
     }
     
     private void println() {
         MethodVisitor mv = getMethodVisitor();
         
         mv.visitInsn(Opcodes.DUP);
-        mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+        mv.visitFieldInsn(Opcodes.GETSTATIC, p(System.class), "out", ci(PrintStream.class));
         mv.visitInsn(Opcodes.SWAP);
         
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/Object;)V");
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, p(PrintStream.class), "println", sig(Void.TYPE, params(Object.class)));
     }
     
     public void defineNewMethod(String name, int arity, int localVarCount, ClosureCallback body) {
@@ -729,7 +862,7 @@ public class StandardASMCompiler implements Compiler {
         mv.visitVarInsn(Opcodes.ALOAD, LOCAL_VARS_INDEX);
         mv.visitLdcInsn(new Integer(0));
         mv.visitLdcInsn(new Integer(arity));
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/System", "arraycopy", "(Ljava/lang/Object;ILjava/lang/Object;II)V");
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC, p(System.class), "arraycopy", sig(Void.TYPE, params(Object.class, Integer.TYPE, Object.class, Integer.TYPE, Integer.TYPE)));
         
         // callback to fill in method body
         body.compile(this);
@@ -758,16 +891,16 @@ public class StandardASMCompiler implements Compiler {
             // get class, compare to Object
             getRubyClass();
             loadRuntime();
-            invokeIRuby("getObject", "()Lorg/jruby/RubyClass;");
+            invokeIRuby("getObject", sig(RubyClass.class));
             
             // if class == Object
             mv.visitJumpInsn(Opcodes.IF_ACMPNE, notObjectClass);
             loadRuntime();
             
             // display warning about redefining Object#initialize
-            invokeIRuby("getWarnings", "()Lorg/jruby/common/RubyWarnings;");
+            invokeIRuby("getWarnings", sig(RubyWarnings.class));
             mv.visitLdcInsn("redefining Object#initialize may cause infinite loop");
-            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/common/RubyWarnings", "warn", "(Ljava/lang/String;)V");
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, p(RubyWarnings.class), "warn", sig(Void.TYPE, params(String.class)));
         
             mv.visitLabel(notObjectClass);
         }
@@ -799,23 +932,23 @@ public class StandardASMCompiler implements Compiler {
         
         { // this section sets up the parameters to the CompiledMethod constructor
             // get method factory
-            mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/jruby/runtime/MethodFactory", "createFactory", "()Lorg/jruby/runtime/MethodFactory;");
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, p(MethodFactory.class), "createFactory", sig(MethodFactory.class));
             getRubyClass();
             mv.visitLdcInsn(classname.replace("/", "."));
 
-            mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Class", "forName", "(Ljava/lang/String;)Ljava/lang/Class;");
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, p(Class.class), "forName", sig(Class.class, params(String.class)));
             // this is the actual name of the compiled method, for calling in the generated Method object
             mv.visitLdcInsn(methodName);
             
             // load arity
             mv.visitLdcInsn(new Integer(arity));
-            mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/jruby/runtime/Arity", "createArity", "(I)Lorg/jruby/runtime/Arity;");
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, p(Arity.class), "createArity", sig(Arity.class, params(Integer.TYPE)));
             
             getCurrentVisibility();
             getCRef();
             
             // create CompiledMethod object from Factory
-            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/runtime/MethodFactory", "getCompiledMethod", "(Lorg/jruby/RubyModule;Ljava/lang/Class;Ljava/lang/String;Lorg/jruby/runtime/Arity;Lorg/jruby/runtime/Visibility;Lorg/jruby/util/collections/SinglyLinkedList;)Lorg/jruby/runtime/DynamicMethod;");
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, p(MethodFactory.class), "getCompiledMethod", sig(DynamicMethod.class, params(RubyModule.class, Class.class, String.class, Arity.class, Visibility.class, SinglyLinkedList.class)));
 
             // TODO: handle args some way? maybe unnecessary with method compiled?
     //        mv.visitVarInsn(ALOAD, 4);
@@ -824,7 +957,7 @@ public class StandardASMCompiler implements Compiler {
         }
 
         // add the method to the class, and we're set!
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/RubyModule", "addMethod", "(Ljava/lang/String;Lorg/jruby/runtime/DynamicMethod;)V");
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, p(RubyModule.class), "addMethod", sig(Void.TYPE, params(String.class, DynamicMethod.class)));
 
         // FIXME: this part is for invoking method_added or singleton_method_added
 //        Label l345 = new Label();
@@ -894,17 +1027,17 @@ public class StandardASMCompiler implements Compiler {
         
         // don't leave the stack hanging!
         loadRuntime();
-        invokeIRuby("getNil", "()Lorg/jruby/runtime/builtin/IRubyObject;");
+        invokeIRuby("getNil", sig(IRubyObject.class));
     }
     
     public void loadFalse() {
         loadRuntime();
-        invokeIRuby("getFalse", "()Lorg/jruby/RubyBoolean;");
+        invokeIRuby("getFalse", sig(RubyBoolean.class));
     }
     
     public void loadTrue() {
         loadRuntime();
-        invokeIRuby("getTrue", "()Lorg/jruby/RubyBoolean;");
+        invokeIRuby("getTrue", sig(RubyBoolean.class));
     }
     
     public void retrieveInstanceVariable(String name) {
@@ -913,7 +1046,7 @@ public class StandardASMCompiler implements Compiler {
         MethodVisitor mv = getMethodVisitor();
         
         mv.visitLdcInsn(name);
-        invokeIRubyObject("getInstanceVariable", "(Ljava/lang/String;)Lorg/jruby/runtime/builtin/IRubyObject;");
+        invokeIRubyObject("getInstanceVariable", sig(IRubyObject.class, params(String.class)));
         
         // check if it's null; if so, load nil
         mv.visitInsn(Opcodes.DUP);
@@ -937,7 +1070,7 @@ public class StandardASMCompiler implements Compiler {
         mv.visitLdcInsn(name);
         mv.visitInsn(Opcodes.SWAP);
         
-        invokeIRubyObject("setInstanceVariable", "(Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
+        invokeIRubyObject("setInstanceVariable", sig(IRubyObject.class, params(String.class, IRubyObject.class)));
     }
     
     public void retrieveGlobalVariable(String name) {
@@ -945,9 +1078,9 @@ public class StandardASMCompiler implements Compiler {
         
         MethodVisitor mv = getMethodVisitor();
         
-        invokeIRuby("getGlobalVariables", "()Lorg/jruby/internal/runtime/GlobalVariables;");
+        invokeIRuby("getGlobalVariables", sig(GlobalVariables.class));
         mv.visitLdcInsn(name);
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/internal/runtime/GlobalVariables", "get", "(Ljava/lang/String;)Lorg/jruby/runtime/builtin/IRubyObject;");
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, p(GlobalVariables.class), "get", sig(IRubyObject.class, params(String.class)));
     }
     
     public void assignGlobalVariable(String name) {
@@ -955,26 +1088,24 @@ public class StandardASMCompiler implements Compiler {
         
         MethodVisitor mv = getMethodVisitor();
         
-        invokeIRuby("getGlobalVariables", "()Lorg/jruby/internal/runtime/GlobalVariables;");
+        invokeIRuby("getGlobalVariables", sig(GlobalVariables.class));
         mv.visitInsn(Opcodes.SWAP);
         mv.visitLdcInsn(name);
         mv.visitInsn(Opcodes.SWAP);
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/internal/runtime/GlobalVariables", "set", "(Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, p(GlobalVariables.class), "set", sig(IRubyObject.class, params(String.class, IRubyObject.class)));
     }
     
     public void negateCurrentValue() {
         MethodVisitor mv = getMethodVisitor();
         
-        invokeIRubyObject("isTrue", "()Z");
+        isTrue();
         Label isTrue = new Label();
         Label end = new Label();
         mv.visitJumpInsn(Opcodes.IFNE, isTrue);
-        loadRuntime();
-        invokeIRuby("getTrue", "()Lorg/jruby/RubyBoolean;");
+        loadTrue();
         mv.visitJumpInsn(Opcodes.GOTO, end);
         mv.visitLabel(isTrue);
-        loadRuntime();
-        invokeIRuby("getFalse", "()Lorg/jruby/RubyBoolean;");
+        loadFalse();
         mv.visitLabel(end);
     }
 }
