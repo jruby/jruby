@@ -142,6 +142,8 @@ public interface Compiler {
     
     public void defineNewMethod(String name, int arity, int localVarCount, ClosureCallback body);
     
+    public void defineAlias(String newName, String oldName);
+    
     public void retrieveConstant(String name);
     
     public void loadFalse();

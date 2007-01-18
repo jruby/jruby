@@ -175,9 +175,10 @@ public final class DefaultMethod extends AbstractMethod {
         if (callCount >= 0 && getArity().isFixed()) {
             callCount++;
             if (callCount >= COMPILE_COUNT) {
+                //                System.err.println("trying to compile: " + getImplementationClass().getBaseName() + "." + name);
                 try {
                     String cleanName = name.replace("?", "_p").replace("!","_b").replace("<", "_lt").replace(">", "_gt").replace("=", "_eq");
-                    cleanName = cleanName.replace("[]", "_aref");
+                    cleanName = cleanName.replace("[]", "_aref").replace("+","_pl").replace("-","_mi").replace("*","_ti").replace("/","_di");
                     StandardASMCompiler compiler = new StandardASMCompiler(cleanName + hashCode(), body.getPosition().getFile());
                     compiler.startScript();
                     Object methodToken = compiler.beginMethod("__file__", getArity().getValue(), staticScope.getNumberOfVariables());
@@ -188,7 +189,7 @@ public final class DefaultMethod extends AbstractMethod {
                     jitCompiledScript = (Script)sourceClass.newInstance();
                     System.out.println("compiled: " + getImplementationClass().getBaseName() + "." + name);
                 } catch (Exception e) {
-                    //e.printStackTrace();
+                    //                    e.printStackTrace();
                 } finally {
                     callCount = -1;
                 }

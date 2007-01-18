@@ -38,6 +38,8 @@ import org.jruby.ast.NodeTypes;
 public class NodeCompilerFactory {
     public static NodeCompiler getCompiler(Node node) {
         switch (node.nodeId) {
+            case NodeTypes.ALIASNODE:
+                return new AliasNodeCompiler();
             case NodeTypes.ANDNODE:
                 return new AndNodeCompiler();
             case NodeTypes.ARRAYNODE:

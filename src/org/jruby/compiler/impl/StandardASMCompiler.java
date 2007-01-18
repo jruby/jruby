@@ -845,6 +845,15 @@ public class StandardASMCompiler implements Compiler {
         
         mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, p(PrintStream.class), "println", sig(Void.TYPE, params(Object.class)));
     }
+
+    public void defineAlias(String newName, String oldName) {
+        getRubyClass();
+        getMethodVisitor().visitLdcInsn(newName);
+        getMethodVisitor().visitLdcInsn(oldName);
+        getMethodVisitor().visitMethodInsn(Opcodes.INVOKEVIRTUAL, p(RubyModule.class), "defineAlias", sig(Void.TYPE,params(String.class,String.class)));
+        loadNil();
+        // TODO: should call method_added, and possibly push nil.
+    }
     
     public void defineNewMethod(String name, int arity, int localVarCount, ClosureCallback body) {
         // TODO: build arg list based on number of args, optionals, etc
