@@ -42,6 +42,8 @@ public class NodeCompilerFactory {
                 return new AndNodeCompiler();
             case NodeTypes.ARRAYNODE:
                 return new ArrayNodeCompiler();
+            case NodeTypes.BEGINNODE:
+                return new BeginNodeCompiler();
             case NodeTypes.BLOCKNODE:
                 return new BlockNodeCompiler();
             case NodeTypes.CALLNODE:

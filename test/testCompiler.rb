@@ -15,6 +15,7 @@ whileCode = JRuby.parse("a = 0; while a < 5; a = a + 2; end; a", "EVAL8")
 whileNoBody = JRuby.parse("$foo = false; def flip; $foo = !$foo; $foo; end; while flip; end", "EVAL8_1")
 andCode = JRuby.parse("1 && 2", "EVAL9");
 andShortCode = JRuby.parse("nil && 3", "EVAL10");
+beginCode = JRuby.parse("begin; a = 4; end; a", "beginCode");
 
 iterBasic = JRuby.parse("foo2('baz') { 4 }", "EVAL11");
 
@@ -63,3 +64,4 @@ test_equal('hello2', foo3('hello'))
 
 test_equal(2, compile_and_run(andCode))
 test_equal(nil, compile_and_run(andShortCode));
+test_equal(4, compile_and_run(beginCode));
