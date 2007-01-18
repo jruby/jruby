@@ -41,6 +41,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
 import org.jruby.common.RubyWarnings;
@@ -622,6 +623,12 @@ public class StandardASMCompiler implements Compiler {
         mv.visitLdcInsn(value);
         
         invokeIRuby("newString", sig(RubyString.class, params(String.class)));
+    }
+
+    public void createNewSymbol(String name) {
+        loadRuntime();
+        getMethodVisitor().visitLdcInsn(name);
+        invokeIRuby("newSymbol", sig(RubySymbol.class, params(String.class)));
     }
     
     public void createNewArray() {

@@ -119,6 +119,11 @@ public interface Compiler {
      * Generate a new "String" value.
      */
     public void createNewString(String value);
+
+    /**
+     * Generate a new "Symbol" value (or fetch the existing one).
+     */
+    public void createNewSymbol(String name);
     
     /**
      * Combine the top <pre>elementCount</pre> elements into a single element, generally

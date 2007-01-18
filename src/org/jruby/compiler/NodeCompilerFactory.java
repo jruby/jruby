@@ -92,6 +92,8 @@ public class NodeCompilerFactory {
                 return new SelfNodeCompiler();
             case NodeTypes.STRNODE:
                 return new StringNodeCompiler();
+            case NodeTypes.SYMBOLNODE:
+                return new SymbolNodeCompiler();
             case NodeTypes.TRUENODE:
                 return new TrueNodeCompiler();
             case NodeTypes.VCALLNODE:
