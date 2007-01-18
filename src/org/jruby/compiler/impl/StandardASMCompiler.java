@@ -369,7 +369,7 @@ public class StandardASMCompiler implements Compiler {
     private void createConstructor() {
         ClassVisitor cv = getClassVisitor();
         
-        MethodVisitor mv = cv.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
+        MethodVisitor mv = cv.visitMethod(Opcodes.ACC_PUBLIC, "<init>", sig(Void.TYPE), null, null);
         mv.visitCode();
         mv.visitVarInsn(Opcodes.ALOAD, 0);
         mv.visitMethodInsn(Opcodes.INVOKESPECIAL, p(Object.class), "<init>",
