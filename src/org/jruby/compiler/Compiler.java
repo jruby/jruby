@@ -109,6 +109,11 @@ public interface Compiler {
      * Generate a new "Fixnum" value.
      */
     public void createNewFixnum(long value);
+
+    /**
+     * Generate a new "Bignum" value.
+     */
+    public void createNewBignum(java.math.BigInteger value);
     
     /**
      * Generate a new "String" value.

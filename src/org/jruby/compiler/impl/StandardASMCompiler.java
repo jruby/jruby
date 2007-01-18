@@ -605,6 +605,15 @@ public class StandardASMCompiler implements Compiler {
         
         invokeIRuby("newFixnum", sig(RubyFixnum.class, params(Long.TYPE)));
     }
+
+    public void createNewBignum(java.math.BigInteger value) {
+        MethodVisitor mv = getMethodVisitor();
+
+        loadRuntime();
+        mv.visitLdcInsn(value.toString());
+        
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC,p(org.jruby.RubyBignum.class) , "newBignum", sig(org.jruby.RubyBignum.class,params(IRuby.class,String.class)));
+    }
     
     public void createNewString(String value) {
         MethodVisitor mv = getMethodVisitor();

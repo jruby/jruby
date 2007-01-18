@@ -148,6 +148,10 @@ public class RubyBignum extends RubyInteger {
         return new RubyBignum(runtime, value);
     }
 
+    public static RubyBignum newBignum(IRuby runtime, String value) {
+        return new RubyBignum(runtime, new BigInteger(value));
+    }
+
     public IRubyObject remainder(IRubyObject other) {
         if (other instanceof RubyFloat) {
             return RubyFloat.newFloat(getRuntime(), getDoubleValue()).remainder(other);
