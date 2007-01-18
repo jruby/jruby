@@ -131,11 +131,6 @@ public class YARVMethod extends AbstractMethod {
             throw runtime.newArgumentError("Wrong # of arguments(" + args.length + " for " + expectedArgsCount + ")");
         }
 
-        // Bind 'normal' parameter values to the local scope for this method.
-        if (expectedArgsCount > 0) {
-            context.getCurrentScope().setArgValues(args, expectedArgsCount);
-        }
-
         // optArgs and restArgs require more work, so isolate them and ArrayList creation here
         if (hasOptArgs || restArg != -1) {
             args = prepareOptOrRestArgs(context, runtime, args, expectedArgsCount, restArg, hasOptArgs);
