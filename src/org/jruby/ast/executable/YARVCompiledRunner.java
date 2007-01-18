@@ -171,12 +171,12 @@ public class YARVCompiledRunner implements Runnable {
             IRubyObject first = (IRubyObject)internal.get(1);
             if(instruction == YARVInstructions.GETLOCAL || instruction == YARVInstructions.SETLOCAL) {
                 i.l_op0 = (iseq.locals.length + 1) - RubyNumeric.fix2long(first);
-            } else if(first instanceof RubyString) {
+            } else if(first instanceof RubyString || first instanceof RubySymbol ) {
                 i.s_op0 = first.toString();
             } else if(first instanceof RubyNumeric) {
                 i.l_op0 = RubyNumeric.fix2long(first);
-            } else if(instruction == YARVInstructions.SEND) {
-                i.s_op0 = first.toString();
+            } 
+            if(instruction == YARVInstructions.SEND) {
                 i.i_op1 = RubyNumeric.fix2int((IRubyObject)internal.get(2));
                 i.i_op3 = RubyNumeric.fix2int((IRubyObject)internal.get(4));
             }

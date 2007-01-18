@@ -189,19 +189,18 @@ public class YARVMachine {
         int ip = 0;
         IRuby runtime = context.getRuntime();
         context.preRootNode(scope);
-        
+        // This allows us to optimize locals right now, since we always use depth 0 anyway (at least for now)
+        IRubyObject[] locals = scope.getValues();
+
         yarvloop: while (ip < bytecodes.length) {
             switch (bytecodes[ip].bytecode) {
             case YARVInstructions.NOP:
                 break;
             case YARVInstructions.GETLOCAL:
-                // ENEBO: Not sure if this is correct since a local can have a depth (now that 
-                // block and local vars are in same list).
-                stack[++stackTop] = context.getCurrentScope().getValue((int)bytecodes[ip].l_op0, 0);
+                stack[++stackTop] = locals[(int)bytecodes[ip].l_op0];
                 break;
             case YARVInstructions.SETLOCAL:
-                // ENEBO: Not sure if this is correct since a local can have a depth
-                context.getCurrentScope().setValue((int)bytecodes[ip].l_op0, (IRubyObject)stack[stackTop--], 0);
+                locals[(int)bytecodes[ip].l_op0] = stack[stackTop--];
                 break;
             case YARVInstructions.GETSPECIAL:
                 System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
@@ -219,7 +218,7 @@ public class YARVMachine {
                 stack[++stackTop] = self.getInstanceVariable(bytecodes[ip].s_op0);
                 break;
             case YARVInstructions.SETINSTANCEVARIABLE:
-                self.setInstanceVariable(bytecodes[ip].s_op0, (IRubyObject)stack[stackTop--]);
+                self.setInstanceVariable(bytecodes[ip].s_op0, stack[stackTop--]);
                 break;
             case YARVInstructions.GETCLASSVARIABLE: {
                 RubyModule rubyClass = context.getRubyClass();
@@ -249,14 +248,15 @@ public class YARVMachine {
                     rubyClass = (RubyModule) rubyClass.getInstanceVariable("__attached__");
                 }
     
-                rubyClass.setClassVar(bytecodes[ip].s_op0, (IRubyObject)stack[stackTop--]);
+                rubyClass.setClassVar(bytecodes[ip].s_op0, stack[stackTop--]);
                 break;
             }
             case YARVInstructions.GETCONSTANT:
-                stack[stackTop] = ((RubyModule)stack[stackTop]).getConstant(bytecodes[ip].s_op0);
+                stack[++stackTop] = context.getConstant(bytecodes[ip].s_op0);
                 break;
             case YARVInstructions.SETCONSTANT:
-                ((RubyModule)stack[stackTop--]).setConstant(bytecodes[ip].s_op0, (IRubyObject)stack[stackTop--]);
+                RubyModule module = (RubyModule) context.peekCRef().getValue();
+                module.setConstant(bytecodes[ip].s_op0,stack[stackTop--]);
                 break;
             case YARVInstructions.GETGLOBAL:
                 System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
@@ -288,14 +288,14 @@ public class YARVMachine {
             case YARVInstructions.CONCATSTRINGS: {
                 StringBuffer concatter = new StringBuffer();
                 for (int i = 0; i < bytecodes[ip].l_op0; i++) {
-                    concatter.append(((RubyString)stack[stackTop--]).toString());
+                    concatter.append(stack[stackTop--].toString());
                 }
                 stack[++stackTop] = context.getRuntime().newString(concatter.toString());
                 break;
             }
             case YARVInstructions.TOSTRING:
                 if(!(stack[stackTop] instanceof RubyString)) {
-                    stack[stackTop] = ((IRubyObject)stack[stackTop]).callMethod(context, "to_s");
+                    stack[stackTop] = (stack[stackTop]).callMethod(context, "to_s");
                 }
                 break;
             case YARVInstructions.TOREGEXP:
@@ -451,6 +451,7 @@ public class YARVMachine {
                 for (int i = args.length; i > 0; i--) {
                     args[i-1] = stack[stackTop--];
                 }
+
                 if ((flags & YARVInstructions.VCALL_FLAG) == 0) {
                     if ((flags & YARVInstructions.FCALL_FLAG) == 0) {
                         receiver = stack[stackTop--];
@@ -474,7 +475,7 @@ public class YARVMachine {
                 System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
                 break;
             case YARVInstructions.LEAVE:
-                return stack[stackTop];
+                break yarvloop;
             case YARVInstructions.FINISH: 
                 System.err.println("Not implemented, YARVMachine." + bytecodes[ip].bytecode);
                 break;
@@ -612,7 +613,8 @@ break;
             }
             ip++;
         }
-        
+
+        context.postRootNode();
         return stack[stackTop];
     }
 }

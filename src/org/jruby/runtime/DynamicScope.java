@@ -56,6 +56,10 @@ public class DynamicScope {
     public String[] getAllNamesInScope() {
         return staticScope.getAllNamesInScope();
     }
+
+    public IRubyObject[] getValues() {
+        return variableValues;
+    }
     
     /**
      * Get value from current scope or one of its captured scopes.
