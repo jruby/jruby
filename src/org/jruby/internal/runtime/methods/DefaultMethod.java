@@ -73,7 +73,7 @@ public final class DefaultMethod extends AbstractMethod {
     private Script jitCompiledScript;
 
     // change to true to enable JIT compilation
-    private static final boolean JIT_ENABLED = false;
+    private static final boolean JIT_ENABLED = Boolean.getBoolean("jruby.jit.enabled");
     
     public DefaultMethod(RubyModule implementationClass, StaticScope staticScope, Node body, 
             ArgsNode argsNode, Visibility visibility, SinglyLinkedList cref) {
