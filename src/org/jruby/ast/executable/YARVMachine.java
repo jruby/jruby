@@ -19,7 +19,7 @@ import org.jruby.internal.runtime.methods.YARVMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 
 public class YARVMachine {
-    private static final boolean TAILCALL_OPT = false;
+    private static final boolean TAILCALL_OPT = Boolean.getBoolean("jruby.tailcall.enabled");
 
     private static final Map INSTS = new HashMap();
     static {
