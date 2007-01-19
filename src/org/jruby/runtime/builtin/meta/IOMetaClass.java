@@ -233,7 +233,7 @@ public class IOMetaClass extends ObjectMetaClass {
             if (args.length > 1 && !args[1].isNil()) {
             	atLeastOneDescriptor = true;
                 // write
-                for (Iterator i = ((RubyArray) args[0]).getList().iterator(); i.hasNext(); ) {
+                for (Iterator i = ((RubyArray) args[1]).getList().iterator(); i.hasNext(); ) {
                     IRubyObject obj = (IRubyObject) i.next();
                     registerSelect(selector, obj, SelectionKey.OP_WRITE);
                 }
