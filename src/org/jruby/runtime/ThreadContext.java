@@ -705,6 +705,7 @@ public class ThreadContext {
     public IRubyObject getConstant(String name) {
         //RubyModule self = state.threadContext.getRubyClass();
         SinglyLinkedList cbase = peekCRef();
+        RubyClass object = runtime.getObject();
         IRubyObject result = null;
         
         // flipped from while to do to search current class first
@@ -722,9 +723,8 @@ public class ThreadContext {
               return result;
           }
           cbase = cbase.getNext();
-        } while (cbase != null);
+        } while (cbase != null && cbase.getValue() != object);
         
-        //System.out.println("CREF is " + state.threadContext.getCRef().getValue());  
         return ((RubyModule) peekCRef().getValue()).getConstant(name);
     }
 

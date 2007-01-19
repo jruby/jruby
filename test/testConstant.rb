@@ -182,3 +182,16 @@ test_equal(false, Empty::CONST_FOO)
 $! = nil
 defined? NoSuchThing::ToTestSideEffect
 test_equal(nil, $!)
+
+# Constants in toplevel should be searched last
+Gobble = "hello"
+module Foo2
+  Gobble = "goodbye"
+end
+class Bar2
+  include Foo2
+  def gobble
+    Gobble
+  end
+end
+test_equal("goodbye", Bar2.new.gobble)
