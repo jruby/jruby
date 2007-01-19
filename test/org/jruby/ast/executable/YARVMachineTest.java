@@ -14,37 +14,40 @@ import org.jruby.runtime.builtin.IRubyObject;
 import junit.framework.TestCase;
 
 public class YARVMachineTest extends TestCase {
-    Instruction[] simpleTest = {
+    public static Instruction[] getSimpleTest(IRuby runtime) {
+        return new Instruction[] {
             new Instruction(YARVInstructions.PUTSTRING, "Hello, YARV!"),
             new Instruction(YARVInstructions.DUP),
             new Instruction(YARVInstructions.SETLOCAL, 0),
             new Instruction(YARVInstructions.GETLOCAL, 0),
             new Instruction(YARVInstructions.POP),
             new Instruction(YARVInstructions.SETLOCAL, 1),
-            new Instruction(YARVInstructions.PUTOBJECT, true),
+            new Instruction(YARVInstructions.PUTOBJECT, runtime.getTrue()),
             new Instruction(YARVInstructions.BRANCHIF, 10),
             new Instruction(YARVInstructions.PUTSTRING, "Wrong String"),
             new Instruction(YARVInstructions.JUMP, 11),
             new Instruction(YARVInstructions.GETLOCAL, 1),
-            new Instruction(YARVInstructions.PUTOBJECT, 2),
+            new Instruction(YARVInstructions.PUTOBJECT, runtime.newFixnum(2)),
             new Instruction(YARVInstructions.SEND, "*", 1, null, 0),
             new Instruction(YARVInstructions.SEND, "to_s", 0, null, YARVInstructions.VCALL_FLAG),
             new Instruction(YARVInstructions.SEND, "+", 1, null, 0)
+        };
     };
     
-    Instruction[] fib = {
+    public static Instruction[] getFib(IRuby runtime, int n){
+        return new Instruction[] {
             // local var n declared (argument)
-            new Instruction(YARVInstructions.PUTOBJECT, 10), // fib index
+            new Instruction(YARVInstructions.PUTOBJECT, runtime.newFixnum(n)), // fib index
             new Instruction(YARVInstructions.SETLOCAL, 0),
             // method begins here
             // local var i declared
-            new Instruction(YARVInstructions.PUTOBJECT, 0),
+            new Instruction(YARVInstructions.PUTOBJECT, runtime.newFixnum(0)),
             new Instruction(YARVInstructions.SETLOCAL, 1),
             // local var j declared
-            new Instruction(YARVInstructions.PUTOBJECT, 1),
+            new Instruction(YARVInstructions.PUTOBJECT, runtime.newFixnum(1)),
             new Instruction(YARVInstructions.SETLOCAL, 2),
             // local var cur declared
-            new Instruction(YARVInstructions.PUTOBJECT, 1),
+            new Instruction(YARVInstructions.PUTOBJECT, runtime.newFixnum(1)),
             new Instruction(YARVInstructions.SETLOCAL, 3),
             // while begins here, instruction 8
             new Instruction(YARVInstructions.GETLOCAL, 3),
@@ -64,13 +67,14 @@ public class YARVMachineTest extends TestCase {
             new Instruction(YARVInstructions.SETLOCAL, 2),
             // cur = cur + 1
             new Instruction(YARVInstructions.GETLOCAL, 3),
-            new Instruction(YARVInstructions.PUTOBJECT, 1),
+            new Instruction(YARVInstructions.PUTOBJECT, runtime.newFixnum(1)),
             new Instruction(YARVInstructions.SEND, "+", 1, null, 0),
             new Instruction(YARVInstructions.SETLOCAL, 3),
             // end while
             new Instruction(YARVInstructions.JUMP, 8),
             // return i, instruction 25
             new Instruction(YARVInstructions.GETLOCAL, 1)
+        };
     };
 
     public void testSimpleExecution() {
@@ -81,7 +85,7 @@ public class YARVMachineTest extends TestCase {
         
         StaticScope scope = new LocalStaticScope(null);
         scope.setVariables(new String[] { "zero", "one" });
-        assertEquals("Hello, YARV!Hello, YARV!Object", ym.exec(context, runtime.getObject(), scope, simpleTest).toString());
+        assertEquals("Hello, YARV!Hello, YARV!Object", ym.exec(context, runtime.getObject(), scope, getSimpleTest(runtime)).toString());
     }
     
     public void testIterativeFib() {
@@ -93,12 +97,9 @@ public class YARVMachineTest extends TestCase {
         StaticScope scope = new LocalStaticScope(null);
         scope.setVariables(new String[] {"n", "i", "j", "cur", "k"});
         
-        assertEquals("55", ym.exec(context, runtime.getObject(), scope, fib).toString());
+        assertEquals("55", ym.exec(context, runtime.getObject(), scope, getFib(runtime,10)).toString());
         
-        // change n to 5000
-        fib[0] = new Instruction(YARVInstructions.PUTOBJECT, 5000);
-        
-        IRubyObject fib5k = ym.exec(context, runtime.getObject(), scope, fib);
+        IRubyObject fib5k = ym.exec(context, runtime.getObject(), scope, getFib(runtime,5000));
         assertEquals("38789684543883256337019163083259053120821277146462451061605972148955501390440370" +
                 "9701082291646221066947929345285888297381348310200895498294036143015691147893836421656" +
                 "3944106910214505634133706558656238254656700712525929903854933813928836378347518908762" +

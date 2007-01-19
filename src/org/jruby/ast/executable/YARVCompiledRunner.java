@@ -172,6 +172,8 @@ public class YARVCompiledRunner implements Runnable {
             IRubyObject first = (IRubyObject)internal.get(1);
             if(instruction == YARVInstructions.GETLOCAL || instruction == YARVInstructions.SETLOCAL) {
                 i.l_op0 = (iseq.locals.length + 1) - RubyNumeric.fix2long(first);
+            } else if(instruction == YARVInstructions.PUTOBJECT || instruction == YARVInstructions.OPT_REGEXPMATCH1) {
+                i.o_op0 = first;
             } else if(first instanceof RubyString || first instanceof RubySymbol ) {
                 i.s_op0 = first.toString();
             } else if(first instanceof RubyNumeric) {
