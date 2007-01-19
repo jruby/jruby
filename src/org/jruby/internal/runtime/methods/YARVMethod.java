@@ -55,6 +55,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.InvocationCallbackFactory;
 import org.jruby.util.collections.SinglyLinkedList;
 import org.jruby.ast.executable.YARVMachine;
+import org.jruby.ast.executable.ISeqPosition;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -123,6 +124,8 @@ public class YARVMethod extends AbstractMethod {
     }
 
     private void prepareArguments(ThreadContext context, IRuby runtime, IRubyObject receiver, IRubyObject[] args) {
+        context.setPosition(new ISeqPosition(iseq));
+
         int expectedArgsCount = iseq.args_argc;
         int restArg = iseq.args_rest;
         boolean hasOptArgs = iseq.args_arg_opts > 0;

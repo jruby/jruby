@@ -52,6 +52,8 @@ public class Frame {
     private boolean callingZSuper;
 
     private Scope scope;
+
+    private int tailCalls = 0;
     
     public Frame(ThreadContext threadContext, Iter iter, Block blockArg) {
         this(threadContext.getRuntime(), null, IRubyObject.NULL_ARRAY, null, null, threadContext.getPosition(), 
@@ -195,6 +197,14 @@ public class Frame {
     
     Block getBlockArg() {
         return blockArg;
+    }
+
+    public void tailCall() {
+        tailCalls++;
+    }
+
+    public int tailCalls() {
+        return tailCalls;
     }
 
     public boolean getCallingZSuper() {

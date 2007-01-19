@@ -765,6 +765,10 @@ public class ThreadContext {
         } else if (previousFrame == null && frame.getLastFunc() != null) {
             sb.append(":in `").append(frame.getLastFunc()).append('\'');
         }
+
+        if(previousFrame != null && previousFrame.tailCalls() > 0) {
+            sb.append(" TAIL CALL(").append(previousFrame.tailCalls()).append(")");
+        }
     
         backtrace.append(backtrace.getRuntime().newString(sb.toString()));
     }
@@ -787,11 +791,11 @@ public class ThreadContext {
 
         if (nativeException) {
             // assert level == 0;
-            addBackTraceElement(backtrace, (Frame) frameStack[frameIndex], null);
+            addBackTraceElement(backtrace, frameStack[frameIndex], null);
         }
-        
+
         for (int i = traceSize; i > base; i--) {
-            addBackTraceElement(backtrace, (Frame) frameStack[i], (Frame) frameStack[i-1]);
+            addBackTraceElement(backtrace, frameStack[i], frameStack[i-1]);
         }
     
         return backtrace;

@@ -82,6 +82,7 @@ public class YARVCompiledRunner implements Runnable {
         ThreadContext context = runtime.getCurrentContext();
         StaticScope scope = new LocalStaticScope(null);
         scope.setVariables(iseq.locals);
+        context.setPosition(new ISeqPosition(iseq));
         ym.exec(context, runtime.getObject(), new DynamicScope(scope,null), iseq.body);
     }
 

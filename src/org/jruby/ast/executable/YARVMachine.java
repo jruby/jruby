@@ -477,6 +477,7 @@ public class YARVMachine {
                     for(int i=0;i<args.length;i++) {
                         context.getCurrentScope().getValues()[i] = args[i];
                     }
+                    context.getCurrentFrame().tailCall();
                 } else {
                     stack[++stackTop] = recv.callMethod(context, name, args, callType);
                 }
