@@ -51,3 +51,16 @@ a = Struct.new(:foo, :bar) {
 }
 
 test_equal("hello", a.new(0, 0).hello)
+
+# Redefining a named struct should produce a warning, but it should be a new class
+P1 = Struct.new("Post", :foo)
+P1.class_eval do
+  def bar
+    true
+  end
+end
+P2 = Struct.new("Post", :foo)
+
+test_exception {
+  P2.new.bar
+}

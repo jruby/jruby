@@ -154,6 +154,7 @@ public class RubyStruct extends RubyObject {
      */
     public static RubyClass newInstance(IRubyObject recv, IRubyObject[] args) {
         String name = null;
+        IRuby runtime = recv.getRuntime();
 
         if (args.length > 0 && args[0] instanceof RubyString) {
             name = args[0].toString();
@@ -172,9 +173,15 @@ public class RubyStruct extends RubyObject {
             newStruct = new RubyClass(superClass, superClass.getAllocator());
         } else {
             if (!IdUtil.isConstant(name)) {
-                throw recv.getRuntime().newNameError("identifier " + name + " needs to be constant", name);
+                throw runtime.newNameError("identifier " + name + " needs to be constant", name);
             }
-            newStruct = superClass.defineClassUnder(name, superClass, superClass.getAllocator());
+
+            IRubyObject type = superClass.getConstantAt(name);
+
+            if (type != null) {
+                runtime.getWarnings().warn(runtime.getCurrentContext().getFramePosition(), "redefining constant Struct::" + name);
+            }
+            newStruct = superClass.newSubClass(name, superClass.getAllocator(), superClass.getCRef());
         }
 
         newStruct.setInstanceVariable("__size__", member.length());
