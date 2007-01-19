@@ -757,6 +757,13 @@ public class ThreadContext {
     private void addBackTraceElement(RubyArray backtrace, Frame frame, Frame previousFrame) {
         StringBuffer sb = new StringBuffer(100);
         ISourcePosition position = frame.getPosition();
+
+        if(previousFrame != null && frame.getLastFunc() != null && previousFrame.getLastFunc() != null &&
+           frame.getLastFunc().equals(previousFrame.getLastFunc()) &&
+           frame.getPosition().getFile().equals(previousFrame.getPosition().getFile()) &&
+           frame.getPosition().getEndLine() == previousFrame.getPosition().getEndLine()) {
+            return;
+        }
     
         sb.append(position.getFile()).append(':').append(position.getEndLine());
     
@@ -766,10 +773,6 @@ public class ThreadContext {
             sb.append(":in `").append(frame.getLastFunc()).append('\'');
         }
 
-        if(previousFrame != null && previousFrame.tailCalls() > 0) {
-            sb.append(" TAIL CALL(").append(previousFrame.tailCalls()).append(")");
-        }
-    
         backtrace.append(backtrace.getRuntime().newString(sb.toString()));
     }
 
