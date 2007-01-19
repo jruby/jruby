@@ -94,4 +94,26 @@ test_exception(TypeError) {self.class.module_eval 3}
 test_exception(TypeError) {self.class.class_eval 4}
 test_exception(TypeError) {3.instance_eval 4}
 
+begin
+  eval 'return'
+rescue LocalJumpError => e
+  test_ok(e.message =~ /unexpected return$/)
+end
 
+begin
+  eval 'break'
+rescue LocalJumpError => e
+  test_ok(e.message =~ /unexpected break$/)
+end
+
+begin
+  "".instance_eval 'break'
+rescue LocalJumpError => e
+  test_ok(e.message =~ /unexpected break$/)
+end
+
+begin
+  "".instance_eval 'return'
+rescue LocalJumpError => e
+  test_ok(e.message =~ /unexpected return$/)
+end

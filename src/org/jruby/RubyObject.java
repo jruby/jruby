@@ -45,7 +45,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.Iter;
-import org.jruby.runtime.MethodSelectorTable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -739,6 +738,13 @@ public class RubyObject implements Cloneable, IRubyObject {
             newSelf = threadContext.getFrameSelf();
 
             result = EvaluationState.eval(threadContext, getRuntime().parse(src.toString(), file, blockOfBinding.getDynamicScope()), newSelf);
+        } catch (JumpException je) {
+            if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
+                throw getRuntime().newLocalJumpError("unexpected return");
+            } else if (je.getJumpType() == JumpException.JumpType.BreakJump) {
+                throw getRuntime().newLocalJumpError("unexpected break");
+            }
+            throw je;
         } finally {
             threadContext.postEvalWithBinding(blockOfBinding);
 
@@ -769,6 +775,13 @@ public class RubyObject implements Cloneable, IRubyObject {
             }
 
             result = EvaluationState.eval(threadContext, getRuntime().parse(src.toString(), file, threadContext.getCurrentScope()), this);
+        } catch (JumpException je) {
+            if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
+                throw getRuntime().newLocalJumpError("unexpected return");
+            } else if (je.getJumpType() == JumpException.JumpType.BreakJump) {
+                throw getRuntime().newLocalJumpError("unexpected break");
+            }
+            throw je;
         } finally {
             // FIXME: this is broken for Proc, see above
             threadContext.setFrameIter(iter);
