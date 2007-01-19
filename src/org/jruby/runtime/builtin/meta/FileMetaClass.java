@@ -331,7 +331,18 @@ public class FileMetaClass extends IOMetaClass {
 
 	public IRubyObject extname(IRubyObject arg) {
 		RubyString filename = RubyString.stringValue(arg);
+        
 		String name = filename.toString();
+        
+        // trim off dir name, since it may have dots in it
+        //TODO deal with drive letters A: and UNC names 
+        int index = name.lastIndexOf('/');
+        if (index == -1) {
+            // XXX actually, only on windows...
+            index = name.lastIndexOf('\\');
+        }
+        name = name.substring(index + 1);
+        
         int ix = name.lastIndexOf(".");
         if(ix == -1) {
             return getRuntime().newString("");

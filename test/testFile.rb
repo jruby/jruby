@@ -41,6 +41,7 @@ test_equal("", File.extname(""))
 test_equal("", File.extname("abc"))
 test_equal(".foo", File.extname("abc.foo"))
 test_equal(".foo", File.extname("abc.bar.foo"))
+test_equal("", File.extname("abc.bar/foo"))
 
 # expand_path
 
