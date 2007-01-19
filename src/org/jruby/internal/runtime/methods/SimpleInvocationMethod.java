@@ -56,7 +56,7 @@ public abstract class SimpleInvocationMethod extends AbstractMethod {
     public void postMethod(ThreadContext context) {
     }
     
-	public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
         assert false;
         return null;
     }
@@ -78,7 +78,7 @@ public abstract class SimpleInvocationMethod extends AbstractMethod {
         }        
     }
 
-	public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
         IRuby runtime = context.getRuntime();
         arity.checkArity(runtime, args);
 
@@ -97,12 +97,12 @@ public abstract class SimpleInvocationMethod extends AbstractMethod {
 
     public abstract IRubyObject call(IRubyObject receiver, IRubyObject[] args);
     
-	public DynamicMethod dup() {
+    public DynamicMethod dup() {
         System.err.println("shouldn't dup this class either...");
         return null;
     }
 
-	public Arity getArity() {
-		return arity;
-	}
+    public Arity getArity() {
+        return arity;
+    }
 }// SimpleInvocationMethod
