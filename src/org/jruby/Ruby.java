@@ -122,9 +122,9 @@ import org.jruby.util.collections.SinglyLinkedList;
  * The jruby runtime.
  */
 public final class Ruby implements IRuby {
-	private static String[] BUILTIN_LIBRARIES = {"fcntl", "yaml", "etc", "nkf" };
+    private static String[] BUILTIN_LIBRARIES = {"fcntl", "yaml", "etc", "nkf" };
     
-	private CacheMap cacheMap = new CacheMap(this);
+    private CacheMap cacheMap = new CacheMap(this);
     private ThreadService threadService = new ThreadService(this);
     private Hashtable runtimeInformation;
     private final MethodSelectorTable selectorTable;
@@ -1494,10 +1494,10 @@ public final class Ruby implements IRuby {
     	return re;
     }
     
-	public RaiseException newIOError(String message) {
-		return newRaiseException(getClass("IOError"), message);
+    public RaiseException newIOError(String message) {
+        return newRaiseException(getClass("IOError"), message);
     }
-    
+
     public RaiseException newIOErrorFromException(IOException ioe) {
     	return newRaiseException(getClass("IOError"), ioe.getMessage());
     }
@@ -1515,83 +1515,83 @@ public final class Ruby implements IRuby {
     }
     
     /**
-	 * @param exceptionClass
-	 * @param message
-	 * @return
-	 */
-	private RaiseException newRaiseException(RubyClass exceptionClass, String message) {
-		RaiseException re = new RaiseException(this, exceptionClass, message, true);
-		return re;
-	}
-
-
-	public RubySymbol.SymbolTable getSymbolTable() {
-		return symbolTable;
-	}
-
-	public void setStackTraces(int stackTraces) {
-		this.stackTraces = stackTraces;
-	}
-
-	public int getStackTraces() {
-		return stackTraces;
-	}
-
-	public void setRandomSeed(long randomSeed) {
-		this.randomSeed = randomSeed;
-	}
-
-	public long getRandomSeed() {
-		return randomSeed;
-	}
-
-	public Random getRandom() {
-		return random;
-	}
-
-	public ObjectSpace getObjectSpace() {
-		return objectSpace;
-	}
-
-	public Hashtable getIoHandlers() {
-		return ioHandlers;
-	}
-
-	public RubyFixnum[] getFixnumCache() {
-		return fixnumCache;
-	}
-
-	public long incrementRandomSeedSequence() {
-		return randomSeedSequence++;
-	}
-
-	public InputStream getIn() {
-		return in;
-	}
-
-	public PrintStream getOut() {
-		return out;
-	}
-
-	public PrintStream getErr() {
-		return err;
-	}
-
-	public boolean isGlobalAbortOnExceptionEnabled() {
-		return globalAbortOnExceptionEnabled;
-	}
-
-	public void setGlobalAbortOnExceptionEnabled(boolean enable) {
-		globalAbortOnExceptionEnabled = enable;
-	}
-
-	public boolean isDoNotReverseLookupEnabled() {
-		return doNotReverseLookupEnabled;
-	}
-
-	public void setDoNotReverseLookupEnabled(boolean b) {
-		doNotReverseLookupEnabled = b;
-	}
+     * @param exceptionClass
+     * @param message
+     * @return
+     */
+    private RaiseException newRaiseException(RubyClass exceptionClass, String message) {
+        RaiseException re = new RaiseException(this, exceptionClass, message, true);
+        return re;
+    }
+    
+    
+    public RubySymbol.SymbolTable getSymbolTable() {
+        return symbolTable;
+    }
+    
+    public void setStackTraces(int stackTraces) {
+        this.stackTraces = stackTraces;
+    }
+    
+    public int getStackTraces() {
+        return stackTraces;
+    }
+    
+    public void setRandomSeed(long randomSeed) {
+        this.randomSeed = randomSeed;
+    }
+    
+    public long getRandomSeed() {
+        return randomSeed;
+    }
+    
+    public Random getRandom() {
+        return random;
+    }
+    
+    public ObjectSpace getObjectSpace() {
+        return objectSpace;
+    }
+    
+    public Hashtable getIoHandlers() {
+        return ioHandlers;
+    }
+    
+    public RubyFixnum[] getFixnumCache() {
+        return fixnumCache;
+    }
+    
+    public long incrementRandomSeedSequence() {
+        return randomSeedSequence++;
+    }
+    
+    public InputStream getIn() {
+        return in;
+    }
+    
+    public PrintStream getOut() {
+        return out;
+    }
+    
+    public PrintStream getErr() {
+        return err;
+    }
+    
+    public boolean isGlobalAbortOnExceptionEnabled() {
+        return globalAbortOnExceptionEnabled;
+    }
+    
+    public void setGlobalAbortOnExceptionEnabled(boolean enable) {
+        globalAbortOnExceptionEnabled = enable;
+    }
+    
+    public boolean isDoNotReverseLookupEnabled() {
+        return doNotReverseLookupEnabled;
+    }
+    
+    public void setDoNotReverseLookupEnabled(boolean b) {
+        doNotReverseLookupEnabled = b;
+    }
 
     private ThreadLocal inspect = new ThreadLocal();
     public boolean registerInspecting(Object obj) {
