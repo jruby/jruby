@@ -77,17 +77,13 @@ else
     if [ "$CLASSPATH" != "" ]; then
         CP="$CLASSPATH"
         if $cygwin; then
-            CP=`cygpath -p -w "$CP"`
+            CP=`cygpath -p -u "$CP"`
         fi
     else
         CP=""
     fi
 
-    if $cygwin; then
-        CP_DELIMETER=";"
-        else 
-        CP_DELIMETER=":"
-    fi
+    CP_DELIMETER=":"
 
     # add necessary jars for command-line execution
     for j in $JRUBY_HOME/lib/*.jar; do
@@ -97,6 +93,10 @@ else
             CP="$j"
         fi
     done
+
+    if $cygwin; then
+	CP=`cygpath -p -w "$CP"`
+    fi
 fi
 
 # ----- Set Up JRUBY_BASE If Necessary -------------------------------------
