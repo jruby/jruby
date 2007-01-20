@@ -75,7 +75,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyBigDecimal.class);
 
-        runtime.getModule("Kernel").defineModuleFunction("BigDecimal",callbackFactory.getOptSingletonMethod("newInstance"));
+        runtime.getModule("Kernel").defineModuleFunction("BigDecimal",callbackFactory.getOptSingletonMethod("newBigDecimal"));
         result.defineFastSingletonMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
         result.defineFastSingletonMethod("ver", callbackFactory.getSingletonMethod("ver"));
         result.defineSingletonMethod("_load", callbackFactory.getSingletonMethod("_load",IRubyObject.class));
@@ -154,6 +154,10 @@ public class RubyBigDecimal extends RubyNumeric {
         result.callInit(args);
         
         return result;
+    }
+
+    public static RubyBigDecimal newBigDecimal(IRubyObject recv, IRubyObject[] args) {
+        return newInstance(recv.getRuntime().getClass("BigDecimal"), args);
     }
 
     public static IRubyObject ver(IRubyObject recv) {
