@@ -45,6 +45,7 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
@@ -113,6 +114,9 @@ public class UnmarshalStream extends FilterInputStream {
             case 'f' :
             	rubyObj = RubyFloat.unmarshalFrom(this);
             	break;
+            case '/' :
+                rubyObj = RubyRegexp.unmarshalFrom(this);
+                break;
             case ':' :
                 rubyObj = RubySymbol.unmarshalFrom(this);
                 break;

@@ -43,6 +43,7 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.PrintfFormat;
 
 /**
@@ -683,6 +684,12 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     		off.append(c);
     	}
 	}
+
+    public static RubyRegexp unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
+        RubyRegexp result = newRegexp(input.getRuntime(),input.unmarshalString(),input.unmarshalInt(),null);
+        input.registerLinkTarget(result);
+        return result;
+    }
 
 	public void marshalTo(MarshalStream output) throws java.io.IOException {
         output.write('/');
