@@ -170,15 +170,14 @@ public final class DefaultMethod extends AbstractMethod {
             traceReturn(context, runtime, receiver, name);
         }
     }
-    
+   
     private void runJIT(IRuby runtime, String name) {
         if (callCount >= 0 && getArity().isFixed()) {
             callCount++;
             if (callCount >= COMPILE_COUNT) {
                 //                System.err.println("trying to compile: " + getImplementationClass().getBaseName() + "." + name);
                 try {
-                    String cleanName = name.replace("?", "_p").replace("!","_b").replace("<", "_lt").replace(">", "_gt").replace("=", "_eq");
-                    cleanName = cleanName.replace("[]", "_aref").replace("+","_pl").replace("-","_mi").replace("*","_ti").replace("/","_di");
+                    String cleanName = cleanJavaIdentifier(name);
                     StandardASMCompiler compiler = new StandardASMCompiler(cleanName + hashCode(), body.getPosition().getFile());
                     compiler.startScript();
                     Object methodToken = compiler.beginMethod("__file__", getArity().getValue(), staticScope.getNumberOfVariables());
@@ -187,7 +186,12 @@ public final class DefaultMethod extends AbstractMethod {
                     compiler.endScript();
                     Class sourceClass = compiler.loadClass(runtime);
                     jitCompiledScript = (Script)sourceClass.newInstance();
-                    System.out.println("compiled: " + getImplementationClass().getBaseName() + "." + name);
+                    
+                    String className = getImplementationClass().getBaseName();
+                    if (className == null) {
+                        className = "<anon class>";
+                    }
+                    System.out.println("compiled: " + className + "." + name);
                 } catch (Exception e) {
                     //                    e.printStackTrace();
                 } finally {
@@ -318,5 +322,71 @@ public final class DefaultMethod extends AbstractMethod {
     
     public DynamicMethod dup() {
         return new DefaultMethod(getImplementationClass(), staticScope, body, argsNode, getVisibility(), cref);
-    }	
+    }
+    
+    private String cleanJavaIdentifier(String name) {
+        char[] characters = name.toCharArray();
+        StringBuffer cleanBuffer = new StringBuffer();
+        boolean prevWasReplaced = false;
+        for (int i = 0; i < characters.length; i++) {
+            if (Character.isJavaIdentifierStart(characters[i])) {
+                cleanBuffer.append(characters[i]);
+                prevWasReplaced = false;
+            } else {
+                if (!prevWasReplaced) {
+                    cleanBuffer.append("_");
+                }
+                prevWasReplaced = true;
+                switch (characters[i]) {
+                case '?':
+                    cleanBuffer.append("p_");
+                    continue;
+                case '!':
+                    cleanBuffer.append("b_");
+                    continue;
+                case '<':
+                    cleanBuffer.append("lt_");
+                    continue;
+                case '>':
+                    cleanBuffer.append("gt_");
+                    continue;
+                case '=':
+                    cleanBuffer.append("equal_");
+                    continue;
+                case '[':
+                    if ((i + 1) < characters.length && characters[i + 1] == ']') {
+                        cleanBuffer.append("aref_");
+                        i++;
+                    } else {
+                        // can this ever happen?
+                        cleanBuffer.append("lbracket_");
+                    }
+                    continue;
+                case ']':
+                    // given [ logic above, can this ever happen?
+                    cleanBuffer.append("rbracket_");
+                    continue;
+                case '+':
+                    cleanBuffer.append("plus_");
+                    continue;
+                case '-':
+                    cleanBuffer.append("minus_");
+                    continue;
+                case '*':
+                    cleanBuffer.append("times_");
+                    continue;
+                case '/':
+                    cleanBuffer.append("div_");
+                    continue;
+                case '&':
+                    cleanBuffer.append("and_");
+                    continue;
+                default:
+                    cleanBuffer.append(Integer.toHexString(characters[i])).append("_");
+                }
+            }
+        }
+            
+        return cleanBuffer.toString();
+    }
 }
