@@ -2001,28 +2001,12 @@ public class RubyString extends RubyObject {
         return 0;
     }
     
+    private static Pattern UNESCAPE_PATTERN = Pattern.compile("(\\||\\(|\\)|\\.|\\*|\\[|\\]|\\^|\\$|\\\\|\\?)");
+    
     // Perhaps somewhere else in jruby this can be done easier.
     // I did not rely on jdk1.4 (or I could use 1.4 regexp to do this).
     private static String unescapeString(String unescapedString) {
-        int length = unescapedString.length();
-        char[] charsToEscape = {'|', '(', ')', '.', '*',
-        '[', ']', '^', '$', '\\', '?'};
-        StringBuffer buf = new StringBuffer();
-        
-        for (int i = 0; i < length; i++) {
-            char c = unescapedString.charAt(i);
-            
-            for (int j = 0; j < charsToEscape.length; j++) {
-                if (c == charsToEscape[j]) {
-                    buf.append('\\');
-                    break;
-                }
-            }
-            
-            buf.append(c);
-        }
-        
-        return buf.toString();
+        return UNESCAPE_PATTERN.matcher(unescapedString).replaceAll("\\\\\\1");
     }
 
 	/** rb_str_scan
