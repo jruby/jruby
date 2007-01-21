@@ -474,3 +474,8 @@ test_equal("\"eﬃcient\"", x.inspect)
 test_equal("eﬃcient", x.to_s)
 test_equal(["e", "ﬃ", "c", "i", "e", "n", "t"], x.split(//))
 
+$KCODE = old_code
+
+# unpack("U*") should raise ArgumentError when the string is not valid UTF8
+x = "\270\236\b\210\245"
+test_exception(ArgumentError) { x.unpack("U*") }

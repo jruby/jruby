@@ -33,9 +33,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
 import java.util.HashMap;
 import java.util.List;
-
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyFloat;
@@ -840,15 +845,27 @@ public class Pack {
                         }
                         //get the correct substring
                         String toUnpack = encode.nextSubstring(occurrences);
-                        String lUtf8 = null;
+                        CharBuffer lUtf8 = null;
                         try {
-                            lUtf8 = new String(toUnpack.getBytes("ISO8859_1"), "UTF8");
+                            Charset utf8 = Charset.forName("UTF-8");
+                            CharsetDecoder utf8Decoder = utf8.newDecoder();
+                            utf8Decoder.onMalformedInput(CodingErrorAction.REPORT);
+                            utf8Decoder.onUnmappableCharacter(CodingErrorAction.REPORT);
+                            
+                            byte[] bytes8859 = toUnpack.getBytes("ISO8859_1");
+                            ByteBuffer buffer = ByteBuffer.wrap(bytes8859);
+
+                            lUtf8 = utf8Decoder.decode(buffer);
+                        } catch (CharacterCodingException cce) {
+                            // invalid incoming bytes; fail to encode.
+                            throw runtime.newArgumentError("malformed UTF-8 character");
                         } catch (java.io.UnsupportedEncodingException e) {
                             assert false : "can't convert from UTF8";
                         }
-                        char[] c = lUtf8.toCharArray();
-                        for (int lCurCharIdx = 0; occurrences-- > 0 && lCurCharIdx < c.length; lCurCharIdx++)
-                            result.append(runtime.newFixnum(c[lCurCharIdx]));
+                        while (occurrences-- > 0 && lUtf8.hasRemaining()) {
+                            char lCurChar = lUtf8.get();
+                            result.append(runtime.newFixnum(lCurChar));
+                        }
                     }
                     break;
                  case 'X':
