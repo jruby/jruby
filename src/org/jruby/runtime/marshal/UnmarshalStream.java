@@ -124,7 +124,11 @@ public class UnmarshalStream extends FilterInputStream {
                 rubyObj = RubyArray.unmarshalFrom(this);
                 break;
             case '{' :
-                rubyObj = RubyHash.unmarshalFrom(this);
+                rubyObj = RubyHash.unmarshalFrom(this, false);
+                break;
+            case '}' :
+                // "hashdef" object, a hash with a default
+                rubyObj = RubyHash.unmarshalFrom(this, true);
                 break;
             case 'c' :
                 rubyObj = RubyClass.unmarshalFrom(this);

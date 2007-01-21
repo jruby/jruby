@@ -202,3 +202,7 @@ test_equal(F.new,Marshal.load(Marshal.dump(F.new)))
 test_equal(4, Marshal::MAJOR_VERSION)
 test_equal(8, Marshal::MINOR_VERSION)
 
+# Hashes with defaults serialize a bit differently; confirm the default is coming back correctly
+x = {}
+x.default = "foo"
+test_equal("foo", Marshal.load(Marshal.dump(x)).default)

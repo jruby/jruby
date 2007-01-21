@@ -63,6 +63,15 @@ public class RubyHash extends RubyObject implements Map {
     private Map valueMap;
     // Place we capture any explicitly set proc so we can return it for default_proc
     private IRubyObject capturedDefaultProc;
+    private static final Callback NIL_DEFAULT_VALUE  = new Callback() {
+        public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
+            return recv.getRuntime().getNil();
+        }
+        
+        public Arity getArity() {
+            return Arity.optional();
+        }
+    };
     
     // Holds either default value or default proc.  Executing whatever is here will return the
     // correct default value.
@@ -97,15 +106,19 @@ public class RubyHash extends RubyObject implements Map {
 
     public IRubyObject setDefaultValue(final IRubyObject defaultValue) {
         capturedDefaultProc = getRuntime().getNil();
-        defaultValueCallback = new Callback() {
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
-                return defaultValue;
-            }
+        if (defaultValue == getRuntime().getNil()) {
+            defaultValueCallback = NIL_DEFAULT_VALUE;
+        } else {
+            defaultValueCallback = new Callback() {
+                public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
+                    return defaultValue;
+                }
 
-            public Arity getArity() {
-                return Arity.optional();
-            }
-        };
+                public Arity getArity() {
+                    return Arity.optional();
+                }
+            };
+        }
         
         return defaultValue;
     }
@@ -554,25 +567,35 @@ public class RubyHash extends RubyObject implements Map {
 
     // FIXME:  Total hack to get flash in Rails marshalling/unmarshalling in session ok...We need
     // to totally change marshalling to work with overridden core classes.
-	public void marshalTo(MarshalStream output) throws IOException {
-		output.writeIVar(this, output);
-		output.writeUserClass(this, getRuntime().getClass("Hash"), output);
-		output.write('{');
-		output.dumpInt(getValueMap().size());
-		
-		for (Iterator iter = entryIterator(); iter.hasNext();) {
-			Map.Entry entry = (Map.Entry) iter.next();
-			
-			output.dumpObject((IRubyObject) entry.getKey());
-			output.dumpObject((IRubyObject) entry.getValue());
-		}
-		
-    	if (!getMetaClass().equals(getRuntime().getClass("Hash"))) {
-    		output.writeInstanceVars(this, output);
-    	}
-	}
+    public void marshalTo(MarshalStream output) throws IOException {
+        output.writeIVar(this, output);
+        output.writeUserClass(this, getRuntime().getClass("Hash"), output);
+        if (defaultValueCallback != NIL_DEFAULT_VALUE) {
+            // hashdef
+            output.write('}');
+        } else {
+            output.write('{');
+        }
+        output.dumpInt(getValueMap().size());
+        
+        for (Iterator iter = entryIterator(); iter.hasNext();) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            
+            output.dumpObject((IRubyObject) entry.getKey());
+            output.dumpObject((IRubyObject) entry.getValue());
+        }
+        
+        // handle default value
+        if (defaultValueCallback != NIL_DEFAULT_VALUE) {
+            output.dumpObject(defaultValueCallback.execute(null, NULL_ARRAY));
+        }
+        
+        if (!getMetaClass().equals(getRuntime().getClass("Hash"))) {
+            output.writeInstanceVars(this, output);
+        }
+    }
 
-    public static RubyHash unmarshalFrom(UnmarshalStream input) throws IOException {
+    public static RubyHash unmarshalFrom(UnmarshalStream input, boolean defaultValue) throws IOException {
         RubyHash result = newHash(input.getRuntime());
         input.registerLinkTarget(result);
         int size = input.unmarshalInt();
@@ -580,6 +603,9 @@ public class RubyHash extends RubyObject implements Map {
             IRubyObject key = input.unmarshalObject();
             IRubyObject value = input.unmarshalObject();
             result.aset(key, value);
+        }
+        if (defaultValue) {
+            result.setDefaultValue(input.unmarshalObject());
         }
         return result;
     }
