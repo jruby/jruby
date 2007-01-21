@@ -1883,7 +1883,7 @@ public class RubyString extends RubyObject {
                     isWhitespace = true;
                     pattern = RubyRegexp.newRegexp(getRuntime(), "\\s+", 0, null);
                 } else {
-                    pattern = RubyRegexp.newRegexp(getRuntime(), unescapeString(stringPattern), 0, null);
+                    pattern = RubyRegexp.newRegexp(getRuntime(), RubyRegexp.escapeSpecialChars(stringPattern), 0, null);
                 }
             }
             
@@ -2005,14 +2005,6 @@ public class RubyString extends RubyObject {
             return RubyNumeric.fix2int(args[1]);
         }
         return 0;
-    }
-    
-    private static Pattern UNESCAPE_PATTERN = Pattern.compile("(\\||\\(|\\)|\\.|\\*|\\[|\\]|\\^|\\$|\\\\|\\?)");
-    
-    // Perhaps somewhere else in jruby this can be done easier.
-    // I did not rely on jdk1.4 (or I could use 1.4 regexp to do this).
-    private static String unescapeString(String unescapedString) {
-        return UNESCAPE_PATTERN.matcher(unescapedString).replaceAll("\\\\\\1");
     }
 
 	/** rb_str_scan
