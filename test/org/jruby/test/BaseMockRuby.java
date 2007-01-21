@@ -9,7 +9,6 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBinding;
@@ -49,6 +48,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.util.collections.SinglyLinkedList;
 import org.jruby.util.JRubyClassLoader;
+import org.jruby.util.KCode;
 
 public class BaseMockRuby implements IRuby {
 
@@ -704,9 +704,6 @@ public class BaseMockRuby implements IRuby {
     public long getStartTime() {
         return 0;
     }
-    
-    public void setEncoding(String encoding) {}
-    public String getEncoding() { return null; }
 
     public Profile getProfile() {
         return null;
@@ -722,5 +719,13 @@ public class BaseMockRuby implements IRuby {
     
     public MethodSelectorTable getSelectorTable() {
         return null;
+    }
+    
+    public KCode getKCode() {
+        return null;
+    }
+    
+    public void setKCode(KCode kcode) {
+        return;
     }
 }

@@ -9,7 +9,6 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-
 import org.jruby.ast.Node;
 import org.jruby.common.RubyWarnings;
 import org.jruby.exceptions.RaiseException;
@@ -29,6 +28,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.util.JRubyClassLoader;
+import org.jruby.util.KCode;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public interface IRuby {
@@ -136,6 +136,10 @@ public interface IRuby {
 	public void setSafeLevel(int safeLevel);
 
 	public void secure(int level);
+    
+    public KCode getKCode();
+    
+    public void setKCode(KCode kcode);
 
 	/** rb_define_global_const
 	 *
@@ -422,9 +426,6 @@ public interface IRuby {
 
     public boolean registerInspecting(Object obj);
     public void unregisterInspecting(Object obj);
-
-    public void setEncoding(String encoding);
-    public String getEncoding();
 
     public Profile getProfile();
     

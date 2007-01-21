@@ -36,19 +36,23 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.text.CharacterIterator;
+import java.text.StringCharacterIterator;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.builtin.meta.StringMetaClass;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.KCode;
 import org.jruby.util.Pack;
 import org.jruby.util.PrintfFormat;
-import org.jruby.util.Split;
 
 /**
  *
@@ -58,7 +62,7 @@ public class RubyString extends RubyObject {
     // Default record seperator
     private static final String DEFAULT_RS = "\n";
 
-	private static final String encoding = "ISO8859_1";
+	private static final String ENCODING = "ISO8859_1";
     
     public static final byte OP_PLUS_SWITCHVALUE = 1;
     public static final byte OP_LT_SWITCHVALUE = 2;
@@ -146,7 +150,7 @@ public class RubyString extends RubyObject {
 
 	public static String bytesToString(byte[] bytes) {
 		try {
-			return new String(bytes, encoding);
+			return new String(bytes, ENCODING);
 		} catch (java.io.UnsupportedEncodingException e) {
 			assert false : "unsupported encoding " + e;
             return null;
@@ -155,7 +159,7 @@ public class RubyString extends RubyObject {
 
 	public static byte[] stringToBytes(String string) {
 		try {
-			return string.getBytes(encoding);
+			return string.getBytes(ENCODING);
 		} catch (java.io.UnsupportedEncodingException e) {
 			assert false : "unsupported encoding " + e;
             return null;
@@ -640,11 +644,11 @@ public class RubyString extends RubyObject {
 
 		sb.append('\"');
 
+        // FIXME: This may not be unicode-safe
 		for (int i = 0; i < length; i++) {
 			char c = getValue().charAt(i);
-
-			if (isAlnum(c)) {
-				sb.append(c);
+            if (isAlnum(c)) {
+                sb.append(c);
 			} else if (c == '\"' || c == '\\') {
 				sb.append('\\').append(c);
 			} else if (dump && c == '#') {
@@ -1361,7 +1365,7 @@ public class RubyString extends RubyObject {
 		RubyRegexp pat = RubyRegexp.regexpValue(args[0]);
 
         String intern = toString();
-        boolean utf8 = pat.getCode() == RubyRegexp.Code.UTF8;
+        boolean utf8 = pat.getCode() == KCode.UTF8;
 
         if(utf8) {
             try {
@@ -1854,8 +1858,164 @@ public class RubyString extends RubyObject {
 	 *
 	 */
 	public RubyArray split(IRubyObject[] args) {
-        return new Split(getRuntime(), this.toString(), args).results();
+            RubyRegexp pattern;
+            boolean isWhitespace = false;
+            
+            // get the pattern based on args
+            if (args.length == 0) {
+                isWhitespace = true;
+                pattern = RubyRegexp.newRegexp(getRuntime(), "\\s+", 0, null);
+            } else if (args[0] instanceof RubyRegexp) {
+                // Even if we have whitespace-only explicit regexp we do not
+                // mark it as whitespace.  Apparently, this is so ruby can
+                // still get the do not ignore the front match behavior.
+                pattern = RubyRegexp.regexpValue(args[0]);
+            } else {
+                String stringPattern = RubyString.stringValue(args[0]).toString();
+
+                if (stringPattern.equals(" ")) {
+                    isWhitespace = true;
+                    pattern = RubyRegexp.newRegexp(getRuntime(), "\\s+", 0, null);
+                } else {
+                    pattern = RubyRegexp.newRegexp(getRuntime(), unescapeString(stringPattern), 0, null);
+                }
+            }
+            
+            int limit = getLimit(args);
+            String[] result = null;
+            // convert to Unicode when appropriate
+            String splitee = null;
+            if (getRuntime().getKCode() == KCode.UTF8) {
+                splitee = getUnicodeValue();
+            } else {
+                splitee = toString();
+            }
+            
+            
+            if (limit == 1) {
+                result = new String[] {splitee};
+            } else {
+                // split contains grouping, go the hard route
+
+                List list = new ArrayList();
+                int last = 0;
+                int beg = 0;
+                int hits = 0;
+                int len = splitee.length();
+
+                ThreadContext context = getRuntime().getCurrentContext();
+
+                while ((beg = pattern.searchAgain(splitee)) > -1) {
+                    hits++;
+                    RubyMatchData matchData = (RubyMatchData) context.getBackref();
+                    int end = matchData.matchEndPosition();
+
+                    // Skip first positive lookahead match
+                    if (beg == 0 && beg == end) {
+                        continue;
+                    }
+
+                    // Whitespace splits are supposed to ignore leading whitespace
+                    if (beg != 0 || !isWhitespace) {
+                        addResult(list, substring(splitee, last, (beg == last && end == beg) ? 1 : beg - last));
+                        // Add to list any /(.)/ matched.
+                        long extraPatterns = matchData.getSize();
+                        for (int i = 1; i < extraPatterns; i++) {
+                            IRubyObject matchValue = matchData.group(i);
+                            if (!matchValue.isNil()) {
+                                addResult(list, ((RubyString) matchValue).toString());
+                            }
+                        }
+                    }
+
+                    last = end;
+
+                    if (hits + 1 == limit) {
+                        break;
+                    }
+                }
+                if (hits == 0) {
+                    addResult(list, splitee);
+                } else if (last <= len) {
+                    addResult(list, substring(splitee, last, len - last));
+                }
+                if (limit == 0 && list.size() > 0) {
+                    for (int size = list.size() - 1;
+                    size >= 0 && ((String) list.get(size)).length() == 0; size--) {
+                        list.remove(size);
+                    }
+                }
+
+                result = (String[])list.toArray(new String[list.size()]);
+            }
+            
+            // convert arraylist of strings to RubyArray of RubyStrings
+            RubyArray resultArray = getRuntime().newArray(result.length);
+            
+            for (int i = 0; i < result.length; i++) {
+                RubyString string = getRuntime().newString(result[i]);
+                if (getRuntime().getKCode() == KCode.UTF8) {
+                    string.setUnicodeValue(result[i]);
+                }
+                
+                resultArray.append(string);
+            }
+
+            return resultArray;
 	}
+    
+    private static String substring(String string, int start, int length) {
+        int stringLength = string.length();
+        if (length < 0 || start > stringLength) {
+            return null;
+        }
+        if (start < 0) {
+            start += stringLength;
+            if (start < 0) {
+                return null;
+            }
+        }
+        int end = Math.min(stringLength, start + length);
+        return string.substring(start, end);
+    }
+    
+    private void addResult(List list, String string) {
+        if (string == null) {
+            return;
+        }
+        list.add(string);
+    }
+    
+    private static int getLimit(IRubyObject[] args) {
+        if (args.length == 2) {
+            return RubyNumeric.fix2int(args[1]);
+        }
+        return 0;
+    }
+    
+    // Perhaps somewhere else in jruby this can be done easier.
+    // I did not rely on jdk1.4 (or I could use 1.4 regexp to do this).
+    private static String unescapeString(String unescapedString) {
+        int length = unescapedString.length();
+        char[] charsToEscape = {'|', '(', ')', '.', '*',
+        '[', ']', '^', '$', '\\', '?'};
+        StringBuffer buf = new StringBuffer();
+        
+        for (int i = 0; i < length; i++) {
+            char c = unescapedString.charAt(i);
+            
+            for (int j = 0; j < charsToEscape.length; j++) {
+                if (c == charsToEscape[j]) {
+                    buf.append('\\');
+                    break;
+                }
+            }
+            
+            buf.append(c);
+        }
+        
+        return buf.toString();
+    }
 
 	/** rb_str_scan
 	 *
@@ -2533,5 +2693,22 @@ public class RubyString extends RubyObject {
     
     public CharSequence getValue() {
         return chars;
+    }
+    
+    public String getUnicodeValue() {
+        try {
+            return new String(toString().getBytes(ENCODING), "UTF8");
+        } catch (Exception e) {
+            throw new RuntimeException("Something's seriously broken with encodings", e);
+        }
+    }
+    
+    public void setUnicodeValue(String newValue) {
+        try {
+            chars = new String(toString().getBytes("UTF8"), ENCODING);
+            stringMutated();
+        } catch (Exception e) {
+            throw new RuntimeException("Something's seriously broken with encodings", e);
+        }
     }
 }

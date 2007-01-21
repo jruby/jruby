@@ -108,3 +108,5 @@ def test_load(test)
 	end
   end
 end
+
+at_exit { test_print_report }

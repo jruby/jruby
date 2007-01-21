@@ -51,7 +51,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Stack;
-
 import org.jruby.ast.Node;
 import org.jruby.compiler.InstructionCompiler2;
 import org.jruby.ast.executable.Script;
@@ -115,6 +114,7 @@ import org.jruby.runtime.load.LoadService;
 import org.jruby.util.BuiltinScript;
 import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.JRubyFile;
+import org.jruby.util.KCode;
 import org.jruby.util.NormalizedFile;
 import org.jruby.util.collections.SinglyLinkedList;
 
@@ -208,6 +208,8 @@ public final class Ruby implements IRuby {
     private Profile profile;
 
     private String jrubyHome;
+    
+    private KCode kcode = KCode.NIL;
 
     /**
      * Create and initialize a new jruby Runtime.
@@ -488,6 +490,14 @@ public final class Ruby implements IRuby {
      */
     public void setSafeLevel(int safeLevel) {
         this.safeLevel = safeLevel;
+    }
+    
+    public KCode getKCode() {
+        return kcode;
+    }
+    
+    public void setKCode(KCode kcode) {
+        this.kcode = kcode;
     }
 
     public void secure(int level) {
@@ -1618,14 +1628,6 @@ public final class Ruby implements IRuby {
 
     public long getStartTime() {
         return startTime;
-    }
-
-    public void setEncoding(String encoding) {
-        this.encoding = encoding;
-    }
-    
-    public String getEncoding() {
-        return encoding;
     }
 
     public Profile getProfile() {

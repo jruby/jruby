@@ -68,7 +68,7 @@ public class CommandlineParser {
     private boolean objectSpaceEnabled = true;
     private boolean compilerEnabled = false;
     private boolean yarv = false;
-    private String encoding = "ISO8859_1";
+    private KCode kcode = KCode.NIL;
 
     public int argumentIndex = 0;
     public int characterIndex = 0;
@@ -168,7 +168,7 @@ public class CommandlineParser {
                     String eArg = grabValue("provide a value for -K");
                     
                     if ("u".equals(eArg) || "U".equals(eArg) || "UTF8".equals(eArg)) {
-                        encoding = "UTF-8";
+                        kcode = KCode.UTF8;
                     }
                     
                     break;
@@ -250,10 +250,10 @@ public class CommandlineParser {
             if (hasInlineScript()) {
                 return new StringReader(inlineScript());
             } else if (isSourceFromStdin()) {
-                return new InputStreamReader(System.in, encoding);
+                return new InputStreamReader(System.in, kcode.encoding());
             } else {
                 File file = new File(getScriptFileName());
-                return new BufferedReader(new InputStreamReader(new FileInputStream(file), encoding));
+                return new BufferedReader(new InputStreamReader(new FileInputStream(file), kcode.encoding()));
             }
         } catch (IOException e) {
             throw new MainExitException(1, "Error opening script file: " + e.getMessage());
@@ -335,7 +335,7 @@ public class CommandlineParser {
         return yarv;
     }
     
-    public String getEncoding() {
-        return encoding;
+    public KCode getKCode() {
+        return kcode;
     }
 }

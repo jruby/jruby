@@ -37,13 +37,13 @@ package org.jruby;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.jruby.parser.ReOptions;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.KCode;
 import org.jruby.util.PrintfFormat;
 
 /**
@@ -63,54 +63,10 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 	 * Warning: THIS IS NOT REALLY SUPPORTED BY JRUBY. 
 	 */
 
-	public static final class Code {
-		public static final Code NIL = new Code(null);
-		public static final Code NONE = new Code("none");
-		public static final Code UTF8 = new Code("utf8");
-		public static final Code SJIS = new Code("sjis");
-
-		private String kcode;
-
-		private Code(String kcode) {
-			this.kcode = kcode;
-		}
-
-		public static Code create(IRuby runtime, String lang) {
-			if (lang == null) {
-				return NIL;
-			} else if (lang.charAt(0) == 'n' || lang.charAt(0) == 'N') {
-				return NONE;
-			} else if (lang.charAt(0) == 'u' || lang.charAt(0) == 'U') {
-				return UTF8;
-			} else if (lang.charAt(0) == 's' || lang.charAt(0) == 'S') {
-				runtime.getWarnings().warn("JRuby supports only Unicode regexp.");
-				return SJIS;
-			}
-			return NIL;
-		}
-
-		public IRubyObject kcode(IRuby runtime) {
-			if (kcode == null) {
-				return runtime.getNil();
-			}
-			return runtime.newString(kcode);
-		}
-
-		public int flags() {
-            int flags = 0;
-			if (this == UTF8) {
-				flags |= Pattern.UNICODE_CASE;
-			}
-            flags |= Pattern.UNIX_LINES;
-            
-			return flags;
-		}
-	}
-	
     private Pattern pattern;
-    private Code code;
+    private KCode code;
 
-    Code getCode() {
+    KCode getCode() {
         return code;
     }
 
@@ -205,14 +161,14 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     
     public static RubyRegexp newRegexp(IRuby runtime, Pattern pattern, String lang) {
         RubyRegexp re = new RubyRegexp(runtime);
-        re.code = Code.create(runtime, lang);
+        re.code = KCode.create(runtime, lang);
         re.pattern = pattern;
         return re;
     }
     
     public static RubyRegexp newRegexp(IRuby runtime, String str, int options, String kcode) {
         RubyRegexp re = new RubyRegexp(runtime);
-        re.code = Code.create(runtime, kcode);
+        re.code = KCode.create(runtime, kcode);
         re.initialize(str, options);
         return re;
     }
@@ -242,9 +198,9 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             }
         }
         if (args.length > 2) {
-        	code = Code.create(getRuntime(), RubyString.stringValue (args[2]).toString());
+        	code = KCode.create(getRuntime(), RubyString.stringValue (args[2]).toString());
         } else {
-        	code = Code.create(getRuntime(), null);
+        	code = KCode.create(getRuntime(), null);
         }
         initialize(pat, opts);
         return getRuntime().getNil();
@@ -589,11 +545,11 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         }
         sb.append('/');
 
-        if(code == Code.NONE) {
+        if(code == KCode.NONE) {
             sb.append('n');
-        } else if(code == Code.UTF8) {
+        } else if(code == KCode.UTF8) {
             sb.append('u');
-        } else if(code == Code.SJIS) {
+        } else if(code == KCode.SJIS) {
             sb.append('s');
         }
   

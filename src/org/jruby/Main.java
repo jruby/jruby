@@ -154,7 +154,7 @@ public class Main {
         Reader reader = commandline.getScriptSource();
         String filename = commandline.displayedFileName();
         final IRuby runtime = Ruby.newInstance(in, out, err, commandline.isObjectSpaceEnabled());
-        runtime.setEncoding(commandline.getEncoding());
+        runtime.setKCode(commandline.getKCode());
         
         // Add a shutdown hook that dumps the contents of the runtimeInformation map.
         // This map can be used at development-time to log profiling information
