@@ -30,7 +30,6 @@ package org.jruby.evaluator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-
 import org.jruby.IRuby;
 import org.jruby.MetaClass;
 import org.jruby.RubyArray;
@@ -148,6 +147,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.KCode;
 
 public class EvaluationState {
     public static IRubyObject eval(ThreadContext context, Node node, IRubyObject self) {
@@ -933,6 +933,11 @@ public class EvaluationState {
                 IRubyObject result = evalInternal(context, iVisited.getValueNode(), self);
     
                 runtime.getGlobalVariables().set(iVisited.getName(), result);
+                
+                // FIXME: this should be encapsulated along with the set above
+                if (iVisited.getName() == "$KCODE") {
+                    runtime.setKCode(KCode.create(runtime, result.toString()));
+                }
     
                 return result;
             }

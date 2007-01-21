@@ -458,3 +458,19 @@ test_equal("foo", MyString.new)
 
 # ...but .eql? should still fail, since it only does a strict comparison between strings
 test_ok(!"foo".eql?(MyString.new))
+
+# UTF behavior around inspect, to_s, and split
+# NOTE: the "ffi" in the lines below is a single unicode character "ﬃ"; do not replace it with the normalized characters.
+
+old_code = $KCODE
+x = "eﬃcient"
+test_equal("\"e\\357\\254\\203cient\"", x.inspect)
+test_equal("eﬃcient", x.to_s)
+test_equal(["e", "\357", "\254", "\203", "c", "i", "e", "n", "t"], x.split(//))
+
+$KCODE = "UTF8"
+
+test_equal("\"eﬃcient\"", x.inspect)
+test_equal("eﬃcient", x.to_s)
+test_equal(["e", "ﬃ", "c", "i", "e", "n", "t"], x.split(//))
+

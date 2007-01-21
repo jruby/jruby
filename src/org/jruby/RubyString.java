@@ -639,6 +639,7 @@ public class RubyString extends RubyObject {
 
 	private RubyString inspect(boolean dump) {
 		final int length = getValue().length();
+        IRuby runtime = getRuntime();
 
 		StringBuffer sb = new StringBuffer(length + 2 + length / 100);
 
@@ -649,6 +650,12 @@ public class RubyString extends RubyObject {
 			char c = getValue().charAt(i);
             if (isAlnum(c)) {
                 sb.append(c);
+            } else if (runtime.getKCode() == KCode.UTF8 && c == 0xEF) {
+                // don't escape encoded UTF8 characters, leave them as bytes
+                // append byte order mark plus two character bytes
+                sb.append(c);
+                sb.append(getValue().charAt(++i));
+                sb.append(getValue().charAt(++i));
 			} else if (c == '\"' || c == '\\') {
 				sb.append('\\').append(c);
 			} else if (dump && c == '#') {
@@ -668,6 +675,7 @@ public class RubyString extends RubyObject {
 			} else if (c == '\u0007') {
 				sb.append('\\').append('a');
 			} else if (c == '\u0008') {
+                // FIXME: This doesn't appear to be right; ruby fails a test related to this at testString.rb line 440
 				sb.append('\\').append('b');
 			} else if (c == '\u001B') {
 				sb.append('\\').append('e');
@@ -1907,7 +1915,7 @@ public class RubyString extends RubyObject {
                 String group = null;
                 
                 // TODO: There's a fast path in here somewhere that could just use Pattern.split
-                
+
                 if (matt.find()) {
                     // we have matches, proceed
                     
