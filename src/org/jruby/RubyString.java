@@ -1895,50 +1895,80 @@ public class RubyString extends RubyObject {
             if (limit == 1) {
                 result = new String[] {splitee};
             } else {
-                // split contains grouping, go the hard route
-
                 List list = new ArrayList();
-                int last = 0;
-                int beg = 0;
-                int hits = 0;
-                int len = splitee.length();
+                int numberOfHits = 0;
+                int stringLength = splitee.length();
 
-                ThreadContext context = getRuntime().getCurrentContext();
+                Pattern pat = pattern.getPattern();
+                Matcher matt = pat.matcher(splitee);
+                
+                int startOfCurrentHit = 0;
+                int endOfCurrentHit = 0;
+                String group = null;
+                
+                // TODO: There's a fast path in here somewhere that could just use Pattern.split
+                
+                if (matt.find()) {
+                    // we have matches, proceed
+                    
+                    // end of current hit is start of first match
+                    endOfCurrentHit = matt.start();
+                    
+                    // filter out starting whitespace matches for non-regex whitespace splits
+                    if (endOfCurrentHit != 0 || !isWhitespace) {
+                        // not a non-regex whitespace split, proceed
+                        
+                        numberOfHits++;
+                        
+                        // skip first positive lookahead match
+                        if (matt.end() != 0) {
 
-                while ((beg = pattern.searchAgain(splitee)) > -1) {
-                    hits++;
-                    RubyMatchData matchData = (RubyMatchData) context.getBackref();
-                    int end = matchData.matchEndPosition();
+                            // add the first hit
+                            list.add(splitee.substring(startOfCurrentHit, endOfCurrentHit));
 
-                    // Skip first positive lookahead match
-                    if (beg == 0 && beg == end) {
-                        continue;
-                    }
-
-                    // Whitespace splits are supposed to ignore leading whitespace
-                    if (beg != 0 || !isWhitespace) {
-                        addResult(list, substring(splitee, last, (beg == last && end == beg) ? 1 : beg - last));
-                        // Add to list any /(.)/ matched.
-                        long extraPatterns = matchData.getSize();
-                        for (int i = 1; i < extraPatterns; i++) {
-                            IRubyObject matchValue = matchData.group(i);
-                            if (!matchValue.isNil()) {
-                                addResult(list, ((RubyString) matchValue).toString());
+                            // add any matched groups found while splitting the first hit
+                            for (int groupIndex = 1; groupIndex <= matt.groupCount(); groupIndex++) {
+                                group = matt.group(groupIndex);
+                                list.add(group);
                             }
                         }
                     }
+                    
+                    // advance start to the end of the current hit
+                    startOfCurrentHit = matt.end();
 
-                    last = end;
+                    // ensure we haven't exceeded the hit limit
+                    if (numberOfHits + 1 != limit) {
+                        // loop over the remaining matches
+                        while (matt.find()) {
+                            // end of current hit is start of the next match
+                            endOfCurrentHit = matt.start();
+                            numberOfHits++;
 
-                    if (hits + 1 == limit) {
-                        break;
+                            // add the current hit
+                            list.add(splitee.substring(startOfCurrentHit, endOfCurrentHit));
+
+                            // add any matched groups found while splitting the current hit
+                            for (int groupIndex = 1; groupIndex <= matt.groupCount(); groupIndex++) {
+                                group = matt.group(groupIndex);
+                                list.add(group);
+                            }
+                            
+                            // advance start to the end of the current hit
+                            startOfCurrentHit = matt.end();
+                        }
                     }
                 }
-                if (hits == 0) {
-                    addResult(list, splitee);
-                } else if (last <= len) {
-                    addResult(list, substring(splitee, last, len - last));
+                
+                if (numberOfHits == 0) {
+                    // we found no hits, use the entire string
+                    list.add(splitee);
+                } else if (startOfCurrentHit <= stringLength) {
+                    // our last match ended before the end of the string, add remainder
+                    list.add(splitee.substring(startOfCurrentHit, stringLength));
                 }
+                
+                // Remove trailing whitespace when limit 0 is specified
                 if (limit == 0 && list.size() > 0) {
                     for (int size = list.size() - 1;
                     size >= 0 && ((String) list.get(size)).length() == 0; size--) {
@@ -1963,28 +1993,6 @@ public class RubyString extends RubyObject {
 
             return resultArray;
 	}
-    
-    private static String substring(String string, int start, int length) {
-        int stringLength = string.length();
-        if (length < 0 || start > stringLength) {
-            return null;
-        }
-        if (start < 0) {
-            start += stringLength;
-            if (start < 0) {
-                return null;
-            }
-        }
-        int end = Math.min(stringLength, start + length);
-        return string.substring(start, end);
-    }
-    
-    private void addResult(List list, String string) {
-        if (string == null) {
-            return;
-        }
-        list.add(string);
-    }
     
     private static int getLimit(IRubyObject[] args) {
         if (args.length == 2) {
