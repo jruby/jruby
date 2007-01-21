@@ -36,8 +36,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.text.CharacterIterator;
-import java.text.StringCharacterIterator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
