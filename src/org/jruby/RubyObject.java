@@ -547,7 +547,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         return callMethod(getRuntime().getCurrentContext(), convertMethod);
     }
 
-    private String trueFalseNil(String v) {
+    protected String trueFalseNil(String v) {
         if("TrueClass".equals(v)) {
             return "true";
         } else if("FalseClass".equals(v)) {

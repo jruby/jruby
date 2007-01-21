@@ -207,6 +207,8 @@ public class RubyFixnum extends RubyInteger {
             return RubyFloat.newFloat(getRuntime(), getDoubleValue()).op_div(other);
         } else if (other instanceof RubyBignum) {
             return RubyBignum.newBignum(getRuntime(), getLongValue()).op_div(other);
+        } else if (other instanceof RubyBigDecimal) {
+            //ugly hack until we support this correctly
         } else if (other instanceof RubyNumeric) {
             // Java / and % are not the same as ruby
             long x = getLongValue();
@@ -272,6 +274,8 @@ public class RubyFixnum extends RubyInteger {
             return RubyFloat.newFloat(getRuntime(), getDoubleValue()).op_minus(other);
         } else if (other instanceof RubyBignum) {
             return RubyBignum.newBignum(getRuntime(), value).op_minus(other);
+        } else if (other instanceof RubyBigDecimal) {
+            //ugly hack until we support this correctly
         } else if (other instanceof RubyNumeric) {
             long otherValue = ((RubyNumeric) other).getLongValue();
             long result = value - otherValue;
@@ -292,6 +296,8 @@ public class RubyFixnum extends RubyInteger {
             return RubyFloat.newFloat(getRuntime(), getDoubleValue()).op_mod(other);
         } else if (other instanceof RubyBignum) {
             return RubyBignum.newBignum(getRuntime(), getLongValue()).op_mod(other);
+        } else if (other instanceof RubyBigDecimal) {
+            //ugly hack until we support this correctly
         } else if (other instanceof RubyNumeric) {
 	        // Java / and % are not the same as ruby
             long x = getLongValue();

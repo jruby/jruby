@@ -69,3 +69,26 @@ require "bigdecimal/math.rb"
 include BigMath
 expected = BigDecimal('0.3141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117067E1')
 test_equal expected, PI(1000)
+
+one = BigDecimal("1")
+
+test_equal one * 1, one
+test_equal one / 1, one
+test_equal one + 1, BigDecimal("2")
+test_equal one - 1, BigDecimal("0")
+
+test_equal 1*one, one
+test_equal 1/one, one
+test_equal 1+one, BigDecimal("2")
+test_equal 1-one, BigDecimal("0")
+
+test_equal one * 1.0, 1.0
+test_equal one / 1.0, 1.0
+test_equal one + 1.0, 2.0
+test_equal one - 1.0, 0.0
+
+test_equal 1.0*one, 1.0
+test_equal 1.0/one, 1.0
+test_equal 1.0+one, 2.0
+test_equal 1.0-one, 0.0
+
