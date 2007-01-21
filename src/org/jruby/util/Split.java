@@ -16,7 +16,7 @@
  * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -54,7 +54,7 @@ public class Split {
     private RubyRegexp pattern;
     private String splitee;
     private List result = new ArrayList();
-
+    
     public Split(IRuby runtime, String splitee, IRubyObject[] args) {
         if (args.length > 2) {
             throw runtime.newArgumentError(args.length, 2);
@@ -64,7 +64,7 @@ public class Split {
         this.pattern = getPattern(args);
         this.limit = getLimit(args);
     }
-
+    
     public RubyArray results() {
         process();
         RubyArray resultArray = runtime.newArray(result.size());
@@ -74,66 +74,66 @@ public class Split {
         }
         return resultArray;
     }
-
+    
     private void process() {
         if (limit == 1) {
             result.add(splitee);
             return;
         }
         int last = 0;
-		int beg = 0;
-		int hits = 0;
-		int len = splitee.length();
+        int beg = 0;
+        int hits = 0;
+        int len = splitee.length();
         ThreadContext context = runtime.getCurrentContext();
-		while ((beg = pattern.searchAgain(splitee)) > -1) {
-			hits++;
-			RubyMatchData matchData = (RubyMatchData) context.getBackref();
-			int end = matchData.matchEndPosition();
-
-			// Skip first positive lookahead match
-			if (beg == 0 && beg == end) {
-				continue;
-			}
-
-			// Whitespace splits are supposed to ignore leading whitespace
-			if (beg != 0 || !isWhitespace) {
-			    addResult(substring(splitee, last, (beg == last && end == beg) ? 1 : beg - last));
-			    // Add to list any /(.)/ matched.
-			    long extraPatterns = matchData.getSize();
-			    for (int i = 1; i < extraPatterns; i++) {
+        while ((beg = pattern.searchAgain(splitee)) > -1) {
+            hits++;
+            RubyMatchData matchData = (RubyMatchData) context.getBackref();
+            int end = matchData.matchEndPosition();
+            
+            // Skip first positive lookahead match
+            if (beg == 0 && beg == end) {
+                continue;
+            }
+            
+            // Whitespace splits are supposed to ignore leading whitespace
+            if (beg != 0 || !isWhitespace) {
+                addResult(substring(splitee, last, (beg == last && end == beg) ? 1 : beg - last));
+                // Add to list any /(.)/ matched.
+                long extraPatterns = matchData.getSize();
+                for (int i = 1; i < extraPatterns; i++) {
                     IRubyObject matchValue = matchData.group(i);
                     if (!matchValue.isNil()) {
                         addResult(((RubyString) matchValue).toString());
                     }
-			    }
-			}
-
-			last = end;
-			
-			if (hits + 1 == limit) {
-				break;
-			}
-		}
-		if (hits == 0) {
-			addResult(splitee);
-		} else if (last <= len) {
-			addResult(substring(splitee, last, len - last));
-		}
-		if (limit == 0 && result.size() > 0) {
-			for (int size = result.size() - 1; 
-			    size >= 0 && ((String) result.get(size)).length() == 0; size--) { 
-				result.remove(size);
-			}
-		}
+                }
+            }
+            
+            last = end;
+            
+            if (hits + 1 == limit) {
+                break;
+            }
+        }
+        if (hits == 0) {
+            addResult(splitee);
+        } else if (last <= len) {
+            addResult(substring(splitee, last, len - last));
+        }
+        if (limit == 0 && result.size() > 0) {
+            for (int size = result.size() - 1;
+            size >= 0 && ((String) result.get(size)).length() == 0; size--) {
+                result.remove(size);
+            }
+        }
     }
-
+    
     private static int getLimit(IRubyObject[] args) {
         if (args.length == 2) {
             return RubyNumeric.fix2int(args[1]);
         }
-		return 0;
+        return 0;
     }
-
+    
     private RubyRegexp getPattern(IRubyObject[] args) {
         if (args.length == 0) {
             isWhitespace = true;
@@ -145,21 +145,21 @@ public class Split {
             // still get the do not ignore the front match behavior.
             return RubyRegexp.regexpValue(args[0]);
         }
-		String stringPattern = RubyString.stringValue(args[0]).toString();
-		
-		if (stringPattern.equals(" ")) {
-		    isWhitespace = true;
-		    return RubyRegexp.newRegexp(runtime, "\\s+", 0, null);
-		}
-		return RubyRegexp.newRegexp(runtime, unescapeString(stringPattern), 0, null);
+        String stringPattern = RubyString.stringValue(args[0]).toString();
+        
+        if (stringPattern.equals(" ")) {
+            isWhitespace = true;
+            return RubyRegexp.newRegexp(runtime, "\\s+", 0, null);
+        }
+        return RubyRegexp.newRegexp(runtime, unescapeString(stringPattern), 0, null);
     }
-
+    
     // Perhaps somewhere else in jruby this can be done easier.
     // I did not rely on jdk1.4 (or I could use 1.4 regexp to do this).
     private static String unescapeString(String unescapedString) {
         int length = unescapedString.length();
-        char[] charsToEscape = {'|', '(', ')', '.', '*', 
-                '[', ']', '^', '$', '\\', '?'};
+        char[] charsToEscape = {'|', '(', ')', '.', '*',
+        '[', ']', '^', '$', '\\', '?'};
         StringBuffer buf = new StringBuffer();
         
         for (int i = 0; i < length; i++) {
@@ -177,26 +177,26 @@ public class Split {
         
         return buf.toString();
     }
-
+    
     private void addResult(String string) {
         if (string == null) {
             return;
         }
         result.add(string);
     }
-
-	private static String substring(String string, int start, int length) {
-		int stringLength = string.length();
-		if (length < 0 || start > stringLength) {
-			return null;
-		}
-		if (start < 0) {
-			start += stringLength;
-			if (start < 0) {
-				return null;
-			}
-		}
-		int end = Math.min(stringLength, start + length);
-		return string.substring(start, end);
-	}
+    
+    private static String substring(String string, int start, int length) {
+        int stringLength = string.length();
+        if (length < 0 || start > stringLength) {
+            return null;
+        }
+        if (start < 0) {
+            start += stringLength;
+            if (start < 0) {
+                return null;
+            }
+        }
+        int end = Math.min(stringLength, start + length);
+        return string.substring(start, end);
+    }
 }
