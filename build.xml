@@ -316,12 +316,13 @@
     <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${lib.dir}/junit.jar"/>
     <junit fork="yes" haltonfailure="false" dir="${basedir}" maxmemory="384M">
       <classpath>
-      	<pathelement location="${jruby.instrumented.classes.dir}" />
+        <pathelement location="${jruby.instrumented.classes.dir}" />
         <path refid="build.classpath"/>
         <pathelement path="${java.class.path}"/>
         <pathelement path="${lib.dir}/jruby.jar"/>
-        <pathelement path="${test.classes.dir}"/>
+        <pathelement location="${test.classes.dir}"/>
         <pathelement path="${test.dir}/requireTest.jar"/>
+        <pathelement location="${test.dir}"/>
       </classpath>
       <sysproperty key="jruby.base" value="${basedir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
@@ -333,6 +334,8 @@
       <formatter type="brief" usefile="false"/>
 
       <test name="org.jruby.test.MainTestSuite" todir="${test.results.dir}"/>
+      <test name="org.jruby.test.ScriptTestSuite" todir="${test.results.dir}"/>
+      <test name="org.jruby.test.TestUnitTestSuite" todir="${test.results.dir}"/>
     </junit>
 
     <junitreport todir="${test.results.dir}">

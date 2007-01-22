@@ -36,21 +36,74 @@
       <scope>system</scope>
       <systemPath>${project.basedir}/../../lib/jline-0.9.91-SNAPSHOT.jar</systemPath>
     </dependency>
+    <dependency>
+      <groupId>jvyaml</groupId>
+      <artifactId>jvyaml</artifactId>
+      <version>SNAPSHOT</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/../../lib/jvyaml.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>plaincharset</groupId>
+      <artifactId>plaincharset</artifactId>
+      <version>SNAPSHOT</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/../../lib/plaincharset.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>requireTest</groupId>
+      <artifactId>requireTest</artifactId>
+      <version>SNAPSHOT</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/../../test/requireTest.jar</systemPath>
+    </dependency>
   </dependencies>
 
   <build>
-    <sourceDirectory>${project.basedir}/../../src</sourceDirectory> 
-    <testSourceDirectory>${project.basedir}/../../test</testSourceDirectory> 
-    <resources> 
-      <resource> 
-        <directory>${project.basedir}/../../src</directory> 
-        <includes> 
-          <include>**/*.rb</include> 
-          <include>**/*.properties</include> 
-        </includes> 
-      </resource> 
-    </resources> 
+    <sourceDirectory>${project.basedir}/../../src</sourceDirectory>
+    <testSourceDirectory>${project.basedir}/../../test</testSourceDirectory>
+    <resources>
+      <resource>
+        <directory>${project.basedir}/../../src</directory>
+        <includes>
+          <include>**/*.properties</include>
+        </includes>
+      </resource>
+    </resources>
+    <testResources>
+      <testResource>
+        <directory>${project.basedir}/../..</directory>
+        <includes>
+          <include>test/**/*.rb</include>
+          <include>test/test_index</include>
+          <include>test/test_unit_index</include>
+          <include>test/RubyInitTest.jar</include>
+          <include>test/requireTarget.jar</include>
+        </includes>
+      </testResource>
+      <testResource>
+        <directory>${project.basedir}/../../test</directory>
+        <includes>
+          <include>org/jruby/**/*.rb</include>
+        </includes>
+      </testResource>
+    </testResources>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <includes>
+            <include>org/jruby/test/MainTestSuite.java</include>
+            <include>org/jruby/test/ScriptTestSuite.java</include>
+            <include>org/jruby/test/TestUnitTestSuite.java</include>
+          </includes>
+          <systemProperties>
+            <jruby.home>${project.basedir}/../..</jruby.home>
+            <jruby.lib>${project.basedir}/../../lib</jruby.lib>
+          </systemProperties>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -63,20 +116,6 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-antrun-plugin</artifactId>
         <executions>
-          <execution>
-            <id>unjar-deps</id>
-            <phase>process-resources</phase>
-            <configuration>
-              <tasks>
-                <unjar src="${project.basedir}/../../lib/plaincharset.jar" dest="${project.build.outputDirectory}"/>
-                <unjar src="${project.basedir}/../../lib/jvyaml.jar" dest="${project.build.outputDirectory}"/>
-                <delete file="${project.build.outputDirectory}/META-INF/MANIFEST.MF"/>
-              </tasks>
-            </configuration>
-            <goals>
-              <goal>run</goal>
-            </goals>
-          </execution>
           <execution>
             <id>serialize</id>
             <phase>process-classes</phase>

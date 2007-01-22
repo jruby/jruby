@@ -33,8 +33,8 @@ import org.jruby.javasupport.JavaUtil;
  */
 public class TestUnitTestSuite extends TestCase {
     private static final String TEST_DIR = "test";
-    private static final String TEST_INDEX = "test" + File.separator + "test_unit_index";
-    
+    private static final String TEST_INDEX = "test_unit_index";
+
     public TestUnitTestSuite(String testName) {
         super(testName);
     }
@@ -45,7 +45,14 @@ public class TestUnitTestSuite extends TestCase {
     public static Test suite() throws Exception {
         TestSuite suite = new TestSuite();
 
-        File testIndex = new File(TEST_INDEX);
+        File testDir;
+        if (System.getProperty("basedir") != null) {
+            testDir = new File(System.getProperty("basedir"), "target/test-classes/" + TEST_DIR);
+        } else {
+            testDir = new File(TEST_DIR);
+        }
+
+        File testIndex = new File(testDir, TEST_INDEX);
 
         if (!testIndex.canRead()) {
             // Since we don't have any other error reporting mechanism, we
@@ -59,15 +66,15 @@ public class TestUnitTestSuite extends TestCase {
 
         BufferedReader testFiles =
             new BufferedReader(new InputStreamReader(new FileInputStream(testIndex)));
-        
+
         String line;
         while ((line = testFiles.readLine()) != null) {
             line = line.trim();
             if (line.startsWith("#") || line.length() == 0) {
                 continue;
             }
-            
-            suite.addTest(new ScriptTest(line));
+
+            suite.addTest(new ScriptTest(line, testDir));
         }
 
         return suite;
@@ -81,10 +88,12 @@ public class TestUnitTestSuite extends TestCase {
         private PrintStream printErr;
         private IRuby runtime;
         private final String filename;
+        private final File testDir;
 
-        public ScriptTest(String filename) {
+        public ScriptTest(String filename, File dir) {
             super(filename);
             this.filename = filename;
+            this.testDir = dir;
         }
 
         protected void setUp() throws Exception {
@@ -101,7 +110,7 @@ public class TestUnitTestSuite extends TestCase {
             err.close();
             printOut.close();
             printErr.close();
-            
+
             in = null;
             out = null;
             err = null;
@@ -115,23 +124,23 @@ public class TestUnitTestSuite extends TestCase {
             runtime.defineGlobalConstant("ARGV", runtime.newArray());
         }
 
-		private String scriptName() {
-			return new File(TEST_DIR + File.separator + filename).getPath();
-		}
-        
+        private String scriptName() {
+            return new File(testDir, filename).getPath();
+        }
+
         private String pretty(List list) {
             StringBuffer prettyOut = new StringBuffer();
 
             for (Iterator iter = list.iterator(); iter.hasNext();) {
                 prettyOut.append(iter.next().toString());
             }
-            
+
             return prettyOut.toString();
         }
 
         public void runTest() throws Throwable {
-        	StringBuffer script = new StringBuffer();
-        	
+            StringBuffer script = new StringBuffer();
+
             try {
                 script.append("require 'test/junit_testrunner.rb'\n");
                 script.append("require '" + scriptName() + "'\n");
@@ -142,17 +151,17 @@ public class TestUnitTestSuite extends TestCase {
                 script.append("runner = Test::Unit::UI::JUnit::TestRunner.new(eval('" + classname + "'.split('_').each {|s| s.capitalize! }.join))\n");
                 script.append("runner.start\n");
                 script.append("runner.faults\n");
-                
+
                 RubyArray faults = (RubyArray)runtime.evalScript(script.toString());
-                
+
                 if (!faults.isEmpty()) {
                     StringBuffer faultString = new StringBuffer("Faults encountered running " + scriptName() + ", complete output follows:\n");
                     for (Iterator iter = faults.iterator(); iter.hasNext();) {
                         String fault = iter.next().toString();
-                        
+
                         faultString.append(fault).append("\n");
                     }
-                
+
                     fail(faultString.toString());
                 }
             } catch (RaiseException re) {

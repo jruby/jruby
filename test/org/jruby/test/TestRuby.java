@@ -62,7 +62,7 @@ public class TestRuby extends TestRubyBase {
     
     public void testVarAndMet() throws Exception {
         runtime.getLoadService().init(new ArrayList());
-        eval("load './test/testVariableAndMethod.rb'");
+        eval("load 'test/testVariableAndMethod.rb'");
         assertEquals("Hello World", eval("puts($a)"));
         assertEquals("dlroW olleH", eval("puts $b"));
         assertEquals("Hello World", eval("puts $d.reverse, $c, $e.reverse"));

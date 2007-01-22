@@ -73,11 +73,6 @@ public class MainTestSuite extends TestSuite {
         suite.addTest(new TestSuite(TestRubyArray.class));
         suite.addTest(new TestSuite(TestVariableCreation.class));
         suite.addTest(new TestSuite(YARVMachineTest.class));
-        
-        // tests written in Ruby
-        suite.addTest(ScriptTestSuite.suite());
-        suite.addTest(TestUnitTestSuite.suite());
-        
         return suite;
     }
 }

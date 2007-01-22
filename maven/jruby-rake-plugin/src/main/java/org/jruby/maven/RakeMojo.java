@@ -55,7 +55,9 @@ public class RakeMojo extends AbstractJRubyMojo {
             allArgs.add("-f");
             allArgs.add(rakefile);
         }
-        allArgs.addAll(Arrays.asList(args.split("\\s+")));
+        if (args != null) {
+            allArgs.addAll(Arrays.asList(args.split("\\s+")));
+        }
         Java jruby = jruby((String[]) allArgs.toArray(new String[allArgs.size()]));
         jruby.execute();
     }
