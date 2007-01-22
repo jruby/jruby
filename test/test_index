@@ -14,6 +14,7 @@ mri/testProc.rb
 mri/testString.rb
 mri/testWhileUntil.rb
 testBigDecimal.rb
+testBignum.rb
 testCacheMapLeak.rb
 testClass.rb
 testClasses.rb
@@ -30,6 +31,8 @@ testException2.rb
 testExpressions.rb
 testFile.rb
 testFileTest.rb
+testFixnum.rb
+testFixnumBignumAutoconversion.rb
 testFloat.rb
 testGC.rb
 testGlobalVars.rb
@@ -40,6 +43,7 @@ testIconv.rb
 testIf.rb
 testInspect.rb
 testInstantiatingInterfaces.rb
+testInteger.rb
 testIO.rb
 testJavaExtensions.rb
 testJavaProxy.rb
@@ -61,6 +65,7 @@ testModule.rb
 testNesting.rb
 testNoMethodError.rb
 testNumber.rb
+testNumeric.rb
 testObject.rb
 testObjectSpace.rb
 testPackUnpack.rb

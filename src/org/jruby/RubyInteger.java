@@ -33,6 +33,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -40,13 +42,43 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author  jpetersen
  */
-public abstract class RubyInteger extends RubyNumeric { 
+public abstract class RubyInteger extends RubyNumeric {
+
+    public static RubyClass createIntegerClass(IRuby runtime) {
+        RubyClass integer = runtime.defineClass("Integer", runtime.getClass("Numeric"),
+                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyInteger.class);
+        integer.getSingletonClass().undefineMethod("allocate");
+        integer.getSingletonClass().undefineMethod("new");
+
+        integer.defineFastMethod("integer?", callbackFactory.getMethod("int_p"));
+        integer.defineMethod("upto", callbackFactory.getMethod("upto", IRubyObject.class));
+        integer.defineMethod("downto", callbackFactory.getMethod("downto", IRubyObject.class));
+        integer.defineMethod("times", callbackFactory.getMethod("times"));
+
+        integer.includeModule(runtime.getModule("Precision"));
+
+        integer.defineFastMethod("succ", callbackFactory.getMethod("succ"));
+        integer.defineFastMethod("next", callbackFactory.getMethod("succ"));
+        integer.defineFastMethod("chr", callbackFactory.getMethod("chr"));
+        integer.defineFastMethod("to_i", callbackFactory.getMethod("to_i"));
+        integer.defineFastMethod("to_int", callbackFactory.getMethod("to_i"));
+        integer.defineFastMethod("floor", callbackFactory.getMethod("to_i"));
+        integer.defineFastMethod("ceil", callbackFactory.getMethod("to_i"));
+        integer.defineFastMethod("round", callbackFactory.getMethod("to_i"));
+        integer.defineFastMethod("truncate", callbackFactory.getMethod("to_i"));
+
+        integer.defineFastSingletonMethod("induced_from", callbackFactory.getSingletonMethod("induced_from",
+                IRubyObject.class));
+        return integer;
+    }
+
     public RubyInteger(IRuby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
     }
-    
+
     public RubyInteger convertToInteger() {
-    	return this;
+        return this;
     }
 
     // conversion
@@ -54,74 +86,21 @@ public abstract class RubyInteger extends RubyNumeric {
         return RubyFloat.newFloat(getRuntime(), getDoubleValue());
     }
 
-    // Integer methods
+    /*  ================
+     *  Instance Methods
+     *  ================ 
+     */
 
-    public RubyString chr() {
-        if (getLongValue() < 0 || getLongValue() > 0xff) {
-            throw getRuntime().newRangeError(this.toString() + " out of char range");
-        }
-        return getRuntime().newString(new String(new char[] { (char) getLongValue() }));
-    }
-
-    // TODO: Make callCoerced work in block context...then fix downto, step, and upto.
-    public IRubyObject downto(IRubyObject to) {
-        ThreadContext context = getRuntime().getCurrentContext();
-
-        if (this instanceof RubyFixnum && to instanceof RubyFixnum) {
-            RubyFixnum toFixnum = (RubyFixnum) to;
-            long toValue = toFixnum.getLongValue();
-            for (long i = getLongValue(); i >= toValue; i--) {
-                context.yield(RubyFixnum.newFixnum(getRuntime(), i));
-            }
-        } else {
-            RubyNumeric i = this;
-
-            while (true) {
-                if (i.callMethod(context, "<", to).isTrue()) {
-                    break;
-                }
-                context.yield(i);
-                i = (RubyNumeric) i.callMethod(context, "-", RubyFixnum.one(getRuntime()));
-            }
-        }
-        return this;
-    }
-
-    public RubyBoolean int_p() {
+    /** int_int_p
+     * 
+     */
+    public IRubyObject int_p() {
         return getRuntime().getTrue();
     }
 
-    public IRubyObject times() {
-        ThreadContext context = getRuntime().getCurrentContext();
-
-        if (this instanceof RubyFixnum) {
-
-            long value = getLongValue();
-            for (long i = 0; i < value; i++) {
-                context.yield(RubyFixnum.newFixnum(getRuntime(), i));
-            }
-        } else {
-            RubyNumeric i = RubyFixnum.zero(getRuntime());
-            while (true) {
-                if (!i.callMethod(context, "<", this).isTrue()) {
-                    break;
-                }
-                context.yield(i);
-                i = (RubyNumeric) i.callMethod(context, "+", RubyFixnum.one(getRuntime()));
-            }
-        }
-
-        return this;
-    }
-
-    public IRubyObject next() {
-        if (this instanceof RubyFixnum) {
-            return RubyFixnum.newFixnum(getRuntime(), getLongValue() + 1L);
-        } else {
-            return callMethod(getRuntime().getCurrentContext(), "+", RubyFixnum.one(getRuntime()));
-        }
-    }
-
+    /** int_upto
+     * 
+     */
     public IRubyObject upto(IRubyObject to) {
         ThreadContext context = getRuntime().getCurrentContext();
 
@@ -146,11 +125,104 @@ public abstract class RubyInteger extends RubyNumeric {
         return this;
     }
 
+    /** int_downto
+     * 
+     */
+    // TODO: Make callCoerced work in block context...then fix downto, step, and upto.
+    public IRubyObject downto(IRubyObject to) {
+        ThreadContext context = getRuntime().getCurrentContext();
+
+        if (this instanceof RubyFixnum && to instanceof RubyFixnum) {
+            RubyFixnum toFixnum = (RubyFixnum) to;
+            long toValue = toFixnum.getLongValue();
+            for (long i = getLongValue(); i >= toValue; i--) {
+                context.yield(RubyFixnum.newFixnum(getRuntime(), i));
+            }
+        } else {
+            RubyNumeric i = this;
+
+            while (true) {
+                if (i.callMethod(context, "<", to).isTrue()) {
+                    break;
+                }
+                context.yield(i);
+                i = (RubyNumeric) i.callMethod(context, "-", RubyFixnum.one(getRuntime()));
+            }
+        }
+        return this;
+    }
+
+    /** int_dotimes
+     * 
+     */
+    public IRubyObject times() {
+        ThreadContext context = getRuntime().getCurrentContext();
+
+        if (this instanceof RubyFixnum) {
+
+            long value = getLongValue();
+            for (long i = 0; i < value; i++) {
+                context.yield(RubyFixnum.newFixnum(getRuntime(), i));
+            }
+        } else {
+            RubyNumeric i = RubyFixnum.zero(getRuntime());
+            while (true) {
+                if (!i.callMethod(context, "<", this).isTrue()) {
+                    break;
+                }
+                context.yield(i);
+                i = (RubyNumeric) i.callMethod(context, "+", RubyFixnum.one(getRuntime()));
+            }
+        }
+
+        return this;
+    }
+
+    /** int_succ
+     * 
+     */
+    public IRubyObject succ() {
+        if (this instanceof RubyFixnum) {
+            return RubyFixnum.newFixnum(getRuntime(), getLongValue() + 1L);
+        } else {
+            return callMethod(getRuntime().getCurrentContext(), "+", RubyFixnum.one(getRuntime()));
+        }
+    }
+
+    /** int_chr
+     * 
+     */
+    public RubyString chr() {
+        if (getLongValue() < 0 || getLongValue() > 0xff) {
+            throw getRuntime().newRangeError(this.toString() + " out of char range");
+        }
+        return getRuntime().newString(new String(new char[] { (char) getLongValue() }));
+    }
+
+    /** int_to_i
+     * 
+     */
     public RubyInteger to_i() {
         return this;
     }
 
-    public RubyNumeric multiplyWith(RubyBignum value) {
-        return value.multiplyWith(this);
+    /*  ================
+     *  Singleton Methods
+     *  ================ 
+     */
+
+    /** rb_int_induced_from
+     * 
+     */
+    public static IRubyObject induced_from(IRubyObject recv, IRubyObject other) {
+        if (other instanceof RubyFixnum || other instanceof RubyBignum) {
+            return other;
+        } else if (other instanceof RubyFloat) {
+            return other.callMethod(recv.getRuntime().getCurrentContext(), "to_i");
+        } else {
+            throw recv.getRuntime().newTypeError(
+                    "failed to convert " + other.getMetaClass().getName() + " into Integer");
+        }
     }
+
 }

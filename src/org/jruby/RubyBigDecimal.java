@@ -335,7 +335,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return cmp(arg,'G');
     }
 
-    public RubyNumeric abs() {
+    public IRubyObject abs() {
         return new RubyBigDecimal(getRuntime(),value.abs()).setResult();
     }
 
@@ -608,7 +608,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return this;
     }
 
-    public RubyBoolean zero_p() {
+    public IRubyObject zero_p() {
         return value.signum() == 0 ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 }// RubyBigdecimal

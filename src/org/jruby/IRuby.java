@@ -393,6 +393,8 @@ public interface IRuby {
     public RaiseException newEOFError();
     
     public RaiseException newZeroDivisionError();
+    
+    public RaiseException newFloatDomainError(String message);
 
 	public RubySymbol.SymbolTable getSymbolTable();
 

@@ -80,11 +80,11 @@ public class IntegerMetaClass extends NumericMetaClass {
         return new IntegerMetaClass(name, this, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, parentCRef);
 	}
 	
-    public RubyInteger induced_from(IRubyObject number) {
+    public IRubyObject induced_from(IRubyObject number) {
         if (number instanceof RubyFixnum) {
             return (RubyFixnum) number;
         } else if (number instanceof RubyFloat) {
-            return ((RubyFloat) number).to_i();
+            return ((RubyFloat) number).to_int();
         } else if (number instanceof RubyBignum) {
             return getRuntime().newFixnum(((RubyBignum) number).getLongValue());
         } else {

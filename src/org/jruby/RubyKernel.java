@@ -152,8 +152,9 @@ public class RubyKernel {
         module.defineModuleFunction("singleton_method_added", callbackFactory.getSingletonMethod("singleton_method_added", IRubyObject.class));
         
         // Object methods
-        module.defineFastPublicModuleFunction("==", objectCallbackFactory.getMethod("equal", IRubyObject.class));
-        module.defineAlias("===", "==");
+        module.defineFastPublicModuleFunction("==", objectCallbackFactory.getMethod("obj_equal", IRubyObject.class));
+        module.defineFastPublicModuleFunction("===", objectCallbackFactory.getMethod("equal", IRubyObject.class));
+
         module.defineAlias("eql?", "==");
         module.defineFastPublicModuleFunction("to_s", objectCallbackFactory.getMethod("to_s"));
         module.defineFastPublicModuleFunction("nil?", objectCallbackFactory.getMethod("nil_p"));
@@ -330,10 +331,22 @@ public class RubyKernel {
     }
     
     public static IRubyObject new_float(IRubyObject recv, IRubyObject object) {
-        if(object instanceof RubyString) {
-            return RubyNumeric.str2fnum(recv.getRuntime(),(RubyString)object,true);
-        } else {
-            return object.callMethod(recv.getRuntime().getCurrentContext(), "to_f");
+        if(object instanceof RubyFixnum){
+            return RubyFloat.newFloat(object.getRuntime(), ((RubyFixnum)object).getDoubleValue());
+        }else if(object instanceof RubyFloat){
+            return object;
+        }else if(object instanceof RubyBignum){
+            return RubyFloat.newFloat(object.getRuntime(), RubyBignum.big2dbl((RubyBignum)object));
+        }else if(object instanceof RubyString){
+            return RubyNumeric.str2fnum(recv.getRuntime(), (RubyString)object, true);
+        }else if(object.isNil()){
+            throw recv.getRuntime().newTypeError("can't convert nil into Float");
+        }else{
+            RubyFloat rFloat = object.convertToFloat();
+            if(rFloat.getDoubleValue() == Double.NaN){
+                recv.getRuntime().newTypeError("invalid value for Float()");
+            }
+            return rFloat;
         }
     }
     

@@ -798,11 +798,12 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** rb_obj_equal
      *
      */
-    public IRubyObject equal(IRubyObject obj) {
-        if (isNil()) {
-            return getRuntime().newBoolean(obj.isNil());
-        }
-        return getRuntime().newBoolean(this == obj);
+    public IRubyObject obj_equal(IRubyObject obj) {
+        return this == obj ? getRuntime().getTrue() : getRuntime().getFalse();
+//        if (isNil()) {
+//            return getRuntime().newBoolean(obj.isNil());
+//        }
+//        return getRuntime().newBoolean(this == obj);
     }
 
 	public IRubyObject same(IRubyObject other) {
@@ -871,6 +872,10 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public IRubyObject rbClone() {
+        if (isImmediate()) { // rb_special_const_p(obj) equivalent
+            getRuntime().newTypeError("can't clone " + getMetaClass().getName());
+        }
+        
         IRubyObject clone = doClone();
         clone.setMetaClass(getMetaClass().getSingletonClassClone());
         clone.setTaint(this.isTaint());
@@ -1278,5 +1283,16 @@ public class RubyObject implements Cloneable, IRubyObject {
      */
     public synchronized Object dataGetStruct() {
         return dataStruct;
+    }
+
+    /** rb_equal
+     * 
+     */
+    public IRubyObject equal(IRubyObject other) {
+        if(this == other || callMethod(getRuntime().getCurrentContext(), "==",other).isTrue()){
+            return getRuntime().getTrue();
+        }
+ 
+        return getRuntime().getFalse();
     }
 }

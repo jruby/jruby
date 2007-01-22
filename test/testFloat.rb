@@ -45,3 +45,54 @@ test_equal(nil, 3.0 <=> s)
 test_equal(nil, 3.0 <=> d)
 test_exception(ArgumentError) { 3.0 < s }
 test_exception(ArgumentError) { 3.0 < d }
+
+test_ok(Float.induced_from(1))
+test_ok(Float.induced_from(100**50))
+test_exception(TypeError){Float.induced_from('')}
+
+test_equal(1.0.to_s=="1.0",true)
+
+Inf = 1/0.0
+MInf = -1/0.0
+NaN = 0/0.0
+
+test_equal(10-Inf,MInf)
+test_equal(10+Inf,Inf)
+test_equal(10/Inf,0.0)
+test_equal(Inf.class,Float)
+test_ok(Inf.infinite?)
+test_ok(0.0.finite?)
+
+test_equal(1.2 <=> 1.1,1)
+test_equal(1.1 <=> 1.2,-1)
+test_equal(1.2 <=> 1.2,0)
+
+test_equal(1.0.floor.class,Fixnum)
+test_equal(1.0.ceil.class,Fixnum)
+test_equal(1.0.round.class,Fixnum)
+test_equal(1.0.truncate.class,Fixnum)
+
+test_equal(1.0.eql?(1),false)
+
+test_equal((1.0+100**50).class,Float)
+test_equal((1.0-100**50).class,Float)
+test_equal((1.0/100**50).class,Float)
+test_equal((1.0*100**50).class,Float)
+test_equal((1.0%100**50).class,Float)
+
+test_equal((1.0+100).class,Float)
+test_equal((1.0-100).class,Float)
+test_equal((1.0/100).class,Float)
+test_equal((1.0*100).class,Float)
+test_equal((1.0%100).class,Float)
+
+
+test_equal(1.0.div(1).class,Fixnum)
+test_equal(1.0.modulo(2.0).class,Float)
+
+test_exception(FloatDomainError){1.0.divmod(0.0)}
+test_equal(Inf.to_s=="Infinity",true)
+test_equal((-Inf).to_s=="-Infinity",true)
+test_equal(NaN.to_s=="NaN",true)
+test_equal(NaN.to_s=="NaN",true)
+test_equal(NaN==NaN,false)

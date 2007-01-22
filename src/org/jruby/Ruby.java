@@ -95,15 +95,11 @@ import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.meta.ArrayMetaClass;
-import org.jruby.runtime.builtin.meta.BignumMetaClass;
 import org.jruby.runtime.builtin.meta.BindingMetaClass;
 import org.jruby.runtime.builtin.meta.FileMetaClass;
-import org.jruby.runtime.builtin.meta.FixnumMetaClass;
 import org.jruby.runtime.builtin.meta.HashMetaClass;
 import org.jruby.runtime.builtin.meta.IOMetaClass;
-import org.jruby.runtime.builtin.meta.IntegerMetaClass;
 import org.jruby.runtime.builtin.meta.ModuleMetaClass;
-import org.jruby.runtime.builtin.meta.NumericMetaClass;
 import org.jruby.runtime.builtin.meta.ObjectMetaClass;
 import org.jruby.runtime.builtin.meta.ProcMetaClass;
 import org.jruby.runtime.builtin.meta.StringMetaClass;
@@ -201,7 +197,7 @@ public final class Ruby implements IRuby {
 
     private RubyClass nilClass;
 
-    private FixnumMetaClass fixnumClass;
+    private RubyClass fixnumClass;
     
     private IRubyObject tmsStruct;
 
@@ -689,12 +685,15 @@ public final class Ruby implements IRuby {
         }
 
         if(profile.allowClass("Numeric")) {
-            new NumericMetaClass(this).initializeClass();
+            RubyNumeric.createNumericClass(this);
         }
+
+        if(profile.allowClass("Integer")) {
+            RubyInteger.createIntegerClass(this);
+        }
+        
         if(profile.allowClass("Fixnum")) {
-            new IntegerMetaClass(this).initializeClass();        
-            fixnumClass = new FixnumMetaClass(this);
-            fixnumClass.initializeClass();
+            fixnumClass = RubyFixnum.createFixnumClass(this);
         }
         new HashMetaClass(this).initializeClass();
         new IOMetaClass(this).initializeClass();
@@ -716,11 +715,12 @@ public final class Ruby implements IRuby {
         }
         
         if(profile.allowClass("Float")) {
-            RubyFloat.createFloatClass(this);
+           RubyFloat.createFloatClass(this);
         }        
 
         if(profile.allowClass("Bignum")) {
-            new BignumMetaClass(this).initializeClass();
+           // new BignumMetaClass(this).initializeClass();
+            RubyBignum.createBignumClass(this);
         }
         if(profile.allowClass("Binding")) {
             new BindingMetaClass(this).initializeClass();
@@ -861,7 +861,7 @@ public final class Ruby implements IRuby {
         if(profile.allowClass("ZeroDivisionError")) {
             defineClass("ZeroDivisionError", standardError, standardError.getAllocator());
         }
-        // FIXME: Actually this somewhere
+        // FIXME: Actually this somewhere <- fixed
         if(profile.allowClass("FloatDomainError")) {
             defineClass("FloatDomainError", rangeError, rangeError.getAllocator());
         }
@@ -1522,6 +1522,10 @@ public final class Ruby implements IRuby {
     
     public RaiseException newZeroDivisionError() {
     	return newRaiseException(getClass("ZeroDivisionError"), "divided by 0");
+    }
+    
+    public RaiseException newFloatDomainError(String message){
+        return newRaiseException(getClass("FloatDomainError"), message);
     }
     
     /**

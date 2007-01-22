@@ -643,6 +643,10 @@ public class BaseMockRuby implements IRuby {
         throw new MockException();
 	}
 
+    public RaiseException newFloatDomainError(String message) {
+        throw new MockException();
+    }
+
 	public InputStream getIn() {
         throw new MockException();
 	}
