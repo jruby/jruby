@@ -36,6 +36,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
@@ -1900,14 +1901,16 @@ public class RubyString extends RubyObject {
                 // We're in UTF8 mode; try to convert the string to UTF8, but fall back on ISO8859 bytes if we can't decode
                 // TODO: all this decoder and charset stuff could be centralized...in KCode perhaps?
                 CharsetDecoder decoder = Charset.forName("UTF-8").newDecoder();
-                Charset iso8859 = Charset.forName("ISO-8859-1");
+                //Charset iso8859 = Charset.forName("ISO-8859-1");
                 decoder.onMalformedInput(CodingErrorAction.REPORT);
                 decoder.onUnmappableCharacter(CodingErrorAction.REPORT);
                 
                 try {
-                    splitee = decoder.decode(ByteBuffer.wrap(splitee.getBytes(iso8859))).toString();
+                    splitee = decoder.decode(ByteBuffer.wrap(splitee.getBytes("ISO-8859-1"))).toString();
                     unicodeSuccess = true;
                 } catch (CharacterCodingException cce) {
+                    // ignore, just use the unencoded string
+                } catch (UnsupportedEncodingException e) {
                     // ignore, just use the unencoded string
                 }
             }
