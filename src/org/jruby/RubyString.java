@@ -36,6 +36,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -1080,8 +1085,7 @@ public class RubyString extends RubyObject {
         };
 
         private static final int byteToUnsigned(byte b) {
-            int value = (int)b;
-            return(value >= 0 ? value : value + 256);
+            return b & 0xFF;
         }
 
         private static int fourBytesToInt(byte b[], int offset) {
@@ -1889,12 +1893,23 @@ public class RubyString extends RubyObject {
             
             int limit = getLimit(args);
             String[] result = null;
-            // convert to Unicode when appropriate
-            String splitee = null;
+            // attempt to convert to Unicode when appropriate
+            String splitee = toString();
+            boolean unicodeSuccess = false;
             if (getRuntime().getKCode() == KCode.UTF8) {
-                splitee = getUnicodeValue();
-            } else {
-                splitee = toString();
+                // We're in UTF8 mode; try to convert the string to UTF8, but fall back on ISO8859 bytes if we can't decode
+                // TODO: all this decoder and charset stuff could be centralized...in KCode perhaps?
+                CharsetDecoder decoder = Charset.forName("UTF-8").newDecoder();
+                Charset iso8859 = Charset.forName("ISO-8859-1");
+                decoder.onMalformedInput(CodingErrorAction.REPORT);
+                decoder.onUnmappableCharacter(CodingErrorAction.REPORT);
+                
+                try {
+                    splitee = decoder.decode(ByteBuffer.wrap(splitee.getBytes(iso8859))).toString();
+                    unicodeSuccess = true;
+                } catch (CharacterCodingException cce) {
+                    // ignore, just use the unencoded string
+                }
             }
             
             
@@ -1990,7 +2005,10 @@ public class RubyString extends RubyObject {
             
             for (int i = 0; i < result.length; i++) {
                 RubyString string = getRuntime().newString(result[i]);
-                if (getRuntime().getKCode() == KCode.UTF8) {
+                
+                // if we're in unicode mode and successfully converted to a unicode string before,
+                // make sure to keep unicode in the split values
+                if (unicodeSuccess && getRuntime().getKCode() == KCode.UTF8) {
                     string.setUnicodeValue(result[i]);
                 }
                 
@@ -2596,7 +2614,7 @@ public class RubyString extends RubyObject {
 		int lLength = lByteValue.length;
         ThreadContext context = getRuntime().getCurrentContext();
 		for (int i = 0; i < lLength; i++) {
-			context.yield(getRuntime().newFixnum(Math.abs(lByteValue[i])));
+			context.yield(getRuntime().newFixnum(lByteValue[i] & 0xFF));
 		}
 		return this;
 	}

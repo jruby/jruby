@@ -474,8 +474,19 @@ test_equal("\"eﬃcient\"", x.inspect)
 test_equal("eﬃcient", x.to_s)
 test_equal(["e", "ﬃ", "c", "i", "e", "n", "t"], x.split(//))
 
+# splitting by character should fall back on ISO8859 characters when it's not valid unicode
+
+x2 = "\270\236\b\210\245"
+
+test_equal(["\270", "\236", "\b", "\210", "\245"], x2.split(//u))
+
 $KCODE = old_code
 
 # unpack("U*") should raise ArgumentError when the string is not valid UTF8
-x = "\270\236\b\210\245"
-test_exception(ArgumentError) { x.unpack("U*") }
+test_exception(ArgumentError) { x2.unpack("U*") }
+
+# and just for kicks, make sure we're returning appropriate byte values for each_byte!
+
+bytes = []
+x2.each_byte { |b| bytes << b }
+test_equal([184, 158, 8, 136, 165], bytes)

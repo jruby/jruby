@@ -851,7 +851,6 @@ public class Pack {
                             CharsetDecoder utf8Decoder = utf8.newDecoder();
                             utf8Decoder.onMalformedInput(CodingErrorAction.REPORT);
                             utf8Decoder.onUnmappableCharacter(CodingErrorAction.REPORT);
-                            
                             byte[] bytes8859 = toUnpack.getBytes("ISO8859_1");
                             ByteBuffer buffer = ByteBuffer.wrap(bytes8859);
 
@@ -863,7 +862,7 @@ public class Pack {
                             assert false : "can't convert from UTF8";
                         }
                         while (occurrences-- > 0 && lUtf8.hasRemaining()) {
-                            char lCurChar = lUtf8.get();
+                            long lCurChar = lUtf8.get();
                             result.append(runtime.newFixnum(lCurChar));
                         }
                     }
@@ -1559,17 +1558,18 @@ public class Pack {
                     }
                     break;
                 case 'U' :
-                       char[] c = new char[occurrences];
-                       for (int cIndex = 0; occurrences-- > 0; cIndex++) {
-                           if (listSize-- <= 0) {
-                               throw runtime.newArgumentError(sTooFew);
-                           }
 
-                           IRubyObject from = (IRubyObject) list.get(idx++);
-                           long l = from == runtime.getNil() ? 0 : RubyNumeric.num2long(from);
+                    char[] c = new char[occurrences];
+                    for (int cIndex = 0; occurrences-- > 0; cIndex++) {
+                        if (listSize-- <= 0) {
+                           throw runtime.newArgumentError(sTooFew);
+                        }
 
-                           c[cIndex] = (char) l;
-                       }
+                        IRubyObject from = (IRubyObject) list.get(idx++);
+                        long l = from == runtime.getNil() ? 0 : RubyNumeric.num2long(from);
+
+                        c[cIndex] = (char) l;
+                    }
                     
                     try {
                         byte[] bytes = new String(c).getBytes("UTF8");
