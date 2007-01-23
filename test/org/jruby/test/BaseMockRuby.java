@@ -732,4 +732,13 @@ public class BaseMockRuby implements IRuby {
     public void setKCode(KCode kcode) {
         return;
     }
+
+    /** GET_VM_STATE_VERSION */
+    public long getGlobalState() {
+        return 0;
+    }
+
+    /** INC_VM_STATE_VERSION */
+    public void incGlobalState() {
+    }
 }

@@ -432,4 +432,10 @@ public interface IRuby {
     public Profile getProfile();
     
     public String getJRubyHome();
+
+    /** GET_VM_STATE_VERSION */
+    public long getGlobalState();
+
+    /** INC_VM_STATE_VERSION */
+    public void incGlobalState();
 }

@@ -172,7 +172,7 @@ public class YARVCompiledRunner implements Runnable {
             IRubyObject first = (IRubyObject)internal.get(1);
             if(instruction == YARVInstructions.GETLOCAL || instruction == YARVInstructions.SETLOCAL) {
                 i.l_op0 = (iseq.locals.length + 1) - RubyNumeric.fix2long(first);
-            } else if(instruction == YARVInstructions.PUTOBJECT || instruction == YARVInstructions.OPT_REGEXPMATCH1) {
+            } else if(instruction == YARVInstructions.PUTOBJECT || instruction == YARVInstructions.OPT_REGEXPMATCH1 || instruction == YARVInstructions.GETINLINECACHE) {
                 i.o_op0 = first;
             } else if(first instanceof RubyString || first instanceof RubySymbol ) {
                 i.s_op0 = first.toString();
@@ -188,14 +188,23 @@ public class YARVCompiledRunner implements Runnable {
             }
             if(isJump(instruction)) {
                 i.index = n;
-                jumps.put(i, internal.get(1).toString());
+                jumps.put(i, internal.get(jumpIndex(instruction)).toString());
             }
         }
         return i;
     }
 
     private boolean isJump(int i) {
-        return i == YARVInstructions.JUMP || i == YARVInstructions.BRANCHIF || i == YARVInstructions.BRANCHUNLESS;
+        return i == YARVInstructions.JUMP || i == YARVInstructions.BRANCHIF || i == YARVInstructions.BRANCHUNLESS || 
+            i == YARVInstructions.GETINLINECACHE || i == YARVInstructions.SETINLINECACHE;
+    }
+
+    private int jumpIndex(int i) {
+        if(i == YARVInstructions.GETINLINECACHE) {
+            return 2;
+        } else {
+            return 1;
+        }
     }
 
     private Object[] getExceptionInformation(IRubyObject obj) {

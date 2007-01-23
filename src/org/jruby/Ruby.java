@@ -139,6 +139,8 @@ public final class Ruby implements IRuby {
     private boolean globalAbortOnExceptionEnabled = false;
     private boolean doNotReverseLookupEnabled = false;
     private final boolean objectSpaceEnabled;
+
+    private long globalState = 1;
     
     /**
      * What encoding should we read source files in as...
@@ -1644,4 +1646,17 @@ public final class Ruby implements IRuby {
         return jrubyHome;
     }
 
+    /** GET_VM_STATE_VERSION */
+    public long getGlobalState() {
+        synchronized(this) {
+            return globalState;
+        }
+    }
+
+    /** INC_VM_STATE_VERSION */
+    public void incGlobalState() {
+        synchronized(this) {
+            globalState = (globalState+1) & 0x8fffffff;
+        }
+    }
 }
