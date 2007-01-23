@@ -39,6 +39,7 @@ import java.math.BigInteger;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 
@@ -54,6 +55,7 @@ public class RubyBignum extends RubyInteger {
     public static RubyClass createBignumClass(IRuby runtime) {
         RubyClass bignum = runtime.defineClass("Bignum", runtime.getClass("Integer"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        bignum.index = ClassIndex.BIGNUM;
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyBignum.class);
 
         bignum.defineFastMethod("to_s", callbackFactory.getOptMethod("to_s"));

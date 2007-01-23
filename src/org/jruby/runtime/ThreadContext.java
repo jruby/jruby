@@ -33,10 +33,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;

@@ -39,6 +39,7 @@ import java.math.BigInteger;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -54,6 +55,7 @@ public class RubyFixnum extends RubyInteger {
     public static RubyClass createFixnumClass(IRuby runtime) {
         RubyClass fixnum = runtime.defineClass("Fixnum", runtime.getClass("Integer"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        fixnum.index = ClassIndex.FIXNUM;
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyFixnum.class);
 
         fixnum.includeModule(runtime.getModule("Precision"));

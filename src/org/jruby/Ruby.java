@@ -52,7 +52,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Stack;
 import org.jruby.ast.Node;
-import org.jruby.compiler.InstructionCompiler2;
 import org.jruby.ast.executable.Script;
 import org.jruby.common.RubyWarnings;
 import org.jruby.compiler.NodeCompilerFactory;
@@ -719,7 +718,6 @@ public final class Ruby implements IRuby {
         }        
 
         if(profile.allowClass("Bignum")) {
-           // new BignumMetaClass(this).initializeClass();
             RubyBignum.createBignumClass(this);
         }
         if(profile.allowClass("Binding")) {
