@@ -29,6 +29,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
+import org.jruby.ast.AttrAssignNode;
 import org.jruby.ast.CallNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.types.IArityNode;
@@ -68,6 +69,9 @@ public class EvaluateCallable extends AbstractCallable {
     }
     
     private static Arity procArityOf(Node node) {
+        if (node instanceof AttrAssignNode && node != null) {
+            node = ((AttrAssignNode) node).getArgsNode();
+        }
         if (node == null) {
             return Arity.optional();
         } else if (node instanceof IArityNode) {
