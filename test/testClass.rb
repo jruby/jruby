@@ -207,3 +207,5 @@ class NoConstantInInstanceVariables
 end
 
 test_equal([], NoConstantInInstanceVariables.new.class.instance_variables)
+
+test_equal(3, @@a = 3)

@@ -516,7 +516,7 @@ public class EvaluationState {
                 ((RubyModule) context.peekCRef().getValue()).setClassVar(iVisited.getName(),
                         result);
     
-                return runtime.getNil();
+                return result;
             }
             case NodeTypes.CLASSVARNODE: {
                 ClassVarNode iVisited = (ClassVarNode) node;
