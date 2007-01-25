@@ -227,6 +227,7 @@
 		          <exclude name="**/xmlrpc/**"/>
 		          <exclude name="**/xsd/**"/>
 	      </fileset>
+          <zipfileset src="${lib.dir}/asm-2.2.2.jar"/>
           <zipfileset src="${lib.dir}/jline-0.9.91-SNAPSHOT.jar"/>
           <zipfileset src="${lib.dir}/jvyaml.jar"/>
           <zipfileset src="${lib.dir}/plaincharset.jar"/>
