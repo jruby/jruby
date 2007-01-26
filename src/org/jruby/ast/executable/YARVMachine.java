@@ -6,6 +6,7 @@ import java.util.HashMap;
 import org.jruby.IRuby;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.MetaClass;
@@ -140,10 +141,10 @@ public class YARVMachine {
             case YARVInstructions.NOP:
                 break;
             case YARVInstructions.GETLOCAL:
-                stack[++stackTop] = context.getCurrentScope().getValues()[(int)bytecodes[ip].l_op0];
+                stack[stackTop] = context.getCurrentScope().getValue((int)bytecodes[ip].l_op0,0);
                 break;
             case YARVInstructions.SETLOCAL:
-                context.getCurrentScope().getValues()[(int)bytecodes[ip].l_op0] = stack[stackTop--];
+                context.getCurrentScope().setValue((int)bytecodes[ip].l_op0, stack[stackTop--],0);
                 break;
             case YARVInstructions.GETSPECIAL:
                 System.err.println("Not implemented, YARVMachine." + YARVInstructions.name(bytecodes[ip].bytecode));
@@ -168,16 +169,16 @@ public class YARVMachine {
                 String name = bytecodes[ip].s_op0;
     
                 if (rubyClass == null) {
-                    stack[++stackTop] = self.getMetaClass().getClassVar(name);
+                    stack[stackTop] = self.getMetaClass().getClassVar(name);
                 } else if (!rubyClass.isSingleton()) {
-                    stack[++stackTop] = rubyClass.getClassVar(name);
+                    stack[stackTop] = rubyClass.getClassVar(name);
                 } else {
                     RubyModule module = (RubyModule) rubyClass.getInstanceVariable("__attached__");
     
                     if (module != null) {
-                        stack[++stackTop] = module.getClassVar(name);
+                        stack[stackTop] = module.getClassVar(name);
                     } else {
-                        stack[++stackTop] = context.getRuntime().getNil();
+                        stack[stackTop] = context.getRuntime().getNil();
                     }
                 }
                 break;
@@ -195,7 +196,7 @@ public class YARVMachine {
                 break;
             }
             case YARVInstructions.GETCONSTANT:
-                stack[++stackTop] = context.getConstant(bytecodes[ip].s_op0);
+                stack[stackTop] = context.getConstant(bytecodes[ip].s_op0);
                 break;
             case YARVInstructions.SETCONSTANT:
                 RubyModule module = (RubyModule) context.peekCRef().getValue();
@@ -250,7 +251,7 @@ public class YARVMachine {
                 break;
             }
             case YARVInstructions.DUPARRAY:
-                System.err.println("Not implemented, YARVMachine." +YARVInstructions.name(bytecodes[ip].bytecode));
+                stack[++stackTop] = bytecodes[ip].o_op0.dup();
                 break;
             case YARVInstructions.EXPANDARRAY:
                 // masgn array to values
@@ -266,7 +267,15 @@ public class YARVMachine {
                 System.err.println("Not implemented, YARVMachine." +YARVInstructions.name(bytecodes[ip].bytecode));
                 break;
             case YARVInstructions.NEWHASH:
-                System.err.println("Not implemented, YARVMachine." +YARVInstructions.name(bytecodes[ip].bytecode));
+                int hsize = (int)bytecodes[ip].l_op0;
+                RubyHash h = RubyHash.newHash(runtime);
+                IRubyObject v,k;
+                for(int i = hsize; i>0; i -= 2) {
+                    v = stack[stackTop--];
+                    k = stack[stackTop--];
+                    h.aset(k,v);
+                }
+                stack[++stackTop] = h;
                 break;
             case YARVInstructions.NEWRANGE:
                 System.err.println("Not implemented, YARVMachine." +YARVInstructions.name(bytecodes[ip].bytecode));

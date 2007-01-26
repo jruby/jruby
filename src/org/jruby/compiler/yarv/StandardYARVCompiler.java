@@ -34,8 +34,17 @@ import java.util.Iterator;
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.ast.ArrayNode;
+import org.jruby.ast.BlockNode;
+import org.jruby.ast.CallNode;
+import org.jruby.ast.ConstNode;
 import org.jruby.ast.NewlineNode;
+import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FCallNode;
+import org.jruby.ast.LocalAsgnNode;
+import org.jruby.ast.LocalVarNode;
+import org.jruby.ast.VCallNode;
+import org.jruby.ast.IArgumentNode;
+import org.jruby.ast.HashNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.NodeTypes;
 import org.jruby.ast.RootNode;
@@ -43,6 +52,7 @@ import org.jruby.ast.StrNode;
 import org.jruby.ast.executable.YARVInstructions;
 import org.jruby.ast.executable.YARVMachine;
 import org.jruby.ast.types.ILiteralNode;
+import org.jruby.ast.types.INameNode;
 import org.jruby.compiler.Compiler;
 import org.jruby.compiler.NodeCompiler;
 
@@ -55,6 +65,8 @@ public class StandardYARVCompiler implements NodeCompiler {
     private int last_line = -1;
 
     private LinkAnchor current_iseq;
+
+    private String[] locals = new String[0];
 
     private static final int COMPILE_OK=1;
     private static final int COMPILE_NG=0;
@@ -266,12 +278,25 @@ public class StandardYARVCompiler implements NodeCompiler {
             return COMPILE_OK;
         }
         last_line = nd_line(node);
+
+        LinkAnchor recv = null;
+        LinkAnchor args = null;
+
         compileLoop: while(true) {
             switch(node.nodeId) {
+            case NodeTypes.BLOCKNODE:
+                List l = ((BlockNode)node).childNodes();
+                int sz = l.size();
+                for(int i=0;i<sz;i++) {
+                    boolean p = !(i+1 == sz && !poped);
+                    COMPILE(ret, "BLOCK body", (Node)l.get(i),p);
+                }
+                break compileLoop;
             case NodeTypes.NEWLINENODE:
                 node = ((NewlineNode)node).getNextNode();
                 continue compileLoop;
             case NodeTypes.ROOTNODE:
+                locals = ((RootNode)node).getStaticScope().getAllNamesInScope();
                 node = ((RootNode)node).getBodyNode();
                 continue compileLoop;
             case NodeTypes.STRNODE:
@@ -279,20 +304,97 @@ public class StandardYARVCompiler implements NodeCompiler {
                     ADD_INSN1(ret, nd_line(node), YARVInstructions.PUTSTRING, ((StrNode)node).getValue());
                 }
                 break compileLoop;
-            case NodeTypes.FCALLNODE:
-                FCallNode iNode = (FCallNode) node;
-                LinkAnchor recv = DECL_ANCHOR();
-                LinkAnchor args = DECL_ANCHOR();
-                ADD_CALL_RECEIVER(recv, nd_line(node));
-                int[] argc_flags = setup_arg(args, iNode);
-                int flags = argc_flags[1];
-                ADD_SEQ(ret, recv);
-                ADD_SEQ(ret, args);
-                flags |= YARVInstructions.FCALL_FLAG;
-
-                ADD_SEND_R(ret, nd_line(node), iNode.getName(), argc_flags[0], null, flags);
+            case NodeTypes.CONSTNODE:
+                // Check for inline const cache here
+                ADD_INSN(ret, nd_line(node), YARVInstructions.PUTNIL);
+                ADD_INSN1(ret, nd_line(node), YARVInstructions.GETCONSTANT, ((ConstNode)node).getName());
                 if(poped) {
                     ADD_INSN(ret, nd_line(node), YARVInstructions.POP);
+                }
+                break compileLoop;
+            case NodeTypes.LOCALASGNNODE:
+                int idx = ((LocalAsgnNode)node).getIndex()-2;
+                debugs("lvar: " + idx);
+                COMPILE(ret, "lvalue", ((LocalAsgnNode)node).getValueNode());
+                if(!poped) {
+                    ADD_INSN(ret, nd_line(node), YARVInstructions.DUP);
+                }
+                ADD_INSN1(ret, nd_line(node), YARVInstructions.SETLOCAL, idx);
+                break compileLoop;
+            case NodeTypes.LOCALVARNODE:
+                if(!poped) {
+                    int idx2 = ((LocalVarNode)node).getIndex()-2;
+                    debugs("idx: "+idx2);
+                    ADD_INSN1(ret, nd_line(node), YARVInstructions.GETLOCAL, idx2);
+                }
+                break compileLoop;
+            case NodeTypes.CALLNODE:
+            case NodeTypes.FCALLNODE:
+            case NodeTypes.VCALLNODE:
+                recv = DECL_ANCHOR();
+                args = DECL_ANCHOR();
+                if(node instanceof CallNode) {
+                    COMPILE(recv, "recv", ((CallNode)node).getReceiverNode());
+                } else {
+                    ADD_CALL_RECEIVER(recv, nd_line(node));
+                }
+                int argc = 0;
+                int flags = 0;
+                if(!(node instanceof VCallNode)) {
+                    int[] argc_flags = setup_arg(args, (IArgumentNode)node);
+                    argc = argc_flags[0];
+                    flags = argc_flags[1];
+                } else {
+                    argc = 0;
+                }
+
+                ADD_SEQ(ret, recv);
+                ADD_SEQ(ret, args);
+
+                switch(node.nodeId) {
+                case NodeTypes.VCALLNODE:
+                    flags |= YARVInstructions.VCALL_FLAG;
+                    /* VCALL is funcall, so fall through */
+                case NodeTypes.FCALLNODE:
+                    flags |= YARVInstructions.FCALL_FLAG;
+                }
+
+                ADD_SEND_R(ret, nd_line(node), ((INameNode)node).getName(), argc, null, flags);
+                if(poped) {
+                    ADD_INSN(ret, nd_line(node), YARVInstructions.POP);
+                }
+                break compileLoop;
+            case NodeTypes.ARRAYNODE:
+                compile_array(ret, node, true);
+                if(poped) {
+                    ADD_INSN(ret, nd_line(node), YARVInstructions.POP);
+                }
+                break compileLoop;
+            case NodeTypes.ZARRAYNODE:
+                if(!poped) {
+                    ADD_INSN1(ret, nd_line(node), YARVInstructions.NEWARRAY, 0);
+                }
+                break compileLoop;
+            case NodeTypes.HASHNODE:
+                LinkAnchor list = DECL_ANCHOR();
+                long size = 0;
+                Node lnode = ((HashNode)node).getListNode();
+                if(lnode.childNodes().size()>0) {
+                    compile_array(list, lnode, false);
+                    size = ((Insn)POP_ELEMENT(list)).i.l_op0;
+                    ADD_SEQ(ret, list);
+                }
+
+                ADD_INSN1(ret, nd_line(node), YARVInstructions.NEWHASH, size);
+
+                if(poped) {
+                    ADD_INSN(ret, nd_line(node), YARVInstructions.POP);
+                }
+                break compileLoop;
+            case NodeTypes.FIXNUMNODE:
+                FixnumNode iVisited = (FixnumNode) node;
+                if(!poped) {
+                    ADD_INSN1(ret, nd_line(node), YARVInstructions.PUTOBJECT, iVisited.getFixnum(runtime));
                 }
                 break compileLoop;
             default:
@@ -301,7 +403,7 @@ public class StandardYARVCompiler implements NodeCompiler {
             }
         }
 
-        return COMPILE_NG;
+        return COMPILE_OK;
     }
 
     private int compile_array(LinkAnchor ret, Node node_root, boolean opt_p) {
@@ -320,7 +422,19 @@ public class StandardYARVCompiler implements NodeCompiler {
         }
 
         if(opt_p) {
-            debugs("NOT SUPPORT YET, opt_p on compile_array");
+            List l = new ArrayList();
+            for(Iterator iter = c.iterator(); iter.hasNext();) {
+                node = (Node)iter.next();
+                switch(node.nodeId) {
+                case NodeTypes.FIXNUMNODE:
+                    l.add(((FixnumNode)node).getFixnum(runtime));
+                    break;
+                default:
+                    debugs(" ... doesn't handle array literal node: " + node);
+                    break;
+                }
+            }
+            ADD_INSN1(ret, nd_line(node_root), YARVInstructions.DUPARRAY, runtime.newArray(l));
         } else {
             ADD_INSN1(anchor, line, YARVInstructions.NEWARRAY, len);
             APPEND_LIST(ret, anchor);
@@ -329,7 +443,7 @@ public class StandardYARVCompiler implements NodeCompiler {
         return len;
     }
 
-    private int[] setup_arg(LinkAnchor args, FCallNode node) {
+    private int[] setup_arg(LinkAnchor args, IArgumentNode node) {
         int[] n = new int[] {0,0};
         Node argn = node.getArgsNode();
         LinkAnchor arg_block = DECL_ANCHOR();
@@ -393,7 +507,7 @@ public class StandardYARVCompiler implements NodeCompiler {
         ADD_ELEM(seq, new_insn(i));
     }
 
-    private void ADD_INSN1(LinkAnchor seq, int line, int insn, int op) {
+    private void ADD_INSN1(LinkAnchor seq, int line, int insn, long op) {
         YARVMachine.Instruction i = new YARVMachine.Instruction(insn);
         i.line_no = line;
         i.l_op0 = op;
@@ -421,6 +535,7 @@ public class StandardYARVCompiler implements NodeCompiler {
         }
         debugs("instructions: " + l);
         iseq.body = (YARVMachine.Instruction[])l.toArray(new YARVMachine.Instruction[l.size()]);
+        iseq.locals = locals;
         return iseq;
     }
 }// StandardYARVCompiler
