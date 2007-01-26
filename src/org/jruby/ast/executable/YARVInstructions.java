@@ -412,11 +412,11 @@ public abstract class YARVInstructions {
         return INDEX_TO_NAME[index];
     }
 
-    public static final int ARGS_SPLAT_FLAG = 1;
-    public static final int ARGS_BLOCKARG_FLAG = 2;
-    public static final int FCALL_FLAG = 4;
-    public static final int VCALL_FLAG = 8;
-    public static final int TAILCALL_FLAG = 16;
-    public static final int TAILRECURSION_FLAG = 32;
-    public static final int SUPER = 64;
+    public static final int ARGS_SPLAT_FLAG = 2;
+    public static final int ARGS_BLOCKARG_FLAG = 4;
+    public static final int FCALL_FLAG = 8;
+    public static final int VCALL_FLAG = 16;
+    public static final int TAILCALL_FLAG = 32;
+    public static final int TAILRECURSION_FLAG = 64;
+    public static final int SUPER = 128;
 }

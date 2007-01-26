@@ -365,7 +365,11 @@ public final class Ruby implements IRuby {
         try {
             StandardYARVCompiler compiler = new StandardYARVCompiler(this);
             NodeCompilerFactory.getYARVCompiler().compile(node, compiler);
-            return new YARVCompiledRunner(this,compiler.getInstructionSequence()).run();
+            org.jruby.lexer.yacc.ISourcePosition p = node.getPosition();
+            if(p == null && node instanceof org.jruby.ast.RootNode) {
+                p = ((org.jruby.ast.RootNode)node).getBodyNode().getPosition();
+            }
+            return new YARVCompiledRunner(this,compiler.getInstructionSequence("<main>",p.getFile(),"toplevel")).run();
         } catch(NotCompilableException nce) {
             System.err.println("Error -- Not compileable: " + nce.getMessage());
             return null;

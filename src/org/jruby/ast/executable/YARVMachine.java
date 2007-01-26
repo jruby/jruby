@@ -114,6 +114,10 @@ public class YARVMachine {
             this.ins_op = op2;
             this.i_op3 = op3;
         }
+
+        public String toString() {
+            return "[:" + YARVInstructions.name(bytecode) + ", " + (s_op0 != null ? s_op0 : (o_op0 != null ? o_op0.toString() : ("" + l_op0))) + "]";
+        }
     }
     
     public IRubyObject exec(ThreadContext context, IRubyObject self, StaticScope scope, Instruction[] bytecodes) {
@@ -238,11 +242,11 @@ public class YARVMachine {
                 break;
             case YARVInstructions.NEWARRAY: {
                 int size = (int)bytecodes[ip].l_op0;
-                RubyArray array = context.getRuntime().newArray();
-                for (int i = size - 1; i >= 0; i--) {
-                    array.set(i, stack[stackTop--]);
+                IRubyObject[] arr = new IRubyObject[size];
+                for(int i = size - 1; i >= 0; i--) {
+                    arr[i] =  stack[stackTop--];
                 }
-                stack[++stackTop] = array;
+                stack[++stackTop] = context.getRuntime().newArray(arr);
                 break;
             }
             case YARVInstructions.DUPARRAY:
