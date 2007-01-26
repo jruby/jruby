@@ -687,17 +687,18 @@ public class BaseMockRuby implements IRuby {
     }
 
     public IRubyObject compileAndRun(Node node) {
-        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public IRubyObject ycompileAndRun(Node node) {
         return null;
     }
 
     public Node parse(Reader content, String file, DynamicScope scope) {
-        // TODO Auto-generated method stub
         return null;
     }
 
     public Node parse(String content, String file, DynamicScope scope) {
-        // TODO Auto-generated method stub
         return null;
     }
     
