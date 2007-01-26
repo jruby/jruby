@@ -96,7 +96,7 @@ public class YARVCompiledRunner {
         labels.clear();
         jumps.clear();
 
-        YARVMachine.InstructionSequence seq = new YARVMachine.InstructionSequence(runtime, "", "", "");
+        YARVMachine.InstructionSequence seq = new YARVMachine.InstructionSequence(runtime,null,null,null);
         Iterator internal = (((RubyArray)arr).getList()).iterator();
         seq.magic = internal.next().toString();
         seq.major = RubyNumeric.fix2int((IRubyObject)internal.next());
