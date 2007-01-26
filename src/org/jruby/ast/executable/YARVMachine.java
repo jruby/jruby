@@ -141,7 +141,7 @@ public class YARVMachine {
             case YARVInstructions.NOP:
                 break;
             case YARVInstructions.GETLOCAL:
-                stack[stackTop] = context.getCurrentScope().getValue((int)bytecodes[ip].l_op0,0);
+                stack[++stackTop] = context.getCurrentScope().getValue((int)bytecodes[ip].l_op0,0);
                 break;
             case YARVInstructions.SETLOCAL:
                 context.getCurrentScope().setValue((int)bytecodes[ip].l_op0, stack[stackTop--],0);
@@ -169,16 +169,16 @@ public class YARVMachine {
                 String name = bytecodes[ip].s_op0;
     
                 if (rubyClass == null) {
-                    stack[stackTop] = self.getMetaClass().getClassVar(name);
+                    stack[++stackTop] = self.getMetaClass().getClassVar(name);
                 } else if (!rubyClass.isSingleton()) {
-                    stack[stackTop] = rubyClass.getClassVar(name);
+                    stack[++stackTop] = rubyClass.getClassVar(name);
                 } else {
                     RubyModule module = (RubyModule) rubyClass.getInstanceVariable("__attached__");
     
                     if (module != null) {
-                        stack[stackTop] = module.getClassVar(name);
+                        stack[++stackTop] = module.getClassVar(name);
                     } else {
-                        stack[stackTop] = context.getRuntime().getNil();
+                        stack[++stackTop] = context.getRuntime().getNil();
                     }
                 }
                 break;
@@ -196,7 +196,8 @@ public class YARVMachine {
                 break;
             }
             case YARVInstructions.GETCONSTANT:
-                stack[stackTop] = context.getConstant(bytecodes[ip].s_op0);
+                IRubyObject cls = stack[stackTop--];
+                stack[++stackTop] = context.getConstant(bytecodes[ip].s_op0);
                 break;
             case YARVInstructions.SETCONSTANT:
                 RubyModule module = (RubyModule) context.peekCRef().getValue();

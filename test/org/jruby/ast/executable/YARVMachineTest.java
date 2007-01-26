@@ -19,7 +19,6 @@ public class YARVMachineTest extends TestCase {
             new Instruction(YARVInstructions.PUTSTRING, "Hello, YARV!"),
             new Instruction(YARVInstructions.DUP),
             new Instruction(YARVInstructions.SETLOCAL, 0),
-            new Instruction(YARVInstructions.PUTNIL),
             new Instruction(YARVInstructions.GETLOCAL, 0),
             new Instruction(YARVInstructions.POP),
             new Instruction(YARVInstructions.SETLOCAL, 1),
@@ -27,11 +26,10 @@ public class YARVMachineTest extends TestCase {
             new Instruction(YARVInstructions.BRANCHIF, 10),
             new Instruction(YARVInstructions.PUTSTRING, "Wrong String"),
             new Instruction(YARVInstructions.JUMP, 11),
-            new Instruction(YARVInstructions.PUTNIL),
             new Instruction(YARVInstructions.GETLOCAL, 1),
             new Instruction(YARVInstructions.PUTOBJECT, runtime.newFixnum(2)),
             new Instruction(YARVInstructions.SEND, "*", 1, null, 0),
-            new Instruction(YARVInstructions.SEND, "to_s", 0, null, YARVInstructions.VCALL_FLAG),
+            new Instruction(YARVInstructions.SEND, "to_s", 0, null, YARVInstructions.VCALL_FLAG | YARVInstructions.FCALL_FLAG),
             new Instruction(YARVInstructions.SEND, "+", 1, null, 0)
         };
     };
@@ -52,29 +50,22 @@ public class YARVMachineTest extends TestCase {
             new Instruction(YARVInstructions.PUTOBJECT, runtime.newFixnum(1)),
             new Instruction(YARVInstructions.SETLOCAL, 3),
             // while begins here, instruction 8
-            new Instruction(YARVInstructions.PUTNIL),
             new Instruction(YARVInstructions.GETLOCAL, 3),
-            new Instruction(YARVInstructions.PUTNIL),
             new Instruction(YARVInstructions.GETLOCAL, 0),
             new Instruction(YARVInstructions.SEND, "<=", 1, null, 0),
             new Instruction(YARVInstructions.BRANCHUNLESS, 25),
             // local var k declared, k = i
-            new Instruction(YARVInstructions.PUTNIL),
             new Instruction(YARVInstructions.GETLOCAL, 1),
             new Instruction(YARVInstructions.SETLOCAL, 4),
             // i = j
-            new Instruction(YARVInstructions.PUTNIL),
             new Instruction(YARVInstructions.GETLOCAL, 2),
             new Instruction(YARVInstructions.SETLOCAL, 1),
             // j = k + j
-            new Instruction(YARVInstructions.PUTNIL),
             new Instruction(YARVInstructions.GETLOCAL, 4),
-            new Instruction(YARVInstructions.PUTNIL),
             new Instruction(YARVInstructions.GETLOCAL, 2),
             new Instruction(YARVInstructions.SEND, "+", 1, null, 0),
             new Instruction(YARVInstructions.SETLOCAL, 2),
             // cur = cur + 1
-            new Instruction(YARVInstructions.PUTNIL),
             new Instruction(YARVInstructions.GETLOCAL, 3),
             new Instruction(YARVInstructions.PUTOBJECT, runtime.newFixnum(1)),
             new Instruction(YARVInstructions.SEND, "+", 1, null, 0),
@@ -82,7 +73,6 @@ public class YARVMachineTest extends TestCase {
             // end while
             new Instruction(YARVInstructions.JUMP, 8),
             // return i, instruction 25
-            new Instruction(YARVInstructions.PUTNIL),
             new Instruction(YARVInstructions.GETLOCAL, 1)
         };
     };
