@@ -51,7 +51,7 @@ public class YARVMachine {
 
         public Instruction[] body;
 
-        public InstructionSequence(Ruby runtime, String name, String file, String type) {
+        public InstructionSequence(IRuby runtime, String name, String file, String type) {
             magic = "YARVInstructionSimpledataFormat";
             major = 1;
             minor = 1;
