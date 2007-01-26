@@ -50,6 +50,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.jruby.IRuby;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.BuiltinScript;
@@ -265,11 +266,16 @@ public class LoadService {
 
             library.load(runtime);
             return true;
-        } catch (IOException e) {
+        } catch (Exception e) {
             loadedFeaturesInternal.remove(loadName);
             loadedFeatures.remove(runtime.newString(loadName));
-
-            throw runtime.newLoadError("IO error -- " + file);
+            if (e instanceof RaiseException) {
+                throw (RaiseException) e;
+            } else {
+                RaiseException re = runtime.newLoadError("IO error -- " + file);
+                re.initCause(e);
+                throw re;
+            }
         }
     }
 

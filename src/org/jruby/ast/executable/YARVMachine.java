@@ -131,7 +131,7 @@ public class YARVMachine {
         IRubyObject other;
 
         yarvloop: while (ip < bytecodes.length) {
-            System.err.println("Executing: " + YARVInstructions.name(bytecodes[ip].bytecode));
+            //System.err.println("Executing: " + YARVInstructions.name(bytecodes[ip].bytecode));
             switch (bytecodes[ip].bytecode) {
             case YARVInstructions.NOP:
                 break;

@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2005 Thomas E Enebo <enebo@acm.org>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -30,30 +30,63 @@
 import java.util.ArrayList;
 
 import org.jruby.Ruby;
+import org.jruby.exceptions.RaiseException;
 
 /**
  * Simple test to make sure require works properly in conjunction with jars
  * in the classpath.
  */
 public class TestRequire extends TestRubyBase {
-	public TestRequire(String name) {
-		super(name);
-	}
-	public void setUp() { 
-		runtime = Ruby.getDefaultInstance();
-		
-		runtime.getLoadService().init(new ArrayList());
-	} 
-	
-	public void tearDown() { 
-		super.tearDown(); 
-	} 
-	
-	public void testRubyRequire() throws Exception {
-	    
-		String result = eval("require 'A/C'; puts A::C.new.meth"); 
-		assertEquals("ok", result); 
-		result = eval("$: << 'A'; require 'B'; puts B.new.meth"); 
-		assertEquals("ok", result); 
-	} 
+    public TestRequire(String name) {
+        super(name);
+    }
+    public void setUp() {
+        runtime = Ruby.getDefaultInstance();
+        runtime.getLoadService().init(new ArrayList());
+    }
+
+    public void tearDown() {
+        super.tearDown();
+    }
+
+    public void testRubyRequire() throws Exception {
+        String result = eval("require 'A/C'; puts A::C.new.meth");
+        assertEquals("ok", result);
+        result = eval("$: << 'A'; require 'B'; puts B.new.meth");
+        assertEquals("ok", result);
+    }
+
+    public void testLoadErrorsDuringRequireShouldRaise() throws Exception {
+        try {
+            eval("require 'test/load_error'");
+            fail("should have raised LoadError");
+        } catch (RaiseException re) {
+            assertTrue(re.getException().toString().indexOf("bogus_missing_lib") >= 0);
+            assertEquals("LoadError", re.getException().getMetaClass().toString());
+        }
+    }
+    
+    public void testFailedRequireInRescueClauseStillRaisesException() throws Exception {
+        try {
+            eval(
+            "begin\n"
+            + "require 'test/load_error'\n" +
+            "rescue LoadError => e\n"
+            + " require 'test/load_error'\n" +
+            "end");
+            fail("should raise exception");
+        } catch (RaiseException re) {
+            assertEquals("LoadError", re.getException().getMetaClass().toString());
+            assertTrue(re.getException().toString().indexOf("bogus_missing_lib") >= 0);
+        }
+    }
+
+    public void testParseErrorsDuringRequireShouldRaise() throws Exception {
+        try {
+            eval("require 'test/parse_error'");
+            fail("should have raised SyntaxError");
+        } catch (RaiseException re) {
+            assertEquals("SyntaxError", re.getException().getMetaClass().toString());
+        }
+    }
 }

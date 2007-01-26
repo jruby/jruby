@@ -36,10 +36,18 @@
       <scope>system</scope>
       <systemPath>${project.basedir}/../../lib/jline-0.9.91-SNAPSHOT.jar</systemPath>
     </dependency>
+    <dependency>
+      <groupId>requireTest</groupId>
+      <artifactId>requireTest</artifactId>
+      <version>SNAPSHOT</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/../../test/requireTest.jar</systemPath>
+    </dependency>
   </dependencies>
 
   <build>
     <sourceDirectory>${project.basedir}/../../src</sourceDirectory> 
+    <testSourceDirectory>${project.basedir}/../../test</testSourceDirectory>
     <resources> 
       <resource> 
         <directory>${project.basedir}/../../src</directory> 
@@ -47,8 +55,29 @@
           <include>**/*.rb</include> 
           <include>**/*.properties</include> 
         </includes> 
+        <excludes>
+          <exclude>builtin/**/*.rb</exclude>
+        </excludes>
       </resource> 
     </resources> 
+    <testResources>
+      <testResource>
+        <directory>${project.basedir}/../..</directory>
+        <includes>
+          <include>test/**/*.rb</include>
+          <include>test/test_index</include>
+          <include>test/test_unit_index</include>
+          <include>test/RubyInitTest.jar</include>
+          <include>test/requireTarget.jar</include>
+        </includes>
+      </testResource>
+      <testResource>
+        <directory>${project.basedir}/../../test</directory>
+        <includes>
+          <include>org/jruby/**/*.rb</include>
+        </includes>
+      </testResource>
+    </testResources>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -60,7 +89,11 @@
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <skip>true</skip>
+          <includes>
+            <include>org/jruby/test/MainTestSuite.java</include>
+            <!-- <include>org/jruby/test/ScriptTestSuite.java</include> -->
+            <!-- <include>org/jruby/test/TestUnitTestSuite.java</include> -->
+          </includes>
         </configuration>
       </plugin>
       <plugin>
@@ -123,7 +156,6 @@
                     <include name="**/*.properties"/>
                     <include name="**/*.rb"/>
                     <include name="**/*.rb.ast.ser"/>
-                    <exclude name="builtin/**/*.rb"/>
                     <exclude name="org/jruby/util/ant/**/*.class"/>
                   </fileset>
                   <fileset dir="${project.basedir}/../../lib/ruby/1.8">
