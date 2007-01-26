@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.HashMap;
 
 import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
@@ -21,22 +22,24 @@ import org.jruby.internal.runtime.methods.WrapperMethod;
 public class YARVMachine {
     private static final boolean TAILCALL_OPT = Boolean.getBoolean("jruby.tailcall.enabled");
 
+    public static final YARVMachine INSTANCE = new YARVMachine();
+
     public static int instruction(String name) {
         return YARVInstructions.instruction(name);
     }
 
     public static class InstructionSequence {
-        String magic;
-        int major;
-        int minor;
-        int format_type;
-        Object misc;
-        String name;
-        String filename;
-        Object[] line;
-        String type;
+        public String magic;
+        public int major;
+        public int minor;
+        public int format_type;
+        public Object misc;
+        public String name;
+        public String filename;
+        public Object[] line;
+        public String type;
 
-        String[] locals;
+        public String[] locals;
 
         public int args_argc;
         public int args_arg_opts;
@@ -44,23 +47,40 @@ public class YARVMachine {
         public int args_rest;
         public int args_block;
 
-        Object[] exception;
+        public Object[] exception;
 
         public Instruction[] body;
+
+        public InstructionSequence(Ruby runtime, String name, String file, String type) {
+            magic = "YARVInstructionSimpledataFormat";
+            major = 1;
+            minor = 1;
+            format_type = 1;
+            misc = runtime.getNil();
+            this.name = name;
+            this.filename = file;
+            this.line = new Object[0];
+            this.type = type;
+            this.locals = new String[0];
+            this.args_argc = 0;
+            this.args_arg_opts = 0;
+            this.exception = new Object[0];
+        }
     }
 
     public static class Instruction {
         final int bytecode;
-        String s_op0;
-        IRubyObject o_op0;
-        long l_op0;
-        long l_op1;
-        int i_op1;
-        InstructionSequence iseq_op;
-        Instruction[] ins_op;
-        int i_op3;
+        public int line_no;
+        public String s_op0;
+        public IRubyObject o_op0;
+        public long l_op0;
+        public long l_op1;
+        public int i_op1;
+        public InstructionSequence iseq_op;
+        public Instruction[] ins_op;
+        public int i_op3;
 
-        int index;
+        public int index;
 
         public Instruction(int bytecode) {
             this.bytecode = bytecode;
@@ -111,6 +131,7 @@ public class YARVMachine {
         IRubyObject other;
 
         yarvloop: while (ip < bytecodes.length) {
+            System.err.println("Executing: " + YARVInstructions.name(bytecodes[ip].bytecode));
             switch (bytecodes[ip].bytecode) {
             case YARVInstructions.NOP:
                 break;

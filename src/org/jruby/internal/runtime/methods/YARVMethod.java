@@ -110,7 +110,7 @@ public class YARVMethod extends AbstractMethod {
                 sc.setValue(i,args[i],0);
             }
 
-            return new YARVMachine().exec(context, receiver, sc, iseq.body);
+            return YARVMachine.INSTANCE.exec(context, receiver, sc, iseq.body);
         } catch (JumpException je) {
         	if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
 	            if (je.getPrimaryData() == this) {

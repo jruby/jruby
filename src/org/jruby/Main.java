@@ -145,6 +145,7 @@ public class Main {
             out.println("    -O              run with ObjectSpace disabled (improves performance)");
             out.println("    -C              pre-compile scripts before running (EXPERIMENTAL)");
             out.println("    -y              read a YARV-compiled Ruby script and run that (EXPERIMENTAL)");
+            out.println("    -Y              compile a Ruby script into YARV bytecodes and run this (EXPERIMENTAL)");
             out.println("    --command word  Execute ruby-related shell command (i.e., irb, gem)");
             hasPrintedUsage = true;
         }
@@ -209,15 +210,13 @@ public class Main {
         try {
             initializeRuntime(runtime, filename);
             if(commandline.isYARVEnabled()) {
-                if(filename.endsWith(".rbc")) {
-                    new YARVCompiledRunner(runtime,reader,filename).run();
-                } else {
-                    System.err.println("Can't YARV-compile Ruby yet");
-                }
+                new YARVCompiledRunner(runtime,reader,filename).run();
             } else {
                 Node parsedScript = getParsedScript(runtime, reader, filename);
                 if (commandline.isCompilerEnabled()) {
                     runtime.compileAndRun(parsedScript);
+                } else if(commandline.isYARVCompileEnabled()) {
+                    runtime.ycompileAndRun(parsedScript);
                 } else {
                     runtime.eval(parsedScript);
                 }       

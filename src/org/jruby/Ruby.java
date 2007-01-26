@@ -53,10 +53,12 @@ import java.util.Random;
 import java.util.Stack;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
+import org.jruby.ast.executable.YARVCompiledRunner;
 import org.jruby.common.RubyWarnings;
 import org.jruby.compiler.NodeCompilerFactory;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.StandardASMCompiler;
+import org.jruby.compiler.yarv.StandardYARVCompiler;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
@@ -356,6 +358,23 @@ public final class Ruby implements IRuby {
             // TODO Auto-generated catch block
             e.printStackTrace();
             return null;
+        }
+    }
+
+    public IRubyObject ycompileAndRun(Node node) {
+        try {
+            StandardYARVCompiler compiler = new StandardYARVCompiler(this);
+            NodeCompilerFactory.getYARVCompiler().compile(node, compiler);
+            return new YARVCompiledRunner(this,compiler.getInstructionSequence()).run();
+        } catch(NotCompilableException nce) {
+            System.err.println("Error -- Not compileable: " + nce.getMessage());
+            return null;
+        } catch(JumpException je) {
+            if(je.getJumpType() == JumpException.JumpType.ReturnJump) {
+                return (IRubyObject)je.getSecondaryData();
+            } else {
+                throw je;
+            }
         }
     }
 

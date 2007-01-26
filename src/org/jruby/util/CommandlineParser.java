@@ -68,6 +68,7 @@ public class CommandlineParser {
     private boolean objectSpaceEnabled = true;
     private boolean compilerEnabled = false;
     private boolean yarv = false;
+    private boolean yarvCompile = false;
     private KCode kcode = KCode.NIL;
 
     public int argumentIndex = 0;
@@ -140,6 +141,9 @@ public class CommandlineParser {
                     break;
                 case 'y' :
                     yarv = true;
+                    break;
+                case 'Y' :
+                    yarvCompile = true;
                     break;
                 case 'n' :
                     assumeLoop = true;
@@ -333,6 +337,10 @@ public class CommandlineParser {
 
     public boolean isYARVEnabled() {
         return yarv;
+    }
+
+    public boolean isYARVCompileEnabled() {
+        return yarvCompile;
     }
     
     public KCode getKCode() {
