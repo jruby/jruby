@@ -42,11 +42,11 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /** 
  * Represents a method call with self as an implicit receiver.
  */
-public class FCallNode extends Node implements INameNode, BlockAcceptingNode {
+public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAcceptingNode {
     static final long serialVersionUID = 3590332973770104094L;
 
     private String name;
-    private final Node argsNode;
+    private Node argsNode;
     private Node iterNode;
 
     public FCallNode(ISourcePosition position, String name, Node argsNode) {
@@ -92,6 +92,15 @@ public class FCallNode extends Node implements INameNode, BlockAcceptingNode {
      */
     public Node getArgsNode() {
         return argsNode;
+    }
+
+    /**
+     * Set the argsNode
+     * 
+     * @param argsNode set the arguments for this node.
+     */
+    public void setArgsNode(Node argsNode) {
+        this.argsNode = argsNode;
     }
 
     /**
