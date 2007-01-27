@@ -48,6 +48,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
@@ -268,7 +269,7 @@ public class RubyKernel {
         	// exec process, create IO with process
         	try {
                 // TODO: may need to part cli parms out ourself?
-                Process p = Runtime.getRuntime().exec(command);
+                Process p = Runtime.getRuntime().exec(command,getCurrentEnv(recv.getRuntime()));
                 RubyIO io = new RubyIO(recv.getRuntime(), p);
         		
         	    if (block != null) {
@@ -956,6 +957,17 @@ public class RubyKernel {
         return runInShell(runtime,rawArgs,runtime.getOutputStream());
     }
 
+    private static String[] getCurrentEnv(IRuby runtime) {
+        Map h = ((RubyHash)runtime.getObject().getConstant("ENV")).getValueMap();
+        String[] ret = new String[h.size()];
+        int i=0;
+        for(Iterator iter = h.entrySet().iterator();iter.hasNext();i++) {
+            Map.Entry e = (Map.Entry)iter.next();
+            ret[i] = e.getKey().toString() + "=" + e.getValue().toString();
+        }
+        return ret;
+    }
+
     public static int runInShell(IRuby runtime, IRubyObject[] rawArgs, OutputStream output) {
         OutputStream error = runtime.getErrorStream();
         InputStream input = runtime.getInputStream();
@@ -991,7 +1003,7 @@ public class RubyKernel {
                 argArray[0] = shell;
                 argArray[1] = shellSwitch;
                 argArray[2] = rawArgs[0].toString();
-                aProcess = Runtime.getRuntime().exec(argArray, new String[]{}, pwd);
+                aProcess = Runtime.getRuntime().exec(argArray, getCurrentEnv(runtime), pwd);
             } else {
                 // execute command directly, no wildcard expansion
                 if (rawArgs.length > 1) {
@@ -999,9 +1011,9 @@ public class RubyKernel {
                     for (int i=0;i<rawArgs.length;i++) {
                         argArray[i] = rawArgs[i].toString();
                     }
-                    aProcess = Runtime.getRuntime().exec(argArray, new String[]{}, pwd);
+                    aProcess = Runtime.getRuntime().exec(argArray,getCurrentEnv(runtime), pwd);
                 } else {
-                    aProcess = Runtime.getRuntime().exec(rawArgs[0].toString(), new String[]{}, pwd);
+                    aProcess = Runtime.getRuntime().exec(rawArgs[0].toString(), getCurrentEnv(runtime), pwd);
                 }
             }
             

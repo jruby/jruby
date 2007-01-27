@@ -29,7 +29,7 @@ public class YARVMachineTest extends TestCase {
             new Instruction(YARVInstructions.GETLOCAL, 1),
             new Instruction(YARVInstructions.PUTOBJECT, runtime.newFixnum(2)),
             new Instruction(YARVInstructions.SEND, "*", 1, null, 0),
-            new Instruction(YARVInstructions.SEND, "to_s", 0, null, YARVInstructions.VCALL_FLAG),
+            new Instruction(YARVInstructions.SEND, "to_s", 0, null, YARVInstructions.VCALL_FLAG | YARVInstructions.FCALL_FLAG),
             new Instruction(YARVInstructions.SEND, "+", 1, null, 0)
         };
     };
