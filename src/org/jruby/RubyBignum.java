@@ -37,12 +37,12 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -58,35 +58,35 @@ public class RubyBignum extends RubyInteger {
         bignum.index = ClassIndex.BIGNUM;
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyBignum.class);
 
-        bignum.defineFastMethod("to_s", callbackFactory.getOptMethod("to_s"));
-        bignum.defineFastMethod("coerce", callbackFactory.getMethod("coerce", IRubyObject.class));
-        bignum.defineFastMethod("-@", callbackFactory.getMethod("uminus"));
-        bignum.defineFastMethod("+", callbackFactory.getMethod("plus", IRubyObject.class));
-        bignum.defineFastMethod("-", callbackFactory.getMethod("minus", IRubyObject.class));
-        bignum.defineFastMethod("*", callbackFactory.getMethod("mul", IRubyObject.class));
-        bignum.defineFastMethod("/", callbackFactory.getMethod("div", IRubyObject.class));
-        bignum.defineFastMethod("%", callbackFactory.getMethod("mod", IRubyObject.class));
-        bignum.defineFastMethod("div", callbackFactory.getMethod("div", IRubyObject.class));
-        bignum.defineFastMethod("divmod", callbackFactory.getMethod("divmod", IRubyObject.class));
-        bignum.defineFastMethod("modulo", callbackFactory.getMethod("mod", IRubyObject.class));
-        bignum.defineFastMethod("remainder", callbackFactory.getMethod("remainder", IRubyObject.class));
-        bignum.defineFastMethod("quo", callbackFactory.getMethod("quo", IRubyObject.class));
-        bignum.defineFastMethod("**", callbackFactory.getMethod("pow", IRubyObject.class));
-        bignum.defineFastMethod("&", callbackFactory.getMethod("and", IRubyObject.class));
-        bignum.defineFastMethod("|", callbackFactory.getMethod("or", IRubyObject.class));
-        bignum.defineFastMethod("^", callbackFactory.getMethod("xor", IRubyObject.class));
-        bignum.defineFastMethod("~", callbackFactory.getMethod("neg"));
-        bignum.defineFastMethod("<<", callbackFactory.getMethod("lshift", IRubyObject.class));
-        bignum.defineFastMethod(">>", callbackFactory.getMethod("rshift", IRubyObject.class));
-        bignum.defineFastMethod("[]", callbackFactory.getMethod("aref", IRubyObject.class));
+        bignum.defineFastMethod("to_s", callbackFactory.getFastOptMethod("to_s"));
+        bignum.defineFastMethod("coerce", callbackFactory.getFastMethod("coerce", IRubyObject.class));
+        bignum.defineFastMethod("-@", callbackFactory.getFastMethod("uminus"));
+        bignum.defineFastMethod("+", callbackFactory.getFastMethod("plus", IRubyObject.class));
+        bignum.defineFastMethod("-", callbackFactory.getFastMethod("minus", IRubyObject.class));
+        bignum.defineFastMethod("*", callbackFactory.getFastMethod("mul", IRubyObject.class));
+        bignum.defineFastMethod("/", callbackFactory.getFastMethod("div", IRubyObject.class));
+        bignum.defineFastMethod("%", callbackFactory.getFastMethod("mod", IRubyObject.class));
+        bignum.defineFastMethod("div", callbackFactory.getFastMethod("div", IRubyObject.class));
+        bignum.defineFastMethod("divmod", callbackFactory.getFastMethod("divmod", IRubyObject.class));
+        bignum.defineFastMethod("modulo", callbackFactory.getFastMethod("mod", IRubyObject.class));
+        bignum.defineFastMethod("remainder", callbackFactory.getFastMethod("remainder", IRubyObject.class));
+        bignum.defineFastMethod("quo", callbackFactory.getFastMethod("quo", IRubyObject.class));
+        bignum.defineFastMethod("**", callbackFactory.getFastMethod("pow", IRubyObject.class));
+        bignum.defineFastMethod("&", callbackFactory.getFastMethod("and", IRubyObject.class));
+        bignum.defineFastMethod("|", callbackFactory.getFastMethod("or", IRubyObject.class));
+        bignum.defineFastMethod("^", callbackFactory.getFastMethod("xor", IRubyObject.class));
+        bignum.defineFastMethod("~", callbackFactory.getFastMethod("neg"));
+        bignum.defineFastMethod("<<", callbackFactory.getFastMethod("lshift", IRubyObject.class));
+        bignum.defineFastMethod(">>", callbackFactory.getFastMethod("rshift", IRubyObject.class));
+        bignum.defineFastMethod("[]", callbackFactory.getFastMethod("aref", IRubyObject.class));
 
-        bignum.defineFastMethod("<=>", callbackFactory.getMethod("cmp", IRubyObject.class));
-        bignum.defineFastMethod("==", callbackFactory.getMethod("equal", IRubyObject.class));
-        bignum.defineFastMethod("eql?", callbackFactory.getMethod("eql_p", IRubyObject.class));
-        bignum.defineFastMethod("hash", callbackFactory.getMethod("hash"));
-        bignum.defineFastMethod("to_f", callbackFactory.getMethod("to_f"));
-        bignum.defineFastMethod("abs", callbackFactory.getMethod("abs"));
-        bignum.defineFastMethod("size", callbackFactory.getMethod("size"));
+        bignum.defineFastMethod("<=>", callbackFactory.getFastMethod("cmp", IRubyObject.class));
+        bignum.defineFastMethod("==", callbackFactory.getFastMethod("equal", IRubyObject.class));
+        bignum.defineFastMethod("eql?", callbackFactory.getFastMethod("eql_p", IRubyObject.class));
+        bignum.defineFastMethod("hash", callbackFactory.getFastMethod("hash"));
+        bignum.defineFastMethod("to_f", callbackFactory.getFastMethod("to_f"));
+        bignum.defineFastMethod("abs", callbackFactory.getFastMethod("abs"));
+        bignum.defineFastMethod("size", callbackFactory.getFastMethod("size"));
 
         return bignum;
     }
@@ -108,7 +108,7 @@ public class RubyBignum extends RubyInteger {
     }
     
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, byte switchvalue, String name,
-            IRubyObject[] args, CallType callType) {
+            IRubyObject[] args, CallType callType, Block block) {
         switch (switchvalue) {
             case OP_PLUS_SWITCHVALUE:
                 Arity.singleArgument().checkArity(context.getRuntime(), args);
@@ -118,7 +118,7 @@ public class RubyBignum extends RubyInteger {
                 return minus(args[0]);
             case 0:
             default:
-                return super.callMethod(context, rubyclass, name, args, callType);
+                return super.callMethod(context, rubyclass, name, args, callType, block);
         }
     }
 

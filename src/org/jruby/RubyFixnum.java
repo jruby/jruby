@@ -35,8 +35,8 @@
 package org.jruby;
 
 import java.math.BigInteger;
-
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
@@ -59,47 +59,47 @@ public class RubyFixnum extends RubyInteger {
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyFixnum.class);
 
         fixnum.includeModule(runtime.getModule("Precision"));
-        fixnum.defineFastSingletonMethod("induced_from", callbackFactory.getSingletonMethod(
+        fixnum.defineFastSingletonMethod("induced_from", callbackFactory.getFastSingletonMethod(
                 "induced_from", IRubyObject.class));
 
-        fixnum.defineFastMethod("to_s", callbackFactory.getOptMethod("to_s"));
+        fixnum.defineFastMethod("to_s", callbackFactory.getFastOptMethod("to_s"));
 
-        fixnum.defineFastMethod("id2name", callbackFactory.getMethod("id2name"));
-        fixnum.defineFastMethod("to_sym", callbackFactory.getMethod("to_sym"));
+        fixnum.defineFastMethod("id2name", callbackFactory.getFastMethod("id2name"));
+        fixnum.defineFastMethod("to_sym", callbackFactory.getFastMethod("to_sym"));
 
-        fixnum.defineFastMethod("-@", callbackFactory.getMethod("uminus"));
-        fixnum.defineFastMethod("+", callbackFactory.getMethod("plus", IRubyObject.class));
-        fixnum.defineFastMethod("-", callbackFactory.getMethod("minus", IRubyObject.class));
-        fixnum.defineFastMethod("*", callbackFactory.getMethod("mul", IRubyObject.class));
-        fixnum.defineFastMethod("/", callbackFactory.getMethod("div_slash", IRubyObject.class));
-        fixnum.defineFastMethod("div", callbackFactory.getMethod("div_div", IRubyObject.class));
-        fixnum.defineFastMethod("%", callbackFactory.getMethod("mod", IRubyObject.class));
-        fixnum.defineFastMethod("modulo", callbackFactory.getMethod("mod", IRubyObject.class));
-        fixnum.defineFastMethod("divmod", callbackFactory.getMethod("divmod", IRubyObject.class));
-        fixnum.defineFastMethod("quo", callbackFactory.getMethod("quo", IRubyObject.class));
-        fixnum.defineFastMethod("**", callbackFactory.getMethod("pow", IRubyObject.class));
+        fixnum.defineFastMethod("-@", callbackFactory.getFastMethod("uminus"));
+        fixnum.defineFastMethod("+", callbackFactory.getFastMethod("plus", IRubyObject.class));
+        fixnum.defineFastMethod("-", callbackFactory.getFastMethod("minus", IRubyObject.class));
+        fixnum.defineFastMethod("*", callbackFactory.getFastMethod("mul", IRubyObject.class));
+        fixnum.defineFastMethod("/", callbackFactory.getFastMethod("div_slash", IRubyObject.class));
+        fixnum.defineFastMethod("div", callbackFactory.getFastMethod("div_div", IRubyObject.class));
+        fixnum.defineFastMethod("%", callbackFactory.getFastMethod("mod", IRubyObject.class));
+        fixnum.defineFastMethod("modulo", callbackFactory.getFastMethod("mod", IRubyObject.class));
+        fixnum.defineFastMethod("divmod", callbackFactory.getFastMethod("divmod", IRubyObject.class));
+        fixnum.defineFastMethod("quo", callbackFactory.getFastMethod("quo", IRubyObject.class));
+        fixnum.defineFastMethod("**", callbackFactory.getFastMethod("pow", IRubyObject.class));
 
-        fixnum.defineFastMethod("abs", callbackFactory.getMethod("abs"));
+        fixnum.defineFastMethod("abs", callbackFactory.getFastMethod("abs"));
 
-        fixnum.defineFastMethod("==", callbackFactory.getMethod("equal", IRubyObject.class));
-        fixnum.defineFastMethod("<=>", callbackFactory.getMethod("cmp", IRubyObject.class));
+        fixnum.defineFastMethod("==", callbackFactory.getFastMethod("equal", IRubyObject.class));
+        fixnum.defineFastMethod("<=>", callbackFactory.getFastMethod("cmp", IRubyObject.class));
 
-        fixnum.defineFastMethod(">", callbackFactory.getMethod("gt", IRubyObject.class));
-        fixnum.defineFastMethod(">=", callbackFactory.getMethod("ge", IRubyObject.class));
-        fixnum.defineFastMethod("<", callbackFactory.getMethod("lt", IRubyObject.class));
-        fixnum.defineFastMethod("<=", callbackFactory.getMethod("le", IRubyObject.class));
+        fixnum.defineFastMethod(">", callbackFactory.getFastMethod("gt", IRubyObject.class));
+        fixnum.defineFastMethod(">=", callbackFactory.getFastMethod("ge", IRubyObject.class));
+        fixnum.defineFastMethod("<", callbackFactory.getFastMethod("lt", IRubyObject.class));
+        fixnum.defineFastMethod("<=", callbackFactory.getFastMethod("le", IRubyObject.class));
 
-        fixnum.defineFastMethod("~", callbackFactory.getMethod("rev"));
-        fixnum.defineFastMethod("&", callbackFactory.getMethod("and", IRubyObject.class));
-        fixnum.defineFastMethod("|", callbackFactory.getMethod("or", IRubyObject.class));
-        fixnum.defineFastMethod("^", callbackFactory.getMethod("xor", IRubyObject.class));
-        fixnum.defineFastMethod("[]", callbackFactory.getMethod("aref", IRubyObject.class));
-        fixnum.defineFastMethod("<<", callbackFactory.getMethod("lshift", IRubyObject.class));
-        fixnum.defineFastMethod(">>", callbackFactory.getMethod("rshift", IRubyObject.class));
+        fixnum.defineFastMethod("~", callbackFactory.getFastMethod("rev"));
+        fixnum.defineFastMethod("&", callbackFactory.getFastMethod("and", IRubyObject.class));
+        fixnum.defineFastMethod("|", callbackFactory.getFastMethod("or", IRubyObject.class));
+        fixnum.defineFastMethod("^", callbackFactory.getFastMethod("xor", IRubyObject.class));
+        fixnum.defineFastMethod("[]", callbackFactory.getFastMethod("aref", IRubyObject.class));
+        fixnum.defineFastMethod("<<", callbackFactory.getFastMethod("lshift", IRubyObject.class));
+        fixnum.defineFastMethod(">>", callbackFactory.getFastMethod("rshift", IRubyObject.class));
 
-        fixnum.defineFastMethod("to_f", callbackFactory.getMethod("to_f"));
-        fixnum.defineFastMethod("size", callbackFactory.getMethod("size"));
-        fixnum.defineFastMethod("zero?", callbackFactory.getMethod("zero_p"));
+        fixnum.defineFastMethod("to_f", callbackFactory.getFastMethod("to_f"));
+        fixnum.defineFastMethod("size", callbackFactory.getFastMethod("size"));
+        fixnum.defineFastMethod("zero?", callbackFactory.getFastMethod("zero_p"));
 
         return fixnum;
     }    
@@ -110,7 +110,7 @@ public class RubyFixnum extends RubyInteger {
     public static final long MAX = (1L<<(BIT_SIZE - 1)) - 1;
     public static final long MIN = -1 * MAX - 1;
     private static final long MAX_MARSHAL_FIXNUM = (1L << 30) - 1;
-    
+
     public static final byte OP_PLUS_SWITCHVALUE = 1;
     public static final byte OP_MINUS_SWITCHVALUE = 2;
     public static final byte OP_LT_SWITCHVALUE = 3;
@@ -125,7 +125,7 @@ public class RubyFixnum extends RubyInteger {
     }
     
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, byte switchvalue, String name,
-            IRubyObject[] args, CallType callType) {
+            IRubyObject[] args, CallType callType, Block block) {
         switch (switchvalue) {
             case OP_PLUS_SWITCHVALUE:
                 Arity.singleArgument().checkArity(context.getRuntime(), args);
@@ -138,7 +138,7 @@ public class RubyFixnum extends RubyInteger {
                 return lt(args[0]);
             case 0:
             default:
-                return super.callMethod(context, rubyclass, name, args, callType);
+                return super.callMethod(context, rubyclass, name, args, callType, block);
         }
     }
     
@@ -193,24 +193,24 @@ public class RubyFixnum extends RubyInteger {
     public RubyFixnum hash() {
         return newFixnum(hashCode());
     }
-
+    
     public int hashCode() {
         return (int) value ^ (int) (value >> 32);
     }
-
+    
     public boolean equals(Object other) {
         if (other == this) {
             return true;
         }
-
-        if (other instanceof RubyFixnum) {
-            RubyFixnum num = (RubyFixnum) other;
-
+        
+        if (other instanceof RubyFixnum) { 
+            RubyFixnum num = (RubyFixnum)other;
+            
             if (num.value == value) {
                 return true;
             }
         }
-
+        
         return false;
     }
 
@@ -224,7 +224,7 @@ public class RubyFixnum extends RubyInteger {
      */
     public RubyString to_s(IRubyObject[] args) {
         checkArgumentCount(args, 0, 1);
-
+        
         int base = args.length == 0 ? 10 : num2int(args[0]);
         if (base < 2 || base > 36) {
             throw getRuntime().newArgumentError("illegal radix " + base);
@@ -262,7 +262,7 @@ public class RubyFixnum extends RubyInteger {
             return RubyBignum.newBignum(getRuntime(), BigInteger.valueOf(value).negate());
         }
         return RubyFixnum.newFixnum(getRuntime(), -value);
-    }
+        }
 
     /** fix_plus
      * 
@@ -274,11 +274,11 @@ public class RubyFixnum extends RubyInteger {
             if ((~(value ^ otherValue) & (value ^ result) & SIGN_BIT) != 0) {
                 return RubyBignum.newBignum(getRuntime(), value).plus(other);
             }
-            return newFixnum(result);
-        }
+		return newFixnum(result);
+    }
         if (other instanceof RubyBignum) {
             return ((RubyBignum) other).plus(this);
-        }
+    }
         if (other instanceof RubyFloat) {
             return getRuntime().newFloat((double) value + ((RubyFloat) other).getDoubleValue());
         }
@@ -294,7 +294,7 @@ public class RubyFixnum extends RubyInteger {
             long result = value - otherValue;
             if ((~(value ^ ~otherValue) & (value ^ result) & SIGN_BIT) != 0) {
                 return RubyBignum.newBignum(getRuntime(), value).minus(other);
-            }
+    }
             return newFixnum(result);
         } else if (other instanceof RubyBignum) {
             return RubyBignum.newBignum(getRuntime(), value).minus(other);
@@ -312,7 +312,7 @@ public class RubyFixnum extends RubyInteger {
             long otherValue = ((RubyFixnum) other).value;
             if (value == 0) {
                 return RubyFixnum.zero(getRuntime());
-            }
+    }
             long result = value * otherValue;
             IRubyObject r = newFixnum(getRuntime(),result);
             if(RubyNumeric.fix2long(r) != result || result/value != otherValue) {
@@ -326,7 +326,7 @@ public class RubyFixnum extends RubyInteger {
         }
         return coerceBin("*", other);
     }
-
+    
     /** fix_div
      * here is terrible MRI gotcha:
      * 1.div 3.0 -> 0
@@ -339,8 +339,8 @@ public class RubyFixnum extends RubyInteger {
      */
     public IRubyObject div_div(IRubyObject other) {
         return idiv(other, "div");
-    }
-
+    	}
+    	
     public IRubyObject div_slash(IRubyObject other) {
         return idiv(other, "/");
     }
@@ -349,22 +349,23 @@ public class RubyFixnum extends RubyInteger {
         if (other instanceof RubyFixnum) {
             long x = value;
             long y = ((RubyFixnum) other).value;
-
+            
             if (y == 0) {
-                throw getRuntime().newZeroDivisionError();
+            	throw getRuntime().newZeroDivisionError();
             }
-
+            
             long div = x / y;
             long mod = x % y;
 
             if (mod < 0 && y > 0 || mod > 0 && y < 0) {
                 div -= 1;
-    	}
+            }
+
             return getRuntime().newFixnum(div);
-    }
+        } 
         return coerceBin(method, other);
     }
-
+        
     /** fix_mod
      * 
      */
@@ -376,19 +377,19 @@ public class RubyFixnum extends RubyInteger {
 
             if (y == 0) {
             	throw getRuntime().newZeroDivisionError();
-            }
+    }
 
             long mod = x % y;
 
             if (mod < 0 && y > 0 || mod > 0 && y < 0) {
                 mod += y;
             }
-
+                
             return getRuntime().newFixnum(mod);
-        }
+	            }
         return coerceBin("%", other);
     }
-
+                
     /** fix_divmod
      * 
      */
@@ -400,7 +401,7 @@ public class RubyFixnum extends RubyInteger {
 
             if (y == 0) {
                 throw runtime.newZeroDivisionError();
-            }
+                }
 
             long div = x / y;
             long mod = x % y;
@@ -415,10 +416,10 @@ public class RubyFixnum extends RubyInteger {
 
             return RubyArray.newArray(runtime, fixDiv, fixMod);
 
-    }
+    	}
         return coerceBin("divmod", other);
     }
-
+    	
     /** fix_quo
      * 
      */
@@ -426,7 +427,7 @@ public class RubyFixnum extends RubyInteger {
         if (other instanceof RubyFixnum) {
             return RubyFloat.newFloat(getRuntime(), (double) value
                     / (double) ((RubyFixnum) other).value);
-            }
+    }
         return coerceBin("quo", other);
 	            }
 
@@ -434,11 +435,11 @@ public class RubyFixnum extends RubyInteger {
      * 
      */
     public IRubyObject pow(IRubyObject other) {
-        if (other instanceof RubyFixnum) {
+        if(other instanceof RubyFixnum) {
             long b = ((RubyFixnum) other).value;
             if (b == 0) {
                 return RubyFixnum.one(getRuntime());
-                }
+            }
             if (b == 1) {
                 return this;
             }
@@ -452,24 +453,24 @@ public class RubyFixnum extends RubyInteger {
         }
         return coerceBin("**", other);
     }
-
+            
     /** fix_abs
      * 
      */
     public IRubyObject abs() {
         if (value < 0) {
             return RubyFixnum.newFixnum(getRuntime(), -value);
-    	}
+            }
         return this;
     }
-
+            
     /** fix_equal
      * 
      */
     public IRubyObject equal(IRubyObject other) {
         if (other instanceof RubyFixnum) {
             return RubyBoolean.newBoolean(getRuntime(), value == ((RubyFixnum) other).value);
-            }
+        }
         return super.equal(other);
             }
 
@@ -481,7 +482,7 @@ public class RubyFixnum extends RubyInteger {
             long otherValue = ((RubyFixnum) other).value;
             if (value == otherValue) {
                 return RubyFixnum.zero(getRuntime());
-        }
+    }
             if (value > otherValue) {
                 return RubyFixnum.one(getRuntime());
             }
@@ -506,7 +507,7 @@ public class RubyFixnum extends RubyInteger {
     public IRubyObject ge(IRubyObject other) {
         if (other instanceof RubyFixnum) {
             return RubyBoolean.newBoolean(getRuntime(), value >= ((RubyFixnum) other).value);
-        }
+            }
         return coerceRelOp(">=", other);
     }
 
@@ -516,17 +517,17 @@ public class RubyFixnum extends RubyInteger {
     public IRubyObject lt(IRubyObject other) {
         if (other instanceof RubyFixnum) {
             return RubyBoolean.newBoolean(getRuntime(), value < ((RubyFixnum) other).value);
-            }
+        }
         return coerceRelOp("<", other);
     }
-
+        
     /** fix_le
      * 
      */
     public IRubyObject le(IRubyObject other) {
         if (other instanceof RubyFixnum) {
             return RubyBoolean.newBoolean(getRuntime(), value <= ((RubyFixnum) other).value);
-        }
+    }
         return coerceRelOp("<=", other);
     }
 
@@ -536,7 +537,7 @@ public class RubyFixnum extends RubyInteger {
     public IRubyObject rev() {
         return newFixnum(~value);
     	}
-
+    	
     /** fix_and
      * 
      */
@@ -560,7 +561,7 @@ public class RubyFixnum extends RubyInteger {
         if (other instanceof RubyNumeric) {
             return newFixnum(value | ((RubyNumeric) other).getLongValue());
         }
-
+        
         return or(RubyFixnum.newFixnum(getRuntime(), num2long(other)));
     }
 
@@ -568,7 +569,7 @@ public class RubyFixnum extends RubyInteger {
      * 
      */
     public IRubyObject xor(IRubyObject other) {
-        if (other instanceof RubyFixnum) {
+        if(other instanceof RubyFixnum) {
             return newFixnum(value ^ ((RubyFixnum) other).value);
             }
         if (other instanceof RubyBignum) {
@@ -585,30 +586,30 @@ public class RubyFixnum extends RubyInteger {
      * 
      */
     public IRubyObject aref(IRubyObject other) {
-        if (other instanceof RubyBignum) {
+        if(other instanceof RubyBignum) {
             RubyBignum big = (RubyBignum) other;
             RubyObject tryFix = RubyBignum.bignorm(getRuntime(), big.getValue());
             if (!(tryFix instanceof RubyFixnum)) {
                 if (big.getValue().signum() == 0 || value >= 0) {
                     return RubyFixnum.zero(getRuntime());
-                }
-                return RubyFixnum.one(getRuntime());
-            }
         }
+                return RubyFixnum.one(getRuntime());
+        }
+    }
 
         long otherValue = num2long(other);
-
+            
         if (otherValue < 0) {
             return RubyFixnum.zero(getRuntime());
-        }
-
+		    } 
+		      
         if (BIT_SIZE - 1 < otherValue) {
             if (value < 0) {
                 return RubyFixnum.one(getRuntime());
-            }
+        }
             return RubyFixnum.zero(getRuntime());
         }
-
+        
         return (value & (1L << otherValue)) == 0 ? RubyFixnum.zero(getRuntime()) : RubyFixnum.one(getRuntime());
     }
 
@@ -618,18 +619,18 @@ public class RubyFixnum extends RubyInteger {
     public IRubyObject lshift(IRubyObject other) {
         long width = num2long(other);
 
-        if (width < 0) {
+            if (width < 0) {
             return rshift(RubyFixnum.newFixnum(getRuntime(), -width));
-        }
-
+		    }
+    	
         if (width == 0) {
             return this;
-        }
+    }
 
         if (width > BIT_SIZE - 1 || ((~0L << BIT_SIZE - width - 1) & value) != 0) {
             return RubyBignum.newBignum(getRuntime(), value).lshift(other);
         }
-
+        
         return newFixnum(value << width);
     }
 
@@ -641,35 +642,35 @@ public class RubyFixnum extends RubyInteger {
 
         if (width < 0) {
             return lshift(RubyFixnum.newFixnum(getRuntime(), -width));
-        }
-
+    }
+    
         if (width == 0) {
             return this;
-        }
+    }
 
         if (width >= BIT_SIZE - 1) {
             if (value < 0) {
                 return RubyFixnum.minus_one(getRuntime());
-        }
+    }
             return RubyFixnum.zero(getRuntime());
         }
 
         return newFixnum(value >> width);
-    }
+        }
 
     /** fix_to_f 
      * 
      */
     public IRubyObject to_f() {
         return RubyFloat.newFloat(getRuntime(), (double) value);
-        }
+    }
 
     /** fix_size 
      * 
      */
     public IRubyObject size() {
         return newFixnum((long) ((BIT_SIZE + 7) / 8));
-    }
+        }
 
     /** fix_zero_p 
      * 
@@ -692,7 +693,7 @@ public class RubyFixnum extends RubyInteger {
 
     public IRubyObject rbClone() {
         throw getRuntime().newTypeError("can't clone Fixnum");
-        }
+    }
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {
         if (value <= MAX_MARSHAL_FIXNUM) {
@@ -718,5 +719,5 @@ public class RubyFixnum extends RubyInteger {
 
     public static IRubyObject induced_from(IRubyObject recv, IRubyObject other) {
         return RubyNumeric.num2fix(other);
-    }
+}
 }

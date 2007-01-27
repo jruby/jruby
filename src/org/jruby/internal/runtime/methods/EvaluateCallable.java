@@ -35,6 +35,7 @@ import org.jruby.ast.Node;
 import org.jruby.ast.types.IArityNode;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -56,8 +57,8 @@ public class EvaluateCallable extends AbstractCallable {
     	this(node, procArityOf(vars));
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject receiver, IRubyObject[] args) {
-        return EvaluationState.eval(context, node, receiver);
+    public IRubyObject call(ThreadContext context, IRubyObject receiver, IRubyObject[] args, Block block) {
+        return EvaluationState.eval(context, node, receiver, block);
     }
 
     public Node getNode() {
