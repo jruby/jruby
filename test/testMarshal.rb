@@ -206,3 +206,36 @@ test_equal(8, Marshal::MINOR_VERSION)
 x = {}
 x.default = "foo"
 test_equal("foo", Marshal.load(Marshal.dump(x)).default)
+
+# Range tests
+x = 1..10
+y = Marshal.load(Marshal.dump(x))
+test_equal(x, y)
+test_equal(x.class, y.class)
+test_no_exception {
+  test_equal(10, y.max)
+  test_equal(1, y.min)
+  test_equal(false, y.exclude_end?)
+  y.each {}
+}
+z = Marshal.dump(x)
+test_ok(z.include?("excl"))
+test_ok(z.include?("begin"))
+test_ok(z.include?("end"))
+
+class MyRange < Range
+  attr_accessor :foo
+
+  def initialize(a,b)
+    super
+    @foo = "hello"
+  end
+end
+
+x = MyRange.new(1,10)
+y = Marshal.load(Marshal.dump(x))
+test_equal(MyRange, y.class)
+test_no_exception {
+  test_equal(10, y.max)
+  test_equal("hello", y.foo)
+}

@@ -182,6 +182,23 @@ public class MarshalStream extends FilterOutputStream {
         IRubyObject marshaled =  value.callMethod(runtime.getCurrentContext(), "marshal_dump"); 
         dumpObject(marshaled);
     }
+    
+    public void dumpInstanceVars(Map instanceVars) throws IOException {
+        dumpInt(instanceVars.size());
+        for (Iterator iter = instanceVars.keySet().iterator(); iter.hasNext();) {
+            String name = (String) iter.next();
+            IRubyObject value = (IRubyObject)instanceVars.get(name);
+
+            dumpObject(RubySymbol.newSymbol(runtime, name));
+            dumpObject(value);
+        }
+    }
+    
+    public void dumpDefaultObjectHeader(RubyClass type) throws IOException {
+        write('o');
+        RubySymbol classname = RubySymbol.newSymbol(runtime, type.getName());
+        dumpObject(classname);
+    }
 
     public void dumpString(String value) throws IOException {
         dumpInt(value.length());

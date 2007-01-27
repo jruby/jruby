@@ -131,9 +131,9 @@ public class RubyMarshal {
                 throw recv.getRuntime().newTypeError("instance of IO needed");
             }
             
-            UnmarshalStream input = new UnmarshalStream(recv.getRuntime(), rawInput);
+            UnmarshalStream input = new UnmarshalStream(recv.getRuntime(), rawInput, proc);
 
-            return input.unmarshalObject(proc);
+            return input.unmarshalObject();
 
         } catch (EOFException ee) {
             throw recv.getRuntime().newEOFError();

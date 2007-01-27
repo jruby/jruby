@@ -1222,18 +1222,7 @@ public class RubyObject implements Cloneable, IRubyObject {
    }
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {
-        output.write('o');
-        RubySymbol classname = RubySymbol.newSymbol(getRuntime(), getMetaClass().getName());
-        output.dumpObject(classname);
-        Map iVars = getInstanceVariablesSnapshot();
-        output.dumpInt(iVars.size());
-        for (Iterator iter = iVars.keySet().iterator(); iter.hasNext();) {
-            String name = (String) iter.next();
-            IRubyObject value = (IRubyObject)iVars.get(name);
-            
-            output.dumpObject(RubySymbol.newSymbol(getRuntime(), name));
-            output.dumpObject(value);
-        }
+        getMetaClass().marshal(this, output);
     }
    
     

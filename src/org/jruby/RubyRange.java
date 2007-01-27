@@ -36,12 +36,18 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.UnmarshalStream;
 
 /**
  * @author jpetersen
@@ -75,9 +81,46 @@ public class RubyRange extends RubyObject {
             return new RubyRange(runtime, klass);
         }
     };
+    
+    private static final ObjectMarshal RANGE_MARSHAL = new ObjectMarshal() {
+        public void marshalTo(IRuby runtime, Object obj, RubyClass type,
+                              MarshalStream marshalStream) throws IOException {
+            RubyRange range = (RubyRange)obj;
+            
+            marshalStream.dumpDefaultObjectHeader(type);
+            
+            // FIXME: This is a pretty inefficient way to do this, but we need child class
+            // ivars and begin/end together
+            Map iVars = new HashMap(range.getInstanceVariables());
+            
+            // add our "begin" and "end" instance vars to the collection
+            iVars.put("begin", range.begin);
+            iVars.put("end", range.end);
+            iVars.put("excl", range.isExclusive? runtime.getTrue() : runtime.getFalse());
+            
+            marshalStream.dumpInstanceVars(iVars);
+        }
 
+        public Object unmarshalFrom(IRuby runtime, RubyClass type,
+                                    UnmarshalStream unmarshalStream) throws IOException {
+            RubyRange range = (RubyRange)type.allocate();
+            
+            unmarshalStream.registerLinkTarget(range);
+
+            unmarshalStream.defaultInstanceVarsUnmarshal(range);
+            
+            range.begin = range.getInstanceVariable("begin");
+            range.end = range.getInstanceVariable("end");
+
+            return range;
+        }
+    };
+    
     public static RubyClass createRangeClass(IRuby runtime) {
         RubyClass result = runtime.defineClass("Range", runtime.getObject(), RANGE_ALLOCATOR);
+        
+        result.setMarshal(RANGE_MARSHAL);
+        
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyRange.class);
         
         result.includeModule(runtime.getModule("Enumerable"));
@@ -99,12 +142,12 @@ public class RubyRange extends RubyObject {
 
         result.defineMethod("to_a", callbackFactory.getMethod("to_a"));
         result.defineMethod("include?", callbackFactory.getMethod("include_p", IRubyObject.class));
-		// We override Enumerable#member? since ranges in 1.8.1 are continuous.
-		result.defineAlias("member?", "include?");
+        // We override Enumerable#member? since ranges in 1.8.1 are continuous.
+        result.defineAlias("member?", "include?");
         result.defineAlias("===", "include?");
         
-		CallbackFactory classCB = runtime.callbackFactory(RubyClass.class);
-		result.defineSingletonMethod("new", classCB.getOptMethod("newInstance"));
+        CallbackFactory classCB = runtime.callbackFactory(RubyClass.class);
+        result.defineSingletonMethod("new", classCB.getOptMethod("newInstance"));
         
         return result;
     }

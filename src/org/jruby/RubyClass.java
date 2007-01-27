@@ -30,11 +30,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.IOException;
 import java.util.HashMap;
-
+import java.util.Iterator;
+import java.util.Map;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -51,38 +54,85 @@ public class RubyClass extends RubyModule {
     
     // the default allocator
     private final ObjectAllocator allocator;
+    
+    private ObjectMarshal marshal;
+    
+    private static final ObjectMarshal DEFAULT_OBJECT_MARSHAL = new ObjectMarshal() {
+        public void marshalTo(IRuby runtime, Object obj, RubyClass type,
+                              MarshalStream marshalStream) throws IOException {
+            IRubyObject object = (IRubyObject)obj;
+            
+            marshalStream.dumpDefaultObjectHeader(type);
+            
+            Map iVars = object.getInstanceVariablesSnapshot();
+            
+            marshalStream.dumpInstanceVars(iVars);
+        }
+
+        public Object unmarshalFrom(IRuby runtime, RubyClass type,
+                                    UnmarshalStream unmarshalStream) throws IOException {
+            IRubyObject result = type.allocate();
+            
+            unmarshalStream.registerLinkTarget(result);
+
+            unmarshalStream.defaultInstanceVarsUnmarshal(result);
+
+            return result;
+        }
+    };
 
     /**
      * @mri rb_boot_class
      */
+    
+    /**
+     * @mri rb_boot_class
+     */
     protected RubyClass(RubyClass superClass, ObjectAllocator allocator) {
-        super(superClass.getRuntime(), superClass.getRuntime().getClass("Class"), superClass, null, null);
+        this(superClass.getRuntime(), superClass.getRuntime().getClass("Class"), superClass, allocator, null, null);
 
         infectBy(superClass);
-        this.runtime = superClass.getRuntime();
-        this.allocator = allocator;
     }
 
     protected RubyClass(IRuby runtime, RubyClass superClass, ObjectAllocator allocator) {
-        super(runtime, null, superClass, null, null);
-        this.allocator = allocator;
-        this.runtime = runtime;
+        this(runtime, null, superClass, allocator, null, null);
     }
 
     protected RubyClass(IRuby runtime, RubyClass metaClass, RubyClass superClass, ObjectAllocator allocator) {
-        super(runtime, metaClass, superClass, null, null);
-        this.allocator = allocator;
-        this.runtime = runtime;
+        this(runtime, metaClass, superClass, allocator, null, null);
     }
     
     protected RubyClass(IRuby runtime, RubyClass metaClass, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef, String name) {
         super(runtime, metaClass, superClass, parentCRef, name);
         this.allocator = allocator;
         this.runtime = runtime;
+        
+        // use superclass's marshal by default, or the default marshal
+        if (superClass != null) {
+            this.marshal = superClass.getMarshal();
+        } else {
+            this.marshal = DEFAULT_OBJECT_MARSHAL;
+        }
     }
     
     public final IRubyObject allocate() {
         return getAllocator().allocate(getRuntime(), this);
+    }
+    
+    public final ObjectMarshal getMarshal() {
+        return marshal;
+    }
+    
+    public final void setMarshal(ObjectMarshal marshal) {
+        this.marshal = marshal;
+    }
+    
+    public final void marshal(Object obj, MarshalStream marshalStream) throws IOException {
+        getMarshal().marshalTo(getRuntime(), obj, this, marshalStream);
+    }
+    
+    public final Object unmarshal(UnmarshalStream unmarshalStream) throws IOException {
+        return getMarshal().unmarshalFrom(getRuntime(), this, unmarshalStream);
     }
     
     public static RubyClass newClassClass(IRuby runtime, RubyClass moduleClass) {

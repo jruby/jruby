@@ -60,27 +60,25 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class UnmarshalStream extends FilterInputStream {
     protected final IRuby runtime;
     private UnmarshalCache cache;
+    private IRubyObject proc;
 
-    public UnmarshalStream(IRuby runtime, InputStream in) throws IOException {
+    public UnmarshalStream(IRuby runtime, InputStream in, IRubyObject proc) throws IOException {
         super(in);
         this.runtime = runtime;
         this.cache = new UnmarshalCache(runtime);
+        this.proc = proc;
 
         in.read(); // Major
         in.read(); // Minor
     }
 
     public IRubyObject unmarshalObject() throws IOException {
-        return unmarshalObject(null);
-    }
-
-    public IRubyObject unmarshalObject(IRubyObject proc) throws IOException {
         int type = readUnsignedByte();
         IRubyObject result;
         if (cache.isLinkType(type)) {
             result = cache.readLink(this, type);
         } else {
-        	result = unmarshalObjectDirectly(type, proc);
+        	result = unmarshalObjectDirectly(type);
         }
         return result;
     }
@@ -89,12 +87,12 @@ public class UnmarshalStream extends FilterInputStream {
         cache.register(newObject);
     }
 
-    private IRubyObject unmarshalObjectDirectly(int type, IRubyObject proc) throws IOException {
+    private IRubyObject unmarshalObjectDirectly(int type) throws IOException {
     	IRubyObject rubyObj = null;
         switch (type) {
         	case 'I':
-                rubyObj = unmarshalObject(proc);
-                defaultInstanceVarsUnmarshal(rubyObj, proc);
+                rubyObj = unmarshalObject();
+                defaultInstanceVarsUnmarshal(rubyObj);
         		break;
             case '0' :
                 rubyObj = runtime.getNil();
@@ -143,7 +141,7 @@ public class UnmarshalStream extends FilterInputStream {
                 rubyObj = RubyStruct.unmarshalFrom(this);
                 break;
             case 'o' :
-                rubyObj = defaultObjectUnmarshal(proc);
+                rubyObj = defaultObjectUnmarshal();
                 break;
             case 'u' :
                 rubyObj = userUnmarshal();
@@ -221,7 +219,7 @@ public class UnmarshalStream extends FilterInputStream {
         return (int) result;
     }
 
-    private IRubyObject defaultObjectUnmarshal(IRubyObject proc) throws IOException {
+    private IRubyObject defaultObjectUnmarshal() throws IOException {
         RubySymbol className = (RubySymbol) unmarshalObject();
 
         // ... FIXME: handle if class doesn't exist ...
@@ -229,20 +227,17 @@ public class UnmarshalStream extends FilterInputStream {
         RubyClass type = (RubyClass) runtime.getClassFromPath(className.asSymbol());
 
         assert type != null : "type shouldn't be null.";
-
-        IRubyObject result = new RubyObject(runtime, type);
-        registerLinkTarget(result);
-
-        defaultInstanceVarsUnmarshal(result, proc);
+        
+        IRubyObject result = (IRubyObject)type.unmarshal(this);
 
         return result;
     }
     
-    private void defaultInstanceVarsUnmarshal(IRubyObject object, IRubyObject proc) throws IOException {
+    public void defaultInstanceVarsUnmarshal(IRubyObject object) throws IOException {
     	int count = unmarshalInt();
     	
     	for (int i = 0; i < count; i++) {
-    		object.setInstanceVariable(unmarshalObject().asSymbol(), unmarshalObject(proc));
+    		object.setInstanceVariable(unmarshalObject().asSymbol(), unmarshalObject());
     	}
     }
     
