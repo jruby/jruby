@@ -28,6 +28,7 @@
 
 package org.jruby;
 
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.CallbackFactory;
@@ -49,12 +50,12 @@ public class RubyNameError extends RubyException {
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyNameError.class);
         
         nameErrorClass.defineFastSingletonMethod("new", 
-                callbackFactory.getOptSingletonMethod("newRubyNameError"));		
+                callbackFactory.getFastOptSingletonMethod("newRubyNameError"));		
         nameErrorClass.defineFastSingletonMethod("exception", 
-				callbackFactory.getOptSingletonMethod("newRubyNameError"));		
+				callbackFactory.getFastOptSingletonMethod("newRubyNameError"));		
 
         nameErrorClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
-        nameErrorClass.defineFastMethod("name", callbackFactory.getMethod("name"));
+        nameErrorClass.defineFastMethod("name", callbackFactory.getFastMethod("name"));
 
         return nameErrorClass;
     }
@@ -75,15 +76,15 @@ public class RubyNameError extends RubyException {
     public static RubyNameError newRubyNameError(IRubyObject recv, IRubyObject[] args) {
         RubyClass klass = (RubyClass)recv;
         
-        RubyNameError newError = (RubyNameError)klass.allocate();
+        RubyNameError newError = (RubyNameError) klass.allocate();
         
-        newError.callInit(args);
+        newError.callInit(args, null);
         
         return newError;
     }
 
-    public IRubyObject initialize(IRubyObject[] args) {
-        super.initialize(args);
+    public IRubyObject initialize(IRubyObject[] args, Block block) {
+        super.initialize(args, block);
         if (args.length > 1) {
             name = args[1];
         }

@@ -56,6 +56,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.openssl.x509store.PEM;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -78,17 +79,17 @@ public class PKeyRSA extends PKey {
         CallbackFactory rsacb = runtime.callbackFactory(PKeyRSA.class);
 
         cRSA.defineMethod("initialize",rsacb.getOptMethod("initialize"));
-        cRSA.defineMethod("public?",rsacb.getMethod("public_p"));
-        cRSA.defineMethod("private?",rsacb.getMethod("private_p"));
-        cRSA.defineMethod("to_der",rsacb.getMethod("to_der"));
-        cRSA.defineMethod("public_key",rsacb.getMethod("public_key"));
-        cRSA.defineMethod("export",rsacb.getOptMethod("export"));
-        cRSA.defineMethod("to_pem",rsacb.getOptMethod("export"));
-        cRSA.defineMethod("to_s",rsacb.getOptMethod("export"));
-        cRSA.defineMethod("private_encrypt",rsacb.getOptMethod("private_encrypt"));
-        cRSA.defineMethod("private_decrypt",rsacb.getOptMethod("private_decrypt"));
-        cRSA.defineMethod("public_encrypt",rsacb.getOptMethod("public_encrypt"));
-        cRSA.defineMethod("public_decrypt",rsacb.getOptMethod("public_decrypt"));
+        cRSA.defineFastMethod("public?",rsacb.getFastMethod("public_p"));
+        cRSA.defineFastMethod("private?",rsacb.getFastMethod("private_p"));
+        cRSA.defineFastMethod("to_der",rsacb.getFastMethod("to_der"));
+        cRSA.defineFastMethod("public_key",rsacb.getFastMethod("public_key"));
+        cRSA.defineFastMethod("export",rsacb.getFastOptMethod("export"));
+        cRSA.defineFastMethod("to_pem",rsacb.getFastOptMethod("export"));
+        cRSA.defineFastMethod("to_s",rsacb.getFastOptMethod("export"));
+        cRSA.defineFastMethod("private_encrypt",rsacb.getFastOptMethod("private_encrypt"));
+        cRSA.defineFastMethod("private_decrypt",rsacb.getFastOptMethod("private_decrypt"));
+        cRSA.defineFastMethod("public_encrypt",rsacb.getFastOptMethod("public_encrypt"));
+        cRSA.defineMethod("public_decrypt",rsacb.getFastOptMethod("public_decrypt"));
 
         cRSA.setConstant("PKCS1_PADDING",runtime.newFixnum(1));
         cRSA.setConstant("SSLV23_PADDING",runtime.newFixnum(2));
@@ -115,7 +116,7 @@ public class PKeyRSA extends PKey {
         return "RSA";
     }
 
-    public IRubyObject initialize(IRubyObject[] args) {
+    public IRubyObject initialize(IRubyObject[] args, Block block) {
         Object rsa;
         IRubyObject arg;
         IRubyObject pass = null;

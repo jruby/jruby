@@ -83,7 +83,7 @@ public class RubyBoolean extends RubyObject {
     public static RubyClass createFalseClass(IRuby runtime) {
 		RubyClass falseClass = runtime.defineClass("FalseClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
-		falseClass.defineFastMethod("type", runtime.callbackFactory(RubyBoolean.class).getMethod("type"));
+		falseClass.defineFastMethod("type", runtime.callbackFactory(RubyBoolean.class).getFastMethod("type"));
 
 		runtime.defineGlobalConstant("FALSE", runtime.getFalse());
 
@@ -93,7 +93,7 @@ public class RubyBoolean extends RubyObject {
 	public static RubyClass createTrueClass(IRuby runtime) {
 		RubyClass trueClass = runtime.defineClass("TrueClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
-		trueClass.defineFastMethod("type", runtime.callbackFactory(RubyBoolean.class).getMethod("type"));
+		trueClass.defineFastMethod("type", runtime.callbackFactory(RubyBoolean.class).getFastMethod("type"));
 
 		runtime.defineGlobalConstant("TRUE", runtime.getTrue());
 

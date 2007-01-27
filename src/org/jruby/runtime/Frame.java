@@ -46,33 +46,32 @@ public class Frame {
     private String lastFunc;
     private RubyModule lastClass;
     private final ISourcePosition position;
-    private Iter iter;
     private IRuby runtime;
-    private Block blockArg;
     private boolean callingZSuper;
+    // The block that was in play during this frame.
+    private Block block;
 
     private Scope scope;
 
-    public Frame(ThreadContext threadContext, Iter iter, Block blockArg) {
-        this(threadContext.getRuntime(), null, IRubyObject.NULL_ARRAY, null, null, threadContext.getPosition(), 
-             iter, blockArg);   
+    public Frame(ThreadContext threadContext) {
+        this(threadContext.getRuntime(), null, IRubyObject.NULL_ARRAY, null, null, 
+                threadContext.getPosition(), null); 
     }
 
     public Frame(ThreadContext threadContext, IRubyObject self, IRubyObject[] args, 
-    		String lastFunc, RubyModule lastClass, ISourcePosition position, Iter iter, Block blockArg) {
-    	this(threadContext.getRuntime(), self, args, lastFunc, lastClass, position, iter, blockArg);
+    		String lastFunc, RubyModule lastClass, ISourcePosition position, Block block) {
+    	this(threadContext.getRuntime(), self, args, lastFunc, lastClass, position, block);
     }
 
     private Frame(IRuby runtime, IRubyObject self, IRubyObject[] args, String lastFunc,
-                 RubyModule lastClass, ISourcePosition position, Iter iter, Block blockArg) {
+                 RubyModule lastClass, ISourcePosition position, Block block) {
         this.self = self;
         this.args = args;
         this.lastFunc = lastFunc;
         this.lastClass = lastClass;
         this.position = position;
-        this.iter = iter;
         this.runtime = runtime;
-        this.blockArg = blockArg;
+        this.block = block;
     }
 
     /** Getter for property args.
@@ -94,24 +93,6 @@ public class Frame {
      */
     ISourcePosition getPosition() {
         return position;
-    }
-
-    /** Getter for property iter.
-     * @return Value of property iter.
-     */
-    Iter getIter() {
-        return iter;
-    }
-
-    /** Setter for property iter.
-     * @param iter New value of property iter.
-     */
-    void setIter(Iter iter) {
-        this.iter = iter;
-    }
-
-    boolean isBlockGiven() {
-        return iter.isBlockGiven();
     }
 
     /** Getter for property lastClass.
@@ -175,7 +156,7 @@ public class Frame {
         	newArgs = args;
         }
 
-        return new Frame(runtime, self, newArgs, lastFunc, lastClass, position, iter, blockArg);
+        return new Frame(runtime, self, newArgs, lastFunc, lastClass, position, block);
     }
 
     /* (non-Javadoc)
@@ -193,15 +174,15 @@ public class Frame {
         return sb.toString();
     }
     
-    Block getBlockArg() {
-        return blockArg;
-    }
-
     public boolean getCallingZSuper() {
         return callingZSuper;
     }
 
     public void setCallingZSuper(boolean callingZSuper) {
         this.callingZSuper = callingZSuper;
+    }
+    
+    public Block getBlock() {
+        return block;
     }
 }

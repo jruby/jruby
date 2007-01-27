@@ -34,6 +34,7 @@ package org.jruby.internal.runtime.methods;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
@@ -69,7 +70,6 @@ public final class DefaultMethod extends AbstractMethod {
     private boolean hasBeenTargeted = false;
     private int callCount = 0;
     private static final int COMPILE_COUNT = 50;
-    private boolean compiledFast = false;
     private Script jitCompiledScript;
 
     // change to true to enable JIT compilation
@@ -86,8 +86,8 @@ public final class DefaultMethod extends AbstractMethod {
 		assert argsNode != null;
     }
     
-    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
-        context.preDefMethodInternalCall(lastClass, recv, name, args, noSuper, cref, staticScope);
+    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper, Block block) {
+        context.preDefMethodInternalCall(lastClass, recv, name, args, noSuper, cref, staticScope, block);
     }
     
     public void postMethod(ThreadContext context) {
@@ -100,7 +100,7 @@ public final class DefaultMethod extends AbstractMethod {
     // FIXME: This is commented out because problems were found compiling methods that call protected code.
     // because eliminating the pre/post does not change the "self" on the current frame, this caused
     // visibility to be a larger problem. We must revisit this to examine how to avoid this trap for visibility checks.
-    public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
         if (jitCompiledScript != null) {
             try {
                 context.preCompiledMethod(implementationClass, cref);
@@ -110,37 +110,33 @@ public final class DefaultMethod extends AbstractMethod {
                 context.postCompiledMethod();
             }
         } else {
-            return super.call(context, receiver, lastClass, name, args, noSuper);
+            return super.call(context, receiver, lastClass, name, args, noSuper, block);
         }
     }
 
     /**
      * @see AbstractCallable#call(IRuby, IRubyObject, String, IRubyObject[], boolean)
      */
-    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
-    	assert args != null;
+    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
+        	assert args != null;
         if (JIT_ENABLED && jitCompiledScript != null) {
             return jitCompiledScript.run(context, receiver, args, null);
         }
         
         IRuby runtime = context.getRuntime();
-        RubyProc blockArg = null;
         
         if (!hasBeenTargeted) {
             CreateJumpTargetVisitor.setJumpTarget(this, body);
             hasBeenTargeted = true;
         }
 
-        if (argsNode.getBlockArgNode() != null && context.isBlockGiven()) {
-            // do not attempt to compile; we don't handle blocks yet
-            callCount = -1;
+        if (argsNode.getBlockArgNode() != null && block != null) {
+            RubyProc blockArg;
             
-            Block block = context.getCurrentBlock();
             if (block.getBlockObject() instanceof RubyProc) {
-                blockArg = (RubyProc)block.getBlockObject();
-            }
-            else {
-                blockArg = runtime.newProc();
+                blockArg = (RubyProc) block.getBlockObject();
+            } else {
+                blockArg = runtime.newProc(false, block);
                 blockArg.getBlock().isLambda = block.isLambda;
             }
             // We pass depth zero since we know this only applies to newly created local scope
@@ -157,8 +153,8 @@ public final class DefaultMethod extends AbstractMethod {
             if (JIT_ENABLED) {
                 runJIT(runtime, name);
             }
-            
-            return EvaluationState.eval(context, body, receiver);
+                    
+            return EvaluationState.eval(context, body, receiver, block);
         } catch (JumpException je) {
         	if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
 	            if (je.getPrimaryData() == this) {
@@ -170,7 +166,7 @@ public final class DefaultMethod extends AbstractMethod {
             traceReturn(context, runtime, receiver, name);
         }
     }
-   
+
     private void runJIT(IRuby runtime, String name) {
         if (callCount >= 0 && getArity().isFixed()) {
             callCount++;
@@ -253,7 +249,7 @@ public final class DefaultMethod extends AbstractMethod {
             for (int i = expectedArgsCount; i < args.length && iter.hasNext(); i++) {
                 //new AssignmentVisitor(new EvaluationState(runtime, receiver)).assign((Node)iter.next(), args[i], true);
                 // in-frame EvalState should already have receiver set as self, continue to use it
-                AssignmentVisitor.assign(context, context.getFrameSelf(), (Node)iter.next(), args[i], true);
+                AssignmentVisitor.assign(context, context.getFrameSelf(), (Node)iter.next(), args[i], null, true);
                 expectedArgsCount++;
             }
    
@@ -262,7 +258,7 @@ public final class DefaultMethod extends AbstractMethod {
                 //new EvaluationState(runtime, receiver).begin((Node)iter.next());
                 //EvaluateVisitor.getInstance().eval(receiver.getRuntime(), receiver, (Node)iter.next());
                 // in-frame EvalState should already have receiver set as self, continue to use it
-                allArgs.add(EvaluationState.eval(context, ((Node)iter.next()), context.getFrameSelf()));
+                allArgs.add(EvaluationState.eval(context, (Node) iter.next(), context.getFrameSelf(), null));
             }
         }
         
@@ -322,7 +318,7 @@ public final class DefaultMethod extends AbstractMethod {
     
     public DynamicMethod dup() {
         return new DefaultMethod(getImplementationClass(), staticScope, body, argsNode, getVisibility(), cref);
-    }
+    }	
     
     private String cleanJavaIdentifier(String name) {
         char[] characters = name.toCharArray();
@@ -386,7 +382,6 @@ public final class DefaultMethod extends AbstractMethod {
                 }
             }
         }
-            
         return cleanBuffer.toString();
     }
 }

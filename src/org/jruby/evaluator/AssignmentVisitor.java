@@ -48,6 +48,7 @@ import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.NodeTypes;
 import org.jruby.ast.StarNode;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -57,7 +58,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author jpetersen
  */
 public class AssignmentVisitor {
-    public static IRubyObject assign(ThreadContext context, IRubyObject self, Node node, IRubyObject value, boolean check) {
+    public static IRubyObject assign(ThreadContext context, IRubyObject self, Node node, IRubyObject value, Block block, boolean check) {
         IRubyObject result = null;
         IRuby runtime = context.getRuntime();
         
@@ -65,7 +66,7 @@ public class AssignmentVisitor {
         case NodeTypes.ATTRASSIGNNODE: {
             AttrAssignNode iVisited = (AttrAssignNode) node;
             
-            IRubyObject receiver = EvaluationState.eval(context, iVisited.getReceiverNode(), self);
+            IRubyObject receiver = EvaluationState.eval(context, iVisited.getReceiverNode(), self, block);
             
             // If reciever is self then we do the call the same way as vcall
             CallType callType = (receiver == self ? CallType.VARIABLE : CallType.NORMAL);
@@ -73,7 +74,7 @@ public class AssignmentVisitor {
             if (iVisited.getArgsNode() == null) { // attribute set.
                 receiver.callMethod(context, iVisited.getName(), new IRubyObject[] {value}, callType);
             } else { // element set
-                RubyArray args = (RubyArray)EvaluationState.eval(context, iVisited.getArgsNode(), self);
+                RubyArray args = (RubyArray)EvaluationState.eval(context, iVisited.getArgsNode(), self, block);
                 args.append(value);
                 receiver.callMethod(context, iVisited.getName(), args.toJavaArray(), callType);
             }
@@ -82,12 +83,12 @@ public class AssignmentVisitor {
         case NodeTypes.CALLNODE: {
             CallNode iVisited = (CallNode)node;
             
-            IRubyObject receiver = EvaluationState.eval(context, iVisited.getReceiverNode(), self);
+            IRubyObject receiver = EvaluationState.eval(context, iVisited.getReceiverNode(), self, block);
 
             if (iVisited.getArgsNode() == null) { // attribute set.
                 receiver.callMethod(context, iVisited.getName(), new IRubyObject[] {value}, CallType.NORMAL);
             } else { // element set
-                RubyArray args = (RubyArray)EvaluationState.eval(context, iVisited.getArgsNode(), self);
+                RubyArray args = (RubyArray)EvaluationState.eval(context, iVisited.getArgsNode(), self, block);
                 args.append(value);
                 receiver.callMethod(context, iVisited.getName(), args.toJavaArray(), CallType.NORMAL);
             }
@@ -113,7 +114,7 @@ public class AssignmentVisitor {
             if (iVisited.getPathNode() == null) {
                 context.getRubyClass().defineConstant(iVisited.getName(), value);
             } else {
-                ((RubyModule) EvaluationState.eval(context, iVisited.getPathNode(), self)).defineConstant(iVisited.getName(), value);
+                ((RubyModule) EvaluationState.eval(context, iVisited.getPathNode(), self, block)).defineConstant(iVisited.getName(), value);
             }
             break;
         }
@@ -164,7 +165,7 @@ public class AssignmentVisitor {
         Iterator iter = node.getHeadNode() != null ? node.getHeadNode().iterator() : Collections.EMPTY_LIST.iterator();
         for (int i = 0; i < valueLen && iter.hasNext(); i++) {
             Node lNode = (Node) iter.next();
-            assign(context, self, lNode, value.entry(i), callAsProc);
+            assign(context, self, lNode, value.entry(i), null, callAsProc);
         }
 
         if (callAsProc && iter.hasNext()) {
@@ -177,16 +178,16 @@ public class AssignmentVisitor {
                 // no check for '*'
             } else if (varLen < valueLen) {
                 ArrayList newList = new ArrayList(value.getList().subList(varLen, valueLen));
-                assign(context, self, argsNode, runtime.newArray(newList), callAsProc);
+                assign(context, self, argsNode, runtime.newArray(newList), null, callAsProc);
             } else {
-                assign(context, self, argsNode, runtime.newArray(0), callAsProc);
+                assign(context, self, argsNode, runtime.newArray(0), null, callAsProc);
             }
         } else if (callAsProc && valueLen < varLen) {
             throw runtime.newArgumentError("Wrong # of arguments (" + valueLen + " for " + varLen + ")");
         }
 
         while (iter.hasNext()) {
-            assign(context, self, (Node)iter.next(), runtime.getNil(), callAsProc);
+            assign(context, self, (Node)iter.next(), runtime.getNil(), null, callAsProc);
         }
         
         return value;

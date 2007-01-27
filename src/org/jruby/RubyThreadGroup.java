@@ -32,6 +32,7 @@ package org.jruby;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -47,20 +48,16 @@ public class RubyThreadGroup extends RubyObject {
     private Map rubyThreadList = new HashMap();
     private boolean enclosed = false;
 
+    // ENEBO: Can these be fast?
     public static RubyClass createThreadGroupClass(IRuby runtime) {
         RubyClass threadGroupClass = runtime.defineClass("ThreadGroup", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyThreadGroup.class);
         
-        threadGroupClass.defineMethod("add",
-        		callbackFactory.getMethod("add", RubyThread.class));
-        threadGroupClass.defineMethod("enclose",
-        		callbackFactory.getMethod("enclose"));
-        threadGroupClass.defineMethod("enclosed?",
-        		callbackFactory.getMethod("isEnclosed"));
-        threadGroupClass.defineMethod("list",
-        		callbackFactory.getMethod("list"));
-        threadGroupClass.defineSingletonMethod("new",
-                callbackFactory.getSingletonMethod("newInstance"));
+        threadGroupClass.defineMethod("add", callbackFactory.getMethod("add", RubyThread.class));
+        threadGroupClass.defineMethod("enclose", callbackFactory.getMethod("enclose"));
+        threadGroupClass.defineMethod("enclosed?", callbackFactory.getMethod("isEnclosed"));
+        threadGroupClass.defineMethod("list", callbackFactory.getMethod("list"));
+        threadGroupClass.defineSingletonMethod("new", callbackFactory.getSingletonMethod("newInstance"));
         
         // create the default thread group
         RubyThreadGroup defaultThreadGroup = new RubyThreadGroup(runtime, threadGroupClass);
@@ -69,11 +66,11 @@ public class RubyThreadGroup extends RubyObject {
         return threadGroupClass;
     }
     
-    public static IRubyObject newInstance(IRubyObject recv) {
+    public static IRubyObject newInstance(IRubyObject recv, Block block) {
         return new RubyThreadGroup(recv.getRuntime(), (RubyClass)recv);
     }
 
-    public IRubyObject add(RubyThread rubyThread) {
+    public IRubyObject add(RubyThread rubyThread, Block block) {
     	if (isFrozen()) {
         	throw getRuntime().newTypeError("can't add to frozen ThreadGroup");
     	}
@@ -94,17 +91,17 @@ public class RubyThreadGroup extends RubyObject {
     	rubyThreadList.remove(new Integer(System.identityHashCode(rubyThread)));
     }
     
-    public IRubyObject enclose() {
+    public IRubyObject enclose(Block block) {
     	enclosed = true;
     	
     	return this;
     }
     
-    public IRubyObject isEnclosed() {
+    public IRubyObject isEnclosed(Block block) {
     	return new RubyBoolean(getRuntime(), enclosed);
     }
     
-    public IRubyObject list() {
+    public IRubyObject list(Block block) {
     	return getRuntime().newArray((IRubyObject[])rubyThreadList.values().toArray(new IRubyObject[rubyThreadList.size()]));
     }
 

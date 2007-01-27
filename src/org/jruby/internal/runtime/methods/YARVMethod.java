@@ -86,15 +86,15 @@ public class YARVMethod extends AbstractMethod {
         }
     }
     
-    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
-        context.preDefMethodInternalCall(lastClass, recv, name, args, noSuper, cref, staticScope);
+    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper, Block block) {
+        context.preDefMethodInternalCall(lastClass, recv, name, args, noSuper, cref, staticScope, block);
     }
     
     public void postMethod(ThreadContext context) {
         context.postDefMethodInternalCall();
     }
 
-    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
     	assert args != null;
         
         IRuby runtime = context.getRuntime();

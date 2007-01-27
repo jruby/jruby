@@ -4,8 +4,6 @@ import java.awt.Color;
 import java.awt.Point;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Iterator;
@@ -29,6 +27,7 @@ import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.ext.Readline;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 
@@ -112,7 +111,7 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
         RubyModule readlineM = runtime.getModule("Readline");
         
         readlineM.defineModuleFunction("readline", new Callback() {
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
+            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
                 return runtime.newString(readLine(args[0].toString()));
             }
             public Arity getArity() { return Arity.twoArguments(); }

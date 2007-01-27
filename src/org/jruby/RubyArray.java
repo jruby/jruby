@@ -53,11 +53,11 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.ConversionIterator;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.meta.ArrayMetaClass;
-import org.jruby.runtime.builtin.meta.StringMetaClass;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.Pack;
@@ -89,9 +89,9 @@ public class RubyArray extends RubyObject implements List {
         super(runtime, klass);
         list = new ArrayList(16);
     }
-    
+
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, byte switchvalue, String name,
-            IRubyObject[] args, CallType callType) {
+            IRubyObject[] args, CallType callType, Block block) {
         switch (switchvalue) {
             case OP_PLUS_SWITCHVALUE:
                 Arity.singleArgument().checkArity(context.getRuntime(), args);
@@ -125,7 +125,7 @@ public class RubyArray extends RubyObject implements List {
                 return empty_p();
             case 0:
             default:
-                return super.callMethod(context, rubyclass, name, args, callType);
+                return super.callMethod(context, rubyclass, name, args, callType, block);
         }
     }
 
@@ -239,7 +239,7 @@ public class RubyArray extends RubyObject implements List {
         return (IRubyObject) list.get((int) offset);
     }
     
-    public IRubyObject fetch(IRubyObject[] args) {
+    public IRubyObject fetch(IRubyObject[] args, Block block) {
     	checkArgumentCount(args, 1, 2);
 
     	RubyInteger index = args[0].convertToInteger();
@@ -250,11 +250,8 @@ public class RubyArray extends RubyObject implements List {
     		// FIXME: use constant or method for IndexError lookup?
     		RubyException raisedException = e.getException();
     		if (raisedException.isKindOf(getRuntime().getClassFromPath("IndexError"))) {
-	    		if (args.length > 1) {
-	    			return args[1];
-	    		} else if (tc.isBlockGiven()) {
-	    			return tc.yield(index);
-	    		}
+	    		if (args.length > 1) return args[1];
+	    		if (block != null) return tc.yield(index, block); 
     		}
     		
     		throw e;
@@ -564,7 +561,7 @@ public class RubyArray extends RubyObject implements List {
 
     /** rb_ary_initialize
      */
-    public IRubyObject initialize(IRubyObject[] args) {
+    public IRubyObject initialize(IRubyObject[] args, Block block) {
         int argc = checkArgumentCount(args, 0, 2);
         RubyArray arrayInitializer = null;
         long len = 0;
@@ -594,10 +591,10 @@ public class RubyArray extends RubyObject implements List {
         list = new ArrayList((int) len);
         ThreadContext tc = getRuntime().getCurrentContext();
         if (len > 0) {
-        	if (tc.isBlockGiven()) {
+        	if (block != null) {
         		// handle block-based array initialization
                 for (int i = 0; i < len; i++) {
-                    list.add(tc.yield(new RubyFixnum(getRuntime(), i)));
+                    list.add(tc.yield(new RubyFixnum(getRuntime(), i), block));
                 }
         	} else {
         		IRubyObject obj = (argc == 2) ? args[1] : getRuntime().getNil();
@@ -773,10 +770,10 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_each
      *
      */
-    public IRubyObject each() {
+    public IRubyObject each(Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
         for (int i = 0, len = getLength(); i < len; i++) {
-            context.yield(entry(i));
+            context.yield(entry(i), block);
         }
         return this;
     }
@@ -784,10 +781,10 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_each_index
      *
      */
-    public IRubyObject each_index() {
+    public IRubyObject each_index(Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
         for (int i = 0, len = getLength(); i < len; i++) {
-            context.yield(getRuntime().newFixnum(i));
+            context.yield(getRuntime().newFixnum(i), block);
         }
         return this;
     }
@@ -795,10 +792,10 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_reverse_each
      *
      */
-    public IRubyObject reverse_each() {
+    public IRubyObject reverse_each(Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
         for (long i = getLength(); i > 0; i--) {
-            context.yield(entry(i - 1));
+            context.yield(entry(i - 1), block);
         }
         return this;
     }
@@ -990,7 +987,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_fill
      *
      */
-    public IRubyObject fill(IRubyObject[] args) {
+    public IRubyObject fill(IRubyObject[] args, Block block) {
         int beg = 0;
         int len = getLength();
         int argc;
@@ -999,7 +996,7 @@ public class RubyArray extends RubyObject implements List {
         IRubyObject lenObj;
         IRuby runtime = getRuntime();
         ThreadContext tc = runtime.getCurrentContext();
-        if (tc.isBlockGiven()) {
+        if (block != null) {
         	argc = checkArgumentCount(args, 0, 2);
         	filObj = null;
         	begObj = argc > 0 ? args[0] : null;
@@ -1037,7 +1034,7 @@ public class RubyArray extends RubyObject implements List {
         autoExpand(beg + len);
         for (int i = beg; i < beg + len; i++) {
         	if (filObj == null) {
-        		list.set(i, tc.yield(runtime.newFixnum(i)));
+        		list.set(i, tc.yield(runtime.newFixnum(i), block));
         	} else {
         		list.set(i, filObj);
         	}
@@ -1080,7 +1077,7 @@ public class RubyArray extends RubyObject implements List {
             taint |= result[i].isTaint();
         }
         // TODO: Why was is calling create, which used to skip array initialization?
-        IRubyObject ary = ArrayMetaClass.create(getMetaClass(), result);
+        IRubyObject ary = ArrayMetaClass.create(getMetaClass(), result, null);
         ary.setTaint(taint);
         return ary;
     }
@@ -1117,14 +1114,14 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_collect
      *
      */
-    public RubyArray collect() {
+    public RubyArray collect(Block block) {
         ThreadContext tc = getRuntime().getCurrentContext();
-        if (!tc.isBlockGiven()) {
+        if (block == null) {
             return (RubyArray) dup();
         }
         ArrayList ary = new ArrayList();
         for (int i = 0, len = getLength(); i < len; i++) {
-            ary.add(tc.yield(entry(i)));
+            ary.add(tc.yield(entry(i), block));
         }
         return new RubyArray(getRuntime(), ary);
     }
@@ -1132,11 +1129,11 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_collect_bang
      *
      */
-    public RubyArray collect_bang() {
+    public RubyArray collect_bang(Block block) {
         modify();
         ThreadContext context = getRuntime().getCurrentContext();
         for (int i = 0, len = getLength(); i < len; i++) {
-            list.set(i, context.yield(entry(i)));
+            list.set(i, context.yield(entry(i), block));
         }
         return this;
     }
@@ -1144,7 +1141,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_delete
      *
      */
-    public IRubyObject delete(IRubyObject obj) {
+    public IRubyObject delete(IRubyObject obj, Block block) {
         modify();
         ThreadContext tc = getRuntime().getCurrentContext();
         IRubyObject result = getRuntime().getNil();
@@ -1153,8 +1150,8 @@ public class RubyArray extends RubyObject implements List {
                 result = (IRubyObject) list.remove(i);
             }
         }
-        if (result.isNil() && tc.isBlockGiven()) {
-            result = tc.yield(entry(0));
+        if (result.isNil() && block != null) {
+            result = tc.yield(entry(0), block);
         }
         return result;
     }
@@ -1177,12 +1174,12 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_reject_bang
      *
      */
-    public IRubyObject reject_bang() {
+    public IRubyObject reject_bang(Block block) {
         modify();
         IRubyObject retVal = getRuntime().getNil();
         ThreadContext context = getRuntime().getCurrentContext();
         for (int i = getLength() - 1; i >= 0; i--) {
-            if (context.yield(entry(i)).isTrue()) {
+            if (context.yield(entry(i), block).isTrue()) {
                 retVal = (IRubyObject) list.remove(i);
             }
         }
@@ -1192,8 +1189,8 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_delete_if
      *
      */
-    public IRubyObject delete_if() {
-        reject_bang();
+    public IRubyObject delete_if(Block block) {
+        reject_bang(block);
         return this;
     }
 
@@ -1438,22 +1435,22 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_sort
      *
      */
-    public RubyArray sort() {
+    public RubyArray sort(Block block) {
         RubyArray rubyArray = (RubyArray) dup();
-        rubyArray.sort_bang();
+        rubyArray.sort_bang(block);
         return rubyArray;
     }
 
     /** rb_ary_sort_bang
      *
      */
-    public IRubyObject sort_bang() {
+    public IRubyObject sort_bang(Block block) {
         modify();
         setTmpLock(true);
 
         Comparator comparator;
-        if (getRuntime().getCurrentContext().isBlockGiven()) {
-            comparator = new BlockComparator();
+        if (block != null) {
+            comparator = new BlockComparator(block);
         } else {
             comparator = new DefaultComparator();
         }
@@ -1490,9 +1487,15 @@ public class RubyArray extends RubyObject implements List {
     }
 
     class BlockComparator implements Comparator {
+        private Block block;
+        
+        public BlockComparator(Block block) {
+            this.block = block;
+        }
+        
         public int compare(Object o1, Object o2) {
             ThreadContext context = getRuntime().getCurrentContext();
-            IRubyObject result = context.getFrameBlockOrRaise().yield(context, getRuntime().newArray((IRubyObject) o1, (IRubyObject) o2), null, null, true);
+            IRubyObject result = block.yield(context, getRuntime().newArray((IRubyObject) o1, (IRubyObject) o2), null, null, true);
             return (int) ((RubyNumeric) result).getLongValue();
         }
     }

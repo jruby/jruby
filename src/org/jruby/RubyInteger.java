@@ -33,6 +33,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -42,7 +43,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author  jpetersen
  */
-public abstract class RubyInteger extends RubyNumeric {
+public abstract class RubyInteger extends RubyNumeric { 
 
     public static RubyClass createIntegerClass(IRuby runtime) {
         RubyClass integer = runtime.defineClass("Integer", runtime.getClass("Numeric"),
@@ -51,24 +52,24 @@ public abstract class RubyInteger extends RubyNumeric {
         integer.getSingletonClass().undefineMethod("allocate");
         integer.getSingletonClass().undefineMethod("new");
 
-        integer.defineFastMethod("integer?", callbackFactory.getMethod("int_p"));
+        integer.defineFastMethod("integer?", callbackFactory.getFastMethod("int_p"));
         integer.defineMethod("upto", callbackFactory.getMethod("upto", IRubyObject.class));
         integer.defineMethod("downto", callbackFactory.getMethod("downto", IRubyObject.class));
         integer.defineMethod("times", callbackFactory.getMethod("times"));
 
         integer.includeModule(runtime.getModule("Precision"));
 
-        integer.defineFastMethod("succ", callbackFactory.getMethod("succ"));
-        integer.defineFastMethod("next", callbackFactory.getMethod("succ"));
-        integer.defineFastMethod("chr", callbackFactory.getMethod("chr"));
-        integer.defineFastMethod("to_i", callbackFactory.getMethod("to_i"));
-        integer.defineFastMethod("to_int", callbackFactory.getMethod("to_i"));
-        integer.defineFastMethod("floor", callbackFactory.getMethod("to_i"));
-        integer.defineFastMethod("ceil", callbackFactory.getMethod("to_i"));
-        integer.defineFastMethod("round", callbackFactory.getMethod("to_i"));
-        integer.defineFastMethod("truncate", callbackFactory.getMethod("to_i"));
+        integer.defineFastMethod("succ", callbackFactory.getFastMethod("succ"));
+        integer.defineFastMethod("next", callbackFactory.getFastMethod("succ"));
+        integer.defineFastMethod("chr", callbackFactory.getFastMethod("chr"));
+        integer.defineFastMethod("to_i", callbackFactory.getFastMethod("to_i"));
+        integer.defineFastMethod("to_int", callbackFactory.getFastMethod("to_i"));
+        integer.defineFastMethod("floor", callbackFactory.getFastMethod("to_i"));
+        integer.defineFastMethod("ceil", callbackFactory.getFastMethod("to_i"));
+        integer.defineFastMethod("round", callbackFactory.getFastMethod("to_i"));
+        integer.defineFastMethod("truncate", callbackFactory.getFastMethod("to_i"));
 
-        integer.defineFastSingletonMethod("induced_from", callbackFactory.getSingletonMethod("induced_from",
+        integer.defineFastSingletonMethod("induced_from", callbackFactory.getFastSingletonMethod("induced_from",
                 IRubyObject.class));
         return integer;
     }
@@ -76,9 +77,9 @@ public abstract class RubyInteger extends RubyNumeric {
     public RubyInteger(IRuby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
     }
-
+    
     public RubyInteger convertToInteger() {
-        return this;
+    	return this;
     }
 
     // conversion
@@ -101,7 +102,7 @@ public abstract class RubyInteger extends RubyNumeric {
     /** int_upto
      * 
      */
-    public IRubyObject upto(IRubyObject to) {
+    public IRubyObject upto(IRubyObject to, Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
 
         if (this instanceof RubyFixnum && to instanceof RubyFixnum) {
@@ -109,7 +110,7 @@ public abstract class RubyInteger extends RubyNumeric {
             RubyFixnum toFixnum = (RubyFixnum) to;
             long toValue = toFixnum.getLongValue();
             for (long i = getLongValue(); i <= toValue; i++) {
-                context.yield(RubyFixnum.newFixnum(getRuntime(), i));
+                context.yield(RubyFixnum.newFixnum(getRuntime(), i), block);
             }
         } else {
             RubyNumeric i = this;
@@ -118,7 +119,7 @@ public abstract class RubyInteger extends RubyNumeric {
                 if (i.callMethod(context, ">", to).isTrue()) {
                     break;
                 }
-                context.yield(i);
+                context.yield(i, block);
                 i = (RubyNumeric) i.callMethod(context, "+", RubyFixnum.one(getRuntime()));
             }
         }
@@ -129,14 +130,14 @@ public abstract class RubyInteger extends RubyNumeric {
      * 
      */
     // TODO: Make callCoerced work in block context...then fix downto, step, and upto.
-    public IRubyObject downto(IRubyObject to) {
+    public IRubyObject downto(IRubyObject to, Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
 
         if (this instanceof RubyFixnum && to instanceof RubyFixnum) {
             RubyFixnum toFixnum = (RubyFixnum) to;
             long toValue = toFixnum.getLongValue();
             for (long i = getLongValue(); i >= toValue; i--) {
-                context.yield(RubyFixnum.newFixnum(getRuntime(), i));
+                context.yield(RubyFixnum.newFixnum(getRuntime(), i), block);
             }
         } else {
             RubyNumeric i = this;
@@ -145,24 +146,21 @@ public abstract class RubyInteger extends RubyNumeric {
                 if (i.callMethod(context, "<", to).isTrue()) {
                     break;
                 }
-                context.yield(i);
+                context.yield(i, block);
                 i = (RubyNumeric) i.callMethod(context, "-", RubyFixnum.one(getRuntime()));
             }
         }
         return this;
     }
 
-    /** int_dotimes
-     * 
-     */
-    public IRubyObject times() {
+    public IRubyObject times(Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
 
         if (this instanceof RubyFixnum) {
 
             long value = getLongValue();
             for (long i = 0; i < value; i++) {
-                context.yield(RubyFixnum.newFixnum(getRuntime(), i));
+                context.yield(RubyFixnum.newFixnum(getRuntime(), i), block);
             }
         } else {
             RubyNumeric i = RubyFixnum.zero(getRuntime());
@@ -170,7 +168,7 @@ public abstract class RubyInteger extends RubyNumeric {
                 if (!i.callMethod(context, "<", this).isTrue()) {
                     break;
                 }
-                context.yield(i);
+                context.yield(i, block);
                 i = (RubyNumeric) i.callMethod(context, "+", RubyFixnum.one(getRuntime()));
             }
         }
@@ -222,7 +220,6 @@ public abstract class RubyInteger extends RubyNumeric {
         } else {
             throw recv.getRuntime().newTypeError(
                     "failed to convert " + other.getMetaClass().getName() + " into Integer");
-        }
     }
-
+}
 }

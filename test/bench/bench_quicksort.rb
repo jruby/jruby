@@ -1,5 +1,6 @@
 # Simple quicksort benchmark, once for a small array and once for a very large array
 require 'benchmark'
+require 'bench_quicksort_data'
 
 def quicksort(l)
   if l == [] then 

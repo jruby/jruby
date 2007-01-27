@@ -32,6 +32,7 @@ package org.jruby;
 
 import java.util.HashMap;
 
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -121,14 +122,14 @@ public class RubyClass extends RubyModule {
     public static void createClassClass(RubyClass classClass) {
         CallbackFactory callbackFactory = classClass.getRuntime().callbackFactory(RubyClass.class);
         classClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod("newClass"));
-        classClass.defineMethod("allocate", callbackFactory.getMethod("allocate"));
+        classClass.defineFastMethod("allocate", callbackFactory.getFastMethod("allocate"));
         classClass.defineMethod("new", callbackFactory.getOptMethod("newInstance"));
         classClass.defineMethod("superclass", callbackFactory.getMethod("superclass"));
         classClass.defineSingletonMethod("inherited", callbackFactory.getSingletonMethod("inherited", IRubyObject.class));
         classClass.undefineMethod("module_function");
     }
     
-    public static IRubyObject inherited(IRubyObject recv, IRubyObject arg) {
+    public static IRubyObject inherited(IRubyObject recv, IRubyObject arg, Block block) {
         return recv.getRuntime().getNil();
     }
 
@@ -200,9 +201,9 @@ public class RubyClass extends RubyModule {
     /** rb_class_new_instance
      *
      */
-    public IRubyObject newInstance(IRubyObject[] args) {
-        IRubyObject obj = (IRubyObject)allocate();
-        obj.callInit(args);
+    public IRubyObject newInstance(IRubyObject[] args, Block block) {
+        IRubyObject obj = (IRubyObject) allocate();
+        obj.callInit(args, block);
         return obj;
     }
     
@@ -213,7 +214,7 @@ public class RubyClass extends RubyModule {
     /** rb_class_s_new
      *
      */
-    public static RubyClass newClass(IRubyObject recv, IRubyObject[] args) {
+    public static RubyClass newClass(IRubyObject recv, IRubyObject[] args, Block block) {
         final IRuby runtime = recv.getRuntime();
 
         RubyClass superClass;
@@ -233,14 +234,12 @@ public class RubyClass extends RubyModule {
         RubyClass newClass = superClass.newSubClass(null, superClass.getAllocator(),tc.peekCRef());
 
         // call "initialize" method
-        newClass.callInit(args);
+        newClass.callInit(args, block);
 
         // call "inherited" method of the superclass
         newClass.inheritedBy(superClass);
 
-		if (tc.isBlockGiven()) {
-            newClass.module_eval(NULL_ARRAY);
-		}
+		if (block != null) block.yield(tc, null, newClass, newClass, false);
 
 		return newClass;
     }
@@ -250,7 +249,7 @@ public class RubyClass extends RubyModule {
      * rb_class_superclass
      *
      */
-    public IRubyObject superclass() {
+    public IRubyObject superclass(Block block) {
         RubyClass superClass = getSuperClass();
         while (superClass != null && superClass.isIncluded()) {
             superClass = superClass.getSuperClass();

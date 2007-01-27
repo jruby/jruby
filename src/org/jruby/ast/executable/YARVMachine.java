@@ -389,10 +389,8 @@ public class YARVMachine {
                 break;
             case YARVInstructions.DEFINECLASS: 
                 System.err.println("Not implemented, YARVMachine." +YARVInstructions.name(bytecodes[ip].bytecode));
-                runtime.incGlobalState();
                 break;
             case YARVInstructions.SEND: {
-                context.beginCallArgs();
                 String name = bytecodes[ip].s_op0;
                 IRubyObject[] args = new IRubyObject[bytecodes[ip].i_op1];
 

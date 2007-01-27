@@ -41,6 +41,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.openssl.x509store.X509AuxCertificate;
 import org.jruby.ext.openssl.x509store.X509_STORE;
 import org.jruby.ext.openssl.x509store.X509_STORE_CTX;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -59,19 +60,19 @@ public class X509StoreCtx extends RubyObject {
         RubyClass cX509StoreContext = mX509.defineClassUnder("StoreContext",runtime.getObject(),X509STORECTX_ALLOCATOR);
         CallbackFactory storectxcb = runtime.callbackFactory(X509StoreCtx.class);
         cX509StoreContext.defineMethod("initialize",storectxcb.getOptMethod("_initialize"));
-        cX509StoreContext.defineMethod("verify",storectxcb.getMethod("verify"));
-        cX509StoreContext.defineMethod("chain",storectxcb.getMethod("chain"));
-        cX509StoreContext.defineMethod("error",storectxcb.getMethod("error"));
-        cX509StoreContext.defineMethod("error=",storectxcb.getMethod("set_error",IRubyObject.class));
-        cX509StoreContext.defineMethod("error_string",storectxcb.getMethod("error_string"));
-        cX509StoreContext.defineMethod("error_depth",storectxcb.getMethod("error_depth"));
-        cX509StoreContext.defineMethod("current_cert",storectxcb.getMethod("current_cert"));
-        cX509StoreContext.defineMethod("current_crl",storectxcb.getMethod("current_crl"));
-        cX509StoreContext.defineMethod("cleanup",storectxcb.getMethod("cleanup"));
-        cX509StoreContext.defineMethod("flags=",storectxcb.getMethod("set_flags",IRubyObject.class));
-        cX509StoreContext.defineMethod("purpose=",storectxcb.getMethod("set_purpose",IRubyObject.class));
-        cX509StoreContext.defineMethod("trust=",storectxcb.getMethod("set_trust",IRubyObject.class));
-        cX509StoreContext.defineMethod("time=",storectxcb.getMethod("set_time",IRubyObject.class));
+        cX509StoreContext.defineFastMethod("verify",storectxcb.getFastMethod("verify"));
+        cX509StoreContext.defineFastMethod("chain",storectxcb.getFastMethod("chain"));
+        cX509StoreContext.defineFastMethod("error",storectxcb.getFastMethod("error"));
+        cX509StoreContext.defineFastMethod("error=",storectxcb.getFastMethod("set_error",IRubyObject.class));
+        cX509StoreContext.defineFastMethod("error_string",storectxcb.getFastMethod("error_string"));
+        cX509StoreContext.defineFastMethod("error_depth",storectxcb.getFastMethod("error_depth"));
+        cX509StoreContext.defineFastMethod("current_cert",storectxcb.getFastMethod("current_cert"));
+        cX509StoreContext.defineFastMethod("current_crl",storectxcb.getFastMethod("current_crl"));
+        cX509StoreContext.defineFastMethod("cleanup",storectxcb.getFastMethod("cleanup"));
+        cX509StoreContext.defineFastMethod("flags=",storectxcb.getFastMethod("set_flags",IRubyObject.class));
+        cX509StoreContext.defineFastMethod("purpose=",storectxcb.getFastMethod("set_purpose",IRubyObject.class));
+        cX509StoreContext.defineFastMethod("trust=",storectxcb.getFastMethod("set_trust",IRubyObject.class));
+        cX509StoreContext.defineFastMethod("time=",storectxcb.getFastMethod("set_time",IRubyObject.class));
     }
 
     private X509_STORE_CTX ctx;
@@ -89,7 +90,7 @@ public class X509StoreCtx extends RubyObject {
         throw new RaiseException(getRuntime(),cStoreError, msg, true);
     }
 
-    public IRubyObject _initialize(IRubyObject[] args) throws Exception {
+    public IRubyObject _initialize(IRubyObject[] args, Block block) throws Exception {
         IRubyObject store;
         IRubyObject cert = getRuntime().getNil();
         IRubyObject chain = getRuntime().getNil();

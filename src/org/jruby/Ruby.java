@@ -313,7 +313,7 @@ public final class Ruby implements IRuby {
         try {
             ThreadContext tc = getCurrentContext();
             
-            return EvaluationState.eval(tc, node, tc.getFrameSelf());
+            return EvaluationState.eval(tc, node, tc.getFrameSelf(), null);
         } catch (JumpException je) {
         	if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
                 throw newLocalJumpError("unexpected return");
@@ -735,7 +735,7 @@ public final class Ruby implements IRuby {
                                                    newSymbol("utime"),
                                                    newSymbol("stime"),
                                                    newSymbol("cutime"),
-                                                   newSymbol("cstime")});
+                                                   newSymbol("cstime")}, null);
         }
         
         if(profile.allowClass("Float")) {
@@ -1395,8 +1395,16 @@ public final class Ruby implements IRuby {
     	return RubyNumeric.newNumeric(this);
     }
     
-    public RubyProc newProc() {
-    	return RubyProc.newProc(this, false);
+    public RubyProc newProc(boolean isLambda, Block block) {
+        if (!isLambda && block.getBlockObject() instanceof RubyProc) {
+            return (RubyProc) block.getBlockObject();
+        }
+
+        RubyProc proc =  RubyProc.newProc(this, isLambda);
+        
+        proc.callInit(IRubyObject.NULL_ARRAY, block);
+        
+        return proc;
     }
     
     public RubyBinding newBinding() {

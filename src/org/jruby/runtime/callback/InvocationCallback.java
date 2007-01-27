@@ -29,6 +29,7 @@ package org.jruby.runtime.callback;
 
 import org.jruby.IRuby;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.JumpException;
@@ -41,11 +42,11 @@ import org.jruby.exceptions.MainExitException;
 public abstract class InvocationCallback implements Callback {
     private Arity arity;
 
-    public IRubyObject execute(IRubyObject recv, IRubyObject[] oargs) {
+    public IRubyObject execute(IRubyObject recv, IRubyObject[] oargs, Block block) {
         IRuby runtime = recv.getRuntime();
         arity.checkArity(runtime, oargs);
         try {
-            return call(recv,oargs);
+            return call(recv,oargs,block);
         } catch(RaiseException e) {
             throw e;
         } catch(JumpException e) {
@@ -60,7 +61,7 @@ public abstract class InvocationCallback implements Callback {
         }        
     }
 
-    public abstract IRubyObject call(Object receiver, Object[] args);
+    public abstract IRubyObject call(Object receiver, Object[] args, Block block);
 
     public void setArity(Arity arity) {
         this.arity = arity;

@@ -49,6 +49,7 @@ import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -72,7 +73,7 @@ public class RubyModule extends RubyObject {
 
     // superClass may be null.
     private RubyClass superClass;
-    
+
     public int index;
 
     // Containing class...The parent of Object is null. Object should always be last in chain.
@@ -323,7 +324,7 @@ public class RubyModule extends RubyObject {
      * @param name The constant name which was found to be missing
      * @return Nothing! Absolutely nothing! (though subclasses might choose to return something)
      */
-    public IRubyObject const_missing(IRubyObject name) {
+    public IRubyObject const_missing(IRubyObject name, Block block) {
         /* Uninitialized constant */
         if (this != getRuntime().getObject()) {
             throw getRuntime().newNameError("uninitialized constant " + getName() + "::" + name.asSymbol(), "" + getName() + "::" + name.asSymbol());
@@ -810,7 +811,7 @@ public class RubyModule extends RubyObject {
         ThreadContext context = getRuntime().getCurrentContext();
         if (readable) {
             defineMethod(name, new Callback() {
-                public IRubyObject execute(IRubyObject self, IRubyObject[] args) {
+                public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
                     checkArgumentCount(args, 0, 0);
 
                     IRubyObject variable = self.getInstanceVariable(variableName);
@@ -827,7 +828,7 @@ public class RubyModule extends RubyObject {
         if (writeable) {
             name = name + "=";
             defineMethod(name, new Callback() {
-                public IRubyObject execute(IRubyObject self, IRubyObject[] args) {
+                public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
                     IRubyObject[] fargs = runtime.getCurrentContext().getFrameArgs();
 
                     if (fargs.length != 1) {
@@ -878,9 +879,9 @@ public class RubyModule extends RubyObject {
                 method.setVisibility(visibility);
             } else {
                 addMethod(name, new FullFunctionCallbackMethod(this, new Callback() {
-                    public IRubyObject execute(IRubyObject self, IRubyObject[] args) {
+                    public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
                         ThreadContext tc = self.getRuntime().getCurrentContext();
-                        return tc.callSuper(tc.getFrameArgs());
+                        return tc.callSuper(tc.getFrameArgs(), block);
                     }
 
                     public Arity getArity() {
@@ -922,7 +923,7 @@ public class RubyModule extends RubyObject {
     }
 
     // What is argument 1 for in this method?
-    public IRubyObject define_method(IRubyObject[] args) {
+    public IRubyObject define_method(IRubyObject[] args, Block block) {
         if (args.length < 1 || args.length > 2) {
             throw getRuntime().newArgumentError("wrong # of arguments(" + args.length + " for 1)");
         }
@@ -940,7 +941,7 @@ public class RubyModule extends RubyObject {
 
         if (args.length == 1 || args[1].isKindOf(getRuntime().getClass("Proc"))) {
             // double-testing args.length here, but it avoids duplicating the proc-setup code in two places
-            RubyProc proc = (args.length == 1) ? getRuntime().newProc() : (RubyProc)args[1];
+            RubyProc proc = (args.length == 1) ? getRuntime().newProc(false, block) : (RubyProc)args[1];
             body = proc;
 
             proc.getBlock().isLambda = true;
@@ -952,7 +953,7 @@ public class RubyModule extends RubyObject {
             RubyMethod method = (RubyMethod)args[1];
             body = method;
 
-            newMethod = new MethodMethod(this, method.unbind(), visibility);
+            newMethod = new MethodMethod(this, method.unbind(null), visibility);
         } else {
             throw getRuntime().newTypeError("wrong argument type " + args[0].getType().getName() + " (expected Proc/Method)");
         }
@@ -972,13 +973,13 @@ public class RubyModule extends RubyObject {
         return body;
     }
 
-    public IRubyObject executeUnder(Callback method, IRubyObject[] args) {
+    public IRubyObject executeUnder(Callback method, IRubyObject[] args, Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
 
-        context.preExecuteUnder(this);
+        context.preExecuteUnder(this, block);
 
         try {
-            return method.execute(this, args);
+            return method.execute(this, args, block);
         } finally {
             context.postExecuteUnder();
         }
@@ -991,16 +992,7 @@ public class RubyModule extends RubyObject {
     }
 
     public static RubyModule newModule(IRuby runtime, String name, SinglyLinkedList parentCRef) {
-        // Modules do not directly define Object as their superClass even though in theory they
-        // should.  The C version of Ruby may also do this (special checks in rb_alias for Module
-        // makes me think this).
-        // TODO cnutter: Shouldn't new modules have Module as their superclass?
-        RubyModule newModule = new RubyModule(runtime, runtime.getClass("Module"), null, parentCRef, name);
-        ThreadContext tc = runtime.getCurrentContext();
-        if (tc.isBlockGiven()) {
-            newModule.module_eval(NULL_ARRAY);
-        }
-        return newModule;
+        return new RubyModule(runtime, runtime.getClass("Module"), null, parentCRef, name); 
     }
 
     public RubyString name() {
@@ -1216,7 +1208,9 @@ public class RubyModule extends RubyObject {
     /** rb_mod_initialize
      *
      */
-    public IRubyObject initialize(IRubyObject[] args) {
+    public IRubyObject initialize(IRubyObject[] args, Block block) {
+        if (block != null) block.yield(getRuntime().getCurrentContext(), null, this, this, false);
+        
         return getRuntime().getNil();
     }
 
@@ -1498,7 +1492,7 @@ public class RubyModule extends RubyObject {
         return getRuntime().getNil();
     }
 
-    public IRubyObject extended(IRubyObject other) {
+    public IRubyObject extended(IRubyObject other, Block block) {
         return getRuntime().getNil();
     }
 
@@ -1517,7 +1511,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_public
      *
      */
-    public RubyModule rbPublic(IRubyObject[] args) {
+    public RubyModule rbPublic(IRubyObject[] args, Block block) {
         setVisibility(args, Visibility.PUBLIC);
         return this;
     }
@@ -1525,7 +1519,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_protected
      *
      */
-    public RubyModule rbProtected(IRubyObject[] args) {
+    public RubyModule rbProtected(IRubyObject[] args, Block block) {
         setVisibility(args, Visibility.PROTECTED);
         return this;
     }
@@ -1533,7 +1527,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_private
      *
      */
-    public RubyModule rbPrivate(IRubyObject[] args) {
+    public RubyModule rbPrivate(IRubyObject[] args, Block block) {
         setVisibility(args, Visibility.PRIVATE);
         return this;
     }
@@ -1564,7 +1558,7 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    public IRubyObject method_added(IRubyObject nothing) {
+    public IRubyObject method_added(IRubyObject nothing, Block block) {
         return getRuntime().getNil();
     }
 
@@ -1592,8 +1586,8 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    public IRubyObject module_eval(IRubyObject[] args) {
-        return specificEval(this, args);
+    public IRubyObject module_eval(IRubyObject[] args, Block block) {
+        return specificEval(this, args, block);
     }
 
     public RubyModule remove_method(IRubyObject[] args) {

@@ -11,6 +11,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
@@ -109,7 +110,7 @@ public class ModuleMetaClass extends ObjectMetaClass {
    /** 
     * Return an array of nested modules or classes.
     */
-   public RubyArray nesting() {
+   public RubyArray nesting(Block block) {
 	   IRuby runtime = getRuntime();
        RubyModule object = runtime.getObject();
        SinglyLinkedList base = runtime.getCurrentContext().peekCRef();

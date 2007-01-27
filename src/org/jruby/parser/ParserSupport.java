@@ -44,6 +44,7 @@ import org.jruby.ast.AssignableNode;
 import org.jruby.ast.AttrAssignNode;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BeginNode;
+import org.jruby.ast.BignumNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.BreakNode;
@@ -62,6 +63,7 @@ import org.jruby.ast.FCallNode;
 import org.jruby.ast.FalseNode;
 import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FlipNode;
+import org.jruby.ast.FloatNode;
 import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.GlobalVarNode;
 import org.jruby.ast.IArgumentNode;
@@ -640,41 +642,42 @@ public class ParserSupport {
         return node;
     }
 
-    public Node new_call(Node receiver, Token name, Node args) {
-        if (args != null) {
-            if (args instanceof BlockPassNode) {
-                Node argsNode = ((BlockPassNode) args).getArgsNode();
-                
-                ((BlockPassNode) args).setIterNode(new CallNode(union(receiver, name), receiver, 
-                        (String) name.getValue(), argsNode));
-                
-                return args;
-            }
-            
-            return new CallNode(union(receiver, args), receiver,(String) name.getValue(), args);
+    public Node new_call(Node receiver, Token name, Node args, Node iter) {
+        if (args == null) {
+            return new CallNode(union(receiver, name), receiver,(String) name.getValue(), null, iter);
         }
 
-        return new CallNode(union(receiver, name), receiver,(String) name.getValue(), args);
+        if (args instanceof BlockPassNode) {
+            // Block and block pass passed in at same time....uh oh
+            if (iter != null) {
+                throw new SyntaxException(iter.getPosition(), "Both block arg and actual block given.");
+            }
+                
+            return new CallNode(union(receiver, name), receiver, (String) name.getValue(), 
+                    ((BlockPassNode) args).getArgsNode(), args);
+        }
+            
+        return new CallNode(union(receiver, args), receiver,(String) name.getValue(), args, iter);
     }
 
-    public Node new_fcall(Token operation, Node args) {
+    public Node new_fcall(Token operation, Node args, Node iter) {
         String name = (String) operation.getValue();
         
-        if (args != null) {
-            if (args instanceof BlockPassNode) {
-                ((BlockPassNode) args).setIterNode(new FCallNode(union(operation, args), name, ((BlockPassNode) args).getArgsNode()));
-                return args;
-            }
-            return new FCallNode(union(operation, args), name, args);
-        }
+        if (args == null) return new FCallNode(operation.getPosition(), name, args, iter);
 
-        return new FCallNode(operation.getPosition(), name, args);
+        if (args instanceof BlockPassNode) {
+            if (iter != null) {
+                throw new SyntaxException(iter.getPosition(), "Both block arg and actual block given.");
+            }
+            return new FCallNode(union(operation, args), name, ((BlockPassNode) args).getArgsNode(), args);
+        }
+        
+        return new FCallNode(union(operation, args), name, args, iter);
     }
 
     public Node new_super(Node args, Token operation) {
         if (args != null && args instanceof BlockPassNode) {
-            ((BlockPassNode) args).setIterNode(new SuperNode(union(operation, args), ((BlockPassNode) args).getArgsNode()));
-            return args;
+            return new SuperNode(union(operation, args), ((BlockPassNode) args).getArgsNode(), args);
         }
         return new SuperNode(operation.getPosition(), args);
     }
@@ -817,5 +820,26 @@ public class ParserSupport {
         }
 
         return new YieldNode(position, node, state);
+    }
+    
+    public Node negateInteger(Node integerNode) {
+        if (integerNode instanceof FixnumNode) {
+            FixnumNode fixnumNode = (FixnumNode) integerNode;
+            
+            fixnumNode.setValue(-fixnumNode.getValue());
+            return fixnumNode;
+        } else if (integerNode instanceof BignumNode) {
+            BignumNode bignumNode = (BignumNode) integerNode;
+            
+            bignumNode.setValue(bignumNode.getValue().negate());
+        }
+        
+        return integerNode;
+    }
+    
+    public FloatNode negateFloat(FloatNode floatNode) {
+        floatNode.setValue(-floatNode.getValue());
+        
+        return floatNode;
     }
 }

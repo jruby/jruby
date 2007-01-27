@@ -29,6 +29,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -49,7 +50,7 @@ public class UndefinedMethod extends AbstractMethod {
         super(null, visibility);
     }
     
-    public void preMethod(ThreadContext context, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+    public void preMethod(ThreadContext context, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper, Block block) {
         // do nothing
     }
     
@@ -57,7 +58,7 @@ public class UndefinedMethod extends AbstractMethod {
         // do nothing
     }
 
-    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
         throw new UnsupportedOperationException();
     }
 
@@ -65,7 +66,7 @@ public class UndefinedMethod extends AbstractMethod {
      * If UndefinedMethod gets invoked, don't do the usual method scoping/framing. It should never be invoked.
      */
     public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
-        return internalCall(context, receiver, lastClass, name, args, noSuper);
+        return internalCall(context, receiver, lastClass, name, args, noSuper, null);
     }
 
     public boolean isUndefined() {

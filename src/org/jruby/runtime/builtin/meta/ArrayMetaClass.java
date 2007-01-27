@@ -31,6 +31,7 @@ import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -145,10 +146,9 @@ public class ArrayMetaClass extends ObjectMetaClass {
         }
     };
     
-    public static IRubyObject create(IRubyObject klass, IRubyObject[] args) {
-        // FIXME: Why is this calling newArray directly instead of the normal newInstance process? Performance?
-        RubyArray array = (RubyArray)((RubyClass)klass).allocate();
-        array.callInit(IRubyObject.NULL_ARRAY);
+    public static IRubyObject create(IRubyObject klass, IRubyObject[] args, Block block) {
+        RubyArray array = (RubyArray) ((RubyClass) klass).allocate();
+        array.callInit(IRubyObject.NULL_ARRAY, block);
         
         if (args.length >= 1) {
             for (int i = 0; i < args.length; i++) {

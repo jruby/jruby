@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ObjectAllocator;
@@ -79,18 +80,18 @@ public class RubyUnboundMethod extends RubyMethod {
     /**
      * @see org.jruby.RubyMethod#call(IRubyObject[])
      */
-    public IRubyObject call(IRubyObject[] args) {
+    public IRubyObject call(IRubyObject[] args, Block block) {
         throw getRuntime().newTypeError("you cannot call unbound method; bind first");
     }
 
     /**
      * @see org.jruby.RubyMethod#unbind()
      */
-    public RubyUnboundMethod unbind() {
+    public RubyUnboundMethod unbind(Block block) {
         return this;
     }
 
-    public RubyMethod bind(IRubyObject aReceiver) {
+    public RubyMethod bind(IRubyObject aReceiver, Block block) {
         RubyClass receiverClass = aReceiver.getMetaClass();
         
         if (!aReceiver.isKindOf(originModule)) {

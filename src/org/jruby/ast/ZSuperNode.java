@@ -39,7 +39,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 
 /**
- * a call to 'super(...)' in a method.
+ * a call to 'super' with no arguments in a method.
  */
 public class ZSuperNode extends Node implements IArityNode {
     static final long serialVersionUID = 6109129030317216863L;

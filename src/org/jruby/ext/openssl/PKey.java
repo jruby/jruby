@@ -35,6 +35,7 @@ import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -53,8 +54,8 @@ public abstract class PKey extends RubyObject {
         CallbackFactory pkeycb = runtime.callbackFactory(PKey.class);
 
         cPKey.defineMethod("initialize",pkeycb.getMethod("initialize"));
-        cPKey.defineMethod("sign",pkeycb.getMethod("sign",IRubyObject.class,IRubyObject.class));
-        cPKey.defineMethod("verify",pkeycb.getMethod("verify",IRubyObject.class,IRubyObject.class,IRubyObject.class));
+        cPKey.defineFastMethod("sign",pkeycb.getFastMethod("sign",IRubyObject.class,IRubyObject.class));
+        cPKey.defineFastMethod("verify",pkeycb.getFastMethod("verify",IRubyObject.class,IRubyObject.class,IRubyObject.class));
 
         PKeyRSA.createPKeyRSA(runtime,mPKey);
         PKeyDSA.createPKeyDSA(runtime,mPKey);
@@ -65,7 +66,7 @@ public abstract class PKey extends RubyObject {
         super(runtime,type);
     }
 
-    public IRubyObject initialize() {
+    public IRubyObject initialize(Block unusedBlock) {
         return this;
     }
 

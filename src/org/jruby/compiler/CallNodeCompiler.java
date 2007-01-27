@@ -45,7 +45,8 @@ public class CallNodeCompiler implements NodeCompiler {
                 context.invokeDynamic(callNode.getName(), true, false);
             }
         } else {
-            final IterNode iterNode = callNode.getIterNode();
+            // FIXME: Missing blockpassnode handling
+            final IterNode iterNode = (IterNode) callNode.getIterNode();
 
             // create the closure class and instantiate it
             ClosureCallback closureBody = new ClosureCallback() {

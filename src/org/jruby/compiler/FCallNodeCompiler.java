@@ -41,7 +41,8 @@ public class FCallNodeCompiler implements NodeCompiler {
                 context.invokeDynamic(fcallNode.getName(), false, false);
             }
         } else {
-            final IterNode iterNode = fcallNode.getIterNode();
+            // FIXME: Missing blockpasnode stuff here
+            final IterNode iterNode = (IterNode) fcallNode.getIterNode();
 
             // create the closure class and instantiate it
             ClosureCallback closureBody = new ClosureCallback() {

@@ -35,6 +35,7 @@ import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -51,15 +52,15 @@ public class FullFunctionCallbackMethod extends AbstractMethod {
         this.callback = callback;
     }
 
-    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
-        context.preReflectedMethodInternalCall(implementationClass, lastClass, recv, name, args, noSuper);
+    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper, Block block) {
+        context.preReflectedMethodInternalCall(implementationClass, lastClass, recv, name, args, noSuper, block);
     }
     
     public void postMethod(ThreadContext context) {
         context.postReflectedMethodInternalCall();
     }
 
-    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
     	assert args != null;
         IRuby runtime = context.getRuntime();
         
@@ -68,12 +69,12 @@ public class FullFunctionCallbackMethod extends AbstractMethod {
 
             runtime.callTraceFunction(context, "c-call", position, receiver, name, getImplementationClass());
             try {
-                return callback.execute(receiver, args);
+                return callback.execute(receiver, args, block);
             } finally {
                 runtime.callTraceFunction(context, "c-return", position, receiver, name, getImplementationClass());
             }
         }
-		return callback.execute(receiver, args);
+		return callback.execute(receiver, args, block);
     }
 
     public Callback getCallback() {

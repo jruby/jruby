@@ -54,7 +54,7 @@ public class RubyFloat extends RubyNumeric {
         floatc.getSingletonClass().undefineMethod("allocate");
         floatc.getSingletonClass().undefineMethod("new");
 
-        floatc.defineFastSingletonMethod("induced_from", callbackFactory.getSingletonMethod(
+        floatc.defineFastSingletonMethod("induced_from", callbackFactory.getFastSingletonMethod(
                 "induced_from", IRubyObject.class));
         floatc.includeModule(runtime.getModule("Precision"));
 
@@ -73,39 +73,39 @@ public class RubyFloat extends RubyNumeric {
         floatc.defineConstant("MAX", RubyFloat.newFloat(runtime, Double.MAX_VALUE));
         floatc.defineConstant("EPSILON", RubyFloat.newFloat(runtime, 2.2204460492503131e-16));
 
-        floatc.defineFastMethod("to_s", callbackFactory.getMethod("to_s"));
-        floatc.defineFastMethod("coerce", callbackFactory.getMethod("coerce", IRubyObject.class));
-        floatc.defineFastMethod("-@", callbackFactory.getMethod("uminus"));
-        floatc.defineFastMethod("+", callbackFactory.getMethod("plus", IRubyObject.class));
-        floatc.defineFastMethod("-", callbackFactory.getMethod("minus", IRubyObject.class));
-        floatc.defineFastMethod("*", callbackFactory.getMethod("mul", IRubyObject.class));
-        floatc.defineFastMethod("/", callbackFactory.getMethod("fdiv", IRubyObject.class));
-        floatc.defineFastMethod("%", callbackFactory.getMethod("mod", IRubyObject.class));
-        floatc.defineFastMethod("modulo", callbackFactory.getMethod("mod", IRubyObject.class));
-        floatc.defineFastMethod("divmod", callbackFactory.getMethod("divmod", IRubyObject.class));
-        floatc.defineFastMethod("**", callbackFactory.getMethod("pow", IRubyObject.class));
-        floatc.defineFastMethod("==", callbackFactory.getMethod("equal", IRubyObject.class));
-        floatc.defineFastMethod("<=>", callbackFactory.getMethod("cmp", IRubyObject.class));
-        floatc.defineFastMethod(">", callbackFactory.getMethod("gt", IRubyObject.class));
-        floatc.defineFastMethod(">=", callbackFactory.getMethod("ge", IRubyObject.class));
-        floatc.defineFastMethod("<", callbackFactory.getMethod("lt", IRubyObject.class));
-        floatc.defineFastMethod("<=", callbackFactory.getMethod("le", IRubyObject.class));
-        floatc.defineFastMethod("eql?", callbackFactory.getMethod("eql_p", IRubyObject.class));
-        floatc.defineFastMethod("hash", callbackFactory.getMethod("hash"));
-        floatc.defineFastMethod("to_f", callbackFactory.getMethod("to_f"));
-        floatc.defineFastMethod("abs", callbackFactory.getMethod("abs"));
-        floatc.defineFastMethod("zero?", callbackFactory.getMethod("zero_p"));
+        floatc.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
+        floatc.defineFastMethod("coerce", callbackFactory.getFastMethod("coerce", IRubyObject.class));
+        floatc.defineFastMethod("-@", callbackFactory.getFastMethod("uminus"));
+        floatc.defineFastMethod("+", callbackFactory.getFastMethod("plus", IRubyObject.class));
+        floatc.defineFastMethod("-", callbackFactory.getFastMethod("minus", IRubyObject.class));
+        floatc.defineFastMethod("*", callbackFactory.getFastMethod("mul", IRubyObject.class));
+        floatc.defineFastMethod("/", callbackFactory.getFastMethod("fdiv", IRubyObject.class));
+        floatc.defineFastMethod("%", callbackFactory.getFastMethod("mod", IRubyObject.class));
+        floatc.defineFastMethod("modulo", callbackFactory.getFastMethod("mod", IRubyObject.class));
+        floatc.defineFastMethod("divmod", callbackFactory.getFastMethod("divmod", IRubyObject.class));
+        floatc.defineFastMethod("**", callbackFactory.getFastMethod("pow", IRubyObject.class));
+        floatc.defineFastMethod("==", callbackFactory.getFastMethod("equal", IRubyObject.class));
+        floatc.defineFastMethod("<=>", callbackFactory.getFastMethod("cmp", IRubyObject.class));
+        floatc.defineFastMethod(">", callbackFactory.getFastMethod("gt", IRubyObject.class));
+        floatc.defineFastMethod(">=", callbackFactory.getFastMethod("ge", IRubyObject.class));
+        floatc.defineFastMethod("<", callbackFactory.getFastMethod("lt", IRubyObject.class));
+        floatc.defineFastMethod("<=", callbackFactory.getFastMethod("le", IRubyObject.class));
+        floatc.defineFastMethod("eql?", callbackFactory.getFastMethod("eql_p", IRubyObject.class));
+        floatc.defineFastMethod("hash", callbackFactory.getFastMethod("hash"));
+        floatc.defineFastMethod("to_f", callbackFactory.getFastMethod("to_f"));
+        floatc.defineFastMethod("abs", callbackFactory.getFastMethod("abs"));
+        floatc.defineFastMethod("zero?", callbackFactory.getFastMethod("zero_p"));
 
-        floatc.defineFastMethod("to_i", callbackFactory.getMethod("truncate"));
-        floatc.defineFastMethod("to_int", callbackFactory.getMethod("truncate"));
-        floatc.defineFastMethod("floor", callbackFactory.getMethod("floor"));
-        floatc.defineFastMethod("ceil", callbackFactory.getMethod("ceil"));
-        floatc.defineFastMethod("round", callbackFactory.getMethod("round"));
-        floatc.defineFastMethod("truncate", callbackFactory.getMethod("truncate"));
+        floatc.defineFastMethod("to_i", callbackFactory.getFastMethod("truncate"));
+        floatc.defineFastMethod("to_int", callbackFactory.getFastMethod("truncate"));
+        floatc.defineFastMethod("floor", callbackFactory.getFastMethod("floor"));
+        floatc.defineFastMethod("ceil", callbackFactory.getFastMethod("ceil"));
+        floatc.defineFastMethod("round", callbackFactory.getFastMethod("round"));
+        floatc.defineFastMethod("truncate", callbackFactory.getFastMethod("truncate"));
 
-        floatc.defineFastMethod("nan?", callbackFactory.getMethod("nan_p"));
-        floatc.defineFastMethod("infinite?", callbackFactory.getMethod("infinite_p"));
-        floatc.defineFastMethod("finite?", callbackFactory.getMethod("finite_p"));
+        floatc.defineFastMethod("nan?", callbackFactory.getFastMethod("nan_p"));
+        floatc.defineFastMethod("infinite?", callbackFactory.getFastMethod("infinite_p"));
+        floatc.defineFastMethod("finite?", callbackFactory.getFastMethod("finite_p"));
 
         return floatc;
     }
@@ -139,9 +139,9 @@ public class RubyFloat extends RubyNumeric {
     public long getLongValue() {
         return (long) value;
     }
-
+    
     public RubyFloat convertToFloat() {
-        return this;
+    	return this;
     }
 
     protected int compareValue(RubyNumeric other) {
@@ -164,7 +164,7 @@ public class RubyFloat extends RubyNumeric {
     public static IRubyObject induced_from(IRubyObject recv, IRubyObject number) {
         if (number instanceof RubyFixnum || number instanceof RubyBignum) {
             return number.callMethod(recv.getRuntime().getCurrentContext(), "to_f");
-        }
+    }
         if (number instanceof RubyFloat) {
             return number;
         }
@@ -178,7 +178,7 @@ public class RubyFloat extends RubyNumeric {
     public IRubyObject to_s() {
         if (Double.isInfinite(value)) {
             return RubyString.newString(getRuntime(), value < 0 ? "-Infinity" : "Infinity");
-        }
+    }
 
         if (Double.isNaN(value)) {
             return RubyString.newString(getRuntime(), "NaN");
@@ -186,7 +186,7 @@ public class RubyFloat extends RubyNumeric {
 
         // TODO: needs formatting "%#.15g" and "%#.14e"
         return RubyString.newString(getRuntime(), "" + value);
-    }
+        }
 
     /** flo_coerce
      * 
@@ -195,14 +195,14 @@ public class RubyFloat extends RubyNumeric {
         // MRI doesn't type check here either
         return getRuntime().newArray(
                 newFloat(getRuntime(), ((RubyNumeric) other).getDoubleValue()), this);
-    }
+        }
 
     /** flo_uminus
      * 
      */
     public IRubyObject uminus() {
         return RubyFloat.newFloat(getRuntime(), -value);
-    }
+        }
 
     /** flo_plus
      * 
@@ -220,7 +220,7 @@ public class RubyFloat extends RubyNumeric {
     public IRubyObject minus(IRubyObject other) {
         if (other instanceof RubyNumeric) {
             return RubyFloat.newFloat(getRuntime(), value - ((RubyNumeric) other).getDoubleValue());
-        }
+    }
         return coerceBin("-", other);
     }
 
@@ -230,17 +230,17 @@ public class RubyFloat extends RubyNumeric {
     public IRubyObject mul(IRubyObject other) {
         if (other instanceof RubyNumeric) {
             return RubyFloat.newFloat(getRuntime(), value * ((RubyNumeric) other).getDoubleValue());
-        }
+    }
         return coerceBin("*", other);
     }
-
+    
     /** flo_div
      * 
      */
     public IRubyObject fdiv(IRubyObject other) { // don't override Numeric#div !
-        if (other instanceof RubyNumeric) {
+    	if (other instanceof RubyNumeric) {
             return RubyFloat.newFloat(getRuntime(), value / ((RubyNumeric) other).getDoubleValue());
-        }
+    	}
         return coerceBin("div", other);
     }
 
@@ -248,9 +248,9 @@ public class RubyFloat extends RubyNumeric {
      * 
      */
     public IRubyObject mod(IRubyObject other) {
-        if (other instanceof RubyNumeric) {
+    	if (other instanceof RubyNumeric) {
             double y = ((RubyNumeric) other).getDoubleValue();
-            // Modelled after c ruby implementation (java /,% not same as ruby)        
+            // Modelled after c ruby implementation (java /,% not same as ruby)
             double x = value;
 
             double mod = Math.IEEEremainder(x, y);
@@ -259,7 +259,7 @@ public class RubyFloat extends RubyNumeric {
             }
 
             return RubyFloat.newFloat(getRuntime(), mod);
-        }
+    	}
         return coerceBin("%", other);
     }
 
@@ -267,7 +267,7 @@ public class RubyFloat extends RubyNumeric {
      * 
      */
     public IRubyObject divmod(IRubyObject other) {
-        if (other instanceof RubyNumeric) {
+    	if (other instanceof RubyNumeric) {
             double y = ((RubyNumeric) other).getDoubleValue();
             double x = value;
 
@@ -277,23 +277,23 @@ public class RubyFloat extends RubyNumeric {
             if (y * mod < 0) {
                 mod += y;
                 div -= 1.0;
-            }
+    	}
             final IRuby runtime = getRuntime();
             IRubyObject car = dbl2num(runtime, div);
             RubyFloat cdr = RubyFloat.newFloat(runtime, mod);
             return RubyArray.newArray(runtime, car, cdr);
-        }
-        return coerceBin("%", other);
     }
-
+        return coerceBin("%", other);
+    	}
+    	
     /** flo_pow
      * 
      */
     public IRubyObject pow(IRubyObject other) {
-        if (other instanceof RubyNumeric) {
+    	if (other instanceof RubyNumeric) {
             return RubyFloat.newFloat(getRuntime(), Math.pow(value, ((RubyNumeric) other)
                     .getDoubleValue()));
-        }
+    	}
         return coerceBin("/", other);
     }
 
@@ -303,11 +303,11 @@ public class RubyFloat extends RubyNumeric {
     public IRubyObject equal(IRubyObject other) {
         if (Double.isNaN(value)) {
             return getRuntime().getFalse();
-        }
+    }
         if (other instanceof RubyNumeric) {
             return RubyBoolean.newBoolean(getRuntime(), value == ((RubyNumeric) other)
                     .getDoubleValue());
-        }
+    }
         // Numeric.equal            
         return super.equal(other);
 
@@ -320,7 +320,7 @@ public class RubyFloat extends RubyNumeric {
         if (other instanceof RubyNumeric) {
             double b = ((RubyNumeric) other).getDoubleValue();
             return dbl_cmp(getRuntime(), value, b);
-        }
+    	}
         return coerceCmp("<=>", other);
     }
 
@@ -344,7 +344,7 @@ public class RubyFloat extends RubyNumeric {
             return RubyBoolean.newBoolean(getRuntime(), !Double.isNaN(b) && value >= b);
         }
         return coerceRelOp(">=", other);
-    }
+        }
 
     /** flo_lt
      * 
@@ -353,7 +353,7 @@ public class RubyFloat extends RubyNumeric {
         if (other instanceof RubyNumeric) {
             double b = ((RubyNumeric) other).getDoubleValue();
             return RubyBoolean.newBoolean(getRuntime(), !Double.isNaN(b) && value < b);
-        }
+    }
         return coerceRelOp("<", other);
     }
 
@@ -364,10 +364,10 @@ public class RubyFloat extends RubyNumeric {
         if (other instanceof RubyNumeric) {
             double b = ((RubyNumeric) other).getDoubleValue();
             return RubyBoolean.newBoolean(getRuntime(), !Double.isNaN(b) && value <= b);
-        }
+		}
         return coerceRelOp("<=", other);
-    }
-
+	}
+	
     /** flo_eql
      * 
      */
@@ -375,14 +375,14 @@ public class RubyFloat extends RubyNumeric {
         if (other instanceof RubyFloat) {
             double b = ((RubyFloat) other).value;
             if (Double.isNaN(value) || Double.isNaN(b)) {
-                return getRuntime().getFalse();
-            }
+            return getRuntime().getFalse();
+        }
             if (value == b) {
                 return getRuntime().getTrue();
-            }
-        }
-        return getRuntime().getFalse();
     }
+            }
+            return getRuntime().getFalse();
+        }
 
     /** flo_hash
      * 
@@ -390,15 +390,15 @@ public class RubyFloat extends RubyNumeric {
     public RubyFixnum hash() {
         long l = Double.doubleToLongBits(value);
         return getRuntime().newFixnum((long) (l ^ l >>> 32));
-    }
-
+            }
+            
     /** flo_fo 
      * 
      */
     public IRubyObject to_f() {
         return this;
-    }
-
+        }
+        
     /** flo_abs
      * 
      */
@@ -408,13 +408,13 @@ public class RubyFloat extends RubyNumeric {
         }
         return this;
     }
-
+    
     /** flo_zero_p
      * 
      */
     public IRubyObject zero_p() {
         return RubyBoolean.newBoolean(getRuntime(), value == 0.0);
-    }
+        }
 
     /** flo_truncate
      * 
@@ -423,13 +423,13 @@ public class RubyFloat extends RubyNumeric {
         double f = value;
         if (f > 0.0) {
             f = Math.floor(f);
-        }
+            }
         if (f > 0.0) {
             f = Math.ceil(f);
         }
         return dbl2num(getRuntime(), f);
-    }
-
+        }
+        
     /** loor
      * 
      */
@@ -442,7 +442,7 @@ public class RubyFloat extends RubyNumeric {
      */
     public IRubyObject ceil() {
         return dbl2num(getRuntime(), Math.ceil(value));
-    }
+        }
 
     /** flo_round
      * 
@@ -451,13 +451,13 @@ public class RubyFloat extends RubyNumeric {
         double f = value;
         if (f > 0.0) {
             f = Math.floor(f + 0.5);
-        }
+            }
         if (f < 0.0) {
             f = Math.ceil(f - 0.5);
         }
         return dbl2num(getRuntime(), f);
-    }
-
+        }
+        
     /** flo_is_nan_p
      * 
      */
@@ -473,8 +473,8 @@ public class RubyFloat extends RubyNumeric {
             return RubyFixnum.newFixnum(getRuntime(), value < 0 ? -1 : 1);
         }
         return getRuntime().getNil();
-    }
-
+            }
+            
     /** flo_is_finite_p
      * 
      */
@@ -488,17 +488,17 @@ public class RubyFloat extends RubyNumeric {
     public void marshalTo(MarshalStream output) throws java.io.IOException {
         output.write('f');
         String strValue = this.toString();
-
+    
         if (Double.isInfinite(value)) {
             strValue = value < 0 ? "-inf" : "inf";
         } else if (Double.isNaN(value)) {
             strValue = "nan";
         }
         output.dumpString(strValue);
-    }
-
+        }
+        
     public static RubyFloat unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         return RubyFloat.newFloat(input.getRuntime(), Double.parseDouble(input.unmarshalString()));
     }
-
+    
 }

@@ -44,6 +44,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class RubyProc extends RubyObject {
     private Block block = null;
     private RubyModule wrapper = null;
+    // FIXME: I added it here since I wanted initialize to deal with it and not newProc.  I could
+    // be wrong and I suspect we can find a better way of dealing with this.
+    private boolean isLambda = false;
 
     public RubyProc(IRuby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
@@ -60,30 +63,27 @@ public class RubyProc extends RubyObject {
     // Proc class
 
     public static RubyProc newProc(IRuby runtime, boolean isLambda) {
-        ThreadContext tc = runtime.getCurrentContext();
-        
-        if (!tc.isBlockGiven() && !tc.isFBlockGiven()) {
-            throw runtime.newArgumentError("tried to create Proc object without a block");
-        }
-        
-        if (isLambda && !tc.isBlockGiven()) {
-        	// TODO: warn "tried to create Proc object without a block"
-        }
-        
-        Block block = (Block) tc.getCurrentBlock();
-        
-        if (!isLambda && block.getBlockObject() instanceof RubyProc) {
-        	return (RubyProc) block.getBlockObject();
-        }
-
         RubyProc newProc = new RubyProc(runtime, runtime.getClass("Proc"));
-
-        newProc.block = block.cloneBlock();
-        newProc.wrapper = tc.getWrapper();
-        newProc.block.isLambda = isLambda;
-        newProc.block.setBlockObject(newProc);
+        newProc.isLambda = isLambda;
 
         return newProc;
+    }
+    
+    public IRubyObject initialize(IRubyObject[] args, Block procBlock) {
+        if (procBlock == null) {
+            throw getRuntime().newArgumentError("tried to create Proc object without a block");
+        }
+        
+        if (isLambda && procBlock == null) {
+            // TODO: warn "tried to create Proc object without a block"
+        }
+        
+        block = procBlock.cloneBlock();
+        wrapper = getRuntime().getCurrentContext().getWrapper();
+        block.isLambda = isLambda;
+        block.setBlockObject(this);
+
+        return this;
     }
     
     protected IRubyObject doClone() {
@@ -99,12 +99,17 @@ public class RubyProc extends RubyObject {
     public IRubyObject binding() {
         return getRuntime().newBinding(block);
     }
-    
+
     public IRubyObject call(IRubyObject[] args) {
-        return call(args, null);
+        return call(args, null, null);
     }
 
-    public IRubyObject call(IRubyObject[] args, IRubyObject self) {
+    // ENEBO: For method def others are Java to java versions
+    public IRubyObject call(IRubyObject[] args, Block unusedBlock) {
+        return call(args, null, null);
+    }
+
+    public IRubyObject call(IRubyObject[] args, IRubyObject self, Block unusedBlock) {
     	assert args != null;
     	
         ThreadContext context = getRuntime().getCurrentContext();
@@ -124,6 +129,7 @@ public class RubyProc extends RubyObject {
 		        throw getRuntime().newLocalJumpError("unexpected return");
         	} else if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
         		Object target = je.getPrimaryData();
+                //System.out.println("TARGET: " + target);
 	
 	            if (target == this || block.isLambda) {
 	                return (IRubyObject)je.getSecondaryData();

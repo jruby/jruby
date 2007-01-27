@@ -39,6 +39,7 @@ import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -62,16 +63,16 @@ public class NetscapeSPKI extends RubyObject {
 
         CallbackFactory spkicb = runtime.callbackFactory(NetscapeSPKI.class);
         cSPKI.defineMethod("initialize",spkicb.getOptMethod("_initialize"));
-        cSPKI.defineMethod("to_der",spkicb.getMethod("to_der"));
-        cSPKI.defineMethod("to_pem",spkicb.getMethod("to_pem"));
-        cSPKI.defineMethod("to_s",spkicb.getMethod("to_pem"));
-        cSPKI.defineMethod("to_text",spkicb.getMethod("to_text"));
-        cSPKI.defineMethod("public_key",spkicb.getMethod("public_key"));
-        cSPKI.defineMethod("public_key=",spkicb.getMethod("set_public_key",IRubyObject.class));
-        cSPKI.defineMethod("sign",spkicb.getMethod("sign",IRubyObject.class,IRubyObject.class));
-        cSPKI.defineMethod("verify",spkicb.getMethod("verify",IRubyObject.class));
-        cSPKI.defineMethod("challenge",spkicb.getMethod("challenge"));
-        cSPKI.defineMethod("challenge=",spkicb.getMethod("set_challenge",IRubyObject.class));
+        cSPKI.defineFastMethod("to_der",spkicb.getFastMethod("to_der"));
+        cSPKI.defineFastMethod("to_pem",spkicb.getFastMethod("to_pem"));
+        cSPKI.defineFastMethod("to_s",spkicb.getFastMethod("to_pem"));
+        cSPKI.defineFastMethod("to_text",spkicb.getFastMethod("to_text"));
+        cSPKI.defineFastMethod("public_key",spkicb.getFastMethod("public_key"));
+        cSPKI.defineFastMethod("public_key=",spkicb.getFastMethod("set_public_key",IRubyObject.class));
+        cSPKI.defineFastMethod("sign",spkicb.getFastMethod("sign",IRubyObject.class,IRubyObject.class));
+        cSPKI.defineFastMethod("verify",spkicb.getFastMethod("verify",IRubyObject.class));
+        cSPKI.defineFastMethod("challenge",spkicb.getFastMethod("challenge"));
+        cSPKI.defineFastMethod("challenge=",spkicb.getFastMethod("set_challenge",IRubyObject.class));
     }
 
     public NetscapeSPKI(IRuby runtime, RubyClass type) {
@@ -83,7 +84,7 @@ public class NetscapeSPKI extends RubyObject {
 
     private NetscapeCertRequest cert;
 
-    public IRubyObject _initialize(IRubyObject[] args) throws Exception {
+    public IRubyObject _initialize(IRubyObject[] args, Block unusedBlock) throws Exception {
         if(args.length > 0) {
             byte[] b = args[0].toString().getBytes("PLAIN");
             try {

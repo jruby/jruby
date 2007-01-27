@@ -84,7 +84,7 @@ public class RubyEnumerator extends RubyObject {
     }
 
     /** Primes the instance. Little validation is done at this stage */
-    private IRubyObject initialize(ThreadContext tc, IRubyObject[] args) {
+    private IRubyObject initialize(ThreadContext tc, IRubyObject[] args, Block block) {
         checkArgumentCount(args, 1, -1);
            
         object = args[0];
@@ -110,22 +110,10 @@ public class RubyEnumerator extends RubyObject {
      * Block may not be given and "each" should just ignore it and call on through to
      * underlying method.
      */
-    private IRubyObject each(ThreadContext tc, IRubyObject[] args) {
+    private IRubyObject each(ThreadContext tc, IRubyObject[] args, Block block) {
         checkArgumentCount(args, 0, 0);
 
-        boolean blockGiven = tc.isBlockGiven();
-
-        if (blockGiven) {
-            tc.setBlockAvailable();
-        }
-
-        try {
-            return object.callMethod(tc, method.asSymbol(), methodArgs);
-        } finally {
-            if (blockGiven) {
-                tc.clearInBlock();
-            }
-        }
+        return object.callMethod(tc, method.asSymbol(), methodArgs, block);
     }
 
     /** Block callback for slicing the results of calling the client block */
@@ -142,7 +130,7 @@ public class RubyEnumerator extends RubyObject {
             this.slice = RubyArray.newArray(runtime, sliceSize);
         }
 
-        public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf) {
+        public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf, Block block) {
             if (args.length > 1) {
                 slice.append(RubyArray.newArray(runtime, args));
             } else {
@@ -186,7 +174,7 @@ public class RubyEnumerator extends RubyObject {
             this.cont = RubyArray.newArray(runtime, contSize);
         }
 
-        public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf) {
+        public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf, Block block) {
             if (cont.getLength() == contSize) {
                 cont.shift();
             }
@@ -251,28 +239,28 @@ public class RubyEnumerator extends RubyObject {
         }
 
         /** Enumerable::Enumerator#new */
-        public IRubyObject method0(ThreadContext tc, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method0(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) {
             RubyClass klass = (RubyClass)self;
             
-            RubyEnumerator result = (RubyEnumerator)klass.allocate();
+            RubyEnumerator result = (RubyEnumerator) klass.allocate();
             
-            result.callInit(args);
+            result.callInit(args, block);
             
             return result;
         }
 
         /** Enumerable::Enumerator#initialize */
-        public IRubyObject method1(ThreadContext tc, IRubyObject self, IRubyObject[] args) {
-            return ((RubyEnumerator) self).initialize(tc, args);
+        public IRubyObject method1(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) {
+            return ((RubyEnumerator) self).initialize(tc, args, block);
         }
 
         /** Enumerable::Enumerator#each */
-        public IRubyObject method2(ThreadContext tc, IRubyObject self, IRubyObject[] args) {
-            return ((RubyEnumerator) self).each(tc, args);
+        public IRubyObject method2(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) {
+            return ((RubyEnumerator) self).each(tc, args, block);
         }
 
         /** Object#to_enum and Object#enum_for. Just like Enumerable::Enumerator.new(self, arg_0) */
-        public IRubyObject method3(ThreadContext tc, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method3(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) {
             IRubyObject[] newArgs = new IRubyObject[args.length + 1];
             newArgs[0] = self;
             System.arraycopy(args, 0, newArgs, 1, args.length);
@@ -281,7 +269,7 @@ public class RubyEnumerator extends RubyObject {
         }
 
         /** Enumerable:#each_slice */
-        public IRubyObject method4(final ThreadContext tc, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method4(final ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) {
             self.checkArgumentCount(args, 1, 1);
 
             long sliceSize = args[0].convertToInteger().getLongValue();
@@ -290,10 +278,10 @@ public class RubyEnumerator extends RubyObject {
                 throw runtime.newArgumentError("invalid slice size");
             } 
 
-            SlicedBlockCallback sliceBlock = new SlicedBlockCallback(runtime, tc.getCurrentBlock(), sliceSize);
+            SlicedBlockCallback sliceBlock = new SlicedBlockCallback(runtime, block, sliceSize);
 
             RubyEnumerable.callEach(tc, self, self.getMetaClass(), sliceBlock);
-
+            
             if (sliceBlock.hasLeftovers()) {
                 sliceBlock.yieldLeftovers(tc);
             }
@@ -302,7 +290,7 @@ public class RubyEnumerator extends RubyObject {
         }
 
         /** Enumerable:#each_cons */
-        public IRubyObject method5(final ThreadContext tc, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method5(final ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) {
             self.checkArgumentCount(args, 1, 1);
 
             long consecutiveSize = args[0].convertToInteger().getLongValue();
@@ -312,13 +300,13 @@ public class RubyEnumerator extends RubyObject {
             }
 
             RubyEnumerable.callEach(tc, self, self.getMetaClass(), 
-                    new ConsecutiveBlockCallback(runtime, tc.getCurrentBlock(), consecutiveSize));
+                    new ConsecutiveBlockCallback(runtime, block, consecutiveSize));
 
             return runtime.getNil();
         }
 
         /** Enumerable#enum_with_index */
-        public IRubyObject method6(final ThreadContext tc, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method6(final ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) {
             self.checkArgumentCount(args, 0, 0);
 
             return enumerator.callMethod(tc, "new", 
@@ -326,7 +314,7 @@ public class RubyEnumerator extends RubyObject {
         }
 
         /** Enumerable#enum_slice */
-        public IRubyObject method7(ThreadContext tc, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method7(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) {
             self.checkArgumentCount(args, 1, 1);
 
             return enumerator.callMethod(tc, "new", 
@@ -334,7 +322,7 @@ public class RubyEnumerator extends RubyObject {
         }
 
         /** Enumerable#enum_cons */
-        public IRubyObject method8(ThreadContext tc, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method8(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) {
             self.checkArgumentCount(args, 1, 1);
 
             return enumerator.callMethod(tc, "new", 

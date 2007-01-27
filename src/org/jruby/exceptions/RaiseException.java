@@ -55,7 +55,7 @@ public class RaiseException extends JumpException {
         if (msg == null) {
             msg = "No message available";
         }
-        setException((RubyException) excptnClass.newInstance(new IRubyObject[] {excptnClass.getRuntime().newString(msg)}), nativeException);
+        setException((RubyException) excptnClass.newInstance(new IRubyObject[] {excptnClass.getRuntime().newString(msg)}, null), nativeException);
     }
 
     public RaiseException(RubyException exception, boolean isNativeException) {

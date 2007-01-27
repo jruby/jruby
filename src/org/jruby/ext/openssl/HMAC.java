@@ -35,6 +35,7 @@ import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -56,17 +57,17 @@ public class HMAC extends RubyObject {
         
         CallbackFactory hmaccb = runtime.callbackFactory(HMAC.class);
 
-        cHMAC.defineSingletonMethod("digest",hmaccb.getSingletonMethod("s_digest",IRubyObject.class,IRubyObject.class,IRubyObject.class));
-        cHMAC.defineSingletonMethod("hexdigest",hmaccb.getSingletonMethod("s_hexdigest",IRubyObject.class,IRubyObject.class,IRubyObject.class));
+        cHMAC.defineFastSingletonMethod("digest",hmaccb.getFastSingletonMethod("s_digest",IRubyObject.class,IRubyObject.class,IRubyObject.class));
+        cHMAC.defineFastSingletonMethod("hexdigest",hmaccb.getFastSingletonMethod("s_hexdigest",IRubyObject.class,IRubyObject.class,IRubyObject.class));
         cHMAC.defineMethod("initialize",hmaccb.getMethod("initialize",IRubyObject.class,IRubyObject.class));
-        cHMAC.defineMethod("initialize_copy",hmaccb.getMethod("initialize_copy",IRubyObject.class));
-        cHMAC.defineMethod("clone",hmaccb.getMethod("rbClone"));
-        cHMAC.defineMethod("update",hmaccb.getMethod("update",IRubyObject.class));
-        cHMAC.defineMethod("<<",hmaccb.getMethod("update",IRubyObject.class));
-        cHMAC.defineMethod("digest",hmaccb.getMethod("digest"));
-        cHMAC.defineMethod("hexdigest",hmaccb.getMethod("hexdigest"));
-        cHMAC.defineMethod("inspect",hmaccb.getMethod("hexdigest"));
-        cHMAC.defineMethod("to_s",hmaccb.getMethod("hexdigest"));
+        cHMAC.defineFastMethod("initialize_copy",hmaccb.getFastMethod("initialize_copy",IRubyObject.class));
+        cHMAC.defineFastMethod("clone",hmaccb.getFastMethod("rbClone"));
+        cHMAC.defineFastMethod("update",hmaccb.getFastMethod("update",IRubyObject.class));
+        cHMAC.defineFastMethod("<<",hmaccb.getFastMethod("update",IRubyObject.class));
+        cHMAC.defineFastMethod("digest",hmaccb.getFastMethod("digest"));
+        cHMAC.defineFastMethod("hexdigest",hmaccb.getFastMethod("hexdigest"));
+        cHMAC.defineFastMethod("inspect",hmaccb.getFastMethod("hexdigest"));
+        cHMAC.defineFastMethod("to_s",hmaccb.getFastMethod("hexdigest"));
     }
 
     public static IRubyObject s_digest(IRubyObject recv, IRubyObject digest, IRubyObject kay, IRubyObject data) {
@@ -103,7 +104,7 @@ public class HMAC extends RubyObject {
     private byte[] key;
     private StringBuffer data = new StringBuffer();
 
-    public IRubyObject initialize(IRubyObject kay, IRubyObject digest) {
+    public IRubyObject initialize(IRubyObject kay, IRubyObject digest, Block unusedBlock) {
         String name = "HMAC" + ((Digest)digest).getAlgorithm();
         try {
             mac = Mac.getInstance(name);

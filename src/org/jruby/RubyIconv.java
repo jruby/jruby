@@ -37,6 +37,7 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.UnmappableCharacterException;
 
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -95,7 +96,7 @@ public class RubyIconv extends RubyObject {
     }
     */
     
-    public IRubyObject initialize(IRubyObject[] args) {
+    public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
         checkArgumentCount(args, 2, 2);
         
         //toEncoding = args[0].convertToString().toString();
@@ -104,11 +105,11 @@ public class RubyIconv extends RubyObject {
         return this;
     }
 
-    public static IRubyObject iconv(IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject iconv(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         return convertWithArgs(recv, args, "iconv");
     }
     
-    public static IRubyObject conv(IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject conv(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         return convertWithArgs(recv, args, "conv").join(recv.getRuntime().newString(""));
     }
     

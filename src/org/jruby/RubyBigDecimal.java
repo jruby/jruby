@@ -29,6 +29,7 @@ package org.jruby;
 
 import java.math.BigDecimal;
 
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -72,61 +73,61 @@ public class RubyBigDecimal extends RubyNumeric {
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyBigDecimal.class);
 
         runtime.getModule("Kernel").defineModuleFunction("BigDecimal",callbackFactory.getOptSingletonMethod("newBigDecimal"));
-        result.defineFastSingletonMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
-        result.defineFastSingletonMethod("ver", callbackFactory.getSingletonMethod("ver"));
+        result.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
+        result.defineFastSingletonMethod("ver", callbackFactory.getFastSingletonMethod("ver"));
         result.defineSingletonMethod("_load", callbackFactory.getSingletonMethod("_load",IRubyObject.class));
-        result.defineFastSingletonMethod("double_fig", callbackFactory.getSingletonMethod("double_fig"));
-        result.defineFastSingletonMethod("limit", callbackFactory.getOptSingletonMethod("limit"));
-        result.defineFastSingletonMethod("mode", callbackFactory.getSingletonMethod("mode",IRubyObject.class,IRubyObject.class));
+        result.defineFastSingletonMethod("double_fig", callbackFactory.getFastSingletonMethod("double_fig"));
+        result.defineFastSingletonMethod("limit", callbackFactory.getFastSingletonMethod("limit", IRubyObject.class));
+        result.defineFastSingletonMethod("mode", callbackFactory.getFastSingletonMethod("mode", IRubyObject.class, IRubyObject.class));
 
         result.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
-        result.defineFastMethod("%", callbackFactory.getMethod("mod",IRubyObject.class));
-        result.defineFastMethod("modulo", callbackFactory.getMethod("mod",IRubyObject.class));
-        result.defineFastMethod("*", callbackFactory.getOptMethod("mult"));
-        result.defineFastMethod("mult", callbackFactory.getOptMethod("mult"));
-        result.defineFastMethod("**", callbackFactory.getMethod("power",IRubyObject.class));
-        result.defineFastMethod("power", callbackFactory.getMethod("power",IRubyObject.class));
-        result.defineFastMethod("+", callbackFactory.getOptMethod("add"));
-        result.defineFastMethod("add", callbackFactory.getOptMethod("add"));
-        result.defineFastMethod("-", callbackFactory.getOptMethod("sub"));
-        result.defineFastMethod("sub", callbackFactory.getOptMethod("sub"));
-        result.defineFastMethod("/", callbackFactory.getOptMethod("div"));
-        result.defineFastMethod("div", callbackFactory.getOptMethod("div"));
-        result.defineFastMethod("quo", callbackFactory.getOptMethod("div"));
-        result.defineFastMethod("<=>", callbackFactory.getMethod("spaceship",IRubyObject.class));
-        result.defineFastMethod("==", callbackFactory.getMethod("eql_p",IRubyObject.class));
-        result.defineFastMethod("===", callbackFactory.getMethod("eql_p",IRubyObject.class));
-        result.defineFastMethod("eql?", callbackFactory.getMethod("eql_p",IRubyObject.class));
-        result.defineFastMethod("!=", callbackFactory.getMethod("ne",IRubyObject.class));
-        result.defineFastMethod("<", callbackFactory.getMethod("lt",IRubyObject.class));
-        result.defineFastMethod("<=", callbackFactory.getMethod("le",IRubyObject.class));
-        result.defineFastMethod(">", callbackFactory.getMethod("gt",IRubyObject.class));
-        result.defineFastMethod(">=", callbackFactory.getMethod("ge",IRubyObject.class));
-        result.defineFastMethod("abs", callbackFactory.getMethod("abs"));
-        result.defineFastMethod("ceil", callbackFactory.getMethod("ceil",IRubyObject.class));
-        result.defineFastMethod("coerce", callbackFactory.getMethod("coerce",IRubyObject.class));
-        result.defineFastMethod("divmod", callbackFactory.getMethod("divmod",IRubyObject.class)); 
-        result.defineFastMethod("exponent", callbackFactory.getMethod("exponent"));
-        result.defineFastMethod("finite?", callbackFactory.getMethod("finite_p"));
-        result.defineFastMethod("fix", callbackFactory.getMethod("fix"));
-        result.defineFastMethod("floor", callbackFactory.getMethod("floor",IRubyObject.class));
-        result.defineFastMethod("frac", callbackFactory.getMethod("frac"));
-        result.defineFastMethod("infinite?", callbackFactory.getMethod("infinite_p"));
-        result.defineFastMethod("inspect", callbackFactory.getMethod("inspect"));
-        result.defineFastMethod("nan?", callbackFactory.getMethod("nan_p"));
-        result.defineFastMethod("nonzero?", callbackFactory.getMethod("nonzero_p"));
-        result.defineFastMethod("precs", callbackFactory.getMethod("precs"));
-        result.defineFastMethod("remainder", callbackFactory.getMethod("remainder",IRubyObject.class));
-        result.defineFastMethod("round", callbackFactory.getOptMethod("round"));
-        result.defineFastMethod("sign", callbackFactory.getMethod("sign"));
-        result.defineFastMethod("split", callbackFactory.getMethod("split"));
-        result.defineFastMethod("sqrt", callbackFactory.getOptMethod("sqrt"));
-        result.defineFastMethod("to_f", callbackFactory.getMethod("to_f"));
-        result.defineFastMethod("to_i", callbackFactory.getMethod("to_i"));
-        result.defineFastMethod("to_int", callbackFactory.getMethod("to_int"));
-        result.defineFastMethod("to_s", callbackFactory.getOptMethod("to_s"));
-        result.defineFastMethod("truncate", callbackFactory.getOptMethod("truncate"));
-        result.defineFastMethod("zero?", callbackFactory.getMethod("zero_p"));
+        result.defineFastMethod("%", callbackFactory.getFastMethod("mod",IRubyObject.class));
+        result.defineFastMethod("modulo", callbackFactory.getFastMethod("mod",IRubyObject.class));
+        result.defineFastMethod("*", callbackFactory.getFastOptMethod("mult"));
+        result.defineFastMethod("mult", callbackFactory.getFastOptMethod("mult"));
+        result.defineFastMethod("**", callbackFactory.getFastMethod("power",IRubyObject.class));
+        result.defineFastMethod("power", callbackFactory.getFastMethod("power",IRubyObject.class));
+        result.defineFastMethod("+", callbackFactory.getFastOptMethod("add"));
+        result.defineFastMethod("add", callbackFactory.getFastOptMethod("add"));
+        result.defineFastMethod("-", callbackFactory.getFastOptMethod("sub"));
+        result.defineFastMethod("sub", callbackFactory.getFastOptMethod("sub"));
+        result.defineFastMethod("/", callbackFactory.getFastOptMethod("div"));
+        result.defineFastMethod("div", callbackFactory.getFastOptMethod("div"));
+        result.defineFastMethod("quo", callbackFactory.getFastOptMethod("div"));
+        result.defineFastMethod("<=>", callbackFactory.getFastMethod("spaceship",IRubyObject.class));
+        result.defineFastMethod("==", callbackFactory.getFastMethod("eql_p",IRubyObject.class));
+        result.defineFastMethod("===", callbackFactory.getFastMethod("eql_p",IRubyObject.class));
+        result.defineFastMethod("eql?", callbackFactory.getFastMethod("eql_p",IRubyObject.class));
+        result.defineFastMethod("!=", callbackFactory.getFastMethod("ne",IRubyObject.class));
+        result.defineFastMethod("<", callbackFactory.getFastMethod("lt",IRubyObject.class));
+        result.defineFastMethod("<=", callbackFactory.getFastMethod("le",IRubyObject.class));
+        result.defineFastMethod(">", callbackFactory.getFastMethod("gt",IRubyObject.class));
+        result.defineFastMethod(">=", callbackFactory.getFastMethod("ge",IRubyObject.class));
+        result.defineFastMethod("abs", callbackFactory.getFastMethod("abs"));
+        result.defineFastMethod("ceil", callbackFactory.getFastMethod("ceil",IRubyObject.class));
+        result.defineFastMethod("coerce", callbackFactory.getFastMethod("coerce",IRubyObject.class));
+        result.defineFastMethod("divmod", callbackFactory.getFastMethod("divmod",IRubyObject.class)); 
+        result.defineFastMethod("exponent", callbackFactory.getFastMethod("exponent"));
+        result.defineFastMethod("finite?", callbackFactory.getFastMethod("finite_p"));
+        result.defineFastMethod("fix", callbackFactory.getFastMethod("fix"));
+        result.defineFastMethod("floor", callbackFactory.getFastMethod("floor",IRubyObject.class));
+        result.defineFastMethod("frac", callbackFactory.getFastMethod("frac"));
+        result.defineFastMethod("infinite?", callbackFactory.getFastMethod("infinite_p"));
+        result.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
+        result.defineFastMethod("nan?", callbackFactory.getFastMethod("nan_p"));
+        result.defineFastMethod("nonzero?", callbackFactory.getFastMethod("nonzero_p"));
+        result.defineFastMethod("precs", callbackFactory.getFastMethod("precs"));
+        result.defineFastMethod("remainder", callbackFactory.getFastMethod("remainder",IRubyObject.class));
+        result.defineFastMethod("round", callbackFactory.getFastOptMethod("round"));
+        result.defineFastMethod("sign", callbackFactory.getFastMethod("sign"));
+        result.defineFastMethod("split", callbackFactory.getFastMethod("split"));
+        result.defineFastMethod("sqrt", callbackFactory.getFastOptMethod("sqrt"));
+        result.defineFastMethod("to_f", callbackFactory.getFastMethod("to_f"));
+        result.defineFastMethod("to_i", callbackFactory.getFastMethod("to_i"));
+        result.defineFastMethod("to_int", callbackFactory.getFastMethod("to_int"));
+        result.defineFastMethod("to_s", callbackFactory.getFastOptMethod("to_s"));
+        result.defineFastMethod("truncate", callbackFactory.getFastOptMethod("truncate"));
+        result.defineFastMethod("zero?", callbackFactory.getFastMethod("zero_p"));
 
         result.setClassVar("VpPrecLimit", RubyFixnum.zero(runtime));
 
@@ -144,23 +145,25 @@ public class RubyBigDecimal extends RubyNumeric {
         this.value = value;
     }
 
-    public static RubyBigDecimal newInstance(IRubyObject recv, IRubyObject[] args) {
+    public static RubyBigDecimal newInstance(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         RubyClass klass = (RubyClass)recv;
-        RubyBigDecimal result = (RubyBigDecimal)klass.allocate();
-        result.callInit(args);
+        
+        RubyBigDecimal result = (RubyBigDecimal) klass.allocate();
+        
+        result.callInit(args, unusedBlock);
         
         return result;
     }
 
-    public static RubyBigDecimal newBigDecimal(IRubyObject recv, IRubyObject[] args) {
-        return newInstance(recv.getRuntime().getClass("BigDecimal"), args);
+    public static RubyBigDecimal newBigDecimal(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
+        return newInstance(recv.getRuntime().getClass("BigDecimal"), args, null);
     }
 
     public static IRubyObject ver(IRubyObject recv) {
         return recv.getRuntime().newString("1.0.1");
     }
 
-    public static IRubyObject _load(IRubyObject recv, IRubyObject p1) {
+    public static IRubyObject _load(IRubyObject recv, IRubyObject p1, Block block) {
         // TODO: implement
         return recv.getRuntime().getNil();
     }
@@ -169,15 +172,15 @@ public class RubyBigDecimal extends RubyNumeric {
         return recv.getRuntime().newFixnum(20);
     }
     
-    public static IRubyObject limit(IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject limit(IRubyObject recv, IRubyObject arg1) {
         RubyModule c = (RubyModule)recv;
         IRubyObject nCur = c.getClassVar("VpPrecLimit");
-        if(recv.checkArgumentCount(args,0,1) == 1) {
-            if(args[0].isNil()) {
-                return nCur;
-            }
-            c.setClassVar("VpPrecLimit",args[0]);
+
+        if (arg1.isNil()) {
+            return nCur;
         }
+
+        c.setClassVar("VpPrecLimit",arg1);
 
         return nCur;
     }
@@ -193,7 +196,7 @@ public class RubyBigDecimal extends RubyNumeric {
             return (RubyBigDecimal)v;
         } else if(v instanceof RubyFixnum || v instanceof RubyBignum) {
             String s = v.toString();
-            return newInstance(getRuntime().getClass("BigDecimal"),new IRubyObject[]{getRuntime().newString(s)});
+            return newInstance(getRuntime().getClass("BigDecimal"),new IRubyObject[]{getRuntime().newString(s)}, null);
         }
         if(must) {
             throw getRuntime().newTypeError(trueFalseNil(v.getMetaClass().getName() + " can't be coerced into BigDecimal"));
@@ -201,13 +204,13 @@ public class RubyBigDecimal extends RubyNumeric {
         return null;
     }
 
-    public IRubyObject initialize(IRubyObject[] args) {
+    public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
         String ss = args[0].convertToString().toString();
         if(ss.indexOf('.') != -1) {
             ss = removeTrailingZeroes(ss);
         }
         try {
-            this.value = new BigDecimal(ss);
+        this.value = new BigDecimal(ss);
         } catch(NumberFormatException e) {
             this.value = new BigDecimal("0");
         }
@@ -350,7 +353,7 @@ public class RubyBigDecimal extends RubyNumeric {
         if(other instanceof RubyFloat) {
             obj = getRuntime().newArray(other,to_f());
         } else {
-            obj = getRuntime().newArray(getVpValue(other,true),this);
+            obj = getRuntime().newArray(getVpValue(other, true),this);
         }
         return obj;
     }
@@ -533,7 +536,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 String s = removeTrailingZeroes(unscaled);
                 if("".equals(s)) {
                     build.append("0");
-                } else {
+            } else {
                     build.append(s);
                 }
             } else {

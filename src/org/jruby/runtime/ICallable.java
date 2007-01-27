@@ -37,7 +37,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 // TODO: Consider making this be an interface that will have immutable concrete implementations
 public interface ICallable {
-    IRubyObject call(ThreadContext context, IRubyObject receiver, IRubyObject[] args);
+    IRubyObject call(ThreadContext context, IRubyObject receiver, IRubyObject[] args, Block block);
 
     Arity getArity();
 

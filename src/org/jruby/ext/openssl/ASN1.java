@@ -68,8 +68,8 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.RubyTime;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -249,9 +249,9 @@ public class ASN1 {
         mASN1.defineClassUnder("ASN1Error",openSSLError, openSSLError.getAllocator());
 
         CallbackFactory asncb = runtime.callbackFactory(ASN1.class);
-        mASN1.defineSingletonMethod("traverse",asncb.getSingletonMethod("traverse",IRubyObject.class));
-        mASN1.defineSingletonMethod("decode",asncb.getSingletonMethod("decode",IRubyObject.class));
-        mASN1.defineSingletonMethod("decode_all",asncb.getSingletonMethod("decode_all",IRubyObject.class));
+        mASN1.defineFastSingletonMethod("traverse",asncb.getFastSingletonMethod("traverse",IRubyObject.class));
+        mASN1.defineFastSingletonMethod("decode",asncb.getFastSingletonMethod("decode",IRubyObject.class));
+        mASN1.defineFastSingletonMethod("decode_all",asncb.getFastSingletonMethod("decode_all",IRubyObject.class));
 
         List ary = new ArrayList();
         mASN1.setConstant("UNIVERSAL_TAG_NAME",runtime.newArray(ary));
@@ -268,44 +268,44 @@ public class ASN1 {
         cASN1Data.attr_accessor(new IRubyObject[]{runtime.newString("value"),runtime.newString("tag"),runtime.newString("tag_class")});
         CallbackFactory asn1datacb = runtime.callbackFactory(ASN1Data.class);
         cASN1Data.defineMethod("initialize",asn1datacb.getOptMethod("initialize"));
-        cASN1Data.defineMethod("to_der",asn1datacb.getMethod("to_der"));
+        cASN1Data.defineFastMethod("to_der",asn1datacb.getFastMethod("to_der"));
 
         RubyClass cASN1Primitive = mASN1.defineClassUnder("Primitive",cASN1Data, cASN1Data.getAllocator());
         cASN1Primitive.attr_accessor(new IRubyObject[]{runtime.newString("tagging")});
         CallbackFactory primcb = runtime.callbackFactory(ASN1Primitive.class);
         cASN1Primitive.defineMethod("initialize",primcb.getOptMethod("initialize"));
-        cASN1Primitive.defineMethod("to_der",primcb.getMethod("to_der"));
+        cASN1Primitive.defineFastMethod("to_der",primcb.getFastMethod("to_der"));
 
         RubyClass cASN1Constructive = mASN1.defineClassUnder("Constructive",cASN1Data,cASN1Data.getAllocator());
         cASN1Constructive.includeModule(runtime.getModule("Enumerable"));
         cASN1Constructive.attr_accessor(new IRubyObject[]{runtime.newString("tagging")});
         CallbackFactory concb = runtime.callbackFactory(ASN1Constructive.class);
         cASN1Constructive.defineMethod("initialize",concb.getOptMethod("initialize"));
-        cASN1Constructive.defineMethod("to_der",concb.getMethod("to_der"));
+        cASN1Constructive.defineFastMethod("to_der",concb.getFastMethod("to_der"));
         cASN1Constructive.defineMethod("each",concb.getMethod("each"));
 
-        mASN1.defineSingletonMethod("Boolean",asncb.getOptSingletonMethod("fact_Boolean"));
-        mASN1.defineSingletonMethod("Integer",asncb.getOptSingletonMethod("fact_Integer"));
-        mASN1.defineSingletonMethod("Enumerated",asncb.getOptSingletonMethod("fact_Enumerated"));
-        mASN1.defineSingletonMethod("BitString",asncb.getOptSingletonMethod("fact_BitString"));
-        mASN1.defineSingletonMethod("OctetString",asncb.getOptSingletonMethod("fact_OctetString"));
-        mASN1.defineSingletonMethod("UTF8String",asncb.getOptSingletonMethod("fact_UTF8String"));
-        mASN1.defineSingletonMethod("NumericString",asncb.getOptSingletonMethod("fact_NumericString"));
-        mASN1.defineSingletonMethod("PrintableString",asncb.getOptSingletonMethod("fact_PrintableString"));
-        mASN1.defineSingletonMethod("T61String",asncb.getOptSingletonMethod("fact_T61String"));
-        mASN1.defineSingletonMethod("VideotexString",asncb.getOptSingletonMethod("fact_VideotexString"));
-        mASN1.defineSingletonMethod("IA5String",asncb.getOptSingletonMethod("fact_IA5String"));
-        mASN1.defineSingletonMethod("GraphicString",asncb.getOptSingletonMethod("fact_GraphicString"));
-        mASN1.defineSingletonMethod("ISO64String",asncb.getOptSingletonMethod("fact_ISO64String"));
-        mASN1.defineSingletonMethod("GeneralString",asncb.getOptSingletonMethod("fact_GeneralString"));
-        mASN1.defineSingletonMethod("UniversalString",asncb.getOptSingletonMethod("fact_UniversalString"));
-        mASN1.defineSingletonMethod("BMPString",asncb.getOptSingletonMethod("fact_BMPString"));
-        mASN1.defineSingletonMethod("Null",asncb.getOptSingletonMethod("fact_Null"));
-        mASN1.defineSingletonMethod("ObjectId",asncb.getOptSingletonMethod("fact_ObjectId"));
-        mASN1.defineSingletonMethod("UTCTime",asncb.getOptSingletonMethod("fact_UTCTime"));
-        mASN1.defineSingletonMethod("GeneralizedTime",asncb.getOptSingletonMethod("fact_GeneralizedTime"));
-        mASN1.defineSingletonMethod("Sequence",asncb.getOptSingletonMethod("fact_Sequence"));
-        mASN1.defineSingletonMethod("Set",asncb.getOptSingletonMethod("fact_Set"));
+        mASN1.defineFastSingletonMethod("Boolean",asncb.getFastOptSingletonMethod("fact_Boolean"));
+        mASN1.defineFastSingletonMethod("Integer",asncb.getFastOptSingletonMethod("fact_Integer"));
+        mASN1.defineFastSingletonMethod("Enumerated",asncb.getFastOptSingletonMethod("fact_Enumerated"));
+        mASN1.defineFastSingletonMethod("BitString",asncb.getFastOptSingletonMethod("fact_BitString"));
+        mASN1.defineFastSingletonMethod("OctetString",asncb.getFastOptSingletonMethod("fact_OctetString"));
+        mASN1.defineFastSingletonMethod("UTF8String",asncb.getFastOptSingletonMethod("fact_UTF8String"));
+        mASN1.defineFastSingletonMethod("NumericString",asncb.getFastOptSingletonMethod("fact_NumericString"));
+        mASN1.defineFastSingletonMethod("PrintableString",asncb.getFastOptSingletonMethod("fact_PrintableString"));
+        mASN1.defineFastSingletonMethod("T61String",asncb.getFastOptSingletonMethod("fact_T61String"));
+        mASN1.defineFastSingletonMethod("VideotexString",asncb.getFastOptSingletonMethod("fact_VideotexString"));
+        mASN1.defineFastSingletonMethod("IA5String",asncb.getFastOptSingletonMethod("fact_IA5String"));
+        mASN1.defineFastSingletonMethod("GraphicString",asncb.getFastOptSingletonMethod("fact_GraphicString"));
+        mASN1.defineFastSingletonMethod("ISO64String",asncb.getFastOptSingletonMethod("fact_ISO64String"));
+        mASN1.defineFastSingletonMethod("GeneralString",asncb.getFastOptSingletonMethod("fact_GeneralString"));
+        mASN1.defineFastSingletonMethod("UniversalString",asncb.getFastOptSingletonMethod("fact_UniversalString"));
+        mASN1.defineFastSingletonMethod("BMPString",asncb.getFastOptSingletonMethod("fact_BMPString"));
+        mASN1.defineFastSingletonMethod("Null",asncb.getFastOptSingletonMethod("fact_Null"));
+        mASN1.defineFastSingletonMethod("ObjectId",asncb.getFastOptSingletonMethod("fact_ObjectId"));
+        mASN1.defineFastSingletonMethod("UTCTime",asncb.getFastOptSingletonMethod("fact_UTCTime"));
+        mASN1.defineFastSingletonMethod("GeneralizedTime",asncb.getFastOptSingletonMethod("fact_GeneralizedTime"));
+        mASN1.defineFastSingletonMethod("Sequence",asncb.getFastOptSingletonMethod("fact_Sequence"));
+        mASN1.defineFastSingletonMethod("Set",asncb.getFastOptSingletonMethod("fact_Set"));
 
         mASN1.defineClassUnder("Boolean",cASN1Primitive,cASN1Primitive.getAllocator());
         mASN1.defineClassUnder("Integer",cASN1Primitive,cASN1Primitive.getAllocator());
@@ -330,12 +330,12 @@ public class ASN1 {
         mASN1.defineClassUnder("Sequence",cASN1Constructive,cASN1Constructive.getAllocator());
         mASN1.defineClassUnder("Set",cASN1Constructive,cASN1Constructive.getAllocator());
 
-        cASN1ObjectId.defineSingletonMethod("register",asncb.getOptSingletonMethod("objectid_register"));
-        cASN1ObjectId.defineMethod("sn",asncb.getSingletonMethod("objectid_sn"));
-        cASN1ObjectId.defineMethod("ln",asncb.getSingletonMethod("objectid_ln"));
-        cASN1ObjectId.defineMethod("short_name",asncb.getSingletonMethod("objectid_sn"));
-        cASN1ObjectId.defineMethod("long_name",asncb.getSingletonMethod("objectid_ln"));
-        cASN1ObjectId.defineMethod("oid",asncb.getSingletonMethod("objectid_oid"));
+        cASN1ObjectId.defineFastSingletonMethod("register",asncb.getFastOptSingletonMethod("objectid_register"));
+        cASN1ObjectId.defineFastMethod("sn",asncb.getFastSingletonMethod("objectid_sn"));
+        cASN1ObjectId.defineFastMethod("ln",asncb.getFastSingletonMethod("objectid_ln"));
+        cASN1ObjectId.defineFastMethod("short_name",asncb.getFastSingletonMethod("objectid_sn"));
+        cASN1ObjectId.defineFastMethod("long_name",asncb.getFastSingletonMethod("objectid_ln"));
+        cASN1ObjectId.defineFastMethod("oid",asncb.getFastSingletonMethod("objectid_oid"));
 
         cASN1BitString.attr_accessor(new IRubyObject[]{runtime.newSymbol("unused_bits")});
     }
@@ -857,10 +857,10 @@ public class ASN1 {
             return null;
         }
 
-        public IRubyObject each() {
+        public IRubyObject each(Block block) {
             RubyArray arr = (RubyArray)callMethod(getRuntime().getCurrentContext(),"value");
             for(Iterator iter = arr.getList().iterator();iter.hasNext();) {
-                getRuntime().getCurrentContext().yield((IRubyObject)iter.next());
+                getRuntime().getCurrentContext().yield((IRubyObject)iter.next(), block);
             }
             return getRuntime().getNil();
         }

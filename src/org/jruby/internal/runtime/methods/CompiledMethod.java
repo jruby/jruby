@@ -61,7 +61,7 @@ public abstract class CompiledMethod extends AbstractMethod {
         context.postCompiledMethod();
     }
     
-	public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
         assert false;
         return null;
     }
@@ -83,7 +83,7 @@ public abstract class CompiledMethod extends AbstractMethod {
         }        
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
         IRuby runtime = context.getRuntime();
         arity.checkArity(runtime, args);
 
@@ -92,14 +92,12 @@ public abstract class CompiledMethod extends AbstractMethod {
 
             runtime.callTraceFunction(context, "c-call", position, receiver, name, getImplementationClass());
             try {
-                // FIXME: pass block when it's available
-                return wrap(context, runtime, receiver, args, null);
+                return wrap(context, runtime, receiver, args, block);
             } finally {
                 runtime.callTraceFunction(context, "c-return", position, receiver, name, getImplementationClass());
             }
         }
-        // FIXME: pass block when it's available
-        return wrap(context, runtime, receiver, args, null);
+        return wrap(context, runtime, receiver, args, block);
     }
 
     public abstract IRubyObject call(ThreadContext context, IRubyObject receiver, IRubyObject[] args, Block block);

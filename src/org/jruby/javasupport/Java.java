@@ -34,7 +34,6 @@ package org.jruby.javasupport;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.Date;
 
 import org.jruby.IRuby;
 import org.jruby.RubyBignum;
@@ -42,10 +41,10 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.RubyTime;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -71,20 +70,20 @@ public class Java {
     }
 
 	// Java methods
-    public static IRubyObject define_exception_handler(IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject define_exception_handler(IRubyObject recv, IRubyObject[] args, Block block) {
         String name = args[0].toString();
         RubyProc handler = null;
         if (args.length > 1) {
             handler = (RubyProc)args[1];
         } else {
-            handler = recv.getRuntime().newProc();
+            handler = recv.getRuntime().newProc(false, block);
         }
         recv.getRuntime().getJavaSupport().defineExceptionHandler(name, handler);
 
         return recv;
     }
 
-    public static IRubyObject primitive_to_java(IRubyObject recv, IRubyObject object) {
+    public static IRubyObject primitive_to_java(IRubyObject recv, IRubyObject object, Block unusedBlock) {
         if (object instanceof JavaObject) {
             return object;
         }
@@ -113,7 +112,7 @@ public class Java {
     /**
      * High-level object conversion utility function 'java_to_primitive' is the low-level version 
      */
-    public static IRubyObject java_to_ruby(IRubyObject recv, IRubyObject object) {
+    public static IRubyObject java_to_ruby(IRubyObject recv, IRubyObject object, Block unusedBlock) {
         if (object instanceof JavaObject) {
         	object = JavaUtil.convertJavaToRuby(recv.getRuntime(), ((JavaObject) object).getValue());
         }
@@ -130,15 +129,15 @@ public class Java {
     /**
      * High-level object conversion utility. 
      */
-    public static IRubyObject ruby_to_java(final IRubyObject recv, IRubyObject object) {
+    public static IRubyObject ruby_to_java(final IRubyObject recv, IRubyObject object, Block unusedBlock) {
     	if (object.respondsTo("to_java_object")) {
     		return object.callMethod(recv.getRuntime().getCurrentContext(), "to_java_object");
     	}
     	
-    	return primitive_to_java(recv, object);
+    	return primitive_to_java(recv, object, unusedBlock);
     }    
 
-    public static IRubyObject java_to_primitive(IRubyObject recv, IRubyObject object) {
+    public static IRubyObject java_to_primitive(IRubyObject recv, IRubyObject object, Block unusedBlock) {
         if (object instanceof JavaObject) {
         	return JavaUtil.convertJavaToRuby(recv.getRuntime(), ((JavaObject) object).getValue());
         }
@@ -146,7 +145,7 @@ public class Java {
 		return object;
     }
 
-    public static IRubyObject new_proxy_instance(final IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject new_proxy_instance(final IRubyObject recv, IRubyObject[] args, Block block) {
     	int size = recv.checkArgumentCount(args, 1, -1) - 1;
     	final RubyProc proc;
 
@@ -154,7 +153,7 @@ public class Java {
     	if (args[size] instanceof RubyProc) {
     		proc = (RubyProc) args[size];
     	} else {
-    		proc = recv.getRuntime().newProc();
+    		proc = recv.getRuntime().newProc(false, block);
     		size++;
     	}
 

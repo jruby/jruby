@@ -98,25 +98,25 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         regexpClass.defineConstant("EXTENDED", runtime.newFixnum(RE_OPTION_EXTENDED));
         regexpClass.defineConstant("MULTILINE", runtime.newFixnum(RE_OPTION_MULTILINE));
 
-        regexpClass.defineFastMethod("initialize", callbackFactory.getOptMethod("initialize"));
-        regexpClass.defineFastMethod("clone", callbackFactory.getMethod("rbClone"));
-        regexpClass.defineFastMethod("==", callbackFactory.getMethod("equal", IRubyObject.class));
-        regexpClass.defineFastMethod("===", callbackFactory.getMethod("match", IRubyObject.class));
-        regexpClass.defineFastMethod("=~", callbackFactory.getMethod("match", IRubyObject.class));
-        regexpClass.defineFastMethod("~", callbackFactory.getMethod("match2"));
-        regexpClass.defineFastMethod("match", callbackFactory.getMethod("match_m", IRubyObject.class));
-        regexpClass.defineFastMethod("inspect", callbackFactory.getMethod("inspect"));
-        regexpClass.defineFastMethod("source", callbackFactory.getMethod("source"));
-        regexpClass.defineFastMethod("casefold?", callbackFactory.getMethod("casefold"));
-        regexpClass.defineFastMethod("kcode", callbackFactory.getMethod("kcode"));
-        regexpClass.defineFastMethod("to_s", callbackFactory.getMethod("to_s"));
+        regexpClass.defineFastMethod("initialize", callbackFactory.getFastOptMethod("initialize"));
+        regexpClass.defineFastMethod("clone", callbackFactory.getFastMethod("rbClone"));
+        regexpClass.defineFastMethod("==", callbackFactory.getFastMethod("equal", IRubyObject.class));
+        regexpClass.defineFastMethod("===", callbackFactory.getFastMethod("match", IRubyObject.class));
+        regexpClass.defineFastMethod("=~", callbackFactory.getFastMethod("match", IRubyObject.class));
+        regexpClass.defineFastMethod("~", callbackFactory.getFastMethod("match2"));
+        regexpClass.defineFastMethod("match", callbackFactory.getFastMethod("match_m", IRubyObject.class));
+        regexpClass.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
+        regexpClass.defineFastMethod("source", callbackFactory.getFastMethod("source"));
+        regexpClass.defineFastMethod("casefold?", callbackFactory.getFastMethod("casefold"));
+        regexpClass.defineFastMethod("kcode", callbackFactory.getFastMethod("kcode"));
+        regexpClass.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
 
-        regexpClass.defineFastSingletonMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
-        regexpClass.defineFastSingletonMethod("compile", callbackFactory.getOptSingletonMethod("newInstance"));
-        regexpClass.defineFastSingletonMethod("quote", callbackFactory.getSingletonMethod("quote", RubyString.class));
-        regexpClass.defineFastSingletonMethod("escape", callbackFactory.getSingletonMethod("quote", RubyString.class));
-        regexpClass.defineFastSingletonMethod("last_match", callbackFactory.getSingletonMethod("last_match_s"));
-        regexpClass.defineFastSingletonMethod("union", callbackFactory.getOptSingletonMethod("union"));
+        regexpClass.defineFastSingletonMethod("new", callbackFactory.getFastOptSingletonMethod("newInstance"));
+        regexpClass.defineFastSingletonMethod("compile", callbackFactory.getFastOptSingletonMethod("newInstance"));
+        regexpClass.defineFastSingletonMethod("quote", callbackFactory.getFastSingletonMethod("quote", RubyString.class));
+        regexpClass.defineFastSingletonMethod("escape", callbackFactory.getFastSingletonMethod("quote", RubyString.class));
+        regexpClass.defineFastSingletonMethod("last_match", callbackFactory.getFastSingletonMethod("last_match_s"));
+        regexpClass.defineFastSingletonMethod("union", callbackFactory.getFastOptSingletonMethod("union"));
 
         return regexpClass;
     }
@@ -174,12 +174,11 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     }
     
     public static RubyRegexp newInstance(IRubyObject recv, IRubyObject[] args) {
-        IRuby runtime = recv.getRuntime();
         RubyClass klass = (RubyClass)recv;
         
-        RubyRegexp re = (RubyRegexp)klass.allocate();
+        RubyRegexp re = (RubyRegexp) klass.allocate();
         
-        re.callInit(args);
+        re.callInit(args, null);
         
         return re;
     }

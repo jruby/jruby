@@ -42,20 +42,18 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class RubyNativeThread extends Thread {
 	private IRuby runtime;
     private Frame currentFrame;
-    private Block currentBlock;
     private RubyProc proc;
     private IRubyObject[] arguments;
     private RubyThread rubyThread;
     
-	protected RubyNativeThread(RubyThread rubyThread, IRubyObject[] args) {
+	protected RubyNativeThread(RubyThread rubyThread, IRubyObject[] args, Block currentBlock) {
 		super(rubyThread.getRuntime().getThreadService().getRubyThreadGroup(), "Ruby Thread" + rubyThread.hash());
         this.rubyThread = rubyThread;
         this.runtime = rubyThread.getRuntime();
         ThreadContext tc = runtime.getCurrentContext();
 		
-		proc = runtime.newProc();
+		proc = runtime.newProc(false, currentBlock);
         currentFrame = tc.getCurrentFrame();
-        currentBlock = (Block) tc.getCurrentBlock();
         this.arguments = args;
 	}
 	
@@ -67,7 +65,7 @@ public class RubyNativeThread extends Thread {
         runtime.getThreadService().registerNewThread(rubyThread);
         ThreadContext context = runtime.getCurrentContext();
         
-        context.preRunThread(currentFrame, currentBlock);
+        context.preRunThread(currentFrame);
 
         // Call the thread's code
         try {

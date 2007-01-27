@@ -92,6 +92,6 @@ public abstract class JavaCallable extends JavaAccessibleObject {
         
         CallbackFactory callbackFactory = runtime.callbackFactory(klass);
 
-        result.defineMethod("public?",  callbackFactory.getMethod("public_p"));
+        result.defineFastMethod("public?",  callbackFactory.getFastMethod("public_p"));
     }
 }

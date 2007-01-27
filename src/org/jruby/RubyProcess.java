@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -128,39 +129,39 @@ public class RubyProcess {
             return new RubyStatus(runtime, runtime.getModule("Process").getClass("Status"), status);
         }
         
-        public IRubyObject exitstatus() {
+        public IRubyObject exitstatus(Block block) {
             return getRuntime().newFixnum(status);
         }
         
-        public IRubyObject rightshift_op(IRubyObject other) {
+        public IRubyObject rightshift_op(IRubyObject other, Block block) {
             long shiftValue = other.convertToInteger().getLongValue();
             
             
             return getRuntime().newFixnum(status >> shiftValue);
         }
         
-        public IRubyObject op_eq(IRubyObject other) {
-            return other.callMethod(getRuntime().getCurrentContext(),"==",this.to_i());
+        public IRubyObject op_eq(IRubyObject other, Block block) {
+            return other.callMethod(getRuntime().getCurrentContext(), "==", this.to_i(block));
         }
 
-        public IRubyObject to_i() {
-            return exitstatus();
+        public IRubyObject to_i(Block unusedBlock) {
+            return exitstatus(null);
         }
         
-        public IRubyObject to_s() {
+        public IRubyObject to_s(Block unusedBlock) {
             return getRuntime().newString(String.valueOf(status));
         }
         
-        public IRubyObject inspect() {
+        public IRubyObject inspect(Block unusedBlock) {
             return to_s();
         }
         
-        public IRubyObject success_p() {
+        public IRubyObject success_p(Block unusedBlock) {
             return getRuntime().newBoolean(status == EXIT_SUCCESS);
         }
     }
     
-    public static IRubyObject times(IRubyObject recv) {
+    public static IRubyObject times(IRubyObject recv, Block unusedBlock) {
         IRuby runtime = recv.getRuntime();
         double currentTime = System.currentTimeMillis() / 1000.0;
         double startTime = runtime.getStartTime() / 1000.0;
@@ -169,7 +170,7 @@ public class RubyProcess {
                 runtime.newFloat(currentTime - startTime), 
                 zero,
                 zero, 
-                zero });
+                zero }, null);
     }
 
     public static IRubyObject pid(IRubyObject recv) {

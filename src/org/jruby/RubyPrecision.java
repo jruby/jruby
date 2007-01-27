@@ -30,6 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -53,7 +54,7 @@ public class RubyPrecision {
         throw receiver.getRuntime().newTypeError("Undefined conversion from " + source.getMetaClass().getName() + " into " + ((RubyClass)receiver).getName());
     }
 
-    public static IRubyObject append_features(IRubyObject receiver, IRubyObject include) {
+    public static IRubyObject append_features(IRubyObject receiver, IRubyObject include, Block block) {
         if (include instanceof RubyModule) {
             ((RubyModule) include).includeModule(receiver);
             CallbackFactory f = receiver.getRuntime().callbackFactory(RubyPrecision.class);
@@ -62,15 +63,15 @@ public class RubyPrecision {
         return receiver;
     }
     
-    public static IRubyObject prec(IRubyObject receiver, IRubyObject type) {
+    public static IRubyObject prec(IRubyObject receiver, IRubyObject type, Block block) {
         return type.callMethod(receiver.getRuntime().getCurrentContext(), "induced_from", receiver);
     }
 
-    public static IRubyObject prec_i(IRubyObject receiver) {
+    public static IRubyObject prec_i(IRubyObject receiver, Block block) {
         return receiver.getRuntime().getClass("Integer").callMethod(receiver.getRuntime().getCurrentContext(), "induced_from", receiver);
     }
 
-    public static IRubyObject prec_f(IRubyObject receiver) {
+    public static IRubyObject prec_f(IRubyObject receiver, Block block) {
         return receiver.getRuntime().getClass("Float").callMethod(receiver.getRuntime().getCurrentContext(), "induced_from", receiver);
     }
 }

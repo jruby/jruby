@@ -341,8 +341,8 @@ END
 list = [
 nil,
 nil, #['NewlineNode',0,1,0,6],
-  ['IterNode',0,0,4,6],
-    ['FCallNode',0,0,0,6]
+  ['FCallNode',0,0,0,6],
+    ['IterNode',0,0,4,6]
 ]
 test_tree(list, <<'END', "operation brace_block [paren-less no-args block")
 foo {}
@@ -351,8 +351,8 @@ END
 list = [
 nil,
 nil, #['NewlineNode',0,1,0,6],
-  ['IterNode',0,1,4,10],
-    ['FCallNode',0,1,0,10]
+  ['FCallNode',0,1,0,10],
+    ['IterNode',0,1,4,10]
 ]
 
 test_tree(list, <<'END', "operation brace_block [paren-less no-args block")
@@ -363,9 +363,9 @@ END
 list = [
 nil,
 nil, #['NewlineNode',0,1,6,9],
-  ['IterNode',0,0,6,8],
-    ['FCallNode',0,0,0,8],
-      ['ArrayNode',0,0,3,5]
+  ['FCallNode',0,0,0,5],
+    ['ArrayNode',0,0,3,5],
+    ['IterNode',0,0,6,8]
 ]
 
 test_tree(list, <<'END', "operation brace_block [parens no-args block")
@@ -375,9 +375,9 @@ END
 list = [
 nil,
 nil, #['NewlineNode',0,1,6,9],
-  ['IterNode',0,1,6,12],
-    ['FCallNode',0,1,0,12],
-      ['ArrayNode',0,0,3,5]
+  ['FCallNode',0,0,0,5],
+    ['ArrayNode',0,0,3,5],
+    ['IterNode',0,1,6,12]
 ]
 
 test_tree(list, <<'END', "operation brace_block [parens no-args block")
@@ -388,10 +388,10 @@ END
 list = [
 nil,
 nil, #['NewlineNode',0,2,6,17],
-  ['IterNode',0,1,6,16],
-    ['DAsgnNode',0,0,10,11],
-    ['FCallNode',0,1,0,16],
-      ['ArrayNode',0,0,3,5]
+  ['FCallNode',0,0,0,5],
+    ['ArrayNode',0,0,3,5],
+    ['IterNode',0,1,6,16],
+      ['DAsgnNode',0,0,10,11]
 ]
 
 test_tree(list, <<'END', "operation brace_block [parens no-args block arg")
@@ -402,13 +402,13 @@ END
 list = [
 nil,
 nil, #['NewlineNode',0,2,6,19],
-  ['IterNode',0,1,6,18],
-    ['MultipleAsgnNode',0,0,9,14],
-      ['ArrayNode',0,0,10,13],
-        ['DAsgnNode',0,0,10,11],
-        ['DAsgnNode',0,0,12,13],
-    ['FCallNode',0,1,0,18],
-      ['ArrayNode',0,0,3,5]
+  ['FCallNode',0,0,0,5],
+    ['ArrayNode',0,0,3,5],
+    ['IterNode',0,1,6,18],
+      ['MultipleAsgnNode',0,0,9,14],
+        ['ArrayNode',0,0,10,13],
+          ['DAsgnNode',0,0,10,11],
+          ['DAsgnNode',0,0,12,13]
 ]
 
 test_tree(list, <<'END', "operation brace_block [parens no-args block args")
@@ -419,15 +419,15 @@ END
 list = [
 nil,
 nil, #['NewlineNode',0,2,10,23],
-  ['IterNode',0,1,10,22],
-    ['MultipleAsgnNode',0,0,13,18],
-      ['ArrayNode',0,0,14,17],
-        ['DAsgnNode',0,0,14,15],
-        ['DAsgnNode',0,0,16,17],
-    ['FCallNode',0,1,0,22],
-      ['ArrayNode',0,0,3,9],
-        ['VCallNode',0,0,4,5],
-        ['VCallNode',0,0,7,8]
+  ['FCallNode',0,0,0,9],
+    ['ArrayNode',0,0,3,9],
+      ['VCallNode',0,0,4,5],
+      ['VCallNode',0,0,7,8],
+    ['IterNode',0,1,10,22],
+      ['MultipleAsgnNode',0,0,13,18],
+        ['ArrayNode',0,0,14,17],
+          ['DAsgnNode',0,0,14,15],
+          ['DAsgnNode',0,0,16,17]
 ]
 
 test_tree(list, <<'END', "operation brace_block [parens args block args")

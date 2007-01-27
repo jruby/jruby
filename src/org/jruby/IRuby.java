@@ -324,7 +324,7 @@ public interface IRuby {
 
 	public RubyNumeric newNumeric();
 
-    public RubyProc newProc();
+    public RubyProc newProc(boolean isLambda, Block block);
 
     public RubyBinding newBinding();
     public RubyBinding newBinding(Block block);

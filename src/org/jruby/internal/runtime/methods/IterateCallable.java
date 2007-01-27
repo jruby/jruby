@@ -33,6 +33,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyMethod;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -51,8 +52,8 @@ public class IterateCallable extends AbstractCallable {
         this.method = method;
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject receiver, IRubyObject[] args) {
-        return callback.execute(args[0], new IRubyObject[] { method, receiver });
+    public IRubyObject call(ThreadContext context, IRubyObject receiver, IRubyObject[] args, Block block) {
+        return callback.execute(args[0], new IRubyObject[] { method, receiver }, block);
     }
     
     public ICallable dup() {

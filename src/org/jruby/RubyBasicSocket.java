@@ -35,6 +35,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.Channel;
 
 import org.jruby.javasupport.JavaObject;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOHandlerNio;
 import org.jruby.util.IOHandler;
@@ -46,7 +47,7 @@ public class RubyBasicSocket extends RubyIO {
         super(runtime, type);
     }
     
-    public IRubyObject initialize(IRubyObject arg) {
+    public IRubyObject initialize(IRubyObject arg, Block unusedBlock) {
         socketChannel = extractSocketChannel(arg);
         
         try {

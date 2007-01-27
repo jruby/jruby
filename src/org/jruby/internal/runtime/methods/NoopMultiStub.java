@@ -27,18 +27,19 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class NoopMultiStub implements MultiStub {
-  public IRubyObject method0(ThreadContext tc, IRubyObject self, IRubyObject[] args) { return null; }
-  public IRubyObject method1(ThreadContext tc, IRubyObject self, IRubyObject[] args) { return null; }
-  public IRubyObject method2(ThreadContext tc, IRubyObject self, IRubyObject[] args) { return null; }
-  public IRubyObject method3(ThreadContext tc, IRubyObject self, IRubyObject[] args) { return null; }
-  public IRubyObject method4(ThreadContext tc, IRubyObject self, IRubyObject[] args) { return null; }
-  public IRubyObject method5(ThreadContext tc, IRubyObject self, IRubyObject[] args) { return null; }
-  public IRubyObject method6(ThreadContext tc, IRubyObject self, IRubyObject[] args) { return null; }
-  public IRubyObject method7(ThreadContext tc, IRubyObject self, IRubyObject[] args) { return null; }
-  public IRubyObject method8(ThreadContext tc, IRubyObject self, IRubyObject[] args) { return null; }
-  public IRubyObject method9(ThreadContext tc, IRubyObject self, IRubyObject[] args) { return null; }
+  public IRubyObject method0(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) { return null; }
+  public IRubyObject method1(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) { return null; }
+  public IRubyObject method2(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) { return null; }
+  public IRubyObject method3(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) { return null; }
+  public IRubyObject method4(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) { return null; }
+  public IRubyObject method5(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) { return null; }
+  public IRubyObject method6(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) { return null; }
+  public IRubyObject method7(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) { return null; }
+  public IRubyObject method8(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) { return null; }
+  public IRubyObject method9(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) { return null; }
 }

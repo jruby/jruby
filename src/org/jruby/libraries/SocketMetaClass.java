@@ -12,7 +12,6 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.meta.BasicSocketMetaClass;
 
@@ -24,8 +23,8 @@ public class SocketMetaClass extends BasicSocketMetaClass {
     
     protected class SocketMeta extends Meta {
 	    protected void initializeClass() {
-	    	defineSingletonMethod("gethostname", Arity.noArguments());
-	    	defineSingletonMethod("gethostbyname", Arity.singleArgument());
+	    	defineFastSingletonMethod("gethostname", Arity.noArguments());
+	    	defineFastSingletonMethod("gethostbyname", Arity.singleArgument());
 	    }
     }
     

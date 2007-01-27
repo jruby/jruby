@@ -55,6 +55,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -77,14 +78,14 @@ public class X509Name extends RubyObject {
         CallbackFactory namecb = runtime.callbackFactory(X509Name.class);
 
         cX509Name.defineMethod("initialize",namecb.getOptMethod("initialize"));
-        cX509Name.defineMethod("add_entry",namecb.getOptMethod("add_entry"));
-        cX509Name.defineMethod("to_s",namecb.getOptMethod("_to_s"));
-        cX509Name.defineMethod("to_a",namecb.getMethod("to_a"));
-        cX509Name.defineMethod("cmp",namecb.getMethod("cmp",IRubyObject.class));
-        cX509Name.defineMethod("<=>",namecb.getMethod("cmp",IRubyObject.class));
-        cX509Name.defineMethod("eql?",namecb.getMethod("eql_p",IRubyObject.class));
-        cX509Name.defineMethod("hash",namecb.getMethod("hash"));
-        cX509Name.defineMethod("to_der",namecb.getMethod("to_der"));
+        cX509Name.defineFastMethod("add_entry",namecb.getFastOptMethod("add_entry"));
+        cX509Name.defineFastMethod("to_s",namecb.getFastOptMethod("_to_s"));
+        cX509Name.defineFastMethod("to_a",namecb.getFastMethod("to_a"));
+        cX509Name.defineFastMethod("cmp",namecb.getFastMethod("cmp",IRubyObject.class));
+        cX509Name.defineFastMethod("<=>",namecb.getFastMethod("cmp",IRubyObject.class));
+        cX509Name.defineFastMethod("eql?",namecb.getFastMethod("eql_p",IRubyObject.class));
+        cX509Name.defineFastMethod("hash",namecb.getFastMethod("hash"));
+        cX509Name.defineFastMethod("to_der",namecb.getFastMethod("to_der"));
         
         cX509Name.setConstant("COMPAT",runtime.newFixnum(COMPAT));
         cX509Name.setConstant("RFC2253",runtime.newFixnum(RFC2253));
@@ -128,7 +129,7 @@ public class X509Name extends RubyObject {
         types.add(type);
     }
 
-    public IRubyObject initialize(IRubyObject[] args) {
+    public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
         if(checkArgumentCount(args,0,2) == 0) {
             return this;
         }

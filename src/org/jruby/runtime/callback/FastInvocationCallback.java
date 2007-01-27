@@ -11,11 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
- * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
- * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2007 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -29,48 +25,50 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.ast;
+package org.jruby.runtime.callback;
 
-import java.math.BigInteger;
-import java.util.List;
+import org.jruby.IRuby;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.ThreadKill;
+import org.jruby.exceptions.MainExitException;
 
-import org.jruby.ast.types.ILiteralNode;
-import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.Instruction;
-import org.jruby.lexer.yacc.ISourcePosition;
-
-/** Represents a big integer literal.
- *
- * @author  jpetersen
+/**
+ * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
-public class BignumNode extends Node implements ILiteralNode {
-    static final long serialVersionUID = -8646636291868912747L;
+public abstract class FastInvocationCallback implements Callback {
+    private Arity arity;
 
-    private BigInteger value;
-
-    public BignumNode(ISourcePosition position, BigInteger value) {
-        super(position, NodeTypes.BIGNUMNODE);
-        this.value = value;
+    public IRubyObject execute(IRubyObject recv, IRubyObject[] oargs, Block block) {
+        IRuby runtime = recv.getRuntime();
+        arity.checkArity(runtime, oargs);
+        try {
+            return call(recv,oargs);
+        } catch(RaiseException e) {
+            throw e;
+        } catch(JumpException e) {
+            throw e;
+        } catch(ThreadKill e) {
+            throw e;
+        } catch(MainExitException e) {
+            throw e;
+        } catch(Exception e) {
+            runtime.getJavaSupport().handleNativeException(e);
+            return runtime.getNil();
+        }
     }
 
-    public Instruction accept(NodeVisitor iVisitor) {
-        return iVisitor.visitBignumNode(this);
+    public abstract IRubyObject call(Object receiver, Object[] args);
+
+    public void setArity(Arity arity) {
+        this.arity = arity;
     }
 
-    /**
-     * Gets the value.
-     * @return Returns a BigInteger
-     */
-    public BigInteger getValue() {
-        return value;
-    }
-    
-    public List childNodes() {
-        return EMPTY_LIST;
+    public Arity getArity() {
+        return arity;
     }
 
-    public void setValue(BigInteger value) {
-        this.value = value;
-    }
-
-}
+}// FastInvocationCallback

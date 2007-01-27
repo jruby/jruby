@@ -31,6 +31,7 @@
 package org.jruby.runtime.callback;
 
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -38,7 +39,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author  jpetersen
  */
 public interface Callback {
-    public IRubyObject execute(IRubyObject recv, IRubyObject[] args);
+    public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block);
 
     public Arity getArity();
 }

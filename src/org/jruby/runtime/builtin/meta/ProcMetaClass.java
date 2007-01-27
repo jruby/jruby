@@ -31,6 +31,7 @@ import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyProc;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
@@ -47,24 +48,44 @@ public class ProcMetaClass extends ObjectMetaClass {
 	protected class ProcMeta extends Meta {
 		protected void initializeClass() {
 			defineFastMethod("arity", Arity.noArguments(), "arity");
-			defineMethod("binding", Arity.noArguments(), "binding");
+			defineFastMethod("binding", Arity.noArguments(), "binding");
 			defineMethod("call", Arity.optional(), "call");
 			defineAlias("[]", "call");
-			defineMethod("to_proc", Arity.noArguments(), "to_proc");
-		}
+			defineFastMethod("to_proc", Arity.noArguments(), "to_proc");
+            defineMethod("initialize", Arity.optional());
+
+            defineSingletonMethod("new", Arity.optional(), "newInstance");
+        }
 	};
 	
 	protected Meta getMeta() {
 		return new ProcMeta();
 	}
-	
+    
+    /**
+     * Create a new instance of a Proc object.  We override this method (from RubyClass)
+     * since we need to deal with special case of Proc.new with no arguments or block arg.  In 
+     * this case, we need to check previous frame for a block to consume.
+     */
+    public IRubyObject newInstance(IRubyObject[] args, Block block) {
+        IRubyObject obj = (IRubyObject) allocate();
+        
+        // No passed in block, lets check next outer frame for one ('Proc.new')
+        if (block == null) {
+            block = getRuntime().getCurrentContext().getPreviousFrame().getBlock();
+        }
+        
+        obj.callInit(args, block);
+        return obj;
+    }
+    
 	public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
 		return new ProcMetaClass(name, this, PROC_ALLOCATOR, parentCRef);
 	}
     
     private static ObjectAllocator PROC_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(IRuby runtime, RubyClass klass) {
-            RubyProc instance = runtime.newProc();
+            RubyProc instance = RubyProc.newProc(runtime, false);
 
             instance.setMetaClass(klass);
 

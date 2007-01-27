@@ -43,6 +43,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -66,25 +67,25 @@ public class Cipher extends RubyObject {
 
         CallbackFactory ciphercb = runtime.callbackFactory(Cipher.class);
 
-        mCipher.defineSingletonMethod("ciphers",ciphercb.getSingletonMethod("ciphers"));
+        mCipher.defineFastSingletonMethod("ciphers",ciphercb.getFastSingletonMethod("ciphers"));
         cCipher.defineMethod("initialize",ciphercb.getMethod("initialize",IRubyObject.class));
-        cCipher.defineMethod("initialize_copy",ciphercb.getMethod("initialize_copy",IRubyObject.class));
-        cCipher.defineMethod("clone",ciphercb.getMethod("rbClone"));
-        cCipher.defineMethod("name",ciphercb.getMethod("name"));
-        cCipher.defineMethod("key_len",ciphercb.getMethod("key_len"));
-        cCipher.defineMethod("key_len=",ciphercb.getMethod("set_key_len",IRubyObject.class));
-        cCipher.defineMethod("iv_len",ciphercb.getMethod("iv_len"));
-        cCipher.defineMethod("block_size",ciphercb.getMethod("block_size"));
-        cCipher.defineMethod("encrypt",ciphercb.getOptMethod("encrypt"));
-        cCipher.defineMethod("decrypt",ciphercb.getOptMethod("decrypt"));
-        cCipher.defineMethod("key=",ciphercb.getMethod("set_key",IRubyObject.class));
-        cCipher.defineMethod("iv=",ciphercb.getMethod("set_iv",IRubyObject.class));
-        cCipher.defineMethod("reset",ciphercb.getMethod("reset"));
-        cCipher.defineMethod("pkcs5_keyivgen",ciphercb.getOptMethod("pkcs5_keyivgen"));
-        cCipher.defineMethod("update",ciphercb.getMethod("update",IRubyObject.class));
-        cCipher.defineMethod("<<",ciphercb.getMethod("update_deprecated",IRubyObject.class));
-        cCipher.defineMethod("final",ciphercb.getMethod("_final"));
-        cCipher.defineMethod("padding=",ciphercb.getMethod("set_padding",IRubyObject.class));
+        cCipher.defineFastMethod("initialize_copy",ciphercb.getFastMethod("initialize_copy",IRubyObject.class));
+        cCipher.defineFastMethod("clone",ciphercb.getFastMethod("rbClone"));
+        cCipher.defineFastMethod("name",ciphercb.getFastMethod("name"));
+        cCipher.defineFastMethod("key_len",ciphercb.getFastMethod("key_len"));
+        cCipher.defineFastMethod("key_len=",ciphercb.getFastMethod("set_key_len",IRubyObject.class));
+        cCipher.defineFastMethod("iv_len",ciphercb.getFastMethod("iv_len"));
+        cCipher.defineFastMethod("block_size",ciphercb.getFastMethod("block_size"));
+        cCipher.defineFastMethod("encrypt",ciphercb.getFastOptMethod("encrypt"));
+        cCipher.defineFastMethod("decrypt",ciphercb.getFastOptMethod("decrypt"));
+        cCipher.defineFastMethod("key=",ciphercb.getFastMethod("set_key",IRubyObject.class));
+        cCipher.defineFastMethod("iv=",ciphercb.getFastMethod("set_iv",IRubyObject.class));
+        cCipher.defineFastMethod("reset",ciphercb.getFastMethod("reset"));
+        cCipher.defineFastMethod("pkcs5_keyivgen",ciphercb.getFastOptMethod("pkcs5_keyivgen"));
+        cCipher.defineFastMethod("update",ciphercb.getFastMethod("update",IRubyObject.class));
+        cCipher.defineFastMethod("<<",ciphercb.getFastMethod("update_deprecated",IRubyObject.class));
+        cCipher.defineFastMethod("final",ciphercb.getFastMethod("_final"));
+        cCipher.defineFastMethod("padding=",ciphercb.getFastMethod("set_padding",IRubyObject.class));
     }
 
     private static final Set BLOCK_MODES = new HashSet();
@@ -190,7 +191,7 @@ public class Cipher extends RubyObject {
     private byte[] iv;
     private String padding;
 
-    public IRubyObject initialize(IRubyObject str) {
+    public IRubyObject initialize(IRubyObject str, Block unusedBlock) {
         name = str.toString();
         String[] values = rubyToJavaCipher(name);
         cryptoBase = values[0];

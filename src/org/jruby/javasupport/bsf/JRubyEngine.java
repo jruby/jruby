@@ -195,7 +195,7 @@ public class JRubyEngine extends BSFEngineImpl {
         }
 
         public IRubyObject setValue(IRubyObject value) {
-            bean.bean = JavaUtil.convertArgument(Java.ruby_to_java(runtime.getObject(), value), bean.type);
+            bean.bean = JavaUtil.convertArgument(Java.ruby_to_java(runtime.getObject(), value, null), bean.type);
             return value;
         }
     }

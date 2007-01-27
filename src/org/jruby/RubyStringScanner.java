@@ -1,5 +1,6 @@
 package org.jruby;
 
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -24,49 +25,49 @@ public class RubyStringScanner extends RubyObject {
 		CallbackFactory callbackFactory = runtime.callbackFactory(RubyStringScanner.class);
 		
 		scannerClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
-		scannerClass.defineFastMethod("<<", callbackFactory.getMethod("concat", IRubyObject.class));
-		scannerClass.defineFastMethod("concat", callbackFactory.getMethod("concat", IRubyObject.class));
-		scannerClass.defineFastMethod("[]", callbackFactory.getMethod("group", RubyFixnum.class));
-		scannerClass.defineFastMethod("beginning_of_line?", callbackFactory.getMethod("bol_p"));
-		scannerClass.defineFastMethod("bol?", callbackFactory.getMethod("bol_p"));
-		scannerClass.defineFastMethod("check", callbackFactory.getMethod("check", RubyRegexp.class));
-		scannerClass.defineFastMethod("check_until", callbackFactory.getMethod("check_until", RubyRegexp.class));
-		scannerClass.defineFastMethod("clear", callbackFactory.getMethod("terminate"));
-		scannerClass.defineFastMethod("empty?", callbackFactory.getMethod("eos_p"));
-		scannerClass.defineFastMethod("eos?", callbackFactory.getMethod("eos_p"));
-		scannerClass.defineFastMethod("exist?", callbackFactory.getMethod("exist_p", RubyRegexp.class));
-		scannerClass.defineFastMethod("get_byte", callbackFactory.getMethod("getch"));
-		scannerClass.defineFastMethod("getbyte", callbackFactory.getMethod("getch"));
-		scannerClass.defineFastMethod("getch", callbackFactory.getMethod("getch"));
-		scannerClass.defineFastMethod("inspect", callbackFactory.getMethod("inspect"));
-		scannerClass.defineFastMethod("match?", callbackFactory.getMethod("match_p", RubyRegexp.class));
-		scannerClass.defineFastMethod("matched", callbackFactory.getMethod("matched"));
-		scannerClass.defineFastMethod("matched?", callbackFactory.getMethod("matched_p"));
-		scannerClass.defineFastMethod("matched_size", callbackFactory.getMethod("matched_size"));
-		scannerClass.defineFastMethod("matchedsize", callbackFactory.getMethod("matched_size"));
-		scannerClass.defineFastMethod("peek", callbackFactory.getMethod("peek", RubyFixnum.class));
-		scannerClass.defineFastMethod("peep", callbackFactory.getMethod("peek", RubyFixnum.class));
-		scannerClass.defineMethod("pointer", callbackFactory.getMethod("pos"));
-		scannerClass.defineFastMethod("pointer=", callbackFactory.getMethod("set_pos", RubyFixnum.class));
-		scannerClass.defineFastMethod("pos=", callbackFactory.getMethod("set_pos", RubyFixnum.class));
-		scannerClass.defineFastMethod("pos", callbackFactory.getMethod("pos"));
-		scannerClass.defineFastMethod("post_match", callbackFactory.getMethod("post_match"));
-		scannerClass.defineFastMethod("pre_match", callbackFactory.getMethod("pre_match"));
-		scannerClass.defineFastMethod("reset", callbackFactory.getMethod("reset"));
-		scannerClass.defineFastMethod("rest", callbackFactory.getMethod("rest"));
-		scannerClass.defineFastMethod("rest?", callbackFactory.getMethod("rest_p"));
-		scannerClass.defineFastMethod("rest_size", callbackFactory.getMethod("rest_size"));
-		scannerClass.defineFastMethod("restsize", callbackFactory.getMethod("rest_size"));
-		scannerClass.defineFastMethod("scan", callbackFactory.getMethod("scan", RubyRegexp.class));
-		scannerClass.defineFastMethod("scan_full", callbackFactory.getMethod("scan_full", RubyRegexp.class, RubyBoolean.class, RubyBoolean.class));
-		scannerClass.defineFastMethod("scan_until", callbackFactory.getMethod("scan_until", RubyRegexp.class));
-		scannerClass.defineFastMethod("search_full", callbackFactory.getMethod("search_full", RubyRegexp.class, RubyBoolean.class, RubyBoolean.class));
-		scannerClass.defineFastMethod("skip", callbackFactory.getMethod("skip", RubyRegexp.class));
-		scannerClass.defineFastMethod("skip_until", callbackFactory.getMethod("skip_until", RubyRegexp.class));
-		scannerClass.defineFastMethod("string", callbackFactory.getMethod("string"));
-		scannerClass.defineFastMethod("string=", callbackFactory.getMethod("set_string", RubyString.class));
-		scannerClass.defineFastMethod("terminate", callbackFactory.getMethod("terminate"));
-		scannerClass.defineFastMethod("unscan", callbackFactory.getMethod("unscan"));
+		scannerClass.defineFastMethod("<<", callbackFactory.getFastMethod("concat", IRubyObject.class));
+		scannerClass.defineFastMethod("concat", callbackFactory.getFastMethod("concat", IRubyObject.class));
+		scannerClass.defineFastMethod("[]", callbackFactory.getFastMethod("group", RubyFixnum.class));
+		scannerClass.defineFastMethod("beginning_of_line?", callbackFactory.getFastMethod("bol_p"));
+		scannerClass.defineFastMethod("bol?", callbackFactory.getFastMethod("bol_p"));
+		scannerClass.defineFastMethod("check", callbackFactory.getFastMethod("check", RubyRegexp.class));
+		scannerClass.defineFastMethod("check_until", callbackFactory.getFastMethod("check_until", RubyRegexp.class));
+		scannerClass.defineFastMethod("clear", callbackFactory.getFastMethod("terminate"));
+		scannerClass.defineFastMethod("empty?", callbackFactory.getFastMethod("eos_p"));
+		scannerClass.defineFastMethod("eos?", callbackFactory.getFastMethod("eos_p"));
+		scannerClass.defineFastMethod("exist?", callbackFactory.getFastMethod("exist_p", RubyRegexp.class));
+		scannerClass.defineFastMethod("get_byte", callbackFactory.getFastMethod("getch"));
+		scannerClass.defineFastMethod("getbyte", callbackFactory.getFastMethod("getch"));
+		scannerClass.defineFastMethod("getch", callbackFactory.getFastMethod("getch"));
+		scannerClass.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
+		scannerClass.defineFastMethod("match?", callbackFactory.getFastMethod("match_p", RubyRegexp.class));
+		scannerClass.defineFastMethod("matched", callbackFactory.getFastMethod("matched"));
+		scannerClass.defineFastMethod("matched?", callbackFactory.getFastMethod("matched_p"));
+		scannerClass.defineFastMethod("matched_size", callbackFactory.getFastMethod("matched_size"));
+		scannerClass.defineFastMethod("matchedsize", callbackFactory.getFastMethod("matched_size"));
+		scannerClass.defineFastMethod("peek", callbackFactory.getFastMethod("peek", RubyFixnum.class));
+		scannerClass.defineFastMethod("peep", callbackFactory.getFastMethod("peek", RubyFixnum.class));
+		scannerClass.defineFastMethod("pointer", callbackFactory.getFastMethod("pos"));
+		scannerClass.defineFastMethod("pointer=", callbackFactory.getFastMethod("set_pos", RubyFixnum.class));
+		scannerClass.defineFastMethod("pos=", callbackFactory.getFastMethod("set_pos", RubyFixnum.class));
+		scannerClass.defineFastMethod("pos", callbackFactory.getFastMethod("pos"));
+		scannerClass.defineFastMethod("post_match", callbackFactory.getFastMethod("post_match"));
+		scannerClass.defineFastMethod("pre_match", callbackFactory.getFastMethod("pre_match"));
+		scannerClass.defineFastMethod("reset", callbackFactory.getFastMethod("reset"));
+		scannerClass.defineFastMethod("rest", callbackFactory.getFastMethod("rest"));
+		scannerClass.defineFastMethod("rest?", callbackFactory.getFastMethod("rest_p"));
+		scannerClass.defineFastMethod("rest_size", callbackFactory.getFastMethod("rest_size"));
+		scannerClass.defineFastMethod("restsize", callbackFactory.getFastMethod("rest_size"));
+		scannerClass.defineFastMethod("scan", callbackFactory.getFastMethod("scan", RubyRegexp.class));
+		scannerClass.defineFastMethod("scan_full", callbackFactory.getFastMethod("scan_full", RubyRegexp.class, RubyBoolean.class, RubyBoolean.class));
+		scannerClass.defineFastMethod("scan_until", callbackFactory.getFastMethod("scan_until", RubyRegexp.class));
+		scannerClass.defineFastMethod("search_full", callbackFactory.getFastMethod("search_full", RubyRegexp.class, RubyBoolean.class, RubyBoolean.class));
+		scannerClass.defineFastMethod("skip", callbackFactory.getFastMethod("skip", RubyRegexp.class));
+		scannerClass.defineFastMethod("skip_until", callbackFactory.getFastMethod("skip_until", RubyRegexp.class));
+		scannerClass.defineFastMethod("string", callbackFactory.getFastMethod("string"));
+		scannerClass.defineFastMethod("string=", callbackFactory.getFastMethod("set_string", RubyString.class));
+		scannerClass.defineFastMethod("terminate", callbackFactory.getFastMethod("terminate"));
+		scannerClass.defineFastMethod("unscan", callbackFactory.getFastMethod("unscan"));
 		
 		return scannerClass;
 	}
@@ -75,7 +76,7 @@ public class RubyStringScanner extends RubyObject {
 		super(runtime, type);
 	}
 	
-	public IRubyObject initialize(IRubyObject[] args) {
+	public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
 		if (checkArgumentCount(args, 0, 2) > 0) {
 			scanner = new StringScanner(args[0].convertToString().getValue());
 		} else {

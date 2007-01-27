@@ -52,8 +52,7 @@ public class CallBlock extends Block {
                 ctx.peekCRef(),
                 new Scope(),
                 ctx.getRubyClass(),
-                Iter.ITER_PRE,
-                ctx.getCurrentScope());
+                ctx.getCurrentScope(), null);
         this.arity = arity;
         this.callback = callback;
         this.self = self;
@@ -62,7 +61,7 @@ public class CallBlock extends Block {
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf) {
-        return callback.call(context, args, replacementSelf);
+        return callback.call(context, args, replacementSelf, null);
     }
 
     public Block cloneBlock() {
@@ -79,8 +78,8 @@ public class CallBlock extends Block {
             this.callback = callback;
         }
 
-        public IRubyObject call(ThreadContext context, IRubyObject receiver, IRubyObject[] args) {
-            return callback.call(context, args,receiver);
+        public IRubyObject call(ThreadContext context, IRubyObject receiver, IRubyObject[] args, Block block) {
+            return callback.call(context, args,receiver, block);
         }
 
         public ICallable dup() {

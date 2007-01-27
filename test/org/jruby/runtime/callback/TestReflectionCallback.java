@@ -12,9 +12,9 @@ public class TestReflectionCallback extends TestCase {
 
 	public void testExecuteWithStaticMethodThrowingException() throws Exception {
 		ReflectionCallback callback = new ReflectionCallback(MockRubyObject.class, "throwException", 
-				new Class[0], false, true, Arity.noArguments());
+				new Class[0], false, true, Arity.noArguments(), false);
 		try {
-			callback.execute(new MockRubyObject(Ruby.getDefaultInstance()), new IRubyObject[0]);
+			callback.execute(new MockRubyObject(Ruby.getDefaultInstance()), new IRubyObject[0], null);
 		} catch (RaiseException e) {
 			assertEquals(RuntimeException.class, e.getCause().getClass());
 		}

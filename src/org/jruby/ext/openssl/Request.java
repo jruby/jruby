@@ -46,6 +46,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -69,24 +70,24 @@ public class Request extends RubyObject {
         CallbackFactory reqcb = runtime.callbackFactory(Request.class);
 
         cRequest.defineMethod("initialize",reqcb.getOptMethod("_initialize"));
-        cRequest.defineMethod("initialize_copy",reqcb.getMethod("initialize_copy",IRubyObject.class));
-        cRequest.defineMethod("clone",reqcb.getMethod("rbClone"));
-        cRequest.defineMethod("to_pem",reqcb.getMethod("to_pem"));
-        cRequest.defineMethod("to_der",reqcb.getMethod("to_der"));
-        cRequest.defineMethod("to_s",reqcb.getMethod("to_pem"));
-        cRequest.defineMethod("to_text",reqcb.getMethod("to_text"));
-        cRequest.defineMethod("version",reqcb.getMethod("version"));
-        cRequest.defineMethod("version=",reqcb.getMethod("set_version",IRubyObject.class));
-        cRequest.defineMethod("subject",reqcb.getMethod("subject"));
-        cRequest.defineMethod("subject=",reqcb.getMethod("set_subject",IRubyObject.class));
-        cRequest.defineMethod("signature_algorithm",reqcb.getMethod("signature_algorithm"));
-        cRequest.defineMethod("public_key",reqcb.getMethod("public_key"));
-        cRequest.defineMethod("public_key=",reqcb.getMethod("set_public_key",IRubyObject.class));
-        cRequest.defineMethod("sign",reqcb.getMethod("sign",IRubyObject.class,IRubyObject.class));
-        cRequest.defineMethod("verify",reqcb.getMethod("verify",IRubyObject.class));
-        cRequest.defineMethod("attributes",reqcb.getMethod("attributes"));
-        cRequest.defineMethod("attributes=",reqcb.getMethod("set_attributes",IRubyObject.class));
-        cRequest.defineMethod("add_attribute",reqcb.getMethod("add_attribute",IRubyObject.class));
+        cRequest.defineFastMethod("initialize_copy",reqcb.getFastMethod("initialize_copy",IRubyObject.class));
+        cRequest.defineFastMethod("clone",reqcb.getFastMethod("rbClone"));
+        cRequest.defineFastMethod("to_pem",reqcb.getFastMethod("to_pem"));
+        cRequest.defineFastMethod("to_der",reqcb.getFastMethod("to_der"));
+        cRequest.defineFastMethod("to_s",reqcb.getFastMethod("to_pem"));
+        cRequest.defineFastMethod("to_text",reqcb.getFastMethod("to_text"));
+        cRequest.defineFastMethod("version",reqcb.getFastMethod("version"));
+        cRequest.defineFastMethod("version=",reqcb.getFastMethod("set_version",IRubyObject.class));
+        cRequest.defineFastMethod("subject",reqcb.getFastMethod("subject"));
+        cRequest.defineFastMethod("subject=",reqcb.getFastMethod("set_subject",IRubyObject.class));
+        cRequest.defineFastMethod("signature_algorithm",reqcb.getFastMethod("signature_algorithm"));
+        cRequest.defineFastMethod("public_key",reqcb.getFastMethod("public_key"));
+        cRequest.defineFastMethod("public_key=",reqcb.getFastMethod("set_public_key",IRubyObject.class));
+        cRequest.defineFastMethod("sign",reqcb.getFastMethod("sign",IRubyObject.class,IRubyObject.class));
+        cRequest.defineFastMethod("verify",reqcb.getFastMethod("verify",IRubyObject.class));
+        cRequest.defineFastMethod("attributes",reqcb.getFastMethod("attributes"));
+        cRequest.defineFastMethod("attributes=",reqcb.getFastMethod("set_attributes",IRubyObject.class));
+        cRequest.defineFastMethod("add_attribute",reqcb.getFastMethod("add_attribute",IRubyObject.class));
     }
 
     private IRubyObject version;
@@ -103,7 +104,7 @@ public class Request extends RubyObject {
         attrs = new ArrayList();
     }
 
-    public IRubyObject _initialize(IRubyObject[] args) throws Exception {
+    public IRubyObject _initialize(IRubyObject[] args, Block block) throws Exception {
         if(checkArgumentCount(args,0,1) == 0) {
             return this;
         }

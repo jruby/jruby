@@ -48,6 +48,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -67,7 +68,7 @@ public class TimeMetaClass extends ObjectMetaClass {
             includeModule(getRuntime().getModule("Comparable"));
     
             defineSingletonMethod("new", Arity.noArguments(), "s_new"); 
-            defineFastSingletonMethod("now", Arity.noArguments(), "s_new"); 
+            defineSingletonMethod("now", Arity.noArguments(), "s_new"); 
             defineFastSingletonMethod("at", Arity.optional(), "new_at"); 
             defineFastSingletonMethod("local", Arity.optional(), "new_local"); 
             defineFastSingletonMethod("mktime", Arity.optional(), "new_local"); 
@@ -116,7 +117,7 @@ public class TimeMetaClass extends ObjectMetaClass {
             defineAlias("gmtime?", "gmt?");
             defineFastMethod("localtime", Arity.noArguments()); 
             defineFastMethod("hash", Arity.noArguments()); 
-            defineMethod("initialize_copy", Arity.singleArgument()); 
+            defineFastMethod("initialize_copy", Arity.singleArgument()); 
             defineMethod("_dump", Arity.optional(),"dump"); 
             defineFastMethod("gmt_offset", Arity.noArguments());
             defineAlias("gmtoff", "gmt_offset");
@@ -145,7 +146,7 @@ public class TimeMetaClass extends ObjectMetaClass {
         }
     };
     
-    public IRubyObject s_new() {
+    public IRubyObject s_new(Block block) {
         RubyTime time = new RubyTime(getRuntime(), this);
         GregorianCalendar cal = new GregorianCalendar();
         cal.setTime(new Date());
@@ -186,7 +187,7 @@ public class TimeMetaClass extends ObjectMetaClass {
             cal.setTimeInMillis(seconds * 1000 + millisecs);
         }
 
-        time.callInit(args);
+        time.callInit(args, null);
 
         return time;
     }
@@ -199,8 +200,8 @@ public class TimeMetaClass extends ObjectMetaClass {
         return createTime(args, true);
     }
 
-    public RubyTime s_load(IRubyObject from) {
-        return s_mload((RubyTime) s_new(), from);
+    public RubyTime s_load(IRubyObject from, Block block) {
+        return s_mload((RubyTime) s_new(block), from);
     }
 
     protected RubyTime s_mload(RubyTime time, IRubyObject from) {
@@ -305,7 +306,7 @@ public class TimeMetaClass extends ObjectMetaClass {
         cal.set(Calendar.MILLISECOND, int_args[4] / 1000);
         time.setUSec(int_args[4] % 1000);
 
-        time.callInit(args);
+        time.callInit(args, null);
 
         return time;
     }

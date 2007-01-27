@@ -46,7 +46,6 @@ public class BlockPassNode extends Node {
     static final long serialVersionUID = 7201862349971094217L;
 
     private final Node bodyNode;
-    private Node iterNode;
 
     /** Used by the arg_blk_pass and new_call, new_fcall and new_super
      * methods in ParserSupport to temporary save the args node.
@@ -75,22 +74,6 @@ public class BlockPassNode extends Node {
     }
 
     /**
-     * Gets the iterNode.
-     * @return Returns a Node
-     */
-    public Node getIterNode() {
-        return iterNode;
-    }
-
-    /**
-     * Sets the iterNode.
-     * @param iterNode The iterNode to set
-     */
-    public void setIterNode(Node iterNode) {
-        this.iterNode = iterNode;
-    }
-
-    /**
      * Gets the argsNode.
      * @return Returns a IListNode
      */
@@ -107,7 +90,7 @@ public class BlockPassNode extends Node {
     }
     
     public List childNodes() {
-        return Node.createList(argsNode, iterNode, bodyNode);
+        return Node.createList(argsNode, bodyNode);
     }
 
 }

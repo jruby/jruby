@@ -284,7 +284,7 @@ public class UnmarshalStream extends FilterInputStream {
         String className = unmarshalObject().asSymbol();
         IRubyObject marshaled = unmarshalObject();
         RubyClass classInstance = runtime.getClass(className);
-        IRubyObject result = classInstance.newInstance(new IRubyObject[0]);;
+        IRubyObject result = classInstance.newInstance(new IRubyObject[0], null);
         result.callMethod(getRuntime().getCurrentContext(),"marshal_load", marshaled);
         registerLinkTarget(result);
         return result;

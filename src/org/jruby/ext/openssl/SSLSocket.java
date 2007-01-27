@@ -46,6 +46,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
@@ -72,17 +73,17 @@ public class SSLSocket extends RubyObject {
         CallbackFactory sockcb = runtime.callbackFactory(SSLSocket.class);
         cSSLSocket.defineAlias("to_io","io");
         cSSLSocket.defineMethod("initialize",sockcb.getOptMethod("_initialize"));
-        cSSLSocket.defineMethod("connect",sockcb.getMethod("connect"));
-        cSSLSocket.defineMethod("accept",sockcb.getMethod("accept"));
-        cSSLSocket.defineMethod("sysread",sockcb.getOptMethod("sysread"));
-        cSSLSocket.defineMethod("syswrite",sockcb.getMethod("syswrite",IRubyObject.class));
-        cSSLSocket.defineMethod("sysclose",sockcb.getMethod("sysclose"));
-        cSSLSocket.defineMethod("cert",sockcb.getMethod("cert"));
-        cSSLSocket.defineMethod("peer_cert",sockcb.getMethod("peer_cert"));
-        cSSLSocket.defineMethod("peer_cert_chain",sockcb.getMethod("peer_cert_chain"));
-        cSSLSocket.defineMethod("cipher",sockcb.getMethod("cipher"));
-        cSSLSocket.defineMethod("state",sockcb.getMethod("state"));
-        cSSLSocket.defineMethod("pending",sockcb.getMethod("pending"));
+        cSSLSocket.defineFastMethod("connect",sockcb.getFastMethod("connect"));
+        cSSLSocket.defineFastMethod("accept",sockcb.getFastMethod("accept"));
+        cSSLSocket.defineFastMethod("sysread",sockcb.getFastOptMethod("sysread"));
+        cSSLSocket.defineFastMethod("syswrite",sockcb.getFastMethod("syswrite",IRubyObject.class));
+        cSSLSocket.defineFastMethod("sysclose",sockcb.getFastMethod("sysclose"));
+        cSSLSocket.defineFastMethod("cert",sockcb.getFastMethod("cert"));
+        cSSLSocket.defineFastMethod("peer_cert",sockcb.getFastMethod("peer_cert"));
+        cSSLSocket.defineFastMethod("peer_cert_chain",sockcb.getFastMethod("peer_cert_chain"));
+        cSSLSocket.defineFastMethod("cipher",sockcb.getFastMethod("cipher"));
+        cSSLSocket.defineFastMethod("state",sockcb.getFastMethod("state"));
+        cSSLSocket.defineFastMethod("pending",sockcb.getFastMethod("pending"));
     }
 
     private RubyClass sslError;
@@ -111,7 +112,7 @@ public class SSLSocket extends RubyObject {
     private Selector wsel;
     private Selector asel;
     
-    public IRubyObject _initialize(IRubyObject[] args) throws Exception {
+    public IRubyObject _initialize(IRubyObject[] args, Block unusedBlock) throws Exception {
         IRubyObject io, ctx;
         ThreadContext tc = getRuntime().getCurrentContext();
         if(checkArgumentCount(args,1,2) == 1) {
@@ -124,7 +125,7 @@ public class SSLSocket extends RubyObject {
         c = (SocketChannel)(((RubyIO)io).getChannel());
         callMethod(tc,"context=",ctx);
         callMethod(tc,"sync_close=",getRuntime().getFalse());
-        return callMethod(tc,getMetaClass().getSuperClass(),"initialize",args,CallType.SUPER);
+        return callMethod(tc,getMetaClass().getSuperClass(),"initialize",args,CallType.SUPER, null);
     }
 
     private void ossl_ssl_setup() throws Exception {

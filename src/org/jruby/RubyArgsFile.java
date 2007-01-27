@@ -30,6 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -131,18 +132,18 @@ public class RubyArgsFile extends RubyObject {
     /** Invoke a block for each line.
      * 
      */
-    public IRubyObject each_line(IRubyObject[] args) {
+    public IRubyObject each_line(IRubyObject[] args, Block block) {
         IRubyObject nextLine = internalGets(args);
         
         while (!nextLine.isNil()) {
-        	getRuntime().getCurrentContext().yield(nextLine);
+        	getRuntime().getCurrentContext().yield(nextLine, block);
         	nextLine = internalGets(args);
         }
         
         return this;
     }
     
-	public RubyString filename() {
+	public RubyString filename(Block unusedBlock) {
         return (RubyString)getRuntime().getGlobalVariables().get("$FILENAME");
     }
 }

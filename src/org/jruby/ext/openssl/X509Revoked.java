@@ -31,6 +31,7 @@ import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -53,13 +54,13 @@ public class X509Revoked extends RubyObject {
         CallbackFactory revcb = runtime.callbackFactory(X509Revoked.class);
 
         cX509Rev.defineMethod("initialize",revcb.getOptMethod("_initialize"));
-        cX509Rev.defineMethod("serial",revcb.getMethod("serial"));
-        cX509Rev.defineMethod("serial=",revcb.getMethod("set_serial",IRubyObject.class));
-        cX509Rev.defineMethod("time",revcb.getMethod("time"));
-        cX509Rev.defineMethod("time=",revcb.getMethod("set_time",IRubyObject.class));
-        cX509Rev.defineMethod("extensions",revcb.getMethod("extensions"));
-        cX509Rev.defineMethod("extensions=",revcb.getMethod("set_extensions",IRubyObject.class));
-        cX509Rev.defineMethod("add_extension",revcb.getMethod("add_extension",IRubyObject.class));
+        cX509Rev.defineFastMethod("serial",revcb.getFastMethod("serial"));
+        cX509Rev.defineFastMethod("serial=",revcb.getFastMethod("set_serial",IRubyObject.class));
+        cX509Rev.defineFastMethod("time",revcb.getFastMethod("time"));
+        cX509Rev.defineFastMethod("time=",revcb.getFastMethod("set_time",IRubyObject.class));
+        cX509Rev.defineFastMethod("extensions",revcb.getFastMethod("extensions"));
+        cX509Rev.defineFastMethod("extensions=",revcb.getFastMethod("set_extensions",IRubyObject.class));
+        cX509Rev.defineFastMethod("add_extension",revcb.getFastMethod("add_extension",IRubyObject.class));
     }
 
     private IRubyObject serial;
@@ -70,7 +71,7 @@ public class X509Revoked extends RubyObject {
         super(runtime,type);
     }
 
-    public IRubyObject _initialize(IRubyObject[] args) throws Exception {
+    public IRubyObject _initialize(IRubyObject[] args, Block unusedBlock) throws Exception {
         serial = getRuntime().getNil();
         time = getRuntime().getNil();
         extensions = getRuntime().newArray();

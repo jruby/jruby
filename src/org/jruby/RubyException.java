@@ -38,6 +38,7 @@ package org.jruby;
 
 import java.io.PrintStream;
 
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -81,24 +82,15 @@ public class RubyException extends RubyObject {
 		CallbackFactory callbackFactory = runtime.callbackFactory(RubyException.class);
         CallbackFactory classCB = runtime.callbackFactory(RubyClass.class);
         // TODO: could this just  be an alias for new?
-        exceptionClass.defineFastSingletonMethod("exception", 
-            classCB.getOptMethod("newInstance"));		
-		exceptionClass.defineMethod("initialize",
-			callbackFactory.getOptMethod("initialize"));
-		exceptionClass.defineFastMethod("exception", 
-			callbackFactory.getOptMethod("exception"));
-		exceptionClass.defineFastMethod("to_s", 
-			callbackFactory.getMethod("to_s"));
-		exceptionClass.defineFastMethod("to_str", 
-			callbackFactory.getMethod("to_s"));
-		exceptionClass.defineFastMethod("message", 
-			callbackFactory.getMethod("to_s"));
-		exceptionClass.defineFastMethod("inspect", 
-			callbackFactory.getMethod("inspect"));
-		exceptionClass.defineFastMethod("backtrace", 
-			callbackFactory.getMethod("backtrace"));		
-		exceptionClass.defineFastMethod("set_backtrace", 
-			callbackFactory.getMethod("set_backtrace", IRubyObject.class));		
+        exceptionClass.defineSingletonMethod("exception", classCB.getOptMethod("newInstance"));		
+		exceptionClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
+		exceptionClass.defineFastMethod("exception", callbackFactory.getFastOptMethod("exception"));
+		exceptionClass.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
+		exceptionClass.defineFastMethod("to_str", callbackFactory.getFastMethod("to_s"));
+		exceptionClass.defineFastMethod("message", callbackFactory.getFastMethod("to_s"));
+		exceptionClass.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
+		exceptionClass.defineFastMethod("backtrace", callbackFactory.getFastMethod("backtrace"));		
+		exceptionClass.defineFastMethod("set_backtrace", callbackFactory.getFastMethod("set_backtrace", IRubyObject.class));		
 
 		return exceptionClass;
     }
@@ -107,7 +99,7 @@ public class RubyException extends RubyObject {
         return new RubyException(runtime, excptnClass, msg);
     }
 
-    public IRubyObject initialize(IRubyObject[] args) {
+    public IRubyObject initialize(IRubyObject[] args, Block block) {
         if (args.length > 0) {
             message = args[0];
         }
@@ -138,7 +130,7 @@ public class RubyException extends RubyObject {
                     return this;
                 }
                 RubyException ret = (RubyException)rbClone();
-                ret.initialize(args); // This looks wrong, but it's the way MRI does it.
+                ret.initialize(args, null); // This looks wrong, but it's the way MRI does it.
                 return ret;
             default :
                 throw getRuntime().newArgumentError("Wrong argument count");

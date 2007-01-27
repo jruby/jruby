@@ -46,6 +46,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.ast.Node;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.callback.Callback;
@@ -77,12 +78,13 @@ public interface IRubyObject {
     Map getInstanceVariables();
     Map getInstanceVariablesSnapshot();
 
-    IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, String name, IRubyObject[] args, CallType callType);
+    IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, String name, IRubyObject[] args, CallType callType, Block block);
     IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, byte switchvalue, String name, IRubyObject[] args, CallType callType);
     
-    IRubyObject callMethod(ThreadContext context, byte switchValue, String name, IRubyObject[] args, CallType callType);
+    IRubyObject callMethod(ThreadContext context, byte switchValue, String name, IRubyObject[] args, CallType callType, Block block);
     
     IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, CallType callType);
+    IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, CallType callType, Block block);
     
     /**
      * RubyMethod funcall.
@@ -91,6 +93,26 @@ public interface IRubyObject {
      * @return RubyObject
      */
     IRubyObject callMethod(ThreadContext context, String string);
+    IRubyObject callMethod(ThreadContext context, String string, Block aBlock);
+
+    /**
+     * RubyMethod funcall.
+     * @param context TODO
+     * @param string
+     * @param arg
+     * @return RubyObject
+     */
+    IRubyObject callMethod(ThreadContext context, String string, IRubyObject arg);
+
+    /**
+     * RubyMethod callMethod.
+     * @param context TODO
+     * @param method
+     * @param rubyArgs
+     * @return IRubyObject
+     */
+    IRubyObject callMethod(ThreadContext context, String method, IRubyObject[] rubyArgs);
+    IRubyObject callMethod(ThreadContext context, String method, IRubyObject[] rubyArgs, Block block);
 
     /**
      * RubyMethod isNil.
@@ -113,15 +135,6 @@ public interface IRubyObject {
     boolean isFrozen();
 
     boolean isImmediate();
-
-    /**
-     * RubyMethod funcall.
-     * @param context TODO
-     * @param string
-     * @param arg
-     * @return RubyObject
-     */
-    IRubyObject callMethod(ThreadContext context, String string, IRubyObject arg);
 
     /**
      * RubyMethod getRubyClass.
@@ -166,15 +179,6 @@ public interface IRubyObject {
      * @return Class
      */
     Class getJavaClass();
-
-    /**
-     * RubyMethod callMethod.
-     * @param context TODO
-     * @param method
-     * @param rubyArgs
-     * @return IRubyObject
-     */
-    IRubyObject callMethod(ThreadContext context, String method, IRubyObject[] rubyArgs);
 
     /**
      * RubyMethod eval.
@@ -312,7 +316,7 @@ public interface IRubyObject {
     IRubyObject rbClone();
 
 
-    public void callInit(IRubyObject[] args);
+    public void callInit(IRubyObject[] args, Block block);
 
     /**
      * RubyMethod defineSingletonMethod.

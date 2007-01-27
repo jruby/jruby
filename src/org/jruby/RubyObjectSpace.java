@@ -33,6 +33,7 @@ package org.jruby;
 
 import java.util.Iterator;
 
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -46,8 +47,8 @@ public class RubyObjectSpace {
         RubyModule objectSpaceModule = runtime.defineModule("ObjectSpace");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyObjectSpace.class);
         objectSpaceModule.defineModuleFunction("each_object", callbackFactory.getOptSingletonMethod("each_object"));
-        objectSpaceModule.defineFastModuleFunction("garbage_collect", callbackFactory.getSingletonMethod("garbage_collect"));
-        objectSpaceModule.defineFastModuleFunction("_id2ref", callbackFactory.getSingletonMethod("id2ref", RubyFixnum.class));
+        objectSpaceModule.defineFastModuleFunction("garbage_collect", callbackFactory.getFastSingletonMethod("garbage_collect"));
+        objectSpaceModule.defineFastModuleFunction("_id2ref", callbackFactory.getFastSingletonMethod("id2ref", RubyFixnum.class));
         objectSpaceModule.defineModuleFunction("define_finalizer", 
         		callbackFactory.getOptSingletonMethod("define_finalizer"));
         objectSpaceModule.defineModuleFunction("undefine_finalizer", 
@@ -56,7 +57,7 @@ public class RubyObjectSpace {
         return objectSpaceModule;
     }
 
-    public static IRubyObject define_finalizer(IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject define_finalizer(IRubyObject recv, IRubyObject[] args, Block block) {
         RubyProc proc = null;
         if(recv.checkArgumentCount(args,1,2) == 2) {
             if(args[1] instanceof RubyProc) {
@@ -65,7 +66,7 @@ public class RubyObjectSpace {
                 proc = (RubyProc)args[1].convertToType("Proc","to_proc",true);
             }
         } else {
-            proc = (RubyProc)RubyProc.newProc(recv.getRuntime(),false);
+            proc = recv.getRuntime().newProc(false, block);
         }
         IRubyObject obj = args[0];
         long id = RubyNumeric.fix2long(obj.id());
@@ -73,7 +74,7 @@ public class RubyObjectSpace {
         return recv;
     }
 
-    public static IRubyObject undefine_finalizer(IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject undefine_finalizer(IRubyObject recv, IRubyObject[] args, Block block) {
         recv.checkArgumentCount(args,1,1);
         recv.getRuntime().getObjectSpace().removeFinalizers(RubyNumeric.fix2long(args[0].id()));
         return recv;
@@ -98,7 +99,7 @@ public class RubyObjectSpace {
         }
     }
     
-    public static IRubyObject each_object(IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject each_object(IRubyObject recv, IRubyObject[] args, Block block) {
         RubyModule rubyClass;
         if (args.length == 0) {
             rubyClass = recv.getRuntime().getObject();
@@ -111,7 +112,7 @@ public class RubyObjectSpace {
         ThreadContext context = recv.getRuntime().getCurrentContext();
         while ((obj = (IRubyObject)iter.next()) != null) {
             count++;
-            context.yield(obj);
+            context.yield(obj, block);
         }
         return recv.getRuntime().newFixnum(count);
     }

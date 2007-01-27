@@ -29,6 +29,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback2;
 import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
@@ -55,14 +56,14 @@ public class MultiStubMethod2 extends AbstractMethod implements
         assert arity != null;
     }
 
-    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper, Block block) {
     }
     
     public void postMethod(ThreadContext context) {
     }
     
     // FIXME: once we pass block as a paramter, fix this to pass it through to the stubs
-    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block aBlock) {
         BlockCallback2 block = null;
         
         switch (index) {

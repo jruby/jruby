@@ -258,4 +258,18 @@ test_equal(9, Optional3.new.single(9))
   # call Base#single with 1 argument; the arg is supplied
 test_equal(1, Optional3.new.single)
 
+class SuperBase
+  def create_table(a)
+     test_equal(true, block_given?)
+  end
+end
+
+class SuperDerived < SuperBase
+  def create_table(name)
+    super("HEH")
+  end
+end
+
+SuperDerived.new.create_table("A") {  }
+
 

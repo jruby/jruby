@@ -103,14 +103,6 @@ public class IterNode extends Node {
     }
 
     /**
-     * Sets the iterNode.
-     * @param iterNode The iterNode to set
-     */
-    public void setIterNode(Node iterNode) {
-        this.iterNode = iterNode;
-    }
-
-    /**
      * Gets the varNode.
      * @return Returns a Node
      */
@@ -119,7 +111,7 @@ public class IterNode extends Node {
     }
     
     public List childNodes() {
-        return Node.createList(varNode, bodyNode, iterNode);
+        return Node.createList(varNode, bodyNode);
     }
 
     public ICallable getCallable() {

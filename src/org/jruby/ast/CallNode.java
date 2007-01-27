@@ -51,14 +51,20 @@ public final class CallNode extends Node implements INameNode, IArgumentNode, Bl
     private final Node receiverNode;
     private String name;
     private Node argsNode;
-    private IterNode iterNode;
+    private Node iterNode;
     public final int index;
 
     public CallNode(ISourcePosition position, Node receiverNode, String name, Node argsNode) {
+        this(position, receiverNode, name, argsNode, null);
+    }
+    
+    public CallNode(ISourcePosition position, Node receiverNode, String name, Node argsNode, 
+            Node iterNode) {
         super(position, NodeTypes.CALLNODE);
         this.receiverNode = receiverNode;
         this.name = name.intern();
         this.argsNode = argsNode;
+        this.iterNode = iterNode;
         this.index = MethodIndex.getIndex(this.name);
     }
     
@@ -77,11 +83,11 @@ public final class CallNode extends Node implements INameNode, IArgumentNode, Bl
         return iVisitor.visitCallNode(this);
     }
     
-    public IterNode getIterNode() {
+    public Node getIterNode() {
         return iterNode;
     }
     
-    public void setIterNode(IterNode iterNode) {
+    public void setIterNode(Node iterNode) {
         this.iterNode = iterNode;
     }
 
@@ -121,6 +127,10 @@ public final class CallNode extends Node implements INameNode, IArgumentNode, Bl
     }
     
     public List childNodes() {
-        return Node.createList(receiverNode, argsNode);
+        return Node.createList(receiverNode, argsNode, iterNode);
+    }
+    
+    public String toString() {
+        return "CallNode: " + getName();
     }
 }

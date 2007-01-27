@@ -50,11 +50,11 @@ import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.ext.openssl.x509store.PEM;
 import org.jruby.ext.openssl.x509store.X509AuxCertificate;
 import org.jruby.ext.openssl.x509store.X509_STORE_CTX;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -72,37 +72,38 @@ public class PKCS7 extends RubyObject {
         cPKCS7.attr_accessor(new IRubyObject[]{runtime.newSymbol("data"),runtime.newSymbol("error_string")});
 
         CallbackFactory p7cb = runtime.callbackFactory(PKCS7.class);
-        mPKCS7.defineSingletonMethod("read_smime",p7cb.getSingletonMethod("read_smime",IRubyObject.class));
-        mPKCS7.defineSingletonMethod("write_smime",p7cb.getOptSingletonMethod("write_smime"));
-        mPKCS7.defineSingletonMethod("sign",p7cb.getOptSingletonMethod("sign"));
-        mPKCS7.defineSingletonMethod("encrypt",p7cb.getOptSingletonMethod("encrypt"));
-        cPKCS7.defineSingletonMethod("new",p7cb.getOptSingletonMethod("newInstance"));
+        mPKCS7.defineFastSingletonMethod("read_smime",p7cb.getFastSingletonMethod("read_smime",IRubyObject.class));
+        mPKCS7.defineFastSingletonMethod("write_smime",p7cb.getFastOptSingletonMethod("write_smime"));
+        mPKCS7.defineFastSingletonMethod("sign",p7cb.getFastOptSingletonMethod("sign"));
+        mPKCS7.defineFastSingletonMethod("encrypt",p7cb.getFastOptSingletonMethod("encrypt"));
+        // FIXME: This was defined, but does not exist?  Should it?
+        //cPKCS7.defineFastSingletonMethod("new",p7cb.getFastOptSingletonMethod("newInstance"));
         cPKCS7.defineMethod("initialize",p7cb.getOptMethod("_initialize"));
-        cPKCS7.defineMethod("initialize_copy",p7cb.getMethod("initialize_copy",IRubyObject.class));
-        cPKCS7.defineMethod("clone",p7cb.getMethod("rbClone"));
-        cPKCS7.defineMethod("type=",p7cb.getMethod("set_type",IRubyObject.class));
-        cPKCS7.defineMethod("type",p7cb.getMethod("get_type"));
-        cPKCS7.defineMethod("detached=",p7cb.getMethod("set_detached",IRubyObject.class));
-        cPKCS7.defineMethod("detached",p7cb.getMethod("detached"));
-        cPKCS7.defineMethod("detached?",p7cb.getMethod("detached_p"));
-        cPKCS7.defineMethod("cipher=",p7cb.getMethod("set_cipher",IRubyObject.class));
-        cPKCS7.defineMethod("add_signer",p7cb.getMethod("add_signer",IRubyObject.class));
-        cPKCS7.defineMethod("signers",p7cb.getMethod("signers"));
-        cPKCS7.defineMethod("add_recipient",p7cb.getMethod("add_recipient",IRubyObject.class));
-        cPKCS7.defineMethod("recipients",p7cb.getMethod("recipients"));
-        cPKCS7.defineMethod("add_certificate",p7cb.getMethod("add_certificate",IRubyObject.class));
-        cPKCS7.defineMethod("certificates=",p7cb.getMethod("set_certificates",IRubyObject.class));
-        cPKCS7.defineMethod("certificates",p7cb.getMethod("certificates"));
-        cPKCS7.defineMethod("add_crl",p7cb.getMethod("add_crl",IRubyObject.class));
-        cPKCS7.defineMethod("crls=",p7cb.getMethod("set_crls",IRubyObject.class));
-        cPKCS7.defineMethod("crls",p7cb.getMethod("crls"));
-        cPKCS7.defineMethod("add_data",p7cb.getMethod("add_data",IRubyObject.class));
-        cPKCS7.defineMethod("data=",p7cb.getMethod("add_data",IRubyObject.class));
-        cPKCS7.defineMethod("verify",p7cb.getOptMethod("verify"));
-        cPKCS7.defineMethod("decrypt",p7cb.getOptMethod("decrypt"));
-        cPKCS7.defineMethod("to_pem",p7cb.getMethod("to_pem"));
-        cPKCS7.defineMethod("to_s",p7cb.getMethod("to_pem"));
-        cPKCS7.defineMethod("to_der",p7cb.getMethod("to_der"));
+        cPKCS7.defineFastMethod("initialize_copy",p7cb.getFastMethod("initialize_copy",IRubyObject.class));
+        cPKCS7.defineFastMethod("clone",p7cb.getFastMethod("rbClone"));
+        cPKCS7.defineFastMethod("type=",p7cb.getFastMethod("set_type",IRubyObject.class));
+        cPKCS7.defineFastMethod("type",p7cb.getFastMethod("get_type"));
+        cPKCS7.defineFastMethod("detached=",p7cb.getFastMethod("set_detached",IRubyObject.class));
+        cPKCS7.defineFastMethod("detached",p7cb.getFastMethod("detached"));
+        cPKCS7.defineFastMethod("detached?",p7cb.getFastMethod("detached_p"));
+        cPKCS7.defineFastMethod("cipher=",p7cb.getFastMethod("set_cipher",IRubyObject.class));
+        cPKCS7.defineFastMethod("add_signer",p7cb.getFastMethod("add_signer",IRubyObject.class));
+        cPKCS7.defineFastMethod("signers",p7cb.getFastMethod("signers"));
+        cPKCS7.defineFastMethod("add_recipient",p7cb.getFastMethod("add_recipient",IRubyObject.class));
+        cPKCS7.defineFastMethod("recipients",p7cb.getFastMethod("recipients"));
+        cPKCS7.defineFastMethod("add_certificate",p7cb.getFastMethod("add_certificate",IRubyObject.class));
+        cPKCS7.defineFastMethod("certificates=",p7cb.getFastMethod("set_certificates",IRubyObject.class));
+        cPKCS7.defineFastMethod("certificates",p7cb.getFastMethod("certificates"));
+        cPKCS7.defineFastMethod("add_crl",p7cb.getFastMethod("add_crl",IRubyObject.class));
+        cPKCS7.defineFastMethod("crls=",p7cb.getFastMethod("set_crls",IRubyObject.class));
+        cPKCS7.defineFastMethod("crls",p7cb.getFastMethod("crls"));
+        cPKCS7.defineFastMethod("add_data",p7cb.getFastMethod("add_data",IRubyObject.class));
+        cPKCS7.defineFastMethod("data=",p7cb.getFastMethod("add_data",IRubyObject.class));
+        cPKCS7.defineFastMethod("verify",p7cb.getFastOptMethod("verify"));
+        cPKCS7.defineFastMethod("decrypt",p7cb.getFastOptMethod("decrypt"));
+        cPKCS7.defineFastMethod("to_pem",p7cb.getFastMethod("to_pem"));
+        cPKCS7.defineFastMethod("to_s",p7cb.getFastMethod("to_pem"));
+        cPKCS7.defineFastMethod("to_der",p7cb.getFastMethod("to_der"));
 
         SignerInfo.createSignerInfo(runtime,mPKCS7);
         RecipientInfo.createRecipientInfo(runtime,mPKCS7);
@@ -187,7 +188,7 @@ public class PKCS7 extends RubyObject {
 
     private CMSSignedData signedData;
 
-    public IRubyObject _initialize(IRubyObject[] args) throws Exception {
+    public IRubyObject _initialize(IRubyObject[] args, Block unusedBlock) throws Exception {
         if(checkArgumentCount(args,0,1) == 0) {
             return this;
         }
@@ -394,11 +395,11 @@ public class PKCS7 extends RubyObject {
             mPKCS7.defineConstant("Signer",cPKCS7Signer);
 
             CallbackFactory p7scb = runtime.callbackFactory(SignerInfo.class);
-            cPKCS7Signer.defineMethod("initialize",p7scb.getMethod("initialize",IRubyObject.class,IRubyObject.class,IRubyObject.class));
-            cPKCS7Signer.defineMethod("issuer",p7scb.getMethod("issuer"));
-            cPKCS7Signer.defineMethod("name",p7scb.getMethod("issuer"));
-            cPKCS7Signer.defineMethod("serial",p7scb.getMethod("serial"));
-            cPKCS7Signer.defineMethod("signed_time",p7scb.getMethod("signed_time"));
+            cPKCS7Signer.defineFastMethod("initialize",p7scb.getFastMethod("initialize",IRubyObject.class,IRubyObject.class,IRubyObject.class));
+            cPKCS7Signer.defineFastMethod("issuer",p7scb.getFastMethod("issuer"));
+            cPKCS7Signer.defineFastMethod("name",p7scb.getFastMethod("issuer"));
+            cPKCS7Signer.defineFastMethod("serial",p7scb.getFastMethod("serial"));
+            cPKCS7Signer.defineFastMethod("signed_time",p7scb.getFastMethod("signed_time"));
         }
 
         public SignerInfo(IRuby runtime, RubyClass type) {
@@ -437,10 +438,10 @@ public class PKCS7 extends RubyObject {
             RubyClass cPKCS7Recipient = mPKCS7.defineClassUnder("RecipientInfo",runtime.getObject(),RECIPIENTINFO_ALLOCATOR);
 
             CallbackFactory p7rcb = runtime.callbackFactory(RecipientInfo.class);
-            cPKCS7Recipient.defineMethod("initialize",p7rcb.getMethod("initialize",IRubyObject.class));
-            cPKCS7Recipient.defineMethod("issuer",p7rcb.getMethod("issuer"));
-            cPKCS7Recipient.defineMethod("serial",p7rcb.getMethod("serial"));
-            cPKCS7Recipient.defineMethod("enc_key",p7rcb.getMethod("enc_key"));
+            cPKCS7Recipient.defineFastMethod("initialize",p7rcb.getFastMethod("initialize",IRubyObject.class));
+            cPKCS7Recipient.defineFastMethod("issuer",p7rcb.getFastMethod("issuer"));
+            cPKCS7Recipient.defineFastMethod("serial",p7rcb.getFastMethod("serial"));
+            cPKCS7Recipient.defineFastMethod("enc_key",p7rcb.getFastMethod("enc_key"));
         }
 
         public RecipientInfo(IRuby runtime, RubyClass type) {

@@ -29,6 +29,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -54,36 +55,37 @@ public class MultiStubMethod extends AbstractMethod implements
         assert arity != null;
     }
 
-    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
-        context.preReflectedMethodInternalCall(implementationClass, lastClass, recv, name, args, noSuper);
+    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper, Block block) {
+        context.preReflectedMethodInternalCall(implementationClass, lastClass, recv, name, args, noSuper, block);
     }
     
     public void postMethod(ThreadContext context) {
         context.postReflectedMethodInternalCall();
     }
     
-    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
+        // FIXME: Uh uh
         switch (index) {
         case 0:
-            return stub.method0(context, receiver, args);
+            return stub.method0(context, receiver, args, block);
         case 1:
-            return stub.method1(context, receiver, args);
+            return stub.method1(context, receiver, args, block);
         case 2:
-            return stub.method2(context, receiver, args);
+            return stub.method2(context, receiver, args, block);
         case 3:
-            return stub.method3(context, receiver, args);
+            return stub.method3(context, receiver, args, block);
         case 4:
-            return stub.method4(context, receiver, args);
+            return stub.method4(context, receiver, args, block);
         case 5:
-            return stub.method5(context, receiver, args);
+            return stub.method5(context, receiver, args, block);
         case 6:
-            return stub.method6(context, receiver, args);
+            return stub.method6(context, receiver, args, block);
         case 7:
-            return stub.method7(context, receiver, args);
+            return stub.method7(context, receiver, args, block);
         case 8:
-            return stub.method8(context, receiver, args);
+            return stub.method8(context, receiver, args, block);
         case 9:
-            return stub.method9(context, receiver, args);
+            return stub.method9(context, receiver, args, block);
         }
         
         assert false;

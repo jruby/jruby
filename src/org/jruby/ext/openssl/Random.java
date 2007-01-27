@@ -40,13 +40,13 @@ public class Random {
         RubyModule rand = ossl.defineModuleUnder("Random");
 
         CallbackFactory randcb = runtime.callbackFactory(Random.class);
-        rand.defineSingletonMethod("seed",randcb.getOptSingletonMethod("seed"));
-        rand.defineSingletonMethod("load_random_file",randcb.getOptSingletonMethod("load_random_file"));
-        rand.defineSingletonMethod("write_random_file",randcb.getOptSingletonMethod("write_random_file"));
-        rand.defineSingletonMethod("random_bytes",randcb.getOptSingletonMethod("random_bytes"));
-        rand.defineSingletonMethod("pseudo_bytes",randcb.getOptSingletonMethod("pseudo_bytes"));
-        rand.defineSingletonMethod("egd",randcb.getOptSingletonMethod("egd"));
-        rand.defineSingletonMethod("egd_bytes",randcb.getOptSingletonMethod("egd_bytes"));
+        rand.defineFastSingletonMethod("seed",randcb.getFastOptSingletonMethod("seed"));
+        rand.defineFastSingletonMethod("load_random_file",randcb.getFastOptSingletonMethod("load_random_file"));
+        rand.defineFastSingletonMethod("write_random_file",randcb.getFastOptSingletonMethod("write_random_file"));
+        rand.defineFastSingletonMethod("random_bytes",randcb.getFastOptSingletonMethod("random_bytes"));
+        rand.defineFastSingletonMethod("pseudo_bytes",randcb.getFastOptSingletonMethod("pseudo_bytes"));
+        rand.defineFastSingletonMethod("egd",randcb.getFastOptSingletonMethod("egd"));
+        rand.defineFastSingletonMethod("egd_bytes",randcb.getFastOptSingletonMethod("egd_bytes"));
     }
 
     public static IRubyObject seed(IRubyObject recv, IRubyObject[] args) {

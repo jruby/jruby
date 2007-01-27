@@ -39,6 +39,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -104,30 +105,18 @@ public class JavaObject extends RubyObject {
 	protected static void registerRubyMethods(IRuby runtime, RubyClass result) {
 		CallbackFactory callbackFactory = runtime.callbackFactory(JavaObject.class);
 
-        result.defineMethod("to_s", 
-            callbackFactory.getMethod("to_s"));
-        result.defineMethod("==", 
-            callbackFactory.getMethod("equal", IRubyObject.class));
-        result.defineMethod("eql?", 
-            callbackFactory.getMethod("equal", IRubyObject.class));
-        result.defineMethod("equal?", 
-            callbackFactory.getMethod("same", IRubyObject.class));
-        result.defineMethod("hash", 
-            callbackFactory.getMethod("hash"));
-        result.defineMethod("java_type", 
-            callbackFactory.getMethod("java_type"));
-        result.defineMethod("java_class", 
-            callbackFactory.getMethod("java_class"));
-        result.defineMethod("java_proxy?", 
-            callbackFactory.getMethod("is_java_proxy"));
-        result.defineMethod("synchronized",
-            callbackFactory.getMethod("ruby_synchronized"));
-        result.defineMethod("length", 
-            callbackFactory.getMethod("length"));
-        result.defineMethod("[]", 
-            callbackFactory.getMethod("aref", IRubyObject.class));
-        result.defineMethod("[]=", 
-            callbackFactory.getMethod("aset", IRubyObject.class, IRubyObject.class));
+        result.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
+        result.defineFastMethod("==", callbackFactory.getFastMethod("equal", IRubyObject.class));
+        result.defineFastMethod("eql?", callbackFactory.getFastMethod("equal", IRubyObject.class));
+        result.defineFastMethod("equal?", callbackFactory.getFastMethod("same", IRubyObject.class));
+        result.defineFastMethod("hash", callbackFactory.getFastMethod("hash"));
+        result.defineFastMethod("java_type", callbackFactory.getFastMethod("java_type"));
+        result.defineFastMethod("java_class", callbackFactory.getFastMethod("java_class"));
+        result.defineFastMethod("java_proxy?", callbackFactory.getFastMethod("is_java_proxy"));
+        result.defineMethod("synchronized", callbackFactory.getMethod("ruby_synchronized"));
+        result.defineFastMethod("length", callbackFactory.getFastMethod("length"));
+        result.defineFastMethod("[]", callbackFactory.getFastMethod("aref", IRubyObject.class));
+        result.defineFastMethod("[]=", callbackFactory.getFastMethod("aset", IRubyObject.class, IRubyObject.class));
 	}
 
 	public RubyFixnum hash() {
@@ -195,10 +184,10 @@ public class JavaObject extends RubyObject {
         return getRuntime().getTrue();
     }
 
-    public IRubyObject ruby_synchronized() {
+    public IRubyObject ruby_synchronized(Block block) {
         Object lock = getValue();
         synchronized (lock != null ? lock : NULL_LOCK) {
-            return getRuntime().getCurrentContext().yield(null);
+            return getRuntime().getCurrentContext().yield(null, block);
         }
     }
 }

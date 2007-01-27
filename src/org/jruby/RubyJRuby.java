@@ -29,6 +29,7 @@ package org.jruby;
 
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -48,14 +49,14 @@ public class RubyJRuby {
         return comparableModule;
     }
     
-    public static IRubyObject runtime(IRubyObject recv) {
-        return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), recv.getRuntime()));
+    public static IRubyObject runtime(IRubyObject recv, Block unusedBlock) {
+        return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), recv.getRuntime()), null);
     }
     
-    public static IRubyObject parse(IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
+    public static IRubyObject parse(IRubyObject recv, IRubyObject arg1, IRubyObject arg2, Block unusedBlock) {
         RubyString content = arg1.convertToString();
         RubyString filename = arg2.convertToString();
         return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), 
-            recv.getRuntime().parse(content.toString(), filename.toString(), null)));
+            recv.getRuntime().parse(content.toString(), filename.toString(), null)), null);
     }
 }

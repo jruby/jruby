@@ -61,13 +61,13 @@ public class BasicSocketMetaClass extends IOMetaClass {
     	protected void initializeClass() {
             // FIXME: shouldn't this be private?
             defineMethod("initialize", Arity.singleArgument());
-            defineMethod("send", Arity.optional(), "write_send");
-            defineMethod("recv", Arity.optional());
-            defineMethod("shutdown", Arity.optional());
-            defineMethod("__getsockname", Arity.noArguments(), "getsockname");
-            defineMethod("__getpeername", Arity.noArguments(), "getpeername");
-            defineSingletonMethod("do_not_reverse_lookup", Arity.noArguments());
-            defineSingletonMethod("do_not_reverse_lookup=", Arity.singleArgument(), "set_do_not_reverse_lookup");
+            defineFastMethod("send", Arity.optional(), "write_send");
+            defineFastMethod("recv", Arity.optional());
+            defineFastMethod("shutdown", Arity.optional());
+            defineFastMethod("__getsockname", Arity.noArguments(), "getsockname");
+            defineFastMethod("__getpeername", Arity.noArguments(), "getpeername");
+            defineFastSingletonMethod("do_not_reverse_lookup", Arity.noArguments());
+            defineFastSingletonMethod("do_not_reverse_lookup=", Arity.singleArgument(), "set_do_not_reverse_lookup");
     	}
     };
 

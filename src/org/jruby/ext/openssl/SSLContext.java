@@ -43,6 +43,7 @@ import org.jruby.RubyObject;
 import org.jruby.ext.openssl.x509store.X509AuxCertificate;
 import org.jruby.ext.openssl.x509store.X509_STORE;
 import org.jruby.ext.openssl.x509store.X509_STORE_CTX;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -71,8 +72,8 @@ public class SSLContext extends RubyObject {
 
         CallbackFactory ctxcb = runtime.callbackFactory(SSLContext.class);
         cSSLContext.defineMethod("initialize",ctxcb.getOptMethod("initialize"));
-        cSSLContext.defineMethod("ciphers",ctxcb.getMethod("ciphers"));
-        cSSLContext.defineMethod("ciphers=",ctxcb.getMethod("set_ciphers",IRubyObject.class));
+        cSSLContext.defineFastMethod("ciphers",ctxcb.getFastMethod("ciphers"));
+        cSSLContext.defineFastMethod("ciphers=",ctxcb.getFastMethod("set_ciphers",IRubyObject.class));
     }
 
     public SSLContext(IRuby runtime, RubyClass type) {
@@ -115,7 +116,7 @@ public class SSLContext extends RubyObject {
         return t_cert;
     }
 
-    public IRubyObject initialize(IRubyObject[] args) {
+    public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
         ciphers = getRuntime().getNil();
         return this;
     }

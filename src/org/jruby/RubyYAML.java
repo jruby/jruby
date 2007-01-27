@@ -38,6 +38,7 @@ import java.util.Map;
 
 import java.util.regex.Pattern;
 
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Visibility;
@@ -227,7 +228,7 @@ public class RubyYAML {
         public MultiStubMethod yaml_quick_emit_node;
         public MultiStubMethod yaml_quick_emit;
 
-        public IRubyObject method0(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method0(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             //yaml_dump
             IRubyObject obj = args[0];
             IRubyObject val = self.getRuntime().newArray(obj);
@@ -237,7 +238,7 @@ public class RubyYAML {
                 return self.callMethod(context,"dump_all", val);
             }
         }
-        public IRubyObject method1(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method1(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             //yaml_load
             IRubyObject io = args[0];
             Scanner scn = null;
@@ -252,7 +253,7 @@ public class RubyYAML {
             }
             return self.getRuntime().getNil();
         }
-        public IRubyObject method2(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method2(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             //yaml_load_file
             IRubyObject io = self.getRuntime().getClass("File").callMethod(context,"open", new IRubyObject[]{args[0],self.getRuntime().newString("r")});
             IRubyObject val = self.callMethod(context,"load", io);
@@ -260,7 +261,7 @@ public class RubyYAML {
             return val;
 
         }
-        public IRubyObject method3(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method3(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             //yaml_dump_all
             RubyArray objs = (RubyArray)args[0];
             IRubyObject io = null;
@@ -295,7 +296,7 @@ public class RubyYAML {
                 return io;
             }
         }
-        public IRubyObject method4(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method4(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             //yaml_each_document
             IRubyObject io = args[0];
             Scanner scn = null;
@@ -306,11 +307,11 @@ public class RubyYAML {
             }
             Constructor ctor = new JRubyConstructor(self,new ComposerImpl(new ParserImpl(scn,YAML.config().version("1.0")),new ResolverImpl()));
             while(ctor.checkData()) {
-                context.yield(JavaEmbedUtils.javaToRuby(self.getRuntime(),ctor.getData()));
+                context.yield(JavaEmbedUtils.javaToRuby(self.getRuntime(),ctor.getData()), block);
             }
             return self.getRuntime().getNil();
         }
-        public IRubyObject method5(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method5(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             //yaml_load_documents
             IRubyObject io = args[0];
             Scanner scn = null;
@@ -321,11 +322,11 @@ public class RubyYAML {
             }
             Constructor ctor = new JRubyConstructor(self,new ComposerImpl(new ParserImpl(scn,YAML.config().version("1.0")),new ResolverImpl()));
             while(ctor.checkData()) {
-                context.yield(JavaEmbedUtils.javaToRuby(self.getRuntime(),ctor.getData()));
+                context.yield(JavaEmbedUtils.javaToRuby(self.getRuntime(),ctor.getData()), block);
             }
             return self.getRuntime().getNil();
         }
-        public IRubyObject method6(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method6(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             //yaml_load_stream
             IRubyObject d = self.getRuntime().getNil();
             IRubyObject io = args[0];
@@ -344,7 +345,7 @@ public class RubyYAML {
             }
             return d;
         }
-        public IRubyObject method7(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method7(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             //yaml_dump_stream
             IRubyObject stream = self.getRuntime().getModule("YAML").getClass("Stream").callMethod(context, "new");
             for(int i=0,j=args.length;i<j;) {
@@ -352,11 +353,11 @@ public class RubyYAML {
             }
             return stream.callMethod(context, "emit");
         }
-        public IRubyObject method8(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method8(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             //yaml_quick_emit_node
-            return context.yield(args[0]);
+            return context.yield(args[0], block);
         }
-        public IRubyObject method9(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method9(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             //yaml_quick_emit
             return self.getRuntime().getNil();
         }
@@ -374,10 +375,10 @@ public class RubyYAML {
         public MultiStubMethod array_to_yaml_node;
         public MultiStubMethod array_taguri;
 
-        public IRubyObject method0(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method0(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return args[0].callMethod(context,"map", new IRubyObject[]{self.callMethod(context, "taguri"),self,self.callMethod(context, "to_yaml_style")});
         }
-        public IRubyObject method1(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method1(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             String className = self.getType().getName();
             if("Hash".equals(className)) {
                 return self.getRuntime().newString("tag:yaml.org,2002:map");
@@ -385,13 +386,13 @@ public class RubyYAML {
                 return self.getRuntime().newString("tag:yaml.org,2002:map:" + className);
             }
         }
-        public IRubyObject method2(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method2(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return self.callMethod(context, "instance_variables").callMethod(context, "sort");
         }
-        public IRubyObject method3(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method3(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return self.getRuntime().getNil();
         }
-        public IRubyObject method4(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method4(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             Map mep = (Map)(new RubyHash(self.getRuntime()));
             RubyArray props = (RubyArray)self.callMethod(context, "to_yaml_properties");
             for(Iterator iter = props.getList().iterator(); iter.hasNext();) {
@@ -400,19 +401,19 @@ public class RubyYAML {
             }
             return args[0].callMethod(context,"map", new IRubyObject[]{self.callMethod(context, "taguri"),(IRubyObject)mep,self.callMethod(context, "to_yaml_style")});
         }
-        public IRubyObject method5(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method5(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return self.getRuntime().newString("!ruby/object:" + self.getType().getName());
         }
-        public IRubyObject method6(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method6(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             throw self.getRuntime().newTypeError("can't dump anonymous class " + self.getType().getName());
         }
-        public IRubyObject method7(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method7(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return self.getRuntime().getModule("YAML").callMethod(context,"dump", self);
         }
-        public IRubyObject method8(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method8(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return args[0].callMethod(context,"seq", new IRubyObject[]{self.callMethod(context, "taguri"),self,self.callMethod(context, "to_yaml_style")});
         }
-        public IRubyObject method9(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method9(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             String className = self.getType().getName();
             if("Array".equals(className)) {
                 return self.getRuntime().newString("tag:yaml.org,2002:seq");
@@ -435,7 +436,7 @@ public class RubyYAML {
 
         public MultiStubMethod numeric_to_yaml_node;
 
-        public IRubyObject method0(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method0(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             //struct_to_yaml_node
             Map mep = (Map)(new RubyHash(self.getRuntime()));
             for(Iterator iter = ((RubyArray)self.callMethod(context, "members")).getList().iterator();iter.hasNext();) {
@@ -448,10 +449,10 @@ public class RubyYAML {
             }
             return args[0].callMethod(context,"map", new IRubyObject[]{self.callMethod(context, "taguri"),(IRubyObject)mep,self.callMethod(context, "to_yaml_style")});
         }
-        public IRubyObject method1(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method1(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return self.getRuntime().newString("!ruby/struct:" + self.getType().getName());
         }
-        public IRubyObject method2(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method2(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             //exception_to_yaml_node
             Map mep = (Map)(new RubyHash(self.getRuntime()));
             mep.put(self.getRuntime().newString("message"),self.callMethod(context, "message"));
@@ -461,22 +462,22 @@ public class RubyYAML {
             }
             return args[0].callMethod(context,"map", new IRubyObject[]{self.callMethod(context, "taguri"),(IRubyObject)mep,self.callMethod(context, "to_yaml_style")});
         }
-        public IRubyObject method3(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method3(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return self.getRuntime().newString("!ruby/exception:" + self.getType().getName());
         }
         private static final Pattern AFTER_NEWLINE = Pattern.compile("\n.+", Pattern.DOTALL);
-        public IRubyObject method4(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method4(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return (self.callMethod(context, "to_yaml_style").isTrue() ||
                     ((List)self.callMethod(context, "to_yaml_properties")).isEmpty() ||
                     AFTER_NEWLINE.matcher(self.toString()).find()) ? self.getRuntime().getTrue() : self.getRuntime().getFalse();
         }
-        public IRubyObject method5(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method5(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             if(self.callMethod(context, "empty?").isTrue()) {
                 return self.getRuntime().getNil();
             }
             return self.toString().indexOf('\0') != -1 ? self.getRuntime().getTrue() : self.getRuntime().getFalse();
         }
-        public IRubyObject method6(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method6(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             IRuby rt = self.getRuntime();
             if(self.callMethod(context, "is_binary_data?").isTrue()) {
                 return args[0].callMethod(context,"scalar", new IRubyObject[]{rt.newString("tag:yaml.org,2002:binary"),rt.newArray(self).callMethod(context,"pack", rt.newString("m")),rt.newString("|")});
@@ -493,13 +494,13 @@ public class RubyYAML {
             }
             return args[0].callMethod(context,"map", new IRubyObject[]{self.callMethod(context, "taguri"),(IRubyObject)mep,self.callMethod(context, "to_yaml_style")});
         }
-        public IRubyObject method7(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method7(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return self.getRuntime().newString("tag:yaml.org,2002:str");
         }
-        public IRubyObject method8(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method8(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return args[0].callMethod(context,"scalar", new IRubyObject[]{self.callMethod(context, "taguri"),self.callMethod(context, "inspect"),self.callMethod(context, "to_yaml_style")});
         }
-        public IRubyObject method9(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method9(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             String val = self.toString();
             if("Infinity".equals(val)) {
                 val = ".Inf";
@@ -528,7 +529,7 @@ public class RubyYAML {
         public MultiStubMethod fixnum_taguri;
         public MultiStubMethod float_taguri;
 
-        public IRubyObject method0(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method0(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             Map mep = (Map)(new RubyHash(self.getRuntime()));
             mep.put(self.getRuntime().newString("begin"),self.callMethod(context, "begin"));
             mep.put(self.getRuntime().newString("end"),self.callMethod(context, "end"));
@@ -539,16 +540,16 @@ public class RubyYAML {
             }
             return args[0].callMethod(context,"map", new IRubyObject[]{self.callMethod(context, "taguri"),(IRubyObject)mep,self.callMethod(context, "to_yaml_style")});
         }
-        public IRubyObject method1(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method1(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return self.getRuntime().newString("!ruby/range");
         }
-        public IRubyObject method2(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method2(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return args[0].callMethod(context,"scalar", new IRubyObject[]{self.callMethod(context, "taguri"),self.callMethod(context, "inspect"),self.callMethod(context, "to_yaml_style")});
         }
-        public IRubyObject method3(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method3(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return self.getRuntime().newString("!ruby/regexp");
         }
-        public IRubyObject method4(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method4(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             IRubyObject tz = self.getRuntime().newString("Z");
             IRubyObject difference_sign = self.getRuntime().newString("-");
             if(!self.callMethod(context, "utc?").isTrue()) {
@@ -575,19 +576,19 @@ public class RubyYAML {
             standard = standard.callMethod(context,"+", self.getRuntime().newString(" %s").callMethod(context,"%", self.getRuntime().newArray(tz)));
             return args[0].callMethod(context,"scalar", new IRubyObject[]{self.callMethod(context, "taguri"),standard,self.callMethod(context, "to_yaml_style")});
         }
-        public IRubyObject method5(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method5(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return self.getRuntime().newString("tag:yaml.org,2002:timestamp");
         }
-        public IRubyObject method6(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method6(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return args[0].callMethod(context,"scalar", new IRubyObject[]{self.callMethod(context, "taguri"),self.callMethod(context, "to_s"),self.callMethod(context, "to_yaml_style")});
         }
-        public IRubyObject method7(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method7(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return self.getRuntime().newString("tag:yaml.org,2002:timestamp#ymd");
         }
-        public IRubyObject method8(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method8(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return self.getRuntime().newString("tag:yaml.org,2002:int");
         }
-        public IRubyObject method9(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method9(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return self.getRuntime().newString("tag:yaml.org,2002:float");
         }
     }
@@ -600,34 +601,34 @@ public class RubyYAML {
         public MultiStubMethod nil_taguri;
         public MultiStubMethod nil_to_yaml_node;
 
-        public IRubyObject method0(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method0(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return args[0].callMethod(context,"scalar", new IRubyObject[]{self.callMethod(context, "taguri"),self.callMethod(context, "to_s"),self.callMethod(context, "to_yaml_style")});
         }
-        public IRubyObject method1(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method1(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return self.getRuntime().newString("tag:yaml.org,2002:bool");
         }
-        public IRubyObject method2(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method2(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return args[0].callMethod(context,"scalar", new IRubyObject[]{self.callMethod(context, "taguri"),self.callMethod(context, "to_s"),self.callMethod(context, "to_yaml_style")});
         }
-        public IRubyObject method3(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method3(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return self.getRuntime().newString("tag:yaml.org,2002:bool");
         }
-        public IRubyObject method4(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method4(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return args[0].callMethod(context,"scalar", new IRubyObject[]{self.callMethod(context, "taguri"),self.getRuntime().newString(""),self.callMethod(context, "to_yaml_style")});
         }
-        public IRubyObject method5(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method5(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return self.getRuntime().newString("tag:yaml.org,2002:null");
         }
-        public IRubyObject method6(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method6(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return null;
         }
-        public IRubyObject method7(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method7(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return null;
         }
-        public IRubyObject method8(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method8(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return null;
         }
-        public IRubyObject method9(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        public IRubyObject method9(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             return null;
         }
     }

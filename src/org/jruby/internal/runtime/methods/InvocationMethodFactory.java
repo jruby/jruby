@@ -48,10 +48,11 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     private final static String SIMPLE_SUPER_CLASS = SimpleInvocationMethod.class.getName().replace('.','/');
     private final static String COMPILED_SUPER_CLASS = CompiledMethod.class.getName().replace('.','/');
     private final static String FULL_SUPER_CLASS = FullInvocationMethod.class.getName().replace('.','/');
-    private final static String IRUB = "org/jruby/runtime/builtin/IRubyObject";
     private final static String IRUB_ID = "Lorg/jruby/runtime/builtin/IRubyObject;";
-    private final static String CALL_SIG = "(" + IRUB_ID + "[" + IRUB_ID + ")" + IRUB_ID;
-    private final static String COMPILED_CALL_SIG = "(Lorg/jruby/runtime/ThreadContext;" + IRUB_ID + "[" + IRUB_ID + "Lorg/jruby/runtime/Block;)" + IRUB_ID;
+    private final static String BLOCK_ID = "Lorg/jruby/runtime/Block;";
+    private final static String CALL_SIG = "(" + IRUB_ID + "[" + IRUB_ID + BLOCK_ID + ")" + IRUB_ID;
+    private final static String CALL_SIG_NB = "(" + IRUB_ID + "[" + IRUB_ID + ")" + IRUB_ID;
+    private final static String COMPILED_CALL_SIG = "(Lorg/jruby/runtime/ThreadContext;" + IRUB_ID + "[" + IRUB_ID + BLOCK_ID + ")" + IRUB_ID;
     private final static String SUPER_SIG = "(" + ci(RubyModule.class) + ci(Arity.class) + ci(Visibility.class) + ")V";
     private final static String COMPILED_SUPER_SIG = "(" + ci(RubyModule.class) + ci(Arity.class) + ci(Visibility.class) + ci(SinglyLinkedList.class) + ")V";
 
@@ -126,7 +127,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         return t;
     }
 
-    private DynamicMethod getMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility, String sup) {
+    private DynamicMethod getMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility, String sup, boolean block) {
         String typePath = p(type);
         String mname = type.getName() + "Invoker" + method + arity;
         String mnamePath = typePath + "Invoker" + method + arity;
@@ -137,14 +138,20 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 MethodVisitor mv = null;
                 if(arity.isFixed()) {
                     int ar_len = arity.getValue();
-                    Class[] sign = new Class[ar_len];
+                    Class[] sign = new Class[ block ? ar_len+1 : ar_len ];
                     java.util.Arrays.fill(sign,IRubyObject.class);
+                    if(block) {
+                        sign[sign.length-1] = Block.class;
+                    }
                     StringBuffer sbe = new StringBuffer();
                     for(int i=0;i<ar_len;i++) {
                         sbe.append(IRUB_ID);
                     }
+                    if(block) {
+                        sbe.append(BLOCK_ID);
+                    }
                     String ret = getReturnName(type, method, sign);
-                    mv = cw.visitMethod(ACC_PUBLIC, "call", CALL_SIG, null, null);
+                    mv = cw.visitMethod(ACC_PUBLIC, "call", block ? CALL_SIG : CALL_SIG_NB, null, null);
                     mv.visitCode();
                     mv.visitVarInsn(ALOAD, 1);
                     mv.visitTypeInsn(CHECKCAST, typePath);
@@ -157,16 +164,22 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                         }
                         mv.visitInsn(AALOAD);
                     }
+                    if(block) {
+                        mv.visitVarInsn(ALOAD, 3);
+                    }
                     mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, "(" + sbe + ")" + ret);
                     mv.visitInsn(ARETURN);
                 } else {
-                    String ret = getReturnName(type, method, new Class[]{IRubyObject[].class});
-                    mv = cw.visitMethod(ACC_PUBLIC, "call", CALL_SIG, null, null);
+                    String ret = getReturnName(type, method, block ? new Class[]{IRubyObject[].class, Block.class} : new Class[]{IRubyObject[].class});
+                    mv = cw.visitMethod(ACC_PUBLIC, "call", block ? CALL_SIG : CALL_SIG_NB, null, null);
                     mv.visitCode();
                     mv.visitVarInsn(ALOAD, 1);
                     mv.visitTypeInsn(CHECKCAST, typePath);
                     mv.visitVarInsn(ALOAD, 2);
-                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, "([" + IRUB_ID + ")" + ret);
+                    if(block) {
+                        mv.visitVarInsn(ALOAD, 3);
+                    }
+                    mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, "([" + IRUB_ID + (block ? BLOCK_ID : "") + ")" + ret);
                     mv.visitInsn(ARETURN);
                 }
                 c = endCall(implementationClass.getRuntime(), cw,mv,mname);
@@ -174,6 +187,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             
             return (DynamicMethod)c.getConstructor(new Class[]{RubyModule.class, Arity.class, Visibility.class}).newInstance(new Object[]{implementationClass,arity,visibility});
         } catch(Exception e) {
+            e.printStackTrace();
             throw implementationClass.getRuntime().newLoadError(e.getMessage());
         }
     }
@@ -211,11 +225,11 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     }
 
     public DynamicMethod getFullMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility) {
-        return getMethod(implementationClass,type,method,arity,visibility,FULL_SUPER_CLASS);
+        return getMethod(implementationClass,type,method,arity,visibility,FULL_SUPER_CLASS, true);
     }
 
     public DynamicMethod getSimpleMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility) {
-        return getMethod(implementationClass,type,method,arity,visibility,SIMPLE_SUPER_CLASS);
+        return getMethod(implementationClass,type,method,arity,visibility,SIMPLE_SUPER_CLASS, false);
     }
 
     public DynamicMethod getCompiledMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility, SinglyLinkedList cref) {

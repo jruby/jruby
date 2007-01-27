@@ -34,6 +34,7 @@ import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -57,21 +58,21 @@ public class Digest extends RubyObject {
         CallbackFactory digestcb = runtime.callbackFactory(Digest.class);
 
         cDigest.defineSingletonMethod("new",digestcb.getOptSingletonMethod("newInstance"));
-        cDigest.defineSingletonMethod("digest",digestcb.getSingletonMethod("s_digest",IRubyObject.class,IRubyObject.class));
-        cDigest.defineSingletonMethod("hexdigest",digestcb.getSingletonMethod("s_hexdigest",IRubyObject.class,IRubyObject.class));
+        cDigest.defineFastSingletonMethod("digest",digestcb.getFastSingletonMethod("s_digest",IRubyObject.class,IRubyObject.class));
+        cDigest.defineFastSingletonMethod("hexdigest",digestcb.getFastSingletonMethod("s_hexdigest",IRubyObject.class,IRubyObject.class));
         cDigest.defineMethod("initialize",digestcb.getOptMethod("initialize"));
-        cDigest.defineMethod("initialize_copy",digestcb.getMethod("initialize_copy",IRubyObject.class));
-        cDigest.defineMethod("clone",digestcb.getMethod("rbClone"));
-        cDigest.defineMethod("update",digestcb.getMethod("update",IRubyObject.class));
-        cDigest.defineMethod("<<",digestcb.getMethod("update",IRubyObject.class));
-        cDigest.defineMethod("digest",digestcb.getMethod("digest"));
-        cDigest.defineMethod("hexdigest",digestcb.getMethod("hexdigest"));
-        cDigest.defineMethod("inspect",digestcb.getMethod("hexdigest"));
-        cDigest.defineMethod("to_s",digestcb.getMethod("hexdigest"));
-        cDigest.defineMethod("==",digestcb.getMethod("eq",IRubyObject.class));
-        cDigest.defineMethod("reset",digestcb.getMethod("reset"));
-        cDigest.defineMethod("name",digestcb.getMethod("name"));
-        cDigest.defineMethod("size",digestcb.getMethod("size"));
+        cDigest.defineFastMethod("initialize_copy",digestcb.getFastMethod("initialize_copy",IRubyObject.class));
+        cDigest.defineFastMethod("clone",digestcb.getFastMethod("rbClone"));
+        cDigest.defineFastMethod("update",digestcb.getFastMethod("update",IRubyObject.class));
+        cDigest.defineFastMethod("<<",digestcb.getFastMethod("update",IRubyObject.class));
+        cDigest.defineFastMethod("digest",digestcb.getFastMethod("digest"));
+        cDigest.defineFastMethod("hexdigest",digestcb.getFastMethod("hexdigest"));
+        cDigest.defineFastMethod("inspect",digestcb.getFastMethod("hexdigest"));
+        cDigest.defineFastMethod("to_s",digestcb.getFastMethod("hexdigest"));
+        cDigest.defineFastMethod("==",digestcb.getFastMethod("eq",IRubyObject.class));
+        cDigest.defineFastMethod("reset",digestcb.getFastMethod("reset"));
+        cDigest.defineFastMethod("name",digestcb.getFastMethod("name"));
+        cDigest.defineFastMethod("size",digestcb.getFastMethod("size"));
     }
 
     private static String transformDigest(String inp) {
@@ -88,8 +89,8 @@ public class Digest extends RubyObject {
         return inp;
     }
 
-    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-        Digest result = (Digest)((RubyClass)recv).allocate();
+    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
+        Digest result = (Digest) ((RubyClass) recv).allocate();
         if(!(recv.toString().equals("OpenSSL::Digest::Digest"))) {
             try {
                 result.name = recv.toString();
@@ -98,7 +99,7 @@ public class Digest extends RubyObject {
                 throw recv.getRuntime().newNotImplementedError("Unsupported digest algorithm (" + recv.toString() + ")");
             }
         }
-        result.callInit(args);
+        result.callInit(args, block);
         return result;
     }
 

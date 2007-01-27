@@ -442,8 +442,8 @@ public class StandardASMCompiler implements Compiler {
     public void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs) {
         MethodVisitor mv = getMethodVisitor();
         String callType = null;
-        String callSig = sig(IRubyObject.class, params(ThreadContext.class, String.class, IRubyObject[].class, CallType.class));
-        String callSigIndexed = sig(IRubyObject.class, params(ThreadContext.class, Byte.TYPE, String.class, IRubyObject[].class, CallType.class));
+        String callSig = sig(IRubyObject.class, params(ThreadContext.class, String.class, IRubyObject[].class, CallType.class, Block.class));
+        String callSigIndexed = sig(IRubyObject.class, params(ThreadContext.class, Byte.TYPE, String.class, IRubyObject[].class, CallType.class, Block.class));
         
         byte index = MethodIndex.getIndex(name);
         
@@ -512,6 +512,7 @@ public class StandardASMCompiler implements Compiler {
         }
 
         mv.visitFieldInsn(Opcodes.GETSTATIC, p(CallType.class), callType, ci(CallType.class));
+        mv.visitInsn(Opcodes.ACONST_NULL);
 
         if (index != 0) {
             invokeIRubyObject("callMethod", callSigIndexed);

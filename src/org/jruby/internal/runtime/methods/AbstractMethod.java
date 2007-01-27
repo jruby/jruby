@@ -31,6 +31,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
@@ -56,11 +57,11 @@ public abstract class AbstractMethod implements DynamicMethod {
         }
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject recv, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
-        preMethod(context, lastClass, recv, name, args, noSuper);
+    public IRubyObject call(ThreadContext context, IRubyObject recv, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
+        preMethod(context, lastClass, recv, name, args, noSuper, block);
 
         try {
-            return internalCall(context, recv, lastClass, name, args, noSuper);
+            return internalCall(context, recv, lastClass, name, args, noSuper, block);
         } finally {
             postMethod(context);
         }

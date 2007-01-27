@@ -45,16 +45,16 @@ public class RubyMath {
         result.defineConstant("E", RubyFloat.newFloat(runtime, Math.E));
         result.defineConstant("PI", RubyFloat.newFloat(runtime, Math.PI));
 
-        result.defineFastModuleFunction("atan2", callbackFactory.getSingletonMethod("atan2", RubyNumeric.class, RubyNumeric.class));
-        result.defineFastModuleFunction("cos", callbackFactory.getSingletonMethod("cos", RubyNumeric.class));
-        result.defineFastModuleFunction("exp", callbackFactory.getSingletonMethod("exp", RubyNumeric.class));
-        result.defineFastModuleFunction("frexp", callbackFactory.getSingletonMethod("frexp", RubyNumeric.class));
-        result.defineFastModuleFunction("ldexp", callbackFactory.getSingletonMethod("ldexp", RubyNumeric.class, RubyNumeric.class));
-        result.defineFastModuleFunction("log", callbackFactory.getSingletonMethod("log", RubyNumeric.class));
-        result.defineFastModuleFunction("log10", callbackFactory.getSingletonMethod("log10", RubyNumeric.class));
-        result.defineFastModuleFunction("sin", callbackFactory.getSingletonMethod("sin", RubyNumeric.class));
-        result.defineFastModuleFunction("sqrt", callbackFactory.getSingletonMethod("sqrt", RubyNumeric.class));
-        result.defineFastModuleFunction("tan", callbackFactory.getSingletonMethod("tan", RubyNumeric.class));
+        result.defineFastModuleFunction("atan2", callbackFactory.getFastSingletonMethod("atan2", RubyNumeric.class, RubyNumeric.class));
+        result.defineFastModuleFunction("cos", callbackFactory.getFastSingletonMethod("cos", RubyNumeric.class));
+        result.defineFastModuleFunction("exp", callbackFactory.getFastSingletonMethod("exp", RubyNumeric.class));
+        result.defineFastModuleFunction("frexp", callbackFactory.getFastSingletonMethod("frexp", RubyNumeric.class));
+        result.defineFastModuleFunction("ldexp", callbackFactory.getFastSingletonMethod("ldexp", RubyNumeric.class, RubyNumeric.class));
+        result.defineFastModuleFunction("log", callbackFactory.getFastSingletonMethod("log", RubyNumeric.class));
+        result.defineFastModuleFunction("log10", callbackFactory.getFastSingletonMethod("log10", RubyNumeric.class));
+        result.defineFastModuleFunction("sin", callbackFactory.getFastSingletonMethod("sin", RubyNumeric.class));
+        result.defineFastModuleFunction("sqrt", callbackFactory.getFastSingletonMethod("sqrt", RubyNumeric.class));
+        result.defineFastModuleFunction("tan", callbackFactory.getFastSingletonMethod("tan", RubyNumeric.class));
         
         return result;
     }

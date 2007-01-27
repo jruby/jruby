@@ -38,6 +38,7 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -62,11 +63,13 @@ public class FullFunctionReflectedMethod extends AbstractMethod {
 
         Class[] parameterTypes;
         if (arity.isFixed()) {
-            parameterTypes = new Class[arity.getValue()];
+            parameterTypes = new Class[arity.getValue()+1];
             Arrays.fill(parameterTypes, IRubyObject.class);
+            parameterTypes[arity.getValue()] = Block.class;
         } else {
-            parameterTypes = new Class[1];
+            parameterTypes = new Class[2];
             parameterTypes[0] = IRubyObject[].class;
+            parameterTypes[1] = Block.class;
         }
         try {
             method = type.getMethod(methodName, parameterTypes);
@@ -79,15 +82,15 @@ public class FullFunctionReflectedMethod extends AbstractMethod {
         assert method != null;
     }
 
-    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
-        context.preReflectedMethodInternalCall(implementationClass, lastClass, recv, name, args, noSuper);
+    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper, Block block) {
+        context.preReflectedMethodInternalCall(implementationClass, lastClass, recv, name, args, noSuper, block);
     }
     
     public void postMethod(ThreadContext context) {
         context.postReflectedMethodInternalCall();
     }
     
-	public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+	public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
         IRuby runtime = context.getRuntime();
         arity.checkArity(runtime, args);
         
@@ -95,7 +98,14 @@ public class FullFunctionReflectedMethod extends AbstractMethod {
         assert args != null;
         assert method != null;
         
-        Object[] methodArgs = !arity.isFixed() ? new Object[]{args} : args; 
+        Object[] methodArgs;
+        if (!arity.isFixed()) {
+            methodArgs = new Object[]{args, block};
+        } else {
+            methodArgs = new Object[args.length + 1];
+            System.arraycopy(args, 0, methodArgs, 0, args.length);
+            methodArgs[args.length] = block;
+        }
 
         try {
             return (IRubyObject) method.invoke(receiver, methodArgs);

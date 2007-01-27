@@ -46,8 +46,8 @@ public class RubyGC {
         RubyModule result = runtime.defineModule("GC");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyGC.class);
         
-        result.defineFastSingletonMethod("start", callbackFactory.getSingletonMethod("start"));
-        result.defineFastSingletonMethod("garbage_collect", callbackFactory.getSingletonMethod("start"));
+        result.defineFastSingletonMethod("start", callbackFactory.getFastSingletonMethod("start"));
+        result.defineFastSingletonMethod("garbage_collect", callbackFactory.getFastSingletonMethod("start"));
         
         return result;        
     }

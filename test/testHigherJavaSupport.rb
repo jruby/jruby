@@ -90,7 +90,6 @@ test_check "High-level Java Support"
     array[2] = 17.0
     test_equal(3.14, array[0])
     test_equal(17.0, array[2])
-
     # Inner classes
     test_equal("java.lang.Character$UnicodeBlock",
                Character::UnicodeBlock.java_class.name)

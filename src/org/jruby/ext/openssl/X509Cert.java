@@ -56,6 +56,7 @@ import org.jruby.RubyTime;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.openssl.x509store.PEM;
 import org.jruby.ext.openssl.x509store.X509AuxCertificate;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -78,34 +79,34 @@ public class X509Cert extends RubyObject {
 
         CallbackFactory certcb = runtime.callbackFactory(X509Cert.class);
         cX509Cert.defineMethod("initialize",certcb.getOptMethod("_initialize"));
-        cX509Cert.defineMethod("initialize_copy",certcb.getMethod("initialize_copy",IRubyObject.class));
-        cX509Cert.defineMethod("clone",certcb.getMethod("rbClone"));
-        cX509Cert.defineMethod("to_der",certcb.getMethod("to_der"));
-        cX509Cert.defineMethod("to_pem",certcb.getMethod("to_pem"));
-        cX509Cert.defineMethod("to_s",certcb.getMethod("to_pem"));
-        cX509Cert.defineMethod("to_text",certcb.getMethod("to_text"));
-        cX509Cert.defineMethod("version",certcb.getMethod("version"));
-        cX509Cert.defineMethod("version=",certcb.getMethod("set_version",IRubyObject.class));
-        cX509Cert.defineMethod("signature_algorithm",certcb.getMethod("signature_algorithm"));
-        cX509Cert.defineMethod("serial",certcb.getMethod("serial"));
-        cX509Cert.defineMethod("serial=",certcb.getMethod("set_serial",IRubyObject.class));
-        cX509Cert.defineMethod("subject",certcb.getMethod("subject"));
-        cX509Cert.defineMethod("subject=",certcb.getMethod("set_subject",IRubyObject.class));
-        cX509Cert.defineMethod("issuer",certcb.getMethod("issuer"));
-        cX509Cert.defineMethod("issuer=",certcb.getMethod("set_issuer",IRubyObject.class));
-        cX509Cert.defineMethod("not_before",certcb.getMethod("not_before"));
-        cX509Cert.defineMethod("not_before=",certcb.getMethod("set_not_before",IRubyObject.class));
-        cX509Cert.defineMethod("not_after",certcb.getMethod("not_after"));
-        cX509Cert.defineMethod("not_after=",certcb.getMethod("set_not_after",IRubyObject.class));
-        cX509Cert.defineMethod("public_key",certcb.getMethod("public_key"));
-        cX509Cert.defineMethod("public_key=",certcb.getMethod("set_public_key",IRubyObject.class));
-        cX509Cert.defineMethod("sign",certcb.getMethod("sign",IRubyObject.class,IRubyObject.class));
-        cX509Cert.defineMethod("verify",certcb.getMethod("verify",IRubyObject.class));
-        cX509Cert.defineMethod("check_private_key",certcb.getMethod("check_private_key",IRubyObject.class));
-        cX509Cert.defineMethod("extensions",certcb.getMethod("extensions"));
-        cX509Cert.defineMethod("extensions=",certcb.getMethod("set_extensions",IRubyObject.class));
-        cX509Cert.defineMethod("add_extension",certcb.getMethod("add_extension",IRubyObject.class));
-        cX509Cert.defineMethod("inspect",certcb.getMethod("inspect"));
+        cX509Cert.defineFastMethod("initialize_copy",certcb.getFastMethod("initialize_copy",IRubyObject.class));
+        cX509Cert.defineFastMethod("clone",certcb.getFastMethod("rbClone"));
+        cX509Cert.defineFastMethod("to_der",certcb.getFastMethod("to_der"));
+        cX509Cert.defineFastMethod("to_pem",certcb.getFastMethod("to_pem"));
+        cX509Cert.defineFastMethod("to_s",certcb.getFastMethod("to_pem"));
+        cX509Cert.defineFastMethod("to_text",certcb.getFastMethod("to_text"));
+        cX509Cert.defineFastMethod("version",certcb.getFastMethod("version"));
+        cX509Cert.defineFastMethod("version=",certcb.getFastMethod("set_version",IRubyObject.class));
+        cX509Cert.defineFastMethod("signature_algorithm",certcb.getFastMethod("signature_algorithm"));
+        cX509Cert.defineFastMethod("serial",certcb.getFastMethod("serial"));
+        cX509Cert.defineFastMethod("serial=",certcb.getFastMethod("set_serial",IRubyObject.class));
+        cX509Cert.defineFastMethod("subject",certcb.getFastMethod("subject"));
+        cX509Cert.defineFastMethod("subject=",certcb.getFastMethod("set_subject",IRubyObject.class));
+        cX509Cert.defineFastMethod("issuer",certcb.getFastMethod("issuer"));
+        cX509Cert.defineFastMethod("issuer=",certcb.getFastMethod("set_issuer",IRubyObject.class));
+        cX509Cert.defineFastMethod("not_before",certcb.getFastMethod("not_before"));
+        cX509Cert.defineFastMethod("not_before=",certcb.getFastMethod("set_not_before",IRubyObject.class));
+        cX509Cert.defineFastMethod("not_after",certcb.getFastMethod("not_after"));
+        cX509Cert.defineFastMethod("not_after=",certcb.getFastMethod("set_not_after",IRubyObject.class));
+        cX509Cert.defineFastMethod("public_key",certcb.getFastMethod("public_key"));
+        cX509Cert.defineFastMethod("public_key=",certcb.getFastMethod("set_public_key",IRubyObject.class));
+        cX509Cert.defineFastMethod("sign",certcb.getFastMethod("sign",IRubyObject.class,IRubyObject.class));
+        cX509Cert.defineFastMethod("verify",certcb.getFastMethod("verify",IRubyObject.class));
+        cX509Cert.defineFastMethod("check_private_key",certcb.getFastMethod("check_private_key",IRubyObject.class));
+        cX509Cert.defineFastMethod("extensions",certcb.getFastMethod("extensions"));
+        cX509Cert.defineFastMethod("extensions=",certcb.getFastMethod("set_extensions",IRubyObject.class));
+        cX509Cert.defineFastMethod("add_extension",certcb.getFastMethod("add_extension",IRubyObject.class));
+        cX509Cert.defineFastMethod("inspect",certcb.getFastMethod("inspect"));
     }
 
     public X509Cert(IRuby runtime, RubyClass type) {
@@ -144,7 +145,7 @@ public class X509Cert extends RubyObject {
         return cr.callMethod(runtime.getCurrentContext(),"new",runtime.newString(new String(c.getEncoded(),"ISO8859_1")));
     }
 
-    public IRubyObject _initialize(IRubyObject[] args) throws Exception {
+    public IRubyObject _initialize(IRubyObject[] args, Block unusedBlock) throws Exception {
         extensions = new ArrayList();
         if(checkArgumentCount(args,0,1) == 0) {
             return this;

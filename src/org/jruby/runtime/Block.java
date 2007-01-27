@@ -57,7 +57,6 @@ public class Block implements StackElement {
     private SinglyLinkedList cref;
     private Scope scope;
     private RubyModule klass;
-    private Iter iter;
     // Fixme: null dynamic scope screams for subclass (after rest of block clean up do this)
     
     // For loops are done via blocks and they have no dynamic scope of their own so we use
@@ -67,9 +66,10 @@ public class Block implements StackElement {
     public boolean isLambda = false;
 
     private Block next;
+    private Block blockAtCreation;
 
     public static Block createBlock(ThreadContext context, Node varNode, DynamicScope dynamicScope, ICallable method, 
-            IRubyObject self) {
+            IRubyObject self, Block blockAtCreation) {
         return new Block(varNode,
                          method,
                          self,
@@ -77,8 +77,8 @@ public class Block implements StackElement {
                          context.peekCRef(),
                          context.getFrameScope(),
                          context.getRubyClass(),
-                         context.getCurrentIter(),
-                         dynamicScope);
+                         dynamicScope,
+                         blockAtCreation);
     }
 
     public Block(
@@ -89,8 +89,8 @@ public class Block implements StackElement {
         SinglyLinkedList cref,
         Scope scope,
         RubyModule klass,
-        Iter iter,
-        DynamicScope dynamicScope) {
+        DynamicScope dynamicScope,
+        Block blockAtCreation) {
     	
         //assert method != null;
 
@@ -100,12 +100,12 @@ public class Block implements StackElement {
         this.frame = frame;
         this.scope = scope;
         this.klass = klass;
-        this.iter = iter;
         this.cref = cref;
         this.dynamicScope = dynamicScope;
+        this.blockAtCreation = blockAtCreation;
     }
     
-    public static Block createBinding(RubyModule wrapper, Iter iter, Frame frame, DynamicScope dynamicScope) {
+    public static Block createBinding(RubyModule wrapper, Frame frame, DynamicScope dynamicScope) {
         ThreadContext context = frame.getSelf().getRuntime().getCurrentContext();
         
         // We create one extra dynamicScope on a binding so that when we 'eval "b=1", binding' the
@@ -136,9 +136,10 @@ public class Block implements StackElement {
                 dynamicScope.setBindingScope(extraScope);
             }
         } 
+        
         // FIXME: Ruby also saves wrapper, which we do not
         return new Block(null, null, frame.getSelf(), frame, context.peekCRef(), frame.getScope(), 
-                context.getBindingRubyClass(), iter, extraScope);
+                context.getRubyClass(), extraScope, null);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf) {
@@ -157,12 +158,7 @@ public class Block implements StackElement {
             }
         }
 
-        context.preProcBlockCall();
-        try {
-            return newBlock.yield(context, runtime.newArray(args), null, null, true);
-        } finally {
-            context.postProcBlockCall();
-        }
+        return newBlock.yield(context, runtime.newArray(args), null, null, true);
     }
 
     /**
@@ -193,7 +189,7 @@ public class Block implements StackElement {
             // This while loop is for restarting the block call in case a 'redo' fires.
             while (true) {
                 try {
-                    IRubyObject result = method.call(context, self, args);
+                    IRubyObject result = method.call(context, self, args, blockAtCreation);
 
                     return result;
                 } catch (JumpException je) {
@@ -262,7 +258,7 @@ public class Block implements StackElement {
                     runtime.getWarnings().warn("multiple values for a block parameter (0 for 1)");
                 }
 
-                AssignmentVisitor.assign(context, self, varNode, value, callAsProc);
+                AssignmentVisitor.assign(context, self, varNode, value, null, callAsProc);
         }
         return ArgsUtil.convertToJavaArray(value);
     }
@@ -275,7 +271,7 @@ public class Block implements StackElement {
         // We clone dynamic scope because this will be a new instance of a block.  Any previously
         // captured instances of this block may still be around and we do not want to start
         // overwriting those values when we create a new one.
-        Block newBlock = new Block(varNode, method, self, frame, cref, scope, klass, iter, ((dynamicScope == null)?null:dynamicScope.cloneScope()));
+        Block newBlock = new Block(varNode, method, self, frame, cref, scope, klass, ((dynamicScope == null)?null:dynamicScope.cloneScope()), blockAtCreation);
         
         newBlock.isLambda = isLambda;
 
@@ -339,22 +335,6 @@ public class Block implements StackElement {
      */
     public Frame getFrame() {
         return frame;
-    }
-
-    /**
-     * Gets the iter.
-     * @return Returns a int
-     */
-    public Iter getIter() {
-        return iter;
-    }
-
-    /**
-     * Sets the iter.
-     * @param iter The iter to set
-     */
-    public void setIter(Iter iter) {
-        this.iter = iter;
     }
 
     /**

@@ -9,8 +9,6 @@
 
 package org.jruby.compiler;
 
-import org.jruby.ast.BlockAcceptingNode;
-import org.jruby.ast.IterNode;
 import org.jruby.ast.Node;
 
 /**
@@ -24,16 +22,8 @@ public class IterNodeCompiler implements NodeCompiler{
     }
     
     public void compile(Node node, Compiler context) {
-        context.lineNumber(node.getPosition());
-        
-        final IterNode iterNode = (IterNode)node;
-        
-        if (iterNode.getIterNode() instanceof BlockAcceptingNode) {
-            ((BlockAcceptingNode)iterNode.getIterNode()).setIterNode(iterNode);
-            
-            NodeCompilerFactory.getCompiler(iterNode.getIterNode()).compile(iterNode.getIterNode(), context);
-        }
-        
+        // FIXME: This should get caller from different location than iter since we revered 
+        // relationship
         // FIXME: handle other iternode cases
     }
     

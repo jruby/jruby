@@ -41,6 +41,7 @@ import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.nio.channels.Channel;
 
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOHandler;
@@ -432,7 +433,7 @@ public class RubyIO extends RubyObject {
 
     // IO class methods.
 
-    public IRubyObject initialize(IRubyObject[] args) {
+    public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
         int count = checkArgumentCount(args, 1, 2);
         int newFileno = RubyNumeric.fix2int(args[0]);
         String mode = null;
@@ -1039,12 +1040,12 @@ public class RubyIO extends RubyObject {
     /** 
      * <p>Invoke a block for each byte.</p>
      */
-    public IRubyObject each_byte() {
+    public IRubyObject each_byte(Block block) {
     	try {
             ThreadContext context = getRuntime().getCurrentContext();
             for (int c = handler.getc(); c != -1; c = handler.getc()) {
                 assert c < 256;
-                context.yield(getRuntime().newFixnum(c));
+                context.yield(getRuntime().newFixnum(c), block);
             }
 
             return getRuntime().getNil();
@@ -1060,11 +1061,11 @@ public class RubyIO extends RubyObject {
     /** 
      * <p>Invoke a block for each line.</p>
      */
-    public RubyIO each_line(IRubyObject[] args) {
+    public RubyIO each_line(IRubyObject[] args, Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
         for (IRubyObject line = internalGets(args); !line.isNil(); 
         	line = internalGets(args)) {
-            context.yield(line);
+            context.yield(line, block);
         }
         
         return this;

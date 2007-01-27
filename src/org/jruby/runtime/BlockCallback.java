@@ -33,5 +33,5 @@ import org.jruby.runtime.builtin.IRubyObject;
  * A simple interface for creating a callback using JRuby's block logic.
  */
 public interface BlockCallback {
-    IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf);
+    IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf, Block block);
  }

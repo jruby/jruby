@@ -51,6 +51,7 @@ public abstract class CallbackFactory {
      * @return a CallBack object corresponding to the appropriate method
      **/
     public abstract Callback getMethod(String method);
+    public abstract Callback getFastMethod(String method);
 
     /**
      * gets an instance method with 1 argument.
@@ -59,6 +60,7 @@ public abstract class CallbackFactory {
      * @return a CallBack object corresponding to the appropriate method
      **/
     public abstract Callback getMethod(String method, Class arg1);
+    public abstract Callback getFastMethod(String method, Class arg1);
 
     /**
      * gets an instance method with two arguments.
@@ -68,6 +70,7 @@ public abstract class CallbackFactory {
      * @return a CallBack object corresponding to the appropriate method
      **/
     public abstract Callback getMethod(String method, Class arg1, Class arg2);
+    public abstract Callback getFastMethod(String method, Class arg1, Class arg2);
     
     /**
      * gets an instance method with two arguments.
@@ -78,6 +81,7 @@ public abstract class CallbackFactory {
      * @return a CallBack object corresponding to the appropriate method
      **/
     public abstract Callback getMethod(String method, Class arg1, Class arg2, Class arg3);
+    public abstract Callback getFastMethod(String method, Class arg1, Class arg2, Class arg3);
 
     /**
      * gets a singleton (class) method without arguments.
@@ -85,6 +89,7 @@ public abstract class CallbackFactory {
      * @return a CallBack object corresponding to the appropriate method
      **/
     public abstract Callback getSingletonMethod(String method);
+    public abstract Callback getFastSingletonMethod(String method);
 
     /**
      * gets a singleton (class) method with 1 argument.
@@ -93,6 +98,7 @@ public abstract class CallbackFactory {
      * @return a CallBack object corresponding to the appropriate method
      **/
     public abstract Callback getSingletonMethod(String method, Class arg1);
+    public abstract Callback getFastSingletonMethod(String method, Class arg1);
 
     /**
      * gets a singleton (class) method with 2 arguments.
@@ -100,6 +106,7 @@ public abstract class CallbackFactory {
      * @return a CallBack object corresponding to the appropriate method
      **/
     public abstract Callback getSingletonMethod(String method, Class arg1, Class arg2);
+    public abstract Callback getFastSingletonMethod(String method, Class arg1, Class arg2);
 
     /**
      * gets a singleton (class) method with 3 arguments.
@@ -107,6 +114,7 @@ public abstract class CallbackFactory {
      * @return a CallBack object corresponding to the appropriate method
      **/
     public abstract Callback getSingletonMethod(String method, Class arg1, Class arg2, Class arg3);
+    public abstract Callback getFastSingletonMethod(String method, Class arg1, Class arg2, Class arg3);
 
     public abstract Callback getBlockMethod(String method);
 
@@ -116,6 +124,7 @@ public abstract class CallbackFactory {
     * @return a CallBack object corresponding to the appropriate method
     **/
     public abstract Callback getOptSingletonMethod(String method);
+    public abstract Callback getFastOptSingletonMethod(String method);
 
     /**
     * gets an instance method with no mandatory argument and some optional arguments.
@@ -123,6 +132,7 @@ public abstract class CallbackFactory {
     * @return a CallBack object corresponding to the appropriate method
     **/
     public abstract Callback getOptMethod(String method);
+    public abstract Callback getFastOptMethod(String method);
 
     private static boolean reflection = false;
 

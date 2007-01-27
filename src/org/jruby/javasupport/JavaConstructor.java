@@ -56,14 +56,10 @@ public class JavaConstructor extends JavaCallable {
         CallbackFactory callbackFactory = runtime.callbackFactory(JavaConstructor.class);
 
         JavaCallable.registerRubyMethods(runtime, result, JavaConstructor.class);
-        result.defineMethod("arity", 
-                callbackFactory.getMethod("arity"));
-        result.defineMethod("inspect", 
-                callbackFactory.getMethod("inspect"));
-        result.defineMethod("argument_types", 
-                callbackFactory.getMethod("argument_types"));
-        result.defineMethod("new_instance", 
-                callbackFactory.getOptMethod("new_instance"));
+        result.defineFastMethod("arity", callbackFactory.getFastMethod("arity"));
+        result.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
+        result.defineFastMethod("argument_types", callbackFactory.getFastMethod("argument_types"));
+        result.defineFastMethod("new_instance", callbackFactory.getFastOptMethod("new_instance"));
         
         return result;
     }

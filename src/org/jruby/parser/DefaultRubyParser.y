@@ -44,6 +44,7 @@ import org.jruby.ast.ArrayNode;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BeginNode;
+import org.jruby.ast.BlockAcceptingNode;
 import org.jruby.ast.BlockArgNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.BlockPassNode;
@@ -66,6 +67,7 @@ import org.jruby.ast.DotNode;
 import org.jruby.ast.EnsureNode;
 import org.jruby.ast.EvStrNode;
 import org.jruby.ast.FCallNode;
+import org.jruby.ast.FloatNode;
 import org.jruby.ast.ForNode;
 import org.jruby.ast.GlobalVarNode;
 import org.jruby.ast.HashNode;
@@ -150,8 +152,9 @@ public class DefaultRubyParser {
   kRESCUE_MOD kALIAS kDEFINED klBEGIN klEND k__LINE__ k__FILE__
 
 %token <Token>  tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR 
-%token <Node> tNTH_REF tBACK_REF tSTRING_CONTENT tINTEGER tFLOAT
-%token <RegexpNode>    tREGEXP_END
+%token <Node> tNTH_REF tBACK_REF tSTRING_CONTENT tINTEGER 
+%token <FloatNode> tFLOAT
+%token <RegexpNode> tREGEXP_END
 
 %type <Node>  singleton strings string string1 xstring regexp
 %type <Node>  string_contents xstring_contents string_content method_call
@@ -454,10 +457,10 @@ command_call  : command
 
 block_command : block_call
               | block_call tDOT operation2 command_args {
-                  $$ = support.new_call($1, $3, $4);
+                  $$ = support.new_call($1, $3, $4, null);
               }
               | block_call tCOLON2 operation2 command_args {
-                  $$ = support.new_call($1, $3, $4);
+                  $$ = support.new_call($1, $3, $4, null);
               }
 
 cmd_brace_block	: tLBRACE_ARG {
@@ -468,43 +471,22 @@ cmd_brace_block	: tLBRACE_ARG {
 		}
 
 command       : operation command_args  %prec tLOWEST {
-                  $$ = support.new_fcall($1, $2);
+                  $$ = support.new_fcall($1, $2, null);
               }
  	      | operation command_args cmd_brace_block {
-                  $$ = support.new_fcall($1, $2); 
-	          if ($3 != null) {
-                      if ($$ instanceof BlockPassNode) {
-                          throw new SyntaxException(getPosition($1), "Both block arg and actual block given.");
-                      }
-                      $3.setIterNode($<Node>$);
-                      $$ = $2;
-		  }
+                  $$ = support.new_fcall($1, $2, $3); 
               }
 	      | primary_value tDOT operation2 command_args %prec tLOWEST {
-                  $$ = support.new_call($1, $3, $4); //.setPosFrom($1);
+                  $$ = support.new_call($1, $3, $4, null);
               }
  	      | primary_value tDOT operation2 command_args cmd_brace_block {
-                  $$ = support.new_call($1, $3, $4); 
-		  if ($5 != null) {
-		      if ($$ instanceof BlockPassNode) {
-                          throw new SyntaxException(getPosition($1), "Both block arg and actual block given.");
-                      }
-                      $5.setIterNode($<Node>$);
-		      $$ = $5;
-		  }
+                  $$ = support.new_call($1, $3, $4, $5); 
 	      }
               | primary_value tCOLON2 operation2 command_args %prec tLOWEST {
-                  $$ = support.new_call($1, $3, $4);
+                  $$ = support.new_call($1, $3, $4, null);
               }
  	      | primary_value tCOLON2 operation2 command_args cmd_brace_block {
-                  $$ = support.new_call($1, $3, $4); 
-		  if ($5 != null) {
-		      if ($$ instanceof BlockPassNode) {
-                          throw new SyntaxException(getPosition($1), "Both block arg and actual block given.");
-                      }
-                      $5.setIterNode($<Node>$);
-		      $$ = $5;
-		  }
+                  $$ = support.new_call($1, $3, $4, $5); 
 	      }
               | kSUPER command_args {
 		  $$ = support.new_super($2, $1); // .setPosFrom($2);
@@ -542,7 +524,7 @@ mlhs_basic    : mlhs_head {
                   $$ = new MultipleAsgnNode(getPosition($1), null, new StarNode(getPosition(null)));
               }
 
-mlhs_item     : mlhs_node
+mlhs_item     : mlhs_node 
               | tLPAREN mlhs_entry tRPAREN {
                   $$ = $2;
               }
@@ -1011,7 +993,7 @@ primary       : literal
 	      | var_ref
 	      | backref
 	      | tFID {
-                  $$ = new VCallNode($1.getPosition(), (String) $1.getValue());
+                  $$ = new FCallNode($1.getPosition(), (String) $1.getValue(), null);
 	      }
               | kBEGIN bodystmt kEND {
                   $$ = new BeginNode(support.union($1, $3), $2);
@@ -1032,7 +1014,11 @@ primary       : literal
                   $$ = new Colon3Node(support.union($1, $2), (String) $2.getValue());
               }
               | primary_value '[' aref_args tRBRACK {
-                  $$ = new CallNode(getPosition($1), $1, "[]", $3);
+                  if ($1 instanceof SelfNode) {
+                      $$ = new FCallNode(getPosition($1), "[]", $3);
+                  } else {
+                      $$ = new CallNode(getPosition($1), $1, "[]", $3);
+                  }
               }
               | tLBRACK aref_args tRBRACK {
                   ISourcePosition position = support.union($1, $3);
@@ -1062,18 +1048,15 @@ primary       : literal
                   $$ = new DefinedNode(getPosition($1), $4);
               }
               | operation brace_block {
-                  $2.setIterNode(new FCallNode(support.union($1, $2), (String) $1.getValue(), null));
-                  $$ = $2;
+                  $$ = new FCallNode(support.union($1, $2), (String) $1.getValue(), null, $2);
               }
               | method_call
               | method_call brace_block {
-		  if ($1 != null && $1 instanceof BlockPassNode) {
+	          if ($1 != null && 
+                      $<BlockAcceptingNode>1.getIterNode() instanceof BlockPassNode) {
                       throw new SyntaxException(getPosition($1), "Both block arg and actual block given.");
 		  }
-                  $2.setIterNode($1);
-                  $$ = $2;
-		  // XXXEnebo: Having iter around a call seems backwards
-                  $1.setPosition(support.union($1, $2));
+		  $<BlockAcceptingNode>1.setIterNode($2);
               }
               | kIF expr_value then compstmt if_tail kEND {
                   $$ = new IfNode(support.union($1, $6), support.getConditionNode($2), $4, $5);
@@ -1226,30 +1209,30 @@ do_block      : kDO_BLOCK {
               }
 
 block_call    : command do_block {
-                  if ($1 instanceof BlockPassNode) {
+	          if ($1 != null && 
+                      $<BlockAcceptingNode>1.getIterNode() instanceof BlockPassNode) {
                       throw new SyntaxException(getPosition($1), "Both block arg and actual block given.");
                   }
-                  $2.setIterNode($1);
-                  $$ = $2;
+		  $<BlockAcceptingNode>1.setIterNode($2);
               }
               | block_call tDOT operation2 opt_paren_args {
-                  $$ = support.new_call($1, $3, $4);
+                  $$ = support.new_call($1, $3, $4, null);
               }
               | block_call tCOLON2 operation2 opt_paren_args {
-                  $$ = support.new_call($1, $3, $4);
+                  $$ = support.new_call($1, $3, $4, null);
               }
 
 method_call   : operation paren_args {
-                  $$ = support.new_fcall($1, $2);
+                  $$ = support.new_fcall($1, $2, null);
               }
               | primary_value tDOT operation2 opt_paren_args {
-                  $$ = support.new_call($1, $3, $4);
+                  $$ = support.new_call($1, $3, $4, null);
               }
               | primary_value tCOLON2 operation2 paren_args {
-                  $$ = support.new_call($1, $3, $4);
+                  $$ = support.new_call($1, $3, $4, null);
               }
               | primary_value tCOLON2 operation3 {
-                  $$ = support.new_call($1, $3, null);
+                  $$ = support.new_call($1, $3, null, null);
               }
               | kSUPER paren_args {
                   $$ = support.new_super($2, $1);
@@ -1506,12 +1489,14 @@ dsym	       : tSYMBEG xstring_contents tSTRING_END {
 	       }
 
 // Node:numeric - numeric value [!null]
-numeric        : tINTEGER | tFLOAT
+numeric        : tINTEGER | tFLOAT {
+                   $$ = $1;
+               }
 	       | tUMINUS_NUM tINTEGER	       %prec tLOWEST {
-                   $$ = support.getOperatorCallNode($2, "-@");
+                   $$ = support.negateInteger($2);
 	       }
 	       | tUMINUS_NUM tFLOAT	       %prec tLOWEST {
-                   $$ = support.getOperatorCallNode($2, "-@");
+                   $$ = support.negateFloat($2);
 	       }
 
 // Token:variable - name (special and normal onces)

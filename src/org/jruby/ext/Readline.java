@@ -68,17 +68,17 @@ public class Readline {
         
         RubyModule mReadline = runtime.defineModule("Readline");
         CallbackFactory readlinecb = runtime.callbackFactory(Readline.class);
-        mReadline.defineMethod("readline",readlinecb.getSingletonMethod("s_readline",IRubyObject.class,IRubyObject.class));
+        mReadline.defineMethod("readline",readlinecb.getFastSingletonMethod("s_readline",IRubyObject.class,IRubyObject.class));
         mReadline.module_function(new IRubyObject[]{runtime.newSymbol("readline")});
-        mReadline.defineMethod("completion_append_character=",readlinecb.getSingletonMethod("s_set_completion_append_character",IRubyObject.class));
+        mReadline.defineMethod("completion_append_character=",readlinecb.getFastSingletonMethod("s_set_completion_append_character",IRubyObject.class));
         mReadline.module_function(new IRubyObject[]{runtime.newSymbol("completion_append_character=")});
-        mReadline.defineMethod("completion_proc=",readlinecb.getSingletonMethod("s_set_completion_proc",IRubyObject.class));
+        mReadline.defineMethod("completion_proc=",readlinecb.getFastSingletonMethod("s_set_completion_proc",IRubyObject.class));
         mReadline.module_function(new IRubyObject[]{runtime.newSymbol("completion_proc=")});
         IRubyObject hist = runtime.getObject().callMethod(runtime.getCurrentContext(), "new");
         mReadline.setConstant("HISTORY",hist);
-        hist.defineSingletonMethod("push",readlinecb.getSingletonMethod("s_push",IRubyObject.class));
-        hist.defineSingletonMethod("pop",readlinecb.getSingletonMethod("s_pop"));
-        hist.defineSingletonMethod("to_a",readlinecb.getSingletonMethod("s_hist_to_a"));
+        hist.defineSingletonMethod("push",readlinecb.getFastSingletonMethod("s_push",IRubyObject.class));
+        hist.defineSingletonMethod("pop",readlinecb.getFastSingletonMethod("s_pop"));
+        hist.defineSingletonMethod("to_a",readlinecb.getFastSingletonMethod("s_hist_to_a"));
     }
     
     // We lazily initialise this in case Readline.readline has been overriden in ruby (s_readline)

@@ -37,17 +37,22 @@ import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
- *
- * @author  jpetersen
+ * A call to super(...) with arguments to a method.
  */
-public class SuperNode extends Node {
+public class SuperNode extends Node implements BlockAcceptingNode {
     static final long serialVersionUID = 5158689332796676417L;
 
     private final Node argsNode;
+    private Node iterNode;
 
     public SuperNode(ISourcePosition position, Node argsNode) {
+        this(position, argsNode, null);
+    }
+    
+    public SuperNode(ISourcePosition position, Node argsNode, Node iterNode) {
         super(position, NodeTypes.SUPERNODE);
         this.argsNode = argsNode;
+        this.iterNode = iterNode;
     }
 
     /**
@@ -68,6 +73,14 @@ public class SuperNode extends Node {
     
     public List childNodes() {
         return createList(argsNode);
+    }
+
+    public Node getIterNode() {
+        return iterNode;
+    }
+
+    public void setIterNode(Node iterNode) {
+        this.iterNode = iterNode;
     }
 
 }

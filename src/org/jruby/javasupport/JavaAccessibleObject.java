@@ -46,8 +46,8 @@ public abstract class JavaAccessibleObject extends RubyObject {
 	public static void registerRubyMethods(IRuby runtime, RubyClass result) {
         CallbackFactory callbackFactory = runtime.callbackFactory(JavaAccessibleObject.class);
 
-        result.defineMethod("accessible?", callbackFactory.getMethod("isAccessible"));
-        result.defineMethod("accessible=", callbackFactory.getMethod("setAccessible", IRubyObject.class));
+        result.defineFastMethod("accessible?", callbackFactory.getFastMethod("isAccessible"));
+        result.defineFastMethod("accessible=", callbackFactory.getFastMethod("setAccessible", IRubyObject.class));
 	}
 	protected abstract AccessibleObject accesibleObject();
 	

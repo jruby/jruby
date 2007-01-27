@@ -49,6 +49,7 @@ import java.util.Set;
 
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
@@ -64,10 +65,10 @@ public class RubyHash extends RubyObject implements Map {
     // Place we capture any explicitly set proc so we can return it for default_proc
     private IRubyObject capturedDefaultProc;
     private static final Callback NIL_DEFAULT_VALUE  = new Callback() {
-        public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
+        public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
             return recv.getRuntime().getNil();
         }
-        
+    
         public Arity getArity() {
             return Arity.optional();
         }
@@ -97,11 +98,11 @@ public class RubyHash extends RubyObject implements Map {
         setDefaultValue(defaultValue);
     }
     
-    public IRubyObject getDefaultValue(IRubyObject[] args) {
+    public IRubyObject getDefaultValue(IRubyObject[] args, Block block) {
         if(defaultValueCallback == null || (args.length == 0 && !capturedDefaultProc.isNil())) {
             return getRuntime().getNil();
         }
-        return defaultValueCallback.execute(this,args);
+        return defaultValueCallback.execute(this,args,null);
     }
 
     public IRubyObject setDefaultValue(final IRubyObject defaultValue) {
@@ -109,15 +110,15 @@ public class RubyHash extends RubyObject implements Map {
         if (defaultValue == getRuntime().getNil()) {
             defaultValueCallback = NIL_DEFAULT_VALUE;
         } else {
-            defaultValueCallback = new Callback() {
-                public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
-                    return defaultValue;
-                }
+        defaultValueCallback = new Callback() {
+            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
+                return defaultValue;
+            }
 
-                public Arity getArity() {
-                    return Arity.optional();
-                }
-            };
+            public Arity getArity() {
+                return Arity.optional();
+            }
+        };
         }
         
         return defaultValue;
@@ -127,7 +128,7 @@ public class RubyHash extends RubyObject implements Map {
         final IRubyObject self = this;
         capturedDefaultProc = newProc;
         defaultValueCallback = new Callback() {
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
+            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
                 IRubyObject[] nargs = args.length == 0 ? new IRubyObject[] { self } :
                      new IRubyObject[] { self, args[0] };
 
@@ -140,7 +141,7 @@ public class RubyHash extends RubyObject implements Map {
         };
     }
     
-    public IRubyObject default_proc() {
+    public IRubyObject default_proc(Block block) {
         return capturedDefaultProc;
     }
 
@@ -215,8 +216,10 @@ public class RubyHash extends RubyObject implements Map {
 		return new RubyHash(runtime, valueMap, defaultValue);
 	}
 
-    public IRubyObject initialize(IRubyObject[] args) {
-        if (args.length > 0) {
+    public IRubyObject initialize(IRubyObject[] args, Block block) {
+        if (block != null) {
+            setDefaultProc(getRuntime().newProc(false, block));
+        } else if (args.length > 0) {
             modify();
 
             setDefaultValue(args[0]);
@@ -287,7 +290,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
 	public IRubyObject rbClone() {
-		RubyHash result = newHash(getRuntime(), getValueMap(), getDefaultValue(NULL_ARRAY));
+		RubyHash result = newHash(getRuntime(), getValueMap(), getDefaultValue(NULL_ARRAY, null));
 		result.setTaint(isTaint());
 		result.initCopy(this);
 		result.setFrozen(isFrozen());
@@ -328,19 +331,16 @@ public class RubyHash extends RubyObject implements Map {
         return value != null ? value : callMethod(getRuntime().getCurrentContext(), "default", new IRubyObject[] {key});
     }
 
-    public IRubyObject fetch(IRubyObject[] args) {
+    public IRubyObject fetch(IRubyObject[] args, Block block) {
         if (args.length < 1) {
             throw getRuntime().newArgumentError(args.length, 1);
         }
         IRubyObject key = args[0];
         IRubyObject result = (IRubyObject) valueMap.get(key);
         if (result == null) {
-            ThreadContext tc = getRuntime().getCurrentContext();
-            if (args.length > 1) {
-                return args[1];
-            } else if (tc.isBlockGiven()) {
-                return tc.yield(key);
-            }
+            if (args.length > 1) return args[1]; 
+                
+            if (block != null) return getRuntime().getCurrentContext().yield(key, block); 
 
             throw getRuntime().newIndexError("key not found");
         }
@@ -356,20 +356,20 @@ public class RubyHash extends RubyObject implements Map {
         return getRuntime().newBoolean(valueMap.containsValue(value));
     }
 
-	public RubyHash each() {
-		return eachInternal(false);
+	public RubyHash each(Block block) {
+		return eachInternal(false, block);
 	}
 
-	public RubyHash each_pair() {
-		return eachInternal(true);
+	public RubyHash each_pair(Block block) {
+		return eachInternal(true, block);
 	}
 
-    protected RubyHash eachInternal(boolean aValue) {
+    protected RubyHash eachInternal(boolean aValue, Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
         for (Iterator iter = entryIterator(); iter.hasNext();) {
             checkRehashing();
             Map.Entry entry = (Map.Entry) iter.next();
-            context.getFrameBlockOrRaise().yield(context, getRuntime().newArray((IRubyObject)entry.getKey(), (IRubyObject)entry.getValue()), null, null, aValue);
+            block.yield(context, getRuntime().newArray((IRubyObject)entry.getKey(), (IRubyObject)entry.getValue()), null, null, aValue);
         }
         return this;
     }
@@ -382,28 +382,28 @@ public class RubyHash extends RubyObject implements Map {
         }
     }
 
-    public RubyHash each_value() {
+    public RubyHash each_value(Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
 		for (Iterator iter = valueIterator(); iter.hasNext();) {
             checkRehashing();
 			IRubyObject value = (IRubyObject) iter.next();
-			context.yield(value);
+			context.yield(value, block);
 		}
 		return this;
 	}
 
-	public RubyHash each_key() {
+	public RubyHash each_key(Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
 		for (Iterator iter = keyIterator(); iter.hasNext();) {
 			checkRehashing();
             IRubyObject key = (IRubyObject) iter.next();
-			context.yield(key);
+			context.yield(key, block);
 		}
 		return this;
 	}
 
-	public RubyArray sort() {
-		return (RubyArray) to_a().sort_bang();
+	public RubyArray sort(Block block) {
+		return (RubyArray) to_a().sort_bang(block);
 	}
 
     public IRubyObject index(IRubyObject value) {
@@ -463,38 +463,38 @@ public class RubyHash extends RubyObject implements Map {
 		return getRuntime().newArray((IRubyObject)entry.getKey(), (IRubyObject)entry.getValue());
     }
 
-	public IRubyObject delete(IRubyObject key) {
+	public IRubyObject delete(IRubyObject key, Block block) {
 		modify();
 		IRubyObject result = (IRubyObject) valueMap.remove(key);
         ThreadContext tc = getRuntime().getCurrentContext();
 		if (result != null) {
 			return result;
-		} else if (tc.isBlockGiven()) {
-			return tc.yield(key);
+		} else if (block != null) {
+			return tc.yield(key, block);
 		} 
 
-		return getDefaultValue(new IRubyObject[] {key});
+		return getDefaultValue(new IRubyObject[] {key}, null);
 	}
 
-	public RubyHash delete_if() {
-		reject_bang();
+	public RubyHash delete_if(Block block) {
+		reject_bang(block);
 		return this;
 	}
 
-	public RubyHash reject() {
+	public RubyHash reject(Block block) {
 		RubyHash result = (RubyHash) dup();
-		result.reject_bang();
+		result.reject_bang(block);
 		return result;
 	}
 
-	public IRubyObject reject_bang() {
+	public IRubyObject reject_bang(Block block) {
 		modify();
 		boolean isModified = false;
         ThreadContext context = getRuntime().getCurrentContext();
 		for (Iterator iter = keyIterator(); iter.hasNext();) {
 			IRubyObject key = (IRubyObject) iter.next();
 			IRubyObject value = (IRubyObject) valueMap.get(key);
-			IRubyObject shouldDelete = context.getFrameBlockOrRaise().yield(context, getRuntime().newArray(key, value), null, null, true);
+			IRubyObject shouldDelete = block.yield(context, getRuntime().newArray(key, value), null, null, true);
 			if (shouldDelete.isTrue()) {
 				valueMap.remove(key);
 				isModified = true;
@@ -521,12 +521,12 @@ public class RubyHash extends RubyObject implements Map {
 		return result;
 	}
 
-    public RubyHash update(IRubyObject freshElements) {
+    public RubyHash update(IRubyObject freshElements, Block block) {
         modify();
         RubyHash freshElementsHash =
             (RubyHash) freshElements.convertType(RubyHash.class, "Hash", "to_hash");
         ThreadContext ctx = getRuntime().getCurrentContext();
-        if(ctx.isBlockGiven()) {
+        if (block != null) {
             Map other = freshElementsHash.valueMap;
             for(Iterator iter = other.keySet().iterator();iter.hasNext();) {
                 IRubyObject key = (IRubyObject)iter.next();
@@ -534,17 +534,17 @@ public class RubyHash extends RubyObject implements Map {
                 if(null == oval) {
                     valueMap.put(key,other.get(key));
                 } else {
-                    valueMap.put(key,ctx.yield(getRuntime().newArray(new IRubyObject[]{key,oval,(IRubyObject)other.get(key)})));
+                    valueMap.put(key,ctx.yield(getRuntime().newArray(new IRubyObject[]{key,oval,(IRubyObject)other.get(key)}), block));
                 }
             }
         } else {
-            valueMap.putAll(freshElementsHash.valueMap);
+        valueMap.putAll(freshElementsHash.valueMap);
         }
         return this;
     }
     
-    public RubyHash merge(IRubyObject freshElements) {
-        return ((RubyHash) dup()).update(freshElements);
+    public RubyHash merge(IRubyObject freshElements, Block block) {
+        return ((RubyHash) dup()).update(freshElements, block);
     }
 
     public RubyHash replace(IRubyObject replacement) {
@@ -567,33 +567,33 @@ public class RubyHash extends RubyObject implements Map {
 
     // FIXME:  Total hack to get flash in Rails marshalling/unmarshalling in session ok...We need
     // to totally change marshalling to work with overridden core classes.
-    public void marshalTo(MarshalStream output) throws IOException {
-        output.writeIVar(this, output);
-        output.writeUserClass(this, getRuntime().getClass("Hash"), output);
+	public void marshalTo(MarshalStream output) throws IOException {
+		output.writeIVar(this, output);
+		output.writeUserClass(this, getRuntime().getClass("Hash"), output);
         if (defaultValueCallback != NIL_DEFAULT_VALUE) {
             // hashdef
             output.write('}');
         } else {
-            output.write('{');
+		output.write('{');
         }
-        output.dumpInt(getValueMap().size());
-        
-        for (Iterator iter = entryIterator(); iter.hasNext();) {
-            Map.Entry entry = (Map.Entry) iter.next();
-            
-            output.dumpObject((IRubyObject) entry.getKey());
-            output.dumpObject((IRubyObject) entry.getValue());
-        }
-        
+		output.dumpInt(getValueMap().size());
+		
+		for (Iterator iter = entryIterator(); iter.hasNext();) {
+			Map.Entry entry = (Map.Entry) iter.next();
+			
+			output.dumpObject((IRubyObject) entry.getKey());
+			output.dumpObject((IRubyObject) entry.getValue());
+		}
+		
         // handle default value
         if (defaultValueCallback != NIL_DEFAULT_VALUE) {
-            output.dumpObject(defaultValueCallback.execute(null, NULL_ARRAY));
+            output.dumpObject(defaultValueCallback.execute(null, NULL_ARRAY, null));
         }
         
-        if (!getMetaClass().equals(getRuntime().getClass("Hash"))) {
-            output.writeInstanceVars(this, output);
-        }
-    }
+    	if (!getMetaClass().equals(getRuntime().getClass("Hash"))) {
+    		output.writeInstanceVars(this, output);
+    	}
+	}
 
     public static RubyHash unmarshalFrom(UnmarshalStream input, boolean defaultValue) throws IOException {
         RubyHash result = newHash(input.getRuntime());

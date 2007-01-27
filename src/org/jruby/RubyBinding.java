@@ -35,7 +35,6 @@ package org.jruby;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Frame;
-import org.jruby.runtime.Iter;
 import org.jruby.runtime.ThreadContext;
 
 /**
@@ -71,19 +70,10 @@ public class RubyBinding extends RubyObject {
         
         // FIXME: We should be cloning, not reusing: frame, scope, dynvars, and potentially iter/block info
         RubyModule wrapper = context.getWrapper();
-        // defaults for TOPLEVEL_BINDING
-        Iter iter = Iter.ITER_NOT;
         Frame frame = context.getCurrentFrame();
-        
-        if (context.getPreviousFrame() != null) {
-            
-            iter = context.getPreviousFrameIter();
-        }
 
-        Block bindingBlock = Block.createBinding(wrapper, iter, frame, context.getCurrentScope());
+        Block bindingBlock = Block.createBinding(wrapper, frame, context.getCurrentScope());
 
-        RubyBinding newBinding = new RubyBinding(runtime, runtime.getClass("Binding"), bindingBlock, context.getRubyClass());
-
-        return newBinding;
+        return new RubyBinding(runtime, runtime.getClass("Binding"), bindingBlock, context.getRubyClass());
     }
 }

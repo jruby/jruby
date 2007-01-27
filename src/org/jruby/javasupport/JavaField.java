@@ -55,23 +55,15 @@ public class JavaField extends JavaAccessibleObject {
         CallbackFactory callbackFactory = runtime.callbackFactory(JavaField.class);
 
         JavaAccessibleObject.registerRubyMethods(runtime, result);
-        result.defineMethod("value_type", 
-            callbackFactory.getMethod("value_type"));
-        result.defineMethod("public?", 
-            callbackFactory.getMethod("public_p"));
-        result.defineMethod("static?", 
-            callbackFactory.getMethod("static_p"));
-        result.defineMethod("value", 
-            callbackFactory.getMethod("value", IRubyObject.class));
-        result.defineMethod("set_value", 
-            callbackFactory.getMethod("set_value", IRubyObject.class, IRubyObject.class));
-        result.defineMethod("final?", 
-            callbackFactory.getMethod("final_p"));
-        result.defineMethod("static_value", 
-            callbackFactory.getMethod("static_value"));
-        result.defineMethod("name", 
-            callbackFactory.getMethod("name"));
-        result.defineMethod("==", callbackFactory.getMethod("equal", IRubyObject.class));
+        result.defineFastMethod("value_type", callbackFactory.getFastMethod("value_type"));
+        result.defineFastMethod("public?", callbackFactory.getFastMethod("public_p"));
+        result.defineFastMethod("static?", callbackFactory.getFastMethod("static_p"));
+        result.defineFastMethod("value", callbackFactory.getFastMethod("value", IRubyObject.class));
+        result.defineFastMethod("set_value", callbackFactory.getFastMethod("set_value", IRubyObject.class, IRubyObject.class));
+        result.defineFastMethod("final?", callbackFactory.getFastMethod("final_p"));
+        result.defineFastMethod("static_value", callbackFactory.getFastMethod("static_value"));
+        result.defineFastMethod("name", callbackFactory.getFastMethod("name"));
+        result.defineFastMethod("==", callbackFactory.getFastMethod("equal", IRubyObject.class));
         result.defineAlias("===", "==");
 
         return result;

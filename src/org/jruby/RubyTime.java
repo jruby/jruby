@@ -42,6 +42,7 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.RubyDateFormat;
 
@@ -363,7 +364,7 @@ public class RubyTime extends RubyObject {
         return getRuntime().newFixnum((int)(((cal.getTimeInMillis() / 1000) ^ microseconds()) << 1) >> 1);
     }    
 
-    public RubyString dump(final IRubyObject[] args) {
+    public RubyString dump(final IRubyObject[] args, Block unusedBlock) {
         if (args.length > 1) {
             throw getRuntime().newArgumentError(0, 1);
         }

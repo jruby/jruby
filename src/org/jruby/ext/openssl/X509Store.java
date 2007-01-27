@@ -33,12 +33,12 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
-import org.jruby.RubyProc;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.openssl.x509store.Function2;
 import org.jruby.ext.openssl.x509store.X509AuxCertificate;
 import org.jruby.ext.openssl.x509store.X509_STORE;
 import org.jruby.ext.openssl.x509store.X509_STORE_CTX;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -63,16 +63,16 @@ public class X509Store extends RubyObject {
         CallbackFactory storecb = runtime.callbackFactory(X509Store.class);
 
         cX509Store.defineMethod("initialize",storecb.getOptMethod("_initialize"));
-        cX509Store.defineMethod("verify_callback=",storecb.getMethod("set_verify_callback",IRubyObject.class));
-        cX509Store.defineMethod("flags=",storecb.getMethod("set_flags",IRubyObject.class));
-        cX509Store.defineMethod("purpose=",storecb.getMethod("set_purpose",IRubyObject.class));
-        cX509Store.defineMethod("trust=",storecb.getMethod("set_trust",IRubyObject.class));
-        cX509Store.defineMethod("time=",storecb.getMethod("set_time",IRubyObject.class));
-        cX509Store.defineMethod("add_path",storecb.getMethod("add_path",IRubyObject.class));
-        cX509Store.defineMethod("add_file",storecb.getMethod("add_file",IRubyObject.class));
-        cX509Store.defineMethod("set_default_paths",storecb.getMethod("set_default_paths"));
-        cX509Store.defineMethod("add_cert",storecb.getMethod("add_cert",IRubyObject.class));
-        cX509Store.defineMethod("add_crl",storecb.getMethod("add_crl",IRubyObject.class));
+        cX509Store.defineFastMethod("verify_callback=",storecb.getFastMethod("set_verify_callback",IRubyObject.class));
+        cX509Store.defineFastMethod("flags=",storecb.getFastMethod("set_flags",IRubyObject.class));
+        cX509Store.defineFastMethod("purpose=",storecb.getFastMethod("set_purpose",IRubyObject.class));
+        cX509Store.defineFastMethod("trust=",storecb.getFastMethod("set_trust",IRubyObject.class));
+        cX509Store.defineFastMethod("time=",storecb.getFastMethod("set_time",IRubyObject.class));
+        cX509Store.defineFastMethod("add_path",storecb.getFastMethod("add_path",IRubyObject.class));
+        cX509Store.defineFastMethod("add_file",storecb.getFastMethod("add_file",IRubyObject.class));
+        cX509Store.defineFastMethod("set_default_paths",storecb.getFastMethod("set_default_paths"));
+        cX509Store.defineFastMethod("add_cert",storecb.getFastMethod("add_cert",IRubyObject.class));
+        cX509Store.defineFastMethod("add_crl",storecb.getFastMethod("add_crl",IRubyObject.class));
         cX509Store.defineMethod("verify",storecb.getOptMethod("verify"));
         
         X509StoreCtx.createX509StoreCtx(runtime, mX509);
@@ -98,7 +98,7 @@ public class X509Store extends RubyObject {
         throw new RaiseException(getRuntime(),cStoreError, msg, true);
     }
 
-    public IRubyObject _initialize(IRubyObject[] args) throws Exception {
+    public IRubyObject _initialize(IRubyObject[] args, Block block) throws Exception {
         store.set_verify_cb_func(ossl_verify_cb);
         this.set_verify_callback(getRuntime().getNil());
         this.setInstanceVariable("@flags",RubyFixnum.zero(getRuntime()));
@@ -169,7 +169,7 @@ public class X509Store extends RubyObject {
         return this;
     }
 
-    public IRubyObject verify(IRubyObject[] args) throws Exception {
+    public IRubyObject verify(IRubyObject[] args, Block block) throws Exception {
         IRubyObject cert, chain;
         if(checkArgumentCount(args,1,2) == 2) {
             chain = args[1];
@@ -179,8 +179,8 @@ public class X509Store extends RubyObject {
         cert = args[0];
         IRubyObject proc, result;
         X509StoreCtx ctx = (X509StoreCtx)cStoreContext.callMethod(getRuntime().getCurrentContext(),"new",new IRubyObject[]{this,cert,chain});
-        if(getRuntime().getCurrentContext().isBlockGiven()) {
-            proc = RubyProc.newProc(getRuntime(),false);
+        if (block != null) {
+            proc = getRuntime().newProc(false, block);
         } else {
             proc = getInstanceVariable("@verify_callback");
         }

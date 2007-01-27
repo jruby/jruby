@@ -39,21 +39,25 @@ import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
 
-/** Represents a method call with self as receiver.
- *
- * @author  jpetersen
+/** 
+ * Represents a method call with self as an implicit receiver.
  */
 public class FCallNode extends Node implements INameNode, BlockAcceptingNode, IArgumentNode {
     static final long serialVersionUID = 3590332973770104094L;
 
     private String name;
     private Node argsNode;
-    private IterNode iterNode;
+    private Node iterNode;
 
     public FCallNode(ISourcePosition position, String name, Node argsNode) {
+        this(position, name, argsNode, null);
+    }
+    
+    public FCallNode(ISourcePosition position, String name, Node argsNode, Node iterNode) {
         super(position, NodeTypes.FCALLNODE);
         this.name = name.intern();
         this.argsNode = argsNode;
+        this.iterNode = iterNode;
     }
     
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
@@ -71,11 +75,14 @@ public class FCallNode extends Node implements INameNode, BlockAcceptingNode, IA
         return iVisitor.visitFCallNode(this);
     }
     
-    public IterNode getIterNode() {
+    /**
+     * Get the node that represents a block or a block variable.
+     */
+    public Node getIterNode() {
         return iterNode;
     }
     
-    public void setIterNode(IterNode iterNode) {
+    public void setIterNode(Node iterNode) {
         this.iterNode = iterNode;
     }
 
@@ -105,7 +112,10 @@ public class FCallNode extends Node implements INameNode, BlockAcceptingNode, IA
     }
     
     public List childNodes() {
-        return createList(argsNode);
+        return createList(argsNode, iterNode);
     }
 
+    public String toString() {
+        return "FCallNode: " + getName();
+    }
 }

@@ -42,17 +42,15 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  */
 public class RubyComparable {
-
     public static RubyModule createComparable(IRuby runtime) {
         RubyModule comparableModule = runtime.defineModule("Comparable");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyComparable.class);
-        comparableModule.defineFastMethod("==", callbackFactory.getSingletonMethod("equal", IRubyObject.class));
-        comparableModule.defineFastMethod(">", callbackFactory.getSingletonMethod("op_gt", IRubyObject.class));
-        comparableModule.defineFastMethod(">=", callbackFactory.getSingletonMethod("op_ge", IRubyObject.class));
-        comparableModule.defineFastMethod("<", callbackFactory.getSingletonMethod("op_lt", IRubyObject.class));
-        comparableModule.defineFastMethod("<=", callbackFactory.getSingletonMethod("op_le", IRubyObject.class));
-        comparableModule.defineFastMethod("between?", callbackFactory.getSingletonMethod("between_p",
-                IRubyObject.class, IRubyObject.class));
+        comparableModule.defineFastMethod("==", callbackFactory.getFastSingletonMethod("equal", IRubyObject.class));
+        comparableModule.defineFastMethod(">", callbackFactory.getFastSingletonMethod("op_gt", IRubyObject.class));
+        comparableModule.defineFastMethod(">=", callbackFactory.getFastSingletonMethod("op_ge", IRubyObject.class));
+        comparableModule.defineFastMethod("<", callbackFactory.getFastSingletonMethod("op_lt", IRubyObject.class));
+        comparableModule.defineFastMethod("<=", callbackFactory.getFastSingletonMethod("op_le", IRubyObject.class));
+        comparableModule.defineFastMethod("between?", callbackFactory.getFastSingletonMethod("between_p", IRubyObject.class, IRubyObject.class));
 
         return comparableModule;
     }
@@ -114,9 +112,9 @@ public class RubyComparable {
      * 
      */
     public static IRubyObject equal(IRubyObject recv, IRubyObject other) {
-        if (recv == other) {
-            return recv.getRuntime().getTrue();
-        }
+            if (recv == other) {
+                return recv.getRuntime().getTrue();
+            }
         IRuby runtime = recv.getRuntime();
         IRubyObject result = null;
         try {
@@ -124,14 +122,14 @@ public class RubyComparable {
         } catch (RaiseException e) {
             return recv.getRuntime().getFalse();
         }
-
-        if (result.isNil()) {
-            return result;
-        }
-
+            
+            if (result.isNil()) {
+            	return result;
+            }
+            
         return RubyBoolean.newBoolean(runtime, cmpint(result, recv, other) == 0);
-    }
-
+        	}
+    
     /** cmp_gt
      * 
      */
@@ -139,7 +137,7 @@ public class RubyComparable {
     public static RubyBoolean op_gt(IRubyObject recv, IRubyObject other) {
         final IRuby runtime = recv.getRuntime();
         IRubyObject result = recv.callMethod(runtime.getCurrentContext(), "<=>", other);
-
+        
         if (result.isNil()) {
             cmperr(recv, other);
         }
@@ -153,7 +151,7 @@ public class RubyComparable {
     public static RubyBoolean op_ge(IRubyObject recv, IRubyObject other) {
         final IRuby runtime = recv.getRuntime();
         IRubyObject result = recv.callMethod(runtime.getCurrentContext(), "<=>", other);
-
+        
         if (result.isNil()) {
             cmperr(recv, other);
         }

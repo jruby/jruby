@@ -3,6 +3,7 @@ package org.jruby.test;
 import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class MockRubyObject extends RubyObject {
@@ -26,7 +27,7 @@ public class MockRubyObject extends RubyObject {
 		return runtime;
 	}
 	
-	public static void throwException(IRubyObject recv) {
+	public static void throwException(IRubyObject recv, Block block) {
 		throw new RuntimeException("x");
 	}
 

@@ -32,6 +32,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -61,20 +62,20 @@ public class RubyNil extends RubyObject {
     public static RubyClass createNilClass(IRuby runtime) {
         RubyClass nilClass = runtime.defineClass("NilClass", runtime.getObject(), NIL_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyNil.class);
-        nilClass.defineFastMethod("type", callbackFactory.getSingletonMethod("type"));
-        nilClass.defineFastMethod("to_i", callbackFactory.getSingletonMethod("to_i"));
-        nilClass.defineFastMethod("to_s", callbackFactory.getSingletonMethod("to_s"));
-        nilClass.defineFastMethod("to_a", callbackFactory.getSingletonMethod("to_a"));
-        nilClass.defineFastMethod("to_f", callbackFactory.getSingletonMethod("to_f"));
-        nilClass.defineFastMethod("inspect", callbackFactory.getSingletonMethod("inspect"));
+        nilClass.defineFastMethod("type", callbackFactory.getFastSingletonMethod("type"));
+        nilClass.defineFastMethod("to_i", callbackFactory.getFastSingletonMethod("to_i"));
+        nilClass.defineFastMethod("to_s", callbackFactory.getFastSingletonMethod("to_s"));
+        nilClass.defineFastMethod("to_a", callbackFactory.getFastSingletonMethod("to_a"));
+        nilClass.defineFastMethod("to_f", callbackFactory.getFastSingletonMethod("to_f"));
+        nilClass.defineFastMethod("inspect", callbackFactory.getFastSingletonMethod("inspect"));
         
-        nilClass.defineFastMethod("&", callbackFactory.getSingletonMethod("op_and", IRubyObject.class));
-        nilClass.defineFastMethod("|", callbackFactory.getSingletonMethod("op_or", IRubyObject.class));
-        nilClass.defineFastMethod("^", callbackFactory.getSingletonMethod("op_xor", IRubyObject.class));
-        nilClass.defineFastMethod("nil?", callbackFactory.getMethod("nil_p"));
-        nilClass.defineFastMethod("id", callbackFactory.getSingletonMethod("id"));
-        nilClass.defineFastMethod("taint", callbackFactory.getMethod("taint"));
-        nilClass.defineFastMethod("freeze", callbackFactory.getMethod("freeze"));
+        nilClass.defineFastMethod("&", callbackFactory.getFastSingletonMethod("op_and", IRubyObject.class));
+        nilClass.defineFastMethod("|", callbackFactory.getFastSingletonMethod("op_or", IRubyObject.class));
+        nilClass.defineFastMethod("^", callbackFactory.getFastSingletonMethod("op_xor", IRubyObject.class));
+        nilClass.defineFastMethod("nil?", callbackFactory.getFastMethod("nil_p"));
+        nilClass.defineFastMethod("id", callbackFactory.getFastSingletonMethod("id"));
+        nilClass.defineFastMethod("taint", callbackFactory.getFastMethod("taint"));
+        nilClass.defineFastMethod("freeze", callbackFactory.getFastMethod("freeze"));
 
         nilClass.getMetaClass().undefineMethod("new");
         

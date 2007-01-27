@@ -59,6 +59,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -94,70 +95,70 @@ public class JavaClass extends JavaObject {
         
         JavaObject.registerRubyMethods(runtime, result);
         
-        result.defineSingletonMethod("for_name", 
-                callbackFactory.getSingletonMethod("for_name", IRubyObject.class));
-        result.defineMethod("public?", 
-                callbackFactory.getMethod("public_p"));
-        result.defineMethod("protected?", 
-                callbackFactory.getMethod("protected_p"));
-        result.defineMethod("private?", 
-                callbackFactory.getMethod("private_p"));
-        result.defineMethod("final?", 
-                callbackFactory.getMethod("final_p"));
-        result.defineMethod("interface?", 
-                callbackFactory.getMethod("interface_p"));
-        result.defineMethod("array?", 
-                callbackFactory.getMethod("array_p"));
-        result.defineMethod("name", 
-                callbackFactory.getMethod("name"));
-        result.defineMethod("to_s", 
-                callbackFactory.getMethod("name"));
-        result.defineMethod("superclass", 
-                callbackFactory.getMethod("superclass"));
-        result.defineMethod("<=>", 
-                callbackFactory.getMethod("op_cmp", IRubyObject.class));
-        result.defineMethod("java_instance_methods", 
-                callbackFactory.getMethod("java_instance_methods"));
-        result.defineMethod("java_class_methods", 
-                callbackFactory.getMethod("java_class_methods"));
-        result.defineMethod("java_method", 
-                callbackFactory.getOptMethod("java_method"));
-        result.defineMethod("constructors", 
-                callbackFactory.getMethod("constructors"));
-        result.defineMethod("constructor", 
-                callbackFactory.getOptMethod("constructor"));
-        result.defineMethod("array_class", 
-                callbackFactory.getMethod("array_class"));
-        result.defineMethod("new_array", 
-                callbackFactory.getMethod("new_array", IRubyObject.class));
-        result.defineMethod("fields", 
-                callbackFactory.getMethod("fields"));
-        result.defineMethod("field", 
-                callbackFactory.getMethod("field", IRubyObject.class));
-        result.defineMethod("interfaces", 
-                callbackFactory.getMethod("interfaces"));
-        result.defineMethod("primitive?", 
-                callbackFactory.getMethod("primitive_p"));
-        result.defineMethod("assignable_from?", 
-                callbackFactory.getMethod("assignable_from_p", IRubyObject.class));
-        result.defineMethod("component_type", 
-                callbackFactory.getMethod("component_type"));
-		result.defineMethod("declared_instance_methods", 
-                callbackFactory.getMethod("declared_instance_methods"));
-        result.defineMethod("declared_class_methods", 
-                callbackFactory.getMethod("declared_class_methods"));
-        result.defineMethod("declared_fields", 
-                callbackFactory.getMethod("declared_fields"));
-        result.defineMethod("declared_field", 
-                callbackFactory.getMethod("declared_field", IRubyObject.class));
-        result.defineMethod("declared_constructors", 
-                callbackFactory.getMethod("declared_constructors"));
-        result.defineMethod("declared_constructor", 
-                callbackFactory.getOptMethod("declared_constructor"));
-        result.defineMethod("declared_method", 
-                callbackFactory.getOptMethod("declared_method"));
-        result.defineMethod("define_instance_methods_for_proxy", 
-                callbackFactory.getMethod("define_instance_methods_for_proxy", IRubyObject.class));
+        result.defineFastSingletonMethod("for_name", 
+                callbackFactory.getFastSingletonMethod("for_name", IRubyObject.class));
+        result.defineFastMethod("public?", 
+                callbackFactory.getFastMethod("public_p"));
+        result.defineFastMethod("protected?", 
+                callbackFactory.getFastMethod("protected_p"));
+        result.defineFastMethod("private?", 
+                callbackFactory.getFastMethod("private_p"));
+        result.defineFastMethod("final?", 
+                callbackFactory.getFastMethod("final_p"));
+        result.defineFastMethod("interface?", 
+                callbackFactory.getFastMethod("interface_p"));
+        result.defineFastMethod("array?", 
+                callbackFactory.getFastMethod("array_p"));
+        result.defineFastMethod("name", 
+                callbackFactory.getFastMethod("name"));
+        result.defineFastMethod("to_s", 
+                callbackFactory.getFastMethod("name"));
+        result.defineFastMethod("superclass", 
+                callbackFactory.getFastMethod("superclass"));
+        result.defineFastMethod("<=>", 
+                callbackFactory.getFastMethod("op_cmp", IRubyObject.class));
+        result.defineFastMethod("java_instance_methods", 
+                callbackFactory.getFastMethod("java_instance_methods"));
+        result.defineFastMethod("java_class_methods", 
+                callbackFactory.getFastMethod("java_class_methods"));
+        result.defineFastMethod("java_method", 
+                callbackFactory.getFastOptMethod("java_method"));
+        result.defineFastMethod("constructors", 
+                callbackFactory.getFastMethod("constructors"));
+        result.defineFastMethod("constructor", 
+                callbackFactory.getFastOptMethod("constructor"));
+        result.defineFastMethod("array_class", 
+                callbackFactory.getFastMethod("array_class"));
+        result.defineFastMethod("new_array", 
+                callbackFactory.getFastMethod("new_array", IRubyObject.class));
+        result.defineFastMethod("fields", 
+                callbackFactory.getFastMethod("fields"));
+        result.defineFastMethod("field", 
+                callbackFactory.getFastMethod("field", IRubyObject.class));
+        result.defineFastMethod("interfaces", 
+                callbackFactory.getFastMethod("interfaces"));
+        result.defineFastMethod("primitive?", 
+                callbackFactory.getFastMethod("primitive_p"));
+        result.defineFastMethod("assignable_from?", 
+                callbackFactory.getFastMethod("assignable_from_p", IRubyObject.class));
+        result.defineFastMethod("component_type", 
+                callbackFactory.getFastMethod("component_type"));
+		result.defineFastMethod("declared_instance_methods", 
+                callbackFactory.getFastMethod("declared_instance_methods"));
+        result.defineFastMethod("declared_class_methods", 
+                callbackFactory.getFastMethod("declared_class_methods"));
+        result.defineFastMethod("declared_fields", 
+                callbackFactory.getFastMethod("declared_fields"));
+        result.defineFastMethod("declared_field", 
+                callbackFactory.getFastMethod("declared_field", IRubyObject.class));
+        result.defineFastMethod("declared_constructors", 
+                callbackFactory.getFastMethod("declared_constructors"));
+        result.defineFastMethod("declared_constructor", 
+                callbackFactory.getFastOptMethod("declared_constructor"));
+        result.defineFastMethod("declared_method", 
+                callbackFactory.getFastOptMethod("declared_method"));
+        result.defineFastMethod("define_instance_methods_for_proxy", 
+                callbackFactory.getFastMethod("define_instance_methods_for_proxy", IRubyObject.class));
         
         result.getMetaClass().undefineMethod("new");
 
@@ -255,20 +256,20 @@ public class JavaClass extends JavaObject {
             final RubyArray methods) {
         final RubyModule javaUtilities = getRuntime().getModule("JavaUtilities");
         Callback method = new Callback() {
-            public IRubyObject execute(IRubyObject self, IRubyObject[] args) {
+            public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
                 IRubyObject[] argsArray = new IRubyObject[args.length + 1];
                 ThreadContext context = self.getRuntime().getCurrentContext();
                 
                 argsArray[0] = self.callMethod(context, "java_object");
                 RubyArray argsAsArray = getRuntime().newArray();
                 for (int j = 0; j < args.length; j++) {
-                    argsArray[j+1] = Java.ruby_to_java(proxy, args[j]);
+                    argsArray[j+1] = Java.ruby_to_java(proxy, args[j], null);
                     argsAsArray.append(argsArray[j+1]);
                 }
 
                 IRubyObject[] mmArgs = new IRubyObject[] {methods, argsAsArray};
                 IRubyObject result = javaUtilities.callMethod(context, "matching_method", mmArgs);
-                return Java.java_to_ruby(self, result.callMethod(context, "invoke", argsArray));
+                return Java.java_to_ruby(self, result.callMethod(context, "invoke", argsArray), null);
             }
 
             public Arity getArity() {

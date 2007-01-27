@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -37,14 +38,14 @@ import org.jruby.runtime.builtin.IRubyObject;
  * methods for a target class. 
  */
 public interface MultiStub {
-    IRubyObject method0(ThreadContext tc, IRubyObject self, IRubyObject[] args);
-    IRubyObject method1(ThreadContext tc, IRubyObject self, IRubyObject[] args);
-    IRubyObject method2(ThreadContext tc, IRubyObject self, IRubyObject[] args);
-    IRubyObject method3(ThreadContext tc, IRubyObject self, IRubyObject[] args);
-    IRubyObject method4(ThreadContext tc, IRubyObject self, IRubyObject[] args);
-    IRubyObject method5(ThreadContext tc, IRubyObject self, IRubyObject[] args);
-    IRubyObject method6(ThreadContext tc, IRubyObject self, IRubyObject[] args);
-    IRubyObject method7(ThreadContext tc, IRubyObject self, IRubyObject[] args);
-    IRubyObject method8(ThreadContext tc, IRubyObject self, IRubyObject[] args);
-    IRubyObject method9(ThreadContext tc, IRubyObject self, IRubyObject[] args);
+    IRubyObject method0(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block);
+    IRubyObject method1(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block);
+    IRubyObject method2(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block);
+    IRubyObject method3(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block);
+    IRubyObject method4(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block);
+    IRubyObject method5(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block);
+    IRubyObject method6(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block);
+    IRubyObject method7(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block);
+    IRubyObject method8(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block);
+    IRubyObject method9(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block);
 }

@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -65,7 +66,7 @@ public class RubyMarshal {
         return module;
     }
 
-    public static IRubyObject dump(IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject dump(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         if (args.length < 1) {
             throw recv.getRuntime().newArgumentError("wrong # of arguments(at least 1)");
         }
@@ -100,7 +101,7 @@ public class RubyMarshal {
 
     }
 
-    public static IRubyObject load(IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject load(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         try {
             if (args.length < 1) {
                 throw recv.getRuntime().newArgumentError("wrong number of arguments (0 for 1)");

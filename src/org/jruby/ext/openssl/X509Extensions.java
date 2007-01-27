@@ -54,6 +54,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -73,23 +74,23 @@ public class X509Extensions {
         cX509ExtFactory.attr_reader(new IRubyObject[]{runtime.newString("issuer_certificate"),runtime.newString("subject_certificate"),
                                             runtime.newString("subject_request"),runtime.newString("crl"),
                                             runtime.newString("config")});
-        cX509ExtFactory.defineMethod("issuer_certificate=",extfcb.getMethod("set_issuer_cert",IRubyObject.class));
-        cX509ExtFactory.defineMethod("subject_certificate=",extfcb.getMethod("set_subject_cert",IRubyObject.class));
-        cX509ExtFactory.defineMethod("subject_request=",extfcb.getMethod("set_subject_req",IRubyObject.class));
-        cX509ExtFactory.defineMethod("crl=",extfcb.getMethod("set_crl",IRubyObject.class));
-        cX509ExtFactory.defineMethod("config=",extfcb.getMethod("set_config",IRubyObject.class));
-        cX509ExtFactory.defineMethod("create_ext",extfcb.getOptMethod("create_ext"));
+        cX509ExtFactory.defineFastMethod("issuer_certificate=",extfcb.getFastMethod("set_issuer_cert",IRubyObject.class));
+        cX509ExtFactory.defineFastMethod("subject_certificate=",extfcb.getFastMethod("set_subject_cert",IRubyObject.class));
+        cX509ExtFactory.defineFastMethod("subject_request=",extfcb.getFastMethod("set_subject_req",IRubyObject.class));
+        cX509ExtFactory.defineFastMethod("crl=",extfcb.getFastMethod("set_crl",IRubyObject.class));
+        cX509ExtFactory.defineFastMethod("config=",extfcb.getFastMethod("set_config",IRubyObject.class));
+        cX509ExtFactory.defineFastMethod("create_ext",extfcb.getFastOptMethod("create_ext"));
 
         RubyClass cX509Ext = mX509.defineClassUnder("Extension",runtime.getObject(),runtime.getObject().getAllocator());
         CallbackFactory extcb = runtime.callbackFactory(Extension.class);
-        cX509Ext.defineMethod("initialize",extcb.getOptMethod("_initialize"));
-        cX509Ext.defineMethod("oid=",extcb.getMethod("set_oid",IRubyObject.class));
-        cX509Ext.defineMethod("value=",extcb.getMethod("set_value",IRubyObject.class));
-        cX509Ext.defineMethod("critical=",extcb.getMethod("set_critical",IRubyObject.class));
-        cX509Ext.defineMethod("oid",extcb.getMethod("oid"));
-        cX509Ext.defineMethod("value",extcb.getMethod("value"));
-        cX509Ext.defineMethod("critical?",extcb.getMethod("critical_p"));
-        cX509Ext.defineMethod("to_der",extcb.getMethod("to_der"));
+        cX509Ext.defineFastMethod("initialize",extcb.getFastOptMethod("_initialize"));
+        cX509Ext.defineFastMethod("oid=",extcb.getFastMethod("set_oid",IRubyObject.class));
+        cX509Ext.defineFastMethod("value=",extcb.getFastMethod("set_value",IRubyObject.class));
+        cX509Ext.defineFastMethod("critical=",extcb.getFastMethod("set_critical",IRubyObject.class));
+        cX509Ext.defineFastMethod("oid",extcb.getFastMethod("oid"));
+        cX509Ext.defineFastMethod("value",extcb.getFastMethod("value"));
+        cX509Ext.defineFastMethod("critical?",extcb.getFastMethod("critical_p"));
+        cX509Ext.defineFastMethod("to_der",extcb.getFastMethod("to_der"));
     }
 
     public static class ExtensionFactory extends RubyObject {
@@ -97,7 +98,7 @@ public class X509Extensions {
             super(runtime,type);
         }
 
-        public IRubyObject initialize(IRubyObject[] args) {
+        public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
             checkArgumentCount(args,0,4);
             if(args.length > 0 && !args[0].isNil()) {
                 set_issuer_cert(args[0]);

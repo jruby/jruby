@@ -61,26 +61,16 @@ public class JavaMethod extends JavaCallable {
 
         JavaAccessibleObject.registerRubyMethods(runtime, result);
         
-        result.defineMethod("name", 
-                callbackFactory.getMethod("name"));
-        result.defineMethod("arity", 
-                callbackFactory.getMethod("arity"));
-        result.defineMethod("public?", 
-                callbackFactory.getMethod("public_p"));
-        result.defineMethod("final?", 
-                callbackFactory.getMethod("final_p"));
-        result.defineMethod("static?", 
-                callbackFactory.getMethod("static_p"));
-        result.defineMethod("invoke", 
-                callbackFactory.getOptMethod("invoke"));
-        result.defineMethod("invoke_static", 
-                callbackFactory.getOptMethod("invoke_static"));
-        result.defineMethod("argument_types", 
-                callbackFactory.getMethod("argument_types"));
-        result.defineMethod("inspect", 
-                callbackFactory.getMethod("inspect"));
-        result.defineMethod("return_type", 
-                callbackFactory.getMethod("return_type"));
+        result.defineFastMethod("name", callbackFactory.getFastMethod("name"));
+        result.defineFastMethod("arity", callbackFactory.getFastMethod("arity"));
+        result.defineFastMethod("public?", callbackFactory.getFastMethod("public_p"));
+        result.defineFastMethod("final?", callbackFactory.getFastMethod("final_p"));
+        result.defineFastMethod("static?", callbackFactory.getFastMethod("static_p"));
+        result.defineFastMethod("invoke", callbackFactory.getFastOptMethod("invoke"));
+        result.defineFastMethod("invoke_static", callbackFactory.getFastOptMethod("invoke_static"));
+        result.defineFastMethod("argument_types", callbackFactory.getFastMethod("argument_types"));
+        result.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
+        result.defineFastMethod("return_type", callbackFactory.getFastMethod("return_type"));
 
         return result;
     }

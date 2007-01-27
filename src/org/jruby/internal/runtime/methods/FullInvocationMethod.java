@@ -31,6 +31,7 @@ import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -50,17 +51,17 @@ public abstract class FullInvocationMethod extends AbstractMethod {
         this.arity = arity;
     }
 
-    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
-        context.preReflectedMethodInternalCall(implementationClass, lastClass, recv, name, args, noSuper);
+    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper, Block block) {
+        context.preReflectedMethodInternalCall(implementationClass, lastClass, recv, name, args, noSuper, block);
     }
     
     public void postMethod(ThreadContext context) {
         context.postReflectedMethodInternalCall();
     }
 
-    private IRubyObject wrap(IRuby runtime, IRubyObject receiver, IRubyObject[] args) {
+    private IRubyObject wrap(IRuby runtime, IRubyObject receiver, IRubyObject[] args, Block block) {
         try {
-            return call(receiver,args);
+            return call(receiver,args,block);
         } catch(RaiseException e) {
             throw e;
         } catch(JumpException e) {
@@ -75,7 +76,7 @@ public abstract class FullInvocationMethod extends AbstractMethod {
         }        
     }
     
-	public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
+	public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
         IRuby runtime = context.getRuntime();
         arity.checkArity(runtime, args);
 
@@ -84,15 +85,15 @@ public abstract class FullInvocationMethod extends AbstractMethod {
 
             runtime.callTraceFunction(context, "c-call", position, receiver, name, getImplementationClass());
             try {
-                return wrap(runtime,receiver,args);
+                return wrap(runtime,receiver,args,block);
             } finally {
                 runtime.callTraceFunction(context, "c-return", position, receiver, name, getImplementationClass());
             }
         }
-        return wrap(runtime,receiver,args);
+        return wrap(runtime,receiver,args,block);
     }
 
-    public abstract IRubyObject call(IRubyObject receiver, IRubyObject[] args);
+    public abstract IRubyObject call(IRubyObject receiver, IRubyObject[] args, Block block);
     
 	public DynamicMethod dup() {
         System.err.println("shouldn't dup this class...");

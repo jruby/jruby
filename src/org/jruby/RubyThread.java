@@ -39,6 +39,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.internal.runtime.NativeThread;
 import org.jruby.internal.runtime.ThreadService;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -81,69 +82,39 @@ public class RubyThread extends RubyObject {
         RubyClass threadClass = runtime.defineClass("Thread", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyThread.class);
 
-        threadClass.defineFastMethod("[]", 
-                callbackFactory.getMethod("aref", IRubyObject.class));
-        threadClass.defineFastMethod("[]=", 
-                callbackFactory.getMethod("aset", IRubyObject.class, IRubyObject.class));
-        threadClass.defineFastMethod("abort_on_exception", 
-                callbackFactory.getMethod("abort_on_exception"));
-        threadClass.defineFastMethod("abort_on_exception=", 
-                callbackFactory.getMethod("abort_on_exception_set", IRubyObject.class));
-        threadClass.defineFastMethod("alive?", 
-                callbackFactory.getMethod("is_alive"));
-        threadClass.defineFastMethod("group", 
-                callbackFactory.getMethod("group"));
-        threadClass.defineFastMethod("join", 
-                callbackFactory.getOptMethod("join"));
-        threadClass.defineFastMethod("key?", 
-                callbackFactory.getMethod("has_key", IRubyObject.class));
-        threadClass.defineFastMethod("priority", 
-                callbackFactory.getMethod("priority"));
-        threadClass.defineFastMethod("priority=", 
-                callbackFactory.getMethod("priority_set", IRubyObject.class));
-        threadClass.defineFastMethod("raise", 
-                callbackFactory.getMethod("raise", IRubyObject.class));
-        threadClass.defineFastMethod("run",
-        		callbackFactory.getMethod("run"));
-        threadClass.defineFastMethod("status", 
-                callbackFactory.getMethod("status"));
-        threadClass.defineFastMethod("stop?", 
-                callbackFactory.getMethod("isStopped"));
-        threadClass.defineFastMethod("wakeup", 
-                callbackFactory.getMethod("wakeup"));
+        threadClass.defineFastMethod("[]", callbackFactory.getFastMethod("aref", IRubyObject.class));
+        threadClass.defineFastMethod("[]=", callbackFactory.getFastMethod("aset", IRubyObject.class, IRubyObject.class));
+        threadClass.defineFastMethod("abort_on_exception", callbackFactory.getFastMethod("abort_on_exception"));
+        threadClass.defineFastMethod("abort_on_exception=", callbackFactory.getFastMethod("abort_on_exception_set", IRubyObject.class));
+        threadClass.defineFastMethod("alive?", callbackFactory.getFastMethod("is_alive"));
+        threadClass.defineFastMethod("group", callbackFactory.getFastMethod("group"));
+        threadClass.defineFastMethod("join", callbackFactory.getFastOptMethod("join"));
+        threadClass.defineFastMethod("key?", callbackFactory.getFastMethod("has_key", IRubyObject.class));
+        threadClass.defineFastMethod("priority", callbackFactory.getFastMethod("priority"));
+        threadClass.defineFastMethod("priority=", callbackFactory.getFastMethod("priority_set", IRubyObject.class));
+        threadClass.defineFastMethod("raise", callbackFactory.getFastMethod("raise", IRubyObject.class));
+        threadClass.defineFastMethod("run", callbackFactory.getFastMethod("run"));
+        threadClass.defineFastMethod("status", callbackFactory.getFastMethod("status"));
+        threadClass.defineFastMethod("stop?", callbackFactory.getFastMethod("isStopped"));
+        threadClass.defineFastMethod("wakeup", callbackFactory.getFastMethod("wakeup"));
         //        threadClass.defineMethod("value", 
         //                callbackFactory.getMethod("value"));
-        threadClass.defineFastMethod("kill", 
-                callbackFactory.getMethod("kill"));
-        threadClass.defineMethod("exit",
-        		callbackFactory.getMethod("exit"));
+        threadClass.defineFastMethod("kill", callbackFactory.getFastMethod("kill"));
+        threadClass.defineMethod("exit", callbackFactory.getMethod("exit"));
         
-        threadClass.defineFastSingletonMethod("current",
-                callbackFactory.getSingletonMethod("current"));
-        threadClass.defineSingletonMethod("fork",
-                callbackFactory.getOptSingletonMethod("newInstance"));
-        threadClass.defineSingletonMethod("new",
-                callbackFactory.getOptSingletonMethod("newInstance"));
-        threadClass.defineFastSingletonMethod("list",
-                callbackFactory.getSingletonMethod("list"));
-        threadClass.defineFastSingletonMethod("pass",
-                callbackFactory.getSingletonMethod("pass"));
-        threadClass.defineSingletonMethod("start",
-                callbackFactory.getOptSingletonMethod("start"));
-        threadClass.defineFastSingletonMethod("critical=", 
-                callbackFactory.getSingletonMethod("critical_set", RubyBoolean.class));
-        threadClass.defineFastSingletonMethod("critical", 
-                callbackFactory.getSingletonMethod("critical"));
-        threadClass.defineFastSingletonMethod("stop", 
-                callbackFactory.getSingletonMethod("stop"));
-        threadClass.defineSingletonMethod("kill", 
-                callbackFactory.getSingletonMethod("s_kill", RubyThread.class));
-        threadClass.defineSingletonMethod("exit", 
-                callbackFactory.getSingletonMethod("s_exit"));
-        threadClass.defineFastSingletonMethod("abort_on_exception",
-                callbackFactory.getSingletonMethod("abort_on_exception"));
-        threadClass.defineFastSingletonMethod("abort_on_exception=",
-                callbackFactory.getSingletonMethod("abort_on_exception_set", IRubyObject.class));
+        threadClass.defineFastSingletonMethod("current", callbackFactory.getFastSingletonMethod("current"));
+        threadClass.defineSingletonMethod("fork", callbackFactory.getOptSingletonMethod("newInstance"));
+        threadClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
+        threadClass.defineFastSingletonMethod("list", callbackFactory.getFastSingletonMethod("list"));
+        threadClass.defineFastSingletonMethod("pass", callbackFactory.getFastSingletonMethod("pass"));
+        threadClass.defineSingletonMethod("start", callbackFactory.getOptSingletonMethod("start"));
+        threadClass.defineFastSingletonMethod("critical=", callbackFactory.getFastSingletonMethod("critical_set", RubyBoolean.class));
+        threadClass.defineFastSingletonMethod("critical", callbackFactory.getFastSingletonMethod("critical"));
+        threadClass.defineFastSingletonMethod("stop", callbackFactory.getFastSingletonMethod("stop"));
+        threadClass.defineSingletonMethod("kill", callbackFactory.getSingletonMethod("s_kill", RubyThread.class));
+        threadClass.defineSingletonMethod("exit", callbackFactory.getSingletonMethod("s_exit"));
+        threadClass.defineFastSingletonMethod("abort_on_exception", callbackFactory.getFastSingletonMethod("abort_on_exception"));
+        threadClass.defineFastSingletonMethod("abort_on_exception=", callbackFactory.getFastSingletonMethod("abort_on_exception_set", IRubyObject.class));
 
         RubyThread rubyThread = new RubyThread(runtime, threadClass);
         // set hasStarted to true, otherwise Thread.main.status freezes
@@ -152,8 +123,7 @@ public class RubyThread extends RubyObject {
         rubyThread.threadImpl = new NativeThread(rubyThread, Thread.currentThread());
         runtime.getThreadService().setMainThread(rubyThread);
         
-        threadClass.defineFastSingletonMethod("main",
-        		callbackFactory.getSingletonMethod("main"));
+        threadClass.defineFastSingletonMethod("main", callbackFactory.getFastSingletonMethod("main"));
         
         return threadClass;
     }
@@ -174,8 +144,8 @@ public class RubyThread extends RubyObject {
      * </pre>
      * <i>produces:</i> abxyzc
      */
-    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-        return startThread(recv, args, true);
+    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
+        return startThread(recv, args, true, block);
     }
 
     /**
@@ -183,15 +153,15 @@ public class RubyThread extends RubyObject {
      * subclassed, then calling start in that subclass will not invoke the
      * subclass's initialize method.
      */
-    public static RubyThread start(IRubyObject recv, IRubyObject[] args) {
-        return startThread(recv, args, false);
+    public static RubyThread start(IRubyObject recv, IRubyObject[] args, Block block) {
+        return startThread(recv, args, false, block);
     }
     
     public static RubyThread adopt(IRubyObject recv, Thread t) {
-        return adoptThread(recv, t);
+        return adoptThread(recv, t, null);
     }
 
-    private static RubyThread adoptThread(final IRubyObject recv, Thread t) {
+    private static RubyThread adoptThread(final IRubyObject recv, Thread t, Block block) {
         final IRuby runtime = recv.getRuntime();
         final RubyThread rubyThread = new RubyThread(runtime, (RubyClass) recv, false);
         
@@ -200,24 +170,23 @@ public class RubyThread extends RubyObject {
         
         runtime.getCurrentContext().preAdoptThread();
         
-        rubyThread.callInit(new IRubyObject[0]);
+        rubyThread.callInit(new IRubyObject[0], block);
         
         rubyThread.notifyStarted();
         
         return rubyThread;
     }
 
-    private static RubyThread startThread(final IRubyObject recv, final IRubyObject[] args, boolean callInit) {
+    private static RubyThread startThread(final IRubyObject recv, final IRubyObject[] args, boolean callInit, Block block) {
         final IRuby runtime = recv.getRuntime();
-        if (!runtime.getCurrentContext().isBlockGiven()) {
-            throw runtime.newThreadError("must be called with a block");
-        }
+        if (block == null) throw runtime.newThreadError("must be called with a block");
+
         final RubyThread rubyThread = new RubyThread(runtime, (RubyClass) recv);
         if (callInit) {
-            rubyThread.callInit(args);
+            rubyThread.callInit(args, block);
         }
 
-        rubyThread.threadImpl = new NativeThread(rubyThread, args);
+        rubyThread.threadImpl = new NativeThread(rubyThread, args, block);
         rubyThread.threadImpl.start();
         
         // make sure the thread has started before continuing, so it will appear "runnable" to the rest of Ruby
@@ -284,7 +253,7 @@ public class RubyThread extends RubyObject {
         this.threadService = runtime.getThreadService();
         // set to default thread group
         RubyThreadGroup defaultThreadGroup = (RubyThreadGroup)runtime.getClass("ThreadGroup").getConstant("Default");
-        defaultThreadGroup.add(this);
+        defaultThreadGroup.add(this, null);
         
     }
 
@@ -294,7 +263,7 @@ public class RubyThread extends RubyObject {
         
         // set to default thread group
         RubyThreadGroup defaultThreadGroup = (RubyThreadGroup)runtime.getClass("ThreadGroup").getConstant("Default");
-        defaultThreadGroup.add(this);
+        defaultThreadGroup.add(this, null);
     }
 
     /**
@@ -456,11 +425,11 @@ public class RubyThread extends RubyObject {
     	return receiver.getRuntime().getNil();
     }
     
-    public static IRubyObject s_kill(IRubyObject receiver, RubyThread rubyThread) {
+    public static IRubyObject s_kill(IRubyObject receiver, RubyThread rubyThread, Block block) {
     	return rubyThread.kill();
     }
 
-    public static IRubyObject s_exit(IRubyObject receiver) {
+    public static IRubyObject s_exit(IRubyObject receiver, Block block) {
     	RubyThread rubyThread = receiver.getRuntime().getThreadService().getCurrentContext().getThread();
     	
 		rubyThread.killed = true;
@@ -576,7 +545,7 @@ public class RubyThread extends RubyObject {
     	return this;
     }
     
-    public IRubyObject exit() {
+    public IRubyObject exit(Block block) {
     	return kill();
     }
     

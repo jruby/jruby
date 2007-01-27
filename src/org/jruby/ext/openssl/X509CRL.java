@@ -57,6 +57,7 @@ import org.jruby.RubyObject;
 import org.jruby.RubyTime;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.openssl.x509store.PEM;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -80,32 +81,32 @@ public class X509CRL extends RubyObject {
         CallbackFactory crlcb = runtime.callbackFactory(X509CRL.class);
 
         cX509CRL.defineMethod("initialize",crlcb.getOptMethod("_initialize"));
-        cX509CRL.defineMethod("initialize_copy",crlcb.getMethod("initialize_copy",IRubyObject.class));
-        cX509CRL.defineMethod("clone",crlcb.getMethod("rbClone"));
+        cX509CRL.defineFastMethod("initialize_copy",crlcb.getFastMethod("initialize_copy",IRubyObject.class));
+        cX509CRL.defineFastMethod("clone",crlcb.getFastMethod("rbClone"));
 
-        cX509CRL.defineMethod("version",crlcb.getMethod("version"));
-        cX509CRL.defineMethod("version=",crlcb.getMethod("set_version",IRubyObject.class));
-        cX509CRL.defineMethod("signature_algorithm",crlcb.getMethod("signature_algorithm"));
-        cX509CRL.defineMethod("issuer",crlcb.getMethod("issuer"));
-        cX509CRL.defineMethod("issuer=",crlcb.getMethod("set_issuer",IRubyObject.class));
-        cX509CRL.defineMethod("last_update",crlcb.getMethod("last_update"));
-        cX509CRL.defineMethod("last_update=",crlcb.getMethod("set_last_update",IRubyObject.class));
-        cX509CRL.defineMethod("next_update",crlcb.getMethod("next_update"));
-        cX509CRL.defineMethod("next_update=",crlcb.getMethod("set_next_update",IRubyObject.class));
-        cX509CRL.defineMethod("revoked",crlcb.getMethod("revoked"));
-        cX509CRL.defineMethod("revoked=",crlcb.getMethod("set_revoked",IRubyObject.class));
-        cX509CRL.defineMethod("add_revoked",crlcb.getMethod("add_revoked",IRubyObject.class));
+        cX509CRL.defineFastMethod("version",crlcb.getFastMethod("version"));
+        cX509CRL.defineFastMethod("version=",crlcb.getFastMethod("set_version",IRubyObject.class));
+        cX509CRL.defineFastMethod("signature_algorithm",crlcb.getFastMethod("signature_algorithm"));
+        cX509CRL.defineFastMethod("issuer",crlcb.getFastMethod("issuer"));
+        cX509CRL.defineFastMethod("issuer=",crlcb.getFastMethod("set_issuer",IRubyObject.class));
+        cX509CRL.defineFastMethod("last_update",crlcb.getFastMethod("last_update"));
+        cX509CRL.defineFastMethod("last_update=",crlcb.getFastMethod("set_last_update",IRubyObject.class));
+        cX509CRL.defineFastMethod("next_update",crlcb.getFastMethod("next_update"));
+        cX509CRL.defineFastMethod("next_update=",crlcb.getFastMethod("set_next_update",IRubyObject.class));
+        cX509CRL.defineFastMethod("revoked",crlcb.getFastMethod("revoked"));
+        cX509CRL.defineFastMethod("revoked=",crlcb.getFastMethod("set_revoked",IRubyObject.class));
+        cX509CRL.defineFastMethod("add_revoked",crlcb.getFastMethod("add_revoked",IRubyObject.class));
 
-        cX509CRL.defineMethod("sign",crlcb.getMethod("sign",IRubyObject.class,IRubyObject.class));
-        cX509CRL.defineMethod("verify",crlcb.getMethod("verify",IRubyObject.class));
+        cX509CRL.defineFastMethod("sign",crlcb.getFastMethod("sign",IRubyObject.class,IRubyObject.class));
+        cX509CRL.defineFastMethod("verify",crlcb.getFastMethod("verify",IRubyObject.class));
 
-        cX509CRL.defineMethod("to_der",crlcb.getMethod("to_der"));
-        cX509CRL.defineMethod("to_pem",crlcb.getMethod("to_pem"));
-        cX509CRL.defineMethod("to_s",crlcb.getMethod("to_pem")); 
-        cX509CRL.defineMethod("to_text",crlcb.getMethod("to_text"));
-        cX509CRL.defineMethod("extensions",crlcb.getMethod("extensions"));
-        cX509CRL.defineMethod("extensions=",crlcb.getMethod("set_extensions",IRubyObject.class));
-        cX509CRL.defineMethod("add_extension",crlcb.getMethod("add_extension",IRubyObject.class));
+        cX509CRL.defineFastMethod("to_der",crlcb.getFastMethod("to_der"));
+        cX509CRL.defineFastMethod("to_pem",crlcb.getFastMethod("to_pem"));
+        cX509CRL.defineFastMethod("to_s",crlcb.getFastMethod("to_pem")); 
+        cX509CRL.defineFastMethod("to_text",crlcb.getFastMethod("to_text"));
+        cX509CRL.defineFastMethod("extensions",crlcb.getFastMethod("extensions"));
+        cX509CRL.defineFastMethod("extensions=",crlcb.getFastMethod("set_extensions",IRubyObject.class));
+        cX509CRL.defineFastMethod("add_extension",crlcb.getFastMethod("add_extension",IRubyObject.class));
     }
 
     private IRubyObject version;
@@ -132,7 +133,7 @@ public class X509CRL extends RubyObject {
         super(runtime,type);
     }
 
-    public IRubyObject _initialize(IRubyObject[] args) throws Exception {
+    public IRubyObject _initialize(IRubyObject[] args, Block block) throws Exception {
         //        System.err.println("WARNING: unimplemented method called: CRL#initialize");
         extensions = new ArrayList();
         if(checkArgumentCount(args,0,1) == 0) {

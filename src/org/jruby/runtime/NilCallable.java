@@ -22,7 +22,7 @@ public class NilCallable extends AbstractCallable{
     public NilCallable() {
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject receiver, IRubyObject[] args) {
+    public IRubyObject call(ThreadContext context, IRubyObject receiver, IRubyObject[] args, Block block) {
         return context.getRuntime().getNil();
     }
 

@@ -31,24 +31,19 @@
 package org.jruby.libraries;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Iterator;
-import java.util.Collections;
 import java.util.LinkedList;
 
 import org.jruby.IRuby;
 import org.jruby.RubyObject;
 import org.jruby.RubyClass;
-import org.jruby.RubyModule;
 import org.jruby.RubyBoolean;
-import org.jruby.RubyArray;
 import org.jruby.RubyThread;
 import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.load.Library;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -66,9 +61,9 @@ public class ThreadLibrary implements Library {
     public static class Mutex extends RubyObject {
         private RubyThread owner = null;
 
-        public static Mutex newInstance(IRubyObject recv, IRubyObject[] args) {
+        public static Mutex newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
             Mutex result = new Mutex(recv.getRuntime(), (RubyClass)recv);
-            result.callInit(args);
+            result.callInit(args, block);
             return result;
         }
 
@@ -84,10 +79,10 @@ public class ThreadLibrary implements Library {
             });
             CallbackFactory cb = runtime.callbackFactory(Mutex.class);
             cMutex.defineSingletonMethod("new", cb.getOptSingletonMethod("newInstance"));
-            cMutex.defineMethod("locked?", cb.getMethod("locked_p"));
-            cMutex.defineMethod("try_lock", cb.getMethod("try_lock"));
-            cMutex.defineMethod("lock", cb.getMethod("lock"));
-            cMutex.defineMethod("unlock", cb.getMethod("unlock"));
+            cMutex.defineFastMethod("locked?", cb.getFastMethod("locked_p"));
+            cMutex.defineFastMethod("try_lock", cb.getFastMethod("try_lock"));
+            cMutex.defineFastMethod("lock", cb.getFastMethod("lock"));
+            cMutex.defineFastMethod("unlock", cb.getFastMethod("unlock"));
             cMutex.defineMethod("synchronize", cb.getMethod("synchronize"));
         }
 
@@ -138,11 +133,10 @@ public class ThreadLibrary implements Library {
             }
         }
 
-        public IRubyObject synchronize() throws InterruptedException {
-            ThreadContext tc = getRuntime().getCurrentContext();
+        public IRubyObject synchronize(Block block) throws InterruptedException {
             try {
                 lock();
-                return getRuntime().getCurrentContext().yield(null);
+                return getRuntime().getCurrentContext().yield(null, block);
             } finally {
                 unlock();
             }
@@ -150,9 +144,9 @@ public class ThreadLibrary implements Library {
     }
 
     public static class ConditionVariable extends RubyObject {
-        public static ConditionVariable newInstance(IRubyObject recv, IRubyObject[] args) {
+        public static ConditionVariable newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
             ConditionVariable result = new ConditionVariable(recv.getRuntime(), (RubyClass)recv);
-            result.callInit(args);
+            result.callInit(args, block);
             return result;
         }
 
@@ -168,9 +162,9 @@ public class ThreadLibrary implements Library {
             });
             CallbackFactory cb = runtime.callbackFactory(ConditionVariable.class);
             cConditionVariable.defineSingletonMethod("new", cb.getOptSingletonMethod("newInstance"));
-            cConditionVariable.defineMethod("wait", cb.getMethod("wait_ruby", Mutex.class));
-            cConditionVariable.defineMethod("broadcast", cb.getMethod("broadcast"));
-            cConditionVariable.defineMethod("signal", cb.getMethod("signal"));
+            cConditionVariable.defineFastMethod("wait", cb.getFastMethod("wait_ruby", Mutex.class));
+            cConditionVariable.defineFastMethod("broadcast", cb.getFastMethod("broadcast"));
+            cConditionVariable.defineFastMethod("signal", cb.getFastMethod("signal"));
         }
 
         public IRubyObject wait_ruby(Mutex mutex) throws InterruptedException {
@@ -207,9 +201,9 @@ public class ThreadLibrary implements Library {
     public static class Queue extends RubyObject {
         private LinkedList entries;
 
-        public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
+        public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
             Queue result = new Queue(recv.getRuntime(), (RubyClass)recv);
-            result.callInit(args);
+            result.callInit(args, block);
             return result;
         }
 
@@ -227,12 +221,12 @@ public class ThreadLibrary implements Library {
             CallbackFactory cb = runtime.callbackFactory(Queue.class);
             cQueue.defineSingletonMethod("new", cb.getOptSingletonMethod("newInstance"));
 
-            cQueue.defineMethod("clear", cb.getMethod("clear"));
-            cQueue.defineMethod("empty?", cb.getMethod("empty_p"));
-            cQueue.defineMethod("length", cb.getMethod("length"));
-            cQueue.defineMethod("num_waiting", cb.getMethod("num_waiting"));
-            cQueue.defineMethod("pop", cb.getOptMethod("pop"));
-            cQueue.defineMethod("push", cb.getMethod("push", IRubyObject.class));
+            cQueue.defineFastMethod("clear", cb.getFastMethod("clear"));
+            cQueue.defineFastMethod("empty?", cb.getFastMethod("empty_p"));
+            cQueue.defineFastMethod("length", cb.getFastMethod("length"));
+            cQueue.defineFastMethod("num_waiting", cb.getFastMethod("num_waiting"));
+            cQueue.defineFastMethod("pop", cb.getFastOptMethod("pop"));
+            cQueue.defineFastMethod("push", cb.getFastMethod("push", IRubyObject.class));
             
             cQueue.defineAlias("<<", "push");
             cQueue.defineAlias("deq", "pop");
@@ -283,9 +277,9 @@ public class ThreadLibrary implements Library {
     public static class SizedQueue extends Queue {
         private int capacity;
 
-        public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
+        public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
             SizedQueue result = new SizedQueue(recv.getRuntime(), (RubyClass)recv);
-            result.callInit(args);
+            result.callInit(args, block);
             return result;
         }
 
@@ -303,13 +297,13 @@ public class ThreadLibrary implements Library {
             CallbackFactory cb = runtime.callbackFactory(SizedQueue.class);
             cSizedQueue.defineSingletonMethod("new", cb.getOptSingletonMethod("newInstance"));
 
-            cSizedQueue.defineMethod("initialize", cb.getMethod("max_set", RubyInteger.class));
+            cSizedQueue.defineFastMethod("initialize", cb.getFastMethod("max_set", RubyInteger.class));
 
-            cSizedQueue.defineMethod("clear", cb.getMethod("clear"));
-            cSizedQueue.defineMethod("max", cb.getMethod("max"));
-            cSizedQueue.defineMethod("max=", cb.getMethod("max_set", RubyInteger.class));
-            cSizedQueue.defineMethod("pop", cb.getOptMethod("pop"));
-            cSizedQueue.defineMethod("push", cb.getMethod("push", IRubyObject.class));
+            cSizedQueue.defineFastMethod("clear", cb.getFastMethod("clear"));
+            cSizedQueue.defineFastMethod("max", cb.getFastMethod("max"));
+            cSizedQueue.defineFastMethod("max=", cb.getFastMethod("max_set", RubyInteger.class));
+            cSizedQueue.defineFastMethod("pop", cb.getFastOptMethod("pop"));
+            cSizedQueue.defineFastMethod("push", cb.getFastMethod("push", IRubyObject.class));
 
             cSizedQueue.defineAlias("<<", "push");
             cSizedQueue.defineAlias("deq", "pop");

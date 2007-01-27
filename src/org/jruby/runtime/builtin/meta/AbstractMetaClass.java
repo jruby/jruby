@@ -314,7 +314,7 @@ public abstract class AbstractMetaClass extends RubyClass {
 	}
 
 	public void defineFastSingletonMethod(String name, Arity arity) {
-		defineSingletonMethod(name, arity, name);
+		defineFastSingletonMethod(name, arity, name);
 	}
 
 	public void defineFastSingletonMethod(String name, Arity arity, String java_name) {

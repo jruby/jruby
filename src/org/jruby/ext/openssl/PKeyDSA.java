@@ -48,6 +48,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.openssl.x509store.PEM;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -71,16 +72,16 @@ public class PKeyDSA extends PKey {
 
         cDSA.defineMethod("initialize",dsacb.getOptMethod("initialize"));
 
-        cDSA.defineMethod("public?",dsacb.getMethod("public_p"));
-        cDSA.defineMethod("private?",dsacb.getMethod("private_p"));
-        cDSA.defineMethod("to_der",dsacb.getMethod("to_der"));
-        cDSA.defineMethod("to_text",dsacb.getMethod("to_text"));
-        cDSA.defineMethod("public_key",dsacb.getMethod("public_key"));
-        cDSA.defineMethod("export",dsacb.getOptMethod("export"));
-        cDSA.defineMethod("to_pem",dsacb.getOptMethod("export"));
-        cDSA.defineMethod("to_s",dsacb.getOptMethod("export"));
-        cDSA.defineMethod("syssign",dsacb.getMethod("syssign",IRubyObject.class));
-        cDSA.defineMethod("sysverify",dsacb.getMethod("sysverify",IRubyObject.class,IRubyObject.class));
+        cDSA.defineFastMethod("public?",dsacb.getFastMethod("public_p"));
+        cDSA.defineFastMethod("private?",dsacb.getFastMethod("private_p"));
+        cDSA.defineFastMethod("to_der",dsacb.getFastMethod("to_der"));
+        cDSA.defineFastMethod("to_text",dsacb.getFastMethod("to_text"));
+        cDSA.defineFastMethod("public_key",dsacb.getFastMethod("public_key"));
+        cDSA.defineFastMethod("export",dsacb.getFastOptMethod("export"));
+        cDSA.defineFastMethod("to_pem",dsacb.getFastOptMethod("export"));
+        cDSA.defineFastMethod("to_s",dsacb.getFastOptMethod("export"));
+        cDSA.defineFastMethod("syssign",dsacb.getFastMethod("syssign",IRubyObject.class));
+        cDSA.defineFastMethod("sysverify",dsacb.getFastMethod("sysverify",IRubyObject.class,IRubyObject.class));
     }
 
     public PKeyDSA(IRuby runtime, RubyClass type) {
@@ -102,7 +103,7 @@ public class PKeyDSA extends PKey {
         return "DSA";
     }
 
-    public IRubyObject initialize(IRubyObject[] args) {
+    public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
         Object rsa;
         IRubyObject arg;
         IRubyObject pass = null;

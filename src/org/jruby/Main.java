@@ -262,7 +262,7 @@ public class Main {
         Iterator iter = commandline.requiredLibraries().iterator();
         while (iter.hasNext()) {
             String scriptName = (String) iter.next();
-            RubyKernel.require(runtime.getTopSelf(), runtime.newString(scriptName));
+            RubyKernel.require(runtime.getTopSelf(), runtime.newString(scriptName), null);
         }
     }
 

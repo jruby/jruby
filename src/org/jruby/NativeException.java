@@ -30,6 +30,7 @@ package org.jruby;
 import java.io.PrintStream;
 
 import org.jruby.javasupport.JavaObject;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -59,7 +60,7 @@ public class NativeException extends RubyException {
 		return exceptionClass;
     }
     
-    public IRubyObject cause() {
+    public IRubyObject cause(Block unusedBlock) {
         return getRuntime().getModule("JavaUtilities").callMethod(getRuntime().getCurrentContext(),
             "wrap",
             JavaObject.wrap(getRuntime(), cause));

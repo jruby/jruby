@@ -44,6 +44,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.meta.FileMetaClass;
 import org.jruby.util.IOHandler;
@@ -189,7 +190,7 @@ public class RubyFile extends RubyIO {
 		return getRuntime().getFalse();
 	}
 
-	public IRubyObject initialize(IRubyObject[] args) {
+	public IRubyObject initialize(IRubyObject[] args, Block block) {
 	    if (args.length == 0) {
 	        throw getRuntime().newArgumentError(0, 1);
 	    }
@@ -207,7 +208,7 @@ public class RubyFile extends RubyIO {
 	    }
 	    openInternal(path, modes);
 	    
-	    if (getRuntime().getCurrentContext().isBlockGiven()) {
+	    if (block != null) {
 	        // getRuby().getRuntime().warn("File::new does not take block; use File::open instead");
 	    }
 	    return this;

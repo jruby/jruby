@@ -49,6 +49,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyIO;
 import org.jruby.RubyKernel;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -83,8 +84,8 @@ public class IOMetaClass extends ObjectMetaClass {
 	        // on this.  This would allow things like cgi.rb to work properly.
 	
 	        defineSingletonMethod("foreach", Arity.optional());
-			defineFastSingletonMethod("read", Arity.optional());
-	        defineFastSingletonMethod("readlines", Arity.optional());
+			defineSingletonMethod("read", Arity.optional());
+	        defineSingletonMethod("readlines", Arity.optional());
 	        defineSingletonMethod("popen", Arity.optional());
             defineFastSingletonMethod("select", Arity.optional());
 			defineFastSingletonMethod("pipe", Arity.noArguments());
@@ -159,11 +160,11 @@ public class IOMetaClass extends ObjectMetaClass {
     /** rb_io_s_foreach
      * 
      */
-    public IRubyObject foreach(IRubyObject[] args) {
+    public IRubyObject foreach(IRubyObject[] args, Block block) {
         int count = checkArgumentCount(args, 1, -1);
         IRubyObject filename = args[0].convertToString();
         filename.checkSafeString();
-        RubyIO io = (RubyIO) ((FileMetaClass) getRuntime().getClass("File")).open(new IRubyObject[] { filename }, false);
+        RubyIO io = (RubyIO) ((FileMetaClass) getRuntime().getClass("File")).open(new IRubyObject[] { filename }, false, block);
 
         if (!io.isNil() && io.isOpen()) {
         	try {
@@ -172,7 +173,7 @@ public class IOMetaClass extends ObjectMetaClass {
 	
 	            IRubyObject nextLine = io.internalGets(newArgs);
 	            while (!nextLine.isNil()) {
-	                getRuntime().getCurrentContext().yield(nextLine);
+	                getRuntime().getCurrentContext().yield(nextLine, block);
 	                nextLine = io.internalGets(newArgs);
 	            }
         	} finally {
@@ -308,10 +309,10 @@ public class IOMetaClass extends ObjectMetaClass {
         }
     }
 
-    public IRubyObject read(IRubyObject[] args) {
+    public IRubyObject read(IRubyObject[] args, Block block) {
         checkArgumentCount(args, 1, 3);
         IRubyObject[] fileArguments = new IRubyObject[] {args[0]};
-        RubyIO file = (RubyIO) RubyKernel.open(this, fileArguments);
+        RubyIO file = (RubyIO) RubyKernel.open(this, fileArguments, block);
         IRubyObject[] readArguments;
 		
         if (args.length >= 2) {
@@ -332,12 +333,12 @@ public class IOMetaClass extends ObjectMetaClass {
         }
     }
 
-    public RubyArray readlines(IRubyObject[] args) {
+    public RubyArray readlines(IRubyObject[] args, Block block) {
         int count = checkArgumentCount(args, 1, 2);
 
         IRubyObject[] fileArguments = new IRubyObject[] {args[0]};
         IRubyObject[] separatorArguments = count >= 2 ? new IRubyObject[]{args[1]} : IRubyObject.NULL_ARRAY;
-        RubyIO file = (RubyIO) RubyKernel.open(this, fileArguments);
+        RubyIO file = (RubyIO) RubyKernel.open(this, fileArguments, block);
         try {
         	return file.readlines(separatorArguments);
         } finally {
@@ -346,7 +347,7 @@ public class IOMetaClass extends ObjectMetaClass {
     }
     
     //XXX Hacked incomplete popen implementation to make
-    public IRubyObject popen(IRubyObject[] args) {
+    public IRubyObject popen(IRubyObject[] args, Block block) {
     	IRuby runtime = getRuntime();
     	checkArgumentCount(args, 1, 2);
     	IRubyObject cmdObj = args[0].convertToString();
@@ -379,9 +380,9 @@ public class IOMetaClass extends ObjectMetaClass {
 	    	
 	    	RubyIO io = new RubyIO(runtime, process);
 	    	
-	    	if (tc.isBlockGiven()) {
+	    	if (block != null) {
 		        try {
-		        	tc.yield(io);
+		        	tc.yield(io, block);
 	    	        return runtime.getNil();
 		        } finally {
 		            io.close();

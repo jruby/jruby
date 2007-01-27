@@ -36,6 +36,7 @@ import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -59,11 +60,11 @@ public class Attribute extends RubyObject {
         CallbackFactory attrcb = runtime.callbackFactory(Attribute.class);
 
         cAttribute.defineMethod("initialize",attrcb.getOptMethod("_initialize"));
-        cAttribute.defineMethod("to_der",attrcb.getMethod("to_der"));
-        cAttribute.defineMethod("oid",attrcb.getMethod("oid"));
-        cAttribute.defineMethod("oid=",attrcb.getMethod("set_oid",IRubyObject.class));
-        cAttribute.defineMethod("value",attrcb.getMethod("value"));
-        cAttribute.defineMethod("value=",attrcb.getMethod("set_value",IRubyObject.class));
+        cAttribute.defineFastMethod("to_der",attrcb.getFastMethod("to_der"));
+        cAttribute.defineFastMethod("oid",attrcb.getFastMethod("oid"));
+        cAttribute.defineFastMethod("oid=",attrcb.getFastMethod("set_oid",IRubyObject.class));
+        cAttribute.defineFastMethod("value",attrcb.getFastMethod("value"));
+        cAttribute.defineFastMethod("value=",attrcb.getFastMethod("set_value",IRubyObject.class));
     }
 
     public Attribute(IRuby runtime, RubyClass type) {
@@ -95,7 +96,7 @@ public class Attribute extends RubyObject {
         return new DERSequence(v1);
     }
 
-    public IRubyObject _initialize(IRubyObject[] str) throws Exception {
+    public IRubyObject _initialize(IRubyObject[] str, Block unusedBlock) throws Exception {
         if(checkArgumentCount(str,1,2) == 1) {
             IRubyObject _oid = OpenSSLImpl.to_der_if_possible(str[0]);
             set_oid(_oid);

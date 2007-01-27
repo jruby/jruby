@@ -46,6 +46,7 @@ import org.jruby.ast.DefinedNode;
 import org.jruby.ast.DotNode;
 import org.jruby.ast.EnsureNode;
 import org.jruby.ast.EvStrNode;
+import org.jruby.ast.FCallNode;
 import org.jruby.ast.FlipNode;
 import org.jruby.ast.ForNode;
 import org.jruby.ast.GlobalAsgnNode;
@@ -109,8 +110,7 @@ public class CreateJumpTargetVisitor {
                 case NodeTypes.BLOCKPASSNODE:
                     setJumpTarget(target, ((BlockPassNode)node).getArgsNode());
                     setJumpTarget(target, ((BlockPassNode)node).getBodyNode());
-                    node = ((BlockPassNode)node).getIterNode();
-                    continue bigloop;
+                    return;
                 case NodeTypes.BREAKNODE:
                     node = ((BreakNode)node).getValueNode();
                     continue bigloop;
@@ -128,6 +128,7 @@ public class CreateJumpTargetVisitor {
                     node = ((ClassVarDeclNode)node).getValueNode();
                     continue bigloop;
                 case NodeTypes.CALLNODE:
+                    setJumpTarget(target, ((CallNode)node).getIterNode());
                     node = ((CallNode)node).getReceiverNode();
                     continue bigloop;
                 case NodeTypes.CASENODE:
@@ -154,6 +155,9 @@ public class CreateJumpTargetVisitor {
                 case NodeTypes.EVSTRNODE:
                     node = ((EvStrNode)node).getBody();
                     continue bigloop;
+                case NodeTypes.FCALLNODE:
+                    setJumpTarget(target, ((FCallNode)node).getIterNode());
+                    return;
                 case NodeTypes.FLIPNODE:
                     setJumpTarget(target, ((FlipNode)node).getBeginNode());
                     node = ((FlipNode)node).getEndNode();
@@ -176,7 +180,6 @@ public class CreateJumpTargetVisitor {
                     continue bigloop;
                 case NodeTypes.ITERNODE:
                     setJumpTarget(target, ((IterNode)node).getBodyNode());
-                    setJumpTarget(target, ((IterNode)node).getIterNode());
                     node = ((IterNode)node).getVarNode();
                     continue bigloop;
                 case NodeTypes.LOCALASGNNODE:

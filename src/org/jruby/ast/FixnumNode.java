@@ -46,7 +46,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class FixnumNode extends Node implements ILiteralNode {
     static final long serialVersionUID = 2236565825959274729L;
 
-    private final long value;
+    private long value;
     private RubyFixnum fixnum;
 
     public FixnumNode(ISourcePosition position, long value) {
@@ -64,6 +64,14 @@ public class FixnumNode extends Node implements ILiteralNode {
      */
     public long getValue() {
         return value;
+    }
+    
+    public void setValue(long value) {
+        // This should never happen past parse, but just bulletproof this just in case
+        if (fixnum != null) {
+            fixnum = null;
+        }
+        this.value = value;
     }
     
     public RubyFixnum getFixnum(IRuby runtime) {

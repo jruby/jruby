@@ -31,6 +31,7 @@
 package org.jruby;
 
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 
@@ -54,7 +55,7 @@ public final class TopSelfFactory {
             /**
              * @see org.jruby.runtime.callback.Callback#execute(IRubyObject, IRubyObject[])
              */
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
+            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
                 return runtime.newString("main");
             }
 
@@ -70,7 +71,7 @@ public final class TopSelfFactory {
             /**
              * @see org.jruby.runtime.callback.Callback#execute(IRubyObject, IRubyObject[])
              */
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
+            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
                 runtime.secure(4);
                 return runtime.getObject().include(args);
             }
@@ -87,8 +88,8 @@ public final class TopSelfFactory {
             /**
              * @see org.jruby.runtime.callback.Callback#execute(IRubyObject, IRubyObject[])
              */
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
-                return runtime.getObject().rbPublic(args);
+            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
+                return runtime.getObject().rbPublic(args, block);
             }
 
             /**
@@ -103,8 +104,8 @@ public final class TopSelfFactory {
             /**
              * @see org.jruby.runtime.callback.Callback#execute(IRubyObject, IRubyObject[])
              */
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
-                return runtime.getObject().rbPrivate(args);
+            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
+                return runtime.getObject().rbPrivate(args, block);
             }
 
             /**

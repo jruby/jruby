@@ -34,6 +34,7 @@ package org.jruby;
 
 import java.util.List;
 
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -70,20 +71,20 @@ public class RubyStruct extends RubyObject {
         structClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
         structClass.defineMethod("clone", callbackFactory.getMethod("rbClone"));
 
-        structClass.defineFastMethod("==", callbackFactory.getMethod("equal", IRubyObject.class));
+        structClass.defineFastMethod("==", callbackFactory.getFastMethod("equal", IRubyObject.class));
 
-        structClass.defineFastMethod("to_s", callbackFactory.getMethod("to_s"));
-        structClass.defineFastMethod("inspect", callbackFactory.getMethod("inspect"));
-        structClass.defineFastMethod("to_a", callbackFactory.getMethod("to_a"));
-        structClass.defineFastMethod("values", callbackFactory.getMethod("to_a"));
-        structClass.defineFastMethod("size", callbackFactory.getMethod("size"));
-        structClass.defineFastMethod("length", callbackFactory.getMethod("size"));
+        structClass.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
+        structClass.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
+        structClass.defineFastMethod("to_a", callbackFactory.getFastMethod("to_a"));
+        structClass.defineFastMethod("values", callbackFactory.getFastMethod("to_a"));
+        structClass.defineFastMethod("size", callbackFactory.getFastMethod("size"));
+        structClass.defineFastMethod("length", callbackFactory.getFastMethod("size"));
 
         structClass.defineMethod("each", callbackFactory.getMethod("each"));
-        structClass.defineFastMethod("[]", callbackFactory.getMethod("aref", IRubyObject.class));
-        structClass.defineFastMethod("[]=", callbackFactory.getMethod("aset", IRubyObject.class, IRubyObject.class));
+        structClass.defineFastMethod("[]", callbackFactory.getFastMethod("aref", IRubyObject.class));
+        structClass.defineFastMethod("[]=", callbackFactory.getFastMethod("aset", IRubyObject.class, IRubyObject.class));
 
-        structClass.defineFastMethod("members", callbackFactory.getMethod("members"));
+        structClass.defineFastMethod("members", callbackFactory.getFastMethod("members"));
 
         return structClass;
     }
@@ -152,7 +153,7 @@ public class RubyStruct extends RubyObject {
      * MRI: rb_struct_s_def / make_struct
      *
      */
-    public static RubyClass newInstance(IRubyObject recv, IRubyObject[] args) {
+    public static RubyClass newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
         String name = null;
         IRuby runtime = recv.getRuntime();
 
@@ -199,9 +200,8 @@ public class RubyStruct extends RubyObject {
             newStruct.defineMethod(memberName + "=", callbackFactory.getMethod("set", IRubyObject.class));
         }
         
-        ThreadContext context = recv.getRuntime().getCurrentContext();
-        if (context.isBlockGiven()) {
-            context.getFrameBlock().yield(context, null, newStruct, newStruct, false);
+        if (block != null) {
+            block.yield(recv.getRuntime().getCurrentContext(), null, newStruct, newStruct, false);
         }
 
         return newStruct;
@@ -212,19 +212,19 @@ public class RubyStruct extends RubyObject {
      * MRI: struct_alloc
      *
      */
-    public static RubyStruct newStruct(IRubyObject recv, IRubyObject[] args) {
+    public static RubyStruct newStruct(IRubyObject recv, IRubyObject[] args, Block block) {
         RubyStruct struct = new RubyStruct(recv.getRuntime(), (RubyClass) recv);
 
         int size = RubyNumeric.fix2int(getInstanceVariable((RubyClass) recv, "__size__"));
 
         struct.values = new IRubyObject[size];
 
-        struct.callInit(args);
+        struct.callInit(args, block);
 
         return struct;
     }
 
-    public IRubyObject initialize(IRubyObject[] args) {
+    public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
         modify();
 
         int size = RubyNumeric.fix2int(getInstanceVariable(getMetaClass(), "__size__"));
@@ -243,8 +243,8 @@ public class RubyStruct extends RubyObject {
 
         return getRuntime().getNil();
     }
-
-    public static RubyArray members(IRubyObject recv) {
+    
+    public static RubyArray members(IRubyObject recv, Block block) {
         RubyArray member = (RubyArray) getInstanceVariable((RubyClass) recv, "__member__");
 
         assert !member.isNil() : "uninitialized struct";
@@ -258,10 +258,10 @@ public class RubyStruct extends RubyObject {
     }
 
     public RubyArray members() {
-        return members(classOf());
+        return members(classOf(), null);
     }
 
-    public IRubyObject set(IRubyObject value) {
+    public IRubyObject set(IRubyObject value, Block block) {
         String name = getRuntime().getCurrentContext().getFrameLastFunc();
         if (name.endsWith("=")) {
             name = name.substring(0, name.length() - 1);
@@ -286,7 +286,7 @@ public class RubyStruct extends RubyObject {
         return getRuntime().newNameError(name + " is not struct member", name);
     }
 
-    public IRubyObject get() {
+    public IRubyObject get(Block block) {
         String name = getRuntime().getCurrentContext().getFrameLastFunc();
 
         RubyArray member = (RubyArray) getInstanceVariable(classOf(), "__member__");
@@ -302,7 +302,7 @@ public class RubyStruct extends RubyObject {
         throw notStructMemberError(name);
     }
 
-    public IRubyObject rbClone() {
+    public IRubyObject rbClone(Block block) {
         RubyStruct clone = new RubyStruct(getRuntime(), getMetaClass());
 
         clone.values = new IRubyObject[values.length];
@@ -366,10 +366,10 @@ public class RubyStruct extends RubyObject {
         return getRuntime().newFixnum(values.length);
     }
 
-    public IRubyObject each() {
+    public IRubyObject each(Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
         for (int i = 0; i < values.length; i++) {
-            context.yield(values[i]);
+            context.yield(values[i], block);
         }
 
         return this;
@@ -448,7 +448,7 @@ public class RubyStruct extends RubyObject {
             values[i] = input.unmarshalObject();
         }
 
-        RubyStruct result = newStruct(rbClass, values);
+        RubyStruct result = newStruct(rbClass, values, null);
         input.registerLinkTarget(result);
         return result;
     }

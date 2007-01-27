@@ -393,7 +393,7 @@ public class BaseMockRuby implements IRuby {
 
     }
 
-    public RubyProc newProc() {
+    public RubyProc newProc(boolean isLambda, Block block) {
         throw new MockException();
         
     }

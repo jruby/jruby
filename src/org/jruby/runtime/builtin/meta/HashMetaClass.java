@@ -12,6 +12,7 @@ import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -36,8 +37,9 @@ public class HashMetaClass extends ObjectMetaClass {
 			defineFastMethod("clear", Arity.noArguments(), "rb_clear");
 			defineFastMethod("clone", Arity.noArguments(), "rbClone");
 			defineMethod("default", Arity.optional(), "getDefaultValue");
-            defineMethod("default_proc", Arity.noArguments()); 
-			defineMethod("default=", Arity.singleArgument(), "setDefaultValue");
+            defineMethod("default_proc", Arity.noArguments());
+            // ENEBO: I made this fast, which perhaps is bad?
+			defineFastMethod("default=", Arity.singleArgument(), "setDefaultValue");
 			defineMethod("delete", Arity.singleArgument());
 			defineMethod("delete_if", Arity.noArguments());
 			defineMethod("each", Arity.noArguments());
@@ -103,25 +105,18 @@ public class HashMetaClass extends ObjectMetaClass {
         }
     };
 
-    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-        // FIXME: This is pretty ugly, but I think it's being done to capture the block. Confirm that.
-    	IRuby runtime = recv.getRuntime();
-        RubyHash hash = (RubyHash)((RubyClass)recv).allocate();
-
-        // A block to represent 'default' value for unknown values
-        if (runtime.getCurrentContext().isBlockGiven()) {
-        	hash.setDefaultProc(runtime.newProc());
-        }
+    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
+        RubyHash hash = (RubyHash) ((RubyClass) recv).allocate();
         
-        hash.callInit(args);
+        hash.callInit(args, block);
         
         return hash;
     }
     
-    public static IRubyObject create(IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject create(IRubyObject recv, IRubyObject[] args, Block block) {
         IRuby runtime = recv.getRuntime();
-        RubyClass klass = (RubyClass)recv;
-        RubyHash hash = (RubyHash)klass.allocate();
+        RubyClass klass = (RubyClass) recv;
+        RubyHash hash = (RubyHash) klass.allocate();
 
         if (args.length == 1) {
             hash.setValueMap(new HashMap(((RubyHash) args[0]).getValueMap()));

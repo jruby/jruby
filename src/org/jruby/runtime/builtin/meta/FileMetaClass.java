@@ -49,6 +49,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -513,11 +514,11 @@ public class FileMetaClass extends IOMetaClass {
         return getRuntime().newTime(JRubyFile.create(getRuntime().getCurrentDirectory(),name.toString()).lastModified());
     }
 
-	public IRubyObject open(IRubyObject[] args) {
-	    return open(args, true);
+	public IRubyObject open(IRubyObject[] args, Block block) {
+	    return open(args, true, block);
 	}
 	
-	public IRubyObject open(IRubyObject[] args, boolean tryToYield) {
+	public IRubyObject open(IRubyObject[] args, boolean tryToYield, Block block) {
         checkArgumentCount(args, 1, -1);
         IRuby runtime = getRuntime();
         ThreadContext tc = runtime.getCurrentContext();
@@ -539,10 +540,10 @@ public class FileMetaClass extends IOMetaClass {
             chmod(new IRubyObject[] {fileMode, pathString});
         }
 
-        if (tryToYield && tc.isBlockGiven()) {
+        if (tryToYield && block != null) {
             IRubyObject value = getRuntime().getNil();
 	        try {
-	            value = tc.yield(file);
+	            value = tc.yield(file, block);
 	        } finally {
 	            file.close();
 	        }
@@ -626,7 +627,7 @@ public class FileMetaClass extends IOMetaClass {
         RubyString filename = RubyString.stringValue(arg1);
         RubyFixnum newLength = (RubyFixnum) arg2.convertToType("Fixnum", "to_int", true);
         IRubyObject[] args = new IRubyObject[] { filename, getRuntime().newString("w+") };
-        RubyFile file = (RubyFile) open(args, false);
+        RubyFile file = (RubyFile) open(args, false, null);
         file.truncate(newLength);
         file.close();
         
