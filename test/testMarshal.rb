@@ -249,3 +249,23 @@ test_core_subclass_marshalling(Range, 1, 10)
 test_core_subclass_marshalling(Array, 0)
 test_core_subclass_marshalling(Hash, 5)
 test_core_subclass_marshalling(Regexp, //)
+
+# FIXME: this isn't working because we intercept system calls to "ruby" and run JRuby...
+=begin
+ruby_available = (`ruby -v`[0..3] == "ruby")
+
+if ruby_available
+  def test_dump_against_ruby(eval_string)
+    ruby_command = "ruby -e 'p Marshal.dump(eval\"#{eval_string}\")'"
+    ruby_output = "Ruby output: " + system(ruby_command)
+
+    test_equal(ruby_output, Marshal.dump(eval(eval_string)))
+  end
+else
+  def test_dump_against_ruby(eval_string)
+    warn "ruby interpreter not available, skipping test
+  end
+end
+
+test_dump_against_ruby("Object.new")
+=end

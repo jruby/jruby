@@ -89,10 +89,10 @@ public class UnmarshalStream extends FilterInputStream {
     private IRubyObject unmarshalObjectDirectly(int type) throws IOException {
     	IRubyObject rubyObj = null;
         switch (type) {
-        	case 'I':
+            case 'I':
                 rubyObj = unmarshalObject();
                 defaultInstanceVarsUnmarshal(rubyObj);
-        		break;
+                break;
             case '0' :
                 rubyObj = runtime.getNil();
                 break;
@@ -155,9 +155,10 @@ public class UnmarshalStream extends FilterInputStream {
                 throw getRuntime().newArgumentError("dump format error(" + (char)type + ")");
         }
         
-        if (proc != null) {
-			proc.callMethod(getRuntime().getCurrentContext(), "call", new IRubyObject[] {rubyObj});
-		}
+        if (proc != null && type != ':') {
+            // call the proc, but not for symbols
+            proc.callMethod(getRuntime().getCurrentContext(), "call", new IRubyObject[] {rubyObj});
+        }
         return rubyObj;
     }
 
