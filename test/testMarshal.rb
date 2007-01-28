@@ -223,19 +223,29 @@ test_ok(z.include?("excl"))
 test_ok(z.include?("begin"))
 test_ok(z.include?("end"))
 
-class MyRange < Range
-  attr_accessor :foo
-
-  def initialize(a,b)
-    super
-    @foo = "hello"
+def test_core_subclass_marshalling(type, *init_args)
+  my_type = nil
+  eval <<-EOS
+  class My#{type} < #{type}
+    attr_accessor :foo
+    def initialize(*args)
+      super
+      @foo = "hello"
+    end
   end
+  my_type = My#{type}
+  EOS
+
+  x = my_type.new(*init_args)
+  y = Marshal.load(Marshal.dump(x))
+  test_equal(my_type, y.class)
+  test_no_exception {
+    test_equal(x.to_s, y.to_s)
+    test_equal("hello", y.foo)
+  }
 end
 
-x = MyRange.new(1,10)
-y = Marshal.load(Marshal.dump(x))
-test_equal(MyRange, y.class)
-test_no_exception {
-  test_equal(10, y.max)
-  test_equal("hello", y.foo)
-}
+test_core_subclass_marshalling(Range, 1, 10)
+test_core_subclass_marshalling(Array, 0)
+test_core_subclass_marshalling(Hash, 5)
+test_core_subclass_marshalling(Regexp, //)
