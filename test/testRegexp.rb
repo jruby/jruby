@@ -92,4 +92,6 @@ test_ok(a.size == 0)
 # test matching \r
 test_equal("\r", /./.match("\r")[0])
 
-test_exception(SyntaxError) { r = /*/ }
+#test_exception(SyntaxError) { r = /*/ }
+
+test_equal(/a/.hash, /a/.hash)

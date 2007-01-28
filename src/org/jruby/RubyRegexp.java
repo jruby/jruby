@@ -104,7 +104,8 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         regexpClass.defineFastMethod("initialize", callbackFactory.getFastOptMethod("initialize"));
         regexpClass.defineFastMethod("initialize_copy", callbackFactory.getFastMethod("initialize_copy",IRubyObject.class));        
         regexpClass.defineFastMethod("==", callbackFactory.getFastMethod("equal", IRubyObject.class));
-        regexpClass.defineFastMethod("===", callbackFactory.getFastMethod("match", IRubyObject.class));
+        regexpClass.defineFastMethod("eql?", callbackFactory.getFastMethod("equal", IRubyObject.class));
+        regexpClass.defineFastMethod("===", callbackFactory.getFastMethod("eqq", IRubyObject.class));
         regexpClass.defineFastMethod("=~", callbackFactory.getFastMethod("match", IRubyObject.class));
         regexpClass.defineFastMethod("~", callbackFactory.getFastMethod("match2"));
         regexpClass.defineFastMethod("match", callbackFactory.getFastMethod("match_m", IRubyObject.class));
@@ -113,6 +114,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         regexpClass.defineFastMethod("casefold?", callbackFactory.getFastMethod("casefold"));
         regexpClass.defineFastMethod("kcode", callbackFactory.getFastMethod("kcode"));
         regexpClass.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
+        regexpClass.defineFastMethod("hash", callbackFactory.getFastMethod("hash"));
 
         regexpClass.getMetaClass().defineFastMethod("new", callbackFactory.getFastOptSingletonMethod("newInstance"));
         regexpClass.getMetaClass().defineFastMethod("compile", callbackFactory.getFastOptSingletonMethod("newInstance"));
@@ -259,6 +261,27 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         return target instanceof RubyString ? match(target) : getRuntime().getNil();
     }
     
+    /** rb_reg_eqq
+     * 
+     */
+    public IRubyObject eqq(IRubyObject target) {
+        if(!(target instanceof RubyString)) {
+            target = target.checkStringType();
+            if(target.isNil()) {
+                getRuntime().getCurrentContext().setBackref(getRuntime().getNil());
+                return getRuntime().getFalse();
+            }
+        }
+    	String string = RubyString.stringValue(target).toString();
+    	if (string.length() == 0) {
+    		string = "\n";
+    	}
+    	
+        int result = search(string, 0);
+        
+        return result < 0 ? getRuntime().getFalse() : getRuntime().getTrue();
+    }
+
     /** rb_reg_match
      * 
      */
@@ -683,4 +706,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 		return this.pattern;
 	}
 
+    public RubyFixnum hash() {
+        return getRuntime().newFixnum(this.pattern.pattern().hashCode());
+    }
 }

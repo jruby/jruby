@@ -387,4 +387,6 @@ public interface IRubyObject {
     RubyFixnum id();
 
     IRubyObject anyToString();
+
+    IRubyObject checkStringType();
 }

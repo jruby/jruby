@@ -613,6 +613,17 @@ public class RubyObject implements Cloneable, IRubyObject {
 
         return result;
     }
+    
+    /** rb_check_string_type
+     *
+     */
+    public IRubyObject checkStringType() {
+        IRubyObject str = convertToTypeWithCheck("String","to_str");
+        if(!str.isNil() && !(str instanceof RubyString)) {
+            str = getRuntime().newString("");
+        }
+        return str;
+    }
 
     public void checkSafeString() {
         if (getRuntime().getSafeLevel() > 0 && isTaint()) {
