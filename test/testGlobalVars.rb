@@ -18,7 +18,7 @@ test_ok($foo == 10)
 $foo = 5
 test_ok($bar == 5)
 
-test_equal("UTF8", $KCODE)
+test_equal("NONE", $KCODE)
 
 # Make last test so we don't have safety mucking with other tests
 test_exception(SecurityError) { $SAFE = 3; $SAFE = 2 }

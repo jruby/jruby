@@ -47,6 +47,7 @@ import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.ReadonlyGlobalVariable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.KCode;
 
 /** This class initializes global variables and constants.
  * 
@@ -102,7 +103,9 @@ public class RubyGlobal {
         runtime.defineGlobalConstant("RELEASE_DATE", release);
         runtime.defineGlobalConstant("PLATFORM", platform);
 		
-        runtime.defineVariable(new StringGlobalVariable(runtime, "$KCODE", runtime.newString("UTF8")));
+        GlobalVariable kcodeGV = new KCodeGlobalVariable(runtime, "$KCODE", runtime.newString("NONE"));
+        runtime.defineVariable(kcodeGV);
+        runtime.defineVariable(new GlobalVariable.Copy(runtime, "$-K", kcodeGV));
         runtime.defineVariable(new StringGlobalVariable(runtime, "$/", runtime.newString("\n")));
         runtime.defineVariable(new StringGlobalVariable(runtime, "$\\", runtime.getNil()));
         runtime.defineVariable(new StringGlobalVariable(runtime, "$,", runtime.getNil()));
@@ -216,6 +219,24 @@ public class RubyGlobal {
                 throw runtime.newTypeError("value of " + name() + " must be a String");
             }
             return super.set(value);
+        }
+    }
+
+    public static class KCodeGlobalVariable extends GlobalVariable {
+        public KCodeGlobalVariable(IRuby runtime, String name, IRubyObject value) {
+            super(runtime, name, value);
+        }
+
+        public IRubyObject get() {
+            return runtime.getKCode().kcode(runtime);
+        }
+
+        public IRubyObject set(IRubyObject value) {
+            if (!value.isNil() && ! (value instanceof RubyString)) {
+                throw runtime.newTypeError("value of " + name() + " must be a String");
+            }
+            runtime.setKCode(KCode.create(runtime, value.toString()));
+            return value;
         }
     }
 

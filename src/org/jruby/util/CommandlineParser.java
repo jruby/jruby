@@ -69,7 +69,7 @@ public class CommandlineParser {
     private boolean compilerEnabled = false;
     private boolean yarv = false;
     private boolean yarvCompile = false;
-    private KCode kcode = KCode.NIL;
+    private KCode kcode = KCode.NONE;
 
     public int argumentIndex = 0;
     public int characterIndex = 0;
@@ -170,11 +170,7 @@ public class CommandlineParser {
                     // siphon off additional args 'jruby -K ~/scripts/foo'.  Also better error
                     // processing.
                     String eArg = grabValue("provide a value for -K");
-                    
-                    if ("u".equals(eArg) || "U".equals(eArg) || "UTF8".equals(eArg)) {
-                        kcode = KCode.UTF8;
-                    }
-                    
+                    kcode = KCode.create(null, eArg);
                     break;
                 case '-' :
                     if (argument.equals("--version")) {

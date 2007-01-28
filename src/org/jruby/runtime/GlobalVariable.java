@@ -35,6 +35,23 @@ import org.jruby.IRuby;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class GlobalVariable {
+    public static class Copy extends GlobalVariable {
+        private GlobalVariable other;
+
+        public Copy(IRuby runtime, String name, GlobalVariable other) {
+            super(runtime, name, other.get());
+            this.other = other;
+        }
+
+        public IRubyObject get() {
+            return other.get();
+        }
+
+        public IRubyObject set(IRubyObject value) {
+            return other.set(value);
+        }
+    }
+
     protected final IRuby runtime;
 
     private final String name;

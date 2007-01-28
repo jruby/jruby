@@ -208,7 +208,7 @@ public final class Ruby implements IRuby {
 
     private String jrubyHome;
     
-    private KCode kcode = KCode.NIL;
+    private KCode kcode = KCode.NONE;
 
     /**
      * Create and initialize a new jruby Runtime.

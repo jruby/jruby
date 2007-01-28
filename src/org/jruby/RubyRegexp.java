@@ -303,7 +303,11 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     }
 
     public IRubyObject kcode() {
-        return code.kcode(getRuntime());
+        if(code == KCode.NIL) {
+            return code.kcode(getRuntime());
+        } else {
+            return getRuntime().newString(code.kcode(getRuntime()).toString().toLowerCase());
+        }
     }
 
     /** rb_reg_casefold_p

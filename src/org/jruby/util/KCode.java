@@ -34,9 +34,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class KCode {
     public static final KCode NIL = new KCode(null);
-    public static final KCode NONE = new KCode("none");
-    public static final KCode UTF8 = new KCode("utf8");
-    public static final KCode SJIS = new KCode("sjis");
+    public static final KCode NONE = new KCode("NONE");
+    public static final KCode UTF8 = new KCode("UTF8");
+    public static final KCode SJIS = new KCode("SJIS");
+    public static final KCode EUC = new KCode("EUC");
 
     private String kcode;
 
@@ -45,15 +46,27 @@ public class KCode {
     }
 
     public static KCode create(IRuby runtime, String lang) {
-        if (lang == null) {
+        if(lang == null) {
             return NIL;
-        } else if (lang.charAt(0) == 'n' || lang.charAt(0) == 'N') {
-            return NONE;
-        } else if (lang.charAt(0) == 'u' || lang.charAt(0) == 'U') {
-            return UTF8;
-        } else if (lang.charAt(0) == 's' || lang.charAt(0) == 'S') {
+        }
+
+        switch(lang.charAt(0)) {
+        case 'E':
+        case 'e':
+            runtime.getWarnings().warn("JRuby supports only Unicode regexp.");
+            return EUC;
+        case 'S':
+        case 's':
             runtime.getWarnings().warn("JRuby supports only Unicode regexp.");
             return SJIS;
+        case 'U':
+        case 'u':
+            return UTF8;
+        case 'N':
+        case 'n':
+        case 'A':
+        case 'a':
+            return NONE;
         }
         return NIL;
     }
