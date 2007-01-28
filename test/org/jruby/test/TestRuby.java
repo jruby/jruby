@@ -17,6 +17,7 @@
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2006 Aslak Hellesoy <rinkrank@codehaus.org>
  * Copyright (C) 2006 Michael Studman <codehaus@michaelstudman.com>
+ * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -41,6 +42,7 @@ import org.jruby.IRuby;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyException;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyIO;
 import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
@@ -97,8 +99,11 @@ public class TestRuby extends TestRubyBase {
     }
     
     public void testPrintErrorShouldPrintErrorMessageAndStacktraceWhenBacktraceIsPresent() {
-        ByteArrayOutputStream err = new ByteArrayOutputStream();
-        IRuby ruby = Ruby.newInstance(System.in, System.out, new PrintStream(err), false);
+        final ByteArrayOutputStream err = new ByteArrayOutputStream();
+        RubyInstanceConfig config = new RubyInstanceConfig() {{
+            setInput(System.in); setOutput(System.out); setError(new PrintStream(err)); setObjectSpaceEnabled(false);
+        }};
+        IRuby ruby = Ruby.newInstance(config);
         RubyException exception = new RubyException(ruby, ruby.getClass("NameError"), "A message");
         RubyString[] lines = new RubyString[]{
             RubyString.newString(ruby, "Line 1"),
@@ -111,8 +116,11 @@ public class TestRuby extends TestRubyBase {
     }
     
     public void testPrintErrorShouldOnlyPrintErrorMessageWhenBacktraceIsNil() {
-        ByteArrayOutputStream err = new ByteArrayOutputStream();
-        IRuby ruby = Ruby.newInstance(System.in, System.out, new PrintStream(err), false);
+        final ByteArrayOutputStream err = new ByteArrayOutputStream();
+        RubyInstanceConfig config = new RubyInstanceConfig() {{
+            setInput(System.in); setOutput(System.out); setError(new PrintStream(err)); setObjectSpaceEnabled(false);
+        }};
+        IRuby ruby = Ruby.newInstance(config);
         RubyException exception = new RubyException(ruby, ruby.getClass("NameError"), "A message");
         ruby.printError(exception);
         //        assertEquals(":[0,0]:[0,7]: A message (NameError)\n", err.toString());

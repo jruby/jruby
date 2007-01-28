@@ -9,6 +9,7 @@ import java.util.ArrayList;
 
 import org.jruby.IRuby;
 import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig;
 
 public class DOMScriptingApplet extends Applet {
 
@@ -16,12 +17,17 @@ public class DOMScriptingApplet extends Applet {
         super.start();
 
         try {
-            final PipedInputStream pipeIn = new PipedInputStream();
-            final PipedOutputStream out = new PipedOutputStream(pipeIn);
-            final PipedInputStream in = new PipedInputStream();
+            final PipedInputStream pipeIn   = new PipedInputStream();
+            final PipedOutputStream out     = new PipedOutputStream(pipeIn);
+            final PipedInputStream in       = new PipedInputStream();
             final PipedOutputStream pipeOut = new PipedOutputStream(in);
-            final IRuby runtime = Ruby.newInstance(pipeIn, new PrintStream(pipeOut),
-                    new PrintStream(pipeOut), false);
+            final RubyInstanceConfig config = new RubyInstanceConfig() {{
+                setInput(pipeIn);
+                setOutput(new PrintStream(pipeOut));
+                setError(new PrintStream(pipeOut));
+                setObjectSpaceEnabled(false);
+            }};
+            final IRuby runtime = Ruby.newInstance(config);
 
             runtime.defineGlobalConstant("ARGV", runtime.newArray());
             //runtime.defineGlobalConstant("JSObject", JavaEmbedUtils.javaToRuby(runtime, JSObject.getWindow(this)));

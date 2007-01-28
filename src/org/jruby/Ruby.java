@@ -22,7 +22,8 @@
  * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * Copyright (C) 2006 Michael Studman <codehaus@michaelstudman.com>
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -120,11 +121,11 @@ import org.jruby.util.collections.SinglyLinkedList;
  */
 public final class Ruby implements IRuby {
     private static String[] BUILTIN_LIBRARIES = {"fcntl", "yaml", "etc", "nkf" };
-    
+
     private CacheMap cacheMap = new CacheMap(this);
     private ThreadService threadService = new ThreadService(this);
     private Hashtable runtimeInformation;
-    private final MethodSelectorTable selectorTable;
+    private final MethodSelectorTable selectorTable = new MethodSelectorTable();
 
     private int stackTraces = 0;
 
@@ -143,7 +144,7 @@ public final class Ruby implements IRuby {
     private final boolean objectSpaceEnabled;
 
     private long globalState = 1;
-    
+
     /**
      * What encoding should we read source files in as...
      * @see org.jruby.util.CommandlineParser#processArgument()
@@ -151,11 +152,11 @@ public final class Ruby implements IRuby {
     private String encoding = "ISO8859_1";
 
     /** safe-level:
-    		0 - strings from streams/environment/ARGV are tainted (default)
-    		1 - no dangerous operation by tainted value
-    		2 - process/file operations prohibited
-    		3 - all genetated objects are tainted
-    		4 - no global (non-tainted) variable modification/no direct output
+            0 - strings from streams/environment/ARGV are tainted (default)
+            1 - no dangerous operation by tainted value
+            2 - process/file operations prohibited
+            3 - all genetated objects are tainted
+            4 - no global (non-tainted) variable modification/no direct output
     */
     private int safeLevel = 0;
 
@@ -168,16 +169,18 @@ public final class Ruby implements IRuby {
     private RubyClass systemCallError = null;
     private RubyModule errnoModule = null;
     private IRubyObject topSelf;
-    
+
     // former java.lang.System concepts now internalized for MVM
     private String currentDirectory;
-    
+
     private long startTime = System.currentTimeMillis();
-    
+
+    private RubyInstanceConfig config;
+
     private InputStream in;
     private PrintStream out;
     private PrintStream err;
-    
+
     private IRubyObject verbose;
     private IRubyObject debug;
 
@@ -201,48 +204,26 @@ public final class Ruby implements IRuby {
     private RubyClass nilClass;
 
     private RubyClass fixnumClass;
-    
+
     private IRubyObject tmsStruct;
 
     private Profile profile;
 
     private String jrubyHome;
-    
+
     private KCode kcode = KCode.NONE;
 
     /**
      * Create and initialize a new jruby Runtime.
      */
-    private Ruby(InputStream in, PrintStream out, PrintStream err) {
-        this(in,out,err,true,Profile.DEFAULT);
-    }
-
-    /**
-     * Create and initialize a new jruby Runtime.
-     */
-    private Ruby(InputStream in, PrintStream out, PrintStream err, boolean osEnabled) {
-        this(in,out,err,osEnabled,Profile.DEFAULT);
-    }
-
-    /**
-     * Create and initialize a new jruby Runtime.
-     */
-    private Ruby(InputStream in, PrintStream out, PrintStream err, boolean osEnabled, Profile profile) {
-        this.in = in;
-        this.out = out;
-        this.err = err;
-        this.selectorTable = new MethodSelectorTable();
-        
-        objectSpaceEnabled = osEnabled;
-
-        this.profile = profile;
-        
-        try {
-            currentDirectory = JRubyFile.getFileProperty("user.dir");
-        } catch (AccessControlException accessEx) {
-            // default to "/" as current dir for applets (which can't read from FS anyway)
-            currentDirectory = "/";
-        }
+    private Ruby(RubyInstanceConfig config) {
+        this.config             = config;
+        this.in                 = config.getInput();
+        this.out                = config.getOutput();
+        this.err                = config.getError();
+        this.objectSpaceEnabled = config.isObjectSpaceEnabled();
+        this.profile            = config.getProfile();
+        this.currentDirectory   = config.getCurrentDirectory();;
     }
 
     /**
@@ -251,55 +232,35 @@ public final class Ruby implements IRuby {
      * @return the JRuby runtime
      */
     public static IRuby getDefaultInstance() {
-        Ruby ruby;
-        if(System.getProperty("jruby.objectspace.enabled") != null) {
-            ruby = new Ruby(System.in, System.out, System.err, Boolean.getBoolean("jruby.objectspace.enabled"));
-        } else {
-            ruby = new Ruby(System.in, System.out, System.err);
-        }
+        return newInstance(new RubyInstanceConfig());
+    }
 
+    /**
+     * Returns a default instance of the JRuby runtime configured as provided.
+     *
+     * @param config the instance configuration
+     * @return the JRuby runtime
+     */
+    public static IRuby newInstance(RubyInstanceConfig config) {
+        Ruby ruby = new Ruby(config);
         ruby.init();
-        
         return ruby;
     }
 
     /**
-     * Returns a default instance of the JRuby runtime.
+     * Returns a default instance of the JRuby runtime configured with the given input, output and error streams.
      *
-     * @return the JRuby runtime
-     */
-    public static IRuby newInstance(InputStream in, PrintStream out, PrintStream err, boolean osEnabled, Profile profile) {
-        Ruby ruby = new Ruby(in, out, err, osEnabled, profile);
-        ruby.init();
-        
-        return ruby;
-    }
-
-    /**
-     * Returns a default instance of the JRuby runtime.
-     *
-     * @return the JRuby runtime
-     */
-    public static IRuby newInstance(InputStream in, PrintStream out, PrintStream err, Profile profile) {
-        return newInstance(in,out,err,true,profile);
-    }
-
-    /**
-     * Returns a default instance of the JRuby runtime.
-     *
-     * @return the JRuby runtime
-     */
-    public static IRuby newInstance(InputStream in, PrintStream out, PrintStream err, boolean osEnabled) {
-        return newInstance(in,out,err,osEnabled,Profile.DEFAULT);
-    }
-
-    /**
-     * Returns a default instance of the JRuby runtime.
-     *
+     * @param in the custom input stream
+     * @param out the custom output stream
+     * @param err the custom error stream
      * @return the JRuby runtime
      */
     public static IRuby newInstance(InputStream in, PrintStream out, PrintStream err) {
-        return newInstance(in, out, err, true, Profile.DEFAULT);
+        RubyInstanceConfig config = new RubyInstanceConfig();
+        config.setInput(in);
+        config.setOutput(out);
+        config.setError(err);
+        return newInstance(config);
     }
 
     /**
@@ -312,13 +273,13 @@ public final class Ruby implements IRuby {
     public IRubyObject eval(Node node) {
         try {
             ThreadContext tc = getCurrentContext();
-            
+
             return EvaluationState.eval(tc, node, tc.getFrameSelf(), null);
         } catch (JumpException je) {
-        	if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
+            if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
                 throw newLocalJumpError("unexpected return");
-                //	            return (IRubyObject)je.getSecondaryData();
-        	} else if(je.getJumpType() == JumpException.JumpType.BreakJump) {
+                //              return (IRubyObject)je.getSecondaryData();
+            } else if(je.getJumpType() == JumpException.JumpType.BreakJump) {
                 throw newLocalJumpError("unexpected break");
             }
 
@@ -331,9 +292,9 @@ public final class Ruby implements IRuby {
             // do the compile
             StandardASMCompiler compiler = new StandardASMCompiler(node);
             NodeCompilerFactory.getCompiler(node).compile(node, compiler);
-            
+
             Class scriptClass = compiler.loadClass(this);
-            
+
             Script script = (Script)scriptClass.newInstance();
             // FIXME: Pass something better for args and block here?
             return script.run(getCurrentContext(), getTopSelf(), IRubyObject.NULL_ARRAY, null);
@@ -383,21 +344,21 @@ public final class Ruby implements IRuby {
     }
 
     public RubyClass getObject() {
-    	return objectClass;
+        return objectClass;
     }
-    
+
     public RubyModule getKernel() {
         return kernelModule;
     }
-    
+
     public RubyClass getString() {
         return stringClass;
     }
-    
+
     public RubyClass getFixnum() {
         return fixnumClass;
     }
-    
+
     public IRubyObject getTmsStruct() {
         return tmsStruct;
     }
@@ -422,7 +383,7 @@ public final class Ruby implements IRuby {
     public IRubyObject getNil() {
         return nilObject;
     }
-    
+
     public RubyClass getNilClass() {
         return nilClass;
     }
@@ -452,7 +413,7 @@ public final class Ruby implements IRuby {
     public RubyClass defineClass(String name, RubyClass superClass, ObjectAllocator allocator) {
         return defineClassUnder(name, superClass, allocator, objectClass.getCRef());
     }
-    
+
     public RubyClass defineClassUnder(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
         if (superClass == null) {
             superClass = objectClass;
@@ -460,22 +421,22 @@ public final class Ruby implements IRuby {
 
         return superClass.newSubClass(name, allocator, parentCRef);
     }
-    
+
     /** rb_define_module / rb_define_module_id
      *
      */
     public RubyModule defineModule(String name) {
         return defineModuleUnder(name, objectClass.getCRef());
     }
-    
+
     public RubyModule defineModuleUnder(String name, SinglyLinkedList parentCRef) {
         RubyModule newModule = RubyModule.newModule(this, name, parentCRef);
 
         ((RubyModule)parentCRef.getValue()).setConstant(name, newModule);
-        
+
         return newModule;
     }
-    
+
     /**
      * In the current context, get the named module. If it doesn't exist a
      * new module is created.
@@ -483,11 +444,11 @@ public final class Ruby implements IRuby {
     public RubyModule getOrCreateModule(String name) {
         ThreadContext tc = getCurrentContext();
         RubyModule module = (RubyModule) tc.getRubyClass().getConstantAt(name);
-        
+
         if (module == null) {
             module = defineModule(name);
         } else if (getSafeLevel() >= 4) {
-        	throw newSecurityError("Extending module prohibited.");
+            throw newSecurityError("Extending module prohibited.");
         }
 
         if (tc.getWrapper() != null) {
@@ -496,7 +457,7 @@ public final class Ruby implements IRuby {
         }
         return module;
     }
-    
+
 
     /** Getter for property securityLevel.
      * @return Value of property securityLevel.
@@ -511,11 +472,11 @@ public final class Ruby implements IRuby {
     public void setSafeLevel(int safeLevel) {
         this.safeLevel = safeLevel;
     }
-    
+
     public KCode getKCode() {
         return kcode;
     }
-    
+
     public void setKCode(KCode kcode) {
         this.kcode = kcode;
     }
@@ -525,12 +486,12 @@ public final class Ruby implements IRuby {
             throw newSecurityError("Insecure operation '" + getCurrentContext().getFrameLastFunc() + "' at level " + safeLevel);
         }
     }
-    
+
     /**
      * Retrieve mappings of cached methods to where they have been cached.  When a cached
      * method needs to be invalidated this map can be used to remove all places it has been
      * cached.
-     * 
+     *
      * @return the mappings of where cached methods have been stored
      */
     public CacheMap getCacheMap() {
@@ -543,7 +504,7 @@ public final class Ruby implements IRuby {
     public Map getRuntimeInformation() {
         return runtimeInformation == null ? runtimeInformation = new Hashtable() : runtimeInformation;
     }
-    
+
     public MethodSelectorTable getSelectorTable() {
         return selectorTable;
     }
@@ -573,11 +534,11 @@ public final class Ruby implements IRuby {
     public IRubyObject getTopSelf() {
         return topSelf;
     }
-    
+
     public void setCurrentDirectory(String dir) {
         currentDirectory = dir;
     }
-    
+
     public String getCurrentDirectory() {
         return currentDirectory;
     }
@@ -594,11 +555,11 @@ public final class Ruby implements IRuby {
 
         verbose = falseObject;
         debug = falseObject;
-        
+
         javaSupport = new JavaSupport(this);
-        
+
         initLibraries();
-        
+
         tc.preInitCoreClasses();
 
         initCoreClasses();
@@ -610,9 +571,9 @@ public final class Ruby implements IRuby {
         RubyGlobal.createGlobals(this);
 
         initBuiltinClasses();
-        
+
         getObject().defineConstant("TOPLEVEL_BINDING", newBinding());
-        
+
         // Load additional definitions and hacks from etc.rb
         getLoadService().smartLoad("builtin/etc.rb");
     }
@@ -634,7 +595,7 @@ public final class Ruby implements IRuby {
                 loadService.registerRubyBuiltin(BUILTIN_LIBRARIES[i]);
             }
         }
-        
+
         registerBuiltin("jruby.rb", new JRubyLibrary());
         registerBuiltin("iconv.rb", new IConvLibrary());
         registerBuiltin("stringio.rb", new StringIOLibrary());
@@ -664,7 +625,7 @@ public final class Ruby implements IRuby {
     private void initCoreClasses() {
         ObjectMetaClass objectMetaClass = new ObjectMetaClass(this);
         objectMetaClass.initializeClass();
-        
+
         objectClass = objectMetaClass;
         objectClass.setConstant("Object", objectClass);
         RubyClass moduleClass = new ModuleMetaClass(this, objectClass);
@@ -678,7 +639,7 @@ public final class Ruby implements IRuby {
         metaClass = classClass.makeMetaClass(metaClass, objectMetaClass.getCRef());
 
         ((ObjectMetaClass) moduleClass).initializeBootstrapClass();
-        
+
         kernelModule = RubyKernel.createKernelModule(this);
         objectClass.includeModule(kernelModule);
 
@@ -703,7 +664,7 @@ public final class Ruby implements IRuby {
         if(profile.allowClass("Exception")) {
             RubyException.createExceptionClass(this);
         }
-        
+
         if(profile.allowModule("Precision")) {
             RubyPrecision.createPrecisionModule(this);
         }
@@ -715,19 +676,19 @@ public final class Ruby implements IRuby {
         if(profile.allowClass("Integer")) {
             RubyInteger.createIntegerClass(this);
         }
-        
+
         if(profile.allowClass("Fixnum")) {
             fixnumClass = RubyFixnum.createFixnumClass(this);
         }
         new HashMetaClass(this).initializeClass();
         new IOMetaClass(this).initializeClass();
         new ArrayMetaClass(this).initializeClass();
-        
+
         RubyClass structClass = null;
         if(profile.allowClass("Struct")) {
             structClass = RubyStruct.createStructClass(this);
         }
-        
+
         if(profile.allowClass("Tms")) {
             tmsStruct = RubyStruct.newInstance(structClass,
                                                new IRubyObject[] {
@@ -737,10 +698,10 @@ public final class Ruby implements IRuby {
                                                    newSymbol("cutime"),
                                                    newSymbol("cstime")}, null);
         }
-        
+
         if(profile.allowClass("Float")) {
            RubyFloat.createFloatClass(this);
-        }        
+        }
 
         if(profile.allowClass("Bignum")) {
             RubyBignum.createBignumClass(this);
@@ -801,7 +762,7 @@ public final class Ruby implements IRuby {
         if(profile.allowClass("UnboundMethod")) {
             RubyUnboundMethod.defineUnboundMethodClass(this);
         }
-        
+
         RubyClass exceptionClass = getClass("Exception");
         RubyClass standardError = null;
         RubyClass runtimeError = null;
@@ -897,7 +858,7 @@ public final class Ruby implements IRuby {
         if(profile.allowModule("Errno")) {
             errnoModule = defineModule("Errno");
         }
-       
+
         initErrnoErrors();
 
         if(profile.allowClass("Data")) {
@@ -906,59 +867,59 @@ public final class Ruby implements IRuby {
     }
 
     private void initBuiltinClasses() {
-    	try {
-	        new BuiltinScript("FalseClass").load(this);
-	        new BuiltinScript("TrueClass").load(this);
-    	} catch (IOException e) {
-    		throw new Error("builtin scripts are missing", e);
-    	}
+        try {
+            new BuiltinScript("FalseClass").load(this);
+            new BuiltinScript("TrueClass").load(this);
+        } catch (IOException e) {
+            throw new Error("builtin scripts are missing", e);
+        }
     }
-    
+
     /**
-     * Create module Errno's Variables.  We have this method since Errno does not have it's 
+     * Create module Errno's Variables.  We have this method since Errno does not have it's
      * own java class.
      */
     private void initErrnoErrors() {
-        createSysErr(IErrno.ENOTEMPTY, "ENOTEMPTY");   
-        createSysErr(IErrno.ERANGE, "ERANGE");      
-        createSysErr(IErrno.ESPIPE, "ESPIPE");      
-        createSysErr(IErrno.ENFILE, "ENFILE");      
-        createSysErr(IErrno.EXDEV, "EXDEV");       
-        createSysErr(IErrno.ENOMEM, "ENOMEM");      
-        createSysErr(IErrno.E2BIG, "E2BIG");       
-        createSysErr(IErrno.ENOENT, "ENOENT");      
-        createSysErr(IErrno.ENOSYS, "ENOSYS");      
-        createSysErr(IErrno.EDOM, "EDOM");        
-        createSysErr(IErrno.ENOSPC, "ENOSPC");      
-        createSysErr(IErrno.EINVAL, "EINVAL");      
-        createSysErr(IErrno.EEXIST, "EEXIST");      
-        createSysErr(IErrno.EAGAIN, "EAGAIN");      
-        createSysErr(IErrno.ENXIO, "ENXIO");       
-        createSysErr(IErrno.EILSEQ, "EILSEQ");      
-        createSysErr(IErrno.ENOLCK, "ENOLCK");      
-        createSysErr(IErrno.EPIPE, "EPIPE");       
-        createSysErr(IErrno.EFBIG, "EFBIG");       
-        createSysErr(IErrno.EISDIR, "EISDIR");      
-        createSysErr(IErrno.EBUSY, "EBUSY");       
-        createSysErr(IErrno.ECHILD, "ECHILD");      
-        createSysErr(IErrno.EIO, "EIO");         
-        createSysErr(IErrno.EPERM, "EPERM");       
-        createSysErr(IErrno.EDEADLOCK, "EDEADLOCK");   
+        createSysErr(IErrno.ENOTEMPTY, "ENOTEMPTY");
+        createSysErr(IErrno.ERANGE, "ERANGE");
+        createSysErr(IErrno.ESPIPE, "ESPIPE");
+        createSysErr(IErrno.ENFILE, "ENFILE");
+        createSysErr(IErrno.EXDEV, "EXDEV");
+        createSysErr(IErrno.ENOMEM, "ENOMEM");
+        createSysErr(IErrno.E2BIG, "E2BIG");
+        createSysErr(IErrno.ENOENT, "ENOENT");
+        createSysErr(IErrno.ENOSYS, "ENOSYS");
+        createSysErr(IErrno.EDOM, "EDOM");
+        createSysErr(IErrno.ENOSPC, "ENOSPC");
+        createSysErr(IErrno.EINVAL, "EINVAL");
+        createSysErr(IErrno.EEXIST, "EEXIST");
+        createSysErr(IErrno.EAGAIN, "EAGAIN");
+        createSysErr(IErrno.ENXIO, "ENXIO");
+        createSysErr(IErrno.EILSEQ, "EILSEQ");
+        createSysErr(IErrno.ENOLCK, "ENOLCK");
+        createSysErr(IErrno.EPIPE, "EPIPE");
+        createSysErr(IErrno.EFBIG, "EFBIG");
+        createSysErr(IErrno.EISDIR, "EISDIR");
+        createSysErr(IErrno.EBUSY, "EBUSY");
+        createSysErr(IErrno.ECHILD, "ECHILD");
+        createSysErr(IErrno.EIO, "EIO");
+        createSysErr(IErrno.EPERM, "EPERM");
+        createSysErr(IErrno.EDEADLOCK, "EDEADLOCK");
         createSysErr(IErrno.ENAMETOOLONG, "ENAMETOOLONG");
-        createSysErr(IErrno.EMLINK, "EMLINK");      
-        createSysErr(IErrno.ENOTTY, "ENOTTY");      
-        createSysErr(IErrno.ENOTDIR, "ENOTDIR");     
-        createSysErr(IErrno.EFAULT, "EFAULT");      
-        createSysErr(IErrno.EBADF, "EBADF");       
-        createSysErr(IErrno.EINTR, "EINTR");       
-        createSysErr(IErrno.EWOULDBLOCK, "EWOULDBLOCK"); 
-        createSysErr(IErrno.EDEADLK, "EDEADLK");     
-        createSysErr(IErrno.EROFS, "EROFS");       
-        createSysErr(IErrno.EMFILE, "EMFILE");      
-        createSysErr(IErrno.ENODEV, "ENODEV");      
-        createSysErr(IErrno.EACCES, "EACCES");      
-        createSysErr(IErrno.ENOEXEC, "ENOEXEC");             
-        createSysErr(IErrno.ESRCH, "ESRCH");       
+        createSysErr(IErrno.EMLINK, "EMLINK");
+        createSysErr(IErrno.ENOTTY, "ENOTTY");
+        createSysErr(IErrno.ENOTDIR, "ENOTDIR");
+        createSysErr(IErrno.EFAULT, "EFAULT");
+        createSysErr(IErrno.EBADF, "EBADF");
+        createSysErr(IErrno.EINTR, "EINTR");
+        createSysErr(IErrno.EWOULDBLOCK, "EWOULDBLOCK");
+        createSysErr(IErrno.EDEADLK, "EDEADLK");
+        createSysErr(IErrno.EROFS, "EROFS");
+        createSysErr(IErrno.EMFILE, "EMFILE");
+        createSysErr(IErrno.ENODEV, "ENODEV");
+        createSysErr(IErrno.EACCES, "EACCES");
+        createSysErr(IErrno.ENOEXEC, "ENOEXEC");
+        createSysErr(IErrno.ESRCH, "ESRCH");
         createSysErr(IErrno.ECONNREFUSED, "ECONNREFUSED");
         createSysErr(IErrno.ECONNRESET, "ECONNRESET");
         createSysErr(IErrno.EADDRINUSE, "EADDRINUSE");
@@ -974,8 +935,8 @@ public final class Ruby implements IRuby {
             errnoModule.defineClassUnder(name, systemCallError, systemCallError.getAllocator()).defineConstant("Errno", newFixnum(i));
         }
     }
-    
-	/** Getter for property isVerbose.
+
+    /** Getter for property isVerbose.
      * @return Value of property isVerbose.
      */
     public IRubyObject getVerbose() {
@@ -989,7 +950,7 @@ public final class Ruby implements IRuby {
         this.verbose = verbose;
     }
 
-	/** Getter for property isDebug.
+    /** Getter for property isDebug.
      * @return Value of property isDebug.
      */
     public IRubyObject getDebug() {
@@ -1006,7 +967,7 @@ public final class Ruby implements IRuby {
     public JavaSupport getJavaSupport() {
         return javaSupport;
     }
-    
+
     public JRubyClassLoader getJRubyClassLoader() {
         return jrubyClassLoader;
     }
@@ -1087,14 +1048,14 @@ public final class Ruby implements IRuby {
         }
         return (RubyModule) type;
     }
-    
+
     /** Prints an error with backtrace to the error stream.
      *
      * MRI: eval.c - error_print()
      *
      */
     public void printError(RubyException excp) {
-		if (excp == null || excp.isNil()) {
+        if (excp == null || excp.isNil()) {
             return;
         }
 
@@ -1154,18 +1115,18 @@ public final class Ruby implements IRuby {
         }
 
         excp.printBacktrace(errorStream);
-	}
+    }
 
-	private void printErrorPos(PrintStream errorStream) {
+    private void printErrorPos(PrintStream errorStream) {
         ThreadContext tc = getCurrentContext();
         if (tc.getSourceFile() != null) {
             if (tc.getFrameLastFunc() != null) {
-            	errorStream.print(tc.getPosition());
-            	errorStream.print(":in '" + tc.getFrameLastFunc() + '\'');
+                errorStream.print(tc.getPosition());
+                errorStream.print(":in '" + tc.getFrameLastFunc() + '\'');
             } else if (tc.getSourceLine() != 0) {
                 errorStream.print(tc.getPosition());
             } else {
-            	errorStream.print(tc.getSourceFile());
+                errorStream.print(tc.getSourceFile());
             }
         }
     }
@@ -1199,19 +1160,19 @@ public final class Ruby implements IRuby {
             } else {
                 /* load in anonymous module as toplevel */
                 context.preNodeEval(RubyModule.newModule(this, null), context.getWrapper(), self);
-                
+
                 self = getTopSelf().rbClone();
                 self.extendObject(context.getRubyClass());
             }
 
-        	Node node = parse(source, scriptName, null);
+            Node node = parse(source, scriptName, null);
             self.eval(node);
         } catch (JumpException je) {
-        	if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
-        		// Make sure this does not bubble out to java caller.
-        	} else {
-        		throw je;
-        	}
+            if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
+                // Make sure this does not bubble out to java caller.
+            } else {
+                throw je;
+            }
         } finally {
             context.postNodeEval(wrapper);
         }
@@ -1227,24 +1188,24 @@ public final class Ruby implements IRuby {
         try {
             if (!wrap) {
                 secure(4); /* should alter global state */
-                
+
                 context.preNodeEval(null, objectClass, self);
             } else {
 
                 /* load in anonymous module as toplevel */
                 context.preNodeEval(RubyModule.newModule(this, null), context.getWrapper(), self);
-                
+
                 self = getTopSelf().rbClone();
                 self.extendObject(context.getRubyClass());
             }
-            
+
             self.eval(node);
         } catch (JumpException je) {
-        	if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
-        		// Make sure this does not bubble out to java caller.
-        	} else {
-        		throw je;
-        	}
+            if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
+                // Make sure this does not bubble out to java caller.
+            } else {
+                throw je;
+            }
         } finally {
             context.postNodeEval(wrapper);
         }
@@ -1272,7 +1233,7 @@ public final class Ruby implements IRuby {
      * MRI: eval.c - call_trace_func
      *
      */
-    public void callTraceFunction(ThreadContext context, String event, ISourcePosition position, 
+    public void callTraceFunction(ThreadContext context, String event, ISourcePosition position,
             IRubyObject self, String name, IRubyObject type) {
         if (traceFunction == null) return;
 
@@ -1283,7 +1244,7 @@ public final class Ruby implements IRuby {
             String file = position.getFile();
 
             if (file == null) file = "(ruby)";
-            if (type == null) type = getFalse(); 
+            if (type == null) type = getFalse();
 
             context.preTrace();
 
@@ -1311,10 +1272,10 @@ public final class Ruby implements IRuby {
     public GlobalVariables getGlobalVariables() {
         return globalVariables;
     }
-    
+
     // For JSR 223 support: see http://scripting.java.net/
     public void setGlobalVariables(GlobalVariables globalVariables) {
-    	this.globalVariables = globalVariables;
+        this.globalVariables = globalVariables;
     }
 
     public CallbackFactory callbackFactory(Class type) {
@@ -1324,183 +1285,183 @@ public final class Ruby implements IRuby {
     /**
      * Push block onto exit stack.  When runtime environment exits
      * these blocks will be evaluated.
-     * 
+     *
      * @return the element that was pushed onto stack
      */
     public IRubyObject pushExitBlock(RubyProc proc) {
-    	atExitBlocks.push(proc);
+        atExitBlocks.push(proc);
         return proc;
     }
-    
+
     /**
      * Make sure Kernel#at_exit procs get invoked on runtime shutdown.
      * This method needs to be explicitly called to work properly.
      * I thought about using finalize(), but that did not work and I
      * am not sure the runtime will be at a state to run procs by the
      * time Ruby is going away.  This method can contain any other
-     * things that need to be cleaned up at shutdown.  
+     * things that need to be cleaned up at shutdown.
      */
     public void tearDown() {
         while (!atExitBlocks.empty()) {
             RubyProc proc = (RubyProc) atExitBlocks.pop();
-            
+
             proc.call(IRubyObject.NULL_ARRAY);
         }
         getObjectSpace().finishFinalizers();
     }
-    
+
     // new factory methods ------------------------------------------------------------------------
-    
+
     public RubyArray newArray() {
-    	return RubyArray.newArray(this);
+        return RubyArray.newArray(this);
     }
-    
+
     public RubyArray newArray(IRubyObject object) {
-    	return RubyArray.newArray(this, object);
+        return RubyArray.newArray(this, object);
     }
 
     public RubyArray newArray(IRubyObject car, IRubyObject cdr) {
-    	return RubyArray.newArray(this, car, cdr);
+        return RubyArray.newArray(this, car, cdr);
     }
-    
+
     public RubyArray newArray(IRubyObject[] objects) {
-    	return RubyArray.newArray(this, objects);
+        return RubyArray.newArray(this, objects);
     }
-    
+
     public RubyArray newArray(List list) {
-    	return RubyArray.newArray(this, list);
+        return RubyArray.newArray(this, list);
     }
-    
+
     public RubyArray newArray(int size) {
-    	return RubyArray.newArray(this, size);
+        return RubyArray.newArray(this, size);
     }
-    
+
     public RubyBoolean newBoolean(boolean value) {
-    	return RubyBoolean.newBoolean(this, value);
+        return RubyBoolean.newBoolean(this, value);
     }
-    
+
     public RubyFileStat newRubyFileStat(String file) {
         return (RubyFileStat)getClass("File").getClass("Stat").callMethod(getCurrentContext(),"new",newString(file));
     }
-    
+
     public RubyFixnum newFixnum(long value) {
-    	return RubyFixnum.newFixnum(this, value);
+        return RubyFixnum.newFixnum(this, value);
     }
-    
+
     public RubyFloat newFloat(double value) {
-    	return RubyFloat.newFloat(this, value);
+        return RubyFloat.newFloat(this, value);
     }
 
     public RubyNumeric newNumeric() {
-    	return RubyNumeric.newNumeric(this);
+        return RubyNumeric.newNumeric(this);
     }
-    
+
     public RubyProc newProc(boolean isLambda, Block block) {
         if (!isLambda && block.getBlockObject() instanceof RubyProc) {
             return (RubyProc) block.getBlockObject();
         }
 
         RubyProc proc =  RubyProc.newProc(this, isLambda);
-        
+
         proc.callInit(IRubyObject.NULL_ARRAY, block);
-        
+
         return proc;
     }
-    
+
     public RubyBinding newBinding() {
         return RubyBinding.newBinding(this);
     }
-    
+
     public RubyBinding newBinding(Block block) {
-    	return RubyBinding.newBinding(this, block);
+        return RubyBinding.newBinding(this, block);
     }
 
     public RubyString newString(String string) {
-    	return RubyString.newString(this, string);
+        return RubyString.newString(this, string);
     }
-    
+
     public RubySymbol newSymbol(String string) {
-    	return RubySymbol.newSymbol(this, string);
+        return RubySymbol.newSymbol(this, string);
     }
-    
+
     public RubyTime newTime(long milliseconds) {
         return RubyTime.newTime(this, milliseconds);
     }
-    
+
     public RaiseException newArgumentError(String message) {
-    	return newRaiseException(getClass("ArgumentError"), message);
+        return newRaiseException(getClass("ArgumentError"), message);
     }
-    
+
     public RaiseException newArgumentError(int got, int expected) {
-    	return newRaiseException(getClass("ArgumentError"), "wrong # of arguments(" + got + " for " + expected + ")");
+        return newRaiseException(getClass("ArgumentError"), "wrong # of arguments(" + got + " for " + expected + ")");
     }
-    
+
     public RaiseException newErrnoEBADFError() {
-    	return newRaiseException(getModule("Errno").getClass("EBADF"), "Bad file descriptor");
+        return newRaiseException(getModule("Errno").getClass("EBADF"), "Bad file descriptor");
     }
 
     public RaiseException newErrnoEINVALError() {
-    	return newRaiseException(getModule("Errno").getClass("EINVAL"), "Invalid file");
+        return newRaiseException(getModule("Errno").getClass("EINVAL"), "Invalid file");
     }
 
     public RaiseException newErrnoENOENTError() {
-    	return newRaiseException(getModule("Errno").getClass("ENOENT"), "File not found");
+        return newRaiseException(getModule("Errno").getClass("ENOENT"), "File not found");
     }
 
     public RaiseException newErrnoESPIPEError() {
-    	return newRaiseException(getModule("Errno").getClass("ESPIPE"), "Illegal seek");
+        return newRaiseException(getModule("Errno").getClass("ESPIPE"), "Illegal seek");
     }
 
     public RaiseException newErrnoEBADFError(String message) {
-    	return newRaiseException(getModule("Errno").getClass("EBADF"), message);
+        return newRaiseException(getModule("Errno").getClass("EBADF"), message);
     }
 
     public RaiseException newErrnoEINVALError(String message) {
-    	return newRaiseException(getModule("Errno").getClass("EINVAL"), message);
+        return newRaiseException(getModule("Errno").getClass("EINVAL"), message);
     }
 
     public RaiseException newErrnoENOENTError(String message) {
-    	return newRaiseException(getModule("Errno").getClass("ENOENT"), message);
+        return newRaiseException(getModule("Errno").getClass("ENOENT"), message);
     }
 
     public RaiseException newErrnoESPIPEError(String message) {
-    	return newRaiseException(getModule("Errno").getClass("ESPIPE"), message);
+        return newRaiseException(getModule("Errno").getClass("ESPIPE"), message);
     }
 
     public RaiseException newErrnoEEXISTError(String message) {
-    	return newRaiseException(getModule("Errno").getClass("EEXIST"), message);
+        return newRaiseException(getModule("Errno").getClass("EEXIST"), message);
     }
 
     public RaiseException newIndexError(String message) {
-    	return newRaiseException(getClass("IndexError"), message);
+        return newRaiseException(getClass("IndexError"), message);
     }
-    
+
     public RaiseException newSecurityError(String message) {
-    	return newRaiseException(getClass("SecurityError"), message);
+        return newRaiseException(getClass("SecurityError"), message);
     }
-    
+
     public RaiseException newSystemCallError(String message) {
-    	return newRaiseException(getClass("SystemCallError"), message);
+        return newRaiseException(getClass("SystemCallError"), message);
     }
 
     public RaiseException newTypeError(String message) {
-    	return newRaiseException(getClass("TypeError"), message);
+        return newRaiseException(getClass("TypeError"), message);
     }
-    
+
     public RaiseException newThreadError(String message) {
-    	return newRaiseException(getClass("ThreadError"), message);
+        return newRaiseException(getClass("ThreadError"), message);
     }
-    
+
     public RaiseException newSyntaxError(String message) {
-    	return newRaiseException(getClass("SyntaxError"), message);
+        return newRaiseException(getClass("SyntaxError"), message);
     }
 
     public RaiseException newRangeError(String message) {
-    	return newRaiseException(getClass("RangeError"), message);
+        return newRaiseException(getClass("RangeError"), message);
     }
 
     public RaiseException newNotImplementedError(String message) {
-    	return newRaiseException(getClass("NotImplementedError"), message);
+        return newRaiseException(getClass("NotImplementedError"), message);
     }
 
     public RaiseException newNoMethodError(String message, String name) {
@@ -1512,53 +1473,53 @@ public final class Ruby implements IRuby {
     }
 
     public RaiseException newLocalJumpError(String message) {
-    	return newRaiseException(getClass("LocalJumpError"), message);
+        return newRaiseException(getClass("LocalJumpError"), message);
     }
 
     public RaiseException newLoadError(String message) {
-    	return newRaiseException(getClass("LoadError"), message);
+        return newRaiseException(getClass("LoadError"), message);
     }
 
     public RaiseException newFrozenError(String objectType) {
-		// TODO: Should frozen error have its own distinct class?  If not should more share?
-    	return newRaiseException(getClass("TypeError"), "can't modify frozen " + objectType);
+        // TODO: Should frozen error have its own distinct class?  If not should more share?
+        return newRaiseException(getClass("TypeError"), "can't modify frozen " + objectType);
     }
 
     public RaiseException newSystemStackError(String message) {
-    	return newRaiseException(getClass("SystemStackError"), message);
+        return newRaiseException(getClass("SystemStackError"), message);
     }
-    
+
     public RaiseException newSystemExit(int status) {
-    	RaiseException re = newRaiseException(getClass("SystemExit"), "");
-    	re.getException().setInstanceVariable("status", newFixnum(status));
-    	
-    	return re;
+        RaiseException re = newRaiseException(getClass("SystemExit"), "");
+        re.getException().setInstanceVariable("status", newFixnum(status));
+
+        return re;
     }
-    
+
     public RaiseException newIOError(String message) {
         return newRaiseException(getClass("IOError"), message);
     }
 
     public RaiseException newIOErrorFromException(IOException ioe) {
-    	return newRaiseException(getClass("IOError"), ioe.getMessage());
+        return newRaiseException(getClass("IOError"), ioe.getMessage());
     }
-    
+
     public RaiseException newTypeError(IRubyObject receivedObject, RubyClass expectedType) {
-    	return newRaiseException(getClass("TypeError"), "wrong argument type " + receivedObject.getMetaClass() + " (expected " + expectedType);
+        return newRaiseException(getClass("TypeError"), "wrong argument type " + receivedObject.getMetaClass() + " (expected " + expectedType);
     }
-    
+
     public RaiseException newEOFError() {
-    	return newRaiseException(getClass("EOFError"), "End of file reached");
+        return newRaiseException(getClass("EOFError"), "End of file reached");
     }
-    
+
     public RaiseException newZeroDivisionError() {
-    	return newRaiseException(getClass("ZeroDivisionError"), "divided by 0");
+        return newRaiseException(getClass("ZeroDivisionError"), "divided by 0");
     }
-    
+
     public RaiseException newFloatDomainError(String message){
         return newRaiseException(getClass("FloatDomainError"), message);
     }
-    
+
     /**
      * @param exceptionClass
      * @param message
@@ -1568,72 +1529,72 @@ public final class Ruby implements IRuby {
         RaiseException re = new RaiseException(this, exceptionClass, message, true);
         return re;
     }
-    
-    
+
+
     public RubySymbol.SymbolTable getSymbolTable() {
         return symbolTable;
     }
-    
+
     public void setStackTraces(int stackTraces) {
         this.stackTraces = stackTraces;
     }
-    
+
     public int getStackTraces() {
         return stackTraces;
     }
-    
+
     public void setRandomSeed(long randomSeed) {
         this.randomSeed = randomSeed;
     }
-    
+
     public long getRandomSeed() {
         return randomSeed;
     }
-    
+
     public Random getRandom() {
         return random;
     }
-    
+
     public ObjectSpace getObjectSpace() {
         return objectSpace;
     }
-    
+
     public Hashtable getIoHandlers() {
         return ioHandlers;
     }
-    
+
     public RubyFixnum[] getFixnumCache() {
         return fixnumCache;
     }
-    
+
     public long incrementRandomSeedSequence() {
         return randomSeedSequence++;
     }
-    
+
     public InputStream getIn() {
         return in;
     }
-    
+
     public PrintStream getOut() {
         return out;
     }
-    
+
     public PrintStream getErr() {
         return err;
     }
-    
+
     public boolean isGlobalAbortOnExceptionEnabled() {
         return globalAbortOnExceptionEnabled;
     }
-    
+
     public void setGlobalAbortOnExceptionEnabled(boolean enable) {
         globalAbortOnExceptionEnabled = enable;
     }
-    
+
     public boolean isDoNotReverseLookupEnabled() {
         return doNotReverseLookupEnabled;
     }
-    
+
     public void setDoNotReverseLookupEnabled(boolean b) {
         doNotReverseLookupEnabled = b;
     }
@@ -1675,6 +1636,10 @@ public final class Ruby implements IRuby {
             new NormalizedFile(jrubyHome).mkdirs();
         }
         return jrubyHome;
+    }
+
+    public RubyInstanceConfig getInstanceConfig() {
+        return config;
     }
 
     /** GET_VM_STATE_VERSION */

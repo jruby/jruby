@@ -1,3 +1,40 @@
+/***** BEGIN LICENSE BLOCK *****
+ * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Common Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.eclipse.org/legal/cpl-v10.html
+ *
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * Copyright (C) 2001 Chad Fowler <chadfowler@chadfowler.com>
+ * Copyright (C) 2001 Alan Moore <alan_moore@gmx.net>
+ * Copyright (C) 2001-2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
+ * Copyright (C) 2006 Michael Studman <codehaus@michaelstudman.com>
+ * Copyright (C) 2006 Ola Bini <ola@ologix.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the CPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the CPL, the GPL or the LGPL.
+ ***** END LICENSE BLOCK *****/
 package org.jruby;
 
 import java.io.File;
@@ -33,410 +70,410 @@ import org.jruby.util.collections.SinglyLinkedList;
 
 public interface IRuby {
 
-	/**
-	 * Retrieve mappings of cached methods to where they have been cached.  When a cached
-	 * method needs to be invalidated this map can be used to remove all places it has been
-	 * cached.
-	 * 
-	 * @return the mappings of where cached methods have been stored
-	 */
-	public CacheMap getCacheMap();
+    /**
+     * Retrieve mappings of cached methods to where they have been cached.  When a cached
+     * method needs to be invalidated this map can be used to remove all places it has been
+     * cached.
+     *
+     * @return the mappings of where cached methods have been stored
+     */
+    CacheMap getCacheMap();
 
     /**
      * The contents of the runtimeInformation map are dumped with the JVM exits if
      * JRuby has been invoked via the Main class. Otherwise these contents can be used
      * by embedders to track development-time runtime information such as profiling
      * or logging data during execution.
-     * 
+     *
      * @return the runtimeInformation map
      * @see org.jruby.Main#runInterpreter
      */
-    public Map getRuntimeInformation();
-    
-    public MethodSelectorTable getSelectorTable();
-    
-	/**
-	 * Evaluates a script and returns a RubyObject.
-	 */
-	public IRubyObject evalScript(String script);
+    Map getRuntimeInformation();
 
-    public IRubyObject eval(Node node);
+    MethodSelectorTable getSelectorTable();
 
-    public IRubyObject compileAndRun(Node node);
-    public IRubyObject ycompileAndRun(Node node);
+    /**
+     * Evaluates a script and returns a RubyObject.
+     */
+    IRubyObject evalScript(String script);
 
-	public RubyClass getObject();
-    
-    public RubyModule getKernel();
-    
-    public RubyClass getString();
-    
-    public RubyClass getFixnum();
-    
-    public IRubyObject getTmsStruct();
+    IRubyObject eval(Node node);
 
-	/** Returns the "true" instance from the instance pool.
-	 * @return The "true" instance.
-	 */
-	public RubyBoolean getTrue();
+    IRubyObject compileAndRun(Node node);
+    IRubyObject ycompileAndRun(Node node);
 
-	/** Returns the "false" instance from the instance pool.
-	 * @return The "false" instance.
-	 */
-	public RubyBoolean getFalse();
+    RubyClass getObject();
 
-	/** Returns the "nil" singleton instance.
-	 * @return "nil"
-	 */
-	public IRubyObject getNil();
-    
+    RubyModule getKernel();
+
+    RubyClass getString();
+
+    RubyClass getFixnum();
+
+    IRubyObject getTmsStruct();
+
+    /** Returns the "true" instance from the instance pool.
+     * @return The "true" instance.
+     */
+    RubyBoolean getTrue();
+
+    /** Returns the "false" instance from the instance pool.
+     * @return The "false" instance.
+     */
+    RubyBoolean getFalse();
+
+    /** Returns the "nil" singleton instance.
+     * @return "nil"
+     */
+    IRubyObject getNil();
+
     /**
      * @return The NilClass class
      */
-    public RubyClass getNilClass();
+    RubyClass getNilClass();
 
-	public RubyModule getModule(String name);
+    RubyModule getModule(String name);
 
-	/** Returns a class from the instance pool.
-	 *
-	 * @param name The name of the class.
-	 * @return The class.
-	 */
-	public RubyClass getClass(String name);
+    /** Returns a class from the instance pool.
+     *
+     * @param name The name of the class.
+     * @return The class.
+     */
+    RubyClass getClass(String name);
 
-	/** Define a new class with name 'name' and super class 'superClass'.
-	 *
-	 * MRI: rb_define_class / rb_define_class_id
-	 *
-	 */
-	public RubyClass defineClass(String name, RubyClass superClass, ObjectAllocator allocator);
+    /** Define a new class with name 'name' and super class 'superClass'.
+     *
+     * MRI: rb_define_class / rb_define_class_id
+     *
+     */
+    RubyClass defineClass(String name, RubyClass superClass, ObjectAllocator allocator);
 
-	public RubyClass defineClassUnder(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef);
+    RubyClass defineClassUnder(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef);
 
-	/** rb_define_module / rb_define_module_id
-	 *
-	 */
-	public RubyModule defineModule(String name);
+    /** rb_define_module / rb_define_module_id
+     *
+     */
+    RubyModule defineModule(String name);
 
-	public RubyModule defineModuleUnder(String name, SinglyLinkedList parentCRef);
+    RubyModule defineModuleUnder(String name, SinglyLinkedList parentCRef);
 
-	/**
-	 * In the current context, get the named module. If it doesn't exist a
-	 * new module is created.
-	 */
-	public RubyModule getOrCreateModule(String name);
+    /**
+     * In the current context, get the named module. If it doesn't exist a
+     * new module is created.
+     */
+    RubyModule getOrCreateModule(String name);
 
-	/** Getter for property securityLevel.
-	 * @return Value of property securityLevel.
-	 */
-	public int getSafeLevel();
+    /** Getter for property securityLevel.
+     * @return Value of property securityLevel.
+     */
+    int getSafeLevel();
 
-	/** Setter for property securityLevel.
-	 * @param safeLevel New value of property securityLevel.
-	 */
-	public void setSafeLevel(int safeLevel);
+    /** Setter for property securityLevel.
+     * @param safeLevel New value of property securityLevel.
+     */
+    void setSafeLevel(int safeLevel);
 
-	public void secure(int level);
-    
-    public KCode getKCode();
-    
-    public void setKCode(KCode kcode);
+    void secure(int level);
 
-	/** rb_define_global_const
-	 *
-	 */
-	public void defineGlobalConstant(String name, IRubyObject value);
+    KCode getKCode();
 
-	public IRubyObject getTopConstant(String name);
-    
-    public String getCurrentDirectory();
-    
-    public void setCurrentDirectory(String dir);
-    
-    public long getStartTime();
-    
-    public InputStream getIn();
-    public PrintStream getOut();
-    public PrintStream getErr();
+    void setKCode(KCode kcode);
 
-	public boolean isClassDefined(String name);
+    /** rb_define_global_const
+     *
+     */
+    void defineGlobalConstant(String name, IRubyObject value);
 
-    public boolean isObjectSpaceEnabled();
-    
-	/** Getter for property rubyTopSelf.
-	 * @return Value of property rubyTopSelf.
-	 */
-	public IRubyObject getTopSelf();
+    IRubyObject getTopConstant(String name);
+
+    String getCurrentDirectory();
+
+    void setCurrentDirectory(String dir);
+
+    long getStartTime();
+
+    InputStream getIn();
+    PrintStream getOut();
+    PrintStream getErr();
+
+    boolean isClassDefined(String name);
+
+    boolean isObjectSpaceEnabled();
+
+    /** Getter for property rubyTopSelf.
+     * @return Value of property rubyTopSelf.
+     */
+    IRubyObject getTopSelf();
 
     /** Getter for property isVerbose.
-	 * @return Value of property isVerbose.
-	 */
-	public IRubyObject getVerbose();
+     * @return Value of property isVerbose.
+     */
+    IRubyObject getVerbose();
 
-	/** Setter for property isVerbose.
-	 * @param verbose New value of property isVerbose.
-	 */
-	public void setVerbose(IRubyObject verbose);
+    /** Setter for property isVerbose.
+     * @param verbose New value of property isVerbose.
+     */
+    void setVerbose(IRubyObject verbose);
 
     /** Getter for property isDebug.
-	 * @return Value of property isDebug.
-	 */
-	public IRubyObject getDebug();
+     * @return Value of property isDebug.
+     */
+    IRubyObject getDebug();
 
-	/** Setter for property isDebug.
-	 * @param verbose New value of property isDebug.
-	 */
-	public void setDebug(IRubyObject debug);
+    /** Setter for property isDebug.
+     * @param verbose New value of property isDebug.
+     */
+    void setDebug(IRubyObject debug);
 
-    public JavaSupport getJavaSupport();
-    
-    public JRubyClassLoader getJRubyClassLoader();
+    JavaSupport getJavaSupport();
+
+    JRubyClassLoader getJRubyClassLoader();
 
     /** Defines a global variable
-	 */
-	public void defineVariable(final GlobalVariable variable);
+     */
+    void defineVariable(final GlobalVariable variable);
 
-	/** defines a readonly global variable
-	 *
-	 */
-	public void defineReadonlyVariable(String name, IRubyObject value);
+    /** defines a readonly global variable
+     *
+     */
+    void defineReadonlyVariable(String name, IRubyObject value);
 
     /**
      * Parse the source specified by the reader and return an AST
-     * 
+     *
      * @param content to be parsed
      * @param file the name of the file to be used in warnings/errors
      * @param scope that this content is being parsed under
      * @return the top of the AST
      */
-	public Node parse(Reader content, String file, DynamicScope scope);
+    Node parse(Reader content, String file, DynamicScope scope);
 
     /**
      * Parse the source specified by the string and return an AST
-     * 
+     *
      * @param content to be parsed
      * @param file the name of the file to be used in warnings/errors
      * @param scope that this content is being parsed under
      * @return the top of the AST
      */
-	public Node parse(String content, String file, DynamicScope scope);
+    Node parse(String content, String file, DynamicScope scope);
 
-	public ThreadService getThreadService();
+    ThreadService getThreadService();
 
-	public ThreadContext getCurrentContext();
+    ThreadContext getCurrentContext();
 
     /**
-	 * Returns the loadService.
-	 * @return ILoadService
-	 */
-	public LoadService getLoadService();
+     * Returns the loadService.
+     * @return ILoadService
+     */
+    LoadService getLoadService();
 
-	public RubyWarnings getWarnings();
+    RubyWarnings getWarnings();
 
-	public PrintStream getErrorStream();
+    PrintStream getErrorStream();
 
-	public InputStream getInputStream();
+    InputStream getInputStream();
 
-	public PrintStream getOutputStream();
+    PrintStream getOutputStream();
 
-	public RubyModule getClassFromPath(String path);
+    RubyModule getClassFromPath(String path);
 
-	/** Prints an error with backtrace to the error stream.
-	 *
-	 * MRI: eval.c - error_print()
-	 *
-	 */
-	public void printError(RubyException excp);
+    /** Prints an error with backtrace to the error stream.
+     *
+     * MRI: eval.c - error_print()
+     *
+     */
+    void printError(RubyException excp);
 
-	/** This method compiles and interprets a Ruby script.
-	 *
-	 *  It can be used if you want to use JRuby as a Macro language.
-	 *
-	 */
-	public void loadScript(RubyString scriptName, RubyString source,
-			boolean wrap);
+    /** This method compiles and interprets a Ruby script.
+     *
+     *  It can be used if you want to use JRuby as a Macro language.
+     *
+     */
+    void loadScript(RubyString scriptName, RubyString source, boolean wrap);
 
-	public void loadScript(String scriptName, Reader source, boolean wrap);
+    void loadScript(String scriptName, Reader source, boolean wrap);
 
-	public void loadNode(String scriptName, Node node, boolean wrap);
+    void loadNode(String scriptName, Node node, boolean wrap);
 
-	/** Loads, compiles and interprets a Ruby file.
-	 *  Used by Kernel#require.
-	 *
-	 *  @mri rb_load
-	 */
-	public void loadFile(File file, boolean wrap);
+    /** Loads, compiles and interprets a Ruby file.
+     *  Used by Kernel#require.
+     *
+     *  @mri rb_load
+     */
+    void loadFile(File file, boolean wrap);
 
-	/** Call the trace function
-	 *
-	 * MRI: eval.c - call_trace_func
-	 *
-	 */
-	public void callTraceFunction(ThreadContext context, String event, ISourcePosition position,
-			IRubyObject self, String name, IRubyObject type);
+    /** Call the trace function
+     *
+     * MRI: eval.c - call_trace_func
+     *
+     */
+    void callTraceFunction(ThreadContext context, String event, ISourcePosition position, IRubyObject self, String name, IRubyObject type);
 
-	public RubyProc getTraceFunction();
+    RubyProc getTraceFunction();
 
-	public void setTraceFunction(RubyProc traceFunction);
+    void setTraceFunction(RubyProc traceFunction);
 
-	public GlobalVariables getGlobalVariables();
-	public void setGlobalVariables(GlobalVariables variables);
+    GlobalVariables getGlobalVariables();
+    void setGlobalVariables(GlobalVariables variables);
 
-	public CallbackFactory callbackFactory(Class type);
+    CallbackFactory callbackFactory(Class type);
 
-	/**
-	 * Push block onto exit stack.  When runtime environment exits
-	 * these blocks will be evaluated.
-	 * 
-	 * @return the element that was pushed onto stack
-	 */
-	public IRubyObject pushExitBlock(RubyProc proc);
+    /**
+     * Push block onto exit stack.  When runtime environment exits
+     * these blocks will be evaluated.
+     *
+     * @return the element that was pushed onto stack
+     */
+    IRubyObject pushExitBlock(RubyProc proc);
 
-	/**
-	 * Make sure Kernel#at_exit procs get invoked on runtime shutdown.
-	 * This method needs to be explicitly called to work properly.
-	 * I thought about using finalize(), but that did not work and I
-	 * am not sure the runtime will be at a state to run procs by the
-	 * time Ruby is going away.  This method can contain any other
-	 * things that need to be cleaned up at shutdown.  
-	 */
-	public void tearDown();
+    /**
+     * Make sure Kernel#at_exit procs get invoked on runtime shutdown.
+     * This method needs to be explicitly called to work properly.
+     * I thought about using finalize(), but that did not work and I
+     * am not sure the runtime will be at a state to run procs by the
+     * time Ruby is going away.  This method can contain any other
+     * things that need to be cleaned up at shutdown.
+     */
+    void tearDown();
 
-	public RubyArray newArray();
+    RubyArray newArray();
 
-	public RubyArray newArray(IRubyObject object);
+    RubyArray newArray(IRubyObject object);
 
-	public RubyArray newArray(IRubyObject car, IRubyObject cdr);
+    RubyArray newArray(IRubyObject car, IRubyObject cdr);
 
-	public RubyArray newArray(IRubyObject[] objects);
+    RubyArray newArray(IRubyObject[] objects);
 
-	public RubyArray newArray(List list);
+    RubyArray newArray(List list);
 
-	public RubyArray newArray(int size);
+    RubyArray newArray(int size);
 
-	public RubyBoolean newBoolean(boolean value);
+    RubyBoolean newBoolean(boolean value);
 
-	public RubyFileStat newRubyFileStat(String file);
+    RubyFileStat newRubyFileStat(String file);
 
-	public RubyFixnum newFixnum(long value);
+    RubyFixnum newFixnum(long value);
 
-	public RubyFloat newFloat(double value);
+    RubyFloat newFloat(double value);
 
-	public RubyNumeric newNumeric();
+    RubyNumeric newNumeric();
 
-    public RubyProc newProc(boolean isLambda, Block block);
+    RubyProc newProc(boolean isLambda, Block block);
 
-    public RubyBinding newBinding();
-    public RubyBinding newBinding(Block block);
+    RubyBinding newBinding();
+    RubyBinding newBinding(Block block);
 
-	public RubyString newString(String string);
+    RubyString newString(String string);
 
-	public RubySymbol newSymbol(String string);
+    RubySymbol newSymbol(String string);
 
-    public RaiseException newArgumentError(String message);
-    
-    public RaiseException newArgumentError(int got, int expected);
-    
-    public RaiseException newErrnoEBADFError();
+    RaiseException newArgumentError(String message);
 
-    public RaiseException newErrnoEINVALError();
+    RaiseException newArgumentError(int got, int expected);
 
-    public RaiseException newErrnoENOENTError();
+    RaiseException newErrnoEBADFError();
 
-    public RaiseException newErrnoESPIPEError();
+    RaiseException newErrnoEINVALError();
 
-    public RaiseException newErrnoEBADFError(String message);
+    RaiseException newErrnoENOENTError();
 
-    public RaiseException newErrnoEINVALError(String message);
+    RaiseException newErrnoESPIPEError();
 
-    public RaiseException newErrnoENOENTError(String message);
+    RaiseException newErrnoEBADFError(String message);
 
-    public RaiseException newErrnoESPIPEError(String message);
+    RaiseException newErrnoEINVALError(String message);
 
-    public RaiseException newErrnoEEXISTError(String message);
+    RaiseException newErrnoENOENTError(String message);
 
-    public RaiseException newIndexError(String message);
-    
-    public RaiseException newSecurityError(String message);
-    
-    public RaiseException newSystemCallError(String message);
+    RaiseException newErrnoESPIPEError(String message);
 
-    public RaiseException newTypeError(String message);
-    
-    public RaiseException newThreadError(String message);
-    
-    public RaiseException newSyntaxError(String message);
+    RaiseException newErrnoEEXISTError(String message);
 
-    public RaiseException newRangeError(String message);
+    RaiseException newIndexError(String message);
 
-    public RaiseException newNotImplementedError(String message);
+    RaiseException newSecurityError(String message);
 
-    public RaiseException newNoMethodError(String message, String name);
+    RaiseException newSystemCallError(String message);
 
-    public RaiseException newNameError(String message, String name);
+    RaiseException newTypeError(String message);
 
-    public RaiseException newLocalJumpError(String message);
+    RaiseException newThreadError(String message);
 
-    public RaiseException newLoadError(String message);
+    RaiseException newSyntaxError(String message);
 
-    public RaiseException newFrozenError(String objectType);
+    RaiseException newRangeError(String message);
 
-    public RaiseException newSystemStackError(String message);
-    
-    public RaiseException newSystemExit(int status);
-    
-    public RaiseException newIOError(String message);
-    
-    public RaiseException newIOErrorFromException(IOException ioe);
-    
-    public RaiseException newTypeError(IRubyObject receivedObject, RubyClass expectedType);
+    RaiseException newNotImplementedError(String message);
 
-    public RaiseException newEOFError();
-    
-    public RaiseException newZeroDivisionError();
-    
-    public RaiseException newFloatDomainError(String message);
+    RaiseException newNoMethodError(String message, String name);
 
-	public RubySymbol.SymbolTable getSymbolTable();
+    RaiseException newNameError(String message, String name);
 
-	public void setStackTraces(int stackTraces);
+    RaiseException newLocalJumpError(String message);
 
-	public int getStackTraces();
+    RaiseException newLoadError(String message);
 
-	public void setRandomSeed(long randomSeed);
+    RaiseException newFrozenError(String objectType);
 
-	public long getRandomSeed();
+    RaiseException newSystemStackError(String message);
 
-	public Random getRandom();
+    RaiseException newSystemExit(int status);
 
-	public ObjectSpace getObjectSpace();
+    RaiseException newIOError(String message);
 
-	public Hashtable getIoHandlers();
+    RaiseException newIOErrorFromException(IOException ioe);
 
-	public RubyFixnum[] getFixnumCache();
+    RaiseException newTypeError(IRubyObject receivedObject, RubyClass expectedType);
 
-	public long incrementRandomSeedSequence();
+    RaiseException newEOFError();
 
-    public RubyTime newTime(long milliseconds);
+    RaiseException newZeroDivisionError();
 
-	public boolean isGlobalAbortOnExceptionEnabled();
+    RaiseException newFloatDomainError(String message);
 
-	public void setGlobalAbortOnExceptionEnabled(boolean b);
+    RubySymbol.SymbolTable getSymbolTable();
 
-	public boolean isDoNotReverseLookupEnabled();
+    void setStackTraces(int stackTraces);
 
-	public void setDoNotReverseLookupEnabled(boolean b);
+    int getStackTraces();
 
-    public boolean registerInspecting(Object obj);
-    public void unregisterInspecting(Object obj);
+    void setRandomSeed(long randomSeed);
 
-    public Profile getProfile();
-    
-    public String getJRubyHome();
+    long getRandomSeed();
+
+    Random getRandom();
+
+    ObjectSpace getObjectSpace();
+
+    Hashtable getIoHandlers();
+
+    RubyFixnum[] getFixnumCache();
+
+    long incrementRandomSeedSequence();
+
+    RubyTime newTime(long milliseconds);
+
+    boolean isGlobalAbortOnExceptionEnabled();
+
+    void setGlobalAbortOnExceptionEnabled(boolean b);
+
+    boolean isDoNotReverseLookupEnabled();
+
+    void setDoNotReverseLookupEnabled(boolean b);
+
+    boolean registerInspecting(Object obj);
+    void unregisterInspecting(Object obj);
+
+    Profile getProfile();
+
+    String getJRubyHome();
+
+    RubyInstanceConfig getInstanceConfig();
 
     /** GET_VM_STATE_VERSION */
-    public long getGlobalState();
+    long getGlobalState();
 
     /** INC_VM_STATE_VERSION */
-    public void incGlobalState();
+    void incGlobalState();
 }

@@ -75,3 +75,5 @@ test_equal "\n",v
 ENV['__JRUBY_T1'] = "abc"
 v = `echo #{name}`
 test_equal "abc\n",v
+
+test_equal "abc\n", `jruby -e "puts ENV[%{__JRUBY_T1}]"`

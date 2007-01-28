@@ -18,6 +18,7 @@ import javax.swing.JTextPane;
 
 import org.jruby.IRuby;
 import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class IRBApplet extends Applet {
@@ -45,10 +46,15 @@ public class IRBApplet extends Applet {
         add(pane);
         this.validate();
         
-        TextAreaReadline tar = new TextAreaReadline(text, " Welcome to JRuby for the Web! \n\n");
+        final TextAreaReadline tar = new TextAreaReadline(text, " Welcome to JRuby for the Web! \n\n");
         
-        final IRuby runtime = Ruby.newInstance(pipeIn, new PrintStream(tar),
-                new PrintStream(tar), false);
+        final RubyInstanceConfig config = new RubyInstanceConfig() {{
+            setInput(pipeIn);
+            setOutput(new PrintStream(tar));
+            setError(new PrintStream(tar));
+            setObjectSpaceEnabled(false);
+        }};
+        final IRuby runtime = Ruby.newInstance(config);
         
         runtime.defineGlobalConstant("ARGV", runtime.newArray(new IRubyObject[] {
                 runtime.newString("-f") }));

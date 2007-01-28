@@ -21,7 +21,7 @@
  * Copyright (C) 2005 Kiel Hodges <jruby-devel@selfsosoft.com>
  * Copyright (C) 2005 Jason Voegele <jason@jvoegele.com>
  * Copyright (C) 2005 Tim Azzopardi <tim@tigerfive.com>
- *  
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -66,18 +66,28 @@ import org.jruby.ast.executable.YARVCompiledRunner;
 public class Main {
     private CommandlineParser commandline;
     private boolean hasPrintedUsage = false;
+    private RubyInstanceConfig config;
     private InputStream in;
     private PrintStream out;
     private PrintStream err;
-    
-    public Main(InputStream in, PrintStream out, PrintStream err) {
-        this.in = in;
-        this.out = out;
-        this.err = err;
+
+    public Main(RubyInstanceConfig config) {
+        this.config = config;
+        this.in     = config.getInput();
+        this.out    = config.getOutput();
+        this.err    = config.getError();
     }
-    
+
+    public Main(final InputStream in, final PrintStream out, final PrintStream err) {
+        this(new RubyInstanceConfig(){{
+            setInput(in);
+            setOutput(out);
+            setError(err);
+        }});
+    }
+
     public Main() {
-        this(System.in, System.out, System.err);
+        this(new RubyInstanceConfig());
     }
 
     public static void main(String[] args) {
@@ -87,14 +97,14 @@ public class Main {
             System.exit(status);
         }
     }
-    
+
     public int run(String[] args) {
         commandline = new CommandlineParser(this, args);
 
         if (commandline.isShowVersion()) {
             showVersion();
         }
-        
+
         if (! commandline.shouldRunInterpreter()) {
             return 0;
         }
@@ -119,7 +129,7 @@ public class Main {
         if (commandline.isBenchmarking()) {
             out.println("Runtime: " + (System.currentTimeMillis() - now) + " ms");
         }
-        
+
         return status;
     }
 
@@ -152,11 +162,12 @@ public class Main {
     }
 
     private int runInterpreter(CommandlineParser commandline) {
-        Reader reader = commandline.getScriptSource();
+        Reader reader   = commandline.getScriptSource();
         String filename = commandline.displayedFileName();
-        final IRuby runtime = Ruby.newInstance(in, out, err, commandline.isObjectSpaceEnabled());
+        config.updateWithCommandline(commandline);
+        final IRuby runtime = Ruby.newInstance(config);
         runtime.setKCode(commandline.getKCode());
-        
+
         // Add a shutdown hook that dumps the contents of the runtimeInformation map.
         // This map can be used at development-time to log profiling information
         // that must be updated as the execution runs.
@@ -164,7 +175,7 @@ public class Main {
             public void run() {
                 if (!runtime.getRuntimeInformation().isEmpty()) {
                     System.err.println("Runtime information dump:");
-                
+
                     for (Iterator iter = runtime.getRuntimeInformation().keySet().iterator(); iter.hasNext();) {
                         Object key = iter.next();
                         System.err.println("[" + key + "]: " + runtime.getRuntimeInformation().get(key));
@@ -181,7 +192,7 @@ public class Main {
                 RubyException raisedException = ((RaiseException)je).getException();
                 if (raisedException.isKindOf(runtime.getClass("SystemExit"))) {
                     RubyFixnum status = (RubyFixnum)raisedException.getInstanceVariable("status");
-                    
+
                     if (status != null) {
                         return RubyNumeric.fix2int(status);
                     } else {
@@ -205,7 +216,7 @@ public class Main {
             }
         }
     }
-    
+
     private void runInterpreter(IRuby runtime, Reader reader, String filename) {
         try {
             initializeRuntime(runtime, filename);
@@ -219,7 +230,7 @@ public class Main {
                     runtime.ycompileAndRun(parsedScript);
                 } else {
                     runtime.eval(parsedScript);
-                }       
+                }
             }
         } finally {
             runtime.tearDown();
@@ -246,7 +257,7 @@ public class Main {
         defineGlobalVERBOSE(runtime);
         defineGlobalDEBUG(runtime);
 
-        runtime.getObject().setConstant("$VERBOSE", 
+        runtime.getObject().setConstant("$VERBOSE",
                 commandline.isVerbose() ? runtime.getTrue() : runtime.getNil());
         runtime.defineGlobalConstant("ARGV", argumentArray);
 
@@ -267,19 +278,19 @@ public class Main {
     }
 
     private void defineGlobalVERBOSE(final IRuby runtime) {
-        // $VERBOSE can be true, false, or nil.  Any non-false-nil value will get stored as true  
+        // $VERBOSE can be true, false, or nil.  Any non-false-nil value will get stored as true
         runtime.getGlobalVariables().define("$VERBOSE", new IAccessor() {
             public IRubyObject getValue() {
                 return runtime.getVerbose();
             }
-            
+
             public IRubyObject setValue(IRubyObject newValue) {
                 if (newValue.isNil()) {
                     runtime.setVerbose(newValue);
                 } else {
                     runtime.setVerbose(runtime.newBoolean(newValue != runtime.getFalse()));
                 }
-                
+
                 return newValue;
             }
         });
@@ -290,14 +301,14 @@ public class Main {
             public IRubyObject getValue() {
                 return runtime.getDebug();
             }
-            
+
             public IRubyObject setValue(IRubyObject newValue) {
                 if (newValue.isNil()) {
                     runtime.setDebug(newValue);
                 } else {
                     runtime.setDebug(runtime.newBoolean(newValue != runtime.getFalse()));
                 }
-                
+
                 return newValue;
             }
             };
