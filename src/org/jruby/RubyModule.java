@@ -584,9 +584,6 @@ public class RubyModule extends RubyObject {
         return null;
     }
 
-    // FIXME: Why do module functions need singleton classes here? This messages with
-    // marshalling tests for dumping modules, since they now always have a singleton
-    // class, which isn't allowed to dump.
     public void addModuleFunction(String name, DynamicMethod method) {
         addMethod(name, method);
         getSingletonClass().addMethod(name, method);
@@ -622,14 +619,6 @@ public class RubyModule extends RubyObject {
     public void defineFastPublicModuleFunction(String name, Callback method) {
         defineFastMethod(name, method);
         getSingletonClass().defineFastMethod(name, method);
-    }
-
-    /** rb_define_module_function
-     *
-     */
-    public void defineFastPublicModuleFunction2(String name, Callback method) {
-        defineFastMethod(name, method);
-        getMetaClass().defineFastMethod(name, method);
     }
 
     private IRubyObject getConstantInner(String name, boolean exclude) {

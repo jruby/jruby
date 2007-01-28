@@ -77,9 +77,6 @@ import org.jruby.util.UnsynchronizedStack;
  */
 public class RubyKernel {
     public static RubyModule createKernelModule(IRuby runtime) {
-        // FIXME: All these "defineFastModuleFunction" calls are resulting in Kernel being
-        // singltonized, and these methods are defined on the singleton. This does not seem right,
-        // but just using Kernel's metaclass did not seem to work. Examine this and determine correct behavior.
         RubyModule module = runtime.defineModule("Kernel");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyKernel.class);
         CallbackFactory objectCallbackFactory = runtime.callbackFactory(RubyObject.class);

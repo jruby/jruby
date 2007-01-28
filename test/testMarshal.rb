@@ -235,7 +235,7 @@ end
 x = MyRange.new(1,10)
 y = Marshal.load(Marshal.dump(x))
 test_equal(MyRange, y.class)
-  test_equal(10, y.max)
 test_no_exception {
+  test_equal(10, y.max)
   test_equal("hello", y.foo)
 }

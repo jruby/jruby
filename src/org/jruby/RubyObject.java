@@ -121,6 +121,10 @@ public class RubyObject implements Cloneable, IRubyObject {
             setMetaClass(newMetaClass);
         }
         newMetaClass.attachToObject(this);
+        
+        // use same ClassIndex as metaclass, since we're technically still of that type
+        newMetaClass.index = type.index;
+        
         return newMetaClass;
     }
 
