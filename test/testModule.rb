@@ -337,3 +337,6 @@ Aaaa = Class.new(Dir) {
 }
 
 test_no_exception { Aaaa.new("/") }
+
+class Froom < Module; end
+test_equal Froom, Froom.new.class

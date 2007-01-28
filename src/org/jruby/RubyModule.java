@@ -991,11 +991,19 @@ public class RubyModule extends RubyObject {
     // Methods of the Module Class (rb_mod_*):
 
     public static RubyModule newModule(IRuby runtime, String name) {
-        return newModule(runtime, name, null);
+        return newModule(runtime, runtime.getClass("Module"), name, null);
+    }
+
+    public static RubyModule newModule(IRuby runtime, RubyClass type, String name) {
+        return newModule(runtime, type, name, null);
     }
 
     public static RubyModule newModule(IRuby runtime, String name, SinglyLinkedList parentCRef) {
-        RubyModule module = new RubyModule(runtime, runtime.getClass("Module"), null, parentCRef, name);
+        return newModule(runtime, runtime.getClass("Module"), name, parentCRef);
+    }
+
+    public static RubyModule newModule(IRuby runtime, RubyClass type, String name, SinglyLinkedList parentCRef) {
+        RubyModule module = new RubyModule(runtime, type, null, parentCRef, name);
         
         return module;
     }
