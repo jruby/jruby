@@ -74,7 +74,7 @@ public class Generator {
         gstub.gen_rewind = new MultiStubMethod(gstub,8,cGen,Arity.noArguments(),Visibility.PUBLIC);
         gstub.gen_each = new MultiStubMethod(gstub,9,cGen,Arity.noArguments(),Visibility.PUBLIC);
        
-        cGen.addSingletonMethod("new",gstub.gen_new);
+        cGen.getMetaClass().addMethod("new",gstub.gen_new);
         cGen.addMethod("initialize",gstub.gen_initialize);
         cGen.addMethod("yield",gstub.gen_yield);
         cGen.addMethod("end?",gstub.gen_end_p);

@@ -45,9 +45,9 @@ public class RubyDigest {
 
         CallbackFactory basecb = runtime.callbackFactory(Base.class);
         
-        cDigestBase.defineFastSingletonMethod("new",basecb.getFastOptSingletonMethod("newInstance"));
-        cDigestBase.defineFastSingletonMethod("digest",basecb.getFastSingletonMethod("s_digest",IRubyObject.class));
-        cDigestBase.defineFastSingletonMethod("hexdigest",basecb.getFastSingletonMethod("s_hexdigest",IRubyObject.class));
+        cDigestBase.getMetaClass().defineFastMethod("new",basecb.getFastOptSingletonMethod("newInstance"));
+        cDigestBase.getMetaClass().defineFastMethod("digest",basecb.getFastSingletonMethod("s_digest",IRubyObject.class));
+        cDigestBase.getMetaClass().defineFastMethod("hexdigest",basecb.getFastSingletonMethod("s_hexdigest",IRubyObject.class));
 
         cDigestBase.defineMethod("initialize",basecb.getOptMethod("initialize"));
         cDigestBase.defineFastMethod("initialize_copy",basecb.getFastMethod("initialize_copy",IRubyObject.class));

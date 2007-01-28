@@ -49,9 +49,9 @@ public class RubyNameError extends RubyException {
         RubyClass nameErrorClass = runtime.defineClass("NameError", standardErrorClass, NAMEERROR_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyNameError.class);
         
-        nameErrorClass.defineFastSingletonMethod("new", 
+        nameErrorClass.getMetaClass().defineFastMethod("new", 
                 callbackFactory.getFastOptSingletonMethod("newRubyNameError"));		
-        nameErrorClass.defineFastSingletonMethod("exception", 
+        nameErrorClass.getMetaClass().defineFastMethod("exception", 
 				callbackFactory.getFastOptSingletonMethod("newRubyNameError"));		
 
         nameErrorClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));

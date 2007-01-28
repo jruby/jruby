@@ -33,7 +33,6 @@
 package org.jruby;
 
 import java.util.List;
-
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
@@ -43,6 +42,7 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.IdUtil;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.ClassIndex;
 
 /**
  * @author  jpetersen
@@ -63,10 +63,12 @@ public class RubyStruct extends RubyObject {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR may be ok here, but it's unclear how Structs
         // work with marshalling. Confirm behavior and ensure we're doing this correctly. JRUBY-415
         RubyClass structClass = runtime.defineClass("Struct", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        structClass.index = ClassIndex.STRUCT;
+        
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyStruct.class);
         structClass.includeModule(runtime.getModule("Enumerable"));
 
-        structClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
+        structClass.getMetaClass().defineMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
 
         structClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
         structClass.defineMethod("clone", callbackFactory.getMethod("rbClone"));
@@ -87,6 +89,10 @@ public class RubyStruct extends RubyObject {
         structClass.defineFastMethod("members", callbackFactory.getFastMethod("members"));
 
         return structClass;
+    }
+    
+    public int getNativeTypeIndex() {
+        return ClassIndex.STRUCT;
     }
 
     private static IRubyObject getInstanceVariable(RubyClass type, String name) {
@@ -185,6 +191,8 @@ public class RubyStruct extends RubyObject {
             newStruct = superClass.newSubClass(name, superClass.getAllocator(), superClass.getCRef());
         }
 
+        newStruct.index = ClassIndex.STRUCT;
+        
         newStruct.setInstanceVariable("__size__", member.length());
         newStruct.setInstanceVariable("__member__", member);
 
@@ -412,22 +420,20 @@ public class RubyStruct extends RubyObject {
         return values[idx] = value;
     }
 
-    public void marshalTo(MarshalStream output) throws java.io.IOException {
-        output.write('S');
-
-        String className = getMetaClass().getName();
+    public static void marshalTo(RubyStruct struct, MarshalStream output) throws java.io.IOException {
+        String className = struct.getMetaClass().getName();
         if (className == null) {
-            throw getRuntime().newArgumentError("can't dump anonymous class");
+            throw struct.getRuntime().newArgumentError("can't dump anonymous class");
         }
-        output.dumpObject(RubySymbol.newSymbol(getRuntime(), className));
+        output.dumpObject(RubySymbol.newSymbol(struct.getRuntime(), className));
 
-        List members = ((RubyArray) getInstanceVariable(classOf(), "__member__")).getList();
-        output.dumpInt(members.size());
+        List members = ((RubyArray) getInstanceVariable(struct.classOf(), "__member__")).getList();
+        output.writeInt(members.size());
 
         for (int i = 0; i < members.size(); i++) {
             RubySymbol name = (RubySymbol) members.get(i);
             output.dumpObject(name);
-            output.dumpObject(values[i]);
+            output.dumpObject(struct.values[i]);
         }
     }
 

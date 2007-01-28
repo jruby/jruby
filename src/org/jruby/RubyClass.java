@@ -36,6 +36,7 @@ import java.util.Iterator;
 import java.util.Map;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
@@ -50,7 +51,7 @@ import org.jruby.util.collections.SinglyLinkedList;
  */
 public class RubyClass extends RubyModule {
 	
-	private final IRuby runtime;
+    private final IRuby runtime;
     
     // the default allocator
     private final ObjectAllocator allocator;
@@ -61,8 +62,6 @@ public class RubyClass extends RubyModule {
         public void marshalTo(IRuby runtime, Object obj, RubyClass type,
                               MarshalStream marshalStream) throws IOException {
             IRubyObject object = (IRubyObject)obj;
-            
-            marshalStream.dumpDefaultObjectHeader(type);
             
             Map iVars = object.getInstanceVariablesSnapshot();
             
@@ -81,6 +80,14 @@ public class RubyClass extends RubyModule {
         }
     };
 
+    /**
+     * @mri rb_boot_class
+     */
+    
+    /**
+     * @mri rb_boot_class
+     */
+    
     /**
      * @mri rb_boot_class
      */
@@ -107,12 +114,16 @@ public class RubyClass extends RubyModule {
         this.allocator = allocator;
         this.runtime = runtime;
         
-        // use superclass's marshal by default, or the default marshal
-        if (superClass != null) {
+        // use parent's marshal, or default object marshal by default
+        if (metaClass != null) {
             this.marshal = superClass.getMarshal();
         } else {
             this.marshal = DEFAULT_OBJECT_MARSHAL;
         }
+    }
+    
+    public int getNativeTypeIndex() {
+        return ClassIndex.CLASS;
     }
     
     public final IRubyObject allocate() {
@@ -145,13 +156,17 @@ public class RubyClass extends RubyModule {
             }
         };
         
-        return new RubyClass(
+        RubyClass classClass = new RubyClass(
                 runtime,
                 null /* FIXME: should be something else? */,
                 moduleClass,
                 defaultAllocator,
                 null,
                 "Class");
+        
+        classClass.index = ClassIndex.CLASS;
+        
+        return classClass;
     }
     
     /* (non-Javadoc)
@@ -171,11 +186,11 @@ public class RubyClass extends RubyModule {
 
     public static void createClassClass(RubyClass classClass) {
         CallbackFactory callbackFactory = classClass.getRuntime().callbackFactory(RubyClass.class);
-        classClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod("newClass"));
+        classClass.getMetaClass().defineMethod("new", callbackFactory.getOptSingletonMethod("newClass"));
         classClass.defineFastMethod("allocate", callbackFactory.getFastMethod("allocate"));
         classClass.defineMethod("new", callbackFactory.getOptMethod("newInstance"));
         classClass.defineMethod("superclass", callbackFactory.getMethod("superclass"));
-        classClass.defineSingletonMethod("inherited", callbackFactory.getSingletonMethod("inherited", IRubyObject.class));
+        classClass.getMetaClass().defineMethod("inherited", callbackFactory.getSingletonMethod("inherited", IRubyObject.class));
         classClass.undefineMethod("module_function");
     }
     
@@ -315,9 +330,8 @@ public class RubyClass extends RubyModule {
         throw recv.getRuntime().newTypeError("can't make subclass of Class");
     }
 
-    public void marshalTo(MarshalStream output) throws java.io.IOException {
-        output.write('c');
-        output.dumpString(getName());
+    public static void marshalTo(RubyClass clazz, MarshalStream output) throws java.io.IOException {
+        output.writeString(clazz.getName());
     }
 
     public static RubyModule unmarshalFrom(UnmarshalStream output) throws java.io.IOException {

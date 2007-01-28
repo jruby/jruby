@@ -46,10 +46,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
@@ -96,6 +96,10 @@ public class RubyHash extends RubyObject implements Map {
         this.valueMap = new HashMap(valueMap);
         this.capturedDefaultProc = runtime.getNil();
         setDefaultValue(defaultValue);
+    }
+    
+    public int getNativeTypeIndex() {
+        return ClassIndex.HASH;
     }
     
     public IRubyObject getDefaultValue(IRubyObject[] args, Block block) {
@@ -564,36 +568,28 @@ public class RubyHash extends RubyObject implements Map {
         }
         return result;
     }
+    
+    public boolean hasNonProcDefault() {
+        return defaultValueCallback != NIL_DEFAULT_VALUE;
+    }
 
     // FIXME:  Total hack to get flash in Rails marshalling/unmarshalling in session ok...We need
     // to totally change marshalling to work with overridden core classes.
-	public void marshalTo(MarshalStream output) throws IOException {
-		output.writeIVar(this, output);
-		output.writeUserClass(this, getRuntime().getClass("Hash"), output);
-        if (defaultValueCallback != NIL_DEFAULT_VALUE) {
-            // hashdef
-            output.write('}');
-        } else {
-		output.write('{');
+    public static void marshalTo(RubyHash hash, MarshalStream output) throws IOException {
+        output.writeInt(hash.getValueMap().size());
+
+        for (Iterator iter = hash.entryIterator(); iter.hasNext();) {
+                Map.Entry entry = (Map.Entry) iter.next();
+
+                output.dumpObject((IRubyObject) entry.getKey());
+                output.dumpObject((IRubyObject) entry.getValue());
         }
-		output.dumpInt(getValueMap().size());
-		
-		for (Iterator iter = entryIterator(); iter.hasNext();) {
-			Map.Entry entry = (Map.Entry) iter.next();
-			
-			output.dumpObject((IRubyObject) entry.getKey());
-			output.dumpObject((IRubyObject) entry.getValue());
-		}
 		
         // handle default value
-        if (defaultValueCallback != NIL_DEFAULT_VALUE) {
-            output.dumpObject(defaultValueCallback.execute(null, NULL_ARRAY, null));
+        if (hash.hasNonProcDefault()) {
+            output.dumpObject(hash.defaultValueCallback.execute(null, NULL_ARRAY, null));
         }
-        
-    	if (!getMetaClass().equals(getRuntime().getClass("Hash"))) {
-    		output.writeInstanceVars(this, output);
-    	}
-	}
+    }
 
     public static RubyHash unmarshalFrom(UnmarshalStream input, boolean defaultValue) throws IOException {
         RubyHash result = newHash(input.getRuntime());

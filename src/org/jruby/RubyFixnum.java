@@ -59,7 +59,7 @@ public class RubyFixnum extends RubyInteger {
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyFixnum.class);
 
         fixnum.includeModule(runtime.getModule("Precision"));
-        fixnum.defineFastSingletonMethod("induced_from", callbackFactory.getFastSingletonMethod(
+        fixnum.getMetaClass().defineFastMethod("induced_from", callbackFactory.getFastSingletonMethod(
                 "induced_from", IRubyObject.class));
 
         fixnum.defineFastMethod("to_s", callbackFactory.getFastOptMethod("to_s"));
@@ -109,7 +109,7 @@ public class RubyFixnum extends RubyInteger {
     private static final long SIGN_BIT = (1L << (BIT_SIZE - 1));
     public static final long MAX = (1L<<(BIT_SIZE - 1)) - 1;
     public static final long MIN = -1 * MAX - 1;
-    private static final long MAX_MARSHAL_FIXNUM = (1L << 30) - 1;
+    public static final long MAX_MARSHAL_FIXNUM = (1L << 30) - 1;
 
     public static final byte OP_PLUS_SWITCHVALUE = 1;
     public static final byte OP_MINUS_SWITCHVALUE = 2;
@@ -140,6 +140,9 @@ public class RubyFixnum extends RubyInteger {
             default:
                 return super.callMethod(context, rubyclass, name, args, callType, block);
         }
+    }
+    public int getNativeTypeIndex() {
+        return ClassIndex.FIXNUM;
     }
     
     public boolean isImmediate() {
@@ -693,15 +696,6 @@ public class RubyFixnum extends RubyInteger {
 
     public IRubyObject rbClone() {
         throw getRuntime().newTypeError("can't clone Fixnum");
-    }
-
-    public void marshalTo(MarshalStream output) throws java.io.IOException {
-        if (value <= MAX_MARSHAL_FIXNUM) {
-            output.write('i');
-            output.dumpInt((int) value);
-        } else {
-            output.dumpObject(RubyBignum.newBignum(getRuntime(), value));
-        }
     }
 
     public static RubyFixnum unmarshalFrom(UnmarshalStream input) throws java.io.IOException {

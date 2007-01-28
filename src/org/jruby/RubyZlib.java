@@ -60,8 +60,8 @@ public class RubyZlib {
 
         RubyClass gzfile = result.defineClassUnder("GzipFile", runtime.getObject(), RubyGzipFile.GZIPFILE_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyGzipFile.class);
-        gzfile.defineSingletonMethod("wrap", callbackFactory.getSingletonMethod("wrap", RubyGzipFile.class, IRubyObject.class));
-        gzfile.defineSingletonMethod("new", callbackFactory.getSingletonMethod("newInstance"));
+        gzfile.getMetaClass().defineMethod("wrap", callbackFactory.getSingletonMethod("wrap", RubyGzipFile.class, IRubyObject.class));
+        gzfile.getMetaClass().defineMethod("new", callbackFactory.getSingletonMethod("newInstance"));
         gzfile.defineFastMethod("os_code", callbackFactory.getFastMethod("os_code"));
         gzfile.defineFastMethod("closed?", callbackFactory.getFastMethod("closed_p"));
         gzfile.defineFastMethod("orig_name", callbackFactory.getFastMethod("orig_name"));
@@ -79,8 +79,8 @@ public class RubyZlib {
         RubyClass gzreader = result.defineClassUnder("GzipReader", gzfile, RubyGzipReader.GZIPREADER_ALLOCATOR);
         gzreader.includeModule(runtime.getModule("Enumerable"));
         CallbackFactory callbackFactory2 = runtime.callbackFactory(RubyGzipReader.class);
-        gzreader.defineSingletonMethod("open", callbackFactory2.getSingletonMethod("open", RubyString.class));
-        gzreader.defineSingletonMethod("new", classCB.getOptMethod("newInstance"));
+        gzreader.getMetaClass().defineMethod("open", callbackFactory2.getSingletonMethod("open", RubyString.class));
+        gzreader.getMetaClass().defineMethod("new", classCB.getOptMethod("newInstance"));
         gzreader.defineMethod("initialize", callbackFactory2.getMethod("initialize", IRubyObject.class));
         gzreader.defineFastMethod("rewind", callbackFactory2.getFastMethod("rewind"));
         gzreader.defineFastMethod("lineno", callbackFactory2.getFastMethod("lineno"));
@@ -106,8 +106,8 @@ public class RubyZlib {
 
         RubyClass gzwriter = result.defineClassUnder("GzipWriter", gzfile, RubyGzipWriter.GZIPWRITER_ALLOCATOR);
         CallbackFactory callbackFactory3 = runtime.callbackFactory(RubyGzipWriter.class);
-        gzwriter.defineSingletonMethod("open", callbackFactory3.getOptSingletonMethod("open"));
-        gzwriter.defineSingletonMethod("new", classCB.getOptMethod("newInstance"));
+        gzwriter.getMetaClass().defineMethod("open", callbackFactory3.getOptSingletonMethod("open"));
+        gzwriter.getMetaClass().defineMethod("new", classCB.getOptMethod("newInstance"));
         gzwriter.defineMethod("initialize", callbackFactory3.getOptMethod("initialize2"));
         gzwriter.defineFastMethod("<<", callbackFactory3.getFastMethod("append", IRubyObject.class));
         gzwriter.defineFastMethod("printf", callbackFactory3.getFastOptMethod("printf"));
@@ -209,7 +209,7 @@ public class RubyZlib {
 
         RubyClass infl = result.defineClassUnder("Inflate", zstream, Inflate.INFLATE_ALLOCATOR);
         CallbackFactory inflcb = runtime.callbackFactory(Inflate.class);
-        infl.defineFastSingletonMethod("inflate",inflcb.getFastSingletonMethod("s_inflate",IRubyObject.class));
+        infl.getMetaClass().defineFastMethod("inflate",inflcb.getFastSingletonMethod("s_inflate",IRubyObject.class));
         infl.defineFastMethod("initialize",inflcb.getFastOptMethod("_initialize"));
         infl.defineFastMethod("<<",inflcb.getFastMethod("append",IRubyObject.class));
         infl.defineFastMethod("sync_point?",inflcb.getFastMethod("sync_point_p"));
@@ -219,7 +219,7 @@ public class RubyZlib {
 
         RubyClass defl = result.defineClassUnder("Deflate", zstream, Deflate.DEFLATE_ALLOCATOR);
         CallbackFactory deflcb = runtime.callbackFactory(Deflate.class);
-        defl.defineFastSingletonMethod("deflate",deflcb.getFastOptSingletonMethod("s_deflate"));
+        defl.getMetaClass().defineFastMethod("deflate",deflcb.getFastOptSingletonMethod("s_deflate"));
         defl.defineFastMethod("initialize",deflcb.getFastOptMethod("_initialize"));
         defl.defineFastMethod("<<",deflcb.getFastMethod("append",IRubyObject.class));
         defl.defineFastMethod("params",deflcb.getFastMethod("params",IRubyObject.class,IRubyObject.class));

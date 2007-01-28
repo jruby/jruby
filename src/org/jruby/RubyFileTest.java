@@ -39,16 +39,16 @@ public class RubyFileTest {
         RubyModule fileTestModule = runtime.defineModule("FileTest");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyFileTest.class);
 
-        fileTestModule.defineFastSingletonMethod("file?", callbackFactory.getFastSingletonMethod("file_p", IRubyObject.class));
-        fileTestModule.defineFastSingletonMethod("directory?", callbackFactory.getFastSingletonMethod("directory_p", IRubyObject.class));
-        fileTestModule.defineFastSingletonMethod("exist?", callbackFactory.getFastSingletonMethod("exist_p", IRubyObject.class));
-        fileTestModule.defineFastSingletonMethod("exists?", callbackFactory.getFastSingletonMethod("exist_p", IRubyObject.class));
-        fileTestModule.defineFastSingletonMethod("readable?", callbackFactory.getFastSingletonMethod("readable_p", IRubyObject.class));
-        fileTestModule.defineFastSingletonMethod("readable_real?", callbackFactory.getFastSingletonMethod("readable_p", IRubyObject.class));
-        fileTestModule.defineFastSingletonMethod("size", callbackFactory.getFastSingletonMethod("size", IRubyObject.class));
-        fileTestModule.defineFastSingletonMethod("writable?", callbackFactory.getFastSingletonMethod("writable_p", IRubyObject.class));
-        fileTestModule.defineFastSingletonMethod("writable_real?", callbackFactory.getFastSingletonMethod("writable_p", IRubyObject.class));
-        fileTestModule.defineFastSingletonMethod("zero?", callbackFactory.getFastSingletonMethod("zero_p", IRubyObject.class));
+        fileTestModule.getMetaClass().defineFastMethod("file?", callbackFactory.getFastSingletonMethod("file_p", IRubyObject.class));
+        fileTestModule.getMetaClass().defineFastMethod("directory?", callbackFactory.getFastSingletonMethod("directory_p", IRubyObject.class));
+        fileTestModule.getMetaClass().defineFastMethod("exist?", callbackFactory.getFastSingletonMethod("exist_p", IRubyObject.class));
+        fileTestModule.getMetaClass().defineFastMethod("exists?", callbackFactory.getFastSingletonMethod("exist_p", IRubyObject.class));
+        fileTestModule.getMetaClass().defineFastMethod("readable?", callbackFactory.getFastSingletonMethod("readable_p", IRubyObject.class));
+        fileTestModule.getMetaClass().defineFastMethod("readable_real?", callbackFactory.getFastSingletonMethod("readable_p", IRubyObject.class));
+        fileTestModule.getMetaClass().defineFastMethod("size", callbackFactory.getFastSingletonMethod("size", IRubyObject.class));
+        fileTestModule.getMetaClass().defineFastMethod("writable?", callbackFactory.getFastSingletonMethod("writable_p", IRubyObject.class));
+        fileTestModule.getMetaClass().defineFastMethod("writable_real?", callbackFactory.getFastSingletonMethod("writable_p", IRubyObject.class));
+        fileTestModule.getMetaClass().defineFastMethod("zero?", callbackFactory.getFastSingletonMethod("zero_p", IRubyObject.class));
         
         fileTestModule.defineFastMethod("file?", callbackFactory.getFastSingletonMethod("file_p", IRubyObject.class));
         fileTestModule.defineFastMethod("directory?", callbackFactory.getFastSingletonMethod("directory_p", IRubyObject.class));

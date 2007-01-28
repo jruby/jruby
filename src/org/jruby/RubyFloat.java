@@ -36,6 +36,7 @@
 package org.jruby;
 
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -50,11 +51,13 @@ public class RubyFloat extends RubyNumeric {
     public static RubyClass createFloatClass(IRuby runtime) {
         RubyClass floatc = runtime.defineClass("Float", runtime.getClass("Numeric"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        floatc.index = ClassIndex.FLOAT;
+        
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyFloat.class);
         floatc.getSingletonClass().undefineMethod("allocate");
         floatc.getSingletonClass().undefineMethod("new");
 
-        floatc.defineFastSingletonMethod("induced_from", callbackFactory.getFastSingletonMethod(
+        floatc.getMetaClass().defineFastMethod("induced_from", callbackFactory.getFastSingletonMethod(
                 "induced_from", IRubyObject.class));
         floatc.includeModule(runtime.getModule("Precision"));
 
@@ -111,6 +114,10 @@ public class RubyFloat extends RubyNumeric {
     }
 
     private final double value;
+    
+    public int getNativeTypeIndex() {
+        return ClassIndex.FLOAT;
+    }
 
     public RubyFloat(IRuby runtime) {
         this(runtime, 0.0);
@@ -485,17 +492,16 @@ public class RubyFloat extends RubyNumeric {
         return getRuntime().getTrue();
     }
 
-    public void marshalTo(MarshalStream output) throws java.io.IOException {
-        output.write('f');
-        String strValue = this.toString();
+    public static void marshalTo(RubyFloat aFloat, MarshalStream output) throws java.io.IOException {
+        String strValue = aFloat.toString();
     
-        if (Double.isInfinite(value)) {
-            strValue = value < 0 ? "-inf" : "inf";
-        } else if (Double.isNaN(value)) {
+        if (Double.isInfinite(aFloat.value)) {
+            strValue = aFloat.value < 0 ? "-inf" : "inf";
+        } else if (Double.isNaN(aFloat.value)) {
             strValue = "nan";
         }
-        output.dumpString(strValue);
-        }
+        output.writeString(strValue);
+    }
         
     public static RubyFloat unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         return RubyFloat.newFloat(input.getRuntime(), Double.parseDouble(input.unmarshalString()));

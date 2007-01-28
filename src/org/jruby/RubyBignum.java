@@ -121,6 +121,10 @@ public class RubyBignum extends RubyInteger {
                 return super.callMethod(context, rubyclass, name, args, callType, block);
         }
     }
+    
+    public int getNativeTypeIndex() {
+        return ClassIndex.BIGNUM;
+    }
 
     public static RubyBignum newBignum(IRuby runtime, long value) {
         return newBignum(runtime, BigInteger.valueOf(value));
@@ -578,25 +582,24 @@ public class RubyBignum extends RubyInteger {
         return getRuntime().newFixnum((value.bitLength() + 7) / 8);
     }
 
-    public void marshalTo(MarshalStream output) throws IOException {
-        output.write('l');
-        output.write(value.signum() >= 0 ? '+' : '-');
-
-        BigInteger absValue = value.abs();
-
+    public static void marshalTo(RubyBignum bignum, MarshalStream output) throws IOException {
+        output.write(bignum.value.signum() >= 0 ? '+' : '-');
+        
+        BigInteger absValue = bignum.value.abs();
+        
         byte[] digits = absValue.toByteArray();
-
+        
         boolean oddLengthNonzeroStart = (digits.length % 2 != 0 && digits[0] != 0);
         int shortLength = digits.length / 2;
         if (oddLengthNonzeroStart) {
-			shortLength++;
-		}
-        output.dumpInt(shortLength);
-
-        for (int i = 1; i <= shortLength * 2 && i <= digits.length; i++) {
-        	output.write(digits[digits.length - i]);
+            shortLength++;
         }
-
+        output.writeInt(shortLength);
+        
+        for (int i = 1; i <= shortLength * 2 && i <= digits.length; i++) {
+            output.write(digits[digits.length - i]);
+        }
+        
         if (oddLengthNonzeroStart) {
             // Pad with a 0
             output.write(0);

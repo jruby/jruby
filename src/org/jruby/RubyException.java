@@ -77,22 +77,22 @@ public class RubyException extends RubyObject {
     };
 
     public static RubyClass createExceptionClass(IRuby runtime) {
-		RubyClass exceptionClass = runtime.defineClass("Exception", runtime.getObject(), EXCEPTION_ALLOCATOR);
-    	
-		CallbackFactory callbackFactory = runtime.callbackFactory(RubyException.class);
+        RubyClass exceptionClass = runtime.defineClass("Exception", runtime.getObject(), EXCEPTION_ALLOCATOR);
+
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyException.class);
         CallbackFactory classCB = runtime.callbackFactory(RubyClass.class);
         // TODO: could this just  be an alias for new?
-        exceptionClass.defineSingletonMethod("exception", classCB.getOptMethod("newInstance"));		
-		exceptionClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
-		exceptionClass.defineFastMethod("exception", callbackFactory.getFastOptMethod("exception"));
-		exceptionClass.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
-		exceptionClass.defineFastMethod("to_str", callbackFactory.getFastMethod("to_s"));
-		exceptionClass.defineFastMethod("message", callbackFactory.getFastMethod("to_s"));
-		exceptionClass.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
-		exceptionClass.defineFastMethod("backtrace", callbackFactory.getFastMethod("backtrace"));		
-		exceptionClass.defineFastMethod("set_backtrace", callbackFactory.getFastMethod("set_backtrace", IRubyObject.class));		
+        exceptionClass.getMetaClass().defineMethod("exception", classCB.getOptMethod("newInstance"));		
+        exceptionClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
+        exceptionClass.defineFastMethod("exception", callbackFactory.getFastOptMethod("exception"));
+        exceptionClass.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
+        exceptionClass.defineFastMethod("to_str", callbackFactory.getFastMethod("to_s"));
+        exceptionClass.defineFastMethod("message", callbackFactory.getFastMethod("to_s"));
+        exceptionClass.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
+        exceptionClass.defineFastMethod("backtrace", callbackFactory.getFastMethod("backtrace"));		
+        exceptionClass.defineFastMethod("set_backtrace", callbackFactory.getFastMethod("set_backtrace", IRubyObject.class));		
 
-		return exceptionClass;
+        return exceptionClass;
     }
 
     public static RubyException newException(IRuby runtime, RubyClass excptnClass, String msg) {

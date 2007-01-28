@@ -66,8 +66,8 @@ public class RubyIconv extends RubyObject {
         
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyIconv.class);
 
-        iconvClass.defineFastSingletonMethod("iconv", callbackFactory.getOptSingletonMethod("iconv"));
-        iconvClass.defineFastSingletonMethod("conv", callbackFactory.getOptSingletonMethod("conv"));
+        iconvClass.getMetaClass().defineFastMethod("iconv", callbackFactory.getOptSingletonMethod("iconv"));
+        iconvClass.getMetaClass().defineFastMethod("conv", callbackFactory.getOptSingletonMethod("conv"));
         
         iconvClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
         //iconvClass.defineMethod("iconv", callbackFactory.getOptMethod("iconv"));

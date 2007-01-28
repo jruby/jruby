@@ -57,8 +57,8 @@ public class HMAC extends RubyObject {
         
         CallbackFactory hmaccb = runtime.callbackFactory(HMAC.class);
 
-        cHMAC.defineFastSingletonMethod("digest",hmaccb.getFastSingletonMethod("s_digest",IRubyObject.class,IRubyObject.class,IRubyObject.class));
-        cHMAC.defineFastSingletonMethod("hexdigest",hmaccb.getFastSingletonMethod("s_hexdigest",IRubyObject.class,IRubyObject.class,IRubyObject.class));
+        cHMAC.getMetaClass().defineFastMethod("digest",hmaccb.getFastSingletonMethod("s_digest",IRubyObject.class,IRubyObject.class,IRubyObject.class));
+        cHMAC.getMetaClass().defineFastMethod("hexdigest",hmaccb.getFastSingletonMethod("s_hexdigest",IRubyObject.class,IRubyObject.class,IRubyObject.class));
         cHMAC.defineMethod("initialize",hmaccb.getMethod("initialize",IRubyObject.class,IRubyObject.class));
         cHMAC.defineFastMethod("initialize_copy",hmaccb.getFastMethod("initialize_copy",IRubyObject.class));
         cHMAC.defineFastMethod("clone",hmaccb.getFastMethod("rbClone"));

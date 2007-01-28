@@ -44,7 +44,6 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
-import org.jruby.RubyObject;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubyStruct;
@@ -222,12 +221,19 @@ public class UnmarshalStream extends FilterInputStream {
     private IRubyObject defaultObjectUnmarshal() throws IOException {
         RubySymbol className = (RubySymbol) unmarshalObject();
 
-        // ... FIXME: handle if class doesn't exist ...
-
-        RubyClass type = (RubyClass) runtime.getClassFromPath(className.asSymbol());
+        RubyClass type = null;
+        try {
+            type = (RubyClass)runtime.getClassFromPath(className.asSymbol());
+        } catch (RaiseException e) {
+            if (e.getException().isKindOf(runtime.getModule("NameError"))) {
+                throw runtime.newArgumentError("undefined class/module " + className.asSymbol());
+            } 
+                
+            throw e;
+        }
 
         assert type != null : "type shouldn't be null.";
-        
+
         IRubyObject result = (IRubyObject)type.unmarshal(this);
 
         return result;

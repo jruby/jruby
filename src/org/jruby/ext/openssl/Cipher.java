@@ -67,7 +67,7 @@ public class Cipher extends RubyObject {
 
         CallbackFactory ciphercb = runtime.callbackFactory(Cipher.class);
 
-        mCipher.defineFastSingletonMethod("ciphers",ciphercb.getFastSingletonMethod("ciphers"));
+        mCipher.getMetaClass().defineFastMethod("ciphers",ciphercb.getFastSingletonMethod("ciphers"));
         cCipher.defineMethod("initialize",ciphercb.getMethod("initialize",IRubyObject.class));
         cCipher.defineFastMethod("initialize_copy",ciphercb.getFastMethod("initialize_copy",IRubyObject.class));
         cCipher.defineFastMethod("clone",ciphercb.getFastMethod("rbClone"));

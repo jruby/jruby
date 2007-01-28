@@ -249,9 +249,9 @@ public class ASN1 {
         mASN1.defineClassUnder("ASN1Error",openSSLError, openSSLError.getAllocator());
 
         CallbackFactory asncb = runtime.callbackFactory(ASN1.class);
-        mASN1.defineFastSingletonMethod("traverse",asncb.getFastSingletonMethod("traverse",IRubyObject.class));
-        mASN1.defineFastSingletonMethod("decode",asncb.getFastSingletonMethod("decode",IRubyObject.class));
-        mASN1.defineFastSingletonMethod("decode_all",asncb.getFastSingletonMethod("decode_all",IRubyObject.class));
+        mASN1.getMetaClass().defineFastMethod("traverse",asncb.getFastSingletonMethod("traverse",IRubyObject.class));
+        mASN1.getMetaClass().defineFastMethod("decode",asncb.getFastSingletonMethod("decode",IRubyObject.class));
+        mASN1.getMetaClass().defineFastMethod("decode_all",asncb.getFastSingletonMethod("decode_all",IRubyObject.class));
 
         List ary = new ArrayList();
         mASN1.setConstant("UNIVERSAL_TAG_NAME",runtime.newArray(ary));
@@ -284,28 +284,28 @@ public class ASN1 {
         cASN1Constructive.defineFastMethod("to_der",concb.getFastMethod("to_der"));
         cASN1Constructive.defineMethod("each",concb.getMethod("each"));
 
-        mASN1.defineFastSingletonMethod("Boolean",asncb.getFastOptSingletonMethod("fact_Boolean"));
-        mASN1.defineFastSingletonMethod("Integer",asncb.getFastOptSingletonMethod("fact_Integer"));
-        mASN1.defineFastSingletonMethod("Enumerated",asncb.getFastOptSingletonMethod("fact_Enumerated"));
-        mASN1.defineFastSingletonMethod("BitString",asncb.getFastOptSingletonMethod("fact_BitString"));
-        mASN1.defineFastSingletonMethod("OctetString",asncb.getFastOptSingletonMethod("fact_OctetString"));
-        mASN1.defineFastSingletonMethod("UTF8String",asncb.getFastOptSingletonMethod("fact_UTF8String"));
-        mASN1.defineFastSingletonMethod("NumericString",asncb.getFastOptSingletonMethod("fact_NumericString"));
-        mASN1.defineFastSingletonMethod("PrintableString",asncb.getFastOptSingletonMethod("fact_PrintableString"));
-        mASN1.defineFastSingletonMethod("T61String",asncb.getFastOptSingletonMethod("fact_T61String"));
-        mASN1.defineFastSingletonMethod("VideotexString",asncb.getFastOptSingletonMethod("fact_VideotexString"));
-        mASN1.defineFastSingletonMethod("IA5String",asncb.getFastOptSingletonMethod("fact_IA5String"));
-        mASN1.defineFastSingletonMethod("GraphicString",asncb.getFastOptSingletonMethod("fact_GraphicString"));
-        mASN1.defineFastSingletonMethod("ISO64String",asncb.getFastOptSingletonMethod("fact_ISO64String"));
-        mASN1.defineFastSingletonMethod("GeneralString",asncb.getFastOptSingletonMethod("fact_GeneralString"));
-        mASN1.defineFastSingletonMethod("UniversalString",asncb.getFastOptSingletonMethod("fact_UniversalString"));
-        mASN1.defineFastSingletonMethod("BMPString",asncb.getFastOptSingletonMethod("fact_BMPString"));
-        mASN1.defineFastSingletonMethod("Null",asncb.getFastOptSingletonMethod("fact_Null"));
-        mASN1.defineFastSingletonMethod("ObjectId",asncb.getFastOptSingletonMethod("fact_ObjectId"));
-        mASN1.defineFastSingletonMethod("UTCTime",asncb.getFastOptSingletonMethod("fact_UTCTime"));
-        mASN1.defineFastSingletonMethod("GeneralizedTime",asncb.getFastOptSingletonMethod("fact_GeneralizedTime"));
-        mASN1.defineFastSingletonMethod("Sequence",asncb.getFastOptSingletonMethod("fact_Sequence"));
-        mASN1.defineFastSingletonMethod("Set",asncb.getFastOptSingletonMethod("fact_Set"));
+        mASN1.getMetaClass().defineFastMethod("Boolean",asncb.getFastOptSingletonMethod("fact_Boolean"));
+        mASN1.getMetaClass().defineFastMethod("Integer",asncb.getFastOptSingletonMethod("fact_Integer"));
+        mASN1.getMetaClass().defineFastMethod("Enumerated",asncb.getFastOptSingletonMethod("fact_Enumerated"));
+        mASN1.getMetaClass().defineFastMethod("BitString",asncb.getFastOptSingletonMethod("fact_BitString"));
+        mASN1.getMetaClass().defineFastMethod("OctetString",asncb.getFastOptSingletonMethod("fact_OctetString"));
+        mASN1.getMetaClass().defineFastMethod("UTF8String",asncb.getFastOptSingletonMethod("fact_UTF8String"));
+        mASN1.getMetaClass().defineFastMethod("NumericString",asncb.getFastOptSingletonMethod("fact_NumericString"));
+        mASN1.getMetaClass().defineFastMethod("PrintableString",asncb.getFastOptSingletonMethod("fact_PrintableString"));
+        mASN1.getMetaClass().defineFastMethod("T61String",asncb.getFastOptSingletonMethod("fact_T61String"));
+        mASN1.getMetaClass().defineFastMethod("VideotexString",asncb.getFastOptSingletonMethod("fact_VideotexString"));
+        mASN1.getMetaClass().defineFastMethod("IA5String",asncb.getFastOptSingletonMethod("fact_IA5String"));
+        mASN1.getMetaClass().defineFastMethod("GraphicString",asncb.getFastOptSingletonMethod("fact_GraphicString"));
+        mASN1.getMetaClass().defineFastMethod("ISO64String",asncb.getFastOptSingletonMethod("fact_ISO64String"));
+        mASN1.getMetaClass().defineFastMethod("GeneralString",asncb.getFastOptSingletonMethod("fact_GeneralString"));
+        mASN1.getMetaClass().defineFastMethod("UniversalString",asncb.getFastOptSingletonMethod("fact_UniversalString"));
+        mASN1.getMetaClass().defineFastMethod("BMPString",asncb.getFastOptSingletonMethod("fact_BMPString"));
+        mASN1.getMetaClass().defineFastMethod("Null",asncb.getFastOptSingletonMethod("fact_Null"));
+        mASN1.getMetaClass().defineFastMethod("ObjectId",asncb.getFastOptSingletonMethod("fact_ObjectId"));
+        mASN1.getMetaClass().defineFastMethod("UTCTime",asncb.getFastOptSingletonMethod("fact_UTCTime"));
+        mASN1.getMetaClass().defineFastMethod("GeneralizedTime",asncb.getFastOptSingletonMethod("fact_GeneralizedTime"));
+        mASN1.getMetaClass().defineFastMethod("Sequence",asncb.getFastOptSingletonMethod("fact_Sequence"));
+        mASN1.getMetaClass().defineFastMethod("Set",asncb.getFastOptSingletonMethod("fact_Set"));
 
         mASN1.defineClassUnder("Boolean",cASN1Primitive,cASN1Primitive.getAllocator());
         mASN1.defineClassUnder("Integer",cASN1Primitive,cASN1Primitive.getAllocator());
@@ -330,7 +330,7 @@ public class ASN1 {
         mASN1.defineClassUnder("Sequence",cASN1Constructive,cASN1Constructive.getAllocator());
         mASN1.defineClassUnder("Set",cASN1Constructive,cASN1Constructive.getAllocator());
 
-        cASN1ObjectId.defineFastSingletonMethod("register",asncb.getFastOptSingletonMethod("objectid_register"));
+        cASN1ObjectId.getMetaClass().defineFastMethod("register",asncb.getFastOptSingletonMethod("objectid_register"));
         cASN1ObjectId.defineFastMethod("sn",asncb.getFastSingletonMethod("objectid_sn"));
         cASN1ObjectId.defineFastMethod("ln",asncb.getFastSingletonMethod("objectid_ln"));
         cASN1ObjectId.defineFastMethod("short_name",asncb.getFastSingletonMethod("objectid_sn"));

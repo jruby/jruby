@@ -37,7 +37,6 @@
 package org.jruby;
 
 import java.lang.reflect.Array;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -48,13 +47,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
-
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.ConversionIterator;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.meta.ArrayMetaClass;
@@ -127,6 +126,10 @@ public class RubyArray extends RubyObject implements List {
             default:
                 return super.callMethod(context, rubyclass, name, args, callType, block);
         }
+    }
+    
+    public int getNativeTypeIndex() {
+        return ClassIndex.ARRAY;
     }
 
     /** Getter for property list.
@@ -1460,10 +1463,9 @@ public class RubyArray extends RubyObject implements List {
         return this;
     }
 
-    public void marshalTo(MarshalStream output) throws IOException {
-        output.write('[');
-        output.dumpInt(getList().size());
-        for (Iterator iter = getList().iterator(); iter.hasNext(); ) {
+    public static void marshalTo(RubyArray array, MarshalStream output) throws IOException {
+        output.writeInt(array.getList().size());
+        for (Iterator iter = array.getList().iterator(); iter.hasNext(); ) {
             output.dumpObject((IRubyObject) iter.next());
         }
     }

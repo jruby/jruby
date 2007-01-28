@@ -102,19 +102,19 @@ public class RubyThread extends RubyObject {
         threadClass.defineFastMethod("kill", callbackFactory.getFastMethod("kill"));
         threadClass.defineMethod("exit", callbackFactory.getMethod("exit"));
         
-        threadClass.defineFastSingletonMethod("current", callbackFactory.getFastSingletonMethod("current"));
-        threadClass.defineSingletonMethod("fork", callbackFactory.getOptSingletonMethod("newInstance"));
-        threadClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
-        threadClass.defineFastSingletonMethod("list", callbackFactory.getFastSingletonMethod("list"));
-        threadClass.defineFastSingletonMethod("pass", callbackFactory.getFastSingletonMethod("pass"));
-        threadClass.defineSingletonMethod("start", callbackFactory.getOptSingletonMethod("start"));
-        threadClass.defineFastSingletonMethod("critical=", callbackFactory.getFastSingletonMethod("critical_set", RubyBoolean.class));
-        threadClass.defineFastSingletonMethod("critical", callbackFactory.getFastSingletonMethod("critical"));
-        threadClass.defineFastSingletonMethod("stop", callbackFactory.getFastSingletonMethod("stop"));
-        threadClass.defineSingletonMethod("kill", callbackFactory.getSingletonMethod("s_kill", RubyThread.class));
-        threadClass.defineSingletonMethod("exit", callbackFactory.getSingletonMethod("s_exit"));
-        threadClass.defineFastSingletonMethod("abort_on_exception", callbackFactory.getFastSingletonMethod("abort_on_exception"));
-        threadClass.defineFastSingletonMethod("abort_on_exception=", callbackFactory.getFastSingletonMethod("abort_on_exception_set", IRubyObject.class));
+        threadClass.getMetaClass().defineFastMethod("current", callbackFactory.getFastSingletonMethod("current"));
+        threadClass.getMetaClass().defineMethod("fork", callbackFactory.getOptSingletonMethod("newInstance"));
+        threadClass.getMetaClass().defineMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
+        threadClass.getMetaClass().defineFastMethod("list", callbackFactory.getFastSingletonMethod("list"));
+        threadClass.getMetaClass().defineFastMethod("pass", callbackFactory.getFastSingletonMethod("pass"));
+        threadClass.getMetaClass().defineMethod("start", callbackFactory.getOptSingletonMethod("start"));
+        threadClass.getMetaClass().defineFastMethod("critical=", callbackFactory.getFastSingletonMethod("critical_set", RubyBoolean.class));
+        threadClass.getMetaClass().defineFastMethod("critical", callbackFactory.getFastSingletonMethod("critical"));
+        threadClass.getMetaClass().defineFastMethod("stop", callbackFactory.getFastSingletonMethod("stop"));
+        threadClass.getMetaClass().defineMethod("kill", callbackFactory.getSingletonMethod("s_kill", RubyThread.class));
+        threadClass.getMetaClass().defineMethod("exit", callbackFactory.getSingletonMethod("s_exit"));
+        threadClass.getMetaClass().defineFastMethod("abort_on_exception", callbackFactory.getFastSingletonMethod("abort_on_exception"));
+        threadClass.getMetaClass().defineFastMethod("abort_on_exception=", callbackFactory.getFastSingletonMethod("abort_on_exception_set", IRubyObject.class));
 
         RubyThread rubyThread = new RubyThread(runtime, threadClass);
         // set hasStarted to true, otherwise Thread.main.status freezes
@@ -123,7 +123,7 @@ public class RubyThread extends RubyObject {
         rubyThread.threadImpl = new NativeThread(rubyThread, Thread.currentThread());
         runtime.getThreadService().setMainThread(rubyThread);
         
-        threadClass.defineFastSingletonMethod("main", callbackFactory.getFastSingletonMethod("main"));
+        threadClass.getMetaClass().defineFastMethod("main", callbackFactory.getFastSingletonMethod("main"));
         
         return threadClass;
     }

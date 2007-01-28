@@ -44,101 +44,101 @@ public class ArrayMetaClass extends ObjectMetaClass {
         this.index = ClassIndex.ARRAY;
     }
     
-	public ArrayMetaClass(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
-		super(name, RubyArray.class, superClass, allocator, parentCRef);
+    public ArrayMetaClass(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+        super(name, RubyArray.class, superClass, allocator, parentCRef);
         this.index = ClassIndex.ARRAY;
-	}
-
-	protected class ArrayMeta extends Meta {
-		protected void initializeClass() {
-	        includeModule(getRuntime().getModule("Enumerable"));
-	
-	        defineFastMethod("+", Arity.singleArgument(), "op_plus");
-	        defineFastMethod("*", Arity.singleArgument(), "op_times");
-	        defineFastMethod("-", Arity.singleArgument(), "op_diff");
-	        defineFastMethod("&", Arity.singleArgument(), "op_and");
-	        defineFastMethod("|", Arity.singleArgument(), "op_or");
-	        defineFastMethod("[]", Arity.optional(), "aref");
-	        defineFastMethod("[]=", Arity.optional(), "aset");
-	        defineFastMethod("<=>", Arity.singleArgument(), "op_cmp");
-	        defineFastMethod("<<", Arity.singleArgument(), "append");
-	        defineFastMethod("==", Arity.singleArgument(), "array_op_equal");
-	        defineFastMethod("assoc", Arity.singleArgument());
-	        defineFastMethod("at", Arity.singleArgument(), "at");
-	        defineFastMethod("clear", Arity.noArguments(), "rb_clear");
-	        defineFastMethod("clone", Arity.noArguments(), "rbClone");
-	        defineMethod("collect", Arity.noArguments());
-	        defineMethod("collect!", Arity.noArguments(), "collect_bang");
-	        defineFastMethod("compact", Arity.noArguments());
-	        defineFastMethod("compact!", Arity.noArguments(), "compact_bang");
-	        defineFastMethod("concat", Arity.singleArgument());
-	        defineMethod("delete", Arity.singleArgument());
-	        defineFastMethod("delete_at", Arity.singleArgument());
-	        defineMethod("delete_if", Arity.noArguments());
-	        defineMethod("each", Arity.noArguments());
-	        defineMethod("each_index", Arity.noArguments());
-	        defineFastMethod("eql?", Arity.singleArgument(), "eql");
-	        defineFastMethod("empty?", Arity.noArguments(), "empty_p");
-	        defineMethod("fetch", Arity.optional());
-	        defineMethod("fill", Arity.optional());
-	        defineFastMethod("first", Arity.optional());
-	        defineFastMethod("flatten", Arity.noArguments());
-	        defineFastMethod("flatten!", Arity.noArguments(), "flatten_bang");
-	        defineFastMethod("frozen?", Arity.noArguments(), "frozen");
-	        defineFastMethod("hash", Arity.noArguments());
-	        defineFastMethod("include?", Arity.singleArgument(), "include_p");
-	        defineFastMethod("index", Arity.singleArgument());
-	        defineFastMethod("indices", Arity.optional());
+    }
+    
+    protected class ArrayMeta extends Meta {
+        protected void initializeClass() {
+            includeModule(getRuntime().getModule("Enumerable"));
+            
+            defineFastMethod("+", Arity.singleArgument(), "op_plus");
+            defineFastMethod("*", Arity.singleArgument(), "op_times");
+            defineFastMethod("-", Arity.singleArgument(), "op_diff");
+            defineFastMethod("&", Arity.singleArgument(), "op_and");
+            defineFastMethod("|", Arity.singleArgument(), "op_or");
+            defineFastMethod("[]", Arity.optional(), "aref");
+            defineFastMethod("[]=", Arity.optional(), "aset");
+            defineFastMethod("<=>", Arity.singleArgument(), "op_cmp");
+            defineFastMethod("<<", Arity.singleArgument(), "append");
+            defineFastMethod("==", Arity.singleArgument(), "array_op_equal");
+            defineFastMethod("assoc", Arity.singleArgument());
+            defineFastMethod("at", Arity.singleArgument(), "at");
+            defineFastMethod("clear", Arity.noArguments(), "rb_clear");
+            defineFastMethod("clone", Arity.noArguments(), "rbClone");
+            defineMethod("collect", Arity.noArguments());
+            defineMethod("collect!", Arity.noArguments(), "collect_bang");
+            defineFastMethod("compact", Arity.noArguments());
+            defineFastMethod("compact!", Arity.noArguments(), "compact_bang");
+            defineFastMethod("concat", Arity.singleArgument());
+            defineMethod("delete", Arity.singleArgument());
+            defineFastMethod("delete_at", Arity.singleArgument());
+            defineMethod("delete_if", Arity.noArguments());
+            defineMethod("each", Arity.noArguments());
+            defineMethod("each_index", Arity.noArguments());
+            defineFastMethod("eql?", Arity.singleArgument(), "eql");
+            defineFastMethod("empty?", Arity.noArguments(), "empty_p");
+            defineMethod("fetch", Arity.optional());
+            defineMethod("fill", Arity.optional());
+            defineFastMethod("first", Arity.optional());
+            defineFastMethod("flatten", Arity.noArguments());
+            defineFastMethod("flatten!", Arity.noArguments(), "flatten_bang");
+            defineFastMethod("frozen?", Arity.noArguments(), "frozen");
+            defineFastMethod("hash", Arity.noArguments());
+            defineFastMethod("include?", Arity.singleArgument(), "include_p");
+            defineFastMethod("index", Arity.singleArgument());
+            defineFastMethod("indices", Arity.optional());
             // FIXME: shouldn't this be private?
-	        defineMethod("initialize", Arity.optional());
-	        defineFastMethod("insert", Arity.optional());
-	        defineFastMethod("inspect", Arity.noArguments());
-	        defineFastMethod("join", Arity.optional());
-	        defineFastMethod("last", Arity.optional());
-	        defineFastMethod("length", Arity.noArguments());
-	        defineFastMethod("nitems", Arity.noArguments());
-	        defineFastMethod("pack", Arity.singleArgument());
-	        defineFastMethod("pop", Arity.noArguments());
-	        defineFastMethod("push", Arity.optional());
-	        defineFastMethod("rassoc", Arity.singleArgument());
-	        defineMethod("reject!", Arity.noArguments(), "reject_bang");
-	        defineFastMethod("replace", Arity.singleArgument(), "replace");
-	        defineFastMethod("reverse", Arity.noArguments());
-	        defineFastMethod("reverse!", Arity.noArguments(), "reverse_bang");
-	        defineMethod("reverse_each", Arity.noArguments());
-	        defineFastMethod("rindex", Arity.singleArgument());
-	        defineFastMethod("shift", Arity.noArguments());
-	        defineMethod("sort", Arity.noArguments());
-	        defineMethod("sort!", Arity.noArguments(), "sort_bang");
-	        defineFastMethod("slice", Arity.optional(), "aref");
-	        defineFastMethod("slice!", Arity.optional(), "slice_bang");
-	        defineFastMethod("to_a", Arity.noArguments());
-	        defineFastMethod("to_ary", Arity.noArguments());
-	        defineFastMethod("to_s", Arity.noArguments());
-	        defineFastMethod("transpose", Arity.noArguments());
-	        defineFastMethod("uniq", Arity.noArguments());
-	        defineFastMethod("uniq!", Arity.noArguments(), "uniq_bang");
-	        defineFastMethod("unshift", Arity.optional());
-	        defineFastMethod("values_at", Arity.optional());
-	        defineAlias("===", "==");
-	        defineAlias("size", "length");
-	        defineAlias("indexes", "indices");
-	        defineAlias("filter", "collect!");
-	        defineAlias("map!", "collect!");
+            defineMethod("initialize", Arity.optional());
+            defineFastMethod("insert", Arity.optional());
+            defineFastMethod("inspect", Arity.noArguments());
+            defineFastMethod("join", Arity.optional());
+            defineFastMethod("last", Arity.optional());
+            defineFastMethod("length", Arity.noArguments());
+            defineFastMethod("nitems", Arity.noArguments());
+            defineFastMethod("pack", Arity.singleArgument());
+            defineFastMethod("pop", Arity.noArguments());
+            defineFastMethod("push", Arity.optional());
+            defineFastMethod("rassoc", Arity.singleArgument());
+            defineMethod("reject!", Arity.noArguments(), "reject_bang");
+            defineFastMethod("replace", Arity.singleArgument(), "replace");
+            defineFastMethod("reverse", Arity.noArguments());
+            defineFastMethod("reverse!", Arity.noArguments(), "reverse_bang");
+            defineMethod("reverse_each", Arity.noArguments());
+            defineFastMethod("rindex", Arity.singleArgument());
+            defineFastMethod("shift", Arity.noArguments());
+            defineMethod("sort", Arity.noArguments());
+            defineMethod("sort!", Arity.noArguments(), "sort_bang");
+            defineFastMethod("slice", Arity.optional(), "aref");
+            defineFastMethod("slice!", Arity.optional(), "slice_bang");
+            defineFastMethod("to_a", Arity.noArguments());
+            defineFastMethod("to_ary", Arity.noArguments());
+            defineFastMethod("to_s", Arity.noArguments());
+            defineFastMethod("transpose", Arity.noArguments());
+            defineFastMethod("uniq", Arity.noArguments());
+            defineFastMethod("uniq!", Arity.noArguments(), "uniq_bang");
+            defineFastMethod("unshift", Arity.optional());
+            defineFastMethod("values_at", Arity.optional());
+            defineAlias("===", "==");
+            defineAlias("size", "length");
+            defineAlias("indexes", "indices");
+            defineAlias("filter", "collect!");
+            defineAlias("map!", "collect!");
             
             CallbackFactory arrayCB = getRuntime().callbackFactory(ArrayMetaClass.class);
-	
-            defineSingletonMethod("[]", arrayCB.getOptSingletonMethod("create"));
-		}
-	};
-
-	protected Meta getMeta() {
-		return new ArrayMeta();
-	}
-	
-	public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
-		return new ArrayMetaClass(name, this, ARRAY_ALLOCATOR, parentCRef);
-	}
+            
+            getMetaClass().defineMethod("[]", arrayCB.getOptSingletonMethod("create"));
+        }
+    };
+    
+    protected Meta getMeta() {
+        return new ArrayMeta();
+    }
+    
+    public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
+        return new ArrayMetaClass(name, this, ARRAY_ALLOCATOR, parentCRef);
+    }
     
     private static ObjectAllocator ARRAY_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(IRuby runtime, RubyClass klass) {

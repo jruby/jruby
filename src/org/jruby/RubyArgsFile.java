@@ -55,16 +55,16 @@ public class RubyArgsFile extends RubyObject {
         getRuntime().defineGlobalConstant("ARGF", this);
         
         CallbackFactory callbackFactory = getRuntime().callbackFactory(RubyArgsFile.class);
-        defineSingletonMethod("each", callbackFactory.getOptMethod("each_line"));
-        defineSingletonMethod("each_line", callbackFactory.getOptMethod("each_line"));
+        getMetaClass().defineMethod("each", callbackFactory.getOptMethod("each_line"));
+        getMetaClass().defineMethod("each_line", callbackFactory.getOptMethod("each_line"));
 
-		defineSingletonMethod("filename", callbackFactory.getMethod("filename"));
-//		defineSingletonMethod("gets", callbackFactory.getOptSingletonMethod(RubyGlobal.class, "gets"));
-//		defineSingletonMethod("readline", callbackFactory.getOptSingletonMethod(RubyGlobal.class, "readline"));
-//		defineSingletonMethod("readlines", callbackFactory.getOptSingletonMethod(RubyGlobal.class, "readlines"));
+        getMetaClass().defineMethod("filename", callbackFactory.getMethod("filename"));
+//      getMetaClass().defineMethod("gets", callbackFactory.getOptSingletonMethod(RubyGlobal.class, "gets"));
+//	getMetaClass().defineMethod("readline", callbackFactory.getOptSingletonMethod(RubyGlobal.class, "readline"));
+//	getMetaClass().defineMethod("readlines", callbackFactory.getOptSingletonMethod(RubyGlobal.class, "readlines"));
 		
-//		defineSingletonMethod("to_a", callbackFactory.getOptSingletonMethod(RubyGlobal.class, "readlines"));
-		defineSingletonMethod("to_s", callbackFactory.getMethod("filename"));
+//	getMetaClass().defineMethod("to_a", callbackFactory.getOptSingletonMethod(RubyGlobal.class, "readlines"));
+	getMetaClass().defineMethod("to_s", callbackFactory.getMethod("filename"));
 
         getRuntime().defineReadonlyVariable("$FILENAME", getRuntime().newString("-"));
 

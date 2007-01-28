@@ -51,7 +51,7 @@ public class RubyStringIO extends RubyObject {
         
         final CallbackFactory callbackFactory = runtime.callbackFactory(RubyStringIO.class);
         
-        stringIOClass.defineSingletonMethod("open", callbackFactory.getOptSingletonMethod("open"));
+        stringIOClass.getMetaClass().defineMethod("open", callbackFactory.getOptSingletonMethod("open"));
         stringIOClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
         stringIOClass.defineFastMethod("<<", callbackFactory.getFastMethod("append",IRubyObject.class));
         stringIOClass.defineFastMethod("binmode", callbackFactory.getFastMethod("binmode"));

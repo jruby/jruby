@@ -75,22 +75,22 @@ public class RubyDir extends RubyObject {
 
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyDir.class);
 
-        dirClass.defineSingletonMethod("glob", callbackFactory.getSingletonMethod("glob", RubyString.class));
-        dirClass.defineFastSingletonMethod("entries", callbackFactory.getFastSingletonMethod("entries", RubyString.class));
-        dirClass.defineSingletonMethod("[]", callbackFactory.getSingletonMethod("glob", RubyString.class));
+        dirClass.getMetaClass().defineMethod("glob", callbackFactory.getSingletonMethod("glob", RubyString.class));
+        dirClass.getMetaClass().defineFastMethod("entries", callbackFactory.getFastSingletonMethod("entries", RubyString.class));
+        dirClass.getMetaClass().defineMethod("[]", callbackFactory.getSingletonMethod("glob", RubyString.class));
         // dirClass.defineAlias("[]", "glob");
-        dirClass.defineSingletonMethod("chdir", callbackFactory.getOptSingletonMethod("chdir"));
-        dirClass.defineFastSingletonMethod("chroot", callbackFactory.getFastSingletonMethod("chroot", RubyString.class));
+        dirClass.getMetaClass().defineMethod("chdir", callbackFactory.getOptSingletonMethod("chdir"));
+        dirClass.getMetaClass().defineFastMethod("chroot", callbackFactory.getFastSingletonMethod("chroot", RubyString.class));
         //dirClass.defineSingletonMethod("delete", callbackFactory.getSingletonMethod(RubyDir.class, "delete", RubyString.class));
-        dirClass.defineSingletonMethod("foreach", callbackFactory.getSingletonMethod("foreach", RubyString.class));
-        dirClass.defineFastSingletonMethod("getwd", callbackFactory.getFastSingletonMethod("getwd"));
-        dirClass.defineFastSingletonMethod("pwd", callbackFactory.getFastSingletonMethod("getwd"));
+        dirClass.getMetaClass().defineMethod("foreach", callbackFactory.getSingletonMethod("foreach", RubyString.class));
+        dirClass.getMetaClass().defineFastMethod("getwd", callbackFactory.getFastSingletonMethod("getwd"));
+        dirClass.getMetaClass().defineFastMethod("pwd", callbackFactory.getFastSingletonMethod("getwd"));
         // dirClass.defineAlias("pwd", "getwd");
-        dirClass.defineFastSingletonMethod("mkdir", callbackFactory.getFastOptSingletonMethod("mkdir"));
-        dirClass.defineSingletonMethod("open", callbackFactory.getSingletonMethod("open", RubyString.class));
-        dirClass.defineFastSingletonMethod("rmdir", callbackFactory.getFastSingletonMethod("rmdir", RubyString.class));
-        dirClass.defineFastSingletonMethod("unlink", callbackFactory.getFastSingletonMethod("rmdir", RubyString.class));
-        dirClass.defineFastSingletonMethod("delete", callbackFactory.getFastSingletonMethod("rmdir", RubyString.class));
+        dirClass.getMetaClass().defineFastMethod("mkdir", callbackFactory.getFastOptSingletonMethod("mkdir"));
+        dirClass.getMetaClass().defineMethod("open", callbackFactory.getSingletonMethod("open", RubyString.class));
+        dirClass.getMetaClass().defineFastMethod("rmdir", callbackFactory.getFastSingletonMethod("rmdir", RubyString.class));
+        dirClass.getMetaClass().defineFastMethod("unlink", callbackFactory.getFastSingletonMethod("rmdir", RubyString.class));
+        dirClass.getMetaClass().defineFastMethod("delete", callbackFactory.getFastSingletonMethod("rmdir", RubyString.class));
         // dirClass.defineAlias("unlink", "rmdir");
         // dirClass.defineAlias("delete", "rmdir");
 
@@ -104,7 +104,7 @@ public class RubyDir extends RubyObject {
         dirClass.defineFastMethod("pos=", callbackFactory.getFastMethod("setPos", RubyFixnum.class));
         dirClass.defineFastMethod("read", callbackFactory.getFastMethod("read"));
         dirClass.defineFastMethod("rewind", callbackFactory.getFastMethod("rewind"));
-		dirClass.defineMethod("initialize", callbackFactory.getMethod("initialize", RubyString.class));
+        dirClass.defineMethod("initialize", callbackFactory.getMethod("initialize", RubyString.class));
 
         return dirClass;
     }

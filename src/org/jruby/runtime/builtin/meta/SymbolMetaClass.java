@@ -33,48 +33,49 @@ import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public class SymbolMetaClass extends ObjectMetaClass {
     public SymbolMetaClass(IRuby runtime) {
         super("Symbol", RubySymbol.class, runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        this.index = ClassIndex.SYMBOL;
     }
     
-	public SymbolMetaClass(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
-		super(name, RubySymbol.class, superClass, allocator, parentCRef);
-	}
+    private SymbolMetaClass(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+        super(name, RubySymbol.class, superClass, allocator, parentCRef);
+    }
     
-	protected class SymbolMeta extends Meta {
-		public void initializeClass() {
+    protected class SymbolMeta extends Meta {
+        public void initializeClass() {
             defineFastMethod("==", Arity.singleArgument(), "equal");
             
-	        defineFastMethod("clone", Arity.noArguments(), "rbClone");
-	        defineFastMethod("freeze", Arity.noArguments()); 
-	        defineFastMethod("hash", Arity.noArguments()); 
-	        defineFastMethod("inspect", Arity.noArguments());
-	        defineFastMethod("taint", Arity.noArguments());
-	        defineFastMethod("to_i", Arity.noArguments());
-	        defineFastMethod("to_s", Arity.noArguments());
+            defineFastMethod("clone", Arity.noArguments(), "rbClone");
+            defineFastMethod("freeze", Arity.noArguments());
+            defineFastMethod("hash", Arity.noArguments());
+            defineFastMethod("inspect", Arity.noArguments());
+            defineFastMethod("taint", Arity.noArguments());
+            defineFastMethod("to_i", Arity.noArguments());
+            defineFastMethod("to_s", Arity.noArguments());
             defineFastMethod("to_sym", Arity.noArguments());
             defineFastSingletonMethod("all_symbols", Arity.noArguments());
             defineAlias("dup", "clone");
-	        defineAlias("id2name", "to_s");
-	        defineAlias("to_int", "to_i");
-				
-	        getMetaClass().undefineMethod("new");
-		}
-	};
-	
-	protected Meta getMeta() {
-		return new SymbolMeta();
-	}
-	
-	public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
-		return new SymbolMetaClass(name, this, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, parentCRef);
-	}
+            defineAlias("id2name", "to_s");
+            defineAlias("to_int", "to_i");
+            
+            getMetaClass().undefineMethod("new");
+        }
+    };
+    
+    protected Meta getMeta() {
+        return new SymbolMeta();
+    }
+    
+    public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
+        return new SymbolMetaClass(name, this, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, parentCRef);
+    }
     
     public IRubyObject all_symbols() {
         return getRuntime().newArray(getRuntime().getSymbolTable().all_symbols());

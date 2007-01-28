@@ -34,6 +34,7 @@ package org.jruby;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -42,16 +43,16 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author  jpetersen
  */
 public class RubyNil extends RubyObject {
-	private final IRuby runtime;
-	
-	public RubyNil(IRuby runtime) {
-		super(runtime, null);
-		this.runtime = runtime;
-	}
-	
-	public IRuby getRuntime() {
-		return runtime;
-	}
+    private final IRuby runtime;
+
+    public RubyNil(IRuby runtime) {
+            super(runtime, null);
+            this.runtime = runtime;
+    }
+
+    public IRuby getRuntime() {
+            return runtime;
+    }
     
     public static ObjectAllocator NIL_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(IRuby runtime, RubyClass klass) {
@@ -61,6 +62,8 @@ public class RubyNil extends RubyObject {
 	
     public static RubyClass createNilClass(IRuby runtime) {
         RubyClass nilClass = runtime.defineClass("NilClass", runtime.getObject(), NIL_ALLOCATOR);
+        nilClass.index = ClassIndex.NIL;
+        
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyNil.class);
         nilClass.defineFastMethod("type", callbackFactory.getFastSingletonMethod("type"));
         nilClass.defineFastMethod("to_i", callbackFactory.getFastSingletonMethod("to_i"));
@@ -84,12 +87,20 @@ public class RubyNil extends RubyObject {
         return nilClass;
     }
     
+    public int getNativeTypeIndex() {
+        return ClassIndex.NIL;
+    }
+    
     public RubyClass getMetaClass() {
         return runtime.getNilClass();
     }
 
     public boolean isImmediate() {
     	return true;
+    }
+    
+    public boolean safeHasInstanceVariables() {
+        return false;
     }
     
     // Methods of the Nil Class (nil_*):

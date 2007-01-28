@@ -29,6 +29,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
@@ -37,6 +38,8 @@ public class MetaClass extends RubyClass {
 
     public MetaClass(IRuby runtime, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
         super(runtime, runtime.getClass("Class"), superClass, allocator, parentCRef, null);
+        
+        this.index = ClassIndex.CLASS;
     }
  
     public boolean isSingleton() {
@@ -55,15 +58,15 @@ public class MetaClass extends RubyClass {
         setInstanceVariable("__attached__", object);
     }
     
-	public String getName() {
-		return "#<Class:" + getInstanceVariable("__attached__").toString() + ">";
-	}
-	
-	/**
-	 * If an object uses an anonymous class 'class << obj', then this grabs the original 
-	 * metaclass and not the one that get injected as a result of 'class << obj'.
-	 */
-	public RubyClass getRealClass() {
+    public String getName() {
+            return "#<Class:" + getInstanceVariable("__attached__").toString() + ">";
+    }
+
+    /**
+     * If an object uses an anonymous class 'class << obj', then this grabs the original 
+     * metaclass and not the one that get injected as a result of 'class << obj'.
+     */
+    public RubyClass getRealClass() {
         return getSuperClass().getRealClass();
     }
     

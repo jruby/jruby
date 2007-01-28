@@ -59,7 +59,7 @@ public class MarshalCache {
 
     public void writeLink(MarshalStream output, IRubyObject value) throws IOException {
         output.write(linkType(value));
-        output.dumpInt(registeredIndex(value));
+        output.writeInt(registeredIndex(value));
     }
 
     private static char linkType(IRubyObject value) {

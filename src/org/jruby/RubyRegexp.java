@@ -39,6 +39,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jruby.parser.ReOptions;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -92,6 +93,8 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
     public static RubyClass createRegexpClass(IRuby runtime) {
         RubyClass regexpClass = runtime.defineClass("Regexp", runtime.getObject(), REGEXP_ALLOCATOR);
+        regexpClass.index = ClassIndex.REGEXP;
+        
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyRegexp.class);
         
         regexpClass.defineConstant("IGNORECASE", runtime.newFixnum(RE_OPTION_IGNORECASE));
@@ -111,14 +114,18 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         regexpClass.defineFastMethod("kcode", callbackFactory.getFastMethod("kcode"));
         regexpClass.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
 
-        regexpClass.defineFastSingletonMethod("new", callbackFactory.getFastOptSingletonMethod("newInstance"));
-        regexpClass.defineFastSingletonMethod("compile", callbackFactory.getFastOptSingletonMethod("newInstance"));
-        regexpClass.defineFastSingletonMethod("quote", callbackFactory.getFastSingletonMethod("quote", RubyString.class));
-        regexpClass.defineFastSingletonMethod("escape", callbackFactory.getFastSingletonMethod("quote", RubyString.class));
-        regexpClass.defineFastSingletonMethod("last_match", callbackFactory.getFastSingletonMethod("last_match_s"));
-        regexpClass.defineFastSingletonMethod("union", callbackFactory.getFastOptSingletonMethod("union"));
+        regexpClass.getMetaClass().defineFastMethod("new", callbackFactory.getFastOptSingletonMethod("newInstance"));
+        regexpClass.getMetaClass().defineFastMethod("compile", callbackFactory.getFastOptSingletonMethod("newInstance"));
+        regexpClass.getMetaClass().defineFastMethod("quote", callbackFactory.getFastSingletonMethod("quote", RubyString.class));
+        regexpClass.getMetaClass().defineFastMethod("escape", callbackFactory.getFastSingletonMethod("quote", RubyString.class));
+        regexpClass.getMetaClass().defineFastMethod("last_match", callbackFactory.getFastSingletonMethod("last_match_s"));
+        regexpClass.getMetaClass().defineFastMethod("union", callbackFactory.getFastOptSingletonMethod("union"));
 
         return regexpClass;
+    }
+    
+    public int getNativeTypeIndex() {
+        return ClassIndex.REGEXP;
     }
 
     public void initialize(String regex, int options) {
@@ -646,21 +653,20 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         return result;
     }
 
-	public void marshalTo(MarshalStream output) throws java.io.IOException {
-        output.write('/');
-        output.dumpString(pattern.pattern());
+    public static void marshalTo(RubyRegexp regexp, MarshalStream output) throws java.io.IOException {
+        output.writeString(regexp.pattern.pattern());
 
         int flags = 0;
-        if ((pattern.flags() & Pattern.DOTALL) > 0) {
+        if ((regexp.pattern.flags() & Pattern.DOTALL) > 0) {
             flags |= RE_OPTION_MULTILINE;
         }
-        if ((pattern.flags() & Pattern.CASE_INSENSITIVE) > 0) {
+        if ((regexp.pattern.flags() & Pattern.CASE_INSENSITIVE) > 0) {
             flags |= RE_OPTION_IGNORECASE;
         }
-        if ((pattern.flags() & Pattern.COMMENTS) > 0) {
+        if ((regexp.pattern.flags() & Pattern.COMMENTS) > 0) {
             flags |= RE_OPTION_EXTENDED;
         }
-        output.dumpInt(flags);
+        output.writeInt(flags);
     }
 	
 	public Pattern getPattern() {

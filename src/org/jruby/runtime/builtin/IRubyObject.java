@@ -61,6 +61,34 @@ public interface IRubyObject {
     public static final IRubyObject[] NULL_ARRAY = new IRubyObject[0];
     
     /**
+     * Return the ClassIndex value for the native type this object was
+     * constructed from. Particularly useful for determining marshalling
+     * format. All instances of Hash instances of subclasses of Hash, for example
+     * are of Java type RubyHash, and so should utilize RubyHash marshalling
+     * logic in addition to user-defined class marshalling logic.
+     * 
+     * @return the ClassIndex of the native type this object was constructed from
+     */
+    int getNativeTypeIndex();
+    
+    /**
+     * Gets a copy of the instance variables for this object, if any exist.
+     * Returns null if this object has no instance variables.
+     * "safe" in that it doesn't cause the instance var map to be created.
+     * 
+     * @return A snapshot of the instance vars, or null if none.
+     */
+    Map safeGetInstanceVariables();
+    
+    /**
+     * Returns true if the object has any instance variables, false otherwise.
+     * "safe" in that it doesn't cause the instance var map to be created.
+     * 
+     * @return true if the object has instance variables, false otherwise.
+     */
+    boolean safeHasInstanceVariables();
+    
+    /**
      * RubyMethod getInstanceVar.
      * @param string
      * @return RubyObject
@@ -260,12 +288,6 @@ public interface IRubyObject {
      * RubyMethod checkSafeString.
      */
     void checkSafeString();
-
-    /**
-     * RubyMethod marshalTo.
-     * @param marshalStream
-     */
-    void marshalTo(MarshalStream marshalStream) throws IOException;
 
     /**
      * RubyMethod convertType.

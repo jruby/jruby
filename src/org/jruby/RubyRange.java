@@ -87,8 +87,6 @@ public class RubyRange extends RubyObject {
                               MarshalStream marshalStream) throws IOException {
             RubyRange range = (RubyRange)obj;
             
-            marshalStream.dumpDefaultObjectHeader(type);
-            
             // FIXME: This is a pretty inefficient way to do this, but we need child class
             // ivars and begin/end together
             Map iVars = new HashMap(range.getInstanceVariables());
@@ -111,6 +109,7 @@ public class RubyRange extends RubyObject {
             
             range.begin = range.getInstanceVariable("begin");
             range.end = range.getInstanceVariable("end");
+            range.isExclusive = range.getInstanceVariable("excl").isTrue();
 
             return range;
         }
@@ -147,7 +146,7 @@ public class RubyRange extends RubyObject {
         result.defineAlias("===", "include?");
         
         CallbackFactory classCB = runtime.callbackFactory(RubyClass.class);
-        result.defineSingletonMethod("new", classCB.getOptMethod("newInstance"));
+        result.getMetaClass().defineMethod("new", classCB.getOptMethod("newInstance"));
         
         return result;
     }

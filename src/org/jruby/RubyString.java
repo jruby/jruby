@@ -51,6 +51,7 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -79,23 +80,23 @@ public class RubyString extends RubyObject {
     public static final byte OP_LSHIFT_SWITCHVALUE = 8;
     public static final byte EMPTY_P_SWITCHVALUE = 9;
 
-	private StringBuffer value;
+    private StringBuffer value;
     private CharSequence chars;
-	private String stringValue; // remember toString value
+    private String stringValue; // remember toString value
     
     // @see IRuby.newString(...)
-	private RubyString(IRuby runtime, CharSequence value) {
-		this(runtime, runtime.getString(), value);
-	}
+    private RubyString(IRuby runtime, CharSequence value) {
+            this(runtime, runtime.getString(), value);
+    }
 
-	private RubyString(IRuby runtime, RubyClass rubyClass, CharSequence value) {
-		super(runtime, rubyClass);
+    private RubyString(IRuby runtime, RubyClass rubyClass, CharSequence value) {
+        super(runtime, rubyClass);
 
         assert value != null;
 
         // defer creation of StringBuffer until needed
         chars = value;
-	}
+    }
     
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, byte switchvalue, String name,
             IRubyObject[] args, CallType callType, Block block) {
@@ -131,6 +132,10 @@ public class RubyString extends RubyObject {
             default:
                 return super.callMethod(context, rubyclass, name, args, callType, block);
         }
+    }
+    
+    public int getNativeTypeIndex() {
+        return ClassIndex.STRING;
     }
 
 	public Class getJavaClass() {
@@ -2654,11 +2659,6 @@ public class RubyString extends RubyObject {
         }
         return getRuntime().newFixnum(bitSize == 0 ? result : result % (long) Math.pow(2, bitSize)); 
     }
-
-	public void marshalTo(MarshalStream output) throws java.io.IOException {
-		output.write('"');
-		output.dumpString(toString());
-	}
 
 	public static RubyString unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
 		RubyString result = input.getRuntime().newString(input.unmarshalString());

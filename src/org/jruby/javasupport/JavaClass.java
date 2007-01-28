@@ -95,7 +95,7 @@ public class JavaClass extends JavaObject {
         
         JavaObject.registerRubyMethods(runtime, result);
         
-        result.defineFastSingletonMethod("for_name", 
+        result.getMetaClass().defineFastMethod("for_name", 
                 callbackFactory.getFastSingletonMethod("for_name", IRubyObject.class));
         result.defineFastMethod("public?", 
                 callbackFactory.getFastMethod("public_p"));
@@ -143,7 +143,7 @@ public class JavaClass extends JavaObject {
                 callbackFactory.getFastMethod("assignable_from_p", IRubyObject.class));
         result.defineFastMethod("component_type", 
                 callbackFactory.getFastMethod("component_type"));
-		result.defineFastMethod("declared_instance_methods", 
+        result.defineFastMethod("declared_instance_methods", 
                 callbackFactory.getFastMethod("declared_instance_methods"));
         result.defineFastMethod("declared_class_methods", 
                 callbackFactory.getFastMethod("declared_class_methods"));

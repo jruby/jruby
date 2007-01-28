@@ -73,12 +73,12 @@ public class RubyBigDecimal extends RubyNumeric {
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyBigDecimal.class);
 
         runtime.getModule("Kernel").defineModuleFunction("BigDecimal",callbackFactory.getOptSingletonMethod("newBigDecimal"));
-        result.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
-        result.defineFastSingletonMethod("ver", callbackFactory.getFastSingletonMethod("ver"));
-        result.defineSingletonMethod("_load", callbackFactory.getSingletonMethod("_load",IRubyObject.class));
-        result.defineFastSingletonMethod("double_fig", callbackFactory.getFastSingletonMethod("double_fig"));
-        result.defineFastSingletonMethod("limit", callbackFactory.getFastSingletonMethod("limit", IRubyObject.class));
-        result.defineFastSingletonMethod("mode", callbackFactory.getFastSingletonMethod("mode", IRubyObject.class, IRubyObject.class));
+        result.getMetaClass().defineMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
+        result.getMetaClass().defineFastMethod("ver", callbackFactory.getFastSingletonMethod("ver"));
+        result.getMetaClass().defineMethod("_load", callbackFactory.getSingletonMethod("_load",IRubyObject.class));
+        result.getMetaClass().defineFastMethod("double_fig", callbackFactory.getFastSingletonMethod("double_fig"));
+        result.getMetaClass().defineFastMethod("limit", callbackFactory.getFastSingletonMethod("limit", IRubyObject.class));
+        result.getMetaClass().defineFastMethod("mode", callbackFactory.getFastSingletonMethod("mode", IRubyObject.class, IRubyObject.class));
 
         result.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
         result.defineFastMethod("%", callbackFactory.getFastMethod("mod",IRubyObject.class));

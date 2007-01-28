@@ -78,7 +78,7 @@ public class ThreadLibrary implements Library {
                 }
             });
             CallbackFactory cb = runtime.callbackFactory(Mutex.class);
-            cMutex.defineSingletonMethod("new", cb.getOptSingletonMethod("newInstance"));
+            cMutex.getMetaClass().defineMethod("new", cb.getOptSingletonMethod("newInstance"));
             cMutex.defineFastMethod("locked?", cb.getFastMethod("locked_p"));
             cMutex.defineFastMethod("try_lock", cb.getFastMethod("try_lock"));
             cMutex.defineFastMethod("lock", cb.getFastMethod("lock"));
@@ -161,7 +161,7 @@ public class ThreadLibrary implements Library {
                 }
             });
             CallbackFactory cb = runtime.callbackFactory(ConditionVariable.class);
-            cConditionVariable.defineSingletonMethod("new", cb.getOptSingletonMethod("newInstance"));
+            cConditionVariable.getMetaClass().defineMethod("new", cb.getOptSingletonMethod("newInstance"));
             cConditionVariable.defineFastMethod("wait", cb.getFastMethod("wait_ruby", Mutex.class));
             cConditionVariable.defineFastMethod("broadcast", cb.getFastMethod("broadcast"));
             cConditionVariable.defineFastMethod("signal", cb.getFastMethod("signal"));
@@ -219,7 +219,7 @@ public class ThreadLibrary implements Library {
                 }
             });
             CallbackFactory cb = runtime.callbackFactory(Queue.class);
-            cQueue.defineSingletonMethod("new", cb.getOptSingletonMethod("newInstance"));
+            cQueue.getMetaClass().defineMethod("new", cb.getOptSingletonMethod("newInstance"));
 
             cQueue.defineFastMethod("clear", cb.getFastMethod("clear"));
             cQueue.defineFastMethod("empty?", cb.getFastMethod("empty_p"));
@@ -295,7 +295,7 @@ public class ThreadLibrary implements Library {
                 }
             });
             CallbackFactory cb = runtime.callbackFactory(SizedQueue.class);
-            cSizedQueue.defineSingletonMethod("new", cb.getOptSingletonMethod("newInstance"));
+            cSizedQueue.getMetaClass().defineMethod("new", cb.getOptSingletonMethod("newInstance"));
 
             cSizedQueue.defineFastMethod("initialize", cb.getFastMethod("max_set", RubyInteger.class));
 

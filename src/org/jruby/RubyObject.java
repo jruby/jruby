@@ -52,12 +52,12 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.util.IdUtil;
 import org.jruby.util.PrintfFormat;
 import org.jruby.util.collections.SinglyLinkedList;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import org.jruby.runtime.ClassIndex;
 
 /**
  *
@@ -94,6 +94,14 @@ public class RubyObject implements Cloneable, IRubyObject {
         taint |= runtime.getSafeLevel() >= 3;
     }
     
+    /**
+     * This is overridden in the other concrete Java builtins to provide a fast way
+     * to determine what type they are.
+     */
+    public int getNativeTypeIndex() {
+        return ClassIndex.OBJECT;
+    }
+    
     /*
      *  Is object immediate (def: Fixnum, Symbol, true, false, nil?).
      */
@@ -109,9 +117,9 @@ public class RubyObject implements Cloneable, IRubyObject {
     public MetaClass makeMetaClass(RubyClass type, SinglyLinkedList parentCRef) {
         MetaClass newMetaClass = type.newSingletonClass(parentCRef);
 		
-		if (!isNil()) {
-			setMetaClass(newMetaClass);
-		}
+        if (!isNil()) {
+            setMetaClass(newMetaClass);
+        }
         newMetaClass.attachToObject(this);
         return newMetaClass;
     }
@@ -146,6 +154,14 @@ public class RubyObject implements Cloneable, IRubyObject {
      */
     public IRuby getRuntime() {
         return metaClass.getRuntime();
+    }
+    
+    public boolean safeHasInstanceVariables() {
+        return instanceVariables != null && instanceVariables.size() > 0;
+    }
+    
+    public Map safeGetInstanceVariables() {
+        return instanceVariables == null ? null : getInstanceVariablesSnapshot();
     }
 
     public IRubyObject removeInstanceVariable(String name) {
@@ -291,17 +307,6 @@ public class RubyObject implements Cloneable, IRubyObject {
      */
     public void defineSingletonMethod(String name, Callback method) {
         getSingletonClass().defineMethod(name, method);
-    }
-
-    /** rb_define_singleton_method
-     *
-     */
-    public void defineFastSingletonMethod(String name, Callback method) {
-        getSingletonClass().defineFastMethod(name, method);
-    }
-
-    public void addSingletonMethod(String name, DynamicMethod method) {
-        getSingletonClass().addMethod(name, method);
     }
 
     /* rb_init_ccopy */
@@ -1220,11 +1225,6 @@ public class RubyObject implements Cloneable, IRubyObject {
 
        throw getRuntime().newNameError("instance variable " + id + " not defined", id);
    }
-
-    public void marshalTo(MarshalStream output) throws java.io.IOException {
-        getMetaClass().marshal(this, output);
-    }
-   
     
     /**
      * @see org.jruby.runtime.builtin.IRubyObject#getType()

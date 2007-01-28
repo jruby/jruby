@@ -72,12 +72,12 @@ public class PKCS7 extends RubyObject {
         cPKCS7.attr_accessor(new IRubyObject[]{runtime.newSymbol("data"),runtime.newSymbol("error_string")});
 
         CallbackFactory p7cb = runtime.callbackFactory(PKCS7.class);
-        mPKCS7.defineFastSingletonMethod("read_smime",p7cb.getFastSingletonMethod("read_smime",IRubyObject.class));
-        mPKCS7.defineFastSingletonMethod("write_smime",p7cb.getFastOptSingletonMethod("write_smime"));
-        mPKCS7.defineFastSingletonMethod("sign",p7cb.getFastOptSingletonMethod("sign"));
-        mPKCS7.defineFastSingletonMethod("encrypt",p7cb.getFastOptSingletonMethod("encrypt"));
+        mPKCS7.getMetaClass().defineFastMethod("read_smime",p7cb.getFastSingletonMethod("read_smime",IRubyObject.class));
+        mPKCS7.getMetaClass().defineFastMethod("write_smime",p7cb.getFastOptSingletonMethod("write_smime"));
+        mPKCS7.getMetaClass().defineFastMethod("sign",p7cb.getFastOptSingletonMethod("sign"));
+        mPKCS7.getMetaClass().defineFastMethod("encrypt",p7cb.getFastOptSingletonMethod("encrypt"));
         // FIXME: This was defined, but does not exist?  Should it?
-        //cPKCS7.defineFastSingletonMethod("new",p7cb.getFastOptSingletonMethod("newInstance"));
+        //cPKCS7.getMetaClass().defineFastMethod("new",p7cb.getFastOptSingletonMethod("newInstance"));
         cPKCS7.defineMethod("initialize",p7cb.getOptMethod("_initialize"));
         cPKCS7.defineFastMethod("initialize_copy",p7cb.getFastMethod("initialize_copy",IRubyObject.class));
         cPKCS7.defineFastMethod("clone",p7cb.getFastMethod("rbClone"));

@@ -57,9 +57,9 @@ public class Digest extends RubyObject {
 
         CallbackFactory digestcb = runtime.callbackFactory(Digest.class);
 
-        cDigest.defineSingletonMethod("new",digestcb.getOptSingletonMethod("newInstance"));
-        cDigest.defineFastSingletonMethod("digest",digestcb.getFastSingletonMethod("s_digest",IRubyObject.class,IRubyObject.class));
-        cDigest.defineFastSingletonMethod("hexdigest",digestcb.getFastSingletonMethod("s_hexdigest",IRubyObject.class,IRubyObject.class));
+        cDigest.getMetaClass().defineMethod("new",digestcb.getOptSingletonMethod("newInstance"));
+        cDigest.getMetaClass().defineFastMethod("digest",digestcb.getFastSingletonMethod("s_digest",IRubyObject.class,IRubyObject.class));
+        cDigest.getMetaClass().defineFastMethod("hexdigest",digestcb.getFastSingletonMethod("s_hexdigest",IRubyObject.class,IRubyObject.class));
         cDigest.defineMethod("initialize",digestcb.getOptMethod("initialize"));
         cDigest.defineFastMethod("initialize_copy",digestcb.getFastMethod("initialize_copy",IRubyObject.class));
         cDigest.defineFastMethod("clone",digestcb.getFastMethod("rbClone"));

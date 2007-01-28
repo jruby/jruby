@@ -37,9 +37,8 @@ package org.jruby;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
 /**
@@ -59,6 +58,10 @@ public class RubySymbol extends RubyObject {
 
         lastId++;
         this.id = lastId;
+    }
+    
+    public int getNativeTypeIndex() {
+        return ClassIndex.SYMBOL;
     }
 
     /** rb_to_id
@@ -163,11 +166,6 @@ public class RubySymbol extends RubyObject {
 
     public IRubyObject taint() {
         return this;
-    }
-
-    public void marshalTo(MarshalStream output) throws java.io.IOException {
-        output.write(':');
-        output.dumpString(symbol);
     }
     
     private static boolean isIdentStart(char c) {

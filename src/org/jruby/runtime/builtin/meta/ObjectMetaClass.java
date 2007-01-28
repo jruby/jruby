@@ -33,6 +33,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
@@ -48,6 +49,7 @@ public class ObjectMetaClass extends AbstractMetaClass {
     	super(runtime, null /*Would be Class if it existed yet */, null, OBJECT_ALLOCATOR, null, "Object");
     	
     	this.builtinClass = RubyObject.class;
+        this.index = ClassIndex.OBJECT;
     }
     
     // Only for other core modules/classes

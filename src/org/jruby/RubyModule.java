@@ -40,7 +40,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.FullFunctionCallbackMethod;
 import org.jruby.internal.runtime.methods.SimpleCallbackMethod;
@@ -61,6 +60,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.IdUtil;
 import org.jruby.util.collections.SinglyLinkedList;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.ClassIndex;
 
 /**
  *
@@ -95,7 +95,6 @@ public class RubyModule extends RubyObject {
         super(runtime, metaClass);
 
         this.superClass = superClass;
-        //this.parentModule = parentModule;
 
         setBaseName(name);
 
@@ -106,6 +105,10 @@ public class RubyModule extends RubyObject {
             }
         }
         this.cref = new SinglyLinkedList(this, parentCRef);
+    }
+    
+    public int getNativeTypeIndex() {
+        return ClassIndex.MODULE;
     }
 
     /** Getter for property superClass.
@@ -581,9 +584,12 @@ public class RubyModule extends RubyObject {
         return null;
     }
 
+    // FIXME: Why do module functions need singleton classes here? This messages with
+    // marshalling tests for dumping modules, since they now always have a singleton
+    // class, which isn't allowed to dump.
     public void addModuleFunction(String name, DynamicMethod method) {
         addMethod(name, method);
-        addSingletonMethod(name, method);
+        getSingletonClass().addMethod(name, method);
     }
 
     /** rb_define_module_function
@@ -591,7 +597,7 @@ public class RubyModule extends RubyObject {
      */
     public void defineModuleFunction(String name, Callback method) {
         definePrivateMethod(name, method);
-        defineSingletonMethod(name, method);
+        getSingletonClass().defineMethod(name, method);
     }
 
     /** rb_define_module_function
@@ -599,7 +605,7 @@ public class RubyModule extends RubyObject {
      */
     public void definePublicModuleFunction(String name, Callback method) {
         defineMethod(name, method);
-        defineSingletonMethod(name, method);
+        getSingletonClass().defineMethod(name, method);
     }
 
     /** rb_define_module_function
@@ -607,7 +613,7 @@ public class RubyModule extends RubyObject {
      */
     public void defineFastModuleFunction(String name, Callback method) {
         defineFastPrivateMethod(name, method);
-        defineFastSingletonMethod(name, method);
+        getSingletonClass().defineFastMethod(name, method);
     }
 
     /** rb_define_module_function
@@ -615,7 +621,15 @@ public class RubyModule extends RubyObject {
      */
     public void defineFastPublicModuleFunction(String name, Callback method) {
         defineFastMethod(name, method);
-        defineFastSingletonMethod(name, method);
+        getSingletonClass().defineFastMethod(name, method);
+    }
+
+    /** rb_define_module_function
+     *
+     */
+    public void defineFastPublicModuleFunction2(String name, Callback method) {
+        defineFastMethod(name, method);
+        getMetaClass().defineFastMethod(name, method);
     }
 
     private IRubyObject getConstantInner(String name, boolean exclude) {
@@ -992,7 +1006,9 @@ public class RubyModule extends RubyObject {
     }
 
     public static RubyModule newModule(IRuby runtime, String name, SinglyLinkedList parentCRef) {
-        return new RubyModule(runtime, runtime.getClass("Module"), null, parentCRef, name); 
+        RubyModule module = new RubyModule(runtime, runtime.getClass("Module"), null, parentCRef, name);
+        
+        return module;
     }
 
     public RubyString name() {
@@ -1597,9 +1613,8 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    public void marshalTo(MarshalStream output) throws java.io.IOException {
-        output.write('m');
-        output.dumpString(name().toString());
+    public static void marshalTo(RubyModule module, MarshalStream output) throws java.io.IOException {
+        output.writeString(module.name().toString());
     }
 
     public static RubyModule unmarshalFrom(UnmarshalStream input) throws java.io.IOException {

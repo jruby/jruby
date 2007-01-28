@@ -65,7 +65,7 @@ public class RubyEnumerator extends RubyObject {
         RubyEnumeratorStub0 enumeratorStub = RubyEnumeratorStub0.createStub(enumeratorClass, object, enumerableModule);
 
         enumeratorClass.includeModule(enumerableModule);
-        enumeratorClass.addSingletonMethod("new", enumeratorStub.enumerator__new);
+        enumeratorClass.getMetaClass().addMethod("new", enumeratorStub.enumerator__new);
         enumeratorClass.addMethod("initialize", enumeratorStub.enumerator__initialize);
         enumeratorClass.addMethod("each", enumeratorStub.enumerator__each);
 
