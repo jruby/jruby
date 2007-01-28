@@ -385,4 +385,6 @@ public interface IRubyObject {
     Object dataGetStruct();
 
     RubyFixnum id();
+
+    IRubyObject anyToString();
 }

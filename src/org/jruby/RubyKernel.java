@@ -248,7 +248,12 @@ public class RubyKernel {
         }
 
         String name = args[0].asSymbol();
-        String description = recv.callMethod(runtime.getCurrentContext(), "inspect").toString();
+        String description = null;
+        if("inspect".equals(name) || "to_s".equals(name)) {
+            description = recv.anyToString().toString();
+        } else {
+            description = recv.inspect().toString();
+        }
         boolean noClass = description.length() > 0 && description.charAt(0) == '#';
         ThreadContext tc = runtime.getCurrentContext();
         Visibility lastVis = tc.getLastVisibility();

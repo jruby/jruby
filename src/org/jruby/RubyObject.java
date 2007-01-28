@@ -395,12 +395,11 @@ public class RubyObject implements Cloneable, IRubyObject {
             IRubyObject[] args, CallType callType, Block block) {
         assert args != null;
         DynamicMethod method = null;
-
         method = rubyclass.searchMethod(name);
-
         if (method.isUndefined() ||
             !(name.equals("method_missing") ||
               method.isCallableFrom(context.getFrameSelf(), callType))) {
+
             if (callType == CallType.SUPER) {
                 throw getRuntime().newNameError("super: no superclass method '" + name + "'", name);
             }
@@ -411,6 +410,7 @@ public class RubyObject implements Cloneable, IRubyObject {
             if (name.equals("method_missing")) {
                 return RubyKernel.method_missing(this, args, block);
             }
+
 
             IRubyObject[] newArgs = new IRubyObject[args.length + 1];
             System.arraycopy(args, 0, newArgs, 1, args.length);
@@ -1121,7 +1121,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         return getMetaClass().newMethod(this, symbol.asSymbol(), true);
     }
 
-    protected IRubyObject anyToString() {
+    public IRubyObject anyToString() {
         String cname = getMetaClass().getRealClass().getName();
         /* 6:tags 16:addr 1:eos */
         RubyString str = getRuntime().newString("#<" + cname + ":0x" + Integer.toHexString(System.identityHashCode(this)) + ">");
@@ -1168,7 +1168,12 @@ public class RubyObject implements Cloneable, IRubyObject {
         }
 
         String name = args[0].asSymbol();
-        String description = callMethod(getRuntime().getCurrentContext(), "inspect").toString();
+        String description = null;
+        if("inspect".equals(name) || "to_s".equals(name)) {
+            description = anyToString().toString();
+        } else {
+            description = inspect().toString();
+        }
         boolean noClass = description.length() > 0 && description.charAt(0) == '#';
         ThreadContext tc = getRuntime().getCurrentContext();
         Visibility lastVis = tc.getLastVisibility();
