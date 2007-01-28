@@ -32,10 +32,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.marshal;
 
-import java.io.FilterInputStream;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
@@ -56,7 +55,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author Anders
  */
-public class UnmarshalStream extends FilterInputStream {
+public class UnmarshalStream extends BufferedInputStream {
     protected final IRuby runtime;
     private UnmarshalCache cache;
     private IRubyObject proc;
@@ -72,14 +71,19 @@ public class UnmarshalStream extends FilterInputStream {
     }
 
     public IRubyObject unmarshalObject() throws IOException {
-        int type = readUnsignedByte();
-        IRubyObject result;
-        if (cache.isLinkType(type)) {
-            result = cache.readLink(this, type);
-        } else {
-        	result = unmarshalObjectDirectly(type);
+        try {
+            int type = readUnsignedByte();
+            IRubyObject result;
+            if (cache.isLinkType(type)) {
+                result = cache.readLink(this, type);
+            } else {
+                result = unmarshalObjectDirectly(type);
+            }
+            return result;
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+            throw ioe;
         }
-        return result;
     }
 
     public void registerLinkTarget(IRubyObject newObject) {
@@ -186,20 +190,27 @@ public class UnmarshalStream extends FilterInputStream {
     public String unmarshalString() throws IOException {
         int length = unmarshalInt();
         byte[] buffer = new byte[length];
-        int bytesRead = read(buffer);
-        if (bytesRead != length) {
+        
+        // FIXME: sooper inefficient, but it's working better...
+        int b = 0;
+        int i = 0;
+        while (i < length && (b = read()) != -1) {
+            buffer[i++] = (byte)b;
+        }
+        if (i < length) {
             throw new IOException("Unexpected end of stream");
         }
-        return RubyString.bytesToString(buffer);
+        String foo = RubyString.bytesToString(buffer);
+        return foo;
     }
 
     public int unmarshalInt() throws IOException {
         int c = readSignedByte();
         if (c == 0) {
             return 0;
-        } else if (4 < c && c < 128) {
+        } else if (5 < c && c < 128) {
             return c - 5;
-        } else if (-129 < c && c < -4) {
+        } else if (-129 < c && c < -5) {
             return c + 5;
         }
         long result;
@@ -244,7 +255,9 @@ public class UnmarshalStream extends FilterInputStream {
     	int count = unmarshalInt();
     	
     	for (int i = 0; i < count; i++) {
-    		object.setInstanceVariable(unmarshalObject().asSymbol(), unmarshalObject());
+            String name = unmarshalObject().asSymbol();
+            IRubyObject value = unmarshalObject();
+            object.setInstanceVariable(name, value);
     	}
     }
     

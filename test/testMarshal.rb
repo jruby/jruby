@@ -269,3 +269,10 @@ end
 
 test_dump_against_ruby("Object.new")
 =end
+
+# Time is user-marshalled, so ensure it's being marshalled correctly
+x = Time.now
+y = Marshal.dump([x,x])
+# symlink for second time object
+test_equal(6, y[-1])
+test_equal([x, x], Marshal.load(y))

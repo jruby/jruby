@@ -90,16 +90,12 @@ public class MarshalStream extends FilterOutputStream {
         
         if (!shouldBeRegistered(value)) {
             writeDirectly(value);
-        } else if (hasNewUserDefinedMarshaling(value)) {
-            userNewMarshal(value);
-        } else if (hasUserDefinedMarshaling(value)) {
-            userMarshal(value);
         } else {
             writeAndRegister(value);
         }
         depth--;
         if (depth == 0) {
-        	out.flush(); // flush afer whole dump is complete
+            out.flush(); // flush afer whole dump is complete
         }
     }
 
@@ -121,7 +117,13 @@ public class MarshalStream extends FilterOutputStream {
             cache.writeLink(this, value);
         } else {
             cache.register(value);
-            writeDirectly(value);
+            if (hasNewUserDefinedMarshaling(value)) {
+                userNewMarshal(value);
+            } else if (hasUserDefinedMarshaling(value)) {
+                userMarshal(value);
+            } else {
+                writeDirectly(value);
+            }
         }
     }
 
@@ -148,7 +150,7 @@ public class MarshalStream extends FilterOutputStream {
         writeObjectData(value);
         
         if (instanceVariables != null) {
-            writeInstanceVars(instanceVariables);
+            dumpInstanceVars(instanceVariables);
         }
     }
 
@@ -274,24 +276,13 @@ public class MarshalStream extends FilterOutputStream {
     	dumpSymbol(obj.getMetaClass().getName());
     }
     
-    public void writeInstanceVars(Map iVars) throws IOException {
-        writeInt(iVars.size());
-        for (Iterator iter = iVars.keySet().iterator(); iter.hasNext();) {
-            String name = (String) iter.next();
-            IRubyObject value = (IRubyObject)iVars.get(name);
-            
-            dumpSymbol(name);
-            dumpObject(value);
-        }
-    }
-    
     public void dumpInstanceVars(Map instanceVars) throws IOException {
         writeInt(instanceVars.size());
         for (Iterator iter = instanceVars.keySet().iterator(); iter.hasNext();) {
             String name = (String) iter.next();
             IRubyObject value = (IRubyObject)instanceVars.get(name);
 
-            dumpSymbol(name);
+            writeAndRegister(runtime.newSymbol(name));
             dumpObject(value);
         }
     }

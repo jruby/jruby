@@ -63,7 +63,9 @@ public class UnmarshalCache {
             return linkedByIndex(input.unmarshalInt());
         }
         assert type == ';';
-        return symbolByIndex(input.unmarshalInt());
+        int i = input.unmarshalInt();
+        
+        return symbolByIndex(i);
     }
 
     private IRubyObject linkedByIndex(int index) {
