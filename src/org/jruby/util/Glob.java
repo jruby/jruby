@@ -155,9 +155,12 @@ public class Glob {
         
         final Pattern p = Pattern.compile(expandedPattern);
         
+        final boolean firstDot = pattern.length()>0 && pattern.charAt(0) == '.';
+
     	FileFilter filter = new FileFilter() {
             public boolean accept(File pathname) {
-                return (pathname.isDirectory() || !isDirectory) && p.matcher(pathname.getName()).matches();
+                String n = pathname.getName();
+                return (pathname.isDirectory() || !isDirectory) && p.matcher(n).matches() && (firstDot || (n.length()==0 || n.charAt(0) != '.'));
             }
     	};
     	
