@@ -118,7 +118,7 @@ public class RubyModule extends RubyObject {
         return superClass;
     }
 
-    private void setSuperClass(RubyClass superClass) {
+    protected void setSuperClass(RubyClass superClass) {
         this.superClass = superClass;
     }
 
@@ -1032,13 +1032,6 @@ public class RubyModule extends RubyObject {
         return ary;
     }
 
-    /** rb_mod_clone
-     *
-     */
-    public IRubyObject rbClone() {
-        return cloneMethods((RubyModule) super.rbClone());
-    }
-
     protected IRubyObject cloneMethods(RubyModule clone) {
         RubyModule realType = this.getNonIncludedClass();
         for (Iterator iter = getMethods().entrySet().iterator(); iter.hasNext(); ) {
@@ -1062,18 +1055,27 @@ public class RubyModule extends RubyObject {
         return RubyModule.newModule(getRuntime(), getBaseName(), cref.getNext());
     }
 
-    /** rb_mod_dup
-     *
+    /** rb_mod_init_copy
+     * 
      */
-    public IRubyObject dup() {
-        RubyModule dup = (RubyModule) rbClone();
-        dup.setMetaClass(getMetaClass());
-        dup.setFrozen(false);
-        // +++ jpetersen
-        // dup.setSingleton(isSingleton());
-        // --- jpetersen
-
-        return dup;
+    public IRubyObject initialize_copy(IRubyObject original){
+        super.initialize_copy(original);
+        
+        if (!getMetaClass().isSingleton()){
+            setMetaClass(original.getMetaClass().getSingletonClassClone());
+        }
+        
+        setSuperClass(original.getMetaClass().getRealClass().getSuperClass());
+        
+        if (!original.getMetaClass().getInstanceVariables().isEmpty()){
+            setInstanceVariables(new HashMap(original.getInstanceVariables()));
+        }
+        
+        if (!original.getMetaClass().getMethods().isEmpty()){
+            ((RubyModule) original).cloneMethods(this);
+        }
+        
+        return this;        
     }
 
     /** rb_mod_included_modules

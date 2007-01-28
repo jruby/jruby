@@ -36,7 +36,6 @@ public class HashMetaClass extends ObjectMetaClass {
             defineFastMethod("[]", Arity.singleArgument(), "aref");
             defineFastMethod("[]=", Arity.twoArguments(), "aset");
             defineFastMethod("clear", Arity.noArguments(), "rb_clear");
-            defineFastMethod("clone", Arity.noArguments(), "rbClone");
             defineMethod("default", Arity.optional(), "getDefaultValue");
             defineMethod("default_proc", Arity.noArguments());
             // ENEBO: I made this fast, which perhaps is bad?
@@ -53,6 +52,7 @@ public class HashMetaClass extends ObjectMetaClass {
             defineFastMethod("index", Arity.singleArgument());
             defineFastMethod("indices", Arity.optional());
             defineMethod("initialize", Arity.optional());
+            defineFastMethod("initialize_copy", Arity.singleArgument(), "replace");
             defineFastMethod("inspect", Arity.noArguments());
             defineFastMethod("invert", Arity.noArguments());
             defineFastMethod("include?", Arity.singleArgument(), "has_key");

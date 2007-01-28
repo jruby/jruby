@@ -44,7 +44,7 @@ import org.jruby.exceptions.MainExitException;
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
-public abstract class FullInvocationMethod extends AbstractMethod {
+public abstract class FullInvocationMethod extends AbstractMethod implements Cloneable {
     private Arity arity;
     public FullInvocationMethod(RubyModule implementationClass, Arity arity, Visibility visibility) {
     	super(implementationClass, visibility);
@@ -96,8 +96,12 @@ public abstract class FullInvocationMethod extends AbstractMethod {
     public abstract IRubyObject call(IRubyObject receiver, IRubyObject[] args, Block block);
     
 	public DynamicMethod dup() {
-        System.err.println("shouldn't dup this class...");
+        try {
+            FullInvocationMethod msm = (FullInvocationMethod)clone();
+            return msm;
+        } catch (CloneNotSupportedException cnse) {
         return null;
+    }
     }
 
 	public Arity getArity() {

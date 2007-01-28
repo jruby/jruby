@@ -84,7 +84,8 @@ public class ObjectMetaClass extends AbstractMetaClass {
     protected class ObjectMeta extends Meta {
 	    protected void initializeClass() {
 	        definePrivateMethod("initialize", Arity.optional());
-	        definePrivateMethod("inherited", Arity.singleArgument());
+	        definePrivateMethod("inherited", Arity.singleArgument());            
+            defineFastMethod("initialize_copy", Arity.singleArgument());
 		}
     };
     

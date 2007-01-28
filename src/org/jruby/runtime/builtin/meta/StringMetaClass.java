@@ -85,7 +85,6 @@ public class StringMetaClass extends ObjectMetaClass {
 	        defineFastMethod("chop!", Arity.noArguments(), "chop_bang");
 	        defineFastMethod("chomp", Arity.optional());
 	        defineFastMethod("chomp!", Arity.optional(), "chomp_bang");
-	        defineFastMethod("clone", Arity.noArguments(), "rbClone");
 	        defineFastMethod("concat", Arity.singleArgument());
 	        defineFastMethod("count", Arity.optional());
 	        defineFastMethod("crypt", Arity.singleArgument());
@@ -94,7 +93,6 @@ public class StringMetaClass extends ObjectMetaClass {
 	        defineFastMethod("downcase", Arity.noArguments());
 	        defineFastMethod("downcase!", Arity.noArguments(), "downcase_bang");
 	        defineFastMethod("dump", Arity.noArguments());
-	        defineFastMethod("dup", Arity.noArguments());
 	        defineMethod("each_line", Arity.optional());
 	        defineMethod("each_byte", Arity.noArguments());
 	        defineFastMethod("empty?", Arity.noArguments(), "empty");

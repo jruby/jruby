@@ -42,7 +42,7 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.Block;
 import org.jruby.util.collections.SinglyLinkedList;
 
-public abstract class CompiledMethod extends AbstractMethod {
+public abstract class CompiledMethod extends AbstractMethod implements Cloneable{
     private Arity arity;
     private SinglyLinkedList cref;
     
@@ -103,8 +103,12 @@ public abstract class CompiledMethod extends AbstractMethod {
     public abstract IRubyObject call(ThreadContext context, IRubyObject receiver, IRubyObject[] args, Block block);
     
     public DynamicMethod dup() {
-        System.err.println("shouldn't dup this class either...");
+        try {
+            CompiledMethod msm = (CompiledMethod)clone();
+            return msm;
+        } catch (CloneNotSupportedException cnse) {
         return null;
+    }
     }
 
     public Arity getArity() {

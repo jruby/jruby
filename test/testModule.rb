@@ -340,3 +340,30 @@ test_no_exception { Aaaa.new("/") }
 
 class Froom < Module; end
 test_equal Froom, Froom.new.class
+
+# Dup/Clon'ing of modules
+module M
+    def self.initialize_copy original
+       raise Exception.new
+    end
+    
+    def self.meth;end
+end
+
+test_no_exception do
+    M.dup
+end
+
+test_exception do
+    M.clone
+end
+
+
+module M2
+    def self.meth;end
+end
+
+test_no_exception do
+    M2.clone.instance_eval{meth}
+    M2.dup.instance_eval{meth}
+end

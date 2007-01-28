@@ -66,7 +66,6 @@ public class ArrayMetaClass extends ObjectMetaClass {
             defineFastMethod("assoc", Arity.singleArgument());
             defineFastMethod("at", Arity.singleArgument(), "at");
             defineFastMethod("clear", Arity.noArguments(), "rb_clear");
-            defineFastMethod("clone", Arity.noArguments(), "rbClone");
             defineMethod("collect", Arity.noArguments());
             defineMethod("collect!", Arity.noArguments(), "collect_bang");
             defineFastMethod("compact", Arity.noArguments());
@@ -91,6 +90,7 @@ public class ArrayMetaClass extends ObjectMetaClass {
             defineFastMethod("indices", Arity.optional());
             // FIXME: shouldn't this be private?
             defineMethod("initialize", Arity.optional());
+            defineFastMethod("initialize_copy", Arity.singleArgument(), "replace");            
             defineFastMethod("insert", Arity.optional());
             defineFastMethod("inspect", Arity.noArguments());
             defineFastMethod("join", Arity.optional());

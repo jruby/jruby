@@ -44,7 +44,7 @@ import org.jruby.exceptions.MainExitException;
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
-public abstract class SimpleInvocationMethod extends AbstractMethod {
+public abstract class SimpleInvocationMethod extends AbstractMethod implements Cloneable{
     private Arity arity;
     public SimpleInvocationMethod(RubyModule implementationClass, Arity arity, Visibility visibility) {
     	super(implementationClass, visibility);
@@ -99,8 +99,12 @@ public abstract class SimpleInvocationMethod extends AbstractMethod {
     public abstract IRubyObject call(IRubyObject receiver, IRubyObject[] args);
     
     public DynamicMethod dup() {
-        System.err.println("shouldn't dup this class either...");
+        try {
+            SimpleInvocationMethod msm = (SimpleInvocationMethod)clone();
+            return msm;
+        } catch (CloneNotSupportedException cnse) {
         return null;
+    }
     }
 
     public Arity getArity() {

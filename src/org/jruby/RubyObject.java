@@ -313,13 +313,15 @@ public class RubyObject implements Cloneable, IRubyObject {
         getSingletonClass().defineMethod(name, method);
     }
 
-    /* rb_init_ccopy */
+    /** init_copy
+     * 
+     */
     public void initCopy(IRubyObject original) {
         assert original != null;
         assert !isFrozen() : "frozen object (" + getMetaClass().getName() + ") allocated";
 
         setInstanceVariables(new HashMap(original.getInstanceVariables()));
-
+        /* FIXME: finalizer should be dupped here */
         callMethod(getRuntime().getCurrentContext(), "initialize_copy", original);
     }
 
@@ -815,12 +817,17 @@ public class RubyObject implements Cloneable, IRubyObject {
 		return this == other ? getRuntime().getTrue() : getRuntime().getFalse();
 	}
 
+    
+    /** rb_obj_init_copy
+     * 
+     */
 	public IRubyObject initialize_copy(IRubyObject original) {
-	    if (this != original) {
-	        checkFrozen();
-	        if (!getClass().equals(original.getClass())) {
+	    if (this == original) return this;
+	    
+	    checkFrozen();
+        
+        if (getMetaClass().getRealClass() != getMetaClass().getRealClass()) {
 	            throw getRuntime().newTypeError("initialize_copy should take same class object");
-	        }
 	    }
 
 	    return this;
@@ -874,16 +881,16 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     /** rb_obj_clone
-     *
+     *  should be overriden only by: Proc, Method, UnboundedMethod, Binding
      */
     public IRubyObject rbClone() {
         if (isImmediate()) { // rb_special_const_p(obj) equivalent
-            getRuntime().newTypeError("can't clone " + getMetaClass().getName());
+            throw getRuntime().newTypeError("can't clone " + getMetaClass().getName());
         }
         
         IRubyObject clone = doClone();
         clone.setMetaClass(getMetaClass().getSingletonClassClone());
-        clone.setTaint(this.isTaint());
+        clone.setTaint(isTaint());
         clone.initCopy(this);
         clone.setFrozen(isFrozen());
         return clone;
@@ -906,16 +913,21 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     /** rb_obj_dup
-     *
+     *  should be overriden only by: Proc
      */
     public IRubyObject dup() {
-        IRubyObject dup = callMethod(getRuntime().getCurrentContext(), "clone");
-        if (!dup.getClass().equals(getClass())) {
-            throw getRuntime().newTypeError("duplicated object must be same type");
-        }
+        if (isImmediate()) {
+            throw getRuntime().newTypeError("can't dup " + getMetaClass().getName());
+        }        
+        
+        IRubyObject dup = doClone();    
 
         dup.setMetaClass(type());
         dup.setFrozen(false);
+        dup.setTaint(isTaint());
+        
+        dup.initCopy(this);
+
         return dup;
     }
 

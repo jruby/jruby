@@ -190,6 +190,7 @@ public class RubyClass extends RubyModule {
         classClass.defineFastMethod("allocate", callbackFactory.getFastMethod("allocate"));
         classClass.defineMethod("new", callbackFactory.getOptMethod("newInstance"));
         classClass.defineMethod("superclass", callbackFactory.getMethod("superclass"));
+        classClass.defineFastMethod("initialize_copy", callbackFactory.getFastMethod("initialize_copy", IRubyObject.class));
         classClass.getMetaClass().defineMethod("inherited", callbackFactory.getSingletonMethod("inherited", IRubyObject.class));
         classClass.undefineMethod("module_function");
     }
@@ -219,12 +220,14 @@ public class RubyClass extends RubyModule {
         if (!isSingleton()) {
             return this;
         }
+        
+        MetaClass clone = new MetaClass(getRuntime(), getSuperClass(), getMetaClass().getAllocator(), getSuperClass().getCRef());
 
-        MetaClass clone = new MetaClass(getRuntime(), getMetaClass(), getMetaClass().getAllocator(), getSuperClass().getCRef());
-        clone.initCopy(this);
         clone.setInstanceVariables(new HashMap(getInstanceVariables()));
 
-        return (RubyClass) cloneMethods(clone);
+        cloneMethods(clone);
+
+        return clone;
     }
 
     public boolean isSingleton() {
@@ -363,4 +366,18 @@ public class RubyClass extends RubyModule {
     protected IRubyObject doClone() {
     	return RubyClass.newClass(getRuntime(), getSuperClass(), null/*FIXME*/, getBaseName());
     }
+    
+    /** rb_class_init_copy
+     * 
+     */
+    public IRubyObject initialize_copy(IRubyObject original){
+
+        if (((RubyClass) original).isSingleton()){
+            throw getRuntime().newTypeError("can't copy singleton class");
+        }
+        
+        super.initialize_copy(original);
+        
+        return this;        
+    }    
 }

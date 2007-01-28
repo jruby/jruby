@@ -82,6 +82,10 @@ public class RubyRange extends RubyObject {
         }
     };
     
+    public IRubyObject doClone(){
+        return RubyRange.newRange(getRuntime(), begin, end, isExclusive);
+    }
+    
     private static final ObjectMarshal RANGE_MARSHAL = new ObjectMarshal() {
         public void marshalTo(IRuby runtime, Object obj, RubyClass type,
                               MarshalStream marshalStream) throws IOException {

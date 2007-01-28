@@ -370,22 +370,8 @@ public class RubyString extends RubyObject {
 		return runtime.newString(bytesToString(bytes));
 	}
 
-
-	/** rb_str_dup
-	 *
-	 */
-	public IRubyObject dup() {
-		return newString(toString()).infectBy(this);
-	}
-
-	/** rb_str_clone
-	 *
-	 */
-	public IRubyObject rbClone() {
-		IRubyObject newObject = dup();
-		newObject.initCopy(this);
-		newObject.setFrozen(isFrozen());
-		return newObject;
+    public IRubyObject doClone(){
+        return getRuntime().newString(toString());
 	}
     
 	public RubyString cat(CharSequence str) {

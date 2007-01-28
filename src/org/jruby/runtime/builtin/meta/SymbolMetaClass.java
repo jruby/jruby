@@ -52,7 +52,6 @@ public class SymbolMetaClass extends ObjectMetaClass {
         public void initializeClass() {
             defineFastMethod("==", Arity.singleArgument(), "equal");
             
-            defineFastMethod("clone", Arity.noArguments(), "rbClone");
             defineFastMethod("freeze", Arity.noArguments());
             defineFastMethod("hash", Arity.noArguments());
             defineFastMethod("inspect", Arity.noArguments());
@@ -61,7 +60,6 @@ public class SymbolMetaClass extends ObjectMetaClass {
             defineFastMethod("to_s", Arity.noArguments());
             defineFastMethod("to_sym", Arity.noArguments());
             defineFastSingletonMethod("all_symbols", Arity.noArguments());
-            defineAlias("dup", "clone");
             defineAlias("id2name", "to_s");
             defineAlias("to_int", "to_i");
             

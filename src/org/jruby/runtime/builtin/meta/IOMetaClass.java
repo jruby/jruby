@@ -92,7 +92,6 @@ public class IOMetaClass extends ObjectMetaClass {
 	
 	        defineFastMethod("<<", Arity.singleArgument(), "addString");
 			defineFastMethod("binmode", Arity.noArguments());
-	        defineFastMethod("clone", Arity.noArguments(), "clone_IO");
 	        defineFastMethod("close", Arity.noArguments());
 	        defineFastMethod("closed?", Arity.noArguments(), "closed");
 	        defineMethod("each", Arity.optional(), "each_line");
@@ -107,6 +106,7 @@ public class IOMetaClass extends ObjectMetaClass {
 	        defineFastMethod("getc", Arity.noArguments());
 	        defineFastMethod("gets", Arity.optional());
 	        defineMethod("initialize", Arity.optional());
+            defineFastMethod("initialize_copy", Arity.singleArgument());
 	        defineFastMethod("lineno", Arity.noArguments());
 	        defineFastMethod("lineno=", Arity.singleArgument(), "lineno_set");
 	        defineFastMethod("pid", Arity.noArguments());

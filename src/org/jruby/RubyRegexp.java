@@ -102,7 +102,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         regexpClass.defineConstant("MULTILINE", runtime.newFixnum(RE_OPTION_MULTILINE));
 
         regexpClass.defineFastMethod("initialize", callbackFactory.getFastOptMethod("initialize"));
-        regexpClass.defineFastMethod("clone", callbackFactory.getFastMethod("rbClone"));
+        regexpClass.defineFastMethod("initialize_copy", callbackFactory.getFastMethod("initialize_copy",IRubyObject.class));        
         regexpClass.defineFastMethod("==", callbackFactory.getFastMethod("equal", IRubyObject.class));
         regexpClass.defineFastMethod("===", callbackFactory.getFastMethod("match", IRubyObject.class));
         regexpClass.defineFastMethod("=~", callbackFactory.getFastMethod("match", IRubyObject.class));
@@ -503,15 +503,21 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         return getRuntime().newString(sb.toString());
     }
 
-    // TODO: Could this be better hooked up to RubyObject#clone?
-    public IRubyObject rbClone() {
-    	RubyRegexp newObj = new RubyRegexp(getRuntime());
-    	newObj.pattern = pattern;
-    	newObj.code = code;
-    	newObj.setTaint(isTaint());
-    	newObj.initCopy(this);
-    	newObj.setFrozen(isFrozen());
-        return newObj;
+    /** rb_reg_init_copy
+     * 
+     */
+    public IRubyObject initialize_copy(IRubyObject original) {
+        if (this == original) return this;
+        
+        if (!(getMetaClass() == original.getMetaClass())){ // MRI also does a pointer comparison here
+            throw getRuntime().newTypeError("wrong argument class");
+        }
+
+        RubyRegexp origRegexp = (RubyRegexp)original;
+        pattern = origRegexp.pattern;
+        code = origRegexp.code;
+
+        return this;
     }
 
     /** rb_reg_inspect

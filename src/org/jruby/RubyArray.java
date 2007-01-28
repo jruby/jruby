@@ -1085,17 +1085,6 @@ public class RubyArray extends RubyObject implements List {
         return ary;
     }
 
-    /** rb_ary_clone
-     *
-     */
-    public IRubyObject rbClone() {
-        RubyArray result = getRuntime().newArray(new ArrayList(list));
-        result.setTaint(isTaint());
-        result.initCopy(this);
-        result.setFrozen(isFrozen());
-        return result;
-    }
-
     /** rb_ary_reverse_bang
      *
      */

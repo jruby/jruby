@@ -38,17 +38,16 @@ public class ModuleMetaClass extends ObjectMetaClass {
             defineFastMethod(">=", Arity.singleArgument(), "op_ge");
             defineFastMethod("ancestors", Arity.noArguments());
             defineFastMethod("class_variables", Arity.noArguments());
-            defineFastMethod("clone", Arity.noArguments(), "rbClone");
             defineFastMethod("const_defined?", Arity.singleArgument(), "const_defined");
             defineFastMethod("const_get", Arity.singleArgument(), "const_get");
             defineMethod("const_missing", Arity.singleArgument());
             defineFastMethod("const_set", Arity.twoArguments());
             defineFastMethod("constants", Arity.noArguments());
-            defineFastMethod("dup", Arity.noArguments());
             defineMethod("extended", Arity.singleArgument());
             defineFastMethod("included", Arity.singleArgument());
             defineFastMethod("included_modules", Arity.noArguments());
             defineMethod("initialize", Arity.optional());
+            defineFastMethod("initialize_copy", Arity.singleArgument());
             defineFastMethod("instance_method", Arity.singleArgument());
             defineFastMethod("instance_methods", Arity.optional());
             defineFastMethod("method_defined?", Arity.singleArgument(), "method_defined");

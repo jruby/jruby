@@ -757,9 +757,11 @@ public class RubyIO extends RubyObject {
         }
     }
     
-    public RubyIO clone_IO() {
-        RubyIO io = new RubyIO(getRuntime(), getMetaClass());
+    public IRubyObject initialize_copy(IRubyObject original){
+        if (this == original) return this;
 
+        RubyIO originalIO = (RubyIO) original;
+        
         // Two pos pointers?  
         // http://blade.nagaokaut.ac.jp/ruby/ruby-talk/81513
         // So if I understand this correctly, the descriptor level stuff
@@ -771,11 +773,12 @@ public class RubyIO extends RubyObject {
         // behavior (i.e. show how this interface bleeds their 
         // implementation). So our best bet, is to just create a yet another
         // copy of the handler.  In fact, ruby 1.8 must do this as the cloned
-        // resource is in fact a different fileno.  What is clone for again?
-        io.handler = handler;
-        io.modes = (IOModes) modes.clone();
+        // resource is in fact a different fileno.  What is clone for again?        
         
-        return io;
+        handler = originalIO.handler;
+        modes = (IOModes) originalIO.modes.clone();
+        
+        return this;
     }
     
     /** Closes the IO.

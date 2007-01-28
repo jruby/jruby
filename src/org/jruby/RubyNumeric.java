@@ -766,13 +766,6 @@ public class RubyNumeric extends RubyObject {
         return this;
     }
     
-    /** num_clone
-     *
-     */
-    public IRubyObject rbClone() {
-        return this;
-    }
-
     //    /** num_equal
     //     *
     //     */

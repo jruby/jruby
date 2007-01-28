@@ -293,14 +293,6 @@ public class RubyHash extends RubyObject implements Map {
         }
     }
 
-	public IRubyObject rbClone() {
-		RubyHash result = newHash(getRuntime(), getValueMap(), getDefaultValue(NULL_ARRAY, null));
-		result.setTaint(isTaint());
-		result.initCopy(this);
-		result.setFrozen(isFrozen());
-		return result;
-	}
-
     public RubyHash rehash() {
         modify();
         try {

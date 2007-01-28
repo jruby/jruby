@@ -154,12 +154,6 @@ public class RubySymbol extends RubyObject {
         return this;
     }
 
-    // TODO: Should all immediate classes be subclassed so that clone etc...can inherit 
-    // immediate behavior like this.
-    public IRubyObject rbClone() {
-        throw getRuntime().newTypeError("can't clone Symbol");
-    }
-
     public IRubyObject freeze() {
         return this;
     }

@@ -694,10 +694,6 @@ public class RubyFixnum extends RubyInteger {
         return this;
     }
 
-    public IRubyObject rbClone() {
-        throw getRuntime().newTypeError("can't clone Fixnum");
-    }
-
     public static RubyFixnum unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         return input.getRuntime().newFixnum(input.unmarshalInt());
     }

@@ -61,7 +61,6 @@ public class RubyMatchData extends RubyObject {
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyMatchData.class);
 
         matchDataClass.defineFastMethod("captures", callbackFactory.getFastMethod("captures"));
-        matchDataClass.defineFastMethod("clone", callbackFactory.getFastMethod("rbClone"));
         matchDataClass.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
         matchDataClass.defineFastMethod("size", callbackFactory.getFastMethod("size"));
         matchDataClass.defineFastMethod("length", callbackFactory.getFastMethod("size"));
@@ -273,10 +272,7 @@ public class RubyMatchData extends RubyObject {
         return getRuntime().newString(str.substring(begin[0], end[0]));
     }
 
-    /** match_clone
-     *
-     */
-    public IRubyObject rbClone() {
+    public IRubyObject doClone() {
         int len = (int) getSize();
         int[] begin_p = new int[len];
         int[] end_p = new int[len];
