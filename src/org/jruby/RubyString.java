@@ -235,7 +235,7 @@ public class RubyString extends RubyObject {
         if (other == this) {
             return runtime.getTrue();
         } else if (!(other instanceof RubyString)) {
-            if (other.respondsTo("to_str")) {
+            if(other.callMethod(runtime.getCurrentContext(),"respond_to?", runtime.newSymbol("to_str")).isTrue()) {
                 return other.callMethod(runtime.getCurrentContext(), "==", this);
             }
             return runtime.getFalse();
