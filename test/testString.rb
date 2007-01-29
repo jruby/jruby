@@ -490,3 +490,6 @@ test_exception(ArgumentError) { x2.unpack("U*") }
 bytes = []
 x2.each_byte { |b| bytes << b }
 test_equal([184, 158, 8, 136, 165], bytes)
+
+# JRUBY-280
+test_equal("1234567890.51",("%01.2f" % 1234567890.506))

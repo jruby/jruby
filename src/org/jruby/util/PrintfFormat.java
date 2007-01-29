@@ -713,6 +713,19 @@ public class PrintfFormat {
             return s2;
         }
 
+        private void incrementAndCarry(char[] arr, int index) {
+            if(arr[index] == '9') {
+                arr[index] = '0';
+                if(index == 0) {
+                    System.err.println("WARNING, carry on string that won't support this. Check code in PrintfFormat.");
+                } else {
+                    incrementAndCarry(arr, index-1);
+                }
+            } else {
+                arr[index] += 1;
+            }
+        }
+
         private char[] fFormatDigits(double x) {
             // int defaultDigits=6;
             String sx;
@@ -754,6 +767,7 @@ public class PrintfFormat {
             } else {
                 n2In = 0;
             }
+
             if (ePos != -1) {
                 int ie = ePos + 1;
                 expon = 0;
@@ -786,6 +800,7 @@ public class PrintfFormat {
             } else {
                 p = defaultDigits - 1;
             }
+
             char[] ca1 = sx.toCharArray();
             char[] ca2 = new char[n1In + n2In];
             char[] ca3;
@@ -814,7 +829,7 @@ public class PrintfFormat {
                 if (expon < 0) {
                     i = p;
                 } else {
-                    i = p + n1In;
+                    i = p + n1In + expon;
                 }
                 carry = checkForCarry(ca3, i);
                 if (carry) {
