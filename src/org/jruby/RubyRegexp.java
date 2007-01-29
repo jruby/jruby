@@ -132,6 +132,12 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
     public void initialize(String regex, int options) {
         try {
+            if(getCode() == KCode.UTF8) {
+                try {
+                    regex = new String(regex.getBytes("PLAIN"),"UTF8");
+                } catch(Exception e) {
+                }
+            }
             pattern = REGEXP_TRANSLATOR.translate(regex, options, code.flags());
         } catch(java.util.regex.PatternSyntaxException e) {
             throw getRuntime().newSyntaxError(e.getMessage());
@@ -453,7 +459,16 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     }
     
     public IRubyObject match(String target, int startPos) {
-    	Matcher aMatcher = pattern.matcher(target);
+        boolean utf8 = getCode() == KCode.UTF8;
+        String t = target;
+        if(utf8) {
+            try {
+                t = new String(target.getBytes("PLAIN"),"UTF8");
+            } catch(Exception e) {
+            }
+        }
+
+    	Matcher aMatcher = pattern.matcher(t);
     	
         if (aMatcher.find(startPos)) {
             int count = aMatcher.groupCount() + 1;
