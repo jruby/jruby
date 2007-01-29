@@ -51,6 +51,8 @@ import org.jruby.RubyIO;
 public class IOHandlerSeekable extends IOHandlerJavaIO {
     protected RandomAccessFile file;
     protected String path;
+    protected String cwd;
+
     
     public IOHandlerSeekable(IRuby runtime, String path, IOModes modes) 
     	throws IOException, InvalidValueException {
@@ -58,7 +60,8 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
         
         this.path = path;
         this.modes = modes;
-        JRubyFile theFile = JRubyFile.create(runtime.getCurrentDirectory(),path);
+        this.cwd = runtime.getCurrentDirectory();
+        JRubyFile theFile = JRubyFile.create(cwd,path);
         
         if (theFile.exists()) {
             if (modes.shouldTruncate()) {
@@ -93,7 +96,52 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
         // we have a problem opening a file.
         fileno = RubyIO.getNewFileno();
     }
+
+    private void reopen() throws IOException {
+        long pos = pos();
+
+		String javaMode = "r";
+		if (modes.isWriteable()) {
+			javaMode += "w";
+		}
+		
+        JRubyFile theFile = JRubyFile.create(cwd,path);
+        file.close();
+        file = new RandomAccessFile(theFile, javaMode);
+        isOpen = true;
+
+        try {
+            seek(pos,SEEK_SET);
+        } catch(Exception e) {
+            throw new IOException(e);
+        }
+    }
+
+    private void checkReopen() throws IOException {
+        if(file.length() != new java.io.File(path).length()) {
+            reopen();
+        }
+    }
     
+    public String getsEntireStream() throws IOException {
+        StringBuffer result = new StringBuffer();
+        int c;
+
+        checkReopen();
+        
+        while ((c = read()) != -1) {
+            result.append((char) c);
+        }
+        
+        // We are already at EOF
+        if (result.length() == 0) {
+            return null;
+        }
+        
+        return result.toString();
+    }
+
+
     public IOHandler cloneIOHandler() throws IOException, PipeException, InvalidValueException {
         IOHandler newHandler = new IOHandlerSeekable(getRuntime(), path, modes); 
             
