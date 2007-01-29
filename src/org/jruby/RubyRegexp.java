@@ -279,9 +279,9 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             }
         }
     	String string = RubyString.stringValue(target).toString();
-    	if (string.length() == 0) {
+        if (string.length() == 0 && "^$".equals(pattern.pattern())) {
     		string = "\n";
-    	}
+        }
     	
         int result = search(string, 0);
         
@@ -301,10 +301,9 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     	}
     	
     	String string = RubyString.stringValue(target).toString();
-    	
-    	if (string.length() == 0) {
+        if (string.length() == 0 && "^$".equals(pattern.pattern())) {
     		string = "\n";
-    	}
+        }
     	
         int result = search(string, 0);
         
