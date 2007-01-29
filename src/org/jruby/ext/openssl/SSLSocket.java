@@ -106,8 +106,6 @@ public class SSLSocket extends RubyObject {
     private SSLEngineResult.HandshakeStatus hsStatus;
     private SSLEngineResult.Status status = null;
 
-    private String type = null;
-
     private Selector rsel;
     private Selector wsel;
     private Selector asel;
@@ -167,7 +165,6 @@ public class SSLSocket extends RubyObject {
             ossl_ssl_setup();
             engine.setUseClientMode(true);
             engine.beginHandshake();
-            type = "client";
             hsStatus = engine.getHandshakeStatus();
             initialHandshake = true;
             doHandshake();
@@ -206,7 +203,6 @@ public class SSLSocket extends RubyObject {
                 }
             }
             engine.beginHandshake();
-            type = "server";
             hsStatus = engine.getHandshakeStatus();
             initialHandshake = true;
             doHandshake();
@@ -384,14 +380,12 @@ public class SSLSocket extends RubyObject {
         }
         waitSelect(rsel);
         ByteBuffer dst = ByteBuffer.allocate(len);
-        String bef_dst = dst.toString();
         int rr = -1;
         if(engine == null) {
             rr = c.read(dst);
         } else {
             rr = read(dst);
         }
-        String aft_dst = dst.toString();
         String out = null;
         boolean eof = false;
         if(rr == -1) {
@@ -402,7 +396,6 @@ public class SSLSocket extends RubyObject {
             dst.get(bss);
             out = new String(bss,"ISO8859_1");
         }
-        String aft_ag_dst = dst.toString();
         if(eof){
             throw getRuntime().newEOFError();
         }

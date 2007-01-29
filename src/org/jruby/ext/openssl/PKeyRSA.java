@@ -117,12 +117,10 @@ public class PKeyRSA extends PKey {
     }
 
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        Object rsa;
         IRubyObject arg;
         IRubyObject pass = null;
         char[] passwd = null;
         if(checkArgumentCount(args,0,2) == 0) {
-            rsa = null; //RSA.new
         } else {
             arg = args[0];
             if(args.length > 1) {

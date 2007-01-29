@@ -281,7 +281,6 @@ public class X509_LOOKUP {
             int cmd = ((Integer)_cmd).intValue();
             String argp = (String)_argp;
             long argl = ((Long)_argl).longValue();
-            String[] ret = (String[])_ret;
 
             int ok = 0;
             String file = null;
@@ -346,7 +345,6 @@ public class X509_LOOKUP {
             int cmd = ((Integer)_cmd).intValue();
             String argp = (String)_argp;
             long argl = ((Long)_argl).longValue();
-            String[] retp = (String[])_retp;
             int ret = 0;
             BY_DIR ld = (BY_DIR)ctx.method_data;
             String dir = null;
@@ -371,8 +369,6 @@ public class X509_LOOKUP {
         }
 
         private int add_cert_dir(BY_DIR ctx,String dir,int type) {
-            int[] ip;
-
             if(dir == null || "".equals(dir)) {
                 Err.PUT_err(X509.X509_R_INVALID_DIRECTORY);
                 return 0;
@@ -428,7 +424,6 @@ public class X509_LOOKUP {
                 int tp = ((Integer)iter2.next()).intValue();
                 int k = 0;
                 for(;;) {
-                    char c = '/';
                     b.append(String.format("%s/%08lx.%s%d",new Object[]{cdir,new Long(h),postfix,new Integer(k)}));
                     k++;
                     if(!(new File(b.toString()).exists())) {

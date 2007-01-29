@@ -683,9 +683,6 @@ public class PEM {
      * create the secret key needed for this object, fetching the password
      */
     private static SecretKey getKey(char[] k1, String  algorithm,int     keyLength, byte[]  salt) throws IOException {
-        byte[]      key = new byte[keyLength];
-        int         offset = 0;
-        int         bytesNeeded = keyLength;
         char[]      password = k1;
 
         if (password == null) {
@@ -814,7 +811,7 @@ public class PEM {
 
         if (type.equals("RSA"))
         {
-            DERInteger              v = (DERInteger)seq.getObjectAt(0);
+            //DERInteger              v = (DERInteger)seq.getObjectAt(0);
             DERInteger              mod = (DERInteger)seq.getObjectAt(1);
             DERInteger              pubExp = (DERInteger)seq.getObjectAt(2);
             DERInteger              privExp = (DERInteger)seq.getObjectAt(3);
@@ -834,7 +831,7 @@ public class PEM {
         }
         else    // "DSA"
         {
-            DERInteger              v = (DERInteger)seq.getObjectAt(0);
+            //DERInteger              v = (DERInteger)seq.getObjectAt(0);
             DERInteger              p = (DERInteger)seq.getObjectAt(1);
             DERInteger              q = (DERInteger)seq.getObjectAt(2);
             DERInteger              g = (DERInteger)seq.getObjectAt(3);

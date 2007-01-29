@@ -28,20 +28,9 @@
 package org.jruby.internal.runtime.methods;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
-import org.jruby.RubyProc;
-import org.jruby.ast.ArgsNode;
-import org.jruby.ast.ListNode;
-import org.jruby.ast.Node;
-import org.jruby.ast.executable.Script;
-import org.jruby.compiler.NodeCompilerFactory;
-import org.jruby.compiler.impl.StandardASMCompiler;
-import org.jruby.evaluator.AssignmentVisitor;
-import org.jruby.evaluator.CreateJumpTargetVisitor;
-import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
@@ -52,7 +41,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callback.InvocationCallbackFactory;
 import org.jruby.util.collections.SinglyLinkedList;
 import org.jruby.ast.executable.YARVMachine;
 import org.jruby.ast.executable.ISeqPosition;

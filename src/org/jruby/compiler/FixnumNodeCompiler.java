@@ -30,8 +30,6 @@ package org.jruby.compiler;
 
 import org.jruby.ast.FixnumNode;
 import org.jruby.ast.Node;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 
 /**
  *

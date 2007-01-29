@@ -32,7 +32,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.builtin;
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -50,7 +49,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.callback.Callback;
-import org.jruby.runtime.marshal.MarshalStream;
 
 /** Object is the parent class of all classes in Ruby. Its methods are
  * therefore available to all objects unless explicitly overridden.

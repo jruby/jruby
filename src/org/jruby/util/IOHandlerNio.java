@@ -211,6 +211,7 @@ public class IOHandlerNio extends IOHandler {
         outBuffer.clear();
     }
    
+    /* unused but looks like it could be at some point
     private int buffer_rindex(ByteBuffer haystack, byte[] needle) {
         search_loop:
         for (int i = haystack.limit() - needle.length; i >= haystack.position(); i--) {
@@ -222,7 +223,7 @@ public class IOHandlerNio extends IOHandler {
             return i;
         }
         return -1;
-    }
+    }*/
 
     private int buffer_index(ByteBuffer haystack, byte[] needle) {
         search_loop:

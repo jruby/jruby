@@ -37,6 +37,8 @@ public class Err {
     private static ThreadLocal errors = new ThreadLocal();
 
     public static class ErrException extends Exception {
+        private static final long serialVersionUID = -3214495184277468063L;
+        
         private int reason;
         public ErrException(int reason) {
             super();

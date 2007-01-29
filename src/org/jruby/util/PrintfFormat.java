@@ -713,6 +713,7 @@ public class PrintfFormat {
             return s2;
         }
 
+        /*
         private void incrementAndCarry(char[] arr, int index) {
             if(arr[index] == '9') {
                 arr[index] = '0';
@@ -724,7 +725,7 @@ public class PrintfFormat {
             } else {
                 arr[index] += 1;
             }
-        }
+        }*/
 
         private char[] fFormatDigits(double x) {
             // int defaultDigits=6;

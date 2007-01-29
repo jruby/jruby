@@ -185,7 +185,7 @@ public class Cipher extends RubyObject {
     private int keyLen = -1;
     private int ivLen = -1;
     private boolean encryptMode = true;
-    private IRubyObject[] modeParams;
+    //private IRubyObject[] modeParams;
     private boolean ciphInited = false;
     private byte[] key;
     private byte[] iv;
@@ -332,7 +332,7 @@ public class Cipher extends RubyObject {
         //TODO: implement backwards compat
         checkArgumentCount(args,0,2);
         encryptMode = true;
-        modeParams = args;
+        //modeParams = args;
         ciphInited = false;
         return this;
     }
@@ -341,7 +341,7 @@ public class Cipher extends RubyObject {
         //TODO: implement backwards compat
         checkArgumentCount(args,0,2);
         encryptMode = false;
-        modeParams = args;
+        //modeParams = args;
         ciphInited = false;
         return this;
     }

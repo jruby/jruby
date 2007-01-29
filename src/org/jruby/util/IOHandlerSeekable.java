@@ -113,7 +113,7 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
         try {
             seek(pos,SEEK_SET);
         } catch(Exception e) {
-            throw new IOException(e);
+            throw new IOException();
         }
     }
 

@@ -150,9 +150,9 @@ public class X509_TRUST {
 
     public final static Function3 trust_compat = new Function3() {
             public int call(Object _trust, Object _x, Object _flags) throws Exception {
-                X509_TRUST trust = (X509_TRUST)_trust;
+                //X509_TRUST trust = (X509_TRUST)_trust;
                 X509AuxCertificate x = (X509AuxCertificate)_x;
-                int flags = ((Integer)_flags).intValue();
+                //int flags = ((Integer)_flags).intValue();
 
                 X509_PURPOSE.check_purpose(x,-1,0);
                 if(x.getIssuerX500Principal().equals(x.getSubjectX500Principal())) { // self signed
@@ -191,7 +191,7 @@ public class X509_TRUST {
             public int call(Object _id, Object _x, Object _flags) {
                 String id = (String)_id;
                 X509AuxCertificate x = (X509AuxCertificate)_x;
-                int flags = ((Integer)_flags).intValue();
+                //int flags = ((Integer)_flags).intValue();
                 
                 X509_AUX ax = x.getAux();
                 if(null == ax) {

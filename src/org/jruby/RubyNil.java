@@ -32,7 +32,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;

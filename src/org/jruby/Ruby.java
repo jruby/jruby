@@ -46,7 +46,6 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringReader;
-import java.security.AccessControlException;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
@@ -111,7 +110,6 @@ import org.jruby.runtime.load.Library;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.util.BuiltinScript;
 import org.jruby.util.JRubyClassLoader;
-import org.jruby.util.JRubyFile;
 import org.jruby.util.KCode;
 import org.jruby.util.NormalizedFile;
 import org.jruby.util.collections.SinglyLinkedList;
@@ -144,12 +142,6 @@ public final class Ruby implements IRuby {
     private final boolean objectSpaceEnabled;
 
     private long globalState = 1;
-
-    /**
-     * What encoding should we read source files in as...
-     * @see org.jruby.util.CommandlineParser#processArgument()
-     */
-    private String encoding = "ISO8859_1";
 
     /** safe-level:
             0 - strings from streams/environment/ARGV are tainted (default)

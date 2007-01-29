@@ -28,12 +28,8 @@
 
 package org.jruby.compiler;
 
-import org.jruby.Ruby;
-
 import org.jruby.ast.Node;
 import org.jruby.ast.NodeTypes;
-
-import org.jruby.compiler.yarv.StandardYARVCompiler;
 
 /**
  *

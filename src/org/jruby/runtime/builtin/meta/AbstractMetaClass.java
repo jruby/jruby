@@ -30,8 +30,6 @@ package org.jruby.runtime.builtin.meta;
 import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.internal.runtime.methods.SimpleReflectedMethod;
-import org.jruby.internal.runtime.methods.FullFunctionReflectedMethod;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;

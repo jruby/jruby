@@ -135,11 +135,11 @@ public class PKCS7 extends RubyObject {
         IRubyObject key = recv.getRuntime().getNil();
         IRubyObject data = recv.getRuntime().getNil();
         IRubyObject certs = recv.getRuntime().getNil();
-        IRubyObject flags = recv.getRuntime().getNil();
+        //IRubyObject flags = recv.getRuntime().getNil();
         recv.checkArgumentCount(args,3,5);
         switch(args.length) {
         case 5:
-            flags = args[4];
+            //flags = args[4];
         case 4:
             certs = args[3];
         case 3:
@@ -299,17 +299,18 @@ public class PKCS7 extends RubyObject {
     }
 
     public IRubyObject verify(IRubyObject[] args) throws Exception {
-        IRubyObject certs, store;
+        IRubyObject certs;
+        //IRubyObject store;
         IRubyObject indata = getRuntime().getNil();
-        IRubyObject flags = getRuntime().getNil();
+        //IRubyObject flags = getRuntime().getNil();
         switch(checkArgumentCount(args,2,4)) {
         case 4:
-            flags = args[3];
+            //flags = args[3];
         case 3:
             indata = args[2];
         default:
             certs = args[0];
-            store = args[1];
+            //store = args[1];
         }
         
         if(indata.isNil()) {

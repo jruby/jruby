@@ -124,7 +124,6 @@ public class LoadService {
     private static final String[] allSuffixes = { ".rb", ".rb.ast.ser", ".so", ".jar" };
     private static final Pattern sourcePattern = Pattern.compile("^(.*)\\.(rb|rb\\.ast\\.ser)$");
     private static final Pattern extensionPattern = Pattern.compile("^(.*)\\.(so|o|dll|jar)$");
-    private static final Pattern allPattern = Pattern.compile("^(.*)\\.(rb|rb\\.ast\\.ser|so|o|dll|jar)$");
 
     private final List loadPath = new ArrayList();
     private final Set loadedFeatures = Collections.synchronizedSet(new HashSet());

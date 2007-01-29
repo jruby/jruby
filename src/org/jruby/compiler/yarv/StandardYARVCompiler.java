@@ -42,8 +42,6 @@ import org.jruby.ast.ConstNode;
 import org.jruby.ast.DefnNode;
 import org.jruby.ast.NewlineNode;
 import org.jruby.ast.FixnumNode;
-import org.jruby.ast.FCallNode;
-import org.jruby.ast.ListNode;
 import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.LocalVarNode;
 import org.jruby.ast.VCallNode;

@@ -53,6 +53,7 @@ import javax.security.auth.x500.X500Principal;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class X509AuxCertificate extends X509Certificate {
+    private static final long serialVersionUID = -909543379295427515L;
     private final X509Certificate wrap;
     private final X509_AUX aux;
 

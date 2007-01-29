@@ -429,9 +429,8 @@ public class X509_STORE_CTX {
 
     public int verify_cert() throws Exception {
         X509AuxCertificate x,xtmp=null,chain_ss = null;
-        X509_NAME xn;
+        //X509_NAME xn;
         int bad_chain = 0;
-        X509_VERIFY_PARAM p = param;
         int depth,i,ok=0;
         int num;
         Function2 cb;
@@ -459,7 +458,7 @@ public class X509_STORE_CTX {
             if(depth < num) {
                 break;
             }
-            xn = new X509_NAME(x.getIssuerX500Principal());
+            //xn = new X509_NAME(x.getIssuerX500Principal());
             if(check_issued.call(this,x,x) != 0) {
                 break;
             }
@@ -479,7 +478,7 @@ public class X509_STORE_CTX {
 
         i = chain.size();
         x = (X509AuxCertificate)chain.get(i-1);
-        xn = new X509_NAME(x.getSubjectX500Principal());
+        //xn = new X509_NAME(x.getSubjectX500Principal());
         if(check_issued.call(this,x,x) != 0) {
             if(chain.size() == 1) {
                 X509AuxCertificate[] p_xtmp = new X509AuxCertificate[]{xtmp};
@@ -511,7 +510,7 @@ public class X509_STORE_CTX {
             if(depth<num) {
                 break;
             }
-            xn = new X509_NAME(x.getIssuerX500Principal());
+            //xn = new X509_NAME(x.getIssuerX500Principal());
             if(check_issued.call(this,x,x) != 0) {
                 break;
             }
@@ -529,7 +528,7 @@ public class X509_STORE_CTX {
             num++;
         }
 
-        xn = new X509_NAME(x.getIssuerX500Principal());
+        //xn = new X509_NAME(x.getIssuerX500Principal());
 
         if(check_issued.call(this,x,x) == 0) {
             if(chain_ss == null || check_issued.call(this,x,chain_ss) == 0) {

@@ -117,8 +117,6 @@ public class X509Name extends RubyObject {
         types = new ArrayList();
     }
 
-    private org.bouncycastle.asn1.x509.X509Name name;
-
     private List oids;
     private List values;
     private List types;
@@ -183,6 +181,7 @@ public class X509Name extends RubyObject {
         return this;
     }
 
+    /*
     private void printASN(org.bouncycastle.asn1.DERObject obj) {
         printASN(obj,0);
     }
@@ -214,6 +213,7 @@ public class X509Name extends RubyObject {
             }
         }
     }
+    */
 
     private DERObjectIdentifier getObjectIdentifier(String nameOrOid) {
         Object val1 = ASN1.getOIDLookup(getRuntime()).get(nameOrOid.toLowerCase());

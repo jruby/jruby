@@ -67,13 +67,12 @@ public class Main {
     private CommandlineParser commandline;
     private boolean hasPrintedUsage = false;
     private RubyInstanceConfig config;
-    private InputStream in;
+    // ENEBO: We used to have in, but we do not use it in this class anywhere
     private PrintStream out;
     private PrintStream err;
 
     public Main(RubyInstanceConfig config) {
         this.config = config;
-        this.in     = config.getInput();
         this.out    = config.getOutput();
         this.err    = config.getError();
     }

@@ -29,7 +29,6 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.IRuby;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;

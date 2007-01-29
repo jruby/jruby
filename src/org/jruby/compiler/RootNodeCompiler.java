@@ -30,7 +30,6 @@ package org.jruby.compiler;
 
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *

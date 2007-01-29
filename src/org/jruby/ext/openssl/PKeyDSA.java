@@ -104,12 +104,10 @@ public class PKeyDSA extends PKey {
     }
 
     public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
-        Object rsa;
         IRubyObject arg;
         IRubyObject pass = null;
         char[] passwd = null;
         if(checkArgumentCount(args,0,2) == 0) {
-            rsa = null; //DSA.new
         } else {
             arg = args[0];
             if(args.length > 1) {
@@ -242,6 +240,7 @@ public class PKeyDSA extends PKey {
         return getRuntime().newString(w.toString());
     }
 
+    /* 
     private String getPadding(int padding) {
         if(padding < 1 || padding > 4) {
             throw new RaiseException(getRuntime(), (RubyClass)(((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("PKey"))).getConstant("DSAError")), null, true);
@@ -256,7 +255,8 @@ public class PKeyDSA extends PKey {
             p = "/NONE/ISO9796-1Padding";
         }
         return p;
-    }        
+    }  
+    */      
 
     public IRubyObject syssign(IRubyObject arg) {
         return getRuntime().getNil();

@@ -9,7 +9,6 @@
 
 package org.jruby.compiler;
 
-import java.util.Iterator;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.Node;
 

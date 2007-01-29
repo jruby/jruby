@@ -147,7 +147,7 @@ public class InstructionCompiler2 implements NodeVisitor {
 
     private static final String IRUBYOBJECT = "org/jruby/runtime/builtin/IRubyObject";
 
-    private static final String FRAME = "org/jruby/runtime/Frame";
+    //private static final String FRAME = "org/jruby/runtime/Frame";
 
     private static final String THREADCONTEXT = "org/jruby/runtime/ThreadContext";
 

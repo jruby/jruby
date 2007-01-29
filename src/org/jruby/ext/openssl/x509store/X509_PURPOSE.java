@@ -228,7 +228,6 @@ public class X509_PURPOSE {
 
     public final static Function3 cp_ssl_client = new Function3() {
             public int call(Object _xp, Object _x, Object _ca) throws Exception {
-                X509_PURPOSE xp = (X509_PURPOSE)_xp;
                 X509AuxCertificate x = (X509AuxCertificate)_x;
                 int ca = ((Integer)_ca).intValue();
 
@@ -252,7 +251,6 @@ public class X509_PURPOSE {
 
     public final static Function3 cp_ssl_server =  new Function3() {
             public int call(Object _xp, Object _x, Object _ca) throws Exception {
-                X509_PURPOSE xp = (X509_PURPOSE)_xp;
                 X509AuxCertificate x = (X509AuxCertificate)_x;
                 int ca = ((Integer)_ca).intValue();
 
@@ -294,7 +292,6 @@ public class X509_PURPOSE {
 
     public final static Function3 cp_smime_sign = new Function3() {
             public int call(Object _xp, Object _x, Object _ca) throws Exception {
-                X509_PURPOSE xp = (X509_PURPOSE)_xp;
                 X509AuxCertificate x = (X509AuxCertificate)_x;
                 int ca = ((Integer)_ca).intValue();
                 int ret = purpose_smime(x,ca);
@@ -310,7 +307,6 @@ public class X509_PURPOSE {
 
     public final static Function3 cp_smime_encrypt = new Function3() {
             public int call(Object _xp, Object _x, Object _ca) throws Exception {
-                X509_PURPOSE xp = (X509_PURPOSE)_xp;
                 X509AuxCertificate x = (X509AuxCertificate)_x;
                 int ca = ((Integer)_ca).intValue();
                 int ret = purpose_smime(x,ca);
@@ -326,7 +322,6 @@ public class X509_PURPOSE {
 
     public final static Function3 cp_crl_sign = new Function3() {
             public int call(Object _xp, Object _x, Object _ca) throws Exception {
-                X509_PURPOSE xp = (X509_PURPOSE)_xp;
                 X509AuxCertificate x = (X509AuxCertificate)_x;
                 int ca = ((Integer)_ca).intValue();
                 

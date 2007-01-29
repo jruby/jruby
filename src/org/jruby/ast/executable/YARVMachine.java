@@ -1,11 +1,6 @@
 package org.jruby.ast.executable;
 
-import java.util.Map;
-import java.util.HashMap;
-
 import org.jruby.IRuby;
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;

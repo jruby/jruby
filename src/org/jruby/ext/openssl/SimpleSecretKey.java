@@ -35,6 +35,8 @@ import javax.crypto.SecretKey;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class SimpleSecretKey implements Key, SecretKey {
+    private static final long serialVersionUID = -3941646158676294788L;
+    
     private final byte[] value;
     public SimpleSecretKey(byte[] value) {
         this.value = value;

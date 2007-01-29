@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 
 import org.jruby.IRuby;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.load.Library;
 
 /**

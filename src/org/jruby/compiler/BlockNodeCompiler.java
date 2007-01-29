@@ -31,7 +31,6 @@ package org.jruby.compiler;
 import java.util.Iterator;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.Node;
-import org.objectweb.asm.Opcodes;
 
 /**
  *
