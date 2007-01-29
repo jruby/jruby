@@ -35,6 +35,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.text.DecimalFormat;
+
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -179,21 +181,37 @@ public class RubyFloat extends RubyNumeric {
                 "failed to convert " + number.getMetaClass() + " into Float");
     }
 
+    private final static DecimalFormat FORMAT = new DecimalFormat("##############0.0##############");
+
     /** flo_to_s
      * 
      */
     public IRubyObject to_s() {
         if (Double.isInfinite(value)) {
             return RubyString.newString(getRuntime(), value < 0 ? "-Infinity" : "Infinity");
-    }
+        }
 
         if (Double.isNaN(value)) {
             return RubyString.newString(getRuntime(), "NaN");
         }
 
-        // TODO: needs formatting "%#.15g" and "%#.14e"
-        return RubyString.newString(getRuntime(), "" + value);
+        String val = ""+value;
+
+        if(val.indexOf('E') != -1) {
+            String v2 = FORMAT.format(value);
+            int ix = v2.length()-1;
+            while(v2.charAt(ix) == '0' && v2.charAt(ix-1) != '.') {
+                ix--;
+            }
+            if(ix > 15 || "0.0".equals(v2.substring(0,ix+1))) {
+                val = val.replaceFirst("E(\\d)","e+$1").replaceFirst("E-","e-");
+            } else {
+                val = v2.substring(0,ix+1);
+            }
         }
+
+        return RubyString.newString(getRuntime(), val);
+    }
 
     /** flo_coerce
      * 
