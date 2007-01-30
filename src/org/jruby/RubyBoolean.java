@@ -31,8 +31,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 
 /**
@@ -87,9 +89,16 @@ public class RubyBoolean extends RubyObject {
 
     public static RubyClass createFalseClass(IRuby runtime) {
 		RubyClass falseClass = runtime.defineClass("FalseClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-                falseClass.index = ClassIndex.FALSE;
+        falseClass.index = ClassIndex.FALSE;
 
-		falseClass.defineFastMethod("type", runtime.callbackFactory(RubyBoolean.class).getFastMethod("type"));
+        CallbackFactory fact = runtime.callbackFactory(RubyBoolean.class);
+
+		falseClass.defineFastMethod("type", fact.getFastMethod("type"));
+        falseClass.defineFastMethod("&", fact.getFastMethod("false_and", IRubyObject.class));
+        falseClass.defineFastMethod("|", fact.getFastMethod("false_or", IRubyObject.class));
+        falseClass.defineFastMethod("^", fact.getFastMethod("false_xor", IRubyObject.class));
+        falseClass.defineFastMethod("id", fact.getFastMethod("false_id"));
+        falseClass.defineFastMethod("to_s", fact.getFastMethod("false_to_s"));
 
 		runtime.defineGlobalConstant("FALSE", runtime.getFalse());
 
@@ -100,7 +109,14 @@ public class RubyBoolean extends RubyObject {
 		RubyClass trueClass = runtime.defineClass("TrueClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
                 trueClass.index = ClassIndex.TRUE;
 
-		trueClass.defineFastMethod("type", runtime.callbackFactory(RubyBoolean.class).getFastMethod("type"));
+        CallbackFactory fact = runtime.callbackFactory(RubyBoolean.class);
+
+		trueClass.defineFastMethod("type", fact.getFastMethod("type"));
+        trueClass.defineFastMethod("&", fact.getFastMethod("true_and", IRubyObject.class));
+        trueClass.defineFastMethod("|", fact.getFastMethod("true_or", IRubyObject.class));
+        trueClass.defineFastMethod("^", fact.getFastMethod("true_xor", IRubyObject.class));
+        trueClass.defineFastMethod("id", fact.getFastMethod("true_id"));
+        trueClass.defineFastMethod("to_s", fact.getFastMethod("true_to_s"));
 
 		runtime.defineGlobalConstant("TRUE", runtime.getTrue());
 
@@ -118,6 +134,46 @@ public class RubyBoolean extends RubyObject {
 	public RubyClass type() {
 		return getMetaClass();
 	}
+
+    public IRubyObject false_and(IRubyObject oth) {
+        return this;
+    }
+
+    public IRubyObject false_or(IRubyObject oth) {
+        return oth.isTrue() ? getRuntime().getTrue() : this;
+    }
+
+    public IRubyObject false_xor(IRubyObject oth) {
+        return oth.isTrue() ? getRuntime().getTrue() : this;
+    }
+
+    public IRubyObject false_id() {
+        return RubyFixnum.zero(getRuntime());
+    }
+
+    public IRubyObject false_to_s() {
+        return getRuntime().newString("false");
+    }
+
+    public IRubyObject true_and(IRubyObject oth) {
+        return oth.isTrue() ? this : getRuntime().getFalse();
+    }
+
+    public IRubyObject true_or(IRubyObject oth) {
+        return this;
+    }
+
+    public IRubyObject true_xor(IRubyObject oth) {
+        return oth.isTrue() ? getRuntime().getFalse() : this;
+    }
+
+    public IRubyObject true_id() {
+        return getRuntime().newFixnum(2);
+    }
+
+    public IRubyObject true_to_s() {
+        return getRuntime().newString("true");
+    }
 
 	public void marshalTo(MarshalStream output) throws java.io.IOException {
 		output.write(isTrue() ? 'T' : 'F');

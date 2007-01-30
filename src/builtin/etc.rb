@@ -1,5 +1,6 @@
 module Signal
   def self.trap(sig)
+    warn "Signal.trap: Signals are not implemented in JRuby and will not work"
     # do nothing
   end
 end

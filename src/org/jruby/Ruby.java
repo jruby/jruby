@@ -859,12 +859,6 @@ public final class Ruby implements IRuby {
     }
 
     private void initBuiltinClasses() {
-        try {
-            new BuiltinScript("FalseClass").load(this);
-            new BuiltinScript("TrueClass").load(this);
-        } catch (IOException e) {
-            throw new Error("builtin scripts are missing", e);
-        }
     }
 
     /**
