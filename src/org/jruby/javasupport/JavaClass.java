@@ -192,7 +192,7 @@ public class JavaClass extends JavaObject {
             RubyArray methodsWithName = (RubyArray) map.get(key); 
             
             if (methodsWithName == null) {
-                methodsWithName = getRuntime().newArray();
+                methodsWithName = RubyArray.newArrayLight(getRuntime());
                 map.put(key, methodsWithName);
             }
             
@@ -256,20 +256,34 @@ public class JavaClass extends JavaObject {
             final RubyArray methods) {
         final RubyModule javaUtilities = getRuntime().getModule("JavaUtilities");
         Callback method = new Callback() {
+            private Map matchingMethods;
             public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
                 IRubyObject[] argsArray = new IRubyObject[args.length + 1];
                 ThreadContext context = self.getRuntime().getCurrentContext();
                 
-                argsArray[0] = self.callMethod(context, "java_object");
-                RubyArray argsAsArray = getRuntime().newArray();
+                argsArray[0] = self.getInstanceVariable("@java_object");
+                RubyArray argsAsArray = RubyArray.newArrayLight(getRuntime());
+                int argsTypeHash = 0;
                 for (int j = 0; j < args.length; j++) {
                     argsArray[j+1] = Java.ruby_to_java(proxy, args[j], null);
                     argsAsArray.append(argsArray[j+1]);
+                    // TODO: better hash combinator?
+                    argsTypeHash += System.identityHashCode(args[j].getMetaClass());
                 }
+                Integer argsKey = new Integer(argsTypeHash);
 
-                IRubyObject[] mmArgs = new IRubyObject[] {methods, argsAsArray};
-                IRubyObject result = javaUtilities.callMethod(context, "matching_method", mmArgs);
-                return Java.java_to_ruby(self, result.callMethod(context, "invoke", argsArray), null);
+                if (matchingMethods == null) {
+                    matchingMethods = new HashMap();
+                }
+                
+                IRubyObject match = (IRubyObject)matchingMethods.get(argsKey);
+                if (match == null) {
+                    IRubyObject[] mmArgs = new IRubyObject[] {methods, argsAsArray};
+                    match = javaUtilities.callMethod(context, "matching_method", mmArgs);
+                    matchingMethods.put(argsKey, match);
+                }
+                
+                return Java.java_to_ruby(self, match.callMethod(context, "invoke", argsArray), null);
             }
 
             public Arity getArity() {
@@ -283,7 +297,7 @@ public class JavaClass extends JavaObject {
             // We do not override class since it is too important to be overridden by getClass
             // short name.
             if (!methodName.equals("class")) {
-                proxy.defineMethod(methodName, method);
+                proxy.defineFastMethod(methodName, method);
                 
                 String rubyCasedName = getRubyCasedName(methodName);
                 if (rubyCasedName != null) {

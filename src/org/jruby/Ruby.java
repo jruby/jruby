@@ -1308,6 +1308,10 @@ public final class Ruby implements IRuby {
         return RubyArray.newArray(this);
     }
 
+    public RubyArray newArrayLight() {
+        return RubyArray.newArrayLight(this);
+    }
+
     public RubyArray newArray(IRubyObject object) {
         return RubyArray.newArray(this, object);
     }

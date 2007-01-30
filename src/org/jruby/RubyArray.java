@@ -79,14 +79,22 @@ public class RubyArray extends RubyObject implements List {
     public static final byte OP_LSHIFT_SWITCHVALUE = 9;
     public static final byte EMPTY_P_SWITCHVALUE = 10;
 
-	private RubyArray(IRuby runtime, List list) {
-		this(runtime, runtime.getClass("Array"));
+    private RubyArray(IRuby runtime, List list) {
+        super(runtime, runtime.getClass("Array"));
         this.list = list;
+    }
+    
+    /**
+     * "Light" version which isn't entered into ObjectSpace. For internal utility purposes.
+     */
+    private RubyArray(IRuby runtime) {
+        super(runtime, runtime.getClass("Array"), false);
+        this.list = new ArrayList(6);
     }
     
     public RubyArray(IRuby runtime, RubyClass klass) {
         super(runtime, klass);
-        list = new ArrayList(16);
+        this.list = new ArrayList(16);
     }
 
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, byte switchvalue, String name,
@@ -457,6 +465,17 @@ public class RubyArray extends RubyObject implements List {
          */
     	
         return new RubyArray(runtime, new ArrayList(16));
+    }
+
+    /** rb_ary_new
+     *
+     */
+    public static final RubyArray newArrayLight(final IRuby runtime) {
+        /* Ruby arrays default to holding 16 elements, so we create an
+         * ArrayList of the same size if we're not told otherwise
+         */
+    	
+        return new RubyArray(runtime);
     }
 
     /**

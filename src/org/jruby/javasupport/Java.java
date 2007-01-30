@@ -34,7 +34,6 @@ package org.jruby.javasupport;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-
 import org.jruby.IRuby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
@@ -46,6 +45,7 @@ import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class Java {
@@ -89,22 +89,34 @@ public class Java {
         }
         IRuby runtime = recv.getRuntime();
         Object javaObject;
-        if (object.isNil()) {
+        switch (object.getMetaClass().index) {
+        case ClassIndex.NIL:
             javaObject = null;
-        } else if (object instanceof RubyFixnum) {
+            break;
+        case ClassIndex.FIXNUM:
             javaObject = new Long(((RubyFixnum) object).getLongValue());
-        } else if (object instanceof RubyBignum) {
+            break;
+        case ClassIndex.BIGNUM:
             javaObject = ((RubyBignum) object).getValue();
-        } else if (object instanceof RubyFloat) {
+            break;
+        case ClassIndex.FLOAT:
             javaObject = new Double(((RubyFloat) object).getValue());
-        } else if (object instanceof RubyString) {
+            break;
+        case ClassIndex.STRING:
             javaObject = ((RubyString) object).toString();
-        } else if (object instanceof RubyBoolean) {
-            javaObject = Boolean.valueOf(object.isTrue());
-        } else if (object instanceof RubyTime) {
-            javaObject = ((RubyTime)object).getJavaDate();
-        } else {
-            javaObject = object;
+            break;
+        case ClassIndex.TRUE:
+            javaObject = Boolean.TRUE;
+            break;
+        case ClassIndex.FALSE:
+            javaObject = Boolean.FALSE;
+            break;
+        default:
+            if (object instanceof RubyTime) {
+                javaObject = ((RubyTime)object).getJavaDate();
+            } else {
+                javaObject = object;
+            }
         }
         return JavaObject.wrap(runtime, javaObject);
     }
@@ -131,7 +143,11 @@ public class Java {
      */
     public static IRubyObject ruby_to_java(final IRubyObject recv, IRubyObject object, Block unusedBlock) {
     	if (object.respondsTo("to_java_object")) {
-    		return object.callMethod(recv.getRuntime().getCurrentContext(), "to_java_object");
+            IRubyObject result = object.getInstanceVariable("@java_object");
+            if (result == null) {
+    		result = object.callMethod(recv.getRuntime().getCurrentContext(), "to_java_object");
+            }
+            return result;
     	}
     	
     	return primitive_to_java(recv, object, unusedBlock);
