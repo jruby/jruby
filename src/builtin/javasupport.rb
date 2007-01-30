@@ -356,22 +356,29 @@ module JavaUtilities
   end
   
   def JavaUtilities.matching_method(methods, args)
+    @match_cache ||= {}
+
     arg_types = args.collect {|a| a.java_class }
+    
+    @match_cache[methods] ||= {}
+    method = @match_cache[methods][arg_types]
+    return method if method
+    
     notfirst = false
     2.times do
       methods.each do |method|
         types = method.argument_types
 
         # Exact match
-        return method if types == arg_types
-      
+        return @match_cache[methods][arg_types] = method if types == arg_types
+        
         # Compatible (by inheritance)
         if (types.length == arg_types.length)
           match = true
           0.upto(types.length - 1) do |i|
             match = false unless types[i].assignable_from?(arg_types[i]) && (notfirst || primitive_match(types[i],arg_types[i]))
           end
-          return method if match
+          return @match_cache[methods][arg_types] = method if match
         end
       end
       notfirst = true
