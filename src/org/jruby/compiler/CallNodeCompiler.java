@@ -55,6 +55,7 @@ public class CallNodeCompiler implements NodeCompiler {
                 }
             };
             
+            context.createNewClosure(iterNode.getScope(), closureBody);
             // handle receiver
             NodeCompilerFactory.getCompiler(callNode.getReceiverNode()).compile(callNode.getReceiverNode(), context);
             
