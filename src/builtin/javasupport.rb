@@ -113,6 +113,9 @@ class JavaProxy
             Java.java_to_ruby(JavaUtilities.matching_method(methods, args).invoke_static(*args))
           end
         end
+        singleton_class.instance_eval do
+          alias_method name.gsub(/([a-z])([A-Z])/, '\1_\2').downcase, name
+        end
       end
     end
     

@@ -316,3 +316,6 @@ end
 
   # No error is a pass here for JRUBY-66
   javax.xml.xpath.XPathFactory.newInstance.newXPath.setNamespaceContext(NSCT.new(1))
+
+# Test that class methods are being camel_cased
+test_ok(java.lang.System.respond_to?("current_time_millis"))
