@@ -245,7 +245,11 @@ public class MarshalStream extends FilterOutputStream {
 
     private void userNewMarshal(final IRubyObject value) throws IOException {
         write(TYPE_USRMARSHAL);
-        dumpObject(RubySymbol.newSymbol(runtime, value.getMetaClass().getName()));
+        RubyClass metaclass = value.getMetaClass();
+        while (metaclass.isSingleton()) {
+            metaclass = metaclass.getSuperClass();
+        }
+        dumpObject(RubySymbol.newSymbol(runtime, metaclass.getName()));
 
         IRubyObject marshaled =  value.callMethod(runtime.getCurrentContext(), "marshal_dump"); 
         dumpObject(marshaled);
@@ -257,7 +261,11 @@ public class MarshalStream extends FilterOutputStream {
 
     private void userMarshal(IRubyObject value) throws IOException {
         write(TYPE_USERDEF);
-        dumpObject(RubySymbol.newSymbol(runtime, value.getMetaClass().getName()));
+        RubyClass metaclass = value.getMetaClass();
+        while (metaclass.isSingleton()) {
+            metaclass = metaclass.getSuperClass();
+        }
+        dumpObject(RubySymbol.newSymbol(runtime, metaclass.getName()));
 
         RubyString marshaled = (RubyString) value.callMethod(runtime.getCurrentContext(), "_dump", runtime.newFixnum(depthLimit)); 
         writeString(marshaled.toString());

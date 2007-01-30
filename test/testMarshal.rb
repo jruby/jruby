@@ -276,3 +276,28 @@ y = Marshal.dump([x,x])
 # symlink for second time object
 test_equal(6, y[-1])
 test_equal([x, x], Marshal.load(y))
+
+# User-marshalled classes should marshal singleton objects as the original class
+class Special  
+  def initialize(valuable)
+    @valuable = valuable
+  end
+
+  def _dump(depth)
+    @valuable.to_str
+  end
+
+  def Special._load(str)
+    result = Special.new(str);
+  end
+end
+
+a = Special.new("Hello, World")
+class << a
+  def newMeth
+    puts "HELLO"
+  end
+end
+data = Marshal.dump(a)
+test_equal("\004\bu:\fSpecial\021Hello, World", data)
+test_no_exception { obj = Marshal.load(data) }
