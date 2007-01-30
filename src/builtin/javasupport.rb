@@ -339,18 +339,18 @@ module JavaUtilities
     get_proxy_class(java_object.java_class).new_instance_for(java_object)
   end
 
+  @@primitive_matches = {
+    'int'     => ['java.lang.Integer','java.lang.Long','java.lang.Short','java.lang.Character'],
+    'long'    => ['java.lang.Integer','java.lang.Long','java.lang.Short','java.lang.Character'],
+    'short'   => ['java.lang.Integer','java.lang.Long','java.lang.Short','java.lang.Character'],
+    'char'    => ['java.lang.Integer','java.lang.Long','java.lang.Short','java.lang.Character'],
+    'float'   => ['java.lang.Float','java.lang.Double'],
+    'double'  => ['java.lang.Float','java.lang.Double'],
+    'boolean' => ['java.lang.Boolean'] }
+
   def JavaUtilities.primitive_match(t1,t2)
     if t1.primitive?
-      return case t1.inspect
-             when 'int': ['java.lang.Integer','java.lang.Long','java.lang.Short','java.lang.Character'].include?(t2.inspect)
-             when 'long': ['java.lang.Integer','java.lang.Long','java.lang.Short','java.lang.Character'].include?(t2.inspect)
-             when 'short': ['java.lang.Integer','java.lang.Long','java.lang.Short','java.lang.Character'].include?(t2.inspect)
-             when 'char': ['java.lang.Integer','java.lang.Long','java.lang.Short','java.lang.Character'].include?(t2.inspect)
-             when 'float': ['java.lang.Float','java.lang.Double'].include?(t2.inspect)
-             when 'double': ['java.lang.Float','java.lang.Double'].include?(t2.inspect)
-             when 'boolean': ['java.lang.Boolean'].include?(t2.inspect)
-             else false
-             end
+      return (matches = @@primitive_matches[t1.inspect]) && matches.include?(t2.inspect)
     end
     return true
   end
