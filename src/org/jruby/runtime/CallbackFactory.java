@@ -117,6 +117,7 @@ public abstract class CallbackFactory {
     public abstract Callback getFastSingletonMethod(String method, Class arg1, Class arg2, Class arg3);
 
     public abstract Callback getBlockMethod(String method);
+    public abstract BlockCallback getBlockCallback(String method);
 
     /**
     * gets a singleton (class) method with no mandatory argument and some optional arguments.

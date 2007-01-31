@@ -32,8 +32,11 @@ package org.jruby.runtime;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.jruby.IRuby;
+import org.jruby.ast.AttrAssignNode;
+import org.jruby.ast.CallNode;
+import org.jruby.ast.Node;
+import org.jruby.ast.types.IArityNode;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -83,9 +86,24 @@ public final class Arity implements Serializable {
         return createArity(1);
     }
 
-	public static Arity twoArguments() {
-		return createArity(2);
-	}
+    public static Arity twoArguments() {
+        return createArity(2);
+    }
+    
+    public static Arity procArityOf(Node node) {
+        if (node instanceof AttrAssignNode && node != null) {
+            node = ((AttrAssignNode) node).getArgsNode();
+        }
+        if (node == null) {
+            return Arity.optional();
+        } else if (node instanceof IArityNode) {
+            return ((IArityNode) node).getArity();
+        } else if (node instanceof CallNode) {
+            return Arity.singleArgument();
+        }
+
+        throw new Error("unexpected type " + node.getClass() + " at " + node.getPosition());
+    }
 
     public int getValue() {
         return value;

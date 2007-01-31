@@ -12,6 +12,7 @@ package org.jruby.compiler;
 import org.jruby.ast.CallNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.Node;
+import org.jruby.runtime.Arity;
 
 /**
  *
@@ -40,22 +41,27 @@ public class CallNodeCompiler implements NodeCompiler {
                 
                 argsCompiler.compile(callNode.getArgsNode(), context);
 
-                context.invokeDynamic(callNode.getName(), true, true);
+                context.invokeDynamic(callNode.getName(), true, true, null);
             } else {
-                context.invokeDynamic(callNode.getName(), true, false);
+                context.invokeDynamic(callNode.getName(), true, false, null);
             }
         } else {
             // FIXME: Missing blockpassnode handling
             final IterNode iterNode = (IterNode) callNode.getIterNode();
 
             // create the closure class and instantiate it
-            ClosureCallback closureBody = new ClosureCallback() {
+            final ClosureCallback closureBody = new ClosureCallback() {
                 public void compile(Compiler context) {
                     NodeCompilerFactory.getCompiler(iterNode.getBodyNode()).compile(iterNode.getBodyNode(), context);
                 }
             };
             
-            context.createNewClosure(iterNode.getScope(), closureBody);
+            final ClosureCallback closureArg = new ClosureCallback() {
+                public void compile(Compiler context) {
+                    context.createNewClosure(iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(), closureBody);
+                }
+            };
+            
             // handle receiver
             NodeCompilerFactory.getCompiler(callNode.getReceiverNode()).compile(callNode.getReceiverNode(), context);
             
@@ -65,9 +71,11 @@ public class CallNodeCompiler implements NodeCompiler {
                 
                 argsCompiler.compile(callNode.getArgsNode(), context);
 
-                context.invokeDynamic(callNode.getName(), true, true);
+                context.invokeDynamic(callNode.getName(), true, true, closureArg);
             } else {
-                context.invokeDynamic(callNode.getName(), true, false);
+                context.createNewClosure(iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(), closureBody);
+                
+                context.invokeDynamic(callNode.getName(), true, false, closureArg);
             }
         }
     }

@@ -91,7 +91,14 @@ public interface Compiler {
      * to the compiler has prepared the exact number of argument values necessary for this
      * call. Those values will be consumed, and the result of the call will be generated.
      */
-    public void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs);
+    public void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, ClosureCallback closureArg);
+    
+    /**
+     * Invoke the block passed into this method, or throw an error if no block is present.
+     * If arguments have been prepared for the block, specify true. Otherwise the default
+     * empty args will be used.
+     */
+    public void yield(boolean hasArgs);
     
     /**
      * Assigns the previous value to a local variable at the specified index, consuming
@@ -148,7 +155,7 @@ public interface Compiler {
     
     public void performBooleanLoop(BranchCallback condition, BranchCallback body, boolean checkFirst);
     
-    public void createNewClosure(StaticScope scope, ClosureCallback body);
+    public void createNewClosure(StaticScope scope, int arity, ClosureCallback body);
     
     public void defineNewMethod(String name, int arity, int localVarCount, ClosureCallback body);
     

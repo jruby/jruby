@@ -31,43 +31,33 @@ import org.jruby.IRuby;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.CodegenUtils;
 
 public class InvocationCallbackFactory extends CallbackFactory implements Opcodes {
+    private final static CodegenUtils cg = CodegenUtils.instance;
 
     private final Class type;
     private final String typePath;
     private final IRuby runtime;
 
-    private final static String SUPER_CLASS = InvocationCallback.class.getName().replace('.','/');
-    private final static String FAST_SUPER_CLASS = FastInvocationCallback.class.getName().replace('.','/');
-    private final static String BLOCK_ID = "Lorg/jruby/runtime/Block;";
-    private final static String CALL_SIG = "(Ljava/lang/Object;[Ljava/lang/Object;" + BLOCK_ID + ")Lorg/jruby/runtime/builtin/IRubyObject;";
-    private final static String FAST_CALL_SIG = "(Ljava/lang/Object;[Ljava/lang/Object;)Lorg/jruby/runtime/builtin/IRubyObject;";
-    private final static String IRUB = "org/jruby/runtime/builtin/IRubyObject";
-    private final static String IRUB_ID = "Lorg/jruby/runtime/builtin/IRubyObject;";
-
-    /**
-     * Creates a class path name, from a Class.
-     */
-    private static String p(Class n) {
-        return n.getName().replace('.','/');
-    }
-
-    /**
-     * Creates a class identifier of form Labc/abc;, from a Class.
-     */
-    private static String ci(Class n) {
-        return "L" + p(n) + ";";
-    }
-
+    private final static String SUPER_CLASS = cg.p(InvocationCallback.class);
+    private final static String FAST_SUPER_CLASS = cg.p(FastInvocationCallback.class);
+    private final static String BLOCK_ID = cg.ci(Block.class);
+    private final static String CALL_SIG = cg.sig(IRubyObject.class, cg.params(Object.class, Object[].class, Block.class));
+    private final static String FAST_CALL_SIG = cg.sig(IRubyObject.class, cg.params(Object.class, Object[].class));
+    private final static String BLOCK_CALL_SIG = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject[].class, IRubyObject.class, Block.class));
+    private final static String IRUB = cg.p(IRubyObject.class);
+    private final static String IRUB_ID = cg.ci(IRubyObject.class);
+    
     public InvocationCallbackFactory(IRuby runtime, Class type) {
         this.type = type;
-        this.typePath = p(type);
+        this.typePath = cg.p(type);
         this.runtime = runtime;
     }
 
@@ -99,6 +89,19 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 0);
         mv.visitMethodInsn(INVOKESPECIAL, FAST_SUPER_CLASS, "<init>", "()V");
+        mv.visitInsn(RETURN);
+        mv.visitMaxs(1, 1);
+        mv.visitEnd();
+        return cw;
+    }
+
+    private ClassWriter createBlockCtor(String namePath) throws Exception {
+        ClassWriter cw = new ClassWriter(true);
+        cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, namePath, null, cg.p(Object.class), new String[] { cg.p(BlockCallback.class) });
+        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+        mv.visitCode();
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitMethodInsn(INVOKESPECIAL, cg.p(Object.class), "<init>", "()V");
         mv.visitInsn(RETURN);
         mv.visitMaxs(1, 1);
         mv.visitEnd();
@@ -142,6 +145,12 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 1);
         mv.visitTypeInsn(CHECKCAST, IRUB);
+        return mv;
+    }
+
+    private MethodVisitor startBlockCall(ClassWriter cw) {
+        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "call", BLOCK_CALL_SIG, null, null);;
+        mv.visitCode();
         return mv;
     }
 
@@ -189,9 +198,9 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 mv.visitVarInsn(ALOAD, 2);
                 mv.visitInsn(ICONST_0);
                 mv.visitInsn(AALOAD);
-                mv.visitTypeInsn(CHECKCAST, p(arg1));
+                mv.visitTypeInsn(CHECKCAST, cg.p(arg1));
                 mv.visitVarInsn(ALOAD, 3);
-                mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, "("+ci(arg1)+BLOCK_ID+")L"+ret+";");
+                mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, "("+cg.ci(arg1)+BLOCK_ID+")L"+ret+";");
                 mv.visitInsn(ARETURN);
                 mv.visitMaxs(3, 3);
                 c = endCall(cw,mv,mname);
@@ -218,13 +227,13 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 mv.visitVarInsn(ALOAD, 2);
                 mv.visitInsn(ICONST_0);
                 mv.visitInsn(AALOAD);
-                mv.visitTypeInsn(CHECKCAST, p(arg1));
+                mv.visitTypeInsn(CHECKCAST, cg.p(arg1));
                 mv.visitVarInsn(ALOAD, 2);
                 mv.visitInsn(ICONST_1);
                 mv.visitInsn(AALOAD);
-                mv.visitTypeInsn(CHECKCAST, p(arg2));
+                mv.visitTypeInsn(CHECKCAST, cg.p(arg2));
                 mv.visitVarInsn(ALOAD, 3);
-                mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, "("+ci(arg1)+ci(arg2)+BLOCK_ID+")L"+ret+";");
+                mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, "("+cg.ci(arg1)+cg.ci(arg2)+BLOCK_ID+")L"+ret+";");
                 mv.visitInsn(ARETURN);
                 mv.visitMaxs(4, 3);
                 c = endCall(cw,mv,mname);
@@ -251,17 +260,17 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 mv.visitVarInsn(ALOAD, 2);
                 mv.visitInsn(ICONST_0);
                 mv.visitInsn(AALOAD);
-                mv.visitTypeInsn(CHECKCAST, p(arg1));
+                mv.visitTypeInsn(CHECKCAST, cg.p(arg1));
                 mv.visitVarInsn(ALOAD, 2);
                 mv.visitInsn(ICONST_1);
                 mv.visitInsn(AALOAD);
-                mv.visitTypeInsn(CHECKCAST, p(arg2));
+                mv.visitTypeInsn(CHECKCAST, cg.p(arg2));
                 mv.visitVarInsn(ALOAD, 2);
                 mv.visitInsn(ICONST_2);
                 mv.visitInsn(AALOAD);
-                mv.visitTypeInsn(CHECKCAST, p(arg3));
+                mv.visitTypeInsn(CHECKCAST, cg.p(arg3));
                 mv.visitVarInsn(ALOAD, 3);
-                mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, "("+ci(arg1)+ci(arg2)+ci(arg3)+BLOCK_ID+")L"+ret+";");
+                mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, "("+cg.ci(arg1)+cg.ci(arg2)+cg.ci(arg3)+BLOCK_ID+")L"+ret+";");
                 mv.visitInsn(ARETURN);
                 mv.visitMaxs(5, 3);
                 c = endCall(cw,mv,mname);
@@ -313,9 +322,9 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 mv.visitVarInsn(ALOAD, 2);
                 mv.visitInsn(ICONST_0);
                 mv.visitInsn(AALOAD);
-                mv.visitTypeInsn(CHECKCAST, p(arg1));
+                mv.visitTypeInsn(CHECKCAST, cg.p(arg1));
                 mv.visitVarInsn(ALOAD, 3);
-                mv.visitMethodInsn(INVOKESTATIC, typePath, method, "(" + IRUB_ID + ci(arg1) + BLOCK_ID + ")L" + ret + ";");
+                mv.visitMethodInsn(INVOKESTATIC, typePath, method, "(" + IRUB_ID + cg.ci(arg1) + BLOCK_ID + ")L" + ret + ";");
                 mv.visitInsn(ARETURN);
                 mv.visitMaxs(3, 3);
                 c = endCall(cw,mv,mname);
@@ -342,13 +351,13 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 mv.visitVarInsn(ALOAD, 2);
                 mv.visitInsn(ICONST_0);
                 mv.visitInsn(AALOAD);
-                mv.visitTypeInsn(CHECKCAST, p(arg1));
+                mv.visitTypeInsn(CHECKCAST, cg.p(arg1));
                 mv.visitVarInsn(ALOAD, 2);
                 mv.visitInsn(ICONST_1);
                 mv.visitInsn(AALOAD);
-                mv.visitTypeInsn(CHECKCAST, p(arg2));
+                mv.visitTypeInsn(CHECKCAST, cg.p(arg2));
                 mv.visitVarInsn(ALOAD, 3);
-                mv.visitMethodInsn(INVOKESTATIC, typePath, method, "(" + IRUB_ID + ci(arg1) + ci(arg2) + BLOCK_ID + ")L" + ret + ";");
+                mv.visitMethodInsn(INVOKESTATIC, typePath, method, "(" + IRUB_ID + cg.ci(arg1) + cg.ci(arg2) + BLOCK_ID + ")L" + ret + ";");
                 mv.visitInsn(ARETURN);
                 mv.visitMaxs(4, 4);
                 c = endCall(cw,mv,mname);
@@ -375,17 +384,17 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 mv.visitVarInsn(ALOAD, 2);
                 mv.visitInsn(ICONST_0);
                 mv.visitInsn(AALOAD);
-                mv.visitTypeInsn(CHECKCAST, p(arg1));
+                mv.visitTypeInsn(CHECKCAST, cg.p(arg1));
                 mv.visitVarInsn(ALOAD, 2);
                 mv.visitInsn(ICONST_1);
                 mv.visitInsn(AALOAD);
-                mv.visitTypeInsn(CHECKCAST, p(arg2));
+                mv.visitTypeInsn(CHECKCAST, cg.p(arg2));
                 mv.visitVarInsn(ALOAD, 2);
                 mv.visitInsn(ICONST_2);
                 mv.visitInsn(AALOAD);
-                mv.visitTypeInsn(CHECKCAST, p(arg3));
+                mv.visitTypeInsn(CHECKCAST, cg.p(arg3));
                 mv.visitVarInsn(ALOAD, 3);
-                mv.visitMethodInsn(INVOKESTATIC, typePath, method, "(" + IRUB_ID + ci(arg1) + ci(arg2) + ci(arg3) + BLOCK_ID + ")L" + ret + ";");
+                mv.visitMethodInsn(INVOKESTATIC, typePath, method, "(" + IRUB_ID + cg.ci(arg1) + cg.ci(arg2) + cg.ci(arg3) + BLOCK_ID + ")L" + ret + ";");
                 mv.visitInsn(ARETURN);
                 mv.visitMaxs(5, 3);
                 c = endCall(cw,mv,mname);
@@ -409,6 +418,33 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
             false,
             true,
             Arity.fixed(2), false);
+    }
+    
+    public BlockCallback getBlockCallback(String method) {
+        String mname = type.getName() + "Block" + method + "xx1";
+        String mnamePath = typePath + "Block" + method + "xx1";
+        Class c = tryClass(mname);
+        try {
+            if(c == null) {
+                ClassWriter cw = createBlockCtor(mnamePath);
+                MethodVisitor mv = startBlockCall(cw);
+                mv.visitVarInsn(ALOAD, 1);
+                mv.visitVarInsn(ALOAD, 3);
+                mv.visitVarInsn(ALOAD, 2);
+                //mv.visitInsn(ACONST_NULL);
+                mv.visitMethodInsn(INVOKESTATIC, typePath, method, 
+                        cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, IRubyObject[].class)));
+                mv.visitInsn(ARETURN);
+                mv.visitMaxs(2, 3);
+                c = endCall(cw,mv,mname);
+            }
+            BlockCallback ic = (BlockCallback)c.newInstance();
+            return ic;
+        } catch(IllegalArgumentException e) {
+            throw e;
+        } catch(Exception e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
     public Callback getOptSingletonMethod(String method) {
@@ -503,8 +539,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 mv.visitVarInsn(ALOAD, 2);
                 mv.visitInsn(ICONST_0);
                 mv.visitInsn(AALOAD);
-                mv.visitTypeInsn(CHECKCAST, p(arg1));
-                mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, "("+ci(arg1)+")L"+ret+";");
+                mv.visitTypeInsn(CHECKCAST, cg.p(arg1));
+                mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, "("+cg.ci(arg1)+")L"+ret+";");
                 mv.visitInsn(ARETURN);
                 mv.visitMaxs(3, 3);
                 c = endCall(cw,mv,mname);
@@ -531,12 +567,12 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 mv.visitVarInsn(ALOAD, 2);
                 mv.visitInsn(ICONST_0);
                 mv.visitInsn(AALOAD);
-                mv.visitTypeInsn(CHECKCAST, p(arg1));
+                mv.visitTypeInsn(CHECKCAST, cg.p(arg1));
                 mv.visitVarInsn(ALOAD, 2);
                 mv.visitInsn(ICONST_1);
                 mv.visitInsn(AALOAD);
-                mv.visitTypeInsn(CHECKCAST, p(arg2));
-                mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, "("+ci(arg1)+ci(arg2)+")L"+ret+";");
+                mv.visitTypeInsn(CHECKCAST, cg.p(arg2));
+                mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, "("+cg.ci(arg1)+cg.ci(arg2)+")L"+ret+";");
                 mv.visitInsn(ARETURN);
                 mv.visitMaxs(4, 3);
                 c = endCall(cw,mv,mname);
@@ -563,16 +599,16 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 mv.visitVarInsn(ALOAD, 2);
                 mv.visitInsn(ICONST_0);
                 mv.visitInsn(AALOAD);
-                mv.visitTypeInsn(CHECKCAST, p(arg1));
+                mv.visitTypeInsn(CHECKCAST, cg.p(arg1));
                 mv.visitVarInsn(ALOAD, 2);
                 mv.visitInsn(ICONST_1);
                 mv.visitInsn(AALOAD);
-                mv.visitTypeInsn(CHECKCAST, p(arg2));
+                mv.visitTypeInsn(CHECKCAST, cg.p(arg2));
                 mv.visitVarInsn(ALOAD, 2);
                 mv.visitInsn(ICONST_2);
                 mv.visitInsn(AALOAD);
-                mv.visitTypeInsn(CHECKCAST, p(arg3));
-                mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, "("+ci(arg1)+ci(arg2)+ci(arg3)+")L"+ret+";");
+                mv.visitTypeInsn(CHECKCAST, cg.p(arg3));
+                mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, "("+cg.ci(arg1)+cg.ci(arg2)+cg.ci(arg3)+")L"+ret+";");
                 mv.visitInsn(ARETURN);
                 mv.visitMaxs(5, 3);
                 c = endCall(cw,mv,mname);
@@ -623,8 +659,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 mv.visitVarInsn(ALOAD, 2);
                 mv.visitInsn(ICONST_0);
                 mv.visitInsn(AALOAD);
-                mv.visitTypeInsn(CHECKCAST, p(arg1));
-                mv.visitMethodInsn(INVOKESTATIC, typePath, method, "(" + IRUB_ID + ci(arg1) + ")L" + ret + ";");
+                mv.visitTypeInsn(CHECKCAST, cg.p(arg1));
+                mv.visitMethodInsn(INVOKESTATIC, typePath, method, "(" + IRUB_ID + cg.ci(arg1) + ")L" + ret + ";");
                 mv.visitInsn(ARETURN);
                 mv.visitMaxs(3, 3);
                 c = endCall(cw,mv,mname);
@@ -651,12 +687,12 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 mv.visitVarInsn(ALOAD, 2);
                 mv.visitInsn(ICONST_0);
                 mv.visitInsn(AALOAD);
-                mv.visitTypeInsn(CHECKCAST, p(arg1));
+                mv.visitTypeInsn(CHECKCAST, cg.p(arg1));
                 mv.visitVarInsn(ALOAD, 2);
                 mv.visitInsn(ICONST_1);
                 mv.visitInsn(AALOAD);
-                mv.visitTypeInsn(CHECKCAST, p(arg2));
-                mv.visitMethodInsn(INVOKESTATIC, typePath, method, "(" + IRUB_ID + ci(arg1) + ci(arg2) + ")L" + ret + ";");
+                mv.visitTypeInsn(CHECKCAST, cg.p(arg2));
+                mv.visitMethodInsn(INVOKESTATIC, typePath, method, "(" + IRUB_ID + cg.ci(arg1) + cg.ci(arg2) + ")L" + ret + ";");
                 mv.visitInsn(ARETURN);
                 mv.visitMaxs(4, 4);
                 c = endCall(cw,mv,mname);
@@ -683,16 +719,16 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 mv.visitVarInsn(ALOAD, 2);
                 mv.visitInsn(ICONST_0);
                 mv.visitInsn(AALOAD);
-                mv.visitTypeInsn(CHECKCAST, p(arg1));
+                mv.visitTypeInsn(CHECKCAST, cg.p(arg1));
                 mv.visitVarInsn(ALOAD, 2);
                 mv.visitInsn(ICONST_1);
                 mv.visitInsn(AALOAD);
-                mv.visitTypeInsn(CHECKCAST, p(arg2));
+                mv.visitTypeInsn(CHECKCAST, cg.p(arg2));
                 mv.visitVarInsn(ALOAD, 2);
                 mv.visitInsn(ICONST_2);
                 mv.visitInsn(AALOAD);
-                mv.visitTypeInsn(CHECKCAST, p(arg3));
-                mv.visitMethodInsn(INVOKESTATIC, typePath, method, "(" + IRUB_ID + ci(arg1) + ci(arg2) + ci(arg3) + ")L" + ret + ";");
+                mv.visitTypeInsn(CHECKCAST, cg.p(arg3));
+                mv.visitMethodInsn(INVOKESTATIC, typePath, method, "(" + IRUB_ID + cg.ci(arg1) + cg.ci(arg2) + cg.ci(arg3) + ")L" + ret + ";");
                 mv.visitInsn(ARETURN);
                 mv.visitMaxs(5, 3);
                 c = endCall(cw,mv,mname);
@@ -761,4 +797,3 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
     }
 } //InvocationCallbackFactory
-

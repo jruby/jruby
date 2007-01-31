@@ -29,6 +29,7 @@
 package org.jruby.runtime.callback;
 
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -112,6 +113,10 @@ public class ReflectionCallbackFactory extends CallbackFactory {
             false,
             true,
             Arity.fixed(2), false);
+    }
+    
+    public BlockCallback getBlockCallback(String method) {
+        throw new RuntimeException("not implemented");
     }
 
     public Callback getOptSingletonMethod(String method) {

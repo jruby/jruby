@@ -103,6 +103,8 @@ public class NodeCompilerFactory {
                 return new VCallNodeCompiler();
             case NodeTypes.WHILENODE:
                 return new WhileNodeCompiler();
+            case NodeTypes.YIELDNODE:
+                return new YieldNodeCompiler();
         }
         
         throw new NotCompilableException("Can't compile node: " + node);

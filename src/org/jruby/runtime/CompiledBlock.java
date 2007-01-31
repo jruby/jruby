@@ -11,9 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2006 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -27,49 +25,50 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.internal.runtime.methods;
+package org.jruby.runtime;
 
-import org.jruby.ast.AttrAssignNode;
-import org.jruby.ast.CallNode;
-import org.jruby.ast.Node;
-import org.jruby.ast.types.IArityNode;
-import org.jruby.evaluator.EvaluationState;
-import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ICallable;
-import org.jruby.runtime.ThreadContext;
+import org.jruby.RubyModule;
+import org.jruby.ast.util.ArgsUtil;
+import org.jruby.internal.runtime.methods.AbstractCallable;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- *
- * @author  jpetersen
+ * A Block implemented using a Java-based BlockCallback implementation
+ * rather than with an ICallable. For lightweight block logic within
+ * Java code.
  */
-public class EvaluateCallable extends AbstractCallable {
-    private final Node node;
-    private final Arity arity;
+public class CompiledBlock extends Block {
+    private Arity arity;
+    private BlockCallback callback;
+    private ThreadContext tc;
 
-    private EvaluateCallable(Node node, Arity arity) {
-        this.node = node;
+    public CompiledBlock(Arity arity, BlockCallback callback, ThreadContext ctx) {
+        super(null,
+                null,
+                null,
+                ctx.getCurrentFrame(),
+                ctx.peekCRef(),
+                new Scope(),
+                ctx.getRubyClass(),
+                ctx.getCurrentScope(), null);
         this.arity = arity;
+        this.callback = callback;
+        this.tc = ctx;
     }
 
-    public EvaluateCallable(Node node, Node vars) {
-    	this(node, Arity.procArityOf(vars));
-    }
-
-    public IRubyObject call(ThreadContext context, IRubyObject receiver, IRubyObject[] args, Block block) {
-        return EvaluationState.eval(context, node, receiver, block);
-    }
-
-    public Node getNode() {
-        return node;
-    }
-
-    public Arity getArity() {
-    	return arity;
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf) {
+        return callback.call(context, args, replacementSelf, null);
     }
     
-    public ICallable dup() {
-        return new EvaluateCallable(node, arity);
+    public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue) {
+        return callback.call(context, ArgsUtil.convertToJavaArray(args), self, null);
+    }
+
+    public Block cloneBlock() {
+        return new CompiledBlock(arity,callback,tc);
+    }
+
+    public Arity arity() {
+        return arity;
     }
 }

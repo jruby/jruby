@@ -46,6 +46,6 @@ public class VCallNodeCompiler implements NodeCompiler {
         
         VCallNode vcallNode = (VCallNode)node;
         
-        context.invokeDynamic(vcallNode.getName(), false, false);
+        context.invokeDynamic(vcallNode.getName(), false, false, null);
     }
 }

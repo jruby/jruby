@@ -12,6 +12,7 @@ package org.jruby.compiler;
 import org.jruby.ast.FCallNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.Node;
+import org.jruby.runtime.Arity;
 
 /**
  *
@@ -36,33 +37,36 @@ public class FCallNodeCompiler implements NodeCompiler {
                 
                 argsCompiler.compile(fcallNode.getArgsNode(), context);
 
-                context.invokeDynamic(fcallNode.getName(), false, true);
+                context.invokeDynamic(fcallNode.getName(), false, true, null);
             } else {
-                context.invokeDynamic(fcallNode.getName(), false, false);
+                context.invokeDynamic(fcallNode.getName(), false, false, null);
             }
         } else {
             // FIXME: Missing blockpasnode stuff here
             final IterNode iterNode = (IterNode) fcallNode.getIterNode();
 
             // create the closure class and instantiate it
-            ClosureCallback closureBody = new ClosureCallback() {
+            final ClosureCallback closureBody = new ClosureCallback() {
                 public void compile(Compiler context) {
                     NodeCompilerFactory.getCompiler(iterNode.getBodyNode()).compile(iterNode.getBodyNode(), context);
                 }
             };
             
-            context.createNewClosure(iterNode.getScope(), closureBody);
+            final ClosureCallback closureArg = new ClosureCallback() {
+                public void compile(Compiler context) {
+                    context.createNewClosure(iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(), closureBody);
+                }
+            };
 
-            // NOT YET CREATING THE CLOSURE or passing it or handling it...etc
             if (fcallNode.getArgsNode() != null) {
                 // args compiler processes args and results in an args array for invocation
                 NodeCompiler argsCompiler = NodeCompilerFactory.getArgumentsCompiler(fcallNode.getArgsNode());
                 
                 argsCompiler.compile(fcallNode.getArgsNode(), context);
 
-                context.invokeDynamic(fcallNode.getName(), false, true);
+                context.invokeDynamic(fcallNode.getName(), false, true, closureArg);
             } else {
-                context.invokeDynamic(fcallNode.getName(), false, false);
+                context.invokeDynamic(fcallNode.getName(), false, false, closureArg);
             }
         }
     }

@@ -453,6 +453,10 @@ public class ThreadContext {
     public IRubyObject yield(IRubyObject value, Block block) {
         return block.yield(this, value, null, null, false);
     }
+    
+    public void raiseErrorIfNoBlock(Block block) {
+        if (block == null) throw runtime.newLocalJumpError("yield called out of block");
+    }
 
     public void pollThreadEvents() {
         getThread().pollThreadEvents();
