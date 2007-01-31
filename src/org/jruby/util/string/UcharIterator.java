@@ -11,6 +11,7 @@ package org.jruby.util.string;
  */
 
 public class UcharIterator implements java.util.Iterator, java.io.Serializable {
+    private static final long serialVersionUID = -2821982911687539515L;
     private Ustr u;
     private int next;
     

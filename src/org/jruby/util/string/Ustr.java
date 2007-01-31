@@ -39,7 +39,9 @@ import java.util.Hashtable;
  */
 public class Ustr
         implements Comparable, Serializable {
-    
+    private static final long serialVersionUID = -7263880042540200296L;
+
+
     // the number of bytes of UTF8, indexed by the value of the first byte
     private static final byte[] encLength = {
         1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,

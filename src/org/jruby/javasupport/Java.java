@@ -36,7 +36,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import org.jruby.IRuby;
 import org.jruby.RubyBignum;
-import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;

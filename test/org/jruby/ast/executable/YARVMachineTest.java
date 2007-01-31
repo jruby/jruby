@@ -2,10 +2,7 @@ package org.jruby.ast.executable;
 
 import org.jruby.IRuby;
 import org.jruby.Ruby;
-import org.jruby.ast.AssignableNode;
-import org.jruby.ast.Node;
 import org.jruby.ast.executable.YARVMachine.Instruction;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;

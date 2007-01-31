@@ -44,7 +44,6 @@ import org.jruby.IRuby;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyString;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author Anders

@@ -36,7 +36,6 @@ import java.io.PrintStream;
 import junit.framework.TestCase;
 
 import org.jruby.Main;
-import org.jruby.exceptions.MainExitException;
 import org.jruby.util.CommandlineParser;
 
 public class TestCommandlineParser extends TestCase {

@@ -22,10 +22,7 @@ import junit.framework.*;
 import org.jruby.IRuby;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyString;
-import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.javasupport.JavaUtil;
 
 /**
  *
