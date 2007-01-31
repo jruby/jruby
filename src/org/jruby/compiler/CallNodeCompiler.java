@@ -73,8 +73,6 @@ public class CallNodeCompiler implements NodeCompiler {
 
                 context.invokeDynamic(callNode.getName(), true, true, closureArg);
             } else {
-                context.createNewClosure(iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(), closureBody);
-                
                 context.invokeDynamic(callNode.getName(), true, false, closureArg);
             }
         }
