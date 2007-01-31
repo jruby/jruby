@@ -319,3 +319,16 @@ end
 
 # Test that class methods are being camel_cased
 test_ok(java.lang.System.respond_to?("current_time_millis"))
+
+# Test that blocks are passed through to the constructor for an interface impl
+class Test < Java::java.lang.Runnable
+  def initialize(&block)
+    raise if !block
+    @bar = block.call
+  end
+  def bar; @bar; end
+end
+
+test_no_exception {
+  test_equal("foo", Test.new { "foo" }.bar)
+}
