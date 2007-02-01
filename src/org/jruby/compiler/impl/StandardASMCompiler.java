@@ -1149,4 +1149,66 @@ public class StandardASMCompiler implements Compiler {
         MethodVisitor method = getMethodVisitor();
         method.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(EvaluationState.class), "aValueSplat", cg.sig(IRubyObject.class, cg.params(IRubyObject.class)));
     }
+    
+    public void ensureRubyArray() {
+        MethodVisitor method = getMethodVisitor();
+        
+        method.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(StandardASMCompiler.class), "ensureRubyArray", cg.sig(RubyArray.class, cg.params(IRubyObject.class)));
+    }
+    
+    public static RubyArray ensureRubyArray(IRubyObject value) {
+        if (!(value instanceof RubyArray)) {
+            value = RubyArray.newArray(value.getRuntime(), value);
+        }
+        return (RubyArray)value;
+    }
+    
+    public void forEachInValueArray(int start, int count, Object source, ArrayCallback callback) {
+        MethodVisitor method = getMethodVisitor();
+        
+        Label noMoreArrayElements = new Label();
+        for (; start < count; start++) {
+            // confirm we're not past the end of the array
+            method.visitInsn(Opcodes.DUP); // dup the original array object
+            method.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(RubyArray.class), "getLength", cg.sig(Integer.TYPE, cg.params()));
+            method.visitLdcInsn(new Integer(start));
+            method.visitJumpInsn(Opcodes.IFLE, noMoreArrayElements); // if length <= start, end loop
+            
+            // extract item from array
+            method.visitInsn(Opcodes.DUP); // dup the original array object
+            method.visitLdcInsn(new Integer(start)); // index for the item
+            method.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(RubyArray.class), "entry",
+                    cg.sig(IRubyObject.class, cg.params(Long.TYPE))); // extract item
+            callback.nextValue(this, source, start);
+        }
+        method.visitLabel(noMoreArrayElements);
+    }
+
+    public void loadInteger(int value) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public void performGEBranch(BranchCallback trueBranch,
+                                BranchCallback falseBranch) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public void performGTBranch(BranchCallback trueBranch,
+                                BranchCallback falseBranch) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public void performLEBranch(BranchCallback trueBranch,
+                                BranchCallback falseBranch) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public void performLTBranch(BranchCallback trueBranch,
+                                BranchCallback falseBranch) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public void loadRubyArraySize() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }

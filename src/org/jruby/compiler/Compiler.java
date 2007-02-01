@@ -199,4 +199,42 @@ public interface Compiler {
      * zero, use nil
      */
     public void singlifySplattedValue();
+    
+    /**
+     * Given an IRubyObject[] on the stack (or otherwise available as the present object)
+     * call back to the provided ArrayCallback 'callback' for 'count' elements, starting with 'start'.
+     */
+    public void forEachInValueArray(int count, int start, Object source, ArrayCallback callback);
+    
+    /**
+     * Ensures that the present value is an IRubyObject[] by wrapping it with one if it is not.
+     */
+    public void ensureRubyArray();
+    
+    /**
+     * Load an integer value suitable for numeric comparisons
+     */
+    public void loadInteger(int value);
+    
+    /**
+     * Perform a greater-than-or-equal test and branch, given the provided true and false branches.
+     */
+    public void performGEBranch(BranchCallback trueBranch, BranchCallback falseBranch);
+    
+    /**
+     * Perform a greater-than test and branch, given the provided true and false branches.
+     */
+    public void performGTBranch(BranchCallback trueBranch, BranchCallback falseBranch);
+    
+    /**
+     * Perform a greater-than-or-equal test and branch, given the provided true and false branches.
+     */
+    public void performLEBranch(BranchCallback trueBranch, BranchCallback falseBranch);
+    
+    /**
+     * Perform a greater-than test and branch, given the provided true and false branches.
+     */
+    public void performLTBranch(BranchCallback trueBranch, BranchCallback falseBranch);
+    
+    public void loadRubyArraySize();
 }

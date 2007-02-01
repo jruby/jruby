@@ -131,8 +131,9 @@ public class NodeCompilerFactory {
     
     public static NodeCompiler getAssignmentCompiler(Node node) {
         switch (node.nodeId) {
-        case NodeTypes.MULTIPLEASGNNODE:
-            return new MultipleAsgnNodeAsgnCompiler();
+            // disabled for now; incomplete
+        //case NodeTypes.MULTIPLEASGNNODE:
+        //    return new MultipleAsgnNodeAsgnCompiler();
         }
         
         throw new NotCompilableException("Can't compile assignment node: " + node);
