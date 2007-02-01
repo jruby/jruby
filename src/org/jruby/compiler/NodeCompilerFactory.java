@@ -136,6 +136,5 @@ public class NodeCompilerFactory {
         }
         
         throw new NotCompilableException("Can't compile assignment node: " + node);
-        }
     }
 }
