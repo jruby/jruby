@@ -35,6 +35,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.CompiledBlockCallback;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.CodegenUtils;
@@ -51,7 +52,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     private final static String BLOCK_ID = cg.ci(Block.class);
     private final static String CALL_SIG = cg.sig(IRubyObject.class, cg.params(Object.class, Object[].class, Block.class));
     private final static String FAST_CALL_SIG = cg.sig(IRubyObject.class, cg.params(Object.class, Object[].class));
-    private final static String BLOCK_CALL_SIG = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject[].class, IRubyObject.class, Block.class));
+    private final static String BLOCK_CALL_SIG = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class, IRubyObject[][].class));
     private final static String IRUB = cg.p(IRubyObject.class);
     private final static String IRUB_ID = cg.ci(IRubyObject.class);
     
@@ -97,7 +98,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
 
     private ClassWriter createBlockCtor(String namePath) throws Exception {
         ClassWriter cw = new ClassWriter(true);
-        cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, namePath, null, cg.p(Object.class), new String[] { cg.p(BlockCallback.class) });
+        cw.visit(V1_4, ACC_PUBLIC + ACC_SUPER, namePath, null, cg.p(Object.class), new String[] { cg.p(CompiledBlockCallback.class) });
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 0);
@@ -420,7 +421,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
             Arity.fixed(2), false);
     }
     
-    public BlockCallback getBlockCallback(String method) {
+    public CompiledBlockCallback getBlockCallback(String method) {
         String mname = type.getName() + "Block" + method + "xx1";
         String mnamePath = typePath + "Block" + method + "xx1";
         Class c = tryClass(mname);
@@ -429,16 +430,17 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 ClassWriter cw = createBlockCtor(mnamePath);
                 MethodVisitor mv = startBlockCall(cw);
                 mv.visitVarInsn(ALOAD, 1);
-                mv.visitVarInsn(ALOAD, 3);
                 mv.visitVarInsn(ALOAD, 2);
-                //mv.visitInsn(ACONST_NULL);
+                mv.visitVarInsn(ALOAD, 3);
+                mv.visitVarInsn(ALOAD, 4);
+                mv.visitVarInsn(ALOAD, 5);
                 mv.visitMethodInsn(INVOKESTATIC, typePath, method, 
-                        cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, IRubyObject[].class)));
+                        cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class, IRubyObject[][].class)));
                 mv.visitInsn(ARETURN);
                 mv.visitMaxs(2, 3);
                 c = endCall(cw,mv,mname);
             }
-            BlockCallback ic = (BlockCallback)c.newInstance();
+            CompiledBlockCallback ic = (CompiledBlockCallback)c.newInstance();
             return ic;
         } catch(IllegalArgumentException e) {
             throw e;

@@ -46,7 +46,7 @@ public class LocalVarNodeCompiler implements NodeCompiler {
         
         LocalVarNode localVarNode = (LocalVarNode)node;
         
-        context.retrieveLocalVariable(localVarNode.getIndex());
+        context.retrieveLocalVariable(localVarNode.getIndex(), localVarNode.getDepth());
     }
     
 }

@@ -39,33 +39,37 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class CompiledBlock extends Block {
     private Arity arity;
-    private BlockCallback callback;
-    private ThreadContext tc;
+    private CompiledBlockCallback callback;
+    private ThreadContext context;
+    private IRubyObject self;
+    private IRubyObject[][] scopes;
 
-    public CompiledBlock(Arity arity, BlockCallback callback, ThreadContext ctx) {
+    public CompiledBlock(ThreadContext context, IRubyObject self, Arity arity, IRubyObject[][] scopes, CompiledBlockCallback callback) {
         super(null,
                 null,
-                null,
-                ctx.getCurrentFrame(),
-                ctx.peekCRef(),
+                self,
+                context.getCurrentFrame(),
+                context.peekCRef(),
                 new Scope(),
-                ctx.getRubyClass(),
-                ctx.getCurrentScope(), null);
+                context.getRubyClass(),
+                context.getCurrentScope(), null);
         this.arity = arity;
         this.callback = callback;
-        this.tc = ctx;
+        this.context = context;
+        this.self = self;
+        this.scopes = scopes;
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf) {
-        return callback.call(context, args, replacementSelf, null);
+        return callback.call(context, replacementSelf, args, null, scopes);
     }
     
     public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue) {
-        return callback.call(context, ArgsUtil.convertToJavaArray(args), self, null);
+        return callback.call(context, this.self, ArgsUtil.convertToJavaArray(args), null, scopes);
     }
 
     public Block cloneBlock() {
-        return new CompiledBlock(arity,callback,tc);
+        return new CompiledBlock(context, self, arity, scopes, callback);
     }
 
     public Arity arity() {

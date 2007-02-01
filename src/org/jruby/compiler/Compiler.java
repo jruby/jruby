@@ -110,6 +110,10 @@ public interface Compiler {
     
     public void retrieveLocalVariable(int index);
     
+    public void assignLocalVariable(int index, int depth);
+    
+    public void retrieveLocalVariable(int index, int depth);
+    
     public void retrieveSelf();
     
     /**
@@ -146,6 +150,11 @@ public interface Compiler {
      * create a Ruby array object.
      */
     public void createNewArray();
+
+    /**
+     * Create an empty Ruby array
+     */
+    public void createEmptyArray();
     
     public void performBooleanBranch(BranchCallback trueBranch, BranchCallback falseBranch);
     

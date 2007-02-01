@@ -41,70 +41,76 @@ public class NodeCompilerFactory {
     }
     public static NodeCompiler getCompiler(Node node) {
         switch (node.nodeId) {
-            case NodeTypes.ALIASNODE:
-                return new AliasNodeCompiler();
-            case NodeTypes.ANDNODE:
-                return new AndNodeCompiler();
-            case NodeTypes.ARRAYNODE:
-                return new ArrayNodeCompiler();
-            case NodeTypes.BEGINNODE:
-                return new BeginNodeCompiler();
-            case NodeTypes.BIGNUMNODE:
-                return new BignumNodeCompiler();
-            case NodeTypes.BLOCKNODE:
-                return new BlockNodeCompiler();
-            case NodeTypes.CALLNODE:
-                return new CallNodeCompiler();
-            case NodeTypes.CONSTNODE:
-                return new ConstNodeCompiler();
-            case NodeTypes.DEFNNODE:
-                return new DefnNodeCompiler();
-            case NodeTypes.FALSENODE:
-                return new FalseNodeCompiler();
-            case NodeTypes.FCALLNODE:
-                return new FCallNodeCompiler();
-            case NodeTypes.FIXNUMNODE:
-                return new FixnumNodeCompiler();
-            case NodeTypes.GLOBALASGNNODE:
-                return new GlobalAsgnNodeCompiler();
-            case NodeTypes.GLOBALVARNODE:
-                return new GlobalVarNodeCompiler();
-            case NodeTypes.IFNODE:
-                return new IfNodeCompiler();
-            case NodeTypes.INSTASGNNODE:
-                return new InstAsgnNodeCompiler();
-            case NodeTypes.INSTVARNODE:
-                return new InstVarNodeCompiler();
-            //case NodeTypes.ITERNODE:
-            //    return new IterNodeCompiler();
-            case NodeTypes.LOCALASGNNODE:
-                return new LocalAsgnNodeCompiler();
-            case NodeTypes.LOCALVARNODE:
-                return new LocalVarNodeCompiler();
-            case NodeTypes.NEWLINENODE:
-                return new NewlineNodeCompiler();
-            case NodeTypes.NILNODE:
-                return new NilNodeCompiler();
-            case NodeTypes.NOTNODE:
-                return new NotNodeCompiler();
-            case NodeTypes.ORNODE:
-                return new OrNodeCompiler();
-            case NodeTypes.ROOTNODE:
-                return new RootNodeCompiler();
-            case NodeTypes.SELFNODE:
-                return new SelfNodeCompiler();
-            case NodeTypes.STRNODE:
-                return new StringNodeCompiler();
-            case NodeTypes.SYMBOLNODE:
-                return new SymbolNodeCompiler();
-            case NodeTypes.TRUENODE:
-                return new TrueNodeCompiler();
-            case NodeTypes.VCALLNODE:
-                return new VCallNodeCompiler();
-            case NodeTypes.WHILENODE:
-                return new WhileNodeCompiler();
-            case NodeTypes.YIELDNODE:
-                return new YieldNodeCompiler();
+        case NodeTypes.ALIASNODE:
+            return new AliasNodeCompiler();
+        case NodeTypes.ANDNODE:
+            return new AndNodeCompiler();
+        case NodeTypes.ARRAYNODE:
+            return new ArrayNodeCompiler();
+        case NodeTypes.BEGINNODE:
+            return new BeginNodeCompiler();
+        case NodeTypes.BIGNUMNODE:
+            return new BignumNodeCompiler();
+        case NodeTypes.BLOCKNODE:
+            return new BlockNodeCompiler();
+        case NodeTypes.CALLNODE:
+            return new CallNodeCompiler();
+        case NodeTypes.CONSTNODE:
+            return new ConstNodeCompiler();
+        case NodeTypes.DASGNNODE:
+            return new DAsgnNodeCompiler();
+        case NodeTypes.DEFNNODE:
+            return new DefnNodeCompiler();
+        case NodeTypes.DVARNODE:
+            return new DVarNodeCompiler();
+        case NodeTypes.FALSENODE:
+            return new FalseNodeCompiler();
+        case NodeTypes.FCALLNODE:
+            return new FCallNodeCompiler();
+        case NodeTypes.FIXNUMNODE:
+            return new FixnumNodeCompiler();
+        case NodeTypes.GLOBALASGNNODE:
+            return new GlobalAsgnNodeCompiler();
+        case NodeTypes.GLOBALVARNODE:
+            return new GlobalVarNodeCompiler();
+        case NodeTypes.IFNODE:
+            return new IfNodeCompiler();
+        case NodeTypes.INSTASGNNODE:
+            return new InstAsgnNodeCompiler();
+        case NodeTypes.INSTVARNODE:
+            return new InstVarNodeCompiler();
+        //case NodeTypes.ITERNODE:
+        //    return new IterNodeCompiler();
+        case NodeTypes.LOCALASGNNODE:
+            return new LocalAsgnNodeCompiler();
+        case NodeTypes.LOCALVARNODE:
+            return new LocalVarNodeCompiler();
+        case NodeTypes.NEWLINENODE:
+            return new NewlineNodeCompiler();
+        case NodeTypes.NILNODE:
+            return new NilNodeCompiler();
+        case NodeTypes.NOTNODE:
+            return new NotNodeCompiler();
+        case NodeTypes.ORNODE:
+            return new OrNodeCompiler();
+        case NodeTypes.ROOTNODE:
+            return new RootNodeCompiler();
+        case NodeTypes.SELFNODE:
+            return new SelfNodeCompiler();
+        case NodeTypes.STRNODE:
+            return new StringNodeCompiler();
+        case NodeTypes.SYMBOLNODE:
+            return new SymbolNodeCompiler();
+        case NodeTypes.TRUENODE:
+            return new TrueNodeCompiler();
+        case NodeTypes.VCALLNODE:
+            return new VCallNodeCompiler();
+        case NodeTypes.WHILENODE:
+            return new WhileNodeCompiler();
+        case NodeTypes.YIELDNODE:
+            return new YieldNodeCompiler();
+        case NodeTypes.ZARRAYNODE:
+            return new ZArrayNodeCompiler();
         }
         
         throw new NotCompilableException("Can't compile node: " + node);

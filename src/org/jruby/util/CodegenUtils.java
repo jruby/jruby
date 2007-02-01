@@ -51,7 +51,7 @@ public class CodegenUtils {
                     throw new RuntimeException("Unrecognized type in compiler: " + n.getName());
                 }
             } else {
-                return "[L" + p(n) + ";";
+                return "[" + ci(n);
             }
         } else {
             if (n.isPrimitive()) {
@@ -103,6 +103,9 @@ public class CodegenUtils {
     }
     
     // TODO: Wouldn't it be nice to replace this all with a single varargs?
+    public static Class[] params() {
+        return new Class[0];
+    }
     public static Class[] params(Class a) {
         return new Class[] {a};
     }

@@ -15,6 +15,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author headius
  */
-public interface BlockCallback2 {
-    public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args);
+public interface CompiledBlockCallback {
+    public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, IRubyObject[][] parentScopes);
 }

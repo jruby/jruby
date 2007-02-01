@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Charles O Nutter <headius@headius.com>
- *  
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -54,10 +54,10 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CompiledBlock;
+import org.jruby.runtime.CompiledBlockCallback;
 import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.MethodIndex;
@@ -86,16 +86,16 @@ public class StandardASMCompiler implements Compiler {
     private static final String METHOD_SIGNATURE =
             cg.sig(IRubyObject.class, new Class[] { ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class });
     private static final String CLOSURE_SIGNATURE =
-            cg.sig(IRubyObject.class, new Class[] { ThreadContext.class, IRubyObject.class, IRubyObject[].class });
+            cg.sig(IRubyObject.class, new Class[] { ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class, IRubyObject[][].class });
     
     private static final int THREADCONTEXT_INDEX = 0;
     private static final int SELF_INDEX = 1;
     private static final int ARGS_INDEX = 2;
     private static final int CLOSURE_INDEX = 3;
-    private static final int RUNTIME_INDEX = 4;
-    private static final int LOCAL_VARS_INDEX = 5;
+    private static final int SCOPE_INDEX = 4;
+    private static final int RUNTIME_INDEX = 5;
+    private static final int LOCAL_VARS_INDEX = 6;
     
-    //private Stack classVisitors = new Stack();
     private Stack methodVisitors = new Stack();
     private Stack arities = new Stack();
     private Stack scopeStarts = new Stack();
@@ -139,7 +139,7 @@ public class StandardASMCompiler implements Compiler {
         JRubyClassLoader jcl = runtime.getJRubyClassLoader();
         
         jcl.defineClass(cg.c(classname), classWriter.toByteArray());
-
+        
         return jcl.loadClass(cg.c(classname));
     }
     
@@ -161,9 +161,9 @@ public class StandardASMCompiler implements Compiler {
         // create dir if necessary
         File pathfile = new File(destination, path);
         pathfile.mkdirs();
-
+        
         FileOutputStream out = new FileOutputStream(new File(pathfile, filename));
-
+        
         out.write(writer.toByteArray());
     }
     
@@ -174,19 +174,19 @@ public class StandardASMCompiler implements Compiler {
     public String getSourcename() {
         return sourcename;
     }
-
+    
     public ClassVisitor getClassVisitor() {
         return classWriter;
     }
-
+    
     public MethodVisitor getMethodVisitor() {
         return (MethodVisitor)methodVisitors.peek();
     }
-
+    
     public MethodVisitor popMethodVisitor() {
         return (MethodVisitor)methodVisitors.pop();
     }
-
+    
     public void pushMethodVisitor(MethodVisitor mv) {
         methodVisitors.push(mv);
     }
@@ -239,7 +239,7 @@ public class StandardASMCompiler implements Compiler {
         mv.visitInsn(Opcodes.ARETURN);
         mv.visitMaxs(1, 1);
         mv.visitEnd();
-
+        
         // add main impl, used for detached or command-line execution of this script with a new runtime
         // root method of a script is always in stub0, method0
         mv = getClassVisitor().visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "main", cg.sig(Void.TYPE, cg.params(String[].class)), null, null);
@@ -278,7 +278,7 @@ public class StandardASMCompiler implements Compiler {
         mv.visitMaxs(1, 1);
         mv.visitEnd();
     }
-
+    
     public Object beginMethod(String friendlyName, int arity, int localVarCount) {
         MethodVisitor newMethod = getClassVisitor().visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, friendlyName, METHOD_SIGNATURE, null, null);
         pushMethodVisitor(newMethod);
@@ -291,6 +291,10 @@ public class StandardASMCompiler implements Compiler {
         
         // store the local vars in a local variable
         newMethod.visitVarInsn(Opcodes.ASTORE, LOCAL_VARS_INDEX);
+        
+        // put a null at register 4, for closure creation to know we're at top-level or local scope
+        newMethod.visitInsn(Opcodes.ACONST_NULL);
+        newMethod.visitVarInsn(Opcodes.ASTORE, SCOPE_INDEX);
         
         // set up a local IRuby variable
         newMethod.visitVarInsn(Opcodes.ALOAD, THREADCONTEXT_INDEX);
@@ -350,7 +354,7 @@ public class StandardASMCompiler implements Compiler {
             if (hasReceiver) {
                 // Call with args
                 // receiver already present
-
+                
                 loadThreadContext();
                 // put under args
                 mv.visitInsn(Opcodes.SWAP);
@@ -369,14 +373,14 @@ public class StandardASMCompiler implements Compiler {
                 
                 callType = "FUNCTIONAL";
             }
-
+            
             if (index != 0) {
                 // load method index
                 mv.visitLdcInsn(new Byte(index));
                 // put under args
                 mv.visitInsn(Opcodes.SWAP);
             }
-
+            
             mv.visitLdcInsn(name);
             // put under args
             mv.visitInsn(Opcodes.SWAP);
@@ -397,19 +401,19 @@ public class StandardASMCompiler implements Compiler {
                 
                 callType = "VARIABLE";
             }
-
+            
             
             if (index != 0) {
                 // load method index
                 mv.visitLdcInsn(new Byte(index));
             }
-
+            
             mv.visitLdcInsn(name);
-                
+            
             // empty args list
             mv.visitFieldInsn(Opcodes.GETSTATIC, cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
         }
-
+        
         mv.visitFieldInsn(Opcodes.GETSTATIC, cg.p(CallType.class), callType, cg.ci(CallType.class));
         
         if (closureArg == null) {
@@ -417,7 +421,7 @@ public class StandardASMCompiler implements Compiler {
         } else {
             closureArg.compile(this);
         }
-
+        
         if (index != 0) {
             invokeIRubyObject("callMethod", callSigIndexed);
         } else {
@@ -429,7 +433,7 @@ public class StandardASMCompiler implements Compiler {
         loadClosure();
         
         MethodVisitor method = getMethodVisitor();
-
+        
         method.visitInsn(Opcodes.DUP);
         loadThreadContext();
         method.visitInsn(Opcodes.SWAP);
@@ -449,14 +453,14 @@ public class StandardASMCompiler implements Compiler {
             // empty args
             method.visitInsn(Opcodes.ACONST_NULL);
         }
-
+        
         loadSelf();
         getRubyClass();
         method.visitLdcInsn(Boolean.FALSE);
         
         method.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(Block.class), "yield", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, IRubyObject.class, RubyModule.class, Boolean.TYPE)));
     }
-
+    
     private void invokeIRubyObject(String methodName, String signature) {
         getMethodVisitor().visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBYOBJECT, methodName, signature);
     }
@@ -493,16 +497,16 @@ public class StandardASMCompiler implements Compiler {
     public void assignLocalVariable(int index) {
         MethodVisitor mv = getMethodVisitor();
         mv.visitInsn(Opcodes.DUP);
-        if ((index - 2) < Math.abs(getArity())) {
+        //if ((index - 2) < Math.abs(getArity())) {
             // load from the incoming params
             // index is 2-based, and our zero is runtime
             
             // load args array
-            mv.visitVarInsn(Opcodes.ALOAD, ARGS_INDEX);
-            index = index - 2;
-        } else {
+        //    mv.visitVarInsn(Opcodes.ALOAD, ARGS_INDEX);
+        //    index = index - 2;
+        //} else {
             mv.visitVarInsn(Opcodes.ALOAD, LOCAL_VARS_INDEX);
-        }
+        //}
         
         mv.visitInsn(Opcodes.SWAP);
         mv.visitLdcInsn(new Integer(index));
@@ -513,26 +517,65 @@ public class StandardASMCompiler implements Compiler {
     public void retrieveLocalVariable(int index) {
         MethodVisitor mv = getMethodVisitor();
         
-    
+        
         // check if it's an argument
-        if ((index - 2) < Math.abs(getArity())) {
+        //if ((index - 2) < Math.abs(getArity())) {
             // load from the incoming params
             // index is 2-based, and our zero is runtime
             
             // load args array
-            mv.visitVarInsn(Opcodes.ALOAD, ARGS_INDEX);
-            mv.visitLdcInsn(new Integer(index - 2));
-            mv.visitInsn(Opcodes.AALOAD);
-        } else {
+        //    mv.visitVarInsn(Opcodes.ALOAD, ARGS_INDEX);
+        //    mv.visitLdcInsn(new Integer(index - 2));
+        //    mv.visitInsn(Opcodes.AALOAD);
+        //} else {
             mv.visitVarInsn(Opcodes.ALOAD, LOCAL_VARS_INDEX);
             mv.visitLdcInsn(new Integer(index));
             mv.visitInsn(Opcodes.AALOAD);
+        //}
+    }
+    
+    public void assignLocalVariable(int index, int depth) {
+        if (depth == 0) {
+            assignLocalVariable(index);
+            return;
         }
+
+        MethodVisitor mv = getMethodVisitor();
+        mv.visitInsn(Opcodes.DUP);
+        
+        // get the appropriate array out of the scopes
+        mv.visitVarInsn(Opcodes.ALOAD, SCOPE_INDEX);
+        mv.visitLdcInsn(new Integer(depth - 1));
+        mv.visitInsn(Opcodes.AALOAD);
+        
+        // insert the value into the array at the specified index
+        mv.visitInsn(Opcodes.SWAP);
+        mv.visitLdcInsn(new Integer(index));
+        mv.visitInsn(Opcodes.SWAP);
+        mv.visitInsn(Opcodes.AASTORE);
+    }
+    
+    public void retrieveLocalVariable(int index, int depth) {
+        if (depth == 0) {
+            retrieveLocalVariable(index);
+            return;
+        }
+        
+        MethodVisitor mv = getMethodVisitor();
+        
+        // get the appropriate array out of the scopes
+        mv.visitVarInsn(Opcodes.ALOAD, SCOPE_INDEX);
+        mv.visitLdcInsn(new Integer(depth - 1));
+        mv.visitInsn(Opcodes.AALOAD);
+        
+        // load the value from the array at the specified index
+        mv.visitLdcInsn(new Integer(index));
+        mv.visitInsn(Opcodes.AALOAD);
     }
     
     public void retrieveConstant(String name) {
         MethodVisitor mv = getMethodVisitor();
-    
+        
         // FIXME this doesn't work right yet since TC.getConstant depends on TC state
         loadThreadContext();
         mv.visitLdcInsn(name);
@@ -547,10 +590,10 @@ public class StandardASMCompiler implements Compiler {
         
         invokeIRuby("newFixnum", cg.sig(RubyFixnum.class, cg.params(Long.TYPE)));
     }
-
+    
     public void createNewBignum(java.math.BigInteger value) {
         MethodVisitor mv = getMethodVisitor();
-
+        
         loadRuntime();
         mv.visitLdcInsn(value.toString());
         
@@ -565,7 +608,7 @@ public class StandardASMCompiler implements Compiler {
         
         invokeIRuby("newString", cg.sig(RubyString.class, cg.params(String.class)));
     }
-
+    
     public void createNewSymbol(String name) {
         loadRuntime();
         getMethodVisitor().visitLdcInsn(name);
@@ -580,6 +623,14 @@ public class StandardASMCompiler implements Compiler {
         mv.visitInsn(Opcodes.SWAP);
         
         invokeIRuby("newArray", cg.sig(RubyArray.class, cg.params(IRubyObject[].class)));
+    }
+    
+    public void createEmptyArray() {
+        MethodVisitor mv = getMethodVisitor();
+        
+        loadRuntime();
+        
+        invokeIRuby("newArray", cg.sig(RubyArray.class, cg.params()));
     }
     
     public void createObjectArray(Object[] sourceArray, ArrayCallback callback) {
@@ -620,11 +671,11 @@ public class StandardASMCompiler implements Compiler {
         mv.visitJumpInsn(Opcodes.IFEQ, falseJmp); // EQ == 0 (i.e. false)
         trueBranch.branch(this);
         mv.visitJumpInsn(Opcodes.GOTO, afterJmp);
-
+        
         // FIXME: optimize for cases where we have no false branch
         mv.visitLabel(falseJmp);
         falseBranch.branch(this);
-
+        
         mv.visitLabel(afterJmp);
     }
     
@@ -676,24 +727,24 @@ public class StandardASMCompiler implements Compiler {
             condition.branch(this);
             // call isTrue on the result
             isTrue();
-        
+            
             mv.visitJumpInsn(Opcodes.IFEQ, endJmp); // EQ == 0 (i.e. false)
         }
-
+        
         Label topJmp = new Label();
-
+        
         mv.visitLabel(topJmp);
-            
+        
         body.branch(this);
         
         // clear result after each loop
         mv.visitInsn(Opcodes.POP);
-
+        
         // calculate condition
         condition.branch(this);
         // call isTrue on the result
         isTrue();
-
+        
         mv.visitJumpInsn(Opcodes.IFNE, topJmp); // NE == nonzero (i.e. true)
         
         if (checkFirst) {
@@ -703,20 +754,20 @@ public class StandardASMCompiler implements Compiler {
         loadNil();
     }
     
-    public static CompiledBlock createBlock(ThreadContext context, int arity, BlockCallback callback) {
-        return new CompiledBlock(Arity.createArity(arity), callback, context);
+    public static CompiledBlock createBlock(ThreadContext context, IRubyObject self, int arity, IRubyObject[][] scopes, CompiledBlockCallback callback) {
+        return new CompiledBlock(context, self, Arity.createArity(arity), scopes, callback);
     }
     
     public void createNewClosure(StaticScope scope, int arity, ClosureCallback body) {
         // FIXME: This isn't quite done yet; waiting to have full support for passing closures so we can test it
         ClassVisitor cv = getClassVisitor();
         MethodVisitor method;
-
+        
         String closureMethodName = "closure" + ++innerIndex;
         String closureFieldName = "_" + closureMethodName;
         
         // declare the field
-        cv.visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, closureFieldName, cg.ci(BlockCallback.class), null, null);
+        cv.visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, closureFieldName, cg.ci(CompiledBlockCallback.class), null, null);
         
         ////////////////////////////
         // closure implementation
@@ -732,12 +783,18 @@ public class StandardASMCompiler implements Compiler {
         // store the dvars in a local variable
         method.visitVarInsn(Opcodes.ASTORE, LOCAL_VARS_INDEX);
         
-        // set up local variables for containing scopes
-        // containing scope's local vars are stored in LOCAL_VARS_INDEX + <depth>
-        // where <depth> is the number of scopes we are away from that.
-        // Eventually this will want to handle multiple nested scopes
-        //method.visitFieldInsn(Opcodes.GETFIELD, closureClassName, "val$variables", "[L" + IRUBYOBJECT +";");
-        //method.visitVarInsn(Opcodes.ASTORE, LOCAL_VARS_INDEX + 1);
+        // arraycopy arguments into local vars array
+        if (arity != 0) {
+            // array index OOB for some reason; perhaps because we're not actually handling args right?
+            /*method.visitVarInsn(Opcodes.ALOAD, ARGS_INDEX);
+            method.visitInsn(Opcodes.ICONST_0);
+            method.visitVarInsn(Opcodes.ALOAD, LOCAL_VARS_INDEX);
+            mv.visitInsn(Opcodes.ICONST_2);
+            method.visitLdcInsn(new Integer(arity));
+            method.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(System.class), "arraycopy", cg.sig(Void.TYPE, cg.params(Object.class, Integer.TYPE, Object.class, Integer.TYPE, Integer.TYPE)));*/
+        }
+        
+        // Containing scopes are passed as IRubyObject[][] in the SCOPE_INDEX var
         
         // set up a local IRuby variable
         method.visitVarInsn(Opcodes.ALOAD, THREADCONTEXT_INDEX);
@@ -766,7 +823,7 @@ public class StandardASMCompiler implements Compiler {
         // Now, store a compiled block object somewhere we can access it in the future
         
         // in current method, load the field to see if we've created a BlockCallback yet
-        method.visitFieldInsn(Opcodes.GETSTATIC, classname, closureFieldName, cg.ci(BlockCallback.class));
+        method.visitFieldInsn(Opcodes.GETSTATIC, classname, closureFieldName, cg.ci(CompiledBlockCallback.class));
         Label alreadyCreated = new Label();
         method.visitJumpInsn(Opcodes.IFNONNULL, alreadyCreated);
         
@@ -774,25 +831,74 @@ public class StandardASMCompiler implements Compiler {
         getCallbackFactory();
         
         method.visitLdcInsn(closureMethodName);
-        method.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(CallbackFactory.class), "getBlockCallback", cg.sig(BlockCallback.class, cg.params(String.class)));
-        method.visitFieldInsn(Opcodes.PUTSTATIC, classname, closureFieldName, cg.ci(BlockCallback.class));
+        method.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(CallbackFactory.class), "getBlockCallback", cg.sig(CompiledBlockCallback.class, cg.params(String.class)));
+        method.visitFieldInsn(Opcodes.PUTSTATIC, classname, closureFieldName, cg.ci(CompiledBlockCallback.class));
         
         method.visitLabel(alreadyCreated);
         
-        // Construct the block for passing to the target method        
+        // Construct the block for passing to the target method
         loadThreadContext();
+        loadSelf();
         method.visitLdcInsn(new Integer(arity));
-        method.visitFieldInsn(Opcodes.GETSTATIC, classname, closureFieldName, cg.ci(BlockCallback.class));
         
-        method.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(StandardASMCompiler.class), "createBlock", 
-                cg.sig(CompiledBlock.class, cg.params(ThreadContext.class, Integer.TYPE, BlockCallback.class)));
-    }
+        // create an array of scopes to use
+        
+        // check if we have containing scopes
+        method.visitVarInsn(Opcodes.ALOAD, SCOPE_INDEX);
+        Label noScopes = new Label();
+        Label copyLocals = new Label();
+        method.visitJumpInsn(Opcodes.IFNULL, noScopes);
+        
+        // we have containing scopes, include them
+        
+        // get length of current scopes array, add one
+        method.visitVarInsn(Opcodes.ALOAD, SCOPE_INDEX);
+        method.visitInsn(Opcodes.ARRAYLENGTH);
+        method.visitInsn(Opcodes.ICONST_1);
+        method.visitInsn(Opcodes.IADD);
+        
+        // create new scopes array
+        method.visitTypeInsn(Opcodes.ANEWARRAY, cg.p(IRubyObject[].class));
+        
+        // copy containing scopes to index one and on
+        method.visitInsn(Opcodes.DUP);
+        method.visitVarInsn(Opcodes.ALOAD, SCOPE_INDEX);
+        method.visitInsn(Opcodes.SWAP);
+        method.visitInsn(Opcodes.ICONST_0);
+        method.visitInsn(Opcodes.SWAP);
+        // new scopes array is here now
+        method.visitInsn(Opcodes.ICONST_1);
+        method.visitVarInsn(Opcodes.ALOAD, SCOPE_INDEX);
+        method.visitInsn(Opcodes.ARRAYLENGTH);
+        method.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(System.class), "arraycopy", cg.sig(Void.TYPE, cg.params(Object.class, Integer.TYPE, Object.class, Integer.TYPE, Integer.TYPE)));
 
+        method.visitJumpInsn(Opcodes.GOTO, copyLocals);
+        
+        method.visitLabel(noScopes);
+
+        // create new scopes array
+        method.visitInsn(Opcodes.ICONST_1);
+        method.visitTypeInsn(Opcodes.ANEWARRAY, cg.p(IRubyObject[].class));
+        
+        method.visitLabel(copyLocals);
+
+        // store local vars at index zero
+        method.visitInsn(Opcodes.DUP);
+        method.visitInsn(Opcodes.ICONST_0);
+        method.visitVarInsn(Opcodes.ALOAD, LOCAL_VARS_INDEX);
+        method.visitInsn(Opcodes.AASTORE);
+        
+        method.visitFieldInsn(Opcodes.GETSTATIC, classname, closureFieldName, cg.ci(CompiledBlockCallback.class));
+        
+        method.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(StandardASMCompiler.class), "createBlock",
+                cg.sig(CompiledBlock.class, cg.params(ThreadContext.class, IRubyObject.class, Integer.TYPE, IRubyObject[][].class, CompiledBlockCallback.class)));
+    }
+    
     private void invokeThreadContext(String methodName, String signature) {
         MethodVisitor mv = getMethodVisitor();
         mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, THREADCONTEXT, methodName, signature);
     }
-
+    
     private void invokeIRuby(String methodName, String signature) {
         MethodVisitor mv = getMethodVisitor();
         mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, methodName, signature);
@@ -817,13 +923,13 @@ public class StandardASMCompiler implements Compiler {
         // FIXME: This doesn't seem *quite* right. If actually within a class...end, is self.getMetaClass the correct class? should be self, no?
         invokeThreadContext("peekCRef", cg.sig(SinglyLinkedList.class));
     }
-
+    
     private void newTypeError(String error) {
         loadRuntime();
         getMethodVisitor().visitLdcInsn(error);
         invokeIRuby("newTypeError", cg.sig(RaiseException.class, cg.params(String.class)));
     }
-
+    
     private void getCurrentVisibility() {
         loadThreadContext();
         invokeThreadContext("getCurrentVisibility", cg.sig(Visibility.class));
@@ -838,7 +944,7 @@ public class StandardASMCompiler implements Compiler {
         
         mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(PrintStream.class), "println", cg.sig(Void.TYPE, cg.params(Object.class)));
     }
-
+    
     public void defineAlias(String newName, String oldName) {
         getRubyClass();
         getMethodVisitor().visitLdcInsn(newName);
@@ -854,25 +960,25 @@ public class StandardASMCompiler implements Compiler {
         // FIXME: This is what the old def did, but doesn't work in the compiler for top-level methods. Hmm.
         //RubyModule containingClass = context.getRubyClass();
         RubyModule containingClass = self.getMetaClass();
-    
+        
         if (containingClass == null) {
             throw runtime.newTypeError("No class to add method.");
         }
-
+        
         if (containingClass == runtime.getObject() && name == "initialize") {
             runtime.getWarnings().warn("redefining Object#initialize may cause infinite loop");
         }
-
+        
         Visibility visibility = context.getCurrentVisibility();
         if (name == "initialize" || visibility.isModuleFunction() || context.isTopLevel()) {
             visibility = Visibility.PRIVATE;
         }
-
+        
         if (containingClass.isSingleton()) {
             IRubyObject attachedObject = ((MetaClass) containingClass).getAttachedObject();
-
+            
             if (!attachedObject.singletonMethodsAllowed()) {
-                throw runtime.newTypeError("can't define singleton method \"" + 
+                throw runtime.newTypeError("can't define singleton method \"" +
                         name + "\" for " + attachedObject.getType());
             }
         }
@@ -881,17 +987,17 @@ public class StandardASMCompiler implements Compiler {
         
         MethodFactory factory = MethodFactory.createFactory();
         DynamicMethod method = factory.getCompiledMethod(containingClass, compiledClass, javaName, Arity.createArity(arity), visibility, cref);
-
+        
         containingClass.addMethod(name, method);
-
+        
         if (context.getCurrentVisibility().isModuleFunction()) {
             containingClass.getSingletonClass().addMethod(
                     name,
                     new WrapperMethod(containingClass.getSingletonClass(), method,
-                            Visibility.PUBLIC));
+                    Visibility.PUBLIC));
             containingClass.callMethod(context, "singleton_method_added", runtime.newSymbol(name));
         }
-
+        
         // 'class << state.self' and 'class << obj' uses defn as opposed to defs
         if (containingClass.isSingleton()) {
             ((MetaClass) containingClass).getAttachedObject().callMethod(
@@ -899,7 +1005,7 @@ public class StandardASMCompiler implements Compiler {
         } else {
             containingClass.callMethod(context, "method_added", runtime.newSymbol(name));
         }
-
+        
         return runtime.getNil();
     }
     
@@ -910,20 +1016,24 @@ public class StandardASMCompiler implements Compiler {
         beginMethod(methodName, arity, localVarCount);
         
         MethodVisitor mv = getMethodVisitor();
-
+        
         mv.visitCode();
         
         // arraycopy arguments into local vars array
         mv.visitVarInsn(Opcodes.ALOAD, ARGS_INDEX);
-        mv.visitLdcInsn(new Integer(0));
+        mv.visitInsn(Opcodes.ICONST_0);
         mv.visitVarInsn(Opcodes.ALOAD, LOCAL_VARS_INDEX);
-        mv.visitLdcInsn(new Integer(0));
+        mv.visitInsn(Opcodes.ICONST_2);
         mv.visitLdcInsn(new Integer(arity));
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(System.class), "arraycopy", cg.sig(Void.TYPE, cg.params(Object.class, Integer.TYPE, Object.class, Integer.TYPE, Integer.TYPE)));
         
+        // put a null at register 4, for closure creation to know we're at top-level or local scope
+        mv.visitInsn(Opcodes.ACONST_NULL);
+        mv.visitVarInsn(Opcodes.ASTORE, SCOPE_INDEX);
+        
         // callback to fill in method body
         body.compile(this);
-
+        
         endMethod(mv);
         
         // return to previous method
@@ -940,7 +1050,7 @@ public class StandardASMCompiler implements Compiler {
         mv.visitLdcInsn(name);
         
         mv.visitLdcInsn(methodName);
-
+        
         mv.visitLdcInsn(new Integer(arity));
         
         mv.visitMethodInsn(Opcodes.INVOKESTATIC,

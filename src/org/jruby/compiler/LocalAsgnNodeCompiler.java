@@ -48,7 +48,7 @@ public class LocalAsgnNodeCompiler implements NodeCompiler {
         
         NodeCompilerFactory.getCompiler(localAsgnNode.getValueNode()).compile(localAsgnNode.getValueNode(), context);
         
-        context.assignLocalVariable(localAsgnNode.getIndex());
+        context.assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth());
     }
     
 }
