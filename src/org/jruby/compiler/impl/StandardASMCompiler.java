@@ -47,6 +47,7 @@ import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
 import org.jruby.compiler.*;
 import org.jruby.compiler.Compiler;
+import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.methods.WrapperMethod;
@@ -1136,5 +1137,16 @@ public class StandardASMCompiler implements Compiler {
         mv.visitLabel(isTrue);
         loadFalse();
         mv.visitLabel(end);
+    }
+    
+    public void splatCurrentValue() {
+        MethodVisitor method = getMethodVisitor();
+        
+        method.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(EvaluationState.class), "splatValue", cg.sig(IRubyObject.class, cg.params(IRubyObject.class)));
+    }
+    
+    public void singlifySplattedValue() {
+        MethodVisitor method = getMethodVisitor();
+        method.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(EvaluationState.class), "aValueSplat", cg.sig(IRubyObject.class, cg.params(IRubyObject.class)));
     }
 }

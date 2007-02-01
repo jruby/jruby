@@ -187,4 +187,16 @@ public interface Compiler {
     public void retrieveGlobalVariable(String name);
     
     public void negateCurrentValue();
+    
+    /**
+     * Convert the current value into a "splatted value" suitable for passing as
+     * method arguments or disassembling into multiple variables.
+     */
+    public void splatCurrentValue();
+    
+    /**
+     * Given a splatted value, extract a single value. If no splat or length is
+     * zero, use nil
+     */
+    public void singlifySplattedValue();
 }

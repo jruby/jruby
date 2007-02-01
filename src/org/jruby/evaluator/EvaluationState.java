@@ -1733,7 +1733,7 @@ public class EvaluationState {
         runtime.callTraceFunction(context, event, context.getPosition(), zelf, name, type);
     }
 
-    private static IRubyObject splatValue(IRubyObject value) {
+    public static IRubyObject splatValue(IRubyObject value) {
         if (value.isNil()) {
             return value.getRuntime().newArray(value);
         }
@@ -1741,7 +1741,7 @@ public class EvaluationState {
         return arrayValue(value);
     }
 
-    private static IRubyObject aValueSplat(IRubyObject value) {
+    public static IRubyObject aValueSplat(IRubyObject value) {
         IRuby runtime = value.getRuntime();
         if (!(value instanceof RubyArray) || ((RubyArray) value).length().getLongValue() == 0) {
             return runtime.getNil();
@@ -1752,7 +1752,7 @@ public class EvaluationState {
         return array.getLength() == 1 ? array.first(IRubyObject.NULL_ARRAY) : array;
     }
 
-    private static RubyArray arrayValue(IRubyObject value) {
+    public static RubyArray arrayValue(IRubyObject value) {
         IRubyObject newValue = value.convertToType("Array", "to_ary", false);
 
         if (newValue.isNil()) {

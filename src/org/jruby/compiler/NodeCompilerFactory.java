@@ -97,8 +97,12 @@ public class NodeCompilerFactory {
             return new RootNodeCompiler();
         case NodeTypes.SELFNODE:
             return new SelfNodeCompiler();
+        case NodeTypes.SPLATNODE:
+            return new SplatNodeCompiler();
         case NodeTypes.STRNODE:
             return new StringNodeCompiler();
+        case NodeTypes.SVALUENODE:
+            return new SValueNodeCompiler();
         case NodeTypes.SYMBOLNODE:
             return new SymbolNodeCompiler();
         case NodeTypes.TRUENODE:
@@ -118,10 +122,20 @@ public class NodeCompilerFactory {
     
     public static NodeCompiler getArgumentsCompiler(Node node) {
         switch (node.nodeId) {
-            case NodeTypes.ARRAYNODE:
-                return new ArrayNodeArgsCompiler();
+        case NodeTypes.ARRAYNODE:
+            return new ArrayNodeArgsCompiler();
         }
         
-        throw new NotCompilableException("Can't compile node: " + node);
+        throw new NotCompilableException("Can't compile argument node: " + node);
+    }
+    
+    public static NodeCompiler getAssignmentCompiler(Node node) {
+        switch (node.nodeId) {
+        case NodeTypes.MULTIPLEASGNNODE:
+            return new MultipleAsgnNodeAsgnCompiler();
+        }
+        
+        throw new NotCompilableException("Can't compile assignment node: " + node);
+        }
     }
 }
