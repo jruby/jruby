@@ -30,6 +30,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.libraries;
 
+import java.io.IOException;
+
 import org.jruby.IRuby;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
@@ -72,9 +74,14 @@ public class RbConfigLibrary implements Library {
 
         String libdir = System.getProperty("jruby.lib");
         if (libdir == null) {
+            System.out.println("B");
             libdir = new NormalizedFile(runtime.getJRubyHome(), "lib").getAbsolutePath();
         } else {
-            libdir = new NormalizedFile(libdir).getAbsolutePath();
+            try {
+                libdir = new NormalizedFile(libdir).getCanonicalPath();
+            } catch (IOException e) {
+                libdir = new NormalizedFile(libdir).getAbsolutePath();
+            }
         }
 
         setConfig(configHash, "libdir", libdir);
