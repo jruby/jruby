@@ -264,7 +264,7 @@ module Gem
     end
 
     def shebang_env
-      return "#!/usr/bin/env ruby"
+      return "#!/usr/bin/env jruby"
     end
 
     # Return the text for an application file.
