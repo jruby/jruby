@@ -79,7 +79,8 @@ public class RbConfigLibrary implements Library {
             try {
             // Our shell scripts pass in non-canonicalized paths, but even if we didn't
             // anyone who did would become unhappy because Ruby apps expect no relative
-            // operators in the pathname (rubygems, for example).                libdir = new NormalizedFile(libdir).getCanonicalPath();
+            // operators in the pathname (rubygems, for example).
+                libdir = new NormalizedFile(libdir).getCanonicalPath();
             } catch (IOException e) {
                 libdir = new NormalizedFile(libdir).getAbsolutePath();
             }
