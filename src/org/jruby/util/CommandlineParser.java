@@ -172,6 +172,9 @@ public class CommandlineParser {
                     String eArg = grabValue("provide a value for -K");
                     kcode = KCode.create(null, eArg);
                     break;
+                case 'S':
+                    scriptFileName = System.getProperty("jruby.home") + "/bin/" + grabValue("provide a value for -S");
+                    break;
                 case '-' :
                     if (argument.equals("--version")) {
                         setShowVersion(true);
