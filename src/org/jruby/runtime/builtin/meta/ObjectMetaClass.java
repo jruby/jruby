@@ -93,7 +93,7 @@ public class ObjectMetaClass extends AbstractMetaClass {
     	return new ObjectMeta();
     }
     
-    private static ObjectAllocator OBJECT_ALLOCATOR = new ObjectAllocator() {
+    public static ObjectAllocator OBJECT_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(IRuby runtime, RubyClass klass) {
             IRubyObject instance = new RubyObject(runtime, klass);
             instance.setMetaClass(klass);

@@ -447,6 +447,16 @@ public class BaseMockRuby implements IRuby {
 
     }
 
+    public RaiseException newErrnoECONNREFUSEDError() {
+        throw new MockException();
+
+    }
+
+    public RaiseException newErrnoEADDRINUSEError() {
+        throw new MockException();
+
+    }
+
     public RaiseException newErrnoEBADFError() {
         throw new MockException();
 

@@ -567,11 +567,11 @@ public class RubyThread extends RubyObject {
         // Yes, I know double-check locking is broken.
         if (!hasStarted) {
             synchronized (hasStartedLock) {
-                if (!hasStarted) {
+                while (!hasStarted) {
                     try {
                         hasStartedLock.wait();
                     } catch (InterruptedException iExcptn) {
-                        assert false : iExcptn;
+                        //                        assert false : iExcptn;
                     }
                 }
             }

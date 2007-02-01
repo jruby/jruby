@@ -71,7 +71,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.libraries.IConvLibrary;
 import org.jruby.libraries.JRubyLibrary;
 import org.jruby.libraries.RbConfigLibrary;
-import org.jruby.libraries.SocketLibrary;
 import org.jruby.libraries.StringIOLibrary;
 import org.jruby.libraries.StringScannerLibrary;
 import org.jruby.libraries.ZlibLibrary;
@@ -81,6 +80,7 @@ import org.jruby.libraries.BigDecimalLibrary;
 import org.jruby.libraries.DigestLibrary;
 import org.jruby.libraries.ThreadLibrary;
 import org.jruby.ext.openssl.RubyOpenSSL;
+import org.jruby.ext.socket.RubySocket;
 import org.jruby.ext.Generator;
 import org.jruby.ext.Readline;
 import org.jruby.parser.Parser;
@@ -579,7 +579,7 @@ public final class Ruby implements IRuby {
                 }
             });
 
-        registerBuiltin("socket.rb", new SocketLibrary());
+        registerBuiltin("socket.rb", new RubySocket.Service());
         registerBuiltin("rbconfig.rb", new RbConfigLibrary());
 
         for (int i=0; i<BUILTIN_LIBRARIES.length; i++) {
@@ -1388,6 +1388,14 @@ public final class Ruby implements IRuby {
 
     public RaiseException newErrnoEBADFError() {
         return newRaiseException(getModule("Errno").getClass("EBADF"), "Bad file descriptor");
+    }
+
+    public RaiseException newErrnoECONNREFUSEDError() {
+        return newRaiseException(getModule("Errno").getClass("ECONNREFUSED"), "Connection refused");
+    }
+
+    public RaiseException newErrnoEADDRINUSEError() {
+        return newRaiseException(getModule("Errno").getClass("EADDRINUSE"), "Address in use");
     }
 
     public RaiseException newErrnoEINVALError() {

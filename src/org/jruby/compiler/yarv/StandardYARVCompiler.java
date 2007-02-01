@@ -42,6 +42,9 @@ import org.jruby.ast.ConstNode;
 import org.jruby.ast.DefnNode;
 import org.jruby.ast.NewlineNode;
 import org.jruby.ast.FixnumNode;
+import org.jruby.ast.FCallNode;
+import org.jruby.ast.IfNode;
+import org.jruby.ast.ListNode;
 import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.LocalVarNode;
 import org.jruby.ast.VCallNode;
@@ -83,6 +86,11 @@ public class StandardYARVCompiler implements NodeCompiler {
     }
 
     private static class Label extends LinkElement {
+        int label_no;
+        int position;
+        int sc_state;
+        int set;
+        int sp;
     }
 
     private static class Insn extends LinkElement {
@@ -114,6 +122,15 @@ public class StandardYARVCompiler implements NodeCompiler {
         if(flag != 0) {
             throw new RuntimeException("list verify error: " + Integer.toString(flag, 16) + " (" + info + ")");
         }
+    }
+
+    private static Label NEW_LABEL(int l) {
+        // TODO: implement
+        return null;
+    }
+
+    private static void ADD_LABEL(LinkAnchor anchor, LinkElement elem) {
+        ADD_ELEM(anchor,elem);
     }
 
     private static void ADD_ELEM(LinkAnchor anchor, LinkElement elem) {
@@ -356,6 +373,32 @@ public class StandardYARVCompiler implements NodeCompiler {
                     ADD_INSN1(ret, nd_line(node), YARVInstructions.GETLOCAL, idx2);
                 }
                 break compileLoop;
+            case NodeTypes.IFNODE:
+                LinkAnchor cond_seq = DECL_ANCHOR();
+                LinkAnchor then_seq = DECL_ANCHOR();
+                LinkAnchor else_seq = DECL_ANCHOR();
+
+                Label then_label = NEW_LABEL(nd_line(node));
+                Label else_label = NEW_LABEL(nd_line(node));
+                Label end_label = NEW_LABEL(nd_line(node));
+
+                compile_branch_condition(cond_seq, ((IfNode)node).getCondition(), then_label, else_label);
+                
+                COMPILE(then_seq, "then", ((IfNode)node).getThenBody(), poped);
+                COMPILE(else_seq, "else", ((IfNode)node).getElseBody(), poped);
+
+                ADD_SEQ(ret, cond_seq);
+
+                ADD_LABEL(ret, then_label);
+                ADD_SEQ(ret, then_seq);
+
+                ADD_INSNL(ret, nd_line(node), YARVInstructions.JUMP, end_label);
+
+                ADD_LABEL(ret, else_label);
+                ADD_SEQ(ret, else_seq);
+
+                ADD_LABEL(ret, end_label);
+                break compileLoop;
             case NodeTypes.CALLNODE:
             case NodeTypes.FCALLNODE:
             case NodeTypes.VCALLNODE:
@@ -432,6 +475,11 @@ public class StandardYARVCompiler implements NodeCompiler {
         }
 
         return COMPILE_OK;
+    }
+
+    private int compile_branch_condition(LinkAnchor ret, Node cond, Label then_label, Label else_label) {
+        //TODO: implement
+        return COMPILE_NG;
     }
 
     private int compile_array(LinkAnchor ret, Node node_root, boolean opt_p) {
@@ -541,6 +589,10 @@ public class StandardYARVCompiler implements NodeCompiler {
         i.l_op0 = op;
         debugs("ADD_INSN1(" + line + ", " + YARVInstructions.name(insn) + ", " + op + ")");
         ADD_ELEM(seq, new_insn(i));
+    }
+
+    private void ADD_INSNL(LinkAnchor seq, int line, int insn, Label l) {
+        // TODO: impl
     }
 
     private void ADD_INSN1(LinkAnchor seq, int line, int insn, String obj) {

@@ -374,6 +374,10 @@ public interface IRuby {
 
     RaiseException newErrnoEBADFError();
 
+    RaiseException newErrnoECONNREFUSEDError();
+
+    RaiseException newErrnoEADDRINUSEError();
+
     RaiseException newErrnoEINVALError();
 
     RaiseException newErrnoENOENTError();
