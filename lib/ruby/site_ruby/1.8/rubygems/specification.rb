@@ -8,7 +8,7 @@ require 'time'
 require 'rubygems'
 require 'rubygems/version'
 
-class Time
+class Time # :nodoc:
   def self.today
     Time.parse Time.now.strftime("%Y-%m-%d")
   end
@@ -152,11 +152,11 @@ module Gem
       @@default_value[name] = []
       module_eval %{
         def #{name}
-	  @#{name} ||= []
-	end
+          @#{name} ||= []
+        end
         def #{name}=(value)
-	  @#{name} = value.to_a
-	end
+          @#{name} = value.to_a
+        end
       }
     end
 
@@ -273,6 +273,7 @@ module Gem
 
     def test_suite_file=(val)
       warn_deprecated(:test_suite_file, :test_files)
+      @test_files = [] unless defined? @test_files
       @test_files << val
     end
  
@@ -320,54 +321,73 @@ module Gem
     end
 
     overwrite_accessor :summary= do |str|
-      if str
-        @summary = str.strip.
-          gsub(/(\w-)\n[ \t]*(\w)/, '\1\2').
-          gsub(/\n[ \t]*/, " ")
-      end
+      @summary = if str then
+                   str.strip.
+                   gsub(/(\w-)\n[ \t]*(\w)/, '\1\2').
+                   gsub(/\n[ \t]*/, " ")
+                 end
     end
 
     overwrite_accessor :description= do |str|
-      if str
-        @description = str.strip.
-          gsub(/(\w-)\n[ \t]*(\w)/, '\1\2').
-          gsub(/\n[ \t]*/, " ")
-      end
+      @description = if str then
+                       str.strip.
+                       gsub(/(\w-)\n[ \t]*(\w)/, '\1\2').
+                       gsub(/\n[ \t]*/, " ")
+                     end
     end
 
     overwrite_accessor :default_executable do
-      return @default_executable if @default_executable
-      # Special case: if there is only one executable specified, then
-      # that's obviously the default one.
-      return @executables.first if @executables.size == 1
-      nil
+      begin
+        if defined? @default_executable and @default_executable
+          result = @default_executable 
+        elsif @executables and @executables.size == 1
+          result = @executables.first
+        else
+          result = nil
+        end
+        result
+      rescue
+        nil
+      end
     end
 
     def add_bindir(executables)
-      if(@executables.nil?) 
+      if not defined? @executables || @executables.nil?
         return nil
       end
-      if(@bindir)
+
+      if defined? @bindir and @bindir then
         @executables.map {|e| File.join(@bindir, e) }
       else
         @executables
       end
+    rescue
+      return nil
     end
 
     overwrite_accessor :files do
-      (@files || []) | (@test_files || []) | (add_bindir(@executables) || []) |
-        (@extra_rdoc_files || []) | (@extensions || [])
+      result = []
+      result |= as_array(@files) if defined?(@files)
+      result |= as_array(@test_files) if defined?(@test_files)
+      result |= as_array(add_bindir(@executables) || [])
+      result |= as_array(@extra_rdoc_files) if defined?(@extra_rdoc_files)
+      result |= as_array(@extensions) if defined?(@extensions)
+      result
     end
 
     overwrite_accessor :test_files do
       # Handle the possibility that we have @test_suite_file but not
       # @test_files.  This will happen when an old gem is loaded via
       # YAML.
-      if @test_suite_file
+      if defined? @test_suite_file then
         @test_files = [@test_suite_file].flatten
         @test_suite_file = nil
       end
-      @test_files ||= []
+      if defined? @test_files and @test_files then
+        @test_files
+      else
+        @test_files = []
+      end
     end
 
     # Predicates -----------------------------------------------------
@@ -412,13 +432,14 @@ module Gem
     def Specification.from_yaml(input)
       input = normalize_yaml_input(input)
       spec = YAML.load(input)
-      if(spec.class == FalseClass) then
+      if(spec && spec.class == FalseClass) then
         raise Gem::EndOfYAMLException
       end
       unless Specification === spec
         raise Gem::Exception, "YAML data doesn't evaluate to gem specification"
       end
-      unless spec.instance_variable_get :@specification_version
+      unless spec.instance_variables.include? '@specification_version' and
+             spec.instance_variable_get :@specification_version
         spec.instance_variable_set :@specification_version, 
           NONEXISTENT_SPECIFICATION_VERSION
       end
@@ -515,9 +536,11 @@ module Gem
     end
 
     # Tests specs for equality (across all attributes).
-    def ==(other)
+    def ==(other) # :nodoc:
       other.kind_of?(self.class) && same_attributes?(other)
     end
+
+    alias eql? == # :nodoc:
 
     def same_attributes?(other)
       @@attributes.each do |name, default|
@@ -527,8 +550,11 @@ module Gem
     end
     private :same_attributes?
 
-    def hash
-      @name.hash + 13 * @version.hash
+    def hash # :nodoc:
+      @@attributes.inject(0) { |hash_code, (name, default_value)|
+        n = self.send(name).hash
+        hash_code + n
+      }
     end
     
     # Export methods (YAML and Ruby code) ----------------------------
@@ -593,7 +619,7 @@ module Gem
     # Also, the summary and description are converted to a normal
     # format. 
     def normalize
-      if @extra_rdoc_files
+      if defined? @extra_rdoc_files and @extra_rdoc_files then
         @extra_rdoc_files.uniq!
         @files ||= []
         @files.concat(@extra_rdoc_files)
@@ -646,6 +672,12 @@ module Gem
       when Numeric, Symbol, true, false, nil then obj
       else obj.dup
       end
+    end
+
+    def as_array(items)
+      items.to_ary
+    rescue NoMethodError => ex
+      [items]
     end
 
     # Return a string containing a Ruby code representation of the

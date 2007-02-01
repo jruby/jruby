@@ -27,6 +27,7 @@ module Gem
       @options = defaults.dup
       @option_list = []
       @parser = nil
+      @when_invoked = nil
     end
     
     # Override to provide command handling.
@@ -36,7 +37,7 @@ module Gem
 
     # Override to display the usage for an individual gem command.
     def usage
-      "#{program_name}"
+      program_name
     end
 
     # Override to provide details of the arguments a command takes.
@@ -165,7 +166,9 @@ module Gem
         @parser.separator("")
       end
       @parser.separator("  Summary:")
-      @parser.separator("    #@summary")
+      wrap(@summary, 80 - 4).each do |line|
+        @parser.separator("    #{line.strip}")
+      end
       unless defaults_str.empty?
         @parser.separator("")
         @parser.separator("  Defaults:")
@@ -184,6 +187,11 @@ module Gem
         end
         dashes.each do |arg| option_names[arg] = true end
       end
+    end
+
+    # Wraps +text+ to +width+
+    def wrap(text, width)
+      text.gsub(/(.{1,#{width}})( +|$\n?)|(.{1,#{width}})/, "\\1\\3\n")
     end
 
     ##################################################################
@@ -214,21 +222,21 @@ module Gem
       # arguments come from the gem configuration file read at program
       # startup.
       def specific_extra_args(cmd)
-	specific_extra_args_hash[cmd]
+        specific_extra_args_hash[cmd]
       end
       
       # Add a list of extra arguments for the given command.  +args+
       # may be an array or a string to be split on white space.
       def add_specific_extra_args(cmd,args)
-	args = args.split(/\s+/) if args.kind_of? String
-	specific_extra_args_hash[cmd] = args
+        args = args.split(/\s+/) if args.kind_of? String
+        specific_extra_args_hash[cmd] = args
       end
 
       # Accessor for the specific extra args hash (self initializing).
       def specific_extra_args_hash
-	@specific_extra_args_hash ||= Hash.new do |h,k|
-	  h[k] = Array.new
-	end
+        @specific_extra_args_hash ||= Hash.new do |h,k|
+          h[k] = Array.new
+        end
       end
     end
 
@@ -238,7 +246,7 @@ module Gem
     add_common_option('--source URL', 
       'Use URL as the remote source for gems') do
       |value, options|
-      require_gem("sources")
+      gem("sources")
       Gem.sources.clear
       Gem.sources << value
     end
@@ -247,6 +255,7 @@ module Gem
       'Use HTTP proxy for remote operations') do 
       |value, options|
       options[:http_proxy] = (value == false) ? :no_proxy : value
+      Gem.configuration[:http_proxy] = options[:http_proxy]
     end
 
     add_common_option('-h', '--help', 

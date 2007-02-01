@@ -10,7 +10,9 @@ module Gem
   # The Dependency class holds a Gem name and Version::Requirement
   #
   class Dependency
-    attr_accessor :name, :version_requirements
+    attr_accessor :name
+
+    attr_writer :version_requirements
 
     def <=>(other)
       [@name] <=> [other.name]
@@ -28,9 +30,8 @@ module Gem
       @version_requirement = nil   # Avoid warnings.
     end
 
-    undef version_requirements
     def version_requirements
-      normalize if @version_requirement
+      normalize if defined? @version_requirement and @version_requirement
       @version_requirements
     end
 
@@ -210,13 +211,13 @@ module Gem
     #
     def self.create(input)
       if input.kind_of?(Requirement)
-	return input
+        return input
       elsif input.kind_of?(Array)
-	return self.new(input)
+        return self.new(input)
       elsif input.respond_to? :to_str
-	return self.new([input.to_str])
+        return self.new([input.to_str])
       else
-	return self.default
+        return self.default
       end
     end
     
@@ -234,8 +235,8 @@ module Gem
     #
     def initialize(reqs)
       @requirements = reqs.collect do |rq|
-	op, version_string = parse(rq)
-	[op, Version.new(version_string)]
+        op, version_string = parse(rq)
+        [op, Version.new(version_string)]
       end
       @version = nil   # Avoid warnings.
     end
@@ -258,12 +259,12 @@ module Gem
     def as_list
       normalize
       @requirements.collect { |req|
-	"#{req[0]} #{req[1]}"
+        "#{req[0]} #{req[1]}"
       }
     end
     
     def normalize
-      return if @version.nil?
+      return if not defined? @version or @version.nil?
       @requirements = [parse(@version)]
       @nums = nil
       @version = nil
@@ -297,13 +298,13 @@ module Gem
     #
     def parse(str)
       if md = /^\s*(#{OP_RE})\s*([0-9.]+)\s*$/.match(str)
-	[md[1], md[2]]
+        [md[1], md[2]]
       elsif md = /^\s*([0-9.]+)\s*$/.match(str)
-	["=", md[1]]
+        ["=", md[1]]
       elsif md = /^\s*(#{OP_RE})\s*$/.match(str)
-	[md[1], "0"]
+        [md[1], "0"]
       else
-	fail ArgumentError, "Illformed requirement [#{str}]"
+        fail ArgumentError, "Illformed requirement [#{str}]"
       end
     end
     

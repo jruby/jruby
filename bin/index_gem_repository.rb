@@ -16,6 +16,11 @@ require 'optparse'
 require 'rubygems'
 require 'zlib'
 require 'digest/sha2'
+begin
+  require 'builder/xchar'
+rescue LoadError
+  fail "index_gem_repository requires that the XML Builder library be installed"
+end
 
 Gem.manage_gems
 
@@ -69,14 +74,14 @@ class AbstractIndexBuilder
       yield
     else
       unless File.exist?(@directory)
-	FileUtils.mkdir_p(@directory)
+        FileUtils.mkdir_p(@directory)
       end
       fail "not a directory: #{@directory}" unless File.directory?(@directory)
       File.open(File.join(@directory, @filename), "w") do |file|
-	@file = file
-	start_index
-	yield
-	end_index
+        @file = file
+        start_index
+        yield
+        end_index
       end
       cleanup
     end
@@ -191,13 +196,14 @@ class Indexer
     FileUtils.rm_r(@options[:quick_directory]) rescue nil
     @master_index.build do
       @quick_index.build do 
-	gem_file_list.each do |gemfile|
-	  spec = Gem::Format.from_file_by_path(gemfile).spec
-	  abbreviate(spec)	  
-	  announce "   ... adding #{spec.full_name}"
-	  @master_index.add(spec)
-	  @quick_index.add(spec)
-	end
+        gem_file_list.each do |gemfile|
+          spec = Gem::Format.from_file_by_path(gemfile).spec
+          abbreviate(spec)
+          sanitize(spec)
+          announce "   ... adding #{spec.full_name}"
+          @master_index.add(spec)
+          @quick_index.add(spec)
+        end
       end
     end
   end
@@ -218,6 +224,22 @@ class Indexer
     spec.extra_rdoc_files = []
     spec.cert_chain = []
     spec
+  end
+
+  # Sanitize the descriptive fields in the spec.  Sometimes non-ASCII
+  # characters will garble the site index.  Non-ASCII characters will
+  # be replaced by their XML entity equivalent.
+  def sanitize(spec)
+    spec.summary = sanitize_string(spec.summary)
+    spec.description = sanitize_string(spec.description)
+    spec.post_install_message = sanitize_string(spec.post_install_message)
+    spec.authors = spec.authors.collect { |a| sanitize_string(a) }
+    spec
+  end
+
+  # Sanitize a single string.
+  def sanitize_string(string)
+    string ? string.to_xs : string
   end
 end
 

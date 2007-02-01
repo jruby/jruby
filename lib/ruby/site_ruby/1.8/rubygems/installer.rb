@@ -4,12 +4,13 @@
 # See LICENSE.txt for permissions.
 #++
 
-$TESTING = false unless defined? $TESTING
-
+require 'fileutils'
 require 'pathname'
 require 'rbconfig'
 require 'rubygems/format'
 require 'rubygems/dependency_list'
+
+class Gem::InstallError < Gem::Exception; end
 
 module Gem
 
@@ -21,8 +22,13 @@ module Gem
   #
   class Installer
 
+    ##
+    # Raised when there is an error while building extensions.
+    #
+    class ExtensionBuildError < Gem::InstallError; end
+
     include UserInteraction
-  
+
     ##
     # Constructs an Installer instance
     #
@@ -32,7 +38,7 @@ module Gem
       @gem = gem
       @options = options
     end
-    
+
     ##
     # Installs the gem in the Gem.path.  This will fail (unless
     # force=true) if a Gem has a requirement on another Gem that is
@@ -44,37 +50,40 @@ module Gem
     #      gems/<gem-version>/... #=> the extracted Gem files
     #      cache/<gem-version>.gem #=> a cached copy of the installed Gem
     #
-    # force:: [default = false] if false will fail if a required Gem is not installed,
-    #         or if the Ruby version is too low for the gem
+    # force:: [default = false] if false will fail if a required Gem is not
+    #         installed, or if the Ruby version is too low for the gem
     # install_dir:: [default = Gem.dir] directory that Gem is to be installed in
     #
-    # return:: [Gem::Specification] The specification for the newly installed Gem.
+    # return:: [Gem::Specification] The specification for the newly installed
+    #          Gem.
     #
     def install(force=false, install_dir=Gem.dir, ignore_this_parameter=false)
-      require 'fileutils'
-
-      # if we're forcing the install, then disable security, _unless_ 
+      # if we're forcing the install, then disable security, _unless_
       # the security policy says that we only install singed gems
       # (this includes Gem::Security::HighSecurity)
       security_policy = @options[:security_policy]
       security_policy = nil if force && security_policy && security_policy.only_signed != true
-      
-      format = Gem::Format.from_file_by_path(@gem, security_policy)
+
+      begin
+        format = Gem::Format.from_file_by_path @gem, security_policy
+      rescue Gem::Package::FormatError
+        raise Gem::InstallError, "invalid gem format for #{@gem}"
+      end
       unless force
         spec = format.spec
         # Check the Ruby version.
         if (rrv = spec.required_ruby_version)
           unless rrv.satisfied_by?(Gem::Version.new(RUBY_VERSION))
-            raise "#{spec.name} requires Ruby version #{rrv}"
+            raise Gem::InstallError, "#{spec.name} requires Ruby version #{rrv}"
           end
         end
- 	unless @options[:ignore_dependencies]
- 	  spec.dependencies.each do |dep_gem|
-	    ensure_dependency!(spec, dep_gem)
- 	  end
- 	end
+        unless @options[:ignore_dependencies]
+          spec.dependencies.each do |dep_gem|
+            ensure_dependency!(spec, dep_gem)
+          end
+        end
       end
-      
+
       raise Gem::FilePermissionError.new(install_dir) unless File.writable?(install_dir)
 
       # Build spec dir.
@@ -84,10 +93,10 @@ module Gem
       extract_files(@directory, format)
       generate_bin(format.spec, install_dir)
       build_extensions(@directory, format.spec)
-      
+
       # Build spec/cache/doc dir.
       build_support_directories(install_dir)
-      
+
       # Write the spec and cache files.
       write_spec(format.spec, File.join(install_dir, "specifications"))
       unless File.exist? File.join(install_dir, "cache", @gem.split(/\//).pop)
@@ -98,6 +107,8 @@ module Gem
 
       format.spec.loaded_from = File.join(install_dir, 'specifications', format.spec.full_name+".gemspec")
       return format.spec
+    rescue Zlib::GzipFile::Error
+      raise InstallError, "gzip error installing #{@gem}"
     end
 
     ##
@@ -108,8 +119,8 @@ module Gem
     # spec       :: Gem::Specification
     # dependency :: Gem::Dependency
     def ensure_dependency!(spec, dependency)
-      raise "#{spec.name} requires #{dependency.name} #{dependency.version_requirements} " unless
-	installation_satisfies_dependency?(dependency)
+      raise Gem::InstallError, "#{spec.name} requires #{dependency.name} #{dependency.version_requirements} " unless
+        installation_satisfies_dependency?(dependency)
     end
 
     ##
@@ -143,7 +154,7 @@ module Gem
          FileUtils.mkdir_p File.join(install_dir, "doc")
        end
     end
-    
+
     ##
     # Writes the .gemspec specification (in Ruby) to the supplied
     # spec_path.
@@ -171,22 +182,6 @@ module Gem
       end
     end
 
-    ##
-    # Determines the directory for binaries
-    #
-    def bindir(install_dir=Gem.dir)
-      if(install_dir == Gem.default_dir)
-        # mac framework support
-        if defined? RUBY_FRAMEWORK_VERSION
-          File.join(File.dirname(Config::CONFIG["sitedir"]), File.basename(Config::CONFIG["bindir"]))
-        else # generic install
-          Config::CONFIG['bindir']
-        end
-      else
-        File.join(install_dir, "bin")
-      end
-    end
-
     def generate_bin(spec, install_dir=Gem.dir)
       return unless spec.executables && ! spec.executables.empty?
       
@@ -194,7 +189,7 @@ module Gem
       # a directory that is the system gem directory, then
       # use the system bin directory, else create (or use) a
       # new bin dir under the install_dir.
-      bindir = bindir(install_dir)
+      bindir = Gem.bindir(install_dir)
 
       Dir.mkdir bindir unless File.exist? bindir
       raise Gem::FilePermissionError.new(bindir) unless File.writable?(bindir)
@@ -224,7 +219,7 @@ module Gem
     #
     def generate_bin_symlink(spec, filename, bindir, install_dir)
       if Config::CONFIG["arch"] =~ /dos|win32/i then
-        warn "Unable to use symlinks on win32, installing wrapper" unless $TESTING # HACK
+        warn "Unable to use symlinks on win32, installing wrapper"
         generate_bin_script spec, filename, bindir, install_dir
         return
       end
@@ -245,24 +240,34 @@ module Gem
     end
 
     def shebang(spec, install_dir, bin_file_name)
+      if @options[:env_shebang]
+        shebang_env
+      else
+        shebang_default(spec, install_dir, bin_file_name)
+      end
+    end
+
+    def shebang_default(spec, install_dir, bin_file_name)
       path = File.join(install_dir, "gems", spec.full_name, spec.bindir, bin_file_name)
       File.open(path, "rb") do |file|
         first_line = file.readlines("\n").first 
         path_to_ruby = File.join(Config::CONFIG['bindir'], Config::CONFIG['ruby_install_name'])
         if first_line =~ /^#!/
           # Preserve extra words on shebang line, like "-w".  Thanks RPA.
-          shebang = first_line.sub(/\A\#!\s*\S*ruby\S*/, "#!/usr/bin/env " + path_to_ruby)
+          shebang = first_line.sub(/\A\#!\s*\S*ruby\S*/, "#!" + path_to_ruby)
         else
           # Create a plain shebang line.
-          shebang = "#!/usr/bin/env " + path_to_ruby
+          shebang = "#!" + path_to_ruby
         end
         return shebang.strip  # Avoid nasty ^M issues.
       end
     end
 
-    ##
-    # Returns the text for an application file.
-    #
+    def shebang_env
+      return "#!/usr/bin/env ruby"
+    end
+
+    # Return the text for an application file.
     def app_script_text(spec, install_dir, filename)
       text = <<-TEXT
 #{shebang(spec, install_dir, filename)}
@@ -275,14 +280,12 @@ module Gem
 
 require 'rubygems'
 version = "> 0"
-if ARGV.size > 0 && ARGV[0][0]==95 && ARGV[0][-1]==95
-  if Gem::Version.correct?(ARGV[0][1..-2])
-    version = ARGV[0][1..-2] 
-    ARGV.shift
-  end
+if ARGV.first =~ /^_(.*)_$/ and Gem::Version.correct? $1 then
+  version = $1
+  ARGV.shift
 end
-require_gem '#{spec.name}', version
-load '#{filename}'  
+gem '#{spec.name}', version
+load '#{filename}'
 TEXT
       text
     end
@@ -292,39 +295,49 @@ TEXT
       say "Building native extensions.  This could take a while..."
       start_dir = Dir.pwd
       dest_path = File.join(directory, spec.require_paths[0])
+      ran_rake = false # only run rake once
 
-      results = []
       spec.extensions.each do |extension|
+        break if ran_rake
+        results = []
+
         case extension
         when /extconf/ then
           builder = ExtExtConfBuilder
         when /configure/ then
           builder = ExtConfigureBuilder
-        when /rakefile/i then
+        when /rakefile/i, /mkrf_conf/i then
           builder = ExtRakeBuilder
+          ran_rake = true
         else
           builder = nil
           results = ["No builder for extension '#{extension}'"]
         end
 
         begin
-          err = false
           Dir.chdir File.join(directory, File.dirname(extension))
-          results = builder.build(extension, directory, dest_path)
+          results = builder.build(extension, directory, dest_path, results)
         rescue => ex
-          err = true
+          results = results.join "\n"
+
+          File.open('gem_make.out', 'wb') { |f| f.puts results }
+
+          message = <<-EOF
+ERROR: Failed to build gem native extension.
+
+#{results}
+
+Gem files will remain installed in #{directory} for inspection.
+Results logged to #{File.join(Dir.pwd, 'gem_make.out')}
+          EOF
+
+          raise ExtensionBuildError, message
+        ensure
+          Dir.chdir start_dir
         end
-
-        say results.join("\n")
-        File.open('gem_make.out', 'wb') {|f| f.puts results.join("\n")}
-
-        if err
-          raise "ERROR: Failed to build gem native extension.\nGem files will remain installed in #{directory} for inspection.\n  #{results.join('\n')}\n\nResults logged to #{File.join(Dir.pwd, 'gem_make.out')}"
-		end
       end
-      Dir.chdir start_dir
     end
-    
+
     ##
     # Reads the YAML file index and then extracts each file
     # into the supplied directory, building directories for the
@@ -334,31 +347,40 @@ TEXT
     # file:: [IO] The IO that contains the file data
     #
     def extract_files(directory, format)
-      require 'fileutils'
-      wd = Dir.getwd
-      Dir.chdir directory do
-        format.file_entries.each do |entry, file_data|
-          path = entry['path'].untaint
-          FileUtils.mkdir_p File.dirname(path)
-          File.open(path, "wb") do |out|
-            out.write file_data
-          end
+      unless File.expand_path(directory) == directory then
+        raise ArgumentError, "install directory %p not absolute" % directory
+      end
+
+      format.file_entries.each do |entry, file_data|
+        path = entry['path'].untaint
+        if path =~ /\A\// then # for extra sanity
+          raise Gem::InstallError,
+                "attempt to install file into #{entry['path'].inspect}"
+        end
+        path = File.expand_path File.join(directory, path)
+        if path !~ /\A#{Regexp.escape directory}/ then
+          msg = "attempt to install file into %p under %p" %
+                  [entry['path'], directory]
+          raise Gem::InstallError, msg
+        end
+        FileUtils.mkdir_p File.dirname(path)
+        File.open(path, "wb") do |out|
+          out.write file_data
         end
       end
     end
   end  # class Installer
 
-
   ##
   # The Uninstaller class uninstalls a Gem
   #
   class Uninstaller
-  
+
     include UserInteraction
-  
+
     ##
     # Constructs an Uninstaller instance
-    # 
+    #
     # gem:: [String] The Gem name to uninstall
     #
     def initialize(gem, options)
@@ -368,7 +390,7 @@ TEXT
       @force_all = options[:all]
       @force_ignore = options[:ignore]
     end
-    
+
     ##
     # Performs the uninstall of the Gem.  This removes the spec, the
     # Gem directory, and the cached .gem file,
@@ -381,23 +403,22 @@ TEXT
     # (i.e. referring to a version that no longer exists).
     #
     def uninstall
-      require 'fileutils'
-      list = Gem.source_index.search(@gem, @version)
+      list = Gem.source_index.search(/^#{@gem}$/, @version)
       if list.empty?
-        raise "Unknown RubyGem: #{@gem} (#{@version})"
+        raise Gem::InstallError, "Unknown gem #{@gem}-#{@version}"
       elsif list.size > 1 && @force_all
-	remove_all(list.dup) 
-	remove_executables(list.last)
+        remove_all(list.dup) 
+        remove_executables(list.last)
       elsif list.size > 1 
         say 
         gem_names = list.collect {|gem| gem.full_name} + ["All versions"]
         gem_name, index =
-	  choose_from_list("Select RubyGem to uninstall:", gem_names)
+          choose_from_list("Select gem to uninstall:", gem_names)
         if index == list.size
           remove_all(list.dup) 
           remove_executables(list.last)
         elsif index >= 0 && index < list.size
-	  to_remove = list[index]
+          to_remove = list[index]
           remove(to_remove, list)
           remove_executables(to_remove)
         else
@@ -418,11 +439,11 @@ TEXT
     def remove_executables(gemspec)
       return if gemspec.nil?
       if(gemspec.executables.size > 0)
-        raise Gem::FilePermissionError.new(Config::CONFIG['bindir']) unless
-	  File.writable?(Config::CONFIG['bindir'])
+        raise Gem::FilePermissionError.new(Gem.bindir) unless
+          File.writable?(Gem.bindir)
         list = Gem.source_index.search(gemspec.name).delete_if { |spec|
-	  spec.version == gemspec.version
-	}
+          spec.version == gemspec.version
+        }
         executables = gemspec.executables.clone
         list.each do |spec|
           spec.executables.each do |exe_name|
@@ -431,18 +452,17 @@ TEXT
         end
         return if executables.size == 0
         answer = @force_executables || ask_yes_no(
-	  "Remove executables and scripts for\n" +
-	  "'#{gemspec.executables.join(", ")}' in addition to the gem?",
-	  true) # " # appease ruby-mode - don't ask
+          "Remove executables and scripts for\n" +
+          "'#{gemspec.executables.join(", ")}' in addition to the gem?",
+          true) # " # appease ruby-mode - don't ask
         unless answer
           say "Executables and scripts will remain installed."
           return
         else
-          bindir = Config::CONFIG['bindir']
           gemspec.executables.each do |exe_name|
             say "Removing #{exe_name}"
-            File.unlink(File.join(bindir, exe_name)) rescue nil
-            File.unlink(File.join(bindir, exe_name + ".cmd")) rescue nil
+            File.unlink File.join(Gem.bindir, exe_name) rescue nil
+            File.unlink File.join(Gem.bindir, exe_name + ".cmd") rescue nil
           end
         end
       end
@@ -468,19 +488,19 @@ TEXT
     def remove(spec, list)
       if( ! ok_to_remove?(spec)) then
         raise DependencyRemovalException.new(
-	  "Uninstallation aborted due to dependent gem(s)")
+          "Uninstallation aborted due to dependent gem(s)")
       end
       raise Gem::FilePermissionError.new(spec.installation_path) unless
-	File.writable?(spec.installation_path)
+        File.writable?(spec.installation_path)
       FileUtils.rm_rf spec.full_gem_path
       FileUtils.rm_rf File.join(
-	spec.installation_path,
-	'specifications',
-	"#{spec.full_name}.gemspec")
+        spec.installation_path,
+        'specifications',
+        "#{spec.full_name}.gemspec")
       FileUtils.rm_rf File.join(
-	spec.installation_path,
-	'cache',
-	"#{spec.full_name}.gem")
+        spec.installation_path,
+        'cache',
+        "#{spec.full_name}.gem")
       DocManager.new(spec).uninstall_doc
       #remove_stub_files(spec, list - [spec])
       say "Successfully uninstalled #{spec.name} version #{spec.version}"
@@ -492,7 +512,7 @@ TEXT
       srcindex= Gem::SourceIndex.from_installed_gems
       deplist = Gem::DependencyList.from_source_index(srcindex)
       deplist.ok_to_remove?(spec.full_name) ||
-	ask_if_ok(spec)
+        ask_if_ok(spec)
     end
 
     def ask_if_ok(spec)
@@ -501,8 +521,8 @@ TEXT
       msg << "\t#{spec.full_name}"
       spec.dependent_gems.each do |gem,dep,satlist|
         msg <<
-	  ("#{gem.name}-#{gem.version} depends on " +
-	  "[#{dep.name} (#{dep.version_requirements})]")
+          ("#{gem.name}-#{gem.version} depends on " +
+          "[#{dep.name} (#{dep.version_requirements})]")
       end
       msg << 'If you remove this gems, one or more dependencies will not be met.'
       msg << 'Continue with Uninstall?'
@@ -533,7 +553,7 @@ TEXT
       # what we delete isn't needed by any remaining versions of the
       # gem.
       #
-      # There's extra trickiness, too, because app stubs 'require_gem'
+      # There's extra trickiness, too, because app stubs 'gem'
       # a specific version of the gem.  If we uninstall the latest
       # gem, we should ensure that there is a sensible app stub(s)
       # installed after the removal of the current one.
@@ -550,64 +570,90 @@ TEXT
 
   end  # class Uninstaller
 
-  class ExtConfigureBuilder
-    def self.build(extension, directory, dest_path)
-      results = []
-      unless File.exist?('Makefile') then
-        cmd = "sh ./configure --prefix=#{dest_path}"
-        results << cmd
-        results << `#{cmd}`
+  class ExtBuilder
+
+    def self.class_name
+      name =~ /Ext(.*)Builder/
+      $1.downcase
+    end
+
+    def self.make(dest_path, results)
+      unless File.exist? 'Makefile' then
+        raise Gem::InstallError, "Makefile not found:\n\n#{results.join "\n"}" 
       end
 
-      results.push(*ExtExtConfBuilder.make(dest_path))
-      results
-    end
-  end
-
-  class ExtExtConfBuilder
-    def self.build(extension, directory, dest_path)
-      results = ["#{Gem.ruby} #{File.basename(extension)} #{ARGV.join(" ")}"]
-      results << `#{Gem.ruby} #{File.basename(extension)} #{ARGV.join(" ")}`
-      results.push(*make(dest_path))
-      results
-    end
-
-    def self.make(dest_path)
-      results = []
-      raise unless File.exist?('Makefile')
       mf = File.read('Makefile')
       mf = mf.gsub(/^RUBYARCHDIR\s*=\s*\$[^$]*/, "RUBYARCHDIR = #{dest_path}")
       mf = mf.gsub(/^RUBYLIBDIR\s*=\s*\$[^$]*/, "RUBYLIBDIR = #{dest_path}")
+
       File.open('Makefile', 'wb') {|f| f.print mf}
 
       make_program = ENV['make']
-      unless make_program
+      unless make_program then
         make_program = (/mswin/ =~ RUBY_PLATFORM) ? 'nmake' : 'make'
       end
 
-      ['', 'install', 'clean'].each do |target|
-        results << "#{make_program} #{target}".strip
-        results << `#{make_program} #{target}`
-      end
+      ['', ' install'].each do |target|
+        cmd = "#{make_program}#{target}"
+        results << cmd
+        results << `#{cmd} #{redirector}`
 
-      results
+        raise Gem::InstallError, "make#{target} failed:\n\n#{results}" unless
+          $?.exitstatus.zero?
+      end
+    end
+
+    def self.redirector
+      '2>&1'
+    end
+
+    def self.run(command, results)
+      results << command
+      results << `#{command} #{redirector}`
+
+      unless $?.exitstatus.zero? then
+        raise Gem::InstallError, "#{class_name} failed:\n\n#{results.join "\n"}"
+      end
     end
 
   end
 
-  class ExtRakeBuilder
-    def ExtRakeBuilder.build(ext, directory, dest_path)
-      make_program = ENV['rake'] || 'rake'
-      make_program += " RUBYARCHDIR=#{dest_path} RUBYLIBDIR=#{dest_path}"
+  class ExtConfigureBuilder < ExtBuilder
+    def self.build(extension, directory, dest_path, results)
+      unless File.exist?('Makefile') then
+        cmd = "sh ./configure --prefix=#{dest_path}"
 
-      results = []
-
-      ['', 'install', 'clean'].each do |target|
-        results << "#{make_program} #{target}".strip
-        results << `#{make_program} #{target}`
+        run cmd, results
       end
+
+      make dest_path, results
 
       results
     end
   end
+
+  class ExtExtConfBuilder < ExtBuilder
+    def self.build(extension, directory, dest_path, results)
+      cmd = "#{Gem.ruby} #{File.basename extension}"
+      cmd << " #{ARGV.join " "}" unless ARGV.empty?
+
+      run cmd, results
+
+      make dest_path, results
+
+      results
+    end
+  end
+
+  class ExtRakeBuilder < ExtBuilder
+    def ExtRakeBuilder.build(ext, directory, dest_path, results)
+      cmd = ENV['rake'] || 'rake'
+      cmd << " RUBYARCHDIR=#{dest_path} RUBYLIBDIR=#{dest_path} extension"
+
+      run cmd, results
+
+      results
+    end
+  end
+
 end  # module Gem

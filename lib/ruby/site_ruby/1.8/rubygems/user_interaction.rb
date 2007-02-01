@@ -29,6 +29,9 @@ module Gem
 
     # The default UI is a class variable of the singleton class for
     # this module.
+
+    @ui = nil
+
     class << self
       def ui
         @ui ||= Gem::ConsoleUI.new
@@ -172,15 +175,15 @@ module Gem
     def progress_reporter(*args)
       case Gem.configuration.verbose
       when nil, false
-	SilentProgressReporter.new(@outs, *args)
+        SilentProgressReporter.new(@outs, *args)
       when true
-	SimpleProgressReporter.new(@outs, *args)
+        SimpleProgressReporter.new(@outs, *args)
       else
-	VerboseProgressReporter.new(@outs, *args)
+        VerboseProgressReporter.new(@outs, *args)
       end
     end
 
-    class SilentReporter
+    class SilentProgressReporter
       attr_reader :count
 
       def initialize(out_stream, size, initial_message)
@@ -199,20 +202,20 @@ module Gem
       attr_reader :count
 
       def initialize(out_stream, size, initial_message)
-	@out = out_stream
-	@total = size
-	@count = 0
-	ui.say initial_message
+        @out = out_stream
+        @total = size
+        @count = 0
+        @out.puts initial_message
       end
 
       def updated(message)
-	@count += 1
-	@out.print "."
-	@out.flush
+        @count += 1
+        @out.print "."
+        @out.flush
       end
 
       def done
-	@out.puts "\ncomplete"
+        @out.puts "\ncomplete"
       end
     end
 
@@ -222,23 +225,22 @@ module Gem
       attr_reader :count
 
       def initialize(out_stream, size, initial_message)
-	@out = out_stream
-	@total = size
-	@count = 0
-	@out.puts initial_message
+        @out = out_stream
+        @total = size
+        @count = 0
+        @out.puts initial_message
       end
 
       def updated(message)
-	@count += 1
-	@out.puts "#{@count}/#{@total}: #{message}"
+        @count += 1
+        @out.puts "#{@count}/#{@total}: #{message}"
       end
 
       def done
-	@out.puts "complete"
+        @out.puts "complete"
       end
     end
   end
-
 
   ####################################################################
   # Subclass of StreamUI that instantiates the user interaction using

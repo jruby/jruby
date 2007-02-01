@@ -7,7 +7,7 @@
 require 'rubygems/source_index'
 
 module Kernel
-  alias gem_original_require require
+  alias gem_original_require require # :nodoc:
 
   #
   # We replace Ruby's require with our own, which is capable of
@@ -23,21 +23,19 @@ module Kernel
   # The normal <tt>require</tt> functionality of returning false if
   # that file has already been loaded is preserved.
   #
-  def require(path)
+  def require(path) # :nodoc:
     gem_original_require path
   rescue LoadError => load_error
     begin
-      @gempath_searcher ||= Gem::GemPathSearcher.new
-      if spec = @gempath_searcher.find(path)
+      if spec = Gem.searcher.find(path)
         Gem.activate(spec.name, false, "= #{spec.version}")
         gem_original_require path
       else
-	raise load_error
+        raise load_error
       end
     end
   end
 end  # module Kernel
-
 
 module Gem
 
@@ -91,17 +89,13 @@ module Gem
 
     private
 
-    SUFFIX_PATTERN = "{,.rb,.rbw,.so,.bundle,.dll,.sl,.jar}"
-
-    #
     # Attempts to find a matching path using the require_paths of the
     # given _spec_.
     #
     # Some of the intermediate results are cached in @lib_dirs for
     # speed.
-    #
     def matching_file(spec, path)  # :doc:
-      glob = "#{@lib_dirs[spec.object_id]}/#{path}#{SUFFIX_PATTERN}"
+      glob = File.join @lib_dirs[spec.object_id], "#{path}#{Gem.suffix_pattern}"
       return true unless Dir[glob].select { |f| File.file?(f.untaint) }.empty?
     end
 
@@ -109,7 +103,7 @@ module Gem
     # order and in reverse version order.
     def init_gemspecs
       Gem.source_index.map { |_, spec| spec }.sort { |a,b|
-	(a.name <=> b.name).nonzero? || (b.version <=> a.version)
+        (a.name <=> b.name).nonzero? || (b.version <=> a.version)
       }
     end
 
@@ -122,3 +116,4 @@ module Gem
   end  # class Gem::GemPathLoader
 
 end  # module Gem
+

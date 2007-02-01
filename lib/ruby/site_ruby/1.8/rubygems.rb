@@ -49,16 +49,26 @@ module Kernel
   def gem(gem_name, *version_requirements)
     active_gem_with_options(gem_name, version_requirements)
   end
-  
+
   # Same as the +gem+ command, but will also require a file if the gem
   # provides an auto-required file name.
   #
   # DEPRECATED!  Use +gem+ instead.
   #
   def require_gem(gem_name, *version_requirements)
-    active_gem_with_options(gem_name,
-      version_requirements, :auto_require=>true)
+    file, lineno = location_of_caller
+    warn "#{file}:#{lineno}:Warning: require_gem is obsolete.  Use gem instead."
+    active_gem_with_options(gem_name, version_requirements, :auto_require=>true)
   end
+
+  # Return the file name (string) and line number (integer) of the caller of
+  # the caller of this method.
+  def location_of_caller
+    file, lineno = caller[1].split(':')
+    lineno = lineno.to_i
+    [file, lineno]
+  end
+  private :location_of_caller
 
   def active_gem_with_options(gem_name, version_requirements, options={})
     skip_list = (ENV['GEM_SKIP'] || "").split(/:/)
@@ -68,11 +78,13 @@ module Kernel
   private :active_gem_with_options
 end
 
-
 # Main module to hold all RubyGem classes/modules.
 #
 module Gem
   require 'rubygems/rubygems_version.rb'
+  require 'thread'
+
+  MUTEX = Mutex.new
 
   class Exception < RuntimeError
   end
@@ -85,8 +97,13 @@ module Gem
   DIRECTORIES = ['cache', 'doc', 'gems', 'specifications']
   
   @@source_index = nil  
+
+  @configuration = nil
+  @loaded_specs = {}
   
   class << self
+
+    attr_reader :loaded_specs
   
     def manage_gems
       require 'rubygems/user_interaction'
@@ -122,6 +139,19 @@ module Gem
       @gem_home
     end
     
+    # The directory path where executables are to be installed.
+    #
+    def bindir(install_dir=Gem.dir)
+      return File.join(install_dir, 'bin') unless install_dir == Gem.default_dir
+
+      if defined? RUBY_FRAMEWORK_VERSION then # mac framework support
+        File.join(File.dirname(Config::CONFIG["sitedir"]),
+                  File.basename(Config::CONFIG["bindir"]))
+      else # generic install
+        Config::CONFIG['bindir']
+      end
+    end
+
     # List of directory paths to search for Gems.
     #
     # return:: [List<String>] List of directory paths.
@@ -144,7 +174,22 @@ module Gem
 
     # The standard configuration object for gems.
     def configuration
-      @configuration ||= {}
+      return @configuration if @configuration
+
+      @configuration = {}
+      class << @configuration
+        undef_method :verbose # HACK RakeFileUtils pollution
+      end if @configuration.respond_to? :verbose
+
+      def @configuration.method_missing(sym, *args, &block)
+        if args.empty?
+          self[sym]
+        else
+          super
+        end
+      end
+
+      @configuration
     end
 
     # Use the given configuration object (which implements the
@@ -156,10 +201,16 @@ module Gem
     # Return the path the the data directory specified by the gem
     # name.  If the package is not available as a gem, return nil.
     def datadir(gem_name)
-      return nil if @loaded_specs.nil?
       spec = @loaded_specs[gem_name]
       return nil if spec.nil?
       File.join(spec.full_gem_path, 'data', gem_name)
+    end
+
+    # Return the searcher object to search for matching gems.  
+    def searcher
+      MUTEX.synchronize do
+        @searcher ||= Gem::GemPathSearcher.new
+      end
     end
 
     # Return the Ruby command to use to execute the Ruby interpreter.
@@ -176,7 +227,6 @@ module Gem
     # already loaded, or an exception otherwise.
     #
     def activate(gem, autorequire, *version_requirements)
-      @loaded_specs ||= Hash.new
       unless version_requirements.size > 0
         version_requirements = [">= 0.0.0"]
       end
@@ -188,22 +238,22 @@ module Gem
       report_activate_error(gem) if matches.empty?
 
       if @loaded_specs[gem.name]
-	# This gem is already loaded.  If the currently loaded gem is
-	# not in the list of candidate gems, then we have a version
-	# conflict.
-	existing_spec = @loaded_specs[gem.name]
-	if ! matches.any? { |spec| spec.version == existing_spec.version }
-	  fail Gem::Exception, "can't activate #{gem}, already activated #{existing_spec.full_name}]"
-	end
-	return false
+        # This gem is already loaded.  If the currently loaded gem is
+        # not in the list of candidate gems, then we have a version
+        # conflict.
+        existing_spec = @loaded_specs[gem.name]
+        if ! matches.any? { |spec| spec.version == existing_spec.version }
+          fail Gem::Exception, "can't activate #{gem}, already activated #{existing_spec.full_name}]"
+        end
+        return false
       end
 
       # new load
       spec = matches.last
       if spec.loaded?
-	return false unless autorequire
-	result = spec.autorequire ? require(spec.autorequire) : false
-	return result || false 
+        return false unless autorequire
+        result = spec.autorequire ? require(spec.autorequire) : false
+        return result || false 
       end
 
       spec.loaded = true
@@ -211,17 +261,17 @@ module Gem
       
       # Load dependent gems first
       spec.dependencies.each do |dep_gem|
-	activate(dep_gem, autorequire)
+        activate(dep_gem, autorequire)
       end
       
       # add bin dir to require_path
       if(spec.bindir) then
-	spec.require_paths << spec.bindir
+        spec.require_paths << spec.bindir
       end
       
       # Now add the require_paths to the LOAD_PATH
       spec.require_paths.each do |path|
-	$:.unshift File.join(spec.full_gem_path, path)
+        $:.unshift File.join(spec.full_gem_path, path)
       end
       
       if autorequire && spec.autorequire then
@@ -239,12 +289,12 @@ module Gem
     def report_activate_error(gem)
       matches = Gem.source_index.find_name(gem.name)
       if matches.size==0
-	error = Gem::LoadError.new(
-	  "Could not find RubyGem #{gem.name} (#{gem.version_requirements})\n")
+        error = Gem::LoadError.new(
+          "Could not find RubyGem #{gem.name} (#{gem.version_requirements})\n")
       else
-	error = Gem::LoadError.new(
-	  "RubyGem version error: " +
-	  "#{gem.name}(#{matches.first.version} not #{gem.version_requirements})\n")
+        error = Gem::LoadError.new(
+          "RubyGem version error: " +
+          "#{gem.name}(#{matches.first.version} not #{gem.version_requirements})\n")
       end
       error.name = gem.name
       error.version_requirement = gem.version_requirements
@@ -308,6 +358,13 @@ module Gem
       nil
     end
 
+    def suffixes
+      ['', '.rb', '.rbw', '.so', '.bundle', '.dll', '.sl', '.jar']
+    end
+
+    def suffix_pattern
+      @suffix_pattern ||= "{#{suffixes.join(',')}}"
+    end
 
     private
     
@@ -398,22 +455,6 @@ module Gem
     # Default home directory path to be used if an alternate value is
     # not specified in the environment.
     def default_dir
-      ## rbconfig = Dir.glob("{#{($LOAD_PATH).join(',')}}/rbconfig.rb").first
-      ## if rbconfig
-      ##   module_eval File.read(rbconfig) unless const_defined?("Config")
-      ## else
-      ##   require 'rbconfig'
-      ## end
-      #
-      # Note on above code: we have an issue if a Config class is
-      # already defined and we load 'rbconfig'.  The above code is
-      # supposed to work around that but it's been commented out.  In
-      # any case, I moved "require 'rbconfig'" to the top of this
-      # file, because there was a circular dependency between this
-      # method and our custom require.  In any case, rbconfig is a
-      # fundamental RubyGems dependency, so it might as well be up the
-      # top.  -- Gavin Sinclair, 2004-12-12
-      #
       if defined? RUBY_FRAMEWORK_VERSION
         return File.join(File.dirname(Config::CONFIG["sitedir"]), "Gems")
       else
@@ -429,7 +470,7 @@ module Gem
     def ensure_gem_subdirectories(gemdir)
       DIRECTORIES.each do |filename|
         fn = File.join(gemdir, filename)
-        unless File.exists?(fn)
+        unless File.exist?(fn)
           require 'fileutils'
           FileUtils.mkdir_p(fn) rescue nil
         end
@@ -443,7 +484,7 @@ end
 # Modify the non-gem version of datadir to handle gem package names.
 
 require 'rbconfig/datadir'
-module Config
+module Config # :nodoc:
   class << self
     alias gem_original_datadir datadir
 
@@ -457,11 +498,9 @@ module Config
   end
 end
 
-
 require 'rubygems/source_index'
 require 'rubygems/specification'
 require 'rubygems/security'
 require 'rubygems/version'
-#require 'rubygems/loadpath_manager'    # custom_require replaces this
 require 'rubygems/custom_require'
 
