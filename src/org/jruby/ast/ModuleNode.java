@@ -44,11 +44,11 @@ import org.jruby.parser.StaticScope;
 public class ModuleNode extends Node implements IScopingNode {
     static final long serialVersionUID = 4938115602547834310L;
 
-    private final Node cpath;
+    private final Colon3Node cpath;
     private final StaticScope scope;
     private final Node bodyNode;
 
-    public ModuleNode(ISourcePosition position, Node cpath, StaticScope scope, Node bodyNode) {
+    public ModuleNode(ISourcePosition position, Colon3Node cpath, StaticScope scope, Node bodyNode) {
         super(position, NodeTypes.MODULENODE);
         this.cpath = cpath;
         this.scope = scope;
@@ -85,7 +85,7 @@ public class ModuleNode extends Node implements IScopingNode {
      * Gets the name.
      * @return Representation of the module path+name
      */
-    public Node getCPath() {
+    public Colon3Node getCPath() {
         return cpath;
     }
     

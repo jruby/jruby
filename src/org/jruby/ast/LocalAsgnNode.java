@@ -80,6 +80,14 @@ public class LocalAsgnNode extends AssignableNode implements INameNode {
     public String getName() {
         return name;
     }
+    
+    /**
+     * Change the name of this local assignment (for refactoring)
+     * @param name
+     */
+    public void setName(String name) {
+        this.name = name;
+    }
 
     /**
      * How many scopes should we burrow down to until we need to set the block variable value.

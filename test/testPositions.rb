@@ -778,7 +778,7 @@ list = [
 nil,
 nil, #['NewlineNode',0,3,0,22],
   ['DStrNode',0,2,0,21],
-    ['StrNode',1,1,5,10],  # ENEBO: What should this really be?
+    ['StrNode',0,1,0,10],  # ENEBO: What should this really be? # MIRKO: This would be much easier for the rewriter
     ['EvStrNode',1,1,10,17],
       nil, #['NewlineNode',1,1,12,18],
         ['VCallNode',1,1,12,16],
@@ -1037,7 +1037,7 @@ EOF
 list = [
 nil,
 nil, #['NewlineNode',0,1,0,9]
-  ['LocalAsgnNode',0,0,0,1],
+  ['LocalAsgnNode',0,0,0,22],
     ['RescueNode',0,0,10,22],
       ['RescueBodyNode',0,0,10,22],
         ['FCallNode',0,0,17,22],
@@ -1142,3 +1142,376 @@ for i in j
 end
 EOF
 
+#test calls:
+list = [
+nil,
+nil,
+['CallNode', 0, 0, 0, 10],
+nil
+]
+test_tree(list, <<END)
+String.new
+END
+
+list = [
+nil,
+nil,
+['CallNode', 0, 0, 0, 12],
+nil
+]
+test_tree(list, <<END)
+String.new()
+END
+
+list = [
+nil,
+nil,
+['CallNode', 0, 0, 0, 17],
+nil
+]
+test_tree(list, <<END)
+String.new("aaa")
+END
+
+list = [
+nil,
+nil,
+['CallNode', 0, 0, 0, 24],
+nil
+]
+test_tree(list, <<END)
+String.new "aaa" + "bbb"
+END
+
+list = [
+nil,
+nil,
+['CallNode', 0, 0, 0, 17],
+nil
+]
+test_tree(list, <<END)
+String.new 5.to_s
+END
+
+#test arrays
+
+list = [
+nil,
+nil,
+['CallNode', 0, 0, 0, 30],
+['ConstNode', 0, 0, 0, 5],
+['ArrayNode', 0, 0, 10, 30]
+]
+test_tree(list, <<END)
+Array.new "aa", 11000, 20, 340
+END
+
+list = [
+nil,
+nil,
+['CallNode', 0, 0, 0, 26],
+]
+test_tree(list, <<END)
+Array.new String.new(1234)
+END
+
+list = [
+nil,
+nil,
+['ArrayNode', 0, 0, 0, 12],
+]
+test_tree(list, <<END)
+[55, "test"]
+END
+
+list = [
+nil,
+nil,
+nil,
+['ConstNode', 0, 0, 0, 5],
+['ArrayNode', 0, 0, 9, 14],
+]
+test_tree(list, <<END)
+Array.new("a")
+END
+
+list = [
+nil,
+nil,
+nil,
+nil,
+nil,
+['DAsgnNode', 0, 0, 12, 19],
+nil,
+nil,
+]
+test_tree(list, <<END, "dasgn node")
+[].each do |element|
+end
+END
+
+list = [
+nil,
+nil,
+nil,
+nil,
+nil,
+nil,
+nil,
+['DAsgnNode', 0, 0, 12, 20],
+['DAsgnNode', 0, 0, 22, 30],
+nil,
+nil,
+]
+test_tree(list, <<END, "multiple dasgn nodes")
+[].each do |element1, element2|
+end
+END
+
+list = [
+nil,
+nil,
+['MultipleAsgnNode', 0, 0, 0, 13],
+['ArrayNode', 0, 0, 0, 4],
+['LocalAsgnNode', 0, 0, 0, 1],
+['LocalAsgnNode', 0, 0, 3, 4],
+['ArrayNode', 0, 0, 7, 13],
+['ZArrayNode', 0, 0, 7, 9],
+['HashNode', 0, 0, 11, 13],
+]
+test_tree(list, <<END, "multipleasgn node")
+a, b = [], {}
+END
+
+list = [
+nil,
+nil,
+nil,
+['ArrayNode', 0, 0, 0, 9],
+['FixnumNode', 0, 0, 1, 2],
+['FixnumNode', 0, 0, 4, 5],
+['FixnumNode', 0, 0, 7, 8],
+['IterNode', 0, 2, 15, 34],
+['DAsgnNode', 0, 0, 19, 20],
+nil,
+['FCallNode', 1, 1, 24, 30],
+['ArrayNode', 1, 1, 29, 30],
+['DVarNode', 1, 1, 29, 30],
+]
+test_tree(list, <<END, "iter node")
+[1, 2, 3].each do |i|
+  puts i
+end
+END
+
+list = [
+nil,
+nil, #['NewlineNode', 0, 1, 0, 7],
+['LocalAsgnNode', 0, 0, 0, 6],
+['CallNode', 0, 0, 0, 6],
+['LocalVarNode', 0, 0, 0, 1],
+['ArrayNode', 0, 0, 5, 6],
+['FixnumNode', 0, 0, 5, 6]
+]
+test_tree(list, <<END, "+= assignment")
+a += 5
+END
+
+list = [
+nil,
+nil, #['NewlineNode', 0, 6, 0, 70],
+['ClassNode', 0, 6, 0, 70],
+['Colon2Node', 0, 0, 6, 10],
+nil, #['NewlineNode', 1, 6, 13, 67],
+['DefnNode', 1, 5, 13, 66],
+['ArgumentNode', 1, 1, 17, 21],
+['ArgsNode', 2, 2, 22, 22],
+nil, #['NewlineNode', 2, 5, 26, 61],
+['WhileNode', 2, 4, 26, 60],
+['TrueNode', 2, 2, 32, 36],
+nil, #['NewlineNode', 3, 4, 43, 53],
+['FCallNode', 3, 3, 43, 52],
+['ArrayNode', 3, 3, 48, 52],
+['TrueNode', 3, 3, 48, 52]
+]
+test_tree(list, <<END)
+class Test
+  def test
+    while true
+      puts true
+    end
+  end
+end
+END
+
+list = [
+nil,
+nil, #['NewlineNode', 0, 4, 0, 78],
+['ClassNode', 0, 4, 0, 78],
+['Colon2Node', 0, 0, 6, 14],
+nil, #['NewlineNode', 1, 4, 17, 75],
+['DefnNode', 1, 3, 17, 73],
+['ArgumentNode', 1, 1, 21, 27],
+['ArgsNode', 1, 1, 28, 32],
+['ListNode', 1, 1, 28, 32],
+['ArgumentNode', 1, 1, 28, 29],
+['ArgumentNode', 1, 1, 31, 32],
+nil, #['NewlineNode', 2, 3, 38, 68],
+['LocalAsgnNode', 2, 2, 38, 66],
+['CallNode', 2, 2, 42, 66],
+['ConstNode', 2, 2, 42, 50],
+['ArrayNode', 2, 2, 62, 66],
+['LocalVarNode', 2, 2, 62, 63],
+['LocalVarNode', 2, 2, 65, 66]
+]
+test_tree(list, <<END)
+class Triangle
+  def printC a, b 
+    c = Triangle.hypotenuse a, b 
+  end 
+end
+END
+
+list = [
+nil,
+nil, #['NewlineNode', 0, 7, 0, 91],
+['ClassNode', 0, 7, 0, 90],
+['Colon2Node', 0, 0, 6, 10],
+['BlockNode', 1, 7, 13, 87],
+nil, #['NewlineNode', 1, 4, 13, 49],
+['DefsNode', 1, 3, 13, 48],
+['ConstNode', 1, 1, 17, 21],
+['ArgumentNode', 1, 1, 22, 26],
+['ArgsNode', 1, 1, 27, 31],
+['ListNode', 1, 1, 27, 31],
+['ArgumentNode', 1, 1, 27, 31],
+nil, #['NewlineNode', 2, 3, 36, 43],
+['ReturnNode', 2, 2, 36, 42],
+nil, #['NewlineNode', 1, 7, 13, 87],
+['DefsNode', 4, 6, 51, 86],
+['SelfNode', 4, 4, 55, 59],
+['ArgumentNode', 4, 4, 60, 64],
+['ArgsNode', 4, 4, 65, 69],
+['ListNode', 4, 4, 65, 69],
+['ArgumentNode', 4, 4, 65, 69],
+nil, #['NewlineNode', 5, 6, 74, 81],
+['ReturnNode', 5, 5, 74, 80]
+]
+test_tree(list, <<END, "class methods")
+class Test
+  def Test.test huhu
+    return
+  end
+  def self.test huhu
+    return
+  end
+end
+END
+
+list = [
+nil,
+nil, #['NewlineNode', 0, 4, 0, 67],
+['DefnNode', 0, 4, 0, 67],
+['ArgumentNode', 0, 0, 4, 20],
+['ArgsNode', 1, 1, 21, 21],
+['RescueNode', 1, 4, 23, 67],
+['RescueBodyNode', 2, 4, 33, 67],
+nil, #['NewlineNode', 3, 4, 42, 64],
+['FCallNode', 3, 3, 42, 63],
+['ArrayNode', 3, 3, 47, 63],
+['StrNode', 3, 3, 47, 63],
+nil, #['NewlineNode', 1, 2, 23, 33],
+['LocalAsgnNode', 1, 1, 23, 32],
+['FixnumNode', 1, 1, 31, 32]
+]
+test_tree(list, <<END)
+def value_assertions
+  value = 5
+rescue
+  puts "to the rescue!"
+end
+END
+
+list = [
+nil,
+nil, #['NewlineNode', 0, 6, 0, 63],
+['ClassNode', 0, 6, 0, 63],
+['Colon2Node', 0, 0, 6, 7],
+nil, #['NewlineNode', 1, 6, 11, 60],
+['DefnNode', 1, 5, 11, 58],
+['ArgumentNode', 1, 1, 15, 16],
+['ArgsNode', 2, 2, 18, 18],
+['BlockNode', 2, 5, 22, 53],
+nil, #['NewlineNode', 2, 3, 22, 31],
+['YieldNode', 2, 2, 22, 30],
+['FixnumNode', 2, 2, 28, 29],
+nil, #['NewlineNode', 2, 4, 22, 43],
+['YieldNode', 3, 3, 35, 42],
+nil, #['NewlineNode', 2, 5, 22, 53],
+['YieldNode', 4, 4, 47, 52]
+]
+test_tree(list, <<END, "yield")
+class X 
+  def x 
+    yield(5)
+    yield()
+    yield
+  end 
+end
+END
+
+
+list = [
+nil,
+nil, #['NewlineNode', 0, 1, 0, 25],
+['CallNode', 0, 0, 0, 7],
+['FixnumNode', 0, 0, 0, 1],
+['IterNode', 0, 0, 8, 24],
+nil, #['NewlineNode', 0, 0, 10, 24],
+['FCallNode', 0, 0, 10, 22],
+['ArrayNode', 0, 0, 15, 22],
+['StrNode', 0, 0, 15, 22],
+]
+test_tree(list, <<END)
+5.times { puts "hello" }
+END
+
+
+list = [
+nil,
+nil, #['NewlineNode', 0, 4, 0, 44],
+['ClassNode', 0, 4, 0, 44],
+['Colon2Node', 0, 0, 6, 7],
+nil, #['NewlineNode', 1, 4, 10, 41],
+['DefnNode', 1, 3, 10, 40],
+['ArgumentNode', 1, 1, 14, 24],
+['ArgsNode', 2, 2, 25, 25],
+nil, #['NewlineNode', 2, 3, 29, 35],
+['ZSuperNode', 2, 2, 29, 34]
+]
+test_tree(list, <<END, "zsuper")
+class X
+  def initialize
+    super
+  end
+end
+END
+
+
+list = [
+nil,
+nil, #['NewlineNode', 0, 2, 0, 35],
+['DefnNode', 0, 1, 0, 34],
+['ArgumentNode', 0, 0, 4, 8],
+['ArgsNode', 0, 0, 9, 30],
+['ListNode', 0, 0, 9, 16],
+['ArgumentNode', 0, 0, 9, 10],
+['ArgumentNode', 0, 0, 12, 13],
+['ArgumentNode', 0, 0, 15, 16],
+['BlockArgNode', 0, 0, 24, 30],
+nil, #['ScopeNode', 1, 1, 33, 34]
+]
+test_tree(list, <<END, "method with opt and block arg")
+def test a, b, c, *opt, &block
+end
+END

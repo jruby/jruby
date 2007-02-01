@@ -34,7 +34,9 @@ import org.jruby.ast.AliasNode;
 import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArgsNode;
+import org.jruby.ast.ArgsPushNode;
 import org.jruby.ast.ArrayNode;
+import org.jruby.ast.AttrAssignNode;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BeginNode;
 import org.jruby.ast.BignumNode;
@@ -130,7 +132,7 @@ import org.jruby.evaluator.Instruction;
  * @author  jpetersen
  */
 public abstract class AbstractVisitor implements NodeVisitor {
-    
+
     /**
      * This method is called by default for each visited Node.
      */
@@ -513,6 +515,14 @@ public abstract class AbstractVisitor implements NodeVisitor {
     }
 
     public Instruction visitSymbolNode(SymbolNode iVisited) {
+        return visitNode(iVisited);
+    }
+    
+    public Instruction visitArgsPushNode(ArgsPushNode iVisited) {
+        return visitNode(iVisited);
+    }
+
+    public Instruction visitAttrAssignNode(AttrAssignNode iVisited) {
         return visitNode(iVisited);
     }
 }

@@ -121,19 +121,9 @@ public class StandardASMCompiler implements Compiler {
     
     public StandardASMCompiler(Node node) {
         // determine new class name based on filename of incoming node
-        ISourcePosition position = node.getPosition();
-        
-        if (position != null) {
-            classname = position.getFile();
-            if (classname.endsWith(".rb")) {
-                classname = classname.substring(0, classname.length() - 3);
-            }
-            sourcename = position.getFile();
-        } else {
-            // must generate unique classnames for evals, since they could be generated many times in a given run
-            classname = "EVAL" + hashCode();
-            sourcename = "EVAL" + hashCode();
-        }
+        // must generate unique classnames for evals, since they could be generated many times in a given run
+        classname = "EVAL" + hashCode();
+        sourcename = "EVAL" + hashCode();
     }
     
     public Class loadClass(IRuby runtime) throws ClassNotFoundException {

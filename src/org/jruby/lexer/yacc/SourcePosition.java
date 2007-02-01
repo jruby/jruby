@@ -157,6 +157,7 @@ public class SourcePosition implements ISourcePosition, Serializable {
      */
     public void adjustStartOffset(int relativeValue) {
         startOffset += relativeValue;
+        if(startOffset < 0) startOffset = 0;
     }
     
     /**

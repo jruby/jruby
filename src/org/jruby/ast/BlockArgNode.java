@@ -83,7 +83,12 @@ public class BlockArgNode extends Node implements INameNode {
         return name;
     }
 
+	public void setName(String name) {
+		this.name = name;
+	}
+	
     public List childNodes() {
         return EMPTY_LIST;
     }
+
 }

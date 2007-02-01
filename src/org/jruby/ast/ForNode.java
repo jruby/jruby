@@ -42,13 +42,20 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 public class ForNode extends IterNode {
     static final long serialVersionUID = -8319863477790150586L;
+    private Node iterNode;
 
     public ForNode(ISourcePosition position, Node varNode, Node bodyNode, Node iterNode) {
         // For nodes do not have their own scope so we pass null to indicate this.
         // 'For's are implemented as blocks in evaluation, but they have no scope so we
         // just deal with this lack of scope throughout its lifespan.  We should probably
         // change the way this works to get rid of multiple null checks.
-        super(position, varNode, null, bodyNode, iterNode, NodeTypes.FORNODE);
+        super(position, varNode, null, bodyNode, NodeTypes.FORNODE);
+        
+        this.iterNode = iterNode;
+    }
+    
+    public Node getIterNode() {
+        return iterNode;
     }
 
     /**

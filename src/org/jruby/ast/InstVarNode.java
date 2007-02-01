@@ -87,5 +87,9 @@ public class InstVarNode extends Node implements IArityNode, INameNode {
     public List childNodes() {
         return EMPTY_LIST;
     }
+    
+    public void setName(String name){
+    		this.name = name;
+    }
 
 }

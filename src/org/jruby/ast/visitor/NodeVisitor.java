@@ -140,7 +140,7 @@ public interface NodeVisitor {
     public Instruction visitAndNode(AndNode iVisited);
     public Instruction visitArgsNode(ArgsNode iVisited);
     public Instruction visitArgsCatNode(ArgsCatNode iVisited);
-    public Instruction visitArgsPushNode(ArgsPushNode node);
+    public Instruction visitArgsPushNode(ArgsPushNode iVisited);
     public Instruction visitArrayNode(ArrayNode iVisited);
     public Instruction visitAttrAssignNode(AttrAssignNode iVisited);
     public Instruction visitBackRefNode(BackRefNode iVisited);

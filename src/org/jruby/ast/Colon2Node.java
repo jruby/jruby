@@ -30,7 +30,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import java.io.IOException;
 import java.util.List;
 
 import org.jruby.ast.types.INameNode;
@@ -42,25 +41,16 @@ import org.jruby.lexer.yacc.ISourcePosition;
  *
  * @author  jpetersen
  */
-public class Colon2Node extends Node implements INameNode {
+public class Colon2Node extends Colon3Node implements INameNode {
     static final long serialVersionUID = -3250593470034657352L;
 
     private final Node leftNode;
-    private String name;
 
     public Colon2Node(ISourcePosition position, Node leftNode, String name) {
-        super(position, NodeTypes.COLON2NODE);
+        super(position, NodeTypes.COLON2NODE, name);
         this.leftNode = leftNode;
-        this.name = name.intern();
     }
     
-    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
-        
-        // deserialized strings are not interned; intern it now
-        name = name.intern();
-    }
-
     /**
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
@@ -77,23 +67,14 @@ public class Colon2Node extends Node implements INameNode {
         return leftNode;
     }
 
-    /**
-     * Gets the name.
-     * @return Returns a String
-     */
-    public String getName() {
-        return name;
-    }
-    
     public List childNodes() {
         return Node.createList(leftNode);
     }
     
     public String toString() {
         String result = "Colon2Node [";
-        if (leftNode != null)
-            result += leftNode;
-        result += name;
-        return result+"]";
+        if (leftNode != null) result += leftNode;
+        result += getName();
+        return result + "]";
     }
 }

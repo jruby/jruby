@@ -33,6 +33,7 @@ package org.jruby.ast;
 import java.io.IOException;
 import java.util.List;
 
+import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -42,7 +43,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * 
  * @author  jpetersen
  */
-public class ClassVarNode extends Node {
+public class ClassVarNode extends Node implements INameNode {
     static final long serialVersionUID = -228883683599457381L;
 
     private String name;
@@ -77,6 +78,10 @@ public class ClassVarNode extends Node {
     
     public List childNodes() {
         return EMPTY_LIST;
+    }
+    
+    public void setName(String name) {
+    		this.name = name;
     }
 
 }

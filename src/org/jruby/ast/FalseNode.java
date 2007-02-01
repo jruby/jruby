@@ -63,7 +63,7 @@ public class FalseNode extends Node implements INameNode {
     public String getName() {
         return "false";
     }
-
+    
     public List childNodes() {
         return EMPTY_LIST;
     }

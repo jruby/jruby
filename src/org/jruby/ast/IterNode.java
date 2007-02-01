@@ -49,24 +49,22 @@ public class IterNode extends Node {
 
     private final Node varNode;
     private final Node bodyNode;
-    private Node iterNode;
     
     // What static scoping relationship exists when it comes into being.
     private StaticScope scope;
     
     private transient ICallable callable;
 
-    public IterNode(ISourcePosition position, Node varNode, StaticScope scope, Node bodyNode, Node iterNode) {
-        this(position, varNode, scope, bodyNode, iterNode, NodeTypes.ITERNODE);
+    public IterNode(ISourcePosition position, Node varNode, StaticScope scope, Node bodyNode) {
+        this(position, varNode, scope, bodyNode, NodeTypes.ITERNODE);
     }
     
     public IterNode(ISourcePosition position, Node varNode, StaticScope scope, Node bodyNode, 
-            Node iterNode, int id) {
+            int id) {
         super(position, id);
         this.varNode = varNode;
         this.scope = scope;
         this.bodyNode = bodyNode;
-        this.iterNode = iterNode;
         
         // if body and var are null, don't both with a heavyweight callable
         if (bodyNode == null && varNode == null) {
@@ -92,14 +90,6 @@ public class IterNode extends Node {
      */
     public Node getBodyNode() {
         return bodyNode;
-    }
-
-    /**
-     * Gets the iterNode.
-     * @return Returns a Node
-     */
-    public Node getIterNode() {
-        return iterNode;
     }
 
     /**

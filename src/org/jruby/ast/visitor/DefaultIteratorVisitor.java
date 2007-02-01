@@ -195,14 +195,14 @@ public class DefaultIteratorVisitor implements NodeVisitor {
         return null;
     }
     
-    /** @fixme iteration not correctly defined */
     public Instruction visitAttrAssignNode(AttrAssignNode iVisited) {
         iVisited.accept(_Payload);
-        // FIXME
-        /*
-         * for (Node node = iVisited.getArgsNode(); node != null; node =
-         * node.getNextNode()) { node.getHeadNode().accept(this); }
-         */
+        if(iVisited.getArgsNode() != null) {
+        	iVisited.getArgsNode().accept(this);
+        }
+        if(iVisited.getReceiverNode() != null) {
+        	iVisited.getReceiverNode().accept(this);
+        }
         return null;
     }
 
@@ -272,16 +272,14 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 		return null;
 	}
 
-	/**
-	 * @fixme iteration not correctly defined
-	 */
 	public Instruction visitCallNode(CallNode iVisited) {
 		iVisited.getReceiverNode().accept(this);
-		//  FIXME
-		/*
-		 * for (Node node = iVisited.getArgsNode(); node != null; node =
-		 * node.getNextNode()) { node.getHeadNode().accept(this); }
-		 */
+		if(iVisited.getArgsNode() != null) {
+			iVisited.getArgsNode().accept(this);
+		}
+		if(iVisited.getIterNode() != null) {
+			iVisited.getIterNode().accept(this);
+		}
 		iVisited.accept(_Payload);
 		return null;
 	}
@@ -387,14 +385,14 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 		return null;
 	}
 
-	/** @fixme iteration not correctly defined */
 	public Instruction visitFCallNode(FCallNode iVisited) {
 		iVisited.accept(_Payload);
-		// FIXME
-		/*
-		 * for (Node node = iVisited.getArgsNode(); node != null; node =
-		 * node.getNextNode()) { node.getHeadNode().accept(this); }
-		 */
+		if(iVisited.getArgsNode() != null) {
+			iVisited.getArgsNode().accept(this);
+		}
+		if(iVisited.getIterNode() != null) {
+			iVisited.getIterNode().accept(this);
+		}
 		return null;
 	}
 
@@ -589,6 +587,7 @@ public class DefaultIteratorVisitor implements NodeVisitor {
     
     public Instruction visitRootNode(RootNode iVisited) {
         iVisited.accept(_Payload);
+        iVisited.getBodyNode().accept(this);
         return null;
     }
 

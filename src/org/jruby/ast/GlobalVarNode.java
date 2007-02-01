@@ -33,6 +33,7 @@ package org.jruby.ast;
 import java.io.IOException;
 import java.util.List;
 
+import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -41,7 +42,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  *	access to a global variable.
  * @author  jpetersen
  */
-public class GlobalVarNode extends Node {
+public class GlobalVarNode extends Node implements INameNode {
     static final long serialVersionUID = -8913633094119740033L;
 
     private String name;

@@ -33,6 +33,7 @@ package org.jruby.ast;
 import java.io.IOException;
 import java.util.List;
 
+import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -40,7 +41,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /**
  * Access a dynamic variable (e.g. block scope local variable).
  */
-public class DVarNode extends Node {
+public class DVarNode extends Node implements INameNode {
     static final long serialVersionUID = -8479281167248673970L;
 
     // The name of the variable
@@ -97,6 +98,14 @@ public class DVarNode extends Node {
      */
     public String getName() {
         return name;
+    }
+    
+    /**
+     * Sets the name of this variable (for refactoring support)
+     * @param name to set the variable to
+     */
+    public void setName(String name) {
+        this.name = name;
     }
     
     public List childNodes() {

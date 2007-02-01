@@ -49,12 +49,12 @@ import org.jruby.parser.StaticScope;
 public class ClassNode extends Node implements IScopingNode {
     static final long serialVersionUID = -1369424045737867587L;
 
-    private final Node cpath;
+    private final Colon3Node cpath;
     private final StaticScope scope;
     private final Node bodyNode;
     private final Node superNode;
     
-    public ClassNode(ISourcePosition position, Node cpath, StaticScope scope, Node bodyNode, Node superNode) {
+    public ClassNode(ISourcePosition position, Colon3Node cpath, StaticScope scope, Node bodyNode, Node superNode) {
         super(position, NodeTypes.CLASSNODE);
         this.cpath = cpath;
         this.scope = scope;
@@ -92,7 +92,7 @@ public class ClassNode extends Node implements IScopingNode {
      * Gets the className.
      * @return Returns representation of class path+name
      */
-    public Node getCPath() {
+    public Colon3Node getCPath() {
         return cpath;
     }
 

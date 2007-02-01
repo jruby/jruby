@@ -44,7 +44,7 @@ public class LocalVarNode extends Node implements INameNode {
     static final long serialVersionUID = 8562701804939317217L;
 
     // The name of the variable
-    private final String name;
+    private String name;
     
     // A scoped location of this variable (high 16 bits is how many scopes down and low 16 bits
     // is what index in the right scope to set the value.
@@ -90,6 +90,14 @@ public class LocalVarNode extends Node implements INameNode {
      */
     public String getName() {
         return name;
+    }
+    
+    /**
+     * Set the name of this variable (for refactoring support)
+     * @param name the new name
+     */
+    public void setName(String name) {
+        this.name = name;
     }
     
     public List childNodes() {

@@ -162,7 +162,7 @@ public class RubyYaccLexer {
     	return src.getPosition(startPosition, inclusive); 
     }
     
-    protected ISourcePosition getPosition() {
+    public ISourcePosition getPosition() {
         return src.getPosition(null, false);
     }
 

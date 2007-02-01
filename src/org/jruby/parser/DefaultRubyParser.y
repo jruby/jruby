@@ -307,7 +307,7 @@ stmts         : none
 stmt          : kALIAS fitem {
                   lexer.setState(LexState.EXPR_FNAME);
               } fitem {
-                  $$ = new AliasNode(getPosition($1), (String) $2.getValue(), (String) $4.getValue());
+                  $$ = new AliasNode(support.union($1, $4), (String) $2.getValue(), (String) $4.getValue());
               }
               | kALIAS tGVAR tGVAR {
                   $$ = new VAliasNode(getPosition($1), (String) $2.getValue(), (String) $3.getValue());
@@ -358,7 +358,8 @@ stmt          : kALIAS fitem {
                   if (support.isInDef() || support.isInSingle()) {
                       yyerror("END in method; use at_exit");
                   }
-                  support.getResult().addEndNode(new IterNode(support.union($2, $4), null, null, new PostExeNode(getPosition($1)), $3));
+		  // FIXME: Totally broken if scoping is important...though if not this is an improvement over iterNode
+                  support.getResult().addEndNode(new PostExeNode(getPosition($1), $3));
                   $$ = null;
               }
               | lhs '=' command_call {
@@ -420,6 +421,7 @@ stmt          : kALIAS fitem {
 	      | mlhs '=' mrhs {
                   $<AssignableNode>1.setValueNode($3);
 		  $$ = $1;
+                  $1.setPosition(support.union($1, $3));
 	      }
               | expr 
 
@@ -465,7 +467,7 @@ block_command : block_call
 cmd_brace_block	: tLBRACE_ARG {
                     support.pushBlockScope();
 		} opt_block_var compstmt tRCURLY {
-                    $$ = new IterNode(getPosition($1), $3, support.getCurrentScope(), $4, null);
+                    $$ = new IterNode(getPosition($1), $3, support.getCurrentScope(), $4);
                     support.popCurrentScope();
 		}
 
@@ -508,7 +510,9 @@ mlhs_basic    : mlhs_head {
                   $$ = new MultipleAsgnNode(getPosition($1), $1, null);
               }
               | mlhs_head mlhs_item {
-                  $$ = new MultipleAsgnNode(getPosition($1), $1.add($2), null);
+//mirko: check
+                  $$ = new MultipleAsgnNode(support.union($<Node>1, $<Node>2), $1.add($2), null);
+                  $<Node>1.setPosition(support.union($<Node>1, $<Node>2));
               }
               | mlhs_head tSTAR mlhs_node {
                   $$ = new MultipleAsgnNode(getPosition($1), $1, $3);
@@ -680,6 +684,7 @@ arg           : lhs '=' arg {
                       $$ = new OpAsgnAndNode(getPosition($1), support.gettable2(name, $1.getPosition()), $1);
 		  } else {
 		      $1.setValueNode(support.getOperatorCallNode(support.gettable2(name, $1.getPosition()), asgnOp, $3));
+                      $1.setPosition(support.union($1, $3));
 		      $$ = $1;
 		  }
               }
@@ -707,12 +712,12 @@ arg           : lhs '=' arg {
               | arg tDOT2 arg {
 		  support.checkExpression($1);
 		  support.checkExpression($3);
-                  $$ = new DotNode(getPosition($1), $1, $3, false);
+                  $$ = new DotNode(support.union($1, $3), $1, $3, false);
               }
               | arg tDOT3 arg {
 		  support.checkExpression($1);
 		  support.checkExpression($3);
-                  $$ = new DotNode(getPosition($1), $1, $3, true);
+                  $$ = new DotNode(support.union($1, $3), $1, $3, true);
               }
               | arg tPLUS arg {
                   $$ = support.getOperatorCallNode($1, "+", $3);
@@ -1029,7 +1034,7 @@ primary       : literal
                   }
               }
               | tLBRACE assoc_list tRCURLY {
-                  $$ = new HashNode(getPosition($1), $2);
+                  $$ = new HashNode(support.union($1, $3), $2);
               }
               | kRETURN {
 		  $$ = new ReturnNode($1.getPosition(), null);
@@ -1068,7 +1073,7 @@ primary       : literal
 	      } expr_value do {
 		  lexer.getConditionState().end();
 	      } compstmt kEND {
-                  $$ = new WhileNode(getPosition($1), support.getConditionNode($3), $6);
+                  $$ = new WhileNode(support.union($1, $7), support.getConditionNode($3), $6);
               }
               | kUNTIL {
                   lexer.getConditionState().begin();
@@ -1099,7 +1104,7 @@ primary       : literal
                   }
 		  support.pushLocalScope();
               } bodystmt kEND {
-                  $$ = new ClassNode(support.union($1, $6), $2, support.getCurrentScope(), $5, $3);
+                  $$ = new ClassNode(support.union($1, $6), $<Colon3Node>2, support.getCurrentScope(), $5, $3);
                   support.popCurrentScope();
               }
               | kCLASS tLSHFT expr {
@@ -1121,7 +1126,7 @@ primary       : literal
                   }
 		  support.pushLocalScope();
               } bodystmt kEND {
-                  $$ = new ModuleNode(support.union($1, $5), $2, support.getCurrentScope(), $4);
+                  $$ = new ModuleNode(support.union($1, $5), $<Colon3Node>2, support.getCurrentScope(), $4);
                   support.popCurrentScope();
               }
 	      | kDEF fname {
@@ -1129,7 +1134,7 @@ primary       : literal
 		  support.pushLocalScope();
               } f_arglist bodystmt kEND {
                     /* NOEX_PRIVATE for toplevel */
-                  $$ = new DefnNode(support.union($1, $6), new ArgumentNode($2.getPosition(), (String) $2.getValue()), $4, support.getCurrentScope(), $5, Visibility.PRIVATE);
+                  $$ = new DefnNode(support.union($1, $6), new ArgumentNode($2.getPosition(), (String) $2.getValue()), $<ArgsNode>4, support.getCurrentScope(), $5, Visibility.PRIVATE);
                   support.popCurrentScope();
                   support.setInDef(false);
               }
@@ -1140,7 +1145,7 @@ primary       : literal
 		  support.pushLocalScope();
                   lexer.setState(LexState.EXPR_END); /* force for args */
               } f_arglist bodystmt kEND {
-                  $$ = new DefsNode(support.union($1, $9), $2, (String) $5.getValue(), $7, support.getCurrentScope(), $8);
+                  $$ = new DefsNode(support.union($1, $9), $2, new ArgumentNode($5.getPosition(), (String) $5.getValue()), $<ArgsNode>7, support.getCurrentScope(), $8);
                   support.popCurrentScope();
                   support.setInSingle(support.getInSingle() - 1);
               }
@@ -1173,6 +1178,7 @@ do            : term
 
 if_tail       : opt_else 
               | kELSIF expr_value then compstmt if_tail {
+//mirko: support.union($<ISourcePositionHolder>1.getPosition(), getPosition($<ISourcePositionHolder>1)) ?
                   $$ = new IfNode(getPosition($1), support.getConditionNode($2), $4, $5);
               }
 
@@ -1203,7 +1209,7 @@ opt_block_var : none
 do_block      : kDO_BLOCK {
                   support.pushBlockScope();
 	      } opt_block_var compstmt kEND {
-                  $$ = new IterNode(support.union($1, $5), $3, support.getCurrentScope(), $4, null);
+                  $$ = new IterNode(support.union($1, $5), $3, support.getCurrentScope(), $4);
                   support.popCurrentScope();
               }
 
@@ -1237,24 +1243,25 @@ method_call   : operation paren_args {
                   $$ = support.new_super($2, $1);
               }
               | kSUPER {
-                  $$ = new ZSuperNode(getPosition($1));
+                  $$ = new ZSuperNode($1.getPosition());
               }
 
 // IterNode:brace_block - block invocation argument (foo >{...}< | foo >do end<) [!null]
 brace_block   : tLCURLY {
                   support.pushBlockScope();
 	      } opt_block_var compstmt tRCURLY {
-                  $$ = new IterNode(support.union($1, $5), $3, support.getCurrentScope(), $4, null);
+                  $$ = new IterNode(support.union($1, $5), $3, support.getCurrentScope(), $4);
                   support.popCurrentScope();
               }
               | kDO {
                   support.pushBlockScope();
 	      } opt_block_var compstmt kEND {
-                  $$ = new IterNode(support.union($1, $5), $3, support.getCurrentScope(), $4, null);
+                  $$ = new IterNode(support.union($1, $5), $3, support.getCurrentScope(), $4);
                   support.popCurrentScope();
               }
 
 case_body     : kWHEN when_args then compstmt cases {
+//mirko support.union($1, support.unwrapNewlineNode($4))?
                   $$ = new WhenNode($1.getPosition(), $2, $4, $5);
               }
 
@@ -1273,6 +1280,9 @@ opt_rescue    : kRESCUE exc_list exc_var then compstmt opt_rescue {
                   Node node;
                   if ($3 != null) {
                      node = support.appendToBlock(support.node_assign($3, new GlobalVarNode(getPosition($1), "$!")), $5);
+                     if($5 != null) {
+                        node.setPosition(support.unwrapNewlineNode($5).getPosition());
+                     }
 		  } else {
 		     node = $5;
                   }
@@ -1316,7 +1326,7 @@ strings       : string {
 
 string        : string1
               | string string1 {
-                  $$ = support.literal_concat($1, $2);
+                  $$ = support.literal_concat(getPosition($1), $1, $2);
               }
 
 string1       : tSTRING_BEG string_contents tSTRING_END {
@@ -1359,7 +1369,7 @@ regexp	      : tREGEXP_BEG xstring_contents tREGEXP_END {
 		  if (node == null) {
 		      $$ = new RegexpNode(getPosition($1), "", options & ~ReOptions.RE_OPTION_ONCE);
 		  } else if (node instanceof StrNode) {
-		      $$ = new RegexpNode(getPosition($1), ((StrNode) node).getValue(), options & ~ReOptions.RE_OPTION_ONCE);
+		      $$ = new RegexpNode($2.getPosition(), ((StrNode) node).getValue(), options & ~ReOptions.RE_OPTION_ONCE);
 		  } else {
 		      if (node instanceof DStrNode == false) {
 			  node = new DStrNode(getPosition($1)).add(new ArrayNode(getPosition($1), node));
@@ -1386,7 +1396,7 @@ word_list      : /* none */ {
 
 word	       : string_content
 	       | word string_content {
-                   $$ = support.literal_concat($1, $2);
+                   $$ = support.literal_concat(getPosition($1), $1, $2);
 	       }
 
 qwords	       : tQWORDS_BEG ' ' tSTRING_END {
@@ -1405,17 +1415,17 @@ qword_list     : /* none */ {
 	       }
 
 string_contents: /* none */ {
-                   $$ = new StrNode(getPosition(null), "");
+                   $$ = new StrNode($<Token>0.getPosition(), "");
 	       }
 	       | string_contents string_content {
-                   $$ = support.literal_concat($1, $2);
+                   $$ = support.literal_concat(getPosition($1), $1, $2);
 	       }
 
 xstring_contents: /* none */ {
 		   $$ = null;
 	       }
 	       | xstring_contents string_content {
-                   $$ = support.literal_concat($1, $2);
+                   $$ = support.literal_concat(getPosition($1), $1, $2);
 	       }
 
 string_content : tSTRING_CONTENT {
@@ -1553,13 +1563,13 @@ f_arglist      : tLPAREN2 f_args opt_nl tRPAREN {
                }
 
 f_args         : f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg {
-                   $$ = new ArgsNode(getPosition($1), $1, $3, ((Integer) $5.getValue()).intValue(), $6);
+                   $$ = new ArgsNode(support.union($1, $6), $1, $3, ((Integer) $5.getValue()).intValue(), $6);
                }
                | f_arg ',' f_optarg opt_f_block_arg {
                    $$ = new ArgsNode(getPosition($1), $1, $3, -1, $4);
                }
                | f_arg ',' f_rest_arg opt_f_block_arg {
-                   $$ = new ArgsNode(getPosition($1), $1, null, ((Integer) $3.getValue()).intValue(), $4);
+                   $$ = new ArgsNode(support.union($1, $4), $1, null, ((Integer) $3.getValue()).intValue(), $4);
                }
                | f_arg opt_f_block_arg {
                    $$ = new ArgsNode($<ISourcePositionHolder>1.getPosition(), $1, null, -1, $2);
@@ -1577,7 +1587,8 @@ f_args         : f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg {
                    $$ = new ArgsNode(getPosition($1), null, null, -1, $1);
                }
                | /* none */ {
-                   $$ = new ArgsNode(getPosition(null), null, null, -1, null);
+                   //take the last position from the lexer, this isn't entirely correct, but more accurate then getPosition(null). 
+                   $$ = new ArgsNode(lexer.getPosition(), null, null, -1, null);
                }
 
 f_norm_arg     : tCONSTANT {

@@ -84,4 +84,8 @@ public class ConstNode extends Node implements INameNode {
         return "ConstNode [" + name + "]";
     }
 
+	public void setName(String name) {
+		this.name = name;
+	}
+
 }

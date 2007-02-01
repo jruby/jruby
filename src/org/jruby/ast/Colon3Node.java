@@ -57,6 +57,11 @@ public class Colon3Node extends Node implements INameNode {
         this.name = name.intern();
     }
     
+    public Colon3Node(ISourcePosition position, int id, String name) {
+        super(position, id);
+        this.name = name.intern();
+    }
+    
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         
@@ -83,5 +88,9 @@ public class Colon3Node extends Node implements INameNode {
     public List childNodes() {
         return EMPTY_LIST;
     }
+
+	public void setName(String name) {
+		this.name = name;
+	}
 
 }

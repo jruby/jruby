@@ -33,6 +33,7 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -44,23 +45,15 @@ import org.jruby.runtime.Visibility;
  * 
  * @author  jpetersen
  */
-public class DefnNode extends Node {
+public class DefnNode extends MethodDefNode implements INameNode {
     static final long serialVersionUID = -7634791007500033454L;
 
-    private final ArgumentNode nameNode;
-    private final Node argsNode;
-    private final StaticScope scope;
-    private final Node bodyNode;
     private final Visibility visibility;
     
-    public DefnNode(ISourcePosition position, ArgumentNode nameNode, Node argsNode, 
+    public DefnNode(ISourcePosition position, ArgumentNode nameNode, ArgsNode argsNode, 
             StaticScope scope, Node bodyNode, Visibility visibility) {
-        super(position, NodeTypes.DEFNNODE);
+        super(position, nameNode, argsNode, scope, bodyNode, NodeTypes.DEFNNODE);
         
-        this.nameNode = nameNode;
-        this.argsNode = argsNode;
-        this.scope = scope;
-        this.bodyNode = bodyNode;
         this.visibility = visibility;
     }
 
@@ -69,49 +62,18 @@ public class DefnNode extends Node {
     }
 
     /**
-     * Gets the argsNode.
-     * @return Returns a Node
-     */
-    public Node getArgsNode() {
-        return argsNode;
-    }
-
-    /**
-     * Get the static scoping information.
-     * 
-     * @return the scoping info
-     */
-    public StaticScope getScope() {
-        return scope;
-    }
-    
-    /**
-     * Gets the body of this class.
-     * 
-     * @return the contents
-     */
-    public Node getBodyNode() {
-        return bodyNode;
-    }
-
-    public ArgumentNode getNameNode() {
-        return nameNode;
-    }
-
-    /**
-     * Gets the name.
-     * @return Returns a String
-     */
-    public String getName() {
-        return nameNode.getName();
-    }
-
-    /**
      * Gets the noex.
      * @return Returns a int
      */
     public Visibility getVisibility() {
         return visibility;
+    }
+    
+    /**
+     * Get the name of this method
+     */
+    public String getName() {
+        return nameNode.getName();
     }
     
     public List childNodes() {

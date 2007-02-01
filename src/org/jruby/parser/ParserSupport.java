@@ -96,6 +96,7 @@ import org.jruby.ast.types.ILiteralNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
+import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.Token;
 import org.jruby.runtime.DynamicScope;
@@ -239,7 +240,7 @@ public class ParserSupport {
         } else {
             switch (IdUtil.getVarType(id)) {
             case IdUtil.LOCAL_VAR:
-                return currentScope.assign(lhs.getPosition(), id, value);
+                return currentScope.assign(value != null ? union(lhs, value) : lhs.getPosition(), id, value);
             case IdUtil.CONSTANT:
                 if (isInDef() || isInSingle()) {
                     throw new SyntaxException(lhs.getPosition(), "dynamic constant assignment");
@@ -281,13 +282,29 @@ public class ParserSupport {
             second = ((NewlineNode) second).getNextNode();
         }
         
+        if(second == null) {
+        	return first.getPosition();
+        }
+        
         return first.getPosition().union(second.getPosition());
     }
+    
+    public ISourcePosition union(ISourcePosition first, ISourcePosition second) {
+		assert first.getFile().equals(second.getFile());
+
+		if (first.getStartOffset() < second.getStartOffset()) {
+			return new SourcePosition(first.getFile(), first.getStartLine(),
+					second.getEndLine(), first.getStartOffset(), second.getEndOffset());
+		} else {
+			return new SourcePosition(first.getFile(), second.getStartLine(),
+					first.getEndLine(), second.getStartOffset(), first.getEndOffset());
+		}
+	}
     
     public Node addRootNode(Node topOfAST) {
         // I am not sure we need to get AST to set AST and the appendToBlock could maybe get removed.
         // For sure once we do two pass parsing we should since this is mostly just optimzation.
-        RootNode root = new RootNode(null, result.getScope(),
+        RootNode root = new RootNode(topOfAST != null ? topOfAST.getPosition() : null, result.getScope(),
                 appendToBlock(result.getAST(), topOfAST));
 
         // FIXME: Should add begin and end nodes
@@ -300,9 +317,10 @@ public class ParserSupport {
         if (tail == null) return head;
         if (head == null) return tail;
         
-        while (head instanceof NewlineNode) {
-            head = ((NewlineNode) head).getNextNode();
-        }
+        //Mirko asks: This was added, and it breaks a lof of my code, is it really needed? 
+        //while (head instanceof NewlineNode) {
+        //    head = ((NewlineNode) head).getNextNode();
+        //}
 
         if (!(head instanceof BlockNode)) {
             head = new BlockNode(head.getPosition()).add(head);
@@ -311,6 +329,8 @@ public class ParserSupport {
         if (warnings.isVerbose() && isBreakStatement(((ListNode) head).getLast())) {
             warnings.warning(tail.getPosition(), "Statement not reached.");
         }
+        
+        head.setPosition(union(head, tail));
 
         // Assumption: tail is never a list node
         return ((ListNode) head).addAll(tail);
@@ -392,6 +412,7 @@ public class ParserSupport {
         checkExpression(rhs);
         if (lhs instanceof AssignableNode) {
     	    ((AssignableNode) lhs).setValueNode(rhs);
+    	    lhs.setPosition(union(lhs, rhs));
         } else if (lhs instanceof IArgumentNode) {
             IArgumentNode invokableNode = (IArgumentNode) lhs;
             
@@ -749,12 +770,12 @@ public class ParserSupport {
         this.warnings = warnings;
     }
     
-    public Node literal_concat(Node head, Node tail) { 
+    public Node literal_concat(ISourcePosition position, Node head, Node tail) { 
         if (head == null) return tail;
         if (tail == null) return head;
         
         if (head instanceof EvStrNode) {
-            head = new DStrNode(head.getPosition()).add(head);
+            head = new DStrNode(union(head.getPosition(), position)).add(head);
         } 
 
         if (tail instanceof StrNode) {
@@ -762,7 +783,9 @@ public class ParserSupport {
         	    return new StrNode(union(head, tail), 
                        ((StrNode) head).getValue() + ((StrNode) tail).getValue());
             } 
-        	return ((ListNode) head).add(tail);
+            head.setPosition(union(head, tail));
+            return ((ListNode) head).add(tail);
+        	
         } else if (tail instanceof DStrNode) {
             if (head instanceof StrNode){
                 ((DStrNode)tail).childNodes().add(0, head);
@@ -841,5 +864,12 @@ public class ParserSupport {
         floatNode.setValue(-floatNode.getValue());
         
         return floatNode;
+    }
+    
+    public Node unwrapNewlineNode(Node node) {
+    	if(node instanceof NewlineNode) {
+    		return ((NewlineNode) node).getNextNode();
+    	}
+    	return node;
     }
 }

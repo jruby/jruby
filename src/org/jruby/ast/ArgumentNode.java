@@ -30,6 +30,7 @@ package org.jruby.ast;
 import java.io.IOException;
 import java.util.List;
 
+import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -38,7 +39,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * Simple Node that allows editor projects to keep position info in AST
  * (evaluation does not need this).
  */
-public class ArgumentNode extends Node {
+public class ArgumentNode extends Node implements INameNode {
     private static final long serialVersionUID = -6375678995811376530L;
     private String identifier;
     
@@ -60,6 +61,10 @@ public class ArgumentNode extends Node {
     
     public String getName() {
         return identifier;
+    }
+    
+    public void setName(String name) {
+        this.identifier = name;
     }
 
     public List childNodes() {
