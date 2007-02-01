@@ -20,7 +20,7 @@ public class CodegenUtils {
      * Creates a dotted class name from a path/package name
      */
     public static String c(String p) {
-        return p.replace("/", ".");
+        return p.replace('/', '.');
     }
 
     /**

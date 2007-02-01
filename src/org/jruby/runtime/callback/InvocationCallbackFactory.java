@@ -33,7 +33,6 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CompiledBlockCallback;
 import org.jruby.runtime.ThreadContext;
@@ -183,7 +182,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         } catch(IllegalArgumentException e) {
             throw e;
         } catch(Exception e) {
-            throw new IllegalArgumentException(e);
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
@@ -212,7 +211,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         } catch(IllegalArgumentException e) {
             throw e;
         } catch(Exception e) {
-            throw new IllegalArgumentException(e);
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
@@ -245,7 +244,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         } catch(IllegalArgumentException e) {
             throw e;
         } catch(Exception e) {
-            throw new IllegalArgumentException(e);
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
     
@@ -282,7 +281,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         } catch(IllegalArgumentException e) {
             throw e;
         } catch(Exception e) {
-            throw new IllegalArgumentException(e);
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
@@ -307,7 +306,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         } catch(IllegalArgumentException e) {
             throw e;
         } catch(Exception e) {
-            throw new IllegalArgumentException(e);
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
@@ -336,7 +335,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         } catch(IllegalArgumentException e) {
             throw e;
         } catch(Exception e) {
-            throw new IllegalArgumentException(e);
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
@@ -369,7 +368,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         } catch(IllegalArgumentException e) {
             throw e;
         } catch(Exception e) {
-            throw new IllegalArgumentException(e);
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
@@ -406,7 +405,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         } catch(IllegalArgumentException e) {
             throw e;
         } catch(Exception e) {
-            throw new IllegalArgumentException(e);
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
@@ -445,7 +444,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         } catch(IllegalArgumentException e) {
             throw e;
         } catch(Exception e) {
-            throw new IllegalArgumentException(e);
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
@@ -473,7 +472,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         } catch(IllegalArgumentException e) {
             throw e;
         } catch(Exception e) {
-            throw new IllegalArgumentException(e);
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
@@ -501,7 +500,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         } catch(IllegalArgumentException e) {
             throw e;
         } catch(Exception e) {
-            throw new IllegalArgumentException(e);
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
@@ -525,7 +524,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         } catch(IllegalArgumentException e) {
             throw e;
         } catch(Exception e) {
-            throw new IllegalArgumentException(e);
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
@@ -553,7 +552,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         } catch(IllegalArgumentException e) {
             throw e;
         } catch(Exception e) {
-            throw new IllegalArgumentException(e);
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
@@ -585,7 +584,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         } catch(IllegalArgumentException e) {
             throw e;
         } catch(Exception e) {
-            throw new IllegalArgumentException(e);
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
@@ -621,7 +620,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         } catch(IllegalArgumentException e) {
             throw e;
         } catch(Exception e) {
-            throw new IllegalArgumentException(e);
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
@@ -645,7 +644,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         } catch(IllegalArgumentException e) {
             throw e;
         } catch(Exception e) {
-            throw new IllegalArgumentException(e);
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
@@ -673,7 +672,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         } catch(IllegalArgumentException e) {
             throw e;
         } catch(Exception e) {
-            throw new IllegalArgumentException(e);
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
@@ -705,7 +704,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         } catch(IllegalArgumentException e) {
             throw e;
         } catch(Exception e) {
-            throw new IllegalArgumentException(e);
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
@@ -741,7 +740,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         } catch(IllegalArgumentException e) {
             throw e;
         } catch(Exception e) {
-            throw new IllegalArgumentException(e);
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
@@ -768,7 +767,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         } catch(IllegalArgumentException e) {
             throw e;
         } catch(Exception e) {
-            throw new IllegalArgumentException(e);
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
@@ -795,7 +794,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         } catch(IllegalArgumentException e) {
             throw e;
         } catch(Exception e) {
-            throw new IllegalArgumentException(e);
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 } //InvocationCallbackFactory

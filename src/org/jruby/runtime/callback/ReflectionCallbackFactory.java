@@ -29,7 +29,6 @@
 package org.jruby.runtime.callback;
 
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CompiledBlockCallback;
 import org.jruby.runtime.builtin.IRubyObject;

@@ -10,7 +10,6 @@
 package org.jruby.compiler;
 
 import org.jruby.ast.Node;
-import org.jruby.ast.ZArrayNode;
 
 /**
  *

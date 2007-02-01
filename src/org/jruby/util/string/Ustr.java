@@ -152,7 +152,9 @@ public class Ustr
         prepareAppend();
         int i = 0;
         while (i < chars.length) {
-            int val = Character.codePointAt(chars, i);
+            // FIXME: Need a 1.4-compatible version of this that works for all codepoints
+            //int val = Character.codePointAt(chars, i);
+            int val = chars[i];
             if (val > 0xffff)
                 i += 2;
             else

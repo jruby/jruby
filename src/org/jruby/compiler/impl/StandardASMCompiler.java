@@ -1044,7 +1044,7 @@ public class StandardASMCompiler implements Compiler {
         
         loadSelf();
         
-        mv.visitLdcInsn(classname.replace("/", "."));
+        mv.visitLdcInsn(classname.replace('/', '.'));
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(Class.class), "forName", cg.sig(Class.class, cg.params(String.class)));
         
         mv.visitLdcInsn(name);
