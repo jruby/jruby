@@ -51,6 +51,7 @@ public class CommandlineParser {
 
     private ArrayList loadPaths = new ArrayList();
     private StringBuffer inlineScript = new StringBuffer();
+    private boolean hasInlineScript = false;
     private String scriptFileName = null;
     private ArrayList requiredLibraries = new ArrayList();
     private boolean benchmarking = false;
@@ -87,7 +88,7 @@ public class CommandlineParser {
             argumentIndex++;
         }
 
-        if (! hasInlineScript()) {
+        if (!hasInlineScript) {
             if (argumentIndex < arguments.length) {
                 setScriptFileName(arguments[argumentIndex]); //consume the file name
                 argumentIndex++;
@@ -125,6 +126,7 @@ public class CommandlineParser {
                 case 'e' :
                     inlineScript.append(grabValue(" -e must be followed by an expression to evaluate"));
                     inlineScript.append('\n');
+                    hasInlineScript = true;
                     break FOR;
                 case 'b' :
                     benchmarking = true;
@@ -174,7 +176,9 @@ public class CommandlineParser {
                     break;
                 case 'S':
                     scriptFileName = System.getProperty("jruby.home") + "/bin/" + grabValue("provide a value for -S");
-                    break;
+                    hasInlineScript = true;
+                    endOfArguments = true; // remaining args are for testrb
+                    break FOR;
                 case '-' :
                     if (argument.equals("--version")) {
                         setShowVersion(true);
@@ -192,6 +196,7 @@ public class CommandlineParser {
                         characterIndex = argument.length();
                         inlineScript.append(grabValue("provide a command to execute"));
                         inlineScript.append("\n");
+                        hasInlineScript = true;
                         endOfArguments = true;
                         break;
                     } else {
@@ -224,10 +229,6 @@ public class CommandlineParser {
 		throw mee;
     }
 
-    public boolean hasInlineScript() {
-        return inlineScript.length() > 0;
-    }
-
     public String inlineScript() {
         return inlineScript.toString();
     }
@@ -250,7 +251,11 @@ public class CommandlineParser {
 
     public Reader getScriptSource() {
         try {
-            if (hasInlineScript()) {
+            if (hasInlineScript) {
+                if (scriptFileName != null) {
+                    File file = new File(getScriptFileName());
+                    return new BufferedReader(new InputStreamReader(new FileInputStream(file), kcode.encoding()));
+                }
                 return new StringReader(inlineScript());
             } else if (isSourceFromStdin()) {
                 return new InputStreamReader(System.in, kcode.encoding());
@@ -264,8 +269,12 @@ public class CommandlineParser {
     }
 
     public String displayedFileName() {
-        if (hasInlineScript()) {
-            return "-e";
+        if (hasInlineScript) {
+            if (scriptFileName != null) {
+                return scriptFileName;
+            } else {
+                return "-e";
+            }
         } else if (isSourceFromStdin()) {
             return "-";
         } else {
