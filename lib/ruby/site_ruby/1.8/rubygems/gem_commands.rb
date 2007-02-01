@@ -164,7 +164,7 @@ module Gem
     
     # Default options for the gem install command.
     def install_update_defaults_str
-      '--rdoc --no-force --no-test --wrappers'
+      '--rdoc --no-force --no-test --wrappers --env-shebang'
     end
   end
 
