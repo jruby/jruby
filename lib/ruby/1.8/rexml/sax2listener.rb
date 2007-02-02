@@ -70,7 +70,7 @@ module REXML
 		#  ["open-hatch", "PUBLIC", "\"-//Textuality//TEXT Standard open-hatch boilerplate//EN\"", "\"http://www.textuality.com/boilerplate/OpenHatch.xml\""]
 		#  <!ENTITY hatch-pic SYSTEM "../grafix/OpenHatch.gif" NDATA gif>
 		#  ["hatch-pic", "SYSTEM", "\"../grafix/OpenHatch.gif\"", "\n\t\t\t\t\t\t\tNDATA gif", "gif"]
-		def entitydecl content
+		def entitydecl name, decl
 		end
 		# <!NOTATION ...>
 		def notationdecl content
@@ -84,6 +84,7 @@ module REXML
 		# @p version the version attribute value.  EG, "1.0"
 		# @p encoding the encoding attribute value, or nil.  EG, "utf"
 		# @p standalone the standalone attribute value, or nil.  EG, nil
+    # @p spaced the declaration is followed by a line break
 		def xmldecl version, encoding, standalone
 		end
 		# Called when a comment is encountered.

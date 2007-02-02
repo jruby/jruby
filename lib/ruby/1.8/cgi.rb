@@ -708,13 +708,13 @@ class CGI
       require "nkf"
       case options["charset"]
       when /iso-2022-jp/ni
-        content = NKF::nkf('-j', content)
+        content = NKF::nkf('-m0 -x -j', content)
         options["language"] = "ja" unless options.has_key?("language")
       when /euc-jp/ni
-        content = NKF::nkf('-e', content)
+        content = NKF::nkf('-m0 -x -e', content)
         options["language"] = "ja" unless options.has_key?("language")
       when /shift_jis/ni
-        content = NKF::nkf('-s', content)
+        content = NKF::nkf('-m0 -x -s', content)
         options["language"] = "ja" unless options.has_key?("language")
       end
     end
@@ -967,8 +967,10 @@ class CGI
     def read_multipart(boundary, content_length)
       params = Hash.new([])
       boundary = "--" + boundary
+      quoted_boundary = Regexp.quote(boundary, "n")
       buf = ""
       bufsize = 10 * 1024
+      boundary_end=""
 
       # start multipart/form-data
       stdinput.binmode if defined? stdinput.binmode
@@ -997,7 +999,7 @@ class CGI
         end
         body.binmode if defined? body.binmode
 
-        until head and /#{boundary}(?:#{EOL}|--)/n.match(buf)
+        until head and /#{quoted_boundary}(?:#{EOL}|--)/n.match(buf)
 
           if (not head) and /#{EOL}#{EOL}/n.match(buf)
             buf = buf.sub(/\A((?:.|\n)*?#{EOL})#{EOL}/n) do
@@ -1017,18 +1019,19 @@ class CGI
               else
                 stdinput.read(content_length)
               end
-          if c.nil?
+          if c.nil? || c.empty?
             raise EOFError, "bad content body"
           end
           buf.concat(c)
           content_length -= c.size
         end
 
-        buf = buf.sub(/\A((?:.|\n)*?)(?:[\r\n]{1,2})?#{boundary}([\r\n]{1,2}|--)/n) do
+        buf = buf.sub(/\A((?:.|\n)*?)(?:[\r\n]{1,2})?#{quoted_boundary}([\r\n]{1,2}|--)/n) do
           body.print $1
           if "--" == $2
             content_length = -1
           end
+         boundary_end = $2.dup
           ""
         end
 
@@ -1060,8 +1063,9 @@ class CGI
           params[name] = [body]
         end
         break if buf.size == 0
-        break if content_length === -1
+        break if content_length == -1
       end
+      raise EOFError, "bad boundary end of body part" unless boundary_end=~/--/
 
       params
     end # read_multipart

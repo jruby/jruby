@@ -1,3 +1,4 @@
+#!/usr/local/bin/ruby
 # Illustration of a script to convert an RDoc-style file to a LaTeX
 # document
 

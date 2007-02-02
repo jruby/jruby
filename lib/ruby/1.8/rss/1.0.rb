@@ -38,17 +38,12 @@ module RSS
     [
       ["channel", nil],
       ["image", "?"],
-      ["item", "+"],
+      ["item", "+", :children],
       ["textinput", "?"],
-    ].each do |tag, occurs|
-      install_model(tag, occurs)
+    ].each do |tag, occurs, type|
+      type ||= :child
+      __send__("install_have_#{type}_element", tag, ::RSS::URI, occurs)
     end
-
-    %w(channel image textinput).each do |name|
-      install_have_child_element(name)
-    end
-
-    install_have_children_element("item")
 
     attr_accessor :rss_version, :version, :encoding, :standalone
     
@@ -59,137 +54,109 @@ module RSS
     def full_name
       tag_name_with_prefix(PREFIX)
     end
-    
-    def to_s(need_convert=true, indent=calc_indent)
-      rv = tag(indent, ns_declarations) do |next_indent|
-        [
-          channel_element(false, next_indent),
-          image_element(false, next_indent),
-          item_elements(false, next_indent),
-          textinput_element(false, next_indent),
-          other_element(false, next_indent),
-        ]
-      end
-      rv = convert(rv) if need_convert
-      rv
-    end
-
-    private
-    def rdf_validate(tags)
-      _validate(tags, [])
-    end
-
-    def children
-      [@channel, @image, @textinput, *@item]
-    end
-
-    def _tags
-      rv = [
-        [::RSS::URI, "channel"],
-        [::RSS::URI, "image"],
-      ].delete_if {|uri, name| send(name).nil?}
-      @item.each do |item|
-        rv << [::RSS::URI, "item"]
-      end
-      rv << [::RSS::URI, "textinput"] if @textinput
-      rv
-    end
-
-    class Seq < Element
-
-      include RSS10
-
-      class << self
-        
-        def required_uri
-          URI
-        end
-        
-      end
-
-      @tag_name = 'Seq'
-      
-      install_have_children_element("li")
-      
-      install_must_call_validator('rdf', ::RSS::RDF::URI)
-      
-      def initialize(li=[])
-        super()
-        @li = li
-      end
-      
-      def to_s(need_convert=true, indent=calc_indent)
-        tag(indent) do |next_indent|
-          [
-            li_elements(need_convert, next_indent),
-            other_element(need_convert, next_indent),
-          ]
-        end
-      end
-
-      def full_name
-        tag_name_with_prefix(PREFIX)
-      end
-      
-      private
-      def children
-        @li
-      end
-          
-      def rdf_validate(tags)
-        _validate(tags, [["li", '*']])
-      end
-
-      def _tags
-        rv = []
-        @li.each do |li|
-          rv << [URI, "li"]
-        end
-        rv
-      end
-
-    end
 
     class Li < Element
 
       include RSS10
 
       class << self
-          
         def required_uri
           URI
         end
-        
       end
       
       [
-        ["resource", [URI, nil], true]
+        ["resource", [URI, ""], true]
       ].each do |name, uri, required|
         install_get_attribute(name, uri, required)
       end
       
-      def initialize(resource=nil)
-        super()
-        @resource = resource
+      def initialize(*args)
+        if Utils.element_initialize_arguments?(args)
+          super
+        else
+          super()
+          self.resource = args[0]
+        end
+      end
+
+      def full_name
+        tag_name_with_prefix(PREFIX)
+      end
+    end
+
+    class Seq < Element
+
+      include RSS10
+
+      Li = ::RSS::RDF::Li
+
+      class << self
+        def required_uri
+          URI
+        end
+      end
+
+      @tag_name = 'Seq'
+      
+      install_have_children_element("li", URI, "*")
+      install_must_call_validator('rdf', ::RSS::RDF::URI)
+      
+      def initialize(*args)
+        if Utils.element_initialize_arguments?(args)
+          super
+        else
+          super()
+          @li = args[0] if args[0]
+        end
       end
 
       def full_name
         tag_name_with_prefix(PREFIX)
       end
       
-      def to_s(need_convert=true, indent=calc_indent)
-        rv = tag(indent)
-        rv = convert(rv) if need_convert
-        rv
+      def setup_maker(target)
+        lis.each do |li|
+          target << li.resource
+        end
+      end
+    end
+
+    class Bag < Element
+
+      include RSS10
+
+      Li = ::RSS::RDF::Li
+
+      class << self
+        def required_uri
+          URI
+        end
       end
 
-      private
-      def _attrs
-        [
-          ["resource", true]
-        ]
+      @tag_name = 'Bag'
+      
+      install_have_children_element("li", URI, "*")
+      install_must_call_validator('rdf', URI)
+      
+      def initialize(*args)
+        if Utils.element_initialize_arguments?(args)
+          super
+        else
+          super()
+          @li = args[0] if args[0]
+        end
+      end
+
+      def full_name
+        tag_name_with_prefix(PREFIX)
       end
       
+      def setup_maker(target)
+        lis.each do |li|
+          target << li.resource
+        end
+      end
     end
 
     class Channel < Element
@@ -207,73 +174,31 @@ module RSS
       [
         ["about", URI, true]
       ].each do |name, uri, required|
-        install_get_attribute(name, uri, required)
+        install_get_attribute(name, uri, required, nil, nil,
+                              "#{PREFIX}:#{name}")
       end
 
-      %w(title link description).each do |name|
-        install_text_element(name)
-      end
-
-      %w(image items textinput).each do |name|
-        install_have_child_element(name)
-      end
-      
       [
-        ['title', nil],
-        ['link', nil],
-        ['description', nil],
-        ['image', '?'],
-        ['items', nil],
-        ['textinput', '?'],
-      ].each do |tag, occurs|
-        install_model(tag, occurs)
-      end
-      
-      def initialize(about=nil)
-        super()
-        @about = about
+        ['title', nil, :text],
+        ['link', nil, :text],
+        ['description', nil, :text],
+        ['image', '?', :have_child],
+        ['items', nil, :have_child],
+        ['textinput', '?', :have_child],
+      ].each do |tag, occurs, type|
+        __send__("install_#{type}_element", tag, ::RSS::URI, occurs)
       end
 
-      def to_s(need_convert=true, indent=calc_indent)
-        rv = tag(indent) do |next_indent|
-          [
-            title_element(false, next_indent),
-            link_element(false, next_indent),
-            description_element(false, next_indent),
-            image_element(false, next_indent),
-            items_element(false, next_indent),
-            textinput_element(false, next_indent),
-            other_element(false, next_indent),
-          ]
+      def initialize(*args)
+        if Utils.element_initialize_arguments?(args)
+          super
+        else
+          super()
+          self.about = args[0]
         end
-        rv = convert(rv) if need_convert
-        rv
       end
 
       private
-      def children
-        [@image, @items, @textinput]
-      end
-
-      def _tags
-        [
-          [::RSS::URI, 'title'],
-          [::RSS::URI, 'link'],
-          [::RSS::URI, 'description'],
-          [::RSS::URI, 'image'],
-          [::RSS::URI, 'items'],
-          [::RSS::URI, 'textinput'],
-        ].delete_if do |uri, name|
-          send(name).nil?
-        end
-      end
-
-      def _attrs
-        [
-          ["#{PREFIX}:about", true, "about"]
-        ]
-      end
-      
       def maker_target(maker)
         maker.channel
       end
@@ -297,25 +222,17 @@ module RSS
         [
           ["resource", URI, true]
         ].each do |name, uri, required|
-          install_get_attribute(name, uri, required)
+          install_get_attribute(name, uri, required, nil, nil,
+                                "#{PREFIX}:#{name}")
         end
       
-        def initialize(resource=nil)
-          super()
-          @resource = resource
-        end
-
-        def to_s(need_convert=true, indent=calc_indent)
-          rv = tag(indent)
-          rv = convert(rv) if need_convert
-          rv
-        end
-
-        private
-        def _attrs
-          [
-            ["#{PREFIX}:resource", true, "resource"]
-          ]
+        def initialize(*args)
+          if Utils.element_initialize_arguments?(args)
+            super
+          else
+            super()
+            self.resource = args[0]
+          end
         end
       end
 
@@ -334,25 +251,17 @@ module RSS
         [
           ["resource", URI, true]
         ].each do |name, uri, required|
-          install_get_attribute(name, uri, required)
+          install_get_attribute(name, uri, required, nil, nil,
+                                "#{PREFIX}:#{name}")
         end
       
-        def initialize(resource=nil)
-          super()
-          @resource = resource
-        end
-
-        def to_s(need_convert=true, indent=calc_indent)
-          rv = tag(indent)
-          rv = convert(rv) if need_convert
-          rv
-        end
-        
-        private
-        def _attrs
-          [
-            ["#{PREFIX}:resource", true, "resource"]
-          ]
+        def initialize(*args)
+          if Utils.element_initialize_arguments?(args)
+            super
+          else
+            super()
+            self.resource = args[0]
+          end
         end
       end
       
@@ -361,11 +270,6 @@ module RSS
         include RSS10
 
         Seq = ::RSS::RDF::Seq
-        class Seq
-          unless const_defined?(:Li)
-            Li = ::RSS::RDF::Li
-          end
-        end
 
         class << self
           
@@ -375,42 +279,29 @@ module RSS
           
         end
 
-        install_have_child_element("Seq")
+        install_have_child_element("Seq", URI, nil)
+        install_must_call_validator('rdf', URI)
         
-        install_must_call_validator('rdf', ::RSS::RDF::URI)
-        
-        def initialize(seq=Seq.new)
-          super()
-          @Seq = seq
+        def initialize(*args)
+          if Utils.element_initialize_arguments?(args)
+            super
+          else
+            super()
+            self.Seq = args[0]
+          end
+          self.Seq ||= Seq.new
         end
-        
-        def to_s(need_convert=true, indent=calc_indent)
-          rv = tag(indent) do |next_indent|
-            [
-              Seq_element(need_convert, next_indent),
-              other_element(need_convert, next_indent),
-            ]
+
+        def resources
+          if @Seq
+            @Seq.lis.collect do |li|
+              li.resource
+            end
+          else
+            []
           end
         end
-
-        private
-        def children
-          [@Seq]
-        end
-
-        private
-        def _tags
-          rv = []
-          rv << [URI, 'Seq'] unless @Seq.nil?
-          rv
-        end
-        
-        def rdf_validate(tags)
-          _validate(tags, [["Seq", nil]])
-        end
-
       end
-
     end
 
     class Image < Element
@@ -424,60 +315,28 @@ module RSS
         end
 
       end
-      
+
       [
         ["about", URI, true]
       ].each do |name, uri, required|
-        install_get_attribute(name, uri, required)
+        install_get_attribute(name, uri, required, nil, nil,
+                              "#{PREFIX}:#{name}")
       end
 
       %w(title url link).each do |name|
-        install_text_element(name)
-      end
-    
-      [
-        ['title', nil],
-        ['url', nil],
-        ['link', nil],
-      ].each do |tag, occurs|
-        install_model(tag, occurs)
+        install_text_element(name, ::RSS::URI, nil)
       end
 
-      def initialize(about=nil)
-        super()
-        @about = about
-      end
-
-      def to_s(need_convert=true, indent=calc_indent)
-        rv = tag(indent) do |next_indent|
-          [
-            title_element(false, next_indent),
-            url_element(false, next_indent),
-            link_element(false, next_indent),
-            other_element(false, next_indent),
-          ]
+      def initialize(*args)
+        if Utils.element_initialize_arguments?(args)
+          super
+        else
+          super()
+          self.about = args[0]
         end
-        rv = convert(rv) if need_convert
-        rv
       end
 
       private
-      def _tags
-        [
-          [::RSS::URI, 'title'],
-          [::RSS::URI, 'url'],
-          [::RSS::URI, 'link'],
-        ].delete_if do |uri, name|
-          send(name).nil?
-        end
-      end
-
-      def _attrs
-        [
-          ["#{PREFIX}:about", true, "about"]
-        ]
-      end
-
       def maker_target(maker)
         maker.image
       end
@@ -495,14 +354,12 @@ module RSS
         
       end
 
+
       [
         ["about", URI, true]
       ].each do |name, uri, required|
-        install_get_attribute(name, uri, required)
-      end
-
-      %w(title link description).each do |name|
-        install_text_element(name)
+        install_get_attribute(name, uri, required, nil, nil,
+                              "#{PREFIX}:#{name}")
       end
 
       [
@@ -510,46 +367,25 @@ module RSS
         ["link", nil],
         ["description", "?"],
       ].each do |tag, occurs|
-        install_model(tag, occurs)
+        install_text_element(tag, ::RSS::URI, occurs)
       end
 
-      def initialize(about=nil)
-        super()
-        @about = about
-      end
-
-      def to_s(need_convert=true, indent=calc_indent)
-        rv = tag(indent) do |next_indent|
-          [
-            title_element(false, next_indent),
-            link_element(false, next_indent),
-            description_element(false, next_indent),
-            other_element(false, next_indent),
-          ]
+      def initialize(*args)
+        if Utils.element_initialize_arguments?(args)
+          super
+        else
+          super()
+          self.about = args[0]
         end
-        rv = convert(rv) if need_convert
-        rv
       end
- 
+
       private
-      def _tags
-        [
-          [::RSS::URI, 'title'],
-          [::RSS::URI, 'link'],
-          [::RSS::URI, 'description'],
-        ].delete_if do |uri, name|
-          send(name).nil?
+      def maker_target(items)
+        if items.respond_to?("items")
+          # For backward compatibility
+          items = items.items
         end
-      end
-
-      def _attrs
-        [
-          ["#{PREFIX}:about", true, "about"]
-        ]
-      end
-
-      def maker_target(maker)
-        maker.items.new_item
+        items.new_item
       end
     end
 
@@ -568,59 +404,24 @@ module RSS
       [
         ["about", URI, true]
       ].each do |name, uri, required|
-        install_get_attribute(name, uri, required)
+        install_get_attribute(name, uri, required, nil, nil,
+                              "#{PREFIX}:#{name}")
       end
 
       %w(title description name link).each do |name|
-        install_text_element(name)
-      end
-    
-      [
-        ["title", nil],
-        ["description", nil],
-        ["name", nil],
-        ["link", nil],
-      ].each do |tag, occurs|
-        install_model(tag, occurs)
+        install_text_element(name, ::RSS::URI, nil)
       end
 
-      def initialize(about=nil)
-        super()
-        @about = about
-      end
-
-      def to_s(need_convert=true, indent=calc_indent)
-        rv = tag(indent) do |next_indent|
-          [
-            title_element(false, next_indent),
-            description_element(false, next_indent),
-            name_element(false, next_indent),
-            link_element(false, next_indent),
-            other_element(false, next_indent),
-          ]
+      def initialize(*args)
+        if Utils.element_initialize_arguments?(args)
+          super
+        else
+          super()
+          self.about = args[0]
         end
-        rv = convert(rv) if need_convert
-        rv
       end
 
       private
-      def _tags
-        [
-          [::RSS::URI, 'title'],
-          [::RSS::URI, 'description'],
-          [::RSS::URI, 'name'],
-          [::RSS::URI, 'link'],
-        ].delete_if do |uri, name|
-          send(name).nil?
-        end
-      end
-      
-      def _attrs
-        [
-          ["#{PREFIX}:about", true, "about"]
-        ]
-      end
-
       def maker_target(maker)
         maker.textinput
       end
@@ -642,7 +443,7 @@ module RSS
       @rss.xml_stylesheets = @xml_stylesheets
       @last_element = @rss
       @proc_stack.push Proc.new { |text, tags|
-        @rss.validate_for_stream(tags) if @do_validate
+        @rss.validate_for_stream(tags, @ignore_unknown_element) if @do_validate
       }
     end
   end

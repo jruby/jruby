@@ -1,17 +1,22 @@
-# readbytes.rb
-#
-# add IO#readbytes, which reads fixed sized data.
-# it guarantees read data size.
+# TruncatedDataError is raised when IO#readbytes fails to read enough data.
 
 class TruncatedDataError<IOError
-  def initialize(mesg, data)
+  def initialize(mesg, data) # :nodoc:
     @data = data
     super(mesg)
   end
+
+  # The read portion of an IO#readbytes attempt.
   attr_reader :data
 end
 
 class IO
+  # Reads exactly +n+ bytes.
+  #
+  # If the data read is nil an EOFError is raised.
+  #
+  # If the data read is too short a TruncatedDataError is raised and the read
+  # data is obtainable via its #data method.
   def readbytes(n)
     str = read(n)
     if str == nil

@@ -1,9 +1,8 @@
 # logger.rb - saimple logging utility
 # Copyright (C) 2000-2003, 2005  NAKAMURA, Hiroshi <nakahiro@sarion.co.jp>.
 
+require 'monitor'
 
-# = logger.rb
-#
 # Simple logging utility.
 #
 # Author:: NAKAMURA, Hiroshi  <nakahiro@sarion.co.jp>
@@ -12,11 +11,6 @@
 #   You can redistribute it and/or modify it under the same terms of Ruby's
 #   license; either the dual license version in 2003, or any later version.
 # Revision:: $Id$
-#
-# See Logger for documentation.
-#
-
-
 #
 # == Description
 #
@@ -149,7 +143,7 @@
 # 2. Log4r (somewhat) compatible interface.
 #
 #      logger.level = Logger::INFO
-#
+#      
 #      DEBUG < INFO < WARN < ERROR < FATAL < UNKNOWN
 #
 #
@@ -172,9 +166,6 @@
 # There is currently no supported way to change the overall format, but you may
 # have some luck hacking the Format constant.
 #
-
-
-require 'monitor'
 
 
 class Logger

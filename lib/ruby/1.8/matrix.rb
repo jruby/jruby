@@ -1,3 +1,4 @@
+#!/usr/local/bin/ruby
 #--
 #   matrix.rb - 
 #       $Release Version: 1.0$

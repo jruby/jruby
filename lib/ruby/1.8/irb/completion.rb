@@ -99,15 +99,27 @@ module IRB
 	candidates = Symbol.instance_methods(true)
 	select_message(receiver, message, candidates)
 
-      when /^([0-9_]+(\.[0-9_]+)?(e[0-9]+)?)\.([^.]*)$/
+      when /^(-?(0[dbo])?[0-9_]+(\.[0-9_]+)?([eE]-?[0-9]+)?)\.([^.]*)$/
 	# Numeric
 	receiver = $1
-	message = Regexp.quote($4)
+	message = Regexp.quote($5)
 
 	begin
 	  candidates = eval(receiver, bind).methods
 	rescue Exception
-	  candidates
+	  candidates = []
+	end
+	select_message(receiver, message, candidates)
+
+      when /^(-?0x[0-9a-fA-F_]+)\.([^.]*)$/
+	# Numeric(0xFFFF)
+	receiver = $1
+	message = Regexp.quote($2)
+
+	begin
+	  candidates = eval(receiver, bind).methods
+	rescue Exception
+	  candidates = []
 	end
 	select_message(receiver, message, candidates)
 
@@ -138,8 +150,13 @@ module IRB
 	  # func1.func2
 	  candidates = []
 	  ObjectSpace.each_object(Module){|m|
-	    next if m.name != "IRB::Context" and 
-	      /^(IRB|SLex|RubyLex|RubyToken)/ =~ m.name
+	    begin
+	      name = m.name
+	    rescue Exception
+	      name = ""
+	    end
+	    next if name != "IRB::Context" and 
+	      /^(IRB|SLex|RubyLex|RubyToken)/ =~ name
 	    candidates.concat m.instance_methods(false)
 	  }
 	  candidates.sort!

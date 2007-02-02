@@ -1,9 +1,9 @@
 #
 #   irb/init.rb - irb initialize module
-#   	$Release Version: 0.9.5$
-#   	$Revision$
-#   	$Date$
-#   	by Keiju ISHITSUKA(keiju@ruby-lang.org)
+#     $Release Version: 0.9.5$
+#     $Revision$
+#     $Date$
+#     by Keiju ISHITSUKA(keiju@ruby-lang.org)
 #
 # --
 #
@@ -237,7 +237,7 @@ module IRB
   # enumerate possible rc-file base name generators
   def IRB.rc_file_generators
     if irbrc = ENV["IRBRC"]
-      yield proc{|rc| irbrc}
+      yield proc{|rc|  rc == "rc" ? irbrc : irbrc+rc}
     end
     if home = ENV["HOME"]
       yield proc{|rc| home+"/.irb#{rc}"} 

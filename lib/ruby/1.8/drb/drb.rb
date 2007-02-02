@@ -430,12 +430,15 @@ module DRb
     end
   end
 
+  # An exception wrapping an error object
   class DRbRemoteError < DRbError
     def initialize(error)
       @reason = error.class.to_s
       super("#{error.message} (#{error.class})")
       set_backtrace(error.backtrace)
     end
+
+    # the class of the error, as a string.
     attr_reader :reason
   end
 
@@ -829,7 +832,7 @@ module DRb
       begin
         Socket::gethostbyname(host)[0]
       rescue
-        host
+        'localhost'
       end
     end
 

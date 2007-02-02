@@ -94,7 +94,7 @@ module REXML
 		#   new_a = d.root.clone
 		#   puts new_a  # => "<a/>"
 		def clone
-			Element.new self
+			self.class.new self
 		end
 
 		# Evaluates to the root node of the document that this element 
@@ -200,9 +200,9 @@ module REXML
 		end
 
 		def namespaces
-			namespaces = []
+			namespaces = {}
 			namespaces = parent.namespaces if parent
-			namespaces |= attributes.namespaces
+			namespaces = namespaces.merge( attributes.namespaces )
 			return namespaces
 		end
 
@@ -494,13 +494,12 @@ module REXML
 		#  doc.root.add_element 'c'    #-> '<a><b/>Elliott<c/></a>'
 		#  doc.root.text = 'Russell'   #-> '<a><b/>Russell<c/></a>'
 		#  doc.root.text = nil         #-> '<a><b/><c/></a>'
-		def text=( text )
+    def text=( text )
       if text.kind_of? String
         text = Text.new( text, whitespace(), nil, raw() )
       elsif text and !text.kind_of? Text
         text = Text.new( text.to_s, whitespace(), nil, raw() )
       end
-        
 			old_text = get_text
 			if text.nil?
 				old_text.remove unless old_text.nil?
@@ -557,13 +556,9 @@ module REXML
 		#################################################
 
 		def attribute( name, namespace=nil )
-			prefix = ''
-			if namespace
-				prefix = attributes.prefixes.each { |prefix|
-					return "#{prefix}:" if namespace( prefix ) == namespace
-				} || ''
-			end
-			attributes.get_attribute( "#{prefix}#{name}" )
+			prefix = nil
+      prefix = namespaces.index(namespace) if namespace
+			attributes.get_attribute( "#{prefix ? prefix + ':' : ''}#{name}" )
 		end
 
 		# Evaluates to +true+ if this element has any attributes set, false
@@ -713,7 +708,7 @@ module REXML
 
 		private
     def __to_xpath_helper node
-      rv = node.expanded_name
+      rv = node.expanded_name.clone
       if node.parent
         results = node.parent.find_all {|n| 
           n.kind_of?(REXML::Element) and n.expanded_name == node.expanded_name 
@@ -938,6 +933,29 @@ module REXML
 		def each( xpath=nil, &block)
 			XPath::each( @element, xpath ) {|e| yield e if e.kind_of? Element }
 		end
+		
+		def collect( xpath=nil, &block )
+			collection = []
+			XPath::each( @element, xpath ) {|e| 
+				collection << yield(e)  if e.kind_of?(Element) 
+			}
+			collection
+		end
+			
+		def inject( xpath=nil, initial=nil, &block )
+			first = true
+			XPath::each( @element, xpath ) {|e|
+				if (e.kind_of? Element)
+					if (first and initial == nil)
+						initial = e
+						first = false
+					else
+						initial = yield( initial, e ) if e.kind_of? Element
+					end
+				end
+			}
+			initial
+		end
 
 		# Returns the number of +Element+ children of the parent object.
 		#  doc = Document.new '<a>sean<b/>elliott<b/>russell<b/></a>'
@@ -1149,16 +1167,16 @@ module REXML
 		end
 
 		def namespaces
-			namespaces = []
+			namespaces = {}
 			each_attribute do |attribute|
-				namespaces << attribute.value if attribute.prefix == 'xmlns' or attribute.name == 'xmlns'
+				namespaces[attribute.name] = attribute.value if attribute.prefix == 'xmlns' or attribute.name == 'xmlns'
 			end
 			if @element.document and @element.document.doctype
 				expn = @element.expanded_name
 				expn = @element.document.doctype.name if expn.size == 0
 				@element.document.doctype.attributes_of(expn).each {
 					|attribute|
-					namespaces << attribute.value if attribute.prefix == 'xmlns' or attribute.name == 'xmlns'
+					namespaces[attribute.name] = attribute.value if attribute.prefix == 'xmlns' or attribute.name == 'xmlns'
 				}
 			end
 			namespaces
@@ -1224,5 +1242,20 @@ module REXML
 			rv.each{ |attr| attr.remove }
 			return rv
 		end
+    
+    # The +get_attribute_ns+ method retrieves a method by its namespace
+    # and name. Thus it is possible to reliably identify an attribute
+    # even if an XML processor has changed the prefix.
+    # 
+    # Method contributed by Henrik Martensson
+    def get_attribute_ns(namespace, name)
+      each_attribute() { |attribute|
+        if name == attribute.name &&
+           namespace == attribute.namespace()
+          return attribute
+        end
+      }
+      nil
+    end
 	end
 end

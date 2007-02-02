@@ -16,6 +16,10 @@ module REXML
 				@tag_stack = []
         @entities = {}
 			end
+
+      def source
+        @parser.source
+      end
 			
       def add_listener( listener )
         @parser.add_listener( listener )
@@ -167,7 +171,7 @@ module REXML
 						:elementdecl, :cdata, :notationdecl, :xmldecl
 						handle( *event )
 					end
-          handle( :progress, @parser.source.position )
+          handle( :progress, @parser.position )
 				end
 			end
 

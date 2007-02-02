@@ -1,3 +1,4 @@
+#!/usr/local/bin/ruby
 #
 #   save-history.rb - 
 #   	$Release Version: 0.9.5$

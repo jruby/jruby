@@ -29,13 +29,7 @@ module RI
     version = Config::CONFIG['ruby_version']
 
     base    = File.join(Config::CONFIG['datadir'], "ri", version)
-
-    if ENV["DESTDIR"]
-      SYSDIR = File.join(ENV["DESTDIR"], base, "system")
-    else
-      SYSDIR  = File.join(base, "system")
-    end
-
+    SYSDIR  = File.join(base, "system")
     SITEDIR = File.join(base, "site")
     homedir = ENV['HOME'] || ENV['USERPROFILE'] || ENV['HOMEPATH']
 
@@ -47,5 +41,40 @@ module RI
 
     # This is the search path for 'ri'
     PATH = [ SYSDIR, SITEDIR, HOMEDIR ].find_all {|p| p && File.directory?(p)}
+
+    begin
+      require 'rubygems'
+      GEMDIRS = Dir["#{Gem.path}/doc/*/ri"]
+      GEMDIRS.each { |path| RI::Paths::PATH << path }
+    rescue LoadError
+      GEMDIRS = nil
+    end
+
+    # Returns the selected documentation directories as an Array, or PATH if no
+    # overriding directories were given.
+
+    def self.path(use_system, use_site, use_home, use_gems, *extra_dirs)
+      path = raw_path(use_system, use_site, use_home, use_gems, *extra_dirs)
+      return path.select { |path| File.directory? path }
+    end
+
+    # Returns the selected documentation directories including nonexistent
+    # directories.  Used to print out what paths were searched if no ri was
+    # found.
+
+    def self.raw_path(use_system, use_site, use_home, use_gems, *extra_dirs)
+      return PATH unless use_system or use_site or use_home or use_gems or
+                         not extra_dirs.empty?
+
+      path = []
+      path << extra_dirs unless extra_dirs.empty?
+      path << RI::Paths::SYSDIR if use_system
+      path << RI::Paths::SITEDIR if use_site
+      path << RI::Paths::HOMEDIR if use_home
+      path << RI::Paths::GEMDIRS if use_gems
+
+      return path.flatten.compact
+    end
+
   end
 end

@@ -30,28 +30,6 @@ class Time
   end
 end
 
-module Enumerable
-  unless instance_methods.include?("sort_by")
-    def sort_by
-      collect do |x|
-        [yield(x), x]
-      end.sort do |x, y|
-        x[0] <=> y[0]
-      end.collect! do |x|
-        x[1]
-      end
-    end
-  end
-end
-
-class Hash
-  unless instance_methods.include?("merge")
-    def merge(other)
-      dup.update(other)
-    end
-  end
-end
-
 require "English"
 require "rss/utils"
 require "rss/converter"
@@ -59,7 +37,7 @@ require "rss/xml-stylesheet"
 
 module RSS
 
-  VERSION = "0.1.5"
+  VERSION = "0.1.6"
 
   URI = "http://purl.org/rss/1.0/"
 
@@ -108,19 +86,24 @@ module RSS
     end
   end
 
-  class NotExceptedTagError < InvalidRSSError
-    attr_reader :tag, :parent
-    def initialize(tag, parent)
-      @tag, @parent = tag, parent
-      super("tag <#{tag}> is not expected in tag <#{parent}>")
+  class NotExpectedTagError < InvalidRSSError
+    attr_reader :tag, :uri, :parent
+    def initialize(tag, uri, parent)
+      @tag, @uri, @parent = tag, uri, parent
+      super("tag <{#{uri}}#{tag}> is not expected in tag <#{parent}>")
     end
   end
+  # For backward compatibility :X
+  NotExceptedTagError = NotExpectedTagError
 
   class NotAvailableValueError < InvalidRSSError
-    attr_reader :tag, :value
-    def initialize(tag, value)
-      @tag, @value = tag, value
-      super("value <#{value}> of tag <#{tag}> is not available.")
+    attr_reader :tag, :value, :attribute
+    def initialize(tag, value, attribute=nil)
+      @tag, @value, @attribute = tag, value, attribute
+      message = "value <#{value}> of "
+      message << "attribute <#{attribute}> of " if attribute
+      message << "tag <#{tag}> is not available."
+      super(message)
     end
   end
 
@@ -158,8 +141,10 @@ module RSS
 
     include Utils
 
-    def install_have_child_element(name)
+    def install_have_child_element(tag_name, uri, occurs, name=nil)
+      name ||= tag_name
       add_need_initialize_variable(name)
+      install_model(tag_name, uri, occurs, name)
 
       attr_accessor name
       install_element(name) do |n, elem_name|
@@ -174,11 +159,13 @@ EOC
     end
     alias_method(:install_have_attribute_element, :install_have_child_element)
 
-    def install_have_children_element(name, plural_name=nil)
+    def install_have_children_element(tag_name, uri, occurs, name=nil, plural_name=nil)
+      name ||= tag_name
       plural_name ||= "#{name}s"
       add_have_children_element(name, plural_name)
       add_plural_form(name, plural_name)
-      
+      install_model(tag_name, uri, occurs, plural_name)
+
       def_children_accessor(name, plural_name)
       install_element(name, "s") do |n, elem_name|
         <<-EOC
@@ -192,11 +179,14 @@ EOC
       end
     end
 
-    def install_text_element(name)
+    def install_text_element(tag_name, uri, occurs, name=nil, type=nil, disp_name=nil)
+      name ||= tag_name
+      disp_name ||= name
       self::ELEMENTS << name
       add_need_initialize_variable(name)
+      install_model(tag_name, uri, occurs, name)
 
-      attr_writer name
+      def_corresponded_attr_writer name, type, disp_name
       convert_attr_reader name
       install_element(name) do |n, elem_name|
         <<-EOC
@@ -217,9 +207,13 @@ EOC
       end
     end
 
-    def install_date_element(name, type, disp_name=name)
+    def install_date_element(tag_name, uri, occurs, name=nil, type=nil, disp_name=nil)
+      name ||= tag_name
+      type ||= :w3cdtf
+      disp_name ||= name
       self::ELEMENTS << name
       add_need_initialize_variable(name)
+      install_model(tag_name, uri, occurs, name)
 
       # accessor
       convert_attr_reader name
@@ -248,11 +242,13 @@ EOC
     private
     def install_element(name, postfix="")
       elem_name = name.sub('_', ':')
+      method_name = "#{name}_element#{postfix}"
+      add_to_element_method(method_name)
       module_eval(<<-EOC, *get_file_and_line_from_caller(2))
-      def #{name}_element#{postfix}(need_convert=true, indent='')
+      def #{method_name}(need_convert=true, indent='')
         #{yield(name, elem_name)}
       end
-      private :#{name}_element#{postfix}
+      private :#{method_name}
 EOC
     end
 
@@ -279,7 +275,7 @@ EOC
         else
           if @do_validate
             begin
-              @#{name} = Time.send('#{type}', new_value)
+              @#{name} = Time.__send__('#{type}', new_value)
             rescue ArgumentError
               raise NotAvailableValueError.new('#{disp_name}', new_value)
             end
@@ -306,6 +302,68 @@ EOC
 EOC
     end
 
+    def integer_writer(name, disp_name=name)
+      module_eval(<<-EOC, *get_file_and_line_from_caller(2))
+      def #{name}=(new_value)
+        if new_value.nil?
+          @#{name} = new_value
+        else
+          if @do_validate
+            begin
+              @#{name} = Integer(new_value)
+            rescue ArgumentError
+              raise NotAvailableValueError.new('#{disp_name}', new_value)
+            end
+          else
+            @#{name} = new_value.to_i
+          end
+        end
+      end
+EOC
+    end
+
+    def positive_integer_writer(name, disp_name=name)
+      module_eval(<<-EOC, *get_file_and_line_from_caller(2))
+      def #{name}=(new_value)
+        if new_value.nil?
+          @#{name} = new_value
+        else
+          if @do_validate
+            begin
+              tmp = Integer(new_value)
+              raise ArgumentError if tmp <= 0
+              @#{name} = tmp
+            rescue ArgumentError
+              raise NotAvailableValueError.new('#{disp_name}', new_value)
+            end
+          else
+            @#{name} = new_value.to_i
+          end
+        end
+      end
+EOC
+    end
+
+    def boolean_writer(name, disp_name=name)
+      module_eval(<<-EOC, *get_file_and_line_from_caller(2))
+      def #{name}=(new_value)
+        if new_value.nil?
+          @#{name} = new_value
+        else
+          if @do_validate and
+              ![true, false, "true", "false"].include?(new_value)
+            raise NotAvailableValueError.new('#{disp_name}', new_value)
+          end
+          if [true, false].include?(new_value)
+            @#{name} = new_value
+          else
+            @#{name} = new_value == "true"
+          end
+        end
+      end
+EOC
+    end
+
     def def_children_accessor(accessor_name, plural_name)
       module_eval(<<-EOC, *get_file_and_line_from_caller(2))
       def #{plural_name}
@@ -316,7 +374,7 @@ EOC
         if args.empty?
           @#{accessor_name}.first
         else
-          @#{accessor_name}.send("[]", *args)
+          @#{accessor_name}[*args]
         end
       end
 
@@ -328,29 +386,12 @@ EOC
         if args.size == 1
           @#{accessor_name}.push(args[0])
         else
-          @#{accessor_name}.send("[]=", *args)
+          @#{accessor_name}.__send__("[]=", *args)
         end
       end
       alias_method(:set_#{accessor_name}, :#{accessor_name}=)
 EOC
     end
-
-    def def_content_only_to_s
-      module_eval(<<-EOC, *get_file_and_line_from_caller(2))
-      def to_s(need_convert=true, indent=calc_indent)
-        if @content
-          rv = tag(indent) do |next_indent|
-            h(@content)
-          end
-          rv = convert(rv) if need_convert
-          rv
-        else
-          ""
-        end
-      end
-EOC
-    end
-    
   end
 
   class Element
@@ -361,9 +402,10 @@ EOC
     INDENT = "  "
     
     MUST_CALL_VALIDATORS = {}
-    MODEL = []
+    MODELS = []
     GET_ATTRIBUTES = []
     HAVE_CHILDREN_ELEMENTS = []
+    TO_ELEMENT_METHODS = []
     NEED_INITIALIZE_VARIABLES = []
     PLURAL_FORMS = {}
     
@@ -372,14 +414,17 @@ EOC
       def must_call_validators
         MUST_CALL_VALIDATORS
       end
-      def model
-        MODEL
+      def models
+        MODELS
       end
       def get_attributes
         GET_ATTRIBUTES
       end
       def have_children_elements
         HAVE_CHILDREN_ELEMENTS
+      end
+      def to_element_methods
+        TO_ELEMENT_METHODS
       end
       def need_initialize_variables
         NEED_INITIALIZE_VARIABLES
@@ -391,9 +436,10 @@ EOC
       
       def inherited(klass)
         klass.const_set("MUST_CALL_VALIDATORS", {})
-        klass.const_set("MODEL", [])
+        klass.const_set("MODELS", [])
         klass.const_set("GET_ATTRIBUTES", [])
         klass.const_set("HAVE_CHILDREN_ELEMENTS", [])
+        klass.const_set("TO_ELEMENT_METHODS", [])
         klass.const_set("NEED_INITIALIZE_VARIABLES", [])
         klass.const_set("PLURAL_FORMS", {})
 
@@ -402,20 +448,22 @@ EOC
         
         @tag_name = name.split(/::/).last
         @tag_name[0,1] = @tag_name[0,1].downcase
-        @indent_size = name.split(/::/).size - 2
         @have_content = false
 
         def self.must_call_validators
           super.merge(MUST_CALL_VALIDATORS)
         end
-        def self.model
-          MODEL + super
+        def self.models
+          MODELS + super
         end
         def self.get_attributes
           GET_ATTRIBUTES + super
         end
         def self.have_children_elements
           HAVE_CHILDREN_ELEMENTS + super
+        end
+        def self.to_element_methods
+          TO_ELEMENT_METHODS + super
         end
         def self.need_initialize_variables
           NEED_INITIALIZE_VARIABLES + super
@@ -429,24 +477,47 @@ EOC
           MUST_CALL_VALIDATORS[uri] = prefix
         end
         
-        def self.install_model(tag, occurs=nil)
-          if m = MODEL.find {|t, o| t == tag}
-            m[1] = occurs
+        def self.install_model(tag, uri, occurs=nil, getter=nil)
+          getter ||= tag
+          if m = MODELS.find {|t, u, o, g| t == tag and u == uri}
+            m[2] = occurs
           else
-            MODEL << [tag, occurs]
+            MODELS << [tag, uri, occurs, getter]
           end
         end
 
-        def self.install_get_attribute(name, uri, required=true)
-          attr_writer name
+        def self.install_get_attribute(name, uri, required=true,
+                                       type=nil, disp_name=nil,
+                                       element_name=nil)
+          disp_name ||= name
+          element_name ||= name
+          def_corresponded_attr_writer name, type, disp_name
           convert_attr_reader name
-          GET_ATTRIBUTES << [name, uri, required]
+          if type == :boolean and /^is/ =~ name
+            alias_method "\#{$POSTMATCH}?", name
+          end
+          GET_ATTRIBUTES << [name, uri, required, element_name]
+          add_need_initialize_variable(disp_name)
         end
 
-        def self.content_setup
-          attr_writer :content
+        def self.def_corresponded_attr_writer(name, type=nil, disp_name=name)
+          case type
+          when :integer
+            integer_writer name, disp_name
+          when :positive_integer
+            positive_integer_writer name, disp_name
+          when :boolean
+            boolean_writer name, disp_name
+          when :w3cdtf, :rfc822, :rfc2822
+            date_writer name, type, disp_name
+          else
+            attr_writer name
+          end
+        end
+
+        def self.content_setup(type=nil)
+          def_corresponded_attr_writer "content", type
           convert_attr_reader :content
-          def_content_only_to_s
           @have_content = true
         end
 
@@ -458,6 +529,10 @@ EOC
           HAVE_CHILDREN_ELEMENTS << [variable_name, plural_name]
         end
         
+        def self.add_to_element_method(method_name)
+          TO_ELEMENT_METHODS << method_name
+        end
+
         def self.add_need_initialize_variable(variable_name)
           NEED_INITIALIZE_VARIABLES << variable_name
         end
@@ -474,7 +549,7 @@ EOC
       end
 
       def required_uri
-        nil
+        ""
       end
       
       def install_ns(prefix, uri)
@@ -487,19 +562,14 @@ EOC
       def tag_name
         @tag_name
       end
-      
-      def indent_size
-        @indent_size
-      end
-      
     end
 
     attr_accessor :do_validate
 
-    def initialize(do_validate=true)
+    def initialize(do_validate=true, attrs={})
       @converter = nil
       @do_validate = do_validate
-      initialize_variables
+      initialize_variables(attrs)
     end
 
     def tag_name
@@ -508,10 +578,6 @@ EOC
 
     def full_name
       tag_name
-    end
-    
-    def indent_size
-      self.class.indent_size
     end
     
     def converter=(converter)
@@ -533,14 +599,14 @@ EOC
       end
     end
     
-    def validate
+    def validate(ignore_unknown_element=true)
       validate_attribute
-      __validate
+      __validate(ignore_unknown_element)
     end
     
-    def validate_for_stream(tags)
+    def validate_for_stream(tags, ignore_unknown_element=true)
       validate_attribute
-      __validate(tags, false)
+      __validate(ignore_unknown_element, tags, false)
     end
 
     def setup_maker(maker)
@@ -551,11 +617,37 @@ EOC
         setup_maker_elements(target)
       end
     end
-    
+
+    def to_s(need_convert=true, indent='')
+      if self.class.have_content?
+        return "" unless @content
+        rv = tag(indent) do |next_indent|
+          h(@content)
+        end
+      else
+        rv = tag(indent) do |next_indent|
+          self.class.to_element_methods.collect do |method_name|
+            __send__(method_name, false, next_indent)
+          end
+        end
+      end
+      rv = convert(rv) if need_convert
+      rv
+    end
+
     private
-    def initialize_variables
+    def initialize_variables(attrs)
+      normalized_attrs = {}
+      attrs.each do |key, value|
+        normalized_attrs[key.to_s] = value
+      end
       self.class.need_initialize_variables.each do |variable_name|
-        instance_eval("@#{variable_name} = nil")
+        value = normalized_attrs[variable_name.to_s]
+        if value
+          __send__("#{variable_name}=", value)
+        else
+          instance_eval("@#{variable_name} = nil")
+        end
       end
       initialize_have_children_elements
       @content = "" if self.class.have_content?
@@ -567,13 +659,13 @@ EOC
       end
     end
 
-    def tag(indent, additional_attrs=[], &block)
+    def tag(indent, additional_attrs={}, &block)
       next_indent = indent + INDENT
 
       attrs = collect_attrs
       return "" if attrs.nil?
 
-      attrs += additional_attrs
+      attrs.update(additional_attrs)
       start_tag = make_start_tag(indent, next_indent, attrs)
 
       if block
@@ -610,21 +702,24 @@ EOC
     end
 
     def collect_attrs
-      _attrs.collect do |name, required, alias_name|
+      attrs = {}
+      _attrs.each do |name, required, alias_name|
         value = __send__(alias_name || name)
         return nil if required and value.nil?
-        [name, value]
-      end.reject do |name, value|
-        value.nil?
+        next if value.nil?
+        return nil if attrs.has_key?(name)
+        attrs[name] = value
       end
+      attrs
     end
     
     def tag_name_with_prefix(prefix)
       "#{prefix}:#{tag_name}"
     end
-    
+
+    # For backward compatibility
     def calc_indent
-      INDENT * (self.class.indent_size)
+      ''
     end
 
     def maker_target(maker)
@@ -655,7 +750,6 @@ EOC
     
     def setup_maker_elements(parent)
       self.class.have_children_elements.each do |name, plural_name|
-        real_name = name.sub(/^[^_]+_/, '')
         if parent.respond_to?(plural_name)
           target = parent.__send__(plural_name)
           __send__(plural_name).each do |elem|
@@ -665,7 +759,7 @@ EOC
       end
     end
 
-    def set_next_element(prefix, tag_name, next_element)
+    def set_next_element(tag_name, next_element)
       klass = next_element.class
       prefix = ""
       prefix << "#{klass.required_prefix}_" if klass.required_prefix
@@ -677,22 +771,41 @@ EOC
         __send__("#{prefix}#{tag_name}=", next_element)
       end
     end
-    
-    # not String class children.
+
     def children
-      []
+      rv = []
+      self.class.models.each do |name, uri, occurs, getter|
+        value = __send__(getter)
+        next if value.nil?
+        value = [value] unless value.is_a?(Array)
+        value.each do |v|
+          rv << v if v.is_a?(Element)
+        end
+      end
+      rv
     end
 
-    # default #validate() argument.
     def _tags
-      []
+      rv = []
+      self.class.models.each do |name, uri, occurs, getter|
+        value = __send__(getter)
+        next if value.nil?
+        if value.is_a?(Array)
+          rv.concat([[uri, name]] * value.size)
+        else
+          rv << [uri, name]
+        end
+      end
+      rv
     end
 
     def _attrs
-      []
+      self.class.get_attributes.collect do |name, uri, required, element_name|
+        [element_name, required, name]
+      end
     end
 
-    def __validate(tags=_tags, recursive=true)
+    def __validate(ignore_unknown_element, tags=_tags, recursive=true)
       if recursive
         children.compact.each do |child|
           child.validate
@@ -701,14 +814,12 @@ EOC
       must_call_validators = self.class.must_call_validators
       tags = tag_filter(tags.dup)
       p tags if DEBUG
-      self.class::NSPOOL.each do |prefix, uri|
-        if tags.has_key?(uri) and !must_call_validators.has_key?(uri)
-          meth = "#{prefix}_validate"
-          send(meth, tags[uri]) if respond_to?(meth, true)
-        end
-      end
       must_call_validators.each do |uri, prefix|
-        send("#{prefix}_validate", tags[uri])
+        _validate(ignore_unknown_element, tags[uri], uri)
+        meth = "#{prefix}_validate"
+        if respond_to?(meth, true)
+          __send__(meth, ignore_unknown_element, tags[uri], uri)
+        end
       end
     end
 
@@ -720,35 +831,25 @@ EOC
       end
     end
 
-    def other_element(need_convert, indent='')
-      rv = []
-      private_methods.each do |meth|
-        if /\A([^_]+)_[^_]+_elements?\z/ =~ meth and
-            self.class::NSPOOL.has_key?($1)
-          res = __send__(meth, need_convert)
-          rv << "#{indent}#{res}" if /\A\s*\z/ !~ res
-        end
-      end
-      rv.join("\n")
-    end
-
-    def _validate(tags, model=self.class.model)
+    def _validate(ignore_unknown_element, tags, uri, models=self.class.models)
       count = 1
       do_redo = false
       not_shift = false
       tag = nil
-      element_names = model.collect {|elem| elem[0]}
+      models = models.find_all {|model| model[1] == uri}
+      element_names = models.collect {|model| model[0]}
       if tags
         tags_size = tags.size
         tags = tags.sort_by {|x| element_names.index(x) || tags_size}
       end
 
-      model.each_with_index do |elem, i|
+      models.each_with_index do |model, i|
+        name, model_uri, occurs, getter = model
 
         if DEBUG
           p "before" 
           p tags
-          p elem
+          p model
         end
 
         if not_shift
@@ -762,41 +863,41 @@ EOC
           p count
         end
 
-        case elem[1]
+        case occurs
         when '?'
           if count > 2
-            raise TooMuchTagError.new(elem[0], tag_name)
+            raise TooMuchTagError.new(name, tag_name)
           else
-            if elem[0] == tag
+            if name == tag
               do_redo = true
             else
               not_shift = true
             end
           end
         when '*'
-          if elem[0] == tag
+          if name == tag
             do_redo = true
           else
             not_shift = true
           end
         when '+'
-          if elem[0] == tag
+          if name == tag
             do_redo = true
           else
             if count > 1
               not_shift = true
             else
-              raise MissingTagError.new(elem[0], tag_name)
+              raise MissingTagError.new(name, tag_name)
             end
           end
         else
-          if elem[0] == tag
-            if model[i+1] and model[i+1][0] != elem[0] and
-                tags and tags.first == elem[0]
-              raise TooMuchTagError.new(elem[0], tag_name)
+          if name == tag
+            if models[i+1] and models[i+1][0] != name and
+                tags and tags.first == name
+              raise TooMuchTagError.new(name, tag_name)
             end
           else
-            raise MissingTagError.new(elem[0], tag_name)
+            raise MissingTagError.new(name, tag_name)
           end
         end
 
@@ -817,8 +918,8 @@ EOC
 
       end
 
-      if !tags.nil? and !tags.empty?
-        raise NotExceptedTagError.new(tag, tag_name)
+      if !ignore_unknown_element and !tags.nil? and !tags.empty?
+        raise NotExpectedTagError.new(tags.first, uri, tag_name)
       end
 
     end
@@ -865,11 +966,22 @@ EOC
 
       setup_maker_elements(maker)
     end
-    
+
+    def to_xml(version=nil, &block)
+      if version.nil? or version == @rss_version
+        to_s
+      else
+        RSS::Maker.make(version) do |maker|
+          setup_maker(maker)
+          block.call(maker) if block
+        end.to_s
+      end
+    end
+
     private
-    def tag(indent, attrs, &block)
+    def tag(indent, attrs={}, &block)
       rv = xmldecl + xml_stylesheet_pi
-      rv << super(indent, attrs, &block)
+      rv << super(indent, ns_declarations.merge(attrs), &block)
       rv
     end
 
@@ -884,19 +996,19 @@ EOC
     end
     
     def ns_declarations
+      decls = {}
       self.class::NSPOOL.collect do |prefix, uri|
         prefix = ":#{prefix}" unless prefix.empty?
-        ["xmlns#{prefix}", uri]
+        decls["xmlns#{prefix}"] = uri
       end
+      decls
     end
     
     def setup_maker_elements(maker)
       channel.setup_maker(maker) if channel
       image.setup_maker(maker) if image
       textinput.setup_maker(maker) if textinput
-      items.each do |item|
-        item.setup_maker(maker)
-      end
+      super(maker)
     end
   end
 

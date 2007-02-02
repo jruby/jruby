@@ -9,7 +9,7 @@ module RSS
     def self.append_features(klass)
       super
       
-      klass.install_must_call_validator('', nil)
+      klass.install_must_call_validator('', "")
     end
   end
 
@@ -17,16 +17,9 @@ module RSS
 
     include RSS09
     include RootElementMixin
-    include XMLStyleSheetMixin
-
-    [
-      ["channel", nil],
-    ].each do |tag, occurs|
-      install_model(tag, occurs)
-    end
 
     %w(channel).each do |name|
-      install_have_child_element(name)
+      install_have_child_element(name, "", nil)
     end
 
     attr_accessor :rss_version, :version, :encoding, :standalone
@@ -58,31 +51,15 @@ module RSS
         nil
       end
     end
-    
-    def to_s(need_convert=true, indent=calc_indent)
-      rv = tag(indent, ns_declarations) do |next_indent|
-        [
-          channel_element(false, next_indent),
-          other_element(false, next_indent),
-        ]
+
+    def setup_maker_elements(maker)
+      super
+      items.each do |item|
+        item.setup_maker(maker.items)
       end
-      rv = convert(rv) if need_convert
-      rv
     end
 
     private
-    def children
-      [@channel]
-    end
-
-    def _tags
-      [
-        [nil, 'channel'],
-      ].delete_if do |uri, name|
-        send(name).nil?
-      end
-    end
-
     def _attrs
       [
         ["version", true, "rss_version"],
@@ -94,119 +71,30 @@ module RSS
       include RSS09
 
       [
-        ["title", nil],
-        ["link", nil],
-        ["description", nil],
-        ["language", nil],
-        ["copyright", "?"],
-        ["managingEditor", "?"],
-        ["webMaster", "?"],
-        ["rating", "?"],
-        ["docs", "?"],
-      ].each do |name, occurs|
-        install_text_element(name)
-        install_model(name, occurs)
-      end
-
-      [
-        ["pubDate", "?"],
-        ["lastBuildDate", "?"],
-      ].each do |name, occurs|
-        install_date_element(name, 'rfc822')
-        install_model(name, occurs)
+        ["title", nil, :text],
+        ["link", nil, :text],
+        ["description", nil, :text],
+        ["language", nil, :text],
+        ["copyright", "?", :text],
+        ["managingEditor", "?", :text],
+        ["webMaster", "?", :text],
+        ["rating", "?", :text],
+        ["pubDate", "?", :date, :rfc822],
+        ["lastBuildDate", "?", :date, :rfc822],
+        ["docs", "?", :text],
+        ["cloud", "?", :have_attribute],
+        ["skipDays", "?", :have_child],
+        ["skipHours", "?", :have_child],
+        ["image", nil, :have_child],
+        ["item", "*", :have_children],
+        ["textInput", "?", :have_child],
+      ].each do |name, occurs, type, *args|
+        __send__("install_#{type}_element", name, "", occurs, name, *args)
       end
       alias date pubDate
       alias date= pubDate=
 
-      [
-        ["skipDays", "?"],
-        ["skipHours", "?"],
-        ["image", nil],
-        ["textInput", "?"],
-      ].each do |name, occurs|
-        install_have_child_element(name)
-        install_model(name, occurs)
-      end
-      
-      [
-        ["cloud", "?"]
-      ].each do |name, occurs|
-        install_have_attribute_element(name)
-        install_model(name, occurs)
-      end
-      
-      [
-        ["item", "*"]
-      ].each do |name, occurs|
-        install_have_children_element(name)
-        install_model(name, occurs)
-      end
-
-      def initialize()
-        super()
-      end
-
-      def to_s(need_convert=true, indent=calc_indent)
-        rv = tag(indent) do |next_indent|
-          [
-            title_element(false, next_indent),
-            link_element(false, next_indent),
-            description_element(false, next_indent),
-            language_element(false, next_indent),
-            copyright_element(false, next_indent),
-            managingEditor_element(false, next_indent),
-            webMaster_element(false, next_indent),
-            rating_element(false, next_indent),
-            pubDate_element(false, next_indent),
-            lastBuildDate_element(false, next_indent),
-            docs_element(false, next_indent),
-            cloud_element(false, next_indent),
-            skipDays_element(false, next_indent),
-            skipHours_element(false, next_indent),
-            image_element(false, next_indent),
-            item_elements(false, next_indent),
-            textInput_element(false, next_indent),
-            other_element(false, next_indent),
-          ]
-        end
-        rv = convert(rv) if need_convert
-        rv
-      end
-
       private
-      def children
-        [@skipDays, @skipHours, @image, @textInput, @cloud, *@item]
-      end
-
-      def _tags
-        rv = [
-          "title",
-          "link",
-          "description",
-          "language",
-          "copyright",
-          "managingEditor",
-          "webMaster",
-          "rating",
-          "docs",
-          "skipDays",
-          "skipHours",
-          "image",
-          "textInput",
-          "cloud",
-        ].delete_if do |name|
-          send(name).nil?
-        end.collect do |elem|
-          [nil, elem]
-        end
-
-        @item.each do
-          rv << [nil, "item"]
-        end
-
-        rv
-      end
-
       def maker_target(maker)
         maker.channel
       end
@@ -237,29 +125,7 @@ module RSS
         [
           ["day", "*"]
         ].each do |name, occurs|
-          install_have_children_element(name)
-          install_model(name, occurs)
-        end
-
-        def to_s(need_convert=true, indent=calc_indent)
-          rv = tag(indent) do |next_indent|
-            [
-              day_elements(false, next_indent)
-            ]
-          end
-          rv = convert(rv) if need_convert
-          rv
-        end
-
-        private
-        def children
-          @day
-        end
-
-        def _tags
-          @day.compact.collect do
-            [nil, "day"]
-          end
+          install_have_children_element(name, "", occurs)
         end
 
         class Day < Element
@@ -267,9 +133,13 @@ module RSS
 
           content_setup
 
-          def initialize(content=nil)
-            super()
-            @content = content
+          def initialize(*args)
+            if Utils.element_initialize_arguments?(args)
+              super
+            else
+              super()
+              self.content = args[0]
+            end
           end
       
         end
@@ -282,46 +152,22 @@ module RSS
         [
           ["hour", "*"]
         ].each do |name, occurs|
-          install_have_children_element(name)
-          install_model(name, occurs)
-        end
-
-        def to_s(need_convert=true, indent=calc_indent)
-          rv = tag(indent) do |next_indent|
-            [
-              hour_elements(false, next_indent)
-            ]
-          end
-          rv = convert(rv) if need_convert
-          rv
-        end
-
-        private
-        def children
-          @hour
-        end
-
-        def _tags
-          @hour.compact.collect do
-            [nil, "hour"]
-          end
+          install_have_children_element(name, "", occurs)
         end
 
         class Hour < Element
           include RSS09
 
-          content_setup
+          content_setup(:integer)
 
-          def initialize(content=nil)
-            super()
-            @content = content
+          def initialize(*args)
+            if Utils.element_initialize_arguments?(args)
+              super
+            else
+              super()
+              self.content = args[0]
+            end
           end
-
-          remove_method :content=
-          def content=(value)
-            @content = value.to_i
-          end
-          
         end
         
       end
@@ -331,39 +177,31 @@ module RSS
         include RSS09
         
         %w(url title link).each do |name|
-          install_text_element(name)
-          install_model(name, nil)
+          install_text_element(name, "", nil)
         end
-        %w(width height description).each do |name|
-          install_text_element(name)
-          install_model(name, "?")
+        [
+          ["width", :integer],
+          ["height", :integer],
+          ["description"],
+        ].each do |name, type|
+          install_text_element(name, "", "?", name, type)
         end
 
-        def to_s(need_convert=true, indent=calc_indent)
-          rv = tag(indent) do |next_indent|
-            [
-              url_element(false, next_indent),
-              title_element(false, next_indent),
-              link_element(false, next_indent),
-              width_element(false, next_indent),
-              height_element(false, next_indent),
-              description_element(false, next_indent),
-              other_element(false, next_indent),
-            ]
+        def initialize(*args)
+          if Utils.element_initialize_arguments?(args)
+            super
+          else
+            super()
+            self.url = args[0]
+            self.title = args[1]
+            self.link = args[2]
+            self.width = args[3]
+            self.height = args[4]
+            self.description = args[5]
           end
-          rv = convert(rv) if need_convert
-          rv
         end
 
         private
-        def _tags
-          %w(url title link width height description).delete_if do |name|
-            send(name).nil?
-          end.collect do |elem|
-            [nil, elem]
-          end
-        end
-
         def maker_target(maker)
           maker.image
         end
@@ -372,108 +210,53 @@ module RSS
       class Cloud < Element
 
         include RSS09
-        
+
         [
-          ["domain", nil, true],
-          ["port", nil, true],
-          ["path", nil, true],
-          ["registerProcedure", nil, true],
-          ["protocol", nil ,true],
-        ].each do |name, uri, required|
-          install_get_attribute(name, uri, required)
+          ["domain", "", true],
+          ["port", "", true, :integer],
+          ["path", "", true],
+          ["registerProcedure", "", true],
+          ["protocol", "", true],
+        ].each do |name, uri, required, type|
+          install_get_attribute(name, uri, required, type)
         end
 
-        def initialize(domain=nil, port=nil, path=nil, rp=nil, protocol=nil)
-          super()
-          @domain = domain
-          @port = port
-          @path = path
-          @registerProcedure = rp
-          @protocol = protocol
-        end
-
-        def to_s(need_convert=true, indent=calc_indent)
-          rv = tag(indent)
-          rv = convert(rv) if need_convert
-          rv
-        end
-
-        private
-        def _attrs
-          %w(domain port path registerProcedure protocol).collect do |attr|
-            [attr, true]
+        def initialize(*args)
+          if Utils.element_initialize_arguments?(args)
+            super
+          else
+            super()
+            self.domain = args[0]
+            self.port = args[1]
+            self.path = args[2]
+            self.registerProcedure = args[3]
+            self.protocol = args[4]
           end
         end
-
       end
       
       class Item < Element
         
         include RSS09
 
-        %w(title link description).each do |name|
-          install_text_element(name)
-        end
-
-        %w(source enclosure).each do |name|
-          install_have_child_element(name)
-        end
-
         [
-          %w(category categories),
-        ].each do |name, plural_name|
-          install_have_children_element(name, plural_name)
-        end
-        
-        [
-          ["title", '?'],
-          ["link", '?'],
-          ["description", '?'],
-          ["category", '*'],
-          ["source", '?'],
-          ["enclosure", '?'],
-        ].each do |tag, occurs|
-          install_model(tag, occurs)
-        end
-
-        def to_s(need_convert=true, indent=calc_indent)
-          rv = tag(indent) do |next_indent|
-            [
-              title_element(false, next_indent),
-              link_element(false, next_indent),
-              description_element(false, next_indent),
-              category_elements(false, next_indent),
-              source_element(false, next_indent),
-              enclosure_element(false, next_indent),
-              other_element(false, next_indent),
-            ]
-          end
-          rv = convert(rv) if need_convert
-          rv
+          ["title", '?', :text],
+          ["link", '?', :text],
+          ["description", '?', :text],
+          ["category", '*', :have_children, "categories"],
+          ["source", '?', :have_child],
+          ["enclosure", '?', :have_child],
+        ].each do |tag, occurs, type, *args|
+          __send__("install_#{type}_element", tag, "", occurs, tag, *args)
         end
 
         private
-        def children
-          [@source, @enclosure, *@category].compact
-        end
-
-        def _tags
-          rv = %w(title link description author comments
-            source enclosure).delete_if do |name|
-            send(name).nil?
-          end.collect do |name|
-            [nil, name]
+        def maker_target(items)
+          if items.respond_to?("items")
+            # For backward compatibility
+            items = items.items
           end
-
-          @category.each do
-            rv << [nil, "category"]
-          end
-          
-          rv
-        end
-
-        def maker_target(maker)
-          maker.items.new_item
+          items.new_item
         end
 
         def setup_maker_element(item)
@@ -487,31 +270,24 @@ module RSS
           include RSS09
 
           [
-            ["url", nil, true]
+            ["url", "", true]
           ].each do |name, uri, required|
             install_get_attribute(name, uri, required)
           end
           
           content_setup
 
-          def initialize(url=nil, content=nil)
-            super()
-            @url = url
-            @content = content
+          def initialize(*args)
+            if Utils.element_initialize_arguments?(args)
+              super
+            else
+              super()
+              self.url = args[0]
+              self.content = args[1]
+            end
           end
 
           private
-          def _tags
-            []
-          end
-
-          def _attrs
-            [
-              ["url", true]
-            ]
-          end
-
-
           def maker_target(item)
             item.source
           end
@@ -527,35 +303,25 @@ module RSS
           include RSS09
 
           [
-            ["url", nil, true],
-            ["length", nil, true],
-            ["type", nil, true],
-          ].each do |name, uri, required|
-            install_get_attribute(name, uri, required)
+            ["url", "", true],
+            ["length", "", true, :integer],
+            ["type", "", true],
+          ].each do |name, uri, required, type|
+            install_get_attribute(name, uri, required, type)
           end
 
-          def initialize(url=nil, length=nil, type=nil)
-            super()
-            @url = url
-            @length = length
-            @type = type
-          end
-
-          def to_s(need_convert=true, indent=calc_indent)
-            rv = tag(indent)
-            rv = convert(rv) if need_convert
-            rv
+          def initialize(*args)
+            if Utils.element_initialize_arguments?(args)
+              super
+            else
+              super()
+              self.url = args[0]
+              self.length = args[1]
+              self.type = args[2]
+            end
           end
 
           private
-          def _attrs
-            [
-              ["url", true],
-              ["length", true],
-              ["type", true],
-            ]
-          end
-
           def maker_target(item)
             item.enclosure
           end
@@ -572,26 +338,24 @@ module RSS
           include RSS09
           
           [
-            ["domain", nil, false]
+            ["domain", "", false]
           ].each do |name, uri, required|
             install_get_attribute(name, uri, required)
           end
 
           content_setup
 
-          def initialize(domain=nil, content=nil)
-            super()
-            @domain = domain
-            @content = content
+          def initialize(*args)
+            if Utils.element_initialize_arguments?(args)
+              super
+            else
+              super()
+              self.domain = args[0]
+              self.content = args[1]
+            end
           end
 
           private
-          def _attrs
-            [
-              ["domain", false]
-            ]
-          end
-
           def maker_target(item)
             item.new_category
           end
@@ -610,33 +374,22 @@ module RSS
         include RSS09
 
         %w(title description name link).each do |name|
-          install_text_element(name)
-          install_model(name, nil)
+          install_text_element(name, "", nil)
         end
 
-        def to_s(need_convert=true, indent=calc_indent)
-          rv = tag(indent) do |next_indent|
-            [
-              title_element(false, next_indent),
-              description_element(false, next_indent),
-              name_element(false, next_indent),
-              link_element(false, next_indent),
-              other_element(false, next_indent),
-            ]
+        def initialize(*args)
+          if Utils.element_initialize_arguments?(args)
+            super
+          else
+            super()
+            self.title = args[0]
+            self.description = args[1]
+            self.name = args[2]
+            self.link = args[3]
           end
-          rv = convert(rv) if need_convert
-          rv
         end
 
         private
-        def _tags
-          %w(title description name link).each do |name|
-            send(name).nil?
-          end.collect do |elem|
-            [nil, elem]
-          end
-        end
-
         def maker_target(maker)
           maker.textinput
         end
@@ -647,20 +400,20 @@ module RSS
   end
 
   RSS09::ELEMENTS.each do |name|
-    BaseListener.install_get_text_element(nil, name, "#{name}=")
+    BaseListener.install_get_text_element("", name, "#{name}=")
   end
 
   module ListenerMixin
     private
     def start_rss(tag_name, prefix, attrs, ns)
-      check_ns(tag_name, prefix, ns, nil)
+      check_ns(tag_name, prefix, ns, "")
       
       @rss = Rss.new(attrs['version'], @version, @encoding, @standalone)
       @rss.do_validate = @do_validate
       @rss.xml_stylesheets = @xml_stylesheets
       @last_element = @rss
       @proc_stack.push Proc.new { |text, tags|
-        @rss.validate_for_stream(tags) if @do_validate
+        @rss.validate_for_stream(tags, @ignore_unknown_element) if @do_validate
       }
     end
     

@@ -1,3 +1,4 @@
+#!/usr/local/bin/ruby
 
 # Parse a Ruby source file, building a set of objects
 # representing the modules, classes, methods,
@@ -12,7 +13,6 @@
 #   	by Keiju ISHITSUKA (Nippon Rational Inc.)
 #
 
-require "tracer"
 require "e2mmap"
 require "irb/slex"
 
@@ -560,7 +560,7 @@ class RubyLex
     "q" => "\'",
     "Q" => "\"",
     "x" => "\`",
-    "r" => "\/",
+    "r" => "/",
     "w" => "]"
   }
   
@@ -575,7 +575,7 @@ class RubyLex
     "\'" => TkSTRING,
     "\"" => TkSTRING,
     "\`" => TkXSTRING,
-    "\/" => TkREGEXP,
+    "/" => TkREGEXP,
     "]" => TkDSTRING
   }
   Ltype2Token.default = TkSTRING
@@ -583,7 +583,7 @@ class RubyLex
   DLtype2Token = {
     "\"" => TkDSTRING,
     "\`" => TkDXSTRING,
-    "\/" => TkDREGEXP,
+    "/" => TkDREGEXP,
   }
 
   def lex_init()
@@ -1334,7 +1334,7 @@ class RubyLex
 	end
       end
 
-    when "C", "c", "^"
+    when "C", "c" #, "^"
       res << ch
       if ch == "C" and (ch = getc) != "-"
 	ungetc
@@ -1426,16 +1426,23 @@ module RDoc
 
     private 
 
-    def warn(msg)
+    def make_message(msg)
       prefix = "\n" + @input_file_name + ":"
       if @scanner
         prefix << "#{@scanner.line_no}:#{@scanner.char_no}: "
       end
-      $stderr.puts prefix + msg
+      return prefix + msg
+    end
+
+    def warn(msg)
+      return if @options.quiet
+      msg = make_message msg
+      $stderr.puts msg
     end
 
     def error(msg)
-      warn msg
+      msg = make_message msg
+      $stderr.puts msg
       exit(1)
     end
 
@@ -1478,7 +1485,7 @@ module RDoc
             obj.pop_token
           end if @token_listeners
         else
-          warn("':' not followed by identified or operator")
+          warn("':' not followed by identifier or operator")
           tk = tk1
         end
       end
@@ -2551,7 +2558,7 @@ module RDoc
 	    break
 	  when TkCOMMA
 	  else
-	    warn("unexpected token: '#{tk2.inspect}'") if $DEBBUG
+           warn("unexpected token: '#{tk2.inspect}'") if $DEBUG
 	    break
 	  end
 	end

@@ -1,6 +1,13 @@
-# Weak Reference class that does not bother GCing.
+require "delegate"
+
+# WeakRef is a class to represent a reference to an object that is not seen by
+# the tracing phase of the garbage collector.  This allows the referenced
+# object to be garbage collected as if nothing is referring to it. Because
+# WeakRef delegates method calls to the referenced object, it may be used in
+# place of that object, i.e. it is of the same duck type.
 #
 # Usage:
+#
 #   foo = Object.new
 #   foo = Object.new
 #   p foo.to_s			# original's class
@@ -8,11 +15,9 @@
 #   p foo.to_s			# should be same class
 #   ObjectSpace.garbage_collect
 #   p foo.to_s			# should raise exception (recycled)
-
-require "delegate"
-
 class WeakRef<Delegator
 
+  # RefError is raised if an object cannot be referenced by a WeakRef.
   class RefError<StandardError
   end
 
@@ -40,22 +45,15 @@ class WeakRef<Delegator
     end
   }
 
+  # Create a new WeakRef from +orig+.
   def initialize(orig)
     super
-    @__id = orig.__id__
-    ObjectSpace.define_finalizer orig, @@final
-    ObjectSpace.define_finalizer self, @@final
-    __old_status = Thread.critical
-    begin
-      Thread.critical = true
-      @@id_map[@__id] = [] unless @@id_map[@__id]
-    ensure
-      Thread.critical = __old_status
-    end
-    @@id_map[@__id].push self.__id__
-    @@id_rev_map[self.__id__] = @__id
+    __setobj__(orig)
   end
 
+  # Return the object this WeakRef references. Raises RefError if the object
+  # has been garbage collected.  The object returned is the object to which
+  # method calls are delegated (see Delegator).
   def __getobj__
     unless @@id_rev_map[self.__id__] == @__id
       raise RefError, "Illegal Reference - probably recycled", caller(2)
@@ -67,6 +65,25 @@ class WeakRef<Delegator
     end
   end
 
+  def __setobj__(obj)
+    @__id = obj.__id__
+    __old_status = Thread.critical
+    begin
+      Thread.critical = true
+      unless @@id_rev_map.key?(self)
+        ObjectSpace.define_finalizer obj, @@final
+        ObjectSpace.define_finalizer self, @@final
+      end
+      @@id_map[@__id] = [] unless @@id_map[@__id]
+    ensure
+      Thread.critical = __old_status
+    end
+    @@id_map[@__id].push self.__id__
+    @@id_rev_map[self.__id__] = @__id
+  end
+
+  # Returns true if the referenced object still exists, and false if it has
+  # been garbage collected.
   def weakref_alive?
     @@id_rev_map[self.__id__] == @__id
   end

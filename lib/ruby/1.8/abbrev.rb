@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 =begin
 #
 # Copyright (c) 2001,2003 Akinori MUSHA <knu@iDaemons.org>

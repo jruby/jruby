@@ -67,11 +67,10 @@ module REXML
       if node_set == nil
         yield @@context[:node] if defined? @@context[:node].namespace
       else  
-        if node_set.namespace
-          yield node_set
-        else
-          return unless node_set.kind_of? Enumerable
+        if node_set.respond_to? :each
           node_set.each { |node| yield node if defined? node.namespace }
+        elsif node_set.respond_to? :namespace
+          yield node_set
         end
       end
     end
@@ -118,14 +117,28 @@ module REXML
       elsif defined? object.node_type
         if object.node_type == :attribute
           object.value
-        elsif object.node_type == :element
-          object.text
+        elsif object.node_type == :element || object.node_type == :document
+          string_value(object)
         else
           object.to_s
         end
+      elsif object.nil?
+        return ""
       else
         object.to_s
       end
+    end
+
+    def Functions::string_value( o )
+      rv = ""
+      o.children.each { |e|
+        if e.node_type == :text
+          rv << e.to_s
+        elsif e.node_type == :element
+          rv << string_value( e )
+        end
+      }
+      rv
     end
 
     # UNTESTED
@@ -140,7 +153,7 @@ module REXML
 
     # Fixed by Mike Stok
     def Functions::contains( string, test )
-      string(string).include? string(test)
+      string(string).include?(string(test))
     end
 
     # Kouhei fixed this 
@@ -157,12 +170,9 @@ module REXML
     # Kouhei fixed this too
     def Functions::substring_after( string, test )
       ruby_string = string(string)
-      ruby_index = ruby_string.index(string(test))
-      if ruby_index.nil?
-        ""
-      else
-        ruby_string[ ruby_index+1..-1 ]
-      end
+      test_string = string(test)
+      return $1 if ruby_string =~ /#{test}(.*)/
+      ""
     end
 
     # Take equal portions of Mike Stok and Sean Russell; mix 
@@ -330,8 +340,10 @@ module REXML
       else
         str = string( object )
         #puts "STRING OF #{object.inspect} = #{str}"
-        if str =~ /^\d+/
-          object.to_s.to_f
+        # If XPath ever gets scientific notation...
+        #if str =~ /^\s*-?(\d*\.?\d+|\d+\.)([Ee]\d*)?\s*$/
+        if str =~ /^\s*-?(\d*\.?\d+|\d+\.)\s*$/
+          str.to_f
         else
           (0.0 / 0.0)
         end

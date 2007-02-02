@@ -39,8 +39,11 @@ module REXML
     # text.  If this value is nil (the default), then the raw value of the 
     # parent will be used as the raw value for this node.  If there is no raw
     # value for the parent, and no value is supplied, the default is false.
+    # Use this field if you have entities defined for some text, and you don't
+    # want REXML to escape that text in output.
     #   Text.new( "<&", false, nil, false ) #-> "&lt;&amp;"
-    #   Text.new( "<&", false, nil, true )  #-> IllegalArgumentException
+    #   Text.new( "&lt;&amp;", false, nil, false ) #-> "&amp;lt;&amp;amp;"
+    #   Text.new( "<&", false, nil, true )  #-> Parse exception
     #   Text.new( "&lt;&amp;", false, nil, true )  #-> "&lt;&amp;"
     #   # Assume that the entity "s" is defined to be "sean"
     #   # and that the entity    "r" is defined to be "russell"
@@ -156,11 +159,11 @@ module REXML
     #   # Assume that the entity "s" is defined to be "sean", and that the 
     #   # entity "r" is defined to be "russell"
     #   t = Text.new( "< & sean russell", false, nil, false, ['s'] ) 
-    #   t.string   #-> "< & sean russell"
+    #   t.value   #-> "< & sean russell"
     #   t = Text.new( "< & &s; russell", false, nil, false )
-    #   t.string   #-> "< & sean russell"
+    #   t.value   #-> "< & sean russell"
     #   u = Text.new( "sean russell", false, nil, true )
-    #   u.string   #-> "sean russell"
+    #   u.value   #-> "sean russell"
     def value
       @unnormalized if @unnormalized
       doctype = nil
@@ -170,17 +173,6 @@ module REXML
       end
       @unnormalized = Text::unnormalize( @string, doctype )
     end
-     
-     def wrap(string, width, addnewline=false)
-       # Recursivly wrap string at width.
-       return string if string.length <= width
-       place = string.rindex(' ', width) # Position in string with last ' ' before cutoff
-       if addnewline then
-         return "\n" + string[0,place] + "\n" + wrap(string[place+1..-1], width)
-       else
-         return string[0,place] + "\n" + wrap(string[place+1..-1], width)
-       end
-     end
 
     # Sets the contents of this text node.  This expects the text to be 
     # unnormalized.  It returns self.
@@ -196,17 +188,28 @@ module REXML
       @raw = false
     end
  
-     def indent_text(string, level=1, style="\t", indentfirstline=true)
-      return string if level < 0
-       new_string = ''
-       string.each { |line|
-         indent_string = style * level
-         new_line = (indent_string + line).sub(/[\s]+$/,'')
-         new_string << new_line
-       }
-       new_string.strip! unless indentfirstline
-       return new_string
+     def wrap(string, width, addnewline=false)
+       # Recursivly wrap string at width.
+       return string if string.length <= width
+       place = string.rindex(' ', width) # Position in string with last ' ' before cutoff
+       if addnewline then
+         return "\n" + string[0,place] + "\n" + wrap(string[place+1..-1], width)
+       else
+         return string[0,place] + "\n" + wrap(string[place+1..-1], width)
+       end
      end
+
+    def indent_text(string, level=1, style="\t", indentfirstline=true)
+      return string if level < 0
+      new_string = ''
+      string.each { |line|
+        indent_string = style * level
+        new_line = (indent_string + line).sub(/[\s]+$/,'')
+        new_string << new_line
+      }
+      new_string.strip! unless indentfirstline
+      return new_string
+    end
  
     def write( writer, indent=-1, transitive=false, ie_hack=false ) 
       s = to_s()
@@ -282,17 +285,19 @@ module REXML
     EREFERENCE = /&(?!#{Entity::NAME};)/
     # Escapes all possible entities
     def Text::normalize( input, doctype=nil, entity_filter=nil )
-      copy = input.clone
+      copy = input
       # Doing it like this rather than in a loop improves the speed
+      #copy = copy.gsub( EREFERENCE, '&amp;' )
+      copy = copy.gsub( "&", "&amp;" )
       if doctype
-        copy = copy.gsub( EREFERENCE, '&amp;' )
+        # Replace all ampersands that aren't part of an entity
         doctype.entities.each_value do |entity|
           copy = copy.gsub( entity.value, 
             "&#{entity.name};" ) if entity.value and 
               not( entity_filter and entity_filter.include?(entity) )
         end
       else
-        copy = copy.gsub( EREFERENCE, '&amp;' )
+        # Replace all ampersands that aren't part of an entity
         DocType::DEFAULT_ENTITIES.each_value do |entity|
           copy = copy.gsub(entity.value, "&#{entity.name};" )
         end

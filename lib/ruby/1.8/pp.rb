@@ -46,8 +46,16 @@
 require 'prettyprint'
 
 module Kernel
+  # returns a pretty printed object as a string.
+  def pretty_inspect
+    PP.pp(self, '')
+  end
+
   private
-  def pp(*objs)
+  # prints arguments in pretty form.
+  #
+  # pp returns nil.
+  def pp(*objs) # :doc:
     objs.each {|obj|
       PP.pp(obj)
     }
@@ -82,6 +90,12 @@ class PP < PrettyPrint
     q.flush
     out
   end
+
+  # :stopdoc:
+  def PP.mcall(obj, mod, meth, *args, &block)
+    mod.instance_method(meth).bind(obj).call(*args, &block)
+  end
+  # :startdoc:
 
   @sharing_detection = false
   class << self
@@ -276,7 +290,7 @@ class PP < PrettyPrint
     # implement #pretty_print, or a RuntimeError will be raised.
     def pretty_print_inspect
       if /\(PP::ObjectMixin\)#/ =~ method(:pretty_print).inspect
-        raise "pretty_print is not overridden."
+        raise "pretty_print is not overridden for #{self.class}"
       end
       PP.singleline_pp(self, '')
     end
@@ -315,8 +329,8 @@ end
 
 class Struct
   def pretty_print(q)
-    q.group(1, '#<struct ' + self.class.name, '>') {
-      q.seplist(self.members, lambda { q.text "," }) {|member|
+    q.group(1, '#<struct ' + PP.mcall(self, Kernel, :class).name, '>') {
+      q.seplist(PP.mcall(self, Struct, :members), lambda { q.text "," }) {|member|
         q.breakable
         q.text member.to_s
         q.text '='
@@ -329,7 +343,7 @@ class Struct
   end
 
   def pretty_print_cycle(q)
-    q.text sprintf("#<struct %s:...>", self.class.name)
+    q.text sprintf("#<struct %s:...>", PP.mcall(self, Kernel, :class).name)
   end
 end
 
@@ -467,6 +481,12 @@ if __FILE__ == $0
 
     def test_list0123_11
       assert_equal("[0,\n 1,\n 2,\n 3]\n", PP.pp([0,1,2,3], '', 11))
+    end
+
+    OverriddenStruct = Struct.new("OverriddenStruct", :members, :class)
+    def test_struct_override_members # [ruby-core:7865]
+      a = OverriddenStruct.new(1,2)
+      assert_equal("#<struct Struct::OverriddenStruct members=1, class=2>\n", PP.pp(a, ''))
     end
   end
 
