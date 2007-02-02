@@ -535,14 +535,16 @@ public class ParserSupport {
             case NodeTypes.LOCALVARNODE: case NodeTypes.NTHREFNODE: case NodeTypes.CLASSVARNODE:
             case NodeTypes.INSTVARNODE:
                 handleUselessWarn(node, "a variable"); return;
-            case NodeTypes.CONSTNODE:
-                handleUselessWarn(node, "a constant"); return;
+            // FIXME: Temporarily disabling because this fires way too much running Rails tests. JRUBY-518
+            /*case NodeTypes.CONSTNODE:
+                handleUselessWarn(node, "a constant"); return;*/
             case NodeTypes.BIGNUMNODE: case NodeTypes.DREGEXPNODE: case NodeTypes.DSTRNODE:
             case NodeTypes.FIXNUMNODE: case NodeTypes.FLOATNODE: case NodeTypes.REGEXPNODE:
             case NodeTypes.STRNODE: case NodeTypes.SYMBOLNODE:
                 handleUselessWarn(node, "a literal"); return;
-            case NodeTypes.CLASSNODE: case NodeTypes.COLON2NODE:
-                handleUselessWarn(node, "::"); return;
+            // FIXME: Temporarily disabling because this fires way too much running Rails tests. JRUBY-518
+            /*case NodeTypes.CLASSNODE: case NodeTypes.COLON2NODE:
+                handleUselessWarn(node, "::"); return;*/
             case NodeTypes.DOTNODE:
                 handleUselessWarn(node, ((DotNode) node).isExclusive() ? "..." : ".."); return;
             case NodeTypes.DEFINEDNODE:
@@ -551,8 +553,9 @@ public class ParserSupport {
                 handleUselessWarn(node, "false"); return;
             case NodeTypes.NILNODE: 
                 handleUselessWarn(node, "nil"); return;
-            case NodeTypes.SELFNODE:
-                handleUselessWarn(node, "self"); return;
+            // FIXME: Temporarily disabling because this fires way too much running Rails tests. JRUBY-518
+            /*case NodeTypes.SELFNODE:
+                handleUselessWarn(node, "self"); return;*/
             case NodeTypes.TRUENODE:
                 handleUselessWarn(node, "true"); return;
             default: return;
