@@ -1,6 +1,6 @@
 require 'test/unit'
 
-class TestKernel < Test::Unit::TestCase
+class TestBackquote < Test::Unit::TestCase
   def test_backquote_special_commands
     if File.exists?("/bin/echo")
       output = `/bin/echo hello`

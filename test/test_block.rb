@@ -1,6 +1,6 @@
 require 'test/unit'
 
-class TestBlocks < Test::Unit::TestCase
+class TestBlock < Test::Unit::TestCase
   def test_block_variable_closure
     values = []
     5.times do |i|
