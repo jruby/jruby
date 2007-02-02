@@ -325,8 +325,15 @@ public class RubyString extends RubyObject {
 	 *
 	 */
 	public static RubyString objAsString(IRubyObject obj) {
-		return (RubyString) (obj instanceof RubyString ? obj : 
-			obj.callMethod(obj.getRuntime().getCurrentContext(), "to_s"));
+        if (obj instanceof RubyString) return (RubyString) obj;
+    
+        IRubyObject str = obj.callMethod(obj.getRuntime().getCurrentContext(), "to_s");
+        
+        if (!(str instanceof RubyString)) return (RubyString) obj.anyToString();
+
+        if (obj.isTaint()) str.setTaint(true);
+        
+        return (RubyString) str;
 	}
     
 	/** rb_str_cmp

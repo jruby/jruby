@@ -212,23 +212,6 @@ public class RubyClass extends RubyModule {
         superType.callMethod(getRuntime().getCurrentContext(), "inherited", this);
     }
 
-    /** rb_singleton_class_clone
-     *
-     */
-    public RubyClass getSingletonClassClone() {
-        if (!isSingleton()) {
-            return this;
-        }
-        
-        MetaClass clone = new MetaClass(getRuntime(), getSuperClass(), getMetaClass().getAllocator(), getSuperClass().getCRef());
-
-        clone.setInstanceVariables(new HashMap(getInstanceVariables()));
-
-        cloneMethods(clone);
-
-        return clone;
-    }
-
     public boolean isSingleton() {
         return false;
     }
@@ -241,12 +224,6 @@ public class RubyClass extends RubyModule {
 
     public RubyClass getRealClass() {
         return this;
-    }
-
-    public MetaClass newSingletonClass(SinglyLinkedList parentCRef) {
-        MetaClass newClass = new MetaClass(getRuntime(), this, this.getAllocator(), parentCRef);
-        newClass.infectBy(this);
-        return newClass;
     }
 
     public static RubyClass newClass(IRuby runtime, RubyClass superClass, SinglyLinkedList parentCRef, String name) {

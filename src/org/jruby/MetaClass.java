@@ -45,21 +45,9 @@ public class MetaClass extends RubyClass {
     public boolean isSingleton() {
         return true;
     }
-    
-    public boolean isImmediate() {
-        return true;
-    }
 
     protected RubyClass subclass() {
         throw getRuntime().newTypeError("can't make subclass of virtual class");
-    }
-
-    public void attachToObject(IRubyObject object) {
-        setInstanceVariable("__attached__", object);
-    }
-    
-    public String getName() {
-            return "#<Class:" + getInstanceVariable("__attached__").toString() + ">";
     }
 
     /**

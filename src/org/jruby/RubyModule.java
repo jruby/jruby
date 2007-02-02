@@ -1052,28 +1052,32 @@ public class RubyModule extends RubyObject {
     }
 
     protected IRubyObject doClone() {
-        return RubyModule.newModule(getRuntime(), getBaseName(), cref.getNext());
+        return RubyModule.newModule(getRuntime(), null, cref.getNext());
     }
 
     /** rb_mod_init_copy
      * 
      */
-    public IRubyObject initialize_copy(IRubyObject original){
-        super.initialize_copy(original);
+    public IRubyObject initialize_copy(IRubyObject original) {
+        assert original instanceof RubyModule;
         
-        if (!getMetaClass().isSingleton()){
-            setMetaClass(original.getMetaClass().getSingletonClassClone());
+        RubyModule originalModule = (RubyModule)original;
+        
+        super.initialize_copy(originalModule);
+        
+        if (!getMetaClass().isSingleton()) {
+            setMetaClass(originalModule.getSingletonClassClone());
+        }
+
+        setSuperClass(originalModule.getSuperClass());
+        
+        if (originalModule.instanceVariables != null){
+            setInstanceVariables(new HashMap(originalModule.getInstanceVariables()));
         }
         
-        setSuperClass(original.getMetaClass().getRealClass().getSuperClass());
-        
-        if (!original.getMetaClass().getInstanceVariables().isEmpty()){
-            setInstanceVariables(new HashMap(original.getInstanceVariables()));
-        }
-        
-        if (!original.getMetaClass().getMethods().isEmpty()){
-            ((RubyModule) original).cloneMethods(this);
-        }
+        // no __classpath__ and __classid__ stuff in JRuby here (yet?)        
+
+        originalModule.cloneMethods(this);
         
         return this;        
     }
@@ -1130,6 +1134,17 @@ public class RubyModule extends RubyObject {
      *
      */
     public IRubyObject to_s() {
+        if(isSingleton()){            
+            IRubyObject attached = getInstanceVariable("__attached__");
+            StringBuffer buffer = new StringBuffer("#<Class:");
+            if(attached instanceof RubyClass || attached instanceof RubyModule){
+                buffer.append(attached.inspect());
+            }else{
+                buffer.append(attached.anyToString());
+            }
+            buffer.append(">");
+            return getRuntime().newString(buffer.toString());
+        }
         return getRuntime().newString(getName());
     }
 

@@ -113,18 +113,26 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      * @since Ruby 1.6.7
      */
-    public MetaClass makeMetaClass(RubyClass type, SinglyLinkedList parentCRef) {
-        MetaClass newMetaClass = type.newSingletonClass(parentCRef);
+    public RubyClass makeMetaClass(RubyClass superClass, SinglyLinkedList parentCRef) {
+        RubyClass klass = new MetaClass(getRuntime(), superClass, getMetaClass().getAllocator(), parentCRef);
+        setMetaClass(klass);
 		
-        if (!isNil()) {
-            setMetaClass(newMetaClass);
+        klass.setInstanceVariable("__attached__", this);
+
+        if (this instanceof RubyClass && isSingleton()) { // could be pulled down to RubyClass in future
+            klass.setMetaClass(klass);
+            klass.setSuperClass(((RubyClass)this).getSuperClass().getRealClass().getMetaClass());
+        } else {
+            klass.setMetaClass(superClass.getRealClass().getMetaClass());
         }
-        newMetaClass.attachToObject(this);
         
-        // use same ClassIndex as metaclass, since we're technically still of that type
-        newMetaClass.index = type.index;
+        // use same ClassIndex as metaclass, since we're technically still of that type 
+        klass.index = superClass.index;
+        return klass;
+    }
         
-        return newMetaClass;
+    public boolean isSingleton() {
+        return false;
     }
 
     public boolean singletonMethodsAllowed() {
@@ -230,12 +238,12 @@ public class RubyObject implements Cloneable, IRubyObject {
     */
    protected void testFrozen(String message) {
        if (isFrozen()) {
-           throw getRuntime().newFrozenError(message);
+           throw getRuntime().newFrozenError(message + getMetaClass().getName());
        }
    }
 
    protected void checkFrozen() {
-       testFrozen("can't modify frozen " + getMetaClass().getName());
+       testFrozen("can't modify frozen ");
    }
 
     /**
@@ -288,22 +296,52 @@ public class RubyObject implements Cloneable, IRubyObject {
 
     /** rb_singleton_class
      *
-     */
-    public MetaClass getSingletonClass() {
-        RubyClass type = getMetaClass();
-        if (!type.isSingleton()) {
-            type = makeMetaClass(type, type.getCRef());
+     */    
+    public RubyClass getSingletonClass() {
+        RubyClass klass;
+        
+        if (getMetaClass().isSingleton() && getMetaClass().getInstanceVariable("__attached__") == this) {
+            klass = getMetaClass();            
+        } else {
+            klass = makeMetaClass(getMetaClass(), getMetaClass().getCRef());
         }
-
-        assert type instanceof MetaClass;
-
-		if (!isNil()) {
-			type.setTaint(isTaint());
-			type.setFrozen(isFrozen());
-		}
-
-        return (MetaClass)type;
+        
+        klass.setTaint(isTaint());
+        klass.setFrozen(isFrozen());
+        
+        return klass;
     }
+    
+    /** rb_singleton_class_clone
+     *
+     */
+    public RubyClass getSingletonClassClone() {
+       RubyClass klass = getMetaClass();
+
+       if (!klass.isSingleton()) {
+           return klass;
+		}
+       
+       MetaClass clone = new MetaClass(getRuntime(), klass.getSuperClass(), getMetaClass().getAllocator(), getMetaClass().getCRef());
+       clone.setFrozen(klass.isFrozen());
+       clone.setTaint(klass.isTaint());
+
+       if (this instanceof RubyClass) {
+           clone.setMetaClass(clone);
+       } else {
+           clone.setMetaClass(klass.getSingletonClassClone());
+       }
+       
+       if (klass.safeHasInstanceVariables()) {
+           clone.setInstanceVariables(new HashMap(klass.getInstanceVariables()));
+       }
+
+       klass.cloneMethods(clone);
+
+       clone.getMetaClass().setInstanceVariable("__attached__", clone);
+
+       return clone;
+    }    
 
     /** rb_define_singleton_method
      *
@@ -836,7 +874,7 @@ public class RubyObject implements Cloneable, IRubyObject {
 	    
 	    checkFrozen();
         
-        if (getMetaClass().getRealClass() != getMetaClass().getRealClass()) {
+        if (getMetaClass().getRealClass() != original.getMetaClass().getRealClass()) {
 	            throw getRuntime().newTypeError("initialize_copy should take same class object");
 	    }
 
@@ -899,7 +937,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         }
         
         IRubyObject clone = doClone();
-        clone.setMetaClass(getMetaClass().getSingletonClassClone());
+        clone.setMetaClass(getSingletonClassClone());
         clone.setTaint(isTaint());
         clone.initCopy(this);
         clone.setFrozen(isFrozen());
@@ -996,7 +1034,13 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public IRubyObject inspect() {
-        if(getInstanceVariables().size() > 0) {
+        if ((!isImmediate()) &&
+                // TYPE(obj) == T_OBJECT
+                !(this instanceof RubyClass) &&
+                this != getRuntime().getObject() &&
+                this != getRuntime().getClass("Module") &&
+                safeHasInstanceVariables()) {
+
             StringBuffer part = new StringBuffer();
             String cname = getMetaClass().getRealClass().getName();
             part.append("#<").append(cname).append(":0x");

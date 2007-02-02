@@ -81,6 +81,7 @@ testRedefine.rb
 testRegexp.rb
 testReturn.rb
 testRuntimeCallbacks.rb
+testSingletonClass.rb
 testSocket.rb
 testSplat.rb
 testString.rb

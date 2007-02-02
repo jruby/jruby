@@ -173,7 +173,7 @@ public interface IRubyObject {
      * RubyMethod getSingletonClass.
      * @return RubyClass
      */
-    MetaClass getSingletonClass();
+    RubyClass getSingletonClass();
 
     /**
      * RubyMethod getType.
@@ -346,6 +346,8 @@ public interface IRubyObject {
     void defineSingletonMethod(String name, Callback callback);
 
     boolean singletonMethodsAllowed();
+    
+    boolean isSingleton();
 
 	Iterator instanceVariableNames();
 
