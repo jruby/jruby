@@ -24,22 +24,21 @@ module REXML
       old_verbosity = $VERBOSE
       begin
         $VERBOSE = false
-        enc = enc.nil? ? nil : enc.upcase
-        return false if defined? @encoding and enc == @encoding
+        return if defined? @encoding and enc == @encoding
         if enc and enc != UTF_8
-          @encoding = enc
-          raise ArgumentError, "Bad encoding name #@encoding" unless @encoding =~ /^[\w-]+$/
-          @encoding.untaint 
+          @encoding = enc.upcase
           begin
             require 'rexml/encodings/ICONV.rb'
             Encoding.apply(self, "ICONV")
-          rescue LoadError, Exception
+          rescue LoadError, Exception => err
+            raise ArgumentError, "Bad encoding name #@encoding" unless @encoding =~ /^[\w-]+$/
+            @encoding.untaint 
+            enc_file = File.join( "rexml", "encodings", "#@encoding.rb" )
             begin
-              enc_file = File.join( "rexml", "encodings", "#@encoding.rb" )
               require enc_file
               Encoding.apply(self, @encoding)
-            rescue LoadError => err
-              puts err.message
+            rescue LoadError
+              puts $!.message
               raise ArgumentError, "No decoder found for encoding #@encoding.  Please install iconv."
             end
           end
@@ -51,14 +50,13 @@ module REXML
       ensure
         $VERBOSE = old_verbosity
       end
-      true
     end
 
     def check_encoding str
       # We have to recognize UTF-16, LSB UTF-16, and UTF-8
-      return UTF_16 if /\A\xfe\xff/n =~ str
-      return UNILE if /\A\xff\xfe/n =~ str
-      str =~ /^\s*<?xml\s*version\s*=\s*(['"]).*?\2\s*encoding\s*=\s*(["'])(.*?)\2/um
+      return UTF_16 if str[0] == 254 && str[1] == 255
+      return UNILE if str[0] == 255 && str[1] == 254
+      str =~ /^\s*<?xml\s*version=(['"]).*?\2\s*encoding=(["'])(.*?)\2/um
       return $1.upcase if $1
       return UTF_8
     end

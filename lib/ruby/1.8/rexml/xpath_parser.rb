@@ -10,13 +10,9 @@ class Object
   end
 end
 class Symbol
-  def dclone ; self ; end
-end
-class Fixnum
-  def dclone ; self ; end
-end
-class Float
-  def dclone ; self ; end
+  def dclone
+    self
+  end
 end
 class Array
   def dclone
@@ -38,7 +34,7 @@ module REXML
 
     def initialize( )
       @parser = REXML::Parsers::XPathParser.new
-      @namespaces = nil
+      @namespaces = {}
       @variables = {}
     end
 
@@ -134,21 +130,6 @@ module REXML
     private
 
 
-    # Returns a String namespace for a node, given a prefix
-    # The rules are:
-    # 
-    #  1. Use the supplied namespace mapping first.
-    #  2. If no mapping was supplied, use the context node to look up the namespace
-    def get_namespace( node, prefix )
-      if @namespaces
-        return @namespaces[prefix] || ''
-      else
-        return node.namespace( prefix ) if node.node_type == :element
-        return ''
-      end
-    end
-
-
     # Expr takes a stack of path elements and a set of nodes (either a Parent
     # or an Array and returns an Array of matching nodes
     ALL = [ :attribute, :element, :text, :processing_instruction, :comment ]
@@ -162,10 +143,6 @@ module REXML
       while path_stack.length > 0
         #puts "Path stack = #{path_stack.inspect}"
         #puts "Nodeset is #{nodeset.inspect}"
-        if nodeset.length == 0
-          path_stack.clear
-          return []
-        end
         case (op = path_stack.shift)
         when :document
           nodeset = [ nodeset[0].root_node ]
@@ -175,9 +152,12 @@ module REXML
           #puts "IN QNAME"
           prefix = path_stack.shift
           name = path_stack.shift
+          default_ns = @namespaces[prefix]
+          default_ns = default_ns ? default_ns : ''
           nodeset.delete_if do |node|
+            ns = default_ns
             # FIXME: This DOUBLES the time XPath searches take
-            ns = get_namespace( node, prefix )
+            ns = node.namespace( prefix ) if node.node_type == :element and ns == ''
             #puts "NS = #{ns.inspect}"
             #puts "node.node_type == :element => #{node.node_type == :element}"
             if node.node_type == :element
@@ -229,7 +209,11 @@ module REXML
           node_types = ELEMENTS
 
         when :literal
-          return path_stack.shift
+          literal = path_stack.shift
+          if literal =~ /^\d+(\.\d+)?$/
+            return ($1 ? literal.to_f : literal.to_i) 
+          end
+          return literal
         
         when :attribute
           new_nodeset = []
@@ -239,11 +223,9 @@ module REXML
             name = path_stack.shift
             for element in nodeset
               if element.node_type == :element
-                #puts "Element name = #{element.name}"
-                #puts "get_namespace( #{element.inspect}, #{prefix} ) = #{get_namespace(element, prefix)}"
-                attrib = element.attribute( name, get_namespace(element, prefix) )
-                #puts "attrib = #{attrib.inspect}"
-                new_nodeset << attrib if attrib
+                #puts element.name
+                attr = element.attribute( name, @namespaces[prefix] )
+                new_nodeset << attr if attr
               end
             end
           when :any
@@ -305,10 +287,8 @@ module REXML
               #puts "Adding node #{node.inspect}" if result == (index+1)
               new_nodeset << node if result == (index+1)
             elsif result.instance_of? Array
-              if result.size > 0 and result.inject(false) {|k,s| s or k}
-                #puts "Adding node #{node.inspect}" if result.size > 0
-                new_nodeset << node if result.size > 0
-              end
+              #puts "Adding node #{node.inspect}" if result.size > 0
+              new_nodeset << node if result.size > 0
             else
               #puts "Adding node #{node.inspect}" if result
               new_nodeset << node if result
@@ -389,19 +369,9 @@ module REXML
           node_types = ELEMENTS
 
         when :namespace
-          new_nodeset = []
-          prefix = path_stack.shift
+          new_set = []
           for node in nodeset
-            if (node.node_type == :element or node.node_type == :attribute)
-              if (node.node_type == :element)
-                namespaces = node.namespaces
-              else
-                namespaces = node.element.namesapces
-              end
-              if (node.namespace == namespaces[prefix])
-                new_nodeset << node
-              end
-            end
+            new_nodeset << node.namespace if node.node_type == :element or node.node_type == :attribute
           end
           nodeset = new_nodeset
 
@@ -416,18 +386,6 @@ module REXML
         when :eq, :neq, :lt, :lteq, :gt, :gteq, :and, :or
           left = expr( path_stack.shift, nodeset.dup, context )
           #puts "LEFT => #{left.inspect} (#{left.class.name})"
-          right = expr( path_stack.shift, nodeset.dup, context )
-          #puts "RIGHT => #{right.inspect} (#{right.class.name})"
-          res = equality_relational_compare( left, op, right )
-          #puts "RES => #{res.inspect}"
-          return res
-
-        when :and
-          left = expr( path_stack.shift, nodeset.dup, context )
-          #puts "LEFT => #{left.inspect} (#{left.class.name})"
-          if left == false || left.nil? || !left.inject(false) {|a,b| a | b}
-            return []
-          end
           right = expr( path_stack.shift, nodeset.dup, context )
           #puts "RIGHT => #{right.inspect} (#{right.class.name})"
           res = equality_relational_compare( left, op, right )
@@ -507,7 +465,7 @@ module REXML
     # The next two methods are BAD MOJO!
     # This is my achilles heel.  If anybody thinks of a better
     # way of doing this, be my guest.  This really sucks, but 
-    # it is a wonder it works at all.
+    # it took me three days to get it to work at all.
     # ########################################################
     
     def descendant_or_self( path_stack, nodeset )

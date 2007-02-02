@@ -17,6 +17,7 @@ module RSS
 
     include RSS09
     include RootElementMixin
+    include XMLStyleSheetMixin
 
     %w(channel).each do |name|
       install_have_child_element(name, "", nil)

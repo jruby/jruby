@@ -49,8 +49,8 @@ module REXML
       CLOSE_MATCH = /^\s*<\/(#{NAME_STR})\s*>/um
 
       VERSION = /\bversion\s*=\s*["'](.*?)['"]/um
-      ENCODING = /\bencoding\s*=\s*["'](.*?)['"]/um
-      STANDALONE = /\bstandalone\s*=\s["'](.*?)['"]/um
+      ENCODING = /\bencoding=["'](.*?)['"]/um
+      STANDALONE = /\bstandalone=["'](.*?)['"]/um
 
       ENTITY_START = /^\s*<!ENTITY/
       IDENTITY = /^([!\*\w\-]+)(\s+#{NCNAME_STR})?(\s+["'].*?['"])?(\s+['"].*?["'])?/u
@@ -96,13 +96,6 @@ module REXML
         "apos" => [/&apos;/, "&apos;", "'", /'/] 
       }
 
-
-      ######################################################################
-      # These are patterns to identify common markup errors, to make the
-      # error messages more informative.
-      ######################################################################
-      MISSING_ATTRIBUTE_QUOTES = /^<#{NAME_STR}\s+#{NAME_STR}\s*=\s*[^"']/um
-
       def initialize( source )
         self.stream = source
       end
@@ -146,6 +139,8 @@ module REXML
 
       # Returns true if there are no more events
       def empty?
+        #STDERR.puts "@source.empty? = #{@source.empty?}"
+        #STDERR.puts "@stack.empty? = #{@stack.empty?}"
         return (@source.empty? and @stack.empty?)
       end
 
@@ -340,11 +335,7 @@ module REXML
             else
               # Get the next tag
               md = @source.match(TAG_MATCH, true)
-              unless md
-                # Check for missing attribute quotes
-                raise REXML::ParseException.new("missing attribute quote", @source) if @source.match(MISSING_ATTRIBUTE_QUOTES )
-                raise REXML::ParseException.new("malformed XML: missing tag start", @source) 
-              end
+              raise REXML::ParseException.new("malformed XML: missing tag start", @source) unless md
               attrs = []
               if md[2].size > 0
                 attrs = md[2].scan( ATTRIBUTE_PATTERN )
@@ -363,6 +354,8 @@ module REXML
           else
             md = @source.match( TEXT_PATTERN, true )
             if md[0].length == 0
+              puts "EMPTY = #{empty?}"
+              puts "BUFFER = \"#{@source.buffer}\""
               @source.match( /(\s+)/, true )
             end
             #STDERR.puts "GOT #{md[1].inspect}" unless md[0].length == 0

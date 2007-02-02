@@ -69,7 +69,7 @@ module Generators
 
     def initialize(options) #:not-new:
       @options   = options
-      @ri_writer = RI::RiWriter.new(".")
+      @ri_writer = RI::RiWriter.new(options.op_dir)
       @markup    = SM::SimpleMarkup.new
       @to_flow   = SM::ToFlow.new
     end

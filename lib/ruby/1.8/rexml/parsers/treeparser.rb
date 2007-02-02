@@ -23,8 +23,7 @@ module REXML
             case event[0]
             when :end_document
               unless tag_stack.empty?
-                #raise ParseException.new("No close tag for #{tag_stack.inspect}")
-                raise ParseException.new("No close tag for #{@build_context.xpath}")
+                raise ParseException.new("No close tag for #{tag_stack.inspect}")
               end
               return
             when :start_element

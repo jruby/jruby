@@ -100,11 +100,5 @@ module WEBrick
       }
       return cookie
     end
-
-    def self.parse_set_cookies(str)
-      return str.split(/,(?=[^;,]*=)|,$/).collect{|c|
-        parse_set_cookie(c)
-      }
-    end
   end
 end

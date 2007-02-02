@@ -6,7 +6,7 @@ module REXML
 		# Generates a Source object
 		# @param arg Either a String, or an IO
 		# @return a Source, or nil if a bad argument was given
-		def SourceFactory::create_from(arg)
+		def SourceFactory::create_from arg#, slurp=true
       if arg.kind_of? String
 			  Source.new(arg)
       elsif arg.respond_to? :read and
@@ -35,23 +35,16 @@ module REXML
 
 		# Constructor
 		# @param arg must be a String, and should be a valid XML document
-    # @param encoding if non-null, sets the encoding of the source to this
-    # value, overriding all encoding detection
-		def initialize(arg, encoding=nil)
+		def initialize(arg)
 			@orig = @buffer = arg
-      if encoding
-        self.encoding = encoding
-      else
-        self.encoding = check_encoding( @buffer )
-      end
+			self.encoding = check_encoding( @buffer )
 			@line = 0
 		end
-
 
 		# Inherited from Encoding
 		# Overridden to support optimized en/decoding
 		def encoding=(enc)
-			return unless super
+			super
 			@line_break = encode( '>' )
 			if enc != UTF_8
 				@buffer = decode(@buffer)
@@ -131,7 +124,7 @@ module REXML
 		#attr_reader :block_size
 
     # block_size has been deprecated
-		def initialize(arg, block_size=500, encoding=nil)
+		def initialize(arg, block_size=500)
 			@er_source = @source = arg
 			@to_utf = false
       # Determining the encoding is a deceptively difficult issue to resolve.
@@ -141,17 +134,15 @@ module REXML
       # if there is one.  If there isn't one, the file MUST be UTF-8, as per
       # the XML spec.  If there is one, we can determine the encoding from
       # it.
-      @buffer = ""
       str = @source.read( 2 )
-      if encoding
-        self.encoding = encoding
-      elsif /\A(?:\xfe\xff|\xff\xfe)/n =~ str
-        self.encoding = check_encoding( str )
+      if (str[0] == 254 && str[1] == 255) || (str[0] == 255 && str[1] == 254)
+        @encoding = check_encoding( str )
+        @line_break = encode( '>' )
       else
         @line_break = '>'
       end
       super str+@source.readline( @line_break )
-    end
+		end
 
 		def scan(pattern, cons=false)
 			rv = super
@@ -168,8 +159,6 @@ module REXML
 						str = @source.readline(@line_break)
 						str = decode(str) if @to_utf and str
 						@buffer << str
-          rescue Iconv::IllegalSequence
-            raise
 					rescue
 						@source = nil
 					end

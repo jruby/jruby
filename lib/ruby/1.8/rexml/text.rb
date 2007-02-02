@@ -42,7 +42,6 @@ module REXML
     # Use this field if you have entities defined for some text, and you don't
     # want REXML to escape that text in output.
     #   Text.new( "<&", false, nil, false ) #-> "&lt;&amp;"
-    #   Text.new( "&lt;&amp;", false, nil, false ) #-> "&amp;lt;&amp;amp;"
     #   Text.new( "<&", false, nil, true )  #-> Parse exception
     #   Text.new( "&lt;&amp;", false, nil, true )  #-> "&lt;&amp;"
     #   # Assume that the entity "s" is defined to be "sean"
@@ -173,6 +172,17 @@ module REXML
       end
       @unnormalized = Text::unnormalize( @string, doctype )
     end
+     
+     def wrap(string, width, addnewline=false)
+       # Recursivly wrap string at width.
+       return string if string.length <= width
+       place = string.rindex(' ', width) # Position in string with last ' ' before cutoff
+       if addnewline then
+         return "\n" + string[0,place] + "\n" + wrap(string[place+1..-1], width)
+       else
+         return string[0,place] + "\n" + wrap(string[place+1..-1], width)
+       end
+     end
 
     # Sets the contents of this text node.  This expects the text to be 
     # unnormalized.  It returns self.
@@ -188,28 +198,17 @@ module REXML
       @raw = false
     end
  
-     def wrap(string, width, addnewline=false)
-       # Recursivly wrap string at width.
-       return string if string.length <= width
-       place = string.rindex(' ', width) # Position in string with last ' ' before cutoff
-       if addnewline then
-         return "\n" + string[0,place] + "\n" + wrap(string[place+1..-1], width)
-       else
-         return string[0,place] + "\n" + wrap(string[place+1..-1], width)
-       end
-     end
-
-    def indent_text(string, level=1, style="\t", indentfirstline=true)
+     def indent_text(string, level=1, style="\t", indentfirstline=true)
       return string if level < 0
-      new_string = ''
-      string.each { |line|
-        indent_string = style * level
-        new_line = (indent_string + line).sub(/[\s]+$/,'')
-        new_string << new_line
-      }
-      new_string.strip! unless indentfirstline
-      return new_string
-    end
+       new_string = ''
+       string.each { |line|
+         indent_string = style * level
+         new_line = (indent_string + line).sub(/[\s]+$/,'')
+         new_string << new_line
+       }
+       new_string.strip! unless indentfirstline
+       return new_string
+     end
  
     def write( writer, indent=-1, transitive=false, ie_hack=false ) 
       s = to_s()
@@ -287,10 +286,9 @@ module REXML
     def Text::normalize( input, doctype=nil, entity_filter=nil )
       copy = input
       # Doing it like this rather than in a loop improves the speed
-      #copy = copy.gsub( EREFERENCE, '&amp;' )
-      copy = copy.gsub( "&", "&amp;" )
       if doctype
         # Replace all ampersands that aren't part of an entity
+        copy = copy.gsub( EREFERENCE, '&amp;' )
         doctype.entities.each_value do |entity|
           copy = copy.gsub( entity.value, 
             "&#{entity.name};" ) if entity.value and 
@@ -298,6 +296,7 @@ module REXML
         end
       else
         # Replace all ampersands that aren't part of an entity
+        copy = copy.gsub( EREFERENCE, '&amp;' )
         DocType::DEFAULT_ENTITIES.each_value do |entity|
           copy = copy.gsub(entity.value, "&#{entity.name};" )
         end

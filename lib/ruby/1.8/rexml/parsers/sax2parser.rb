@@ -16,10 +16,6 @@ module REXML
 				@tag_stack = []
         @entities = {}
 			end
-
-      def source
-        @parser.source
-      end
 			
       def add_listener( listener )
         @parser.add_listener( listener )

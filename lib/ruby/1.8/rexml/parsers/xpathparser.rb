@@ -596,13 +596,7 @@ module REXML
           parsed << :function
           parsed << fname
           path = FunctionCall(path, parsed)
-        when NUMBER
-          #puts "LITERAL or NUMBER: #$1"
-          varname = $1.nil? ? $2 : $1
-          path = $'
-          parsed << :literal 
-          parsed << (varname.include?('.') ? varname.to_f : varname.to_i)
-        when LITERAL
+        when LITERAL, NUMBER
           #puts "LITERAL or NUMBER: #$1"
           varname = $1.nil? ? $2 : $1
           path = $'

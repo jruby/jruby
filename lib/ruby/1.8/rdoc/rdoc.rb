@@ -16,7 +16,6 @@ require 'rdoc/diagram'
 
 require 'find'
 require 'ftools'
-require 'time'
 
 # We put rdoc stuff in the RDoc module to avoid namespace
 # clutter.
@@ -107,38 +106,25 @@ module RDoc
     # then we refuse to use it, as we may clobber some
     # manually generated documentation
     
-    def setup_output_dir(op_dir, force)
-      flag_file = output_flag_file(op_dir)
+    def setup_output_dir(op_dir)
+      flag_file = File.join(op_dir, "created.rid")
       if File.exist?(op_dir)
         unless File.directory?(op_dir)
           error "'#{op_dir}' exists, and is not a directory" 
         end
-        begin
-          created = File.read(flag_file)
-        rescue SystemCallError
+        unless File.file?(flag_file)
           error "\nDirectory #{op_dir} already exists, but it looks like it\n" +
             "isn't an RDoc directory. Because RDoc doesn't want to risk\n" +
             "destroying any of your existing files, you'll need to\n" +
             "specify a different output directory name (using the\n" +
             "--op <dir> option).\n\n"
-        else
-          last = (Time.parse(created) unless force rescue nil)
         end
       else
         File.makedirs(op_dir)
       end
-      last
+      File.open(flag_file, "w") {|f| f.puts Time.now }
     end
-
-    # Update the flag file in an output directory.
-    def update_output_dir(op_dir, time)
-      File.open(output_flag_file(op_dir), "w") {|f| f.puts time.rfc2822 }
-    end
-
-    # Return the path name of the flag file in an output directory.
-    def output_flag_file(op_dir)
-      File.join(op_dir, "created.rid")
-    end
+    
 
     # The .document file contains a list of file and directory name
     # patterns, representing candidates for documentation. It may
@@ -174,10 +160,8 @@ module RDoc
 
       relative_files.each do |rel_file_name|
         next if exclude_pattern && exclude_pattern =~ rel_file_name
-        stat = File.stat(rel_file_name)
-        case type = stat.ftype
+        case type = File.stat(rel_file_name).ftype
         when "file"
-          next if @last_created and stat.mtime < @last_created
           file_list << rel_file_name.sub(/^\.\//, '') if force_doc || ParserFactory.can_parse(rel_file_name)
         when "directory"
           next if rel_file_name == "CVS" || rel_file_name == ".svn"
@@ -254,25 +238,22 @@ module RDoc
 
       options = Options.instance
       options.parse(argv, GENERATORS)
-
-      @last_created = nil
+    
       unless options.all_one_file
-        @last_created = setup_output_dir(options.op_dir, options.force_update)
+        setup_output_dir(options.op_dir)
       end
-      start_time = Time.now
 
       file_info = parse_files(options)
 
-      if file_info.empty?
-        $stderr.puts "\nNo newer files." unless options.quiet
-      else
-        gen = options.generator
-
-        $stderr.puts "\nGenerating #{gen.key.upcase}..." unless options.quiet
-
-        require gen.file_name
-
-        gen_class = Generators.const_get(gen.class_name)
+      gen = options.generator
+      
+      $stderr.puts "\nGenerating #{gen.key.upcase}..." unless options.quiet
+      
+      require gen.file_name
+      
+      gen_class = Generators.const_get(gen.class_name)
+      
+      unless file_info.empty?
         gen = gen_class.for(options)
 
         pwd = Dir.pwd
@@ -282,7 +263,6 @@ module RDoc
         begin
           Diagram.new(file_info, options).draw if options.diagram
           gen.generate(file_info)
-          update_output_dir(".", start_time)
         ensure
           Dir.chdir(pwd)
         end

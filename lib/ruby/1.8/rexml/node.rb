@@ -55,8 +55,10 @@ module REXML
       return nil
     end
 
-    # Returns the position that +self+ holds in its parent's array, indexed
-    # from 1.
+    # Returns the index that +self+ has in its parent's elements array, so that
+    # the following equation holds true:
+    #
+    #   node == node.parent.elements[node.index_in_parent]
     def index_in_parent
       parent.index(self)+1
     end

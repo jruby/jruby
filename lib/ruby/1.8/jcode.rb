@@ -77,7 +77,7 @@ class String
 
   def succ!
     reg = end_regexp
-    if  $KCODE != 'NONE' && self =~ reg
+    if self =~ reg
       succ_table = SUCC[$KCODE[0,1].downcase]
       begin
 	self[-1] += succ_table[self[-1]]

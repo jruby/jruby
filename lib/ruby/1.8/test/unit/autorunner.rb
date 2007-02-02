@@ -7,8 +7,9 @@ module Test
     class AutoRunner
       def self.run(force_standalone=false, default_dir=nil, argv=ARGV, &block)
         r = new(force_standalone || standalone?, &block)
-        r.base = default_dir
-        r.process_args(argv)
+        if((!r.process_args(argv)) && default_dir)
+          r.to_run << default_dir
+        end
         r.run
       end
       
@@ -63,14 +64,12 @@ module Test
           c.filter = r.filters
           c.pattern.concat(r.pattern) if(r.pattern)
           c.exclude.concat(r.exclude) if(r.exclude)
-          c.base = r.base
-          $:.push(r.base) if r.base
           c.collect(*(r.to_run.empty? ? ['.'] : r.to_run))
         end,
       }
 
       attr_reader :suite
-      attr_accessor :output_level, :filters, :to_run, :pattern, :exclude, :base, :workdir
+      attr_accessor :output_level, :filters, :to_run, :pattern, :exclude
       attr_writer :runner, :collector
 
       def initialize(standalone)
@@ -111,14 +110,6 @@ module Test
           end
 
           if(@standalone)
-            o.on('-b', '--basedir=DIR', "Base directory of test suites.") do |b|
-              @base = b
-            end
-
-            o.on('-w', '--workdir=DIR', "Working directory to run tests.") do |w|
-              @workdir = w
-            end
-
             o.on('-a', '--add=TORUN', Array,
                  "Add TORUN to the list of things to run;",
                  "can be a file or a directory.") do |a|
@@ -160,11 +151,6 @@ module Test
             else
               @filters << proc{|t| n == t.class.name ? true : nil}
             end
-          end
-
-          o.on('-I', "--load-path=DIR[#{File::PATH_SEPARATOR}DIR...]",
-               "Appends directory list to $LOAD_PATH.") do |dirs|
-            $LOAD_PATH.concat(dirs.split(File::PATH_SEPARATOR))
           end
 
           o.on('-v', '--verbose=[LEVEL]', OUTPUT_LEVELS,
@@ -211,7 +197,6 @@ module Test
       def run
         @suite = @collector[self]
         result = @runner[self] or return false
-        Dir.chdir(@workdir) if @workdir
         result.run(@suite, @output_level).passed?
       end
     end
