@@ -1751,7 +1751,6 @@ module M003; include M002; end
 
 test_ok(M003.ancestors == [M003, M002, M001])
 
-=begin Removing marshal tests for now; there are multiple breakages here
 test_check "marshal"
 $x = [1,2,3,[4,5,"foo"],{1=>"bar"},2.5,fact(30)]
 $y = Marshal.dump($x)
@@ -1766,7 +1765,6 @@ test_ok(Marshal.load(Marshal.dump(StrClone.new("abc"))).class == StrClone)
   b = Marshal.load(ma)
   test_ok(a == b)
 }
-=end
 
 test_check "pack"
 

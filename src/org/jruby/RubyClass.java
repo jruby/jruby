@@ -114,7 +114,7 @@ public class RubyClass extends RubyModule {
         this.runtime = runtime;
         
         // use parent's marshal, or default object marshal by default
-        if (metaClass != null) {
+        if (superClass != null) {
             this.marshal = superClass.getMarshal();
         } else {
             this.marshal = DEFAULT_OBJECT_MARSHAL;
@@ -253,6 +253,10 @@ public class RubyClass extends RubyModule {
         return new RubyClass(runtime, runtime.getClass("Class"), superClass, superClass.getAllocator(), parentCRef, name);
     }
 
+    public static RubyClass cloneClass(IRuby runtime, RubyClass metaClass, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef, String name) {
+        return new RubyClass(runtime, metaClass, superClass, allocator, parentCRef, name);
+    }
+
     /** Create a new subclass of this class.
      * @return the new sublass
      * @throws TypeError if this is class `Class'
@@ -363,7 +367,7 @@ public class RubyClass extends RubyModule {
     }
     
     protected IRubyObject doClone() {
-    	return RubyClass.newClass(getRuntime(), getSuperClass(), null/*FIXME*/, getBaseName());
+    	return RubyClass.cloneClass(getRuntime(), getMetaClass(), getSuperClass(), getAllocator(), null/*FIXME*/, null);
     }
     
     /** rb_class_init_copy

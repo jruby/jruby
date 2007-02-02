@@ -13,6 +13,7 @@ mri/testIterator.rb
 mri/testProc.rb
 mri/testString.rb
 mri/testWhileUntil.rb
+mri/sample/test.rb
 testBigDecimal.rb
 testBignum.rb
 testCacheMapLeak.rb
