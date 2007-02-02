@@ -52,7 +52,7 @@ rubicon/test_struct
 rubicon/test_symbol
 rubicon/test_thread_group
 rubicon/test_true_class
-#test_array
+test_array
 #test_backquote
 #test_block
 test_case

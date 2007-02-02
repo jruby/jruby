@@ -919,7 +919,7 @@ public class RubyArray extends RubyObject implements List {
         
         if (!(obj instanceof RubyArray)) {
             if (obj.respondsTo("to_ary")) {
-                ary = obj.convertToArray();
+                return obj.callMethod(getRuntime().getCurrentContext(), "==", this);
             } else {
                 return getRuntime().getFalse();
             }
