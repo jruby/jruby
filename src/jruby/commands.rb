@@ -7,7 +7,7 @@ if File.directory?(Config::CONFIG['bindir'])
     if File.file?(f) && File.open(f) {|io| (io.readline rescue "") =~ /^#!.*ruby/}
       meth = File.basename(f)
       mod = class << self; self; end
-      mod.send(:define_method, meth) do
+      mod.send(:define_method, "_cmd_#{meth}") do
         require 'jruby/extract'
         JRuby::Extract.new.extract unless File.exist?(Config::CONFIG['bindir'] + "/jruby")
         load f
@@ -16,7 +16,7 @@ if File.directory?(Config::CONFIG['bindir'])
   end
 else
   # allow use of 'gem' and 'jirb' without prior extraction
-  def gem
+  def _cmd_gem
     require 'jruby/extract'
     JRuby::Extract.new.extract unless File.exist?(Config::CONFIG['bindir'] + "/jruby")
     require 'rubygems'
@@ -24,19 +24,19 @@ else
     Gem::GemRunner.new.run(ARGV)
   end
 
-  def jirb
+  def _cmd_jirb
     require 'irb'
     IRB.start(__FILE__)
   end  
 end
 
-def maybe_install_gems
+def _cmd_maybe_install_gems
   require 'jruby/extract'
   JRuby::Extract.new.extract unless File.exist?(Config::CONFIG['bindir'] + "/jruby")
   require 'rubygems'
   ARGV.delete_if do |g|
     begin
-      require_gem g
+      gem g
       puts "#{g} already installed"
       true
     rescue Gem::LoadError
@@ -46,13 +46,13 @@ def maybe_install_gems
   unless ARGV.empty?
     ARGV.unshift "install"
     ARGV << "-y" << "--no-ri" << "--no-rdoc"
-    gem
+    _cmd_gem
   end 
 end
 
-def extract
+def _cmd_extract
   require 'jruby/extract'
   JRuby::Extract.new(ARGV.first).extract
 end
 
-class << self; alias_method :irb, :jirb; end
+class << self; alias_method :_cmd_irb, :_cmd_jirb; end

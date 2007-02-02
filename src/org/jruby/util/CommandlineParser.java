@@ -194,7 +194,7 @@ public class CommandlineParser {
                     } else if (argument.equals("--command")) {
                         requiredLibraries.add("jruby/commands");
                         characterIndex = argument.length();
-                        inlineScript.append(grabValue("provide a command to execute"));
+                        inlineScript.append("_cmd_" + grabValue("provide a command to execute"));
                         inlineScript.append("\n");
                         hasInlineScript = true;
                         endOfArguments = true;
