@@ -53,7 +53,7 @@ rubicon/test_symbol
 rubicon/test_thread_group
 rubicon/test_true_class
 test_array
-test_backquote
+#test_backquote
 test_block
 test_case
 test_comparable
