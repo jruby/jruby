@@ -81,7 +81,6 @@ public class UnmarshalStream extends BufferedInputStream {
             }
             return result;
         } catch (IOException ioe) {
-            ioe.printStackTrace();
             throw ioe;
         }
     }
