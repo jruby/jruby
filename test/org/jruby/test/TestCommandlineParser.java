@@ -110,7 +110,7 @@ public class TestCommandlineParser extends TestCase {
         CommandlineParser parser = new CommandlineParser(new Main(System.in, out, err), args);
         assertEquals(1, parser.requiredLibraries().size());
         assertEquals("jruby/commands", parser.requiredLibraries().get(0));
-        assertEquals("_cmd_gem\n", parser.inlineScript());
+        assertEquals("JRuby::Commands.gem\n", parser.inlineScript());
     }
 
     public void testCommandAllowedOnlyOnceAndRemainderAreScriptArgs() {
