@@ -1950,14 +1950,14 @@ test_ok(!x.foo)
 test_ok(x.bar)
 test_ok(!x.quux)
 
-=begin There are multiple errors in this section; uncomment to run these tests
+# commented tests are broken. fix them?
 test_check "path"
 test_ok(File.basename("a") == "a")
 test_ok(File.basename("a/b") == "b")
 test_ok(File.basename("a/b/") == "b")
 test_ok(File.basename("/") == "/")
 test_ok(File.basename("//") == "/")
-test_ok(File.basename("///") == "/")
+#test_ok(File.basename("///") == "/")
 test_ok(File.basename("a/b////") == "b")
 test_ok(File.basename("a.rb", ".rb") == "a")
 test_ok(File.basename("a.rb///", ".rb") == "a")
@@ -1970,7 +1970,7 @@ test_ok(File.dirname("a/b") == "a")
 test_ok(File.dirname("a/b/c") == "a/b")
 test_ok(File.dirname("/a/b/c") == "/a/b")
 test_ok(File.dirname("/a/b/") == "/a")
-test_ok(File.dirname("/a/b///") == "/a")
+#test_ok(File.dirname("/a/b///") == "/a")
 case Dir.pwd
 when %r'\A\w:'
   test_ok(/\A\w:\/\z/ =~ File.expand_path(".", "/"))
@@ -1990,9 +1990,8 @@ if dosish
   test_ok(File.expand_path("/", "z:/sub") == "z:/")
   test_ok(File.expand_path("/dir", "z:/sub") == "z:/dir")
 end
-test_ok(File.expand_path(".", "//") == "//")
-test_ok(File.expand_path("sub", "//") == "//sub")
-=end
+#test_ok(File.expand_path(".", "//") == "//")
+#test_ok(File.expand_path("sub", "//") == "//sub")
 
 test_check "gc"
 begin
