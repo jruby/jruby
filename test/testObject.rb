@@ -85,3 +85,17 @@ test_exception(NoMethodError) { TestClz.new.private_method }
 test_exception(NoMethodError) { TestClz.new.call_private_bad }
 test_equal 1, TestClz.new.call_private_good
 test_no_exception { PrivateSetter.new.foo }
+
+# JRUBY-147: These all crashed at one point.  
+# FIXME: These could be merged into more meaningful tests.
+test_no_exception do
+  o1 = Object.new
+  class << o1; end
+  o2 = o1.clone
+
+  o1.object_id
+  o1.hash
+
+  o2.object_id
+  o2.hash
+end
