@@ -458,6 +458,7 @@ module Gem
       if defined? RUBY_FRAMEWORK_VERSION
         return File.join(File.dirname(Config::CONFIG["sitedir"]), "Gems")
       else
+p        Config::CONFIG['libdir']
         File.join(Config::CONFIG['libdir'], 'ruby', 'gems', Config::CONFIG['ruby_version'])
       end
     end

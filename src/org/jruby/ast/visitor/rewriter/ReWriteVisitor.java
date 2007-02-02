@@ -267,7 +267,7 @@ public class ReWriteVisitor implements NodeVisitor {
 	private boolean sourceRangeContains(ISourcePosition pos, String searched) {
 		return pos.getStartOffset() < config.getSource().length() 
 			&& pos.getEndOffset() < config.getSource().length() + 1
-			&& config.getSource().substring(pos.getStartOffset(), pos.getEndOffset()).contains(searched);
+			&& config.getSource().substring(pos.getStartOffset(), pos.getEndOffset()).indexOf(searched) > -1;
 	}
 	public Instruction visitAndNode(AndNode iVisited) {
 		enterCall();

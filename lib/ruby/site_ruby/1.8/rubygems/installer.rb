@@ -58,6 +58,7 @@ module Gem
     #          Gem.
     #
     def install(force=false, install_dir=Gem.dir, ignore_this_parameter=false)
+      puts "GDIR: #{Gem.dir}"
       # if we're forcing the install, then disable security, _unless_
       # the security policy says that we only install singed gems
       # (this includes Gem::Security::HighSecurity)
@@ -137,6 +138,7 @@ module Gem
     #
     def unpack(directory)
       format = Gem::Format.from_file_by_path(@gem, @options[:security_policy])
+      puts "DIR: #{directory}"
       extract_files(directory, format)
     end
 
@@ -348,7 +350,8 @@ Results logged to #{File.join(Dir.pwd, 'gem_make.out')}
     #
     def extract_files(directory, format)
       unless File.expand_path(directory) == directory then
-        raise ArgumentError, "install directory %p not absolute" % directory
+puts "CALLER: ", caller.join("\n")
+        raise ArgumentError, "install directory %s not absolute" % directory
       end
 
       format.file_entries.each do |entry, file_data|
@@ -359,7 +362,7 @@ Results logged to #{File.join(Dir.pwd, 'gem_make.out')}
         end
         path = File.expand_path File.join(directory, path)
         if path !~ /\A#{Regexp.escape directory}/ then
-          msg = "attempt to install file into %p under %p" %
+          msg = "attempt to install file into %s under %s" %
                   [entry['path'], directory]
           raise Gem::InstallError, msg
         end
