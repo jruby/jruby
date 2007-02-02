@@ -48,6 +48,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Iterator;
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
@@ -274,26 +275,26 @@ public class RubyKernel {
         // Should this logic be pushed into RubyIO Somewhere?
         if (arg.startsWith("|")) {
             String command = arg.substring(1);
-        	// exec process, create IO with process
-        	try {
+            // exec process, create IO with process
+            try {
                 // TODO: may need to part cli parms out ourself?
                 Process p = Runtime.getRuntime().exec(command,getCurrentEnv(recv.getRuntime()));
                 RubyIO io = new RubyIO(recv.getRuntime(), p);
-        		
-        	    if (block != null) {
-        	        try {
+                
+                if (block != null) {
+                    try {
                         recv.getRuntime().getCurrentContext().yield(io, block);
-        	            
-            	        return recv.getRuntime().getNil();
-        	        } finally {
-        	            io.close();
-        	        }
-        	    }
+                        
+                        return recv.getRuntime().getNil();
+                    } finally {
+                        io.close();
+                    }
+                }
 
                 return io;
-        	} catch (IOException ioe) {
-        		throw recv.getRuntime().newIOErrorFromException(ioe);
-        	}
+            } catch (IOException ioe) {
+                throw recv.getRuntime().newIOErrorFromException(ioe);
+            }
         } 
 
         return ((FileMetaClass) recv.getRuntime().getClass("File")).open(args, block);
@@ -419,8 +420,8 @@ public class RubyKernel {
             IRubyObject defout = recv.getRuntime().getGlobalVariables().get("$>");
 
             if (!(args[0] instanceof RubyString)) {
-            	defout = args[0];
-            	args = ArgsUtil.popArray(args);
+                defout = args[0];
+                args = ArgsUtil.popArray(args);
             }
 
             ThreadContext context = recv.getRuntime().getCurrentContext();
@@ -546,17 +547,17 @@ public class RubyKernel {
     }
 
     public static IRubyObject sleep(IRubyObject recv, IRubyObject seconds) {
-    	long milliseconds = (long) (seconds.convertToFloat().getDoubleValue() * 1000);
-    	long startTime = System.currentTimeMillis();
-    	
-    	RubyThread rubyThread = recv.getRuntime().getThreadService().getCurrentContext().getThread();
+        long milliseconds = (long) (seconds.convertToFloat().getDoubleValue() * 1000);
+        long startTime = System.currentTimeMillis();
+        
+        RubyThread rubyThread = recv.getRuntime().getThreadService().getCurrentContext().getThread();
         try {
-        	rubyThread.sleep(milliseconds);
+            rubyThread.sleep(milliseconds);
         } catch (InterruptedException iExcptn) {
         }
 
         return recv.getRuntime().newFixnum(
-        		Math.round((System.currentTimeMillis() - startTime) / 1000.0));
+                Math.round((System.currentTimeMillis() - startTime) / 1000.0));
     }
 
     // FIXME: Add at_exit and finalizers to exit, then make exit_bang not call those.
@@ -745,14 +746,14 @@ public class RubyKernel {
             context.pushCatch(tag.asSymbol());
             return context.yield(tag, block);
         } catch (JumpException je) {
-        	if (je.getJumpType() == JumpException.JumpType.ThrowJump) {
-	            if (je.getPrimaryData().equals(tag.asSymbol())) {
-	                return (IRubyObject)je.getSecondaryData();
-	            }
-        	}
-       		throw je;
+            if (je.getJumpType() == JumpException.JumpType.ThrowJump) {
+                if (je.getPrimaryData().equals(tag.asSymbol())) {
+                    return (IRubyObject)je.getSecondaryData();
+                }
+            }
+            throw je;
         } finally {
-       		context.popCatch();
+            context.popCatch();
         }
     }
 
@@ -786,11 +787,11 @@ public class RubyKernel {
     }
     
     public static IRubyObject warn(IRubyObject recv, IRubyObject message) {
-    	IRubyObject out = recv.getRuntime().getObject().getConstant("STDERR");
+        IRubyObject out = recv.getRuntime().getObject().getConstant("STDERR");
         RubyIO io = (RubyIO) out.convertToType("IO", "to_io", true); 
 
         io.puts(new IRubyObject[] { message });
-    	return recv.getRuntime().getNil();
+        return recv.getRuntime().getNil();
     }
 
     public static IRubyObject set_trace_func(IRubyObject recv, IRubyObject trace_func, Block block) {
@@ -915,49 +916,59 @@ public class RubyKernel {
         return args;
     }
         
-    private static boolean isRubyCommand(String command) {
+    /**
+     * Only run an in-process script under the following conditions:
+     * 1.  The script name has "ruby", ".rb", or "irb" in the name;
+     * 2.  The script doesn't exist anywhere as a filename, either directly, or somewhere on ENV['PATH'].
+     */
+    private static boolean shouldRunInProcess(IRuby runtime, String command) {
         command = command.trim();
         String [] spaceDelimitedTokens = command.split(" ", 2);
         String [] slashDelimitedTokens = spaceDelimitedTokens[0].split("/");
         String finalToken = slashDelimitedTokens[slashDelimitedTokens.length-1];
-        if (finalToken.indexOf("ruby") != -1 || finalToken.endsWith(".rb") || finalToken.indexOf("irb") != -1)
-            return true;
-        else
-            return false;
+        return (finalToken.indexOf("ruby") != -1 || finalToken.endsWith(".rb") || finalToken.endsWith("irb"))
+            && !(new File(spaceDelimitedTokens[0]).exists()
+                 || runtime.evalScript(
+                    "x = %:"+ spaceDelimitedTokens[0] + ":; " +
+                    "ENV['PATH'] && ENV['PATH'].split(File::PATH_SEPARATOR).detect {|p| File.exist? File.join(p,x) }").isTrue());
     }
     
     private static class InProcessScript extends Thread {
-    	private String[] argArray;
-    	private InputStream in;
-    	private PrintStream out;
-    	private PrintStream err;
-    	private int result;
-    	private File dir;
-    	
-    	public InProcessScript(String[] argArray, InputStream in, PrintStream out, PrintStream err, File dir) {
-    		this.argArray = argArray;
-    		this.in = in;
-    		this.out = out;
-    		this.err = err;
-    		this.dir = dir;
-    	}
+        private String[] argArray;
+        private int result;
+        private RubyInstanceConfig config;
+        
+        public InProcessScript(final String[] argArray, final InputStream in, 
+                               final OutputStream out, final OutputStream err, final String[] env, final File dir) {
+            this.argArray = argArray;
+            this.config   = new RubyInstanceConfig() {{
+                setInput(in);
+                setOutput(new PrintStream(out));
+                setError(new PrintStream(err));
+                setEnvironment(environmentMap(env));
+                setCurrentDirectory(dir.toString());
+            }};
+        }
 
-		public int getResult() {
-			return result;
-		}
+        public int getResult() {
+            return result;
+        }
 
-		public void setResult(int result) {
-			this.result = result;
-		}
-		
+        public void setResult(int result) {
+            this.result = result;
+        }
+        
         public void run() {
-            String oldDir = System.getProperty("user.dir");
-            try {
-                System.setProperty("user.dir", dir.getAbsolutePath());
-                result = new Main(in, out, err).run(argArray);
-            } finally {
-                System.setProperty("user.dir", oldDir);
+            result = new Main(config).run(argArray);
+        }
+
+        private Map environmentMap(String[] env) {
+            Map m = new HashMap();
+            for (int i = 0; i < env.length; i++) {
+                String[] kv = env[i].split("=", 2);
+                m.put(kv[0], kv[1]);
             }
+            return m;
         }
     }
 
@@ -984,9 +995,9 @@ public class RubyKernel {
             rawArgs[0] = runtime.newString(repairDirSeps(rawArgs[0].toString()));
             Process aProcess = null;
             InProcessScript ipScript = null;
-            File pwd = new File(runtime.evalScript("Dir.pwd").toString());
+            File pwd = new File(runtime.getCurrentDirectory());
             
-            if (isRubyCommand(rawArgs[0].toString())) {
+            if (shouldRunInProcess(runtime, rawArgs[0].toString())) {
                 List args = parseCommandLine(rawArgs);
                 String command = (String)args.get(0);
 
@@ -998,7 +1009,7 @@ public class RubyKernel {
                     args.set(0,runtime.getJRubyHome() + File.separator + "bin" + File.separator + "jirb");
                 }
                 String[] argArray = (String[])args.subList(startIndex,args.size()).toArray(new String[0]);
-                ipScript = new InProcessScript(argArray, input, new PrintStream(output), new PrintStream(error), pwd);
+                ipScript = new InProcessScript(argArray, input, output, error, getCurrentEnv(runtime), pwd);
                 
                 // execute ruby command in-process
                 ipScript.start();
@@ -1029,7 +1040,7 @@ public class RubyKernel {
                 handleStreams(aProcess,input,output,error);
                 return aProcess.waitFor();
             } else if (ipScript != null) {
-            	return ipScript.getResult();
+                return ipScript.getResult();
             } else {
                 return 0;
             }
@@ -1040,54 +1051,62 @@ public class RubyKernel {
         }
     }
     
-    private static void handleStreams(Process p, InputStream in, OutputStream out, OutputStream err) throws IOException {
-        InputStream pOut = p.getInputStream();
-        InputStream pErr = p.getErrorStream();
-        OutputStream pIn = p.getOutputStream();
-
-        boolean done = false;
-        int b;
-        boolean proc = false;
-        while(!done) {
-            if(pOut.available() > 0) {
-                byte[] input = new byte[pOut.available()];
-                if((b = pOut.read(input)) == -1) {
-                    done = true;
-                } else {
-                    out.write(input);
-                }
-                proc = true;
-            }
-            if(pErr.available() > 0) {
-                byte[] input = new byte[pErr.available()];
-                if((b = pErr.read(input)) != -1) {
-                    err.write(input);
-                }
-                proc = true;
-            }
-            if(in.available() > 0) {
-                byte[] input = new byte[in.available()];
-                if((b = in.read(input)) != -1) {
-                    pIn.write(input);
-                }
-                proc = true;
-            }
-            if(!proc) {
-                if((b = pOut.read()) == -1) {
-                    if((b = pErr.read()) == -1) {
-                        done = true;
-                    } else {
-                        err.write(b);
-                    }
-                } else {
-                    out.write(b);
-                }
-            }
-            proc = false;
+    private static class StreamCopier implements Runnable {
+        private InputStream in;
+        private OutputStream out;
+        private IOException streamError;
+        public StreamCopier(InputStream in, OutputStream out) {
+            this.in = in;
+            this.out = out;
         }
-        pOut.close();
-        pErr.close();
-        pIn.close();
+        public void run() {
+            byte[] buf = new byte[128];
+            int bytesRead;
+            try {
+                while ((bytesRead = in.read(buf)) != -1) {
+                    out.write(buf, 0, bytesRead);
+                }
+            } catch (IOException io) {
+                streamError = io;
+            } finally {
+                try {
+                    in.close();
+                    out.close();
+                } catch (IOException io) {
+                }
+            }
+        }
+        public IOException getStreamError() {
+            return streamError;
+        }
+    }
+
+    private static void handleStreams(Process p, InputStream in, OutputStream out, OutputStream err) 
+        throws InterruptedException, IOException {
+        StreamCopier outCopier = new StreamCopier(p.getInputStream(), out);
+        StreamCopier errCopier = new StreamCopier(p.getErrorStream(), err);
+        StreamCopier inCopier  = new StreamCopier(in, p.getOutputStream());
+        Thread tout = new Thread(outCopier);
+        tout.setDaemon(true);
+        tout.start();
+        Thread terr = new Thread(errCopier);
+        terr.setDaemon(true);
+        terr.start();
+        Thread tin = new Thread(inCopier);
+        tin.setDaemon(true);
+        tin.start();
+        tout.join();
+        terr.join();
+        tin.join();
+        if (outCopier.getStreamError() != null) {
+            throw outCopier.getStreamError();
+        }
+        if (errCopier.getStreamError() != null) {
+            throw errCopier.getStreamError();
+        }
+        if (inCopier.getStreamError() != null) {
+            throw inCopier.getStreamError();
+        }
     }
 
     public static RubyInteger srand(IRubyObject recv, IRubyObject[] args) {
@@ -1096,14 +1115,14 @@ public class RubyKernel {
 
         if (args.length > 0) {
             RubyInteger integerSeed = 
-            	(RubyInteger) args[0].convertToType("Integer", "to_i", true);
+                (RubyInteger) args[0].convertToType("Integer", "to_i", true);
             runtime.setRandomSeed(integerSeed.getLongValue());
         } else {
-        	// Not sure how well this works, but it works much better than
-        	// just currentTimeMillis by itself.
+            // Not sure how well this works, but it works much better than
+            // just currentTimeMillis by itself.
             runtime.setRandomSeed(System.currentTimeMillis() ^
-			  recv.hashCode() ^ runtime.incrementRandomSeedSequence() ^
-			  runtime.getRandom().nextInt(Math.abs((int)runtime.getRandomSeed())));
+              recv.hashCode() ^ runtime.incrementRandomSeedSequence() ^
+              runtime.getRandom().nextInt(Math.abs((int)runtime.getRandomSeed())));
         }
         runtime.getRandom().setSeed(runtime.getRandomSeed());
         return runtime.newFixnum(oldRandomSeed);
@@ -1128,7 +1147,7 @@ public class RubyKernel {
             double result = recv.getRuntime().getRandom().nextDouble();
             return RubyFloat.newFloat(recv.getRuntime(), result);
         }
-		return recv.getRuntime().newFixnum(recv.getRuntime().getRandom().nextInt((int) ceil));
+        return recv.getRuntime().newFixnum(recv.getRuntime().getRandom().nextInt((int) ceil));
     }
 
     public static RubyBoolean system(IRubyObject recv, IRubyObject[] args) {
