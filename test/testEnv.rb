@@ -69,7 +69,7 @@ test_exception(TypeError) {ENV[nil] = "foo"}
 ENV['test'] = nil
 test_equal(nil, ENV['test'])
 
-name = (RUBY_PLATFORM =~ /mswin/ ? '%__JRUBY_T1%' : '$__JRUBY_T1')
+name = (ENV['OS'] =~ /\AWin/i ? '%__JRUBY_T1%' : '$__JRUBY_T1')
 v = `echo #{name}`
 test_equal "\n",v
 ENV['__JRUBY_T1'] = "abc"

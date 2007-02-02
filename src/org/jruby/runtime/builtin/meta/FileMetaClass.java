@@ -393,7 +393,7 @@ public class FileMetaClass extends IOMetaClass {
         
         if (new File(relativePath).isAbsolute()) {
             try {
-                return getRuntime().newString(new File(relativePath).getCanonicalPath());
+                return getRuntime().newString(JRubyFile.create(relativePath, "").getCanonicalPath());
             } catch(IOException e) {
                 return getRuntime().newString(relativePath);
             }
