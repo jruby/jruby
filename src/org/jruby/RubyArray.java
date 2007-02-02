@@ -794,7 +794,7 @@ public class RubyArray extends RubyObject implements List {
      */
     public IRubyObject each(Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
-        for (int i = 0, len = getLength(); i < len; i++) {
+        for (int i = 0, len = getLength(); i < getLength(); i++) {
             context.yield(entry(i), block);
         }
         return this;

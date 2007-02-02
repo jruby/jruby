@@ -37,6 +37,16 @@ class TestArray < Test::Unit::TestCase
     assert_equal(nil, [].flatten!)
   end
   
+  def test_delete
+    arr = [1, 2, 3]
+    arr2 = []
+    arr.each { |x|
+      arr2 << x
+      arr.delete(x) if x == 2
+    }
+    assert_equal([1,2], arr2)
+  end
+  
   def test_flatten
     arr = []
     arr << [[[arr]]]
