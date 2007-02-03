@@ -43,13 +43,11 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
-import org.jruby.util.collections.StackElement;
 
 /**
  *
- * @author  jpetersen
  */
-public class Block implements StackElement {
+public class Block {
     private Node varNode;
     private ICallable method;
     private IRubyObject self;
@@ -65,7 +63,6 @@ public class Block implements StackElement {
     private IRubyObject blockObject = null;
     public boolean isLambda = false;
 
-    private Block next;
     private Block blockAtCreation;
 
     public static Block createBlock(ThreadContext context, Node varNode, DynamicScope dynamicScope, ICallable method, 
@@ -275,10 +272,6 @@ public class Block implements StackElement {
         
         newBlock.isLambda = isLambda;
 
-        if (getNext() != null) {
-            newBlock.setNext(getNext());
-        }
-
         return newBlock;
     }
 
@@ -294,25 +287,10 @@ public class Block implements StackElement {
         scope.setVisibility(visibility);
     }
 
-    /**
-     * @see StackElement#getNext()
-     */
-    public StackElement getNext() {
-        return next;
-    }
-    
     public SinglyLinkedList getCRef() {
         return cref;
     }
 
-    /**
-     * @see StackElement#setNext(StackElement)
-     */
-    public void setNext(StackElement newNext) {
-        assert this != newNext;
-        this.next = (Block) newNext;
-    }
-    
     public IRubyObject getBlockObject() {
     	return blockObject;
     }
