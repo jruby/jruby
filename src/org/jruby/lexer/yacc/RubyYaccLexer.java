@@ -599,6 +599,8 @@ public class RubyYaccLexer {
 
         commandState = commandStart;
         commandStart = false;
+
+        LexState last_state = lex_state;
         
         retry: for(;;) {
             c = src.read();
@@ -1328,7 +1330,11 @@ public class RubyYaccLexer {
                     tokenBuffer.append('$');
                     tokenBuffer.append(c);
                     c = src.read();
-                    tokenBuffer.append(c);
+                    if (isIdentifierChar(c)) {
+                        tokenBuffer.append(c);
+                    } else {
+                        src.unread(c);
+                    }
                     yaccValue = new Token(tokenBuffer.toString(), getPosition());
                     /* xxx shouldn't check if valid option variable */
                     return Tokens.tGVAR;
@@ -1350,10 +1356,13 @@ public class RubyYaccLexer {
                         c = src.read();
                     } while (Character.isDigit(c));
                     src.unread(c);
-                    yaccValue = new NthRefNode(getPosition(), Integer.parseInt(tokenBuffer.substring(1)));
-                    
-                    return Tokens.tNTH_REF;
-
+                    if(last_state == LexState.EXPR_FNAME) {
+                        yaccValue = new Token(tokenBuffer.toString(), getPosition());
+                        return Tokens.tGVAR;
+                    } else {
+                        yaccValue = new NthRefNode(getPosition(), Integer.parseInt(tokenBuffer.substring(1)));
+                        return Tokens.tNTH_REF;
+                    }
                 default:
                     if (!isIdentifierChar(c)) {
                         src.unread(c);

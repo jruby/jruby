@@ -62,4 +62,5 @@ test_core_arities
 test_dup_clone_taint_freeze
 #test_openssl
 test_primitive_to_java
+test_symbol
 test_zlib
