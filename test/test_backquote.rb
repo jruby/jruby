@@ -15,8 +15,8 @@ class TestBackquote < Test::Unit::TestCase
     end
 
     if File.exists?("/bin/false")
-      test_ok(! system("/bin/false"))
-      test_ok($?.exitstatus > 0)
+      assert(! system("/bin/false"))
+      assert($?.exitstatus > 0)
     end
   end
 end
