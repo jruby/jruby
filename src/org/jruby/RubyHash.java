@@ -549,6 +549,7 @@ public class RubyHash extends RubyObject implements Map {
             (RubyHash) replacement.convertType(RubyHash.class, "Hash", "to_hash");
         valueMap.clear();
         valueMap.putAll(replacementHash.valueMap);
+        defaultValueCallback = replacementHash.defaultValueCallback;
         return this;
     }
 
