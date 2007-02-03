@@ -917,20 +917,14 @@ public class RubyKernel {
     }
         
     /**
-     * Only run an in-process script under the following conditions:
-     * 1.  The script name has "ruby", ".rb", or "irb" in the name;
-     * 2.  The script doesn't exist anywhere as a filename, either directly, or somewhere on ENV['PATH'].
+     * Only run an in-process script if the script name has "ruby", ".rb", or "irb" in the name
      */
     private static boolean shouldRunInProcess(IRuby runtime, String command) {
         command = command.trim();
         String [] spaceDelimitedTokens = command.split(" ", 2);
         String [] slashDelimitedTokens = spaceDelimitedTokens[0].split("/");
         String finalToken = slashDelimitedTokens[slashDelimitedTokens.length-1];
-        return (finalToken.indexOf("ruby") != -1 || finalToken.endsWith(".rb") || finalToken.endsWith("irb"))
-            && !(new File(spaceDelimitedTokens[0]).exists()
-                 || runtime.evalScript(
-                    "x = %:"+ spaceDelimitedTokens[0] + ":; " +
-                    "ENV['PATH'] && ENV['PATH'].split(File::PATH_SEPARATOR).detect {|p| File.exist? File.join(p,x) }").isTrue());
+        return (finalToken.indexOf("ruby") != -1 || finalToken.endsWith(".rb") || finalToken.endsWith("irb"));
     }
     
     private static class InProcessScript extends Thread {
@@ -1051,62 +1045,54 @@ public class RubyKernel {
         }
     }
     
-    private static class StreamCopier implements Runnable {
-        private InputStream in;
-        private OutputStream out;
-        private IOException streamError;
-        public StreamCopier(InputStream in, OutputStream out) {
-            this.in = in;
-            this.out = out;
-        }
-        public void run() {
-            byte[] buf = new byte[128];
-            int bytesRead;
-            try {
-                while ((bytesRead = in.read(buf)) != -1) {
-                    out.write(buf, 0, bytesRead);
+    private static void handleStreams(Process p, InputStream in, OutputStream out, OutputStream err) throws IOException {
+        InputStream pOut = p.getInputStream();
+        InputStream pErr = p.getErrorStream();
+        OutputStream pIn = p.getOutputStream();
+
+        boolean done = false;
+        int b;
+        boolean proc = false;
+        while(!done) {
+            if(pOut.available() > 0) {
+                byte[] input = new byte[pOut.available()];
+                if((b = pOut.read(input)) == -1) {
+                    done = true;
+                } else {
+                    out.write(input);
                 }
-            } catch (IOException io) {
-                streamError = io;
-            } finally {
-                try {
-                    in.close();
-                    out.close();
-                } catch (IOException io) {
+                proc = true;
+            }
+            if(pErr.available() > 0) {
+                byte[] input = new byte[pErr.available()];
+                if((b = pErr.read(input)) != -1) {
+                    err.write(input);
+                }
+                proc = true;
+            }
+            if(in.available() > 0) {
+                byte[] input = new byte[in.available()];
+                if((b = in.read(input)) != -1) {
+                    pIn.write(input);
+                }
+                proc = true;
+            }
+            if(!proc) {
+                if((b = pOut.read()) == -1) {
+                    if((b = pErr.read()) == -1) {
+                        done = true;
+                    } else {
+                        err.write(b);
+                    }
+                } else {
+                    out.write(b);
                 }
             }
+            proc = false;
         }
-        public IOException getStreamError() {
-            return streamError;
-        }
-    }
-
-    private static void handleStreams(Process p, InputStream in, OutputStream out, OutputStream err) 
-        throws InterruptedException, IOException {
-        StreamCopier outCopier = new StreamCopier(p.getInputStream(), out);
-        StreamCopier errCopier = new StreamCopier(p.getErrorStream(), err);
-        StreamCopier inCopier  = new StreamCopier(in, p.getOutputStream());
-        Thread tout = new Thread(outCopier);
-        tout.setDaemon(true);
-        tout.start();
-        Thread terr = new Thread(errCopier);
-        terr.setDaemon(true);
-        terr.start();
-        Thread tin = new Thread(inCopier);
-        tin.setDaemon(true);
-        tin.start();
-        tout.join();
-        terr.join();
-        tin.join();
-        if (outCopier.getStreamError() != null) {
-            throw outCopier.getStreamError();
-        }
-        if (errCopier.getStreamError() != null) {
-            throw errCopier.getStreamError();
-        }
-        if (inCopier.getStreamError() != null) {
-            throw inCopier.getStreamError();
-        }
+        pOut.close();
+        pErr.close();
+        pIn.close();
     }
 
     public static RubyInteger srand(IRubyObject recv, IRubyObject[] args) {
