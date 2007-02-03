@@ -117,7 +117,11 @@ public class TestUnitTestSuite extends TestCase {
         }
 
         private void setupInterpreter(IRuby runtime) {
-            runtime.getLoadService().init(new ArrayList());
+            ArrayList loadPath = new ArrayList();
+            
+            loadPath.add("test/externals/bfts");
+            
+            runtime.getLoadService().init(loadPath);
             runtime.defineGlobalConstant("ARGV", runtime.newArray());
         }
 
