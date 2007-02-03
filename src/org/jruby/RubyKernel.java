@@ -264,7 +264,7 @@ public class RubyKernel {
         CallType lastCallType = tc.getLastCallType();
         String format = lastVis.errorMessageFormat(lastCallType, name);
         String msg = new PrintfFormat(format).sprintf(new Object[] { name, description, 
-            noClass ? "" : ":", noClass ? "" : recv.getType().getName()});
+                                                                     noClass ? "" : ":", noClass ? "" : recv.getType().getName()},null);
 
         throw lastCallType == CallType.VARIABLE ? runtime.newNameError(msg, name) : runtime.newNoMethodError(msg, name);
     }

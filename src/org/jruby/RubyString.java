@@ -282,14 +282,19 @@ public class RubyString extends RubyObject {
 
     public IRubyObject format(IRubyObject arg) {
         // FIXME: Should we make this work with platform's locale, or continue hardcoding US?
+        Object[] args;
+        IRubyObject[] rargs = null;
         if (arg instanceof RubyArray) {
-            Object[] args2 = new Object[((RubyArray) arg).getLength()];
-            for (int i = 0; i < args2.length; i++) {
-                args2[i] = JavaUtil.convertRubyToJava(((RubyArray) arg).entry(i));
+            rargs = (IRubyObject[])((RubyArray)arg).getList().toArray(new IRubyObject[0]);
+            args = new Object[rargs.length];
+            for(int i=0;i<rargs.length;i++) {
+                args[i] = JavaUtil.convertRubyToJava(rargs[i]);
             }
-            return getRuntime().newString(new PrintfFormat(Locale.US, toString()).sprintf(args2));
+        } else {
+            args = new Object[]{JavaUtil.convertRubyToJava(arg)};
+            rargs = new IRubyObject[]{arg};
         }
-        return getRuntime().newString(new PrintfFormat(Locale.US, toString()).sprintf(JavaUtil.convertRubyToJava(arg)));
+        return getRuntime().newString(new PrintfFormat(Locale.US, toString()).sprintf(args,rargs));
     }
 
     public RubyFixnum hash() {

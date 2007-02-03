@@ -38,6 +38,8 @@ import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Vector;
 
+import org.jruby.runtime.builtin.IRubyObject;
+
 /**
  * PrintfFormat is a Java implementation of the <code>sprintf</code>
  * utility.  To use it, you pass the string containing the format 
@@ -52,8 +54,7 @@ import java.util.Vector;
  * locales, groups of three digits separated by commas).  The integer 
  * modifiers (<code>[hlL]</code>) are also accepted, but the "L" modifier 
  * is ignored as superfluous.  Finally, all the standard conversion-type 
- * characters (<code>[idfgGoxXeEcs]</code>) are supported, except for 
- * "p" and "n".
+ * characters (<code>[idfgGoxXeEcsp]</code>) are supported, except for "n".
  *<p>
  * In addition, PrintfFormat supports positional syntax for arguments, 
  * field widths, and precisions.  A format specifier that starts with 
@@ -115,7 +116,7 @@ public class PrintfFormat {
             for (ePos = cPos + 1; ePos < fmtArg.length(); ePos++) {
                 char c = 0;
                 c = fmtArg.charAt(ePos);
-                if ("idfgGoxXeEcsb%".indexOf(c) != -1) {
+                if ("idfgGoxXeEcsbp%".indexOf(c) != -1) {
                     break;
                 }
             }
@@ -146,9 +147,10 @@ public class PrintfFormat {
      * types.
      *
      * @param o The array of objects to format.
+     * @param ro The unformatted Ruby objects. If this is null, %p and friends will not work.
      * @return The formatted String.
      */
-    public String sprintf(Object[] o) {
+    public String sprintf(Object[] o, IRubyObject[] ro) {
         Enumeration e = vFmt.elements();
         ConversionSpecification cs = null;
         char c = 0;
@@ -182,9 +184,11 @@ public class PrintfFormat {
                     i++;
                 }
 
-		if (o[i] == null) {
-		    // Nil is printed as nothing
-		} else if (o[i] instanceof Byte) {
+                if (o[i] == null) {
+                    // Nil is printed as nothing
+                } else if (c == 'p') {
+                    sb.append(ro[i].callMethod(ro[i].getRuntime().getCurrentContext(),"inspect"));
+                } else if (o[i] instanceof Byte) {
                     sb.append(cs.internalsprintf(((Byte) o[i]).byteValue()));
                 } else if (o[i] instanceof Short) {
                     sb.append(cs.internalsprintf(((Short) o[i]).shortValue()));
@@ -2260,7 +2264,7 @@ public class PrintfFormat {
             conversionCharacter = '\0';
             if (pos < fmt.length()) {
                 char c = fmt.charAt(pos);
-                if ("idfgGoxXeEcsb%".indexOf(c) != -1) {
+                if ("idfgGoxXeEcsbp%".indexOf(c) != -1) {
                     conversionCharacter = c;
                     pos++;
                     ret = true;

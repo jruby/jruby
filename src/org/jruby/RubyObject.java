@@ -1237,7 +1237,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         CallType lastCallType = tc.getLastCallType();
         String format = lastVis.errorMessageFormat(lastCallType, name);
         String msg = new PrintfFormat(format).sprintf(new Object[] { name, description,
-            noClass ? "" : ":", noClass ? "" : getType().getName()});
+                                                                     noClass ? "" : ":", noClass ? "" : getType().getName()},null);
 
         if (lastCallType == CallType.VARIABLE) {
         	throw getRuntime().newNameError(msg, name);
