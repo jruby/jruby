@@ -63,11 +63,17 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class PKCS7 extends RubyObject {    
+    private static ObjectAllocator PKCS7_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            return new PKCS7(runtime, klass);
+        }
+    };
+
     public static void createPKCS7(IRuby runtime, RubyModule mOSSL) {
         RubyModule mPKCS7 = mOSSL.defineModuleUnder("PKCS7");
         RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
         mPKCS7.defineClassUnder("PKCS7Error",openSSLError,openSSLError.getAllocator());
-        RubyClass cPKCS7 = mPKCS7.defineClassUnder("PKCS7",runtime.getObject(),runtime.getObject().getAllocator());
+        RubyClass cPKCS7 = mPKCS7.defineClassUnder("PKCS7",runtime.getObject(),PKCS7_ALLOCATOR);
 
         cPKCS7.attr_accessor(new IRubyObject[]{runtime.newSymbol("data"),runtime.newSymbol("error_string")});
 
@@ -76,8 +82,6 @@ public class PKCS7 extends RubyObject {
         mPKCS7.getMetaClass().defineFastMethod("write_smime",p7cb.getFastOptSingletonMethod("write_smime"));
         mPKCS7.getMetaClass().defineFastMethod("sign",p7cb.getFastOptSingletonMethod("sign"));
         mPKCS7.getMetaClass().defineFastMethod("encrypt",p7cb.getFastOptSingletonMethod("encrypt"));
-        // FIXME: This was defined, but does not exist?  Should it?
-        //cPKCS7.getMetaClass().defineFastMethod("new",p7cb.getFastOptSingletonMethod("newInstance"));
         cPKCS7.defineMethod("initialize",p7cb.getOptMethod("_initialize"));
         cPKCS7.defineFastMethod("initialize_copy",p7cb.getFastMethod("initialize_copy",IRubyObject.class));
         cPKCS7.defineFastMethod("clone",p7cb.getFastMethod("rbClone"));

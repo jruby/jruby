@@ -56,6 +56,7 @@ import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -64,7 +65,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class X509Extensions {
     public static void createX509Ext(IRuby runtime, RubyModule mX509) {
-        RubyClass cX509ExtFactory = mX509.defineClassUnder("ExtensionFactory",runtime.getObject(),runtime.getObject().getAllocator());
+        RubyClass cX509ExtFactory = mX509.defineClassUnder("ExtensionFactory",runtime.getObject(),ExtensionFactory.ALLOCATOR);
         RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
         mX509.defineClassUnder("ExtensionError",openSSLError,openSSLError.getAllocator());
         
@@ -81,7 +82,7 @@ public class X509Extensions {
         cX509ExtFactory.defineFastMethod("config=",extfcb.getFastMethod("set_config",IRubyObject.class));
         cX509ExtFactory.defineFastMethod("create_ext",extfcb.getFastOptMethod("create_ext"));
 
-        RubyClass cX509Ext = mX509.defineClassUnder("Extension",runtime.getObject(),runtime.getObject().getAllocator());
+        RubyClass cX509Ext = mX509.defineClassUnder("Extension",runtime.getObject(),Extension.ALLOCATOR);
         CallbackFactory extcb = runtime.callbackFactory(Extension.class);
         cX509Ext.defineFastMethod("initialize",extcb.getFastOptMethod("_initialize"));
         cX509Ext.defineFastMethod("oid=",extcb.getFastMethod("set_oid",IRubyObject.class));
@@ -94,6 +95,12 @@ public class X509Extensions {
     }
 
     public static class ExtensionFactory extends RubyObject {
+        public static ObjectAllocator ALLOCATOR = new ObjectAllocator() {
+                public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+                    return new ExtensionFactory(runtime, klass);
+                }
+            };
+
         public ExtensionFactory(IRuby runtime, RubyClass type) {
             super(runtime,type);
         }
@@ -381,6 +388,12 @@ public class X509Extensions {
     }
 
     public static class Extension extends RubyObject {
+        public static ObjectAllocator ALLOCATOR = new ObjectAllocator() {
+                public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+                    return new Extension(runtime, klass);
+                }
+            };
+
         public Extension(IRuby runtime, RubyClass type) {
             super(runtime,type);
         }

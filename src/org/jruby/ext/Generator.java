@@ -58,8 +58,7 @@ public class Generator {
     }
 
     public static void createGenerator(IRuby runtime) throws IOException {
-        // FIXME: Is NOT_ALLOCATABLE_ALLOCATOR ok here. Confirm. JRUBY-415
-        RubyClass cGen = runtime.defineClass("Generator",runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        RubyClass cGen = runtime.defineClass("Generator",runtime.getObject(), runtime.getObject().getAllocator());
         cGen.includeModule(runtime.getModule("Enumerable"));
 
         GenStub0 gstub = new GenStub0();

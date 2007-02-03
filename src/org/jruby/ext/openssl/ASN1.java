@@ -69,6 +69,7 @@ import org.jruby.RubySymbol;
 import org.jruby.RubyTime;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -264,19 +265,19 @@ public class ASN1 {
             }
         }
 
-        RubyClass cASN1Data = mASN1.defineClassUnder("ASN1Data",runtime.getObject(), runtime.getObject().getAllocator());
+        RubyClass cASN1Data = mASN1.defineClassUnder("ASN1Data",runtime.getObject(), ASN1Data.ALLOCATOR);
         cASN1Data.attr_accessor(new IRubyObject[]{runtime.newString("value"),runtime.newString("tag"),runtime.newString("tag_class")});
         CallbackFactory asn1datacb = runtime.callbackFactory(ASN1Data.class);
         cASN1Data.defineMethod("initialize",asn1datacb.getOptMethod("initialize"));
         cASN1Data.defineFastMethod("to_der",asn1datacb.getFastMethod("to_der"));
 
-        RubyClass cASN1Primitive = mASN1.defineClassUnder("Primitive",cASN1Data, cASN1Data.getAllocator());
+        RubyClass cASN1Primitive = mASN1.defineClassUnder("Primitive",cASN1Data, ASN1Primitive.ALLOCATOR);
         cASN1Primitive.attr_accessor(new IRubyObject[]{runtime.newString("tagging")});
         CallbackFactory primcb = runtime.callbackFactory(ASN1Primitive.class);
         cASN1Primitive.defineMethod("initialize",primcb.getOptMethod("initialize"));
         cASN1Primitive.defineFastMethod("to_der",primcb.getFastMethod("to_der"));
 
-        RubyClass cASN1Constructive = mASN1.defineClassUnder("Constructive",cASN1Data,cASN1Data.getAllocator());
+        RubyClass cASN1Constructive = mASN1.defineClassUnder("Constructive",cASN1Data,ASN1Constructive.ALLOCATOR);
         cASN1Constructive.includeModule(runtime.getModule("Enumerable"));
         cASN1Constructive.attr_accessor(new IRubyObject[]{runtime.newString("tagging")});
         CallbackFactory concb = runtime.callbackFactory(ASN1Constructive.class);
@@ -575,7 +576,11 @@ public class ASN1 {
     }
 
     public static class ASN1Data extends RubyObject {
-
+        public static ObjectAllocator ALLOCATOR = new ObjectAllocator() {
+                public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+                    return new ASN1Data(runtime, klass);
+                }
+            };
         public ASN1Data(IRuby runtime, RubyClass type) {
             super(runtime,type);
         }
@@ -667,6 +672,11 @@ public class ASN1 {
     }
 
     public static class ASN1Primitive extends ASN1Data {
+        public static ObjectAllocator ALLOCATOR = new ObjectAllocator() {
+                public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+                    return new ASN1Primitive(runtime, klass);
+                }
+            };
         public ASN1Primitive(IRuby runtime, RubyClass type) {
             super(runtime,type);
         }
@@ -788,6 +798,11 @@ public class ASN1 {
     }
 
     public static class ASN1Constructive extends ASN1Data {
+        public static ObjectAllocator ALLOCATOR = new ObjectAllocator() {
+                public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+                    return new ASN1Constructive(runtime, klass);
+                }
+            };
         public ASN1Constructive(IRuby runtime, RubyClass type) {
             super(runtime,type);
         }
