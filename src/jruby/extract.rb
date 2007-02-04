@@ -11,6 +11,7 @@ module JRuby
     def initialize(dir = nil)
       @this_archive = __FILE__ =~ /file:([^!]*)!.*/ && $1
       raise "error: can't locate enclosed archive" if @this_archive.nil?
+      @this_archive = java.net.URLDecoder.decode(@this_archive, "utf-8")
       @zip = ZipFile.new(@this_archive)
       @destination = dir || Config::CONFIG['prefix']
     end
