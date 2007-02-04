@@ -17,6 +17,7 @@
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2002 Don Schwartz <schwardo@users.sourceforge.net>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2006 Kresten Krab Thorup <krab@gnu.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -33,7 +34,10 @@
 package org.jruby.javasupport;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
+
 import org.jruby.IRuby;
+import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyFloat;
 import org.jruby.RubyNumeric;
@@ -63,7 +67,10 @@ public class JavaUtil {
         }
 
         if (rubyObject instanceof JavaObject) {
-            return ((JavaObject) rubyObject).getValue();
+            Object value =  ((JavaObject) rubyObject).getValue();
+            
+            return convertArgument(value, javaClass);
+            
         } else if (javaClass == Object.class || javaClass == null) {
             /* The Java method doesn't care what class it is, but we need to
                know what to convert it to, so we use the object's own class.
@@ -124,8 +131,26 @@ public class JavaUtil {
 			return new Character('\0');
         } else if (javaClass == String.class) {
             return ((RubyString) rubyObject.callMethod(context, "to_s")).toString();
-        } else {
+        } else if (javaClass == BigInteger.class) {
+         	if (rubyObject instanceof RubyBignum) {
+         		return ((RubyBignum)rubyObject).getValue();
+         	} else if (rubyObject instanceof RubyNumeric) {
+ 				return  BigInteger.valueOf (((RubyNumeric)rubyObject).getLongValue());
+         	} else if (rubyObject.respondsTo("to_i")) {
+         		RubyNumeric rubyNumeric = ((RubyNumeric)rubyObject.callMethod(context,"to_f"));
+ 				return  BigInteger.valueOf (rubyNumeric.getLongValue());
+         	}
+        } else if (javaClass == BigDecimal.class && !(rubyObject instanceof JavaObject)) {
+         	if (rubyObject.respondsTo("to_f")) {
+             	double double_value = ((RubyNumeric)rubyObject.callMethod(context,"to_f")).getDoubleValue();
+             	return BigDecimal.valueOf(double_value);
+         	}
+        }
+        try {
             return ((JavaObject) rubyObject).getValue();
+        } catch (ClassCastException ex) {
+            ex.printStackTrace();
+            return null;
         }
     }
 
@@ -177,6 +202,10 @@ public class JavaUtil {
             return runtime.newString(object.toString());
         } else if (IRubyObject.class.isAssignableFrom(javaClass)) {
             return (IRubyObject) object;
+        } else if (javaClass == BigInteger.class) {
+        	return RubyBignum.newBignum(runtime, (BigInteger)object);
+        } else if (javaClass == BigDecimal.class) {
+        	return JavaObject.wrap(runtime, object);
         } else {
             return JavaObject.wrap(runtime, object);
         }

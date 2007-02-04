@@ -122,11 +122,21 @@ test_check "High-level Java Support"
       def foo
         size
       end
+      
+      def ensureCapacity(howmuch)
+        print '!'
+        super
+      end
     end
     l = FooArrayList.new
     test_equal(0, l.foo)
     l.add(100)
     test_equal(1, l.foo)
+    
+    # Extending Java Interfaces
+    include_class "java.lang.Comparable"
+    class FooComparable < Comparable
+    end
 
     # test support of other class loaders 
     test_helper_class = Java::JavaClass.for_name("org.jruby.test.TestHelper")

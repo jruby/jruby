@@ -16,6 +16,7 @@
 # Copyright (C) 2004-2006 Thomas E Enebo <enebo@acm.org>
 # Copyright (C) 2004 David Corbin <dcorbin@users.sourceforge.net>
 # Copyright (C) 2006 Michael Studman <me@michaelstudman.com>
+# Copyright (C) 2006 Kresten Krab Thorup <krab@gnu.org>
 # 
 # Alternatively, the contents of this file may be used under the terms of
 # either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -223,6 +224,7 @@ class ArrayJavaProxy < JavaProxy
       block.call(self[index])
     end
   end
+
 end
 
 class InterfaceJavaProxy < JavaProxy
@@ -252,7 +254,7 @@ class InterfaceJavaProxy < JavaProxy
 end
 
 class ConcreteJavaProxy < JavaProxy
-  class << self  
+  class << self
     alias_method :new_proxy, :new
 
     def new(*args)
@@ -263,7 +265,7 @@ class ConcreteJavaProxy < JavaProxy
       proxy.java_object = JavaUtilities.matching_method(constructors, args).new_instance(*args)
       proxy
     end
-  end 
+  end
 end
 
 module JavaUtilities
@@ -299,8 +301,18 @@ module JavaUtilities
         else
           base_type = ConcreteJavaProxy
         end
-      
-        proxy_class = Class.new(base_type) { self.java_class = java_class }
+        
+        proxy_class = Class.new(base_type) { 
+          self.java_class = java_class 
+          if base_type == ConcreteJavaProxy
+            class << self
+              def inherited(subclass)
+                super
+                JavaUtilities.setup_java_subclass(subclass, java_class)
+              end
+            end
+          end
+        }
         @proxy_classes[class_id] = proxy_class
         # We do not setup the proxy before we register it so that same-typed constants do
         # not try and create a fresh proxy class and go into an infinite loop
@@ -309,6 +321,36 @@ module JavaUtilities
       end
     end
     @proxy_classes[class_id]
+  end
+
+  def JavaUtilities.setup_java_subclass(subclass, java_class)
+  
+  		# add new class-variable to hold the JavaProxyClass instance
+  		subclass.class.send :attr, :java_proxy_class, true
+
+    class << subclass
+      def new(*args)
+        new_proxy *args
+      end
+    end
+
+        # override 
+  		subclass.send(:define_method, "initialize") {|*args|
+		    constructors = self.class.java_proxy_class.constructors.select {|c| c.arity == args.length }
+		    raise NameError.new("wrong # of arguments for constructor") if constructors.empty?
+		    args.collect! { |v| Java.ruby_to_java(v) }
+			self.java_object = JavaUtilities.matching_method(constructors, args).new_instance(args) { |proxy, method, *args|
+              args.collect! { |arg| Java.java_to_ruby(arg) } 
+              result = send(method.name, *args)
+		      Java.ruby_to_java(result)
+		    } 
+		}
+		
+		subclass.send(:define_method, "setup_instance_methods") {
+			self.java_proxy_class.define_instance_methods_for_proxy(subclass)
+		}
+				  
+  		subclass.java_proxy_class = Java::JavaProxyClass.get(java_class)
   end
 
   def JavaUtilities.get_java_class(name)
@@ -371,7 +413,6 @@ module JavaUtilities
     2.times do
       methods.each do |method|
         types = method.argument_types
-
         # Exact match
         return @match_cache[methods][arg_types] = method if types == arg_types
         

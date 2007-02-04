@@ -163,6 +163,7 @@
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>
         <attribute name="Main-Class" value="org.jruby.Main"/>
+        <attribute name="Class-Path" value="asm-2.2.3.jar asm-commons-2.2.3.jar"/>
       </manifest>
     </jar>
   </target>
@@ -182,7 +183,8 @@
 	      <fileset dir="${basedir}/lib/ruby/1.8">
 	        <include name="**/*.rb"/>
 	      </fileset>
-          <zipfileset src="${lib.dir}/asm-2.2.2.jar"/>
+          <zipfileset src="${lib.dir}/asm-2.2.3.jar"/>
+          <zipfileset src="${lib.dir}/asm-commons-2.2.3.jar"/>
           <zipfileset src="${lib.dir}/jline-0.9.91-SNAPSHOT.jar"/>
           <zipfileset src="${lib.dir}/bsf.jar"/>
           <zipfileset src="${lib.dir}/jvyaml.jar"/>
@@ -227,7 +229,8 @@
 		          <exclude name="**/xmlrpc/**"/>
 		          <exclude name="**/xsd/**"/>
 	      </fileset>
-          <zipfileset src="${lib.dir}/asm-2.2.2.jar"/>
+          <zipfileset src="${lib.dir}/asm-2.2.3.jar"/>
+          <zipfileset src="${lib.dir}/asm-commons-2.2.3.jar"/>
           <zipfileset src="${lib.dir}/jline-0.9.91-SNAPSHOT.jar"/>
           <zipfileset src="${lib.dir}/jvyaml.jar"/>
           <zipfileset src="${lib.dir}/plaincharset.jar"/>

@@ -161,7 +161,8 @@
                   <fileset dir="${project.basedir}/../../lib/ruby/1.8">
                     <include name="**/*.rb"/>
                   </fileset>
-                  <zipfileset src="${project.basedir}/../../lib/asm-2.2.2.jar"/>
+                  <zipfileset src="${project.basedir}/../../lib/asm-2.2.3.jar"/>
+                  <zipfileset src="${project.basedir}/../../lib/asm-commons-2.2.3.jar"/>
                   <zipfileset src="${project.basedir}/../../lib/jline-0.9.91-SNAPSHOT.jar"/>
                   <manifest>
                     <attribute name="Built-By" value="${user.name}"/>

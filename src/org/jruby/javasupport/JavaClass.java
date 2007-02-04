@@ -17,6 +17,7 @@
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2004 David Corbin <dcorbin@users.sourceforge.net>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2006 Kresten Krab Thorup <krab@gnu.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -80,6 +81,8 @@ public class JavaClass extends JavaObject {
         }
         return javaClass;
     }
+
+    private Constructor constructor;
 
     public static RubyClass createJavaClassClass(IRuby runtime, RubyModule javaModule) {
         // FIXME: Determine if a real allocator is needed here. Do people want to extend
@@ -309,7 +312,7 @@ public class JavaClass extends JavaObject {
     
     private static final Pattern CAMEL_CASE_SPLITTER = Pattern.compile("([a-z])([A-Z])");
     
-    private String getRubyCasedName(String javaCasedName) {
+    public static String getRubyCasedName(String javaCasedName) {
         Matcher m = CAMEL_CASE_SPLITTER.matcher(javaCasedName);
 
         String rubyCasedName = m.replaceAll("$1_$2").toLowerCase();

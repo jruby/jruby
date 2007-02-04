@@ -20,6 +20,7 @@
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 David Corbin <dcorbin@users.sourceforge.net>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2006 Kresten Krab Thorup <krab@gnu.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -45,6 +46,10 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.javasupport.proxy.InternalJavaProxy;
+import org.jruby.javasupport.proxy.JavaProxyClass;
+import org.jruby.javasupport.proxy.JavaProxyMethod;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -148,7 +153,31 @@ public class JavaMethod extends JavaCallable {
                                               "got" + javaInvokee.getClass().getName() + " wanted " +
                                               method.getDeclaringClass().getName() + ")");
         }
-        return invokeWithExceptionHandling(javaInvokee, arguments);
+        
+        //
+        // this test really means, that this is a ruby-defined subclass of a java class
+        //
+        if (javaInvokee instanceof InternalJavaProxy) {
+            JavaProxyClass jpc = ((InternalJavaProxy) javaInvokee)
+                    .___getProxyClass();
+            JavaProxyMethod jpm;
+            try {
+                jpm = jpc.getMethod(method.getName(), method
+                        .getParameterTypes());
+            } catch (NoSuchMethodException e) {
+                RaiseException err = getRuntime().newTypeError(
+                        "mismatch with proxy/super method?");
+                err.initCause(e);
+                throw err;
+            }
+            if (jpm.hasSuperImplementation()) {
+                return invokeWithExceptionHandling(jpm.getSuperMethod(),
+                        javaInvokee, arguments);
+            }
+
+        }
+        
+        return invokeWithExceptionHandling(method, javaInvokee, arguments);
     }
 
     public IRubyObject invoke_static(IRubyObject[] args) {
@@ -158,7 +187,7 @@ public class JavaMethod extends JavaCallable {
         Object[] arguments = new Object[args.length];
         System.arraycopy(args, 0, arguments, 0, arguments.length);
         convertArguments(arguments);
-        return invokeWithExceptionHandling(null, arguments);
+        return invokeWithExceptionHandling(method, null, arguments);
     }
 
     public IRubyObject return_type() {
@@ -170,7 +199,7 @@ public class JavaMethod extends JavaCallable {
         return JavaClass.get(getRuntime(), klass);
     }
 
-    private IRubyObject invokeWithExceptionHandling(Object javaInvokee, Object[] arguments) {
+    private IRubyObject invokeWithExceptionHandling(Method method, Object javaInvokee, Object[] arguments) {
         try {
             Object result = method.invoke(javaInvokee, arguments);
             return JavaObject.wrap(getRuntime(), result);

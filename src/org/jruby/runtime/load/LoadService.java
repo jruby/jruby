@@ -271,6 +271,9 @@ public class LoadService {
             if (e instanceof RaiseException) {
                 throw (RaiseException) e;
             } else {
+                if(runtime.getDebug().isTrue()) {
+                    e.printStackTrace();
+                }
                 RaiseException re = runtime.newLoadError("IO error -- " + file);
                 re.initCause(e);
                 throw re;

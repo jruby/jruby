@@ -16,6 +16,7 @@
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2004 David Corbin <dcorbin@users.sourceforge.net>
  * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2006 Kresten Krab Thorup <krab@gnu.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -32,9 +33,11 @@
 package org.jruby.javasupport;
 
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import org.jruby.IRuby;
+import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -42,6 +45,11 @@ import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.RubyTime;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.javasupport.proxy.JavaProxyClass;
+import org.jruby.javasupport.proxy.JavaProxyConstructor;
+import org.jruby.javasupport.proxy.JavaProxyInvocationHandler;
+import org.jruby.javasupport.proxy.JavaProxyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
@@ -64,7 +72,10 @@ public class Java {
         JavaMethod.createJavaMethodClass(runtime, javaModule);
         JavaConstructor.createJavaConstructorClass(runtime, javaModule);
         JavaField.createJavaFieldClass(runtime, javaModule);
-
+       
+        // also create the JavaProxy* classes
+        JavaProxyClass.createJavaProxyModule(runtime);
+        
         return javaModule;
     }
 
@@ -171,7 +182,7 @@ public class Java {
     		proc = recv.getRuntime().newProc(false, block);
     		size++;
     	}
-
+    	
     	// Create list of interfaces to proxy (and make sure they really are interfaces)
         Class[] interfaces = new Class[size];
         for (int i = 0; i < size; i++) {
@@ -180,7 +191,7 @@ public class Java {
             }
             interfaces[i] = ((JavaClass) args[i]).javaClass();
         }
-
+        
         return JavaObject.wrap(recv.getRuntime(), Proxy.newProxyInstance(recv.getRuntime().getJavaSupport().getJavaClassLoader(), interfaces, new InvocationHandler() {
             public Object invoke(Object proxy, Method method, Object[] nargs) throws Throwable {
             	int methodArgsLength = method.getParameterTypes().length;
