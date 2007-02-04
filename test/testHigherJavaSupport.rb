@@ -117,6 +117,7 @@ test_check "High-level Java Support"
     # private class.
     test_equal("a", inner_instance_entry.getKey)
 
+    $ensureCapacity = false
     # Extending Java classes
     class FooArrayList < ArrayList
       def foo
@@ -124,7 +125,7 @@ test_check "High-level Java Support"
       end
       
       def ensureCapacity(howmuch)
-        print '!'
+        $ensureCapacity = true
         super
       end
     end
@@ -132,6 +133,7 @@ test_check "High-level Java Support"
     test_equal(0, l.foo)
     l.add(100)
     test_equal(1, l.foo)
+    test_equal(true, $ensureCapacity)
     
     # Extending Java Interfaces
     include_class "java.lang.Comparable"
