@@ -1377,7 +1377,7 @@ nil,
 nil, #['NewlineNode', 0, 7, 0, 91],
 ['ClassNode', 0, 7, 0, 90],
 ['Colon2Node', 0, 0, 6, 10],
-['BlockNode', 1, 7, 13, 87],
+['BlockNode', 1, 6, 13, 86],
 nil, #['NewlineNode', 1, 4, 13, 49],
 ['DefsNode', 1, 3, 13, 48],
 ['ConstNode', 1, 1, 17, 21],
@@ -1441,7 +1441,7 @@ nil, #['NewlineNode', 1, 6, 11, 60],
 ['DefnNode', 1, 5, 11, 58],
 ['ArgumentNode', 1, 1, 15, 16],
 ['ArgsNode', 2, 2, 18, 18],
-['BlockNode', 2, 5, 22, 53],
+['BlockNode', 2, 4, 22, 52],
 nil, #['NewlineNode', 2, 3, 22, 31],
 ['YieldNode', 2, 2, 22, 30],
 ['FixnumNode', 2, 2, 28, 29],
@@ -1515,3 +1515,21 @@ test_tree(list, <<END, "method with opt and block arg")
 def test a, b, c, *opt, &block
 end
 END
+
+list = [
+nil,
+nil,
+['LocalAsgnNode', 0, 0, 0, 15],
+['CallNode', 0, 0, 4, 15],
+['FixnumNode', 0, 0, 4, 5],
+['ArrayNode', 0, 0, 9, 15],
+nil,
+['CallNode', 0, 0, 9, 14],
+['FixnumNode', 0, 0, 9, 10],
+['ArrayNode', 0, 0, 13, 14],
+['FixnumNode', 0, 0, 13, 14]
+]
+test_tree(list, <<END)
+v = 2 * (1 + 3)
+END
+

@@ -329,11 +329,11 @@ public class ParserSupport {
         if (warnings.isVerbose() && isBreakStatement(((ListNode) head).getLast())) {
             warnings.warning(tail.getPosition(), "Statement not reached.");
         }
-        
-        head.setPosition(union(head, tail));
 
         // Assumption: tail is never a list node
-        return ((ListNode) head).addAll(tail);
+        ((ListNode) head).addAll(tail);
+        head.setPosition(union(head, tail));
+        return head;
     }
 
     public Node getOperatorCallNode(Node firstNode, String operator) {
@@ -346,7 +346,7 @@ public class ParserSupport {
         checkExpression(firstNode);
         checkExpression(secondNode);
 
-        return new CallNode(union(firstNode, secondNode), firstNode, operator, new ArrayNode(secondNode.getPosition()).add(secondNode));
+        return new CallNode(union(firstNode.getPosition(), secondNode.getPosition()), firstNode, operator, new ArrayNode(secondNode.getPosition()).add(secondNode));
     }
 
     public Node getMatchNode(Node firstNode, Node secondNode) {
@@ -800,10 +800,15 @@ public class ParserSupport {
 
         // tail must be EvStrNode at this point 
         if (head instanceof StrNode) {
-            // All first element StrNode's do not include syntacical sugar.
-            head.getPosition().adjustStartOffset(-1);
-            head = new DStrNode(head.getPosition()).add(head);
-
+        	
+            //Do not add an empty string node
+            if(((StrNode) head).getValue().equals("")) {
+                head = new DStrNode(head.getPosition());
+            } else {
+                // All first element StrNode's do not include syntacical sugar.
+                head.getPosition().adjustStartOffset(-1);
+                head = new DStrNode(head.getPosition()).add(head);
+            }
         }
         return ((DStrNode) head).add(tail);
     }

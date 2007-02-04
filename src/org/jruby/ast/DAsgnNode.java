@@ -104,4 +104,8 @@ public class DAsgnNode extends AssignableNode implements INameNode {
         return createList(getValueNode());
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
 }

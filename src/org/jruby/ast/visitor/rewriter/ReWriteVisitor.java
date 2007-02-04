@@ -1640,6 +1640,7 @@ public class ReWriteVisitor implements NodeVisitor {
 	}
 
 	public Instruction visitRootNode(RootNode iVisited) {
+		config.getLocalVariables().addLocalVariable(iVisited.getStaticScope());
 		visitNode(iVisited.getBodyNode());
 		if (config.hasHereDocument()) config.fetchHereDocument().print();
 
