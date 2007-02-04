@@ -152,18 +152,35 @@ public class Ustr
         prepareAppend();
         int i = 0;
         while (i < chars.length) {
-            // FIXME: Need a 1.4-compatible version of this that works for all codepoints
-            //int val = Character.codePointAt(chars, i);
             int val = chars[i];
-            if (val > 0xffff)
-                i += 2;
-            else
+            if (val < 0xd800 || val > 0xdfff)
+                ; // no-op
+            
+            // argh, surrogates.
+            else {
+                if (val > 0xdbff)
+                    throw new UstrException("Mangled surrogate pair");
+                
                 i++;
+                if (i == chars.length)
+                    throw new UstrException("Mangled surrogate pair");
+                
+                int val2 = chars[i];
+                if (val2 < 0xdc00 || val2 > 0xdfff)
+                    throw new UstrException("Mangled surrogate pair");
+                
+                val &= 0x3ff;
+                val <<= 10;
+                val2 &= 0x3ff;
+                val |= val2;
+                val += 0x10000;
+            }
+            i++;
             appendChar(val);
         }
         s[s.length - 1] = 0;
     }
-    
+
     /**
      * Makes a Ustr from an int[] array, where each int is the value of
      * a Unicode character.  Throws a UstrException if one of the ints
