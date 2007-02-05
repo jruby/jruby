@@ -332,7 +332,7 @@
       <sysproperty key="jruby.home" value="${basedir}"/>
       <sysproperty key="jruby.lib" value="${lib.dir}"/>
       <sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
-      <sysproperty key="emma.coverage.out.merge" value="false" />
+      <sysproperty key="emma.coverage.out.merge" value="true" />
 
       <formatter type="xml"/>
       <formatter type="brief" usefile="false"/>
