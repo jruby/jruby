@@ -1570,6 +1570,7 @@ public class RubyString extends RubyObject {
             if (args[0] instanceof RubyRegexp) {
                 IRubyObject match = RubyRegexp.regexpValue(args[0]).match(toString(), 0);
                 long idx = args[1].convertToInteger().getLongValue();
+                getRuntime().getCurrentContext().setBackref(match);
                 return RubyRegexp.nth_match((int) idx, match);
             } 
 	        return substr(RubyNumeric.fix2int(args[0]), RubyNumeric.fix2int(args[1]));
