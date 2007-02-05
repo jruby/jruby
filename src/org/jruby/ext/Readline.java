@@ -86,6 +86,7 @@ public class Readline {
         readline = new ConsoleReader();
         readline.setUseHistory(false);
         readline.setUsePagination(true);
+        readline.setBellEnabled(false);
         ((CandidateListCompletionHandler) readline.getCompletionHandler()).setAlwaysIncludeNewline(false);
         if (currentCompletor == null)
             currentCompletor = new RubyFileNameCompletor();
