@@ -42,6 +42,7 @@ import java.util.Map;
 import org.jruby.IRuby;
 import org.jruby.RubyProc;
 import org.jruby.util.WeakIdentityHashMap;
+import org.jruby.util.JRubyClassLoader;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -50,12 +51,13 @@ public class JavaSupport {
 
     private Map exceptionHandlers = new HashMap();
 
-    private ClassLoader javaClassLoader = this.getClass().getClassLoader();
+    private JRubyClassLoader javaClassLoader;
 
     private Map instanceCache = Collections.synchronizedMap(new WeakIdentityHashMap(100));
 
     public JavaSupport(IRuby ruby) {
         this.runtime = ruby;
+        this.javaClassLoader = ruby.getJRubyClassLoader();
     }
 
     public Class loadJavaClass(String className) {
@@ -81,7 +83,8 @@ public class JavaSupport {
     }
     
     public void addToClasspath(URL url) {
-        javaClassLoader = URLClassLoader.newInstance(new URL[] { url }, javaClassLoader);
+        //        javaClassLoader = URLClassLoader.newInstance(new URL[] { url }, javaClassLoader);
+        javaClassLoader.addURL(url);
     }
 
     public void defineExceptionHandler(String exceptionClass, RubyProc handler) {
