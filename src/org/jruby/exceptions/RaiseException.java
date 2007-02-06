@@ -34,6 +34,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.exceptions;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
@@ -42,16 +44,16 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class RaiseException extends JumpException {
-	private static final long serialVersionUID = -7612079169559973951L;
-	
-	private RubyException exception;
+    private static final long serialVersionUID = -7612079169559973951L;
+    
+    private RubyException exception;
 
     public RaiseException(RubyException actException) {
-    	this(actException, false);
+        this(actException, false);
     }
 
     public RaiseException(IRuby runtime, RubyClass excptnClass, String msg, boolean nativeException) {
-		super(msg, JumpType.RaiseJump);
+        super(msg, JumpType.RaiseJump);
         if (msg == null) {
             msg = "No message available";
         }
@@ -69,15 +71,15 @@ public class RaiseException extends JumpException {
     }
 
     private static String buildMessage(Throwable exception) {
-	    StringBuffer sb = new StringBuffer();
-	    StringWriter stackTrace = new StringWriter();
-	    exception.printStackTrace(new PrintWriter(stackTrace));
-	
-	    sb.append("Native Exception: '").append(exception.getClass()).append("'; ");
-	    sb.append("Message: ").append(exception.getMessage()).append("; ");
-	    sb.append("StackTrace: ").append(stackTrace.getBuffer().toString());
+        StringBuffer sb = new StringBuffer();
+        StringWriter stackTrace = new StringWriter();
+        exception.printStackTrace(new PrintWriter(stackTrace));
+    
+        sb.append("Native Exception: '").append(exception.getClass()).append("'; ");
+        sb.append("Message: ").append(exception.getMessage()).append("; ");
+        sb.append("StackTrace: ").append(stackTrace.getBuffer().toString());
 
-	    return sb.toString();
+        return sb.toString();
     }
 
     public RaiseException(Throwable cause, NativeException nativeException) {
@@ -124,5 +126,42 @@ public class RaiseException extends JumpException {
         }
 
         runtime.setStackTraces(runtime.getStackTraces() - 1);
+    }
+
+    public Throwable fillInStackTrace() {
+        return originalFillInStackTrace();
+    }
+    
+    public void printStackTrace() {
+        printStackTrace(System.err);
+    }
+    
+    public void printStackTrace(PrintStream ps) {
+        StackTraceElement[] trace = getStackTrace();
+        int externalIndex = 0;
+        for (int i = trace.length - 1; i > 0; i--) {
+            if (trace[i].getClassName().indexOf("org.jruby.evaluator") >= 0) {
+                break;
+            }
+            externalIndex = i;
+        }
+        IRubyObject backtrace = exception.backtrace();
+        IRuby runtime = backtrace.getRuntime();
+        if (runtime.getNil() != backtrace) {
+            String firstLine = backtrace.callMethod(runtime.getCurrentContext(), "first").callMethod(runtime.getCurrentContext(), "to_s").toString();
+            ps.print(firstLine + ": ");
+        }
+        ps.println(exception.message + " (" + exception.getMetaClass().toString() + ")");
+        exception.printBacktrace(ps);
+        ps.println("\t...internal jruby stack elided...");
+        for (int i = externalIndex; i < trace.length; i++) {
+            ps.println("\tfrom " + trace[i].toString());
+        }
+    }
+    
+    public void printStackTrace(PrintWriter pw) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        printStackTrace(new PrintStream(baos));
+        pw.print(baos.toString());
     }
 }
