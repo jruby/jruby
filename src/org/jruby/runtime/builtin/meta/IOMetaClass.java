@@ -16,7 +16,7 @@
  * Copyright (C) 2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2006 Evan Buswell <ebuswell@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -57,136 +57,136 @@ import org.jruby.util.IOHandler;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public class IOMetaClass extends ObjectMetaClass {
-
+    
     public IOMetaClass(IRuby runtime) {
         this("IO", RubyIO.class, runtime.getObject(), IO_ALLOCATOR);
     }
-
+    
     public IOMetaClass(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
         this(name, RubyIO.class, superClass, allocator, parentCRef);
     }
     
     public IOMetaClass(String name, Class clazz, RubyClass superClass, ObjectAllocator allocator) {
-    	super(name, clazz, superClass, allocator);
+        super(name, clazz, superClass, allocator);
     }
-
+    
     public IOMetaClass(String name, Class clazz, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
-    	super(name, clazz, superClass, allocator, parentCRef);
+        super(name, clazz, superClass, allocator, parentCRef);
     }
-
+    
     protected class IOMeta extends Meta {
-	    protected void initializeClass() {
-	        includeModule(getRuntime().getModule("Enumerable"));
-	
-	        // TODO: Implement tty? and isatty.  We have no real capability to 
-	        // determine this from java, but if we could set tty status, then
-	        // we could invoke jruby differently to allow stdin to return true
-	        // on this.  This would allow things like cgi.rb to work properly.
-	
-	        defineSingletonMethod("foreach", Arity.optional());
-			defineSingletonMethod("read", Arity.optional());
-	        defineSingletonMethod("readlines", Arity.optional());
-	        defineSingletonMethod("popen", Arity.optional());
+        protected void initializeClass() {
+            includeModule(getRuntime().getModule("Enumerable"));
+            
+            // TODO: Implement tty? and isatty.  We have no real capability to
+            // determine this from java, but if we could set tty status, then
+            // we could invoke jruby differently to allow stdin to return true
+            // on this.  This would allow things like cgi.rb to work properly.
+            
+            defineSingletonMethod("foreach", Arity.optional());
+            defineSingletonMethod("read", Arity.optional());
+            defineSingletonMethod("readlines", Arity.optional());
+            defineSingletonMethod("popen", Arity.optional());
             defineFastSingletonMethod("select", Arity.optional());
-			defineFastSingletonMethod("pipe", Arity.noArguments());
-	
-	        defineFastMethod("<<", Arity.singleArgument(), "addString");
-			defineFastMethod("binmode", Arity.noArguments());
-	        defineFastMethod("close", Arity.noArguments());
-	        defineFastMethod("closed?", Arity.noArguments(), "closed");
-	        defineMethod("each", Arity.optional(), "each_line");
-	        defineMethod("each_byte", Arity.noArguments());
-	        defineMethod("each_line", Arity.optional());
-	        defineFastMethod("eof", Arity.noArguments());
-	        defineAlias("eof?", "eof");
-	        defineFastMethod("fcntl", Arity.twoArguments());
-	        defineFastMethod("fileno", Arity.noArguments());
-	        defineFastMethod("flush", Arity.noArguments());
-	        defineFastMethod("fsync", Arity.noArguments());
-	        defineFastMethod("getc", Arity.noArguments());
-	        defineFastMethod("gets", Arity.optional());
-	        defineMethod("initialize", Arity.optional());
+            defineFastSingletonMethod("pipe", Arity.noArguments());
+            
+            defineFastMethod("<<", Arity.singleArgument(), "addString");
+            defineFastMethod("binmode", Arity.noArguments());
+            defineFastMethod("close", Arity.noArguments());
+            defineFastMethod("closed?", Arity.noArguments(), "closed");
+            defineMethod("each", Arity.optional(), "each_line");
+            defineMethod("each_byte", Arity.noArguments());
+            defineMethod("each_line", Arity.optional());
+            defineFastMethod("eof", Arity.noArguments());
+            defineAlias("eof?", "eof");
+            defineFastMethod("fcntl", Arity.twoArguments());
+            defineFastMethod("fileno", Arity.noArguments());
+            defineFastMethod("flush", Arity.noArguments());
+            defineFastMethod("fsync", Arity.noArguments());
+            defineFastMethod("getc", Arity.noArguments());
+            defineFastMethod("gets", Arity.optional());
+            defineMethod("initialize", Arity.optional());
             defineFastMethod("initialize_copy", Arity.singleArgument());
-	        defineFastMethod("lineno", Arity.noArguments());
-	        defineFastMethod("lineno=", Arity.singleArgument(), "lineno_set");
-	        defineFastMethod("pid", Arity.noArguments());
-	        defineFastMethod("pos", Arity.noArguments());
-	        defineFastMethod("pos=", Arity.singleArgument(), "pos_set");
-	        defineFastMethod("print", Arity.optional());
-	        defineFastMethod("printf", Arity.optional());
-	        defineFastMethod("putc", Arity.singleArgument());
-	        defineFastMethod("puts", Arity.optional());
-	        defineFastMethod("readpartial", Arity.optional());
-	        defineFastMethod("read", Arity.optional());
-	        defineFastMethod("readchar", Arity.noArguments());
-	        defineFastMethod("readline", Arity.optional());
-	        defineFastMethod("readlines", Arity.optional());
-	        defineFastMethod("reopen", Arity.optional());
-	        defineFastMethod("rewind", Arity.noArguments());        
-	        defineFastMethod("seek", Arity.optional());
-	        defineFastMethod("sync", Arity.noArguments());
-	        defineFastMethod("sync=", Arity.singleArgument(), "sync_set");
-	        defineFastMethod("sysread", Arity.singleArgument());
-	        defineFastMethod("syswrite", Arity.singleArgument());
-	        defineAlias("tell", "pos");
-	        defineAlias("to_i", "fileno");
-	        defineFastMethod("to_io", Arity.noArguments());
-	        defineFastMethod("ungetc", Arity.singleArgument());
-	        defineFastMethod("write", Arity.singleArgument());
+            defineFastMethod("lineno", Arity.noArguments());
+            defineFastMethod("lineno=", Arity.singleArgument(), "lineno_set");
+            defineFastMethod("pid", Arity.noArguments());
+            defineFastMethod("pos", Arity.noArguments());
+            defineFastMethod("pos=", Arity.singleArgument(), "pos_set");
+            defineFastMethod("print", Arity.optional());
+            defineFastMethod("printf", Arity.optional());
+            defineFastMethod("putc", Arity.singleArgument());
+            defineFastMethod("puts", Arity.optional());
+            defineFastMethod("readpartial", Arity.optional());
+            defineFastMethod("read", Arity.optional());
+            defineFastMethod("readchar", Arity.noArguments());
+            defineFastMethod("readline", Arity.optional());
+            defineFastMethod("readlines", Arity.optional());
+            defineFastMethod("reopen", Arity.optional());
+            defineFastMethod("rewind", Arity.noArguments());
+            defineFastMethod("seek", Arity.optional());
+            defineFastMethod("sync", Arity.noArguments());
+            defineFastMethod("sync=", Arity.singleArgument(), "sync_set");
+            defineFastMethod("sysread", Arity.singleArgument());
+            defineFastMethod("syswrite", Arity.singleArgument());
+            defineAlias("tell", "pos");
+            defineAlias("to_i", "fileno");
+            defineFastMethod("to_io", Arity.noArguments());
+            defineFastMethod("ungetc", Arity.singleArgument());
+            defineFastMethod("write", Arity.singleArgument());
             defineFastMethod("tty?", Arity.noArguments(), "tty");
             defineAlias("isatty", "tty?");
-	        
-	        // Constants for seek
-	        setConstant("SEEK_SET", getRuntime().newFixnum(IOHandler.SEEK_SET));
-	        setConstant("SEEK_CUR", getRuntime().newFixnum(IOHandler.SEEK_CUR));
-	        setConstant("SEEK_END", getRuntime().newFixnum(IOHandler.SEEK_END));
-	    }
+            
+            // Constants for seek
+            setConstant("SEEK_SET", getRuntime().newFixnum(IOHandler.SEEK_SET));
+            setConstant("SEEK_CUR", getRuntime().newFixnum(IOHandler.SEEK_CUR));
+            setConstant("SEEK_END", getRuntime().newFixnum(IOHandler.SEEK_END));
+        }
     };
     
     protected Meta getMeta() {
-    	return new IOMeta();
+        return new IOMeta();
     }
-
+    
     public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
         return new IOMetaClass(name, this, IO_ALLOCATOR, parentCRef);
     }
     
     private static ObjectAllocator IO_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(IRuby runtime, RubyClass klass) {
-            return new RubyIO(runtime, klass); 
+            return new RubyIO(runtime, klass);
         }
     };
-
+    
     /** rb_io_s_foreach
-     * 
+     *
      */
     public IRubyObject foreach(IRubyObject[] args, Block block) {
         int count = checkArgumentCount(args, 1, -1);
         IRubyObject filename = args[0].convertToString();
         filename.checkSafeString();
         RubyIO io = (RubyIO) ((FileMetaClass) getRuntime().getClass("File")).open(new IRubyObject[] { filename }, false, block);
-
+        
         if (!io.isNil() && io.isOpen()) {
-        	try {
-	            IRubyObject[] newArgs = new IRubyObject[count - 1];
-	            System.arraycopy(args, 1, newArgs, 0, count - 1);
-	
-	            IRubyObject nextLine = io.internalGets(newArgs);
-	            while (!nextLine.isNil()) {
-	                getRuntime().getCurrentContext().yield(nextLine, block);
-	                nextLine = io.internalGets(newArgs);
-	            }
-        	} finally {
-        		io.close();
-        	}
+            try {
+                IRubyObject[] newArgs = new IRubyObject[count - 1];
+                System.arraycopy(args, 1, newArgs, 0, count - 1);
+                
+                IRubyObject nextLine = io.internalGets(newArgs);
+                while (!nextLine.isNil()) {
+                    getRuntime().getCurrentContext().yield(nextLine, block);
+                    nextLine = io.internalGets(newArgs);
+                }
+            } finally {
+                io.close();
+            }
         }
         
         return getRuntime().getNil();
     }
-
+    
     private static void registerSelect(Selector selector, IRubyObject obj, int ops) throws IOException {
         RubyIO ioObj;
-
+        
         if(!(obj instanceof RubyIO)) {
             // invoke to_io
             if(!obj.respondsTo("to_io")) {
@@ -196,35 +196,35 @@ public class IOMetaClass extends ObjectMetaClass {
         } else {
             ioObj = (RubyIO) obj;
         }
-
+        
         Channel channel = ioObj.getChannel();
         if(channel == null || !(channel instanceof SelectableChannel)) {
             return;
         }
-
+        
         ((SelectableChannel) channel).configureBlocking(false);
         int real_ops = ((SelectableChannel) channel).validOps() & ops;
         SelectionKey key = ((SelectableChannel) channel).keyFor(selector);
-
+        
         if(key == null) {
             ((SelectableChannel) channel).register(selector, real_ops, obj);
         } else {
             key.interestOps(key.interestOps()|real_ops);
         }
     }
-
+    
     public IRubyObject select(IRubyObject[] args) {
         return select_static(getRuntime(), args);
     }
-
+    
     public static IRubyObject select_static(IRuby runtime, IRubyObject[] args) {
         try {
-        	boolean atLeastOneDescriptor = false;
-        	
+            boolean atLeastOneDescriptor = false;
+            
             Selector selector = Selector.open();
             if (!args[0].isNil()) {
-            	atLeastOneDescriptor = true;
-            	
+                atLeastOneDescriptor = true;
+                
                 // read
                 for (Iterator i = ((RubyArray) args[0]).getList().iterator(); i.hasNext(); ) {
                     IRubyObject obj = (IRubyObject) i.next();
@@ -232,7 +232,7 @@ public class IOMetaClass extends ObjectMetaClass {
                 }
             }
             if (args.length > 1 && !args[1].isNil()) {
-            	atLeastOneDescriptor = true;
+                atLeastOneDescriptor = true;
                 // write
                 for (Iterator i = ((RubyArray) args[1]).getList().iterator(); i.hasNext(); ) {
                     IRubyObject obj = (IRubyObject) i.next();
@@ -240,8 +240,8 @@ public class IOMetaClass extends ObjectMetaClass {
                 }
             }
             if (args.length > 2 && !args[2].isNil()) {
-            	atLeastOneDescriptor = true;
-        	    // Java's select doesn't do anything about this, so we leave it be.
+                atLeastOneDescriptor = true;
+                // Java's select doesn't do anything about this, so we leave it be.
             }
             
             long timeout = 0;
@@ -253,14 +253,14 @@ public class IOMetaClass extends ObjectMetaClass {
                 }
                 
                 if (timeout < 0) {
-                	throw runtime.newArgumentError("negative timeout given");
+                    throw runtime.newArgumentError("negative timeout given");
                 }
             }
-
+            
             if (!atLeastOneDescriptor) {
-            	return runtime.getNil();
+                return runtime.getNil();
             }
-
+            
             if(args.length > 3) {
                 selector.select(timeout);
             } else {
@@ -273,7 +273,7 @@ public class IOMetaClass extends ObjectMetaClass {
             for (Iterator i = selector.selectedKeys().iterator(); i.hasNext(); ) {
                 SelectionKey key = (SelectionKey) i.next();
                 if ((key.interestOps() & key.readyOps()
-                    & (SelectionKey.OP_READ|SelectionKey.OP_ACCEPT|SelectionKey.OP_CONNECT)) != 0) {
+                        & (SelectionKey.OP_READ|SelectionKey.OP_ACCEPT|SelectionKey.OP_CONNECT)) != 0) {
                     r.add(key.attachment());
                 }
                 if ((key.interestOps() & key.readyOps() & (SelectionKey.OP_WRITE)) != 0) {
@@ -292,7 +292,7 @@ public class IOMetaClass extends ObjectMetaClass {
                 }
             }
             selector.close();
-
+            
             if (r.size() == 0 && w.size() == 0 && e.size() == 0) {
                 return runtime.getNil();
             }
@@ -302,108 +302,108 @@ public class IOMetaClass extends ObjectMetaClass {
             ret.add(RubyArray.newArray(runtime, r));
             ret.add(RubyArray.newArray(runtime, w));
             ret.add(RubyArray.newArray(runtime, e));
-
+            
             return RubyArray.newArray(runtime, ret);
         } catch(IOException e) {
             throw runtime.newIOError(e.getMessage());
         }
     }
-
+    
     public IRubyObject read(IRubyObject[] args, Block block) {
         checkArgumentCount(args, 1, 3);
         IRubyObject[] fileArguments = new IRubyObject[] {args[0]};
         RubyIO file = (RubyIO) RubyKernel.open(this, fileArguments, block);
         IRubyObject[] readArguments;
-		
+        
         if (args.length >= 2) {
             readArguments = new IRubyObject[] {args[1].convertToType("Fixnum", "to_int", true)};
         } else {
             readArguments = new IRubyObject[] {};
         }
-		
+        
         try {
-
+            
             if (args.length == 3) {
-                file.seek(new IRubyObject[] {args[2].convertToType("Fixnum", "to_int", true)});				
+                file.seek(new IRubyObject[] {args[2].convertToType("Fixnum", "to_int", true)});
             }
-			
-			return file.read(readArguments);
+            
+            return file.read(readArguments);
         } finally {
             file.close();
         }
     }
-
+    
     public RubyArray readlines(IRubyObject[] args, Block block) {
         int count = checkArgumentCount(args, 1, 2);
-
+        
         IRubyObject[] fileArguments = new IRubyObject[] {args[0]};
         IRubyObject[] separatorArguments = count >= 2 ? new IRubyObject[]{args[1]} : IRubyObject.NULL_ARRAY;
         RubyIO file = (RubyIO) RubyKernel.open(this, fileArguments, block);
         try {
-        	return file.readlines(separatorArguments);
+            return file.readlines(separatorArguments);
         } finally {
-        	file.close();
+            file.close();
         }
     }
     
     //XXX Hacked incomplete popen implementation to make
     public IRubyObject popen(IRubyObject[] args, Block block) {
-    	IRuby runtime = getRuntime();
-    	checkArgumentCount(args, 1, 2);
-    	IRubyObject cmdObj = args[0].convertToString();
-    	cmdObj.checkSafeString();
-    	String command = cmdObj.toString();
+        IRuby runtime = getRuntime();
+        checkArgumentCount(args, 1, 2);
+        IRubyObject cmdObj = args[0].convertToString();
+        cmdObj.checkSafeString();
+        String command = cmdObj.toString();
         ThreadContext tc = runtime.getCurrentContext();
-
+        
         /*
-    	// only r works so throw error if anything else specified.
+        // only r works so throw error if anything else specified.
         if (args.length >= 2) {
             String mode = args[1].convertToString().toString();
             if (!mode.equals("r")) {
                 throw runtime.newNotImplementedError("only 'r' currently supported");
             }
         }
-    	*/
-    	try {
-    		//TODO Unify with runInShell()
-	    	Process process;
-	    	String shell = System.getProperty("jruby.shell");
-                if (shell != null) {
-	            String shellSwitch = "-c";
-	            if (!shell.endsWith("sh")) {
-	                shellSwitch = "/c";
-	            }
-	            process = Runtime.getRuntime().exec(new String[] { shell, shellSwitch, command });
-	        } else {
-	            process = Runtime.getRuntime().exec(command);
+         */
+        try {
+            //TODO Unify with runInShell()
+            Process process;
+            String shell = System.getProperty("jruby.shell");
+            if (shell != null) {
+                String shellSwitch = "-c";
+                if (!shell.endsWith("sh")) {
+                    shellSwitch = "/c";
                 }
-	    	
-	    	RubyIO io = new RubyIO(runtime, process);
-	    	
-	    	if (block != null) {
-		        try {
-		        	tc.yield(io, block);
-	    	        return runtime.getNil();
-		        } finally {
-		            io.close();
-		            runtime.getGlobalVariables().set("$?", runtime.newFixnum(process.waitFor() * 256));
-		        }
-		    }
-	    	return io;
-    	} catch (IOException e) {
+                process = Runtime.getRuntime().exec(new String[] { shell, shellSwitch, command });
+            } else {
+                process = Runtime.getRuntime().exec(command);
+            }
+            
+            RubyIO io = new RubyIO(runtime, process);
+            
+            if (block != null) {
+                try {
+                    tc.yield(io, block);
+                    return runtime.getNil();
+                } finally {
+                    io.close();
+                    runtime.getGlobalVariables().set("$?", runtime.newFixnum(process.waitFor() * 256));
+                }
+            }
+            return io;
+        } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
         } catch (InterruptedException e) {
-        	throw runtime.newThreadError("unexpected interrupt");
+            throw runtime.newThreadError("unexpected interrupt");
         }
     }
-
-	// NIO based pipe
-	public IRubyObject pipe() throws Exception {
-		IRuby runtime = getRuntime();
-		Pipe pipe = Pipe.open();
-		return runtime.newArray(new IRubyObject[]{
-			new RubyIO(runtime, pipe.source()),
-			new RubyIO(runtime, pipe.sink())
-			});
-	}
+    
+    // NIO based pipe
+    public IRubyObject pipe() throws Exception {
+        IRuby runtime = getRuntime();
+        Pipe pipe = Pipe.open();
+        return runtime.newArray(new IRubyObject[]{
+            new RubyIO(runtime, pipe.source()),
+            new RubyIO(runtime, pipe.sink())
+        });
+    }
 }

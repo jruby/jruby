@@ -40,10 +40,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.nio.channels.Channel;
-
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 import org.jruby.util.IOHandler;
 import org.jruby.util.IOHandlerJavaIO;
 import org.jruby.util.IOHandlerNio;
@@ -405,19 +405,19 @@ public class RubyIO extends RubyObject {
         }
 
         
-        String separator = sepVal.isNil() ? null : ((RubyString) sepVal).toString();
+        byte[] separator = sepVal.isNil() ? null : ((RubyString) sepVal).getBytes();
 
-        if (separator != null && separator.length() == 0) {
+        if (separator != null && separator.length == 0) {
             separator = IOHandler.PARAGRAPH_DELIMETER;
         }
 
         try {
-            String newLine = handler.gets(separator);
+            byte[] newLine = handler.gets(separator);
 
 		    if (newLine != null) {
 		        lineNumber++;
 		        getRuntime().getGlobalVariables().set("$.", getRuntime().newFixnum(lineNumber));
-		        RubyString result = getRuntime().newString(newLine);
+		        RubyString result = RubyString.newString(getRuntime(), newLine);
 		        result.taint();
 		        
 		        return result;
@@ -489,7 +489,15 @@ public class RubyIO extends RubyObject {
 
     public IRubyObject syswrite(IRubyObject obj) {
         try {
-            return getRuntime().newFixnum(handler.syswrite(obj.toString()));
+            if (obj instanceof RubyString) {
+                return getRuntime().newFixnum(handler.syswrite(((RubyString)obj).getBytes()));
+            } else {
+                // FIXME: unlikely to be efficient, but probably correct
+                return getRuntime().newFixnum(
+                        handler.syswrite(
+                        ((RubyString)obj.callMethod(
+                        obj.getRuntime().getCurrentContext(), "to_s")).getBytes()));
+            }
         } catch (IOHandler.BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
         } catch (IOException e) {
@@ -504,9 +512,15 @@ public class RubyIO extends RubyObject {
         checkWriteable();
 
         try {
-            int totalWritten = handler.write(obj.toString());
-
-            return getRuntime().newFixnum(totalWritten);
+            if (obj instanceof RubyString) {
+                return getRuntime().newFixnum(handler.write(((RubyString)obj).getBytes()));
+            } else {
+                // FIXME: unlikely to be efficient, but probably correct
+                return getRuntime().newFixnum(
+                        handler.write(
+                        ((RubyString)obj.callMethod(
+                        obj.getRuntime().getCurrentContext(), "to_s")).getBytes()));
+            }
         } catch (IOHandler.BadDescriptorException e) {
             return RubyFixnum.zero(getRuntime());
         } catch (IOException e) {
@@ -958,8 +972,8 @@ public class RubyIO extends RubyObject {
             throw getRuntime().newNotImplementedError("readpartial only works with Nio based handlers");
         }
     	try {
-            String buf = ((IOHandlerNio)handler).readpartial(RubyNumeric.fix2int(args[0]));
-            IRubyObject strbuf = getRuntime().newString((buf == null ? "" : buf));
+            byte[] buf = ((IOHandlerNio)handler).readpartial(RubyNumeric.fix2int(args[0]));
+            IRubyObject strbuf = RubyString.newString(getRuntime(), buf == null ? ByteList.NULL_ARRAY : buf);
             if(args.length > 1) {
                 args[1].callMethod(getRuntime().getCurrentContext(),"<<", strbuf);
                 return args[1];
@@ -977,9 +991,9 @@ public class RubyIO extends RubyObject {
 
     public IRubyObject sysread(IRubyObject number) {
         try {
-            String buf = handler.sysread(RubyNumeric.fix2int(number));
+            byte[] buf = handler.sysread(RubyNumeric.fix2int(number));
         
-            return getRuntime().newString(buf);
+            return RubyString.newString(getRuntime(), buf);
         } catch (IOHandler.BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
         } catch (EOFException e) {
@@ -997,7 +1011,7 @@ public class RubyIO extends RubyObject {
     
     public IRubyObject read(IRubyObject[] args) {
     	try {
-            String buf = args.length > 0 ? 
+            byte[] buf = args.length > 0 ? 
                 handler.read(RubyNumeric.fix2int(args[0])) : handler.getsEntireStream();
 
             if (buf == null) {
@@ -1007,7 +1021,7 @@ public class RubyIO extends RubyObject {
                 return getRuntime().newString("");
             }
             
-            return getRuntime().newString(buf);
+            return RubyString.newString(getRuntime(), buf);
         } catch (IOHandler.BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
         } catch (EOFException e) {

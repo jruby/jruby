@@ -11,7 +11,7 @@ t1 = Thread.new { result = rd.read; rd.close }
 wr.write "Foo"
 wr.close
 t1.join
-test_equal result , "Foo"
+test_equal "Foo", result
 rescue
 test_fail "Pipe working"
 end

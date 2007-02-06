@@ -34,17 +34,14 @@ import java.nio.channels.SocketChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.net.SocketAddress;
 import java.net.InetSocketAddress;
-
 import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyIO;
-
-import org.jruby.runtime.Block;
+import org.jruby.RubyString;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
-
 import org.jruby.util.IOHandlerNio;
 import org.jruby.util.IOHandler;
 
@@ -97,7 +94,7 @@ public class RubyBasicSocket extends RubyIO {
     
     public IRubyObject recv(IRubyObject[] args) {
         try {
-            return getRuntime().newString(((IOHandlerNio) handler).recv(RubyNumeric.fix2int(args[0])));
+            return RubyString.newString(getRuntime(), ((IOHandlerNio) handler).recv(RubyNumeric.fix2int(args[0])));
         } catch (IOHandler.BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
         } catch (EOFException e) {

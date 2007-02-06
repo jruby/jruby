@@ -116,7 +116,7 @@ public class IOHandlerNio extends IOHandler {
         return blocking;
     }
 
-    public String sysread(int length) throws EOFException, BadDescriptorException, IOException {
+    public byte[] sysread(int length) throws EOFException, BadDescriptorException, IOException {
         checkReadable();
         checkBuffered();
 	
@@ -135,15 +135,15 @@ public class IOHandlerNio extends IOHandler {
         } else {
             ret = buffer.array();
         }
-        return RubyString.bytesToString(ret);
+        return ret;
     }
     
-    public int syswrite(String string) throws BadDescriptorException, IOException {
+    public int syswrite(byte[] string) throws BadDescriptorException, IOException {
         checkWritable();
         outBuffer.flip();
         flushOutBuffer();
     
-        ByteBuffer buffer = ByteBuffer.wrap(RubyString.stringToBytes(string));
+        ByteBuffer buffer = ByteBuffer.wrap(string);
         while (buffer.hasRemaining()) {
         if (((WritableByteChannel) channel).write(buffer) < 0) {
             // does this ever happen??
@@ -154,10 +154,13 @@ public class IOHandlerNio extends IOHandler {
     }
     
     public int syswrite(int c) throws BadDescriptorException, IOException {
-        return syswrite(Character.toString((char)c));
+        ByteBuffer buffer = ByteBuffer.allocate(1); // inefficient?
+        buffer.put((byte)c);
+        
+        return syswrite(buffer.array());
     }
     
-    public String recv(int length) throws EOFException, BadDescriptorException, IOException {
+    public byte[] recv(int length) throws EOFException, BadDescriptorException, IOException {
         return sysread(length);
     }
 
@@ -173,7 +176,7 @@ public class IOHandlerNio extends IOHandler {
 
     int ungotc = -1;
 
-    private String consumeInBuffer(int length) {
+    private byte[] consumeInBuffer(int length) {
         int offset = 0;
         if (ungotc > 0) {
             length--;
@@ -186,7 +189,7 @@ public class IOHandlerNio extends IOHandler {
             ret[0] = (byte) (ungotc & 0xff);
             ungotc = -1;
         }
-        return RubyString.bytesToString(ret);
+        return ret;
     }
 
     private int fillInBuffer() throws IOException {
@@ -238,7 +241,7 @@ public class IOHandlerNio extends IOHandler {
         return -1;
     }
 
-    public String readpartial(int length) throws IOException, BadDescriptorException, EOFException {
+    public byte[] readpartial(int length) throws IOException, BadDescriptorException, EOFException {
         checkReadable();
         setupBufferedIO();
 
@@ -250,15 +253,15 @@ public class IOHandlerNio extends IOHandler {
         return consumeInBuffer(length);
     }
 
-    public String read(int length) throws IOException, BadDescriptorException, EOFException {
+    public byte[] read(int length) throws IOException, BadDescriptorException, EOFException {
         setupBufferedIO();
         checkReadable();
 
         boolean eof = false;
         int remaining = length;
-        StringBuffer ret = new StringBuffer(length);	
+        ByteList ret = new ByteList(length);
         ret.append(consumeInBuffer(remaining));
-        remaining -= ret.length();
+        remaining -= ret.size();
         while (remaining > 0) {
             int i = fillInBuffer();
             if (i < 0) {
@@ -268,16 +271,16 @@ public class IOHandlerNio extends IOHandler {
             ret.append(consumeInBuffer(remaining));
             remaining -= i;
         }
-        if (eof && ret.length() == 0) {
+        if (eof && ret.size() == 0) {
             throw new EOFException();
         }
-        return(ret.toString());
+        return(ret.bytes());
     }
 
-    public int write(String string) throws IOException, BadDescriptorException {
+    public int write(byte[] string) throws IOException, BadDescriptorException {
         checkWritable();
 
-        ByteBuffer buffer = ByteBuffer.wrap(RubyString.stringToBytes(string));
+        ByteBuffer buffer = ByteBuffer.wrap(string);
         while (buffer.hasRemaining()) {
             /* append data */
             while (buffer.hasRemaining() && outBuffer.hasRemaining()) {
@@ -295,15 +298,15 @@ public class IOHandlerNio extends IOHandler {
         return buffer.capacity();
     }
 
-    public String gets(String separator) throws IOException, BadDescriptorException, EOFException {
+    public byte[] gets(byte[] separator) throws IOException, BadDescriptorException, EOFException {
         setupBufferedIO();
         checkReadable();
 
-        StringBuffer ret = new StringBuffer();
+        ByteList ret = new ByteList();
         boolean eof = false;
         byte[] trigger;
         if (separator != null) {
-            trigger = RubyString.stringToBytes(separator);
+            trigger = separator;
         } else {
             trigger = ((RubyString) getRuntime().getGlobalVariables().get("$/")).getBytes();
         }
@@ -315,7 +318,7 @@ public class IOHandlerNio extends IOHandler {
                 eof = true;
 	    }
         }
-        if (eof && !inBuffer.hasRemaining() && ret.length() == 0) {
+        if (eof && !inBuffer.hasRemaining() && ret.size() == 0) {
             throw new EOFException();
         }
         if (idx > 0) {
@@ -323,13 +326,13 @@ public class IOHandlerNio extends IOHandler {
         } else if (eof) {
             ret.append(consumeInBuffer(BLOCK_SIZE));
         }
-        return ret.toString();
+        return ret.bytes();
     }
 
-    public String getsEntireStream() throws IOException, BadDescriptorException, EOFException {
+    public byte[] getsEntireStream() throws IOException, BadDescriptorException, EOFException {
         checkReadable();
         setupBufferedIO();
-        StringBuffer ret = new StringBuffer();
+        ByteList ret = new ByteList();
         boolean eof;
 
         while (true) {
@@ -339,10 +342,10 @@ public class IOHandlerNio extends IOHandler {
                 break;
             }
         }
-        if (eof && ret.length() == 0) {
+        if (eof && ret.size() == 0) {
             throw new EOFException();
         }
-        return ret.toString();
+        return ret.bytes();
     }
 
     public int getc() throws IOException, BadDescriptorException, EOFException {

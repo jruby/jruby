@@ -123,22 +123,22 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
         }
     }
     
-    public String getsEntireStream() throws IOException {
-        StringBuffer result = new StringBuffer();
+    public byte[] getsEntireStream() throws IOException {
+        ByteList result = new ByteList();
         int c;
 
         checkReopen();
         
         while ((c = read()) != -1) {
-            result.append((char) c);
+            result.append(c);
         }
         
         // We are already at EOF
-        if (result.length() == 0) {
+        if (result.size() == 0) {
             return null;
         }
         
-        return result.toString();
+        return result.bytes();
     }
 
 
@@ -289,22 +289,22 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
      * @throws BadDescriptorException 
      * @see org.jruby.util.IOHandler#syswrite(String buf)
      */
-    public int syswrite(String buf) throws IOException, BadDescriptorException {
+    public int syswrite(byte[] buf) throws IOException, BadDescriptorException {
         getRuntime().secure(4);
         checkWriteable();
         
         // Ruby ignores empty syswrites
-        if (buf == null || buf.length() == 0) {
+        if (buf == null || buf.length == 0) {
             return 0;
         }
         
-        file.writeBytes(buf);
+        file.write(buf);
             
         if (isSync()) {
             sync();
         }
             
-        return buf.length();
+        return buf.length;
     }
     
     /**
@@ -328,8 +328,8 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
     public void truncate(long newLength) throws IOException {
         file.setLength(newLength);
     }
-
-	public FileChannel getFileChannel() {
-		return file.getChannel();
-	}
+    
+    public FileChannel getFileChannel() {
+        return file.getChannel();
+    }
 }

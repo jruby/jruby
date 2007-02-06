@@ -274,22 +274,22 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
      * @throws BadDescriptorException 
      * @see org.jruby.util.IOHandler#syswrite(String buf)
      */
-    public int syswrite(String buf) throws IOException, BadDescriptorException {
+    public int syswrite(byte[] buf) throws IOException, BadDescriptorException {
         getRuntime().secure(4);
         checkWriteable();
         
-        if (buf == null || buf.length() == 0) {
+        if (buf == null || buf.length == 0) {
             return 0;
         }
         
-        output.write(buf.getBytes("PLAIN"));
+        output.write(buf);
 
         // Should syswrite sync?
         if (isSync) {
             sync();
         }
             
-        return buf.length();
+        return buf.length;
     }
 
     /**
@@ -314,9 +314,9 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
     public void truncate(long newLength) throws IOException, PipeException {
         throw new IOHandler.PipeException();
     }
-
-	public FileChannel getFileChannel() {
-		assert false : "No file channel for unseekable IO";
-		return null;
-	}
+    
+    public FileChannel getFileChannel() {
+        assert false : "No file channel for unseekable IO";
+        return null;
+    }
 }

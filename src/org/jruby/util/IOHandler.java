@@ -47,7 +47,9 @@ public abstract class IOHandler {
     
     // We use a highly uncommon string to represent the paragraph delimeter. 
     // The 100% solution is not really worth the extra code.
-    public static final String PARAGRAPH_DELIMETER = "PARAGRPH_DELIM_MRK_ER";
+    // CON: I used getBytes here to avoid the exception-handling hassle and because
+    // these bytes should be the same in almost all encodings.
+    public static final byte[] PARAGRAPH_DELIMETER = "PARAGRPH_DELIM_MRK_ER".getBytes();
     
     private IRuby runtime;
     protected IOModes modes;
@@ -137,22 +139,22 @@ public abstract class IOHandler {
         resetByModes(subsetModes);
     }
 
-    public abstract String gets(String separatorString) throws IOException, BadDescriptorException, EOFException;
-    public abstract String getsEntireStream() throws IOException, BadDescriptorException, EOFException;
+    public abstract byte[] gets(byte[] separatorString) throws IOException, BadDescriptorException, EOFException;
+    public abstract byte[] getsEntireStream() throws IOException, BadDescriptorException, EOFException;
 
     // TODO: We overflow on large files...We could increase to long to limit
     // this, but then the impl gets more involved since java io APIs based on
     // int (means we have to chunk up a long into a series of int ops).
 
-    public abstract String read(int number) throws IOException, BadDescriptorException, EOFException;
-    public abstract int write(String string) throws IOException, BadDescriptorException;
+    public abstract byte[] read(int number) throws IOException, BadDescriptorException, EOFException;
+    public abstract int write(byte[] string) throws IOException, BadDescriptorException;
 
     public abstract int getc() throws IOException, BadDescriptorException, EOFException;
     public abstract void ungetc(int c);
     public abstract void putc(int c) throws IOException, BadDescriptorException;
     
-    public abstract String sysread(int number) throws IOException, BadDescriptorException, EOFException;
-    public abstract int syswrite(String buf) throws IOException, BadDescriptorException;
+    public abstract byte[] sysread(int number) throws IOException, BadDescriptorException, EOFException;
+    public abstract int syswrite(byte[] buf) throws IOException, BadDescriptorException;
     public abstract int syswrite(int ch) throws IOException, BadDescriptorException;
     
     public abstract IOHandler cloneIOHandler() throws IOException, PipeException, InvalidValueException;

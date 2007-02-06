@@ -73,7 +73,7 @@ public class RubyBasicSocket extends RubyIO {
     
     public IRubyObject recv(IRubyObject[] args) {
         try {
-            return getRuntime().newString(((IOHandlerNio) handler).recv(RubyNumeric.fix2int(args[0])));
+            return RubyString.newString(getRuntime(), ((IOHandlerNio) handler).recv(RubyNumeric.fix2int(args[0])));
         } catch (IOHandler.BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
         } catch (EOFException e) {
