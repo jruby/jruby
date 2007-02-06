@@ -20,51 +20,51 @@
       <artifactId>bcprov-jdk15</artifactId>
       <version>134</version>
       <scope>system</scope>
-      <systemPath>${project.basedir}/../../lib/bcprov-jdk15-134.jar</systemPath>
+      <systemPath>${basedir}/../../lib/bcprov-jdk15-134.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>bouncycastle</groupId>
       <artifactId>bcmail-jdk15</artifactId>
       <version>134</version>
       <scope>system</scope>
-      <systemPath>${project.basedir}/../../lib/bcmail-jdk15-134.jar</systemPath>
+      <systemPath>${basedir}/../../lib/bcmail-jdk15-134.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>jline</groupId>
       <artifactId>jline</artifactId>
       <version>0.9.91-SNAPSHOT</version>
       <scope>system</scope>
-      <systemPath>${project.basedir}/../../lib/jline-0.9.91-SNAPSHOT.jar</systemPath>
+      <systemPath>${basedir}/../../lib/jline-0.9.91-SNAPSHOT.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>jvyaml</groupId>
       <artifactId>jvyaml</artifactId>
       <version>SNAPSHOT</version>
       <scope>system</scope>
-      <systemPath>${project.basedir}/../../lib/jvyaml.jar</systemPath>
+      <systemPath>${basedir}/../../lib/jvyaml.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>plaincharset</groupId>
       <artifactId>plaincharset</artifactId>
       <version>SNAPSHOT</version>
       <scope>system</scope>
-      <systemPath>${project.basedir}/../../lib/plaincharset.jar</systemPath>
+      <systemPath>${basedir}/../../lib/plaincharset.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>requireTest</groupId>
       <artifactId>requireTest</artifactId>
       <version>SNAPSHOT</version>
       <scope>system</scope>
-      <systemPath>${project.basedir}/../../test/requireTest.jar</systemPath>
+      <systemPath>${basedir}/../../test/requireTest.jar</systemPath>
     </dependency>
   </dependencies>
 
   <build>
-    <sourceDirectory>${project.basedir}/../../src</sourceDirectory>
-    <testSourceDirectory>${project.basedir}/../../test</testSourceDirectory>
+    <sourceDirectory>${basedir}/../../src</sourceDirectory>
+    <testSourceDirectory>${basedir}/../../test</testSourceDirectory>
     <resources>
       <resource>
-        <directory>${project.basedir}/../../src</directory>
+        <directory>${basedir}/../../src</directory>
         <includes>
           <include>**/*.properties</include>
         </includes>
@@ -72,9 +72,10 @@
     </resources>
     <testResources>
       <testResource>
-        <directory>${project.basedir}/../..</directory>
+        <directory>${basedir}/../..</directory>
         <includes>
           <include>test/**/*.rb</include>
+          <include>test/**/*.txt</include>
           <include>test/test_index</include>
           <include>test/test_unit_index</include>
           <include>test/RubyInitTest.jar</include>
@@ -82,7 +83,7 @@
         </includes>
       </testResource>
       <testResource>
-        <directory>${project.basedir}/../../test</directory>
+        <directory>${basedir}/../../test</directory>
         <includes>
           <include>org/jruby/**/*.rb</include>
         </includes>
@@ -95,7 +96,7 @@
         <configuration>
           <includes>
             <include>org/jruby/test/MainTestSuite.java</include>
-            <!-- <include>org/jruby/test/ScriptTestSuite.java</include> -->
+            <!-- <include>org/jruby/test/ScriptTestSuite.java</include>  -->
             <!-- <include>org/jruby/test/TestUnitTestSuite.java</include> -->
           </includes>
         </configuration>
@@ -131,7 +132,41 @@
               <goal>run</goal>
             </goals>
           </execution>
+          <execution>
+            <id>tests</id>
+            <phase>test</phase>
+            <configuration>
+              <tasks>
+                <mkdir dir="${project.build.directory}/surefire-reports"/>
+                <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask"
+                  classpathref="maven.plugin.classpath"/>
+                <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}/../.." maxmemory="384M">
+                  <classpath refid="maven.test.classpath"/>
+                  <formatter type="xml"/>
+                  <formatter type="brief" usefile="false"/>
+                  <test name="org.jruby.test.MainTestSuite" todir="${project.build.directory}/surefire-reports"/>
+                  <test name="org.jruby.test.ScriptTestSuite" todir="${project.build.directory}/surefire-reports"/>
+                  <test name="org.jruby.test.TestUnitTestSuite" todir="${project.build.directory}/surefire-reports"/>
+                </junit>
+              </tasks>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
         </executions>
+        <dependencies>
+          <dependency>
+            <groupId>ant</groupId>
+            <artifactId>ant-junit</artifactId>
+            <version>1.6.5</version>
+          </dependency>
+          <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>3.8.1</version>
+          </dependency>
+        </dependencies>
       </plugin>
     </plugins>
   </build>
