@@ -394,7 +394,7 @@ public class SSLSocket extends RubyObject {
             byte[] bss = new byte[rr];
             dst.position(dst.position()-rr);
             dst.get(bss);
-            out = new String(bss,"ISO8859_1");
+            out = new String(bss,"PLAIN");
         }
         if(eof){
             throw getRuntime().newEOFError();

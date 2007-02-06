@@ -77,7 +77,7 @@ public class HMAC extends RubyObject {
             byte[] key = kay.toString().getBytes("PLAIN");
             SecretKey keysp = new SecretKeySpec(key,name);
             mac.init(keysp);
-            return recv.getRuntime().newString(new String(mac.doFinal(data.toString().getBytes("PLAIN")),"ISO8859_1"));
+            return recv.getRuntime().newString(new String(mac.doFinal(data.toString().getBytes("PLAIN")),"PLAIN"));
         } catch(Exception e) {
             throw recv.getRuntime().newNotImplementedError("Unsupported HMAC algorithm (" + name + ")");
         }
@@ -145,7 +145,7 @@ public class HMAC extends RubyObject {
     public IRubyObject digest() {
         try {
             mac.reset();
-            return getRuntime().newString(new String(mac.doFinal(data.toString().getBytes("PLAIN")),"ISO8859_1"));
+            return getRuntime().newString(new String(mac.doFinal(data.toString().getBytes("PLAIN")),"PLAIN"));
         } catch(java.io.UnsupportedEncodingException e) {
             return getRuntime().getNil();
         }

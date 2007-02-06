@@ -43,9 +43,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class RubyIconv extends RubyObject {
-    //private String toEncoding;
-    //private String fromEncoding;
-    
     public RubyIconv(IRuby runtime, RubyClass type) {
         super(runtime, type);
     }
@@ -130,21 +127,21 @@ public class RubyIconv extends RubyObject {
     /*
     private static IRubyObject convert(String fromEncoding, String toEncoding, RubyString original) 
         throws UnsupportedEncodingException {
-        // Get all bytes from ISO8859 string pretend they are not encoded in any way.
-        byte[] string = original.toString().getBytes("ISO8859-1");
+        // Get all bytes from PLAIN string pretend they are not encoded in any way.
+        byte[] string = original.getBytes();
         // Now create a string pretending it is from fromEncoding
         string = new String(string, fromEncoding).getBytes(toEncoding);
-        // Finally recode back to ISO8859-1
-        return original.getRuntime().newString(new String(string, "ISO8859-1"));
+        // Finally recode back to PLAIN
+        return RubyString.newString(original.getRuntime(), string);
     }
     */
 
-    // FIXME: We are assuming that original string will be ISO8859-1 String.  If -Ku is provided
+    // FIXME: We are assuming that original string will be raw bytes.  If -Ku is provided
     // this will not be true, but that is ok for now.  Deal with that when someone needs it.
     private static IRubyObject convert2(String fromEncoding, String toEncoding, RubyString original) {
         try {
-            // Get all bytes from ISO8859 string and pretend they are not encoded in any way.
-            byte[] bytes = original.toString().getBytes("ISO8859-1");
+            // Get all bytes from string and pretend they are not encoded in any way.
+            byte[] bytes = original.getBytes();
             ByteBuffer buf = ByteBuffer.wrap(bytes);
 
             CharsetDecoder decoder = Charset.forName(fromEncoding).newDecoder();
@@ -159,11 +156,9 @@ public class RubyIconv extends RubyObject {
             bytes = new byte[buf.limit()];
             System.arraycopy(arr, 0, bytes, 0, bytes.length);
 
-            return original.getRuntime().newString(new String(bytes, "ISO8859-1"));
+            return RubyString.newString(original.getRuntime(), bytes);
         } catch (UnmappableCharacterException e) {
         } catch (CharacterCodingException e) {
-        } catch (UnsupportedEncodingException e) {
-
         }
         return original.getRuntime().getNil();
     }

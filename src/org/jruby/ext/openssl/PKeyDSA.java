@@ -193,7 +193,7 @@ public class PKeyDSA extends PKey {
 
     public IRubyObject to_der() throws Exception {
         if(pubKey != null && privKey == null) {
-            return getRuntime().newString( new String(pubKey.getEncoded(),"ISO8859_1"));
+            return getRuntime().newString( new String(pubKey.getEncoded(),"PLAIN"));
         } else if(privKey != null && pubKey != null) {
             DSAParams params = privKey.getParams();
             ASN1EncodableVector v1 = new ASN1EncodableVector();
@@ -203,9 +203,9 @@ public class PKeyDSA extends PKey {
             v1.add(new DERInteger(params.getG()));
             v1.add(new DERInteger(pubKey.getY()));
             v1.add(new DERInteger(privKey.getX()));
-            return getRuntime().newString( new String(new DERSequence(v1).getEncoded(),"ISO8859_1"));
+            return getRuntime().newString( new String(new DERSequence(v1).getEncoded(),"PLAIN"));
         } else {
-            return getRuntime().newString( new String(privKey.getEncoded(),"ISO8859_1"));
+            return getRuntime().newString( new String(privKey.getEncoded(),"PLAIN"));
         }
     }
 

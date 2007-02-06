@@ -378,7 +378,7 @@ else
             seq = new DERSequence();
         }
 
-        return getRuntime().newString(new String(seq.getDEREncoded(),"ISO8859_1"));
+        return getRuntime().newString(new String(seq.getDEREncoded(),"PLAIN"));
     }
 
     private DERObject convert(DERObjectIdentifier oid, String value, int type) throws Exception {

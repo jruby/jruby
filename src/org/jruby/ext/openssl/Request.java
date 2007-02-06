@@ -114,9 +114,9 @@ public class Request extends RubyObject {
         byte[] enc = req.getPublicKey().getEncoded();
         ThreadContext tc = getRuntime().getCurrentContext();
         if("RSA".equalsIgnoreCase(algo)) {
-            this.public_key = ((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("PKey"))).getClass("RSA").callMethod(tc,"new",getRuntime().newString(new String(enc,"ISO8859_1")));
+            this.public_key = ((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("PKey"))).getClass("RSA").callMethod(tc,"new",getRuntime().newString(new String(enc,"PLAIN")));
         } else if("DSA".equalsIgnoreCase(algo)) {
-            this.public_key = ((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("PKey"))).getClass("DSA").callMethod(tc,"new",getRuntime().newString(new String(enc,"ISO8859_1")));
+            this.public_key = ((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("PKey"))).getClass("DSA").callMethod(tc,"new",getRuntime().newString(new String(enc,"PLAIN")));
         } else {
             throw getRuntime().newLoadError("not implemented algo for public key: " + algo);
         }
@@ -141,7 +141,7 @@ public class Request extends RubyObject {
                 DERObjectIdentifier v0 = (DERObjectIdentifier)val.getObjectAt(0);
                 DERObject v1 = (DERObject)val.getObjectAt(1);
                 IRubyObject a1 = getRuntime().newString(((String)(ASN1.getSymLookup(getRuntime()).get(v0))));
-                IRubyObject a2 = ASN1.decode(getRuntime().getModule("OpenSSL").getConstant("ASN1"),getRuntime().newString(new String(v1.getDEREncoded(),"ISO8859_1")));
+                IRubyObject a2 = ASN1.decode(getRuntime().getModule("OpenSSL").getConstant("ASN1"),getRuntime().newString(new String(v1.getDEREncoded(),"PLAIN")));
                 add_attribute(((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("X509"))).getConstant("Attribute").callMethod(tc,"new",new IRubyObject[]{a1,a2}));
             }
         }
@@ -167,7 +167,7 @@ public class Request extends RubyObject {
     }
 
     public IRubyObject to_der() throws Exception {
-        return getRuntime().newString(new String(req.getDEREncoded(),"ISO8859_1"));
+        return getRuntime().newString(new String(req.getDEREncoded(),"PLAIN"));
     }
 
     public IRubyObject to_text() {

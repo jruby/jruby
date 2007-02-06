@@ -107,7 +107,7 @@ public class Digest extends RubyObject {
         String name = str.toString();
         try {
             MessageDigest md = MessageDigest.getInstance(transformDigest(name));
-            return recv.getRuntime().newString(new String(md.digest(data.toString().getBytes("PLAIN")),"ISO8859_1"));
+            return recv.getRuntime().newString(new String(md.digest(data.toString().getBytes("PLAIN")),"PLAIN"));
         } catch(NoSuchAlgorithmException e) {
             throw recv.getRuntime().newNotImplementedError("Unsupported digest algorithm (" + name + ")");
         } catch(java.io.UnsupportedEncodingException e) {
@@ -189,7 +189,7 @@ public class Digest extends RubyObject {
     public IRubyObject digest() {
         try {
             md.reset();
-            return getRuntime().newString(new String(md.digest(data.toString().getBytes("PLAIN")),"ISO8859_1"));
+            return getRuntime().newString(new String(md.digest(data.toString().getBytes("PLAIN")),"PLAIN"));
         } catch(java.io.UnsupportedEncodingException e) {
             return getRuntime().getNil();
         }

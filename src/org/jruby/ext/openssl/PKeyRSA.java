@@ -263,7 +263,7 @@ public class PKeyRSA extends PKey {
             ASN1EncodableVector v1 = new ASN1EncodableVector();
             v1.add(new DERInteger(pubKey.getModulus()));
             v1.add(new DERInteger(pubKey.getPublicExponent()));
-            return getRuntime().newString( new String(new DERSequence(v1).getEncoded(),"ISO8859_1"));
+            return getRuntime().newString( new String(new DERSequence(v1).getEncoded(),"PLAIN"));
         } else {
             ASN1EncodableVector v1 = new ASN1EncodableVector();
             v1.add(new DERInteger(0));
@@ -275,7 +275,7 @@ public class PKeyRSA extends PKey {
             v1.add(new DERInteger(privKey.getPrimeExponentP()));
             v1.add(new DERInteger(privKey.getPrimeExponentQ()));
             v1.add(new DERInteger(privKey.getCrtCoefficient()));
-            return getRuntime().newString( new String(new DERSequence(v1).getEncoded(),"ISO8859_1"));
+            return getRuntime().newString( new String(new DERSequence(v1).getEncoded(),"PLAIN"));
         }
     }
 
@@ -337,7 +337,7 @@ public class PKeyRSA extends PKey {
         Cipher engine = Cipher.getInstance("RSA"+p);
         engine.init(Cipher.ENCRYPT_MODE,privKey);
         byte[] outp = engine.doFinal(buffer.getBytes("PLAIN"));
-        return getRuntime().newString(new String(outp,"ISO8859_1"));
+        return getRuntime().newString(new String(outp,"PLAIN"));
     }
 
     public IRubyObject private_decrypt(IRubyObject[] args) throws Exception {
@@ -355,7 +355,7 @@ public class PKeyRSA extends PKey {
         Cipher engine = Cipher.getInstance("RSA"+p);
         engine.init(Cipher.DECRYPT_MODE,privKey);
         byte[] outp = engine.doFinal(buffer.getBytes("PLAIN"));
-        return getRuntime().newString(new String(outp,"ISO8859_1"));
+        return getRuntime().newString(new String(outp,"PLAIN"));
     }
 
     public IRubyObject public_encrypt(IRubyObject[] args) throws Exception {
@@ -369,7 +369,7 @@ public class PKeyRSA extends PKey {
         Cipher engine = Cipher.getInstance("RSA"+p);
         engine.init(Cipher.ENCRYPT_MODE,pubKey);
         byte[] outp = engine.doFinal(buffer.getBytes("PLAIN"));
-        return getRuntime().newString(new String(outp,"ISO8859_1"));
+        return getRuntime().newString(new String(outp,"PLAIN"));
     }
 
     public IRubyObject public_decrypt(IRubyObject[] args) throws Exception {
@@ -383,6 +383,6 @@ public class PKeyRSA extends PKey {
         Cipher engine = Cipher.getInstance("RSA"+p);
         engine.init(Cipher.DECRYPT_MODE,pubKey);
         byte[] outp = engine.doFinal(buffer.getBytes("PLAIN"));
-        return getRuntime().newString(new String(outp,"ISO8859_1"));
+        return getRuntime().newString(new String(outp,"PLAIN"));
     }
 }// PKeyRSA

@@ -186,7 +186,7 @@ public class UnmarshalStream extends BufferedInputStream {
 		return (byte) b;
     }
 
-    public String unmarshalString() throws IOException {
+    public byte[] unmarshalString() throws IOException {
         int length = unmarshalInt();
         byte[] buffer = new byte[length];
         
@@ -199,8 +199,7 @@ public class UnmarshalStream extends BufferedInputStream {
         if (i < length) {
             throw new IOException("Unexpected end of stream");
         }
-        String foo = RubyString.bytesToString(buffer);
-        return foo;
+        return buffer;
     }
 
     public int unmarshalInt() throws IOException {
@@ -274,7 +273,7 @@ public class UnmarshalStream extends BufferedInputStream {
 
     private IRubyObject userUnmarshal() throws IOException {
         String className = unmarshalObject().asSymbol();
-        String marshaled = unmarshalString();
+        byte[] marshaled = unmarshalString();
         RubyModule classInstance;
         try {
             classInstance = runtime.getClassFromPath(className);
@@ -289,7 +288,7 @@ public class UnmarshalStream extends BufferedInputStream {
             throw runtime.newTypeError("class " + classInstance.getName() + " needs to have method `_load'");
         }
         IRubyObject result = classInstance.callMethod(getRuntime().getCurrentContext(),
-            "_load", runtime.newString(marshaled));
+            "_load", RubyString.newString(getRuntime(), marshaled));
         registerLinkTarget(result);
         return result;
     }

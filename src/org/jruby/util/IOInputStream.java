@@ -45,7 +45,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class IOInputStream extends InputStream {
     private IRubyObject io;
     private final IRubyObject numOne;
-    //private final IRubyObject packArg;
 
     /**
      * Creates a new InputStream with the object provided.
@@ -58,7 +57,6 @@ public class IOInputStream extends InputStream {
         }
         this.io = io;
         this.numOne = RubyFixnum.one(this.io.getRuntime());
-        //this.packArg = io.getRuntime().newString("C");
     }
     
     public int read() throws IOException {
@@ -74,8 +72,8 @@ public class IOInputStream extends InputStream {
         IRubyObject readValue = io.callMethod(io.getRuntime().getCurrentContext(), "read", this.io.getRuntime().newFixnum(b.length));
         int returnValue = -1;
         if (!readValue.isNil()) {
-            final String str = readValue.toString();
-            System.arraycopy(str.getBytes("ISO8859_1"),0,b,0,str.length());
+            String str = readValue.toString();
+            System.arraycopy(str.getBytes("PLAIN"),0,b,0,str.length());
             returnValue = str.length();
         }
         return returnValue;
@@ -86,7 +84,7 @@ public class IOInputStream extends InputStream {
         int returnValue = -1;
         if (!readValue.isNil()) {
             String str = readValue.toString();
-            System.arraycopy(str.getBytes("ISO8859_1"),0,b,off,str.length());
+            System.arraycopy(str.getBytes("PLAIN"),0,b,off,str.length());
             returnValue = str.length();
         }
         return returnValue;

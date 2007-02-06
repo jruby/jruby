@@ -148,7 +148,7 @@ public class RubySocket extends RubyBasicSocket {
 
     private static String intoString(IRubyObject recv, InetAddress as) {
         try {
-            return new String(as.getAddress(),"ISO8859_1");
+            return new String(as.getAddress(),"PLAIN");
         } catch(Exception e) {
             throw sockerr(recv, "addrtostr: " + e.toString());
         }

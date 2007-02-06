@@ -257,13 +257,16 @@ public class RubyRange extends RubyObject {
         
         return getRuntime().newFixnum(hash);
     }
+    
+    private static byte[] DOTDOTDOT = "...".getBytes();
+    private static byte[] DOTDOT = "..".getBytes();
 
     private IRubyObject asString(String stringMethod) {
         ThreadContext context = getRuntime().getCurrentContext();
         RubyString begStr = (RubyString) begin.callMethod(context, stringMethod);
         RubyString endStr = (RubyString) end.callMethod(context, stringMethod);
 
-        return begStr.cat(isExclusive ? "..." : "..").concat(endStr);
+        return begStr.cat(isExclusive ? DOTDOTDOT : DOTDOT).concat(endStr);
     }
     
     public IRubyObject inspect(Block block) {

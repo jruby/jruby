@@ -142,7 +142,7 @@ public class X509Cert extends RubyObject {
 
     public static IRubyObject wrap(IRuby runtime, Certificate c) throws Exception {
         RubyClass cr = (RubyClass)(((RubyModule)(runtime.getModule("OpenSSL").getConstant("X509"))).getConstant("Certificate"));
-        return cr.callMethod(runtime.getCurrentContext(),"new",runtime.newString(new String(c.getEncoded(),"ISO8859_1")));
+        return cr.callMethod(runtime.getCurrentContext(),"new",runtime.newString(new String(c.getEncoded(),"PLAIN")));
     }
 
     public IRubyObject _initialize(IRubyObject[] args, Block unusedBlock) throws Exception {
@@ -159,8 +159,8 @@ public class X509Cert extends RubyObject {
         set_serial(RubyNumeric.str2inum(getRuntime(),getRuntime().newString(cert.getSerialNumber().toString()),10));
         set_not_before(RubyTime.newTime(getRuntime(),cert.getNotBefore().getTime()));
         set_not_after(RubyTime.newTime(getRuntime(),cert.getNotAfter().getTime()));
-        set_subject(((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("X509"))).getConstant("Name").callMethod(tc,"new",getRuntime().newString(new String(cert.getSubjectX500Principal().getEncoded(),"ISO8859_1"))));
-        set_issuer(((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("X509"))).getConstant("Name").callMethod(tc,"new",getRuntime().newString(new String(cert.getIssuerX500Principal().getEncoded(),"ISO8859_1"))));
+        set_subject(((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("X509"))).getConstant("Name").callMethod(tc,"new",getRuntime().newString(new String(cert.getSubjectX500Principal().getEncoded(),"PLAIN"))));
+        set_issuer(((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("X509"))).getConstant("Name").callMethod(tc,"new",getRuntime().newString(new String(cert.getIssuerX500Principal().getEncoded(),"PLAIN"))));
 
         IRubyObject extFact = ((RubyClass)(((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("X509"))).getConstant("ExtensionFactory"))).callMethod(tc,"new");
         extFact.callMethod(tc,"subject_certificate=",this);
@@ -209,7 +209,7 @@ public class X509Cert extends RubyObject {
     }
 
     public IRubyObject to_der() throws Exception {
-        return getRuntime().newString(new String(cert.getEncoded(),"ISO8859_1"));
+        return getRuntime().newString(new String(cert.getEncoded(),"PLAIN"));
     }
 
     public IRubyObject to_pem() throws Exception {
@@ -384,7 +384,7 @@ public class X509Cert extends RubyObject {
                     for(int i=0;i<n2.length;i++) {
                         v1.add(n2[i]);
                     }
-                    ag.setRealValue(new String(new GeneralNames(new DERSequence(v1)).getDEREncoded(),"ISO8859_1"));
+                    ag.setRealValue(new String(new GeneralNames(new DERSequence(v1)).getDEREncoded(),"PLAIN"));
                     one = false;
                     break;
                 }

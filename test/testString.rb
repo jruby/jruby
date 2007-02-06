@@ -474,7 +474,7 @@ test_equal("\"eﬃcient\"", x.inspect)
 test_equal("eﬃcient", x.to_s)
 test_equal(["e", "ﬃ", "c", "i", "e", "n", "t"], x.split(//))
 
-# splitting by character should fall back on ISO8859 characters when it's not valid unicode
+# splitting by character should fall back on raw bytes when it's not valid unicode
 
 x2 = "\270\236\b\210\245"
 

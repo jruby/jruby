@@ -34,22 +34,34 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
 import org.jruby.IRuby;
+import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ZlibInflate {
     private Inflater flater;
-    private StringBuffer collected;
+    private byte[] collected;
     private IRuby runtime;
+
+    public static byte[] append(byte[] from, byte[] inp) {
+        return append(from,inp,inp.length);
+    }
+
+    public static byte[] append(byte[] from, byte[] inp, int inp_len) {
+        byte[] nue = new byte[from.length+inp_len];
+        System.arraycopy(from,0,nue,0,from.length);
+        System.arraycopy(inp,0,nue,from.length,inp_len);
+        return nue;
+    }
 
     public ZlibInflate(IRubyObject caller) {
         super();
         flater = new Inflater(false);
-        collected = new StringBuffer();
+        collected = new byte[0];
         runtime = caller.getRuntime();
     }
 
-    public static IRubyObject s_inflate(IRubyObject caller, String str) 
-    	throws UnsupportedEncodingException, DataFormatException {
+    public static IRubyObject s_inflate(IRubyObject caller, byte[] str) 
+    	throws DataFormatException {
         ZlibInflate zstream = new ZlibInflate(caller);
         IRubyObject result = zstream.inflate(str);
         zstream.finish();
@@ -62,11 +74,11 @@ public class ZlibInflate {
     }
 
     public void append(IRubyObject obj) {
-        append(obj.convertToString().toString());
+        append(obj.convertToString().getBytes());
     }
 
-    public void append(String obj) {
-        collected.append(obj);
+    public void append(byte[] obj) {
+        collected = append(collected, obj);
     }
 
     public IRubyObject sync_point() {
@@ -74,26 +86,25 @@ public class ZlibInflate {
     }
 
     public IRubyObject set_dictionary(IRubyObject str) throws UnsupportedEncodingException {
-        flater.setDictionary(str.convertToString().toString().getBytes("ISO8859_1"));
-        
+        flater.setDictionary(str.convertToString().getBytes());
         return str;
     }
 
-    public IRubyObject inflate(String str) throws UnsupportedEncodingException, DataFormatException {
+    public IRubyObject inflate(byte[] str) throws DataFormatException {
         if (null != str) {
             append(str);
         }
-        StringBuffer result = new StringBuffer();
+        byte[] result = new byte[0];
         byte[] outp = new byte[1024];
-        byte[] buf = collected.toString().getBytes("ISO8859_1");
-        collected = new StringBuffer();
+        byte[] buf = collected;
+        collected = new byte[0];
         flater.setInput(buf);
         int resultLength = -1;
         while (!flater.finished() && resultLength != 0) {
             resultLength = flater.inflate(outp);
-            result.append(new String(outp, 0, resultLength, "ISO8859_1"));
+            result = append(result,outp,resultLength);
         }
-        return runtime.newString(result.toString());       
+        return RubyString.newString(runtime,result);
     }
 
     public IRubyObject sync(IRubyObject str) {

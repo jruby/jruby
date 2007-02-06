@@ -305,7 +305,7 @@ public class IOHandlerNio extends IOHandler {
         if (separator != null) {
             trigger = RubyString.stringToBytes(separator);
         } else {
-            trigger = ((RubyString) getRuntime().getGlobalVariables().get("$/")).toByteArray();
+            trigger = ((RubyString) getRuntime().getGlobalVariables().get("$/")).getBytes();
         }
 
         int idx;

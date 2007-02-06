@@ -433,7 +433,7 @@ public class Cipher extends RubyObject {
         try {
             byte[] out = ciph.update(val.toString().getBytes("PLAIN"));
             if(out != null) {
-                str = new String(out,"ISO8859_1");
+                str = new String(out,"PLAIN");
             }
         } catch(Exception e) {
             throw new RaiseException(getRuntime(), ciphErr, null, true);
@@ -457,7 +457,7 @@ public class Cipher extends RubyObject {
         try {
             byte[] out = ciph.doFinal();
             if(out != null) {
-                str = new String(out,"ISO8859_1");
+                str = new String(out,"PLAIN");
             }
         } catch(Exception e) {
             throw new RaiseException(getRuntime(), ciphErr, null, true);

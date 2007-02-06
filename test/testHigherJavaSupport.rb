@@ -47,7 +47,7 @@ test_check "High-level Java Support"
     java_alias :JavaString, :String
     a = [104, 101, 108, 108, 111]
 #    test_equal("hello", # (char[]) matches here
-#               JavaString.new(a, "iso-8859-1").toString)
+#               JavaString.new(a, "PLAIN").toString)
 #    test_equal("104101108108111", # append(Object) triumphs here
 #               StringBuffer.new.append(a).toString) 
 

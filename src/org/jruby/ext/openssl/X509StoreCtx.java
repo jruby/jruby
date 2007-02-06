@@ -141,7 +141,7 @@ public class X509StoreCtx extends RubyObject {
         List ary = new ArrayList();
         for(Iterator iter = chain.iterator();iter.hasNext();) {
             X509AuxCertificate x509 = (X509AuxCertificate)iter.next();
-            ary.add(cX509Cert.callMethod(getRuntime().getCurrentContext(),"new",getRuntime().newString(new String(x509.getEncoded(),"ISO8859_1"))));
+            ary.add(cX509Cert.callMethod(getRuntime().getCurrentContext(),"new",getRuntime().newString(new String(x509.getEncoded(),"PLAIN"))));
         }
         return getRuntime().newArray(ary);
    }

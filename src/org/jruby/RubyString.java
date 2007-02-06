@@ -43,6 +43,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -67,7 +68,8 @@ public class RubyString extends RubyObject {
     // Default record seperator
     private static final String DEFAULT_RS = "\n";
 
-	private static final String ENCODING = "ISO8859_1";
+    private static final String OUT_ENCODING = "PLAIN";
+    private static final String IN_ENCODING = "PLAIN";
     
     public static final byte OP_PLUS_SWITCHVALUE = 1;
     public static final byte OP_LT_SWITCHVALUE = 2;
@@ -79,12 +81,15 @@ public class RubyString extends RubyObject {
     public static final byte OP_LSHIFT_SWITCHVALUE = 8;
     public static final byte EMPTY_P_SWITCHVALUE = 9;
 
-    private StringBuffer value;
-    private CharSequence chars;
-    private String stringValue; // remember toString value
+    private byte[] value;
+    private String stringValue;
     
     // @see IRuby.newString(...)
     private RubyString(IRuby runtime, CharSequence value) {
+            this(runtime, runtime.getString(), value);
+    }
+
+    private RubyString(IRuby runtime, byte[] value) {
             this(runtime, runtime.getString(), value);
     }
 
@@ -92,9 +97,20 @@ public class RubyString extends RubyObject {
         super(runtime, rubyClass);
 
         assert value != null;
+        
+        try {
+            this.value = value.toString().getBytes(IN_ENCODING);
+        } catch (UnsupportedEncodingException uee) {
+            // ignore, should never, ever happen
+        }
+    }
 
-        // defer creation of StringBuffer until needed
-        chars = value;
+    private RubyString(IRuby runtime, RubyClass rubyClass, byte[] value) {
+        super(runtime, rubyClass);
+
+        assert value != null;
+        
+        this.value = value;
     }
     
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, byte switchvalue, String name,
@@ -136,72 +152,76 @@ public class RubyString extends RubyObject {
     public int getNativeTypeIndex() {
         return ClassIndex.STRING;
     }
+    
+    public Class getJavaClass() {
+        return String.class;
+    }
+    
+    /**
+     * Remembers toString value, which is expensive for StringBuffer.
+     */
+    public String toString() {
+        try {
+            if (stringValue == null) stringValue = new String(value, OUT_ENCODING);
+        } catch (UnsupportedEncodingException uee) {
+            // ignore, never happens
+        }
+        return stringValue;
+    }
+    
+    /**
+     * This string has been changed, so invalidate stringValue.
+     */
+    private void stringMutated() {
+        stringValue = null;
+        taint();
+    }
 
-	public Class getJavaClass() {
-		return String.class;
-	}
-	
-	/**
-	 * Remembers toString value, which is expensive for StringBuffer.
-	 */
-	public String toString() {
-		if (stringValue == null) 
-			stringValue = getValue().toString();
-		return stringValue;
-	}
-	
-	/**
-	 * This string has been changed, so invalidate stringValue.
-	 */
-	private void stringMutated() {
-		stringValue = null;
-	}
-
-	public static String bytesToString(byte[] bytes) {
-		try {
-			return new String(bytes, ENCODING);
-		} catch (java.io.UnsupportedEncodingException e) {
-			assert false : "unsupported encoding " + e;
+    private static final int byteToUnsigned(byte b) {
+        return b & 0xFF;
+    }
+    
+    public static String bytesToString(byte[] bytes) {
+        try {
+            return new String(bytes, IN_ENCODING);
+        } catch (java.io.UnsupportedEncodingException e) {
+            assert false : "unsupported encoding " + e;
             return null;
-		}
-	}
-
-	public static byte[] stringToBytes(String string) {
-		try {
-			return string.getBytes(ENCODING);
-		} catch (java.io.UnsupportedEncodingException e) {
-			assert false : "unsupported encoding " + e;
+        }
+    }
+    
+    public static byte[] stringToBytes(String string) {
+        try {
+            return string.getBytes(OUT_ENCODING);
+        } catch (java.io.UnsupportedEncodingException e) {
+            assert false : "unsupported encoding " + e;
             return null;
-		}
-	}
-
-	public byte[] toByteArray() {
-		return stringToBytes(toString());
-	}
-
-	public static boolean isDigit(char c) {
-		return c >= '0' && c <= '9';
-	}
-
-	public static boolean isUpper(char c) {
-		return c >= 'A' && c <= 'Z';
-	}
-
-	public static boolean isLower(char c) {
-		return c >= 'a' && c <= 'z';
-	}
-
-	public static boolean isLetter(char c) {
-		return isUpper(c) || isLower(c);
-	}
-
-	public static boolean isAlnum(char c) {
-		return isUpper(c) || isLower(c) || isDigit(c);
-	}
-
-	public static boolean isPrint(char c) {
-		return c >= 0x20 && c <= 0x7E;
-	}
+        }
+    }
+    
+    public static boolean isDigit(int c) {
+        return c >= '0' && c <= '9';
+    }
+    
+    public static boolean isUpper(int c) {
+        return c >= 'A' && c <= 'Z';
+    }
+    
+    public static boolean isLower(int c) {
+        return c >= 'a' && c <= 'z';
+    }
+    
+    public static boolean isLetter(int c) {
+        return isUpper(c) || isLower(c);
+    }
+    
+    public static boolean isAlnum(int c) {
+        return isUpper(c) || isLower(c) || isDigit(c);
+    }
+    
+    public static boolean isPrint(int c) {
+        return c >= 0x20 && c <= 0x7E;
+    }
     
     public IRubyObject to_s() {
         return this;
@@ -240,8 +260,7 @@ public class RubyString extends RubyObject {
             return runtime.getFalse();
         }
         /* use Java implementation if both different String instances */
-        return runtime.newBoolean(
-                toString().equals(((RubyString) other).toString()));
+        return runtime.newBoolean(Arrays.equals(value, ((RubyString) other).value));
     }
     
     public IRubyObject veryEqual(IRubyObject other) {
@@ -254,7 +273,10 @@ public class RubyString extends RubyObject {
     public IRubyObject op_plus(IRubyObject other) {
         RubyString str = RubyString.stringValue(other);
 
-        return (RubyString) newString(toString() + str.toString()).infectBy(str);
+        byte bytes[] = new byte[value.length + str.value.length];
+        System.arraycopy(value, 0, bytes, 0, value.length);
+        System.arraycopy(str.value, 0, bytes, value.length, str.value.length);
+        return (RubyString) newString(getRuntime(), bytes).infectBy(str);
     }
 
     public IRubyObject op_mul(IRubyObject other) {
@@ -266,16 +288,17 @@ public class RubyString extends RubyObject {
             throw getRuntime().newArgumentError("negative argument");
         }
 
-        if (len > 0 && Long.MAX_VALUE / len < getValue().length()) {
+        // we limit to int because ByteBuffer can only allocate int sizes
+        if (len > 0 && Integer.MAX_VALUE / len < value.length) {
             throw getRuntime().newArgumentError("argument too big");
         }
-        StringBuffer sb = new StringBuffer((int) (getValue().length() * len));
+        byte[] bytes = new byte[value.length * (int)len];
 
         for (int i = 0; i < len; i++) {
-            sb.append(getValue());
+            System.arraycopy(value, 0, bytes, i * value.length, value.length);
         }
 
-        RubyString newString = newString(sb.toString());
+        RubyString newString = newString(getRuntime(), bytes);
         newString.setTaint(isTaint());
         return newString;
     }
@@ -313,7 +336,7 @@ public class RubyString extends RubyObject {
         if (other instanceof RubyString) {
             RubyString string = (RubyString)other;
             
-            if (string.toString().equals(toString())) {
+            if (Arrays.equals(string.value, value)) {
                 return true;
             }
         }
@@ -322,187 +345,232 @@ public class RubyString extends RubyObject {
     }
     
     // Common enough check to make it a convenience method.
-    private boolean sameAs(Object other) {
-        return toString().equals(other.toString());
+    private boolean sameAs(RubyString other) {
+        return Arrays.equals(value, other.value);
     }
-
-	/** rb_obj_as_string
-	 *
-	 */
-	public static RubyString objAsString(IRubyObject obj) {
-        if (obj instanceof RubyString) return (RubyString) obj;
     
+    /** rb_obj_as_string
+     *
+     */
+    public static RubyString objAsString(IRubyObject obj) {
+        if (obj instanceof RubyString) return (RubyString) obj;
+        
         IRubyObject str = obj.callMethod(obj.getRuntime().getCurrentContext(), "to_s");
         
         if (!(str instanceof RubyString)) return (RubyString) obj.anyToString();
-
+        
         if (obj.isTaint()) str.setTaint(true);
         
         return (RubyString) str;
-	}
+    }
     
-	/** rb_str_cmp
-	 *
-	 */
-	public int cmp(RubyString other) {
-	    int cmp = toString().compareTo(other.toString());
-
-		return cmp < 0 ? -1 : cmp > 0 ? 1 : 0; 
-	}
-
-	/** rb_to_id
-	 *
-	 */
-	public String asSymbol() {
-		return toString();
-	}
-
-	
-	/** Create a new String which uses the same Ruby runtime and the same
-	 *  class like this String.
-	 *
-	 *  This method should be used to satisfy RCR #38.
-	 *
-	 */
-	public RubyString newString(CharSequence s) {
-		return new RubyString(getRuntime(), getType(), s);
-	}
-
-	// Methods of the String class (rb_str_*):
-
-	/** rb_str_new2
-	 *
-	 */
-	public static RubyString newString(IRuby runtime, CharSequence str) {
-		return new RubyString(runtime, str);
-	}
-
-	public static RubyString newString(IRuby runtime, byte[] bytes) {
-		return runtime.newString(bytesToString(bytes));
-	}
-
+    /** rb_str_cmp
+     *
+     */
+    public int cmp(RubyString other) {
+        for (int i = 0; i < value.length; i++) {
+            if (i >= other.value.length) {
+                return 1;
+            }
+            int a = value[i] & 0xFF;
+            int b = other.value[i] & 0xFF;
+            int compare = a - b;
+            if (compare != 0) {
+                return compare < 0 ? -1 : 1;
+            }
+        }
+        if (other.value.length > value.length) {
+            return -1;
+        }
+        
+        return 0;
+    }
+    
+    /** rb_to_id
+     *
+     */
+    public String asSymbol() {
+        return toString();
+    }
+    
+    
+    /** Create a new String which uses the same Ruby runtime and the same
+     *  class like this String.
+     *
+     *  This method should be used to satisfy RCR #38.
+     *
+     */
+    public RubyString newString(CharSequence s) {
+        return new RubyString(getRuntime(), getType(), s);
+    }
+    
+    // Methods of the String class (rb_str_*):
+    
+    /** rb_str_new2
+     *
+     */
+    public static RubyString newString(IRuby runtime, CharSequence str) {
+        return new RubyString(runtime, str);
+    }
+    
+    public static RubyString newString(IRuby runtime, byte[] bytes) {
+        return new RubyString(runtime, bytes);
+    }
+    
+    public static RubyString newString(IRuby runtime, byte[] bytes, int start, int length) {
+        byte[] bytes2 = new byte[length];
+        System.arraycopy(bytes, start, bytes2, 0, length);
+        return new RubyString(runtime, bytes2);
+    }
+    
     public IRubyObject doClone(){
-        return getRuntime().newString(toString());
-	}
+        return newString(getRuntime(), (byte[])value.clone());
+    }
     
-	public RubyString cat(CharSequence str) {
-        getMutableValue().append(str);
+    public RubyString cat(byte[] str) {
+        byte[] bytes = new byte[value.length + str.length];
+        System.arraycopy(value, 0, bytes, 0, value.length);
+        System.arraycopy(str, 0, bytes, value.length, str.length);
+        
+        value = bytes;
         stringMutated();
-		return this;
-	}
-
-	public IRubyObject to_str() {
-		return this;
-	}
-
-	/** rb_str_replace_m
-	 *
-	 */
-	public RubyString replace(IRubyObject other) {
-		RubyString newValue = stringValue(other);
-		if (this == other || sameAs(newValue)) {
-			return this;
-		}
-		setValue(new StringBuffer(newValue.getValue().toString()));
-		return (RubyString) infectBy(newValue); 
-	}
-
-	public RubyString reverse() {
-		return newString(toString()).reverse_bang();
-	}
-
-	public RubyString reverse_bang() {
-        getMutableValue().reverse();
-        stringMutated();
-		return this;
-	}
-
-	/** rb_str_s_new
-	 *
-	 */
-	public static RubyString newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
-		RubyString newString = recv.getRuntime().newString("");
-		newString.setMetaClass((RubyClass) recv);
-		newString.callInit(args, block);
-		return newString;
-	}
-
-	public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
-	    if (checkArgumentCount(args, 0, 1) == 1) {
-	        replace(args[0]);
-	    }
-	    return this;
-	}
-
-	public IRubyObject casecmp(IRubyObject other) {
-		RubyString thisLCString = getRuntime().newString(toString().toLowerCase());
-		RubyString lcString = getRuntime().newString(stringValue(other).toString().toLowerCase());
-
-		return thisLCString.op_cmp(lcString);
-	}
+        return this;
+    }
     
-	/** rb_str_match
-	 *
-	 */
-	public IRubyObject match(IRubyObject other) {
-		if (other instanceof RubyRegexp) {
-			return ((RubyRegexp) other).match(this);
-		} else if (other instanceof RubyString) {
-                    throw getRuntime().newTypeError("type mismatch: String given");
-		}
-		return other.callMethod(getRuntime().getCurrentContext(), "=~", this);
-	}
-
-	/** rb_str_match2
-	 *
-	 */
-	public IRubyObject match2() {
-		return RubyRegexp.newRegexp(this, 0, null).match2();
-	}
-	
-	/**
-	 * String#match(pattern)
-	 * 
-	 * @param pattern Regexp or String 
-	 */
-	public IRubyObject match3(IRubyObject pattern) {
-		if (pattern instanceof RubyRegexp) {
-			return ((RubyRegexp)pattern).search2(toString());
-		} else if (pattern instanceof RubyString) {
-			RubyRegexp regexp = RubyRegexp.newRegexp((RubyString) pattern, 0, null);
-			return regexp.search2(toString());
-		} 
-		
-		return getRuntime().getNil();
-	}
-
-	/** rb_str_capitalize
-	 *
-	 */
-	public IRubyObject capitalize() {
+    public RubyString cat(byte ch) {
+        byte[] bytes = new byte[value.length + 1];
+        System.arraycopy(value, 0, bytes, 0, value.length);
+        bytes[value.length] = ch;
+        
+        value = bytes;
+        stringMutated();
+        return this;
+    }
+    
+    public IRubyObject to_str() {
+        return this;
+    }
+    
+    /** rb_str_replace_m
+     *
+     */
+    public RubyString replace(IRubyObject other) {
+        RubyString newValue = stringValue(other);
+        if (this == other || sameAs(newValue)) {
+            return this;
+        }
+        value = (byte[])newValue.value.clone();
+        return (RubyString) infectBy(newValue);
+    }
+    
+    public RubyString reverse() {
+        return newString(getRuntime(), (byte[])value.clone()).reverse_bang();
+    }
+    
+    public RubyString reverse_bang() {
+        for (int i = 0; i < (value.length / 2); i++) {
+            byte b = value[i];
+            value[i] = value[value.length - i - 1];
+            value[value.length - i - 1] = b;
+        }
+        stringMutated();
+        return this;
+    }
+    
+    /** rb_str_s_new
+     *
+     */
+    public static RubyString newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
+        RubyString newString = recv.getRuntime().newString("");
+        newString.setMetaClass((RubyClass) recv);
+        newString.callInit(args, block);
+        return newString;
+    }
+    
+    public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
+        if (checkArgumentCount(args, 0, 1) == 1) {
+            replace(args[0]);
+        }
+        return this;
+    }
+    
+    public IRubyObject casecmp(IRubyObject other) {
+        int compare = toString().compareToIgnoreCase(stringValue(other).toString());
+        return RubyFixnum.newFixnum(getRuntime(), compare == 0 ? 0 : (compare < 0 ? -1 : 1));
+    }
+    
+    /** rb_str_match
+     *
+     */
+    public IRubyObject match(IRubyObject other) {
+        if (other instanceof RubyRegexp) {
+            return ((RubyRegexp) other).match(this);
+        } else if (other instanceof RubyString) {
+            throw getRuntime().newTypeError("type mismatch: String given");
+        }
+        return other.callMethod(getRuntime().getCurrentContext(), "=~", this);
+    }
+    
+    /** rb_str_match2
+     *
+     */
+    public IRubyObject match2() {
+        return RubyRegexp.newRegexp(this, 0, null).match2();
+    }
+    
+    /**
+     * String#match(pattern)
+     *
+     * @param pattern Regexp or String
+     */
+    public IRubyObject match3(IRubyObject pattern) {
+        if (pattern instanceof RubyRegexp) {
+            return ((RubyRegexp)pattern).search2(toString());
+        } else if (pattern instanceof RubyString) {
+            RubyRegexp regexp = RubyRegexp.newRegexp((RubyString) pattern, 0, null);
+            return regexp.search2(toString());
+        }
+        
+        return getRuntime().getNil();
+    }
+    
+    /** rb_str_capitalize
+     *
+     */
+    public IRubyObject capitalize() {
         RubyString result = (RubyString) dup();
         result.capitalize_bang();
         return result;
-	}
-
-	/** rb_str_capitalize_bang
-	 *
-	 */
-	public IRubyObject capitalize_bang() {
+    }
+    
+    /** rb_str_capitalize_bang
+     *
+     */
+    public IRubyObject capitalize_bang() {
         if (isEmpty()) {
             return getRuntime().getNil();
         }
-        StringBuffer buffer = new StringBuffer(toString().toLowerCase());
-        char capital = buffer.charAt(0);
-        if (Character.isLowerCase(capital)) {
-            buffer.setCharAt(0, Character.toUpperCase(capital));
+        int capital = value[0] & 0xFF;
+        boolean changed = false;
+        if (Character.isLetter(capital) && Character.isLowerCase(capital)) {
+            value[0] = (byte)Character.toUpperCase(capital);
+            changed = true;
         }
-        if (sameAs(buffer)) {
+        
+        for (int i = 1; i < value.length; i++) {
+            capital = value[i] & 0xFF;
+            if (Character.isLetter(capital) && Character.isUpperCase(capital)) {
+                value[i] = (byte)Character.toLowerCase(capital);
+                changed = true;
+            }
+        }
+        
+        if (changed) {
+            return this;
+        } else {
             return getRuntime().getNil();
         }
-        setValue(buffer);
-        return this;
-	}
+    }
 
     public IRubyObject op_ge(IRubyObject other) {
         if (other instanceof RubyString) {
@@ -540,211 +608,228 @@ public class RubyString extends RubyObject {
         return equals(other) ? other.getRuntime().getTrue() : other.getRuntime().getFalse();
     }
     
-	/** rb_str_upcase
-	 *
-	 */
-	public RubyString upcase() {
-		return newString(toString().toUpperCase());
-	}
-
-	/** rb_str_upcase_bang
-	 *
-	 */
-	public IRubyObject upcase_bang() {
-		String result = toString().toUpperCase();
-        if (sameAs(result)) {
+    /** rb_str_upcase
+     *
+     */
+    public RubyString upcase() {
+        return newString(toString().toUpperCase());
+    }
+    
+    /** rb_str_upcase_bang
+     *
+     */
+    public IRubyObject upcase_bang() {
+        boolean changed = false;
+        for (int i = 0; i < value.length; i++) {
+            int c = value[i] & 0xFF;
+            if (!Character.isLetter(c) || Character.isUpperCase(c)) continue;
+            value[i] = (byte)Character.toUpperCase(c);
+            changed = true;
+        }
+        if (changed) {
+            stringMutated();
+            return this;
+        } else {
             return getRuntime().getNil();
         }
-        setValue(new StringBuffer(result));
-		return this;
-	}
-
-	/** rb_str_downcase
-	 *
-	 */
-	public RubyString downcase() {
-		return newString(toString().toLowerCase());
-	}
-
-	/** rb_str_downcase_bang
-	 *
-	 */
-	public IRubyObject downcase_bang() {
-        String result = toString().toLowerCase();
-        if (sameAs(result)) {
+    }
+    
+    /** rb_str_downcase
+     *
+     */
+    public RubyString downcase() {
+        return newString(toString().toLowerCase());
+    }
+    
+    /** rb_str_downcase_bang
+     *
+     */
+    public IRubyObject downcase_bang() {
+        boolean changed = false;
+        for (int i = 0; i < value.length; i++) {
+            int c = value[i] & 0xFF;
+            if (!Character.isLetter(c) || Character.isLowerCase(c)) continue;
+            value[i] = (byte)Character.toLowerCase(c);
+            changed = true;
+        }
+        if (changed) {
+            stringMutated();
+            return this;
+        } else {
             return getRuntime().getNil();
         }
-		setValue(new StringBuffer(result));
-		return this;
-	}
-
-	/** rb_str_swapcase
-	 *
-	 */
-	public RubyString swapcase() {
-	    RubyString newString = newString(toString());
-		IRubyObject swappedString = newString.swapcase_bang();
-		
-		return (RubyString) (swappedString.isNil() ? newString : swappedString);
-	}
-
-	/** rb_str_swapcase_bang
-	 *
-	 */
-	public IRubyObject swapcase_bang() {
-		StringBuffer string = getMutableValue();
-        int length = string.length();
-		boolean changesMade = false;
-
-        for (int i = 0; i < length; i++) {
-            char c = string.charAt(i);
+    }
+    
+    /** rb_str_swapcase
+     *
+     */
+    public RubyString swapcase() {
+        RubyString newString = newString(getRuntime(), (byte[])value.clone());
+        IRubyObject swappedString = newString.swapcase_bang();
+        
+        return (RubyString) (swappedString.isNil() ? newString : swappedString);
+    }
+    
+    /** rb_str_swapcase_bang
+     *
+     */
+    public IRubyObject swapcase_bang() {
+        boolean changesMade = false;
+        
+        for (int i = 0; i < value.length; i++) {
+            int c = value[i] & 0xFF;
             
             if (!Character.isLetter(c)) {
                 continue;
             } else if (Character.isLowerCase(c)) {
                 changesMade = true;
-                string.setCharAt(i, Character.toUpperCase(c));
+                value[i] = (byte)Character.toUpperCase(c);
             } else {
                 changesMade = true;
-                string.setCharAt(i, Character.toLowerCase(c));
+                value[i] = (byte)Character.toLowerCase(c);
             }
         }
-        if (changesMade) stringMutated();
-        return changesMade ? this : getRuntime().getNil(); 
-	}
-
-	/** rb_str_dump
-	 *
-	 */
-	public RubyString dump() {
-		return inspect(true);
-	}
-	
-	public IRubyObject insert(IRubyObject indexArg, IRubyObject stringArg) {
-	    int index = (int) indexArg.convertToInteger().getLongValue();
-	    if (index < 0) {
-	        index += getValue().length() + 1;
-	    }
-	    
-	    if (index < 0 || index > getValue().length()) {
-	    	throw getRuntime().newIndexError("index " + index + " out of range");
-	    }
-	    
-	    String insert = stringArg.convertToString().toString();
-	    
-	    getMutableValue().insert(index, insert);
-	    stringMutated();
-	    return this;
-	}
-
-	/** rb_str_inspect
-	 *
-	 */
-	public IRubyObject inspect() {
-		return inspect(false);
-	}
-
-	private RubyString inspect(boolean dump) {
-		final int length = getValue().length();
+        if (changesMade) { 
+            stringMutated();
+        }
+        return changesMade ? this : getRuntime().getNil();
+    }
+    
+    /** rb_str_dump
+     *
+     */
+    public RubyString dump() {
+        return inspect(true);
+    }
+    
+    public IRubyObject insert(IRubyObject indexArg, IRubyObject stringArg) {
+        int index = (int) indexArg.convertToInteger().getLongValue();
+        if (index < 0) {
+            index += value.length + 1;
+        }
+        
+        if (index < 0 || index > value.length) {
+            throw getRuntime().newIndexError("index " + index + " out of range");
+        }
+        
+        byte[] insert = ((RubyString)stringArg.convertToString()).value;
+        byte[] bytes = new byte[value.length + insert.length];
+        
+        System.arraycopy(value, 0, bytes, 0, index);
+        System.arraycopy(insert, 0, bytes, index, insert.length);
+        System.arraycopy(value, index, bytes, index + insert.length, value.length - index);
+        value = bytes;
+        stringMutated();
+        return this;
+    }
+    
+    /** rb_str_inspect
+     *
+     */
+    public IRubyObject inspect() {
+        return inspect(false);
+    }
+    
+    private RubyString inspect(boolean dump) {
+        final int length = value.length;
         IRuby runtime = getRuntime();
-
-		StringBuffer sb = new StringBuffer(length + 2 + length / 100);
-
-		sb.append('\"');
-
+        
+        StringBuffer sb = new StringBuffer(length + 2 + length / 100);
+        
+        sb.append('\"');
+        
         // FIXME: This may not be unicode-safe
-		for (int i = 0; i < length; i++) {
-			char c = getValue().charAt(i);
+        for (int i = 0; i < length; i++) {
+            int c = value[i] & 0xFF;
             if (isAlnum(c)) {
-                sb.append(c);
+                sb.append((char)c);
             } else if (runtime.getKCode() == KCode.UTF8 && c == 0xEF) {
                 // don't escape encoded UTF8 characters, leave them as bytes
                 // append byte order mark plus two character bytes
-                sb.append(c);
-                sb.append(getValue().charAt(++i));
-                sb.append(getValue().charAt(++i));
-			} else if (c == '\"' || c == '\\') {
-				sb.append('\\').append(c);
-			} else if (dump && c == '#') {
-				sb.append('\\').append(c);
-			} else if (isPrint(c)) {
-				sb.append(c);
-			} else if (c == '\n') {
-				sb.append('\\').append('n');
-			} else if (c == '\r') {
-				sb.append('\\').append('r');
-			} else if (c == '\t') {
-				sb.append('\\').append('t');
-			} else if (c == '\f') {
-				sb.append('\\').append('f');
-			} else if (c == '\u000B') {
-				sb.append('\\').append('v');
-			} else if (c == '\u0007') {
-				sb.append('\\').append('a');
-			} else if (c == '\u0008') {
+                sb.append((char)c);
+                sb.append((char)(value[++i] & 0xFF));
+                sb.append((char)(value[++i] & 0xFF));
+            } else if (c == '\"' || c == '\\') {
+                sb.append('\\').append((char)c);
+            } else if (dump && c == '#') {
+                sb.append('\\').append((char)c);
+            } else if (isPrint(c)) {
+                sb.append((char)c);
+            } else if (c == '\n') {
+                sb.append('\\').append('n');
+            } else if (c == '\r') {
+                sb.append('\\').append('r');
+            } else if (c == '\t') {
+                sb.append('\\').append('t');
+            } else if (c == '\f') {
+                sb.append('\\').append('f');
+            } else if (c == '\u000B') {
+                sb.append('\\').append('v');
+            } else if (c == '\u0007') {
+                sb.append('\\').append('a');
+            } else if (c == '\u0008') {
                 // FIXME: This doesn't appear to be right; ruby fails a test related to this at testString.rb line 440
-				sb.append('\\').append('b');
-			} else if (c == '\u001B') {
-				sb.append('\\').append('e');
-			} else {
-				sb.append(new PrintfFormat("\\%.3o").sprintf(c));
-			}
-		}
-
-		sb.append('\"');
-
-		return getRuntime().newString(sb.toString());
-	}
-
-	/** rb_str_length
-	 *
-	 */
-	public RubyFixnum length() {
-		return getRuntime().newFixnum(getValue().length());
-	}
-
-	/** rb_str_empty
-	 *
-	 */
-	public RubyBoolean empty() {
-		return getRuntime().newBoolean(isEmpty());
-	}
-
-    private boolean isEmpty() {
-        return getValue().length() == 0;
+                sb.append('\\').append('b');
+            } else if (c == '\u001B') {
+                sb.append('\\').append('e');
+            } else {
+                sb.append(new PrintfFormat("\\%.3o").sprintf((char)c));
+            }
+        }
+        
+        sb.append('\"');
+        return getRuntime().newString(sb.toString());
+    }
+    
+    /** rb_str_length
+     *
+     */
+    public RubyFixnum length() {
+        return getRuntime().newFixnum(value.length);
+    }
+    
+    /** rb_str_empty
+     *
+     */
+    public RubyBoolean empty() {
+        return getRuntime().newBoolean(isEmpty());
     }
 
+    private boolean isEmpty() {
+        return value.length == 0;
+    }
+    
     /** rb_str_append
-	 *
-	 */
-	public RubyString append(IRubyObject other) {
-		infectBy(other);
-		return cat(stringValue(other).getValue());
-	}
-
-	/** rb_str_concat
-	 *
-	 */
-	public RubyString concat(IRubyObject other) {
-		if ((other instanceof RubyFixnum) && ((RubyFixnum) other).getLongValue() < 256) {
-			return cat("" + (char) ((RubyFixnum) other).getLongValue());
-		}
-		return append(other);
-	}
-
-	/** rb_str_crypt
-	 *
-	 */
-	public RubyString crypt(IRubyObject other) {
-            String salt = stringValue(other).getValue().toString();
-            if(salt.length()<2) {
-                throw getRuntime().newArgumentError("salt too short(need >=2 bytes)");
-            }
-
-            salt = salt.substring(0,2);
-            return getRuntime().newString(JavaCrypt.crypt(salt, this.toString()));
-	}
-
+     *
+     */
+    public RubyString append(IRubyObject other) {
+        infectBy(other);
+        return cat(stringValue(other).value);
+    }
+    
+    /** rb_str_concat
+     *
+     */
+    public RubyString concat(IRubyObject other) {
+        if ((other instanceof RubyFixnum) && ((RubyFixnum) other).getLongValue() < 256) {
+            return cat((byte) ((RubyFixnum) other).getLongValue());
+        }
+        return append(other);
+    }
+    
+    /** rb_str_crypt
+     *
+     */
+    public RubyString crypt(IRubyObject other) {
+        String salt = stringValue(other).getValue().toString();
+        if(salt.length()<2) {
+            throw getRuntime().newArgumentError("salt too short(need >=2 bytes)");
+        }
+        
+        salt = salt.substring(0,2);
+        return getRuntime().newString(JavaCrypt.crypt(salt, this.toString()));
+    }
+    
 
     public static class JavaCrypt {
         private static java.util.Random r_gen = new java.util.Random();
@@ -1335,267 +1420,270 @@ public class RubyString extends RubyObject {
             return JavaCrypt.crypt(getSaltChar(2),theClear);
         }
     }
-
-
-
-
-
-
-
-
-
-	/* rb_str_to_str */
-	public static RubyString stringValue(IRubyObject object) {
-		return (RubyString) (object instanceof RubyString ? object :
-			object.convertType(RubyString.class, "String", "to_str"));
-	}
-
-	/** rb_str_sub
-	 *
-	 */
-	public IRubyObject sub(IRubyObject[] args, Block block) {
-		return sub(args, false, block);
-	}
-
-	/** rb_str_sub_bang
-	 *
-	 */
-	public IRubyObject sub_bang(IRubyObject[] args, Block block) {
-		return sub(args, true, block);
-	}
-
-	private IRubyObject sub(IRubyObject[] args, boolean bang, Block block) {
-		IRubyObject repl = getRuntime().getNil();
-		boolean iter = false;
+    
+    /* rb_str_to_str */
+    public static RubyString stringValue(IRubyObject object) {
+        return (RubyString) (object instanceof RubyString ? object :
+            object.convertType(RubyString.class, "String", "to_str"));
+    }
+    
+    /** rb_str_sub
+     *
+     */
+    public IRubyObject sub(IRubyObject[] args, Block block) {
+        return sub(args, false, block);
+    }
+    
+    /** rb_str_sub_bang
+     *
+     */
+    public IRubyObject sub_bang(IRubyObject[] args, Block block) {
+        return sub(args, true, block);
+    }
+    
+    private IRubyObject sub(IRubyObject[] args, boolean bang, Block block) {
+        IRubyObject repl = getRuntime().getNil();
+        boolean iter = false;
         ThreadContext tc = getRuntime().getCurrentContext();
         
-		if (args.length == 1 && block != null) {
-			iter = true;
-		} else if (args.length == 2) {
-			repl = args[1];
-		} else {
-			throw getRuntime().newArgumentError("wrong number of arguments");
-		}
-		RubyRegexp pat = RubyRegexp.regexpValue(args[0]);
-
+        if (args.length == 1 && block != null) {
+            iter = true;
+        } else if (args.length == 2) {
+            repl = args[1];
+        } else {
+            throw getRuntime().newArgumentError("wrong number of arguments");
+        }
+        RubyRegexp pat = RubyRegexp.regexpValue(args[0]);
+        
         String intern = toString();
         boolean utf8 = pat.getCode() == KCode.UTF8;
-
+        
         if(utf8) {
             try {
-                intern = new String(toString().getBytes("PLAIN"),"UTF8");
+                intern = new String(intern.getBytes("PLAIN"),"UTF8");
             } catch(Exception e) {
             }
         }
-
-		if (pat.search(intern, 0) >= 0) {
-			RubyMatchData match = (RubyMatchData) tc.getBackref();
-			RubyString newStr = match.pre_match();
-			newStr.append(iter ? tc.yield(match.group(0), block) : pat.regsub(repl, match));
-			newStr.append(match.post_match());
-			newStr.setTaint(isTaint() || repl.isTaint());
+        
+        if (pat.search(intern, 0) >= 0) {
+            RubyMatchData match = (RubyMatchData) tc.getBackref();
+            RubyString newStr = match.pre_match();
+            newStr.append(iter ? tc.yield(match.group(0), block) : pat.regsub(repl, match));
+            newStr.append(match.post_match());
+            newStr.setTaint(isTaint() || repl.isTaint());
             if(utf8) {
                 try {
-                    newStr.setValue(new String(newStr.toString().getBytes("UTF8"),"ISO8859_1"));
+                    newStr.setValue(new String(newStr.toString().getBytes("UTF8"),"PLAIN"));
                 } catch(Exception e) {
                 }
             }
-			if (bang) {
-				replace(newStr);
-				return this;
-			}
-
-			return newStr;
-		}
+            if (bang) {
+                value = newStr.value;
+                stringMutated();
+                return this;
+            }
+            
+            return newStr;
+        }
         
-        return bang ? getRuntime().getNil() : this; 
-	}
-
-	/** rb_str_gsub
-	 *
-	 */
-	public IRubyObject gsub(IRubyObject[] args, Block block) {
-		return gsub(args, false, block);
-	}
-
-	/** rb_str_gsub_bang
-	 *
-	 */
-	public IRubyObject gsub_bang(IRubyObject[] args, Block block) {
-		return gsub(args, true, block);
-	}
-
-	private IRubyObject gsub(IRubyObject[] args, boolean bang, Block block) {
-		IRubyObject repl = getRuntime().getNil();
-		RubyMatchData match;
-		boolean iter = false;
-		if (args.length == 1 && block != null) {
-			iter = true;
-		} else if (args.length == 2) {
-			repl = args[1];
-		} else {
-			throw getRuntime().newArgumentError("wrong number of arguments");
-		}
-		boolean taint = repl.isTaint();
-		RubyRegexp pat = RubyRegexp.regexpValue(args[0]);
-
-		int beg = pat.search(toString(), 0);
-		if (beg < 0) {
-			return bang ? getRuntime().getNil() : dup();
-		}
-		StringBuffer sbuf = new StringBuffer();
-		String str = toString();
-		IRubyObject newStr;
-		int offset = 0;
-
-        // Fix for JRUBY-97: Temporary fix pending 
+        return bang ? getRuntime().getNil() : this;
+    }
+    
+    /** rb_str_gsub
+     *
+     */
+    public IRubyObject gsub(IRubyObject[] args, Block block) {
+        return gsub(args, false, block);
+    }
+    
+    /** rb_str_gsub_bang
+     *
+     */
+    public IRubyObject gsub_bang(IRubyObject[] args, Block block) {
+        return gsub(args, true, block);
+    }
+    
+    private IRubyObject gsub(IRubyObject[] args, boolean bang, Block block) {
+        IRubyObject repl = getRuntime().getNil();
+        RubyMatchData match;
+        boolean iter = false;
+        if (args.length == 1 && block != null) {
+            iter = true;
+        } else if (args.length == 2) {
+            repl = args[1];
+        } else {
+            throw getRuntime().newArgumentError("wrong number of arguments");
+        }
+        boolean taint = repl.isTaint();
+        RubyRegexp pat = RubyRegexp.regexpValue(args[0]);
+        
+        int beg = pat.search(toString(), 0);
+        if (beg < 0) {
+            return bang ? getRuntime().getNil() : dup();
+        }
+        StringBuffer sbuf = new StringBuffer();
+        String str = toString();
+        IRubyObject newStr;
+        int offset = 0;
+        
+        // Fix for JRUBY-97: Temporary fix pending
         // decision on UTF8-based string implementation.
-		// Move toString() call outside loop.
-		String toString = toString();
+        // Move toString() call outside loop.
+        String toString = toString();
         ThreadContext tc = getRuntime().getCurrentContext();
-		
-		while (beg >= 0) {
-			match = (RubyMatchData) tc.getBackref();
-			sbuf.append(str.substring(offset, beg));
-			newStr = iter ? tc.yield(match.group(0), block) : pat.regsub(repl, match);
-			taint |= newStr.isTaint();
-            sbuf.append(newStr.toString());
-			offset = match.matchEndPosition();
-			beg = pat.search(toString, offset == beg ? beg + 1 : offset);
-		}
-
-		sbuf.append(str.substring(offset, str.length()));
-			
-		if (bang) {
-			setTaint(isTaint() || taint);
-			setValue(sbuf);
-			return this;
-		}
-		RubyString result = newString(sbuf.toString());
-		result.setTaint(isTaint() || taint);
-		return result;
-	}
-
-	/** rb_str_index_m
-	 *
-	 */
-	public IRubyObject index(IRubyObject[] args) {
-		return index(args, false);
-	}
-
-	/** rb_str_rindex_m
-	 *
-	 */
-	public IRubyObject rindex(IRubyObject[] args) {
-		return index(args, true);
-	}
-
-	/**
-	 *	@fixme may be a problem with pos when doing reverse searches
-	 */
-	private IRubyObject index(IRubyObject[] args, boolean reverse) {
-		//FIXME may be a problem with pos when doing reverse searches
-		int pos = 0;
-		if (reverse) {
-			pos = getValue().length();
-		}
-		if (checkArgumentCount(args, 1, 2) == 2) {
-			pos = RubyNumeric.fix2int(args[1]);
-		}
-		if (pos < 0) {
-			pos += getValue().length();
-			if (pos < 0) {
-				return getRuntime().getNil();
-			}
-		}
-		if (args[0] instanceof RubyRegexp) {
-		    int doNotLookPastIfReverse = pos;
-		    
-		    // RubyRegexp doesn't (yet?) support reverse searches, so we
-		    // find all matches and use the last one--very inefficient.
-		    // XXX - find a better way
-		    pos = ((RubyRegexp) args[0]).search(toString(), reverse ? 0 : pos);
-
-			int dummy = pos;
-			while (reverse && dummy > -1 && dummy <= doNotLookPastIfReverse) {
-				pos = dummy;
-				dummy = ((RubyRegexp) args[0]).search(toString(), pos + 1);
-			}
-		} else if (args[0] instanceof RubyString) {
-			String sub = ((RubyString) args[0]).toString();
-			pos = reverse ? getMutableValue().lastIndexOf(sub, pos) : getMutableValue().indexOf(sub, pos);
-		} else if (args[0] instanceof RubyFixnum) {
-			char c = (char) ((RubyFixnum) args[0]).getLongValue();
-			pos = reverse ? toString().lastIndexOf(c, pos) : toString().indexOf(c, pos);
-		} else {
-			throw getRuntime().newArgumentError("wrong type of argument");
-		}
-
-        return pos == -1 ? getRuntime().getNil() : getRuntime().newFixnum(pos); 
-	}
-
-	/* rb_str_substr */
-	public IRubyObject substr(int beg, int len) {
-		int length = getValue().length();
-		if (len < 0 || beg > length) {
-			return getRuntime().getNil();
-		}
-		if (beg < 0) {
-			beg += length;
-			if (beg < 0) {
-				return getRuntime().getNil();
-			}
-		}
-		int end = Math.min(length, beg + len);
-		return newString(getMutableValue().substring(beg, end)).infectBy(this);
-	}
-
-	/* rb_str_replace */
-	public IRubyObject replace(int beg, int len, RubyString replaceWith) {
-		if (beg + len >= getValue().length()) { 
-			len = getValue().length() - beg;
-		}
         
-        getMutableValue().delete(beg, beg + len);
-        getMutableValue().insert(beg, replaceWith.toString());
+        while (beg >= 0) {
+            match = (RubyMatchData) tc.getBackref();
+            sbuf.append(str.substring(offset, beg));
+            newStr = iter ? tc.yield(match.group(0), block) : pat.regsub(repl, match);
+            taint |= newStr.isTaint();
+            sbuf.append(newStr.toString());
+            offset = match.matchEndPosition();
+            beg = pat.search(toString, offset == beg ? beg + 1 : offset);
+        }
+        
+        sbuf.append(str.substring(offset, str.length()));
+        
+        if (bang) {
+            setTaint(isTaint() || taint);
+            setValue(sbuf);
+            return this;
+        }
+        RubyString result = newString(sbuf.toString());
+        result.setTaint(isTaint() || taint);
+        return result;
+    }
+    
+    /** rb_str_index_m
+     *
+     */
+    public IRubyObject index(IRubyObject[] args) {
+        return index(args, false);
+    }
+    
+    /** rb_str_rindex_m
+     *
+     */
+    public IRubyObject rindex(IRubyObject[] args) {
+        return index(args, true);
+    }
+    
+    /**
+     *	@fixme may be a problem with pos when doing reverse searches
+     */
+    private IRubyObject index(IRubyObject[] args, boolean reverse) {
+        //FIXME may be a problem with pos when doing reverse searches
+        int pos = 0;
+        if (reverse) {
+            pos = value.length;
+        }
+        if (checkArgumentCount(args, 1, 2) == 2) {
+            pos = RubyNumeric.fix2int(args[1]);
+        }
+        if (pos < 0) {
+            pos += value.length;
+            if (pos < 0) {
+                return getRuntime().getNil();
+            }
+        }
+        if (args[0] instanceof RubyRegexp) {
+            int doNotLookPastIfReverse = pos;
+            
+            // RubyRegexp doesn't (yet?) support reverse searches, so we
+            // find all matches and use the last one--very inefficient.
+            // XXX - find a better way
+            pos = ((RubyRegexp) args[0]).search(toString(), reverse ? 0 : pos);
+            
+            int dummy = pos;
+            while (reverse && dummy > -1 && dummy <= doNotLookPastIfReverse) {
+                pos = dummy;
+                dummy = ((RubyRegexp) args[0]).search(toString(), pos + 1);
+            }
+        } else if (args[0] instanceof RubyString) {
+            String sub = ((RubyString) args[0]).toString();
+            StringBuffer sb = new StringBuffer(toString());
+            pos = reverse ? sb.lastIndexOf(sub, pos) : sb.indexOf(sub, pos);
+        } else if (args[0] instanceof RubyFixnum) {
+            char c = (char) ((RubyFixnum) args[0]).getLongValue();
+            pos = reverse ? toString().lastIndexOf(c, pos) : toString().indexOf(c, pos);
+        } else {
+            throw getRuntime().newArgumentError("wrong type of argument");
+        }
+        
+        return pos == -1 ? getRuntime().getNil() : getRuntime().newFixnum(pos);
+    }
+    
+    /* rb_str_substr */
+    public IRubyObject substr(int beg, int len) {
+        int length = value.length;
+        if (len < 0 || beg > length) {
+            return getRuntime().getNil();
+        }
+        if (beg < 0) {
+            beg += length;
+            if (beg < 0) {
+                return getRuntime().getNil();
+            }
+        }
+        int end = Math.min(length, beg + len);
+        byte[] bytes = new byte[end - beg];
+        System.arraycopy(value, beg, bytes, 0, end - beg);
+        return newString(getRuntime(), bytes).infectBy(this);
+    }
+    
+    /* rb_str_replace */
+    public IRubyObject replace(int beg, int len, RubyString replaceWith) {
+        if (beg + len >= value.length) {
+            len = value.length - beg;
+        }
+        
+        StringBuffer sb = new StringBuffer(toString());
+        
+        sb.delete(beg, beg + len);
+        sb.insert(beg, replaceWith.toString());
+        setValue(sb);
         stringMutated();
-		return infectBy(replaceWith); 
-	}
-
-	/** rb_str_aref, rb_str_aref_m
-	 *
-	 */
-	public IRubyObject aref(IRubyObject[] args) {
-	    if (checkArgumentCount(args, 1, 2) == 2) {
+        return infectBy(replaceWith);
+    }
+    
+    /** rb_str_aref, rb_str_aref_m
+     *
+     */
+    public IRubyObject aref(IRubyObject[] args) {
+        if (checkArgumentCount(args, 1, 2) == 2) {
             if (args[0] instanceof RubyRegexp) {
                 IRubyObject match = RubyRegexp.regexpValue(args[0]).match(toString(), 0);
                 long idx = args[1].convertToInteger().getLongValue();
                 getRuntime().getCurrentContext().setBackref(match);
                 return RubyRegexp.nth_match((int) idx, match);
-            } 
-	        return substr(RubyNumeric.fix2int(args[0]), RubyNumeric.fix2int(args[1]));
-	    }
+            }
+            return substr(RubyNumeric.fix2int(args[0]), RubyNumeric.fix2int(args[1]));
+        }
         
-	    if (args[0] instanceof RubyRegexp) {
-	    	return RubyRegexp.regexpValue(args[0]).search(toString(), 0) >= 0 ?
-	            RubyRegexp.last_match(getRuntime().getCurrentContext().getBackref()) :
-	            	getRuntime().getNil();
-	    } else if (args[0] instanceof RubyString) {
-	        return toString().indexOf(stringValue(args[0]).toString()) != -1 ?
-	            args[0] : getRuntime().getNil();
-	    } else if (args[0] instanceof RubyRange) {
-	        long[] begLen = ((RubyRange) args[0]).getBeginLength(getValue().length(), true, false);
-	        return begLen == null ? getRuntime().getNil() :
-	        	substr((int) begLen[0], (int) begLen[1]);
-	    }
-	    int idx = (int) args[0].convertToInteger().getLongValue();
-	    if (idx < 0) {
-	        idx += getValue().length();
-	    }
-	    return idx < 0 || idx >= getValue().length() ? getRuntime().getNil() : 
-	    	getRuntime().newFixnum(getValue().charAt(idx));
-	}
-    
+        if (args[0] instanceof RubyRegexp) {
+            return RubyRegexp.regexpValue(args[0]).search(toString(), 0) >= 0 ?
+                RubyRegexp.last_match(getRuntime().getCurrentContext().getBackref()) :
+                getRuntime().getNil();
+        } else if (args[0] instanceof RubyString) {
+            return toString().indexOf(stringValue(args[0]).toString()) != -1 ?
+                args[0] : getRuntime().getNil();
+        } else if (args[0] instanceof RubyRange) {
+            long[] begLen = ((RubyRange) args[0]).getBeginLength(value.length, true, false);
+            return begLen == null ? getRuntime().getNil() :
+                substr((int) begLen[0], (int) begLen[1]);
+        }
+        int idx = (int) args[0].convertToInteger().getLongValue();
+        if (idx < 0) {
+            idx += value.length;
+        }
+        if (idx < 0 || idx >= value.length) { 
+            return getRuntime().getNil();
+        } else {
+            RubyFixnum result = getRuntime().newFixnum(value[idx] & 0xFF);
+            return result;
+        }
+    }
+
     /**
      * rb_str_subpat_set
      * 
@@ -1631,14 +1719,14 @@ public class RubyString extends RubyObject {
         replace(beg, len, stringValue(repl));
 
     }
-
-	/** rb_str_aset, rb_str_aset_m
-	 *
-	 */
-	public IRubyObject aset(IRubyObject[] args) {
-		testFrozen("class");
-		int strLen = getValue().length();
-		if (checkArgumentCount(args, 2, 3) == 3) {
+    
+    /** rb_str_aset, rb_str_aset_m
+     *
+     */
+    public IRubyObject aset(IRubyObject[] args) {
+        testFrozen("class");
+        int strLen = value.length;
+        if (checkArgumentCount(args, 2, 3) == 3) {
             if (args[0] instanceof RubyFixnum) {
                 RubyString repl = stringValue(args[2]);
                 int beg = RubyNumeric.fix2int(args[0]);
@@ -1662,123 +1750,125 @@ public class RubyString extends RubyObject {
             if (args[0] instanceof RubyRegexp) {
                 RubyString repl = stringValue(args[2]);
                 int nth = RubyNumeric.fix2int(args[1]);
-                subpatSet((RubyRegexp) args[0], nth, repl); 
+                subpatSet((RubyRegexp) args[0], nth, repl);
                 return repl;
             }
-		}
-		if (args[0] instanceof RubyFixnum) { // RubyNumeric?
-			int idx = RubyNumeric.fix2int(args[0]); // num2int?
-			if (idx < 0) {
-				idx += getValue().length();
-			}
-			if (idx < 0 || idx >= getValue().length()) {
-				throw getRuntime().newIndexError("string index out of bounds");
-			}
-			if (args[1] instanceof RubyFixnum) {
-                getMutableValue().setCharAt(idx, (char) RubyNumeric.fix2int(args[1]));
+        }
+        if (args[0] instanceof RubyFixnum) { // RubyNumeric?
+            int idx = RubyNumeric.fix2int(args[0]); // num2int?
+            if (idx < 0) {
+                idx += value.length;
+            }
+            if (idx < 0 || idx >= value.length) {
+                throw getRuntime().newIndexError("string index out of bounds");
+            }
+            if (args[1] instanceof RubyFixnum) {
+                value[idx] = (byte) RubyNumeric.fix2int(args[1]);
                 stringMutated();
-			} else {
-				replace(idx, 1, stringValue(args[1]));
-			}
-			return args[1];
-		}
-		if (args[0] instanceof RubyRegexp) {
-			sub_bang(args, null);
-			return args[1];
-		}
-		if (args[0] instanceof RubyString) {
-			RubyString orig = stringValue(args[0]);
-			int beg = toString().indexOf(orig.toString());
-			if (beg != -1) {
-				replace(beg, orig.getValue().length(), stringValue(args[1]));
-			}
-			return args[1];
-		}
-		if (args[0] instanceof RubyRange) {
-			long[] idxs = ((RubyRange) args[0]).getBeginLength(getValue().length(), true, true);
-			replace((int) idxs[0], (int) idxs[1], stringValue(args[1]));
-			return args[1];
-		}
-		throw getRuntime().newTypeError("wrong argument type");
-	}
-
-	/** rb_str_slice_bang
-	 *
-	 */
-	public IRubyObject slice_bang(IRubyObject[] args) {
-		int argc = checkArgumentCount(args, 1, 2);
-		IRubyObject[] newArgs = new IRubyObject[argc + 1];
-		newArgs[0] = args[0];
-		if (argc > 1) {
-			newArgs[1] = args[1];
-		}
-		newArgs[argc] = newString("");
-		IRubyObject result = aref(args);
-		if (result.isNil()) {
-			return result;
-		}
-		aset(newArgs);
-		return result;
-	}
-
-	public IRubyObject succ() {
+            } else {
+                replace(idx, 1, stringValue(args[1]));
+            }
+            return args[1];
+        }
+        if (args[0] instanceof RubyRegexp) {
+            sub_bang(args, null);
+            return args[1];
+        }
+        if (args[0] instanceof RubyString) {
+            RubyString orig = stringValue(args[0]);
+            int beg = toString().indexOf(orig.toString());
+            if (beg != -1) {
+                replace(beg, orig.value.length, stringValue(args[1]));
+            }
+            return args[1];
+        }
+        if (args[0] instanceof RubyRange) {
+            long[] idxs = ((RubyRange) args[0]).getBeginLength(value.length, true, true);
+            replace((int) idxs[0], (int) idxs[1], stringValue(args[1]));
+            return args[1];
+        }
+        throw getRuntime().newTypeError("wrong argument type");
+    }
+    
+    /** rb_str_slice_bang
+     *
+     */
+    public IRubyObject slice_bang(IRubyObject[] args) {
+        int argc = checkArgumentCount(args, 1, 2);
+        IRubyObject[] newArgs = new IRubyObject[argc + 1];
+        newArgs[0] = args[0];
+        if (argc > 1) {
+            newArgs[1] = args[1];
+        }
+        newArgs[argc] = newString("");
+        IRubyObject result = aref(args);
+        if (result.isNil()) {
+            return result;
+        }
+        aset(newArgs);
+        return result;
+    }
+    
+    public IRubyObject succ() {
         return ((RubyString) dup()).succ_bang();
-	}
-
-	public IRubyObject succ_bang() {
-        if (getValue().length() == 0) {
+    }
+    
+    public IRubyObject succ_bang() {
+        if (value.length == 0) {
             return this;
         }
         
-        StringBuffer sbuf = getMutableValue();
         boolean alnumSeen = false;
         int pos = -1;
-        char c = 0;
-        char n = 0;
-        for (int i = sbuf.length() - 1; i >= 0; i--) {
-            c = sbuf.charAt(i);
+        int c = 0;
+        int n = 0;
+        for (int i = value.length - 1; i >= 0; i--) {
+            c = value[i] & 0xFF;
             if (isAlnum(c)) {
                 alnumSeen = true;
                 if ((isDigit(c) && c < '9') || (isLower(c) && c < 'z') || (isUpper(c) && c < 'Z')) {
-                    sbuf.setCharAt(i, (char) (c + 1));
+                    value[i] = (byte)(c + 1);
                     pos = -1;
                     break;
                 }
                 pos = i;
                 n = isDigit(c) ? '0' : (isLower(c) ? 'a' : 'A');
-                sbuf.setCharAt(i, n);
+                value[i] = (byte)n;
             }
         }
         if (!alnumSeen) {
-            for (int i = sbuf.length() - 1; i >= 0; i--) {
-                c = sbuf.charAt(i);
+            for (int i = value.length - 1; i >= 0; i--) {
+                c = value[i];
                 if (c < 0xff) {
-                    sbuf.setCharAt(i, (char) (c + 1));
+                    value[i] = (byte)(c + 1);
                     pos = -1;
                     break;
                 }
                 pos = i;
                 n = '\u0001';
-                sbuf.setCharAt(i, '\u0000');
+                value[i] = 0;
             }
         }
         if (pos > -1) {
             // This represents left most digit in a set of incremented
             // values?  Therefore leftmost numeric must be '1' and not '0'
-            // 999 -> 1000, not 999 -> 0000.  whereas chars should be 
+            // 999 -> 1000, not 999 -> 0000.  whereas chars should be
             // zzz -> aaaa
-            sbuf.insert(pos, isDigit(c) ? '1' : (isLower(c) ? 'a' : 'A'));
+            byte[] bytes = new byte[value.length + 1];
+            System.arraycopy(value, 0, bytes, 1, value.length);
+            bytes[pos] = (byte)(isDigit(c) ? '1' : (isLower(c) ? 'a' : 'A'));
+            value = bytes;
         }
         stringMutated();
         return this;
-	}
-
-	/** rb_str_upto_m
-	 *
-	 */
-	public IRubyObject upto(IRubyObject str, Block block) {
-		return upto(str, false, block);
-	}
+    }
+    
+    /** rb_str_upto_m
+     *
+     */
+    public IRubyObject upto(IRubyObject str, Block block) {
+        return upto(str, false, block);
+    }
 
     /* rb_str_upto */
     public IRubyObject upto(IRubyObject str, boolean excl, Block block) {
@@ -1813,269 +1903,272 @@ public class RubyString extends RubyObject {
         return beg;
 
     }
-
-
-	/** rb_str_include
-	 *
-	 */
-	public RubyBoolean include(IRubyObject obj) {
-		if (obj instanceof RubyFixnum) {
-			char c = (char) RubyNumeric.fix2int(obj);
-			return getRuntime().newBoolean(toString().indexOf(c) != -1);
-		}
-		String str = stringValue(obj).toString();
-		return getRuntime().newBoolean(getMutableValue().indexOf(str) != -1);
-	}
-
-	/** rb_str_to_i
-	 *
-	 */
-	public IRubyObject to_i(IRubyObject[] args) {
-		long base = checkArgumentCount(args, 0, 1) == 0 ? 10 : ((RubyInteger) args[0].convertType(RubyInteger.class,
+    
+    
+    /** rb_str_include
+     *
+     */
+    public RubyBoolean include(IRubyObject obj) {
+        if (obj instanceof RubyFixnum) {
+            int c = RubyNumeric.fix2int(obj);
+            for (int i = 0; i < value.length; i++) {
+                if (value[i] == (byte)c) {
+                    return getRuntime().getTrue();
+                }
+            }
+            return getRuntime().getFalse();
+        }
+        String str = stringValue(obj).toString();
+        return getRuntime().newBoolean(new StringBuffer(toString()).indexOf(str) != -1);
+    }
+    
+    /** rb_str_to_i
+     *
+     */
+    public IRubyObject to_i(IRubyObject[] args) {
+        long base = checkArgumentCount(args, 0, 1) == 0 ? 10 : ((RubyInteger) args[0].convertType(RubyInteger.class,
                 "Integer", "to_i")).getLongValue();
-		return RubyNumeric.str2inum(getRuntime(), this, (int) base);
-	}
-
-	/** rb_str_oct
-	 *
-	 */
-	public IRubyObject oct() {
-		if (isEmpty()) {
-			return getRuntime().newFixnum(0);
-		}
-		
-		int base = 8;
-		String str = toString().trim();
-		int pos = (str.charAt(0) == '-' || str.charAt(0) == '+') ? 1 : 0;
-		if (str.indexOf("0x") == pos || str.indexOf("0X") == pos) {
-			base = 16;
-		} else if (str.indexOf("0b") == pos || str.indexOf("0B") == pos) {
-			base = 2;
-		}
-		return RubyNumeric.str2inum(getRuntime(), this, base);
-	}
-
-	/** rb_str_hex
-	 *
-	 */
-	public IRubyObject hex() {
-		return RubyNumeric.str2inum(getRuntime(), this, 16);
-	}
-
-	/** rb_str_to_f
-	 *
-	 */
-	public IRubyObject to_f() {
-		return RubyNumeric.str2fnum(getRuntime(), this);
-	}
-
-	/** rb_str_split
-	 *
-	 */
-	public RubyArray split(IRubyObject[] args) {
-            RubyRegexp pattern;
-            boolean isWhitespace = false;
+        return RubyNumeric.str2inum(getRuntime(), this, (int) base);
+    }
+    
+    /** rb_str_oct
+     *
+     */
+    public IRubyObject oct() {
+        if (isEmpty()) {
+            return getRuntime().newFixnum(0);
+        }
+        
+        int base = 8;
+        String str = toString().trim();
+        int pos = (str.charAt(0) == '-' || str.charAt(0) == '+') ? 1 : 0;
+        if (str.indexOf("0x") == pos || str.indexOf("0X") == pos) {
+            base = 16;
+        } else if (str.indexOf("0b") == pos || str.indexOf("0B") == pos) {
+            base = 2;
+        }
+        return RubyNumeric.str2inum(getRuntime(), this, base);
+    }
+    
+    /** rb_str_hex
+     *
+     */
+    public IRubyObject hex() {
+        return RubyNumeric.str2inum(getRuntime(), this, 16);
+    }
+    
+    /** rb_str_to_f
+     *
+     */
+    public IRubyObject to_f() {
+        return RubyNumeric.str2fnum(getRuntime(), this);
+    }
+    
+    /** rb_str_split
+     *
+     */
+    public RubyArray split(IRubyObject[] args) {
+        RubyRegexp pattern;
+        boolean isWhitespace = false;
+        
+        // get the pattern based on args
+        if (args.length == 0) {
+            isWhitespace = true;
+            pattern = RubyRegexp.newRegexp(getRuntime(), "\\s+", 0, null);
+        } else if (args[0] instanceof RubyRegexp) {
+            // Even if we have whitespace-only explicit regexp we do not
+            // mark it as whitespace.  Apparently, this is so ruby can
+            // still get the do not ignore the front match behavior.
+            pattern = RubyRegexp.regexpValue(args[0]);
+        } else {
+            String stringPattern = RubyString.stringValue(args[0]).toString();
             
-            // get the pattern based on args
-            if (args.length == 0) {
+            if (stringPattern.equals(" ")) {
                 isWhitespace = true;
                 pattern = RubyRegexp.newRegexp(getRuntime(), "\\s+", 0, null);
-            } else if (args[0] instanceof RubyRegexp) {
-                // Even if we have whitespace-only explicit regexp we do not
-                // mark it as whitespace.  Apparently, this is so ruby can
-                // still get the do not ignore the front match behavior.
-                pattern = RubyRegexp.regexpValue(args[0]);
             } else {
-                String stringPattern = RubyString.stringValue(args[0]).toString();
-
-                if (stringPattern.equals(" ")) {
-                    isWhitespace = true;
-                    pattern = RubyRegexp.newRegexp(getRuntime(), "\\s+", 0, null);
-                } else {
-                    pattern = RubyRegexp.newRegexp(getRuntime(), RubyRegexp.escapeSpecialChars(stringPattern), 0, null);
-                }
+                pattern = RubyRegexp.newRegexp(getRuntime(), RubyRegexp.escapeSpecialChars(stringPattern), 0, null);
             }
+        }
+        
+        int limit = getLimit(args);
+        String[] result = null;
+        // attempt to convert to Unicode when appropriate
+        String splitee = toString();
+        boolean unicodeSuccess = false;
+        if (getRuntime().getKCode() == KCode.UTF8) {
+            // We're in UTF8 mode; try to convert the string to UTF8, but fall back on raw bytes if we can't decode
+            // TODO: all this decoder and charset stuff could be centralized...in KCode perhaps?
+            CharsetDecoder decoder = Charset.forName("UTF-8").newDecoder();
+            decoder.onMalformedInput(CodingErrorAction.REPORT);
+            decoder.onUnmappableCharacter(CodingErrorAction.REPORT);
             
-            int limit = getLimit(args);
-            String[] result = null;
-            // attempt to convert to Unicode when appropriate
-            String splitee = toString();
-            boolean unicodeSuccess = false;
-            if (getRuntime().getKCode() == KCode.UTF8) {
-                // We're in UTF8 mode; try to convert the string to UTF8, but fall back on ISO8859 bytes if we can't decode
-                // TODO: all this decoder and charset stuff could be centralized...in KCode perhaps?
-                CharsetDecoder decoder = Charset.forName("UTF-8").newDecoder();
-                decoder.onMalformedInput(CodingErrorAction.REPORT);
-                decoder.onUnmappableCharacter(CodingErrorAction.REPORT);
-                
-                try {
-                    splitee = decoder.decode(ByteBuffer.wrap(splitee.getBytes("ISO-8859-1"))).toString();
-                    unicodeSuccess = true;
-                } catch (CharacterCodingException cce) {
-                    // ignore, just use the unencoded string
-                } catch (UnsupportedEncodingException e) {
-                    // ignore, just use the unencoded string
-                }
+            try {
+                splitee = decoder.decode(ByteBuffer.wrap(value)).toString();
+                unicodeSuccess = true;
+            } catch (CharacterCodingException cce) {
+                // ignore, just use the unencoded string
             }
+        }
+        
+        
+        if (limit == 1) {
+            result = new String[] {splitee};
+        } else {
+            List list = new ArrayList();
+            int numberOfHits = 0;
+            int stringLength = splitee.length();
             
+            Pattern pat = pattern.getPattern();
+            Matcher matt = pat.matcher(splitee);
             
-            if (limit == 1) {
-                result = new String[] {splitee};
-            } else {
-                List list = new ArrayList();
-                int numberOfHits = 0;
-                int stringLength = splitee.length();
-
-                Pattern pat = pattern.getPattern();
-                Matcher matt = pat.matcher(splitee);
+            int startOfCurrentHit = 0;
+            int endOfCurrentHit = 0;
+            String group = null;
+            
+            // TODO: There's a fast path in here somewhere that could just use Pattern.split
+            
+            if (matt.find()) {
+                // we have matches, proceed
                 
-                int startOfCurrentHit = 0;
-                int endOfCurrentHit = 0;
-                String group = null;
+                // end of current hit is start of first match
+                endOfCurrentHit = matt.start();
                 
-                // TODO: There's a fast path in here somewhere that could just use Pattern.split
-
-                if (matt.find()) {
-                    // we have matches, proceed
+                // filter out starting whitespace matches for non-regex whitespace splits
+                if (endOfCurrentHit != 0 || !isWhitespace) {
+                    // not a non-regex whitespace split, proceed
                     
-                    // end of current hit is start of first match
-                    endOfCurrentHit = matt.start();
+                    numberOfHits++;
                     
-                    // filter out starting whitespace matches for non-regex whitespace splits
-                    if (endOfCurrentHit != 0 || !isWhitespace) {
-                        // not a non-regex whitespace split, proceed
+                    // skip first positive lookahead match
+                    if (matt.end() != 0) {
                         
+                        // add the first hit
+                        list.add(splitee.substring(startOfCurrentHit, endOfCurrentHit));
+                        
+                        // add any matched groups found while splitting the first hit
+                        for (int groupIndex = 1; groupIndex <= matt.groupCount(); groupIndex++) {
+                            group = matt.group(groupIndex);
+                            list.add(group);
+                        }
+                    }
+                }
+                
+                // advance start to the end of the current hit
+                startOfCurrentHit = matt.end();
+                
+                // ensure we haven't exceeded the hit limit
+                if (numberOfHits + 1 != limit) {
+                    // loop over the remaining matches
+                    while (matt.find()) {
+                        // end of current hit is start of the next match
+                        endOfCurrentHit = matt.start();
                         numberOfHits++;
                         
-                        // skip first positive lookahead match
-                        if (matt.end() != 0) {
-
-                            // add the first hit
-                            list.add(splitee.substring(startOfCurrentHit, endOfCurrentHit));
-
-                            // add any matched groups found while splitting the first hit
-                            for (int groupIndex = 1; groupIndex <= matt.groupCount(); groupIndex++) {
-                                group = matt.group(groupIndex);
-                                list.add(group);
-                            }
+                        // add the current hit
+                        list.add(splitee.substring(startOfCurrentHit, endOfCurrentHit));
+                        
+                        // add any matched groups found while splitting the current hit
+                        for (int groupIndex = 1; groupIndex <= matt.groupCount(); groupIndex++) {
+                            group = matt.group(groupIndex);
+                            list.add(group);
                         }
-                    }
-                    
-                    // advance start to the end of the current hit
-                    startOfCurrentHit = matt.end();
-
-                    // ensure we haven't exceeded the hit limit
-                    if (numberOfHits + 1 != limit) {
-                        // loop over the remaining matches
-                        while (matt.find()) {
-                            // end of current hit is start of the next match
-                            endOfCurrentHit = matt.start();
-                            numberOfHits++;
-
-                            // add the current hit
-                            list.add(splitee.substring(startOfCurrentHit, endOfCurrentHit));
-
-                            // add any matched groups found while splitting the current hit
-                            for (int groupIndex = 1; groupIndex <= matt.groupCount(); groupIndex++) {
-                                group = matt.group(groupIndex);
-                                list.add(group);
-                            }
-                            
-                            // advance start to the end of the current hit
-                            startOfCurrentHit = matt.end();
-                        }
+                        
+                        // advance start to the end of the current hit
+                        startOfCurrentHit = matt.end();
                     }
                 }
-                
-                if (numberOfHits == 0) {
-                    // we found no hits, use the entire string
-                    list.add(splitee);
-                } else if (startOfCurrentHit <= stringLength) {
-                    // our last match ended before the end of the string, add remainder
-                    list.add(splitee.substring(startOfCurrentHit, stringLength));
-                }
-                
-                // Remove trailing whitespace when limit 0 is specified
-                if (limit == 0 && list.size() > 0) {
-                    for (int size = list.size() - 1;
-                    size >= 0 && ((String) list.get(size)).length() == 0; size--) {
-                        list.remove(size);
-                    }
-                }
-
-                result = (String[])list.toArray(new String[list.size()]);
             }
             
-            // convert arraylist of strings to RubyArray of RubyStrings
-            RubyArray resultArray = getRuntime().newArray(result.length);
-            
-            for (int i = 0; i < result.length; i++) {
-                RubyString string = getRuntime().newString(result[i]);
-                
-                // if we're in unicode mode and successfully converted to a unicode string before,
-                // make sure to keep unicode in the split values
-                if (unicodeSuccess && getRuntime().getKCode() == KCode.UTF8) {
-                    string.setUnicodeValue(result[i]);
-                }
-                
-                resultArray.append(string);
+            if (numberOfHits == 0) {
+                // we found no hits, use the entire string
+                list.add(splitee);
+            } else if (startOfCurrentHit <= stringLength) {
+                // our last match ended before the end of the string, add remainder
+                list.add(splitee.substring(startOfCurrentHit, stringLength));
             }
+            
+            // Remove trailing whitespace when limit 0 is specified
+            if (limit == 0 && list.size() > 0) {
+                for (int size = list.size() - 1;
+                size >= 0 && ((String) list.get(size)).length() == 0; size--) {
+                    list.remove(size);
+                }
+            }
+            
+            result = (String[])list.toArray(new String[list.size()]);
+        }
+        
+        // convert arraylist of strings to RubyArray of RubyStrings
+        RubyArray resultArray = getRuntime().newArray(result.length);
+        
+        for (int i = 0; i < result.length; i++) {
+            RubyString string = getRuntime().newString(result[i]);
+            
+            // if we're in unicode mode and successfully converted to a unicode string before,
+            // make sure to keep unicode in the split values
+            if (unicodeSuccess && getRuntime().getKCode() == KCode.UTF8) {
+                string.setUnicodeValue(result[i]);
+            }
+            
+            resultArray.append(string);
+        }
+        
+        return resultArray;
+    }
 
-            return resultArray;
-	}
-    
     private static int getLimit(IRubyObject[] args) {
         if (args.length == 2) {
             return RubyNumeric.fix2int(args[1]);
         }
         return 0;
     }
-
-	/** rb_str_scan
-	 *
-	 */
-	public IRubyObject scan(IRubyObject arg, Block block) {
-		RubyRegexp pattern = RubyRegexp.regexpValue(arg);
-		int start = 0;
-        ThreadContext tc = getRuntime().getCurrentContext();
-
-        // Fix for JRUBY-97: Temporary fix pending 
-        // decision on UTF8-based string implementation.
-		// Move toString() call outside loop.
-		String toString = toString();
-
-		if (block == null) {
-			RubyArray ary = getRuntime().newArray();
-			while (pattern.search(toString, start) != -1) {
-				RubyMatchData md = (RubyMatchData) tc.getBackref();
-                ary.append(md.getSize() == 1 ? md.group(0) : md.subseq(1, md.getSize()));
-
-                if (md.matchEndPosition() == md.matchStartPosition()) {
-					start++;
-				} else {
-					start = md.matchEndPosition();
-				}
-			}
-			return ary;
-		}
-
-		while (pattern.search(toString, start) != -1) {
-			RubyMatchData md = (RubyMatchData) tc.getBackref();
-            tc.yield(md.getSize() == 1 ? md.group(0) : md.subseq(1, md.getSize()), block);
-
-            if (md.matchEndPosition() == md.matchStartPosition()) {
-				start++;
-			} else {
-				start = md.matchEndPosition();
-			}
-		}
-		return this;
-	}
     
+    /** rb_str_scan
+     *
+     */
+    public IRubyObject scan(IRubyObject arg, Block block) {
+        RubyRegexp pattern = RubyRegexp.regexpValue(arg);
+        int start = 0;
+        ThreadContext tc = getRuntime().getCurrentContext();
+        
+        // Fix for JRUBY-97: Temporary fix pending
+        // decision on UTF8-based string implementation.
+        // Move toString() call outside loop.
+        String toString = toString();
+        
+        if (block == null) {
+            RubyArray ary = getRuntime().newArray();
+            while (pattern.search(toString, start) != -1) {
+                RubyMatchData md = (RubyMatchData) tc.getBackref();
+                ary.append(md.getSize() == 1 ? md.group(0) : md.subseq(1, md.getSize()));
+                
+                if (md.matchEndPosition() == md.matchStartPosition()) {
+                    start++;
+                } else {
+                    start = md.matchEndPosition();
+                }
+            }
+            return ary;
+        }
+        
+        while (pattern.search(toString, start) != -1) {
+            RubyMatchData md = (RubyMatchData) tc.getBackref();
+            tc.yield(md.getSize() == 1 ? md.group(0) : md.subseq(1, md.getSize()), block);
+            
+            if (md.matchEndPosition() == md.matchStartPosition()) {
+                start++;
+            } else {
+                start = md.matchEndPosition();
+            }
+        }
+        return this;
+    }
+
     private IRubyObject justify(IRubyObject [] args, boolean leftJustify) {
         checkArgumentCount(args, 1, 2);
         int length = RubyNumeric.fix2int(args[0]);
-        if (length <= getValue().length()) {
+        if (length <= value.length) {
             return dup();
         }
         
@@ -2121,35 +2214,35 @@ public class RubyString extends RubyObject {
         
         return ret;
     }
-
-	/** rb_str_ljust
-	 *
-	 */
-	public IRubyObject ljust(IRubyObject [] args) {
+    
+    /** rb_str_ljust
+     *
+     */
+    public IRubyObject ljust(IRubyObject [] args) {
         return justify(args, true);
-	}
-
-	/** rb_str_rjust
-	 *
-	 */
+    }
+    
+    /** rb_str_rjust
+     *
+     */
     public IRubyObject rjust(IRubyObject [] args) {
         return justify(args, false);
     }
     
-	public IRubyObject center(IRubyObject[] args) {
+    public IRubyObject center(IRubyObject[] args) {
         checkArgumentCount(args, 1, 2);
-		int len = RubyNumeric.fix2int(args[0]);
+        int len = RubyNumeric.fix2int(args[0]);
         String pad = args.length == 2 ? args[1].convertToString().toString() : " ";
-		int strLen = getValue().length();
+        int strLen = value.length;
         int padLen = pad.length();
         
         if (padLen == 0) {
             throw getRuntime().newArgumentError("zero width padding");
         }
-		if (len <= strLen) {
-			return dup();
-		}
-		StringBuffer sbuf = new StringBuffer(len);
+        if (len <= strLen) {
+            return dup();
+        }
+        StringBuffer sbuf = new StringBuffer(len);
         int lead = (len - strLen) / 2;
         for (int i = 0; i < lead; i++) {
             sbuf.append(pad.charAt(i % padLen));
@@ -2159,77 +2252,79 @@ public class RubyString extends RubyObject {
         for (int i = 0; i < remaining; i++) {
             sbuf.append(pad.charAt(i % padLen));
         }
-		return newString(sbuf.toString());
-	}
-
-	public IRubyObject chop() {
+        return newString(sbuf.toString());
+    }
+    
+    public IRubyObject chop() {
         RubyString newString = (RubyString) dup();
         
         newString.chop_bang();
-
+        
         return newString;
-	}
-
-	public IRubyObject chop_bang() {
-        int end = getValue().length() - 1;
+    }
+    
+    public IRubyObject chop_bang() {
+        int end = value.length - 1;
         
         if (end < 0) {
             return getRuntime().getNil();
         }
         
-        if (getValue().charAt(end) == '\n') {
-            if (end > 0 && getValue().charAt(end-1) == '\r') {
+        if ((value[end] & 0xFF) == '\n') {
+            if (end > 0 && (value[end-1] & 0xFF) == '\r') {
                 end--;
             }
-        } 
+        }
         
-        getMutableValue().delete(end, getValue().length());
+        byte[] bytes = new byte[end];
+        System.arraycopy(value, 0, bytes, 0, end);
+        value = bytes;
         stringMutated();
-		return this;
-	}
-
-	public RubyString chomp(IRubyObject[] args) {
+        return this;
+    }
+    
+    public RubyString chomp(IRubyObject[] args) {
         RubyString result = (RubyString) dup();
         
         result.chomp_bang(args);
         
         return result;
-	}
-
-	/** 
+    }
+    
+    /**
      * rb_str_chomp_bang
-     * 
-	 * In the common case, removes CR and LF characters in various ways depending on the value of
+     *
+     * In the common case, removes CR and LF characters in various ways depending on the value of
      *   the optional args[0].
-     * If args.length==0 removes one instance of CR, CRLF or LF from the end of the string.  
+     * If args.length==0 removes one instance of CR, CRLF or LF from the end of the string.
      * If args.length>0 and args[0] is "\n" then same behaviour as args.length==0 .
      * If args.length>0 and args[0] is "" then removes trailing multiple LF or CRLF (but no CRs at
-     *   all(!)).  
+     *   all(!)).
      * @param args See method description.
-	 */
-	public IRubyObject chomp_bang(IRubyObject[] args) {
+     */
+    public IRubyObject chomp_bang(IRubyObject[] args) {
         if (isEmpty()) {
             return getRuntime().getNil();
         }
-
+        
         // Separator (a.k.a. $/) can be overriden by the -0 (zero) command line option
-        String separator = (args.length == 0) ? 
-                getRuntime().getGlobalVariables().get("$/").asSymbol() : args[0].asSymbol();
+        String separator = (args.length == 0) ?
+            getRuntime().getGlobalVariables().get("$/").asSymbol() : args[0].asSymbol();
         
         if (separator.equals(DEFAULT_RS)) {
-            int end = getValue().length() - 1;
+            int end = value.length - 1;
             int removeCount = 0;
             
             if (end < 0) {
                 return getRuntime().getNil();
             }
             
-            if (getValue().charAt(end) == '\n') {
+            if ((value[end] & 0xFF) == '\n') {
                 removeCount++;
-                if (end > 0 && getValue().charAt(end-1) == '\r') {
+                if (end > 0 && (value[end-1] & 0xFF) == '\r') {
                     removeCount++;
                 }
-            } else if (getValue().charAt(end) == '\r') {
+            } else if ((value[end] & 0xFF) == '\r') {
                 removeCount++;
             }
             
@@ -2237,17 +2332,19 @@ public class RubyString extends RubyObject {
                 return getRuntime().getNil();
             }
             
-            getMutableValue().delete(end - removeCount + 1, getValue().length());
+            byte[] bytes = new byte[end - removeCount + 1];
+            System.arraycopy(value, 0, bytes, 0, end - removeCount + 1);
+            value = bytes;
             stringMutated();
             return this;
         }
-
+        
         if (separator.length() == 0) {
-            int end = getValue().length() - 1;
+            int end = value.length - 1;
             int removeCount = 0;
-            while(end - removeCount >= 0 && getValue().charAt(end - removeCount) == '\n') {
+            while(end - removeCount >= 0 && (value[end - removeCount] & 0xFF) == '\n') {
                 removeCount++;
-                if (end - removeCount >= 0 && getValue().charAt(end - removeCount) == '\r') {
+                if (end - removeCount >= 0 && (value[end - removeCount] & 0xFF) == '\r') {
                     removeCount++;
                 }
             }
@@ -2255,380 +2352,419 @@ public class RubyString extends RubyObject {
                 return getRuntime().getNil();
             }
             
-            getMutableValue().delete(end - removeCount + 1, getValue().length());
+            byte[] bytes = new byte[end - removeCount + 1];
+            System.arraycopy(value, 0, bytes, 0, end - removeCount + 1);
+            value = bytes;
             stringMutated();
             return this;
         }
         
         // Uncommon case of str.chomp!("xxx")
         if (toString().endsWith(separator)) {
-            getMutableValue().delete(getValue().length() - separator.length(), getValue().length());
+            byte[] bytes = new byte[value.length - separator.length()];
+            System.arraycopy(value, 0, bytes, 0, value.length - separator.length());
+            value = bytes;
             stringMutated();
             return this;
         }
-		return getRuntime().getNil();
-	}
-
-	public IRubyObject lstrip() {
-		int length = getValue().length();
-		int i = 0;
-		
-		for (; i < length; i++) {
-			if (!Character.isWhitespace(getValue().charAt(i))) {
-				break;
-			}
-		}
-		
-		return newString(getValue().subSequence(i, getValue().length()));
-	}
-	
-	public IRubyObject lstrip_bang() {
-		RubyString newValue = (RubyString) lstrip();
-		
-		if (sameAs(newValue)) {
-			return getRuntime().getNil();
-		}
-		setValue(newValue.getValue());
-		
-		return this;
-	}
-
-	public IRubyObject rstrip() {
-		int i = getValue().length() - 1;
-		
-		for (; i >= 0; i--) {
-			if (!Character.isWhitespace(getValue().charAt(i))) {
-				break;
-			}
-		}
-		
-		return newString(getValue().subSequence(0, i + 1));
-	}
-
-	public IRubyObject rstrip_bang() {
-		RubyString newValue = (RubyString) rstrip();
-		
-		if (sameAs(newValue)) {
-			return getRuntime().getNil();
-		}
-		setValue(newValue.getValue());
-		
-		return this;
-	}
-
-	/** rb_str_strip
-	 *
-	 */
-	public IRubyObject strip() {
-		if (isEmpty()) {
-			return dup();
-		}
-		return newString(toString().trim());
-	}
-
-	/** rb_str_strip_bang
-	 *
-	 */
-	public IRubyObject strip_bang() {
-		if (isEmpty()) {
-			return getRuntime().getNil();
-		}
-		String newStr = toString().trim();
-		if (sameAs(newStr)) {
-			return getRuntime().getNil();
-		}
-		setValue(new StringBuffer(newStr));
-		return this;
-	}
-
-	private static String expandTemplate(String spec, boolean invertOK) {
-		int len = spec.length();
-		if (len <= 1) {
-			return spec;
-		}
-		StringBuffer sbuf = new StringBuffer();
-		int pos = (invertOK && spec.charAt(0) == '^') ? 1 : 0;
-		while (pos < len) {
-			char c1 = spec.charAt(pos), c2;
-			if (pos + 2 < len && spec.charAt(pos + 1) == '-') {
-				if ((c2 = spec.charAt(pos + 2)) > c1) {
-					for (int i = c1; i <= c2; i++) {
-						sbuf.append((char) i);
-					}
-				}
-				pos += 3;
-				continue;
-			}
-			sbuf.append(c1);
-			pos++;
-		}
-		return sbuf.toString();
-	}
-
-	private String setupTable(String[] specs) {
-		int[] table = new int[256];
-		int numSets = 0;
-		for (int i = 0; i < specs.length; i++) {
-			String template = expandTemplate(specs[i], true);
-			boolean invert = specs[i].length() > 1 && specs[i].charAt(0) == '^';
-			for (int j = 0; j < 256; j++) {
-				if (template.indexOf(j) != -1) {
-					table[j] += invert ? -1 : 1;
-				}
-			}
-			numSets += invert ? 0 : 1;
-		}
-		StringBuffer sbuf = new StringBuffer();
-		for (int k = 0; k < 256; k++) {
-			if (table[k] == numSets) {
-				sbuf.append((char) k);
-			}
-		}
-		return sbuf.toString();
-	}
-
-	/** rb_str_count
-	 *
-	 */
-	public IRubyObject count(IRubyObject[] args) {
-		int argc = checkArgumentCount(args, 1, -1);
-		String[] specs = new String[argc];
-		for (int i = 0; i < argc; i++) {
-			specs[i] = stringValue(args[i]).toString();
-		}
-		String table = setupTable(specs);
-
-		int count = 0;
-		for (int j = 0; j < getValue().length(); j++) {
-			if (table.indexOf(getValue().charAt(j)) != -1) {
-				count++;
-			}
-		}
-		return getRuntime().newFixnum(count);
-	}
-
-	private String getDelete(IRubyObject[] args) {
-		int argc = checkArgumentCount(args, 1, -1);
-		String[] specs = new String[argc];
-		for (int i = 0; i < argc; i++) {
-			specs[i] = stringValue(args[i]).toString();
-		}
-		String table = setupTable(specs);
-
-		int strLen = getValue().length();
-		StringBuffer sbuf = new StringBuffer(strLen);
-		char c;
-		for (int j = 0; j < strLen; j++) {
-			c = getValue().charAt(j);
-			if (table.indexOf(c) == -1) {
-				sbuf.append(c);
-			}
-		}
-		return sbuf.toString();
-	}
-
-	/** rb_str_delete
-	 *
-	 */
-	public IRubyObject delete(IRubyObject[] args) {
-		return newString(getDelete(args)).infectBy(this);
-	}
-
-	/** rb_str_delete_bang
-	 *
-	 */
-	public IRubyObject delete_bang(IRubyObject[] args) {
-		String newStr = getDelete(args);
-		if (sameAs(newStr)) {
-			return getRuntime().getNil();
-		}
-		setValue(new StringBuffer(newStr));
-		return this;
-	}
-
-	private StringBuffer getSqueeze(IRubyObject[] args) {
-		int argc = args.length;
-		String[] specs = null;
-		if (argc > 0) {
-			specs = new String[argc];
-			for (int i = 0; i < argc; i++) {
-				specs[i] = stringValue(args[i]).toString();
-			}
-		}
-		String table = specs == null ? null : setupTable(specs);
-
-		int strLen = getValue().length();
-		if (strLen <= 1) {
-			return getMutableValue();
-		}
-		StringBuffer sbuf = new StringBuffer(strLen);
-		char c1 = getValue().charAt(0);
-		sbuf.append(c1);
-		char c2;
-		for (int j = 1; j < strLen; j++) {
-			c2 = getValue().charAt(j);
-			if (c2 == c1 && (table == null || table.indexOf(c2) != -1)) {
-				continue;
-			}
-			sbuf.append(c2);
-			c1 = c2;
-		}
-		return sbuf;
-	}
-
-	/** rb_str_squeeze
-	 *
-	 */
-	public IRubyObject squeeze(IRubyObject[] args) {
-		return newString(getSqueeze(args).toString()).infectBy(this);
-	}
-
-	/** rb_str_squeeze_bang
-	 *
-	 */
-	public IRubyObject squeeze_bang(IRubyObject[] args) {
-		StringBuffer newStr = getSqueeze(args);
-		if (sameAs(newStr)) {
-			return getRuntime().getNil();
-		}
-		setValue(newStr);
-		return this;
-	}
-
-	private String tr(IRubyObject search, IRubyObject replace, boolean squeeze) {
-		String srchSpec = search.convertToString().toString();
-		String srch = expandTemplate(srchSpec, true);
-		if (srchSpec.startsWith("^")) {
-			StringBuffer sbuf = new StringBuffer(256);
-			for (int i = 0; i < 256; i++) {
-				char c = (char) i;
-				if (srch.indexOf(c) == -1) {
-					sbuf.append(c);
-				}
-			}
-			srch = sbuf.toString();
-		}
-		String repl = expandTemplate(replace.convertToString().toString(), false);
-
-		int strLen = getValue().length();
-		if (strLen == 0 || srch.length() == 0) {
-			return toString();
-		}
-		int repLen = repl.length();
-		StringBuffer sbuf = new StringBuffer(strLen);
-		int last = -1;
-		for (int i = 0; i < strLen; i++) {
-			char cs = getValue().charAt(i);
-			int pos = srch.indexOf(cs);
-			if (pos == -1) {
-				sbuf.append(cs);
-				last = -1;
-			} else if (repLen > 0) {
-				char cr = repl.charAt(Math.min(pos, repLen - 1));
-				if (squeeze && cr == last) {
-					continue;
-				}
-				sbuf.append(cr);
-				last = cr;
-			}
-		}
-		return sbuf.toString();
-	}
-
-	/** rb_str_tr
-	 *
-	 */
-	public IRubyObject tr(IRubyObject search, IRubyObject replace) {
-		return newString(tr(search, replace, false)).infectBy(this);
-	}
-
-	/** rb_str_tr_bang
-	 *
-	 */
-	public IRubyObject tr_bang(IRubyObject search, IRubyObject replace) {
-		String newStr = tr(search, replace, false);
-		if (sameAs(newStr)) {
-			return getRuntime().getNil();
-		}
-		setValue(new StringBuffer(newStr));
-		return this;
-	}
-
-	/** rb_str_tr_s
-	 *
-	 */
-	public IRubyObject tr_s(IRubyObject search, IRubyObject replace) {
-		return newString(tr(search, replace, true)).infectBy(this);
-	}
-
-	/** rb_str_tr_s_bang
-	 *
-	 */
-	public IRubyObject tr_s_bang(IRubyObject search, IRubyObject replace) {
-		String newStr = tr(search, replace, true);
-		if (sameAs(newStr)) {
-			return getRuntime().getNil();
-		}
-		setValue(new StringBuffer(newStr));
-		return this;
-	}
-
-	/** rb_str_each_line
-	 *
-	 */
-	public IRubyObject each_line(IRubyObject[] args, Block block) {
-		int strLen = getValue().length();
-		if (strLen == 0) {
-			return this;
-		}
-		String sep;
-		if (checkArgumentCount(args, 0, 1) == 1) {
-			sep = RubyRegexp.escapeSpecialChars(stringValue(args[0]).toString());
-		} else {
-			sep = RubyRegexp.escapeSpecialChars(getRuntime().getGlobalVariables().get("$/").asSymbol());
-		}
-		if (sep == null) {
-			sep = "(?:\\n|\\r\\n?)";
-		} else if (sep.length() == 0) {
-			sep = "(?:\\n|\\r\\n?){2,}";
-		}
-		RubyRegexp pat = RubyRegexp.newRegexp(getRuntime(), ".*?" + sep, RubyRegexp.RE_OPTION_MULTILINE, null);
-		int start = 0;
+        return getRuntime().getNil();
+    }
+    
+    public IRubyObject lstrip() {
+        return newString(getRuntime(), lstripInternal());
+    }
+    
+    public byte[] lstripInternal() {
+        int length = value.length;
+        int i = 0;
+        
+        for (; i < length; i++) {
+            if (!Character.isWhitespace(value[i] & 0xFF)) {
+                break;
+            }
+        }
+        
+        byte[] bytes = new byte[value.length - i];
+        System.arraycopy(value, i, bytes, 0, value.length - i);
+        return bytes;
+    }
+    
+    public IRubyObject lstrip_bang() {
+        byte[] newBytes = lstripInternal();
+        if (Arrays.equals(value, newBytes)) {
+            return getRuntime().getNil();
+        }
+        value = newBytes;
+        stringMutated();
+        
+        return this;
+    }
+    
+    public IRubyObject rstrip() {
+        return newString(getRuntime(), rstripInternal());
+    }
+    
+    public byte[] rstripInternal() {
+        int i = value.length - 1;
+        
+        for (; i >= 0; i--) {
+            if (!Character.isWhitespace(value[i] & 0xFF)) {
+                break;
+            }
+        }
+        
+        byte[] bytes = new byte[i + 1];
+        System.arraycopy(value, 0, bytes, 0, i + 1);
+        return bytes;
+    }
+    
+    public IRubyObject rstrip_bang() {
+        byte[] newBytes = rstripInternal();
+        if (Arrays.equals(value, newBytes)) {
+            return getRuntime().getNil();
+        }
+        value = newBytes;
+        stringMutated();
+        
+        return this;
+    }
+    
+    /** rb_str_strip
+     *
+     */
+    public IRubyObject strip() {
+        if (isEmpty()) {
+            return dup();
+        }
+        byte[] bytes = stripInternal();
+        if (bytes == null) {
+            return newString(getRuntime(), (byte[])value.clone());
+        }
+        return newString(getRuntime(), stripInternal());
+    }
+    
+    /** rb_str_strip_bang
+     *
+     */
+    public IRubyObject strip_bang() {
+        if (isEmpty()) {
+            return getRuntime().getNil();
+        }
+        byte[] bytes = stripInternal();
+        if (bytes == null) {
+            return getRuntime().getNil();
+        }
+        value = bytes;
+        stringMutated();
+        return this;
+    }
+    
+    public byte[] stripInternal() {
+        int head = 0;
+        while (head < value.length && Character.isWhitespace(value[head] & 0xFF)) head++;
+        int tail = value.length - 1;
+        while (tail > head && Character.isWhitespace(value[tail] & 0xFF)) tail--;
+        
+        if (head == 0 && tail == value.length - 1) {
+            return null;
+        }
+        
+        byte[] bytes = new byte[tail - head + 1];
+        if (head <= tail) {
+            System.arraycopy(value, head, bytes, 0, tail - head + 1);
+        }
+        
+        return bytes;
+    }
+    
+    private static String expandTemplate(String spec, boolean invertOK) {
+        int len = spec.length();
+        if (len <= 1) {
+            return spec;
+        }
+        StringBuffer sbuf = new StringBuffer();
+        int pos = (invertOK && spec.charAt(0) == '^') ? 1 : 0;
+        while (pos < len) {
+            char c1 = spec.charAt(pos), c2;
+            if (pos + 2 < len && spec.charAt(pos + 1) == '-') {
+                if ((c2 = spec.charAt(pos + 2)) > c1) {
+                    for (int i = c1; i <= c2; i++) {
+                        sbuf.append((char) i);
+                    }
+                }
+                pos += 3;
+                continue;
+            }
+            sbuf.append(c1);
+            pos++;
+        }
+        return sbuf.toString();
+    }
+    
+    private String setupTable(String[] specs) {
+        int[] table = new int[256];
+        int numSets = 0;
+        for (int i = 0; i < specs.length; i++) {
+            String template = expandTemplate(specs[i], true);
+            boolean invert = specs[i].length() > 1 && specs[i].charAt(0) == '^';
+            for (int j = 0; j < 256; j++) {
+                if (template.indexOf(j) != -1) {
+                    table[j] += invert ? -1 : 1;
+                }
+            }
+            numSets += invert ? 0 : 1;
+        }
+        StringBuffer sbuf = new StringBuffer();
+        for (int k = 0; k < 256; k++) {
+            if (table[k] == numSets) {
+                sbuf.append((char) k);
+            }
+        }
+        return sbuf.toString();
+    }
+    
+    /** rb_str_count
+     *
+     */
+    public IRubyObject count(IRubyObject[] args) {
+        int argc = checkArgumentCount(args, 1, -1);
+        String[] specs = new String[argc];
+        for (int i = 0; i < argc; i++) {
+            specs[i] = stringValue(args[i]).toString();
+        }
+        String table = setupTable(specs);
+        
+        int count = 0;
+        for (int j = 0; j < value.length; j++) {
+            if (table.indexOf(value[j] & 0xFF) != -1) {
+                count++;
+            }
+        }
+        return getRuntime().newFixnum(count);
+    }
+    
+    private byte[] getDelete(IRubyObject[] args) {
+        int argc = checkArgumentCount(args, 1, -1);
+        String[] specs = new String[argc];
+        for (int i = 0; i < argc; i++) {
+            specs[i] = stringValue(args[i]).toString();
+        }
+        String table = setupTable(specs);
+        
+        int strLen = value.length;
+        StringBuffer sbuf = new StringBuffer(strLen);
+        int c;
+        for (int j = 0; j < strLen; j++) {
+            c = value[j] & 0xFF;
+            if (table.indexOf(c) == -1) {
+                sbuf.append((char)c);
+            }
+        }
+        return stringToBytes(sbuf.toString());
+    }
+    
+    /** rb_str_delete
+     *
+     */
+    public IRubyObject delete(IRubyObject[] args) {
+        return newString(getRuntime(), getDelete(args)).infectBy(this);
+    }
+    
+    /** rb_str_delete_bang
+     *
+     */
+    public IRubyObject delete_bang(IRubyObject[] args) {
+        byte[] newStr = getDelete(args);
+        if (Arrays.equals(value, newStr)) {
+            return getRuntime().getNil();
+        }
+        value = newStr;
+        stringMutated();
+        return this;
+    }
+    
+    private byte[] getSqueeze(IRubyObject[] args) {
+        int argc = args.length;
+        String[] specs = null;
+        if (argc > 0) {
+            specs = new String[argc];
+            for (int i = 0; i < argc; i++) {
+                specs[i] = stringValue(args[i]).toString();
+            }
+        }
+        String table = specs == null ? null : setupTable(specs);
+        
+        int strLen = value.length;
+        if (strLen <= 1) {
+            return value;
+        }
+        StringBuffer sbuf = new StringBuffer(strLen);
+        int c1 = value[0] & 0xFF;
+        sbuf.append((char)c1);
+        int c2;
+        for (int j = 1; j < strLen; j++) {
+            c2 = value[j] & 0xFF;
+            if (c2 == c1 && (table == null || table.indexOf(c2) != -1)) {
+                continue;
+            }
+            sbuf.append((char)c2);
+            c1 = c2;
+        }
+        return stringToBytes(sbuf.toString());
+    }
+    
+    /** rb_str_squeeze
+     *
+     */
+    public IRubyObject squeeze(IRubyObject[] args) {
+        return newString(getRuntime(), getSqueeze(args)).infectBy(this);
+    }
+    
+    /** rb_str_squeeze_bang
+     *
+     */
+    public IRubyObject squeeze_bang(IRubyObject[] args) {
+        byte[] newStr = getSqueeze(args);
+        if (Arrays.equals(value, newStr)) {
+            return getRuntime().getNil();
+        }
+        value = newStr;
+        return this;
+    }
+    
+    private byte[] tr(IRubyObject search, IRubyObject replace, boolean squeeze) {
+        String srchSpec = search.convertToString().toString();
+        String srch = expandTemplate(srchSpec, true);
+        if (srchSpec.startsWith("^")) {
+            StringBuffer sbuf = new StringBuffer(256);
+            for (int i = 0; i < 256; i++) {
+                char c = (char) i;
+                if (srch.indexOf(c) == -1) {
+                    sbuf.append(c);
+                }
+            }
+            srch = sbuf.toString();
+        }
+        String repl = expandTemplate(replace.convertToString().toString(), false);
+        
+        int strLen = value.length;
+        if (strLen == 0 || srch.length() == 0) {
+            return value;
+        }
+        int repLen = repl.length();
+        StringBuffer sbuf = new StringBuffer(strLen);
+        int last = -1;
+        for (int i = 0; i < strLen; i++) {
+            int cs = value[i] & 0xFF;
+            int pos = srch.indexOf(cs);
+            if (pos == -1) {
+                sbuf.append((char)cs);
+                last = -1;
+            } else if (repLen > 0) {
+                char cr = repl.charAt(Math.min(pos, repLen - 1));
+                if (squeeze && cr == last) {
+                    continue;
+                }
+                sbuf.append((char)cr);
+                last = cr;
+            }
+        }
+        return stringToBytes(sbuf.toString());
+    }
+    
+    /** rb_str_tr
+     *
+     */
+    public IRubyObject tr(IRubyObject search, IRubyObject replace) {
+        return newString(getRuntime(), tr(search, replace, false)).infectBy(this);
+    }
+    
+    /** rb_str_tr_bang
+     *
+     */
+    public IRubyObject tr_bang(IRubyObject search, IRubyObject replace) {
+        byte[] newStr = tr(search, replace, false);
+        if (Arrays.equals(value, newStr)) {
+            return getRuntime().getNil();
+        }
+        value = newStr;
+        return this;
+    }
+    
+    /** rb_str_tr_s
+     *
+     */
+    public IRubyObject tr_s(IRubyObject search, IRubyObject replace) {
+        return newString(getRuntime(), tr(search, replace, true)).infectBy(this);
+    }
+    
+    /** rb_str_tr_s_bang
+     *
+     */
+    public IRubyObject tr_s_bang(IRubyObject search, IRubyObject replace) {
+        byte[] newStr = tr(search, replace, true);
+        if (Arrays.equals(value, newStr)) {
+            return getRuntime().getNil();
+        }
+        value = newStr;
+        return this;
+    }
+    
+    /** rb_str_each_line
+     *
+     */
+    public IRubyObject each_line(IRubyObject[] args, Block block) {
+        int strLen = value.length;
+        if (strLen == 0) {
+            return this;
+        }
+        String sep;
+        if (checkArgumentCount(args, 0, 1) == 1) {
+            sep = RubyRegexp.escapeSpecialChars(stringValue(args[0]).toString());
+        } else {
+            sep = RubyRegexp.escapeSpecialChars(getRuntime().getGlobalVariables().get("$/").asSymbol());
+        }
+        if (sep == null) {
+            sep = "(?:\\n|\\r\\n?)";
+        } else if (sep.length() == 0) {
+            sep = "(?:\\n|\\r\\n?){2,}";
+        }
+        RubyRegexp pat = RubyRegexp.newRegexp(getRuntime(), ".*?" + sep, RubyRegexp.RE_OPTION_MULTILINE, null);
+        int start = 0;
         ThreadContext tc = getRuntime().getCurrentContext();
         
-        // Fix for JRUBY-97: Temporary fix pending 
+        // Fix for JRUBY-97: Temporary fix pending
         // decision on UTF8-based string implementation.
-		// Move toString() call outside loop.
-		String toString = toString();
-		
-		while (pat.search(toString, start) != -1) {
-			RubyMatchData md = (RubyMatchData) tc.getBackref();
-			tc.yield(md.group(0), block);
-			start = md.matchEndPosition();
-		}
-		if (start < strLen) {
-			tc.yield(substr(start, strLen - start), block);
-		}
-		return this;
-	}
-
-	/**
-	 * rb_str_each_byte
-	 */
-	public RubyString each_byte(Block block) {
-		byte[] lByteValue = toByteArray();
-		int lLength = lByteValue.length;
+        // Move toString() call outside loop.
+        String toString = toString();
+        
+        while (pat.search(toString, start) != -1) {
+            RubyMatchData md = (RubyMatchData) tc.getBackref();
+            tc.yield(md.group(0), block);
+            start = md.matchEndPosition();
+        }
+        if (start < strLen) {
+            tc.yield(substr(start, strLen - start), block);
+        }
+        return this;
+    }
+    
+    /**
+     * rb_str_each_byte
+     */
+    public RubyString each_byte(Block block) {
+        int lLength = value.length;
         ThreadContext context = getRuntime().getCurrentContext();
-		for (int i = 0; i < lLength; i++) {
-			context.yield(getRuntime().newFixnum(lByteValue[i] & 0xFF), block);
-		}
-		return this;
-	}
-
-	/** rb_str_intern
-	 *
-	 */
-	public RubySymbol intern() {
+        for (int i = 0; i < lLength; i++) {
+            context.yield(getRuntime().newFixnum(value[i] & 0xFF), block);
+        }
+        return this;
+    }
+    
+    /** rb_str_intern
+     *
+     */
+    public RubySymbol intern() {
         String s = toString();
         if (s.equals("")) {
             throw getRuntime().newArgumentError("interning empty string");
@@ -2646,29 +2782,28 @@ public class RubyString extends RubyObject {
     public RubyInteger sum(IRubyObject[] args) {
         long bitSize = 16;
         if (args.length > 0) {
-        	bitSize = ((RubyInteger) args[0].convertType(RubyInteger.class,
+            bitSize = ((RubyInteger) args[0].convertType(RubyInteger.class,
                     "Integer", "to_i")).getLongValue();
         }
-
+        
         long result = 0;
-        char[] characters = toString().toCharArray();
-        for (int i = 0; i < characters.length; i++) {
-            result += characters[i];
+        for (int i = 0; i < value.length; i++) {
+            result += value[i] & 0xFF;
         }
-        return getRuntime().newFixnum(bitSize == 0 ? result : result % (long) Math.pow(2, bitSize)); 
+        return getRuntime().newFixnum(bitSize == 0 ? result : result % (long) Math.pow(2, bitSize));
     }
-
-	public static RubyString unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-		RubyString result = input.getRuntime().newString(input.unmarshalString());
+    
+    public static RubyString unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
+        RubyString result = newString(input.getRuntime(), input.unmarshalString());
         input.registerLinkTarget(result);
         return result;
-	}
+    }
 
     /**
      * @see org.jruby.util.Pack#unpack
      */
     public RubyArray unpack(IRubyObject obj) {
-        return Pack.unpack(this.toString(), stringValue(obj));
+        return Pack.unpack(getRuntime(), this.value, (byte[])stringValue(obj).value);
     }
 
     /**
@@ -2677,36 +2812,21 @@ public class RubyString extends RubyObject {
      * @param value The new java.lang.String this RubyString should encapsulate
      */
     public void setValue(CharSequence value) {
-        this.chars = value;
-        this.value = null;
+        try {
+            this.value = value.toString().getBytes(IN_ENCODING);
+        } catch (UnsupportedEncodingException uee) {
+            // ignore, never happens
+        }
         stringMutated();
     }
 
-    /**
-     * Mutator for internal string representation.
-     * 
-     * @param value The new java.lang.String this RubyString should encapsulate
-     */
-    public void setMutableValue(StringBuffer value) {
-        this.chars = this.value = value;
-    }
-
-	/**
-	 * Accessor for internal string representation.
-	 * 
-	 * @return The java.lang.String this RubyString encapsulates.
-	 */
-	public StringBuffer getMutableValue() {
-		return value != null ? value : (StringBuffer)(chars = value = new StringBuffer(chars.toString()));
-	}
-    
     public CharSequence getValue() {
-        return chars;
+        return toString();
     }
     
     public String getUnicodeValue() {
         try {
-            return new String(toString().getBytes(ENCODING), "UTF8");
+            return new String(value, "UTF8");
         } catch (Exception e) {
             throw new RuntimeException("Something's seriously broken with encodings", e);
         }
@@ -2714,10 +2834,14 @@ public class RubyString extends RubyObject {
     
     public void setUnicodeValue(String newValue) {
         try {
-            chars = new String(toString().getBytes("UTF8"), ENCODING);
+            value = newValue.getBytes("UTF8");
             stringMutated();
         } catch (Exception e) {
             throw new RuntimeException("Something's seriously broken with encodings", e);
         }
+    }
+    
+    public byte[] getBytes() {
+        return value;
     }
 }

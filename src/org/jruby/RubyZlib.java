@@ -243,16 +243,16 @@ public class RubyZlib {
     public static IRubyObject crc32(IRubyObject recv, IRubyObject[] args) throws Exception {
         args = recv.scanArgs(args,0,2);
         int crc = 0;
-        String str = null;
+        byte[] bytes = null;
         if(!args[0].isNil()) {
-            str = args[0].toString();
+            bytes = args[0].convertToString().getBytes();
         }
         if(!args[1].isNil()) {
             crc = RubyNumeric.fix2int(args[1]);
         }
         CRC32Ext ext = new CRC32Ext(crc);
-        if(str != null) {
-            ext.update(str.getBytes("PLAIN"));
+        if(bytes != null) {
+            ext.update(bytes);
         }
         return recv.getRuntime().newFixnum(ext.getValue());
     }
@@ -260,16 +260,16 @@ public class RubyZlib {
     public static IRubyObject adler32(IRubyObject recv, IRubyObject[] args) throws Exception {
         args = recv.scanArgs(args,0,2);
         int adler = 1;
-        String str = null;
+        byte[] bytes = null;
         if(!args[0].isNil()) {
-            str = args[0].toString();
+            bytes = args[0].convertToString().getBytes();
         }
         if(!args[1].isNil()) {
             adler = RubyNumeric.fix2int(args[1]);
         }
         Adler32Ext ext = new Adler32Ext(adler);
-        if(str != null) {
-            ext.update(str.getBytes("PLAIN"));
+        if(bytes != null) {
+            ext.update(bytes);
         }
         return recv.getRuntime().newFixnum(ext.getValue());
     }
@@ -419,7 +419,7 @@ public class RubyZlib {
         };
 
         public static IRubyObject s_inflate(IRubyObject recv, IRubyObject string) throws Exception {
-            return ZlibInflate.s_inflate(recv,string.toString());
+            return ZlibInflate.s_inflate(recv,string.convertToString().getBytes());
         }
 
         public Inflate(IRuby runtime, RubyClass type) {
@@ -447,7 +447,7 @@ public class RubyZlib {
         }
 
         public IRubyObject inflate(IRubyObject string) throws Exception {
-            return infl.inflate(string.toString());
+            return infl.inflate(string.convertToString().getBytes());
         }
 
         public IRubyObject sync(IRubyObject string) {
@@ -505,7 +505,7 @@ public class RubyZlib {
             if(!args[1].isNil()) {
                 level = RubyNumeric.fix2int(args[1]);
             }
-            return ZlibDeflate.s_deflate(recv,args[0].toString(),level);
+            return ZlibDeflate.s_deflate(recv,args[0].convertToString().getBytes(),level);
         }
 
         public Deflate(IRuby runtime, RubyClass type) {
@@ -566,7 +566,7 @@ public class RubyZlib {
             if(!args[1].isNil()) {
                 flush = RubyNumeric.fix2int(args[1]);
             }
-            return defl.deflate(args[0].toString(),flush);
+            return defl.deflate(args[0].convertToString().getBytes(),flush);
         }
 
         protected int internalTotalOut() {
@@ -722,7 +722,13 @@ public class RubyZlib {
 
         public static IRubyObject open(IRubyObject recv, RubyString filename, Block block) throws IOException {
             RubyObject proc = block != null ? (RubyObject)recv.getRuntime().newProc(false, block) : (RubyObject)recv.getRuntime().getNil();
-            RubyGzipReader io = newInstance(recv,new IRubyObject[]{recv.getRuntime().getClass("File").callMethod(recv.getRuntime().getCurrentContext(),"open", new IRubyObject[]{filename,recv.getRuntime().newString("rb")})}, block);
+            RubyGzipReader io = newInstance(
+                    recv,
+                    new IRubyObject[]{recv.getRuntime().getClass("File").callMethod(
+                            recv.getRuntime().getCurrentContext(),
+                            "open",
+                            new IRubyObject[]{filename,recv.getRuntime().newString("rb")})},
+                            block);
             
             return RubyGzipFile.wrap(recv, io, proc, null);
         }
@@ -795,14 +801,14 @@ public class RubyZlib {
         private final static int BUFF_SIZE = 4096;
         public IRubyObject read(IRubyObject[] args) throws IOException {
             if (args.length == 0 || args[0].isNil()) {
-                StringBuffer val = new StringBuffer();
+                byte[] val = new byte[0];
                 byte[] buffer = new byte[BUFF_SIZE];
                 int read = io.read(buffer);
                 while (read != -1) {
-                    val.append(new String(buffer,0,read));
+                    val = ZlibInflate.append(val, buffer, read);
                     read = io.read(buffer);
                 }
-                return getRuntime().newString(val.toString());
+                return RubyString.newString(getRuntime(),val);
             } 
 
             int len = RubyNumeric.fix2int(args[0]);
@@ -820,8 +826,10 @@ public class RubyZlib {
             		}
             		toRead -= read;
             		offset += read;
-            	}
-            	return getRuntime().newString(new String(buffer,0,len-toRead, "PLAIN"));
+            	} // hmm...
+                byte[] nbuf = new byte[len-toRead];
+                System.arraycopy(buffer,0,nbuf,0,len-toRead);
+            	return RubyString.newString(getRuntime(),nbuf);
             }
                 
             return getRuntime().newString("");
@@ -953,7 +961,12 @@ public class RubyZlib {
             }
 
             RubyObject proc = block != null ? (RubyObject)recv.getRuntime().newProc(false, block) : (RubyObject)recv.getRuntime().getNil();
-            RubyGzipWriter io = newGzipWriter(recv,new IRubyObject[]{recv.getRuntime().getClass("File").callMethod(context,"open", new IRubyObject[]{args[0],recv.getRuntime().newString("wb")}),level,strategy}, block);
+            RubyGzipWriter io = newGzipWriter(
+                    recv,
+                    new IRubyObject[]{recv.getRuntime().getClass("File").callMethod(
+                            context,
+                            "open",
+                            new IRubyObject[]{args[0],recv.getRuntime().newString("wb")}),level,strategy},block);
             return RubyGzipFile.wrap(recv, io, proc, null);
         }
 
@@ -1052,9 +1065,9 @@ public class RubyZlib {
         }
 
         public IRubyObject write(IRubyObject p1) throws IOException {
-            String str = p1.toString();
-            io.write(str.getBytes("ISO8859_1"));
-            return getRuntime().newFixnum(str.length());
+            byte[] bs = p1.convertToString().getBytes();
+            io.write(bs);
+            return getRuntime().newFixnum(bs.length);
         }
     }
 }

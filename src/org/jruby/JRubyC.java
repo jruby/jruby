@@ -53,6 +53,7 @@ public class JRubyC {
             int size = (int)srcfile.length();
             byte[] chars = new byte[size];
             new FileInputStream(srcfile).read(chars);
+            // FIXME: encoding?
             String content = new String(chars);
             Node scriptNode = runtime.parse(content, filename, null);
             

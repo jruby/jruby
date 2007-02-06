@@ -210,7 +210,7 @@ public class X509CRL extends RubyObject {
     }
 
     public IRubyObject to_der() throws Exception {
-        return getRuntime().newString(new String(crl_v.getEncoded(),"ISO8859_1"));
+        return getRuntime().newString(new String(crl_v.getEncoded(),"PLAIN"));
     }
 
     private static final String IND8 = "        ";

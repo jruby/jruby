@@ -376,7 +376,7 @@ public class PKCS7 extends RubyObject {
     }
 
     public IRubyObject to_der() throws Exception {
-        return getRuntime().newString(new String(signedData.getEncoded(),"ISO8859_1"));
+        return getRuntime().newString(new String(signedData.getEncoded(),"PLAIN"));
     }
 
     public IRubyObject rbClone() {

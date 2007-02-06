@@ -83,7 +83,7 @@ public class KCode {
             return "UTF-8";
         } 
         
-        return "ISO8859-1";
+        return "PLAIN";
     }
 
     public int flags() {

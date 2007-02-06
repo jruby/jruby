@@ -695,7 +695,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 	}
 
     public static RubyRegexp unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-        RubyRegexp result = newRegexp(input.getRuntime(),input.unmarshalString(),input.unmarshalInt(),null);
+        RubyRegexp result = newRegexp(input.getRuntime(),new String(input.unmarshalString(), "PLAIN"),input.unmarshalInt(),null);
         input.registerLinkTarget(result);
         return result;
     }

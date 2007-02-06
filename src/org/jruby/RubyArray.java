@@ -724,7 +724,7 @@ public class RubyArray extends RubyObject implements List {
                 }
                 result.append(entry(i).callMethod(context, "inspect"));
             }
-            result.cat("]");
+            result.cat((byte)']');
             return result;
         } finally {
             getRuntime().unregisterInspecting(this);
@@ -1493,7 +1493,7 @@ public class RubyArray extends RubyObject implements List {
      */
     public RubyString pack(IRubyObject obj) {
 	RubyString iFmt = RubyString.objAsString(obj);
-        return Pack.pack(this.list, iFmt);
+        return Pack.pack(getRuntime(), this.list, iFmt.getBytes());
     }
 
     class BlockComparator implements Comparator {

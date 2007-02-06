@@ -29,7 +29,7 @@ package org.jruby.util;
 
 import java.io.OutputStream;
 import java.io.IOException;
-
+import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -59,7 +59,7 @@ public class IOOutputStream extends OutputStream {
     }
     
     public void write(final int bite) throws IOException {
-        io.callMethod(io.getRuntime().getCurrentContext(), "write", io.getRuntime().newString(new String(new char[]{(char)(0x000000FF & bite)})));
+        io.callMethod(io.getRuntime().getCurrentContext(), "write", RubyString.newString(io.getRuntime(), new byte[]{(byte)bite}));
     }
 
     public void write(final byte[] b) throws IOException {
@@ -67,6 +67,6 @@ public class IOOutputStream extends OutputStream {
     }
 
     public void write(final byte[] b,final int off, final int len) throws IOException {
-        io.callMethod(io.getRuntime().getCurrentContext(),"write", io.getRuntime().newString(new String(b,off,len,"PLAIN")));
+        io.callMethod(io.getRuntime().getCurrentContext(),"write", RubyString.newString(io.getRuntime(), b, off, len));
     }
 }

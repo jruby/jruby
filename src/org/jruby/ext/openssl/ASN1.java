@@ -501,14 +501,14 @@ public class ASN1 {
         if(null != v_name) {
             RubyClass c = asnM.getClass(v_name);
             if(v instanceof DERBitString) {
-                String va = new String(((DERBitString)v).getBytes(),"ISO8859_1");
+                String va = new String(((DERBitString)v).getBytes(),"PLAIN");
                 IRubyObject bString = c.callMethod(tc,"new",asnM.getRuntime().newString(va));
                 bString.callMethod(tc,"unused_bits=",asnM.getRuntime().newFixnum(((DERBitString)v).getPadBits()));
                 return bString;
             } else if(v instanceof DERString) {
                 String val = ((DERString)v).getString();
                 if(v instanceof DERUTF8String) {
-                    val = new String(val.getBytes("UTF-8"),"ISO8859-1");
+                    val = new String(val.getBytes("UTF-8"),"PLAIN");
                 }
                 return c.callMethod(tc,"new",asnM.getRuntime().newString(val));
             } else if(v instanceof ASN1Sequence) {
@@ -543,7 +543,7 @@ public class ASN1 {
                 String av = ((DERObjectIdentifier)v).getId();
                 return c.callMethod(tc,"new",asnM.getRuntime().newString(av));
             } else if(v instanceof DEROctetString) {
-                String va = new String(((DEROctetString)v).getOctets(),"ISO8859_1");
+                String va = new String(((DEROctetString)v).getOctets(),"PLAIN");
                 return c.callMethod(tc,"new",asnM.getRuntime().newString(va));
             } else if(v instanceof DERBoolean) {
                 return c.callMethod(tc,"new",((DERBoolean)v).isTrue() ? asnM.getRuntime().getTrue() : asnM.getRuntime().getFalse());
@@ -634,7 +634,7 @@ public class ASN1 {
         }
 
         public IRubyObject to_der() throws Exception {
-            return getRuntime().newString(new String(toASN1().getDEREncoded(),"ISO8859_1"));
+            return getRuntime().newString(new String(toASN1().getDEREncoded(),"PLAIN"));
         }
 
         protected IRubyObject defaultTag() {

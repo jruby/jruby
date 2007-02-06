@@ -282,7 +282,7 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
             return 0;
         }
         
-        output.write(buf.getBytes("ISO8859_1"));
+        output.write(buf.getBytes("PLAIN"));
 
         // Should syswrite sync?
         if (isSync) {

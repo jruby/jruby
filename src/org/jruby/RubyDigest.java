@@ -132,7 +132,7 @@ public class RubyDigest {
             String name = ((RubyClass)recv).getClassVar("metadata").toString();
             try {
                 MessageDigest md = MessageDigest.getInstance(name);
-                return recv.getRuntime().newString(new String(md.digest(str.toString().getBytes("PLAIN")),"ISO8859_1"));
+                return recv.getRuntime().newString(new String(md.digest(str.toString().getBytes("PLAIN")),"PLAIN"));
             } catch(NoSuchAlgorithmException e) {
                 throw recv.getRuntime().newNotImplementedError("Unsupported digest algorithm (" + name + ")");
             } catch(java.io.UnsupportedEncodingException e) {
@@ -193,7 +193,7 @@ public class RubyDigest {
         public IRubyObject digest() {
             try {
                 algo.reset();
-                return getRuntime().newString(new String(algo.digest(data.toString().getBytes("PLAIN")),"ISO8859_1"));
+                return getRuntime().newString(new String(algo.digest(data.toString().getBytes("PLAIN")),"PLAIN"));
             } catch(java.io.UnsupportedEncodingException e) {
                 return getRuntime().getNil();
             }

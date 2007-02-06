@@ -93,7 +93,7 @@ public abstract class PKey extends RubyObject {
         byte[] inp = data.toString().getBytes("PLAIN");
         sig.update(inp);
         byte[] sigge = sig.sign();
-        return getRuntime().newString(new String(sigge,"ISO8859_1"));
+        return getRuntime().newString(new String(sigge,"PLAIN"));
         /*
     GetPKey(self, pkey);
     EVP_SignInit(&ctx, GetDigestPtr(digest));
