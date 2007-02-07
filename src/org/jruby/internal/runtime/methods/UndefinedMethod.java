@@ -66,7 +66,7 @@ public class UndefinedMethod extends AbstractMethod {
      * If UndefinedMethod gets invoked, don't do the usual method scoping/framing. It should never be invoked.
      */
     public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
-        return internalCall(context, receiver, lastClass, name, args, noSuper, null);
+        return internalCall(context, receiver, lastClass, name, args, noSuper, Block.NULL_BLOCK);
     }
 
     public boolean isUndefined() {

@@ -266,7 +266,7 @@ public final class Ruby implements IRuby {
         try {
             ThreadContext tc = getCurrentContext();
 
-            return EvaluationState.eval(tc, node, tc.getFrameSelf(), null);
+            return EvaluationState.eval(tc, node, tc.getFrameSelf(), Block.NULL_BLOCK);
         } catch (JumpException je) {
             if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
                 throw newLocalJumpError("unexpected return");
@@ -289,7 +289,7 @@ public final class Ruby implements IRuby {
 
             Script script = (Script)scriptClass.newInstance();
             // FIXME: Pass something better for args and block here?
-            return script.run(getCurrentContext(), getTopSelf(), IRubyObject.NULL_ARRAY, null);
+            return script.run(getCurrentContext(), getTopSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
         } catch (NotCompilableException nce) {
             System.err.println("Error -- Not compileable: " + nce.getMessage());
             return null;
@@ -688,7 +688,7 @@ public final class Ruby implements IRuby {
                                                    newSymbol("utime"),
                                                    newSymbol("stime"),
                                                    newSymbol("cutime"),
-                                                   newSymbol("cstime")}, null);
+                                                   newSymbol("cstime")}, Block.NULL_BLOCK);
         }
 
         if(profile.allowClass("Float")) {
@@ -1347,9 +1347,7 @@ public final class Ruby implements IRuby {
     }
 
     public RubyProc newProc(boolean isLambda, Block block) {
-        if (!isLambda && block.getBlockObject() instanceof RubyProc) {
-            return (RubyProc) block.getBlockObject();
-        }
+        if (!isLambda && block.getProcObject() != null) return block.getProcObject();
 
         RubyProc proc =  RubyProc.newProc(this, isLambda);
 
@@ -1607,7 +1605,7 @@ public final class Ruby implements IRuby {
         if(val.containsKey(obj)) {
             return false;
         }
-        val.put(obj,null);
+        val.put(obj, null);
         return true;
     }
 

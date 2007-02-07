@@ -208,7 +208,7 @@ public class RubyStruct extends RubyObject {
             newStruct.defineMethod(memberName + "=", callbackFactory.getMethod("set", IRubyObject.class));
         }
         
-        if (block != null) {
+        if (block.isGiven()) {
             block.yield(recv.getRuntime().getCurrentContext(), null, newStruct, newStruct, false);
         }
 
@@ -266,7 +266,7 @@ public class RubyStruct extends RubyObject {
     }
 
     public RubyArray members() {
-        return members(classOf(), null);
+        return members(classOf(), Block.NULL_BLOCK);
     }
 
     public IRubyObject set(IRubyObject value, Block block) {
@@ -454,7 +454,7 @@ public class RubyStruct extends RubyObject {
             values[i] = input.unmarshalObject();
         }
 
-        RubyStruct result = newStruct(rbClass, values, null);
+        RubyStruct result = newStruct(rbClass, values, Block.NULL_BLOCK);
         input.registerLinkTarget(result);
         return result;
     }

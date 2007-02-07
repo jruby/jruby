@@ -140,14 +140,12 @@ public class RubyEnumerable {
         }
         public IRubyObject method1(final ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             //SORT
-            if(block == null) {
-                IRubyObject res = self.callMethod(context, "to_a");
-                return res.callMethod(context, "sort");
-            } else {
-                final List arr = eachToList(context,self,module);
-                Collections.sort(arr, new RubyYieldComparator(context, block));
-                return context.getRuntime().newArray(arr);
-            }
+            if (!block.isGiven()) return self.callMethod(context, "to_a").callMethod(context, "sort"); 
+                
+            final List arr = eachToList(context, self, module);
+            Collections.sort(arr, new RubyYieldComparator(context, block));
+            
+            return context.getRuntime().newArray(arr);
         }
         public IRubyObject method2(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             //SORT_BY
@@ -172,7 +170,7 @@ public class RubyEnumerable {
             List arr = eachToList(context,self,module);
             List result = new ArrayList();
             IRubyObject pattern = args[0];
-            if (block == null) {
+            if (!block.isGiven()) {
                 for (Iterator iter = arr.iterator();iter.hasNext();) {
                     IRubyObject item = (IRubyObject)iter.next();
                     if (pattern.callMethod(context,"===", item).isTrue()) {
@@ -231,7 +229,7 @@ public class RubyEnumerable {
             //COLLECT
             List arr = eachToList(context,self,module);
             IRubyObject[] result = new IRubyObject[arr.size()];
-            if (block != null) {
+            if (block.isGiven()) {
                 int i=0;
                 for (Iterator iter = arr.iterator();iter.hasNext();) {
                     result[i++] = context.yield((IRubyObject)iter.next(), block);
@@ -333,7 +331,7 @@ public class RubyEnumerable {
             IRubyObject result = null;
             List arr = eachToList(context,self,module);
 
-            if(block != null) {
+            if(block.isGiven()) {
                 for(Iterator iter = arr.iterator();iter.hasNext();) {
                     IRubyObject item = (IRubyObject)iter.next();
                     if(result == null || (context.yield(context.getRuntime().newArray(item,result), block).callMethod(context, ">", RubyFixnum.zero(context.getRuntime()))).isTrue()) {
@@ -358,7 +356,7 @@ public class RubyEnumerable {
             IRubyObject result = null;
             List arr = eachToList(context,self,module);
 
-            if(block != null) {
+            if(block.isGiven()) {
                 for(Iterator iter = arr.iterator();iter.hasNext();) {
                     IRubyObject item = (IRubyObject)iter.next();
                     if(result == null || (context.yield(context.getRuntime().newArray(item,result), block).callMethod(context, "<", RubyFixnum.zero(context.getRuntime()))).isTrue()) {
@@ -383,7 +381,7 @@ public class RubyEnumerable {
             boolean all = true;
             List arr = eachToList(context,self,module);
 
-            if(block != null) {
+            if (block.isGiven()) {
                 for(Iterator iter = arr.iterator();iter.hasNext();) {
                     if(!context.yield((IRubyObject)iter.next(), block).isTrue()) {
                         all = false;
@@ -405,7 +403,7 @@ public class RubyEnumerable {
             boolean any = false;
             List arr = eachToList(context,self,module);
 
-            if(block != null) {
+            if (block.isGiven()) {
                 for(Iterator iter = arr.iterator();iter.hasNext();) {
                     if(context.yield((IRubyObject)iter.next(), block).isTrue()) {
                         any = true;
@@ -428,7 +426,7 @@ public class RubyEnumerable {
             int ix = 0;
             List zip = new ArrayList(arr.size());
             int aLen = args.length+1;
-            if(block != null) {
+            if(block.isGiven()) {
                 for(Iterator iter = arr.iterator();iter.hasNext();) {
                     IRubyObject elem = (IRubyObject)iter.next();
                     List array = new ArrayList(aLen);

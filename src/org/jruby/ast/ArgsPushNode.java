@@ -30,8 +30,7 @@ public class ArgsPushNode extends Node {
     }
 
     public List childNodes() {
-        // TODO Auto-generated method stub
-        return null;
+        return EMPTY_LIST;
     }
 
 }

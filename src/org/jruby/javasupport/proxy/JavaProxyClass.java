@@ -725,15 +725,15 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                 RubyArray argsAsArray = getRuntime().newArray();
                 for (int j = 0; j < args.length; j++) {
                     argsArray[j + 1] = args[j];
-                    argsAsArray.append(Java.ruby_to_java(proxy,
-                                                         argsArray[j + 1],null));
+                    argsAsArray.append(Java.ruby_to_java(proxy, argsArray[j + 1], Block.NULL_BLOCK));
                 }
 
                 IRubyObject[] mmArgs = new IRubyObject[] { methods, argsAsArray };
                 IRubyObject result = javaUtilities.callMethod(getRuntime().getCurrentContext(),
                         "matching_method", mmArgs);
-                return Java.java_to_ruby(self, result.callMethod(getRuntime().getCurrentContext(),"invoke",
-                                                                 argsArray),null);
+                return Java.java_to_ruby(self, 
+                        result.callMethod(getRuntime().getCurrentContext(),"invoke", argsArray),
+                        Block.NULL_BLOCK);
             }
 
             public Arity getArity() {

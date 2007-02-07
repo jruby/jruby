@@ -380,7 +380,7 @@ public class IOMetaClass extends ObjectMetaClass {
             
             RubyIO io = new RubyIO(runtime, process);
             
-            if (block != null) {
+            if (block.isGiven()) {
                 try {
                     tc.yield(io, block);
                     return runtime.getNil();

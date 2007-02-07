@@ -88,8 +88,8 @@ public final class TopSelfFactory {
             /**
              * @see org.jruby.runtime.callback.Callback#execute(IRubyObject, IRubyObject[])
              */
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-                return runtime.getObject().rbPublic(args, block);
+            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
+                return runtime.getObject().rbPublic(args);
             }
 
             /**
@@ -104,8 +104,8 @@ public final class TopSelfFactory {
             /**
              * @see org.jruby.runtime.callback.Callback#execute(IRubyObject, IRubyObject[])
              */
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-                return runtime.getObject().rbPrivate(args, block);
+            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
+                return runtime.getObject().rbPrivate(args);
             }
 
             /**

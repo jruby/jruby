@@ -105,7 +105,7 @@ public final class DefaultMethod extends AbstractMethod {
             try {
                 context.preCompiledMethod(implementationClass, cref);
                 // FIXME: pass block when available
-                return jitCompiledScript.run(context, receiver, args, null);
+                return jitCompiledScript.run(context, receiver, args, Block.NULL_BLOCK);
             } finally {
                 context.postCompiledMethod();
             }
@@ -120,7 +120,7 @@ public final class DefaultMethod extends AbstractMethod {
     public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
         	assert args != null;
         if (JIT_ENABLED && jitCompiledScript != null) {
-            return jitCompiledScript.run(context, receiver, args, null);
+            return jitCompiledScript.run(context, receiver, args, Block.NULL_BLOCK);
         }
         
         IRuby runtime = context.getRuntime();
@@ -130,11 +130,11 @@ public final class DefaultMethod extends AbstractMethod {
             hasBeenTargeted = true;
         }
 
-        if (argsNode.getBlockArgNode() != null && block != null) {
+        if (argsNode.getBlockArgNode() != null && block.isGiven()) {
             RubyProc blockArg;
             
-            if (block.getBlockObject() instanceof RubyProc) {
-                blockArg = (RubyProc) block.getBlockObject();
+            if (block.getProcObject() != null) {
+                blockArg = (RubyProc) block.getProcObject();
             } else {
                 blockArg = runtime.newProc(false, block);
                 blockArg.getBlock().isLambda = block.isLambda;
@@ -249,7 +249,7 @@ public final class DefaultMethod extends AbstractMethod {
             for (int i = expectedArgsCount; i < args.length && iter.hasNext(); i++) {
                 //new AssignmentVisitor(new EvaluationState(runtime, receiver)).assign((Node)iter.next(), args[i], true);
                 // in-frame EvalState should already have receiver set as self, continue to use it
-                AssignmentVisitor.assign(context, context.getFrameSelf(), (Node)iter.next(), args[i], null, true);
+                AssignmentVisitor.assign(context, context.getFrameSelf(), (Node)iter.next(), args[i], Block.NULL_BLOCK, true);
                 expectedArgsCount++;
             }
    
@@ -258,7 +258,7 @@ public final class DefaultMethod extends AbstractMethod {
                 //new EvaluationState(runtime, receiver).begin((Node)iter.next());
                 //EvaluateVisitor.getInstance().eval(receiver.getRuntime(), receiver, (Node)iter.next());
                 // in-frame EvalState should already have receiver set as self, continue to use it
-                allArgs.add(EvaluationState.eval(context, (Node) iter.next(), context.getFrameSelf(), null));
+                allArgs.add(EvaluationState.eval(context, (Node) iter.next(), context.getFrameSelf(), Block.NULL_BLOCK));
             }
         }
         

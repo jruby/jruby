@@ -257,12 +257,12 @@ public class RubyArray extends RubyObject implements List {
     	try {
     		return entry(index.getLongValue(), true);
     	} catch (RaiseException e) {
-            ThreadContext tc = getRuntime().getCurrentContext();
     		// FIXME: use constant or method for IndexError lookup?
     		RubyException raisedException = e.getException();
+            
     		if (raisedException.isKindOf(getRuntime().getClassFromPath("IndexError"))) {
 	    		if (args.length > 1) return args[1];
-	    		if (block != null) return tc.yield(index, block); 
+	    		if (block.isGiven()) return getRuntime().getCurrentContext().yield(index, block); 
     		}
     		
     		throw e;
@@ -604,16 +604,14 @@ public class RubyArray extends RubyObject implements List {
         }
         
         // otherwise, continue with Array.new(fixnum, obj)
-        if (len < 0) {
-            throw getRuntime().newArgumentError("negative array size");
-        }
-        if (len > Integer.MAX_VALUE) {
-            throw getRuntime().newArgumentError("array size too big");
-        }
+        if (len < 0) throw getRuntime().newArgumentError("negative array size");
+        if (len > Integer.MAX_VALUE) throw getRuntime().newArgumentError("array size too big");
+
         list = new ArrayList((int) len);
-        ThreadContext tc = getRuntime().getCurrentContext();
         if (len > 0) {
-        	if (block != null) {
+        	if (block.isGiven()) {
+                ThreadContext tc = getRuntime().getCurrentContext();
+                
         		// handle block-based array initialization
                 for (int i = 0; i < len; i++) {
                     list.add(tc.yield(new RubyFixnum(getRuntime(), i), block));
@@ -794,7 +792,7 @@ public class RubyArray extends RubyObject implements List {
      */
     public IRubyObject each(Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
-        for (int i = 0, len = getLength(); i < getLength(); i++) {
+        for (int i = 0; i < getLength(); i++) {
             context.yield(entry(i), block);
         }
         return this;
@@ -1017,8 +1015,7 @@ public class RubyArray extends RubyObject implements List {
         IRubyObject begObj;
         IRubyObject lenObj;
         IRuby runtime = getRuntime();
-        ThreadContext tc = runtime.getCurrentContext();
-        if (block != null) {
+        if (block.isGiven()) {
         	argc = checkArgumentCount(args, 0, 2);
         	filObj = null;
         	begObj = argc > 0 ? args[0] : null;
@@ -1044,7 +1041,7 @@ public class RubyArray extends RubyObject implements List {
             default :
                 beg = begObj.isNil() ? beg : RubyNumeric.fix2int(begObj);
                 if (beg < 0 && (beg += len) < 0) {
-                    throw getRuntime().newIndexError("Negative array index");
+                    throw runtime.newIndexError("Negative array index");
                 }
                 len -= beg;
                 if (argc == 3 && !lenObj.isNil()) {
@@ -1054,6 +1051,9 @@ public class RubyArray extends RubyObject implements List {
 
         modify();
         autoExpand(beg + len);
+        
+        ThreadContext tc = runtime.getCurrentContext();
+
         for (int i = beg; i < beg + len; i++) {
         	if (filObj == null) {
         		list.set(i, tc.yield(runtime.newFixnum(i), block));
@@ -1099,7 +1099,7 @@ public class RubyArray extends RubyObject implements List {
             taint |= result[i].isTaint();
         }
         // TODO: Why was is calling create, which used to skip array initialization?
-        IRubyObject ary = ArrayMetaClass.create(getMetaClass(), result, null);
+        IRubyObject ary = ArrayMetaClass.create(getMetaClass(), result, Block.NULL_BLOCK);
         ary.setTaint(taint);
         return ary;
     }
@@ -1126,10 +1126,9 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public RubyArray collect(Block block) {
+        if (!block.isGiven()) return (RubyArray) dup();
+
         ThreadContext tc = getRuntime().getCurrentContext();
-        if (block == null) {
-            return (RubyArray) dup();
-        }
         ArrayList ary = new ArrayList();
         for (int i = 0, len = getLength(); i < len; i++) {
             ary.add(tc.yield(entry(i), block));
@@ -1161,7 +1160,7 @@ public class RubyArray extends RubyObject implements List {
                 result = (IRubyObject) list.remove(i);
             }
         }
-        if (result.isNil() && block != null) {
+        if (result.isNil() && block.isGiven()) {
             result = tc.yield(entry(0), block);
         }
         return result;
@@ -1460,7 +1459,7 @@ public class RubyArray extends RubyObject implements List {
         setTmpLock(true);
 
         Comparator comparator;
-        if (block != null) {
+        if (block.isGiven()) {
             comparator = new BlockComparator(block);
         } else {
             comparator = new DefaultComparator();

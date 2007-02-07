@@ -95,15 +95,12 @@ public class RubyTCPSocket extends RubyIPSocket {
 
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
         RubyTCPSocket sock = (RubyTCPSocket)recv.callMethod(recv.getRuntime().getCurrentContext(),"new",args);
-        if(block == null) {
-            return sock;
-        }
+        if (!block.isGiven()) return sock;
+
         try {
             return recv.getRuntime().getCurrentContext().yield(sock, block);
         } finally {
-            if(sock.isOpen()) {
-                sock.close();
-            }
+            if (sock.isOpen()) sock.close();
         }
     }
 

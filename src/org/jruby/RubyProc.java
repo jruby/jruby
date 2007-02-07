@@ -42,7 +42,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author  jpetersen
  */
 public class RubyProc extends RubyObject {
-    private Block block = null;
+    private Block block = Block.NULL_BLOCK;
     private RubyModule wrapper = null;
     // FIXME: I added it here since I wanted initialize to deal with it and not newProc.  I could
     // be wrong and I suspect we can find a better way of dealing with this.
@@ -81,7 +81,7 @@ public class RubyProc extends RubyObject {
         block = procBlock.cloneBlock();
         wrapper = getRuntime().getCurrentContext().getWrapper();
         block.isLambda = isLambda;
-        block.setBlockObject(this);
+        block.setProcObject(this);
 
         return this;
     }
@@ -101,12 +101,12 @@ public class RubyProc extends RubyObject {
     }
 
     public IRubyObject call(IRubyObject[] args) {
-        return call(args, null, null);
+        return call(args, null, Block.NULL_BLOCK);
     }
 
     // ENEBO: For method def others are Java to java versions
     public IRubyObject call(IRubyObject[] args, Block unusedBlock) {
-        return call(args, null, null);
+        return call(args, null, Block.NULL_BLOCK);
     }
 
     public IRubyObject call(IRubyObject[] args, IRubyObject self, Block unusedBlock) {

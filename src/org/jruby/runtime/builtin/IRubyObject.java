@@ -35,7 +35,6 @@ package org.jruby.runtime.builtin;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.jruby.MetaClass;
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;

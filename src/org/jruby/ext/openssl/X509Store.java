@@ -179,7 +179,7 @@ public class X509Store extends RubyObject {
         cert = args[0];
         IRubyObject proc, result;
         X509StoreCtx ctx = (X509StoreCtx)cStoreContext.callMethod(getRuntime().getCurrentContext(),"new",new IRubyObject[]{this,cert,chain});
-        if (block != null) {
+        if (block.isGiven()) {
             proc = getRuntime().newProc(false, block);
         } else {
             proc = getInstanceVariable("@verify_callback");

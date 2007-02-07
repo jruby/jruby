@@ -32,6 +32,7 @@ import java.util.List;
 
 import org.jruby.IRuby;
 import org.jruby.Ruby;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -105,7 +106,7 @@ public class JavaEmbedUtils {
 	 * 
 	 */
 	public static Object rubyToJava(IRuby runtime, IRubyObject value, Class type) {
-        return JavaUtil.convertArgument(Java.ruby_to_java(runtime.getObject(), value, null), type);
+        return JavaUtil.convertArgument(Java.ruby_to_java(runtime.getObject(), value, Block.NULL_BLOCK), type);
     }
 
 	/**

@@ -72,12 +72,12 @@ public class SimpleCallbackMethod extends AbstractMethod {
 
             runtime.callTraceFunction(context, "c-call", position, receiver, name, getImplementationClass());
             try {
-                return callback.execute(receiver, args, null);
+                return callback.execute(receiver, args, Block.NULL_BLOCK);
             } finally {
                 runtime.callTraceFunction(context, "c-return", position, receiver, name, getImplementationClass());
             }
         }
-		return callback.execute(receiver, args, null);
+		return callback.execute(receiver, args, Block.NULL_BLOCK);
     }
 
     public Callback getCallback() {

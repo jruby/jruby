@@ -67,7 +67,7 @@ public class ProcMethod extends AbstractMethod {
      * @see org.jruby.runtime.ICallable#call(IRuby, IRubyObject, String, IRubyObject[], boolean)
      */
     public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        return proc.call(args, receiver, null);
+        return proc.call(args, receiver, Block.NULL_BLOCK);
     }
     
     public DynamicMethod dup() {

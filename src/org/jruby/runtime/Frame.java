@@ -14,7 +14,7 @@
  * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2007 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2006 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
@@ -32,45 +32,64 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- *
+ * <p>Frame for a full (read: not 'fast') Ruby method invocation.  Any Ruby method which calls 
+ * another Ruby method (or yields to a block) will get a Frame.  A fast method by contrast does 
+ * not get a Frame because we know that we will not be calling/yielding.</p>  
+ * 
+ * A Frame is also needed for a few special cases:
+ * <ul>
+ * <li>Proc.new must check previous frame to get the block it is getting constructed for
+ * <li>block_given? must check the previous frame to see if a block is active
+ * </li>
+ * 
  */
 public class Frame {
+    /**
+     * The 'self' for this frame.
+     */
     private IRubyObject self;
+    
+    /**
+     * The arguments passed into the method of this last frame.   The frame captures arguments
+     * so that they can be reused for things like super/zsuper.
+     */
     private IRubyObject[] args;
+
+    /**
+     * The block that was passed in for this frame (as either a block or a &amp;block argument).
+     * The frame captures the block for super/zsuper, but also for Proc.new (with no arguments)
+     * and also for block_given?.  Both of those methods needs access to the block of the 
+     * previous frame to work.
+     */ 
+    private Block block;
+
+    /**
+     * The current visibility for anything defined under this frame
+     */
+    private Visibility visibility = Visibility.PUBLIC;
+
     private String lastFunc;
     private RubyModule lastClass;
     private final ISourcePosition position;
-    private IRuby runtime;
-    private boolean callingZSuper;
-    // The block that was in play during this frame.
-    private Block block;
 
-    private Scope scope;
-
-    public Frame(ThreadContext threadContext) {
-        this(threadContext.getRuntime(), null, IRubyObject.NULL_ARRAY, null, null, 
-                threadContext.getPosition(), null); 
+    public Frame(ISourcePosition position) {
+        this(null, IRubyObject.NULL_ARRAY, null, null, position, Block.NULL_BLOCK); 
     }
 
-    public Frame(ThreadContext threadContext, IRubyObject self, IRubyObject[] args, 
-    		String lastFunc, RubyModule lastClass, ISourcePosition position, Block block) {
-    	this(threadContext.getRuntime(), self, args, lastFunc, lastClass, position, block);
-    }
-
-    private Frame(IRuby runtime, IRubyObject self, IRubyObject[] args, String lastFunc,
+    public Frame(IRubyObject self, IRubyObject[] args, String lastFunc,
                  RubyModule lastClass, ISourcePosition position, Block block) {
+        assert block != null : "Block uses null object pattern.  It should NEVER be null";
+        
         this.self = self;
         this.args = args;
         this.lastFunc = lastFunc;
         this.lastClass = lastClass;
         this.position = position;
-        this.runtime = runtime;
         this.block = block;
     }
 
@@ -131,22 +150,23 @@ public class Frame {
         this.self = self;
     }
     
-    public void newScope() {
-        setScope(new Scope());
+    public Visibility getVisibility() {
+        return visibility;
     }
     
-    Scope getScope() {
-        return scope;
+    public void setVisibility(Visibility visibility) {
+        this.visibility = visibility;
     }
     
-    Scope setScope(Scope newScope) {
-        Scope oldScope = scope;
-        
-        scope = newScope;
-        
-        return oldScope;
+    /**
+     * What block is associated with this frame?
+     * 
+     * @return the block of this frame or NULL_BLOCK if no block given
+     */
+    public Block getBlock() {
+        return block;
     }
-    
+
     public Frame duplicate() {
         IRubyObject[] newArgs;
         if (args.length != 0) {
@@ -156,7 +176,7 @@ public class Frame {
         	newArgs = args;
         }
 
-        return new Frame(runtime, self, newArgs, lastFunc, lastClass, position, block);
+        return new Frame(self, newArgs, lastFunc, lastClass, position, block);
     }
 
     /* (non-Javadoc)
@@ -172,17 +192,5 @@ public class Frame {
             sb.append(lastFunc);
         }
         return sb.toString();
-    }
-    
-    public boolean getCallingZSuper() {
-        return callingZSuper;
-    }
-
-    public void setCallingZSuper(boolean callingZSuper) {
-        this.callingZSuper = callingZSuper;
-    }
-    
-    public Block getBlock() {
-        return block;
     }
 }

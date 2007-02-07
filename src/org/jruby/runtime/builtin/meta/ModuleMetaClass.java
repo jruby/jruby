@@ -73,9 +73,9 @@ public class ModuleMetaClass extends ObjectMetaClass {
             defineFastPrivateMethod("include", Arity.optional());
             definePrivateMethod("method_added", Arity.singleArgument());
             defineFastPrivateMethod("module_function", Arity.optional());
-            definePrivateMethod("public", Arity.optional(), "rbPublic");
-            definePrivateMethod("protected", Arity.optional(), "rbProtected");
-            definePrivateMethod("private", Arity.optional(), "rbPrivate");
+            defineFastPrivateMethod("public", Arity.optional(), "rbPublic");
+            defineFastPrivateMethod("protected", Arity.optional(), "rbProtected");
+            defineFastPrivateMethod("private", Arity.optional(), "rbPrivate");
             defineFastPrivateMethod("remove_class_variable", Arity.singleArgument());
             defineFastPrivateMethod("remove_const", Arity.singleArgument());
             defineFastPrivateMethod("remove_method", Arity.optional());

@@ -937,10 +937,7 @@ public class RubyModule extends RubyObject {
         ThreadContext tc = getRuntime().getCurrentContext();
         Visibility visibility = tc.getCurrentVisibility();
 
-        if (visibility.isModuleFunction()) {
-            visibility = Visibility.PRIVATE;
-        }
-
+        if (visibility.isModuleFunction()) visibility = Visibility.PRIVATE;
 
         if (args.length == 1 || args[1].isKindOf(getRuntime().getClass("Proc"))) {
             // double-testing args.length here, but it avoids duplicating the proc-setup code in two places
@@ -1239,7 +1236,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if (block != null) block.yield(getRuntime().getCurrentContext(), null, this, this, false);
+        if (block.isGiven()) block.yield(getRuntime().getCurrentContext(), null, this, this, false);
         
         return getRuntime().getNil();
     }
@@ -1532,6 +1529,8 @@ public class RubyModule extends RubyObject {
         }
 
         if (args.length == 0) {
+            // Note: we change current frames visibility here because the methods which call
+            // this method are all "fast" (e.g. they do not created their own frame).
             getRuntime().getCurrentContext().setCurrentVisibility(visibility);
         } else {
             setMethodVisibility(args, visibility);
@@ -1541,7 +1540,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_public
      *
      */
-    public RubyModule rbPublic(IRubyObject[] args, Block block) {
+    public RubyModule rbPublic(IRubyObject[] args) {
         setVisibility(args, Visibility.PUBLIC);
         return this;
     }
@@ -1549,7 +1548,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_protected
      *
      */
-    public RubyModule rbProtected(IRubyObject[] args, Block block) {
+    public RubyModule rbProtected(IRubyObject[] args) {
         setVisibility(args, Visibility.PROTECTED);
         return this;
     }
@@ -1557,7 +1556,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_private
      *
      */
-    public RubyModule rbPrivate(IRubyObject[] args, Block block) {
+    public RubyModule rbPrivate(IRubyObject[] args) {
         setVisibility(args, Visibility.PRIVATE);
         return this;
     }

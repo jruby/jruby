@@ -150,13 +150,13 @@ public class RubyBigDecimal extends RubyNumeric {
         
         RubyBigDecimal result = (RubyBigDecimal) klass.allocate();
         
-        result.callInit(args, unusedBlock);
+        result.callInit(args, Block.NULL_BLOCK);
         
         return result;
     }
 
     public static RubyBigDecimal newBigDecimal(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        return newInstance(recv.getRuntime().getClass("BigDecimal"), args, null);
+        return newInstance(recv.getRuntime().getClass("BigDecimal"), args, Block.NULL_BLOCK);
     }
 
     public static IRubyObject ver(IRubyObject recv) {
@@ -196,7 +196,7 @@ public class RubyBigDecimal extends RubyNumeric {
             return (RubyBigDecimal)v;
         } else if(v instanceof RubyFixnum || v instanceof RubyBignum) {
             String s = v.toString();
-            return newInstance(getRuntime().getClass("BigDecimal"),new IRubyObject[]{getRuntime().newString(s)}, null);
+            return newInstance(getRuntime().getClass("BigDecimal"),new IRubyObject[]{getRuntime().newString(s)}, Block.NULL_BLOCK);
         }
         if(must) {
             throw getRuntime().newTypeError(trueFalseNil(v.getMetaClass().getName() + " can't be coerced into BigDecimal"));

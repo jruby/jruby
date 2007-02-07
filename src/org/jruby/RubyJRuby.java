@@ -50,13 +50,13 @@ public class RubyJRuby {
     }
     
     public static IRubyObject runtime(IRubyObject recv, Block unusedBlock) {
-        return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), recv.getRuntime()), null);
+        return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), recv.getRuntime()), Block.NULL_BLOCK);
     }
     
     public static IRubyObject parse(IRubyObject recv, IRubyObject arg1, IRubyObject arg2, Block unusedBlock) {
         RubyString content = arg1.convertToString();
         RubyString filename = arg2.convertToString();
         return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), 
-            recv.getRuntime().parse(content.toString(), filename.toString(), null)), null);
+            recv.getRuntime().parse(content.toString(), filename.toString(), null)), Block.NULL_BLOCK);
     }
 }

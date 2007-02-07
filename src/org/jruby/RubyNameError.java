@@ -78,7 +78,7 @@ public class RubyNameError extends RubyException {
         
         RubyNameError newError = (RubyNameError) klass.allocate();
         
-        newError.callInit(args, null);
+        newError.callInit(args, Block.NULL_BLOCK);
         
         return newError;
     }

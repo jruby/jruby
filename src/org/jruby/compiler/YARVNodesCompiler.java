@@ -34,6 +34,6 @@ import org.jruby.ast.Node;
  */
 public class YARVNodesCompiler {
     public void compile(Node node, NodeCompiler context) {
-        context.compile(node,null);
+        context.compile(node, null);
     }    
 }// YARVNodesCompiler

@@ -31,7 +31,6 @@
 package org.jruby;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -287,7 +286,7 @@ public class RubyClass extends RubyModule {
         // call "inherited" method of the superclass
         newClass.inheritedBy(superClass);
 
-		if (block != null) block.yield(tc, null, newClass, newClass, false);
+		if (block.isGiven()) block.yield(tc, null, newClass, newClass, false);
 
 		return newClass;
     }

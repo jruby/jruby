@@ -187,7 +187,7 @@ public class TimeMetaClass extends ObjectMetaClass {
             cal.setTimeInMillis(seconds * 1000 + millisecs);
         }
 
-        time.callInit(args, null);
+        time.callInit(args, Block.NULL_BLOCK);
 
         return time;
     }
@@ -306,7 +306,7 @@ public class TimeMetaClass extends ObjectMetaClass {
         cal.set(Calendar.MILLISECOND, int_args[4] / 1000);
         time.setUSec(int_args[4] % 1000);
 
-        time.callInit(args, null);
+        time.callInit(args, Block.NULL_BLOCK);
 
         return time;
     }

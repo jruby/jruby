@@ -40,6 +40,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 import org.jruby.*;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -57,7 +58,7 @@ public class RaiseException extends JumpException {
         if (msg == null) {
             msg = "No message available";
         }
-        setException((RubyException) excptnClass.newInstance(new IRubyObject[] {excptnClass.getRuntime().newString(msg)}, null), nativeException);
+        setException((RubyException) excptnClass.newInstance(new IRubyObject[] {excptnClass.getRuntime().newString(msg)}, Block.NULL_BLOCK), nativeException);
     }
 
     public RaiseException(RubyException exception, boolean isNativeException) {

@@ -264,7 +264,7 @@ public class RubyKernel {
         CallType lastCallType = tc.getLastCallType();
         String format = lastVis.errorMessageFormat(lastCallType, name);
         String msg = new PrintfFormat(format).sprintf(new Object[] { name, description, 
-                                                                     noClass ? "" : ":", noClass ? "" : recv.getType().getName()},null);
+                                                                     noClass ? "" : ":", noClass ? "" : recv.getType().getName()}, null);
 
         throw lastCallType == CallType.VARIABLE ? runtime.newNameError(msg, name) : runtime.newNoMethodError(msg, name);
     }
@@ -281,7 +281,7 @@ public class RubyKernel {
                 Process p = Runtime.getRuntime().exec(command,getCurrentEnv(recv.getRuntime()));
                 RubyIO io = new RubyIO(recv.getRuntime(), p);
                 
-                if (block != null) {
+                if (block.isGiven()) {
                     try {
                         recv.getRuntime().getCurrentContext().yield(io, block);
                         
@@ -619,7 +619,7 @@ public class RubyKernel {
     }
 
     public static RubyBoolean block_given(IRubyObject recv, Block block) {
-        return recv.getRuntime().newBoolean(recv.getRuntime().getCurrentContext().getPreviousFrame().getBlock() != null);
+        return recv.getRuntime().newBoolean(recv.getRuntime().getCurrentContext().getPreviousFrame().getBlock().isGiven());
     }
 
     public static IRubyObject sprintf(IRubyObject recv, IRubyObject[] args) {

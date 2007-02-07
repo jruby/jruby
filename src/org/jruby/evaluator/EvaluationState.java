@@ -305,7 +305,7 @@ public class EvaluationState {
                 Block block = getBlock(context, self, aBlock, iVisited.getIterNode());
                 
                 // No block provided lets look at fast path for STI dispatch.
-                if (block == null) {
+                if (!block.isGiven()) {
                     RubyModule module = receiver.getMetaClass();
                     if (module.index != 0) {
                          return receiver.callMethod(context, module,
@@ -821,7 +821,7 @@ public class EvaluationState {
                 // For nodes do not have to create an addition scope so we just pass null
                 // ENEBO: Not sure we need to pass actual block along or not
                 Block block = Block.createBlock(context, iVisited.getVarNode(), null,
-                        iVisited.getCallable(), self, aBlock);
+                        iVisited.getCallable(), self);
     
                 try {
                     while (true) {
@@ -1350,7 +1350,7 @@ public class EvaluationState {
                 Block block = getBlock(context, self, aBlock, iVisited.getIterNode());
                 
                 // If no explicit block passed to super, then use the one passed in.
-                if (block == null) block = aBlock;
+                if (!block.isGiven()) block = aBlock;
                 
                 return context.callSuper(args, block);
             }
@@ -1464,10 +1464,7 @@ public class EvaluationState {
                     result = null;
                 }
 
-                
-               Block block = context.getCurrentFrame().getBlock();
-                // FIXME: Every caller where I directly yield needs to have this warning (refactor to method)
-                if (block == null) throw runtime.newLocalJumpError("yield called out of block");
+                Block block = context.getCurrentFrame().getBlock();
 
                 return block.yield(context, result, null, null, iVisited.getCheckState());
                                 
@@ -1487,7 +1484,7 @@ public class EvaluationState {
                 // Has the method that is calling super received a block argument
                 Block block = context.getCurrentFrame().getBlock();
                 
-                return context.callSuper(context.getFrameArgs(), true, block);
+                return context.callSuper(context.getFrameArgs(), block);
             }
             default:
                 throw new RuntimeException("Invalid node encountered in interpreter: \"" + node.getClass().getName() + "\", please report this at www.jruby.org");
@@ -1661,7 +1658,7 @@ public class EvaluationState {
             return null;
         }
         case NodeTypes.YIELDNODE:
-            return aBlock != null ? "yield" : null;
+            return aBlock.isGiven() ? "yield" : null;
         case NodeTypes.ZSUPERNODE: {
             String lastMethod = context.getFrameLastFunc();
             RubyModule lastClass = context.getFrameLastClass();
@@ -1783,7 +1780,7 @@ public class EvaluationState {
             IRubyObject[] argsArray = new IRubyObject[size];
 
             for (int i = 0; i < size; i++) {
-                argsArray[i] = evalInternal(context, argsArrayNode.get(i), self, null);
+                argsArray[i] = evalInternal(context, argsArrayNode.get(i), self, Block.NULL_BLOCK);
             }
 
             context.setPosition(position);
@@ -1791,7 +1788,7 @@ public class EvaluationState {
             return argsArray;
         }
 
-        return ArgsUtil.convertToJavaArray(evalInternal(context, node, self, null));
+        return ArgsUtil.convertToJavaArray(evalInternal(context, node, self, Block.NULL_BLOCK));
     }
 
     private static RubyModule getEnclosingModule(ThreadContext context, Node node, IRubyObject self, Block block) {
@@ -1833,20 +1830,20 @@ public class EvaluationState {
     }
     
     public static Block getBlock(ThreadContext context, IRubyObject self, Block currentBlock, Node blockNode) {
-        if (blockNode == null) return null;
+        if (blockNode == null) return Block.NULL_BLOCK;
         
         if (blockNode instanceof IterNode) {
             IterNode iterNode = (IterNode) blockNode;
             // Create block for this iter node
             return Block.createBlock(context, iterNode.getVarNode(),
                     new DynamicScope(iterNode.getScope(), context.getCurrentScope()),
-                    iterNode.getCallable(), self, currentBlock);
+                    iterNode.getCallable(), self);
         } else if (blockNode instanceof BlockPassNode) {
             BlockPassNode blockPassNode = (BlockPassNode) blockNode;
             IRubyObject proc = evalInternal(context, blockPassNode.getBodyNode(), self, currentBlock);
 
             // No block from a nil proc
-            if (proc.isNil()) return null;
+            if (proc.isNil()) return Block.NULL_BLOCK;
 
             // If not already a proc then we should try and make it one.
             if (!(proc instanceof RubyProc)) {
@@ -1860,10 +1857,10 @@ public class EvaluationState {
 
             // TODO: Add safety check for taintedness
             
-            if (currentBlock != null) {
-                IRubyObject blockObject = currentBlock.getBlockObject();
+            if (currentBlock.isGiven()) {
+                RubyProc procObject = currentBlock.getProcObject();
                 // The current block is already associated with proc.  No need to create a new one
-                if (blockObject != null && blockObject == proc) return currentBlock;
+                if (procObject != null && procObject == proc) return currentBlock;
             }
             
             return ((RubyProc) proc).getBlock();

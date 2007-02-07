@@ -146,8 +146,9 @@ public class RubyDir extends RubyObject {
     public static IRubyObject glob(IRubyObject recv, RubyString pat, Block block) {
         String pattern = pat.toString();
         String[] files = new Glob(recv.getRuntime().getCurrentDirectory(), pattern).getNames();
-        ThreadContext context = recv.getRuntime().getCurrentContext();
-        if (block != null) {
+        if (block.isGiven()) {
+            ThreadContext context = recv.getRuntime().getCurrentContext();
+            
             for (int i = 0; i < files.length; i++) {
                 context.yield(JavaUtil.convertJavaToRuby(recv.getRuntime(), files[i]), block);
             }
@@ -198,7 +199,7 @@ public class RubyDir extends RubyObject {
         }
         
         IRubyObject result = null;
-        if (block != null) {
+        if (block.isGiven()) {
         	// FIXME: Don't allow multiple threads to do this at once
             recv.getRuntime().setCurrentDirectory(realPath);
             try {
@@ -288,9 +289,9 @@ public class RubyDir extends RubyObject {
     public static IRubyObject open(IRubyObject recv, RubyString path, Block block) {
         RubyDir directory = 
             (RubyDir) recv.getRuntime().getClass("Dir").newInstance(
-                    new IRubyObject[] { path }, null);
+                    new IRubyObject[] { path }, Block.NULL_BLOCK);
 
-        if (block == null) return directory;
+        if (!block.isGiven()) return directory;
         
         try {
             recv.getRuntime().getCurrentContext().yield(directory, block);

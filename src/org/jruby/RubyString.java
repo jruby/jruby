@@ -189,10 +189,6 @@ public class RubyString extends RubyObject {
         taint();
     }
 
-    private static final int byteToUnsigned(byte b) {
-        return b & 0xFF;
-    }
-    
     public static String bytesToString(byte[] bytes) {
         try {
             return new String(bytes, IN_ENCODING);
@@ -1459,7 +1455,7 @@ public class RubyString extends RubyObject {
         boolean iter = false;
         ThreadContext tc = getRuntime().getCurrentContext();
         
-        if (args.length == 1 && block != null) {
+        if (args.length == 1 && block.isGiven()) {
             iter = true;
         } else if (args.length == 2) {
             repl = args[1];
@@ -1520,7 +1516,7 @@ public class RubyString extends RubyObject {
         IRubyObject repl = getRuntime().getNil();
         RubyMatchData match;
         boolean iter = false;
-        if (args.length == 1 && block != null) {
+        if (args.length == 1 && block.isGiven()) {
             iter = true;
         } else if (args.length == 2) {
             repl = args[1];
@@ -2146,7 +2142,7 @@ public class RubyString extends RubyObject {
         // Move toString() call outside loop.
         String toString = toString();
         
-        if (block == null) {
+        if (!block.isGiven()) {
             RubyArray ary = getRuntime().newArray();
             while (pattern.search(toString, start) != -1) {
                 RubyMatchData md = (RubyMatchData) tc.getBackref();

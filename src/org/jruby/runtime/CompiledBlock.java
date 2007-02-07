@@ -49,9 +49,9 @@ public class CompiledBlock extends Block {
                 self,
                 context.getCurrentFrame(),
                 context.peekCRef(),
-                new Scope(),
+                Visibility.PUBLIC,
                 context.getRubyClass(),
-                context.getCurrentScope(), null);
+                context.getCurrentScope());
         this.arity = arity;
         this.callback = callback;
         this.context = context;
@@ -60,11 +60,11 @@ public class CompiledBlock extends Block {
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf) {
-        return callback.call(context, replacementSelf, args, null, scopes);
+        return callback.call(context, replacementSelf, args, Block.NULL_BLOCK, scopes);
     }
     
     public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue) {
-        return callback.call(context, this.self, ArgsUtil.convertToJavaArray(args), null, scopes);
+        return callback.call(context, this.self, ArgsUtil.convertToJavaArray(args), Block.NULL_BLOCK, scopes);
     }
 
     public Block cloneBlock() {

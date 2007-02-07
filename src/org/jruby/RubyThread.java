@@ -158,7 +158,7 @@ public class RubyThread extends RubyObject {
     }
     
     public static RubyThread adopt(IRubyObject recv, Thread t) {
-        return adoptThread(recv, t, null);
+        return adoptThread(recv, t, Block.NULL_BLOCK);
     }
 
     private static RubyThread adoptThread(final IRubyObject recv, Thread t, Block block) {
@@ -178,13 +178,11 @@ public class RubyThread extends RubyObject {
     }
 
     private static RubyThread startThread(final IRubyObject recv, final IRubyObject[] args, boolean callInit, Block block) {
-        final IRuby runtime = recv.getRuntime();
-        if (block == null) throw runtime.newThreadError("must be called with a block");
+        if (!block.isGiven()) throw recv.getRuntime().newThreadError("must be called with a block");
 
-        final RubyThread rubyThread = new RubyThread(runtime, (RubyClass) recv);
-        if (callInit) {
-            rubyThread.callInit(args, block);
-        }
+        RubyThread rubyThread = new RubyThread(recv.getRuntime(), (RubyClass) recv);
+        
+        if (callInit) rubyThread.callInit(args, block);
 
         rubyThread.threadImpl = new NativeThread(rubyThread, args, block);
         rubyThread.threadImpl.start();
@@ -253,7 +251,7 @@ public class RubyThread extends RubyObject {
         this.threadService = runtime.getThreadService();
         // set to default thread group
         RubyThreadGroup defaultThreadGroup = (RubyThreadGroup)runtime.getClass("ThreadGroup").getConstant("Default");
-        defaultThreadGroup.add(this, null);
+        defaultThreadGroup.add(this, Block.NULL_BLOCK);
         
     }
 
@@ -263,7 +261,7 @@ public class RubyThread extends RubyObject {
         
         // set to default thread group
         RubyThreadGroup defaultThreadGroup = (RubyThreadGroup)runtime.getClass("ThreadGroup").getConstant("Default");
-        defaultThreadGroup.add(this, null);
+        defaultThreadGroup.add(this, Block.NULL_BLOCK);
     }
 
     /**

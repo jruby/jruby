@@ -38,7 +38,6 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.BlockCallback;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.load.Library;
@@ -256,8 +255,7 @@ public class Generator {
             if(self.checkArgumentCount(args,0,1) == 1) {
                 d.setEnum(args[0]);
             } else {
-                // FIXME: null block
-                d.setProc(self.getRuntime().newProc(false, null));
+                d.setProc(self.getRuntime().newProc(false, Block.NULL_BLOCK));
             }
             return self;
         }

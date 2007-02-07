@@ -49,9 +49,9 @@ public class CallBlock extends Block {
                 self,
                 ctx.getCurrentFrame(),
                 ctx.peekCRef(),
-                new Scope(),
+                Visibility.PUBLIC,
                 ctx.getRubyClass(),
-                ctx.getCurrentScope(), null);
+                ctx.getCurrentScope());
         this.arity = arity;
         this.callback = callback;
         this.self = self;
@@ -60,7 +60,7 @@ public class CallBlock extends Block {
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf) {
-        return callback.call(context, args, replacementSelf, null);
+        return callback.call(context, args, replacementSelf, Block.NULL_BLOCK);
     }
 
     public Block cloneBlock() {

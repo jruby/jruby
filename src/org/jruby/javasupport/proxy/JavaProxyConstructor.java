@@ -157,10 +157,8 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject {
         Object[] converted = new Object[count];
         for (int i = 0; i < count; i++) {
             // TODO: call ruby method
-            IRubyObject ith = constructor_args
-                    .aref(new IRubyObject[] { getRuntime().newFixnum(i) });
-            converted[i] = JavaUtil.convertArgument(Java
-                                                    .ruby_to_java(this, ith,null), parameterTypes[i]);
+            IRubyObject ith = constructor_args.aref(new IRubyObject[] { getRuntime().newFixnum(i) });
+            converted[i] = JavaUtil.convertArgument(Java.ruby_to_java(this, ith, Block.NULL_BLOCK), parameterTypes[i]);
         }
 
         final IRubyObject recv = this;
@@ -169,7 +167,6 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject {
 
             public Object invoke(Object proxy, JavaProxyMethod method,
                     Object[] nargs) throws Throwable {
-            	String methodName = method.getName();
                 int length = nargs == null ? 0 : nargs.length;
                 IRubyObject[] rubyArgs = new IRubyObject[length + 2];
                 rubyArgs[0] = JavaObject.wrap(recv.getRuntime(), proxy);

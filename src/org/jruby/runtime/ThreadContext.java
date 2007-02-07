@@ -121,36 +121,6 @@ public class ThreadContext {
     public CallType getLastCallType() {
         return lastCallType;
     }
-    
-    public void restoreBlockState(Block block, RubyModule klass) {
-        //System.out.println("IN RESTORE BLOCK (" + block.getDynamicScope() + ")");
-        pushFrame(block.getFrame());
-
-        setCRef(block.getCRef());
-        
-        getCurrentFrame().setScope(block.getScope());
-
-
-        if (block.getDynamicScope() != null) {
-            pushScope(block.getDynamicScope().cloneScope());
-        }
-
-        pushRubyClass((klass != null) ? klass : block.getKlass()); 
-    }
-
-    private void flushBlockState(Block block) {
-        //System.out.println("FLUSH");
-        
-        // For loop eval has no dynamic scope
-        if (block.getDynamicScope() != null) {
-            popScope();
-        }
-        popFrame();
-        
-        unsetCRef();
-        
-        popRubyClass();
-    }
 
     public void printScope() {
         System.out.println("SCOPE STACK:");
@@ -267,11 +237,11 @@ public class ThreadContext {
     
     private void pushCallFrame(IRubyObject self, IRubyObject[] args, 
             String lastFunc, RubyModule lastClass, Block block) {
-        pushFrame(new Frame(this, self, args, lastFunc, lastClass, getPosition(), block));        
+        pushFrame(new Frame(self, args, lastFunc, lastClass, getPosition(), block));        
     }
     
     private void pushFrame() {
-        pushFrame(new Frame(this));
+        pushFrame(new Frame(getPosition()));
     }
     
     private void pushFrame(Frame frame) {
@@ -370,10 +340,6 @@ public class ThreadContext {
         }
     }
 
-    public Scope getFrameScope() {
-        return getCurrentFrame().getScope();
-    }
-
     public ISourcePosition getPosition() {
         return sourcePosition;
     }
@@ -403,46 +369,31 @@ public class ThreadContext {
     }
 
     public Visibility getCurrentVisibility() {
-        return getFrameScope().getVisibility();
+        return getCurrentFrame().getVisibility();
     }
 
     public Visibility getPreviousVisibility() {
-        return getPreviousFrame().getScope().getVisibility();
+        return getPreviousFrame().getVisibility();
     }
     
-    public void setCurrentVisibility(Visibility vis) {
-        getFrameScope().setVisibility(vis);
+    public void setCurrentVisibility(Visibility visibility) {
+        getCurrentFrame().setVisibility(visibility);
     }
 
-    public IRubyObject callSuper(IRubyObject[] args, boolean zSuper, Block block) {
+    public IRubyObject callSuper(IRubyObject[] args, Block block) {
         Frame frame = getCurrentFrame();
         
-        frame.setCallingZSuper(zSuper);
-
         if (frame.getLastClass() == null) {
             String name = frame.getLastFunc();
             throw runtime.newNameError("superclass method '" + name + "' must be enabled by enableSuper().", name);
         }
-        try {
-            RubyClass superClass = frame.getLastClass().getSuperClass();
 
-            // Modules do not directly inherit Object so we have hacks like this
-            if (superClass == null) {
-                // TODO cnutter: I believe modules, the only ones here to have no superclasses, should have Module as their superclass
-            	superClass = runtime.getClass("Module");
-            }
-            return frame.getSelf().callMethod(this, superClass,
-                                   frame.getLastFunc(), args, CallType.SUPER, block);
-        } finally {
-            // must reset to false after calling so there's no screwy handling
-            // of other calls from this frame
-            frame.setCallingZSuper(false);            
-        }
+        RubyClass superClass = frame.getLastClass().getSuperClass();
+        
+        assert superClass != null : "Superclass should always be something for " + frame.getLastClass().getBaseName();
+
+        return frame.getSelf().callMethod(this, superClass, frame.getLastFunc(), args, CallType.SUPER, block);
     }    
-
-    public IRubyObject callSuper(IRubyObject[] args, Block block) {
-        return callSuper(args, false, block);
-    }
 
     /**
      * Yield to the block passed to the current frame.
@@ -454,8 +405,13 @@ public class ThreadContext {
         return block.yield(this, value, null, null, false);
     }
     
+    /**
+     * Used by compiler
+     * 
+     * @param block
+     */
     public void raiseErrorIfNoBlock(Block block) {
-        if (block == null) throw runtime.newLocalJumpError("yield called out of block");
+        if (!block.isGiven()) throw runtime.newLocalJumpError("yield called out of block");
     }
 
     public void pollThreadEvents() {
@@ -663,7 +619,6 @@ public class ThreadContext {
     
     public void preAdoptThread() {
         pushFrame();
-        getCurrentFrame().newScope();
         pushRubyClass(runtime.getObject());
         pushCRef(runtime.getObject());
         getCurrentFrame().setSelf(runtime.getTopSelf());
@@ -673,7 +628,7 @@ public class ThreadContext {
         pushCRef(type);
         pushRubyClass(type); 
         pushFrameCopy();
-        getCurrentFrame().newScope();
+        getCurrentFrame().setVisibility(Visibility.PUBLIC);
         pushScope(new DynamicScope(staticScope, getCurrentScope()));
     }
     
@@ -689,7 +644,6 @@ public class ThreadContext {
         LocalStaticScope staticScope = new LocalStaticScope(null);
         staticScope.setVariables(names);
         pushFrame();
-        getCurrentFrame().newScope();
     }
     
     public void postBsfApply() {
@@ -712,7 +666,6 @@ public class ThreadContext {
         RubyModule implementationClass = (RubyModule)cref.getValue();
         setCRef(cref);
         pushCallFrame(recv, args, name, noSuper ? null : lastClass, block);
-        getCurrentFrame().newScope();
         pushScope(new DynamicScope(staticScope, getCurrentScope()));
         pushRubyClass(implementationClass);
     }
@@ -739,7 +692,7 @@ public class ThreadContext {
     public void preReflectedMethodInternalCall(RubyModule implementationClass, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper, Block block) {
         pushRubyClass((RubyModule)implementationClass.getCRef().getValue());
         pushCallFrame(recv, args, name, noSuper ? null : lastClass, block);
-        getCurrentFrame().setScope(getPreviousFrame().getScope());
+        getCurrentFrame().setVisibility(getPreviousFrame().getVisibility());
     }
     
     public void postReflectedMethodInternalCall() {
@@ -749,7 +702,6 @@ public class ThreadContext {
     
     public void preInitCoreClasses() {
         pushFrame();
-        getCurrentFrame().newScope();
         setCurrentVisibility(Visibility.PRIVATE);
     }
     
@@ -764,7 +716,7 @@ public class ThreadContext {
     public void preNodeEval(RubyModule newWrapper, RubyModule rubyClass, IRubyObject self) {
         setWrapper(newWrapper);
         pushRubyClass(rubyClass);
-        pushCallFrame(self, IRubyObject.NULL_ARRAY, null, null, null);
+        pushCallFrame(self, IRubyObject.NULL_ARRAY, null, null, Block.NULL_BLOCK);
         
         setCRef(rubyClass.getCRef());
     }
@@ -783,7 +735,7 @@ public class ThreadContext {
         pushRubyClass(executeUnderClass);
         pushCRef(executeUnderClass);
         pushCallFrame(null, frame.getArgs(), frame.getLastFunc(), frame.getLastClass(), block);
-        getCurrentFrame().setScope(getPreviousFrame().getScope());
+        getCurrentFrame().setVisibility(getPreviousFrame().getVisibility());
     }
     
     public void postExecuteUnder() {
@@ -812,15 +764,25 @@ public class ThreadContext {
         popFrame();
     }
     
-    public void preYieldSpecificBlock(Block specificBlock, RubyModule klass) {
-        restoreBlockState(specificBlock, klass);
-    }
+    public void preYieldSpecificBlock(Block block, RubyModule klass) {
+        //System.out.println("IN RESTORE BLOCK (" + block.getDynamicScope() + ")");
+        pushFrame(block.getFrame());
+        setCRef(block.getCRef());
+        
+        getCurrentFrame().setVisibility(block.getVisibility());
 
+        if (block.getDynamicScope() != null) {
+            pushScope(block.getDynamicScope().cloneScope());
+        }
+
+        pushRubyClass((klass != null) ? klass : block.getKlass()); 
+    }
+    
     public void preEvalWithBinding(Block block) {
         pushBindingFrame(frameIndex);
         pushFrame(block.getFrame());
         setCRef(block.getCRef());        
-        getCurrentFrame().setScope(block.getScope());
+        getCurrentFrame().setVisibility(block.getVisibility());
         pushRubyClass(block.getKlass()); 
     }
 
@@ -832,12 +794,17 @@ public class ThreadContext {
     }
     
     public void postYield(Block block) {
-        flushBlockState(block);
-    }
+         // For loop eval has no dynamic scope
+        if (block.getDynamicScope() != null) {
+            popScope();
+        }
+        popFrame();
+        unsetCRef();
+        popRubyClass();
+     }
 
     public void preRootNode(DynamicScope scope) {
         pushScope(scope);
-        getCurrentFrame().newScope();
     }
 
     public void postRootNode() {

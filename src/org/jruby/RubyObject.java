@@ -375,7 +375,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args) {
-        return callMethod(context, getMetaClass(), name, args, CallType.FUNCTIONAL, null);
+        return callMethod(context, getMetaClass(), name, args, CallType.FUNCTIONAL, Block.NULL_BLOCK);
     }
 
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, Block block) {
@@ -387,7 +387,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      */
     public IRubyObject callMethod(ThreadContext context, String name,
             IRubyObject[] args, CallType callType) {
-        return callMethod(context, getMetaClass(), name, args, callType, null);
+        return callMethod(context, getMetaClass(), name, args, callType, Block.NULL_BLOCK);
     }
     
     public IRubyObject callMethod(ThreadContext context, String name,
@@ -414,7 +414,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      */
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, byte switchvalue, String name,
             IRubyObject[] args, CallType callType) {
-        return callMethod(context, rubyclass, name, args, callType, null);
+        return callMethod(context, rubyclass, name, args, callType, Block.NULL_BLOCK);
     }
 
     /**
@@ -474,7 +474,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public IRubyObject callMethod(ThreadContext context, String name) {
-        return callMethod(context, name, IRubyObject.NULL_ARRAY, null, null);
+        return callMethod(context, name, IRubyObject.NULL_ARRAY, null, Block.NULL_BLOCK);
     }
 
     public IRubyObject callMethod(ThreadContext context, String name, Block block) {
@@ -546,7 +546,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     public IRubyObject eval(Node n) {
         //return new EvaluationState(getRuntime(), this).begin(n);
         // need to continue evaluation with a new self, so save the old one (should be a stack?)
-        return EvaluationState.eval(getRuntime().getCurrentContext(), n, this, null);
+        return EvaluationState.eval(getRuntime().getCurrentContext(), n, this, Block.NULL_BLOCK);
     }
 
     public void callInit(IRubyObject[] args, Block block) {
@@ -681,7 +681,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public IRubyObject specificEval(RubyModule mod, IRubyObject[] args, Block block) {
-        if (block != null) {
+        if (block.isGiven()) {
             if (args.length > 0) throw getRuntime().newArgumentError(args.length, 0);
 
             return yieldUnder(mod, block);
@@ -740,7 +740,7 @@ public class RubyObject implements Cloneable, IRubyObject {
             public Arity getArity() {
                 return Arity.optional();
             }
-        }, new IRubyObject[] { this, src, file, line }, null);
+        }, new IRubyObject[] { this, src, file, line }, Block.NULL_BLOCK);
     }
 
     private IRubyObject yieldUnder(RubyModule under, Block block) {
@@ -829,12 +829,11 @@ public class RubyObject implements Cloneable, IRubyObject {
         // this is ensured by the callers
         assert file != null;
 
-        ThreadContext threadContext = getRuntime().getCurrentContext();
-        ISourcePosition savedPosition = threadContext.getPosition();
+        ISourcePosition savedPosition = context.getPosition();
 
         // no binding, just eval in "current" frame (caller's frame)
         try {
-            return EvaluationState.eval(threadContext, getRuntime().parse(src.toString(), file, threadContext.getCurrentScope()), this, null);
+            return EvaluationState.eval(context, getRuntime().parse(src.toString(), file, context.getCurrentScope()), this, Block.NULL_BLOCK);
         } catch (JumpException je) {
             if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
                 throw getRuntime().newLocalJumpError("unexpected return");
@@ -844,7 +843,7 @@ public class RubyObject implements Cloneable, IRubyObject {
             throw je;
         } finally {
             // restore position
-            threadContext.setPosition(savedPosition);
+            context.setPosition(savedPosition);
         }
     }
 
@@ -1238,7 +1237,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         CallType lastCallType = tc.getLastCallType();
         String format = lastVis.errorMessageFormat(lastCallType, name);
         String msg = new PrintfFormat(format).sprintf(new Object[] { name, description,
-                                                                     noClass ? "" : ":", noClass ? "" : getType().getName()},null);
+                                                                     noClass ? "" : ":", noClass ? "" : getType().getName()}, null);
 
         if (lastCallType == CallType.VARIABLE) {
         	throw getRuntime().newNameError(msg, name);

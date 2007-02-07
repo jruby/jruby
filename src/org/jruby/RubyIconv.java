@@ -27,7 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;

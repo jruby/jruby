@@ -102,11 +102,11 @@ public class RubyHash extends RubyObject implements Map {
         return ClassIndex.HASH;
     }
     
-    public IRubyObject getDefaultValue(IRubyObject[] args, Block block) {
+    public IRubyObject getDefaultValue(IRubyObject[] args, Block unusedBlock) {
         if(defaultValueCallback == null || (args.length == 0 && !capturedDefaultProc.isNil())) {
             return getRuntime().getNil();
         }
-        return defaultValueCallback.execute(this,args,null);
+        return defaultValueCallback.execute(this, args, Block.NULL_BLOCK);
     }
 
     public IRubyObject setDefaultValue(final IRubyObject defaultValue) {
@@ -114,15 +114,15 @@ public class RubyHash extends RubyObject implements Map {
         if (defaultValue == getRuntime().getNil()) {
             defaultValueCallback = NIL_DEFAULT_VALUE;
         } else {
-        defaultValueCallback = new Callback() {
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-                return defaultValue;
-            }
+            defaultValueCallback = new Callback() {
+                public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
+                    return defaultValue;
+                }
 
-            public Arity getArity() {
-                return Arity.optional();
-            }
-        };
+                public Arity getArity() {
+                    return Arity.optional();
+                }
+            };
         }
         
         return defaultValue;
@@ -132,7 +132,7 @@ public class RubyHash extends RubyObject implements Map {
         final IRubyObject self = this;
         capturedDefaultProc = newProc;
         defaultValueCallback = new Callback() {
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
+            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
                 IRubyObject[] nargs = args.length == 0 ? new IRubyObject[] { self } :
                      new IRubyObject[] { self, args[0] };
 
@@ -145,7 +145,7 @@ public class RubyHash extends RubyObject implements Map {
         };
     }
     
-    public IRubyObject default_proc(Block block) {
+    public IRubyObject default_proc(Block unusedBlock) {
         return capturedDefaultProc;
     }
 
@@ -221,7 +221,7 @@ public class RubyHash extends RubyObject implements Map {
 	}
 
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if (block != null) {
+        if (block.isGiven()) {
             setDefaultProc(getRuntime().newProc(false, block));
         } else if (args.length > 0) {
             modify();
@@ -336,7 +336,7 @@ public class RubyHash extends RubyObject implements Map {
         if (result == null) {
             if (args.length > 1) return args[1]; 
                 
-            if (block != null) return getRuntime().getCurrentContext().yield(key, block); 
+            if (block.isGiven()) return getRuntime().getCurrentContext().yield(key, block); 
 
             throw getRuntime().newIndexError("key not found");
         }
@@ -462,12 +462,9 @@ public class RubyHash extends RubyObject implements Map {
 	public IRubyObject delete(IRubyObject key, Block block) {
 		modify();
 		IRubyObject result = (IRubyObject) valueMap.remove(key);
-        ThreadContext tc = getRuntime().getCurrentContext();
-		if (result != null) {
-			return result;
-		} else if (block != null) {
-			return tc.yield(key, block);
-		} 
+        
+		if (result != null) return result;
+		if (block.isGiven()) return getRuntime().getCurrentContext().yield(key, block);
 
 		return getDefaultValue(new IRubyObject[] {key}, null);
 	}
@@ -522,7 +519,7 @@ public class RubyHash extends RubyObject implements Map {
         RubyHash freshElementsHash =
             (RubyHash) freshElements.convertType(RubyHash.class, "Hash", "to_hash");
         ThreadContext ctx = getRuntime().getCurrentContext();
-        if (block != null) {
+        if (block.isGiven()) {
             Map other = freshElementsHash.valueMap;
             for(Iterator iter = other.keySet().iterator();iter.hasNext();) {
                 IRubyObject key = (IRubyObject)iter.next();
@@ -534,7 +531,7 @@ public class RubyHash extends RubyObject implements Map {
                 }
             }
         } else {
-        valueMap.putAll(freshElementsHash.valueMap);
+            valueMap.putAll(freshElementsHash.valueMap);
         }
         return this;
     }

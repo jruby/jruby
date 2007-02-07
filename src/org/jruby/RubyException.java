@@ -130,7 +130,7 @@ public class RubyException extends RubyObject {
                     return this;
                 }
                 RubyException ret = (RubyException)rbClone();
-                ret.initialize(args, null); // This looks wrong, but it's the way MRI does it.
+                ret.initialize(args, Block.NULL_BLOCK); // This looks wrong, but it's the way MRI does it.
                 return ret;
             default :
                 throw getRuntime().newArgumentError("Wrong argument count");

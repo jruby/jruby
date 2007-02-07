@@ -125,7 +125,7 @@ public class RubyDigest {
             } catch(NoSuchAlgorithmException e) {
                 throw recv.getRuntime().newNotImplementedError("the " + recv + "() function is unimplemented on this machine");
             }
-            result.callInit(args, null);
+            result.callInit(args, Block.NULL_BLOCK);
             return result;
         }
         public static IRubyObject s_digest(IRubyObject recv, IRubyObject str) {

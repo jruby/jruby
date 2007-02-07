@@ -187,10 +187,10 @@ public class RubySocket extends RubyBasicSocket {
             IRuby r = recv.getRuntime();
             IRubyObject host = args[0];
             IRubyObject port = args[1];
-            IRubyObject family = args[2];
+            //IRubyObject family = args[2];
             IRubyObject socktype = args[3];
-            IRubyObject protocol = args[4];
-            IRubyObject flags = args[5];
+            //IRubyObject protocol = args[4];
+            //IRubyObject flags = args[5];
             boolean sock_stream = true;
             boolean sock_dgram = true;
             if(!socktype.isNil()) {

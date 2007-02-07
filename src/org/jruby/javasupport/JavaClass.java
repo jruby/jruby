@@ -82,8 +82,6 @@ public class JavaClass extends JavaObject {
         return javaClass;
     }
 
-    private Constructor constructor;
-
     public static RubyClass createJavaClassClass(IRuby runtime, RubyModule javaModule) {
         // FIXME: Determine if a real allocator is needed here. Do people want to extend
         // JavaClass? Do we want them to do that? Can you Class.new(JavaClass)? Should
@@ -268,7 +266,7 @@ public class JavaClass extends JavaObject {
                 RubyArray argsAsArray = RubyArray.newArrayLight(getRuntime());
                 int argsTypeHash = 0;
                 for (int j = 0; j < args.length; j++) {
-                    argsArray[j+1] = Java.ruby_to_java(proxy, args[j], null);
+                    argsArray[j+1] = Java.ruby_to_java(proxy, args[j], Block.NULL_BLOCK);
                     argsAsArray.append(argsArray[j+1]);
                     // TODO: better hash combinator?
                     argsTypeHash += System.identityHashCode(args[j].getMetaClass());
@@ -286,7 +284,7 @@ public class JavaClass extends JavaObject {
                     matchingMethods.put(argsKey, match);
                 }
                 
-                return Java.java_to_ruby(self, match.callMethod(context, "invoke", argsArray), null);
+                return Java.java_to_ruby(self, match.callMethod(context, "invoke", argsArray), Block.NULL_BLOCK);
             }
 
             public Arity getArity() {

@@ -166,11 +166,9 @@ public class RubyProcess {
         double currentTime = System.currentTimeMillis() / 1000.0;
         double startTime = runtime.getStartTime() / 1000.0;
         RubyFloat zero = runtime.newFloat(0.0);
-        return RubyStruct.newStruct(runtime.getTmsStruct(), new IRubyObject[] {
-                runtime.newFloat(currentTime - startTime), 
-                zero,
-                zero, 
-                zero }, null);
+        return RubyStruct.newStruct(runtime.getTmsStruct(), 
+                new IRubyObject[] { runtime.newFloat(currentTime - startTime), zero, zero, zero }, 
+                Block.NULL_BLOCK);
     }
 
     public static IRubyObject pid(IRubyObject recv) {

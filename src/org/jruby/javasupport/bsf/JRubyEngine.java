@@ -49,6 +49,7 @@ import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.IAccessor;
@@ -195,7 +196,7 @@ public class JRubyEngine extends BSFEngineImpl {
         }
 
         public IRubyObject setValue(IRubyObject value) {
-            bean.bean = JavaUtil.convertArgument(Java.ruby_to_java(runtime.getObject(), value, null), bean.type);
+            bean.bean = JavaUtil.convertArgument(Java.ruby_to_java(runtime.getObject(), value, Block.NULL_BLOCK), bean.type);
             return value;
         }
     }

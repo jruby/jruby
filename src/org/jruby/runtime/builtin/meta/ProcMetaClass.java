@@ -71,7 +71,7 @@ public class ProcMetaClass extends ObjectMetaClass {
         IRubyObject obj = (IRubyObject) allocate();
         
         // No passed in block, lets check next outer frame for one ('Proc.new')
-        if (block == null) {
+        if (!block.isGiven()) {
             block = getRuntime().getCurrentContext().getPreviousFrame().getBlock();
         }
         

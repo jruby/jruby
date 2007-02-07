@@ -208,7 +208,7 @@ public class RubyFile extends RubyIO {
 	    }
 	    openInternal(path, modes);
 	    
-	    if (block != null) {
+	    if (block.isGiven()) {
 	        // getRuby().getRuntime().warn("File::new does not take block; use File::open instead");
 	    }
 	    return this;
@@ -218,7 +218,7 @@ public class RubyFile extends RubyIO {
         checkArgumentCount(args, 1, 1);
         
         RubyInteger mode = args[0].convertToInteger();
-        System.out.println(mode);
+
         if (!new File(path).exists()) {
             throw getRuntime().newErrnoENOENTError("No such file or directory - " + path);
         }

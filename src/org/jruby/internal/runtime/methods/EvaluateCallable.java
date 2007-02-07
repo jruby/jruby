@@ -29,10 +29,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
-import org.jruby.ast.AttrAssignNode;
-import org.jruby.ast.CallNode;
 import org.jruby.ast.Node;
-import org.jruby.ast.types.IArityNode;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;

@@ -121,7 +121,7 @@ public class RubyStringIO extends RubyObject {
         IRubyObject val = strio;
         ThreadContext tc = recv.getRuntime().getCurrentContext();
         
-        if (block != null) {
+        if (block.isGiven()) {
             try {
                 val = tc.yield(strio, block);
             } finally {

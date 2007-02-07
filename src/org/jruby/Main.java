@@ -48,6 +48,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.ParserSupport;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -273,7 +274,7 @@ public class Main {
         Iterator iter = commandline.requiredLibraries().iterator();
         while (iter.hasNext()) {
             String scriptName = (String) iter.next();
-            RubyKernel.require(runtime.getTopSelf(), runtime.newString(scriptName), null);
+            RubyKernel.require(runtime.getTopSelf(), runtime.newString(scriptName), Block.NULL_BLOCK);
         }
     }
 

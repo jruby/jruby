@@ -131,7 +131,7 @@ public class RubyMethod extends RubyObject {
 		IRuby r = getRuntime();
         ThreadContext tc = r.getCurrentContext();
         Block block = Block.createBlock(tc, null, tc.getCurrentScope().cloneScope(), 
-                new IterateCallable(f.getBlockMethod("bmcall"), this), r.getTopSelf(), null);
+                new IterateCallable(f.getBlockMethod("bmcall"), this), r.getTopSelf());
         
         while (true) {
             try {
@@ -180,10 +180,10 @@ public class RubyMethod extends RubyObject {
     public static IRubyObject bmcall(IRubyObject blockArg, IRubyObject arg1, IRubyObject self, Block unusedBlock) {
         if (blockArg instanceof RubyArray) {
             // ENEBO: Very wrong
-            return ((RubyMethod) arg1).call(((RubyArray) blockArg).toJavaArray(), null);
+            return ((RubyMethod) arg1).call(((RubyArray) blockArg).toJavaArray(), Block.NULL_BLOCK);
         }
         // ENEBO: Very wrong
-        return ((RubyMethod) arg1).call(new IRubyObject[] { blockArg }, null);
+        return ((RubyMethod) arg1).call(new IRubyObject[] { blockArg }, Block.NULL_BLOCK);
     }
 
     public RubyUnboundMethod unbind(Block unusedBlock) {

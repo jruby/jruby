@@ -165,7 +165,7 @@ public class AssignmentVisitor {
         Iterator iter = node.getHeadNode() != null ? node.getHeadNode().iterator() : Collections.EMPTY_LIST.iterator();
         for (int i = 0; i < valueLen && iter.hasNext(); i++) {
             Node lNode = (Node) iter.next();
-            assign(context, self, lNode, value.entry(i), null, callAsProc);
+            assign(context, self, lNode, value.entry(i), Block.NULL_BLOCK, callAsProc);
         }
 
         if (callAsProc && iter.hasNext()) {
@@ -178,16 +178,16 @@ public class AssignmentVisitor {
                 // no check for '*'
             } else if (varLen < valueLen) {
                 ArrayList newList = new ArrayList(value.getList().subList(varLen, valueLen));
-                assign(context, self, argsNode, runtime.newArray(newList), null, callAsProc);
+                assign(context, self, argsNode, runtime.newArray(newList), Block.NULL_BLOCK, callAsProc);
             } else {
-                assign(context, self, argsNode, runtime.newArray(0), null, callAsProc);
+                assign(context, self, argsNode, runtime.newArray(0), Block.NULL_BLOCK, callAsProc);
             }
         } else if (callAsProc && valueLen < varLen) {
             throw runtime.newArgumentError("Wrong # of arguments (" + valueLen + " for " + varLen + ")");
         }
 
         while (iter.hasNext()) {
-            assign(context, self, (Node)iter.next(), runtime.getNil(), null, callAsProc);
+            assign(context, self, (Node)iter.next(), runtime.getNil(), Block.NULL_BLOCK, callAsProc);
         }
         
         return value;

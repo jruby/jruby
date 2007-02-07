@@ -48,6 +48,7 @@ import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -297,7 +298,7 @@ public class UnmarshalStream extends BufferedInputStream {
         String className = unmarshalObject().asSymbol();
         IRubyObject marshaled = unmarshalObject();
         RubyClass classInstance = runtime.getClass(className);
-        IRubyObject result = classInstance.newInstance(new IRubyObject[0], null);
+        IRubyObject result = classInstance.newInstance(new IRubyObject[0], Block.NULL_BLOCK);
         result.callMethod(getRuntime().getCurrentContext(),"marshal_load", marshaled);
         registerLinkTarget(result);
         return result;

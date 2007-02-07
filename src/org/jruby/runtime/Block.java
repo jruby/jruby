@@ -14,7 +14,7 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2007 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -34,6 +34,7 @@ package org.jruby.runtime;
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
+import org.jruby.RubyProc;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.NodeTypes;
@@ -48,46 +49,83 @@ import org.jruby.util.collections.SinglyLinkedList;
  *
  */
 public class Block {
-    private Node varNode;
-    private ICallable method;
+    /**
+     * All Block variables should either refer to a real block or this NULL_BLOCK.
+     */
+    public static Block NULL_BLOCK = new Block() {
+        public boolean isGiven() {
+            return false;
+        }
+        
+        public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
+                RubyModule klass, boolean aValue) {
+            throw context.getRuntime().newLocalJumpError("yield called out of block");
+        }
+        
+        public Block cloneBlock() {
+            return this;
+        }
+    };
+
+    /**
+     * 'self' at point when the block is defined
+     */
     private IRubyObject self;
+
+    /**
+     * body of the block (wrapped in an ICallable)
+     */
+    private ICallable method;
+
+    /**
+     * AST Node representing the parameter (VARiable) list to the block.
+     */
+    private Node varNode;
+    
+    /**
+     * frame of method which defined this block
+     */
     private Frame frame;
     private SinglyLinkedList cref;
-    private Scope scope;
+    private Visibility visibility;
     private RubyModule klass;
     // Fixme: null dynamic scope screams for subclass (after rest of block clean up do this)
     
     // For loops are done via blocks and they have no dynamic scope of their own so we use
     // whatever is there.  What is important is that this may be null.
+    /**
+     * A reference to all variable values (and names) that are in-scope for this block.
+     */
     private DynamicScope dynamicScope;
-    private IRubyObject blockObject = null;
+    
+    /**
+     * The Proc that this block is associated with.  When we reference blocks via variable
+     * reference they are converted to Proc objects.  We store a reference of the associated
+     * Proc object for easy conversion.  
+     */
+    private RubyProc proc = null;
+    
     public boolean isLambda = false;
 
-    private Block blockAtCreation;
-
-    public static Block createBlock(ThreadContext context, Node varNode, DynamicScope dynamicScope, ICallable method, 
-            IRubyObject self, Block blockAtCreation) {
+    public static Block createBlock(ThreadContext context, Node varNode, DynamicScope dynamicScope,
+            ICallable method, IRubyObject self) {
         return new Block(varNode,
                          method,
                          self,
                          context.getCurrentFrame(),
                          context.peekCRef(),
-                         context.getFrameScope(),
+                         context.getCurrentFrame().getVisibility(),
                          context.getRubyClass(),
-                         dynamicScope,
-                         blockAtCreation);
+                         dynamicScope);
+    }
+    
+    protected Block() {
+        this(null, null, null, null, null, null, null, null);
     }
 
-    public Block(
-        Node varNode,
-        ICallable method,
-        IRubyObject self,
-        Frame frame,
-        SinglyLinkedList cref,
-        Scope scope,
-        RubyModule klass,
-        DynamicScope dynamicScope,
-        Block blockAtCreation) {
+    public Block(Node varNode, ICallable method, IRubyObject self, Frame frame,
+        SinglyLinkedList cref, Visibility visibility, RubyModule klass,
+        DynamicScope dynamicScope) {
     	
         //assert method != null;
 
@@ -95,11 +133,10 @@ public class Block {
         this.method = method;
         this.self = self;
         this.frame = frame;
-        this.scope = scope;
+        this.visibility = visibility;
         this.klass = klass;
         this.cref = cref;
         this.dynamicScope = dynamicScope;
-        this.blockAtCreation = blockAtCreation;
     }
     
     public static Block createBinding(RubyModule wrapper, Frame frame, DynamicScope dynamicScope) {
@@ -135,13 +172,11 @@ public class Block {
         } 
         
         // FIXME: Ruby also saves wrapper, which we do not
-        return new Block(null, null, frame.getSelf(), frame, context.peekCRef(), frame.getScope(), 
-                context.getRubyClass(), extraScope, null);
+        return new Block(null, null, frame.getSelf(), frame, context.peekCRef(), frame.getVisibility(), 
+                context.getRubyClass(), extraScope);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf) {
-        IRuby runtime = self.getRuntime();
-
         Block newBlock;
         
         // If we have no dynamic scope we are a block representing a for loop eval.
@@ -155,38 +190,35 @@ public class Block {
             }
         }
 
-        return newBlock.yield(context, runtime.newArray(args), null, null, true);
+        return newBlock.yield(context, context.getRuntime().newArray(args), null, null, true);
     }
 
     /**
      * Yield to this block, usually passed to the current call.
      * 
+     * @param context represents the current thread-specific data
      * @param value The value to yield, either a single value or an array of values
      * @param self The current self
      * @param klass
-     * @param yieldProc
-     * @param aValue
+     * @param aValue Should value be arrayified or not?
      * @return
      */
-    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean aValue) {
-        IRuby runtime = context.getRuntime();
-        
+    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
+            RubyModule klass, boolean aValue) {
         if (klass == null) {
-            self = getSelf();
+            self = this.self;
             frame.setSelf(self);
         }
         
         context.preYieldSpecificBlock(this, klass);
 
         try {
-            
-            // FIXME: during refactoring, it was determined that all calls to yield are passing false for yieldProc; is this still needed?
-            IRubyObject[] args = getBlockArgs(context, value, self, false, aValue, getVarNode());
+            IRubyObject[] args = getBlockArgs(context, value, self, aValue);
         
             // This while loop is for restarting the block call in case a 'redo' fires.
             while (true) {
                 try {
-                    IRubyObject result = method.call(context, self, args, blockAtCreation);
+                    IRubyObject result = method.call(context, self, args, NULL_BLOCK);
 
                     return result;
                 } catch (JumpException je) {
@@ -204,7 +236,7 @@ public class Block {
                 // A 'next' is like a local return from the block, ending this call or yield.
 	            IRubyObject nextValue = (IRubyObject)je.getPrimaryData();
                 
-	            return nextValue == null ? runtime.getNil() : nextValue;
+	            return nextValue == null ? context.getRuntime().getNil() : nextValue;
         	} else {
         		throw je;
         	}
@@ -213,10 +245,10 @@ public class Block {
         }
     }
 
-    private IRubyObject[] getBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self, boolean callAsProc, boolean valueIsArray, Node varNode) {
+    private IRubyObject[] getBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self, boolean valueIsArray) {
         //FIXME: block arg handling is mucked up in strange ways and NEED to
         // be fixed. Especially with regard to Enumerable. See RubyEnumerable#eachToList too.
-        if(varNode == null) {
+        if (varNode == null) {
             return new IRubyObject[]{value};
         }
         
@@ -224,18 +256,13 @@ public class Block {
         
         switch (varNode.nodeId) {
             case NodeTypes.ZEROARGNODE:
-                // Better not have arguments for a no-arg block.
-                if (callAsProc && arrayLength(value) != 0) { 
-                    throw runtime.newArgumentError("wrong # of arguments(" + 
-                                                   ((RubyArray)value).getLength() + "for 0)");
-                }
                 break;
             case NodeTypes.MULTIPLEASGNNODE:
                 if (!valueIsArray) {
                     value = ArgsUtil.convertToRubyArray(runtime, value, ((MultipleAsgnNode)varNode).getHeadNode() != null);
                 }
 
-                value = AssignmentVisitor.multiAssign(context, self, (MultipleAsgnNode)varNode, (RubyArray)value, callAsProc);
+                value = AssignmentVisitor.multiAssign(context, self, (MultipleAsgnNode)varNode, (RubyArray)value, false);
                 break;
             default:
                 if (valueIsArray) {
@@ -255,7 +282,7 @@ public class Block {
                     runtime.getWarnings().warn("multiple values for a block parameter (0 for 1)");
                 }
 
-                AssignmentVisitor.assign(context, self, varNode, value, null, callAsProc);
+                AssignmentVisitor.assign(context, self, varNode, value, Block.NULL_BLOCK, false);
         }
         return ArgsUtil.convertToJavaArray(value);
     }
@@ -268,7 +295,8 @@ public class Block {
         // We clone dynamic scope because this will be a new instance of a block.  Any previously
         // captured instances of this block may still be around and we do not want to start
         // overwriting those values when we create a new one.
-        Block newBlock = new Block(varNode, method, self, frame, cref, scope, klass, ((dynamicScope == null)?null:dynamicScope.cloneScope()), blockAtCreation);
+        Block newBlock = new Block(varNode, method, self, frame, cref, visibility, klass, 
+                (dynamicScope == null ? null : dynamicScope.cloneScope()));
         
         newBlock.isLambda = isLambda;
 
@@ -280,23 +308,33 @@ public class Block {
     }
 
     public Visibility getVisibility() {
-        return scope.getVisibility();
+        return visibility;
     }
 
     public void setVisibility(Visibility visibility) {
-        scope.setVisibility(visibility);
+        this.visibility = visibility;
     }
 
     public SinglyLinkedList getCRef() {
         return cref;
     }
 
-    public IRubyObject getBlockObject() {
-    	return blockObject;
+    /**
+     * Retrieve the proc object associated with this block
+     * 
+     * @return the proc or null if this has no proc associated with it
+     */
+    public RubyProc getProcObject() {
+    	return proc;
     }
     
-    public void setBlockObject(IRubyObject blockObject) {
-    	this.blockObject = blockObject;
+    /**
+     * Set the proc object associated with this block
+     * 
+     * @param procObject
+     */
+    public void setProcObject(RubyProc procObject) {
+    	this.proc = procObject;
     }
 
     /**
@@ -322,36 +360,13 @@ public class Block {
     public RubyModule getKlass() {
         return klass;
     }
-
+    
     /**
-     * Gets the method.
-     * @return Returns a IMethod
+     * Is the current block a real yield'able block instead a null one
+     * 
+     * @return true if this is a valid block or false otherwise
      */
-    public ICallable getMethod() {
-        return method;
-    }
-
-    /**
-     * Gets the scope.
-     * @return Returns a Scope
-     */
-    public Scope getScope() {
-        return scope;
-    }
-
-    /**
-     * Gets the self.
-     * @return Returns a RubyObject
-     */
-    public IRubyObject getSelf() {
-        return self;
-    }
-
-    /**
-     * Gets the variable node for the block.
-     * @return Returns a Node
-     */
-    public Node getVarNode() {
-        return varNode;
+    public boolean isGiven() {
+        return true;
     }
 }

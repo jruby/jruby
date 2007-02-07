@@ -38,6 +38,7 @@ package org.jruby;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jruby.parser.ReOptions;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -193,7 +194,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         
         RubyRegexp re = (RubyRegexp) klass.allocate();
         
-        re.callInit(args, null);
+        re.callInit(args, Block.NULL_BLOCK);
         
         return re;
     }
@@ -695,7 +696,8 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 	}
 
     public static RubyRegexp unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-        RubyRegexp result = newRegexp(input.getRuntime(),new String(input.unmarshalString(), "PLAIN"),input.unmarshalInt(),null);
+        RubyRegexp result = newRegexp(input.getRuntime(), 
+                new String(input.unmarshalString(), "PLAIN"), input.unmarshalInt(), null);
         input.registerLinkTarget(result);
         return result;
     }

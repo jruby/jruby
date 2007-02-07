@@ -542,15 +542,12 @@ public class FileMetaClass extends IOMetaClass {
             chmod(new IRubyObject[] {fileMode, pathString});
         }
         
-        if (tryToYield && block != null) {
-            IRubyObject value = getRuntime().getNil();
+        if (tryToYield && block.isGiven()) {
             try {
-                value = tc.yield(file, block);
+                return tc.yield(file, block);
             } finally {
                 file.close();
             }
-            
-            return value;
         }
         
         return file;
