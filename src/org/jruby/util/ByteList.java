@@ -9,6 +9,8 @@
 
 package org.jruby.util;
 
+import java.util.Arrays;
+
 /**
  *
  * @author headius
@@ -20,7 +22,7 @@ public class ByteList {
     private int realSize;
     
     private static final int DEFAULT_SIZE = 4;
-    private static final double FACTOR = 1.5;
+    private static final double FACTOR = 2;
     
     /** Creates a new instance of ByteList */
     public ByteList() {
@@ -30,6 +32,27 @@ public class ByteList {
     public ByteList(int size) {
         bytes = new byte[size];
         realSize = 0;
+    }
+    
+    public ByteList(byte[] wrap) {
+        if (wrap == null) throw new RuntimeException("Invalid argument: constructing with null array");
+        bytes = (byte[])wrap.clone();
+        realSize = wrap.length;
+    }
+    
+    public ByteList(ByteList wrap) {
+        this(wrap.bytes, 0, wrap.realSize);
+    }
+    
+    public ByteList(byte[] wrap, int index, int len) {
+        if (wrap == null) throw new RuntimeException("Invalid argument: constructing with null array");
+        bytes = new byte[len];
+        System.arraycopy(wrap, index, bytes, 0, len);
+        realSize = len;
+    }
+    
+    public ByteList(ByteList wrap, int index, int len) {
+        this(wrap.bytes, index, len);
     }
     
     public void append(byte b) {
@@ -45,6 +68,22 @@ public class ByteList {
         append((byte)b);
     }
     
+    public void prepend(byte b) {
+        if (realSize == bytes.length) {
+            byte[] newBytes = new byte[(int)(bytes.length * FACTOR)];
+            System.arraycopy(bytes, 0, newBytes, 1, bytes.length);
+            bytes = newBytes;
+        } else {
+            System.arraycopy(bytes, 0, bytes, 1, bytes.length);
+        }
+        bytes[0] = b;
+        realSize++;
+    }
+    
+    public void prepend(int b) {
+        prepend((byte)b);
+    }
+    
     public void append(byte[] moreBytes) {
         if (realSize + moreBytes.length <= bytes.length) {
             System.arraycopy(moreBytes, 0, bytes, realSize, moreBytes.length);
@@ -55,6 +94,26 @@ public class ByteList {
             bytes = newBytes;
         }
         realSize += moreBytes.length;
+    }
+    
+    public void append(ByteList moreBytes) {
+        append(moreBytes.bytes, 0, moreBytes.realSize);
+    }
+    
+    public void append(ByteList moreBytes, int index, int len) {
+        append(moreBytes.bytes, index, len);
+    }
+    
+    public void append(byte[] moreBytes, int start, int len) {
+        if (realSize + len <= bytes.length) {
+            System.arraycopy(moreBytes, start, bytes, realSize, len);
+        } else {
+            byte[] newBytes = new byte[(int)((realSize + len) * FACTOR)];
+            System.arraycopy(bytes, 0, newBytes, 0, realSize);
+            System.arraycopy(moreBytes, start, newBytes, realSize, len);
+            bytes = newBytes;
+        }
+        realSize += len;
     }
     
     public void prepend(byte[] moreBytes) {
@@ -74,14 +133,48 @@ public class ByteList {
         return --realSize;
     }
     
-    public int size() {
+    public int length() {
         return realSize;
+    }
+    
+    public void length(int newLength) {
+        // TODO: check valid, grow if needed?
+        realSize = newLength;
+    }
+    
+    public int get(int index) {
+        // TODO: bounds checking? or assume good for speed?
+        return bytes[index];
+    }
+    
+    public void set(int index, int b) {
+        // TODO: bounds checking? or assume good for speed?
+        bytes[index] = (byte)b;
+    }
+    
+    public void replace(byte[] newBytes) {
+        if (newBytes == null) throw new RuntimeException("Invalid argument: replacing with null array");
+        this.bytes = newBytes;
+        realSize = newBytes.length;
+    }
+    
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if (other instanceof ByteList) {
+            // could be more efficient
+            return Arrays.equals(this.bytes(), ((ByteList)other).bytes());
+        }
+        return false;
     }
     
     public byte[] bytes() {
         byte[] newBytes = new byte[realSize];
         System.arraycopy(bytes, 0, newBytes, 0, realSize);
         return newBytes;
+    }
+    
+    public Object clone() {
+        return new ByteList(bytes());
     }
     
     public static byte[] append(byte[] bytes, int b) {

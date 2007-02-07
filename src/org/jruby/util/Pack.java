@@ -562,11 +562,12 @@ public class Pack {
      *         </table>
      *
      **/
-    public static RubyArray unpack(IRuby runtime, byte[] encodedString, 
-            byte[] formatString) {
+    public static RubyArray unpack(IRuby runtime, ByteList encodedString, 
+            ByteList formatString) {
         RubyArray result = runtime.newArray();
-        ByteBuffer format = ByteBuffer.wrap(formatString);
-        ByteBuffer encode = ByteBuffer.wrap(encodedString);
+        // FIXME: potentially could just use ByteList here?
+        ByteBuffer format = ByteBuffer.wrap(formatString.bytes());
+        ByteBuffer encode = ByteBuffer.wrap(encodedString.bytes());
         int type = 0;
         int next = safeGet(format);
         

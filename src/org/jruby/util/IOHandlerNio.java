@@ -261,7 +261,7 @@ public class IOHandlerNio extends IOHandler {
         int remaining = length;
         ByteList ret = new ByteList(length);
         ret.append(consumeInBuffer(remaining));
-        remaining -= ret.size();
+        remaining -= ret.length();
         while (remaining > 0) {
             int i = fillInBuffer();
             if (i < 0) {
@@ -271,7 +271,7 @@ public class IOHandlerNio extends IOHandler {
             ret.append(consumeInBuffer(remaining));
             remaining -= i;
         }
-        if (eof && ret.size() == 0) {
+        if (eof && ret.length() == 0) {
             throw new EOFException();
         }
         return(ret.bytes());
@@ -318,7 +318,7 @@ public class IOHandlerNio extends IOHandler {
                 eof = true;
 	    }
         }
-        if (eof && !inBuffer.hasRemaining() && ret.size() == 0) {
+        if (eof && !inBuffer.hasRemaining() && ret.length() == 0) {
             throw new EOFException();
         }
         if (idx > 0) {
@@ -342,7 +342,7 @@ public class IOHandlerNio extends IOHandler {
                 break;
             }
         }
-        if (eof && ret.size() == 0) {
+        if (eof && ret.length() == 0) {
             throw new EOFException();
         }
         return ret.bytes();

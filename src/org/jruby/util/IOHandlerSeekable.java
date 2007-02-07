@@ -134,7 +134,7 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
         }
         
         // We are already at EOF
-        if (result.size() == 0) {
+        if (result.length() == 0) {
             return null;
         }
         

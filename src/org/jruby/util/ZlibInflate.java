@@ -94,7 +94,7 @@ public class ZlibInflate {
         if (null != str) {
             append(str);
         }
-        byte[] result = new byte[0];
+        ByteList result = new ByteList(collected.length);
         byte[] outp = new byte[1024];
         byte[] buf = collected;
         collected = new byte[0];
@@ -102,9 +102,9 @@ public class ZlibInflate {
         int resultLength = -1;
         while (!flater.finished() && resultLength != 0) {
             resultLength = flater.inflate(outp);
-            result = append(result,outp,resultLength);
+            result.append(outp, 0, resultLength);
         }
-        return RubyString.newString(runtime,result);
+        return RubyString.newString(runtime, result.bytes());
     }
 
     public IRubyObject sync(IRubyObject str) {

@@ -43,7 +43,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -56,6 +55,7 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 import org.jruby.util.Pack;
 import org.jruby.util.PrintfFormat;
@@ -81,7 +81,7 @@ public class RubyString extends RubyObject {
     public static final byte OP_LSHIFT_SWITCHVALUE = 8;
     public static final byte EMPTY_P_SWITCHVALUE = 9;
 
-    private byte[] value;
+    private ByteList value;
     private String stringValue;
     
     // @see IRuby.newString(...)
@@ -93,19 +93,31 @@ public class RubyString extends RubyObject {
             this(runtime, runtime.getString(), value);
     }
 
+    private RubyString(IRuby runtime, ByteList value) {
+            this(runtime, runtime.getString(), value);
+    }
+
     private RubyString(IRuby runtime, RubyClass rubyClass, CharSequence value) {
         super(runtime, rubyClass);
 
         assert value != null;
         
         try {
-            this.value = value.toString().getBytes(IN_ENCODING);
+            this.value = new ByteList(value.toString().getBytes(IN_ENCODING));
         } catch (UnsupportedEncodingException uee) {
             // ignore, should never, ever happen
         }
     }
 
     private RubyString(IRuby runtime, RubyClass rubyClass, byte[] value) {
+        super(runtime, rubyClass);
+
+        assert value != null;
+        
+        this.value = new ByteList(value);
+    }
+
+    private RubyString(IRuby runtime, RubyClass rubyClass, ByteList value) {
         super(runtime, rubyClass);
 
         assert value != null;
@@ -162,7 +174,7 @@ public class RubyString extends RubyObject {
      */
     public String toString() {
         try {
-            if (stringValue == null) stringValue = new String(value, OUT_ENCODING);
+            if (stringValue == null) stringValue = new String(value.bytes(), OUT_ENCODING);
         } catch (UnsupportedEncodingException uee) {
             // ignore, never happens
         }
@@ -260,7 +272,7 @@ public class RubyString extends RubyObject {
             return runtime.getFalse();
         }
         /* use Java implementation if both different String instances */
-        return runtime.newBoolean(Arrays.equals(value, ((RubyString) other).value));
+        return runtime.newBoolean(value.equals(((RubyString) other).value));
     }
     
     public IRubyObject veryEqual(IRubyObject other) {
@@ -273,10 +285,9 @@ public class RubyString extends RubyObject {
     public IRubyObject op_plus(IRubyObject other) {
         RubyString str = RubyString.stringValue(other);
 
-        byte bytes[] = new byte[value.length + str.value.length];
-        System.arraycopy(value, 0, bytes, 0, value.length);
-        System.arraycopy(str.value, 0, bytes, value.length, str.value.length);
-        return (RubyString) newString(getRuntime(), bytes).infectBy(str);
+        ByteList newValue = new ByteList(value);
+        newValue.append(str.value);
+        return (RubyString) newString(getRuntime(), newValue).infectBy(str);
     }
 
     public IRubyObject op_mul(IRubyObject other) {
@@ -289,16 +300,16 @@ public class RubyString extends RubyObject {
         }
 
         // we limit to int because ByteBuffer can only allocate int sizes
-        if (len > 0 && Integer.MAX_VALUE / len < value.length) {
+        if (len > 0 && Integer.MAX_VALUE / len < value.length()) {
             throw getRuntime().newArgumentError("argument too big");
         }
-        byte[] bytes = new byte[value.length * (int)len];
+        ByteList newBytes = new ByteList(value.length() * (int)len);
 
         for (int i = 0; i < len; i++) {
-            System.arraycopy(value, 0, bytes, i * value.length, value.length);
+            newBytes.append(value);
         }
 
-        RubyString newString = newString(getRuntime(), bytes);
+        RubyString newString = newString(getRuntime(), newBytes);
         newString.setTaint(isTaint());
         return newString;
     }
@@ -336,7 +347,7 @@ public class RubyString extends RubyObject {
         if (other instanceof RubyString) {
             RubyString string = (RubyString)other;
             
-            if (Arrays.equals(string.value, value)) {
+            if (string.value.equals(value)) {
                 return true;
             }
         }
@@ -346,7 +357,7 @@ public class RubyString extends RubyObject {
     
     // Common enough check to make it a convenience method.
     private boolean sameAs(RubyString other) {
-        return Arrays.equals(value, other.value);
+        return value.equals(other.value);
     }
     
     /** rb_obj_as_string
@@ -368,18 +379,18 @@ public class RubyString extends RubyObject {
      *
      */
     public int cmp(RubyString other) {
-        for (int i = 0; i < value.length; i++) {
-            if (i >= other.value.length) {
+        for (int i = 0; i < value.length(); i++) {
+            if (i >= other.value.length()) {
                 return 1;
             }
-            int a = value[i] & 0xFF;
-            int b = other.value[i] & 0xFF;
+            int a = value.get(i) & 0xFF;
+            int b = other.value.get(i) & 0xFF;
             int compare = a - b;
             if (compare != 0) {
                 return compare < 0 ? -1 : 1;
             }
         }
-        if (other.value.length > value.length) {
+        if (other.value.length() > value.length()) {
             return -1;
         }
         
@@ -417,6 +428,10 @@ public class RubyString extends RubyObject {
         return new RubyString(runtime, bytes);
     }
     
+    public static RubyString newString(IRuby runtime, ByteList bytes) {
+        return new RubyString(runtime, bytes);
+    }
+    
     public static RubyString newString(IRuby runtime, byte[] bytes, int start, int length) {
         byte[] bytes2 = new byte[length];
         System.arraycopy(bytes, start, bytes2, 0, length);
@@ -424,25 +439,23 @@ public class RubyString extends RubyObject {
     }
     
     public IRubyObject doClone(){
-        return newString(getRuntime(), (byte[])value.clone());
+        return newString(getRuntime(), (ByteList)value.clone());
     }
     
     public RubyString cat(byte[] str) {
-        byte[] bytes = new byte[value.length + str.length];
-        System.arraycopy(value, 0, bytes, 0, value.length);
-        System.arraycopy(str, 0, bytes, value.length, str.length);
-        
-        value = bytes;
+        value.append(str);
+        stringMutated();
+        return this;
+    }
+    
+    public RubyString cat(ByteList str) {
+        value.append(str);
         stringMutated();
         return this;
     }
     
     public RubyString cat(byte ch) {
-        byte[] bytes = new byte[value.length + 1];
-        System.arraycopy(value, 0, bytes, 0, value.length);
-        bytes[value.length] = ch;
-        
-        value = bytes;
+        value.append(ch);
         stringMutated();
         return this;
     }
@@ -459,19 +472,19 @@ public class RubyString extends RubyObject {
         if (this == other || sameAs(newValue)) {
             return this;
         }
-        value = (byte[])newValue.value.clone();
+        value = (ByteList)newValue.value.clone();
         return (RubyString) infectBy(newValue);
     }
     
     public RubyString reverse() {
-        return newString(getRuntime(), (byte[])value.clone()).reverse_bang();
+        return newString(getRuntime(), (ByteList)value.clone()).reverse_bang();
     }
     
     public RubyString reverse_bang() {
-        for (int i = 0; i < (value.length / 2); i++) {
-            byte b = value[i];
-            value[i] = value[value.length - i - 1];
-            value[value.length - i - 1] = b;
+        for (int i = 0; i < (value.length() / 2); i++) {
+            byte b = (byte)value.get(i);
+            value.set(i, value.get(value.length() - i - 1));
+            value.set(value.length() - i - 1, b);
         }
         stringMutated();
         return this;
@@ -550,17 +563,17 @@ public class RubyString extends RubyObject {
         if (isEmpty()) {
             return getRuntime().getNil();
         }
-        int capital = value[0] & 0xFF;
+        int capital = value.get(0) & 0xFF;
         boolean changed = false;
         if (Character.isLetter(capital) && Character.isLowerCase(capital)) {
-            value[0] = (byte)Character.toUpperCase(capital);
+            value.set(0, (byte)Character.toUpperCase(capital));
             changed = true;
         }
         
-        for (int i = 1; i < value.length; i++) {
-            capital = value[i] & 0xFF;
+        for (int i = 1; i < value.length(); i++) {
+            capital = value.get(i) & 0xFF;
             if (Character.isLetter(capital) && Character.isUpperCase(capital)) {
-                value[i] = (byte)Character.toLowerCase(capital);
+                value.set(i, (byte)Character.toLowerCase(capital));
                 changed = true;
             }
         }
@@ -620,10 +633,10 @@ public class RubyString extends RubyObject {
      */
     public IRubyObject upcase_bang() {
         boolean changed = false;
-        for (int i = 0; i < value.length; i++) {
-            int c = value[i] & 0xFF;
+        for (int i = 0; i < value.length(); i++) {
+            int c = value.get(i) & 0xFF;
             if (!Character.isLetter(c) || Character.isUpperCase(c)) continue;
-            value[i] = (byte)Character.toUpperCase(c);
+            value.set(i, (byte)Character.toUpperCase(c));
             changed = true;
         }
         if (changed) {
@@ -646,10 +659,10 @@ public class RubyString extends RubyObject {
      */
     public IRubyObject downcase_bang() {
         boolean changed = false;
-        for (int i = 0; i < value.length; i++) {
-            int c = value[i] & 0xFF;
+        for (int i = 0; i < value.length(); i++) {
+            int c = value.get(i) & 0xFF;
             if (!Character.isLetter(c) || Character.isLowerCase(c)) continue;
-            value[i] = (byte)Character.toLowerCase(c);
+            value.set(i, (byte)Character.toLowerCase(c));
             changed = true;
         }
         if (changed) {
@@ -664,7 +677,7 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyString swapcase() {
-        RubyString newString = newString(getRuntime(), (byte[])value.clone());
+        RubyString newString = newString(getRuntime(), (ByteList)value.clone());
         IRubyObject swappedString = newString.swapcase_bang();
         
         return (RubyString) (swappedString.isNil() ? newString : swappedString);
@@ -676,17 +689,17 @@ public class RubyString extends RubyObject {
     public IRubyObject swapcase_bang() {
         boolean changesMade = false;
         
-        for (int i = 0; i < value.length; i++) {
-            int c = value[i] & 0xFF;
+        for (int i = 0; i < value.length(); i++) {
+            int c = value.get(i) & 0xFF;
             
             if (!Character.isLetter(c)) {
                 continue;
             } else if (Character.isLowerCase(c)) {
                 changesMade = true;
-                value[i] = (byte)Character.toUpperCase(c);
+                value.set(i, (byte)Character.toUpperCase(c));
             } else {
                 changesMade = true;
-                value[i] = (byte)Character.toLowerCase(c);
+                value.set(i, (byte)Character.toLowerCase(c));
             }
         }
         if (changesMade) { 
@@ -705,20 +718,20 @@ public class RubyString extends RubyObject {
     public IRubyObject insert(IRubyObject indexArg, IRubyObject stringArg) {
         int index = (int) indexArg.convertToInteger().getLongValue();
         if (index < 0) {
-            index += value.length + 1;
+            index += value.length() + 1;
         }
         
-        if (index < 0 || index > value.length) {
+        if (index < 0 || index > value.length()) {
             throw getRuntime().newIndexError("index " + index + " out of range");
         }
         
-        byte[] insert = ((RubyString)stringArg.convertToString()).value;
-        byte[] bytes = new byte[value.length + insert.length];
+        ByteList insert = ((RubyString)stringArg.convertToString()).value;
+        ByteList newBytes = new ByteList(value.length() + insert.length());
         
-        System.arraycopy(value, 0, bytes, 0, index);
-        System.arraycopy(insert, 0, bytes, index, insert.length);
-        System.arraycopy(value, index, bytes, index + insert.length, value.length - index);
-        value = bytes;
+        newBytes.append(value, 0, index);
+        newBytes.append(insert);
+        newBytes.append(value, index, value.length() - index);
+        value = newBytes;
         stringMutated();
         return this;
     }
@@ -731,7 +744,7 @@ public class RubyString extends RubyObject {
     }
     
     private RubyString inspect(boolean dump) {
-        final int length = value.length;
+        final int length = value.length();
         IRuby runtime = getRuntime();
         
         StringBuffer sb = new StringBuffer(length + 2 + length / 100);
@@ -740,15 +753,15 @@ public class RubyString extends RubyObject {
         
         // FIXME: This may not be unicode-safe
         for (int i = 0; i < length; i++) {
-            int c = value[i] & 0xFF;
+            int c = value.get(i) & 0xFF;
             if (isAlnum(c)) {
                 sb.append((char)c);
             } else if (runtime.getKCode() == KCode.UTF8 && c == 0xEF) {
                 // don't escape encoded UTF8 characters, leave them as bytes
                 // append byte order mark plus two character bytes
                 sb.append((char)c);
-                sb.append((char)(value[++i] & 0xFF));
-                sb.append((char)(value[++i] & 0xFF));
+                sb.append((char)(value.get(++i) & 0xFF));
+                sb.append((char)(value.get(++i) & 0xFF));
             } else if (c == '\"' || c == '\\') {
                 sb.append('\\').append((char)c);
             } else if (dump && c == '#') {
@@ -785,7 +798,7 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyFixnum length() {
-        return getRuntime().newFixnum(value.length);
+        return getRuntime().newFixnum(value.length());
     }
     
     /** rb_str_empty
@@ -796,7 +809,7 @@ public class RubyString extends RubyObject {
     }
 
     private boolean isEmpty() {
-        return value.length == 0;
+        return value.length() == 0;
     }
     
     /** rb_str_append
@@ -1575,13 +1588,13 @@ public class RubyString extends RubyObject {
         //FIXME may be a problem with pos when doing reverse searches
         int pos = 0;
         if (reverse) {
-            pos = value.length;
+            pos = value.length();
         }
         if (checkArgumentCount(args, 1, 2) == 2) {
             pos = RubyNumeric.fix2int(args[1]);
         }
         if (pos < 0) {
-            pos += value.length;
+            pos += value.length();
             if (pos < 0) {
                 return getRuntime().getNil();
             }
@@ -1615,7 +1628,7 @@ public class RubyString extends RubyObject {
     
     /* rb_str_substr */
     public IRubyObject substr(int beg, int len) {
-        int length = value.length;
+        int length = value.length();
         if (len < 0 || beg > length) {
             return getRuntime().getNil();
         }
@@ -1626,15 +1639,14 @@ public class RubyString extends RubyObject {
             }
         }
         int end = Math.min(length, beg + len);
-        byte[] bytes = new byte[end - beg];
-        System.arraycopy(value, beg, bytes, 0, end - beg);
-        return newString(getRuntime(), bytes).infectBy(this);
+        ByteList newValue = new ByteList(value, beg, end - beg);
+        return newString(getRuntime(), newValue).infectBy(this);
     }
     
     /* rb_str_replace */
     public IRubyObject replace(int beg, int len, RubyString replaceWith) {
-        if (beg + len >= value.length) {
-            len = value.length - beg;
+        if (beg + len >= value.length()) {
+            len = value.length() - beg;
         }
         
         StringBuffer sb = new StringBuffer(toString());
@@ -1668,18 +1680,18 @@ public class RubyString extends RubyObject {
             return toString().indexOf(stringValue(args[0]).toString()) != -1 ?
                 args[0] : getRuntime().getNil();
         } else if (args[0] instanceof RubyRange) {
-            long[] begLen = ((RubyRange) args[0]).getBeginLength(value.length, true, false);
+            long[] begLen = ((RubyRange) args[0]).getBeginLength(value.length(), true, false);
             return begLen == null ? getRuntime().getNil() :
                 substr((int) begLen[0], (int) begLen[1]);
         }
         int idx = (int) args[0].convertToInteger().getLongValue();
         if (idx < 0) {
-            idx += value.length;
+            idx += value.length();
         }
-        if (idx < 0 || idx >= value.length) { 
+        if (idx < 0 || idx >= value.length()) { 
             return getRuntime().getNil();
         } else {
-            RubyFixnum result = getRuntime().newFixnum(value[idx] & 0xFF);
+            RubyFixnum result = getRuntime().newFixnum(value.get(idx) & 0xFF);
             return result;
         }
     }
@@ -1725,7 +1737,7 @@ public class RubyString extends RubyObject {
      */
     public IRubyObject aset(IRubyObject[] args) {
         testFrozen("class");
-        int strLen = value.length;
+        int strLen = value.length();
         if (checkArgumentCount(args, 2, 3) == 3) {
             if (args[0] instanceof RubyFixnum) {
                 RubyString repl = stringValue(args[2]);
@@ -1757,13 +1769,13 @@ public class RubyString extends RubyObject {
         if (args[0] instanceof RubyFixnum) { // RubyNumeric?
             int idx = RubyNumeric.fix2int(args[0]); // num2int?
             if (idx < 0) {
-                idx += value.length;
+                idx += value.length();
             }
-            if (idx < 0 || idx >= value.length) {
+            if (idx < 0 || idx >= value.length()) {
                 throw getRuntime().newIndexError("string index out of bounds");
             }
             if (args[1] instanceof RubyFixnum) {
-                value[idx] = (byte) RubyNumeric.fix2int(args[1]);
+                value.set(idx, (byte) RubyNumeric.fix2int(args[1]));
                 stringMutated();
             } else {
                 replace(idx, 1, stringValue(args[1]));
@@ -1778,12 +1790,12 @@ public class RubyString extends RubyObject {
             RubyString orig = stringValue(args[0]);
             int beg = toString().indexOf(orig.toString());
             if (beg != -1) {
-                replace(beg, orig.value.length, stringValue(args[1]));
+                replace(beg, orig.value.length(), stringValue(args[1]));
             }
             return args[1];
         }
         if (args[0] instanceof RubyRange) {
-            long[] idxs = ((RubyRange) args[0]).getBeginLength(value.length, true, true);
+            long[] idxs = ((RubyRange) args[0]).getBeginLength(value.length(), true, true);
             replace((int) idxs[0], (int) idxs[1], stringValue(args[1]));
             return args[1];
         }
@@ -1814,7 +1826,7 @@ public class RubyString extends RubyObject {
     }
     
     public IRubyObject succ_bang() {
-        if (value.length == 0) {
+        if (value.length() == 0) {
             return this;
         }
         
@@ -1822,31 +1834,31 @@ public class RubyString extends RubyObject {
         int pos = -1;
         int c = 0;
         int n = 0;
-        for (int i = value.length - 1; i >= 0; i--) {
-            c = value[i] & 0xFF;
+        for (int i = value.length() - 1; i >= 0; i--) {
+            c = value.get(i) & 0xFF;
             if (isAlnum(c)) {
                 alnumSeen = true;
                 if ((isDigit(c) && c < '9') || (isLower(c) && c < 'z') || (isUpper(c) && c < 'Z')) {
-                    value[i] = (byte)(c + 1);
+                    value.set(i, (byte)(c + 1));
                     pos = -1;
                     break;
                 }
                 pos = i;
                 n = isDigit(c) ? '0' : (isLower(c) ? 'a' : 'A');
-                value[i] = (byte)n;
+                value.set(i, (byte)n);
             }
         }
         if (!alnumSeen) {
-            for (int i = value.length - 1; i >= 0; i--) {
-                c = value[i];
+            for (int i = value.length() - 1; i >= 0; i--) {
+                c = value.get(i);
                 if (c < 0xff) {
-                    value[i] = (byte)(c + 1);
+                    value.set(i, (byte)(c + 1));
                     pos = -1;
                     break;
                 }
                 pos = i;
                 n = '\u0001';
-                value[i] = 0;
+                value.set(i, 0);
             }
         }
         if (pos > -1) {
@@ -1854,10 +1866,7 @@ public class RubyString extends RubyObject {
             // values?  Therefore leftmost numeric must be '1' and not '0'
             // 999 -> 1000, not 999 -> 0000.  whereas chars should be
             // zzz -> aaaa
-            byte[] bytes = new byte[value.length + 1];
-            System.arraycopy(value, 0, bytes, 1, value.length);
-            bytes[pos] = (byte)(isDigit(c) ? '1' : (isLower(c) ? 'a' : 'A'));
-            value = bytes;
+            value.prepend((byte)(isDigit(c) ? '1' : (isLower(c) ? 'a' : 'A')));
         }
         stringMutated();
         return this;
@@ -1911,8 +1920,8 @@ public class RubyString extends RubyObject {
     public RubyBoolean include(IRubyObject obj) {
         if (obj instanceof RubyFixnum) {
             int c = RubyNumeric.fix2int(obj);
-            for (int i = 0; i < value.length; i++) {
-                if (value[i] == (byte)c) {
+            for (int i = 0; i < value.length(); i++) {
+                if (value.get(i) == (byte)c) {
                     return getRuntime().getTrue();
                 }
             }
@@ -2004,7 +2013,7 @@ public class RubyString extends RubyObject {
             decoder.onUnmappableCharacter(CodingErrorAction.REPORT);
             
             try {
-                splitee = decoder.decode(ByteBuffer.wrap(value)).toString();
+                splitee = decoder.decode(ByteBuffer.wrap(value.bytes())).toString();
                 unicodeSuccess = true;
             } catch (CharacterCodingException cce) {
                 // ignore, just use the unencoded string
@@ -2168,7 +2177,7 @@ public class RubyString extends RubyObject {
     private IRubyObject justify(IRubyObject [] args, boolean leftJustify) {
         checkArgumentCount(args, 1, 2);
         int length = RubyNumeric.fix2int(args[0]);
-        if (length <= value.length) {
+        if (length <= value.length()) {
             return dup();
         }
         
@@ -2233,7 +2242,7 @@ public class RubyString extends RubyObject {
         checkArgumentCount(args, 1, 2);
         int len = RubyNumeric.fix2int(args[0]);
         String pad = args.length == 2 ? args[1].convertToString().toString() : " ";
-        int strLen = value.length;
+        int strLen = value.length();
         int padLen = pad.length();
         
         if (padLen == 0) {
@@ -2264,21 +2273,19 @@ public class RubyString extends RubyObject {
     }
     
     public IRubyObject chop_bang() {
-        int end = value.length - 1;
+        int end = value.length() - 1;
         
         if (end < 0) {
             return getRuntime().getNil();
         }
         
-        if ((value[end] & 0xFF) == '\n') {
-            if (end > 0 && (value[end-1] & 0xFF) == '\r') {
+        if ((value.get(end) & 0xFF) == '\n') {
+            if (end > 0 && (value.get(end-1) & 0xFF) == '\r') {
                 end--;
             }
         }
         
-        byte[] bytes = new byte[end];
-        System.arraycopy(value, 0, bytes, 0, end);
-        value = bytes;
+        value.length(end);
         stringMutated();
         return this;
     }
@@ -2312,19 +2319,19 @@ public class RubyString extends RubyObject {
             getRuntime().getGlobalVariables().get("$/").asSymbol() : args[0].asSymbol();
         
         if (separator.equals(DEFAULT_RS)) {
-            int end = value.length - 1;
+            int end = value.length() - 1;
             int removeCount = 0;
             
             if (end < 0) {
                 return getRuntime().getNil();
             }
             
-            if ((value[end] & 0xFF) == '\n') {
+            if ((value.get(end) & 0xFF) == '\n') {
                 removeCount++;
-                if (end > 0 && (value[end-1] & 0xFF) == '\r') {
+                if (end > 0 && (value.get(end-1) & 0xFF) == '\r') {
                     removeCount++;
                 }
-            } else if ((value[end] & 0xFF) == '\r') {
+            } else if ((value.get(end) & 0xFF) == '\r') {
                 removeCount++;
             }
             
@@ -2332,19 +2339,17 @@ public class RubyString extends RubyObject {
                 return getRuntime().getNil();
             }
             
-            byte[] bytes = new byte[end - removeCount + 1];
-            System.arraycopy(value, 0, bytes, 0, end - removeCount + 1);
-            value = bytes;
+            value.length(end - removeCount + 1);
             stringMutated();
             return this;
         }
         
         if (separator.length() == 0) {
-            int end = value.length - 1;
+            int end = value.length() - 1;
             int removeCount = 0;
-            while(end - removeCount >= 0 && (value[end - removeCount] & 0xFF) == '\n') {
+            while(end - removeCount >= 0 && (value.get(end - removeCount) & 0xFF) == '\n') {
                 removeCount++;
-                if (end - removeCount >= 0 && (value[end - removeCount] & 0xFF) == '\r') {
+                if (end - removeCount >= 0 && (value.get(end - removeCount) & 0xFF) == '\r') {
                     removeCount++;
                 }
             }
@@ -2352,18 +2357,14 @@ public class RubyString extends RubyObject {
                 return getRuntime().getNil();
             }
             
-            byte[] bytes = new byte[end - removeCount + 1];
-            System.arraycopy(value, 0, bytes, 0, end - removeCount + 1);
-            value = bytes;
+            value.length(end - removeCount + 1);
             stringMutated();
             return this;
         }
         
         // Uncommon case of str.chomp!("xxx")
         if (toString().endsWith(separator)) {
-            byte[] bytes = new byte[value.length - separator.length()];
-            System.arraycopy(value, 0, bytes, 0, value.length - separator.length());
-            value = bytes;
+            value.length(value.length() - separator.length());
             stringMutated();
             return this;
         }
@@ -2374,24 +2375,22 @@ public class RubyString extends RubyObject {
         return newString(getRuntime(), lstripInternal());
     }
     
-    public byte[] lstripInternal() {
-        int length = value.length;
+    public ByteList lstripInternal() {
+        int length = value.length();
         int i = 0;
         
         for (; i < length; i++) {
-            if (!Character.isWhitespace(value[i] & 0xFF)) {
+            if (!Character.isWhitespace(value.get(i) & 0xFF)) {
                 break;
             }
         }
         
-        byte[] bytes = new byte[value.length - i];
-        System.arraycopy(value, i, bytes, 0, value.length - i);
-        return bytes;
+        return new ByteList(value, i, value.length() - i);
     }
     
     public IRubyObject lstrip_bang() {
-        byte[] newBytes = lstripInternal();
-        if (Arrays.equals(value, newBytes)) {
+        ByteList newBytes = lstripInternal();
+        if (value.equals(newBytes)) {
             return getRuntime().getNil();
         }
         value = newBytes;
@@ -2404,23 +2403,21 @@ public class RubyString extends RubyObject {
         return newString(getRuntime(), rstripInternal());
     }
     
-    public byte[] rstripInternal() {
-        int i = value.length - 1;
+    public ByteList rstripInternal() {
+        int i = value.length() - 1;
         
         for (; i >= 0; i--) {
-            if (!Character.isWhitespace(value[i] & 0xFF)) {
+            if (!Character.isWhitespace(value.get(i) & 0xFF)) {
                 break;
             }
         }
         
-        byte[] bytes = new byte[i + 1];
-        System.arraycopy(value, 0, bytes, 0, i + 1);
-        return bytes;
+        return new ByteList(value, 0, i + 1);
     }
     
     public IRubyObject rstrip_bang() {
-        byte[] newBytes = rstripInternal();
-        if (Arrays.equals(value, newBytes)) {
+        ByteList newBytes = rstripInternal();
+        if (value.equals(newBytes)) {
             return getRuntime().getNil();
         }
         value = newBytes;
@@ -2436,9 +2433,9 @@ public class RubyString extends RubyObject {
         if (isEmpty()) {
             return dup();
         }
-        byte[] bytes = stripInternal();
+        ByteList bytes = stripInternal();
         if (bytes == null) {
-            return newString(getRuntime(), (byte[])value.clone());
+            return newString(getRuntime(), (ByteList)value.clone());
         }
         return newString(getRuntime(), stripInternal());
     }
@@ -2450,7 +2447,7 @@ public class RubyString extends RubyObject {
         if (isEmpty()) {
             return getRuntime().getNil();
         }
-        byte[] bytes = stripInternal();
+        ByteList bytes = stripInternal();
         if (bytes == null) {
             return getRuntime().getNil();
         }
@@ -2459,22 +2456,21 @@ public class RubyString extends RubyObject {
         return this;
     }
     
-    public byte[] stripInternal() {
+    public ByteList stripInternal() {
         int head = 0;
-        while (head < value.length && Character.isWhitespace(value[head] & 0xFF)) head++;
-        int tail = value.length - 1;
-        while (tail > head && Character.isWhitespace(value[tail] & 0xFF)) tail--;
+        while (head < value.length() && Character.isWhitespace(value.get(head) & 0xFF)) head++;
+        int tail = value.length() - 1;
+        while (tail > head && Character.isWhitespace(value.get(tail) & 0xFF)) tail--;
         
-        if (head == 0 && tail == value.length - 1) {
+        if (head == 0 && tail == value.length() - 1) {
             return null;
         }
         
-        byte[] bytes = new byte[tail - head + 1];
         if (head <= tail) {
-            System.arraycopy(value, head, bytes, 0, tail - head + 1);
+            return new ByteList(value, head, tail - head + 1);
         }
         
-        return bytes;
+        return null;
     }
     
     private static String expandTemplate(String spec, boolean invertOK) {
@@ -2535,15 +2531,15 @@ public class RubyString extends RubyObject {
         String table = setupTable(specs);
         
         int count = 0;
-        for (int j = 0; j < value.length; j++) {
-            if (table.indexOf(value[j] & 0xFF) != -1) {
+        for (int j = 0; j < value.length(); j++) {
+            if (table.indexOf(value.get(j) & 0xFF) != -1) {
                 count++;
             }
         }
         return getRuntime().newFixnum(count);
     }
     
-    private byte[] getDelete(IRubyObject[] args) {
+    private ByteList getDelete(IRubyObject[] args) {
         int argc = checkArgumentCount(args, 1, -1);
         String[] specs = new String[argc];
         for (int i = 0; i < argc; i++) {
@@ -2551,16 +2547,16 @@ public class RubyString extends RubyObject {
         }
         String table = setupTable(specs);
         
-        int strLen = value.length;
+        int strLen = value.length();
         StringBuffer sbuf = new StringBuffer(strLen);
         int c;
         for (int j = 0; j < strLen; j++) {
-            c = value[j] & 0xFF;
+            c = value.get(j) & 0xFF;
             if (table.indexOf(c) == -1) {
                 sbuf.append((char)c);
             }
         }
-        return stringToBytes(sbuf.toString());
+        return new ByteList(stringToBytes(sbuf.toString()));
     }
     
     /** rb_str_delete
@@ -2574,8 +2570,8 @@ public class RubyString extends RubyObject {
      *
      */
     public IRubyObject delete_bang(IRubyObject[] args) {
-        byte[] newStr = getDelete(args);
-        if (Arrays.equals(value, newStr)) {
+        ByteList newStr = getDelete(args);
+        if (value.equals(newStr)) {
             return getRuntime().getNil();
         }
         value = newStr;
@@ -2583,7 +2579,7 @@ public class RubyString extends RubyObject {
         return this;
     }
     
-    private byte[] getSqueeze(IRubyObject[] args) {
+    private ByteList getSqueeze(IRubyObject[] args) {
         int argc = args.length;
         String[] specs = null;
         if (argc > 0) {
@@ -2594,23 +2590,23 @@ public class RubyString extends RubyObject {
         }
         String table = specs == null ? null : setupTable(specs);
         
-        int strLen = value.length;
+        int strLen = value.length();
         if (strLen <= 1) {
             return value;
         }
         StringBuffer sbuf = new StringBuffer(strLen);
-        int c1 = value[0] & 0xFF;
+        int c1 = value.get(0) & 0xFF;
         sbuf.append((char)c1);
         int c2;
         for (int j = 1; j < strLen; j++) {
-            c2 = value[j] & 0xFF;
+            c2 = value.get(j) & 0xFF;
             if (c2 == c1 && (table == null || table.indexOf(c2) != -1)) {
                 continue;
             }
             sbuf.append((char)c2);
             c1 = c2;
         }
-        return stringToBytes(sbuf.toString());
+        return new ByteList(stringToBytes(sbuf.toString()));
     }
     
     /** rb_str_squeeze
@@ -2624,15 +2620,15 @@ public class RubyString extends RubyObject {
      *
      */
     public IRubyObject squeeze_bang(IRubyObject[] args) {
-        byte[] newStr = getSqueeze(args);
-        if (Arrays.equals(value, newStr)) {
+        ByteList newStr = getSqueeze(args);
+        if (value.equals(newStr)) {
             return getRuntime().getNil();
         }
         value = newStr;
         return this;
     }
     
-    private byte[] tr(IRubyObject search, IRubyObject replace, boolean squeeze) {
+    private ByteList tr(IRubyObject search, IRubyObject replace, boolean squeeze) {
         String srchSpec = search.convertToString().toString();
         String srch = expandTemplate(srchSpec, true);
         if (srchSpec.startsWith("^")) {
@@ -2647,7 +2643,7 @@ public class RubyString extends RubyObject {
         }
         String repl = expandTemplate(replace.convertToString().toString(), false);
         
-        int strLen = value.length;
+        int strLen = value.length();
         if (strLen == 0 || srch.length() == 0) {
             return value;
         }
@@ -2655,7 +2651,7 @@ public class RubyString extends RubyObject {
         StringBuffer sbuf = new StringBuffer(strLen);
         int last = -1;
         for (int i = 0; i < strLen; i++) {
-            int cs = value[i] & 0xFF;
+            int cs = value.get(i) & 0xFF;
             int pos = srch.indexOf(cs);
             if (pos == -1) {
                 sbuf.append((char)cs);
@@ -2669,7 +2665,7 @@ public class RubyString extends RubyObject {
                 last = cr;
             }
         }
-        return stringToBytes(sbuf.toString());
+        return new ByteList(stringToBytes(sbuf.toString()));
     }
     
     /** rb_str_tr
@@ -2683,8 +2679,8 @@ public class RubyString extends RubyObject {
      *
      */
     public IRubyObject tr_bang(IRubyObject search, IRubyObject replace) {
-        byte[] newStr = tr(search, replace, false);
-        if (Arrays.equals(value, newStr)) {
+        ByteList newStr = tr(search, replace, false);
+        if (value.equals(newStr)) {
             return getRuntime().getNil();
         }
         value = newStr;
@@ -2702,8 +2698,8 @@ public class RubyString extends RubyObject {
      *
      */
     public IRubyObject tr_s_bang(IRubyObject search, IRubyObject replace) {
-        byte[] newStr = tr(search, replace, true);
-        if (Arrays.equals(value, newStr)) {
+        ByteList newStr = tr(search, replace, true);
+        if (value.equals(newStr)) {
             return getRuntime().getNil();
         }
         value = newStr;
@@ -2714,7 +2710,7 @@ public class RubyString extends RubyObject {
      *
      */
     public IRubyObject each_line(IRubyObject[] args, Block block) {
-        int strLen = value.length;
+        int strLen = value.length();
         if (strLen == 0) {
             return this;
         }
@@ -2753,10 +2749,10 @@ public class RubyString extends RubyObject {
      * rb_str_each_byte
      */
     public RubyString each_byte(Block block) {
-        int lLength = value.length;
+        int lLength = value.length();
         ThreadContext context = getRuntime().getCurrentContext();
         for (int i = 0; i < lLength; i++) {
-            context.yield(getRuntime().newFixnum(value[i] & 0xFF), block);
+            context.yield(getRuntime().newFixnum(value.get(i) & 0xFF), block);
         }
         return this;
     }
@@ -2787,8 +2783,8 @@ public class RubyString extends RubyObject {
         }
         
         long result = 0;
-        for (int i = 0; i < value.length; i++) {
-            result += value[i] & 0xFF;
+        for (int i = 0; i < value.length(); i++) {
+            result += value.get(i) & 0xFF;
         }
         return getRuntime().newFixnum(bitSize == 0 ? result : result % (long) Math.pow(2, bitSize));
     }
@@ -2803,7 +2799,7 @@ public class RubyString extends RubyObject {
      * @see org.jruby.util.Pack#unpack
      */
     public RubyArray unpack(IRubyObject obj) {
-        return Pack.unpack(getRuntime(), this.value, (byte[])stringValue(obj).value);
+        return Pack.unpack(getRuntime(), this.value, stringValue(obj).value);
     }
 
     /**
@@ -2813,7 +2809,7 @@ public class RubyString extends RubyObject {
      */
     public void setValue(CharSequence value) {
         try {
-            this.value = value.toString().getBytes(IN_ENCODING);
+            this.value.replace(value.toString().getBytes(IN_ENCODING));
         } catch (UnsupportedEncodingException uee) {
             // ignore, never happens
         }
@@ -2826,7 +2822,7 @@ public class RubyString extends RubyObject {
     
     public String getUnicodeValue() {
         try {
-            return new String(value, "UTF8");
+            return new String(value.bytes(), "UTF8");
         } catch (Exception e) {
             throw new RuntimeException("Something's seriously broken with encodings", e);
         }
@@ -2834,7 +2830,7 @@ public class RubyString extends RubyObject {
     
     public void setUnicodeValue(String newValue) {
         try {
-            value = newValue.getBytes("UTF8");
+            value.replace(newValue.getBytes("UTF8"));
             stringMutated();
         } catch (Exception e) {
             throw new RuntimeException("Something's seriously broken with encodings", e);
@@ -2842,6 +2838,10 @@ public class RubyString extends RubyObject {
     }
     
     public byte[] getBytes() {
+        return value.bytes();
+    }
+    
+    public ByteList getByteList() {
         return value;
     }
 }
