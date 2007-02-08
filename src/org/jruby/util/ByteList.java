@@ -200,10 +200,6 @@ public class ByteList {
         realSize++;
     }
 
-    public int hashCode() {
-        return bytes.hashCode();
-    }
-
     public boolean equals(Object other) {
         if (other == this) return true;
         if (other instanceof ByteList) {
@@ -252,5 +248,22 @@ public class ByteList {
             System.arraycopy(bytes,0,newBytes,0,realSize);
             bytes = newBytes;
         }
+    }
+
+    /**
+     * Implements the same hashcode as MRI ELFHASH in rb_str_hash.
+     * No caching here. It's the clients responsibility to cache this value.
+     */
+    public int hashCode() {
+        int key = 0;
+        int g;
+        for(int i = 0; i < realSize; i++) {
+            key = (key << 4) + (((int)bytes[i]) & 0xFF);
+            if((g = key & 0xF0000000) != 0) {
+                key ^= g >> 24;
+            }
+            key &= ~g;
+        }
+        return key;
     }
 }

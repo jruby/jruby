@@ -83,6 +83,8 @@ public class RubyString extends RubyObject {
     public static final byte EMPTY_P_SWITCHVALUE = 9;
 
     private ByteList value;
+    private int hash;
+    private boolean validHash = false;
     private String stringValue;
 
     // @see IRuby.newString(...)
@@ -187,6 +189,7 @@ public class RubyString extends RubyObject {
      */
     private void stringMutated() {
         stringValue = null;
+        validHash = false;
         taint();
     }
 
@@ -341,7 +344,11 @@ public class RubyString extends RubyObject {
     }
 
     public int hashCode() {
-        return toString().hashCode();
+        if(!validHash) {
+            hash = value.hashCode();
+            validHash = true;
+        }
+        return hash;
     }
 
     public boolean equals(Object other) {
