@@ -52,6 +52,7 @@ import org.jruby.util.IOHandlerProcess;
 import org.jruby.util.IOHandlerSeekable;
 import org.jruby.util.IOHandlerUnseekable;
 import org.jruby.util.IOModes;
+import org.jruby.util.ByteList;
 
 /**
  * 
@@ -417,7 +418,7 @@ public class RubyIO extends RubyObject {
 		    if (newLine != null) {
 		        lineNumber++;
 		        getRuntime().getGlobalVariables().set("$.", getRuntime().newFixnum(lineNumber));
-		        RubyString result = RubyString.newString(getRuntime(), newLine);
+		        RubyString result = RubyString.newString(getRuntime(), new ByteList(newLine,false));
 		        result.taint();
 		        
 		        return result;
@@ -973,7 +974,7 @@ public class RubyIO extends RubyObject {
         }
     	try {
             byte[] buf = ((IOHandlerNio)handler).readpartial(RubyNumeric.fix2int(args[0]));
-            IRubyObject strbuf = RubyString.newString(getRuntime(), buf == null ? ByteList.NULL_ARRAY : buf);
+            IRubyObject strbuf = RubyString.newString(getRuntime(), buf == null ? new ByteList(ByteList.NULL_ARRAY) : new ByteList(buf,false));
             if(args.length > 1) {
                 args[1].callMethod(getRuntime().getCurrentContext(),"<<", strbuf);
                 return args[1];
@@ -993,7 +994,7 @@ public class RubyIO extends RubyObject {
         try {
             byte[] buf = handler.sysread(RubyNumeric.fix2int(number));
         
-            return RubyString.newString(getRuntime(), buf);
+            return RubyString.newString(getRuntime(), new ByteList(buf,false));
         } catch (IOHandler.BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
         } catch (EOFException e) {
@@ -1021,7 +1022,7 @@ public class RubyIO extends RubyObject {
                 return getRuntime().newString("");
             }
             
-            return RubyString.newString(getRuntime(), buf);
+            return RubyString.newString(getRuntime(), new ByteList(buf,false));
         } catch (IOHandler.BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
         } catch (EOFException e) {

@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.io.IOException;
 
 import org.jruby.RubyFixnum;
+import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -72,9 +73,9 @@ public class IOInputStream extends InputStream {
         IRubyObject readValue = io.callMethod(io.getRuntime().getCurrentContext(), "read", this.io.getRuntime().newFixnum(b.length));
         int returnValue = -1;
         if (!readValue.isNil()) {
-            String str = readValue.toString();
-            System.arraycopy(str.getBytes("PLAIN"),0,b,0,str.length());
-            returnValue = str.length();
+            ByteList str = ((RubyString)readValue).getByteList();
+            System.arraycopy(str.bytes,0,b,0,str.realSize);
+            returnValue = str.realSize;
         }
         return returnValue;
     }
@@ -83,9 +84,9 @@ public class IOInputStream extends InputStream {
         IRubyObject readValue = io.callMethod(io.getRuntime().getCurrentContext(), "read", io.getRuntime().newFixnum(len));
         int returnValue = -1;
         if (!readValue.isNil()) {
-            String str = readValue.toString();
-            System.arraycopy(str.getBytes("PLAIN"),0,b,off,str.length());
-            returnValue = str.length();
+            ByteList str = ((RubyString)readValue).getByteList();
+            System.arraycopy(str.bytes,0,b,off,str.realSize);
+            returnValue = str.realSize;
         }
         return returnValue;
      }

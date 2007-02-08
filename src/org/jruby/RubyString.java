@@ -2812,6 +2812,11 @@ public class RubyString extends RubyObject {
         stringMutated();
     }
 
+    public void setValue(ByteList value) {
+        this.value = value;
+        stringMutated();
+    }
+
     public CharSequence getValue() {
         return toString();
     }

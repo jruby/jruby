@@ -46,6 +46,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
+import org.jruby.util.ByteList;
+
 /**
  * Marshal module
  *
@@ -93,7 +95,7 @@ public class RubyMarshal {
             }
 			ByteArrayOutputStream stringOutput = new ByteArrayOutputStream();
 			dumpToStream(objectToDump, stringOutput, depthLimit);
-			return RubyString.newString(recv.getRuntime(), stringOutput.toByteArray());
+			return RubyString.newString(recv.getRuntime(), new ByteList(stringOutput.toByteArray(),false));
 
         } catch (IOException ioe) {
             throw recv.getRuntime().newIOErrorFromException(ioe);

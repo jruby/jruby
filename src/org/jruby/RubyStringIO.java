@@ -38,6 +38,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.util.IOHandler;
+import org.jruby.util.ByteList;
 
 public class RubyStringIO extends RubyObject {
     private static ObjectAllocator STRINGIO_ALLOCATOR = new ObjectAllocator() {
@@ -117,7 +118,7 @@ public class RubyStringIO extends RubyObject {
                 mode = args[1];
             }
         }
-        RubyStringIO strio = (RubyStringIO)((RubyClass)recv).newInstance(new IRubyObject[]{str,mode}, null);
+        RubyStringIO strio = (RubyStringIO)((RubyClass)recv).newInstance(new IRubyObject[]{str,mode}, Block.NULL_BLOCK);
         IRubyObject val = strio;
         ThreadContext tc = recv.getRuntime().getCurrentContext();
         
@@ -131,7 +132,6 @@ public class RubyStringIO extends RubyObject {
         return val;
     }
 
-
     protected RubyStringIO(IRuby runtime, RubyClass klass) {
         super(runtime, klass);
     }
@@ -139,21 +139,22 @@ public class RubyStringIO extends RubyObject {
     private long pos = 0L;
     private int lineno = 0;
     private boolean eof = false;
-    private StringBuffer internal;
+    private ByteList internal;
     private boolean closedRead = false;
     private boolean closedWrite = false;
 
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        internal = new StringBuffer();
+        internal = new ByteList();
         if (checkArgumentCount(args, 0, 2) > 0) {
-            internal.append(args[0].convertToString().getValue());
+            internal.append(args[0].convertToString().getByteList());
         }
         return this;
     }
 
     public IRubyObject append(IRubyObject obj) {
-        String val = obj.toString();
-        internal.replace((int)pos,(int)(pos+val.length()),val);
+        ByteList val = ((RubyString)obj.callMethod(obj.getRuntime().getCurrentContext(),"to_s")).getByteList();
+        int left = internal.length()-(int)pos;
+        internal.replace((int)pos,Math.min(val.length(),left),val);
         pos += val.length();
         return this;
     }
@@ -201,7 +202,7 @@ public class RubyStringIO extends RubyObject {
    }
 
     public IRubyObject each_byte(Block block) {
-        getRuntime().newString(internal.substring((int)pos)).each_byte(block);
+        RubyString.newString(getRuntime(),new ByteList(internal, (int)pos, internal.length())).each_byte(block);
         return this;
     }
 
@@ -234,7 +235,7 @@ public class RubyStringIO extends RubyObject {
     }
 
     public IRubyObject getc() {
-        return getRuntime().newFixnum(internal.charAt((int)pos++));
+        return getRuntime().newFixnum( internal.get((int)pos++) & 0xFF);
     }
 
     public IRubyObject internalGets(IRubyObject[] args) {
@@ -242,24 +243,25 @@ public class RubyStringIO extends RubyObject {
             String sep = ((RubyString)getRuntime().getGlobalVariables().get("$/")).getValue().toString();
             if (args.length>0) {
                 if (args[0].isNil()) {
-                    String buf = internal.substring((int)pos);
+                    ByteList buf = new ByteList(internal, (int)pos, internal.length()-(int)pos);
                     pos+=buf.length();
-                    return getRuntime().newString(buf);
+                    return RubyString.newString(getRuntime(),buf);
                 }
                 sep = args[0].toString();
             }
-            int ix = internal.indexOf(sep,(int)pos);
+            String ss = RubyString.byteListToString(internal);
+            int ix = ss.indexOf(sep,(int)pos);
             String add = sep;
             if (-1 == ix) {
                 ix = internal.length();
                 add = "";
             }
-            String line = internal.substring((int)pos,ix)+add;
+            ByteList line = new ByteList(internal, (int)pos, ix-(int)pos);
+            line.append(RubyString.stringToBytes(add));
             pos = ix + add.length();
             lineno++;
-            return getRuntime().newString(line);
+            return RubyString.newString(getRuntime(),line);
         }
-        
         return getRuntime().getNil();
     }
 
@@ -336,30 +338,32 @@ public class RubyStringIO extends RubyObject {
         return obj;
     }
 
+    private static final ByteList NEWLINE_BL = new ByteList(new byte[]{10},false);
+
     public IRubyObject puts(IRubyObject[] obj) {
         if (obj.length == 0) {
-            append(getRuntime().newString("\n"));
+            append(RubyString.newString(getRuntime(),NEWLINE_BL));
         }
         
         for (int i=0,j=obj.length;i<j;i++) {
             append(obj[i]);
-            internal.replace((int)pos,(int)(++pos),("\n"));
+            internal.unsafeReplace((int)(pos++),0,NEWLINE_BL);
         }
         return getRuntime().getNil();
     }
 
     public IRubyObject read(IRubyObject[] args) {
-        String buf = null;
+        ByteList buf = null;
         if (!(pos >= internal.length() || eof)) {
             if (args.length > 0 && !args[0].isNil()) {
                 int end = ((int)pos) + RubyNumeric.fix2int(args[0]);
                 if (end > internal.length()) {
-                    buf = internal.substring((int)pos);
+                    buf = new ByteList(internal,(int)pos,internal.length()-(int)pos);
                 } else {
-                    buf = internal.substring((int)pos,end);
+                    buf = new ByteList(internal,(int)pos,end);
                 }
             } else {
-                buf = internal.substring((int)pos);
+                buf = new ByteList(internal,(int)pos,internal.length()-(int)pos);
             }
             pos+= buf.length();
         }
@@ -374,7 +378,7 @@ public class RubyStringIO extends RubyObject {
                 ret = args[1].convertToString();
 								((RubyString)ret).setValue(buf);
             } else {
-                ret = getRuntime().newString(buf);
+                ret = RubyString.newString(getRuntime(),buf);
             }
         }
 
@@ -404,15 +408,15 @@ public class RubyStringIO extends RubyObject {
             eof = ((RubyStringIO)str).eof;
             closedRead = ((RubyStringIO)str).closedRead;
             closedWrite = ((RubyStringIO)str).closedWrite;
-            internal = new StringBuffer(((RubyStringIO)str).internal.toString());
+            internal = new ByteList(((RubyStringIO)str).internal);
         } else {
             pos = 0L;
             lineno = 0;
             eof = false;
             closedRead = false;
             closedWrite = false;
-            internal = new StringBuffer();
-            internal.append(str.convertToString().getValue());
+            internal = new ByteList();
+            internal.append(str.convertToString().getByteList());
         }
         return this;
     }
@@ -444,7 +448,7 @@ public class RubyStringIO extends RubyObject {
     }
 
     public IRubyObject string() {
-        return getRuntime().newString(internal.toString());
+        return RubyString.newString(getRuntime(),internal);
     }
 
     public IRubyObject set_string(RubyString arg) {
@@ -465,13 +469,12 @@ public class RubyStringIO extends RubyObject {
 
     public IRubyObject truncate(RubyFixnum args) {
         int len = (int) args.getLongValue();
-        internal.delete(len,internal.length());
+        internal.length(len);
         return RubyFixnum.zero(getRuntime());
     }
 
     public IRubyObject ungetc(RubyFixnum args) {
-        char val = (char) args.getLongValue();
-        internal.insert((int)pos,val);
+        internal.insert((int)pos,(int)args.getLongValue());
         return getRuntime().getNil();
     }
 

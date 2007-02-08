@@ -192,6 +192,14 @@ public class ByteList {
         unsafeReplace(beg,len,nbytes,index,count);
     }
 
+    public void insert(int index, int b) {
+        if (index >= realSize) throw new IndexOutOfBoundsException();
+        grow(1);
+        System.arraycopy(bytes,index,bytes,index+1,realSize-index);
+        bytes[index] = (byte)b;
+        realSize++;
+    }
+
     public int hashCode() {
         return bytes.hashCode();
     }

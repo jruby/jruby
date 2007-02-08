@@ -59,7 +59,7 @@ public class IOOutputStream extends OutputStream {
     }
     
     public void write(final int bite) throws IOException {
-        io.callMethod(io.getRuntime().getCurrentContext(), "write", RubyString.newString(io.getRuntime(), new byte[]{(byte)bite}));
+        io.callMethod(io.getRuntime().getCurrentContext(), "write", RubyString.newString(io.getRuntime(), new ByteList(new byte[]{(byte)bite},false)));
     }
 
     public void write(final byte[] b) throws IOException {
@@ -67,6 +67,6 @@ public class IOOutputStream extends OutputStream {
     }
 
     public void write(final byte[] b,final int off, final int len) throws IOException {
-        io.callMethod(io.getRuntime().getCurrentContext(),"write", RubyString.newString(io.getRuntime(), b, off, len));
+        io.callMethod(io.getRuntime().getCurrentContext(),"write", RubyString.newString(io.getRuntime(), new ByteList(b, off, len, false)));
     }
 }

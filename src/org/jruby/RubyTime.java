@@ -45,6 +45,7 @@ import java.util.TimeZone;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.RubyDateFormat;
+import org.jruby.util.ByteList;
 
 /** The Time class.
  * 
@@ -395,6 +396,6 @@ public class RubyTime extends RubyObject {
             dumpValue[i] = (byte)(se & 0xFF);
             se >>>= 8;
         }
-        return RubyString.newString(obj.getRuntime(), dumpValue);
+        return RubyString.newString(obj.getRuntime(), new ByteList(dumpValue,false));
     }
 }

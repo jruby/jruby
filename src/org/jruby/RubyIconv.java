@@ -41,6 +41,8 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import org.jruby.util.ByteList;
+
 public class RubyIconv extends RubyObject {
     public RubyIconv(IRuby runtime, RubyClass type) {
         super(runtime, type);
@@ -152,15 +154,10 @@ public class RubyIconv extends RubyObject {
             encoder.onUnmappableCharacter(CodingErrorAction.REPORT);
             buf = encoder.encode(cbuf);
             byte[] arr = buf.array();
-            bytes = new byte[buf.limit()];
-            System.arraycopy(arr, 0, bytes, 0, bytes.length);
-
-            return RubyString.newString(original.getRuntime(), bytes);
+            return RubyString.newString(original.getRuntime(), new ByteList(arr,0,buf.limit()));
         } catch (UnmappableCharacterException e) {
         } catch (CharacterCodingException e) {
         }
         return original.getRuntime().getNil();
     }
-
-
 }

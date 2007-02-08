@@ -44,6 +44,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOHandlerNio;
 import org.jruby.util.IOHandler;
+import org.jruby.util.ByteList;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -94,7 +95,7 @@ public class RubyBasicSocket extends RubyIO {
     
     public IRubyObject recv(IRubyObject[] args) {
         try {
-            return RubyString.newString(getRuntime(), ((IOHandlerNio) handler).recv(RubyNumeric.fix2int(args[0])));
+            return RubyString.newString(getRuntime(), new ByteList(((IOHandlerNio) handler).recv(RubyNumeric.fix2int(args[0])),false));
         } catch (IOHandler.BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
         } catch (EOFException e) {
