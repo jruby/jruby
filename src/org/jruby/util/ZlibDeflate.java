@@ -40,8 +40,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class ZlibDeflate {
     private Deflater flater;
-    private byte[] collected;
+    private ByteList collected;
     private IRuby runtime;
+
+    public static final int BASE_SIZE = 100;
 
     public final static int DEF_MEM_LEVEL = 8;
     public final static int MAX_MEM_LEVEL = 9;
@@ -57,16 +59,15 @@ public class ZlibDeflate {
         super();
         flater = new Deflater(level,false);
         flater.setStrategy(strategy);
-        collected = new byte[0];
+        collected = new ByteList(BASE_SIZE);
         runtime = caller.getRuntime();
     }
 
-    public static IRubyObject s_deflate(IRubyObject caller, byte[] str, int level) 
+    public static IRubyObject s_deflate(IRubyObject caller, ByteList str, int level) 
     	throws DataFormatException, IOException {
         ZlibDeflate zstream = new ZlibDeflate(caller, level, MAX_WBITS, DEF_MEM_LEVEL, Deflater.DEFAULT_STRATEGY);
         IRubyObject result = zstream.deflate(str, FINISH);
         zstream.close();
-        
         return result;
     }
 
@@ -75,11 +76,11 @@ public class ZlibDeflate {
     }
 
     public void append(IRubyObject obj) throws IOException, UnsupportedEncodingException {
-        append(obj.convertToString().getBytes());
+        append(obj.convertToString().getByteList());
     }
 
-    public void append(byte[] obj) throws IOException {
-        collected = ZlibInflate.append(collected, obj);
+    public void append(ByteList obj) throws IOException {
+        collected.append(obj);
     }
 
     public void params(int level, int strategy) {
@@ -93,56 +94,34 @@ public class ZlibDeflate {
     }
 
     public IRubyObject flush(int flush) throws IOException {
-        return deflate(new byte[0], flush);
+        return deflate(new ByteList(0), flush);
     }
 
-    public IRubyObject deflate(byte[] str, int flush) throws IOException {
+    public IRubyObject deflate(ByteList str, int flush) throws IOException {
         if (null == str) {
-            ByteList result = new ByteList(collected.length);
-            byte[] outp = new byte[1024];
-            byte[] buf = collected;
-            collected = new byte[0];
-            flater.setInput(buf);
-            flater.finish();
-            int resultLength = -1;
-            while (!flater.finished() && resultLength != 0) {
-                resultLength = flater.deflate(outp);
-                result.append(outp, 0, resultLength);
-            }
-            return RubyString.newString(runtime, result.bytes());
+            return finish();
         } else {
             append(str);
             if (flush == FINISH) {
-                ByteList result = new ByteList(collected.length);
-                byte[] outp = new byte[1024];
-                byte[] buf = collected;
-                collected = new byte[0];
-                flater.setInput(buf);
-                flater.finish();
-                int resultLength = -1;
-                while (!flater.finished() && resultLength != 0) {
-                    resultLength = flater.deflate(outp);
-                    result.append(outp, 0, resultLength);
-                }
-                return RubyString.newString(runtime, result.bytes());
+                return finish();
             }
             return runtime.newString("");
         }
     }
     
-    public IRubyObject finish() throws Exception {
-        StringBuffer result = new StringBuffer();
+    public IRubyObject finish() throws IOException {
+        ByteList result = new ByteList(collected.realSize);
         byte[] outp = new byte[1024];
-        byte[] buf = collected;
-        collected = new byte[0];
-        flater.setInput(buf);
+        ByteList buf = collected;
+        collected = new ByteList(BASE_SIZE);
+        flater.setInput(buf.bytes,0,buf.realSize);
         flater.finish();
         int resultLength = -1;
         while (!flater.finished() && resultLength != 0) {
             resultLength = flater.deflate(outp);
-            result.append(new String(outp, 0, resultLength,"PLAIN"));
+            result.append(outp, 0, resultLength);
         }
-        return runtime.newString(result.toString());
+        return RubyString.newString(runtime, result);
     }
     
     public void close() {

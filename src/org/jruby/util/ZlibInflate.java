@@ -39,28 +39,19 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class ZlibInflate {
     private Inflater flater;
-    private byte[] collected;
+    private ByteList collected;
     private IRuby runtime;
 
-    public static byte[] append(byte[] from, byte[] inp) {
-        return append(from,inp,inp.length);
-    }
-
-    public static byte[] append(byte[] from, byte[] inp, int inp_len) {
-        byte[] nue = new byte[from.length+inp_len];
-        System.arraycopy(from,0,nue,0,from.length);
-        System.arraycopy(inp,0,nue,from.length,inp_len);
-        return nue;
-    }
+    public static final int BASE_SIZE = 100;
 
     public ZlibInflate(IRubyObject caller) {
         super();
         flater = new Inflater(false);
-        collected = new byte[0];
+        collected = new ByteList(BASE_SIZE);
         runtime = caller.getRuntime();
     }
 
-    public static IRubyObject s_inflate(IRubyObject caller, byte[] str) 
+    public static IRubyObject s_inflate(IRubyObject caller, ByteList str) 
     	throws DataFormatException {
         ZlibInflate zstream = new ZlibInflate(caller);
         IRubyObject result = zstream.inflate(str);
@@ -74,11 +65,11 @@ public class ZlibInflate {
     }
 
     public void append(IRubyObject obj) {
-        append(obj.convertToString().getBytes());
+        append(obj.convertToString().getByteList());
     }
 
-    public void append(byte[] obj) {
-        collected = append(collected, obj);
+    public void append(ByteList obj) {
+        collected.append(obj);
     }
 
     public IRubyObject sync_point() {
@@ -90,21 +81,21 @@ public class ZlibInflate {
         return str;
     }
 
-    public IRubyObject inflate(byte[] str) throws DataFormatException {
+    public IRubyObject inflate(ByteList str) throws DataFormatException {
         if (null != str) {
             append(str);
         }
-        ByteList result = new ByteList(collected.length);
+        ByteList result = new ByteList(collected.realSize);
         byte[] outp = new byte[1024];
-        byte[] buf = collected;
-        collected = new byte[0];
-        flater.setInput(buf);
+        ByteList buf = collected;
+        collected = new ByteList(BASE_SIZE);
+        flater.setInput(buf.bytes,0,buf.realSize);
         int resultLength = -1;
         while (!flater.finished() && resultLength != 0) {
             resultLength = flater.inflate(outp);
             result.append(outp, 0, resultLength);
         }
-        return RubyString.newString(runtime, result.bytes());
+        return RubyString.newString(runtime, result);
     }
 
     public IRubyObject sync(IRubyObject str) {

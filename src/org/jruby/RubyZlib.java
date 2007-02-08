@@ -51,6 +51,8 @@ import org.jruby.util.Adler32Ext;
 import org.jruby.util.ZlibInflate;
 import org.jruby.util.ZlibDeflate;
 
+import org.jruby.util.ByteList;
+
 public class RubyZlib {
     /** Create the Zlib module and add it to the Ruby runtime.
      * 
@@ -419,7 +421,7 @@ public class RubyZlib {
         };
 
         public static IRubyObject s_inflate(IRubyObject recv, IRubyObject string) throws Exception {
-            return ZlibInflate.s_inflate(recv,string.convertToString().getBytes());
+            return ZlibInflate.s_inflate(recv,string.convertToString().getByteList());
         }
 
         public Inflate(IRuby runtime, RubyClass type) {
@@ -447,7 +449,7 @@ public class RubyZlib {
         }
 
         public IRubyObject inflate(IRubyObject string) throws Exception {
-            return infl.inflate(string.convertToString().getBytes());
+            return infl.inflate(string.convertToString().getByteList());
         }
 
         public IRubyObject sync(IRubyObject string) {
@@ -505,7 +507,7 @@ public class RubyZlib {
             if(!args[1].isNil()) {
                 level = RubyNumeric.fix2int(args[1]);
             }
-            return ZlibDeflate.s_deflate(recv,args[0].convertToString().getBytes(),level);
+            return ZlibDeflate.s_deflate(recv,args[0].convertToString().getByteList(),level);
         }
 
         public Deflate(IRuby runtime, RubyClass type) {
@@ -566,7 +568,7 @@ public class RubyZlib {
             if(!args[1].isNil()) {
                 flush = RubyNumeric.fix2int(args[1]);
             }
-            return defl.deflate(args[0].convertToString().getBytes(),flush);
+            return defl.deflate(args[0].convertToString().getByteList(),flush);
         }
 
         protected int internalTotalOut() {
@@ -714,7 +716,6 @@ public class RubyZlib {
         
         private static RubyGzipReader newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
             RubyClass klass = (RubyClass)recv;
-            
             RubyGzipReader result = (RubyGzipReader)klass.allocate();
             result.callInit(args, block);
             return result;
@@ -802,11 +803,11 @@ public class RubyZlib {
         private final static int BUFF_SIZE = 4096;
         public IRubyObject read(IRubyObject[] args) throws IOException {
             if (args.length == 0 || args[0].isNil()) {
-                byte[] val = new byte[0];
+                ByteList val = new ByteList(10);
                 byte[] buffer = new byte[BUFF_SIZE];
                 int read = io.read(buffer);
                 while (read != -1) {
-                    val = ZlibInflate.append(val, buffer, read);
+                    val.append(buffer,0,read);
                     read = io.read(buffer);
                 }
                 return RubyString.newString(getRuntime(),val);
@@ -828,9 +829,7 @@ public class RubyZlib {
             		toRead -= read;
             		offset += read;
             	} // hmm...
-                byte[] nbuf = new byte[len-toRead];
-                System.arraycopy(buffer,0,nbuf,0,len-toRead);
-            	return RubyString.newString(getRuntime(),nbuf);
+            	return RubyString.newString(getRuntime(),new ByteList(buffer,0,len-toRead,false));
             }
                 
             return getRuntime().newString("");

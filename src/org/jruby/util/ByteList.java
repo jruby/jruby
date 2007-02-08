@@ -37,8 +37,8 @@ package org.jruby.util;
 public class ByteList {
     public static final byte[] NULL_ARRAY = new byte[0];
 
-    private byte[] bytes;
-    private int realSize;
+    byte[] bytes;
+    int realSize;
 
     private static final int DEFAULT_SIZE = 4;
     private static final double FACTOR = 1.5;
