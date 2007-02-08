@@ -61,6 +61,7 @@ testLoad.rb
 testLoops.rb
 testLowerJavaSupport.rb
 testMarshal.rb
+testMath.rb
 testMethods.rb
 testModule.rb
 testNesting.rb

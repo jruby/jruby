@@ -501,6 +501,12 @@ public class BaseMockRuby implements IRuby {
         throw new MockException();
 
     }
+    
+    public RaiseException newErrnoEDOMError(String message) {
+        throw new MockException();
+
+    }
+    
 
     public RaiseException newIndexError(String message) {
         throw new MockException();

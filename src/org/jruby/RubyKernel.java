@@ -346,13 +346,16 @@ public class RubyKernel {
         }else if(object instanceof RubyBignum){
             return RubyFloat.newFloat(object.getRuntime(), RubyBignum.big2dbl((RubyBignum)object));
         }else if(object instanceof RubyString){
+            if(((RubyString)object).getValue().length() == 0){ // rb_cstr_to_dbl case
+                throw recv.getRuntime().newArgumentError("invalid value for Float(): " + object.inspect());
+            }
             return RubyNumeric.str2fnum(recv.getRuntime(),(RubyString)object,true);
         }else if(object.isNil()){
             throw recv.getRuntime().newTypeError("can't convert nil into Float");
         } else {
             RubyFloat rFloat = object.convertToFloat();
-            if(rFloat.getDoubleValue() == Double.NaN){
-                recv.getRuntime().newTypeError("invalid value for Float()");
+            if(Double.isNaN(rFloat.getDoubleValue())){
+                recv.getRuntime().newArgumentError("invalid value for Float()");
         }
             return rFloat;
     }

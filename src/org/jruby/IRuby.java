@@ -393,6 +393,8 @@ public interface IRuby {
     RaiseException newErrnoESPIPEError(String message);
 
     RaiseException newErrnoEEXISTError(String message);
+    
+    RaiseException newErrnoEDOMError(String message);
 
     RaiseException newIndexError(String message);
 

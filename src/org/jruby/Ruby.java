@@ -1427,6 +1427,10 @@ public final class Ruby implements IRuby {
     public RaiseException newErrnoEEXISTError(String message) {
         return newRaiseException(getModule("Errno").getClass("EEXIST"), message);
     }
+    
+    public RaiseException newErrnoEDOMError(String message) {
+        return newRaiseException(getModule("Errno").getClass("EDOM"), "Domain error - " + message);
+    }    
 
     public RaiseException newIndexError(String message) {
         return newRaiseException(getClass("IndexError"), message);
