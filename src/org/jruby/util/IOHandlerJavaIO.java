@@ -16,7 +16,7 @@
  * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2006 Evan Buswell <evan@heron.sytes.net>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -41,30 +41,30 @@ import org.jruby.IRuby;
 /**
  */
 public abstract class IOHandlerJavaIO extends IOHandler {
-    // Last char to be 'ungot'.  <0 indicates nothing waiting to be re-got  
+    // Last char to be 'ungot'.  <0 indicates nothing waiting to be re-got
     private int ungotc = -1;
-    
+
     protected IOHandlerJavaIO(IRuby runtime) {
-	super(runtime);
+    super(runtime);
     }
 
     public byte[] gets(byte[] separatorString) throws IOException, BadDescriptorException {
         checkReadable();
-        
+
         if (separatorString == null) {
             return getsEntireStream();
         }
-        
+
         final byte[] separator = (separatorString == PARAGRAPH_DELIMETER) ?
-	    "\n\n".getBytes() : separatorString;
-	
+        "\n\n".getBytes() : separatorString;
+
         byte c = (byte)read();
         if (c == -1) {
             return null;
         }
-	
+
         ByteList buffer = new ByteList();
-	
+
         LineLoop : while (true) {
             while (c != separator[0] && c != -1) {
                 buffer.append(c);
@@ -83,14 +83,14 @@ public abstract class IOHandlerJavaIO extends IOHandler {
             }
             break;
         }
-        
+
         if (separatorString == PARAGRAPH_DELIMETER) {
             while (c == separator[0]) {
                 c = (byte)read();
             }
             ungetc(c);
         }
-        
+
         return buffer.bytes();
     }
 
@@ -100,15 +100,15 @@ public abstract class IOHandlerJavaIO extends IOHandler {
         while ((c = (byte)read()) != -1) {
             result.append(c);
         }
-        
+
         // We are already at EOF
         if (result.length() == 0) {
             return null;
         }
-        
+
         return result.bytes();
     }
-    
+
     public int read() throws IOException {
         try {
             if (ungotc >= 0) {
@@ -116,7 +116,7 @@ public abstract class IOHandlerJavaIO extends IOHandler {
                 ungotc = -1;
                 return c;
             }
-            
+
             return sysread();
         } catch (EOFException e) {
             return -1;
@@ -125,24 +125,27 @@ public abstract class IOHandlerJavaIO extends IOHandler {
 
     public int getc() throws IOException, BadDescriptorException {
         checkReadable();
-        
+
         int c = read();
-        
+
         if (c == -1) {
             return c;
         }
         return c & 0xff;
     }
-    
+
     public byte[] read(int number) throws IOException, BadDescriptorException {
         try {
-            
+
             if (ungotc >= 0) {
                 byte[] buf2 = sysread(number - 1);
                 int c = ungotc;
                 ungotc = -1;
-                return ByteList.prepend(buf2, c);
-            } 
+                byte[] newBytes = new byte[buf2.length + 1];
+                System.arraycopy(buf2, 0, newBytes, 1, buf2.length);
+                newBytes[0] = (byte)c;
+                return newBytes;
+            }
 
             return sysread(number);
         } catch (EOFException e) {
@@ -163,7 +166,7 @@ public abstract class IOHandlerJavaIO extends IOHandler {
         } catch (IOException e) {
         }
     }
-    
+
     public int write(byte[] string) throws IOException, BadDescriptorException {
         return syswrite(string);
     }
@@ -172,21 +175,21 @@ public abstract class IOHandlerJavaIO extends IOHandler {
         if (buf == null) {
             throw new IOException("sysread2: Buf is null");
         }
-        
+
         int i = 0;
         for (;i < length; i++) {
             int c = sysread();
-            
+
             if (c == -1) {
                 if (i <= 0) {
                     return -1;
                 }
                 break;
             }
-            
+
             buf.append(c);
         }
-        
+
         return i;
     }
 
@@ -196,23 +199,23 @@ public abstract class IOHandlerJavaIO extends IOHandler {
             throw new IOException("File not open");
         }
         checkReadable();
-        
+
         ByteList buf = new ByteList(number);
         int position = 0;
-        
+
         while (position < number) {
             int s = sysread(buf, number - position);
-                
+
             if (s == -1) {
                 if (position <= 0) {
                     throw new EOFException();
                 }
                 break;
             }
-                
+
             position += s;
         }
-            
+
         return buf.bytes();
     }
 

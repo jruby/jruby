@@ -18,7 +18,7 @@
  * Copyright (C) 2002 uid41545 <uid41545@users.sourceforge.net>
  * Copyright (C) 2002 Don Schwartz <schwardo@users.sourceforge.net>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -42,6 +42,7 @@ import org.jruby.ast.visitor.rewriter.VisitorTestSuite;
 import org.jruby.javasupport.TestJavaClass;
 import org.jruby.javasupport.test.JavaSupportTestSuite;
 import org.jruby.runtime.callback.TestReflectionCallback;
+import org.jruby.util.ByteListTest;
 
 /**
  *
@@ -51,31 +52,32 @@ public class MainTestSuite extends TestSuite {
 
     public static Test suite() throws Throwable {
         TestSuite suite = new TestSuite();
-        suite.addTest(new TestSuite(TestLoadService.class));
-        suite.addTest(new TestSuite(TestRubyObject.class));
-        suite.addTest(new TestSuite(TestRubyNil.class));
-        suite.addTest(new TestSuite(TestRubyHash.class));
-        suite.addTest(new TestSuite(TestRuby.class));
-        suite.addTest(new TestSuite(TestRequire.class));
-        suite.addTest(new TestSuite(TestJavaUtil.class));
+        suite.addTestSuite(TestLoadService.class);
+        suite.addTestSuite(TestRubyObject.class);
+        suite.addTestSuite(TestRubyNil.class);
+        suite.addTestSuite(TestRubyHash.class);
+        suite.addTestSuite(TestRuby.class);
+        suite.addTestSuite(TestRequire.class);
+        suite.addTestSuite(TestJavaUtil.class);
         suite.addTestSuite(TestJavaClass.class);
-        suite.addTest(new TestSuite(TestKernel.class));
-        suite.addTest(new TestSuite(TestKernel.class));
-        suite.addTest(new TestSuite(TestRubyCollect.class));
-        suite.addTest(new TestSuite(TestObjectSpace.class));
-        suite.addTest(new TestSuite(TestRubySymbol.class));
+        suite.addTestSuite(TestKernel.class);
+        suite.addTestSuite(TestKernel.class);
+        suite.addTestSuite(TestRubyCollect.class);
+        suite.addTestSuite(TestObjectSpace.class);
+        suite.addTestSuite(TestRubySymbol.class);
         suite.addTest(JavaSupportTestSuite.suite());
-        suite.addTest(new TestSuite(TestIdentitySet.class));
-        suite.addTest(new TestSuite(TestCommandlineParser.class));
-        suite.addTest(new TestSuite(TestRubyException.class));
-        suite.addTest(new TestSuite(TestReflectionCallback.class));
-        suite.addTest(new TestSuite(TestRegexpTranslator.class));
-        suite.addTest(new TestSuite(TestAdoptedThreading.class));
-        suite.addTest(new TestSuite(TestRubyArray.class));
-        suite.addTest(new TestSuite(TestVariableCreation.class));
-        suite.addTest(new TestSuite(YARVMachineTest.class));
-        suite.addTest(new TestSuite(TestRaiseException.class));
+        suite.addTestSuite(TestIdentitySet.class);
+        suite.addTestSuite(TestCommandlineParser.class);
+        suite.addTestSuite(TestRubyException.class);
+        suite.addTestSuite(TestReflectionCallback.class);
+        suite.addTestSuite(TestRegexpTranslator.class);
+        suite.addTestSuite(TestAdoptedThreading.class);
+        suite.addTestSuite(TestRubyArray.class);
+        suite.addTestSuite(TestVariableCreation.class);
+        suite.addTestSuite(YARVMachineTest.class);
+        suite.addTestSuite(TestRaiseException.class);
         suite.addTest(VisitorTestSuite.suite());
+        suite.addTestSuite(ByteListTest.class);
         return suite;
     }
 }
