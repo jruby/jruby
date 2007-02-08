@@ -104,7 +104,7 @@ public class RubyString extends RubyObject {
         assert value != null;
 
         try {
-            this.value = new ByteList(value.toString().getBytes(IN_ENCODING));
+            this.value = new ByteList(value.toString().getBytes(IN_ENCODING),false);
         } catch (UnsupportedEncodingException uee) {
             // ignore, should never, ever happen
         }
@@ -723,7 +723,7 @@ public class RubyString extends RubyObject {
         }
 
         ByteList insert = ((RubyString)stringArg.convertToString()).value;
-        value.replace(index, 0, insert);
+        value.unsafeReplace(index, 0, insert);
         stringMutated();
         return this;
     }
@@ -1641,7 +1641,7 @@ public class RubyString extends RubyObject {
             len = value.length() - beg;
         }
 
-        value.replace(beg,len,replaceWith.value);
+        value.unsafeReplace(beg,len,replaceWith.value);
         stringMutated();
         return infectBy(replaceWith);
     }

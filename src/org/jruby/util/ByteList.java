@@ -54,8 +54,16 @@ public class ByteList {
     }
 
     public ByteList(byte[] wrap) {
+        this(wrap,true);
+    }
+
+    public ByteList(byte[] wrap, boolean copy) {
         if (wrap == null) throw new NullPointerException("Invalid argument: constructing with null array");
-        bytes = (byte[])wrap.clone();
+        if(copy) {
+            bytes = (byte[])wrap.clone();
+        } else {
+            bytes = wrap;
+        }
         realSize = wrap.length;
     }
 
@@ -64,9 +72,17 @@ public class ByteList {
     }
 
     public ByteList(byte[] wrap, int index, int len) {
+        this(wrap,index,len,true);
+    }
+
+    public ByteList(byte[] wrap, int index, int len, boolean copy) {
         if (wrap == null) throw new NullPointerException("Invalid argument: constructing with null array");
-        bytes = new byte[len];
-        System.arraycopy(wrap, index, bytes, 0, len);
+        if(copy || index != 0) {
+            bytes = new byte[len];
+            System.arraycopy(wrap, index, bytes, 0, len);
+        } else {
+            bytes = wrap;
+        }
         realSize = len;
     }
 
@@ -135,6 +151,23 @@ public class ByteList {
         realSize = newBytes.length;
     }
 
+    
+    public void unsafeReplace(int beg, int len, ByteList nbytes) {
+        unsafeReplace(beg, len, nbytes.bytes, 0, nbytes.realSize);
+    }
+
+    public void unsafeReplace(int beg, int len, byte[] buf) {
+        unsafeReplace(beg, len, buf, 0, buf.length);
+    }
+
+    public void unsafeReplace(int beg, int len, byte[] nbytes, int index, int count) {
+        grow(count - len);
+        int newSize = realSize + count - len;
+        System.arraycopy(bytes,beg+len,bytes,beg+count,realSize - (len+beg));
+        System.arraycopy(nbytes,index,bytes,beg,count);
+        realSize = newSize;
+    }
+
     public void replace(int beg, int len, ByteList nbytes) {
         replace(beg, len, nbytes.bytes, 0, nbytes.realSize);
     }
@@ -145,11 +178,7 @@ public class ByteList {
 
     public void replace(int beg, int len, byte[] nbytes, int index, int count) {
         if (len - beg > realSize) throw new IndexOutOfBoundsException();
-        grow(count - len);
-        int newSize = realSize + count - len;
-        System.arraycopy(bytes,beg+len,bytes,beg+count,realSize - (len+beg));
-        System.arraycopy(nbytes,index,bytes,beg,count);
-        realSize = newSize;
+        unsafeReplace(beg,len,nbytes,index,count);
     }
 
     public int hashCode() {
