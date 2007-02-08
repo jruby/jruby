@@ -391,22 +391,7 @@ public class RubyString extends RubyObject {
      *
      */
     public int cmp(RubyString other) {
-        for (int i = 0; i < value.length(); i++) {
-            if (i >= other.value.length()) {
-                return 1;
-            }
-            int a = value.get(i) & 0xFF;
-            int b = other.value.get(i) & 0xFF;
-            int compare = a - b;
-            if (compare != 0) {
-                return compare < 0 ? -1 : 1;
-            }
-        }
-        if (other.value.length() > value.length()) {
-            return -1;
-        }
-
-        return 0;
+        return value.cmp(other.value);
     }
 
     /** rb_to_id

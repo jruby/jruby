@@ -34,7 +34,7 @@ package org.jruby.util;
  *
  * @author headius
  */
-public class ByteList {
+public class ByteList implements Comparable {
     public static final byte[] NULL_ARRAY = new byte[0];
 
     byte[] bytes;
@@ -215,6 +215,35 @@ public class ByteList {
             return true;
         }
         return false;
+    }
+
+    /**
+     * This comparison matches MRI comparison of Strings (rb_str_cmp).
+     * I wish we had memcmp right now...     
+     */
+    public int compareTo(Object other) {
+        return cmp((ByteList)other);
+    }
+
+    public int cmp(ByteList other) {
+        if (other == this || other.bytes == bytes) return 0;
+        int len = Math.min(realSize,other.realSize);
+        int retval = 0;
+        for(int i=0;i<len && retval == 0;i++) {
+            retval = (bytes[i]&0xFF) - (other.bytes[i]&0xFF);
+        }
+        if(retval == 0) {
+            if(realSize == other.realSize) {
+                return 0;
+            } else if(realSize > len) {
+                return 1;
+            }
+            return -1;
+        }
+        if(retval > 0) {
+            return 1;
+        }
+        return -1;
     }
 
     /**
