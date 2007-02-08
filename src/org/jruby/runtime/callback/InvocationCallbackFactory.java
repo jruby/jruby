@@ -28,6 +28,7 @@
 package org.jruby.runtime.callback;
 
 import org.jruby.IRuby;
+import org.jruby.RubyKernel;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -49,11 +50,11 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     private final static String SUPER_CLASS = cg.p(InvocationCallback.class);
     private final static String FAST_SUPER_CLASS = cg.p(FastInvocationCallback.class);
     private final static String BLOCK_ID = cg.ci(Block.class);
-    private final static String CALL_SIG = cg.sig(IRubyObject.class, cg.params(Object.class, Object[].class, Block.class));
-    private final static String FAST_CALL_SIG = cg.sig(IRubyObject.class, cg.params(Object.class, Object[].class));
-    private final static String BLOCK_CALL_SIG = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class, IRubyObject[][].class));
-    private final static String IRUB = cg.p(IRubyObject.class);
-    private final static String IRUB_ID = cg.ci(IRubyObject.class);
+    private final static String CALL_SIG = cg.sig(RubyKernel.IRUBY_OBJECT, cg.params(Object.class, Object[].class, Block.class));
+    private final static String FAST_CALL_SIG = cg.sig(RubyKernel.IRUBY_OBJECT, cg.params(Object.class, Object[].class));
+    private final static String BLOCK_CALL_SIG = cg.sig(RubyKernel.IRUBY_OBJECT, cg.params(ThreadContext.class, RubyKernel.IRUBY_OBJECT, IRubyObject[].class, Block.class, IRubyObject[][].class));
+    private final static String IRUB = cg.p(RubyKernel.IRUBY_OBJECT);
+    private final static String IRUB_ID = cg.ci(RubyKernel.IRUBY_OBJECT);
     
     public InvocationCallbackFactory(IRuby runtime, Class type) {
         this.type = type;
@@ -291,7 +292,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         Class c = tryClass(mname);
         try {
             if(c == null) {
-                String ret = getReturnName(method,new Class[]{IRubyObject.class,Block.class});
+                String ret = getReturnName(method,new Class[]{RubyKernel.IRUBY_OBJECT,Block.class});
                 ClassWriter cw = createCtor(mnamePath);
                 MethodVisitor mv = startCallS(cw);
                 mv.visitVarInsn(ALOAD, 3);
@@ -316,7 +317,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         Class c = tryClass(mname);
         try {
             if(c == null) {
-                String ret = getReturnName(method,new Class[]{IRubyObject.class,arg1,Block.class});
+                String ret = getReturnName(method,new Class[]{RubyKernel.IRUBY_OBJECT,arg1,Block.class});
                 ClassWriter cw = createCtor(mnamePath);
                 MethodVisitor mv = startCallS(cw);
                 mv.visitVarInsn(ALOAD, 2);
@@ -345,7 +346,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         Class c = tryClass(mname);
         try {
             if(c == null) {
-                String ret = getReturnName(method,new Class[]{IRubyObject.class,arg1,arg2,Block.class});
+                String ret = getReturnName(method,new Class[]{RubyKernel.IRUBY_OBJECT,arg1,arg2,Block.class});
                 ClassWriter cw = createCtor(mnamePath);
                 MethodVisitor mv = startCallS(cw);
                 mv.visitVarInsn(ALOAD, 2);
@@ -378,7 +379,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         Class c = tryClass(mname);
         try {
             if(c == null) {
-                String ret = getReturnName(method,new Class[]{IRubyObject.class,arg1,arg2,arg3,Block.class});
+                String ret = getReturnName(method,new Class[]{RubyKernel.IRUBY_OBJECT,arg1,arg2,arg3,Block.class});
                 ClassWriter cw = createCtor(mnamePath);
                 MethodVisitor mv = startCallS(cw);
                 mv.visitVarInsn(ALOAD, 2);
@@ -414,7 +415,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         return new ReflectionCallback(
             type,
             method,
-            new Class[] { IRubyObject.class, IRubyObject.class },
+            new Class[] { RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT },
             false,
             true,
             Arity.fixed(2), false);
@@ -434,7 +435,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 mv.visitVarInsn(ALOAD, 4);
                 mv.visitVarInsn(ALOAD, 5);
                 mv.visitMethodInsn(INVOKESTATIC, typePath, method, 
-                        cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class, IRubyObject[][].class)));
+                        cg.sig(RubyKernel.IRUBY_OBJECT, cg.params(ThreadContext.class, RubyKernel.IRUBY_OBJECT, IRubyObject[].class, Block.class, IRubyObject[][].class)));
                 mv.visitInsn(ARETURN);
                 mv.visitMaxs(2, 3);
                 c = endCall(cw,mv,mname);
@@ -454,7 +455,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         Class c = tryClass(mname);
         try {
             if(c == null) {
-                String ret = getReturnName(method,new Class[]{IRubyObject.class,IRubyObject[].class,Block.class});
+                String ret = getReturnName(method,new Class[]{RubyKernel.IRUBY_OBJECT,IRubyObject[].class,Block.class});
                 ClassWriter cw = createCtor(mnamePath);
                 MethodVisitor mv = startCallS(cw);
                 mv.visitVarInsn(ALOAD, 2);
@@ -630,7 +631,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         Class c = tryClass(mname);
         try {
             if(c == null) {
-                String ret = getReturnName(method,new Class[]{IRubyObject.class});
+                String ret = getReturnName(method,new Class[]{RubyKernel.IRUBY_OBJECT});
                 ClassWriter cw = createCtorFast(mnamePath);
                 MethodVisitor mv = startCallSFast(cw);
                 mv.visitMethodInsn(INVOKESTATIC, typePath, method, "(" + IRUB_ID + ")L" + ret +";");
@@ -654,7 +655,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         Class c = tryClass(mname);
         try {
             if(c == null) {
-                String ret = getReturnName(method,new Class[]{IRubyObject.class,arg1});
+                String ret = getReturnName(method,new Class[]{RubyKernel.IRUBY_OBJECT,arg1});
                 ClassWriter cw = createCtorFast(mnamePath);
                 MethodVisitor mv = startCallSFast(cw);
                 mv.visitVarInsn(ALOAD, 2);
@@ -682,7 +683,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         Class c = tryClass(mname);
         try {
             if(c == null) {
-                String ret = getReturnName(method,new Class[]{IRubyObject.class,arg1,arg2});
+                String ret = getReturnName(method,new Class[]{RubyKernel.IRUBY_OBJECT,arg1,arg2});
                 ClassWriter cw = createCtorFast(mnamePath);
                 MethodVisitor mv = startCallSFast(cw);
                 mv.visitVarInsn(ALOAD, 2);
@@ -714,7 +715,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         Class c = tryClass(mname);
         try {
             if(c == null) {
-                String ret = getReturnName(method,new Class[]{IRubyObject.class,arg1,arg2,arg3});
+                String ret = getReturnName(method,new Class[]{RubyKernel.IRUBY_OBJECT,arg1,arg2,arg3});
                 ClassWriter cw = createCtorFast(mnamePath);
                 MethodVisitor mv = startCallSFast(cw);
                 mv.visitVarInsn(ALOAD, 2);
@@ -777,7 +778,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         Class c = tryClass(mname);
         try {
             if(c == null) {
-                String ret = getReturnName(method,new Class[]{IRubyObject.class,IRubyObject[].class});
+                String ret = getReturnName(method,new Class[]{RubyKernel.IRUBY_OBJECT,IRubyObject[].class});
                 ClassWriter cw = createCtorFast(mnamePath);
                 MethodVisitor mv = startCallSFast(cw);
                 mv.visitVarInsn(ALOAD, 2);

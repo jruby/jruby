@@ -28,6 +28,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.IRuby;
+import org.jruby.RubyKernel;
 import org.jruby.runtime.Block;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
@@ -44,6 +45,7 @@ import org.jruby.util.collections.SinglyLinkedList;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class InvocationMethodFactory extends MethodFactory implements Opcodes {
+    private final static Class IRUBY_OBJECT_ARR = IRubyObject[].class;
     private final static String SIMPLE_SUPER_CLASS = SimpleInvocationMethod.class.getName().replace('.','/');
     private final static String COMPILED_SUPER_CLASS = CompiledMethod.class.getName().replace('.','/');
     private final static String FULL_SUPER_CLASS = FullInvocationMethod.class.getName().replace('.','/');
@@ -138,7 +140,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 if(arity.isFixed()) {
                     int ar_len = arity.getValue();
                     Class[] sign = new Class[ block ? ar_len+1 : ar_len ];
-                    java.util.Arrays.fill(sign,IRubyObject.class);
+                    java.util.Arrays.fill(sign,RubyKernel.IRUBY_OBJECT);
                     if(block) {
                         sign[sign.length-1] = Block.class;
                     }
@@ -169,7 +171,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     mv.visitMethodInsn(INVOKEVIRTUAL, typePath, method, "(" + sbe + ")" + ret);
                     mv.visitInsn(ARETURN);
                 } else {
-                    String ret = getReturnName(type, method, block ? new Class[]{IRubyObject[].class, Block.class} : new Class[]{IRubyObject[].class});
+                    String ret = getReturnName(type, method, block ? new Class[]{IRUBY_OBJECT_ARR, Block.class} : new Class[]{IRUBY_OBJECT_ARR});
                     mv = cw.visitMethod(ACC_PUBLIC, "call", block ? CALL_SIG : CALL_SIG_NB, null, null);
                     mv.visitCode();
                     mv.visitVarInsn(ALOAD, 1);
@@ -202,7 +204,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 MethodVisitor mv = null;
 
                 // compiled methods will always return IRubyObject
-                //String ret = getReturnName(type, method, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class});
+                //String ret = getReturnName(type, method, new Class[]{ThreadContext.class, RubyKernel.IRUBY_OBJECT, IRUBY_OBJECT_ARR, Block.class});
                 String ret = IRUB_ID;
                 mv = cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG, null, null);
                 mv.visitCode();
