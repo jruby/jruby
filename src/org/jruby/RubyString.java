@@ -469,7 +469,7 @@ public class RubyString extends RubyObject {
         if (this == other || sameAs(newValue)) {
             return this;
         }
-        value = (ByteList)newValue.value.clone();
+        value.replace(newValue.value.bytes());
         return (RubyString) infectBy(newValue);
     }
 
@@ -723,12 +723,7 @@ public class RubyString extends RubyObject {
         }
 
         ByteList insert = ((RubyString)stringArg.convertToString()).value;
-        ByteList newBytes = new ByteList(value.length() + insert.length());
-
-        newBytes.append(value, 0, index);
-        newBytes.append(insert);
-        newBytes.append(value, index, value.length() - index);
-        value = newBytes;
+        value.replace(index, 0, insert);
         stringMutated();
         return this;
     }

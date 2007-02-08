@@ -1,11 +1,31 @@
-/*
- * ByteList.java
+/***** BEGIN LICENSE BLOCK *****
+ * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
- * Created on February 5, 2007, 10:29 PM
+ * The contents of this file are subject to the Common Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.eclipse.org/legal/cpl-v10.html
  *
- * To change this template, choose Tools | Template Manager
- * and open the template in the editor.
- */
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * Copyright (C) 2007 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the CPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the CPL, the GPL or the LGPL.
+ ***** END LICENSE BLOCK *****/
 
 package org.jruby.util;
 
@@ -21,7 +41,7 @@ public class ByteList {
     private int realSize;
 
     private static final int DEFAULT_SIZE = 4;
-    private static final double FACTOR = 2.0;
+    private static final double FACTOR = 1.5;
 
     /** Creates a new instance of ByteList */
     public ByteList() {
@@ -55,11 +75,7 @@ public class ByteList {
     }
 
     public void append(byte b) {
-        if (realSize == bytes.length) {
-            byte[] newBytes = new byte[(int)(bytes.length * FACTOR)];
-            System.arraycopy(bytes, 0, newBytes, 0, bytes.length);
-            bytes = newBytes;
-        }
+        grow(1);
         bytes[realSize++] = b;
     }
 
@@ -68,28 +84,15 @@ public class ByteList {
     }
 
     public void prepend(byte b) {
-        if (realSize == bytes.length) {
-            byte[] newBytes = new byte[(int)(bytes.length * FACTOR)];
-            System.arraycopy(bytes, 0, newBytes, 1, bytes.length);
-            bytes = newBytes;
-        } else {
-            for (int i = realSize; i > 0; i--) {
-                bytes[i] = bytes[i-1];
-            }
-        }
+        grow(1);
+        System.arraycopy(bytes, 0, bytes, 1, realSize);
         bytes[0] = b;
         realSize++;
     }
 
     public void append(byte[] moreBytes) {
-        if (realSize + moreBytes.length <= bytes.length) {
-            System.arraycopy(moreBytes, 0, bytes, realSize, moreBytes.length);
-        } else {
-            byte[] newBytes = new byte[(int)((realSize + moreBytes.length) * FACTOR)];
-            System.arraycopy(bytes, 0, newBytes, 0, realSize);
-            System.arraycopy(moreBytes, 0, newBytes, realSize, moreBytes.length);
-            bytes = newBytes;
-        }
+        grow(moreBytes.length);
+        System.arraycopy(moreBytes, 0, bytes, realSize, moreBytes.length);
         realSize += moreBytes.length;
     }
 
@@ -102,14 +105,8 @@ public class ByteList {
     }
 
     public void append(byte[] moreBytes, int start, int len) {
-        if (realSize + len <= bytes.length) {
-            System.arraycopy(moreBytes, start, bytes, realSize, len);
-        } else {
-            byte[] newBytes = new byte[(int)((realSize + len) * FACTOR)];
-            System.arraycopy(bytes, 0, newBytes, 0, realSize);
-            System.arraycopy(moreBytes, start, newBytes, realSize, len);
-            bytes = newBytes;
-        }
+        grow(len);
+        System.arraycopy(moreBytes, start, bytes, realSize, len);
         realSize += len;
     }
 
@@ -118,11 +115,7 @@ public class ByteList {
     }
 
     public void length(int newLength) {
-        if (bytes.length < newLength) {
-            byte[] newBytes = new byte[(int) (newLength * FACTOR)];
-            System.arraycopy(bytes, 0, newBytes, 0, realSize);
-            bytes = newBytes;
-        }
+        grow(newLength - realSize);
         realSize = newLength;
     }
 
@@ -152,15 +145,10 @@ public class ByteList {
 
     public void replace(int beg, int len, byte[] nbytes, int index, int count) {
         if (len - beg > realSize) throw new IndexOutOfBoundsException();
-        int newSize = realSize - len + count;
-        byte[] newBytes = bytes;
-        if (newSize > bytes.length) {
-            newBytes = new byte[(int) (newSize * FACTOR)];
-            System.arraycopy(bytes,0,newBytes,0,beg);
-        }
-        System.arraycopy(bytes,beg+len,newBytes,beg+count,realSize - (len+beg));
-        System.arraycopy(nbytes,index,newBytes,beg,count);
-        bytes = newBytes;
+        grow(count - len);
+        int newSize = realSize + count - len;
+        System.arraycopy(bytes,beg+len,bytes,beg+count,realSize - (len+beg));
+        System.arraycopy(nbytes,index,bytes,beg,count);
         realSize = newSize;
     }
 
@@ -193,5 +181,17 @@ public class ByteList {
 
     public Object clone() {
         return new ByteList(bytes, 0, realSize);
+    }
+
+    private void grow(int increaseRequested) {
+        if (increaseRequested < 0) {
+            return;
+        }
+        int newSize = realSize + increaseRequested;
+        if (bytes.length < newSize) {
+            byte[] newBytes = new byte[(int) (newSize * FACTOR)];
+            System.arraycopy(bytes,0,newBytes,0,realSize);
+            bytes = newBytes;
+        }
     }
 }
