@@ -124,6 +124,5 @@ class TestMath < Test::Unit::TestCase
     # and some special cases
     assert_equal(-1, Math.log(0).infinite?)
     assert_equal(-1, Math.log10(0).infinite?)
-	assert_equal(true, Math.sqrt(-1).nan?)
   end
 end
