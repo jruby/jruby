@@ -1257,12 +1257,12 @@ brace_block   : tLCURLY {
                   support.pushBlockScope();
 	      } opt_block_var compstmt kEND {
                   $$ = new IterNode(support.union($1, $5), $3, support.getCurrentScope(), $4);
+                  $<ISourcePositionHolder>0.setPosition(support.union($<ISourcePositionHolder>0, $<ISourcePositionHolder>$));
                   support.popCurrentScope();
               }
 
 case_body     : kWHEN when_args then compstmt cases {
-//mirko support.union($1, support.unwrapNewlineNode($4))?
-                  $$ = new WhenNode($1.getPosition(), $2, $4, $5);
+                  $$ = new WhenNode(support.union($1, support.unwrapNewlineNode($4)), $2, $4, $5);
               }
 
 when_args     : args

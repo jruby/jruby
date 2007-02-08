@@ -375,7 +375,7 @@ END
 list = [
 nil,
 nil, #['NewlineNode',0,1,6,9],
-  ['FCallNode',0,0,0,5],
+  ['FCallNode',0,1,0,12],
     ['ArrayNode',0,0,3,5],
     ['IterNode',0,1,6,12]
 ]
@@ -388,7 +388,7 @@ END
 list = [
 nil,
 nil, #['NewlineNode',0,2,6,17],
-  ['FCallNode',0,0,0,5],
+  ['FCallNode',0,1,0,16],
     ['ArrayNode',0,0,3,5],
     ['IterNode',0,1,6,16],
       ['DAsgnNode',0,0,10,11]
@@ -402,7 +402,7 @@ END
 list = [
 nil,
 nil, #['NewlineNode',0,2,6,19],
-  ['FCallNode',0,0,0,5],
+  ['FCallNode',0,1,0,18],
     ['ArrayNode',0,0,3,5],
     ['IterNode',0,1,6,18],
       ['MultipleAsgnNode',0,0,9,14],
@@ -419,7 +419,7 @@ END
 list = [
 nil,
 nil, #['NewlineNode',0,2,10,23],
-  ['FCallNode',0,0,0,9],
+  ['FCallNode',0,1,0,22],
     ['ArrayNode',0,0,3,9],
       ['VCallNode',0,0,4,5],
       ['VCallNode',0,0,7,8],
@@ -1533,3 +1533,56 @@ test_tree(list, <<END)
 v = 2 * (1 + 3)
 END
 
+list = [
+nil,
+['BlockNode', 0, 6, 0, 141],
+nil,
+['LocalAsgnNode', 0, 0, 0, 11],
+['FixnumNode', 0, 0, 7, 11],
+nil,
+['LocalAsgnNode', 1, 5, 12, 131],
+['CaseNode', 1, 5, 19, 131],
+['WhenNode', 2, 2, 31, 57],
+['ArrayNode', 2, 2, 36, 51],
+['CallNode', 2, 2, 36, 51],
+['CallNode', 2, 2, 36, 46],
+['LocalVarNode', 2, 2, 36, 40],
+['ArrayNode', 2, 2, 43, 46],
+['FixnumNode', 2, 2, 43, 46],
+['ArrayNode', 2, 2, 50, 51],
+['FixnumNode', 2, 2, 50, 51],
+nil,
+['TrueNode', 2, 2, 53, 57],
+['WhenNode', 3, 3, 65, 92],
+['ArrayNode', 3, 3, 70, 85],
+['CallNode', 3, 3, 70, 85],
+['CallNode', 3, 3, 70, 80],
+['LocalVarNode', 3, 3, 70, 74],
+['ArrayNode', 3, 3, 77, 80],
+['FixnumNode', 3, 3, 77, 80],
+['ArrayNode', 3, 3, 84, 85],
+['FixnumNode', 3, 3, 84, 85],
+nil,
+['FalseNode', 3, 3, 87, 92],
+nil,
+['CallNode', 4, 4, 105, 120],
+['CallNode', 4, 4, 105, 113],
+['LocalVarNode', 4, 4, 105, 109],
+['ArrayNode', 4, 4, 112, 113],
+['FixnumNode', 4, 4, 112, 113],
+['ArrayNode', 4, 4, 119, 120],
+['FixnumNode', 4, 4, 119, 120],
+nil,
+['FCallNode', 6, 6, 132, 141],
+['ArrayNode', 6, 6, 137, 141],
+['LocalVarNode', 6, 6, 137, 141]
+]
+test_tree(list, <<END)
+year = 2007
+leap = case
+       when year % 400 == 0: true
+       when year % 100 == 0: false
+       else year % 4   == 0
+       end
+puts leap
+END

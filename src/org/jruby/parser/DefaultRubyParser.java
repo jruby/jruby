@@ -2579,14 +2579,14 @@ case 353:
 					// line 1258 "DefaultRubyParser.y"
   {
                   yyVal = new IterNode(support.union(((Token)yyVals[-4+yyTop]), ((Token)yyVals[0+yyTop])), ((Node)yyVals[-2+yyTop]), support.getCurrentScope(), ((Node)yyVals[-1+yyTop]));
+                  ((ISourcePositionHolder)yyVals[-5+yyTop]).setPosition(support.union(((ISourcePositionHolder)yyVals[-5+yyTop]), ((ISourcePositionHolder)yyVal)));
                   support.popCurrentScope();
               }
   break;
 case 354:
-					// line 1263 "DefaultRubyParser.y"
+					// line 1264 "DefaultRubyParser.y"
   {
-/*mirko support.union($1, support.unwrapNewlineNode($4))?*/
-                  yyVal = new WhenNode(((Token)yyVals[-4+yyTop]).getPosition(), ((ListNode)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+                  yyVal = new WhenNode(support.union(((Token)yyVals[-4+yyTop]), support.unwrapNewlineNode(((Node)yyVals[-1+yyTop]))), ((ListNode)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
               }
   break;
 case 356:
