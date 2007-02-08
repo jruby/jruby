@@ -42,7 +42,7 @@ public class RubyJRuby {
         RubyModule comparableModule = runtime.defineModule("JRuby");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyJRuby.class);
         comparableModule.defineModuleFunction("parse", 
-                callbackFactory.getSingletonMethod("parse", IRubyObject.class, IRubyObject.class));
+                callbackFactory.getSingletonMethod("parse", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
         comparableModule.defineModuleFunction("runtime", 
                 callbackFactory.getSingletonMethod("runtime"));
 

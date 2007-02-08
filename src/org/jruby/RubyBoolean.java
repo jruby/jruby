@@ -94,9 +94,9 @@ public class RubyBoolean extends RubyObject {
         CallbackFactory fact = runtime.callbackFactory(RubyBoolean.class);
 
 		falseClass.defineFastMethod("type", fact.getFastMethod("type"));
-        falseClass.defineFastMethod("&", fact.getFastMethod("false_and", IRubyObject.class));
-        falseClass.defineFastMethod("|", fact.getFastMethod("false_or", IRubyObject.class));
-        falseClass.defineFastMethod("^", fact.getFastMethod("false_xor", IRubyObject.class));
+        falseClass.defineFastMethod("&", fact.getFastMethod("false_and", RubyKernel.IRUBY_OBJECT));
+        falseClass.defineFastMethod("|", fact.getFastMethod("false_or", RubyKernel.IRUBY_OBJECT));
+        falseClass.defineFastMethod("^", fact.getFastMethod("false_xor", RubyKernel.IRUBY_OBJECT));
         falseClass.defineFastMethod("id", fact.getFastMethod("false_id"));
         falseClass.defineFastMethod("to_s", fact.getFastMethod("false_to_s"));
 
@@ -112,9 +112,9 @@ public class RubyBoolean extends RubyObject {
         CallbackFactory fact = runtime.callbackFactory(RubyBoolean.class);
 
 		trueClass.defineFastMethod("type", fact.getFastMethod("type"));
-        trueClass.defineFastMethod("&", fact.getFastMethod("true_and", IRubyObject.class));
-        trueClass.defineFastMethod("|", fact.getFastMethod("true_or", IRubyObject.class));
-        trueClass.defineFastMethod("^", fact.getFastMethod("true_xor", IRubyObject.class));
+        trueClass.defineFastMethod("&", fact.getFastMethod("true_and", RubyKernel.IRUBY_OBJECT));
+        trueClass.defineFastMethod("|", fact.getFastMethod("true_or", RubyKernel.IRUBY_OBJECT));
+        trueClass.defineFastMethod("^", fact.getFastMethod("true_xor", RubyKernel.IRUBY_OBJECT));
         trueClass.defineFastMethod("id", fact.getFastMethod("true_id"));
         trueClass.defineFastMethod("to_s", fact.getFastMethod("true_to_s"));
 

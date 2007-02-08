@@ -62,7 +62,7 @@ public class RubyZlib {
 
         RubyClass gzfile = result.defineClassUnder("GzipFile", runtime.getObject(), RubyGzipFile.GZIPFILE_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyGzipFile.class);
-        gzfile.getMetaClass().defineMethod("wrap", callbackFactory.getSingletonMethod("wrap", RubyGzipFile.class, IRubyObject.class));
+        gzfile.getMetaClass().defineMethod("wrap", callbackFactory.getSingletonMethod("wrap", RubyGzipFile.class, RubyKernel.IRUBY_OBJECT));
         gzfile.getMetaClass().defineMethod("new", callbackFactory.getSingletonMethod("newInstance"));
         gzfile.defineFastMethod("os_code", callbackFactory.getFastMethod("os_code"));
         gzfile.defineFastMethod("closed?", callbackFactory.getFastMethod("closed_p"));
@@ -75,7 +75,7 @@ public class RubyZlib {
         gzfile.defineFastMethod("sync", callbackFactory.getFastMethod("sync"));
         gzfile.defineFastMethod("close", callbackFactory.getFastMethod("close"));
         gzfile.defineFastMethod("level", callbackFactory.getFastMethod("level"));
-        gzfile.defineFastMethod("sync=", callbackFactory.getFastMethod("set_sync", IRubyObject.class));
+        gzfile.defineFastMethod("sync=", callbackFactory.getFastMethod("set_sync", RubyKernel.IRUBY_OBJECT));
         
         CallbackFactory classCB = runtime.callbackFactory(RubyClass.class);
         RubyClass gzreader = result.defineClassUnder("GzipReader", gzfile, RubyGzipReader.GZIPREADER_ALLOCATOR);
@@ -83,7 +83,7 @@ public class RubyZlib {
         CallbackFactory callbackFactory2 = runtime.callbackFactory(RubyGzipReader.class);
         gzreader.getMetaClass().defineMethod("open", callbackFactory2.getSingletonMethod("open", RubyString.class));
         gzreader.getMetaClass().defineMethod("new", classCB.getOptMethod("newInstance"));
-        gzreader.defineMethod("initialize", callbackFactory2.getMethod("initialize", IRubyObject.class));
+        gzreader.defineMethod("initialize", callbackFactory2.getMethod("initialize", RubyKernel.IRUBY_OBJECT));
         gzreader.defineFastMethod("rewind", callbackFactory2.getFastMethod("rewind"));
         gzreader.defineFastMethod("lineno", callbackFactory2.getFastMethod("lineno"));
         gzreader.defineFastMethod("readline", callbackFactory2.getFastMethod("readline"));
@@ -111,7 +111,7 @@ public class RubyZlib {
         gzwriter.getMetaClass().defineMethod("open", callbackFactory3.getOptSingletonMethod("open"));
         gzwriter.getMetaClass().defineMethod("new", classCB.getOptMethod("newInstance"));
         gzwriter.defineMethod("initialize", callbackFactory3.getOptMethod("initialize2"));
-        gzwriter.defineFastMethod("<<", callbackFactory3.getFastMethod("append", IRubyObject.class));
+        gzwriter.defineFastMethod("<<", callbackFactory3.getFastMethod("append", RubyKernel.IRUBY_OBJECT));
         gzwriter.defineFastMethod("printf", callbackFactory3.getFastOptMethod("printf"));
         gzwriter.defineFastMethod("pos", callbackFactory3.getFastMethod("pos"));
         gzwriter.defineFastMethod("orig_name=", callbackFactory3.getFastMethod("set_orig_name", RubyString.class));
@@ -119,9 +119,9 @@ public class RubyZlib {
         gzwriter.defineFastMethod("comment=", callbackFactory3.getFastMethod("set_comment", RubyString.class));
         gzwriter.defineFastMethod("puts", callbackFactory3.getFastOptMethod("puts"));
         gzwriter.defineFastMethod("flush", callbackFactory3.getFastOptMethod("flush"));
-        gzwriter.defineFastMethod("mtime=", callbackFactory3.getFastMethod("set_mtime", IRubyObject.class));
+        gzwriter.defineFastMethod("mtime=", callbackFactory3.getFastMethod("set_mtime", RubyKernel.IRUBY_OBJECT));
         gzwriter.defineFastMethod("tell", callbackFactory3.getFastMethod("tell"));
-        gzwriter.defineFastMethod("write", callbackFactory3.getFastMethod("write", IRubyObject.class));
+        gzwriter.defineFastMethod("write", callbackFactory3.getFastMethod("write", RubyKernel.IRUBY_OBJECT));
 
         result.defineConstant("ZLIB_VERSION",runtime.newString("1.2.1"));
         result.defineConstant("VERSION",runtime.newString("0.6.0"));
@@ -199,7 +199,7 @@ public class RubyZlib {
         zstream.defineFastMethod("end",zstreamcb.getFastMethod("end"));
         zstream.defineFastMethod("reset",zstreamcb.getFastMethod("reset"));
         zstream.defineFastMethod("avail_out",zstreamcb.getFastMethod("avail_out"));
-        zstream.defineFastMethod("avail_out=",zstreamcb.getFastMethod("set_avail_out",IRubyObject.class));
+        zstream.defineFastMethod("avail_out=",zstreamcb.getFastMethod("set_avail_out",RubyKernel.IRUBY_OBJECT));
         zstream.defineFastMethod("adler",zstreamcb.getFastMethod("adler"));
         zstream.defineFastMethod("finish",zstreamcb.getFastMethod("finish"));
         zstream.defineFastMethod("avail_in",zstreamcb.getFastMethod("avail_in"));
@@ -211,21 +211,21 @@ public class RubyZlib {
 
         RubyClass infl = result.defineClassUnder("Inflate", zstream, Inflate.INFLATE_ALLOCATOR);
         CallbackFactory inflcb = runtime.callbackFactory(Inflate.class);
-        infl.getMetaClass().defineFastMethod("inflate",inflcb.getFastSingletonMethod("s_inflate",IRubyObject.class));
+        infl.getMetaClass().defineFastMethod("inflate",inflcb.getFastSingletonMethod("s_inflate",RubyKernel.IRUBY_OBJECT));
         infl.defineFastMethod("initialize",inflcb.getFastOptMethod("_initialize"));
-        infl.defineFastMethod("<<",inflcb.getFastMethod("append",IRubyObject.class));
+        infl.defineFastMethod("<<",inflcb.getFastMethod("append",RubyKernel.IRUBY_OBJECT));
         infl.defineFastMethod("sync_point?",inflcb.getFastMethod("sync_point_p"));
-        infl.defineFastMethod("set_dictionary",inflcb.getFastMethod("set_dictionary",IRubyObject.class));
-        infl.defineFastMethod("inflate",inflcb.getFastMethod("inflate",IRubyObject.class));
-        infl.defineFastMethod("sync",inflcb.getFastMethod("sync",IRubyObject.class));
+        infl.defineFastMethod("set_dictionary",inflcb.getFastMethod("set_dictionary",RubyKernel.IRUBY_OBJECT));
+        infl.defineFastMethod("inflate",inflcb.getFastMethod("inflate",RubyKernel.IRUBY_OBJECT));
+        infl.defineFastMethod("sync",inflcb.getFastMethod("sync",RubyKernel.IRUBY_OBJECT));
 
         RubyClass defl = result.defineClassUnder("Deflate", zstream, Deflate.DEFLATE_ALLOCATOR);
         CallbackFactory deflcb = runtime.callbackFactory(Deflate.class);
         defl.getMetaClass().defineFastMethod("deflate",deflcb.getFastOptSingletonMethod("s_deflate"));
         defl.defineFastMethod("initialize",deflcb.getFastOptMethod("_initialize"));
-        defl.defineFastMethod("<<",deflcb.getFastMethod("append",IRubyObject.class));
-        defl.defineFastMethod("params",deflcb.getFastMethod("params",IRubyObject.class,IRubyObject.class));
-        defl.defineFastMethod("set_dictionary",deflcb.getFastMethod("set_dictionary",IRubyObject.class));
+        defl.defineFastMethod("<<",deflcb.getFastMethod("append",RubyKernel.IRUBY_OBJECT));
+        defl.defineFastMethod("params",deflcb.getFastMethod("params",RubyKernel.IRUBY_OBJECT,RubyKernel.IRUBY_OBJECT));
+        defl.defineFastMethod("set_dictionary",deflcb.getFastMethod("set_dictionary",RubyKernel.IRUBY_OBJECT));
         defl.defineFastMethod("flush",deflcb.getFastOptMethod("flush"));
         defl.defineFastMethod("deflate",deflcb.getFastOptMethod("deflate"));
 

@@ -46,18 +46,18 @@ public class RubyDigest {
         CallbackFactory basecb = runtime.callbackFactory(Base.class);
         
         cDigestBase.getMetaClass().defineFastMethod("new",basecb.getFastOptSingletonMethod("newInstance"));
-        cDigestBase.getMetaClass().defineFastMethod("digest",basecb.getFastSingletonMethod("s_digest",IRubyObject.class));
-        cDigestBase.getMetaClass().defineFastMethod("hexdigest",basecb.getFastSingletonMethod("s_hexdigest",IRubyObject.class));
+        cDigestBase.getMetaClass().defineFastMethod("digest",basecb.getFastSingletonMethod("s_digest",RubyKernel.IRUBY_OBJECT));
+        cDigestBase.getMetaClass().defineFastMethod("hexdigest",basecb.getFastSingletonMethod("s_hexdigest",RubyKernel.IRUBY_OBJECT));
 
         cDigestBase.defineMethod("initialize",basecb.getOptMethod("initialize"));
-        cDigestBase.defineFastMethod("initialize_copy",basecb.getFastMethod("initialize_copy",IRubyObject.class));
+        cDigestBase.defineFastMethod("initialize_copy",basecb.getFastMethod("initialize_copy",RubyKernel.IRUBY_OBJECT));
         cDigestBase.defineFastMethod("clone",basecb.getFastMethod("rbClone"));
-        cDigestBase.defineFastMethod("update",basecb.getFastMethod("update",IRubyObject.class));
-        cDigestBase.defineFastMethod("<<",basecb.getFastMethod("update",IRubyObject.class));
+        cDigestBase.defineFastMethod("update",basecb.getFastMethod("update",RubyKernel.IRUBY_OBJECT));
+        cDigestBase.defineFastMethod("<<",basecb.getFastMethod("update",RubyKernel.IRUBY_OBJECT));
         cDigestBase.defineFastMethod("digest",basecb.getFastMethod("digest"));
         cDigestBase.defineFastMethod("hexdigest",basecb.getFastMethod("hexdigest"));
         cDigestBase.defineFastMethod("to_s",basecb.getFastMethod("hexdigest"));
-        cDigestBase.defineFastMethod("==",basecb.getFastMethod("eq",IRubyObject.class));
+        cDigestBase.defineFastMethod("==",basecb.getFastMethod("eq",RubyKernel.IRUBY_OBJECT));
     }
 
     public static void createDigestMD5(IRuby runtime) {

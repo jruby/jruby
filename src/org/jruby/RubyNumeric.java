@@ -56,22 +56,22 @@ public class RubyNumeric extends RubyObject {
         RubyClass numeric = runtime.defineClass("Numeric", runtime.getObject(), NUMERIC_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyNumeric.class);
         numeric.defineFastMethod("singleton_method_added", callbackFactory.getFastMethod("sadded",
-                IRubyObject.class));
+                RubyKernel.IRUBY_OBJECT));
 
         numeric.includeModule(runtime.getModule("Comparable"));
 
-        numeric.defineFastMethod("initialize_copy", callbackFactory.getFastMethod("init_copy", IRubyObject.class));
-        numeric.defineFastMethod("coerce", callbackFactory.getFastMethod("coerce", IRubyObject.class));
+        numeric.defineFastMethod("initialize_copy", callbackFactory.getFastMethod("init_copy", RubyKernel.IRUBY_OBJECT));
+        numeric.defineFastMethod("coerce", callbackFactory.getFastMethod("coerce", RubyKernel.IRUBY_OBJECT));
 
         numeric.defineFastMethod("+@", callbackFactory.getFastMethod("uplus"));
         numeric.defineFastMethod("-@", callbackFactory.getFastMethod("uminus"));
-        numeric.defineFastMethod("<=>", callbackFactory.getFastMethod("cmp", IRubyObject.class));
-        numeric.defineFastMethod("quo", callbackFactory.getFastMethod("quo", IRubyObject.class));
-        numeric.defineFastMethod("eql?", callbackFactory.getFastMethod("eql_p", IRubyObject.class));
-        numeric.defineFastMethod("div", callbackFactory.getFastMethod("div", IRubyObject.class));
-        numeric.defineFastMethod("divmod", callbackFactory.getFastMethod("divmod", IRubyObject.class));
-        numeric.defineFastMethod("modulo", callbackFactory.getFastMethod("modulo", IRubyObject.class));
-        numeric.defineFastMethod("remainder", callbackFactory.getFastMethod("remainder", IRubyObject.class));
+        numeric.defineFastMethod("<=>", callbackFactory.getFastMethod("cmp", RubyKernel.IRUBY_OBJECT));
+        numeric.defineFastMethod("quo", callbackFactory.getFastMethod("quo", RubyKernel.IRUBY_OBJECT));
+        numeric.defineFastMethod("eql?", callbackFactory.getFastMethod("eql_p", RubyKernel.IRUBY_OBJECT));
+        numeric.defineFastMethod("div", callbackFactory.getFastMethod("div", RubyKernel.IRUBY_OBJECT));
+        numeric.defineFastMethod("divmod", callbackFactory.getFastMethod("divmod", RubyKernel.IRUBY_OBJECT));
+        numeric.defineFastMethod("modulo", callbackFactory.getFastMethod("modulo", RubyKernel.IRUBY_OBJECT));
+        numeric.defineFastMethod("remainder", callbackFactory.getFastMethod("remainder", RubyKernel.IRUBY_OBJECT));
         numeric.defineFastMethod("abs", callbackFactory.getFastMethod("abs"));
         numeric.defineFastMethod("to_int", callbackFactory.getFastMethod("to_int"));
         numeric.defineFastMethod("integer?", callbackFactory.getFastMethod("int_p"));

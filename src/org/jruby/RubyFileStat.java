@@ -69,7 +69,7 @@ public class RubyFileStat extends RubyObject {
         final RubyClass fileStatClass = runtime.getClass("File").defineClassUnder("Stat",runtime.getObject(), ALLOCATOR);
         final CallbackFactory callbackFactory = runtime.callbackFactory(RubyFileStat.class);
 
-        fileStatClass.defineFastMethod("initialize",callbackFactory.getMethod("initialize", IRubyObject.class));
+        fileStatClass.defineFastMethod("initialize",callbackFactory.getMethod("initialize", RubyKernel.IRUBY_OBJECT));
         //        fileStatClass.defineMethod("<=>", callbackFactory.getMethod(""));
         //        fileStateClass.includeModule(runtime.getModule("Comparable"));
         //        fileStatClass.defineMethod("atime", callbackFactory.getMethod(""));

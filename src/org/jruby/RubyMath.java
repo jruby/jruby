@@ -45,34 +45,34 @@ public class RubyMath {
         result.defineConstant("E", RubyFloat.newFloat(runtime, Math.E));
         result.defineConstant("PI", RubyFloat.newFloat(runtime, Math.PI));
 
-        result.defineFastModuleFunction("atan2", callbackFactory.getFastSingletonMethod("atan2", IRubyObject.class, IRubyObject.class));
-        result.defineFastModuleFunction("cos", callbackFactory.getFastSingletonMethod("cos", IRubyObject.class));
-        result.defineFastModuleFunction("sin", callbackFactory.getFastSingletonMethod("sin", IRubyObject.class));
-        result.defineFastModuleFunction("tan", callbackFactory.getFastSingletonMethod("tan", IRubyObject.class));
+        result.defineFastModuleFunction("atan2", callbackFactory.getFastSingletonMethod("atan2", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
+        result.defineFastModuleFunction("cos", callbackFactory.getFastSingletonMethod("cos", RubyKernel.IRUBY_OBJECT));
+        result.defineFastModuleFunction("sin", callbackFactory.getFastSingletonMethod("sin", RubyKernel.IRUBY_OBJECT));
+        result.defineFastModuleFunction("tan", callbackFactory.getFastSingletonMethod("tan", RubyKernel.IRUBY_OBJECT));
 
-        result.defineFastModuleFunction("acos", callbackFactory.getFastSingletonMethod("acos", IRubyObject.class));        
-        result.defineFastModuleFunction("asin", callbackFactory.getFastSingletonMethod("asin", IRubyObject.class));        
-        result.defineFastModuleFunction("atan", callbackFactory.getFastSingletonMethod("atan", IRubyObject.class));        
+        result.defineFastModuleFunction("acos", callbackFactory.getFastSingletonMethod("acos", RubyKernel.IRUBY_OBJECT));        
+        result.defineFastModuleFunction("asin", callbackFactory.getFastSingletonMethod("asin", RubyKernel.IRUBY_OBJECT));        
+        result.defineFastModuleFunction("atan", callbackFactory.getFastSingletonMethod("atan", RubyKernel.IRUBY_OBJECT));        
 
-        result.defineFastModuleFunction("cosh", callbackFactory.getFastSingletonMethod("cosh", IRubyObject.class));        
-        result.defineFastModuleFunction("sinh", callbackFactory.getFastSingletonMethod("sinh", IRubyObject.class));        
-        result.defineFastModuleFunction("tanh", callbackFactory.getFastSingletonMethod("tanh", IRubyObject.class));        
+        result.defineFastModuleFunction("cosh", callbackFactory.getFastSingletonMethod("cosh", RubyKernel.IRUBY_OBJECT));        
+        result.defineFastModuleFunction("sinh", callbackFactory.getFastSingletonMethod("sinh", RubyKernel.IRUBY_OBJECT));        
+        result.defineFastModuleFunction("tanh", callbackFactory.getFastSingletonMethod("tanh", RubyKernel.IRUBY_OBJECT));        
         
-        result.defineFastModuleFunction("acosh", callbackFactory.getFastSingletonMethod("acosh", IRubyObject.class));        
-        result.defineFastModuleFunction("asinh", callbackFactory.getFastSingletonMethod("asinh", IRubyObject.class));
-        result.defineFastModuleFunction("atanh", callbackFactory.getFastSingletonMethod("atanh", IRubyObject.class));
+        result.defineFastModuleFunction("acosh", callbackFactory.getFastSingletonMethod("acosh", RubyKernel.IRUBY_OBJECT));        
+        result.defineFastModuleFunction("asinh", callbackFactory.getFastSingletonMethod("asinh", RubyKernel.IRUBY_OBJECT));
+        result.defineFastModuleFunction("atanh", callbackFactory.getFastSingletonMethod("atanh", RubyKernel.IRUBY_OBJECT));
         
-        result.defineFastModuleFunction("exp", callbackFactory.getFastSingletonMethod("exp", IRubyObject.class));
-        result.defineFastModuleFunction("log", callbackFactory.getFastSingletonMethod("log", IRubyObject.class));
-        result.defineFastModuleFunction("log10", callbackFactory.getFastSingletonMethod("log10", IRubyObject.class));
-        result.defineFastModuleFunction("sqrt", callbackFactory.getFastSingletonMethod("sqrt", IRubyObject.class));
+        result.defineFastModuleFunction("exp", callbackFactory.getFastSingletonMethod("exp", RubyKernel.IRUBY_OBJECT));
+        result.defineFastModuleFunction("log", callbackFactory.getFastSingletonMethod("log", RubyKernel.IRUBY_OBJECT));
+        result.defineFastModuleFunction("log10", callbackFactory.getFastSingletonMethod("log10", RubyKernel.IRUBY_OBJECT));
+        result.defineFastModuleFunction("sqrt", callbackFactory.getFastSingletonMethod("sqrt", RubyKernel.IRUBY_OBJECT));
         
-        result.defineFastModuleFunction("frexp", callbackFactory.getFastSingletonMethod("frexp", IRubyObject.class));
-        result.defineFastModuleFunction("ldexp", callbackFactory.getFastSingletonMethod("ldexp", IRubyObject.class, IRubyObject.class));
+        result.defineFastModuleFunction("frexp", callbackFactory.getFastSingletonMethod("frexp", RubyKernel.IRUBY_OBJECT));
+        result.defineFastModuleFunction("ldexp", callbackFactory.getFastSingletonMethod("ldexp", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
         
-        result.defineFastModuleFunction("hypot", callbackFactory.getFastSingletonMethod("hypot", IRubyObject.class, IRubyObject.class));        
-        result.defineFastModuleFunction("erf", callbackFactory.getFastSingletonMethod("erf", IRubyObject.class));        
-        result.defineFastModuleFunction("erfc", callbackFactory.getFastSingletonMethod("erfc", IRubyObject.class));
+        result.defineFastModuleFunction("hypot", callbackFactory.getFastSingletonMethod("hypot", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));        
+        result.defineFastModuleFunction("erf", callbackFactory.getFastSingletonMethod("erf", RubyKernel.IRUBY_OBJECT));        
+        result.defineFastModuleFunction("erfc", callbackFactory.getFastSingletonMethod("erfc", RubyKernel.IRUBY_OBJECT));
 
         return result;
     }

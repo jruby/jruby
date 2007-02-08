@@ -90,7 +90,7 @@ public class RubyException extends RubyObject {
         exceptionClass.defineFastMethod("message", callbackFactory.getFastMethod("to_s"));
         exceptionClass.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
         exceptionClass.defineFastMethod("backtrace", callbackFactory.getFastMethod("backtrace"));		
-        exceptionClass.defineFastMethod("set_backtrace", callbackFactory.getFastMethod("set_backtrace", IRubyObject.class));		
+        exceptionClass.defineFastMethod("set_backtrace", callbackFactory.getFastMethod("set_backtrace", RubyKernel.IRUBY_OBJECT));		
 
         return exceptionClass;
     }

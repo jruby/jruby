@@ -53,8 +53,8 @@ public abstract class RubyInteger extends RubyNumeric {
         integer.getSingletonClass().undefineMethod("new");
 
         integer.defineFastMethod("integer?", callbackFactory.getFastMethod("int_p"));
-        integer.defineMethod("upto", callbackFactory.getMethod("upto", IRubyObject.class));
-        integer.defineMethod("downto", callbackFactory.getMethod("downto", IRubyObject.class));
+        integer.defineMethod("upto", callbackFactory.getMethod("upto", RubyKernel.IRUBY_OBJECT));
+        integer.defineMethod("downto", callbackFactory.getMethod("downto", RubyKernel.IRUBY_OBJECT));
         integer.defineMethod("times", callbackFactory.getMethod("times"));
 
         integer.includeModule(runtime.getModule("Precision"));
@@ -70,7 +70,7 @@ public abstract class RubyInteger extends RubyNumeric {
         integer.defineFastMethod("truncate", callbackFactory.getFastMethod("to_i"));
 
         integer.getMetaClass().defineFastMethod("induced_from", callbackFactory.getFastSingletonMethod("induced_from",
-                IRubyObject.class));
+                RubyKernel.IRUBY_OBJECT));
         return integer;
     }
 

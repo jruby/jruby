@@ -73,7 +73,7 @@ public class RubyStruct extends RubyObject {
         structClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
         structClass.defineMethod("clone", callbackFactory.getMethod("rbClone"));
 
-        structClass.defineFastMethod("==", callbackFactory.getFastMethod("equal", IRubyObject.class));
+        structClass.defineFastMethod("==", callbackFactory.getFastMethod("equal", RubyKernel.IRUBY_OBJECT));
 
         structClass.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
         structClass.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
@@ -83,8 +83,8 @@ public class RubyStruct extends RubyObject {
         structClass.defineFastMethod("length", callbackFactory.getFastMethod("size"));
 
         structClass.defineMethod("each", callbackFactory.getMethod("each"));
-        structClass.defineFastMethod("[]", callbackFactory.getFastMethod("aref", IRubyObject.class));
-        structClass.defineFastMethod("[]=", callbackFactory.getFastMethod("aset", IRubyObject.class, IRubyObject.class));
+        structClass.defineFastMethod("[]", callbackFactory.getFastMethod("aref", RubyKernel.IRUBY_OBJECT));
+        structClass.defineFastMethod("[]=", callbackFactory.getFastMethod("aset", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
 
         structClass.defineFastMethod("members", callbackFactory.getFastMethod("members"));
 
@@ -205,7 +205,7 @@ public class RubyStruct extends RubyObject {
         for (int i = name == null ? 0 : 1; i < args.length; i++) {
             String memberName = args[i].asSymbol();
             newStruct.defineMethod(memberName, callbackFactory.getMethod("get"));
-            newStruct.defineMethod(memberName + "=", callbackFactory.getMethod("set", IRubyObject.class));
+            newStruct.defineMethod(memberName + "=", callbackFactory.getMethod("set", RubyKernel.IRUBY_OBJECT));
         }
         
         if (block.isGiven()) {

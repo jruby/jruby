@@ -188,8 +188,8 @@ public class RubyClass extends RubyModule {
         classClass.defineFastMethod("allocate", callbackFactory.getFastMethod("allocate"));
         classClass.defineMethod("new", callbackFactory.getOptMethod("newInstance"));
         classClass.defineMethod("superclass", callbackFactory.getMethod("superclass"));
-        classClass.defineFastMethod("initialize_copy", callbackFactory.getFastMethod("initialize_copy", IRubyObject.class));
-        classClass.getMetaClass().defineMethod("inherited", callbackFactory.getSingletonMethod("inherited", IRubyObject.class));
+        classClass.defineFastMethod("initialize_copy", callbackFactory.getFastMethod("initialize_copy", RubyKernel.IRUBY_OBJECT));
+        classClass.getMetaClass().defineMethod("inherited", callbackFactory.getSingletonMethod("inherited", RubyKernel.IRUBY_OBJECT));
         classClass.undefineMethod("module_function");
     }
     

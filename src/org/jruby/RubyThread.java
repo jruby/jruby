@@ -82,17 +82,17 @@ public class RubyThread extends RubyObject {
         RubyClass threadClass = runtime.defineClass("Thread", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyThread.class);
 
-        threadClass.defineFastMethod("[]", callbackFactory.getFastMethod("aref", IRubyObject.class));
-        threadClass.defineFastMethod("[]=", callbackFactory.getFastMethod("aset", IRubyObject.class, IRubyObject.class));
+        threadClass.defineFastMethod("[]", callbackFactory.getFastMethod("aref", RubyKernel.IRUBY_OBJECT));
+        threadClass.defineFastMethod("[]=", callbackFactory.getFastMethod("aset", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
         threadClass.defineFastMethod("abort_on_exception", callbackFactory.getFastMethod("abort_on_exception"));
-        threadClass.defineFastMethod("abort_on_exception=", callbackFactory.getFastMethod("abort_on_exception_set", IRubyObject.class));
+        threadClass.defineFastMethod("abort_on_exception=", callbackFactory.getFastMethod("abort_on_exception_set", RubyKernel.IRUBY_OBJECT));
         threadClass.defineFastMethod("alive?", callbackFactory.getFastMethod("is_alive"));
         threadClass.defineFastMethod("group", callbackFactory.getFastMethod("group"));
         threadClass.defineFastMethod("join", callbackFactory.getFastOptMethod("join"));
-        threadClass.defineFastMethod("key?", callbackFactory.getFastMethod("has_key", IRubyObject.class));
+        threadClass.defineFastMethod("key?", callbackFactory.getFastMethod("has_key", RubyKernel.IRUBY_OBJECT));
         threadClass.defineFastMethod("priority", callbackFactory.getFastMethod("priority"));
-        threadClass.defineFastMethod("priority=", callbackFactory.getFastMethod("priority_set", IRubyObject.class));
-        threadClass.defineFastMethod("raise", callbackFactory.getFastMethod("raise", IRubyObject.class));
+        threadClass.defineFastMethod("priority=", callbackFactory.getFastMethod("priority_set", RubyKernel.IRUBY_OBJECT));
+        threadClass.defineFastMethod("raise", callbackFactory.getFastMethod("raise", RubyKernel.IRUBY_OBJECT));
         threadClass.defineFastMethod("run", callbackFactory.getFastMethod("run"));
         threadClass.defineFastMethod("status", callbackFactory.getFastMethod("status"));
         threadClass.defineFastMethod("stop?", callbackFactory.getFastMethod("isStopped"));
@@ -114,7 +114,7 @@ public class RubyThread extends RubyObject {
         threadClass.getMetaClass().defineMethod("kill", callbackFactory.getSingletonMethod("s_kill", RubyThread.class));
         threadClass.getMetaClass().defineMethod("exit", callbackFactory.getSingletonMethod("s_exit"));
         threadClass.getMetaClass().defineFastMethod("abort_on_exception", callbackFactory.getFastSingletonMethod("abort_on_exception"));
-        threadClass.getMetaClass().defineFastMethod("abort_on_exception=", callbackFactory.getFastSingletonMethod("abort_on_exception_set", IRubyObject.class));
+        threadClass.getMetaClass().defineFastMethod("abort_on_exception=", callbackFactory.getFastSingletonMethod("abort_on_exception_set", RubyKernel.IRUBY_OBJECT));
 
         RubyThread rubyThread = new RubyThread(runtime, threadClass);
         // set hasStarted to true, otherwise Thread.main.status freezes

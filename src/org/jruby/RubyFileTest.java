@@ -39,27 +39,27 @@ public class RubyFileTest {
         RubyModule fileTestModule = runtime.defineModule("FileTest");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyFileTest.class);
 
-        fileTestModule.defineFastModuleFunction("file?", callbackFactory.getFastSingletonMethod("file_p", IRubyObject.class));
-        fileTestModule.defineFastModuleFunction("directory?", callbackFactory.getFastSingletonMethod("directory_p", IRubyObject.class));
-        fileTestModule.defineFastModuleFunction("exist?", callbackFactory.getFastSingletonMethod("exist_p", IRubyObject.class));
-        fileTestModule.defineFastModuleFunction("exists?", callbackFactory.getFastSingletonMethod("exist_p", IRubyObject.class));
-        fileTestModule.defineFastModuleFunction("readable?", callbackFactory.getFastSingletonMethod("readable_p", IRubyObject.class));
-        fileTestModule.defineFastModuleFunction("readable_real?", callbackFactory.getFastSingletonMethod("readable_p", IRubyObject.class));
-        fileTestModule.defineFastModuleFunction("size", callbackFactory.getFastSingletonMethod("size", IRubyObject.class));
-        fileTestModule.defineFastModuleFunction("writable?", callbackFactory.getFastSingletonMethod("writable_p", IRubyObject.class));
-        fileTestModule.defineFastModuleFunction("writable_real?", callbackFactory.getFastSingletonMethod("writable_p", IRubyObject.class));
-        fileTestModule.defineFastModuleFunction("zero?", callbackFactory.getFastSingletonMethod("zero_p", IRubyObject.class));
+        fileTestModule.defineFastModuleFunction("file?", callbackFactory.getFastSingletonMethod("file_p", RubyKernel.IRUBY_OBJECT));
+        fileTestModule.defineFastModuleFunction("directory?", callbackFactory.getFastSingletonMethod("directory_p", RubyKernel.IRUBY_OBJECT));
+        fileTestModule.defineFastModuleFunction("exist?", callbackFactory.getFastSingletonMethod("exist_p", RubyKernel.IRUBY_OBJECT));
+        fileTestModule.defineFastModuleFunction("exists?", callbackFactory.getFastSingletonMethod("exist_p", RubyKernel.IRUBY_OBJECT));
+        fileTestModule.defineFastModuleFunction("readable?", callbackFactory.getFastSingletonMethod("readable_p", RubyKernel.IRUBY_OBJECT));
+        fileTestModule.defineFastModuleFunction("readable_real?", callbackFactory.getFastSingletonMethod("readable_p", RubyKernel.IRUBY_OBJECT));
+        fileTestModule.defineFastModuleFunction("size", callbackFactory.getFastSingletonMethod("size", RubyKernel.IRUBY_OBJECT));
+        fileTestModule.defineFastModuleFunction("writable?", callbackFactory.getFastSingletonMethod("writable_p", RubyKernel.IRUBY_OBJECT));
+        fileTestModule.defineFastModuleFunction("writable_real?", callbackFactory.getFastSingletonMethod("writable_p", RubyKernel.IRUBY_OBJECT));
+        fileTestModule.defineFastModuleFunction("zero?", callbackFactory.getFastSingletonMethod("zero_p", RubyKernel.IRUBY_OBJECT));
         
-        fileTestModule.defineFastMethod("file?", callbackFactory.getFastSingletonMethod("file_p", IRubyObject.class));
-        fileTestModule.defineFastMethod("directory?", callbackFactory.getFastSingletonMethod("directory_p", IRubyObject.class));
-        fileTestModule.defineFastMethod("exist?", callbackFactory.getFastSingletonMethod("exist_p", IRubyObject.class));
-        fileTestModule.defineFastMethod("exists?", callbackFactory.getFastSingletonMethod("exist_p", IRubyObject.class));
-        fileTestModule.defineFastMethod("readable?", callbackFactory.getFastSingletonMethod("readable_p", IRubyObject.class));
-        fileTestModule.defineFastMethod("readable_real?", callbackFactory.getFastSingletonMethod("readable_p", IRubyObject.class));
-        fileTestModule.defineFastMethod("size", callbackFactory.getFastSingletonMethod("size", IRubyObject.class));
-        fileTestModule.defineFastMethod("writable?", callbackFactory.getFastSingletonMethod("writable_p", IRubyObject.class));
-        fileTestModule.defineFastMethod("writable_real?", callbackFactory.getFastSingletonMethod("writable_p", IRubyObject.class));
-        fileTestModule.defineFastMethod("zero?", callbackFactory.getFastSingletonMethod("zero_p", IRubyObject.class));
+        fileTestModule.defineFastMethod("file?", callbackFactory.getFastSingletonMethod("file_p", RubyKernel.IRUBY_OBJECT));
+        fileTestModule.defineFastMethod("directory?", callbackFactory.getFastSingletonMethod("directory_p", RubyKernel.IRUBY_OBJECT));
+        fileTestModule.defineFastMethod("exist?", callbackFactory.getFastSingletonMethod("exist_p", RubyKernel.IRUBY_OBJECT));
+        fileTestModule.defineFastMethod("exists?", callbackFactory.getFastSingletonMethod("exist_p", RubyKernel.IRUBY_OBJECT));
+        fileTestModule.defineFastMethod("readable?", callbackFactory.getFastSingletonMethod("readable_p", RubyKernel.IRUBY_OBJECT));
+        fileTestModule.defineFastMethod("readable_real?", callbackFactory.getFastSingletonMethod("readable_p", RubyKernel.IRUBY_OBJECT));
+        fileTestModule.defineFastMethod("size", callbackFactory.getFastSingletonMethod("size", RubyKernel.IRUBY_OBJECT));
+        fileTestModule.defineFastMethod("writable?", callbackFactory.getFastSingletonMethod("writable_p", RubyKernel.IRUBY_OBJECT));
+        fileTestModule.defineFastMethod("writable_real?", callbackFactory.getFastSingletonMethod("writable_p", RubyKernel.IRUBY_OBJECT));
+        fileTestModule.defineFastMethod("zero?", callbackFactory.getFastSingletonMethod("zero_p", RubyKernel.IRUBY_OBJECT));
         
         return fileTestModule;
     }

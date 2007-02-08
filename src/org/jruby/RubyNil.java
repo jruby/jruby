@@ -71,9 +71,9 @@ public class RubyNil extends RubyObject {
         nilClass.defineFastMethod("to_f", callbackFactory.getFastSingletonMethod("to_f"));
         nilClass.defineFastMethod("inspect", callbackFactory.getFastSingletonMethod("inspect"));
         
-        nilClass.defineFastMethod("&", callbackFactory.getFastSingletonMethod("op_and", IRubyObject.class));
-        nilClass.defineFastMethod("|", callbackFactory.getFastSingletonMethod("op_or", IRubyObject.class));
-        nilClass.defineFastMethod("^", callbackFactory.getFastSingletonMethod("op_xor", IRubyObject.class));
+        nilClass.defineFastMethod("&", callbackFactory.getFastSingletonMethod("op_and", RubyKernel.IRUBY_OBJECT));
+        nilClass.defineFastMethod("|", callbackFactory.getFastSingletonMethod("op_or", RubyKernel.IRUBY_OBJECT));
+        nilClass.defineFastMethod("^", callbackFactory.getFastSingletonMethod("op_xor", RubyKernel.IRUBY_OBJECT));
         nilClass.defineFastMethod("nil?", callbackFactory.getFastMethod("nil_p"));
         nilClass.defineFastMethod("id", callbackFactory.getFastSingletonMethod("id"));
         nilClass.defineFastMethod("taint", callbackFactory.getFastMethod("taint"));

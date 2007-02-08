@@ -59,19 +59,19 @@ public class RubyProcess {
 //        process.defineModuleFunction("waitpid", processCallbackFactory.getOptSingletonMethod("waitpid"));
 //        process.defineModuleFunction("waitpid2", processCallbackFactory.getOptSingletonMethod("waitpid2"));
 //        process.defineModuleFunction("waitall", processCallbackFactory.getSingletonMethod("waitall"));
-//        process.defineModuleFunction("detach", processCallbackFactory.getSingletonMethod("detach", IRubyObject.class));
+//        process.defineModuleFunction("detach", processCallbackFactory.getSingletonMethod("detach", RubyKernel.IRUBY_OBJECT));
 //        process.defineModuleFunction("pid", processCallbackFactory.getSingletonMethod("pid"));
 //        process.defineModuleFunction("ppid", processCallbackFactory.getSingletonMethod("ppid"));
 //
 //        process.defineModuleFunction("getpgrp", processCallbackFactory.getSingletonMethod("getprgrp"));
 //        process.defineModuleFunction("setpgrp", processCallbackFactory.getSingletonMethod("setpgrp"));
-//        process.defineModuleFunction("getpgid", processCallbackFactory.getSingletonMethod("getpgid", IRubyObject.class));
-//        process.defineModuleFunction("setpgid", processCallbackFactory.getSingletonMethod("setpgid", IRubyObject.class, IRubyObject.class));
+//        process.defineModuleFunction("getpgid", processCallbackFactory.getSingletonMethod("getpgid", RubyKernel.IRUBY_OBJECT));
+//        process.defineModuleFunction("setpgid", processCallbackFactory.getSingletonMethod("setpgid", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
 //
 //        process.defineModuleFunction("setsid", processCallbackFactory.getSingletonMethod("setsid"));
 //
-//        process.defineModuleFunction("getpriority", processCallbackFactory.getSingletonMethod("getpriority", IRubyObject.class, IRubyObject.class));
-//        process.defineModuleFunction("setpriority", processCallbackFactory.getSingletonMethod("setpriority", IRubyObject.class, IRubyObject.class, IRubyObject.class));
+//        process.defineModuleFunction("getpriority", processCallbackFactory.getSingletonMethod("getpriority", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
+//        process.defineModuleFunction("setpriority", processCallbackFactory.getSingletonMethod("setpriority", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
 
 //    #ifdef HAVE_GETPRIORITY
 //        rb_define_const(rb_mProcess, "PRIO_PROCESS", INT2FIX(PRIO_PROCESS));
@@ -80,24 +80,24 @@ public class RubyProcess {
 //    #endif
 
 //        process.defineModuleFunction("uid", processCallbackFactory.getSingletonMethod("uid"));
-//        process.defineModuleFunction("uid=", processCallbackFactory.getSingletonMethod("uid_set", IRubyObject.class));
+//        process.defineModuleFunction("uid=", processCallbackFactory.getSingletonMethod("uid_set", RubyKernel.IRUBY_OBJECT));
 //        process.defineModuleFunction("gid", processCallbackFactory.getSingletonMethod("gid"));
-//        process.defineModuleFunction("gid=", processCallbackFactory.getSingletonMethod("gid_set", IRubyObject.class));
+//        process.defineModuleFunction("gid=", processCallbackFactory.getSingletonMethod("gid_set", RubyKernel.IRUBY_OBJECT));
 //        process.defineModuleFunction("euid", processCallbackFactory.getSingletonMethod("euid"));
-//        process.defineModuleFunction("euid=", processCallbackFactory.getSingletonMethod("euid_set", IRubyObject.class));
+//        process.defineModuleFunction("euid=", processCallbackFactory.getSingletonMethod("euid_set", RubyKernel.IRUBY_OBJECT));
 //        process.defineModuleFunction("egid", processCallbackFactory.getSingletonMethod("egid"));
-//        process.defineModuleFunction("egid=", processCallbackFactory.getSingletonMethod("egid_set", IRubyObject.class));
-//        process.defineModuleFunction("initgroups", processCallbackFactory.getSingletonMethod("initgroups", IRubyObject.class, IRubyObject.class));
+//        process.defineModuleFunction("egid=", processCallbackFactory.getSingletonMethod("egid_set", RubyKernel.IRUBY_OBJECT));
+//        process.defineModuleFunction("initgroups", processCallbackFactory.getSingletonMethod("initgroups", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
 //        process.defineModuleFunction("groups", processCallbackFactory.getSingletonMethod("groups"));
-//        process.defineModuleFunction("groups=", processCallbackFactory.getSingletonMethod("groups_set", IRubyObject.class));
+//        process.defineModuleFunction("groups=", processCallbackFactory.getSingletonMethod("groups_set", RubyKernel.IRUBY_OBJECT));
 //        process.defineModuleFunction("maxgroups", processCallbackFactory.getSingletonMethod("maxgroups"));
-//        process.defineModuleFunction("maxgroups=", processCallbackFactory.getSingletonMethod("maxgroups_set", IRubyObject.class));
+//        process.defineModuleFunction("maxgroups=", processCallbackFactory.getSingletonMethod("maxgroups_set", RubyKernel.IRUBY_OBJECT));
         process.defineModuleFunction("times", processCallbackFactory.getSingletonMethod("times"));
         
         // Process::Status methods  
-        process_status.defineMethod("==", process_statusCallbackFactory.getMethod("op_eq", IRubyObject.class));
+        process_status.defineMethod("==", process_statusCallbackFactory.getMethod("op_eq", RubyKernel.IRUBY_OBJECT));
 //        process_status.defineMethod("&", process_statusCallbackFactory.getMethod("op_and"));
-        process_status.defineMethod(">>", process_statusCallbackFactory.getMethod("rightshift_op", IRubyObject.class));
+        process_status.defineMethod(">>", process_statusCallbackFactory.getMethod("rightshift_op", RubyKernel.IRUBY_OBJECT));
         process_status.defineMethod("to_i", process_statusCallbackFactory.getMethod("to_i"));
 //        process_status.defineMethod("to_int", process_statusCallbackFactory.getMethod("to_int"));
         process_status.defineMethod("to_s", process_statusCallbackFactory.getMethod("to_s"));

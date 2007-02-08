@@ -103,13 +103,13 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         regexpClass.defineConstant("MULTILINE", runtime.newFixnum(RE_OPTION_MULTILINE));
 
         regexpClass.defineFastMethod("initialize", callbackFactory.getFastOptMethod("initialize"));
-        regexpClass.defineFastMethod("initialize_copy", callbackFactory.getFastMethod("initialize_copy",IRubyObject.class));        
-        regexpClass.defineFastMethod("==", callbackFactory.getFastMethod("equal", IRubyObject.class));
-        regexpClass.defineFastMethod("eql?", callbackFactory.getFastMethod("equal", IRubyObject.class));
-        regexpClass.defineFastMethod("===", callbackFactory.getFastMethod("eqq", IRubyObject.class));
-        regexpClass.defineFastMethod("=~", callbackFactory.getFastMethod("match", IRubyObject.class));
+        regexpClass.defineFastMethod("initialize_copy", callbackFactory.getFastMethod("initialize_copy",RubyKernel.IRUBY_OBJECT));        
+        regexpClass.defineFastMethod("==", callbackFactory.getFastMethod("equal", RubyKernel.IRUBY_OBJECT));
+        regexpClass.defineFastMethod("eql?", callbackFactory.getFastMethod("equal", RubyKernel.IRUBY_OBJECT));
+        regexpClass.defineFastMethod("===", callbackFactory.getFastMethod("eqq", RubyKernel.IRUBY_OBJECT));
+        regexpClass.defineFastMethod("=~", callbackFactory.getFastMethod("match", RubyKernel.IRUBY_OBJECT));
         regexpClass.defineFastMethod("~", callbackFactory.getFastMethod("match2"));
-        regexpClass.defineFastMethod("match", callbackFactory.getFastMethod("match_m", IRubyObject.class));
+        regexpClass.defineFastMethod("match", callbackFactory.getFastMethod("match_m", RubyKernel.IRUBY_OBJECT));
         regexpClass.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
         regexpClass.defineFastMethod("source", callbackFactory.getFastMethod("source"));
         regexpClass.defineFastMethod("casefold?", callbackFactory.getFastMethod("casefold"));

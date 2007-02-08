@@ -54,7 +54,7 @@ public class RubyStringIO extends RubyObject {
         
         stringIOClass.getMetaClass().defineMethod("open", callbackFactory.getOptSingletonMethod("open"));
         stringIOClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
-        stringIOClass.defineFastMethod("<<", callbackFactory.getFastMethod("append",IRubyObject.class));
+        stringIOClass.defineFastMethod("<<", callbackFactory.getFastMethod("append",RubyKernel.IRUBY_OBJECT));
         stringIOClass.defineFastMethod("binmode", callbackFactory.getFastMethod("binmode"));
         stringIOClass.defineFastMethod("close", callbackFactory.getFastMethod("close"));
         stringIOClass.defineFastMethod("closed?", callbackFactory.getFastMethod("closed_p"));
@@ -87,24 +87,24 @@ public class RubyStringIO extends RubyObject {
         stringIOClass.defineFastMethod("pos=", callbackFactory.getFastMethod("set_pos", RubyFixnum.class));
         stringIOClass.defineFastMethod("print", callbackFactory.getFastOptMethod("print"));
         stringIOClass.defineFastMethod("printf", callbackFactory.getFastOptMethod("printf"));
-        stringIOClass.defineFastMethod("putc", callbackFactory.getFastMethod("putc", IRubyObject.class));
+        stringIOClass.defineFastMethod("putc", callbackFactory.getFastMethod("putc", RubyKernel.IRUBY_OBJECT));
         stringIOClass.defineFastMethod("puts", callbackFactory.getFastOptMethod("puts"));
         stringIOClass.defineFastMethod("read", callbackFactory.getFastOptMethod("read"));
         stringIOClass.defineFastMethod("readchar", callbackFactory.getFastMethod("readchar"));
         stringIOClass.defineFastMethod("readline", callbackFactory.getFastOptMethod("readline"));
         stringIOClass.defineFastMethod("readlines", callbackFactory.getFastOptMethod("readlines"));
-        stringIOClass.defineFastMethod("reopen", callbackFactory.getFastMethod("reopen", IRubyObject.class));
+        stringIOClass.defineFastMethod("reopen", callbackFactory.getFastMethod("reopen", RubyKernel.IRUBY_OBJECT));
         stringIOClass.defineFastMethod("rewind", callbackFactory.getFastMethod("rewind"));
         stringIOClass.defineFastMethod("seek", callbackFactory.getFastOptMethod("seek"));
         stringIOClass.defineFastMethod("size", callbackFactory.getFastMethod("size"));
         stringIOClass.defineFastMethod("string", callbackFactory.getFastMethod("string"));
         stringIOClass.defineFastMethod("string=", callbackFactory.getFastMethod("set_string",RubyString.class));
         stringIOClass.defineFastMethod("sync", callbackFactory.getFastMethod("sync"));
-        stringIOClass.defineFastMethod("sync=", callbackFactory.getFastMethod("set_sync", IRubyObject.class));
-        stringIOClass.defineFastMethod("syswrite", callbackFactory.getFastMethod("syswrite", IRubyObject.class));
+        stringIOClass.defineFastMethod("sync=", callbackFactory.getFastMethod("set_sync", RubyKernel.IRUBY_OBJECT));
+        stringIOClass.defineFastMethod("syswrite", callbackFactory.getFastMethod("syswrite", RubyKernel.IRUBY_OBJECT));
         stringIOClass.defineFastMethod("truncate", callbackFactory.getFastMethod("truncate", RubyFixnum.class));
         stringIOClass.defineFastMethod("ungetc", callbackFactory.getFastMethod("ungetc", RubyFixnum.class));
-        stringIOClass.defineFastMethod("write", callbackFactory.getFastMethod("write", IRubyObject.class));
+        stringIOClass.defineFastMethod("write", callbackFactory.getFastMethod("write", RubyKernel.IRUBY_OBJECT));
 
         return stringIOClass;
     }

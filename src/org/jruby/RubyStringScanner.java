@@ -25,8 +25,8 @@ public class RubyStringScanner extends RubyObject {
 		CallbackFactory callbackFactory = runtime.callbackFactory(RubyStringScanner.class);
 		
 		scannerClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
-		scannerClass.defineFastMethod("<<", callbackFactory.getFastMethod("concat", IRubyObject.class));
-		scannerClass.defineFastMethod("concat", callbackFactory.getFastMethod("concat", IRubyObject.class));
+		scannerClass.defineFastMethod("<<", callbackFactory.getFastMethod("concat", RubyKernel.IRUBY_OBJECT));
+		scannerClass.defineFastMethod("concat", callbackFactory.getFastMethod("concat", RubyKernel.IRUBY_OBJECT));
 		scannerClass.defineFastMethod("[]", callbackFactory.getFastMethod("group", RubyFixnum.class));
 		scannerClass.defineFastMethod("beginning_of_line?", callbackFactory.getFastMethod("bol_p"));
 		scannerClass.defineFastMethod("bol?", callbackFactory.getFastMethod("bol_p"));

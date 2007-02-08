@@ -69,7 +69,7 @@ public class RubyUnboundMethod extends RubyMethod {
 
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyUnboundMethod.class);
         newClass.defineMethod("[]", callbackFactory.getOptMethod("call"));
-        newClass.defineMethod("bind", callbackFactory.getMethod("bind", IRubyObject.class));
+        newClass.defineMethod("bind", callbackFactory.getMethod("bind", RubyKernel.IRUBY_OBJECT));
         newClass.defineMethod("call", callbackFactory.getOptMethod("call"));
         newClass.defineMethod("to_proc", callbackFactory.getMethod("to_proc"));
         newClass.defineMethod("unbind", callbackFactory.getMethod("unbind"));

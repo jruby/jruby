@@ -60,7 +60,7 @@ public class RubyFloat extends RubyNumeric {
         floatc.getSingletonClass().undefineMethod("new");
 
         floatc.getMetaClass().defineFastMethod("induced_from", callbackFactory.getFastSingletonMethod(
-                "induced_from", IRubyObject.class));
+                "induced_from", RubyKernel.IRUBY_OBJECT));
         floatc.includeModule(runtime.getModule("Precision"));
 
         // Java Doubles are 64 bit long:            
@@ -79,23 +79,23 @@ public class RubyFloat extends RubyNumeric {
         floatc.defineConstant("EPSILON", RubyFloat.newFloat(runtime, 2.2204460492503131e-16));
 
         floatc.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
-        floatc.defineFastMethod("coerce", callbackFactory.getFastMethod("coerce", IRubyObject.class));
+        floatc.defineFastMethod("coerce", callbackFactory.getFastMethod("coerce", RubyKernel.IRUBY_OBJECT));
         floatc.defineFastMethod("-@", callbackFactory.getFastMethod("uminus"));
-        floatc.defineFastMethod("+", callbackFactory.getFastMethod("plus", IRubyObject.class));
-        floatc.defineFastMethod("-", callbackFactory.getFastMethod("minus", IRubyObject.class));
-        floatc.defineFastMethod("*", callbackFactory.getFastMethod("mul", IRubyObject.class));
-        floatc.defineFastMethod("/", callbackFactory.getFastMethod("fdiv", IRubyObject.class));
-        floatc.defineFastMethod("%", callbackFactory.getFastMethod("mod", IRubyObject.class));
-        floatc.defineFastMethod("modulo", callbackFactory.getFastMethod("mod", IRubyObject.class));
-        floatc.defineFastMethod("divmod", callbackFactory.getFastMethod("divmod", IRubyObject.class));
-        floatc.defineFastMethod("**", callbackFactory.getFastMethod("pow", IRubyObject.class));
-        floatc.defineFastMethod("==", callbackFactory.getFastMethod("equal", IRubyObject.class));
-        floatc.defineFastMethod("<=>", callbackFactory.getFastMethod("cmp", IRubyObject.class));
-        floatc.defineFastMethod(">", callbackFactory.getFastMethod("gt", IRubyObject.class));
-        floatc.defineFastMethod(">=", callbackFactory.getFastMethod("ge", IRubyObject.class));
-        floatc.defineFastMethod("<", callbackFactory.getFastMethod("lt", IRubyObject.class));
-        floatc.defineFastMethod("<=", callbackFactory.getFastMethod("le", IRubyObject.class));
-        floatc.defineFastMethod("eql?", callbackFactory.getFastMethod("eql_p", IRubyObject.class));
+        floatc.defineFastMethod("+", callbackFactory.getFastMethod("plus", RubyKernel.IRUBY_OBJECT));
+        floatc.defineFastMethod("-", callbackFactory.getFastMethod("minus", RubyKernel.IRUBY_OBJECT));
+        floatc.defineFastMethod("*", callbackFactory.getFastMethod("mul", RubyKernel.IRUBY_OBJECT));
+        floatc.defineFastMethod("/", callbackFactory.getFastMethod("fdiv", RubyKernel.IRUBY_OBJECT));
+        floatc.defineFastMethod("%", callbackFactory.getFastMethod("mod", RubyKernel.IRUBY_OBJECT));
+        floatc.defineFastMethod("modulo", callbackFactory.getFastMethod("mod", RubyKernel.IRUBY_OBJECT));
+        floatc.defineFastMethod("divmod", callbackFactory.getFastMethod("divmod", RubyKernel.IRUBY_OBJECT));
+        floatc.defineFastMethod("**", callbackFactory.getFastMethod("pow", RubyKernel.IRUBY_OBJECT));
+        floatc.defineFastMethod("==", callbackFactory.getFastMethod("equal", RubyKernel.IRUBY_OBJECT));
+        floatc.defineFastMethod("<=>", callbackFactory.getFastMethod("cmp", RubyKernel.IRUBY_OBJECT));
+        floatc.defineFastMethod(">", callbackFactory.getFastMethod("gt", RubyKernel.IRUBY_OBJECT));
+        floatc.defineFastMethod(">=", callbackFactory.getFastMethod("ge", RubyKernel.IRUBY_OBJECT));
+        floatc.defineFastMethod("<", callbackFactory.getFastMethod("lt", RubyKernel.IRUBY_OBJECT));
+        floatc.defineFastMethod("<=", callbackFactory.getFastMethod("le", RubyKernel.IRUBY_OBJECT));
+        floatc.defineFastMethod("eql?", callbackFactory.getFastMethod("eql_p", RubyKernel.IRUBY_OBJECT));
         floatc.defineFastMethod("hash", callbackFactory.getFastMethod("hash"));
         floatc.defineFastMethod("to_f", callbackFactory.getFastMethod("to_f"));
         floatc.defineFastMethod("abs", callbackFactory.getFastMethod("abs"));

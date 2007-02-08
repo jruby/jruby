@@ -128,7 +128,7 @@ public class RubyRange extends RubyObject {
         
         result.includeModule(runtime.getModule("Enumerable"));
 
-        result.defineMethod("==", callbackFactory.getMethod("equal", IRubyObject.class));
+        result.defineMethod("==", callbackFactory.getMethod("equal", RubyKernel.IRUBY_OBJECT));
         result.defineFastMethod("begin", callbackFactory.getFastMethod("first"));
         result.defineMethod("each", callbackFactory.getMethod("each"));
         result.defineFastMethod("end", callbackFactory.getFastMethod("last"));
@@ -144,7 +144,7 @@ public class RubyRange extends RubyObject {
         result.defineMethod("to_s", callbackFactory.getMethod("to_s"));
 
         result.defineMethod("to_a", callbackFactory.getMethod("to_a"));
-        result.defineMethod("include?", callbackFactory.getMethod("include_p", IRubyObject.class));
+        result.defineMethod("include?", callbackFactory.getMethod("include_p", RubyKernel.IRUBY_OBJECT));
         // We override Enumerable#member? since ranges in 1.8.1 are continuous.
         result.defineAlias("member?", "include?");
         result.defineAlias("===", "include?");

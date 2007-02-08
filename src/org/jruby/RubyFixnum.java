@@ -59,7 +59,7 @@ public class RubyFixnum extends RubyInteger {
 
         fixnum.includeModule(runtime.getModule("Precision"));
         fixnum.getMetaClass().defineFastMethod("induced_from", callbackFactory.getFastSingletonMethod(
-                "induced_from", IRubyObject.class));
+                "induced_from", RubyKernel.IRUBY_OBJECT));
 
         fixnum.defineFastMethod("to_s", callbackFactory.getFastOptMethod("to_s"));
 
@@ -67,34 +67,34 @@ public class RubyFixnum extends RubyInteger {
         fixnum.defineFastMethod("to_sym", callbackFactory.getFastMethod("to_sym"));
 
         fixnum.defineFastMethod("-@", callbackFactory.getFastMethod("uminus"));
-        fixnum.defineFastMethod("+", callbackFactory.getFastMethod("plus", IRubyObject.class));
-        fixnum.defineFastMethod("-", callbackFactory.getFastMethod("minus", IRubyObject.class));
-        fixnum.defineFastMethod("*", callbackFactory.getFastMethod("mul", IRubyObject.class));
-        fixnum.defineFastMethod("/", callbackFactory.getFastMethod("div_slash", IRubyObject.class));
-        fixnum.defineFastMethod("div", callbackFactory.getFastMethod("div_div", IRubyObject.class));
-        fixnum.defineFastMethod("%", callbackFactory.getFastMethod("mod", IRubyObject.class));
-        fixnum.defineFastMethod("modulo", callbackFactory.getFastMethod("mod", IRubyObject.class));
-        fixnum.defineFastMethod("divmod", callbackFactory.getFastMethod("divmod", IRubyObject.class));
-        fixnum.defineFastMethod("quo", callbackFactory.getFastMethod("quo", IRubyObject.class));
-        fixnum.defineFastMethod("**", callbackFactory.getFastMethod("pow", IRubyObject.class));
+        fixnum.defineFastMethod("+", callbackFactory.getFastMethod("plus", RubyKernel.IRUBY_OBJECT));
+        fixnum.defineFastMethod("-", callbackFactory.getFastMethod("minus", RubyKernel.IRUBY_OBJECT));
+        fixnum.defineFastMethod("*", callbackFactory.getFastMethod("mul", RubyKernel.IRUBY_OBJECT));
+        fixnum.defineFastMethod("/", callbackFactory.getFastMethod("div_slash", RubyKernel.IRUBY_OBJECT));
+        fixnum.defineFastMethod("div", callbackFactory.getFastMethod("div_div", RubyKernel.IRUBY_OBJECT));
+        fixnum.defineFastMethod("%", callbackFactory.getFastMethod("mod", RubyKernel.IRUBY_OBJECT));
+        fixnum.defineFastMethod("modulo", callbackFactory.getFastMethod("mod", RubyKernel.IRUBY_OBJECT));
+        fixnum.defineFastMethod("divmod", callbackFactory.getFastMethod("divmod", RubyKernel.IRUBY_OBJECT));
+        fixnum.defineFastMethod("quo", callbackFactory.getFastMethod("quo", RubyKernel.IRUBY_OBJECT));
+        fixnum.defineFastMethod("**", callbackFactory.getFastMethod("pow", RubyKernel.IRUBY_OBJECT));
 
         fixnum.defineFastMethod("abs", callbackFactory.getFastMethod("abs"));
 
-        fixnum.defineFastMethod("==", callbackFactory.getFastMethod("equal", IRubyObject.class));
-        fixnum.defineFastMethod("<=>", callbackFactory.getFastMethod("cmp", IRubyObject.class));
+        fixnum.defineFastMethod("==", callbackFactory.getFastMethod("equal", RubyKernel.IRUBY_OBJECT));
+        fixnum.defineFastMethod("<=>", callbackFactory.getFastMethod("cmp", RubyKernel.IRUBY_OBJECT));
 
-        fixnum.defineFastMethod(">", callbackFactory.getFastMethod("gt", IRubyObject.class));
-        fixnum.defineFastMethod(">=", callbackFactory.getFastMethod("ge", IRubyObject.class));
-        fixnum.defineFastMethod("<", callbackFactory.getFastMethod("lt", IRubyObject.class));
-        fixnum.defineFastMethod("<=", callbackFactory.getFastMethod("le", IRubyObject.class));
+        fixnum.defineFastMethod(">", callbackFactory.getFastMethod("gt", RubyKernel.IRUBY_OBJECT));
+        fixnum.defineFastMethod(">=", callbackFactory.getFastMethod("ge", RubyKernel.IRUBY_OBJECT));
+        fixnum.defineFastMethod("<", callbackFactory.getFastMethod("lt", RubyKernel.IRUBY_OBJECT));
+        fixnum.defineFastMethod("<=", callbackFactory.getFastMethod("le", RubyKernel.IRUBY_OBJECT));
 
         fixnum.defineFastMethod("~", callbackFactory.getFastMethod("rev"));
-        fixnum.defineFastMethod("&", callbackFactory.getFastMethod("and", IRubyObject.class));
-        fixnum.defineFastMethod("|", callbackFactory.getFastMethod("or", IRubyObject.class));
-        fixnum.defineFastMethod("^", callbackFactory.getFastMethod("xor", IRubyObject.class));
-        fixnum.defineFastMethod("[]", callbackFactory.getFastMethod("aref", IRubyObject.class));
-        fixnum.defineFastMethod("<<", callbackFactory.getFastMethod("lshift", IRubyObject.class));
-        fixnum.defineFastMethod(">>", callbackFactory.getFastMethod("rshift", IRubyObject.class));
+        fixnum.defineFastMethod("&", callbackFactory.getFastMethod("and", RubyKernel.IRUBY_OBJECT));
+        fixnum.defineFastMethod("|", callbackFactory.getFastMethod("or", RubyKernel.IRUBY_OBJECT));
+        fixnum.defineFastMethod("^", callbackFactory.getFastMethod("xor", RubyKernel.IRUBY_OBJECT));
+        fixnum.defineFastMethod("[]", callbackFactory.getFastMethod("aref", RubyKernel.IRUBY_OBJECT));
+        fixnum.defineFastMethod("<<", callbackFactory.getFastMethod("lshift", RubyKernel.IRUBY_OBJECT));
+        fixnum.defineFastMethod(">>", callbackFactory.getFastMethod("rshift", RubyKernel.IRUBY_OBJECT));
 
         fixnum.defineFastMethod("to_f", callbackFactory.getFastMethod("to_f"));
         fixnum.defineFastMethod("size", callbackFactory.getFastMethod("size"));
