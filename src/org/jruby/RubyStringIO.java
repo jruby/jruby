@@ -356,11 +356,12 @@ public class RubyStringIO extends RubyObject {
         ByteList buf = null;
         if (!(pos >= internal.length() || eof)) {
             if (args.length > 0 && !args[0].isNil()) {
-                int end = ((int)pos) + RubyNumeric.fix2int(args[0]);
+                int len = RubyNumeric.fix2int(args[0]);
+                int end = ((int)pos) + len;
                 if (end > internal.length()) {
                     buf = new ByteList(internal,(int)pos,internal.length()-(int)pos);
                 } else {
-                    buf = new ByteList(internal,(int)pos,end);
+                    buf = new ByteList(internal,(int)pos,len);
                 }
             } else {
                 buf = new ByteList(internal,(int)pos,internal.length()-(int)pos);
