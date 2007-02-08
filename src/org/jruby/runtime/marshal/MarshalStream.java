@@ -53,6 +53,7 @@ import org.jruby.RubySymbol;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * Marshals objects into Ruby's binary marshal format.
@@ -220,7 +221,7 @@ public class MarshalStream extends FilterOutputStream {
             break;
         case ClassIndex.STRING:
             write('"');
-            writeString(value.toString());
+            writeString(value.convertToString().getByteList());
             break;
         case ClassIndex.STRUCT:
             write('S');
@@ -268,7 +269,7 @@ public class MarshalStream extends FilterOutputStream {
         dumpObject(RubySymbol.newSymbol(runtime, metaclass.getName()));
 
         RubyString marshaled = (RubyString) value.callMethod(runtime.getCurrentContext(), "_dump", runtime.newFixnum(depthLimit)); 
-        writeString(marshaled.toString());
+        writeString(marshaled.getByteList());
     }
     
     public void writeUserClass(IRubyObject obj) throws IOException {
@@ -304,6 +305,12 @@ public class MarshalStream extends FilterOutputStream {
     public void writeString(String value) throws IOException {
         writeInt(value.length());
         out.write(RubyString.stringToBytes(value));
+    }
+
+    public void writeString(ByteList value) throws IOException {
+        int len = value.length();
+        writeInt(len);
+        out.write(value.unsafeBytes(),0,len);
     }
 
     public void dumpSymbol(String value) throws IOException {

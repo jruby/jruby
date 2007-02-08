@@ -1631,7 +1631,7 @@ public class RubyModule extends RubyObject {
     }
 
     public static RubyModule unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-        String name = new String(input.unmarshalString(), "PLAIN");
+        String name = RubyString.byteListToString(input.unmarshalString());
         IRuby runtime = input.getRuntime();
         RubyModule result = runtime.getClassFromPath(name);
         if (result == null) {

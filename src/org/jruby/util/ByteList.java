@@ -151,15 +151,26 @@ public class ByteList {
         realSize = newBytes.length;
     }
 
-    
+    /**
+     * Unsafe version of replace(int,int,ByteList). The contract is that these
+     * unsafe versions will not make sure thet beg and len indices are correct.
+     */    
     public void unsafeReplace(int beg, int len, ByteList nbytes) {
         unsafeReplace(beg, len, nbytes.bytes, 0, nbytes.realSize);
     }
 
+    /**
+     * Unsafe version of replace(int,int,byte[]). The contract is that these
+     * unsafe versions will not make sure thet beg and len indices are correct.
+     */    
     public void unsafeReplace(int beg, int len, byte[] buf) {
         unsafeReplace(beg, len, buf, 0, buf.length);
     }
 
+    /**
+     * Unsafe version of replace(int,int,byte[],int,int). The contract is that these
+     * unsafe versions will not make sure thet beg and len indices are correct.
+     */    
     public void unsafeReplace(int beg, int len, byte[] nbytes, int index, int count) {
         grow(count - len);
         int newSize = realSize + count - len;
@@ -200,6 +211,17 @@ public class ByteList {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Returns the internal byte array. This is unsafe unless you know what you're
+     * doing. But it can improve performance for byte-array operations that
+     * won't change the array.
+     *
+     * @return the internal byte array
+     */
+    public byte[] unsafeBytes() {
+        return bytes;
     }
 
     public byte[] bytes() {

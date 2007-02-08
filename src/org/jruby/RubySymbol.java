@@ -286,7 +286,7 @@ public class RubySymbol extends RubyObject {
  
 
     public static RubySymbol unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-        RubySymbol result = RubySymbol.newSymbol(input.getRuntime(), new String(input.unmarshalString(), "PLAIN"));
+        RubySymbol result = RubySymbol.newSymbol(input.getRuntime(), RubyString.byteListToString(input.unmarshalString()));
         input.registerLinkTarget(result);
         return result;
     }

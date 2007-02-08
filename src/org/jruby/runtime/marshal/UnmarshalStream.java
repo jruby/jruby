@@ -50,6 +50,7 @@ import org.jruby.RubySymbol;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * Unmarshals objects from strings or streams in Ruby's marsal format.
@@ -187,7 +188,7 @@ public class UnmarshalStream extends BufferedInputStream {
 		return (byte) b;
     }
 
-    public byte[] unmarshalString() throws IOException {
+    public ByteList unmarshalString() throws IOException {
         int length = unmarshalInt();
         byte[] buffer = new byte[length];
         
@@ -200,7 +201,7 @@ public class UnmarshalStream extends BufferedInputStream {
         if (i < length) {
             throw new IOException("Unexpected end of stream");
         }
-        return buffer;
+        return new ByteList(buffer,false);
     }
 
     public int unmarshalInt() throws IOException {
@@ -274,7 +275,7 @@ public class UnmarshalStream extends BufferedInputStream {
 
     private IRubyObject userUnmarshal() throws IOException {
         String className = unmarshalObject().asSymbol();
-        byte[] marshaled = unmarshalString();
+        ByteList marshaled = unmarshalString();
         RubyModule classInstance;
         try {
             classInstance = runtime.getClassFromPath(className);

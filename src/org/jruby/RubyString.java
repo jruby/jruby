@@ -190,13 +190,21 @@ public class RubyString extends RubyObject {
         taint();
     }
 
-    public static String bytesToString(byte[] bytes) {
+    public static String bytesToString(byte[] bytes, int beg, int len) {
         try {
-            return new String(bytes, IN_ENCODING);
+            return new String(bytes, beg, len, IN_ENCODING);
         } catch (java.io.UnsupportedEncodingException e) {
             assert false : "unsupported encoding " + e;
             return null;
         }
+    }
+
+    public static String byteListToString(ByteList bytes) {
+        return bytesToString(bytes.unsafeBytes(),0,bytes.length());
+    }
+
+    public static String bytesToString(byte[] bytes) {
+        return bytesToString(bytes,0,bytes.length);
     }
 
     public static byte[] stringToBytes(String string) {
