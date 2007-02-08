@@ -764,17 +764,20 @@ public class ThreadContext {
         popFrame();
     }
     
+    public void preForBlock(Block block, RubyModule klass) {
+        pushFrame(block.getFrame());
+        setCRef(block.getCRef());
+        getCurrentFrame().setVisibility(block.getVisibility());
+        pushScope(block.getDynamicScope());
+        pushRubyClass((klass != null) ? klass : block.getKlass()); 
+    }
+    
     public void preYieldSpecificBlock(Block block, RubyModule klass) {
         //System.out.println("IN RESTORE BLOCK (" + block.getDynamicScope() + ")");
         pushFrame(block.getFrame());
         setCRef(block.getCRef());
-        
         getCurrentFrame().setVisibility(block.getVisibility());
-
-        if (block.getDynamicScope() != null) {
-            pushScope(block.getDynamicScope().cloneScope());
-        }
-
+        pushScope(block.getDynamicScope().cloneScope());
         pushRubyClass((klass != null) ? klass : block.getKlass()); 
     }
     
@@ -794,10 +797,7 @@ public class ThreadContext {
     }
     
     public void postYield(Block block) {
-         // For loop eval has no dynamic scope
-        if (block.getDynamicScope() != null) {
-            popScope();
-        }
+        popScope();
         popFrame();
         unsetCRef();
         popRubyClass();

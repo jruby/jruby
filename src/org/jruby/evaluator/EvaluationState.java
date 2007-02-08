@@ -145,6 +145,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.ForBlock;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -818,10 +819,8 @@ public class EvaluationState {
             case NodeTypes.FORNODE: {
                 ForNode iVisited = (ForNode) node;
                 
-                // For nodes do not have to create an addition scope so we just pass null
-                // ENEBO: Not sure we need to pass actual block along or not
-                Block block = Block.createBlock(context, iVisited.getVarNode(), null,
-                        iVisited.getCallable(), self);
+                Block block = ForBlock.createBlock(context, iVisited.getVarNode(), 
+                        context.getCurrentScope(), iVisited.getCallable(), self);
     
                 try {
                     while (true) {

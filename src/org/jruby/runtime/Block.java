@@ -46,7 +46,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
 
 /**
- *
+ *  Internal live representation of a block ({...} or do ... end).
  */
 public class Block {
     /**
@@ -89,10 +89,7 @@ public class Block {
     private SinglyLinkedList cref;
     private Visibility visibility;
     private RubyModule klass;
-    // Fixme: null dynamic scope screams for subclass (after rest of block clean up do this)
     
-    // For loops are done via blocks and they have no dynamic scope of their own so we use
-    // whatever is there.  What is important is that this may be null.
     /**
      * A reference to all variable values (and names) that are in-scope for this block.
      */
@@ -177,20 +174,19 @@ public class Block {
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf) {
-        Block newBlock;
-        
-        // If we have no dynamic scope we are a block representing a for loop eval.
-        // We can just reuse
-        if (dynamicScope == null) {
-            newBlock = this;
-        } else {
-            newBlock = this.cloneBlock();
-            if (replacementSelf != null) {
-                newBlock.self = replacementSelf;
-            }
-        }
+        Block newBlock = this.cloneBlock();
+            
+        if (replacementSelf != null) newBlock.self = replacementSelf; 
 
         return newBlock.yield(context, context.getRuntime().newArray(args), null, null, true);
+    }
+    
+    protected void pre(ThreadContext context, RubyModule klass) {
+        context.preYieldSpecificBlock(this, klass);
+    }
+    
+    protected void post(ThreadContext context) {
+        context.postYield(this);
     }
 
     /**
@@ -210,7 +206,7 @@ public class Block {
             frame.setSelf(self);
         }
         
-        context.preYieldSpecificBlock(this, klass);
+        pre(context, klass);
 
         try {
             IRubyObject[] args = getBlockArgs(context, value, self, aValue);
@@ -218,9 +214,7 @@ public class Block {
             // This while loop is for restarting the block call in case a 'redo' fires.
             while (true) {
                 try {
-                    IRubyObject result = method.call(context, self, args, NULL_BLOCK);
-
-                    return result;
+                    return method.call(context, self, args, NULL_BLOCK);
                 } catch (JumpException je) {
                     if (je.getJumpType() == JumpException.JumpType.RedoJump) {
                         // do nothing, allow loop to redo
@@ -241,7 +235,7 @@ public class Block {
         		throw je;
         	}
         } finally {
-            context.postYield(this);
+            post(context);
         }
     }
 
@@ -296,13 +290,18 @@ public class Block {
         // captured instances of this block may still be around and we do not want to start
         // overwriting those values when we create a new one.
         Block newBlock = new Block(varNode, method, self, frame, cref, visibility, klass, 
-                (dynamicScope == null ? null : dynamicScope.cloneScope()));
+                dynamicScope.cloneScope());
         
         newBlock.isLambda = isLambda;
 
         return newBlock;
     }
 
+    /**
+     * What is the arity of this block?
+     * 
+     * @return the arity
+     */
     public Arity arity() {
         return method.getArity();
     }
@@ -338,8 +337,10 @@ public class Block {
     }
 
     /**
-     * Gets the dynamicVariables.
-     * @return Returns a RubyVarmap
+     * Gets the dynamicVariables that are local to this block.   Parent dynamic scopes are also
+     * accessible via the current dynamic scope.
+     * 
+     * @return Returns all relevent variable scoping information
      */
     public DynamicScope getDynamicScope() {
         return dynamicScope;
@@ -347,6 +348,7 @@ public class Block {
 
     /**
      * Gets the frame.
+     * 
      * @return Returns a RubyFrame
      */
     public Frame getFrame() {
