@@ -1394,7 +1394,7 @@ public class ScannerImpl implements Scanner {
         return sb.toString();
     }
 
-    private String into(ByteList b) {
+    public static String into(ByteList b) {
         try {
             return new String(b.bytes,0,b.realSize,"ISO8859-1");
         } catch(Exception e) {
