@@ -472,6 +472,13 @@ public class RubyModule extends RubyObject {
             throw getRuntime().newNameError("Undefined method " + name + " for" + s0 + " '" + c.getName() + "'", name);
         }
         addMethod(name, UndefinedMethod.getInstance());
+        
+        if(isSingleton()){
+            IRubyObject singleton = getInstanceVariable("__attached__"); 
+            singleton.callMethod(runtime.getCurrentContext(), "singleton_method_undefined", getRuntime().newSymbol(name));
+        }else{
+            callMethod(runtime.getCurrentContext(), "method_undefined", getRuntime().newSymbol(name));
+    }
     }
 
     private void addCachedMethod(String name, DynamicMethod method) {
@@ -531,6 +538,13 @@ public class RubyModule extends RubyObject {
 
             getRuntime().getCacheMap().remove(name, method);
         }
+        
+        if(isSingleton()){
+            IRubyObject singleton = getInstanceVariable("__attached__"); 
+            singleton.callMethod(getRuntime().getCurrentContext(), "singleton_method_removed", getRuntime().newSymbol(name));
+        }else{
+            callMethod(getRuntime().getCurrentContext(), "method_removed", getRuntime().newSymbol(name));
+    }
     }
 
     /**
@@ -965,10 +979,14 @@ public class RubyModule extends RubyObject {
 
         if (tc.getPreviousVisibility().isModuleFunction()) {
             getSingletonClass().addMethod(name, new WrapperMethod(getSingletonClass(), newMethod, Visibility.PUBLIC));
-            callMethod(context, "singleton_method_added", symbol);
         }
 
+        if(isSingleton()){
+            IRubyObject singleton = getInstanceVariable("__attached__"); 
+            singleton.callMethod(context, "singleton_method_added", symbol);
+        }else{
         callMethod(context, "method_added", symbol);
+        }
 
         return body;
     }
@@ -1591,6 +1609,14 @@ public class RubyModule extends RubyObject {
         return getRuntime().getNil();
     }
 
+    public IRubyObject method_removed(IRubyObject nothing, Block block) {
+        return getRuntime().getNil();
+    }
+
+    public IRubyObject method_undefined(IRubyObject nothing, Block block) {
+        return getRuntime().getNil();
+    }
+    
     public RubyBoolean method_defined(IRubyObject symbol) {
         return isMethodBound(symbol.asSymbol(), true) ? getRuntime().getTrue() : getRuntime().getFalse();
     }

@@ -465,6 +465,8 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyString replace(IRubyObject other) {
+        testFrozen("String");
+         
         RubyString newValue = stringValue(other);
         if (this == other || sameAs(newValue)) {
             return this;

@@ -37,8 +37,8 @@ package org.jruby.util;
 public class ByteList implements Comparable {
     public static final byte[] NULL_ARRAY = new byte[0];
 
-    byte[] bytes;
-    int realSize;
+    public byte[] bytes;
+    public int realSize;
 
     private static final int DEFAULT_SIZE = 4;
     private static final double FACTOR = 1.5;
@@ -88,6 +88,11 @@ public class ByteList implements Comparable {
 
     public ByteList(ByteList wrap, int index, int len) {
         this(wrap.bytes, index, len);
+    }
+
+    public void delete(int start, int len) {
+        System.arraycopy(bytes,start+len,bytes,start,len);
+        realSize-=len;
     }
 
     public void append(byte b) {

@@ -40,6 +40,7 @@ testGlobalVars.rb
 testHash.rb
 testHereDocument.rb
 testHigherJavaSupport.rb
+testHooks.rb
 testIconv.rb
 testIf.rb
 testInspect.rb

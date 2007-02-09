@@ -154,6 +154,8 @@ public class RubyKernel {
         
         // Defined p411 Pickaxe 2nd ed.
         module.defineModuleFunction("singleton_method_added", callbackFactory.getSingletonMethod("singleton_method_added", IRUBY_OBJECT));
+        module.defineModuleFunction("singleton_method_removed", callbackFactory.getSingletonMethod("singleton_method_removed", IRUBY_OBJECT));
+        module.defineModuleFunction("singleton_method_undefined", callbackFactory.getSingletonMethod("singleton_method_undefined", IRUBY_OBJECT));
         
         // Object methods
         module.defineFastPublicModuleFunction("==", objectCallbackFactory.getFastMethod("obj_equal", IRUBY_OBJECT));
@@ -814,6 +816,15 @@ public class RubyKernel {
         return recv.getRuntime().getNil();
     }
 
+    public static IRubyObject singleton_method_removed(IRubyObject recv, IRubyObject symbolId, Block block) {
+        return recv.getRuntime().getNil();
+    }
+
+    public static IRubyObject singleton_method_undefined(IRubyObject recv, IRubyObject symbolId, Block block) {
+        return recv.getRuntime().getNil();
+    }
+    
+    
     public static RubyProc proc(IRubyObject recv, Block block) {
         return recv.getRuntime().newProc(true, block);
     }
