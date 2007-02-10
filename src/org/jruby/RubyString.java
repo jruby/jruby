@@ -412,6 +412,16 @@ public class RubyString extends RubyObject {
         return new RubyString(getRuntime(), getType(), s);
     }
 
+    /** Create a new String which uses the same Ruby runtime and the same
+     *  class like this String.
+     *
+     *  This method should be used to satisfy RCR #38.
+     *
+     */
+    public RubyString newString(ByteList s) {
+        return new RubyString(getRuntime(), getType(), s);
+    }
+
     // Methods of the String class (rb_str_*):
 
     /** rb_str_new2
@@ -1511,7 +1521,7 @@ public class RubyString extends RubyObject {
     }
 
     private IRubyObject gsub(IRubyObject[] args, boolean bang, Block block) {
-        // TODO: improve implementation to be ByteList-aware
+        // TODO: improve implementation. this is _really_ slow
         IRubyObject repl = getRuntime().getNil();
         RubyMatchData match;
         boolean iter = false;
@@ -1530,7 +1540,7 @@ public class RubyString extends RubyObject {
         if (beg < 0) {
             return bang ? getRuntime().getNil() : dup();
         }
-        StringBuffer sbuf = new StringBuffer();
+        ByteList sbuf = new ByteList(this.value.length());
         IRubyObject newStr;
         int offset = 0;
 
@@ -1538,24 +1548,35 @@ public class RubyString extends RubyObject {
         // decision on UTF8-based string implementation.
         ThreadContext tc = getRuntime().getCurrentContext();
 
-        while (beg >= 0) {
-            match = (RubyMatchData) tc.getBackref();
-            sbuf.append(str.substring(offset, beg));
-            newStr = iter ? tc.yield(match.group(0), block) : pat.regsub(repl, match);
-            taint |= newStr.isTaint();
-            sbuf.append(newStr.toString());
-            offset = match.matchEndPosition();
-            beg = pat.search(str, offset == beg ? beg + 1 : offset);
+        if(iter) {
+            while (beg >= 0) {
+                match = (RubyMatchData) tc.getBackref();
+                sbuf.append(this.value,offset,beg-offset);
+                newStr = tc.yield(match.group(0), block);
+                taint |= newStr.isTaint();
+                sbuf.append(newStr.convertToString().getByteList());
+                offset = match.matchEndPosition();
+                beg = pat.search(str, offset == beg ? beg + 1 : offset);
+            }
+        } else {
+            RubyString r = stringValue(repl);
+            while (beg >= 0) {
+                match = (RubyMatchData) tc.getBackref();
+                sbuf.append(this.value,offset,beg-offset);
+                pat.regsub(r, match, sbuf);
+                offset = match.matchEndPosition();
+                beg = pat.search(str, offset == beg ? beg + 1 : offset);
+            }
         }
 
-        sbuf.append(str.substring(offset, str.length()));
+        sbuf.append(this.value,offset,this.value.length()-offset);
 
         if (bang) {
             setTaint(isTaint() || taint);
             setValue(sbuf);
             return this;
         }
-        RubyString result = newString(sbuf.toString());
+        RubyString result = newString(sbuf);
         result.setTaint(isTaint() || taint);
         return result;
     }

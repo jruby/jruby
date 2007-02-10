@@ -45,6 +45,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 import org.jruby.util.PrintfFormat;
 
@@ -484,21 +485,16 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         return getRuntime().getNil();
     }
 
-
-    /** rb_reg_regsub
-     *
-     */
-    public IRubyObject regsub(IRubyObject str, RubyMatchData match) {
-        String repl = RubyString.stringValue(str).toString();
-        StringBuffer sb = new StringBuffer("");
+    public void regsub(RubyString str, RubyMatchData match, ByteList sb) {
+        ByteList repl = str.getByteList();
         int pos = 0;
         int end = repl.length();
         char c;
         IRubyObject ins;
         while (pos < end) {
-            c = repl.charAt(pos++);
+            c = (char)(repl.get(pos++) & 0xFF);
             if (c == '\\' && pos < end) {
-                c = repl.charAt(pos++);
+                c = (char)(repl.get(pos++) & 0xFF);
                 switch (c) {
                     case '0' :
                     case '1' :
@@ -528,17 +524,27 @@ public class RubyRegexp extends RubyObject implements ReOptions {
                         sb.append(c);
                         continue;
                     default :
-                        sb.append('\\').append(c);
+                        sb.append('\\');
+                        sb.append(c);
                         continue;
                 }
                 if (!ins.isNil()) {
-                    sb.append(((RubyString) ins).getValue());
+                    sb.append(((RubyString) ins).getByteList());
                 }
             } else {
                 sb.append(c);
             }
         }
-        return getRuntime().newString(sb.toString());
+    }
+
+    /** rb_reg_regsub
+     *
+     */
+    public IRubyObject regsub(IRubyObject str, RubyMatchData match) {
+        RubyString str2 = RubyString.stringValue(str);
+        ByteList sb = new ByteList(str2.getByteList().length()+30);
+        regsub(str2,match,sb);
+        return RubyString.newString(getRuntime(),sb);
     }
 
     /** rb_reg_init_copy
