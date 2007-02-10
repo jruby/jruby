@@ -281,8 +281,7 @@ public class MarshalStream extends FilterOutputStream {
     	}
     	
     	// w_symbol
-    	// TODO: handle symlink?
-    	dumpSymbol(obj.getMetaClass().getName());
+    	dumpObject(runtime.newSymbol(obj.getMetaClass().getName()));
     }
     
     public void dumpInstanceVars(Map instanceVars) throws IOException {

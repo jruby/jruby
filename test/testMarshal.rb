@@ -301,3 +301,10 @@ end
 data = Marshal.dump(a)
 test_equal("\004\bu:\fSpecial\021Hello, World", data)
 test_no_exception { obj = Marshal.load(data) }
+
+class Aaaa < Array
+  attr_accessor :foo
+end
+a = Aaaa.new
+a.foo = :Aaaa
+test_marshal("IC:\tAaaa[\000\006:\t@foo;\000",a)
