@@ -76,7 +76,7 @@ public class Readline {
         mReadline.module_function(new IRubyObject[]{runtime.newSymbol("completion_proc=")});
         IRubyObject hist = runtime.getObject().callMethod(runtime.getCurrentContext(), "new");
         mReadline.setConstant("HISTORY",hist);
-        hist.defineSingletonMethod("push",readlinecb.getFastSingletonMethod("s_push",IRubyObject.class));
+        hist.defineSingletonMethod("push",readlinecb.getFastOptSingletonMethod("s_push"));
         hist.defineSingletonMethod("pop",readlinecb.getFastSingletonMethod("s_pop"));
         hist.defineSingletonMethod("to_a",readlinecb.getFastSingletonMethod("s_hist_to_a"));
     }
@@ -121,8 +121,10 @@ public class Readline {
         return line;
     }
 
-    public static IRubyObject s_push(IRubyObject recv, IRubyObject line) throws Exception {
-        history.addToHistory(line.toString());
+    public static IRubyObject s_push(IRubyObject recv, IRubyObject[] lines) throws Exception {
+        for (int i = 0; i < lines.length; i++) {
+            history.addToHistory(lines[i].toString());
+        }
         return recv.getRuntime().getNil();
     }
 
