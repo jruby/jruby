@@ -52,7 +52,6 @@ import org.jruby.util.IOHandlerProcess;
 import org.jruby.util.IOHandlerSeekable;
 import org.jruby.util.IOHandlerUnseekable;
 import org.jruby.util.IOModes;
-import org.jruby.util.ByteList;
 
 /**
  * 

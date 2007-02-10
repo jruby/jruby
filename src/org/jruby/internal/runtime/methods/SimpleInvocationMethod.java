@@ -84,7 +84,7 @@ public abstract class SimpleInvocationMethod extends AbstractMethod implements C
         arity.checkArity(runtime, args);
 
         if(runtime.getTraceFunction() != null) {
-            ISourcePosition position = context.getPreviousFramePosition();
+            ISourcePosition position = context.getPosition();
 
             runtime.callTraceFunction(context, "c-call", position, receiver, name, getImplementationClass());
             try {

@@ -65,7 +65,7 @@ public class FullFunctionCallbackMethod extends AbstractMethod {
         IRuby runtime = context.getRuntime();
         
         if (runtime.getTraceFunction() != null) {
-            ISourcePosition position = context.getPreviousFramePosition();
+            ISourcePosition position = context.getPosition();
 
             runtime.callTraceFunction(context, "c-call", position, receiver, name, getImplementationClass());
             try {
