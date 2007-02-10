@@ -1511,6 +1511,7 @@ public class RubyString extends RubyObject {
     }
 
     private IRubyObject gsub(IRubyObject[] args, boolean bang, Block block) {
+        // TODO: improve implementation to be ByteList-aware
         IRubyObject repl = getRuntime().getNil();
         RubyMatchData match;
         boolean iter = false;
@@ -1524,19 +1525,17 @@ public class RubyString extends RubyObject {
         boolean taint = repl.isTaint();
         RubyRegexp pat = RubyRegexp.regexpValue(args[0]);
 
-        int beg = pat.search(toString(), 0);
+        String str = toString();
+        int beg = pat.search(str, 0);
         if (beg < 0) {
             return bang ? getRuntime().getNil() : dup();
         }
         StringBuffer sbuf = new StringBuffer();
-        String str = toString();
         IRubyObject newStr;
         int offset = 0;
 
         // Fix for JRUBY-97: Temporary fix pending
         // decision on UTF8-based string implementation.
-        // Move toString() call outside loop.
-        String toString = toString();
         ThreadContext tc = getRuntime().getCurrentContext();
 
         while (beg >= 0) {
@@ -1546,7 +1545,7 @@ public class RubyString extends RubyObject {
             taint |= newStr.isTaint();
             sbuf.append(newStr.toString());
             offset = match.matchEndPosition();
-            beg = pat.search(toString, offset == beg ? beg + 1 : offset);
+            beg = pat.search(str, offset == beg ? beg + 1 : offset);
         }
 
         sbuf.append(str.substring(offset, str.length()));
