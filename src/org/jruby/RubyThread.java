@@ -61,6 +61,7 @@ public class RubyThread extends RubyObject {
     private NativeThread threadImpl;
     private Map threadLocalVariables = new HashMap();
     private boolean abortOnException;
+    private IRubyObject finalResult;
     private RaiseException exitingException;
     private IRubyObject receivedException;
     private RubyThreadGroup threadGroup;
@@ -89,6 +90,7 @@ public class RubyThread extends RubyObject {
         threadClass.defineFastMethod("alive?", callbackFactory.getFastMethod("is_alive"));
         threadClass.defineFastMethod("group", callbackFactory.getFastMethod("group"));
         threadClass.defineFastMethod("join", callbackFactory.getFastOptMethod("join"));
+        threadClass.defineFastMethod("value", callbackFactory.getFastMethod("value"));
         threadClass.defineFastMethod("key?", callbackFactory.getFastMethod("has_key", RubyKernel.IRUBY_OBJECT));
         threadClass.defineFastMethod("priority", callbackFactory.getFastMethod("priority"));
         threadClass.defineFastMethod("priority=", callbackFactory.getFastMethod("priority_set", RubyKernel.IRUBY_OBJECT));
@@ -193,8 +195,9 @@ public class RubyThread extends RubyObject {
         return rubyThread;
     }
     
-    public void cleanTerminate() {
+    public void cleanTerminate(IRubyObject result) {
     	try {
+    		finalResult = result;
     		isStopped = true;
     		waitIfCriticalized();
     	} catch (InterruptedException ie) {
@@ -252,7 +255,7 @@ public class RubyThread extends RubyObject {
         // set to default thread group
         RubyThreadGroup defaultThreadGroup = (RubyThreadGroup)runtime.getClass("ThreadGroup").getConstant("Default");
         defaultThreadGroup.add(this, Block.NULL_BLOCK);
-        
+        finalResult = runtime.getNil();
     }
 
     private RubyThread(IRuby runtime, RubyClass type, boolean narf) {
@@ -262,6 +265,7 @@ public class RubyThread extends RubyObject {
         // set to default thread group
         RubyThreadGroup defaultThreadGroup = (RubyThreadGroup)runtime.getClass("ThreadGroup").getConstant("Default");
         defaultThreadGroup.add(this, Block.NULL_BLOCK);
+        finalResult = runtime.getNil();
     }
 
     /**
@@ -374,6 +378,11 @@ public class RubyThread extends RubyObject {
             throw exitingException;
         }
         return this;
+    }
+
+    public IRubyObject value() {
+        join(new IRubyObject[0]);
+        return finalResult;
     }
 
     public IRubyObject group() {

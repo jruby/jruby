@@ -64,6 +64,7 @@ test_hash
 #test_openssl
 test_primitive_to_java
 test_symbol
+test_thread
 test_zlib
 
 # BFTS

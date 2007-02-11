@@ -99,7 +99,6 @@ testStringSplitStress.rb
 testStruct.rb
 testSuper.rb
 testSymbol.rb
-testThread.rb
 testTime.rb
 testUnboundMethod.rb
 testVariableAndMethod.rb
