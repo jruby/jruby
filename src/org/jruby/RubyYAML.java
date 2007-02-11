@@ -25,9 +25,6 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-/**
- * $Id: $
- */
 package org.jruby;
 
 import java.io.IOException;
@@ -52,24 +49,23 @@ import org.jruby.internal.runtime.methods.MultiStubMethod;
 import org.jruby.yaml.JRubyRepresenter;
 import org.jruby.yaml.JRubyConstructor;
 import org.jruby.yaml.JRubySerializer;
-import org.jruby.util.IOReader;
+import org.jruby.util.IOInputStream;
 import org.jruby.util.IOWriter;
 
 import org.jvyaml.Representer;
-import org.jvyaml.Constructor;
-import org.jvyaml.ParserImpl;
-import org.jvyaml.Scanner;
-import org.jvyaml.ScannerImpl;
-import org.jvyaml.ComposerImpl;
+import org.jvyamlb.Constructor;
+import org.jvyamlb.ParserImpl;
+import org.jvyamlb.Scanner;
+import org.jvyamlb.ScannerImpl;
+import org.jvyamlb.ComposerImpl;
 import org.jvyaml.Serializer;
-import org.jvyaml.ResolverImpl;
+import org.jvyamlb.ResolverImpl;
 import org.jvyaml.EmitterImpl;
-import org.jvyaml.YAMLConfig;
-import org.jvyaml.YAML;
+import org.jvyamlb.YAMLConfig;
+import org.jvyamlb.YAML;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
- * @version $Revision: $
  */
 public class RubyYAML {
     public static RubyModule createYAMLModule(IRuby runtime) {
@@ -243,9 +239,9 @@ public class RubyYAML {
             IRubyObject io = args[0];
             Scanner scn = null;
             if(io instanceof RubyString) {
-                scn = new ScannerImpl(io.toString());
+                scn = new ScannerImpl(((RubyString)io).getByteList());
             } else {
-                scn = new ScannerImpl(new IOReader(io));
+                scn = new ScannerImpl(new IOInputStream(io));
             }
             Constructor ctor = new JRubyConstructor(self,new ComposerImpl(new ParserImpl(scn,YAML.config().version("1.0")),new ResolverImpl()));
             if(ctor.checkData()) {
@@ -269,7 +265,7 @@ public class RubyYAML {
             if(args.length == 2 && args[1] != null && !args[1].isNil()) {
                 io = args[1];
             }
-            YAMLConfig cfg = YAML.config().version("1.0");
+            org.jvyaml.YAMLConfig cfg = org.jvyaml.YAML.config().version("1.0");
             IOWriter iox = null;
             if(null == io) {
                 self.getRuntime().getModule("Kernel").callMethod(context,"require", self.getRuntime().newString("stringio"));
@@ -278,7 +274,7 @@ public class RubyYAML {
             } else {
                 iox = new IOWriter(io);
             }
-            Serializer ser = new JRubySerializer(new EmitterImpl(iox,cfg),new ResolverImpl(),cfg);
+            Serializer ser = new JRubySerializer(new EmitterImpl(iox,cfg),new org.jvyaml.ResolverImpl(),cfg);
             try {
                 ser.open();
                 Representer r = new JRubyRepresenter(ser, cfg);
@@ -301,9 +297,9 @@ public class RubyYAML {
             IRubyObject io = args[0];
             Scanner scn = null;
             if(io instanceof RubyString) {
-                scn = new ScannerImpl(io.toString());
+                scn = new ScannerImpl(((RubyString)io).getByteList());
             } else {
-                scn = new ScannerImpl(new IOReader(io));
+                scn = new ScannerImpl(new IOInputStream(io));
             }
             Constructor ctor = new JRubyConstructor(self,new ComposerImpl(new ParserImpl(scn,YAML.config().version("1.0")),new ResolverImpl()));
             while(ctor.checkData()) {
@@ -316,9 +312,9 @@ public class RubyYAML {
             IRubyObject io = args[0];
             Scanner scn = null;
             if(io instanceof RubyString) {
-                scn = new ScannerImpl(io.toString());
+                scn = new ScannerImpl(((RubyString)io).getByteList());
             } else {
-                scn = new ScannerImpl(new IOReader(io));
+                scn = new ScannerImpl(new IOInputStream(io));
             }
             Constructor ctor = new JRubyConstructor(self,new ComposerImpl(new ParserImpl(scn,YAML.config().version("1.0")),new ResolverImpl()));
             while(ctor.checkData()) {
@@ -332,9 +328,9 @@ public class RubyYAML {
             IRubyObject io = args[0];
             Scanner scn = null;
             if(io instanceof RubyString) {
-                scn = new ScannerImpl(io.toString());
+                scn = new ScannerImpl(((RubyString)io).getByteList());
             } else {
-                scn = new ScannerImpl(new IOReader(io));
+                scn = new ScannerImpl(new IOInputStream(io));
             }
             Constructor ctor = new JRubyConstructor(self,new ComposerImpl(new ParserImpl(scn,YAML.config().version("1.0")),new ResolverImpl()));
             while(ctor.checkData()) {

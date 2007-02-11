@@ -312,12 +312,12 @@ public class ScannerImpl implements Scanner {
         fetchStreamStart();
     }
 
-    private void update(final int length) {
-        if(!eof) {
-            this.buffer.delete(0,this.pointer-1);
+    private void update(final int length, final boolean reset) {
+        if(!eof && reset) {
+            this.buffer.delete(0,this.pointer);
             this.pointer = 0;
         }
-        while(this.buffer.realSize < length) {
+        while(this.buffer.realSize < (this.pointer+length)) {
             byte[] rawData = ByteList.NULL_ARRAY;
             int converted = -2;
             if(!this.eof) {
@@ -352,25 +352,25 @@ public class ScannerImpl implements Scanner {
         }
     }
 
-    private boolean ensure(final int len) {
-        if(this.pointer + (len-1) >= this.buffer.realSize) {
-            update(len);
+    private boolean ensure(final int len, final boolean reset) {
+        if(this.pointer + len >= this.buffer.realSize) {
+            update(len, reset);
         }
         return true;
     }
 
     private char peek() {
-        ensure(1);
+        ensure(1,false);
         return (char)((char)(buffer.bytes[this.pointer]) & 0xFF);
     }
 
     private char peek(final int index) {
-        ensure(index+1);
+        ensure(index+1,false);
         return (char)((char)this.buffer.bytes[this.pointer + index] & 0xFF);
     }
 
     private void forward() {
-        ensure(2);
+        ensure(2,true);
         final char ch1 = (char)((int)this.buffer.bytes[this.pointer++] & 0xFF);
         if(ch1 == '\n' || ch1 == '\u0085' || (ch1 == '\r' && (((int)this.buffer.bytes[this.pointer] & 0xFF) != '\n'))) {
             this.column = 0;
@@ -380,7 +380,7 @@ public class ScannerImpl implements Scanner {
     }
 
     private void forward(final int length) {
-        ensure(length+1);
+        ensure(length+1,true);
         int ch = 0;
         for(int i=0;i<length;i++) {
             ch = this.buffer.bytes[this.pointer] & 0xFF;
@@ -457,7 +457,7 @@ public class ScannerImpl implements Scanner {
     }
 
     private boolean isEnding() {
-        ensure(4);
+        ensure(4,false);
         return (this.buffer.bytes[this.pointer] & 0xFF) == '-' &&
             (this.buffer.bytes[this.pointer+1] & 0xFF) == '-' &&
             (this.buffer.bytes[this.pointer+2] & 0xFF) == '-' &&
@@ -465,7 +465,7 @@ public class ScannerImpl implements Scanner {
     }
 
     private boolean isStart() {
-        ensure(4);
+        ensure(4,false);
         return (this.buffer.bytes[this.pointer] & 0xFF) == '.' &&
             (this.buffer.bytes[this.pointer+1] & 0xFF) == '.' &&
             (this.buffer.bytes[this.pointer+2] & 0xFF) == '.' &&
@@ -473,7 +473,7 @@ public class ScannerImpl implements Scanner {
     }
 
     private boolean isEndOrStart() {
-        ensure(4);
+        ensure(4,false);
         return (((this.buffer.bytes[this.pointer] & 0xFF) == '-' &&
                  (this.buffer.bytes[this.pointer+1] & 0xFF) == '-' &&
                  (this.buffer.bytes[this.pointer+2] & 0xFF) == '-') ||
@@ -520,7 +520,7 @@ public class ScannerImpl implements Scanner {
         }
 
         //TODO: this is probably incorrect...
-        if(STUPID_CHAR[this.buffer.bytes[this.pointer]] || (ensure(1) && (this.buffer.bytes[this.pointer] == '-' || this.buffer.bytes[this.pointer] == '?' || this.buffer.bytes[this.pointer] == ':') && !NULL_BL_T_LINEBR[this.buffer.bytes[this.pointer+1]])) {
+        if(STUPID_CHAR[this.buffer.bytes[this.pointer]] || (ensure(1,false) && (this.buffer.bytes[this.pointer] == '-' || this.buffer.bytes[this.pointer] == '?' || this.buffer.bytes[this.pointer] == ':') && !NULL_BL_T_LINEBR[this.buffer.bytes[this.pointer+1]])) {
             return fetchPlain();
         }
 
@@ -572,7 +572,7 @@ public class ScannerImpl implements Scanner {
         //   default     :   ''
         final int val = peek();
         if(FULL_LINEBR[val]) {
-            ensure(2);
+            ensure(2,false);
             if(RN[0] == buffer.bytes[this.pointer] && RN[1] == buffer.bytes[this.pointer+1]) {
                 forward(2);
             } else {
@@ -692,7 +692,7 @@ public class ScannerImpl implements Scanner {
         char ch = peek(length);
         while(STRANGE_CHAR[ch]) {
             if('%' == ch) {
-                ensure(length);
+                ensure(length,false);
                 chunks.append(this.buffer.bytes,this.pointer,length);
                 length = 0;
                 chunks.append(scanUriEscapes(name));
@@ -702,7 +702,7 @@ public class ScannerImpl implements Scanner {
             ch = peek(length);
         }
         if(length != 0) {
-            ensure(length);
+            ensure(length,false);
             chunks.append(this.buffer.bytes,this.pointer,length);
             forward(length);
         }
@@ -730,7 +730,7 @@ public class ScannerImpl implements Scanner {
             }
             length++;
         }
-        ensure(length);
+        ensure(length,false);
         final ByteList value = new ByteList(this.buffer.bytes,this.pointer,length,false);
         forward(length);
         return value;
@@ -741,7 +741,7 @@ public class ScannerImpl implements Scanner {
         while(peek() == '%') {
             forward();
             try {
-                ensure(2);
+                ensure(2,false);
                 bytes.append(Integer.parseInt(new String(this.buffer.bytes,this.pointer,2,"PLAIN"),16));
             } catch(final NumberFormatException nfe) {
                 throw new ScannerException("while scanning a " + name,"expected URI escape sequence of 2 hexadecimal numbers, but found " + peek(1) + "(" + ((int)peek(1)) + ") and "+ peek(2) + "(" + ((int)peek(2)) + ")",null);
@@ -778,7 +778,7 @@ public class ScannerImpl implements Scanner {
             int length = 0;
             int i = 0;
             for(;;i++) {
-                ensure(i+1);
+                ensure(i+2,false);
                 if(r_check[this.buffer.bytes[this.pointer+i]] || (r_check2[this.buffer.bytes[this.pointer+i]] && r_check3[this.buffer.bytes[this.pointer+i+1]])) {
                     length = i;
                     break;
@@ -795,7 +795,7 @@ public class ScannerImpl implements Scanner {
             }
             this.allowSimpleKey = false;
             chunks.append(spaces);
-            ensure(length);
+            ensure(length,false);
             chunks.append(this.buffer.bytes,this.pointer,length);
             forward(length);
             spaces = scanPlainSpaces(ind);
@@ -913,7 +913,7 @@ public class ScannerImpl implements Scanner {
    }
 
     private ByteList parseHexa(int length) {
-        ensure(length);
+        ensure(length,false);
         ByteList chunks = new ByteList(length/2);
         for(int i=0;i<length;i+=2) {
             byte val = HEXA_VALUES[this.buffer.bytes[this.pointer+i] & 0xFF];
@@ -942,7 +942,7 @@ public class ScannerImpl implements Scanner {
                 length++;
             }
             if(length != 0) {
-                ensure(length);
+                ensure(length,false);
                 chunks.append(this.buffer.bytes,this.pointer,length);
                 forward(length);
             }
@@ -981,7 +981,7 @@ public class ScannerImpl implements Scanner {
         while(BLANK_T[peek(length)]) {
             length++;
         }
-        ensure(length);
+        ensure(length,false);
         ByteList whitespaces = new ByteList(this.buffer,this.pointer,length);
         forward(length);
         char ch = peek();
@@ -1134,7 +1134,7 @@ public class ScannerImpl implements Scanner {
             while(!NULL_OR_LINEBR[peek(length)]) {
                 length++;
             }
-            ensure(length);
+            ensure(length,false);
             chunks.append(this.buffer.bytes,this.pointer,length);
             forward(length);
             lineBreak = scanLineBreak();
@@ -1310,8 +1310,8 @@ public class ScannerImpl implements Scanner {
         }
         String value = null;
         try {
-            ensure(length);
-            value = new String(this.buffer.bytes,this.pointer,this.pointer+length,"ISO8859-1");
+            ensure(length,false);
+            value = new String(this.buffer.bytes,this.pointer,length,"ISO8859-1");
         } catch(Exception e) {
         }
         forward(length);
@@ -1350,8 +1350,8 @@ public class ScannerImpl implements Scanner {
         }
         String value = null;
         try {
-            ensure(length);
-            value = new String(this.buffer.bytes,this.pointer,this.pointer+length,"ISO8859-1");
+            ensure(length,false);
+            value = new String(this.buffer.bytes,this.pointer,length,"ISO8859-1");
         } catch(Exception e) {
         }
         forward(length);
@@ -1499,6 +1499,27 @@ public class ScannerImpl implements Scanner {
                 //System.out.println(iter.next());
             }
         }
+        final long after = System.currentTimeMillis();
+        final long time = after-before;
+        final double timeS = (after-before)/1000.0;
+        System.out.println("Walking through the " + tokens + " tokens took " + time + "ms, or " + timeS + " seconds"); 
+    }
+
+    public static void tmain(final String[] args) throws Exception {
+        final String filename = args[0];
+        System.out.println("Reading of file: \"" + filename + "\"");
+
+        final InputStream reader = new FileInputStream(filename);
+        final long before = System.currentTimeMillis();
+        int tokens = 0;
+        for(int i=0;i<1;i++) {
+            final Scanner sce2 = new ScannerImpl(reader);
+            for(final Iterator iter = sce2.eachToken();iter.hasNext();) {
+                tokens++;iter.next();
+                //System.out.println(iter.next());
+            }
+        }
+        reader.close();
         final long after = System.currentTimeMillis();
         final long time = after-before;
         final double timeS = (after-before)/1000.0;

@@ -837,6 +837,24 @@ public class ParserImpl implements Parser {
 
     public static void tmain(final String[] args) throws Exception {
         final String filename = args[0];
+        System.out.println("Reading of file: \"" + filename + "\"");
+
+        final InputStream reader = new FileInputStream(filename);
+        final long before = System.currentTimeMillis();
+        for(int i=0;i<1;i++) {
+            final Parser pars = new ParserImpl(new ScannerImpl(reader));
+            for(final Iterator iter = pars.eachEvent();iter.hasNext();iter.next()) {
+            }
+        }
+        reader.close();
+        final long after = System.currentTimeMillis();
+        final long time = after-before;
+        final double timeS = (after-before)/1000.0;
+        System.out.println("Walking through the events for the file: " + filename + " took " + time + "ms, or " + timeS + " seconds"); 
+    }
+
+    public static void tmain2(final String[] args) throws Exception {
+        final String filename = args[0];
         final Parser pars = new ParserImpl(new ScannerImpl(new FileInputStream(filename)));
         for(final Iterator iter = pars.eachEvent();iter.hasNext();) {
             System.out.println(iter.next().getClass().getName());

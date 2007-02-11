@@ -91,8 +91,8 @@ public class ByteList implements Comparable {
     }
 
     public void delete(int start, int len) {
-        System.arraycopy(bytes,start+len,bytes,start,len);
         realSize-=len;
+        System.arraycopy(bytes,start+len,bytes,start,realSize);
     }
 
     public void append(byte b) {
@@ -299,5 +299,9 @@ public class ByteList implements Comparable {
             key &= ~g;
         }
         return key;
+    }
+
+    public String toString() {
+        return new String(this.bytes,0,realSize);
     }
 }

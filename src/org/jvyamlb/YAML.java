@@ -27,7 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jvyamlb;
 
-import java.io.Reader;
+import java.io.InputStream;
 import java.io.Writer;
 import java.io.StringWriter;
 
@@ -36,6 +36,8 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
+
+import org.jruby.util.ByteList;
 
 /**
  * The combinatorial explosion class.
@@ -159,24 +161,24 @@ public class YAML {
             try { s.close(); } catch(final java.io.IOException e) {}
         }
     }
-
-    public static Object load(final String io) {
+    */
+    public static Object load(final ByteList io) {
         return load(io, new DefaultYAMLFactory(),config());
     }
 
-    public static Object load(final Reader io) {
+    public static Object load(final InputStream io) {
         return load(io, new DefaultYAMLFactory(),config());
     }
 
-    public static Object load(final String io, final YAMLConfig cfg) {
+    public static Object load(final ByteList io, final YAMLConfig cfg) {
         return load(io, new DefaultYAMLFactory(),cfg);
     }
 
-    public static Object load(final Reader io, final YAMLConfig cfg) {
+    public static Object load(final InputStream io, final YAMLConfig cfg) {
         return load(io, new DefaultYAMLFactory(),cfg);
     }
 
-    public static Object load(final String io, final YAMLFactory fact, final YAMLConfig cfg) {
+    public static Object load(final ByteList io, final YAMLFactory fact, final YAMLConfig cfg) {
         final Constructor ctor = fact.createConstructor(fact.createComposer(fact.createParser(fact.createScanner(io),cfg),fact.createResolver()));
         if(ctor.checkData()) {
             return ctor.getData();
@@ -185,7 +187,7 @@ public class YAML {
         }
     }
 
-    public static Object load(final Reader io, final YAMLFactory fact, final YAMLConfig cfg) {
+    public static Object load(final InputStream io, final YAMLFactory fact, final YAMLConfig cfg) {
         final Constructor ctor = fact.createConstructor(fact.createComposer(fact.createParser(fact.createScanner(io),cfg),fact.createResolver()));
         if(ctor.checkData()) {
             return ctor.getData();
@@ -194,23 +196,23 @@ public class YAML {
         }
     }
 
-    public static List loadAll(final String io) {
+    public static List loadAll(final ByteList io) {
         return loadAll(io, new DefaultYAMLFactory(),config());
     }
 
-    public static List loadAll(final Reader io) {
+    public static List loadAll(final InputStream io) {
         return loadAll(io, new DefaultYAMLFactory(),config());
     }
 
-    public static List loadAll(final String io, final YAMLConfig cfg) {
+    public static List loadAll(final ByteList io, final YAMLConfig cfg) {
         return loadAll(io, new DefaultYAMLFactory(),cfg);
     }
 
-    public static List loadAll(final Reader io, final YAMLConfig cfg) {
+    public static List loadAll(final InputStream io, final YAMLConfig cfg) {
         return loadAll(io, new DefaultYAMLFactory(),cfg);
     }
 
-    public static List loadAll(final String io, final YAMLFactory fact, final YAMLConfig cfg) {
+    public static List loadAll(final ByteList io, final YAMLFactory fact, final YAMLConfig cfg) {
         final List result = new ArrayList();
         final Constructor ctor = fact.createConstructor(fact.createComposer(fact.createParser(fact.createScanner(io),cfg),fact.createResolver()));
         while(ctor.checkData()) {
@@ -219,7 +221,7 @@ public class YAML {
         return result;
     }
 
-    public static List loadAll(final Reader io, final YAMLFactory fact, final YAMLConfig cfg) {
+    public static List loadAll(final InputStream io, final YAMLFactory fact, final YAMLConfig cfg) {
         final List result = new ArrayList();
         final Constructor ctor = fact.createConstructor(fact.createComposer(fact.createParser(fact.createScanner(io),cfg),fact.createResolver()));
         while(ctor.checkData()) {
@@ -227,5 +229,8 @@ public class YAML {
         }
         return result;
     }
-*/
+
+    public static void main(final String[] args) {
+        System.err.println(YAML.load(new ByteList("%YAML 1.0\n---\n!str str".getBytes())));
+    }
 }// YAML

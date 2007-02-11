@@ -25,9 +25,6 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-/**
- * $Id$
- */
 package org.jruby.yaml;
 
 import java.util.Date;
@@ -40,24 +37,26 @@ import java.util.Set;
 
 import java.util.regex.Pattern;
 
-import org.jvyaml.Composer;
-import org.jvyaml.Constructor;
-import org.jvyaml.ConstructorException;
-import org.jvyaml.ConstructorImpl;
-import org.jvyaml.SafeConstructorImpl;
+import org.jvyamlb.Composer;
+import org.jvyamlb.Constructor;
+import org.jvyamlb.ConstructorException;
+import org.jvyamlb.ConstructorImpl;
+import org.jvyamlb.SafeConstructorImpl;
 
-import org.jvyaml.nodes.Node;
+import org.jvyamlb.nodes.Node;
 
 import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyHash;
+import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import org.jruby.util.ByteList;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
- * @version $Revision$
  */
 public class JRubyConstructor extends ConstructorImpl {
     private final static Map yamlConstructors = new HashMap();
@@ -96,7 +95,7 @@ public class JRubyConstructor extends ConstructorImpl {
     }
 
     public Object constructRubyScalar(final Node node) {
-        return runtime.newString((String)super.constructScalar(node));
+        return RubyString.newString(runtime,(ByteList)super.constructScalar(node));
     }
 
     public Object constructRubySequence(final Node node) {
@@ -133,7 +132,7 @@ public class JRubyConstructor extends ConstructorImpl {
 
     public static Object constructYamlStr(final Constructor ctor, final Node node) {
         final org.jruby.RubyString str = (org.jruby.RubyString)((JRubyConstructor)ctor).constructRubyScalar(node);
-        return (str.getValue().length() == 0 && ((org.jvyaml.nodes.ScalarNode)node).getStyle() == 0) ? str.getRuntime().getNil() : str;
+        return (str.getValue().length() == 0 && ((org.jvyamlb.nodes.ScalarNode)node).getStyle() == 0) ? str.getRuntime().getNil() : str;
     }
 
     public static Object constructYamlSeq(final Constructor ctor, final Node node) {
