@@ -36,7 +36,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import java.util.regex.Pattern;;
+import java.util.regex.Pattern;
 
 import org.jruby.util.ByteList;
 
