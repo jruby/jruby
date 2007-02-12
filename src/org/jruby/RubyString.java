@@ -2447,7 +2447,8 @@ public class RubyString extends RubyObject {
         if (bytes == null) {
             return newString(getRuntime(), (ByteList)value.clone());
         }
-        return newString(getRuntime(), stripInternal());
+
+        return newString(getRuntime(), bytes);
     }
 
     /** rb_str_strip_bang
@@ -2478,6 +2479,10 @@ public class RubyString extends RubyObject {
 
         if (head <= tail) {
             return new ByteList(value, head, tail - head + 1);
+        }
+        
+        if (head > tail) {
+            return new ByteList();
         }
 
         return null;
