@@ -14,6 +14,7 @@
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2007 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -32,6 +33,7 @@ package org.jruby.internal.runtime.methods;
 import org.jruby.IRuby;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
@@ -73,4 +75,8 @@ public class ProcMethod extends AbstractMethod {
     public DynamicMethod dup() {
         return new ProcMethod(getImplementationClass(), proc, getVisibility());
     }
+    
+    public Arity getArity() {
+        return proc.getBlock().arity();
+    }    
 }
