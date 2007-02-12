@@ -74,6 +74,7 @@
       <testResource>
         <directory>${basedir}/../..</directory>
         <includes>
+          <include>build.xml</include>
           <include>test/**/*.rb</include>
           <include>test/**/*.txt</include>
           <include>test/test_index</include>
@@ -140,13 +141,16 @@
                 <mkdir dir="${project.build.directory}/surefire-reports"/>
                 <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask"
                   classpathref="maven.plugin.classpath"/>
-                <junit fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}/../.." maxmemory="384M">
+                <junit fork="yes" forkMode="once" haltonfailure="true" dir="${project.build.testOutputDirectory}" maxmemory="384M">
                   <classpath refid="maven.test.classpath"/>
+                  <formatter type="plain"/>
                   <formatter type="xml"/>
                   <formatter type="brief" usefile="false"/>
-                  <test name="org.jruby.test.MainTestSuite" todir="${project.build.directory}/surefire-reports"/>
-                  <test name="org.jruby.test.ScriptTestSuite" todir="${project.build.directory}/surefire-reports"/>
-                  <test name="org.jruby.test.TestUnitTestSuite" todir="${project.build.directory}/surefire-reports"/>
+                  <sysproperty key="basedir" value="${basedir}"/>
+                  <sysproperty key="jruby.home" value="${basedir}/../.."/>
+                  <test name="org.jruby.test.MainTestSuite" unless="maven.test.skip" todir="${project.build.directory}/surefire-reports"/>
+                  <test name="org.jruby.test.ScriptTestSuite" unless="maven.test.skip" todir="${project.build.directory}/surefire-reports"/>
+                  <test name="org.jruby.test.TestUnitTestSuite" unless="maven.test.skip" todir="${project.build.directory}/surefire-reports"/>
                 </junit>
               </tasks>
             </configuration>
