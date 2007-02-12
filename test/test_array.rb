@@ -18,6 +18,10 @@ class TestArray < Test::Unit::TestCase
     assert("fourth" == arr.pop());
     assert("second" == arr.shift());
   end
+  
+  def test_aref
+    assert_equal(nil, [].slice(-1..1))
+  end
 
   def test_class
     assert(Array == ["zero", "first"].class)
