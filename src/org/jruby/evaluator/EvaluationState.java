@@ -466,7 +466,7 @@ public class EvaluationState {
                 if (rubyClass == null) {
                     rubyClass = self.getMetaClass();
                 } else if (rubyClass.isSingleton()) {
-                    rubyClass = (RubyModule)rubyClass.getInstanceVariable("__attached__");
+                    rubyClass = (RubyModule) context.peekCRef().getNext().getValue();
                 }
                 
                     return rubyClass.getClassVar(iVisited.getName());

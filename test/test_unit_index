@@ -95,7 +95,7 @@ externals/mri/ruby/test_const
 externals/mri/ruby/test_defined
 externals/mri/ruby/test_dir
 externals/mri/ruby/test_env
-#externals/mri/ruby/test_eval
+externals/mri/ruby/test_eval
 externals/mri/ruby/test_exception
 #externals/mri/ruby/test_file
 externals/mri/ruby/test_float
