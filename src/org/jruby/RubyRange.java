@@ -422,6 +422,9 @@ public class RubyRange extends RubyObject {
     
     // this could have been easily written in Ruby --sma
     public RubyBoolean include_p(IRubyObject obj, Block block) {
+        if (obj.isNil()) {
+            return getRuntime().getFalse();
+        }
     	String compareMethod = isExclusive ? ">" : ">=";
     	IRubyObject[] arg = new IRubyObject[]{ obj };
     	IRubyObject f = obj.getRuntime().getFalse();
