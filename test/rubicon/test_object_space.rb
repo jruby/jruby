@@ -56,7 +56,7 @@ class TestObjectSpace < Test::Unit::TestCase
 	ObjectSpace.define_finalizer(a) { puts "OK" }
       }
       tf.close
-      IO.popen("#$interpreter #{tf.path}") do |p|
+      IO.popen(%{"#$interpreter" "#{tf.path}"}) do |p|
 	assert_equal("OK", p.gets.chomp)
       end
     ensure
