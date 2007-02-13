@@ -58,3 +58,6 @@ test_equal(1.zero?,false)
 test_equal(0.nonzero?,nil) # awesome
 
 test_equal(0,1*0)
+
+h = 2
+test_equal(3, h +1)

@@ -1538,10 +1538,9 @@ public class RubyYaccLexer {
             // are emulating
             // FIXME:  I believe this is much simpler now...
             StaticScope scope = parserSupport.getCurrentScope();
-            if (IdUtil.getVarType(tempVal) != IdUtil.LOCAL_VAR &&
-                    scope instanceof BlockStaticScope && 
-                    ((scope.isDefined(tempVal) >= 0) ||
-                    (scope.getLocalScope().isDefined(tempVal) >= 0))) {
+            if (IdUtil.getVarType(tempVal) == IdUtil.LOCAL_VAR &&
+                    (scope instanceof BlockStaticScope && (scope.isDefined(tempVal) >= 0)) ||
+                    (scope.getLocalScope().isDefined(tempVal) >= 0)) {
                 lex_state = LexState.EXPR_END;
             }
 
