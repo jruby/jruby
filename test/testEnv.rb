@@ -70,10 +70,11 @@ ENV['test'] = nil
 test_equal(nil, ENV['test'])
 
 name = (ENV['OS'] =~ /\AWin/i ? '%__JRUBY_T1%' : '$__JRUBY_T1')
-v = `echo #{name}`
-test_equal "\n",v
+expected = (ENV['OS'] =~ /\AWin/i ? '%__JRUBY_T1%' : '')
+v = `echo #{name}`.chomp
+test_equal expected,v
 ENV['__JRUBY_T1'] = "abc"
-v = `echo #{name}`
-test_equal "abc\n",v
+v = `echo #{name}`.chomp
+test_equal "abc",v
 
-test_equal "abc\n", `jruby -e "puts ENV[%{__JRUBY_T1}]"`
+test_equal "abc", `jruby -e "puts ENV[%{__JRUBY_T1}]"`.chomp
