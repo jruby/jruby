@@ -91,7 +91,7 @@ Dir.chdir("testDir_4") do
   pwd.gsub! '\\', '/'
   test_equal("testDir_4", pwd.split("/")[-1].strip)
 
-  pwd = `java -cp #{java_test_classes} org.jruby.util.Pwd`
+  pwd = `java -cp "#{java_test_classes}" org.jruby.util.Pwd`
   pwd.gsub! '\\', '/'
   test_equal("testDir_4", pwd.split("/")[-1].strip)
 end
