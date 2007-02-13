@@ -141,8 +141,11 @@ test_ok(File.size?('build.xml'))
 
 filename = "__test__file"
 File.open(filename, "w") {|f| }
-File.utime(0, 0, filename)
-test_equal(Time.at(0), File.mtime(filename))
+time = Time.now - 3600
+File.utime(time, time, filename)
+# File mtime resolution may not be sub-second on all platforms (e.g., windows)
+# allow for some slop
+test_ok (time.to_i - File.mtime(filename).to_i).abs < 2
 File.unlink(filename)
 
 # File::Stat tests

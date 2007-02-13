@@ -313,16 +313,12 @@ public class FileMetaClass extends IOMetaClass {
     
     public IRubyObject dirname(IRubyObject arg) {
         RubyString filename = RubyString.stringValue(arg);
-        String name = filename.toString();
+        String name = filename.toString().replace('\\', '/');
         if (name.length() > 1 && name.charAt(name.length() - 1) == '/') {
             name = name.substring(0, name.length() - 1);
         }
         //TODO deal with drive letters A: and UNC names
         int index = name.lastIndexOf('/');
-        if (index == -1) {
-            // XXX actually, only on windows...
-            index = name.lastIndexOf('\\');
-        }
         if (index == -1) {
             return getRuntime().newString(".");
         }

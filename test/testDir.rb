@@ -84,9 +84,11 @@ java_test_classes = File.expand_path(File.dirname(__FILE__) + '/..') unless File
 Dir.mkdir("testDir_4") unless File.exist?("testDir_4")
 Dir.chdir("testDir_4") do
   pwd = `ruby -e "puts Dir.pwd"`
+  pwd.gsub! '\\', '/'
   test_equal("testDir_4", pwd.split("/")[-1].strip)
 
   pwd = `jruby -e "puts Dir.pwd"`
+  pwd.gsub! '\\', '/'
   test_equal("testDir_4", pwd.split("/")[-1].strip)
 
   pwd = `java -cp #{java_test_classes} org.jruby.util.Pwd`
