@@ -100,11 +100,10 @@ public class YARVMethod extends AbstractMethod {
 
             return YARVMachine.INSTANCE.exec(context, receiver, sc, iseq.body);
         } catch (JumpException je) {
-        	if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
-	            if (je.getPrimaryData() == this) {
-	                return (IRubyObject)je.getSecondaryData();
-	            }
+        	if (je.getJumpType() == JumpException.JumpType.ReturnJump && je.getTarget() == this) {
+	                return (IRubyObject) je.getValue();
         	}
+            
        		throw je;
         } finally {
             traceReturn(context, runtime, receiver, name);

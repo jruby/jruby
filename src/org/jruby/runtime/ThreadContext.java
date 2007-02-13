@@ -734,7 +734,7 @@ public class ThreadContext {
         
         pushRubyClass(executeUnderClass);
         pushCRef(executeUnderClass);
-        pushCallFrame(null, frame.getArgs(), frame.getLastFunc(), frame.getLastClass(), block);
+        pushCallFrame(frame.getSelf(), frame.getArgs(), frame.getLastFunc(), frame.getLastClass(), block);
         getCurrentFrame().setVisibility(getPreviousFrame().getVisibility());
     }
     

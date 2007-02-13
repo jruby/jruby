@@ -219,21 +219,19 @@ public class Block {
                     if (je.getJumpType() == JumpException.JumpType.RedoJump) {
                         // do nothing, allow loop to redo
                     } else {
+                        if (je.getJumpType() == JumpException.JumpType.BreakJump && je.getTarget() == null) {
+                            je.setTarget(this);                            
+                        }                        
                         throw je;
                     }
                 }
             }
             
         } catch (JumpException je) {
-        	if (je.getJumpType() == JumpException.JumpType.NextJump) {
-                
-                // A 'next' is like a local return from the block, ending this call or yield.
-	            IRubyObject nextValue = (IRubyObject)je.getPrimaryData();
-                
-	            return nextValue == null ? context.getRuntime().getNil() : nextValue;
-        	} else {
-        		throw je;
-        	}
+            // A 'next' is like a local return from the block, ending this call or yield.
+        	if (je.getJumpType() == JumpException.JumpType.NextJump) return (IRubyObject) je.getValue();
+
+            throw je;
         } finally {
             post(context);
         }

@@ -204,7 +204,6 @@ public class Main {
                     return 1;
                 }
             } else if (je.getJumpType() == JumpException.JumpType.ThrowJump) {
-                runtime.printError((RubyException)je.getTertiaryData());
                 return 1;
             } else {
                 throw je;

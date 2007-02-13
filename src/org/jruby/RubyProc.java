@@ -123,17 +123,16 @@ public class RubyProc extends RubyObject {
         	return block.call(context, args, self);
         } catch (JumpException je) {
         	if (je.getJumpType() == JumpException.JumpType.BreakJump) {
-        		if (block.isLambda) {
-	                return (IRubyObject)je.getPrimaryData();
-	            } 
+        		if (block.isLambda) return (IRubyObject) je.getValue();
+
 		        throw getRuntime().newLocalJumpError("unexpected return");
         	} else if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
-        		Object target = je.getPrimaryData();
+        		Object target = je.getTarget();
                 //System.out.println("TARGET: " + target);
 	
-	            if (target == this || block.isLambda) {
-	                return (IRubyObject)je.getSecondaryData();
-	            } else if (target == null) {
+	            if (target == this || block.isLambda) return (IRubyObject) je.getValue();
+	            
+	            if (target == null) {
 	            	throw getRuntime().newLocalJumpError("unexpected return");
 	            }
 	            throw je;

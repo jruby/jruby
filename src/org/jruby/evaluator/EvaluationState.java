@@ -12,6 +12,7 @@
  * 
  * Copyright (C) 2006 Charles Oliver Nutter <headius@headius.com>
  * Copytight (C) 2006-2007 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2007 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"), or
@@ -290,8 +291,7 @@ public class EvaluationState {
     
                 JumpException je = new JumpException(JumpException.JumpType.BreakJump);
     
-                je.setPrimaryData(result);
-                je.setSecondaryData(node);
+                je.setValue(result);
     
                 throw je;
             }
@@ -333,9 +333,7 @@ public class EvaluationState {
                 } catch (JumpException je) {
                     switch (je.getJumpType().getTypeId()) {
                     case JumpType.BREAK:
-                        IRubyObject breakValue = (IRubyObject) je.getPrimaryData();
-                        
-                        return breakValue == null ? runtime.getNil() : breakValue;
+                        return (IRubyObject) je.getValue();
                     default:
                         throw je;
                     }
@@ -765,9 +763,15 @@ public class EvaluationState {
                 } catch (JumpException je) {
                     switch (je.getJumpType().getTypeId()) {
                     case JumpType.BREAK:
-                        IRubyObject breakValue = (IRubyObject) je.getPrimaryData();
+                        // JRUBY-530, Kernel#loop case:
+                        if (je.isBreakInKernelLoop()) {
+                            // consume and rethrow or just keep rethrowing?
+                            if (block == je.getTarget()) je.setBreakInKernelLoop(false);
 
-                        return breakValue == null ? runtime.getNil() : breakValue;
+                            throw je;
+                        }
+                        
+                        return (IRubyObject) je.getValue();
                     default:
                         throw je;
                     }
@@ -848,9 +852,7 @@ public class EvaluationState {
                 } catch (JumpException je) {
                     switch (je.getJumpType().getTypeId()) {
                     case JumpType.BREAK:
-                        IRubyObject breakValue = (IRubyObject) je.getPrimaryData();
-    
-                        return breakValue == null ? runtime.getNil() : breakValue;
+                        return (IRubyObject) je.getValue();
                     default:
                         throw je;
                     }
@@ -1015,10 +1017,9 @@ public class EvaluationState {
                 // now used as an interpreter event
                 JumpException je = new JumpException(JumpException.JumpType.NextJump);
     
-                je.setPrimaryData(result);
-                je.setSecondaryData(iVisited);
+                je.setTarget(iVisited);
+                je.setValue(result);
     
-                //state.setCurrentException(je);
                 throw je;
             }
             case NodeTypes.NILNODE:
@@ -1129,7 +1130,7 @@ public class EvaluationState {
                                 break loop;
                             case JumpType.BREAK:
                                 // end loop
-                                return (IRubyObject) je.getPrimaryData();
+                                return (IRubyObject) je.getValue();
                             default:
                                 throw je;
                             }
@@ -1158,7 +1159,7 @@ public class EvaluationState {
                 // now used as an interpreter event
                 JumpException je = new JumpException(JumpException.JumpType.RedoJump);
     
-                je.setSecondaryData(node);
+                je.setValue(node);
     
                 throw je;
             }
@@ -1264,9 +1265,8 @@ public class EvaluationState {
     
                 JumpException je = new JumpException(JumpException.JumpType.ReturnJump);
     
-                je.setPrimaryData(iVisited.getTarget());
-                je.setSecondaryData(result);
-                je.setTertiaryData(iVisited);
+                je.setTarget(iVisited.getTarget());
+                je.setValue(result);
     
                 throw je;
             }
@@ -1398,7 +1398,14 @@ public class EvaluationState {
                             case JumpType.NEXT:
                                 break loop;
                             case JumpType.BREAK:
-                                return (IRubyObject) je.getPrimaryData();
+                                // JRUBY-530 until case
+                                if (je.getTarget() == aBlock) {
+                                     je.setTarget(null);
+                                     
+                                     throw je;
+                                }
+                                
+                                return (IRubyObject) je.getValue();
                             default:
                                 throw je;
                             }
@@ -1441,6 +1448,13 @@ public class EvaluationState {
                             case JumpType.NEXT:
                                 break loop;
                             case JumpType.BREAK:
+                                // JRUBY-530, while case
+                                if (je.getTarget() == aBlock) {
+                                    je.setTarget(null);
+                                    
+                                    throw je;
+                                }
+                                
                                 return result;
                             default:
                                 throw je;

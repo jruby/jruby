@@ -295,7 +295,7 @@ public final class Ruby implements IRuby {
             return null;
         } catch (JumpException je) {
             if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
-                return (IRubyObject)je.getSecondaryData();
+                return (IRubyObject) je.getValue();
             } else {
                 throw je;
             }
@@ -323,15 +323,15 @@ public final class Ruby implements IRuby {
                 p = ((org.jruby.ast.RootNode)node).getBodyNode().getPosition();
             }
             return new YARVCompiledRunner(this,compiler.getInstructionSequence("<main>",p.getFile(),"toplevel")).run();
-        } catch(NotCompilableException nce) {
+        } catch (NotCompilableException nce) {
             System.err.println("Error -- Not compileable: " + nce.getMessage());
             return null;
-        } catch(JumpException je) {
-            if(je.getJumpType() == JumpException.JumpType.ReturnJump) {
-                return (IRubyObject)je.getSecondaryData();
-            } else {
-                throw je;
-            }
+        } catch (JumpException je) {
+            if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
+                return (IRubyObject) je.getValue();
+            } 
+                
+            throw je;
         }
     }
 

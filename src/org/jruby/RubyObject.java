@@ -758,12 +758,10 @@ public class RubyObject implements Cloneable, IRubyObject {
                     //TODO: Should next and return also catch here?
                 } catch (JumpException je) {
                 	if (je.getJumpType() == JumpException.JumpType.BreakJump) {
-                		IRubyObject breakValue = (IRubyObject)je.getPrimaryData();
+                		return (IRubyObject) je.getValue();
+                	} 
 
-                		return breakValue == null ? getRuntime().getNil() : breakValue;
-                	} else {
-                		throw je;
-                	}
+                    throw je;
                 } finally {
                     block.setVisibility(savedVisibility);
                 }

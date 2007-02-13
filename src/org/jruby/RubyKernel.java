@@ -753,10 +753,9 @@ public class RubyKernel {
             context.pushCatch(tag.asSymbol());
             return context.yield(tag, block);
         } catch (JumpException je) {
-            if (je.getJumpType() == JumpException.JumpType.ThrowJump) {
-                if (je.getPrimaryData().equals(tag.asSymbol())) {
-                    return (IRubyObject)je.getSecondaryData();
-                }
+            if (je.getJumpType() == JumpException.JumpType.ThrowJump &&
+                je.getTarget().equals(tag.asSymbol())) {
+                    return (IRubyObject) je.getValue();
             }
             throw je;
         } finally {
@@ -778,8 +777,8 @@ public class RubyKernel {
                 //Catch active, throw for catch to handle
                 JumpException je = new JumpException(JumpException.JumpType.ThrowJump);
 
-                je.setPrimaryData(tag);
-                je.setSecondaryData(args.length > 1 ? args[1] : runtime.getNil());
+                je.setTarget(tag);
+                je.setValue(args.length > 1 ? args[1] : runtime.getNil());
                 throw je;
             }
         }
@@ -832,9 +831,25 @@ public class RubyKernel {
     public static IRubyObject loop(IRubyObject recv, Block block) {
         ThreadContext context = recv.getRuntime().getCurrentContext();
         while (true) {
-            context.yield(recv.getRuntime().getNil(), block);
+            try {
+                context.yield(recv.getRuntime().getNil(), block);
 
-            Thread.yield();
+                Thread.yield();
+            } catch (JumpException je) {
+                // JRUBY-530, specifically the Kernel#loop case:
+                // Kernel#loop always takes a block.  But what we're looking
+                // for here is breaking an iteration where the block is one 
+                // used inside loop's block, not loop's block itself.  Set the 
+                // appropriate flag on the JumpException if this is the case
+                // (the FCALLNODE case in EvaluationState will deal with it)
+                if (je.getJumpType() == JumpException.JumpType.BreakJump) {
+                    if (je.getTarget() != null && je.getTarget() != block) {
+                        je.setBreakInKernelLoop(true);
+                    }
+                }
+                 
+                throw je;
+            }
         }
     }
 

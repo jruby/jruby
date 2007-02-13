@@ -14,6 +14,8 @@
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2007 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2007 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -65,9 +67,12 @@ public class JumpException extends RuntimeException {
 	}
 	
 	private JumpType jumpType;
-	private Object primaryData;
-	private Object secondaryData;
-	private Object tertiaryData;
+	private Object target;
+	private Object value;
+
+    // FIXME: Remove inKernelLoop from this and come up with something more general
+    // Hack to detect a break in Kernel#loop
+    private boolean inKernelLoop = false;
 
     /**
      * Constructor for JumpException.
@@ -108,44 +113,43 @@ public class JumpException extends RuntimeException {
     }
     
 	/**
-	 * @return Returns the data.
+	 * @return Returns the target.
 	 */
-	public Object getPrimaryData() {
-		return primaryData;
+	public Object getTarget() {
+		return target;
 	}
 	
 	/**
-	 * @param data The data to set.
+	 * @param target The target (destination) of the jump.
 	 */
-	public void setPrimaryData(Object data) {
-		this.primaryData = data;
+	public void setTarget(Object target) {
+		this.target = target;
 	}
 	
 	/**
-	 * @return Returns the secondaryData.
+     * Get the value that will returned when the jump reaches its destination
+     * 
+	 * @return Returns the return value.
 	 */
-	public Object getSecondaryData() {
-		return secondaryData;
+	public Object getValue() {
+		return value;
 	}
 	
 	/**
-	 * @param secondaryData The secondaryData to set.
+     * Set the value that will be returned when the jump reaches its destination
+     * 
+	 * @param value the value to be returned.
 	 */
-	public void setSecondaryData(Object secondaryData) {
-		this.secondaryData = secondaryData;
+	public void setValue(Object value) {
+		this.value = value;
 	}
-	
-	/**
-	 * @return Returns the tertiaryData.
-	 */
-	public Object getTertiaryData() {
-		return tertiaryData;
-	}
-	
-	/**
-	 * @param tertiaryData The tertiaryData to set.
-	 */
-	public void setTertiaryData(Object tertiaryData) {
-		this.tertiaryData = tertiaryData;
-	}
+
+    
+    public void setBreakInKernelLoop(boolean inKernelLoop) {
+        this.inKernelLoop = inKernelLoop;
+    }
+
+    public boolean isBreakInKernelLoop() {
+        return inKernelLoop;
+    }
 }

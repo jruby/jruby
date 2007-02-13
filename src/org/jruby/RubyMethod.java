@@ -140,11 +140,9 @@ public class RubyMethod extends RubyObject {
                             IRubyObject.NULL_ARRAY, block);
             } catch (JumpException je) {
                 if (je.getJumpType() == JumpException.JumpType.BreakJump) {
-                    IRubyObject breakValue = (IRubyObject) je.getPrimaryData();
-
-                    return breakValue == null ? r.getNil() : breakValue;
+                    return (IRubyObject) je.getValue();
                 } else if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
-                    return (IRubyObject) je.getPrimaryData();
+                    return (IRubyObject) je.getTarget();
                 } else if (je.getJumpType() == JumpException.JumpType.RetryJump) {
                     // Execute iterateMethod again.
                 } else {
