@@ -56,7 +56,12 @@ class TestObjectSpace < Test::Unit::TestCase
 	ObjectSpace.define_finalizer(a) { puts "OK" }
       }
       tf.close
-      IO.popen(%{"#$interpreter" "#{tf.path}"}) do |p|
+      if ENV['OS'] =~ /\AWin/
+        command = %{"#$interpreter" "#{tf.path}"}
+      else
+        command = %{#$interpreter #{tf.path}}
+      end
+      IO.popen(command) do |p|
 	assert_equal("OK", p.gets.chomp)
       end
     ensure
