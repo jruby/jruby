@@ -43,7 +43,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jvyaml.util.Base64Coder;
+import org.jvyamlb.util.Base64Coder;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
