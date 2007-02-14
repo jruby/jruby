@@ -47,7 +47,8 @@ class TestBean
   end
 end
 
-test_equal("--- !ruby/object:TestBean\nvalue: 13\nkey: 42\n", TestBean.new(13,42).to_yaml)
+test_ok(["--- !ruby/object:TestBean\nvalue: 13\nkey: 42\n",
+        "--- !ruby/object:TestBean\nkey: 42\nvalue: 13\n"].include?(TestBean.new(13,42).to_yaml))
 test_equal(TestBean.new(13,42),YAML.load("--- !ruby/object:TestBean \nvalue: 13\nkey: 42\n"))
 
 TestStruct = Struct.new(:foo,:bar)
