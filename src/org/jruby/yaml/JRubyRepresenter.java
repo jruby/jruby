@@ -25,9 +25,6 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-/**
- * $Id: $
- */
 package org.jruby.yaml;
 
 import java.io.IOException;
@@ -39,16 +36,17 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.javasupport.JavaEmbedUtils;
 
-import org.jvyaml.SafeRepresenterImpl;
-import org.jvyaml.Serializer;
-import org.jvyaml.Representer;
-import org.jvyaml.YAMLConfig;
-import org.jvyaml.YAMLNodeCreator;
-import org.jvyaml.nodes.Node;
+import org.jvyamlb.SafeRepresenterImpl;
+import org.jvyamlb.Serializer;
+import org.jvyamlb.Representer;
+import org.jvyamlb.YAMLConfig;
+import org.jvyamlb.YAMLNodeCreator;
+import org.jvyamlb.nodes.Node;
+
+import org.jruby.util.ByteList;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
- * @version $Revision: $
  */
 public class JRubyRepresenter extends SafeRepresenterImpl {
     public JRubyRepresenter(final Serializer serializer, final YAMLConfig opts) {
@@ -88,6 +86,10 @@ public class JRubyRepresenter extends SafeRepresenterImpl {
     }
 
     public Node scalar(String tag, String val, String style) throws IOException {
+        return scalar(tag, ByteList.create(val), style);
+    }
+
+    public Node scalar(String tag, ByteList val, String style) throws IOException {
         if(null == style || style.length() == 0) {
             return scalar(tag,val,(char)0);
         } else {

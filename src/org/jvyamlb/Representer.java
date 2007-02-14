@@ -27,45 +27,21 @@
  ***** END LICENSE BLOCK *****/
 package org.jvyamlb;
 
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.IOException;
+
+import java.util.List;
+import java.util.Map;
+
+import org.jvyamlb.nodes.Node;
 
 import org.jruby.util.ByteList;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
-public class DefaultYAMLFactory implements YAMLFactory {
-    public Scanner createScanner(final ByteList io) {
-        return new ScannerImpl(io);
-    }
-    public Scanner createScanner(final InputStream io) {
-        return new ScannerImpl(io);
-    }
-    public Parser createParser(final Scanner scanner) {
-        return new ParserImpl(scanner);
-    }
-    public Parser createParser(final Scanner scanner, final YAMLConfig cfg) {
-        return new ParserImpl(scanner,cfg);
-    }
-    public Resolver createResolver() {
-        return new ResolverImpl();
-    }
-    public Composer createComposer(final Parser parser, final Resolver resolver) {
-        return new ComposerImpl(parser,resolver);
-    }
-    public Constructor createConstructor(final Composer composer) {
-        return new ConstructorImpl(composer);
-    }
-
-    public Emitter createEmitter(final OutputStream output, final YAMLConfig cfg) {
-        return new EmitterImpl(output,cfg);
-    }
-    public Serializer createSerializer(final Emitter emitter, final Resolver resolver, final YAMLConfig cfg) {
-        return new SerializerImpl(emitter,resolver,cfg);
-    }
-    public Representer createRepresenter(final Serializer serializer, final YAMLConfig cfg) {
-        return new RepresenterImpl(serializer,cfg);
-    }
-
-}// DefaultYAMLFactory
+public interface Representer {
+    void represent(final Object data) throws IOException;
+    Node scalar(final String tag, final ByteList value, char style) throws IOException;
+    Node seq(final String tag, final List sequence, final boolean flowStyle) throws IOException;
+    Node map(final String tag, final Map mapping, final boolean flowStyle) throws IOException;
+}// Representer

@@ -50,17 +50,17 @@ import org.jruby.yaml.JRubyRepresenter;
 import org.jruby.yaml.JRubyConstructor;
 import org.jruby.yaml.JRubySerializer;
 import org.jruby.util.IOInputStream;
-import org.jruby.util.IOWriter;
+import org.jruby.util.IOOutputStream;
 
-import org.jvyaml.Representer;
+import org.jvyamlb.Representer;
 import org.jvyamlb.Constructor;
 import org.jvyamlb.ParserImpl;
 import org.jvyamlb.Scanner;
 import org.jvyamlb.ScannerImpl;
 import org.jvyamlb.ComposerImpl;
-import org.jvyaml.Serializer;
+import org.jvyamlb.Serializer;
 import org.jvyamlb.ResolverImpl;
-import org.jvyaml.EmitterImpl;
+import org.jvyamlb.EmitterImpl;
 import org.jvyamlb.YAMLConfig;
 import org.jvyamlb.YAML;
 
@@ -265,16 +265,16 @@ public class RubyYAML {
             if(args.length == 2 && args[1] != null && !args[1].isNil()) {
                 io = args[1];
             }
-            org.jvyaml.YAMLConfig cfg = org.jvyaml.YAML.config().version("1.0");
-            IOWriter iox = null;
+            YAMLConfig cfg = YAML.config().version("1.0");
+            IOOutputStream iox = null;
             if(null == io) {
                 self.getRuntime().getModule("Kernel").callMethod(context,"require", self.getRuntime().newString("stringio"));
                 io2 = self.getRuntime().getClass("StringIO").callMethod(context, "new");
-                iox = new IOWriter(io2);
+                iox = new IOOutputStream(io2);
             } else {
-                iox = new IOWriter(io);
+                iox = new IOOutputStream(io);
             }
-            Serializer ser = new JRubySerializer(new EmitterImpl(iox,cfg),new org.jvyaml.ResolverImpl(),cfg);
+            Serializer ser = new JRubySerializer(new EmitterImpl(iox,cfg),new ResolverImpl(),cfg);
             try {
                 ser.open();
                 Representer r = new JRubyRepresenter(ser, cfg);

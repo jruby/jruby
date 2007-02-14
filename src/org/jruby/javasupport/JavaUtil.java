@@ -45,6 +45,8 @@ import org.jruby.RubyString;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import org.jruby.util.ByteList;
+
 /**
  *
  * @author Jan Arne Petersen, Alan Moore
@@ -131,6 +133,8 @@ public class JavaUtil {
 			return new Character('\0');
         } else if (javaClass == String.class) {
             return ((RubyString) rubyObject.callMethod(context, "to_s")).toString();
+        } else if (javaClass == ByteList.class) {
+            return rubyObject.convertToString().getByteList();
         } else if (javaClass == BigInteger.class) {
          	if (rubyObject instanceof RubyBignum) {
          		return ((RubyBignum)rubyObject).getValue();
@@ -200,6 +204,8 @@ public class JavaUtil {
             return runtime.newFixnum(((Number) object).longValue());
         } else if (javaClass == String.class) {
             return runtime.newString(object.toString());
+        } else if (javaClass == ByteList.class) {
+            return RubyString.newString(runtime,((ByteList)object));
         } else if (IRubyObject.class.isAssignableFrom(javaClass)) {
             return (IRubyObject) object;
         } else if (javaClass == BigInteger.class) {

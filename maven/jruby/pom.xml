@@ -37,13 +37,6 @@
       <systemPath>${basedir}/../../lib/jline-0.9.91-SNAPSHOT.jar</systemPath>
     </dependency>
     <dependency>
-      <groupId>jvyaml</groupId>
-      <artifactId>jvyaml</artifactId>
-      <version>SNAPSHOT</version>
-      <scope>system</scope>
-      <systemPath>${basedir}/../../lib/jvyaml.jar</systemPath>
-    </dependency>
-    <dependency>
       <groupId>plaincharset</groupId>
       <artifactId>plaincharset</artifactId>
       <version>SNAPSHOT</version>

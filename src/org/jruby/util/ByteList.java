@@ -13,6 +13,7 @@
  *
  * Copyright (C) 2007 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
+ * Copyright (C) 2007 Ola Bini <ola@ologix.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -26,7 +27,6 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-
 package org.jruby.util;
 
 
@@ -34,7 +34,7 @@ package org.jruby.util;
  *
  * @author headius
  */
-public class ByteList implements Comparable {
+public class ByteList implements Comparable, CharSequence {
     public static final byte[] NULL_ARRAY = new byte[0];
 
     public byte[] bytes;
@@ -303,5 +303,17 @@ public class ByteList implements Comparable {
 
     public String toString() {
         return new String(this.bytes,0,realSize);
+    }
+
+    public static ByteList create(String s) {
+        return new ByteList(s.getBytes(),false);
+    }
+
+    public char charAt(int ix) {
+        return (char)(this.bytes[ix] & 0xFF);
+    }
+
+    public CharSequence subSequence(int start, int end) {
+        return new ByteList(this, start, end-start);
     }
 }

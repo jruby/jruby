@@ -107,7 +107,6 @@
             <configuration>
               <tasks>
                 <unjar src="${project.basedir}/../../lib/plaincharset.jar" dest="${project.build.outputDirectory}"/>
-                <unjar src="${project.basedir}/../../lib/jvyaml.jar" dest="${project.build.outputDirectory}"/>
                 <delete file="${project.build.outputDirectory}/META-INF/MANIFEST.MF"/>
                 <mkdir dir="${project.build.outputDirectory}/META-INF/jruby.home"/>
                 <copy todir="${project.build.outputDirectory}/META-INF/jruby.home">

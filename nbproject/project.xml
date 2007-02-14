@@ -63,7 +63,7 @@
         <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/2">
             <compilation-unit>
                 <package-root>src</package-root>
-                <classpath mode="compile">lib/bsf.jar:lib/junit.jar:lib/asm-2.2.3.jar:lib/asm-commons-2.2.3.jar:lib/jvyaml.jar:lib/plaincharset.jar:lib/jline-0.9.91-SNAPSHOT.jar</classpath>
+                <classpath mode="compile">lib/bsf.jar:lib/junit.jar:lib/asm-2.2.3.jar:lib/asm-commons-2.2.3.jar:lib/plaincharset.jar:lib/jline-0.9.91-SNAPSHOT.jar</classpath>
                 <source-level>1.4</source-level>
             </compilation-unit>
             <compilation-unit>

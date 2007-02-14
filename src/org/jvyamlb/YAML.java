@@ -28,8 +28,8 @@
 package org.jvyamlb;
 
 import java.io.InputStream;
-import java.io.Writer;
-import java.io.StringWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -74,80 +74,79 @@ public class YAML {
         return new DefaultYAMLConfig();
     }
 
-    /*
-    public static String dump(final Object data) {
+    public static ByteList dump(final Object data) {
         return dump(data,config());
     }
 
-    public static String dump(final Object data, final YAMLFactory fact) {
+    public static ByteList dump(final Object data, final YAMLFactory fact) {
         return dump(data,fact, config());
     }
 
-    public static String dump(final Object data, final YAMLConfig cfg) {
+    public static ByteList dump(final Object data, final YAMLConfig cfg) {
         final List lst = new ArrayList(1);
         lst.add(data);
         return dumpAll(lst,cfg);
     }
 
-    public static String dump(final Object data, final YAMLFactory fact, final YAMLConfig cfg) {
+    public static ByteList dump(final Object data, final YAMLFactory fact, final YAMLConfig cfg) {
         final List lst = new ArrayList(1);
         lst.add(data);
         return dumpAll(lst,fact,cfg);
     }
 
-    public static String dumpAll(final List data) {
+    public static ByteList dumpAll(final List data) {
         return dumpAll(data,config());
     }
 
-    public static String dumpAll(final List data, final YAMLFactory fact) {
+    public static ByteList dumpAll(final List data, final YAMLFactory fact) {
         return dumpAll(data,fact,config());
     }
 
-    public static String dumpAll(final List data, final YAMLConfig cfg) {
-        final StringWriter swe = new StringWriter();
+    public static ByteList dumpAll(final List data, final YAMLConfig cfg) {
+        final ByteArrayOutputStream swe = new ByteArrayOutputStream();
         dumpAll(data,swe,cfg);
-        return swe.toString();
+        return new ByteList(swe.toByteArray(),false);
     }
 
-    public static String dumpAll(final List data, final YAMLFactory fact, final YAMLConfig cfg) {
-        final StringWriter swe = new StringWriter();
+    public static ByteList dumpAll(final List data, final YAMLFactory fact, final YAMLConfig cfg) {
+        final ByteArrayOutputStream swe = new ByteArrayOutputStream();
         dumpAll(data,swe,fact,cfg);
-        return swe.toString();
+        return new ByteList(swe.toByteArray(),false);
     }
 
-    public static void dump(final Object data, final Writer output) {
+    public static void dump(final Object data, final OutputStream output) {
         dump(data,output,config());
     }
 
-    public static void dump(final Object data, final Writer output, YAMLFactory fact) {
+    public static void dump(final Object data, final OutputStream output, YAMLFactory fact) {
         dump(data,output,fact,config());
     }
 
-    public static void dump(final Object data, final Writer output, final YAMLConfig cfg) {
+    public static void dump(final Object data, final OutputStream output, final YAMLConfig cfg) {
         final List lst = new ArrayList(1);
         lst.add(data);
         dumpAll(lst,output,cfg);
     }
 
-    public static void dump(final Object data, final Writer output, final YAMLFactory fact, final YAMLConfig cfg) {
+    public static void dump(final Object data, final OutputStream output, final YAMLFactory fact, final YAMLConfig cfg) {
         final List lst = new ArrayList(1);
         lst.add(data);
         dumpAll(lst,output,fact,cfg);
     }
 
-    public static void dumpAll(final List data, final Writer output) {
+    public static void dumpAll(final List data, final OutputStream output) {
         dumpAll(data,output,config());
     }
 
-    public static void dumpAll(final List data, final Writer output, final YAMLFactory fact) {
+    public static void dumpAll(final List data, final OutputStream output, final YAMLFactory fact) {
         dumpAll(data,output,fact,config());
     }
 
-    public static void dumpAll(final List data, final Writer output, final YAMLConfig cfg) {
+    public static void dumpAll(final List data, final OutputStream output, final YAMLConfig cfg) {
         dumpAll(data,output,new DefaultYAMLFactory(),cfg);
     }
 
-    public static void dumpAll(final List data, final Writer output, final YAMLFactory fact, final YAMLConfig cfg) {
+    public static void dumpAll(final List data, final OutputStream output, final YAMLFactory fact, final YAMLConfig cfg) {
         final Serializer s = fact.createSerializer(fact.createEmitter(output,cfg),fact.createResolver(),cfg);
         try {
             s.open();
@@ -161,7 +160,7 @@ public class YAML {
             try { s.close(); } catch(final java.io.IOException e) {}
         }
     }
-    */
+
     public static Object load(final ByteList io) {
         return load(io, new DefaultYAMLFactory(),config());
     }

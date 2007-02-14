@@ -209,4 +209,30 @@ public class ResolverImpl implements Resolver {
         }
         return null;
     } 
+    
+    private static ByteList s(String se){
+        return new ByteList(se.getBytes());
+    }
+
+    public static void main(String[] args) {
+        ByteList[] strings = {s("yes"), s("NO"), s("booooooooooooooooooooooooooooooooooooooooooooooool"), s("false"),s(""), s("~"),s("~a"),
+                            s("<<"), s("10.1"), s("10000000000003435345.2324E+13"), s(".23"), s(".nan"), s("null"), s("124233333333333333"),
+                            s("0b030323"), s("+0b0111111011010101"), s("0xaafffdf"), s("2005-05-03"), s("2005-05-03a"), s(".nana"),
+                            s("2005-03-05T05:23:22"), s("="), s("= "), s("=a")};
+        boolean[] implicit = new boolean[]{true,true};
+        Resolver res = new ResolverImpl();
+        res.descendResolver(null,null);
+        Class s = ScalarNode.class;
+        final long before = System.currentTimeMillis();
+        final int NUM = 100000;
+        for(int j=0;j<NUM;j++) {
+            for(int i=0;i<strings.length;i++) {
+                res.resolve(s,strings[i%(strings.length)],implicit);
+            }
+        }
+        final long after = System.currentTimeMillis();
+        final long time = after-before;
+        final double timeS = (after-before)/1000.0;
+        System.out.println("Resolving " + NUM*strings.length + " nodes took " + time + "ms, or " + timeS + " seconds"); 
+    }
 }// ResolverImpl

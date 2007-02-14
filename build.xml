@@ -198,7 +198,6 @@
           <zipfileset src="${lib.dir}/asm-commons-2.2.3.jar"/>
           <zipfileset src="${lib.dir}/jline-0.9.91-SNAPSHOT.jar"/>
           <zipfileset src="${lib.dir}/bsf.jar"/>
-          <zipfileset src="${lib.dir}/jvyaml.jar"/>
           <zipfileset src="${lib.dir}/plaincharset.jar"/>
 	      <manifest>
 	        <attribute name="Built-By" value="${user.name}"/>
@@ -243,7 +242,6 @@
           <zipfileset src="${lib.dir}/asm-2.2.3.jar"/>
           <zipfileset src="${lib.dir}/asm-commons-2.2.3.jar"/>
           <zipfileset src="${lib.dir}/jline-0.9.91-SNAPSHOT.jar"/>
-          <zipfileset src="${lib.dir}/jvyaml.jar"/>
           <zipfileset src="${lib.dir}/plaincharset.jar"/>
 	      <manifest>
 	        <attribute name="Built-By" value="${user.name}"/>
@@ -352,6 +350,7 @@
       <test name="org.jruby.test.ScriptTestSuite" todir="${test.results.dir}"/>
       <test name="org.jruby.test.TestUnitTestSuite" todir="${test.results.dir}"/>
       <test name="org.jvyamlb.YAMLLoadTest" todir="${test.results.dir}"/>
+      <test name="org.jvyamlb.YAMLDumpTest" todir="${test.results.dir}"/>
     </junit>
 
     <junitreport todir="${test.results.dir}">

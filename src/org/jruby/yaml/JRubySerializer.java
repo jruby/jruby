@@ -25,21 +25,17 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-/**
- * $Id: $
- */
 package org.jruby.yaml;
 
-import org.jvyaml.SerializerImpl;
-import org.jvyaml.Emitter;
-import org.jvyaml.Resolver;
-import org.jvyaml.YAMLConfig;
+import org.jvyamlb.SerializerImpl;
+import org.jvyamlb.Emitter;
+import org.jvyamlb.Resolver;
+import org.jvyamlb.YAMLConfig;
 
-import org.jvyaml.nodes.Node;
+import org.jvyamlb.nodes.Node;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
- * @version $Revision: $
  */
 public class JRubySerializer extends SerializerImpl {
     public JRubySerializer(Emitter emitter, Resolver resolver, YAMLConfig opts) {
