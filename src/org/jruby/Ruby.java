@@ -1500,6 +1500,10 @@ public final class Ruby implements IRuby {
         return newRaiseException(getClass("IOError"), message);
     }
 
+    public RaiseException newStandardError(String message) {
+        return newRaiseException(getClass("StandardError"), message);
+    }
+
     public RaiseException newIOErrorFromException(IOException ioe) {
         return newRaiseException(getClass("IOError"), ioe.getMessage());
     }

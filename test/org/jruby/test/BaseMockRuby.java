@@ -588,6 +588,11 @@ public class BaseMockRuby implements IRuby {
 
     }
 
+    public RaiseException newStandardError(String message) {
+        throw new MockException();
+
+    }
+
     public RaiseException newIOErrorFromException(IOException ioe) {
         throw new MockException();
 

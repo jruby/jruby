@@ -428,6 +428,8 @@ public interface IRuby {
 
     RaiseException newIOError(String message);
 
+    RaiseException newStandardError(String message);
+
     RaiseException newIOErrorFromException(IOException ioe);
 
     RaiseException newTypeError(IRubyObject receivedObject, RubyClass expectedType);
