@@ -1525,7 +1525,6 @@ public class RubyString extends RubyObject {
 
     private IRubyObject gsub(IRubyObject[] args, boolean bang, Block block) {
         // TODO: improve implementation. this is _really_ slow
-        // shouldn't use convertToString either...
         IRubyObject repl = getRuntime().getNil();
         RubyMatchData match;
         boolean iter = false;
@@ -1558,7 +1557,7 @@ public class RubyString extends RubyObject {
                 sbuf.append(this.value,offset,beg-offset);
                 newStr = tc.yield(match.group(0), block);
                 taint |= newStr.isTaint();
-                sbuf.append(newStr.convertToString().getByteList());
+                sbuf.append(newStr.objAsString().getByteList());
                 offset = match.matchEndPosition();
                 beg = pat.search(str, offset == beg ? beg + 1 : offset);
             }

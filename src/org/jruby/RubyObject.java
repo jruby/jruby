@@ -633,6 +633,20 @@ public class RubyObject implements Cloneable, IRubyObject {
         return (RubyString) convertToType("String", "to_str", true);
     }
 
+    /** rb_obj_as_string
+     */
+    public RubyString objAsString() {
+        IRubyObject str;
+        if(this instanceof RubyString) {
+            return (RubyString)this;
+        }
+        str = this.callMethod(getRuntime().getCurrentContext(),"to_s");
+        if(!(str instanceof RubyString)) {
+            str = anyToString();
+        }
+        return (RubyString)str;
+    }
+
     /** rb_convert_type
      *
      */

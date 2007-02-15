@@ -541,7 +541,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      *
      */
     public IRubyObject regsub(IRubyObject str, RubyMatchData match) {
-        RubyString str2 = RubyString.stringValue(str);
+        RubyString str2 = str.objAsString();
         ByteList sb = new ByteList(str2.getByteList().length()+30);
         regsub(str2,match,sb);
         return RubyString.newString(getRuntime(),sb);

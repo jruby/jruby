@@ -254,6 +254,10 @@ public interface IRubyObject {
     RubyInteger convertToInteger();
     RubyString convertToString();
 
+    /** rb_obj_as_string
+     */
+    RubyString objAsString();
+
     /**
      * Converts this object to type 'targetType' using 'convertMethod' method (MRI: convert_type).
      * 
