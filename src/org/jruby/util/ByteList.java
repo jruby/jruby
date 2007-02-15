@@ -159,7 +159,7 @@ public class ByteList implements Comparable, CharSequence {
     /**
      * Unsafe version of replace(int,int,ByteList). The contract is that these
      * unsafe versions will not make sure thet beg and len indices are correct.
-     */    
+     */
     public void unsafeReplace(int beg, int len, ByteList nbytes) {
         unsafeReplace(beg, len, nbytes.bytes, 0, nbytes.realSize);
     }
@@ -167,7 +167,7 @@ public class ByteList implements Comparable, CharSequence {
     /**
      * Unsafe version of replace(int,int,byte[]). The contract is that these
      * unsafe versions will not make sure thet beg and len indices are correct.
-     */    
+     */
     public void unsafeReplace(int beg, int len, byte[] buf) {
         unsafeReplace(beg, len, buf, 0, buf.length);
     }
@@ -175,7 +175,7 @@ public class ByteList implements Comparable, CharSequence {
     /**
      * Unsafe version of replace(int,int,byte[],int,int). The contract is that these
      * unsafe versions will not make sure thet beg and len indices are correct.
-     */    
+     */
     public void unsafeReplace(int beg, int len, byte[] nbytes, int index, int count) {
         grow(count - len);
         int newSize = realSize + count - len;
@@ -224,7 +224,7 @@ public class ByteList implements Comparable, CharSequence {
 
     /**
      * This comparison matches MRI comparison of Strings (rb_str_cmp).
-     * I wish we had memcmp right now...     
+     * I wish we had memcmp right now...
      */
     public int compareTo(Object other) {
         return cmp((ByteList)other);
@@ -306,7 +306,31 @@ public class ByteList implements Comparable, CharSequence {
     }
 
     public static ByteList create(String s) {
-        return new ByteList(s.getBytes(),false);
+        return new ByteList(plain(s),false);
+    }
+
+    public static byte[] plain(String s) {
+        byte[] bytes = new byte[s.length()];
+        for (int i = 0; i < bytes.length; i++) {
+            bytes[i] = (byte) s.charAt(i);
+        }
+        return bytes;
+    }
+
+    public static byte[] plain(char[] s) {
+        byte[] bytes = new byte[s.length];
+        for (int i = 0; i < s.length; i++) {
+            bytes[i] = (byte) s[i];
+        }
+        return bytes;
+    }
+    
+    public static char[] plain(byte[] b) {
+        char[] chars = new char[b.length];
+        for (int i = 0; i < b.length; i++) {
+            chars[i] = (char) (b[i] & 0xFF);
+        }
+        return chars;
     }
 
     public char charAt(int ix) {
