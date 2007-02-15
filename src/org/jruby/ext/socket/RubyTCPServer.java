@@ -90,7 +90,7 @@ public class RubyTCPServer extends RubyTCPSocket {
         } catch(UnknownHostException e) {
             throw sockerr(this, "initialize: name or service not known");
         } catch(BindException e) {
-            e.printStackTrace();
+            //            e.printStackTrace();
             throw getRuntime().newErrnoEADDRINUSEError();
         } catch(IOException e) {
             throw sockerr(this, "initialize: name or service not known");
