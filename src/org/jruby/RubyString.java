@@ -177,7 +177,7 @@ public class RubyString extends RubyObject {
      */
     public String toString() {
         try {
-            if (stringValue == null) stringValue = new String(value.bytes(), OUT_ENCODING);
+            if (stringValue == null) stringValue = new String(value.bytes,0,value.realSize, OUT_ENCODING);
         } catch (UnsupportedEncodingException uee) {
             // ignore, never happens
         }
@@ -482,6 +482,7 @@ public class RubyString extends RubyObject {
             return this;
         }
         value.replace(newValue.value.bytes());
+        stringMutated();
         return (RubyString) infectBy(newValue);
     }
 
@@ -588,6 +589,7 @@ public class RubyString extends RubyObject {
         }
 
         if (changed) {
+            stringMutated();
             return this;
         } else {
             return getRuntime().getNil();
@@ -713,8 +715,9 @@ public class RubyString extends RubyObject {
         }
         if (changesMade) {
             stringMutated();
+            return this;
         }
-        return changesMade ? this : getRuntime().getNil();
+        return getRuntime().getNil();
     }
 
     /** rb_str_dump
@@ -1522,6 +1525,7 @@ public class RubyString extends RubyObject {
 
     private IRubyObject gsub(IRubyObject[] args, boolean bang, Block block) {
         // TODO: improve implementation. this is _really_ slow
+        // shouldn't use convertToString either...
         IRubyObject repl = getRuntime().getNil();
         RubyMatchData match;
         boolean iter = false;
@@ -2640,6 +2644,7 @@ public class RubyString extends RubyObject {
             return getRuntime().getNil();
         }
         value = newStr;
+        stringMutated();
         return this;
     }
 
@@ -2699,6 +2704,7 @@ public class RubyString extends RubyObject {
             return getRuntime().getNil();
         }
         value = newStr;
+        stringMutated();
         return this;
     }
 
@@ -2718,6 +2724,7 @@ public class RubyString extends RubyObject {
             return getRuntime().getNil();
         }
         value = newStr;
+        stringMutated();
         return this;
     }
 
