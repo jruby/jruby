@@ -29,12 +29,11 @@ package org.jruby.runtime;
 
 import java.util.WeakHashMap;
 import java.util.Iterator;
-import java.util.Set;
 import java.util.Map;
 import org.jruby.IRuby;
 
 import org.jruby.RubyModule;
-import org.jruby.util.collections.WeakHashSet;
+import org.jruby.util.WeakIdentityHashMap;
 
 /**
  * This class represents mappings between methods that have been cached and the classes which
@@ -66,14 +65,14 @@ public class CacheMap {
 	 * @param module which is caching method
 	 */
 	public void add(DynamicMethod method, RubyModule module) {
-		Set classList = (Set) mappings.get(method);
+		Map classList = (Map) mappings.get(method);
 		
 		if (classList == null) {
-			classList = new WeakHashSet();
+			classList = new WeakIdentityHashMap();
 			mappings.put(method, classList);
 		}
 		
-		classList.add(module);
+		classList.put(module,null);
 	}
 	
 	/**
@@ -85,14 +84,14 @@ public class CacheMap {
 	 * @param method to remove all caches of
 	 */
 	public void remove(String name, DynamicMethod method) {
-		Set classList = (Set) mappings.remove(method);
+		Map classList = (Map) mappings.remove(method);
 		
 		// Removed method has never been used so it has not been cached
 		if (classList == null) {
 			return;
 		}
 		
-		for(Iterator iter = classList.iterator(); iter.hasNext();) {
+		for(Iterator iter = classList.keySet().iterator(); iter.hasNext();) {
 			RubyModule module = (RubyModule) iter.next();
             if (module != null) {
                 module.removeCachedMethod(name);

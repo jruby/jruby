@@ -167,7 +167,7 @@ public class WeakIdentityHashMap extends GenericMap implements Map {
 
     private Object get(int hash, Object masked_key) {
         int idx = index(hash);
-
+        expunge();
         for (Entry ent = table[idx]; ent != null; ent = ent.next) {
             if (ent.sameKey(hash, masked_key))
                 return ent.value;
@@ -185,7 +185,7 @@ public class WeakIdentityHashMap extends GenericMap implements Map {
 
     private boolean containsKey(int hash, Object masked_key) {
         int idx = index(hash);
-
+        expunge();
         for (Entry ent = table[idx]; ent != null; ent = ent.next) {
             if (ent.sameKey(hash, masked_key))
                 return true;
@@ -322,6 +322,7 @@ public class WeakIdentityHashMap extends GenericMap implements Map {
 
         EntryIterator() {
             idx = 0;
+            expunge();
             entry = table[0];
             locateNext();
         }
@@ -359,7 +360,7 @@ public class WeakIdentityHashMap extends GenericMap implements Map {
 
         public void remove() {
             Entry remove = entry;
-
+            expunge();
             entry = entry.next;
             locateNext();
 
