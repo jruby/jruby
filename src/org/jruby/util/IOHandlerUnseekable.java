@@ -274,22 +274,22 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
      * @throws BadDescriptorException 
      * @see org.jruby.util.IOHandler#syswrite(String buf)
      */
-    public int syswrite(byte[] buf) throws IOException, BadDescriptorException {
+    public int syswrite(ByteList buf) throws IOException, BadDescriptorException {
         getRuntime().secure(4);
         checkWriteable();
         
-        if (buf == null || buf.length == 0) {
+        if (buf == null || buf.realSize == 0) {
             return 0;
         }
         
-        output.write(buf);
+        output.write(buf.bytes,0,buf.realSize);
 
         // Should syswrite sync?
         if (isSync) {
             sync();
         }
             
-        return buf.length;
+        return buf.realSize;
     }
 
     /**

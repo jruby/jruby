@@ -116,7 +116,7 @@ public class IOHandlerNio extends IOHandler {
         return blocking;
     }
 
-    public byte[] sysread(int length) throws EOFException, BadDescriptorException, IOException {
+    public ByteList sysread(int length) throws EOFException, BadDescriptorException, IOException {
         checkReadable();
         checkBuffered();
 	
@@ -135,15 +135,15 @@ public class IOHandlerNio extends IOHandler {
         } else {
             ret = buffer.array();
         }
-        return ret;
+        return new ByteList(ret,false);
     }
     
-    public int syswrite(byte[] string) throws BadDescriptorException, IOException {
+    public int syswrite(ByteList string) throws BadDescriptorException, IOException {
         checkWritable();
         outBuffer.flip();
         flushOutBuffer();
     
-        ByteBuffer buffer = ByteBuffer.wrap(string);
+        ByteBuffer buffer = ByteBuffer.wrap(string.bytes,0,string.realSize);
         while (buffer.hasRemaining()) {
         if (((WritableByteChannel) channel).write(buffer) < 0) {
             // does this ever happen??
@@ -157,10 +157,10 @@ public class IOHandlerNio extends IOHandler {
         ByteBuffer buffer = ByteBuffer.allocate(1); // inefficient?
         buffer.put((byte)c);
         
-        return syswrite(buffer.array());
+        return syswrite(new ByteList(buffer.array(),false));
     }
     
-    public byte[] recv(int length) throws EOFException, BadDescriptorException, IOException {
+    public ByteList recv(int length) throws EOFException, BadDescriptorException, IOException {
         return sysread(length);
     }
 
@@ -176,7 +176,7 @@ public class IOHandlerNio extends IOHandler {
 
     int ungotc = -1;
 
-    private byte[] consumeInBuffer(int length) {
+    private ByteList consumeInBuffer(int length) {
         int offset = 0;
         if (ungotc > 0) {
             length--;
@@ -189,7 +189,7 @@ public class IOHandlerNio extends IOHandler {
             ret[0] = (byte) (ungotc & 0xff);
             ungotc = -1;
         }
-        return ret;
+        return new ByteList(ret,false);
     }
 
     private int fillInBuffer() throws IOException {
@@ -228,11 +228,11 @@ public class IOHandlerNio extends IOHandler {
         return -1;
     }*/
 
-    private int buffer_index(ByteBuffer haystack, byte[] needle) {
+    private int buffer_index(ByteBuffer haystack, ByteList needle) {
         search_loop:
-        for (int i = haystack.position(); i + (needle.length - 1) < haystack.limit(); i++) {
-            for (int j = 0; j < needle.length; j++) {
-                if (haystack.get(i + j) != needle[j]) {
+        for (int i = haystack.position(); i + (needle.realSize - 1) < haystack.limit(); i++) {
+            for (int j = 0; j < needle.realSize; j++) {
+                if (haystack.get(i + j) != needle.bytes[j]) {
                     continue search_loop;
                 }
             }
@@ -241,7 +241,7 @@ public class IOHandlerNio extends IOHandler {
         return -1;
     }
 
-    public byte[] readpartial(int length) throws IOException, BadDescriptorException, EOFException {
+    public ByteList readpartial(int length) throws IOException, BadDescriptorException, EOFException {
         checkReadable();
         setupBufferedIO();
 
@@ -253,7 +253,7 @@ public class IOHandlerNio extends IOHandler {
         return consumeInBuffer(length);
     }
 
-    public byte[] read(int length) throws IOException, BadDescriptorException, EOFException {
+    public ByteList read(int length) throws IOException, BadDescriptorException, EOFException {
         setupBufferedIO();
         checkReadable();
 
@@ -274,13 +274,13 @@ public class IOHandlerNio extends IOHandler {
         if (eof && ret.length() == 0) {
             throw new EOFException();
         }
-        return(ret.bytes());
+        return ret;
     }
 
-    public int write(byte[] string) throws IOException, BadDescriptorException {
+    public int write(ByteList string) throws IOException, BadDescriptorException {
         checkWritable();
 
-        ByteBuffer buffer = ByteBuffer.wrap(string);
+        ByteBuffer buffer = ByteBuffer.wrap(string.bytes,0,string.realSize);
         while (buffer.hasRemaining()) {
             /* append data */
             while (buffer.hasRemaining() && outBuffer.hasRemaining()) {
@@ -298,17 +298,17 @@ public class IOHandlerNio extends IOHandler {
         return buffer.capacity();
     }
 
-    public byte[] gets(byte[] separator) throws IOException, BadDescriptorException, EOFException {
+    public ByteList gets(ByteList separator) throws IOException, BadDescriptorException, EOFException {
         setupBufferedIO();
         checkReadable();
 
         ByteList ret = new ByteList();
         boolean eof = false;
-        byte[] trigger;
+        ByteList trigger;
         if (separator != null) {
             trigger = separator;
         } else {
-            trigger = ((RubyString) getRuntime().getGlobalVariables().get("$/")).getBytes();
+            trigger = ((RubyString) getRuntime().getGlobalVariables().get("$/")).getByteList();
         }
 
         int idx;
@@ -322,14 +322,14 @@ public class IOHandlerNio extends IOHandler {
             throw new EOFException();
         }
         if (idx > 0) {
-            ret.append(consumeInBuffer((idx + trigger.length) - inBuffer.position()));
+            ret.append(consumeInBuffer((idx + trigger.realSize) - inBuffer.position()));
         } else if (eof) {
             ret.append(consumeInBuffer(BLOCK_SIZE));
         }
-        return ret.bytes();
+        return ret;
     }
 
-    public byte[] getsEntireStream() throws IOException, BadDescriptorException, EOFException {
+    public ByteList getsEntireStream() throws IOException, BadDescriptorException, EOFException {
         checkReadable();
         setupBufferedIO();
         ByteList ret = new ByteList();
@@ -345,7 +345,7 @@ public class IOHandlerNio extends IOHandler {
         if (eof && ret.length() == 0) {
             throw new EOFException();
         }
-        return ret.bytes();
+        return ret;
     }
 
     public int getc() throws IOException, BadDescriptorException, EOFException {

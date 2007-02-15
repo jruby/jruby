@@ -123,7 +123,7 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
         }
     }
     
-    public byte[] getsEntireStream() throws IOException {
+    public ByteList getsEntireStream() throws IOException {
         ByteList result = new ByteList();
         int c;
 
@@ -138,7 +138,7 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
             return null;
         }
         
-        return result.bytes();
+        return result;
     }
 
 
@@ -289,22 +289,22 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
      * @throws BadDescriptorException 
      * @see org.jruby.util.IOHandler#syswrite(String buf)
      */
-    public int syswrite(byte[] buf) throws IOException, BadDescriptorException {
+    public int syswrite(ByteList buf) throws IOException, BadDescriptorException {
         getRuntime().secure(4);
         checkWriteable();
         
         // Ruby ignores empty syswrites
-        if (buf == null || buf.length == 0) {
+        if (buf == null || buf.realSize == 0) {
             return 0;
         }
         
-        file.write(buf);
+        file.write(buf.bytes,0,buf.realSize);
             
         if (isSync()) {
             sync();
         }
             
-        return buf.length;
+        return buf.realSize;
     }
     
     /**

@@ -41,12 +41,12 @@ public class IOHandlerSocket extends IOHandlerUnseekable {
         super(runtime, inStream, outStream);
     }
 
-    public byte[] recv(int len) throws IOException, BadDescriptorException {
+    public ByteList recv(int len) throws IOException, BadDescriptorException {
         if(!isOpen()) {
             throw new IOException("Socket not open");
         }
         if(len < 1) {
-            return ByteList.NULL_ARRAY;
+            return new ByteList(ByteList.NULL_ARRAY);
         }
 
         // this should provide blocking until data is available...
@@ -59,6 +59,6 @@ public class IOHandlerSocket extends IOHandlerUnseekable {
         ByteList buf = new ByteList(len + 1);
         buf.append(c);
         sysread(buf, len);
-        return buf.bytes();
+        return buf;
     }
 }

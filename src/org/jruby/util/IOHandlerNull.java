@@ -47,23 +47,23 @@ public class IOHandlerNull extends IOHandler {
         return null;
     }
 
-    public byte[] gets(byte[] separatorString) throws IOException, BadDescriptorException, 
+    public ByteList gets(ByteList separatorString) throws IOException, BadDescriptorException, 
         EOFException {
         throw new EOFException();
     }
 
-    public byte[] getsEntireStream() throws IOException,
+    public ByteList getsEntireStream() throws IOException,
             BadDescriptorException, EOFException {
         throw new EOFException();
     }
 
-    public byte[] read(int number) throws IOException, BadDescriptorException,
+    public ByteList read(int number) throws IOException, BadDescriptorException,
             EOFException {
         throw new EOFException();
     }
 
-    public int write(byte[] string) throws IOException, BadDescriptorException {
-        return string.length;
+    public int write(ByteList string) throws IOException, BadDescriptorException {
+        return string.length();
     }
 
     public int getc() throws IOException, BadDescriptorException, EOFException {
@@ -76,12 +76,12 @@ public class IOHandlerNull extends IOHandler {
     public void putc(int c) throws IOException, BadDescriptorException {
     }
 
-    public byte[] sysread(int number) throws IOException, BadDescriptorException, EOFException {
+    public ByteList sysread(int number) throws IOException, BadDescriptorException, EOFException {
         throw new EOFException();
     }
 
-    public int syswrite(byte[] buf) throws IOException, BadDescriptorException {
-        return buf.length;
+    public int syswrite(ByteList buf) throws IOException, BadDescriptorException {
+        return buf.length();
     }
 
     public int syswrite(int c) throws IOException, BadDescriptorException {
