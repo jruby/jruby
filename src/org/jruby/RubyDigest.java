@@ -12,6 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -187,12 +188,12 @@ public class RubyDigest {
 
         public IRubyObject digest() {
             algo.reset();
-            return RubyString.newString(getRuntime(), algo.digest(ByteList.plain(data.toString())));
+            return RubyString.newString(getRuntime(), algo.digest(ByteList.plain(data)));
         }
 
         public IRubyObject hexdigest() {
             algo.reset();
-            return RubyString.newString(getRuntime(), ByteList.plain(toHex(algo.digest(ByteList.plain(data.toString())))));
+            return RubyString.newString(getRuntime(), ByteList.plain(toHex(algo.digest(ByteList.plain(data)))));
         }
 
         public IRubyObject eq(IRubyObject oth) {
