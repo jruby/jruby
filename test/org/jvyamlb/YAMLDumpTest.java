@@ -72,18 +72,18 @@ public class YAMLDumpTest extends TestCase {
     }
 
     public void testDumpJavaBean() {
-        final java.util.Calendar cal = java.util.Calendar.getInstance();
+        final java.util.Calendar cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("Sweden"));
         cal.clear();
         cal.set(1982,5-1,3); // Java's months are zero-based...
         final TestBean toDump = new TestBean(ByteList.create("Ola Bini"), 24, cal.getTime());
         Object v = YAML.dump(toDump);
         assertTrue(
-ByteList.create("--- !java/object:org.jvyamlb.TestBean\nname: Ola Bini\nage: 24\nborn: 1982-05-03 00:00:00 +02:00\n").equals(v) ||
-ByteList.create("--- !java/object:org.jvyamlb.TestBean\nname: Ola Bini\nborn: 1982-05-03 00:00:00 +02:00\nage: 24\n").equals(v) ||
-ByteList.create("--- !java/object:org.jvyamlb.TestBean\nage: 24\nname: Ola Bini\nborn: 1982-05-03 00:00:00 +02:00\n").equals(v) ||
-ByteList.create("--- !java/object:org.jvyamlb.TestBean\nage: 24\nborn: 1982-05-03 00:00:00 +02:00\nname: Ola Bini\n").equals(v) ||
-ByteList.create("--- !java/object:org.jvyamlb.TestBean\nborn: 1982-05-03 00:00:00 +02:00\nage: 24\nname: Ola Bini\n").equals(v) ||
-ByteList.create("--- !java/object:org.jvyamlb.TestBean\nborn: 1982-05-03 00:00:00 +02:00\nname: Ola Bini\nage: 24\n").equals(v)
+ByteList.create("--- !java/object:org.jvyamlb.TestBean\nname: Ola Bini\nage: 24\nborn: 1982-05-03 02:00:00 +02:00\n").equals(v) ||
+ByteList.create("--- !java/object:org.jvyamlb.TestBean\nname: Ola Bini\nborn: 1982-05-03 02:00:00 +02:00\nage: 24\n").equals(v) ||
+ByteList.create("--- !java/object:org.jvyamlb.TestBean\nage: 24\nname: Ola Bini\nborn: 1982-05-03 02:00:00 +02:00\n").equals(v) ||
+ByteList.create("--- !java/object:org.jvyamlb.TestBean\nage: 24\nborn: 1982-05-03 02:00:00 +02:00\nname: Ola Bini\n").equals(v) ||
+ByteList.create("--- !java/object:org.jvyamlb.TestBean\nborn: 1982-05-03 02:00:00 +02:00\nage: 24\nname: Ola Bini\n").equals(v) ||
+ByteList.create("--- !java/object:org.jvyamlb.TestBean\nborn: 1982-05-03 02:00:00 +02:00\nname: Ola Bini\nage: 24\n").equals(v)
                    );
     }
 }// YAMLDumpTest
