@@ -41,8 +41,9 @@ import org.jruby.runtime.Arity;
 /**
  * a call to 'super' with no arguments in a method.
  */
-public class ZSuperNode extends Node implements IArityNode {
+public class ZSuperNode extends Node implements IArityNode, BlockAcceptingNode {
     static final long serialVersionUID = 6109129030317216863L;
+    private Node iterNode;
 
     public ZSuperNode(ISourcePosition position) {
         super(position, NodeTypes.ZSUPERNODE);
@@ -65,5 +66,13 @@ public class ZSuperNode extends Node implements IArityNode {
     
     public List childNodes() {
         return EMPTY_LIST;
+    }
+
+    public Node getIterNode() {
+        return iterNode;
+    }
+
+    public void setIterNode(Node iterNode) {
+        this.iterNode = iterNode;
     }
 }
