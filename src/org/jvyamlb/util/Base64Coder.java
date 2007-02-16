@@ -83,16 +83,7 @@ public class Base64Coder {
             out[op++] = map1[o1];
             out[op] = op < oDataLen ? map1[o2] : '='; op++;
             out[op] = op < oDataLen ? map1[o3] : '='; op++; }
-        return out; }
-
-    /**
-     * Decodes a Base64 string.
-     * @param s  a Base64 String to be decoded.
-     * @return   A String containing the decoded data.
-     * @throws   IllegalArgumentException if the input is not valid Base64 encoded data.
-     */
-    public static String decode(final String s) {
-        return new String(decode(s.toCharArray()));
+        return out;
     }
 
     /**
@@ -102,7 +93,7 @@ public class Base64Coder {
      * @return    An array containing the decoded data bytes.
      * @throws    IllegalArgumentException if the input is not valid Base64 encoded data.
      */
-    public static byte[] decode(final char[] in) {
+    public static byte[] decode(final byte[] in) {
         int iLen = in.length;
         if (iLen%4 != 0) throw new IllegalArgumentException ("Length of Base64 encoded input string is not a multiple of 4.");
         while (iLen > 0 && in[iLen-1] == '=') iLen--;

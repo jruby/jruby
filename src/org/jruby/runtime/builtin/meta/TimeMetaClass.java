@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2001 Chad Fowler <chadfowler@chadfowler.com>
+ * Copyright (C) 2001, 2007 Chad Fowler <chadfowler@chadfowler.com>
  * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
@@ -209,11 +209,7 @@ public class TimeMetaClass extends ObjectMetaClass {
         calendar.clear();
         calendar.setTimeZone(TimeZone.getTimeZone(RubyTime.UTC));
         byte[] fromAsBytes = null;
-        try {
-            fromAsBytes = from.toString().getBytes("PLAIN");
-        } catch(final java.io.UnsupportedEncodingException uee) {
-            throw getRuntime().newTypeError("marshaled time format differ");
-        }
+        fromAsBytes = from.convertToString().getBytes();
         if(fromAsBytes.length != 8) {
             throw getRuntime().newTypeError("marshaled time format differ");
         }

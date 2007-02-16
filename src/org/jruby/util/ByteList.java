@@ -309,7 +309,7 @@ public class ByteList implements Comparable, CharSequence {
         return new ByteList(plain(s),false);
     }
 
-    public static byte[] plain(String s) {
+    public static byte[] plain(CharSequence s) {
         byte[] bytes = new byte[s.length()];
         for (int i = 0; i < bytes.length; i++) {
             bytes[i] = (byte) s.charAt(i);

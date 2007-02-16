@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -39,6 +39,7 @@ import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.RubyString;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
@@ -86,20 +87,19 @@ public class NetscapeSPKI extends RubyObject {
 
     public IRubyObject _initialize(IRubyObject[] args, Block unusedBlock) throws Exception {
         if(args.length > 0) {
-            byte[] b = args[0].toString().getBytes("PLAIN");
+            byte[] b = args[0].convertToString().getBytes();
             try {
-                b = Base64Coder.decode(args[0].toString()).getBytes("PLAIN");
+                b = Base64Coder.decode(b);
             } catch(Exception e) {
-                b = args[0].toString().getBytes("PLAIN");
             }
             cert = new NetscapeCertRequest(b);
             this.challenge = getRuntime().newString(cert.getChallenge());
             String algo = cert.getPublicKey().getAlgorithm();;
             byte[] enc = cert.getPublicKey().getEncoded();
             if("RSA".equalsIgnoreCase(algo)) {
-                this.public_key = ((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("PKey"))).getClass("RSA").callMethod(getRuntime().getCurrentContext(),"new",getRuntime().newString(new String(enc,"PLAIN")));
+                this.public_key = ((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("PKey"))).getClass("RSA").callMethod(getRuntime().getCurrentContext(),"new",RubyString.newString(getRuntime(), enc));
             } else if("DSA".equalsIgnoreCase(algo)) {
-                this.public_key = ((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("PKey"))).getClass("DSA").callMethod(getRuntime().getCurrentContext(),"new",getRuntime().newString(new String(enc,"PLAIN")));
+                this.public_key = ((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("PKey"))).getClass("DSA").callMethod(getRuntime().getCurrentContext(),"new",RubyString.newString(getRuntime(), enc));
             } else {
                 throw getRuntime().newLoadError("not implemented algo for public key: " + algo);
             }
@@ -110,7 +110,7 @@ public class NetscapeSPKI extends RubyObject {
     public IRubyObject to_der() throws Exception {
         DERSequence b = (DERSequence)cert.toASN1Object();
         DERObjectIdentifier encType = null;
-        DERBitString publicKey = new DERBitString(((PKey)public_key).to_der().toString().getBytes("PLAIN"));
+        DERBitString publicKey = new DERBitString(((PKey)public_key).to_der().convertToString().getBytes());
         DERIA5String challenge = new DERIA5String(this.challenge.toString());
         DERObjectIdentifier sigAlg = null;
         DERBitString sig = null;
@@ -134,7 +134,7 @@ public class NetscapeSPKI extends RubyObject {
         v1_2.add(new DERNull());
         v1.add(new DERSequence(v1_2));
         v1.add(sig);
-        return getRuntime().newString(new String(new DERSequence(v1).getEncoded(),"PLAIN"));
+        return RubyString.newString(getRuntime(), new DERSequence(v1).getEncoded());
     }
 
     public IRubyObject to_pem() throws Exception {

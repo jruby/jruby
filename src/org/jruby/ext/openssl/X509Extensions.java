@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -59,6 +59,7 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -197,10 +198,10 @@ public class X509Extensions {
                     } else {
                         val = ASN1.decode(getRuntime().getModule("OpenSSL").getConstant("ASN1"),pkey.callMethod(tc,"to_der")).callMethod(tc,"value").callMethod(tc,"[]",getRuntime().newFixnum(1)).callMethod(tc,"value");
                     }
-                    byte[] b = MessageDigest.getInstance("SHA-1").digest(val.toString().getBytes("PLAIN"));
-                    value = new String(new DEROctetString(b).getDEREncoded(),"PLAIN");
+                    byte[] b = MessageDigest.getInstance("SHA-1").digest(val.convertToString().getBytes());
+                    value = new String(ByteList.plain(new DEROctetString(b).getDEREncoded()));
                 } else if(valuex.length() == 20) {
-                    value = new String(new DEROctetString(valuex.getBytes("PLAIN")).getDEREncoded(),"PLAIN");
+                    value = new String(ByteList.plain(new DEROctetString(ByteList.plain(valuex)).getDEREncoded()));
                 } else {
                     StringBuffer nstr = new StringBuffer();
                     for(int i = 0; i < valuex.length(); i+=2) {
@@ -224,7 +225,7 @@ public class X509Extensions {
                     for(int i=0;i<v.length();i+=2) {
                         arr[i/2] = (byte)Integer.parseInt(v.substring(i,i+2),16);
                     }
-                    value = new String(new DEROctetString(arr).getDEREncoded(),"PLAIN");
+                    value = new String(ByteList.plain(new DEROctetString(arr).getDEREncoded()));
                 }
             } else if(r_oid.equals(new DERObjectIdentifier("2.5.29.35"))) { //authorityKeyIdentifier
                 String ourV = valuex;
@@ -239,7 +240,7 @@ public class X509Extensions {
                     } else {
                         val = ASN1.decode(getRuntime().getModule("OpenSSL").getConstant("ASN1"),pkey.callMethod(tc,"to_der")).callMethod(tc,"value").callMethod(tc,"[]",getRuntime().newFixnum(1)).callMethod(tc,"value");
                     }
-                    byte[] b = MessageDigest.getInstance("SHA-1").digest(val.toString().getBytes("PLAIN"));
+                    byte[] b = MessageDigest.getInstance("SHA-1").digest(val.convertToString().getBytes());
                     asnv.add(new DEROctetString(b));
                 } else if(ourV.startsWith("keyid")) {
                     ourV = ourV.substring("keyid".length());
@@ -250,10 +251,10 @@ public class X509Extensions {
                     } else {
                         val = ASN1.decode(getRuntime().getModule("OpenSSL").getConstant("ASN1"),pkey.callMethod(tc,"to_der")).callMethod(tc,"value").callMethod(tc,"[]",getRuntime().newFixnum(1)).callMethod(tc,"value");
                     }
-                    byte[] b = MessageDigest.getInstance("SHA-1").digest(val.toString().getBytes("PLAIN"));
+                    byte[] b = MessageDigest.getInstance("SHA-1").digest(val.convertToString().getBytes());
                     asnv.add(new DEROctetString(b));
                 }
-                value = new String(new DERSequence(asnv).getDEREncoded(),"PLAIN");
+                value = new String(ByteList.plain(new DERSequence(asnv).getDEREncoded()));
             } else if(r_oid.equals(new DERObjectIdentifier("2.5.29.18"))) { //issuerAltName
                 if(valuex.startsWith("issuer:copy")) {
                     List exts = ((RubyArray)getInstanceVariable("@issuer_certificate").callMethod(tc,"extensions")).getList();
@@ -281,7 +282,7 @@ public class X509Extensions {
                         asnv.add(new DERInteger(Integer.parseInt(spl[i].substring(8).trim())));
                     }
                 }
-                value = new String(new DERSequence(asnv).getDEREncoded(),"PLAIN");
+                value = new String(ByteList.plain(new DERSequence(asnv).getDEREncoded()));
             } else if(r_oid.equals(new DERObjectIdentifier("2.5.29.15"))) { //keyUsage
                 byte[] inp = null;
                 inp = null;
@@ -298,7 +299,7 @@ public class X509Extensions {
                 }
 
                 if(null == inp && valuex.length()<3) {
-                    inp = valuex.getBytes("PLAIN");
+                    inp = ByteList.plain(valuex);
                 }
 
                 if(inp == null) {
@@ -354,10 +355,10 @@ public class X509Extensions {
                     }
                 }
                 
-                value = new String(new DERBitString(inp,unused).getDEREncoded(),"PLAIN");
+                value = new String(ByteList.plain(new DERBitString(inp,unused).getDEREncoded()));
             } else if(r_oid.equals(new DERObjectIdentifier("2.5.29.17"))) { //subjectAltName
                 if(valuex.startsWith("DNS:")) {
-                    value = new String(new GeneralNames(new GeneralName(GeneralName.dNSName,new DERIA5String(valuex.substring(4)))).getDEREncoded(),"PLAIN");
+                    value = new String(ByteList.plain(new GeneralNames(new GeneralName(GeneralName.dNSName,new DERIA5String(valuex.substring(4)))).getDEREncoded()));
                 } else if(valuex.startsWith("IP:")) {
                     String[] numbers = valuex.substring(3).split("\\.");
                     byte[] bs = new byte[4];
@@ -365,7 +366,7 @@ public class X509Extensions {
                     bs[1] = (byte) (Integer.parseInt(numbers[1]) & 0xff);
                     bs[2] = (byte) (Integer.parseInt(numbers[2]) & 0xff);
                     bs[3] = (byte) (Integer.parseInt(numbers[3]) & 0xff);
-                    value = new String(new GeneralNames(new GeneralName(GeneralName.iPAddress,new DEROctetString(bs))).getDEREncoded(),"PLAIN");
+                    value = new String(ByteList.plain(new GeneralNames(new GeneralName(GeneralName.iPAddress,new DEROctetString(bs))).getDEREncoded()));
                 } else if(valuex.startsWith("IP Address:")) {
                     String[] numbers = valuex.substring(11).split("\\.");
                     byte[] bs = new byte[4];
@@ -373,10 +374,10 @@ public class X509Extensions {
                     bs[1] = (byte) (Integer.parseInt(numbers[1]) & 0xff);
                     bs[2] = (byte) (Integer.parseInt(numbers[2]) & 0xff);
                     bs[3] = (byte) (Integer.parseInt(numbers[3]) & 0xff);
-                    value = new String(new GeneralNames(new GeneralName(GeneralName.iPAddress,new DEROctetString(bs))).getDEREncoded(),"PLAIN");
+                    value = new String(ByteList.plain(new GeneralNames(new GeneralName(GeneralName.iPAddress,new DEROctetString(bs))).getDEREncoded()));
                 }
             } else {
-                value = new DEROctetString(new DEROctetString(valuex.getBytes("PLAIN")).getDEREncoded());
+                value = new DEROctetString(new DEROctetString(ByteList.plain(valuex)).getDEREncoded());
             }
 
             ext.setRealOid(r_oid);
@@ -423,8 +424,10 @@ public class X509Extensions {
         }
 
         byte[] getRealValueBytes() throws Exception {
-            if((value instanceof RubyString) || (value instanceof String)) {
-                return value.toString().getBytes("PLAIN");
+            if((value instanceof RubyString)) {
+                return ((RubyString) value).convertToString().getBytes();
+            } else if(value instanceof String) {
+                return ByteList.plain((String) value);
             } else if(value instanceof DEROctetString) {
                 return ((DEROctetString)value).getOctets();
             } else {
@@ -448,7 +451,7 @@ public class X509Extensions {
         public IRubyObject _initialize(IRubyObject[] args) throws Exception {
             byte[] octets = null;
             if(args.length == 1) {
-                ASN1InputStream is = new ASN1InputStream(OpenSSLImpl.to_der_if_possible(args[0]).toString().getBytes("PLAIN"));
+                ASN1InputStream is = new ASN1InputStream(OpenSSLImpl.to_der_if_possible(args[0]).convertToString().getBytes());
                 Object obj = is.readObject();
                 ASN1Sequence seq = (ASN1Sequence)obj;
                 setRealOid((DERObjectIdentifier)(seq.getObjectAt(0)));
@@ -462,7 +465,7 @@ public class X509Extensions {
                 setRealCritical(args[2].isTrue());
             }
             if(args.length > 0 && octets != null) {
-                setRealValue(new String(octets,"PLAIN"));
+                setRealValue(new String(ByteList.plain(octets)));
             }
 
             return this;
@@ -620,7 +623,7 @@ public class X509Extensions {
                 }
             } else {
                 try {
-                    return ASN1.decode(getRuntime().getModule("OpenSSL").getConstant("ASN1"),getRuntime().newString(new String(getRealValueBytes(),"PLAIN"))).callMethod(getRuntime().getCurrentContext(),"value").callMethod(getRuntime().getCurrentContext(),"to_s");
+                    return ASN1.decode(getRuntime().getModule("OpenSSL").getConstant("ASN1"),RubyString.newString(getRuntime(), getRealValueBytes())).callMethod(getRuntime().getCurrentContext(),"value").callMethod(getRuntime().getCurrentContext(),"to_s");
                 } catch(Exception e) {
                     return getRuntime().newString(getRealValue().toString());
                 }
@@ -636,7 +639,7 @@ public class X509Extensions {
             all.add(getRealOid());
             all.add(getRealCritical() ? DERBoolean.TRUE : DERBoolean.FALSE);
             all.add(new DEROctetString(getRealValueBytes()));
-            return getRuntime().newString(new String(new DERSequence(all).getDEREncoded(),"PLAIN"));
+            return RubyString.newString(getRuntime(), new DERSequence(all).getDEREncoded());
         }
     }
 }// X509Extensions

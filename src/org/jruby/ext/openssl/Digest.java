@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -34,10 +34,12 @@ import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.RubyString;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -107,10 +109,8 @@ public class Digest extends RubyObject {
         String name = str.toString();
         try {
             MessageDigest md = MessageDigest.getInstance(transformDigest(name));
-            return recv.getRuntime().newString(new String(md.digest(data.toString().getBytes("PLAIN")),"PLAIN"));
+            return RubyString.newString(recv.getRuntime(), md.digest(data.convertToString().getBytes()));
         } catch(NoSuchAlgorithmException e) {
-            throw recv.getRuntime().newNotImplementedError("Unsupported digest algorithm (" + name + ")");
-        } catch(java.io.UnsupportedEncodingException e) {
             throw recv.getRuntime().newNotImplementedError("Unsupported digest algorithm (" + name + ")");
         }
     }
@@ -119,10 +119,8 @@ public class Digest extends RubyObject {
         String name = str.toString();
         try {
             MessageDigest md = MessageDigest.getInstance(transformDigest(name));
-            return recv.getRuntime().newString(Utils.toHex(md.digest(data.toString().getBytes("PLAIN"))));
+            return RubyString.newString(recv.getRuntime(), ByteList.plain(Utils.toHex(md.digest(data.convertToString().getBytes()))));
         } catch(NoSuchAlgorithmException e) {
-            throw recv.getRuntime().newNotImplementedError("Unsupported digest algorithm (" + name + ")");
-        } catch(java.io.UnsupportedEncodingException e) {
             throw recv.getRuntime().newNotImplementedError("Unsupported digest algorithm (" + name + ")");
         }
     }
@@ -173,10 +171,8 @@ public class Digest extends RubyObject {
     }
 
     public IRubyObject update(IRubyObject obj) {
-        try {
-            data.append(obj);
-            md.update(obj.toString().getBytes("PLAIN"));
-        } catch(java.io.UnsupportedEncodingException e) {}
+        data.append(obj);
+        md.update(obj.convertToString().getBytes());
         return this;
     }
 
@@ -187,12 +183,8 @@ public class Digest extends RubyObject {
     }
 
     public IRubyObject digest() {
-        try {
-            md.reset();
-            return getRuntime().newString(new String(md.digest(data.toString().getBytes("PLAIN")),"PLAIN"));
-        } catch(java.io.UnsupportedEncodingException e) {
-            return getRuntime().getNil();
-        }
+        md.reset();
+        return RubyString.newString(getRuntime(), md.digest(ByteList.plain(data)));
     }
 
     public IRubyObject name() {
@@ -204,12 +196,8 @@ public class Digest extends RubyObject {
     }
 
     public IRubyObject hexdigest() {
-        try {
-            md.reset();
-            return getRuntime().newString(Utils.toHex(md.digest(data.toString().getBytes("PLAIN"))));
-        } catch(java.io.UnsupportedEncodingException e) {
-            return getRuntime().getNil();
-        }
+        md.reset();
+        return RubyString.newString(getRuntime(), ByteList.plain(Utils.toHex(md.digest(ByteList.plain(data)))));
     }
 
     public IRubyObject eq(IRubyObject oth) {

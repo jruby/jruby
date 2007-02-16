@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -45,6 +45,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
+import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -108,15 +109,15 @@ public class Request extends RubyObject {
         if(checkArgumentCount(args,0,1) == 0) {
             return this;
         }
-        req = new PKCS10CertificationRequestExt(args[0].toString().getBytes("PLAIN"));
+        req = new PKCS10CertificationRequestExt(args[0].convertToString().getBytes());
         version = getRuntime().newFixnum(req.getVersion());
         String algo = req.getPublicKey().getAlgorithm();;
         byte[] enc = req.getPublicKey().getEncoded();
         ThreadContext tc = getRuntime().getCurrentContext();
         if("RSA".equalsIgnoreCase(algo)) {
-            this.public_key = ((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("PKey"))).getClass("RSA").callMethod(tc,"new",getRuntime().newString(new String(enc,"PLAIN")));
+            this.public_key = ((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("PKey"))).getClass("RSA").callMethod(tc,"new",RubyString.newString(getRuntime(), enc));
         } else if("DSA".equalsIgnoreCase(algo)) {
-            this.public_key = ((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("PKey"))).getClass("DSA").callMethod(tc,"new",getRuntime().newString(new String(enc,"PLAIN")));
+            this.public_key = ((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("PKey"))).getClass("DSA").callMethod(tc,"new",RubyString.newString(getRuntime(), enc));
         } else {
             throw getRuntime().newLoadError("not implemented algo for public key: " + algo);
         }
@@ -141,7 +142,7 @@ public class Request extends RubyObject {
                 DERObjectIdentifier v0 = (DERObjectIdentifier)val.getObjectAt(0);
                 DERObject v1 = (DERObject)val.getObjectAt(1);
                 IRubyObject a1 = getRuntime().newString(((String)(ASN1.getSymLookup(getRuntime()).get(v0))));
-                IRubyObject a2 = ASN1.decode(getRuntime().getModule("OpenSSL").getConstant("ASN1"),getRuntime().newString(new String(v1.getDEREncoded(),"PLAIN")));
+                IRubyObject a2 = ASN1.decode(getRuntime().getModule("OpenSSL").getConstant("ASN1"),RubyString.newString(getRuntime(), v1.getDEREncoded()));
                 add_attribute(((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("X509"))).getConstant("Attribute").callMethod(tc,"new",new IRubyObject[]{a1,a2}));
             }
         }
@@ -167,7 +168,7 @@ public class Request extends RubyObject {
     }
 
     public IRubyObject to_der() throws Exception {
-        return getRuntime().newString(new String(req.getDEREncoded(),"PLAIN"));
+        return RubyString.newString(getRuntime(), req.getDEREncoded());
     }
 
     public IRubyObject to_text() {

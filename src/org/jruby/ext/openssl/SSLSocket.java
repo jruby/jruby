@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -45,6 +45,7 @@ import org.jruby.RubyIO;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
+import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -386,7 +387,7 @@ public class SSLSocket extends RubyObject {
         } else {
             rr = read(dst);
         }
-        String out = null;
+        byte[] out = null;
         boolean eof = false;
         if(rr == -1) {
             eof = true;
@@ -394,12 +395,12 @@ public class SSLSocket extends RubyObject {
             byte[] bss = new byte[rr];
             dst.position(dst.position()-rr);
             dst.get(bss);
-            out = new String(bss,"PLAIN");
+            out = bss;
         }
         if(eof){
             throw getRuntime().newEOFError();
         }
-        str.callMethod(getRuntime().getCurrentContext(),"<<",getRuntime().newString(out));
+        str.callMethod(getRuntime().getCurrentContext(),"<<",RubyString.newString(getRuntime(), out));
         return str;
     }
 
@@ -408,13 +409,13 @@ public class SSLSocket extends RubyObject {
         //        System.err.println(type + ".syswrite(" + arg + ")");
         if(engine == null) {
             waitSelect(wsel);
-            byte[] bls = arg.toString().getBytes("PLAIN");
+            byte[] bls = arg.convertToString().getBytes();
             ByteBuffer b1 = ByteBuffer.wrap(bls);
             c.write(b1);
             return getRuntime().newFixnum(bls.length);
         } else {
             waitSelect(wsel);
-            byte[] bls = arg.toString().getBytes("PLAIN");
+            byte[] bls = arg.convertToString().getBytes();
             ByteBuffer b1 = ByteBuffer.wrap(bls);
             write(b1);
             return getRuntime().newFixnum(bls.length);

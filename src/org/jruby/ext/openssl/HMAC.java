@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -35,10 +35,12 @@ import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.RubyString;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -74,10 +76,10 @@ public class HMAC extends RubyObject {
         String name = "HMAC" + ((Digest)digest).getAlgorithm();
         try {
             Mac mac = Mac.getInstance(name);
-            byte[] key = kay.toString().getBytes("PLAIN");
+            byte[] key = kay.convertToString().getBytes();
             SecretKey keysp = new SecretKeySpec(key,name);
             mac.init(keysp);
-            return recv.getRuntime().newString(new String(mac.doFinal(data.toString().getBytes("PLAIN")),"PLAIN"));
+            return RubyString.newString(recv.getRuntime(), mac.doFinal(data.convertToString().getBytes()));
         } catch(Exception e) {
             throw recv.getRuntime().newNotImplementedError("Unsupported HMAC algorithm (" + name + ")");
         }
@@ -87,10 +89,10 @@ public class HMAC extends RubyObject {
         String name = "HMAC" + ((Digest)digest).getAlgorithm();
         try {
             Mac mac = Mac.getInstance(name);
-            byte[] key = kay.toString().getBytes("PLAIN");
+            byte[] key = kay.convertToString().getBytes();
             SecretKey keysp = new SecretKeySpec(key,name);
             mac.init(keysp);
-            return recv.getRuntime().newString(Utils.toHex(mac.doFinal(data.toString().getBytes("PLAIN"))));
+            return RubyString.newString(recv.getRuntime(), ByteList.plain(Utils.toHex(mac.doFinal(data.convertToString().getBytes()))));
         } catch(Exception e) {
             throw recv.getRuntime().newNotImplementedError("Unsupported HMAC algorithm (" + name + ")");
         }
@@ -108,7 +110,7 @@ public class HMAC extends RubyObject {
         String name = "HMAC" + ((Digest)digest).getAlgorithm();
         try {
             mac = Mac.getInstance(name);
-            key = kay.toString().getBytes("PLAIN");
+            key = kay.convertToString().getBytes();
             SecretKey keysp = new SecretKeySpec(key,name);
             mac.init(keysp);
         } catch(Exception e) {
@@ -143,21 +145,13 @@ public class HMAC extends RubyObject {
     }
 
     public IRubyObject digest() {
-        try {
-            mac.reset();
-            return getRuntime().newString(new String(mac.doFinal(data.toString().getBytes("PLAIN")),"PLAIN"));
-        } catch(java.io.UnsupportedEncodingException e) {
-            return getRuntime().getNil();
-        }
+        mac.reset();
+        return RubyString.newString(getRuntime(), mac.doFinal(ByteList.plain(data)));
     }
 
     public IRubyObject hexdigest() {
-        try {
-            mac.reset();
-            return getRuntime().newString(Utils.toHex(mac.doFinal(data.toString().getBytes("PLAIN"))));
-        } catch(java.io.UnsupportedEncodingException e) {
-            return getRuntime().getNil();
-        }
+        mac.reset();
+        return RubyString.newString(getRuntime(), ByteList.plain(Utils.toHex(mac.doFinal(ByteList.plain(data)))));
     }
 
     public IRubyObject rbClone() {

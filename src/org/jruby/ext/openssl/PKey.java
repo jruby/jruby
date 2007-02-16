@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -35,6 +35,7 @@ import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.RubyString;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
@@ -90,10 +91,10 @@ public abstract class PKey extends RubyObject {
         }
         Signature sig = Signature.getInstance(((Digest)digest).getAlgorithm() + "WITH" + getAlgorithm(),"BC");
         sig.initSign(getPrivateKey());
-        byte[] inp = data.toString().getBytes("PLAIN");
+        byte[] inp = data.convertToString().getBytes();
         sig.update(inp);
         byte[] sigge = sig.sign();
-        return getRuntime().newString(new String(sigge,"PLAIN"));
+        return RubyString.newString(getRuntime(), sigge);
         /*
     GetPKey(self, pkey);
     EVP_SignInit(&ctx, GetDigestPtr(digest));

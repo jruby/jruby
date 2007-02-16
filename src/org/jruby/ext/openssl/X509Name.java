@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -54,6 +54,7 @@ import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
+import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -160,7 +161,7 @@ public class X509Name extends RubyObject {
             }
         } else {
             try {
-                ASN1Sequence seq = (ASN1Sequence)new ASN1InputStream(OpenSSLImpl.to_der_if_possible(arg).toString().getBytes("PLAIN")).readObject();
+                ASN1Sequence seq = (ASN1Sequence)new ASN1InputStream(OpenSSLImpl.to_der_if_possible(arg).convertToString().getBytes()).readObject();
                 oids = new ArrayList();
                 values = new ArrayList();
                 types = new ArrayList();
@@ -378,7 +379,7 @@ else
             seq = new DERSequence();
         }
 
-        return getRuntime().newString(new String(seq.getDEREncoded(),"PLAIN"));
+        return RubyString.newString(getRuntime(), seq.getDEREncoded());
     }
 
     private DERObject convert(DERObjectIdentifier oid, String value, int type) throws Exception {

@@ -37,13 +37,6 @@
       <systemPath>${basedir}/../../lib/jline-0.9.91-SNAPSHOT.jar</systemPath>
     </dependency>
     <dependency>
-      <groupId>plaincharset</groupId>
-      <artifactId>plaincharset</artifactId>
-      <version>SNAPSHOT</version>
-      <scope>system</scope>
-      <systemPath>${basedir}/../../lib/plaincharset.jar</systemPath>
-    </dependency>
-    <dependency>
       <groupId>requireTest</groupId>
       <artifactId>requireTest</artifactId>
       <version>SNAPSHOT</version>

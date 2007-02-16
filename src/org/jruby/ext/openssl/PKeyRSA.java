@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -54,12 +54,14 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
+import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.openssl.x509store.PEM;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -178,7 +180,7 @@ public class PKeyRSA extends PKey {
                 }
                 if(null == val) {
                     try {
-                        DERSequence seq = (DERSequence)(new ASN1InputStream(input.getBytes("PLAIN")).readObject());
+                        DERSequence seq = (DERSequence)(new ASN1InputStream(ByteList.plain(input)).readObject());
                         if(seq.size() == 9) {
                             BigInteger mod = ((DERInteger)seq.getObjectAt(1)).getValue();
                             BigInteger pubexp = ((DERInteger)seq.getObjectAt(2)).getValue();
@@ -198,7 +200,7 @@ public class PKeyRSA extends PKey {
                 }
                 if(null == val) {
                     try {
-                        DERSequence seq = (DERSequence)(new ASN1InputStream(input.getBytes("PLAIN")).readObject());
+                        DERSequence seq = (DERSequence)(new ASN1InputStream(ByteList.plain(input)).readObject());
                         if(seq.size() == 2) {
                             BigInteger mod = ((DERInteger)seq.getObjectAt(0)).getValue();
                             BigInteger pubexp = ((DERInteger)seq.getObjectAt(1)).getValue();
@@ -212,14 +214,14 @@ public class PKeyRSA extends PKey {
                 }
                 if(null == val) {
                     try {
-                        val = fact.generatePublic(new X509EncodedKeySpec(input.getBytes("PLAIN")));
+                        val = fact.generatePublic(new X509EncodedKeySpec(ByteList.plain(input)));
                     } catch(Exception e) {
                         val = null;
                     }
                 }
                 if(null == val) {
                     try {
-                        val = fact.generatePrivate(new PKCS8EncodedKeySpec(input.getBytes("PLAIN")));
+                        val = fact.generatePrivate(new PKCS8EncodedKeySpec(ByteList.plain(input)));
                     } catch(Exception e) {
                         val = null;
                     }
@@ -263,7 +265,7 @@ public class PKeyRSA extends PKey {
             ASN1EncodableVector v1 = new ASN1EncodableVector();
             v1.add(new DERInteger(pubKey.getModulus()));
             v1.add(new DERInteger(pubKey.getPublicExponent()));
-            return getRuntime().newString( new String(new DERSequence(v1).getEncoded(),"PLAIN"));
+            return RubyString.newString(getRuntime(), new DERSequence(v1).getEncoded());
         } else {
             ASN1EncodableVector v1 = new ASN1EncodableVector();
             v1.add(new DERInteger(0));
@@ -275,7 +277,7 @@ public class PKeyRSA extends PKey {
             v1.add(new DERInteger(privKey.getPrimeExponentP()));
             v1.add(new DERInteger(privKey.getPrimeExponentQ()));
             v1.add(new DERInteger(privKey.getCrtCoefficient()));
-            return getRuntime().newString( new String(new DERSequence(v1).getEncoded(),"PLAIN"));
+            return RubyString.newString(getRuntime(), new DERSequence(v1).getEncoded());
         }
     }
 
@@ -329,15 +331,15 @@ public class PKeyRSA extends PKey {
         }
         String p = getPadding(padding);
 
-        String buffer = args[0].toString();
+        RubyString buffer = args[0].convertToString();
         if(privKey == null) {
             throw new RaiseException(getRuntime(), (RubyClass)(((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("PKey"))).getConstant("RSAError")), "private key needed.", true);
         }
 
         Cipher engine = Cipher.getInstance("RSA"+p);
         engine.init(Cipher.ENCRYPT_MODE,privKey);
-        byte[] outp = engine.doFinal(buffer.getBytes("PLAIN"));
-        return getRuntime().newString(new String(outp,"PLAIN"));
+        byte[] outp = engine.doFinal(buffer.getBytes());
+        return RubyString.newString(getRuntime(), outp);
     }
 
     public IRubyObject private_decrypt(IRubyObject[] args) throws Exception {
@@ -347,15 +349,15 @@ public class PKeyRSA extends PKey {
         }
         String p = getPadding(padding);
 
-        String buffer = args[0].toString();
+        RubyString buffer = args[0].convertToString();
         if(privKey == null) {
             throw new RaiseException(getRuntime(), (RubyClass)(((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("PKey"))).getConstant("RSAError")), "private key needed.", true);
         }
 
         Cipher engine = Cipher.getInstance("RSA"+p);
         engine.init(Cipher.DECRYPT_MODE,privKey);
-        byte[] outp = engine.doFinal(buffer.getBytes("PLAIN"));
-        return getRuntime().newString(new String(outp,"PLAIN"));
+        byte[] outp = engine.doFinal(buffer.getBytes());
+        return RubyString.newString(getRuntime(), outp);
     }
 
     public IRubyObject public_encrypt(IRubyObject[] args) throws Exception {
@@ -365,11 +367,11 @@ public class PKeyRSA extends PKey {
         }
         String p = getPadding(padding);
 
-        String buffer = args[0].toString();
+        RubyString buffer = args[0].convertToString();
         Cipher engine = Cipher.getInstance("RSA"+p);
         engine.init(Cipher.ENCRYPT_MODE,pubKey);
-        byte[] outp = engine.doFinal(buffer.getBytes("PLAIN"));
-        return getRuntime().newString(new String(outp,"PLAIN"));
+        byte[] outp = engine.doFinal(buffer.getBytes());
+        return RubyString.newString(getRuntime(), outp);
     }
 
     public IRubyObject public_decrypt(IRubyObject[] args) throws Exception {
@@ -379,10 +381,10 @@ public class PKeyRSA extends PKey {
         }
         String p = getPadding(padding);
 
-        String buffer = args[0].toString();
+        RubyString buffer = args[0].convertToString();
         Cipher engine = Cipher.getInstance("RSA"+p);
         engine.init(Cipher.DECRYPT_MODE,pubKey);
-        byte[] outp = engine.doFinal(buffer.getBytes("PLAIN"));
-        return getRuntime().newString(new String(outp,"PLAIN"));
+        byte[] outp = engine.doFinal(buffer.getBytes());
+        return RubyString.newString(getRuntime(), outp);
     }
 }// PKeyRSA

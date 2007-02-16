@@ -11,14 +11,14 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2002-2004, 2007 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2003-2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Derek Berner <derek.berner@state.nm.us>
  * Copyright (C) 2006 Evan Buswell <ebuswell@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -33,7 +33,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.CharBuffer;
@@ -42,6 +41,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
 import java.util.List;
+
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyFloat;
@@ -63,28 +63,24 @@ public class Pack {
     private static final byte[] sHexDigits;
     private static final int[] b64_xtable = new int[256];
     private static final Converter[] converters = new Converter[256];
-    
-    static {
-        try {
-            hex_table = "0123456789ABCDEF".getBytes("PLAIN");
-            uu_table =
-                "`!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_".getBytes("PLAIN");
-            b64_table =
-                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".getBytes("PLAIN");
-            sHexDigits = "0123456789abcdef0123456789ABCDEFx".getBytes("PLAIN");
 
-            // b64_xtable for decoding Base 64
-            for (int i = 0; i < 256; i++) {
-                b64_xtable[i] = -1;
-            }
-            for (int i = 0; i < 64; i++) {
-                b64_xtable[(int)b64_table[i]] = i;
-            }
-        } catch (UnsupportedEncodingException uee) {
-            throw new RuntimeException(uee);
+    static {
+        hex_table = ByteList.plain("0123456789ABCDEF");
+        uu_table =
+            ByteList.plain("`!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_");
+        b64_table =
+            ByteList.plain("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
+        sHexDigits = ByteList.plain("0123456789abcdef0123456789ABCDEFx");
+
+        // b64_xtable for decoding Base 64
+        for (int i = 0; i < 256; i++) {
+            b64_xtable[i] = -1;
+        }
+        for (int i = 0; i < 64; i++) {
+            b64_xtable[(int)b64_table[i]] = i;
         }
         // short, little-endian (network)
-        converters['v'] = new Converter(2) { 
+        converters['v'] = new Converter(2) {
             public IRubyObject decode(IRuby runtime, ByteBuffer enc) {
                 return runtime.newFixnum(
                         decodeShortUnsignedLittleEndian(enc));
@@ -94,7 +90,7 @@ public class Pack {
                    encodeShortLittleEndian(result, s);
                }};
         // single precision, little-endian
-        converters['e'] = new Converter(4) { 
+        converters['e'] = new Converter(4) {
             public IRubyObject decode(IRuby runtime, ByteBuffer enc) {
                 return RubyFloat.newFloat(runtime, decodeFloatLittleEndian(enc));
             }
@@ -114,7 +110,7 @@ public class Pack {
         converters['f'] = tmp; // single precision, native
         converters['g'] = tmp; // single precision, native
         // double precision, little-endian
-        converters['E'] = new Converter(8) { 
+        converters['E'] = new Converter(8) {
             public IRubyObject decode(IRuby runtime, ByteBuffer enc) {
                 return RubyFloat.newFloat(runtime, decodeDoubleLittleEndian(enc));
             }
@@ -130,9 +126,9 @@ public class Pack {
                 double d = o == runtime.getNil() ? 0 : o.convertToFloat().getDoubleValue();
                 encodeDoubleBigEndian(result, d);
             }
-        }; 
+        };
         converters['d'] = tmp; // double precision native
-        converters['G'] = tmp; // double precision bigendian 
+        converters['G'] = tmp; // double precision bigendian
         converters['s'] = new Converter(2) { // signed short
             public IRubyObject decode(IRuby runtime, ByteBuffer enc) {
                 return runtime.newFixnum(decodeShortBigEndian(enc));
@@ -157,7 +153,7 @@ public class Pack {
             public IRubyObject decode(IRuby runtime, ByteBuffer enc) {
                 int c = enc.get();
                 return runtime.newFixnum(c > (char) 127 ? c-256 : c);
-            }    
+            }
             public void encode(IRuby runtime, IRubyObject o, StringBuffer result){
                 char c = o == runtime.getNil() ? 0 : (char) (RubyNumeric.num2long(o) & 0xff);
                 result.append(c);
@@ -170,8 +166,8 @@ public class Pack {
                 char c = o == runtime.getNil() ? 0 : (char) (RubyNumeric.num2long(o) & 0xff);
                 result.append(c);
             }};
-        // long, little-endian 
-        converters['V'] = new Converter(4) { 
+        // long, little-endian
+        converters['V'] = new Converter(4) {
             public IRubyObject decode(IRuby runtime, ByteBuffer enc) {
                 return runtime.newFixnum(
                         decodeIntUnsignedLittleEndian(enc));
@@ -190,7 +186,7 @@ public class Pack {
                 encodeIntBigEndian(result, s);
             }
         };
-        converters['I'] = tmp; // unsigned int, native 
+        converters['I'] = tmp; // unsigned int, native
         converters['L'] = tmp; // unsigned long (bugs?)
         converters['N'] = tmp; // long, network
         tmp = new Converter(4) {
@@ -198,13 +194,13 @@ public class Pack {
                 return runtime.newFixnum(decodeIntBigEndian(enc));
             }
             public void encode(IRuby runtime, IRubyObject o, StringBuffer result){
-                int s = (o == runtime.getNil() ? 0 : 
+                int s = (o == runtime.getNil() ? 0 :
                     (int) (RubyNumeric.num2long(o)));
                 encodeIntBigEndian(result, s);
             }
         };
-        converters['l'] = tmp; // long, native 
-        converters['i'] = tmp; // int, native 
+        converters['l'] = tmp; // long, native
+        converters['i'] = tmp; // int, native
     }
 
     /**
@@ -318,7 +314,7 @@ public class Pack {
         }
         return io2Append;
     }
-    
+
     private static String convert2String(IRubyObject l2Conv) {
         IRuby runtime = l2Conv.getRuntime();
         if (l2Conv.getMetaClass() != runtime.getString()) {
@@ -562,7 +558,7 @@ public class Pack {
      *         </table>
      *
      **/
-    public static RubyArray unpack(IRuby runtime, ByteList encodedString, 
+    public static RubyArray unpack(IRuby runtime, ByteList encodedString,
             ByteList formatString) {
         RubyArray result = runtime.newArray();
         // FIXME: potentially could just use ByteList here?
@@ -570,19 +566,19 @@ public class Pack {
         ByteBuffer encode = ByteBuffer.wrap(encodedString.bytes());
         int type = 0;
         int next = safeGet(format);
-        
+
         while (next != 0) {
             type = next;
             next = safeGet(format);
             // Next indicates to decode using native encoding format
             if (next == '_' || next == '!') {
                 if (NATIVE_CODES.indexOf(type) == -1) {
-                    throw runtime.newArgumentError("'" + next + 
+                    throw runtime.newArgumentError("'" + next +
                             "' allowed only after types " + NATIVE_CODES);
                 }
                 next = safeGet(format);
             }
-            
+
             // How many occurrences of 'type' we want
             int occurrences = 0;
             if (next == 0) {
@@ -625,15 +621,15 @@ public class Pack {
 
                     byte[] potential = new byte[occurrences];
                     encode.get(potential);
-                    
+
                     for (int t = occurrences - 1; occurrences > 0; occurrences--, t--) {
                         byte c = potential[t];
-                        
+
                            if (c != '\0' && c != ' ') {
                                break;
                            }
                     }
-                    
+
                     result.append(RubyString.newString(runtime, new ByteList(potential, 0, occurrences,false)));
                     }
                     break;
@@ -642,18 +638,18 @@ public class Pack {
                     if (occurrences == IS_STAR || occurrences > encode.remaining()) {
                         occurrences = encode.remaining();
                     }
-                    
+
                     byte[] potential = new byte[occurrences];
                     encode.get(potential);
-                    
+
                     for (int t = occurrences - 1; occurrences > 0; occurrences--, t--) {
                         char c = (char)potential[t];
-                        
+
                            if (c != '\0') {
                                break;
                            }
                     }
-                    
+
                     result.append(RubyString.newString(runtime, new ByteList(potential, 0, occurrences,false)));
                     }
                     break;
@@ -697,7 +693,7 @@ public class Pack {
                                 bits = encode.get();
                             lElem[lCurByte] = (bits & 128) != 0 ? (byte)'1' : (byte)'0';
                         }
-                        
+
                         result.append(RubyString.newString(runtime, new ByteList(lElem,false)));
                     }
                     break;
@@ -737,7 +733,7 @@ public class Pack {
                     }
                     break;
 
-                case 'u': 
+                case 'u':
                 {
                     int length = encode.remaining() * 3 / 4;
                     byte[] lElem = new byte[length];
@@ -748,7 +744,7 @@ public class Pack {
                     while (encode.hasRemaining() && s > ' ' && s < 'a') {
                         int a, b, c, d;
                         byte[] hunk = new byte[3];
-    
+
                         int len = (s - ' ') & 077;
                         s = safeGet(encode);
                         total += len;
@@ -756,10 +752,10 @@ public class Pack {
                             len -= total - length;
                             total = length;
                         }
-    
+
                         while (len > 0) {
                             int mlen = len > 3 ? 3 : len;
-    
+
                             if (encode.hasRemaining() && s >= ' ') {
                                 a = (s - ' ') & 077;
                                 s = safeGet(encode);
@@ -783,7 +779,7 @@ public class Pack {
                             hunk[0] = (byte)((a << 2 | b >> 4) & 255);
                             hunk[1] = (byte)((b << 4 | c >> 2) & 255);
                             hunk[2] = (byte)((c << 6 | d) & 255);
-    
+
                             for (int i = 0; i < mlen; i++) lElem[index++] = hunk[i];
                             len -= mlen;
                         }
@@ -814,7 +810,7 @@ public class Pack {
                         do {
                             s = safeGet(encode);
                         } while (s == '\r' || s == '\n');
-                        
+
                         if ((a = b64_xtable[s]) == -1) break;
                         s = safeGet(encode);
                         if ((b = b64_xtable[s]) == -1) break;
@@ -822,7 +818,7 @@ public class Pack {
                         if ((c = b64_xtable[s]) == -1) break;
                         s = safeGet(encode);
                         if ((d = b64_xtable[s]) == -1) break;
-                        
+
                         lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
                         lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
                         lElem[index++] = (byte)((c << 6 | d) & 255);
@@ -841,7 +837,7 @@ public class Pack {
 
                 case 'M' :
                     {
-                        byte[] lElem = new byte[Math.max(encode.remaining(),0)]; 
+                        byte[] lElem = new byte[Math.max(encode.remaining(),0)];
                         int index = 0;
                         for(;;) {
                             byte c = safeGet(encode);
@@ -892,7 +888,7 @@ public class Pack {
                      if (occurrences == IS_STAR) {
                          occurrences = encode.limit() - encode.remaining();
                      }
-                     
+
                      try {
                          encode.position(encode.position() - occurrences);
                      } catch (IllegalArgumentException e) {
@@ -903,7 +899,7 @@ public class Pack {
                       if (occurrences == IS_STAR) {
                            occurrences = encode.remaining();
                       }
-                      
+
                       try {
                           encode.position(encode.position() + occurrences);
                       } catch (IllegalArgumentException e) {
@@ -915,15 +911,15 @@ public class Pack {
         }
         return result;
     }
-    
+
     private static byte safeGet(ByteBuffer encode) {
         return encode.hasRemaining() ? encode.get() : 0;
     }
-    
-    public static void decode(IRuby runtime, ByteBuffer encode, int occurrences, 
+
+    public static void decode(IRuby runtime, ByteBuffer encode, int occurrences,
             RubyArray result, Converter converter) {
         int lPadLength = 0;
-        
+
         if (occurrences == IS_STAR) {
             occurrences = encode.remaining() / converter.size;
         } else if (occurrences > encode.remaining() / converter.size) {
@@ -936,8 +932,8 @@ public class Pack {
         for (; lPadLength-- > 0;)
             result.append(runtime.getNil());
     }
-   
-    public static int encode(IRuby runtime, int occurrences, StringBuffer result, 
+
+    public static int encode(IRuby runtime, int occurrences, StringBuffer result,
             List list, int index, Converter converter) {
         int listSize = list.size();
 
@@ -953,19 +949,19 @@ public class Pack {
 
         return index;
     }
-    
+
     public abstract static class Converter {
         public int size;
-        
+
         public Converter(int size) {
             this.size = size;
         }
-        
+
         public abstract IRubyObject decode(IRuby runtime, ByteBuffer format);
-        public abstract void encode(IRuby runtime, IRubyObject from, 
+        public abstract void encode(IRuby runtime, IRubyObject from,
                 StringBuffer result);
     }
- 
+
     static class PtrList {
         private byte[] buffer; // List to be managed
         private int index; // Pointer location in list
@@ -985,7 +981,7 @@ public class Pack {
         /**
          * <p>Get substring from current point of desired length and advance
          * pointer.</p>
-         * 
+         *
          * @param length of substring
          * @return the substring
          */
@@ -994,19 +990,15 @@ public class Pack {
             if (index + length > buffer.length) {
                 throw new IllegalArgumentException();
             }
-            
+
             String substring = null;
-            try {
-                substring = new String(buffer, index, length, "PLAIN");
-            } catch (UnsupportedEncodingException uee) {
-                // ignore
-            }
-            
+            substring = new String(ByteList.plain(buffer), index, length);
+
             index += length;
-            
+
             return substring;
         }
-        
+
         public void setPosition(int position) {
             if (position < buffer.length) {
                 index = position;
@@ -1024,15 +1016,11 @@ public class Pack {
                     break;
                 }
             }
-            
+
             // An exception will occur if no number is at ptr....
             int number = 0;
-            try {
-                Integer.parseInt(new String(buffer, index, i - index, "PLAIN"));
-            } catch (UnsupportedEncodingException uee) {
-                // ignore;
-            }
-            
+            Integer.parseInt(new String(ByteList.plain(buffer), index, i - index));
+
             // An exception may occur here if an int can't hold this but ...
             index = i;
             return number;
@@ -1053,21 +1041,21 @@ public class Pack {
          */
         public int nextByte() {
             byte next = 0;
-                        
+
             if (index < buffer.length) {
                 next = buffer[index++];
             } else if (index == buffer.length) {
                 index++;
             }
-                            
+
             return next & 0xFF;
         }
-        
+
         /**
          * <p>Backup the pointer occurrences times.</p>
-         * 
-         * @throws IllegalArgumentException if it backs up past beginning 
-         * of buffer    
+         *
+         * @throws IllegalArgumentException if it backs up past beginning
+         * of buffer
          */
         public void backup(int occurrences) {
             index -= occurrences;
@@ -1091,7 +1079,7 @@ public class Pack {
             return index;
         }
     }
-    
+
     /**
      * shrinks a stringbuffer.
      * shrinks a stringbuffer by a number of characters.
@@ -1101,7 +1089,7 @@ public class Pack {
      **/
     private static final StringBuffer shrink(StringBuffer i2Shrink, int iLength) {
         iLength = i2Shrink.length() - iLength;
-        
+
         if (iLength < 0) {
             throw new IllegalArgumentException();
         }
@@ -1301,10 +1289,10 @@ public class Pack {
         int listSize = list.size();
         int type = 0;
         int next = safeGet(format);
-        
+
         int idx = 0;
         String lCurElemString;
-        
+
         mainLoop: while (next != 0) {
             type = next;
             next = safeGet(format);
@@ -1313,7 +1301,7 @@ public class Pack {
                 type = next;
                 next = safeGet(format);
             }
-            
+
             if (next == '!' || next == '_') {
                 if (NATIVE_CODES.indexOf(type) == -1) {
                     throw runtime.newArgumentError("'" + next +
@@ -1365,14 +1353,14 @@ public class Pack {
                         if (listSize-- <= 0) {
                             throw runtime.newArgumentError(sTooFew);
                         }
-                        
+
                         IRubyObject from = (IRubyObject) list.get(idx++);
                         lCurElemString = from == runtime.getNil() ? "" : convert2String(from);
 
                         if (isStar) {
                             occurrences = lCurElemString.length();
                         }
-                    
+
                         switch (type) {
                             case 'a' :
                             case 'A' :
@@ -1385,7 +1373,7 @@ public class Pack {
                                     result.append(lCurElemString);
                                     occurrences -= lCurElemString.length();
                                     grow(result, (type == 'a') ? sNil10 : sSp10, occurrences);
-                                }    
+                                }
                             break;
 
                             //I believe there is a bug in the b and B case we skip a char too easily
@@ -1398,27 +1386,27 @@ public class Pack {
                                         padLength = occurrences - lCurElemString.length();
                                         occurrences = lCurElemString.length();
                                     }
-                                
+
                                     for (int i = 0; i < occurrences;) {
                                         if ((lCurElemString.charAt(i++) & 1) != 0) {//if the low bit is set
                                             currentByte |= 128; //set the high bit of the result
                                         }
-                                        
+
                                         if ((i & 7) == 0) {
                                             result.append((char) (currentByte & 0xff));
                                             currentByte = 0;
                                             continue;
                                         }
-                                        
+
                                            //if the index is not a multiple of 8, we are not on a byte boundary
                                            currentByte >>= 1; //shift the byte
                                     }
-                                
+
                                     if ((occurrences & 7) != 0) { //if the length is not a multiple of 8
                                         currentByte >>= 7 - (occurrences & 7); //we need to pad the last byte
                                         result.append((char) (currentByte & 0xff));
                                     }
-                                
+
                                     //do some padding, I don't understand the padding strategy
                                     result.setLength(result.length() + padLength);
                                 }
@@ -1432,26 +1420,26 @@ public class Pack {
                                         padLength = occurrences - lCurElemString.length();
                                         occurrences = lCurElemString.length();
                                     }
-                                    
+
                                     for (int i = 0; i < occurrences;) {
                                         currentByte |= lCurElemString.charAt(i++) & 1;
-                                        
+
                                         // we filled up current byte; append it and create next one
                                         if ((i & 7) == 0) {
                                             result.append((char) (currentByte & 0xff));
                                             currentByte = 0;
                                             continue;
                                         }
-                                        
+
                                         //if the index is not a multiple of 8, we are not on a byte boundary
-                                        currentByte <<= 1; 
+                                        currentByte <<= 1;
                                     }
-                                    
+
                                     if ((occurrences & 7) != 0) { //if the length is not a multiple of 8
                                         currentByte <<= 7 - (occurrences & 7); //we need to pad the last byte
                                         result.append((char) (currentByte & 0xff));
                                     }
-                                    
+
                                     result.setLength(result.length() + padLength);
                                 }
                             break;
@@ -1459,22 +1447,22 @@ public class Pack {
                                 {
                                     int currentByte = 0;
                                     int padLength = 0;
-                                    
+
                                     if (occurrences > lCurElemString.length()) {
                                         padLength = occurrences - lCurElemString.length();
                                         occurrences = lCurElemString.length();
                                     }
-                                    
+
                                     for (int i = 0; i < occurrences;) {
                                         char currentChar = lCurElemString.charAt(i++);
-                                        
+
                                         if (Character.isJavaIdentifierStart(currentChar)) {
                                             //this test may be too lax but it is the same as in MRI
                                             currentByte |= (((currentChar & 15) + 9) & 15) << 4;
                                         } else {
                                             currentByte |= (currentChar & 15) << 4;
                                         }
-                                        
+
                                         if ((i & 1) != 0) {
                                             currentByte >>= 4;
                                         } else {
@@ -1482,7 +1470,7 @@ public class Pack {
                                             currentByte = 0;
                                         }
                                     }
-                                    
+
                                     if ((occurrences & 1) != 0) {
                                         result.append((char) (currentByte & 0xff));
                                     }
@@ -1494,22 +1482,22 @@ public class Pack {
                                 {
                                     int currentByte = 0;
                                     int padLength = 0;
-                                    
+
                                     if (occurrences > lCurElemString.length()) {
                                         padLength = occurrences - lCurElemString.length();
                                         occurrences = lCurElemString.length();
                                     }
-                                    
+
                                     for (int i = 0; i < occurrences;) {
                                         char currentChar = lCurElemString.charAt(i++);
-                                        
+
                                         if (Character.isJavaIdentifierStart(currentChar)) {
                                             //this test may be too lax but it is the same as in MRI
                                             currentByte |= ((currentChar & 15) + 9) & 15;
                                         } else {
                                             currentByte |= currentChar & 15;
                                         }
-                                        
+
                                         if ((i & 1) != 0) {
                                             currentByte <<= 4;
                                         } else {
@@ -1517,7 +1505,7 @@ public class Pack {
                                             currentByte = 0;
                                         }
                                     }
-                                    
+
                                     if ((occurrences & 1) != 0) {
                                         result.append((char) (currentByte & 0xff));
                                     }
@@ -1561,11 +1549,11 @@ public class Pack {
 
                         for (;;) {
                             encodes(runtime, result, lCurElemString, occurrences, (char)type);
-                            
+
                             if (occurrences >= lCurElemString.length()) {
                                 break;
                             }
-                            
+
                             lCurElemString = lCurElemString.substring(occurrences);
                         }
                     }
@@ -1575,14 +1563,14 @@ public class Pack {
                        if (listSize-- <= 0) {
                            throw runtime.newArgumentError(sTooFew);
                        }
-                    
+
                        IRubyObject from = (IRubyObject) list.get(idx++);
                        lCurElemString = from == runtime.getNil() ? "" : convert2String(from);
 
                        if (occurrences <= 1) {
                            occurrences = 72;
                        }
-                    
+
                        qpencode(result, lCurElemString, occurrences);
                     }
                     break;
@@ -1599,7 +1587,7 @@ public class Pack {
 
                         c[cIndex] = (char) l;
                     }
-                    
+
                     try {
                         byte[] bytes = new String(c).getBytes("UTF8");
                         result.append(RubyString.bytesToString(bytes));
@@ -1611,11 +1599,11 @@ public class Pack {
         }
         return runtime.newString(result.toString());
     }
-    
+
     /**
-     * Retrieve an encoded int in little endian starting at index in the 
+     * Retrieve an encoded int in little endian starting at index in the
      * string value.
-     *  
+     *
      * @param encode string to get int from
      * @return the decoded integer
      */
@@ -1627,20 +1615,20 @@ public class Pack {
     }
 
     /**
-     * Retrieve an encoded int in little endian starting at index in the 
+     * Retrieve an encoded int in little endian starting at index in the
      * string value.
-     *  
+     *
      * @param encode string to get int from
      * @return the decoded integer
      */
     private static int decodeIntBigEndian(ByteBuffer encode) {
         return encode.getInt();
     }
-    
+
     /**
-     * Retrieve an encoded int in big endian starting at index in the string 
+     * Retrieve an encoded int in big endian starting at index in the string
      * value.
-     *  
+     *
      * @param encode string to get int from
      * @return the decoded integer
      */
@@ -1649,9 +1637,9 @@ public class Pack {
     }
 
     /**
-     * Retrieve an encoded int in little endian starting at index in the 
+     * Retrieve an encoded int in little endian starting at index in the
      * string value.
-     *  
+     *
      * @param encode the encoded string
      * @return the decoded integer
      */
@@ -1661,10 +1649,10 @@ public class Pack {
         encode.order(ByteOrder.BIG_ENDIAN);
         return value;
     }
-    
+
     /**
      * Encode an int in little endian format into a packed representation.
-     *  
+     *
      * @param result to be appended to
      * @param s the integer to encode
      */
@@ -1675,7 +1663,7 @@ public class Pack {
 
     /**
      * Encode an int in big-endian format into a packed representation.
-     *  
+     *
      * @param result to be appended to
      * @param s the integer to encode
      */
@@ -1683,23 +1671,23 @@ public class Pack {
         result.append((char) ((s>>24) &0xff)).append((char) ((s>>16) &0xff));
         result.append((char) ((s >> 8) & 0xff)).append((char) (s & 0xff));
     }
-    
+
     /**
      * Decode a long in big-endian format from a packed value
-     * 
+     *
      * @param encode string to get int from
      * @return the long value
      */
     private static long decodeLongBigEndian(ByteBuffer encode) {
         int c1 = decodeIntBigEndian(encode);
         int c2 = decodeIntBigEndian(encode);
-        
-        return ((long) c1 << 32) + (c2 & 0xffffffffL); 
+
+        return ((long) c1 << 32) + (c2 & 0xffffffffL);
     }
 
     /**
      * Decode a long in little-endian format from a packed value
-     * 
+     *
      * @param encode string to get int from
      * @return the long value
      */
@@ -1707,12 +1695,12 @@ public class Pack {
         int c1 = decodeIntLittleEndian(encode);
         int c2 = decodeIntLittleEndian(encode);
 
-        return ((long) c2 << 32) + (c1 & 0xffffffffL); 
+        return ((long) c2 << 32) + (c1 & 0xffffffffL);
     }
-    
+
     /**
      * Encode a long in little-endian format into a packed value
-     * 
+     *
      * @param result to pack long into
      * @param l is the long to encode
      */
@@ -1720,21 +1708,21 @@ public class Pack {
         encodeIntLittleEndian(result, (int) (l & 0xffffffff));
         encodeIntLittleEndian(result, (int) (l >>> 32));
     }
-    
+
     /**
      * Encode a long in big-endian format into a packed value
-     * 
+     *
      * @param result to pack long into
      * @param l is the long to encode
      */
     private static void encodeLongBigEndian(StringBuffer result, long l) {
-        encodeIntBigEndian(result, (int) (l >>> 32)); 
-        encodeIntBigEndian(result, (int) (l & 0xffffffff)); 
+        encodeIntBigEndian(result, (int) (l >>> 32));
+        encodeIntBigEndian(result, (int) (l & 0xffffffff));
     }
-    
+
     /**
      * Decode a double from a packed value
-     * 
+     *
      * @param encode string to get int from
      * @return the double value
      */
@@ -1744,37 +1732,37 @@ public class Pack {
 
     /**
      * Decode a double in big-endian from a packed value
-     * 
+     *
      * @param encode string to get int from
      * @return the double value
      */
     private static double decodeDoubleBigEndian(ByteBuffer encode) {
         return Double.longBitsToDouble(decodeLongBigEndian(encode));
     }
-    
+
     /**
      * Encode a double in little endian format into a packed value
-     * 
+     *
      * @param result to pack double into
      * @param d is the double to encode
      */
     private static void encodeDoubleLittleEndian(StringBuffer result, double d) {
-        encodeLongLittleEndian(result, Double.doubleToLongBits(d)); 
+        encodeLongLittleEndian(result, Double.doubleToLongBits(d));
     }
 
     /**
      * Encode a double in big-endian format into a packed value
-     * 
+     *
      * @param result to pack double into
      * @param d is the double to encode
      */
     private static void encodeDoubleBigEndian(StringBuffer result, double d) {
-        encodeLongBigEndian(result, Double.doubleToLongBits(d)); 
+        encodeLongBigEndian(result, Double.doubleToLongBits(d));
     }
-    
+
     /**
      * Decode a float in big-endian from a packed value
-     * 
+     *
      * @param encode string to get int from
      * @return the double value
      */
@@ -1784,21 +1772,21 @@ public class Pack {
 
     /**
      * Decode a float in little-endian from a packed value
-     * 
+     *
      * @param encode string to get int from
      * @return the double value
      */
     private static float decodeFloatLittleEndian(ByteBuffer encode) {
         return Float.intBitsToFloat(decodeIntLittleEndian(encode));
     }
-    
+
     /**
      * Encode a float in little endian format into a packed value
      * @param result to pack float into
      * @param f is the float to encode
      */
     private static void encodeFloatLittleEndian(StringBuffer result, float f) {
-        encodeIntLittleEndian(result, Float.floatToIntBits(f)); 
+        encodeIntLittleEndian(result, Float.floatToIntBits(f));
     }
 
     /**
@@ -1807,12 +1795,12 @@ public class Pack {
      * @param f is the float to encode
      */
     private static void encodeFloatBigEndian(StringBuffer result, float f) {
-        encodeIntBigEndian(result, Float.floatToIntBits(f)); 
+        encodeIntBigEndian(result, Float.floatToIntBits(f));
     }
-    
+
     /**
      * Decode a short in big-endian from a packed value
-     * 
+     *
      * @param encode string to get int from
      * @return the short value
      */
@@ -1825,7 +1813,7 @@ public class Pack {
 
     /**
      * Decode a short in big-endian from a packed value
-     * 
+     *
      * @param encode string to get int from
      * @return the short value
      */
@@ -1836,27 +1824,27 @@ public class Pack {
 
     /**
      * Decode a short in big-endian from a packed value
-     * 
+     *
      * @param encode string to get int from
      * @return the short value
      */
     private static short decodeShortBigEndian(ByteBuffer encode) {
         return encode.getShort();
     }
-    
+
     /**
      * Encode an short in little endian format into a packed representation.
-     *  
+     *
      * @param result to be appended to
      * @param s the short to encode
      */
     private static void encodeShortLittleEndian(StringBuffer result, int s) {
         result.append((char) (s & 0xff)).append((char) ((s & 0xff00) >> 8));
     }
-    
+
     /**
      * Encode an shortin big-endian format into a packed representation.
-     *  
+     *
      * @param result to be appended to
      * @param s the short to encode
      */

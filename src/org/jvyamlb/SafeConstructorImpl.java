@@ -325,7 +325,7 @@ public class SafeConstructorImpl extends BaseConstructorImpl {
         for(int i=0,j=values.length;i<j;i++) {
             vals.append(values[i].trim());
         }
-        return Base64Coder.decode(vals.toString());
+        return Base64Coder.decode(ByteList.plain(vals));
     }
 
     public static Object constructSpecializedSequence(final Constructor ctor, final String pref, final Node node) {

@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -42,11 +42,13 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
+import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -305,7 +307,7 @@ public class Cipher extends RubyObject {
             throw new RaiseException(getRuntime(), ciphErr, "key length to short", true);
         }
         try {
-            this.key = key.toString().getBytes("PLAIN");
+            this.key = key.convertToString().getBytes();
         } catch(Exception e) {
             throw new RaiseException(getRuntime(), ciphErr, null, true);
         }
@@ -317,7 +319,7 @@ public class Cipher extends RubyObject {
             throw new RaiseException(getRuntime(), ciphErr, "iv length to short", true);
         }
         try {
-            this.iv = iv.toString().getBytes("PLAIN");
+            this.iv = iv.convertToString().getBytes();
         } catch(Exception e) {
             throw new RaiseException(getRuntime(), ciphErr, null, true);
         }
@@ -385,7 +387,7 @@ public class Cipher extends RubyObject {
                 if(salt.length() != 8) {
                     throw new RaiseException(getRuntime(), ciphErr, "salt must be an 8-octet string", true);
                 }
-                ssalt = salt.getBytes("PLAIN");
+                ssalt = ByteList.plain(salt);
             }
             if(vdigest.isNil()) {
                 digest = MessageDigest.getInstance("MD5","BC");
@@ -393,7 +395,7 @@ public class Cipher extends RubyObject {
                 digest = MessageDigest.getInstance(((Digest)vdigest).getAlgorithm(),"BC");
             }
 
-            OpenSSLImpl.KeyAndIv result = OpenSSLImpl.EVP_BytesToKey(keyLen/8,ivLen/8,digest,ssalt,pass.getBytes("PLAIN"),iter);
+            OpenSSLImpl.KeyAndIv result = OpenSSLImpl.EVP_BytesToKey(keyLen/8,ivLen/8,digest,ssalt,ByteList.plain(pass),iter);
             this.key = result.getKey();
             this.iv = result.getIv();
         } catch(Exception e) {
@@ -420,8 +422,8 @@ public class Cipher extends RubyObject {
 
     public IRubyObject update(IRubyObject data) {
         //TODO: implement correctly
-        String val = data.toString();
-        if(val.length() == 0) {
+        byte[] val = data.convertToString().getBytes();
+        if(val.length == 0) {
             throw getRuntime().newArgumentError("data must not be empty");
         }
 
@@ -429,17 +431,17 @@ public class Cipher extends RubyObject {
             doInitialize();
         }
 
-        String str = "";
+        byte[] out = null;
         try {
-            byte[] out = ciph.update(val.toString().getBytes("PLAIN"));
+            out = ciph.update(val);
             if(out != null) {
-                str = new String(out,"PLAIN");
+                val = out;
             }
         } catch(Exception e) {
             throw new RaiseException(getRuntime(), ciphErr, null, true);
         }
 
-        return getRuntime().newString(str);
+        return RubyString.newString(getRuntime(), val);
     }
 
     public IRubyObject update_deprecated(IRubyObject data) {
@@ -457,7 +459,7 @@ public class Cipher extends RubyObject {
         try {
             byte[] out = ciph.doFinal();
             if(out != null) {
-                str = new String(out,"PLAIN");
+                str = new String(ByteList.plain(out));
             }
         } catch(Exception e) {
             throw new RaiseException(getRuntime(), ciphErr, null, true);

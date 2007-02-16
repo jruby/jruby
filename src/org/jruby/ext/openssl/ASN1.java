@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -69,10 +69,11 @@ import org.jruby.RubySymbol;
 import org.jruby.RubyTime;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -501,14 +502,14 @@ public class ASN1 {
         if(null != v_name) {
             RubyClass c = asnM.getClass(v_name);
             if(v instanceof DERBitString) {
-                String va = new String(((DERBitString)v).getBytes(),"PLAIN");
+                String va = new String(ByteList.plain(((DERBitString)v).getBytes()));
                 IRubyObject bString = c.callMethod(tc,"new",asnM.getRuntime().newString(va));
                 bString.callMethod(tc,"unused_bits=",asnM.getRuntime().newFixnum(((DERBitString)v).getPadBits()));
                 return bString;
             } else if(v instanceof DERString) {
                 String val = ((DERString)v).getString();
                 if(v instanceof DERUTF8String) {
-                    val = new String(val.getBytes("UTF-8"),"PLAIN");
+                    val = new String(ByteList.plain(val.getBytes("UTF-8")));
                 }
                 return c.callMethod(tc,"new",asnM.getRuntime().newString(val));
             } else if(v instanceof ASN1Sequence) {
@@ -543,7 +544,7 @@ public class ASN1 {
                 String av = ((DERObjectIdentifier)v).getId();
                 return c.callMethod(tc,"new",asnM.getRuntime().newString(av));
             } else if(v instanceof DEROctetString) {
-                String va = new String(((DEROctetString)v).getOctets(),"PLAIN");
+                String va = new String(ByteList.plain(((DEROctetString)v).getOctets()));
                 return c.callMethod(tc,"new",asnM.getRuntime().newString(va));
             } else if(v instanceof DERBoolean) {
                 return c.callMethod(tc,"new",((DERBoolean)v).isTrue() ? asnM.getRuntime().getTrue() : asnM.getRuntime().getFalse());
@@ -565,7 +566,7 @@ public class ASN1 {
     public static IRubyObject decode(IRubyObject recv, IRubyObject obj) throws Exception {
         obj = OpenSSLImpl.to_der_if_possible(obj);
         RubyModule asnM = (RubyModule)recv;
-        ASN1InputStream asis = new ASN1InputStream(obj.toString().getBytes("PLAIN"));
+        ASN1InputStream asis = new ASN1InputStream(obj.convertToString().getBytes());
         IRubyObject ret = decodeObj(asnM, asis.readObject());
         return ret;
     }
@@ -634,7 +635,7 @@ public class ASN1 {
         }
 
         public IRubyObject to_der() throws Exception {
-            return getRuntime().newString(new String(toASN1().getDEREncoded(),"PLAIN"));
+            return getRuntime().newString(new String(ByteList.plain(toASN1().getDEREncoded())));
         }
 
         protected IRubyObject defaultTag() {
@@ -764,9 +765,9 @@ public class ASN1 {
             } else if(imp == DERInteger.class) {
                 return new DERInteger(new BigInteger(val.toString()));
             } else if(imp == DEROctetString.class) {
-                return new DEROctetString(val.toString().getBytes("PLAIN"));
+                return new DEROctetString(val.convertToString().getBytes());
             } else if(imp == DERBitString.class) {
-                byte[] bs = val.toString().getBytes("PLAIN");
+                byte[] bs = val.convertToString().getBytes();
                 int unused = 0;
                 for(int i = (bs.length-1); i>-1; i--) {
                     if(bs[i] == 0) {

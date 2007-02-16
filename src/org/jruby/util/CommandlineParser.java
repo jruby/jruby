@@ -254,14 +254,14 @@ public class CommandlineParser {
             if (hasInlineScript) {
                 if (scriptFileName != null) {
                     File file = new File(getScriptFileName());
-                    return new BufferedReader(new InputStreamReader(new FileInputStream(file), kcode.encoding()));
+                    return new BufferedReader(new InputStreamReader(new FileInputStream(file), kcode.decoder()));
                 }
                 return new StringReader(inlineScript());
             } else if (isSourceFromStdin()) {
-                return new InputStreamReader(System.in, kcode.encoding());
+                return new InputStreamReader(System.in, kcode.decoder());
             } else {
                 File file = new File(getScriptFileName());
-                return new BufferedReader(new InputStreamReader(new FileInputStream(file), kcode.encoding()));
+                return new BufferedReader(new InputStreamReader(new FileInputStream(file), kcode.decoder()));
             }
         } catch (IOException e) {
             throw new MainExitException(1, "Error opening script file: " + e.getMessage());

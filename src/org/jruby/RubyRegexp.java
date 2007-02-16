@@ -136,7 +136,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         try {
             if(getCode() == KCode.UTF8) {
                 try {
-                    regex = new String(regex.getBytes("PLAIN"),"UTF8");
+                    regex = new String(ByteList.plain(regex),"UTF8");
                 } catch(Exception e) {
                 }
             }
@@ -464,7 +464,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         String t = target;
         if(utf8) {
             try {
-                t = new String(target.getBytes("PLAIN"),"UTF8");
+                t = new String(ByteList.plain(target),"UTF8");
             } catch(Exception e) {
             }
         }

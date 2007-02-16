@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -36,6 +36,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.openssl.x509store.X509AuxCertificate;
@@ -141,7 +142,7 @@ public class X509StoreCtx extends RubyObject {
         List ary = new ArrayList();
         for(Iterator iter = chain.iterator();iter.hasNext();) {
             X509AuxCertificate x509 = (X509AuxCertificate)iter.next();
-            ary.add(cX509Cert.callMethod(getRuntime().getCurrentContext(),"new",getRuntime().newString(new String(x509.getEncoded(),"PLAIN"))));
+            ary.add(cX509Cert.callMethod(getRuntime().getCurrentContext(),"new",RubyString.newString(getRuntime(), x509.getEncoded())));
         }
         return getRuntime().newArray(ary);
    }

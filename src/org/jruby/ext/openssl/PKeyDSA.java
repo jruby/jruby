@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -46,12 +46,14 @@ import org.jruby.IRuby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
+import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.openssl.x509store.PEM;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -150,14 +152,14 @@ public class PKeyDSA extends PKey {
                 }
                 if(null == val) {
                     try {
-                        val = fact.generatePrivate(new PKCS8EncodedKeySpec(input.getBytes("PLAIN")));
+                        val = fact.generatePrivate(new PKCS8EncodedKeySpec(ByteList.plain(input)));
                     } catch(Exception e) {
                         val = null;
                     }
                 }
                 if(null == val) {
                     try {
-                        val = fact.generatePublic(new X509EncodedKeySpec(input.getBytes("PLAIN")));
+                        val = fact.generatePublic(new X509EncodedKeySpec(ByteList.plain(input)));
                     } catch(Exception e) {
                         val = null;
                     }
@@ -193,7 +195,7 @@ public class PKeyDSA extends PKey {
 
     public IRubyObject to_der() throws Exception {
         if(pubKey != null && privKey == null) {
-            return getRuntime().newString( new String(pubKey.getEncoded(),"PLAIN"));
+            return RubyString.newString(getRuntime(), pubKey.getEncoded());
         } else if(privKey != null && pubKey != null) {
             DSAParams params = privKey.getParams();
             ASN1EncodableVector v1 = new ASN1EncodableVector();
@@ -203,9 +205,9 @@ public class PKeyDSA extends PKey {
             v1.add(new DERInteger(params.getG()));
             v1.add(new DERInteger(pubKey.getY()));
             v1.add(new DERInteger(privKey.getX()));
-            return getRuntime().newString( new String(new DERSequence(v1).getEncoded(),"PLAIN"));
+            return RubyString.newString(getRuntime(), new DERSequence(v1).getEncoded());
         } else {
-            return getRuntime().newString( new String(privKey.getEncoded(),"PLAIN"));
+            return RubyString.newString(getRuntime(), privKey.getEncoded());
         }
     }
 

@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2001 Alan Moore <alan_moore@gmx.net>
+ * Copyright (C) 2001, 2007 Alan Moore <alan_moore@gmx.net>
  * Copyright (C) 2001-2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
@@ -36,7 +36,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
@@ -68,9 +67,6 @@ import org.jruby.util.PrintfFormat;
 public class RubyString extends RubyObject {
     // Default record seperator
     private static final String DEFAULT_RS = "\n";
-
-    private static final String OUT_ENCODING = "PLAIN";
-    private static final String IN_ENCODING = "PLAIN";
 
     public static final byte OP_PLUS_SWITCHVALUE = 1;
     public static final byte OP_LT_SWITCHVALUE = 2;
@@ -105,11 +101,7 @@ public class RubyString extends RubyObject {
 
         assert value != null;
 
-        try {
-            this.value = new ByteList(value.toString().getBytes(IN_ENCODING),false);
-        } catch (UnsupportedEncodingException uee) {
-            // ignore, should never, ever happen
-        }
+        this.value = new ByteList(ByteList.plain(value),false);
     }
 
     private RubyString(IRuby runtime, RubyClass rubyClass, byte[] value) {
@@ -176,10 +168,8 @@ public class RubyString extends RubyObject {
      * Remembers toString value, which is expensive for StringBuffer.
      */
     public String toString() {
-        try {
-            if (stringValue == null) stringValue = new String(value.bytes,0,value.realSize, OUT_ENCODING);
-        } catch (UnsupportedEncodingException uee) {
-            // ignore, never happens
+        if (stringValue == null) {
+            stringValue = new String(ByteList.plain(value.bytes),0,value.realSize);
         }
         return stringValue;
     }
@@ -194,12 +184,7 @@ public class RubyString extends RubyObject {
     }
 
     public static String bytesToString(byte[] bytes, int beg, int len) {
-        try {
-            return new String(bytes, beg, len, IN_ENCODING);
-        } catch (java.io.UnsupportedEncodingException e) {
-            assert false : "unsupported encoding " + e;
-            return null;
-        }
+        return new String(ByteList.plain(bytes), beg, len);
     }
 
     public static String byteListToString(ByteList bytes) {
@@ -211,12 +196,7 @@ public class RubyString extends RubyObject {
     }
 
     public static byte[] stringToBytes(String string) {
-        try {
-            return string.getBytes(OUT_ENCODING);
-        } catch (java.io.UnsupportedEncodingException e) {
-            assert false : "unsupported encoding " + e;
-            return null;
-        }
+        return ByteList.plain(string);
     }
 
     public static boolean isDigit(int c) {
@@ -1480,7 +1460,7 @@ public class RubyString extends RubyObject {
 
         if(utf8) {
             try {
-                intern = new String(intern.getBytes("PLAIN"),"UTF8");
+                intern = new String(ByteList.plain(intern),"UTF8");
             } catch(Exception e) {
             }
         }
@@ -1493,7 +1473,7 @@ public class RubyString extends RubyObject {
             newStr.setTaint(isTaint() || repl.isTaint());
             if(utf8) {
                 try {
-                    newStr.setValue(new String(newStr.toString().getBytes("UTF8"),"PLAIN"));
+                    newStr.setValue(new String(ByteList.plain(newStr.toString().getBytes("UTF8"))));
                 } catch(Exception e) {
                 }
             }
@@ -2829,11 +2809,7 @@ public class RubyString extends RubyObject {
      * @param value The new java.lang.String this RubyString should encapsulate
      */
     public void setValue(CharSequence value) {
-        try {
-            this.value.replace(value.toString().getBytes(IN_ENCODING));
-        } catch (UnsupportedEncodingException uee) {
-            // ignore, never happens
-        }
+        this.value.replace(ByteList.plain(value));
         stringMutated();
     }
 

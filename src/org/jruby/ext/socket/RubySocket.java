@@ -28,23 +28,22 @@
 package org.jruby.ext.socket;
 
 import java.io.IOException;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.jruby.IRuby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.load.Library;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.load.Library;
+import org.jruby.util.ByteList;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -139,7 +138,7 @@ public class RubySocket extends RubyBasicSocket {
 
     private static InetAddress intoAddress(IRubyObject recv, String s) {
         try {
-            byte[] bs = s.getBytes("PLAIN");
+            byte[] bs = ByteList.plain(s);
             return InetAddress.getByAddress(bs);
         } catch(Exception e) {
             throw sockerr(recv, "strtoaddr: " + e.toString());
@@ -148,7 +147,7 @@ public class RubySocket extends RubyBasicSocket {
 
     private static String intoString(IRubyObject recv, InetAddress as) {
         try {
-            return new String(as.getAddress(),"PLAIN");
+            return new String(ByteList.plain(as.getAddress()));
         } catch(Exception e) {
             throw sockerr(recv, "addrtostr: " + e.toString());
         }

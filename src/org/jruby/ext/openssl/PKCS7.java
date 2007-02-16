@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -51,6 +51,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.RubyString;
 import org.jruby.ext.openssl.x509store.PEM;
 import org.jruby.ext.openssl.x509store.X509AuxCertificate;
 import org.jruby.ext.openssl.x509store.X509_STORE_CTX;
@@ -154,7 +155,6 @@ public class PKCS7 extends RubyObject {
 
         X509AuxCertificate x509 = ((X509Cert)cert).getAuxCert();
         PrivateKey pkey = ((PKey)key).getPrivateKey();
-        String in = data.toString();
         List x509s = null;
         if(!certs.isNil()) {
             x509s = new ArrayList();
@@ -171,7 +171,7 @@ public class PKCS7 extends RubyObject {
             CertStore store = CertStore.getInstance("Collection", new CollectionCertStoreParameters(x509s));
             gen.addCertificatesAndCRLs(store);
         }
-        CMSSignedData sdata = gen.generate(new CMSProcessableByteArray(in.getBytes("PLAIN")),"BC");
+        CMSSignedData sdata = gen.generate(new CMSProcessableByteArray(data.convertToString().getBytes()),"BC");
         
         PKCS7 ret = new PKCS7(recv.getRuntime(),((RubyClass)((RubyModule)(recv.getRuntime().getModule("OpenSSL").getConstant("PKCS7"))).getConstant("PKCS7")));
         ret.setInstanceVariable("@data",recv.getRuntime().getNil());
@@ -197,7 +197,7 @@ public class PKCS7 extends RubyObject {
             return this;
         }
         IRubyObject arg = OpenSSLImpl.to_der_if_possible(args[0]);
-        byte[] b = arg.toString().getBytes("PLAIN");
+        byte[] b = arg.convertToString().getBytes();
         signedData = PEM.read_PKCS7(new InputStreamReader(new ByteArrayInputStream(b)),null);
         if(null == signedData) {
             signedData = new CMSSignedData(ContentInfo.getInstance(new ASN1InputStream(b).readObject()));
@@ -376,7 +376,7 @@ public class PKCS7 extends RubyObject {
     }
 
     public IRubyObject to_der() throws Exception {
-        return getRuntime().newString(new String(signedData.getEncoded(),"PLAIN"));
+        return RubyString.newString(getRuntime(), signedData.getEncoded());
     }
 
     public IRubyObject rbClone() {

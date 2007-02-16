@@ -60,19 +60,6 @@
         <artifactId>maven-antrun-plugin</artifactId>
         <executions>
           <execution>
-            <id>unjar-deps</id>
-            <phase>process-resources</phase>
-            <configuration>
-              <tasks>
-                <unjar src="${project.basedir}/../../lib/plaincharset.jar" dest="${project.build.outputDirectory}"/>
-                <delete file="${project.build.outputDirectory}/META-INF/MANIFEST.MF"/>
-              </tasks>
-            </configuration>
-            <goals>
-              <goal>run</goal>
-            </goals>
-          </execution>
-          <execution>
             <id>serialize</id>
             <phase>process-classes</phase>
             <configuration>

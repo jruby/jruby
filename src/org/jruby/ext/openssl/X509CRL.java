@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -54,6 +54,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
+import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.openssl.x509store.PEM;
@@ -145,10 +146,10 @@ public class X509CRL extends RubyObject {
             return this;
         }
         
-        ByteArrayInputStream bis = new ByteArrayInputStream(args[0].toString().getBytes("PLAIN"));
+        ByteArrayInputStream bis = new ByteArrayInputStream(args[0].convertToString().getBytes());
         CertificateFactory cf = CertificateFactory.getInstance("X.509","BC");
         crl = (java.security.cert.X509CRL)cf.generateCRL(bis);
-        crl_v = new ASN1InputStream(new ByteArrayInputStream(args[0].toString().getBytes("PLAIN"))).readObject();
+        crl_v = new ASN1InputStream(new ByteArrayInputStream(args[0].convertToString().getBytes())).readObject();
         DEREncodable v0 = ((DERSequence)(((DERSequence)crl_v).getObjectAt(0))).getObjectAt(0);
         if(v0 instanceof DERInteger) {
             set_version(getRuntime().newFixnum(((DERInteger)v0).getValue().intValue()));
@@ -158,7 +159,7 @@ public class X509CRL extends RubyObject {
         set_last_update(RubyTime.newTime(getRuntime(),crl.getThisUpdate().getTime()));
         set_next_update(RubyTime.newTime(getRuntime(),crl.getNextUpdate().getTime()));
         ThreadContext tc = getRuntime().getCurrentContext();
-        set_issuer(((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("X509"))).getConstant("Name").callMethod(tc,"new",getRuntime().newString(new String(crl.getIssuerX500Principal().getEncoded(),"PLAIN"))));
+        set_issuer(((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("X509"))).getConstant("Name").callMethod(tc,"new",RubyString.newString(getRuntime(), crl.getIssuerX500Principal().getEncoded())));
 
         revoked = getRuntime().newArray();
 
@@ -177,9 +178,9 @@ public class X509CRL extends RubyObject {
                 IRubyObject mASN1 = ((RubyModule)(getRuntime().getModule("OpenSSL"))).getConstant("ASN1");
                 IRubyObject rValue = null;
                 try {
-                    rValue = ASN1.decode(mASN1,ASN1.decode(mASN1,getRuntime().newString(new String(value,"PLAIN"))).callMethod(tc,"value"));
+                    rValue = ASN1.decode(mASN1,ASN1.decode(mASN1,RubyString.newString(getRuntime(), value)).callMethod(tc,"value"));
                 } catch(Exception e) {
-                    rValue = getRuntime().newString(new String(value,"PLAIN"));
+                    rValue = RubyString.newString(getRuntime(), value);
                 }
                 X509Extensions.Extension ext1 = (X509Extensions.Extension)(((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("X509"))).getConstant("Extension").callMethod(tc,"new"));
                 ext1.setRealOid(ext1.getObjectIdentifier(oid));
@@ -210,7 +211,7 @@ public class X509CRL extends RubyObject {
     }
 
     public IRubyObject to_der() throws Exception {
-        return getRuntime().newString(new String(crl_v.getEncoded(),"PLAIN"));
+        return RubyString.newString(getRuntime(), crl_v.getEncoded());
     }
 
     private static final String IND8 = "        ";

@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -52,6 +52,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
+import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.openssl.x509store.PEM;
@@ -61,6 +62,7 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -142,7 +144,7 @@ public class X509Cert extends RubyObject {
 
     public static IRubyObject wrap(IRuby runtime, Certificate c) throws Exception {
         RubyClass cr = (RubyClass)(((RubyModule)(runtime.getModule("OpenSSL").getConstant("X509"))).getConstant("Certificate"));
-        return cr.callMethod(runtime.getCurrentContext(),"new",runtime.newString(new String(c.getEncoded(),"PLAIN")));
+        return cr.callMethod(runtime.getCurrentContext(),"new",RubyString.newString(runtime, c.getEncoded()));
     }
 
     public IRubyObject _initialize(IRubyObject[] args, Block unusedBlock) throws Exception {
@@ -152,15 +154,15 @@ public class X509Cert extends RubyObject {
         }
         ThreadContext tc = getRuntime().getCurrentContext();
         IRubyObject arg = OpenSSLImpl.to_der_if_possible(args[0]);
-        ByteArrayInputStream bis = new ByteArrayInputStream(arg.toString().getBytes("PLAIN"));
+        ByteArrayInputStream bis = new ByteArrayInputStream(arg.convertToString().getBytes());
         CertificateFactory cf = CertificateFactory.getInstance("X.509","BC");
         cert = (X509Certificate)cf.generateCertificate(bis);
 
         set_serial(RubyNumeric.str2inum(getRuntime(),getRuntime().newString(cert.getSerialNumber().toString()),10));
         set_not_before(RubyTime.newTime(getRuntime(),cert.getNotBefore().getTime()));
         set_not_after(RubyTime.newTime(getRuntime(),cert.getNotAfter().getTime()));
-        set_subject(((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("X509"))).getConstant("Name").callMethod(tc,"new",getRuntime().newString(new String(cert.getSubjectX500Principal().getEncoded(),"PLAIN"))));
-        set_issuer(((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("X509"))).getConstant("Name").callMethod(tc,"new",getRuntime().newString(new String(cert.getIssuerX500Principal().getEncoded(),"PLAIN"))));
+        set_subject(((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("X509"))).getConstant("Name").callMethod(tc,"new",RubyString.newString(getRuntime(), cert.getSubjectX500Principal().getEncoded())));
+        set_issuer(((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("X509"))).getConstant("Name").callMethod(tc,"new",RubyString.newString(getRuntime(), cert.getIssuerX500Principal().getEncoded())));
 
         IRubyObject extFact = ((RubyClass)(((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("X509"))).getConstant("ExtensionFactory"))).callMethod(tc,"new");
         extFact.callMethod(tc,"subject_certificate=",this);
@@ -170,8 +172,7 @@ public class X509Cert extends RubyObject {
             for(Iterator iter = crit.iterator();iter.hasNext();) {
                 String critOid = (String)iter.next();
                 byte[] value = cert.getExtensionValue(critOid);
-                IRubyObject rValue = ASN1.decode(((RubyModule)(getRuntime().getModule("OpenSSL"))).getConstant("ASN1"),getRuntime().newString(new String(value,"PLAIN"))).callMethod(tc,"value");
-                //                add_extension(extFact.callMethod("create_ext", new IRubyObject[]{getRuntime().newString(critOid),getRuntime().newString(Utils.toHex(rValue.toString().substring(2).getBytes("PLAIN"),':')),getRuntime().getTrue()}));
+                IRubyObject rValue = ASN1.decode(((RubyModule)(getRuntime().getModule("OpenSSL"))).getConstant("ASN1"),RubyString.newString(getRuntime(), value)).callMethod(tc,"value");
                 if(critOid.equals("2.5.29.17")) {
                     add_extension(extFact.callMethod(tc,"create_ext", new IRubyObject[]{getRuntime().newString(critOid),getRuntime().newString(rValue.toString()),getRuntime().getTrue()}));
                 } else {
@@ -185,8 +186,7 @@ public class X509Cert extends RubyObject {
             for(Iterator iter = ncrit.iterator();iter.hasNext();) {
                 String ncritOid = (String)iter.next();
                 byte[] value = cert.getExtensionValue(ncritOid);
-                IRubyObject rValue = ASN1.decode(((RubyModule)(getRuntime().getModule("OpenSSL"))).getConstant("ASN1"),getRuntime().newString(new String(value,"PLAIN"))).callMethod(tc,"value");
-                //                add_extension(extFact.callMethod("create_ext", new IRubyObject[]{getRuntime().newString(ncritOid),getRuntime().newString(Utils.toHex(rValue.toString().substring(2).getBytes("PLAIN"),':')),getRuntime().getFalse()}));
+                IRubyObject rValue = ASN1.decode(((RubyModule)(getRuntime().getModule("OpenSSL"))).getConstant("ASN1"),RubyString.newString(getRuntime(), value)).callMethod(tc,"value");
 
                 if(ncritOid.equals("2.5.29.17")) {
                     add_extension(extFact.callMethod(tc,"create_ext", new IRubyObject[]{getRuntime().newString(ncritOid),getRuntime().newString(rValue.toString()),getRuntime().getFalse()}));
@@ -209,7 +209,7 @@ public class X509Cert extends RubyObject {
     }
 
     public IRubyObject to_der() throws Exception {
-        return getRuntime().newString(new String(cert.getEncoded(),"PLAIN"));
+        return RubyString.newString(getRuntime(), cert.getEncoded());
     }
 
     public IRubyObject to_pem() throws Exception {
@@ -384,7 +384,7 @@ public class X509Cert extends RubyObject {
                     for(int i=0;i<n2.length;i++) {
                         v1.add(n2[i]);
                     }
-                    ag.setRealValue(new String(new GeneralNames(new DERSequence(v1)).getDEREncoded(),"PLAIN"));
+                    ag.setRealValue(new String(ByteList.plain(new GeneralNames(new DERSequence(v1)).getDEREncoded())));
                     one = false;
                     break;
                 }

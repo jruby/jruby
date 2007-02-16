@@ -27,10 +27,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jvyamlb;
 
-import java.io.InputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
-
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -38,9 +37,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.jvyamlb.tokens.*;
-
 import org.jruby.util.ByteList;
+import org.jvyamlb.tokens.AliasToken;
+import org.jvyamlb.tokens.AnchorToken;
+import org.jvyamlb.tokens.DirectiveToken;
+import org.jvyamlb.tokens.ScalarToken;
+import org.jvyamlb.tokens.TagToken;
+import org.jvyamlb.tokens.Token;
 
 /**
  * <p>A Java implementation of the RbYAML scanner.</p>
@@ -301,7 +304,7 @@ public class ScannerImpl implements Scanner {
 
     public ScannerImpl(final String stream) {
         try {
-            this.buffer = new ByteList(stream.getBytes("PLAIN"),false);
+            this.buffer = new ByteList(ByteList.plain(stream),false);
         } catch(Exception e) {
             throw new RuntimeException(e.getMessage());
         }
@@ -742,10 +745,9 @@ public class ScannerImpl implements Scanner {
             forward();
             try {
                 ensure(2,false);
-                bytes.append(Integer.parseInt(new String(this.buffer.bytes,this.pointer,2,"PLAIN"),16));
+                bytes.append(Integer.parseInt(new String(ByteList.plain(this.buffer.bytes),this.pointer,2),16));
             } catch(final NumberFormatException nfe) {
                 throw new ScannerException("while scanning a " + name,"expected URI escape sequence of 2 hexadecimal numbers, but found " + peek(1) + "(" + ((int)peek(1)) + ") and "+ peek(2) + "(" + ((int)peek(2)) + ")",null);
-            } catch(final java.io.UnsupportedEncodingException e) {
             }
             forward(2);
         }

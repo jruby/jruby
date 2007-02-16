@@ -28,8 +28,12 @@
 
 package org.jruby.util;
 
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
 import java.util.regex.Pattern;
+
 import org.jruby.IRuby;
+import org.jruby.charset.PlainCharset;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class KCode {
@@ -78,12 +82,12 @@ public class KCode {
         return runtime.newString(kcode);
     }
     
-    public String encoding() {
+    public CharsetDecoder decoder() {
         if (this == UTF8) {
-            return "UTF-8";
+            return Charset.forName("UTF-8").newDecoder();
         } 
         
-        return "PLAIN";
+        return new PlainCharset().newDecoder();
     }
 
     public int flags() {
