@@ -36,6 +36,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import org.jruby.IRuby;
 import org.jruby.runtime.load.LoadServiceResource;
+import org.jruby.util.KCode;
 
 public class ExternalScript implements Library {
     private final LoadServiceResource resource;
@@ -46,7 +47,9 @@ public class ExternalScript implements Library {
 
     public void load(IRuby runtime) {
         try {
-            Reader reader = new BufferedReader(new InputStreamReader(resource.getURL().openStream(), runtime.getKCode().decoder()));
+            // KCode.NONE is used because KCODE does not affect parse in Ruby 1.8
+            // if Ruby 2.0 encoding pragmas are implemented, this will need to change
+            Reader reader = new BufferedReader(new InputStreamReader(resource.getURL().openStream(), KCode.NONE.decoder()));
             runtime.loadScript(resource.getName(), reader, false);
             reader.close();
         } catch (IOException e) {

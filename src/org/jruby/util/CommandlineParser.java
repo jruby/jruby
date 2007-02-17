@@ -251,17 +251,19 @@ public class CommandlineParser {
 
     public Reader getScriptSource() {
         try {
+            // KCode.NONE is used because KCODE does not affect parse in Ruby 1.8
+            // if Ruby 2.0 encoding pragmas are implemented, this will need to change
             if (hasInlineScript) {
                 if (scriptFileName != null) {
                     File file = new File(getScriptFileName());
-                    return new BufferedReader(new InputStreamReader(new FileInputStream(file), kcode.decoder()));
+                    return new BufferedReader(new InputStreamReader(new FileInputStream(file), KCode.NONE.decoder()));
                 }
                 return new StringReader(inlineScript());
             } else if (isSourceFromStdin()) {
-                return new InputStreamReader(System.in, kcode.decoder());
+                return new InputStreamReader(System.in, KCode.NONE.decoder());
             } else {
                 File file = new File(getScriptFileName());
-                return new BufferedReader(new InputStreamReader(new FileInputStream(file), kcode.decoder()));
+                return new BufferedReader(new InputStreamReader(new FileInputStream(file), KCode.NONE.decoder()));
             }
         } catch (IOException e) {
             throw new MainExitException(1, "Error opening script file: " + e.getMessage());
