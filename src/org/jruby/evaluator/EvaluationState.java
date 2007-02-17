@@ -151,6 +151,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.KCode;
+import org.jruby.util.collections.SinglyLinkedList;
 
 public class EvaluationState {
     public static IRubyObject eval(ThreadContext context, Node node, IRubyObject self, Block block) {
@@ -159,6 +160,21 @@ public class EvaluationState {
         } catch (StackOverflowError sfe) {
             throw context.getRuntime().newSystemStackError("stack level too deep");
         }
+    }
+    
+    /* Something like cvar_cbase() from eval.c, factored out for the benefit
+     * of all the classvar-related node evaluations */
+    private static RubyModule getClassVariableBase(ThreadContext context, IRuby runtime) {
+        SinglyLinkedList cref = context.peekCRef();
+        RubyModule rubyClass = (RubyModule) cref.getValue();
+        if (rubyClass.isSingleton()) {
+            cref = cref.getNext();
+            rubyClass = (RubyModule) cref.getValue();
+            if (cref.getNext() == null) {
+                runtime.getWarnings().warn("class variable access from toplevel singleton method");
+            }            
+        }
+        return rubyClass;
     }
 
     private static IRubyObject evalInternal(ThreadContext context, Node node, IRubyObject self, Block aBlock) {
@@ -431,14 +447,11 @@ public class EvaluationState {
             case NodeTypes.CLASSVARASGNNODE: {
                 ClassVarAsgnNode iVisited = (ClassVarAsgnNode) node;
                 IRubyObject result = evalInternal(context, iVisited.getValueNode(), self, aBlock);
-                RubyModule rubyClass = (RubyModule) context.peekCRef().getValue();
+                RubyModule rubyClass = getClassVariableBase(context, runtime);
     
                 if (rubyClass == null) {
                     rubyClass = self.getMetaClass();
-                } else if (rubyClass.isSingleton()) {
-                    rubyClass = (RubyModule) rubyClass.getInstanceVariable("__attached__");
-                }
-    
+                }     
                 rubyClass.setClassVar(iVisited.getName(), result);
     
                 return result;
@@ -447,28 +460,25 @@ public class EvaluationState {
     
                 ClassVarDeclNode iVisited = (ClassVarDeclNode) node;
     
-                // FIXME: shouldn't we use cref here?
-                if (context.getRubyClass() == null) {
+                RubyModule rubyClass = getClassVariableBase(context, runtime);                
+                if (rubyClass == null) {
                     throw runtime.newTypeError("no class/module to define class variable");
                 }
                 IRubyObject result = evalInternal(context, iVisited.getValueNode(), self, aBlock);
-                ((RubyModule) context.peekCRef().getValue()).setClassVar(iVisited.getName(),
-                        result);
+                rubyClass.setClassVar(iVisited.getName(), result);
     
                 return result;
             }
             case NodeTypes.CLASSVARNODE: {
                 ClassVarNode iVisited = (ClassVarNode) node;
-                RubyModule rubyClass = (RubyModule) context.peekCRef().getValue();
+                RubyModule rubyClass = getClassVariableBase(context, runtime);
     
                 if (rubyClass == null) {
                     rubyClass = self.getMetaClass();
-                } else if (rubyClass.isSingleton()) {
-                    rubyClass = (RubyModule) context.peekCRef().getNext().getValue();
                 }
-                
-                    return rubyClass.getClassVar(iVisited.getName());
-                    }
+
+                return rubyClass.getClassVar(iVisited.getName());
+            }
             case NodeTypes.COLON2NODE: {
                 Colon2Node iVisited = (Colon2Node) node;
                 Node leftNode = iVisited.getLeftNode();
