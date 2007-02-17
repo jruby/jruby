@@ -636,7 +636,7 @@ public class RubyKernel {
 
         RubyString str = RubyString.stringValue(args[0]);
 
-        RubyArray newArgs = recv.getRuntime().newArray(args);
+        RubyArray newArgs = recv.getRuntime().newArrayNoCopy(args);
         newArgs.shift();
 
         return str.format(newArgs);

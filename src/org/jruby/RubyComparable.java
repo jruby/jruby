@@ -63,12 +63,12 @@ public class RubyComparable {
     /** rb_cmpint
      * 
      */
-    public static long cmpint(IRubyObject val, IRubyObject a, IRubyObject b) {
+    public static int cmpint(IRubyObject val, IRubyObject a, IRubyObject b) {
         if (val.isNil()) {
             cmperr(a, b);
         }
         if (val instanceof RubyFixnum) {
-            return ((RubyFixnum) val).getLongValue();
+            return RubyNumeric.fix2int((RubyFixnum) val);
         }
         if (val instanceof RubyBignum) {
             if (((RubyBignum) val).getValue().signum() == -1) {

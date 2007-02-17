@@ -56,7 +56,7 @@ public class IRBApplet extends Applet {
         }};
         final IRuby runtime = Ruby.newInstance(config);
         
-        runtime.defineGlobalConstant("ARGV", runtime.newArray(new IRubyObject[] {
+        runtime.defineGlobalConstant("ARGV", runtime.newArrayNoCopy(new IRubyObject[] {
                 runtime.newString("-f") }));
         runtime.getLoadService().init(new ArrayList(0));
         

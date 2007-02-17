@@ -61,7 +61,7 @@ public class IRBConsole extends JFrame {
             }};
         final IRuby runtime = Ruby.newInstance(config);
 
-        IRubyObject argumentArray = runtime.newArray(JavaUtil.convertJavaArrayToRuby(runtime, args));
+        IRubyObject argumentArray = runtime.newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(runtime, args));
         runtime.defineGlobalConstant("ARGV", argumentArray);
         runtime.getGlobalVariables().defineReadonly("$*", new ValueAccessor(argumentArray));
         runtime.getGlobalVariables().defineReadonly("$$", new ValueAccessor(runtime.newFixnum(System.identityHashCode(runtime))));

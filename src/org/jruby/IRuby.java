@@ -110,6 +110,8 @@ public interface IRuby {
 
     RubyClass getFixnum();
 
+    RubyClass getArray();
+
     IRubyObject getTmsStruct();
 
     /** Returns the "true" instance from the instance pool.
@@ -344,7 +346,8 @@ public interface IRuby {
     RubyArray newArray(IRubyObject car, IRubyObject cdr);
 
     RubyArray newArray(IRubyObject[] objects);
-
+    RubyArray newArrayNoCopy(IRubyObject[] objects);
+    
     RubyArray newArray(List list);
 
     RubyArray newArray(int size);

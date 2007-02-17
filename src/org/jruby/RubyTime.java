@@ -280,7 +280,7 @@ public class RubyTime extends RubyObject {
     }
 
     public RubyArray to_a() {
-        return getRuntime().newArray(new IRubyObject[] { sec(), min(), hour(), mday(), month(), 
+        return getRuntime().newArrayNoCopy(new IRubyObject[] { sec(), min(), hour(), mday(), month(), 
                 year(), wday(), yday(), isdst(), zone() });
     }
 

@@ -316,7 +316,7 @@ public class RubyThread extends RubyObject {
     public static RubyArray list(IRubyObject recv) {
     	RubyThread[] activeThreads = recv.getRuntime().getThreadService().getActiveRubyThreads();
         
-        return recv.getRuntime().newArray(activeThreads);
+        return recv.getRuntime().newArrayNoCopy(activeThreads);
     }
 
     public IRubyObject aref(IRubyObject key) {

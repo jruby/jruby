@@ -392,4 +392,6 @@ public interface IRubyObject {
     IRubyObject anyToString();
 
     IRubyObject checkStringType();
+
+    IRubyObject checkArrayType();    
 }

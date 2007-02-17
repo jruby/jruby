@@ -37,7 +37,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.AccessControlException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -50,6 +49,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.jruby.IRuby;
+import org.jruby.RubyArray;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -125,8 +125,8 @@ public class LoadService {
     private static final Pattern sourcePattern = Pattern.compile("^(.*)\\.(rb|rb\\.ast\\.ser)$");
     private static final Pattern extensionPattern = Pattern.compile("^(.*)\\.(so|o|dll|jar)$");
 
-    private final List loadPath = new ArrayList();
-    private final Set loadedFeatures = Collections.synchronizedSet(new HashSet());
+    private final RubyArray loadPath;
+    private final RubyArray loadedFeatures;
     private final Set loadedFeaturesInternal = Collections.synchronizedSet(new HashSet());
     private final Map builtinLibraries = new HashMap();
 
@@ -138,6 +138,8 @@ public class LoadService {
     
     public LoadService(IRuby runtime) {
         this.runtime = runtime;
+        loadPath = RubyArray.newArray(runtime);
+        loadedFeatures = RubyArray.newArray(runtime);    
     }
 
     public void init(List additionalDirectories) {
@@ -173,7 +175,9 @@ public class LoadService {
     }
 
     private void addPath(String path) {
-        loadPath.add(runtime.newString(path.replace('\\', '/')));
+        synchronized(loadPath) {
+            loadPath.add(runtime.newString(path.replace('\\', '/')));
+        }
     }
 
     public void load(String file) {
@@ -261,23 +265,24 @@ public class LoadService {
         // attempt to load the found library
         try {
             loadedFeaturesInternal.add(loadName);
-            loadedFeatures.add(runtime.newString(loadName));
+            synchronized(loadedFeatures) {
+                loadedFeatures.add(runtime.newString(loadName));
+            }
 
             library.load(runtime);
             return true;
         } catch (Exception e) {
             loadedFeaturesInternal.remove(loadName);
-            loadedFeatures.remove(runtime.newString(loadName));
-            if (e instanceof RaiseException) {
-                throw (RaiseException) e;
-            } else {
-                if(runtime.getDebug().isTrue()) {
-                    e.printStackTrace();
-                }
-                RaiseException re = runtime.newLoadError("IO error -- " + file);
-                re.initCause(e);
-                throw re;
+            synchronized(loadedFeatures) {
+                loadedFeatures.remove(runtime.newString(loadName));
             }
+            if (e instanceof RaiseException) throw (RaiseException) e;
+
+            if(runtime.getDebug().isTrue()) e.printStackTrace();
+
+            RaiseException re = runtime.newLoadError("IO error -- " + file);
+            re.initCause(e);
+            throw re;
         }
     }
 
@@ -288,11 +293,11 @@ public class LoadService {
         return smartLoad(file);
     }
 
-    public List getLoadPath() {
+    public IRubyObject getLoadPath() {
         return loadPath;
     }
 
-    public Set getLoadedFeatures() {
+    public IRubyObject getLoadedFeatures() {
         return loadedFeatures;
     }
 
@@ -391,7 +396,7 @@ public class LoadService {
         } catch (IllegalArgumentException illArgEx) {
         }
 
-        for (Iterator pathIter = loadPath.iterator(); pathIter.hasNext();) {
+        for (Iterator pathIter = loadPath.getList().iterator(); pathIter.hasNext();) {
             String entry = pathIter.next().toString();
             if (entry.startsWith("jar:")) {
                 JarFile current = (JarFile)jarFiles.get(entry);
@@ -445,7 +450,7 @@ public class LoadService {
         // Note: Jar resources must NEVER begin with an '/'. (previous code said "always begin with a /")
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
-        for (Iterator pathIter = loadPath.iterator(); pathIter.hasNext();) {
+        for (Iterator pathIter = loadPath.getList().iterator(); pathIter.hasNext();) {
             String entry = pathIter.next().toString();
 
             // if entry starts with a slash, skip it since classloader resources never start with a /

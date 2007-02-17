@@ -113,7 +113,7 @@ public class RubyTCPSocket extends RubyIPSocket {
             ret[1] = r.newArray();
             ret[2] = r.newFixnum(2); //AF_INET
             ret[3] = r.newString(addr.getHostAddress());
-            return r.newArray(ret);
+            return r.newArrayNoCopy(ret);
         } catch(UnknownHostException e) {
             throw sockerr(recv, "gethostbyname: name or service not known");
         }

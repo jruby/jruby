@@ -118,24 +118,27 @@ public class RubyNumeric extends RubyObject {
      *  ================ 
      */
 
-    /** rb_num2int, check_int, NUM2INT
+    /** rb_num2int, NUM2INT
      * 
      */
     public static int num2int(IRubyObject arg) {
-        long num;
-        if (arg instanceof RubyFixnum) { // Fixnums can be bigger than int
-            num = ((RubyFixnum) arg).getLongValue();
-        } else {
-            num = num2long(arg);
-        }
+        long num = num2long(arg);
 
+        checkInt(arg, num);
+        return (int)num;
+        }
+    
+    /** check_int
+     * 
+     */
+    public static void checkInt(IRubyObject arg, long num){
         String s;
         if (num < Integer.MIN_VALUE) {
             s = "small";
         } else if (num > Integer.MAX_VALUE) {
             s = "big";
         } else {
-            return (int) num;
+            return;
         }
         throw arg.getRuntime().newRangeError("integer " + num + " too " + s + " to convert to `int'");
     }
@@ -214,19 +217,15 @@ public class RubyNumeric extends RubyObject {
     }
 
     public static long fix2long(IRubyObject arg) {
-        if (arg instanceof RubyFixnum) {
             return ((RubyFixnum) arg).getLongValue();
         }
-        throw arg.getRuntime().newTypeError("argument is not a Fixnum");
-    }
 
     public static int fix2int(IRubyObject arg) {
-        long val = fix2long(arg);
-        if (val > Integer.MAX_VALUE || val < Integer.MIN_VALUE) {
-            throw arg.getRuntime().newTypeError("argument value is too big to convert to int");
+        long num = arg instanceof RubyFixnum ? fix2long(arg) : num2long(arg);
+
+        checkInt(arg, num);
+        return (int) num;
         }
-        return (int) val;
-    }
 
     public static RubyInteger str2inum(IRuby runtime, RubyString str, int base) {
         return str2inum(runtime,str,base,false);

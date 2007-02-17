@@ -178,7 +178,7 @@ public class Block {
             
         if (replacementSelf != null) newBlock.self = replacementSelf; 
 
-        return newBlock.yield(context, context.getRuntime().newArray(args), null, null, true);
+        return newBlock.yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true);
     }
     
     protected void pre(ThreadContext context, RubyModule klass) {

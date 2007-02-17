@@ -78,7 +78,7 @@ public class RubyIPSocket extends RubyBasicSocket {
             ret[2] = r.newString(addr.getHostName());
         }
         ret[3] = r.newString(addr.getAddress().getHostAddress());
-        return r.newArray(ret);
+        return r.newArrayNoCopy(ret);
     }
 
     public IRubyObject addr() {

@@ -401,7 +401,7 @@ public class IOMetaClass extends ObjectMetaClass {
     public IRubyObject pipe() throws Exception {
         IRuby runtime = getRuntime();
         Pipe pipe = Pipe.open();
-        return runtime.newArray(new IRubyObject[]{
+        return runtime.newArrayNoCopy(new IRubyObject[]{
             new RubyIO(runtime, pipe.source()),
             new RubyIO(runtime, pipe.sink())
         });

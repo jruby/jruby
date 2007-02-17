@@ -228,7 +228,7 @@ public class RubyMatchData extends RubyObject {
         if (outOfBounds(index)) {
             return getRuntime().getNil();
         }
-        return getRuntime().newArray(new IRubyObject[] { begin(index), end(index)});
+        return getRuntime().newArrayNoCopy(new IRubyObject[] { begin(index), end(index)});
     }
 
     /** match_pre_match

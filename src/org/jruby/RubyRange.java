@@ -81,11 +81,11 @@ public class RubyRange extends RubyObject {
             return new RubyRange(runtime, klass);
         }
     };
-    
+
     public IRubyObject doClone(){
         return RubyRange.newRange(getRuntime(), begin, end, isExclusive);
     }
-    
+
     private static final ObjectMarshal RANGE_MARSHAL = new ObjectMarshal() {
         public void marshalTo(IRuby runtime, Object obj, RubyClass type,
                               MarshalStream marshalStream) throws IOException {
@@ -218,6 +218,45 @@ public class RubyRange extends RubyObject {
 
         return new long[] { beginLong, Math.max(endLong - beginLong, 0L) };
     }
+    
+    public long[] begLen(long len, int err){
+        long beg = RubyNumeric.num2long(this.begin);
+        long end = RubyNumeric.num2long(this.end);
+
+        if(beg < 0){
+            beg += len;
+            if(beg < 0){
+                if(err != 0){
+                    throw getRuntime().newRangeError(beg + ".." + (isExclusive ? "." : "") + end + " out of range");
+                }
+                return null;
+            }
+        }
+
+        if(err == 0 || err == 2){
+            if(beg > len){
+                if(err != 0){
+                    throw getRuntime().newRangeError(beg + ".." + (isExclusive ? "." : "") + end + " out of range");
+                }
+                return null;
+            }
+            if(end > len){
+                end = len;
+            }
+        }
+        if(end < 0){
+            end += len;
+        }
+        if(!isExclusive){
+            end++;
+        }
+        len = end - beg;
+        if(len < 0){
+            len = 0;
+        }
+
+        return new long[]{beg, len};
+    }    
 
     public static RubyRange newRange(IRuby runtime, IRubyObject begin, IRubyObject end, boolean isExclusive) {
         RubyRange range = new RubyRange(runtime, runtime.getClass("Range"));

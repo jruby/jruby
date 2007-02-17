@@ -320,7 +320,7 @@ else
                 outOid = "UNDEF";
             }
             IRubyObject type = (IRubyObject)titer.next();
-            entries.add(getRuntime().newArray(new IRubyObject[]{getRuntime().newString(outOid),getRuntime().newString(val),type}));
+            entries.add(getRuntime().newArrayNoCopy(new IRubyObject[]{getRuntime().newString(outOid),getRuntime().newString(val),type}));
         }
         return getRuntime().newArray(entries);
     }

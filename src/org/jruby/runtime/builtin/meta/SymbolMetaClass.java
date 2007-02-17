@@ -76,6 +76,6 @@ public class SymbolMetaClass extends ObjectMetaClass {
     }
     
     public IRubyObject all_symbols() {
-        return getRuntime().newArray(getRuntime().getSymbolTable().all_symbols());
+        return getRuntime().newArrayNoCopy(getRuntime().getSymbolTable().all_symbols());
     }
 }

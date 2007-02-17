@@ -196,7 +196,7 @@ public class Generator {
                         }
                     }
                     if(iargs.length > 1) {
-                        obj = gen.getRuntime().newArray(iargs);
+                        obj = gen.getRuntime().newArrayNoCopy(iargs);
                     } else {
                         obj = iargs[0];
                     }

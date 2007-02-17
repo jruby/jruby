@@ -154,14 +154,14 @@ public class RubyDir extends RubyObject {
             }
             return recv.getRuntime().getNil();
         }            
-        return recv.getRuntime().newArray(JavaUtil.convertJavaArrayToRuby(recv.getRuntime(), files));
+        return recv.getRuntime().newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(recv.getRuntime(), files));
     }
 
     /**
      * @return all entries for this Dir
      */
     public RubyArray entries() {
-        return getRuntime().newArray(JavaUtil.convertJavaArrayToRuby(getRuntime(), snapshot));
+        return getRuntime().newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(getRuntime(), snapshot));
     }
     
     /**
@@ -177,7 +177,7 @@ public class RubyDir extends RubyObject {
 		fileList.add(0,".");
 		fileList.add(1,"..");
         Object[] files = fileList.toArray();
-        return recv.getRuntime().newArray(JavaUtil.convertJavaArrayToRuby(recv.getRuntime(), files));
+        return recv.getRuntime().newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(recv.getRuntime(), files));
     }
 
     /** Changes the current directory to <code>path</code> */

@@ -59,7 +59,7 @@ public class RubyEnumerable {
         }
         public IRubyObject call(ThreadContext context, IRubyObject[] iargs, IRubyObject iself, Block block) {
             if(iargs.length > 1) {
-                arr.add(runtime.newArray(iargs));
+                arr.add(runtime.newArrayNoCopy(iargs));
             } else {
                 arr.add(iargs[0]);
             }
@@ -162,7 +162,7 @@ public class RubyEnumerable {
             for(int i=0,j=result2.length;i<j;i++) {
                 result2[i] = secResult[i][1];
             }
-            return context.getRuntime().newArray(result2);
+            return context.getRuntime().newArrayNoCopy(result2);
         }
         public IRubyObject method3(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             //GREP
@@ -240,7 +240,7 @@ public class RubyEnumerable {
                     result[i++] = (IRubyObject)iter.next();
                 }
             }
-            return context.getRuntime().newArray(result);
+            return context.getRuntime().newArrayNoCopy(result);
         }
         public IRubyObject method8(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             //INJECT

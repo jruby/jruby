@@ -219,7 +219,7 @@ public class EvaluationState {
                     array[i++] = evalInternal(context, next, self, aBlock);
                 }
     
-                return runtime.newArray(array);
+                return runtime.newArrayNoCopy(array);
             }
                 //                case NodeTypes.ASSIGNABLENODE:
                 //                EvaluateVisitor.assignableNodeVisitor.execute(this, node);

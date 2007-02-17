@@ -161,7 +161,7 @@ public class RubySocket extends RubyBasicSocket {
         ret[1] = runtime.newArray();
         ret[2] = runtime.newFixnum(2); // AF_INET
         ret[3] = args[0];
-        return runtime.newArray(ret);
+        return runtime.newArrayNoCopy(ret);
     }
 
     public static IRubyObject gethostbyname(IRubyObject recv, IRubyObject hostname) {
@@ -173,7 +173,7 @@ public class RubySocket extends RubyBasicSocket {
             ret[1] = runtime.newArray();
             ret[2] = runtime.newFixnum(2); // AF_INET
             ret[3] = runtime.newString(intoString(recv,addr));
-            return runtime.newArray(ret);
+            return runtime.newArrayNoCopy(ret);
         } catch(UnknownHostException e) {
             throw sockerr(recv, "gethostbyname: name or service not known");
         }
@@ -213,7 +213,7 @@ public class RubySocket extends RubyBasicSocket {
                     c[4] = r.newFixnum(2); // PF_INET
                     c[5] = r.newFixnum(1); // SOCK_STREAM
                     c[6] = r.newFixnum(6); // Protocol TCP
-                    l.add(r.newArray(c));
+                    l.add(r.newArrayNoCopy(c));
                 }
                 if(sock_dgram) {
                     c = new IRubyObject[7];
@@ -224,7 +224,7 @@ public class RubySocket extends RubyBasicSocket {
                     c[4] = r.newFixnum(2); // PF_INET
                     c[5] = r.newFixnum(2); // SOCK_DRGRAM
                     c[6] = r.newFixnum(17); // Protocol UDP
-                    l.add(r.newArray(c));
+                    l.add(r.newArrayNoCopy(c));
                 }
             }
             return r.newArray(l);
@@ -235,18 +235,20 @@ public class RubySocket extends RubyBasicSocket {
 
     public static IRubyObject getnameinfo(IRubyObject recv, IRubyObject[] args) {
         args = recv.scanArgs(args,1,1); // 0 == addr, 1 == flags
-        IRubyObject[] ret = new IRubyObject[2];
-        if(args[0] instanceof RubyArray) {
+        
+        if (args[0] instanceof RubyArray) {
             try {
                 List l = ((RubyArray)args[0]).getList();
+                IRubyObject[] ret = new IRubyObject[2];
                 ret[0] = recv.getRuntime().newString(InetAddress.getByName(l.get(2).toString()).getCanonicalHostName());
                 ret[1] = (IRubyObject)l.get(1);
+                
+                return recv.getRuntime().newArrayNoCopy(ret);
             } catch(UnknownHostException e) {
                 throw sockerr(recv, "getnameinfo: name or service not known");
             }
-        } else {
-            throw sockerr(recv, "getnameinfo: string version not supported yet");
-        }
-        return recv.getRuntime().newArray(ret);
+        } 
+
+        throw sockerr(recv, "getnameinfo: string version not supported yet");
     }
 }// RubySocket

@@ -95,6 +95,10 @@ public class BaseMockRuby implements IRuby {
         throw new MockException();
     }
 
+    public RubyClass getArray() {
+        throw new MockException();
+    }    
+
     public RubyBoolean getTrue() {
         throw new MockException();
     }
@@ -369,6 +373,11 @@ public class BaseMockRuby implements IRuby {
     }
 
     public RubyArray newArray(IRubyObject[] objects) {
+        throw new MockException();
+
+    }
+
+    public RubyArray newArrayNoCopy(IRubyObject[] objects) {
         throw new MockException();
 
     }

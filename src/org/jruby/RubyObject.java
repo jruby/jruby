@@ -676,6 +676,13 @@ public class RubyObject implements Cloneable, IRubyObject {
         return str;
     }
 
+    /** rb_check_array_type
+    *
+    */    
+    public IRubyObject checkArrayType() {
+        return convertToTypeWithCheck("Array","to_ary");
+    }
+
     public void checkSafeString() {
         if (getRuntime().getSafeLevel() > 0 && isTaint()) {
             ThreadContext tc = getRuntime().getCurrentContext();

@@ -243,7 +243,7 @@ public class YARVMachine {
                 for(int i = size - 1; i >= 0; i--) {
                     arr[i] =  stack[stackTop--];
                 }
-                stack[++stackTop] = context.getRuntime().newArray(arr);
+                stack[++stackTop] = context.getRuntime().newArrayNoCopy(arr);
                 break;
             }
             case YARVInstructions.DUPARRAY:

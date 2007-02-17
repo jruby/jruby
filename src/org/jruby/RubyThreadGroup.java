@@ -102,7 +102,7 @@ public class RubyThreadGroup extends RubyObject {
     }
     
     public IRubyObject list(Block block) {
-    	return getRuntime().newArray((IRubyObject[])rubyThreadList.values().toArray(new IRubyObject[rubyThreadList.size()]));
+    	return getRuntime().newArrayNoCopy((IRubyObject[])rubyThreadList.values().toArray(new IRubyObject[rubyThreadList.size()]));
     }
 
     private RubyThreadGroup(IRuby runtime, RubyClass type) {

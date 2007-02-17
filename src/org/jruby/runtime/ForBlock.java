@@ -61,7 +61,7 @@ public class ForBlock extends Block {
     }
     
     public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf) {
-        return yield(context, context.getRuntime().newArray(args), null, null, true);
+        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true);
     }
     
     public Block cloneBlock() {

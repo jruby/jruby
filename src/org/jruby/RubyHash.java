@@ -527,7 +527,7 @@ public class RubyHash extends RubyObject implements Map {
                 if(null == oval) {
                     valueMap.put(key,other.get(key));
                 } else {
-                    valueMap.put(key,ctx.yield(getRuntime().newArray(new IRubyObject[]{key,oval,(IRubyObject)other.get(key)}), block));
+                    valueMap.put(key,ctx.yield(getRuntime().newArrayNoCopy(new IRubyObject[]{key,oval,(IRubyObject)other.get(key)}), block));
                 }
             }
         } else {

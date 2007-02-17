@@ -95,7 +95,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.builtin.meta.ArrayMetaClass;
 import org.jruby.runtime.builtin.meta.BindingMetaClass;
 import org.jruby.runtime.builtin.meta.FileMetaClass;
 import org.jruby.runtime.builtin.meta.HashMetaClass;
@@ -196,6 +195,8 @@ public final class Ruby implements IRuby {
     private RubyClass nilClass;
 
     private RubyClass fixnumClass;
+    
+    private RubyClass arrayClass;
 
     private IRubyObject tmsStruct;
 
@@ -350,6 +351,10 @@ public final class Ruby implements IRuby {
     public RubyClass getFixnum() {
         return fixnumClass;
     }
+
+    public RubyClass getArray() {
+        return arrayClass;
+    }    
 
     public IRubyObject getTmsStruct() {
         return tmsStruct;
@@ -550,11 +555,11 @@ public final class Ruby implements IRuby {
 
         javaSupport = new JavaSupport(this);
 
-        initLibraries();
-
         tc.preInitCoreClasses();
 
         initCoreClasses();
+
+        initLibraries();
 
         topSelf = TopSelfFactory.createTopSelf(this);
 
@@ -674,7 +679,10 @@ public final class Ruby implements IRuby {
         }
         new HashMetaClass(this).initializeClass();
         new IOMetaClass(this).initializeClass();
-        new ArrayMetaClass(this).initializeClass();
+
+        if(profile.allowClass("Array")) {
+            arrayClass = RubyArray.createArrayClass(this);
+        }
 
         RubyClass structClass = null;
         if(profile.allowClass("Struct")) {
@@ -1317,7 +1325,11 @@ public final class Ruby implements IRuby {
     public RubyArray newArray(IRubyObject[] objects) {
         return RubyArray.newArray(this, objects);
     }
-
+    
+    public RubyArray newArrayNoCopy(IRubyObject[] objects) {
+        return RubyArray.newArrayNoCopy(this, objects);
+    }
+    
     public RubyArray newArray(List list) {
         return RubyArray.newArray(this, list);
     }
