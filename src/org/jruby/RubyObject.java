@@ -157,7 +157,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public String toString() {
-        return ((RubyString) callMethod(getRuntime().getCurrentContext(), "to_s")).toString();
+        return callMethod(getRuntime().getCurrentContext(), "to_s").toString();
     }
 
     /** Getter for property ruby.

@@ -655,7 +655,7 @@ public class EvaluationState {
                 for (Iterator iterator = iVisited.iterator(); iterator.hasNext();) {
                     Node iterNode = (Node) iterator.next();
     
-                    sb.append(evalInternal(context, iterNode, self, aBlock).toString());
+                    sb.append(evalInternal(context, iterNode, self, aBlock).objAsString().toString());
                 }
     
                 String lang = null;
@@ -677,7 +677,7 @@ public class EvaluationState {
                 for (Iterator iterator = iVisited.iterator(); iterator.hasNext();) {
                     Node iterNode = (Node) iterator.next();
     
-                    sb.append(evalInternal(context, iterNode, self, aBlock).toString());
+                    sb.append(evalInternal(context, iterNode, self, aBlock).objAsString().toString());
                 }
     
                 return runtime.newString(sb.toString());
