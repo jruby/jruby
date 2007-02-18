@@ -707,6 +707,7 @@ public class EmitterImpl implements Emitter {
                     preparedTag = null;
                     return;
                 }
+                indentation = true;
             }
             if(tag == null) {
                 throw new EmitterException("tag is not specified");
@@ -715,7 +716,7 @@ public class EmitterImpl implements Emitter {
                 preparedTag = emitter.prepareTag(tag);
             }
             if(preparedTag != null && !"".equals(preparedTag)) {
-                emitter.writeIndicator(ByteList.create(preparedTag),true,false,false);
+                emitter.writeIndicator(ByteList.create(preparedTag),true,false,true);
             }
             preparedTag = null;
         }
