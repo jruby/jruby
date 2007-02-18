@@ -603,13 +603,46 @@ public class RubyArray extends RubyObject implements List {
         return values[begin + (int) offset];
     }
 
+    /** rb_ary_elt - faster
+     *
+     */
+    private final IRubyObject elt(int offset) {
+        if (realLength == 0 || offset < 0 || offset >= realLength) return getRuntime().getNil();
+
+        return values[begin + offset];
+    }
+
+    /** rb_ary_elt - faster
+     *
+     */
+    private final IRubyObject elt_f(long offset) {
+        if (realLength == 0 || offset >= realLength) return getRuntime().getNil();
+
+        return values[begin + (int) offset];
+    }
+
+    /** rb_ary_elt - faster
+     *
+     */
+    private final IRubyObject elt_f(int offset) {
+        if (realLength == 0 || offset >= realLength) return getRuntime().getNil();
+
+        return values[begin + offset];
+    }
+
     /** rb_ary_entry
      *
      */
     public final IRubyObject entry(long offset) {
-        if (offset < 0) offset += realLength;
+        return elt_f((offset < 0 ) ? offset + realLength : offset);
+    }
 
-        return elt(offset);
+
+    /** rb_ary_entry
+     *
+     */
+    public final IRubyObject entry(int offset) {
+        return elt((offset < 0 ) ? offset + realLength : offset);
     }
 
     /** rb_ary_fetch
