@@ -255,9 +255,10 @@ class Context
 
   def debug_command(file, line, id, binding)
     MUTEX.lock
-    unless defined?($debugger_restart) and $debugger_restart
-      callcc{|c| $debugger_restart = c} 
-    end
+# This is removed, since JRuby doesn't support continuations
+#    unless defined?($debugger_restart) and $debugger_restart
+#      callcc{|c| $debugger_restart = c} 
+#    end
     set_last_thread(Thread.current)
     frame_pos = 0
     binding_file = file
@@ -528,7 +529,8 @@ class Context
 	  stdout.printf "%s\n", debug_eval($', binding).inspect
 
 	when /^\s*r(?:estart)?$/
-          $debugger_restart.call
+      stdout.print "JRuby doesn't support the command restart, since it depends on continuations"
+#          $debugger_restart.call
 
 	when /^\s*h(?:elp)?$/
 	  debug_print_help()
