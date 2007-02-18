@@ -17,6 +17,7 @@
 # Copyright (C) 2004 David Corbin <dcorbin@users.sourceforge.net>
 # Copyright (C) 2006 Michael Studman <me@michaelstudman.com>
 # Copyright (C) 2006 Kresten Krab Thorup <krab@gnu.org>
+# Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
 # 
 # Alternatively, the contents of this file may be used under the terms of
 # either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -63,8 +64,14 @@ class JavaProxy
       self.java_class
     end
 
-    def []
+    def [](*args)
+      if args.length > 0
+        # array creation should use this variant
+        ArrayJavaProxyCreator.new(java_class,*args)      
+      else
+        # keep this variant for kind_of? testing
       JavaUtilities.get_proxy_class(java_class.array_class)
+    end
     end
     
     def setup
@@ -193,17 +200,84 @@ class JavaProxy
   end
 end
 
+# This class enables the syntax arr = MyClass[n][n]...[n].new
+class ArrayJavaProxyCreator
+  def initialize(java_class,*args)
+    unless args.length > 0 # shouldn't happen
+      raise ArgumentError,"empty array dimensions specified"    
+    end
+    @java_class = java_class
+    @dimensions = []
+    args.each do |arg|
+      unless arg.kind_of?(Fixnum)
+        raise ArgumentError,"array dimension length must be Fixnum"    
+      end
+      @dimensions << arg
+    end
+  end
+  def [](*args)
+    unless args.length > 0
+      raise ArgumentError,"empty array dimensions specified"    
+    end
+    args.each do |arg|
+      unless arg.kind_of?(Fixnum)
+        raise ArgumentError,"array dimension length must be Fixnum"    
+      end
+      @dimensions << arg
+    end
+    self
+  end
+  def new(fill_value=nil)
+    array = @java_class.new_array(@dimensions)
+    array_class = @java_class.array_class
+    (@dimensions.length-1).times do
+      array_class = array_class.array_class    
+    end
+    proxy_class = JavaUtilities.get_proxy_class(array_class)
+    proxy = proxy_class.new(array)
+    if fill_value
+      converter = JavaArrayUtilities.get_converter(@java_class)
+      JavaArrayUtilities.fill_array(proxy,@dimensions,converter.call(fill_value))
+    end
+    proxy  
+  end
+end
+
 class ArrayJavaProxy < JavaProxy
   include Enumerable
 
   class << self  
     alias_method :new_proxy, :new
 
-    def new(size)
+    # the 'size' variant should be phased out ASAP
+    def new(java_array_or_size, fill_value=nil)
       proxy = new_proxy
-      proxy.java_object = proxy.java_class.component_type.new_array(size)
+      if java_array_or_size.kind_of?(Java::JavaArray)
+        proxy.java_object = java_array_or_size
+        return proxy      
+      end
+      puts " ** Warning: the 'ClassName[].new(size)' form is deprecated; use ClassName[size].new"
+      # sort out the mess of the previous approach
+      size = java_array_or_size
+      component_type = proxy.java_class.component_type
+      component_type = component_type.component_type while component_type.array?
+      array = component_type.new_array(size)
+      # get the right proxy class for the number of array dimensions
+      array_class = component_type.array_class
+      if size.kind_of?(Array)
+        (size.length-1).times do
+          array_class = array_class.array_class    
+        end
+      end
+      proxy_class = JavaUtilities.get_proxy_class(array_class)
+      proxy = proxy_class.new(array)
+      if fill_value
+        converter = JavaArrayUtilities.get_converter(component_type)
+        JavaArrayUtilities.fill_array(proxy,size,converter.call(fill_value))
+      end
       proxy
     end
+    
   end
 
   def length()
@@ -215,7 +289,13 @@ class ArrayJavaProxy < JavaProxy
   end
   
   def []=(index, value)
-    java_object[index] = Java.ruby_to_java(value)
+    #java_object[index] = Java.ruby_to_java(value)
+
+    # I don't know if this (instance var) will cause any problems. If so,
+    # I can call JavaArrayUtilities.convert_to_type on every call to []=, but
+    # I'd rather keep the converter locally for better performance. -BD
+    @converter ||= JavaArrayUtilities.get_converter(java_class.component_type)
+    java_object[index] = @converter.call(value)
   end
   
   def each()
@@ -432,7 +512,479 @@ module JavaUtilities
       "constructor" : "method '" + methods.first.name + "'"
     raise NameError.new("no " + name + " with arguments matching " + arg_types.inspect)
   end
+
+  @primitives = {
+    :boolean => true,
+    :byte => true,
+    :char => true,
+    :short => true,
+    :int => true,
+    :long => true,
+    :float => true,
+    :double => true  
+  }
+  def JavaUtilities.is_primitive_type(sym)
+    @primitives[sym]  
+  end
 end
+
+module JavaArrayUtilities
+  class ProxyRef
+    def initialize(class_name)
+      @class_name = class_name
+    end
+    def new(*args)
+      proxy.new(*args).java_object
+    end
+    def proxy
+      @proxy ||= JavaUtilities.get_proxy_class(@class_name)
+    end
+    def name
+      @class_name    
+    end
+    def valueOf(*args)
+      proxy.valueOf(*args).java_object
+    end
+  end
+  Jboolean = ProxyRef.new('boolean')
+  Jbyte = ProxyRef.new('byte')
+  Jchar = ProxyRef.new('char')
+  Jshort = ProxyRef.new('short')
+  Jint = ProxyRef.new('int')
+  Jlong = ProxyRef.new('long')
+  Jfloat = ProxyRef.new('float')
+  Jdouble = ProxyRef.new('double')
+  JBoolean = ProxyRef.new('java.lang.Boolean')
+  JByte = ProxyRef.new('java.lang.Byte')
+  JCharacter = ProxyRef.new('java.lang.Character')
+  JShort = ProxyRef.new('java.lang.Short')
+  JInteger = ProxyRef.new('java.lang.Integer')
+  JLong = ProxyRef.new('java.lang.Long')
+  JFloat = ProxyRef.new('java.lang.Float')
+  JDouble = ProxyRef.new('java.lang.Double')
+  JBigDecimal = ProxyRef.new('java.math.BigDecimal')
+  JBigInteger = ProxyRef.new('java.math.BigInteger')
+  JObject = ProxyRef.new('java.lang.Object')
+  JString = ProxyRef.new('java.lang.String')
+  JDate = ProxyRef.new('java.util.Date')
+  JOFalse = Java.ruby_to_java(false)
+  JOTrue = Java.ruby_to_java(true)
+  JIntegerMin = -2147483648
+  JIntegerMax = 2147483647
+  JLongMin = -9223372036854775808
+  JLongMax = 9223372036854775807
+  SBoolean = 'java.lang.Boolean'.to_sym
+  SByte = 'java.lang.Byte'.to_sym
+  SCharacter = 'java.lang.Character'.to_sym
+  SShort = 'java.lang.Short'.to_sym
+  SInteger = 'java.lang.Integer'.to_sym
+  SLong = 'java.lang.Long'.to_sym
+  SFloat = 'java.lang.Float'.to_sym
+  SDouble = 'java.lang.Double'.to_sym
+  SBigDecimal = 'java.math.BigDecimal'.to_sym
+  SBigInteger = 'java.math.BigInteger'.to_sym
+  SObject = 'java.lang.Object'.to_sym
+  SString = 'java.lang.String'.to_sym
+  SDate = 'java.util.Date'.to_sym
+  # *very* loose/eager conversion rules in place here, can tighten them
+  # up if need be. -BD
+  # the order of evaluation in the converters is important, want to 
+  # check the most probable first, then dispense with any unidentified 
+  # non-Ruby classes before calling to_i/to_f/to_s. -BD
+  @converters = {
+    :boolean => Proc.new {|val| 
+      if val == false || val.nil?
+        JOFalse
+      elsif val == true
+        JOTrue
+      elsif val.kind_of?(Numeric)
+        val.to_i == 0 ? JOFalse : JOTrue
+      elsif val.kind_of?(String)
+        JBoolean.new(val)
+      elsif val.kind_of?(JavaProxy)
+        Java.ruby_to_java(val)
+      elsif val.respond_to?(:to_i)
+        val.to_i == 0 ? JOFalse : JOTrue
+      else
+        Java.ruby_to_java(val)
+      end
+    },
+    :byte => Proc.new {|val| 
+      if val.kind_of?(Numeric)
+        JByte.new(val.to_i)
+      elsif val.kind_of?(JavaProxy)
+        Java.ruby_to_java(val)
+      elsif val.respond_to?(:to_i)
+        JByte.new(val.to_i)
+      else
+        Java.ruby_to_java(val)
+      end
+    },
+    :char => Proc.new {|val| 
+      if val.kind_of?(Numeric)
+        JCharacter.new(val.to_i)
+      elsif val.kind_of?(JavaProxy)
+        Java.ruby_to_java(val)
+      elsif val.respond_to?(:to_i)
+        JCharacter.new(val.to_i)
+      else
+        Java.ruby_to_java(val)
+      end
+    },
+    :short => Proc.new {|val| 
+      if val.kind_of?(Numeric)
+        JShort.new(val.to_i)
+      elsif val.kind_of?(JavaProxy)
+        Java.ruby_to_java(val)
+      elsif val.respond_to?(:to_i)
+        JShort.new(val.to_i)
+      else
+        Java.ruby_to_java(val)
+      end
+    },
+    :int => Proc.new {|val| 
+      if val.kind_of?(Numeric)
+        JInteger.new(val.to_i)
+      elsif val.kind_of?(JavaProxy)
+        Java.ruby_to_java(val)
+      elsif val.respond_to?(:to_i)
+        JInteger.new(val.to_i)
+      else
+        Java.ruby_to_java(val)
+      end
+    },
+    :long => Proc.new {|val| 
+      if val.kind_of?(Numeric)
+        JLong.new(val.to_i)
+      elsif val.kind_of?(JavaProxy)
+        Java.ruby_to_java(val)
+      elsif val.respond_to?(:to_i)
+        JLong.new(val.to_i)
+      else
+        Java.ruby_to_java(val)
+      end
+    },
+    :float => Proc.new {|val| 
+      if val.kind_of?(Numeric)
+        JFloat.new(val.to_f)
+      elsif val.kind_of?(JavaProxy)
+        Java.ruby_to_java(val)
+      elsif val.respond_to?(:to_f)
+        JFloat.new(val.to_f)
+      else
+        Java.ruby_to_java(val)
+      end
+    },
+    :double => Proc.new {|val| 
+      if val.kind_of?(Numeric)
+        JDouble.new(val.to_f)
+      elsif val.kind_of?(JavaProxy)
+        Java.ruby_to_java(val)
+      elsif val.respond_to?(:to_f)
+        JDouble.new(val.to_f)
+      else
+        Java.ruby_to_java(val)
+      end
+    },
+    :decimal => Proc.new {|val| 
+      if val.kind_of?(Numeric)
+        JBigDecimal.valueOf(val)
+      elsif val.kind_of?(String)
+        JBigDecimal.new(val)
+      elsif val.kind_of?(JavaProxy)
+        Java.ruby_to_java(val)
+      elsif val.respond_to?(:to_f)
+        JBigDecimal.valueOf(val.to_f)
+      elsif val.respond_to?(:to_i)
+        JBigDecimal.valueOf(val.to_i)
+      else
+        Java.ruby_to_java(val)
+      end
+    },
+    :big_int => Proc.new {|val|
+      if val.kind_of?(Integer)
+        JBigInteger.new(val.to_s)
+      elsif val.kind_of?(Numeric)
+        JBigInteger.new(val.to_i.to_s)
+      elsif val.kind_of?(String)
+        JBigInteger.new(val)
+      elsif val.kind_of?(JavaProxy)
+        Java.ruby_to_java(val)
+      elsif val.respond_to?(:to_i)
+        JBigInteger.new(val.to_i.to_s)
+      else
+        Java.ruby_to_java(val)
+      end
+    },
+    :object => Proc.new {|val|
+      if val.kind_of?(Integer)
+        if val >= JIntegerMin && val <= JIntegerMax
+          JInteger.new(val)
+        elsif val >= JLongMin && val <= JLongMax
+          JLong.new(val)
+        else
+          JBigInteger.new(val.to_s)
+        end
+      elsif val.kind_of?(Float)
+        JDouble.new(val)
+      else
+        Java.ruby_to_java(val)
+      end
+    },
+    :string => Proc.new {|val|
+      if val.kind_of?(String)
+        JString.new(val)
+      elsif val.kind_of?(JavaProxy)
+        if val.respond_to?(:toString)
+          JString.new(val.toString)
+        else
+          Java.ruby_to_java(val)
+        end
+      elsif val.respond_to?(:to_s)
+        JString.new(val.to_s)
+      else
+        Java.ruby_to_java(val)
+      end
+    },
+  }
+  @converters['boolean'] = @converters['java.lang.Boolean'] = @converters[:Boolean] =
+    @converters[SBoolean] = @converters[:boolean]
+  @converters['byte'] = @converters['java.lang.Byte'] = @converters[:Byte] =
+    @converters[SByte] = @converters[:byte]
+  @converters['char'] = @converters['java.lang.Character'] = @converters[:Character] =
+    @converters[SCharacter] = @converters[:Char] = @converters[:char]
+  @converters['short'] = @converters['java.lang.Short'] = @converters[:Short] =
+    @converters[SShort] = @converters[:short]
+  @converters['int'] = @converters['java.lang.Integer'] = @converters[:Integer] =
+    @converters[SInteger] = @converters[:Int] = @converters[:int]
+  @converters['long'] = @converters['java.lang.Long'] = @converters[:Long] =
+    @converters[SLong] = @converters[:long]
+  @converters['float'] = @converters['java.lang.Float'] = @converters[:Float] =
+    @converters[SFloat] = @converters[:float]
+  @converters['double'] = @converters['java.lang.Double'] = @converters[:Double] =
+    @converters[SDouble] = @converters[:double]
+  @converters['java.math.BigDecimal'] = @converters[:BigDecimal] = @converters[:big_decimal]
+    @converters[SBigDecimal] = @converters[:decimal]
+  @converters['java.math.BigInteger'] = @converters[:BigInteger] = @converters[:big_integer]
+    @converters[SBigInteger] = @converters[:big_int]
+  @converters['java.lang.Object'] = @converters[:Object] =
+    @converters[SObject] = @converters[:object]
+  @converters['java.lang.String'] = @converters[:String] =
+    @converters[SString] = @converters[:string]
+
+  @default_converter = Proc.new {|val| Java.ruby_to_java(val) }
+  
+  @class_index = {
+    :boolean => Jboolean,
+    :byte => Jbyte,
+    :char => Jchar,
+    :short => Jshort,
+    :int => Jint,
+    :long => Jlong,
+    :float => Jfloat,
+    :double => Jdouble,
+    :Boolean => JBoolean,
+    SBoolean => JBoolean,
+    :Byte => JByte,
+    SByte => JByte,
+    :Char => JCharacter,
+    :Character => JCharacter,
+    SCharacter => JCharacter,
+    :Short => JShort,
+    SShort => JShort,
+    :Int => JInteger,
+    :Integer => JInteger,
+    SInteger => JInteger,
+    :Long => JLong,
+    SLong => JLong,
+    :Float => JFloat,
+    SFloat => JFloat,
+    :Double => JDouble,
+    SDouble => JDouble,
+    :object => JObject,
+    :Object => JObject,
+    SObject => JObject,
+    :string => JString,
+    :String => JString,
+    SString => JString,
+    :decimal => JBigDecimal,
+    :big_decimal => JBigDecimal,
+    :BigDecimal => JBigDecimal,
+    SBigDecimal => JBigDecimal,
+    :big_int => JBigInteger,
+    :big_integer => JBigInteger,
+    :BigInteger => JBigInteger,
+    SBigInteger => JBigInteger,
+  }
+ class << self
+  def get_converter(component_type)
+    converter = @converters[component_type.name]
+    converter ? converter : @default_converter
+  end
+  
+  def convert_to_type(component_type,value)
+    get_converter(component_type).call(value)
+  end
+
+  # this can be expensive, as it must examine every element
+  # of every 'dimension' of the Ruby array.  thinking about
+  # moving this to Java.
+  def dimensions(ruby_array,dims = [],index = 0)
+    return [] unless ruby_array.kind_of?(::Array)
+    dims << 0 while dims.length <= index 
+    dims[index] = ruby_array.length if ruby_array.length > dims[index]
+    ruby_array.each do |sub_array|
+      next unless sub_array.kind_of?(::Array)
+      dims = dimensions(sub_array,dims,index+1)
+    end
+    dims
+  end
+  
+  def enable_extended_array_support
+    return if [].respond_to?(:to_java)
+    Array.module_eval {
+      def to_java(*args,&block)
+        JavaArrayUtilities.ruby_to_java(*(args.unshift(self)),&block)
+      end
+    }
+  end
+
+  def disable_extended_array_support
+    return unless [].respond_to?(:to_java)
+    Array.send(:remove_method,:to_java)
+  end
+ 
+  def fill_array(array,dimensions,fill_value)
+    dims = dimensions.kind_of?(Array) ? dimensions : [dimensions]
+    copy_ruby_to_java(dims,nil,array,nil,fill_value)
+  end
+  
+private
+  def get_class(class_name)
+    cls = @class_index[class_name.to_sym].proxy
+    cls ||= JavaUtilities.get_proxy_class(class_name.to_s)
+    cls
+  end
+public
+  
+  def ruby_to_java(*args,&block)
+    puts 'block = ' + block.to_s
+    return JObject.proxy[].new(0) if args.length == 0
+    ruby_array = args[0]
+    unless ruby_array.kind_of?(::Array) || ruby_array.nil?
+      raise ArgumentError,"invalid arg[0] passed to java_array (#{args[0]})"    
+    end
+    dims = nil
+    fill_value = nil
+    index = 1
+    if index < args.length
+      arg = args[index]
+      # the (optional) first arg is class/name. if omitted,
+      # defaults to java.lang.Object
+      if arg.kind_of?(Class) && arg.respond_to?(:java_class)
+        cls = arg
+        cls_name = arg.java_class.name
+        index += 1
+      elsif arg.kind_of?(String) || arg.kind_of?(Symbol)
+        cls = get_class(arg)
+        unless cls
+          raise ArgumentError,"invalid class name (#{arg}) specified for java_array"      
+        end
+        cls_name = arg
+        index += 1
+      else
+        cls = JObject.proxy
+        cls_name = SObject
+      end
+    else
+      cls = JObject.proxy
+      cls_name = SObject
+    end
+    if block
+      converter = block
+    elsif converter = @converters[cls_name]
+    else
+      converter = @default_converter
+    end
+    # the (optional) next arg(s) is dimensions. may be
+    # specified as dim1,dim2,...,dimn, or [dim1,dim2,...,dimn]
+    # the array version is required if you want to pass a
+    # fill value after it
+    if index < args.length
+      arg = args[index]
+      if arg.kind_of?(Fixnum)
+        dims = [arg]
+        index += 1
+        while index < args.length && args[index].kind_of?(Fixnum)
+          dims << args[index]
+          index += 1        
+        end
+      elsif arg.kind_of?(::Array)
+        dims = arg
+        index += 1
+        fill_value = converter.call(args[index]) if index < args.length
+      elsif arg.nil?
+        dims = dimensions(ruby_array) if ruby_array
+        index += 1
+        fill_value = converter.call(args[index]) if index < args.length
+      end
+    else
+      dims = dimensions(ruby_array) if ruby_array
+    end
+    dims = [0] unless dims
+    java_array = cls[].new(dims)
+    if ruby_array
+      copy_ruby_to_java(dims,ruby_array,java_array,converter,fill_value)          
+    elsif fill_value
+      copy_ruby_to_java(dims,nil,java_array,converter,fill_value)
+    end
+    java_array
+  end
+
+private
+  def copy_ruby_to_java(dims,ruby_array,java_array,converter,fill_value)
+    if dims.length > 1
+      shift_dims = dims[1...dims.length]
+      for i in 0...dims[0]
+        if ruby_array.kind_of?(::Array)
+          ruby_param = ruby_array[i]
+        else
+          ruby_param = ruby_array # fill with value when no array        
+        end
+        copy_ruby_to_java(shift_dims,ruby_param,java_array[i],converter,fill_value)
+      end
+    else
+      copy_data(ruby_array,java_array,converter,fill_value)
+    end
+    java_array 
+  end
+  
+private
+  def copy_data(ruby_array,java_array,converter,fill_value)
+    if ruby_array.kind_of?(::Array)
+      rlen = ruby_array.length
+    else
+      rlen = 0
+      # in irregularly-formed Ruby arrays, values that appear where
+      # a subarray is expected get propagated. not sure if this is
+      # the best behavior, will see what users say
+      fill_value = converter.call(ruby_array) if ruby_array    
+    end
+    java_object = java_array.java_object
+    jlen = java_array.length
+    i = 0
+    while i < rlen && i < jlen
+      java_object[i] = converter.call(ruby_array[i])
+      i += 1
+    end
+    if i < jlen && fill_value
+      java_object.fill(i,jlen,fill_value)
+    end
+    java_array
+  end
+
+ end #self
+end #JavaArrayUtilities
 
 # Extensions to the standard Module package.
 
@@ -505,6 +1057,15 @@ class Object
       end
     end
   end
+
+  # sneaking this in with the array support, getting
+  # tired of having to define it in all my code  -BD
+  def java_kind_of?(other)
+    return true if self.kind_of?(other)
+    return false unless self.respond_to?(:java_class) && other.respond_to?(:java_class) &&
+      other.kind_of?(Module) && !self.kind_of?(Module) 
+    return other.java_class.assignable_from?(self.java_class)
+  end
 end
 
 
@@ -526,11 +1087,23 @@ module Java
    end
 
    def method_missing(sym, *args)
-     if sym.to_s.downcase[0] == sym.to_s[0]
+     if JavaUtilities.is_primitive_type(sym) 
+       JavaUtilities.get_proxy_class sym.to_s
+     elsif sym.to_s.downcase[0] == sym.to_s[0]
        Package.create_package sym, sym, Java
      else
        JavaUtilities.get_proxy_class "#{sym}"
      end
+   end
+   
+   # these are temporary; I assume this will be enabled by 
+   # default once tested
+   def enable_extended_array_support
+     JavaArrayUtilities.enable_extended_array_support   
+ end
+
+   def disable_extended_array_support
+     JavaArrayUtilities.disable_extended_array_support   
    end
  end
 

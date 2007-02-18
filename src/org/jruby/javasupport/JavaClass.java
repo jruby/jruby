@@ -501,13 +501,34 @@ public class JavaClass extends JavaObject {
     public JavaClass array_class() {
         return JavaClass.get(getRuntime(), Array.newInstance(javaClass(), 0).getClass());
     }
-
+   
     public JavaObject new_array(IRubyObject lengthArgument) {
-        if (! (lengthArgument instanceof RubyInteger)) {
-            throw getRuntime().newTypeError(lengthArgument, getRuntime().getClass("Integer"));
-        }
+        if (lengthArgument instanceof RubyInteger) {
+            // one-dimensional array
         int length = (int) ((RubyInteger) lengthArgument).getLongValue();
         return new JavaArray(getRuntime(), Array.newInstance(javaClass(), length));
+        } else if (lengthArgument instanceof RubyArray) {
+            // n-dimensional array
+            List list = ((RubyArray)lengthArgument).getList();
+            int length = list.size();
+            if (length == 0) {
+                throw getRuntime().newArgumentError("empty dimensions specifier for java array");
+    }
+            int[] dimensions = new int[length];
+            for (int i = length; --i >= 0; ) {
+                IRubyObject dimensionLength = (IRubyObject)list.get(i);
+                if ( !(dimensionLength instanceof RubyInteger) ) {
+                    throw getRuntime()
+                        .newTypeError(dimensionLength, getRuntime().getClass("Integer"));
+                }
+                dimensions[i] = (int) ((RubyInteger) dimensionLength).getLongValue();
+            }
+            return new JavaArray(getRuntime(), Array.newInstance(javaClass(), dimensions));
+        } else {
+            throw getRuntime().newArgumentError(
+                  "invalid length or dimensions specifier for java array" +
+                  " - must be Integer or Array of Integer");
+        }
     }
 
     public RubyArray fields() {

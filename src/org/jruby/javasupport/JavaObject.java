@@ -117,6 +117,7 @@ public class JavaObject extends RubyObject {
         result.defineFastMethod("length", callbackFactory.getFastMethod("length"));
         result.defineFastMethod("[]", callbackFactory.getFastMethod("aref", IRubyObject.class));
         result.defineFastMethod("[]=", callbackFactory.getFastMethod("aset", IRubyObject.class, IRubyObject.class));
+        result.defineFastMethod("fill", callbackFactory.getFastMethod("afill", IRubyObject.class, IRubyObject.class, IRubyObject.class));
 	}
 
 	public RubyFixnum hash() {
@@ -177,6 +178,10 @@ public class JavaObject extends RubyObject {
     }
 
     public IRubyObject aset(IRubyObject index, IRubyObject someValue) {
+        throw getRuntime().newTypeError("not a java array");
+    }
+    
+    public IRubyObject afill (IRubyObject beginIndex, IRubyObject endIndex, IRubyObject someValue) {
         throw getRuntime().newTypeError("not a java array");
     }
     

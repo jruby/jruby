@@ -84,7 +84,7 @@ test_check "High-level Java Support"
     test_equal(10, array.min)
 
     # Creating arrays
-    array = Double[].new(3)
+    array = Double[3].new
     test_equal(3, array.length)
     array[0] = 3.14
     array[2] = 17.0

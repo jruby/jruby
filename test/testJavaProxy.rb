@@ -34,7 +34,7 @@ class RoomTest
 	  test_ok(JString.new("Bathroom").hashCode() == room3.hash())
 	  test_ok(room1.hash() != room3.hash())
 
-      roomArray = Room[].new(1)
+      roomArray = Room[1].new
       roomArray[0] = room1
       test_equal(room1, roomArray[0])
       test_equal(1, roomArray.length)
