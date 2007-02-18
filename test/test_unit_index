@@ -68,7 +68,7 @@ test_thread
 test_zlib
 
 # BFTS
-#externals/bfts/test_array
+externals/bfts/test_array
 externals/bfts/test_comparable
 externals/bfts/test_exception
 externals/bfts/test_false_class
