@@ -42,12 +42,12 @@ import org.jruby.util.ByteList;
 
 public class RubyStringIO extends RubyObject {
     private static ObjectAllocator STRINGIO_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyStringIO(runtime, klass);
         }
     };
     
-    public static RubyClass createStringIOClass(final IRuby runtime) {
+    public static RubyClass createStringIOClass(final Ruby runtime) {
         final RubyClass stringIOClass = runtime.defineClass("StringIO", runtime.getObject(), STRINGIO_ALLOCATOR);
         
         final CallbackFactory callbackFactory = runtime.callbackFactory(RubyStringIO.class);
@@ -132,7 +132,7 @@ public class RubyStringIO extends RubyObject {
         return val;
     }
 
-    protected RubyStringIO(IRuby runtime, RubyClass klass) {
+    protected RubyStringIO(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
     }
 

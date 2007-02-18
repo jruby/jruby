@@ -37,7 +37,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Iterator;
 import java.util.Map;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
@@ -61,7 +61,7 @@ import org.jruby.util.ByteList;
  * @author Anders
  */
 public class MarshalStream extends FilterOutputStream {
-    private final IRuby runtime;
+    private final Ruby runtime;
     private final int depthLimit;
     private int depth = 0;
     private MarshalCache cache;
@@ -71,7 +71,7 @@ public class MarshalStream extends FilterOutputStream {
     private final static char TYPE_USERDEF = 'u';
     private final static char TYPE_UCLASS = 'C';
 
-    public MarshalStream(IRuby runtime, OutputStream out, int depthLimit) throws IOException {
+    public MarshalStream(Ruby runtime, OutputStream out, int depthLimit) throws IOException {
         super(out);
 
         this.runtime = runtime;

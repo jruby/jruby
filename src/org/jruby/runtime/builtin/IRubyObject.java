@@ -35,7 +35,7 @@ package org.jruby.runtime.builtin;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFloat;
@@ -197,7 +197,7 @@ public interface IRubyObject {
     /**
      * RubyMethod getRuntime.
      */
-    IRuby getRuntime();
+    Ruby getRuntime();
 
     /**
      * RubyMethod getJavaClass.

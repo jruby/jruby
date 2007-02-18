@@ -33,9 +33,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Stack;
-import org.jruby.IRuby;
-import org.jruby.MetaClass;
 import org.jruby.Ruby;
+import org.jruby.MetaClass;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
@@ -81,7 +80,7 @@ import org.objectweb.asm.Opcodes;
 public class StandardASMCompiler implements Compiler {
     private static final CodegenUtils cg = CodegenUtils.instance;
     private static final String THREADCONTEXT = cg.p(ThreadContext.class);
-    private static final String IRUBY = cg.p(IRuby.class);
+    private static final String RUBY = cg.p(Ruby.class);
     private static final String IRUBYOBJECT = cg.p(IRubyObject.class);
     
     private static final String METHOD_SIGNATURE =
@@ -126,7 +125,7 @@ public class StandardASMCompiler implements Compiler {
         sourcename = "EVAL" + hashCode();
     }
     
-    public Class loadClass(IRuby runtime) throws ClassNotFoundException {
+    public Class loadClass(Ruby runtime) throws ClassNotFoundException {
         JRubyClassLoader jcl = runtime.getJRubyClassLoader();
         
         jcl.defineClass(cg.c(classname), classWriter.toByteArray());
@@ -242,12 +241,12 @@ public class StandardASMCompiler implements Compiler {
         mv.visitMethodInsn(Opcodes.INVOKESPECIAL, classname, "<init>", cg.sig(Void.TYPE));
         
         // invoke run with threadcontext and topself
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(Ruby.class), "getDefaultInstance", cg.sig(IRuby.class));
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(Ruby.class), "getDefaultInstance", cg.sig(Ruby.class));
         mv.visitInsn(Opcodes.DUP);
         
-        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, "getCurrentContext", cg.sig(ThreadContext.class));
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, RUBY, "getCurrentContext", cg.sig(ThreadContext.class));
         mv.visitInsn(Opcodes.SWAP);
-        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, "getTopSelf", cg.sig(IRubyObject.class));
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, RUBY, "getTopSelf", cg.sig(IRubyObject.class));
         mv.visitInsn(Opcodes.ACONST_NULL);
         mv.visitInsn(Opcodes.ACONST_NULL);
         
@@ -289,7 +288,7 @@ public class StandardASMCompiler implements Compiler {
         
         // set up a local IRuby variable
         newMethod.visitVarInsn(Opcodes.ALOAD, THREADCONTEXT_INDEX);
-        invokeThreadContext("getRuntime", cg.sig(IRuby.class));
+        invokeThreadContext("getRuntime", cg.sig(Ruby.class));
         newMethod.visitVarInsn(Opcodes.ASTORE, RUNTIME_INDEX);
         
         // visit a label to start scoping for local vars in this method
@@ -588,7 +587,7 @@ public class StandardASMCompiler implements Compiler {
         loadRuntime();
         mv.visitLdcInsn(value.toString());
         
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC,cg.p(org.jruby.RubyBignum.class) , "newBignum", cg.sig(org.jruby.RubyBignum.class,cg.params(IRuby.class,String.class)));
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC,cg.p(org.jruby.RubyBignum.class) , "newBignum", cg.sig(org.jruby.RubyBignum.class,cg.params(Ruby.class,String.class)));
     }
     
     public void createNewString(String value) {
@@ -789,7 +788,7 @@ public class StandardASMCompiler implements Compiler {
         
         // set up a local IRuby variable
         method.visitVarInsn(Opcodes.ALOAD, THREADCONTEXT_INDEX);
-        invokeThreadContext("getRuntime", cg.sig(IRuby.class));
+        invokeThreadContext("getRuntime", cg.sig(Ruby.class));
         method.visitVarInsn(Opcodes.ASTORE, RUNTIME_INDEX);
         
         // start of scoping for closure's vars
@@ -892,7 +891,7 @@ public class StandardASMCompiler implements Compiler {
     
     private void invokeIRuby(String methodName, String signature) {
         MethodVisitor mv = getMethodVisitor();
-        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, methodName, signature);
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, RUBY, methodName, signature);
     }
     
     private void getCallbackFactory() {
@@ -946,7 +945,7 @@ public class StandardASMCompiler implements Compiler {
     }
     
     public static IRubyObject def(ThreadContext context, IRubyObject self, Class compiledClass, String name, String javaName, int arity) {
-        IRuby runtime = context.getRuntime();
+        Ruby runtime = context.getRuntime();
         
         // FIXME: This is what the old def did, but doesn't work in the compiler for top-level methods. Hmm.
         //RubyModule containingClass = context.getRubyClass();

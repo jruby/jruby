@@ -39,7 +39,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.FileChannel;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyIO;
 
 /**
@@ -55,7 +55,7 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
      * @param outStream
      * @throws IOException 
      */
-    public IOHandlerUnseekable(IRuby runtime, InputStream inStream, 
+    public IOHandlerUnseekable(Ruby runtime, InputStream inStream, 
                      OutputStream outStream) throws IOException {
         super(runtime);
         String mode = "";
@@ -91,7 +91,7 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
         fileno = RubyIO.getNewFileno();
     }
     
-    public IOHandlerUnseekable(IRuby runtime, int fileno) throws IOException {
+    public IOHandlerUnseekable(Ruby runtime, int fileno) throws IOException {
         super(runtime);
         
         switch (fileno) {
@@ -117,7 +117,7 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
         this.fileno = fileno;
     }
     
-    public IOHandlerUnseekable(IRuby runtime, int fileno, String mode) throws IOException {
+    public IOHandlerUnseekable(Ruby runtime, int fileno, String mode) throws IOException {
         super(runtime);
 
         modes = new IOModes(runtime, mode);

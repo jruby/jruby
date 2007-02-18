@@ -31,7 +31,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.CallbackFactory;
@@ -42,7 +42,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class RubyIPSocket extends RubyBasicSocket {
-    static void createIPSocket(IRuby runtime) {
+    static void createIPSocket(Ruby runtime) {
         RubyClass rb_cIPSocket = runtime.defineClass("IPSocket", runtime.getClass("BasicSocket"), IPSOCKET_ALLOCATOR);
         CallbackFactory cfact = runtime.callbackFactory(RubyIPSocket.class);
 
@@ -54,12 +54,12 @@ public class RubyIPSocket extends RubyBasicSocket {
     }
     
     private static ObjectAllocator IPSOCKET_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyIPSocket(runtime, klass);
         }
     };
 
-    public RubyIPSocket(IRuby runtime, RubyClass type) {
+    public RubyIPSocket(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
 
@@ -69,7 +69,7 @@ public class RubyIPSocket extends RubyBasicSocket {
 
     private IRubyObject addrFor(InetSocketAddress addr) {
         IRubyObject[] ret = new IRubyObject[4];
-        IRuby r = getRuntime();
+        Ruby r = getRuntime();
         ret[0] = r.newString("AF_INET");
         ret[1] = r.newFixnum(addr.getPort());
         if(r.isDoNotReverseLookupEnabled()) {

@@ -16,7 +16,6 @@ import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 
-import org.jruby.IRuby;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.internal.runtime.ValueAccessor;
@@ -59,7 +58,7 @@ public class IRBConsole extends JFrame {
             setError(new PrintStream(tar));
             setObjectSpaceEnabled(false);
             }};
-        final IRuby runtime = Ruby.newInstance(config);
+        final Ruby runtime = Ruby.newInstance(config);
 
         IRubyObject argumentArray = runtime.newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(runtime, args));
         runtime.defineGlobalConstant("ARGV", argumentArray);

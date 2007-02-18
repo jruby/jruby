@@ -27,7 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -36,7 +36,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class Random {
-    public static void createRandom(IRuby runtime, RubyModule ossl) {
+    public static void createRandom(Ruby runtime, RubyModule ossl) {
         RubyModule rand = ossl.defineModuleUnder("Random");
 
         CallbackFactory randcb = runtime.callbackFactory(Random.class);

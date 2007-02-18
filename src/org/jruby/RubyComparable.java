@@ -42,7 +42,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  */
 public class RubyComparable {
-    public static RubyModule createComparable(IRuby runtime) {
+    public static RubyModule createComparable(Ruby runtime) {
         RubyModule comparableModule = runtime.defineModule("Comparable");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyComparable.class);
         comparableModule.defineFastMethod("==", callbackFactory.getFastSingletonMethod("equal", RubyKernel.IRUBY_OBJECT));
@@ -77,7 +77,7 @@ public class RubyComparable {
             return -1;
         }
 
-        final IRuby runtime = val.getRuntime();
+        final Ruby runtime = val.getRuntime();
         final ThreadContext tc = runtime.getCurrentContext();
         final RubyFixnum zero = RubyFixnum.one(runtime);
         if (val.callMethod(tc, ">", zero).isTrue()) {
@@ -115,7 +115,7 @@ public class RubyComparable {
             if (recv == other) {
                 return recv.getRuntime().getTrue();
             }
-        IRuby runtime = recv.getRuntime();
+        Ruby runtime = recv.getRuntime();
         IRubyObject result = null;
         try {
             result = recv.callMethod(runtime.getCurrentContext(), "<=>", other);
@@ -135,7 +135,7 @@ public class RubyComparable {
      */
     // <=> may return nil in many circumstances, e.g. 3 <=> NaN        
     public static RubyBoolean op_gt(IRubyObject recv, IRubyObject other) {
-        final IRuby runtime = recv.getRuntime();
+        final Ruby runtime = recv.getRuntime();
         IRubyObject result = recv.callMethod(runtime.getCurrentContext(), "<=>", other);
         
         if (result.isNil()) {
@@ -149,7 +149,7 @@ public class RubyComparable {
      * 
      */
     public static RubyBoolean op_ge(IRubyObject recv, IRubyObject other) {
-        final IRuby runtime = recv.getRuntime();
+        final Ruby runtime = recv.getRuntime();
         IRubyObject result = recv.callMethod(runtime.getCurrentContext(), "<=>", other);
         
         if (result.isNil()) {
@@ -163,7 +163,7 @@ public class RubyComparable {
      * 
      */
     public static RubyBoolean op_lt(IRubyObject recv, IRubyObject other) {
-        final IRuby runtime = recv.getRuntime();
+        final Ruby runtime = recv.getRuntime();
         IRubyObject result = recv.callMethod(runtime.getCurrentContext(), "<=>", other);
 
         if (result.isNil()) {
@@ -177,7 +177,7 @@ public class RubyComparable {
      * 
      */
     public static RubyBoolean op_le(IRubyObject recv, IRubyObject other) {
-        final IRuby runtime = recv.getRuntime();
+        final Ruby runtime = recv.getRuntime();
         IRubyObject result = recv.callMethod(runtime.getCurrentContext(), "<=>", other);
 
         if (result.isNil()) {

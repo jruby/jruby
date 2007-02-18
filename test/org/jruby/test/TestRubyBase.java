@@ -36,14 +36,14 @@ import java.io.StringReader;
 
 import junit.framework.TestCase;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyIO;
 
 /**
  * @author Benoit
  */
 public class TestRubyBase extends TestCase {
-    protected IRuby runtime;
+    protected Ruby runtime;
     private PrintStream out;
 
     public TestRubyBase() {

@@ -58,17 +58,17 @@ public class RubyDir extends RubyObject {
     private   int       pos;        // current position in directory
     private boolean isOpen = true;
 
-    public RubyDir(IRuby runtime, RubyClass type) {
+    public RubyDir(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
     
     private static ObjectAllocator DIR_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyDir(runtime, klass);
         }
     };
 
-    public static RubyClass createDirClass(IRuby runtime) {
+    public static RubyClass createDirClass(Ruby runtime) {
         RubyClass dirClass = runtime.defineClass("Dir", runtime.getObject(), DIR_ALLOCATOR);
 
         dirClass.includeModule(runtime.getModule("Enumerable"));
@@ -384,7 +384,7 @@ public class RubyDir extends RubyObject {
      * @param   mustExist is true the directory must exist.  If false it must not.
      * @throws  IOError if <code>path</code> is not a directory.
      */
-    protected static JRubyFile getDir(final IRuby runtime, final String path, final boolean mustExist) {
+    protected static JRubyFile getDir(final Ruby runtime, final String path, final boolean mustExist) {
         JRubyFile result = JRubyFile.create(runtime.getCurrentDirectory(),path);
         boolean isDirectory = result.isDirectory();
         
@@ -419,7 +419,7 @@ public class RubyDir extends RubyObject {
      * Returns the contents of the specified <code>directory</code> as an
      * <code>ArrayList</code> containing the names of the files as Ruby Strings.
      */
-    protected static List getContents(File directory, IRuby runtime) {
+    protected static List getContents(File directory, Ruby runtime) {
         List result = new ArrayList();
         String[] contents = directory.list();
         

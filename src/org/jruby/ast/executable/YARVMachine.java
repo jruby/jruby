@@ -1,6 +1,6 @@
 package org.jruby.ast.executable;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
@@ -47,7 +47,7 @@ public class YARVMachine {
 
         public Instruction[] body;
 
-        public InstructionSequence(IRuby runtime, String name, String file, String type) {
+        public InstructionSequence(Ruby runtime, String name, String file, String type) {
             magic = "YARVInstructionSimpledataFormat";
             major = 1;
             minor = 1;
@@ -125,7 +125,7 @@ public class YARVMachine {
         int stackTop = 0;
         stack[stackTop] = context.getRuntime().getNil();
         int ip = 0;
-        IRuby runtime = context.getRuntime();
+        Ruby runtime = context.getRuntime();
         context.preRootNode(scope);
         IRubyObject recv;
         IRubyObject other;

@@ -28,7 +28,7 @@
 package org.jruby.runtime;
 
 import java.io.IOException;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -38,6 +38,6 @@ import org.jruby.runtime.marshal.UnmarshalStream;
  * @author headius
  */
 public interface ObjectMarshal {
-    void marshalTo(IRuby runtime, Object obj, RubyClass type, MarshalStream marshalStream) throws IOException;
-    Object unmarshalFrom(IRuby runtime, RubyClass type, UnmarshalStream unmarshalStream) throws IOException;
+    void marshalTo(Ruby runtime, Object obj, RubyClass type, MarshalStream marshalStream) throws IOException;
+    Object unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream unmarshalStream) throws IOException;
 }

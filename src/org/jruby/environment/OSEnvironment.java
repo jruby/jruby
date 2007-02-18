@@ -36,7 +36,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 
 public class OSEnvironment {
 
@@ -65,7 +65,7 @@ public class OSEnvironment {
     * @param System.getProperty("jruby.env.method")
     * @throws OSEnvironmentReaderExcepton
     */
-    public Map getEnvironmentVariableMap(IRuby runtime) {
+    public Map getEnvironmentVariableMap(Ruby runtime) {
         Map envs = null;
 
         if (runtime.getInstanceConfig().getEnvironment() != null) {
@@ -114,7 +114,7 @@ public class OSEnvironment {
      * @param runtime
      * @return the java system properties as a Map<RubyString,RubyString>.
      */
-    public Map getSystemPropertiesMap(IRuby runtime) {
+    public Map getSystemPropertiesMap(Ruby runtime) {
         try {
             return getAsMapOfRubyStrings(runtime, System.getProperties().entrySet());
         } catch (AccessControlException accessEx) {
@@ -124,7 +124,7 @@ public class OSEnvironment {
     }
 
 
-    private static IOSEnvironmentReader getAccessibleOSEnvironment(IRuby runtime, String classname) {
+    private static IOSEnvironmentReader getAccessibleOSEnvironment(Ruby runtime, String classname) {
         IOSEnvironmentReader osenvironment = null;
         try {
             osenvironment = (IOSEnvironmentReader)Class.forName(classname).newInstance();
@@ -141,7 +141,7 @@ public class OSEnvironment {
 
 
 
-	private static Map getAsMapOfRubyStrings(IRuby runtime, Set entrySet) {
+	private static Map getAsMapOfRubyStrings(Ruby runtime, Set entrySet) {
 		Map envs = new HashMap();
 		for (Iterator iter = entrySet.iterator(); iter.hasNext();) {
 			Map.Entry entry  = (Map.Entry) iter.next();

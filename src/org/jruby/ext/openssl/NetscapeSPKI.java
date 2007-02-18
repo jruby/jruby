@@ -35,7 +35,7 @@ import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.jce.netscape.NetscapeCertRequest;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -51,12 +51,12 @@ import org.jvyamlb.util.Base64Coder;
  */
 public class NetscapeSPKI extends RubyObject {
     private static ObjectAllocator NETSCAPESPKI_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new NetscapeSPKI(runtime, klass);
         }
     };
     
-    public static void createNetscapeSPKI(IRuby runtime, RubyModule ossl) {
+    public static void createNetscapeSPKI(Ruby runtime, RubyModule ossl) {
         RubyModule mNetscape = ossl.defineModuleUnder("Netscape");
         RubyClass cSPKI = mNetscape.defineClassUnder("SPKI",runtime.getObject(),NETSCAPESPKI_ALLOCATOR);
         RubyClass openSSLError = ossl.getClass("OpenSSLError");
@@ -76,7 +76,7 @@ public class NetscapeSPKI extends RubyObject {
         cSPKI.defineFastMethod("challenge=",spkicb.getFastMethod("set_challenge",IRubyObject.class));
     }
 
-    public NetscapeSPKI(IRuby runtime, RubyClass type) {
+    public NetscapeSPKI(Ruby runtime, RubyClass type) {
         super(runtime,type);
     }
 

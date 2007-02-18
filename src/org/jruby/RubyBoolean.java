@@ -42,11 +42,11 @@ import org.jruby.runtime.marshal.MarshalStream;
  * @author  jpetersen
  */
 public class RubyBoolean extends RubyObject {
-	private final IRuby runtime;
+	private final Ruby runtime;
 	
 	private final boolean value;
 
-	public RubyBoolean(IRuby runtime, boolean value) {
+	public RubyBoolean(Ruby runtime, boolean value) {
 		super(runtime, null, // Don't initialize with class
 		false); // Don't put in object space
 		this.value = value;
@@ -57,7 +57,7 @@ public class RubyBoolean extends RubyObject {
         return value ? ClassIndex.TRUE : ClassIndex.FALSE;
     }
 	
-	public IRuby getRuntime() {
+	public Ruby getRuntime() {
 		return runtime;
 	}
 	
@@ -87,7 +87,7 @@ public class RubyBoolean extends RubyObject {
         return getRuntime().newFixnum(value ? 2 : 0);
     }
 
-    public static RubyClass createFalseClass(IRuby runtime) {
+    public static RubyClass createFalseClass(Ruby runtime) {
 		RubyClass falseClass = runtime.defineClass("FalseClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         falseClass.index = ClassIndex.FALSE;
 
@@ -105,7 +105,7 @@ public class RubyBoolean extends RubyObject {
 		return falseClass;
 	}
 
-	public static RubyClass createTrueClass(IRuby runtime) {
+	public static RubyClass createTrueClass(Ruby runtime) {
 		RubyClass trueClass = runtime.defineClass("TrueClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
                 trueClass.index = ClassIndex.TRUE;
 
@@ -123,7 +123,7 @@ public class RubyBoolean extends RubyObject {
 		return trueClass;
 	}
 
-	public static RubyBoolean newBoolean(IRuby runtime, boolean value) {
+	public static RubyBoolean newBoolean(Ruby runtime, boolean value) {
         return value ? runtime.getTrue() : runtime.getFalse();
 	}
 

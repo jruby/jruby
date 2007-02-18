@@ -30,7 +30,7 @@ package org.jruby.javasupport;
 
 import java.lang.reflect.AccessibleObject;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
@@ -39,11 +39,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public abstract class JavaAccessibleObject extends RubyObject {
 
-	protected JavaAccessibleObject(IRuby runtime, RubyClass rubyClass) {
+	protected JavaAccessibleObject(Ruby runtime, RubyClass rubyClass) {
 		super(runtime, rubyClass);
 	}
 
-	public static void registerRubyMethods(IRuby runtime, RubyClass result) {
+	public static void registerRubyMethods(Ruby runtime, RubyClass result) {
         CallbackFactory callbackFactory = runtime.callbackFactory(JavaAccessibleObject.class);
 
         result.defineFastMethod("accessible?", callbackFactory.getFastMethod("isAccessible"));

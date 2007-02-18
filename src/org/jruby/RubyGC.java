@@ -42,7 +42,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author Anders
  */
 public class RubyGC {
-    public static RubyModule createGCModule(IRuby runtime) {
+    public static RubyModule createGCModule(Ruby runtime) {
         RubyModule result = runtime.defineModule("GC");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyGC.class);
         

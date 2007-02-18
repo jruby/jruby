@@ -29,7 +29,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyUnboundMethod;
 import org.jruby.runtime.Block;
@@ -63,7 +63,7 @@ public class MethodMethod extends AbstractMethod {
     }
 
     /**
-     * @see org.jruby.runtime.ICallable#call(IRuby, IRubyObject, String, IRubyObject[], boolean)
+     * @see org.jruby.runtime.ICallable#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
      */
     public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
         return method.bind(receiver, block).call(args, block);

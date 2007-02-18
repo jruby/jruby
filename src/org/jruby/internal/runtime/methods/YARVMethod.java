@@ -28,7 +28,7 @@
 package org.jruby.internal.runtime.methods;
 
 import java.util.ArrayList;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.JumpException;
@@ -85,7 +85,7 @@ public class YARVMethod extends AbstractMethod {
     public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
     	assert args != null;
         
-        IRuby runtime = context.getRuntime();
+        Ruby runtime = context.getRuntime();
         
         try {
             prepareArguments(context, runtime, receiver, args);
@@ -110,7 +110,7 @@ public class YARVMethod extends AbstractMethod {
         }
     }
 
-    private void prepareArguments(ThreadContext context, IRuby runtime, IRubyObject receiver, IRubyObject[] args) {
+    private void prepareArguments(ThreadContext context, Ruby runtime, IRubyObject receiver, IRubyObject[] args) {
         context.setPosition(new ISeqPosition(iseq));
 
         int expectedArgsCount = iseq.args_argc;
@@ -129,7 +129,7 @@ public class YARVMethod extends AbstractMethod {
         context.setFrameArgs(args);
     }
 
-    private IRubyObject[] prepareOptOrRestArgs(ThreadContext context, IRuby runtime, IRubyObject[] args, int expectedArgsCount, int restArg, boolean hasOptArgs) {
+    private IRubyObject[] prepareOptOrRestArgs(ThreadContext context, Ruby runtime, IRubyObject[] args, int expectedArgsCount, int restArg, boolean hasOptArgs) {
         if (restArg == 0 && hasOptArgs) {
             int opt = expectedArgsCount + iseq.args_arg_opts;
 
@@ -167,7 +167,7 @@ public class YARVMethod extends AbstractMethod {
         return args;
     }
 
-    private void traceReturn(ThreadContext context, IRuby runtime, IRubyObject receiver, String name) {
+    private void traceReturn(ThreadContext context, Ruby runtime, IRubyObject receiver, String name) {
         if (runtime.getTraceFunction() == null) {
             return;
         }
@@ -176,7 +176,7 @@ public class YARVMethod extends AbstractMethod {
         runtime.callTraceFunction(context, "return", position, receiver, name, getImplementationClass());
     }
 
-    private void traceCall(ThreadContext context, IRuby runtime, IRubyObject receiver, String name) {
+    private void traceCall(ThreadContext context, Ruby runtime, IRubyObject receiver, String name) {
         if (runtime.getTraceFunction() == null) {
             return;
         }

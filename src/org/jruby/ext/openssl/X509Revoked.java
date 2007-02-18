@@ -27,7 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -41,12 +41,12 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class X509Revoked extends RubyObject {
     private static ObjectAllocator X509REVOKED_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new X509Revoked(runtime, klass);
         }
     };
     
-    public static void createX509Revoked(IRuby runtime, RubyModule mX509) {
+    public static void createX509Revoked(Ruby runtime, RubyModule mX509) {
         RubyClass cX509Rev = mX509.defineClassUnder("Revoked",runtime.getObject(),X509REVOKED_ALLOCATOR);
         RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
         mX509.defineClassUnder("RevokedError",openSSLError,openSSLError.getAllocator());
@@ -67,7 +67,7 @@ public class X509Revoked extends RubyObject {
     private IRubyObject extensions;
     private IRubyObject time;
 
-    public X509Revoked(IRuby runtime, RubyClass type) {
+    public X509Revoked(Ruby runtime, RubyClass type) {
         super(runtime,type);
     }
 

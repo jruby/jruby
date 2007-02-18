@@ -39,7 +39,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadServiceResource;
 
@@ -60,7 +60,7 @@ public class JarredScript implements Library {
         return this.resource;
     }
 
-    public void load(IRuby runtime) {
+    public void load(Ruby runtime) {
         URL jarFile = resource.getURL();
 
         // Make Java class files in the jar reachable from Ruby

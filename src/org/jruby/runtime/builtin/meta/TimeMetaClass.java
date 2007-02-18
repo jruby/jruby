@@ -42,7 +42,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFloat;
 import org.jruby.RubyNumeric;
@@ -56,7 +56,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public class TimeMetaClass extends ObjectMetaClass {
-    public TimeMetaClass(IRuby runtime) {
+    public TimeMetaClass(Ruby runtime) {
         super("Time", RubyTime.class, runtime.getObject(), TIME_ALLOCATOR);
     }
 
@@ -138,7 +138,7 @@ public class TimeMetaClass extends ObjectMetaClass {
     }
 
     private static ObjectAllocator TIME_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             RubyTime instance = new RubyTime(runtime, klass);
 
             instance.setMetaClass(klass);

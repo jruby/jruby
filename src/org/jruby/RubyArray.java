@@ -64,7 +64,7 @@ import org.jruby.util.Pack;
  */
 public class RubyArray extends RubyObject implements List {
 
-    public static RubyClass createArrayClass(IRuby runtime) {
+    public static RubyClass createArrayClass(Ruby runtime) {
         RubyClass arrayc = runtime.defineClass("Array", runtime.getObject(), ARRAY_ALLOCATOR);
         arrayc.index = ClassIndex.ARRAY;
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyArray.class);
@@ -160,7 +160,7 @@ public class RubyArray extends RubyObject implements List {
     }
 
     private static ObjectAllocator ARRAY_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyArray(runtime, klass);
         }
     };
@@ -233,21 +233,21 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_new2
      *
      */
-    public static final RubyArray newArray(final IRuby runtime, final long len) {
+    public static final RubyArray newArray(final Ruby runtime, final long len) {
         return new RubyArray(runtime, len);
     }
 
     /** rb_ary_new
      *
      */
-    public static final RubyArray newArray(final IRuby runtime) {
+    public static final RubyArray newArray(final Ruby runtime) {
         return new RubyArray(runtime, ARRAY_DEFAULT_SIZE);
     }
 
     /** rb_ary_new
      *
      */
-    public static final RubyArray newArrayLight(final IRuby runtime) {
+    public static final RubyArray newArrayLight(final Ruby runtime) {
         /* Ruby arrays default to holding 16 elements, so we create an
          * ArrayList of the same size if we're not told otherwise
          */
@@ -256,32 +256,32 @@ public class RubyArray extends RubyObject implements List {
         return arr;
     }
 
-    public static RubyArray newArray(IRuby runtime, IRubyObject obj) {
+    public static RubyArray newArray(Ruby runtime, IRubyObject obj) {
         return new RubyArray(runtime, new IRubyObject[] { obj });
     }
 
     /** rb_assoc_new
      *
      */
-    public static RubyArray newArray(IRuby runtime, IRubyObject car, IRubyObject cdr) {
+    public static RubyArray newArray(Ruby runtime, IRubyObject car, IRubyObject cdr) {
         return new RubyArray(runtime, new IRubyObject[] { car, cdr });
     }
 
     /** rb_ary_new4, rb_ary_new3
      *   
      */
-    public static RubyArray newArray(IRuby runtime, IRubyObject[] args) {
+    public static RubyArray newArray(Ruby runtime, IRubyObject[] args) {
         RubyArray arr = new RubyArray(runtime, args.length);
         System.arraycopy(args, 0, arr.values, 0, args.length);
         arr.realLength = args.length;
         return arr;
     }
     
-    public static RubyArray newArrayNoCopy(IRuby runtime, IRubyObject[] args) {
+    public static RubyArray newArrayNoCopy(Ruby runtime, IRubyObject[] args) {
         return new RubyArray(runtime, args);
     }
 
-    public static RubyArray newArray(IRuby runtime, List list) {
+    public static RubyArray newArray(Ruby runtime, List list) {
         RubyArray arr = new RubyArray(runtime, list.size());
         list.toArray(arr.values);
         arr.realLength = arr.values.length;
@@ -300,7 +300,7 @@ public class RubyArray extends RubyObject implements List {
     /* 
      * plain internal array assignment
      */
-    public RubyArray(IRuby runtime, IRubyObject[]vals){
+    public RubyArray(Ruby runtime, IRubyObject[]vals){
         super(runtime, runtime.getArray());
         values = vals;
         realLength = vals.length;
@@ -309,7 +309,7 @@ public class RubyArray extends RubyObject implements List {
     /* rb_ary_new2
      * just allocates the internal array
      */
-    private RubyArray(IRuby runtime, long length) {
+    private RubyArray(Ruby runtime, long length) {
         super(runtime, runtime.getArray());
         checkLength(length);
         alloc((int) length);
@@ -318,7 +318,7 @@ public class RubyArray extends RubyObject implements List {
     /* rb_ary_new3, rb_ary_new4
      * allocates the internal array of size length and copies the 'length' elements
      */
-    public RubyArray(IRuby runtime, long length, IRubyObject[] vals) {
+    public RubyArray(Ruby runtime, long length, IRubyObject[] vals) {
         super(runtime, runtime.getArray());
         checkLength(length);
         int ilength = (int) length;
@@ -331,7 +331,7 @@ public class RubyArray extends RubyObject implements List {
     /* rb_ary_new3, rb_ary_new4, with begin
      * allocates the internal array of size length and copies the 'length' elements from 'vals' starting from 'beg'
      */
-    private RubyArray(IRuby runtime, int beg, long length, IRubyObject[] vals) {
+    private RubyArray(Ruby runtime, int beg, long length, IRubyObject[] vals) {
         super(runtime, runtime.getArray());
         checkLength(length);
         int ilength = (int) length;
@@ -344,16 +344,16 @@ public class RubyArray extends RubyObject implements List {
     /* NEWOBJ and OBJSETUP equivalent
      * fastest one, for shared arrays, optional objectspace
      */
-    private RubyArray(IRuby runtime, boolean objectSpace) {
+    private RubyArray(Ruby runtime, boolean objectSpace) {
         super(runtime, runtime.getArray(), objectSpace);
     }
 
-    private RubyArray(IRuby runtime) {
+    private RubyArray(Ruby runtime) {
         super(runtime, runtime.getArray());
         alloc(ARRAY_DEFAULT_SIZE);
     }
 
-    public RubyArray(IRuby runtime, RubyClass klass) {
+    public RubyArray(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
         alloc(ARRAY_DEFAULT_SIZE);
     }
@@ -458,7 +458,7 @@ public class RubyArray extends RubyObject implements List {
      */
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         int argc = checkArgumentCount(args, 0, 2);
-        IRuby runtime = getRuntime();
+        Ruby runtime = getRuntime();
 
         if (argc == 0) {
             realLength = 0;
@@ -549,7 +549,7 @@ public class RubyArray extends RubyObject implements List {
     public RubyFixnum hash() {
         int h = realLength;
 
-        IRuby runtime = getRuntime();
+        Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
         int begin = this.begin;
         for (int i = begin; i < begin + realLength; i++) {
@@ -765,7 +765,7 @@ public class RubyArray extends RubyObject implements List {
         int alen = realLength;
         if (alen == 0) return aryDup();
     
-        IRuby runtime = getRuntime();
+        Ruby runtime = getRuntime();
         int elen = -1;
         int end = begin + alen;
         for (int i = begin; i < end; i++) {
@@ -1071,7 +1071,7 @@ public class RubyArray extends RubyObject implements List {
         RubyString s;
         try {
             StringBuffer buffer = new StringBuffer("[");
-            IRuby runtime = getRuntime();
+            Ruby runtime = getRuntime();
             ThreadContext context = runtime.getCurrentContext();
             boolean tainted = isTaint();
             for (int i = 0; i < realLength; i++) {
@@ -1150,7 +1150,7 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public IRubyObject each_index(Block block) {
-        IRuby runtime = getRuntime();
+        Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
         for (int i = 0; i < realLength; i++) {
             context.yield(runtime.newFixnum(i), block);
@@ -1198,7 +1198,7 @@ public class RubyArray extends RubyObject implements List {
         if (!sep.isNil()) len += sep.convertToString().getByteList().length() * (realLength - 1);
 
         StringBuffer buf = new StringBuffer((int) len);
-        IRuby runtime = getRuntime();
+        Ruby runtime = getRuntime();
         for (int i = begin; i < begin + realLength; i++) {
             IRubyObject tmp = values[i];
             if (tmp instanceof RubyString) {
@@ -1268,7 +1268,7 @@ public class RubyArray extends RubyObject implements List {
         RubyArray ary = (RubyArray) obj;
         if (realLength != ary.realLength) return getRuntime().getFalse();
 
-        IRuby runtime = getRuntime();
+        Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
         for (long i = 0; i < realLength; i++) {
             if (!elt(i).callMethod(context, "==", ary.elt(i)).isTrue()) return runtime.getFalse();
@@ -1287,7 +1287,7 @@ public class RubyArray extends RubyObject implements List {
 
         if (realLength != ary.realLength) return getRuntime().getFalse();
 
-        IRuby runtime = getRuntime();
+        Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
         for (long i = 0; i < realLength; i++) {
             if (!elt(i).callMethod(context, "eql?", ary.elt(i)).isTrue()) return runtime.getFalse();
@@ -1408,7 +1408,7 @@ public class RubyArray extends RubyObject implements List {
         }
 
         if (block.isGiven()) {
-            IRuby runtime = getRuntime();
+            Ruby runtime = getRuntime();
             ThreadContext context = runtime.getCurrentContext();
             for (int i = (int) beg; i < (int) end; i++) {
                 IRubyObject v = context.yield(runtime.newFixnum(i), block);
@@ -1427,7 +1427,7 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public IRubyObject index(IRubyObject obj) {
-        IRuby runtime = getRuntime();
+        Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
         for (int i = begin; i < begin + realLength; i++) {
             if (values[i].callMethod(context, "==", obj).isTrue()) return runtime.newFixnum(i - begin);
@@ -1440,7 +1440,7 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public IRubyObject rindex(IRubyObject obj) {
-        IRuby runtime = getRuntime();
+        Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
 
         int i = realLength;
@@ -1509,7 +1509,7 @@ public class RubyArray extends RubyObject implements List {
     public RubyArray collect(Block block) {
         if (!block.isGiven()) return new RubyArray(getRuntime(), realLength, values);
 
-        IRuby runtime = getRuntime();
+        Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
         RubyArray collect = new RubyArray(runtime, realLength);
         
@@ -1536,7 +1536,7 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public RubyArray select(Block block) {
-        IRuby runtime = getRuntime();
+        Ruby runtime = getRuntime();
         RubyArray result = new RubyArray(runtime, realLength);
 
         ThreadContext context = runtime.getCurrentContext();
@@ -1558,7 +1558,7 @@ public class RubyArray extends RubyObject implements List {
     public IRubyObject delete(IRubyObject item, Block block) {
         int i2 = 0;
 
-        IRuby runtime = getRuntime();
+        Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
         for (int i1 = 0; i1 < realLength; i1++) {
             IRubyObject e = values[begin + i1];
@@ -1658,7 +1658,7 @@ public class RubyArray extends RubyObject implements List {
             args[i] = args[i].convertToArray();
         }
 
-        IRuby runtime = getRuntime();
+        Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
         if (block.isGiven()) {
             for (int i = 0; i < realLength; i++) {
@@ -1695,7 +1695,7 @@ public class RubyArray extends RubyObject implements List {
 
         if (len > ary2.realLength) len = ary2.realLength;
 
-        IRuby runtime = getRuntime();
+        Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
         for (int i = 0; i < len; i++) {
             IRubyObject v = elt(i).callMethod(context, "<=>", ary2.elt(i));
@@ -1746,7 +1746,7 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public IRubyObject assoc(IRubyObject key) {
-        IRuby runtime = getRuntime();
+        Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
 
         for (int i = begin; i < begin + realLength; i++) {
@@ -1763,7 +1763,7 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public IRubyObject rassoc(IRubyObject value) {
-        IRuby runtime = getRuntime();
+        Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
 
         for (int i = begin; i < begin + realLength; i++) {

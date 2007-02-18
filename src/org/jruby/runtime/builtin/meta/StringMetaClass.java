@@ -31,7 +31,7 @@
 package org.jruby.runtime.builtin.meta;
 
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyString;
 import org.jruby.runtime.Arity;
@@ -41,7 +41,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public class StringMetaClass extends ObjectMetaClass {
-    public StringMetaClass(IRuby runtime) {
+    public StringMetaClass(Ruby runtime) {
         super("String", RubyString.class, runtime.getObject(), STRING_ALLOCATOR);
         this.index = ClassIndex.STRING;
     }
@@ -164,7 +164,7 @@ public class StringMetaClass extends ObjectMetaClass {
     }
 
     private static ObjectAllocator STRING_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             RubyString newString = runtime.newString("");
             
             newString.setMetaClass(klass);

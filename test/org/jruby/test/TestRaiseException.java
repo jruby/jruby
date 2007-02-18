@@ -84,7 +84,7 @@ public class TestRaiseException extends TestRubyBase {
         } catch (RaiseException re) {
              ByteArrayOutputStream baos = new ByteArrayOutputStream();
              re.printStackTrace(new PrintStream(baos));
-             String trace = baos.toString();
+             //String trace = baos.toString();
              // System.out.println(trace);
         }
     }

@@ -33,16 +33,16 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class UnmarshalCache {
-    private final IRuby runtime;
+    private final Ruby runtime;
     private List links = new ArrayList();
     private List symbols = new ArrayList();
 
-    public UnmarshalCache(IRuby runtime) {
+    public UnmarshalCache(Ruby runtime) {
         this.runtime = runtime;
     }
 

@@ -45,7 +45,7 @@ import org.jvyamlb.SafeConstructorImpl;
 
 import org.jvyamlb.nodes.Node;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -87,7 +87,7 @@ public class JRubyConstructor extends ConstructorImpl {
         yamlMultiRegexps.put(tagPrefix,Pattern.compile("^"+tagPrefix));
     }
 
-    private final IRuby runtime;
+    private final Ruby runtime;
 
     public JRubyConstructor(final IRubyObject receiver, final Composer composer) {
         super(composer);
@@ -155,7 +155,7 @@ public class JRubyConstructor extends ConstructorImpl {
         Date d = (Date)SafeConstructorImpl.constructYamlTimestamp(ctor,node);
         Calendar c = Calendar.getInstance();
         c.setTime(d);
-        IRuby runtime = ((JRubyConstructor)ctor).runtime;
+        Ruby runtime = ((JRubyConstructor)ctor).runtime;
         return runtime.getClass("Date").callMethod(runtime.getCurrentContext(),"new",new IRubyObject[]{runtime.newFixnum(c.get(Calendar.YEAR)),runtime.newFixnum(c.get(Calendar.MONTH)+1),runtime.newFixnum(c.get(Calendar.DAY_OF_MONTH)),});
     }
 
@@ -172,7 +172,7 @@ public class JRubyConstructor extends ConstructorImpl {
         return SafeConstructorImpl.constructJava(ctor,pref,node);
     }
     public static Object constructRuby(final Constructor ctor, final String tag, final Node node) {
-        final IRuby runtime = ((JRubyConstructor)ctor).runtime;
+        final Ruby runtime = ((JRubyConstructor)ctor).runtime;
         RubyModule objClass = runtime.getModule("Object");
         if(tag != null) {
             final String[] nms = tag.split("::");
@@ -191,7 +191,7 @@ public class JRubyConstructor extends ConstructorImpl {
     }
 
     public static Object constructRubyMap(final Constructor ctor, final String tag, final Node node) {
-        final IRuby runtime = ((JRubyConstructor)ctor).runtime;
+        final Ruby runtime = ((JRubyConstructor)ctor).runtime;
         RubyModule objClass = runtime.getModule("Object");
         if(tag != null) {
             final String[] nms = tag.split("::");
@@ -210,7 +210,7 @@ public class JRubyConstructor extends ConstructorImpl {
     }
 
     public static Object constructRubySequence(final Constructor ctor, final String tag, final Node node) {
-        final IRuby runtime = ((JRubyConstructor)ctor).runtime;
+        final Ruby runtime = ((JRubyConstructor)ctor).runtime;
         RubyModule objClass = runtime.getModule("Object");
         if(tag != null) {
             final String[] nms = tag.split("::");

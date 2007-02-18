@@ -34,7 +34,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.Map;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 
 
 /**
@@ -53,7 +53,7 @@ class OSEnvironmentReaderFromFile implements IOSEnvironmentReader {
     /* (non-Javadoc)
      * @see org.jruby.IOSEnvironment#isAccessible()
      */
-    public boolean isAccessible(IRuby runtime) {
+    public boolean isAccessible(Ruby runtime) {
         String jrubyEnvFilename = System.getProperty(JRUBY_ENVFILE);
 
         if (jrubyEnvFilename == null || jrubyEnvFilename.length() < 1) {
@@ -68,7 +68,7 @@ class OSEnvironmentReaderFromFile implements IOSEnvironmentReader {
     /* (non-Javadoc)
      * @see org.jruby.IOSEnvironment#getVariables()
      */
-    public Map getVariables(IRuby runtime) {
+    public Map getVariables(Ruby runtime) {
         String jrubyEnvFilename = System.getProperty(JRUBY_ENVFILE);
 
         Map envs = null;

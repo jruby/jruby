@@ -16,7 +16,6 @@ import javax.swing.JEditorPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 
-import org.jruby.IRuby;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -54,7 +53,7 @@ public class IRBApplet extends Applet {
             setError(new PrintStream(tar));
             setObjectSpaceEnabled(false);
         }};
-        final IRuby runtime = Ruby.newInstance(config);
+        final Ruby runtime = Ruby.newInstance(config);
         
         runtime.defineGlobalConstant("ARGV", runtime.newArrayNoCopy(new IRubyObject[] {
                 runtime.newString("-f") }));

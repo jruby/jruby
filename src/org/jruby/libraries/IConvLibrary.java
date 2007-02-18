@@ -29,13 +29,13 @@ package org.jruby.libraries;
 
 import java.io.IOException;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyIconv;
 import org.jruby.runtime.load.Library;
 
 public class IConvLibrary implements Library {
 
-    public void load(IRuby runtime) throws IOException {
+    public void load(Ruby runtime) throws IOException {
         RubyIconv.createIconv(runtime);
     }
 

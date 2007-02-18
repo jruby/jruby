@@ -28,7 +28,7 @@
 
 package org.jruby.util;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyString;
 import org.jruby.RubyIO;
 
@@ -52,7 +52,7 @@ public class IOHandlerNio extends IOHandler {
     private boolean blocking = true;
     private boolean bufferedIO = false;
 
-    public IOHandlerNio(IRuby runtime, Channel channel) throws IOException {
+    public IOHandlerNio(Ruby runtime, Channel channel) throws IOException {
         super(runtime);
         String mode = "";
         this.channel = channel;

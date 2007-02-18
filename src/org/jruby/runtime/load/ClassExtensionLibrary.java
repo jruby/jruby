@@ -28,7 +28,7 @@
 package org.jruby.runtime.load;
 
 import java.io.IOException;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 
 /**
  * The ClassExtensionLibrary wraps a class which implements BasicLibraryService,
@@ -44,7 +44,7 @@ public class ClassExtensionLibrary implements Library {
         theClass = extension;
     }
 
-    public void load(IRuby runtime) throws IOException {
+    public void load(Ruby runtime) throws IOException {
         if(BasicLibraryService.class.isAssignableFrom(theClass)) {
             try {
                 ((BasicLibraryService)theClass.newInstance()).basicLoad(runtime);

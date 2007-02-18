@@ -35,7 +35,7 @@ package org.jruby.internal.runtime.methods;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
@@ -95,7 +95,7 @@ public final class DefaultMethod extends AbstractMethod {
     }
 
     /**
-     * @see AbstractCallable#call(IRuby, IRubyObject, String, IRubyObject[], boolean)
+     * @see AbstractCallable#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
      */
     // FIXME: This is commented out because problems were found compiling methods that call protected code.
     // because eliminating the pre/post does not change the "self" on the current frame, this caused
@@ -115,7 +115,7 @@ public final class DefaultMethod extends AbstractMethod {
     }
 
     /**
-     * @see AbstractCallable#call(IRuby, IRubyObject, String, IRubyObject[], boolean)
+     * @see AbstractCallable#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
      */
     public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
         	assert args != null;
@@ -123,7 +123,7 @@ public final class DefaultMethod extends AbstractMethod {
             return jitCompiledScript.run(context, receiver, args, Block.NULL_BLOCK);
         }
         
-        IRuby runtime = context.getRuntime();
+        Ruby runtime = context.getRuntime();
         
         if (!hasBeenTargeted) {
             CreateJumpTargetVisitor.setJumpTarget(this, body);
@@ -166,7 +166,7 @@ public final class DefaultMethod extends AbstractMethod {
         }
     }
 
-    private void runJIT(IRuby runtime, String name) {
+    private void runJIT(Ruby runtime, String name) {
         if (callCount >= 0 && getArity().isFixed()) {
             callCount++;
             if (callCount >= COMPILE_COUNT) {
@@ -196,7 +196,7 @@ public final class DefaultMethod extends AbstractMethod {
         }
     }
 
-    private void prepareArguments(ThreadContext context, IRuby runtime, IRubyObject receiver, IRubyObject[] args) {
+    private void prepareArguments(ThreadContext context, Ruby runtime, IRubyObject receiver, IRubyObject[] args) {
         int expectedArgsCount = argsNode.getArgsCount();
 
         int restArg = argsNode.getRestArg();
@@ -220,7 +220,7 @@ public final class DefaultMethod extends AbstractMethod {
         context.setFrameArgs(args);
     }
 
-    private IRubyObject[] prepareOptOrRestArgs(ThreadContext context, IRuby runtime, IRubyObject[] args, int expectedArgsCount, int restArg, boolean hasOptArgs) {
+    private IRubyObject[] prepareOptOrRestArgs(ThreadContext context, Ruby runtime, IRubyObject[] args, int expectedArgsCount, int restArg, boolean hasOptArgs) {
         if (restArg == -1 && hasOptArgs) {
             int opt = expectedArgsCount + argsNode.getOptArgs().size();
 
@@ -291,7 +291,7 @@ public final class DefaultMethod extends AbstractMethod {
         return args;
     }
 
-    private void traceReturn(ThreadContext context, IRuby runtime, IRubyObject receiver, String name) {
+    private void traceReturn(ThreadContext context, Ruby runtime, IRubyObject receiver, String name) {
         if (runtime.getTraceFunction() == null) {
             return;
         }
@@ -300,7 +300,7 @@ public final class DefaultMethod extends AbstractMethod {
         runtime.callTraceFunction(context, "return", position, receiver, name, getImplementationClass());
     }
 
-    private void traceCall(ThreadContext context, IRuby runtime, IRubyObject receiver, String name) {
+    private void traceCall(ThreadContext context, Ruby runtime, IRubyObject receiver, String name) {
         if (runtime.getTraceFunction() == null) {
             return;
         }

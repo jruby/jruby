@@ -39,7 +39,7 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLSession;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyIO;
 import org.jruby.RubyModule;
@@ -59,12 +59,12 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class SSLSocket extends RubyObject {
     private static ObjectAllocator SSLSOCKET_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new SSLSocket(runtime, klass);
         }
     };
     
-    public static void createSSLSocket(IRuby runtime, RubyModule mSSL) {
+    public static void createSSLSocket(Ruby runtime, RubyModule mSSL) {
         RubyClass cSSLSocket = mSSL.defineClassUnder("SSLSocket",runtime.getObject(),SSLSOCKET_ALLOCATOR);
 
         cSSLSocket.attr_accessor(new IRubyObject[]{runtime.newSymbol("io")});
@@ -89,7 +89,7 @@ public class SSLSocket extends RubyObject {
 
     private RubyClass sslError;
 
-    public SSLSocket(IRuby runtime, RubyClass type) {
+    public SSLSocket(Ruby runtime, RubyClass type) {
         super(runtime,type);
         sslError = ((RubyClass)((RubyModule)runtime.getModule("OpenSSL").getConstant("SSL")).getConstant("SSLError"));
     }

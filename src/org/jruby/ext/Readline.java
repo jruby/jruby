@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Iterator;
 import java.util.Collections;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyArray;
 import org.jruby.runtime.CallbackFactory;
@@ -53,7 +53,7 @@ import jline.History;
  */
 public class Readline {
     public static class Service implements Library {
-        public void load(final IRuby runtime) throws IOException {
+        public void load(final Ruby runtime) throws IOException {
             createReadline(runtime);
         }
     }
@@ -62,7 +62,7 @@ public class Readline {
     private static Completor currentCompletor;
     private static History history;
 
-    public static void createReadline(IRuby runtime) throws IOException {
+    public static void createReadline(Ruby runtime) throws IOException {
         history = new History();
         currentCompletor = null;
         

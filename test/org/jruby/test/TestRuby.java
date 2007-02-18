@@ -38,7 +38,6 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import org.jruby.IRuby;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyException;
@@ -103,7 +102,7 @@ public class TestRuby extends TestRubyBase {
         RubyInstanceConfig config = new RubyInstanceConfig() {{
             setInput(System.in); setOutput(System.out); setError(new PrintStream(err)); setObjectSpaceEnabled(false);
         }};
-        IRuby ruby = Ruby.newInstance(config);
+        Ruby ruby = Ruby.newInstance(config);
         RubyException exception = new RubyException(ruby, ruby.getClass("NameError"), "A message");
         RubyString[] lines = new RubyString[]{
             RubyString.newString(ruby, "Line 1"),
@@ -120,7 +119,7 @@ public class TestRuby extends TestRubyBase {
         RubyInstanceConfig config = new RubyInstanceConfig() {{
             setInput(System.in); setOutput(System.out); setError(new PrintStream(err)); setObjectSpaceEnabled(false);
         }};
-        IRuby ruby = Ruby.newInstance(config);
+        Ruby ruby = Ruby.newInstance(config);
         RubyException exception = new RubyException(ruby, ruby.getClass("NameError"), "A message");
         ruby.printError(exception);
         //        assertEquals(":[0,0]:[0,7]: A message (NameError)\n", err.toString());

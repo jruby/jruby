@@ -31,7 +31,7 @@
 package org.jruby.ast;
 
 import java.util.List;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 
 import org.jruby.ast.types.ILiteralNode;
@@ -74,7 +74,7 @@ public class FixnumNode extends Node implements ILiteralNode {
         this.value = value;
     }
     
-    public RubyFixnum getFixnum(IRuby runtime) {
+    public RubyFixnum getFixnum(Ruby runtime) {
         if (fixnum == null) {
             return fixnum = RubyFixnum.newFixnum(runtime, value);
         }

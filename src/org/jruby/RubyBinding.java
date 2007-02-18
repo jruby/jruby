@@ -44,7 +44,7 @@ public class RubyBinding extends RubyObject {
     private Block block = null;
     private RubyModule wrapper = null;
 
-    public RubyBinding(IRuby runtime, RubyClass rubyClass, Block block, RubyModule wrapper) {
+    public RubyBinding(Ruby runtime, RubyClass rubyClass, Block block, RubyModule wrapper) {
         super(runtime, rubyClass);
         
         this.block = block;
@@ -61,11 +61,11 @@ public class RubyBinding extends RubyObject {
 
     // Proc class
     
-    public static RubyBinding newBinding(IRuby runtime, Block block) {
+    public static RubyBinding newBinding(Ruby runtime, Block block) {
         return new RubyBinding(runtime, runtime.getClass("Binding"), block, block.getKlass());
     }
 
-    public static RubyBinding newBinding(IRuby runtime) {
+    public static RubyBinding newBinding(Ruby runtime) {
         ThreadContext context = runtime.getCurrentContext();
         
         // FIXME: We should be cloning, not reusing: frame, scope, dynvars, and potentially iter/block info

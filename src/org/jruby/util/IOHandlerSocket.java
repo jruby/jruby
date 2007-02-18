@@ -32,11 +32,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.util.IOHandlerUnseekable;
 
 public class IOHandlerSocket extends IOHandlerUnseekable {
-    public IOHandlerSocket(IRuby runtime, InputStream inStream, OutputStream outStream) 
+    public IOHandlerSocket(Ruby runtime, InputStream inStream, OutputStream outStream) 
         throws IOException {
         super(runtime, inStream, outStream);
     }

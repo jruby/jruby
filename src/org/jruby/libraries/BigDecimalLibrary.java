@@ -33,7 +33,7 @@ package org.jruby.libraries;
 import java.io.IOException;
 
 import org.jruby.RubyBigDecimal;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.runtime.load.Library;
 
 /**
@@ -41,7 +41,7 @@ import org.jruby.runtime.load.Library;
  * @version $Revision: 1.2 $
  */
 public class BigDecimalLibrary implements Library {
-    public void load(IRuby runtime) throws IOException {
+    public void load(Ruby runtime) throws IOException {
         RubyBigDecimal.createBigDecimal(runtime);
     }
 }// BigDecimalLibrary

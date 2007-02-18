@@ -46,7 +46,7 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -69,12 +69,12 @@ import org.jruby.util.ByteList;
  */
 public class X509Cert extends RubyObject {
     private static ObjectAllocator X509CERT_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new X509Cert(runtime, klass);
         }
     };
     
-    public static void createX509Cert(IRuby runtime, RubyModule mX509) {
+    public static void createX509Cert(Ruby runtime, RubyModule mX509) {
         RubyClass cX509Cert = mX509.defineClassUnder("Certificate",runtime.getObject(),X509CERT_ALLOCATOR);
         RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
         mX509.defineClassUnder("CertificateError",openSSLError,openSSLError.getAllocator());
@@ -111,7 +111,7 @@ public class X509Cert extends RubyObject {
         cX509Cert.defineFastMethod("inspect",certcb.getFastMethod("inspect"));
     }
 
-    public X509Cert(IRuby runtime, RubyClass type) {
+    public X509Cert(Ruby runtime, RubyClass type) {
         super(runtime,type);
     }
 
@@ -142,7 +142,7 @@ public class X509Cert extends RubyObject {
         return new X509AuxCertificate(cert);
     }
 
-    public static IRubyObject wrap(IRuby runtime, Certificate c) throws Exception {
+    public static IRubyObject wrap(Ruby runtime, Certificate c) throws Exception {
         RubyClass cr = (RubyClass)(((RubyModule)(runtime.getModule("OpenSSL").getConstant("X509"))).getConstant("Certificate"));
         return cr.callMethod(runtime.getCurrentContext(),"new",RubyString.newString(runtime, c.getEncoded()));
     }

@@ -35,7 +35,6 @@ import java.util.List;
 
 import junit.framework.TestCase;
 
-import org.jruby.IRuby;
 import org.jruby.Ruby;
 import org.jruby.RubyString;
 import org.jruby.runtime.ObjectSpace;
@@ -46,7 +45,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 */
 public class TestObjectSpace extends TestCase {
 
-    private IRuby runtime;
+    private Ruby runtime;
     private ObjectSpace target;
 
     public TestObjectSpace(String name) {

@@ -27,7 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.builtin.meta;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.runtime.MethodFactory;
@@ -193,7 +193,7 @@ public abstract class AbstractMetaClass extends RubyClass {
     protected MethodFactory mfactory = MethodFactory.createFactory();
 
 	// Only for other core modules/classes
-	protected AbstractMetaClass(IRuby runtime, RubyClass metaClass,
+	protected AbstractMetaClass(Ruby runtime, RubyClass metaClass,
 			RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef, String name,
 			Class builtinClass) {
 		super(runtime, metaClass, superClass, allocator, parentCRef, name);
@@ -236,7 +236,7 @@ public abstract class AbstractMetaClass extends RubyClass {
 		}
 	}
 
-	public AbstractMetaClass(IRuby runtime, RubyClass metaClass, RubyClass superClass,
+	public AbstractMetaClass(Ruby runtime, RubyClass metaClass, RubyClass superClass,
             ObjectAllocator allocator, SinglyLinkedList parentCRef, String name) {
 		super(runtime, metaClass, superClass, allocator, parentCRef, name);
 	}

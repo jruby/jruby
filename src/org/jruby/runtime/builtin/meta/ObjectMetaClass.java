@@ -28,7 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.builtin.meta;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -45,7 +45,7 @@ import org.jruby.util.collections.SinglyLinkedList;
  */
 public class ObjectMetaClass extends AbstractMetaClass {
     // Only for creating ObjectMetaClass directly
-    public ObjectMetaClass(IRuby runtime) {
+    public ObjectMetaClass(Ruby runtime) {
     	super(runtime, null /*Would be Class if it existed yet */, null, OBJECT_ALLOCATOR, null, "Object");
     	
     	this.builtinClass = RubyObject.class;
@@ -53,7 +53,7 @@ public class ObjectMetaClass extends AbstractMetaClass {
     }
     
     // Only for other core modules/classes
-    protected ObjectMetaClass(IRuby runtime, RubyClass metaClass, RubyClass superClass, ObjectAllocator allocator, 
+    protected ObjectMetaClass(Ruby runtime, RubyClass metaClass, RubyClass superClass, ObjectAllocator allocator, 
             SinglyLinkedList parentCRef, String name, Class builtinClass) {
     	super(runtime, metaClass, superClass, allocator, parentCRef, name);
     	
@@ -94,7 +94,7 @@ public class ObjectMetaClass extends AbstractMetaClass {
     }
     
     public static ObjectAllocator OBJECT_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             IRubyObject instance = new RubyObject(runtime, klass);
             instance.setMetaClass(klass);
 

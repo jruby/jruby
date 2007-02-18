@@ -68,7 +68,7 @@ import org.jvyamlb.YAML;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class RubyYAML {
-    public static RubyModule createYAMLModule(IRuby runtime) {
+    public static RubyModule createYAMLModule(Ruby runtime) {
         runtime.getModule("Kernel").callMethod(runtime.getCurrentContext(),"require", runtime.newString("date"));
         RubyModule result = runtime.defineModule("YAML");
 
@@ -474,7 +474,7 @@ public class RubyYAML {
             return self.toString().indexOf('\0') != -1 ? self.getRuntime().getTrue() : self.getRuntime().getFalse();
         }
         public IRubyObject method6(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-            IRuby rt = self.getRuntime();
+            Ruby rt = self.getRuntime();
             if(self.callMethod(context, "is_binary_data?").isTrue()) {
                 return args[0].callMethod(context,"scalar", new IRubyObject[]{rt.newString("tag:yaml.org,2002:binary"),rt.newArray(self).callMethod(context,"pack", rt.newString("m")),rt.newString("|")});
             }

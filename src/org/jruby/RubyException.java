@@ -55,18 +55,18 @@ public class RubyException extends RubyObject {
 	public static final int TRACE_TAIL = 4;
 	public static final int TRACE_MAX = TRACE_HEAD + TRACE_TAIL + 6;
 
-    protected RubyException(IRuby runtime, RubyClass rubyClass) {
+    protected RubyException(Ruby runtime, RubyClass rubyClass) {
         this(runtime, rubyClass, null);
     }
 
-    public RubyException(IRuby runtime, RubyClass rubyClass, String message) {
+    public RubyException(Ruby runtime, RubyClass rubyClass, String message) {
         super(runtime, rubyClass);
         
         this.message = message == null ? runtime.getNil() : runtime.newString(message);
     }
     
     private static ObjectAllocator EXCEPTION_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             RubyException instance = new RubyException(runtime, klass);
             
             // for future compatibility as constructors move toward not accepting metaclass?
@@ -76,7 +76,7 @@ public class RubyException extends RubyObject {
         }
     };
 
-    public static RubyClass createExceptionClass(IRuby runtime) {
+    public static RubyClass createExceptionClass(Ruby runtime) {
         RubyClass exceptionClass = runtime.defineClass("Exception", runtime.getObject(), EXCEPTION_ALLOCATOR);
 
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyException.class);
@@ -95,7 +95,7 @@ public class RubyException extends RubyObject {
         return exceptionClass;
     }
 
-    public static RubyException newException(IRuby runtime, RubyClass excptnClass, String msg) {
+    public static RubyException newException(Ruby runtime, RubyClass excptnClass, String msg) {
         return new RubyException(runtime, excptnClass, msg);
     }
 

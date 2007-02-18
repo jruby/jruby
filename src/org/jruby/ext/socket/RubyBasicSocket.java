@@ -34,7 +34,7 @@ import java.nio.channels.SocketChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.net.SocketAddress;
 import java.net.InetSocketAddress;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyIO;
@@ -51,12 +51,12 @@ import org.jruby.util.ByteList;
  */
 public class RubyBasicSocket extends RubyIO {
     private static ObjectAllocator BASICSOCKET_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyBasicSocket(runtime, klass);
         }
     };
 
-    static void createBasicSocket(IRuby runtime) {
+    static void createBasicSocket(Ruby runtime) {
         RubyClass rb_cBasicSocket = runtime.defineClass("BasicSocket", runtime.getClass("IO"), BASICSOCKET_ALLOCATOR);
 
         CallbackFactory cfact = runtime.callbackFactory(RubyBasicSocket.class);
@@ -73,7 +73,7 @@ public class RubyBasicSocket extends RubyIO {
 
     protected Channel socketChannel;
 
-    public RubyBasicSocket(IRuby runtime, RubyClass type) {
+    public RubyBasicSocket(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
 

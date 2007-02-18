@@ -32,7 +32,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.util.regex.Pattern;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.charset.PlainCharset;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -49,7 +49,7 @@ public class KCode {
         this.kcode = kcode;
     }
 
-    public static KCode create(IRuby runtime, String lang) {
+    public static KCode create(Ruby runtime, String lang) {
         if(lang == null) {
             return NIL;
         }
@@ -75,7 +75,7 @@ public class KCode {
         return NIL;
     }
 
-    public IRubyObject kcode(IRuby runtime) {
+    public IRubyObject kcode(Ruby runtime) {
         if (kcode == null) {
             return runtime.getNil();
         }

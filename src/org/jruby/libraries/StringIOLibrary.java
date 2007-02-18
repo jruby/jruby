@@ -30,11 +30,11 @@ package org.jruby.libraries;
 import java.io.IOException;
 
 import org.jruby.RubyStringIO;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.runtime.load.Library;
 
 public class StringIOLibrary implements Library {
-    public void load(IRuby runtime) throws IOException {
+    public void load(Ruby runtime) throws IOException {
         RubyStringIO.createStringIOClass(runtime);
     }
 }

@@ -7,7 +7,7 @@
 package org.jruby.runtime.builtin.meta;
 
 import java.util.HashMap;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.runtime.Arity;
@@ -19,7 +19,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public class HashMetaClass extends ObjectMetaClass {
-    public HashMetaClass(IRuby runtime) {
+    public HashMetaClass(Ruby runtime) {
         super("Hash", RubyHash.class, runtime.getObject(), HASH_ALLOCATOR);
         this.index = ClassIndex.HASH;
     }
@@ -97,7 +97,7 @@ public class HashMetaClass extends ObjectMetaClass {
     }
 
     private static ObjectAllocator HASH_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             RubyHash instance = new RubyHash(runtime);
 
             instance.setMetaClass(klass);
@@ -115,7 +115,7 @@ public class HashMetaClass extends ObjectMetaClass {
     }
     
     public static IRubyObject create(IRubyObject recv, IRubyObject[] args, Block block) {
-        IRuby runtime = recv.getRuntime();
+        Ruby runtime = recv.getRuntime();
         RubyClass klass = (RubyClass) recv;
         RubyHash hash = (RubyHash) klass.allocate();
 

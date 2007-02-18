@@ -50,7 +50,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
@@ -69,11 +69,11 @@ import org.jruby.runtime.callback.Callback;
 
 public class JavaClass extends JavaObject {
 
-    private JavaClass(IRuby runtime, Class javaClass) {
+    private JavaClass(Ruby runtime, Class javaClass) {
         super(runtime, (RubyClass) runtime.getModule("Java").getClass("JavaClass"), javaClass);
     }
     
-    public static synchronized JavaClass get(IRuby runtime, Class klass) {
+    public static synchronized JavaClass get(Ruby runtime, Class klass) {
         JavaClass javaClass = runtime.getJavaSupport().getJavaClassFromCache(klass);
         if (javaClass == null) {
             javaClass = new JavaClass(runtime, klass);
@@ -82,7 +82,7 @@ public class JavaClass extends JavaObject {
         return javaClass;
     }
 
-    public static RubyClass createJavaClassClass(IRuby runtime, RubyModule javaModule) {
+    public static RubyClass createJavaClassClass(Ruby runtime, RubyModule javaModule) {
         // FIXME: Determine if a real allocator is needed here. Do people want to extend
         // JavaClass? Do we want them to do that? Can you Class.new(JavaClass)? Should
         // you be able to?

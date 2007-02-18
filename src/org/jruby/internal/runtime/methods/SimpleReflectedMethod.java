@@ -31,7 +31,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
@@ -92,7 +92,7 @@ public class SimpleReflectedMethod extends AbstractMethod {
     }
     
 	public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        IRuby runtime = context.getRuntime();
+        Ruby runtime = context.getRuntime();
         arity.checkArity(runtime, args);
         
         assert receiver != null;

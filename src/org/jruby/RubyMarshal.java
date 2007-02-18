@@ -55,7 +55,7 @@ import org.jruby.util.ByteList;
  */
 public class RubyMarshal {
 
-    public static RubyModule createMarshalModule(IRuby runtime) {
+    public static RubyModule createMarshalModule(Ruby runtime) {
         RubyModule module = runtime.defineModule("Marshal");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyMarshal.class);
 

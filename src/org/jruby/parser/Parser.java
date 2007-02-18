@@ -33,7 +33,7 @@ package org.jruby.parser;
 import java.io.Reader;
 import java.io.StringReader;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyFile;
 import org.jruby.ast.Node;
 import org.jruby.lexer.yacc.LexerSource;
@@ -46,9 +46,9 @@ import org.jruby.util.collections.SinglyLinkedList;
  * Serves as a simple facade for all the parsing magic.
  */
 public class Parser {
-    private final IRuby runtime;
+    private final Ruby runtime;
 
-    public Parser(IRuby runtime) {
+    public Parser(Ruby runtime) {
         this.runtime = runtime;
     }
 

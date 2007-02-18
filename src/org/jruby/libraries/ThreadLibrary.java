@@ -33,7 +33,7 @@ package org.jruby.libraries;
 import java.io.IOException;
 import java.util.LinkedList;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyBoolean;
@@ -51,7 +51,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author <a href="mailto:mental@rydia.net">MenTaLguY</a>
  */
 public class ThreadLibrary implements Library {
-    public void load(final IRuby runtime) throws IOException {
+    public void load(final Ruby runtime) throws IOException {
         Mutex.setup(runtime);
         ConditionVariable.setup(runtime);
         Queue.setup(runtime);
@@ -67,13 +67,13 @@ public class ThreadLibrary implements Library {
             return result;
         }
 
-        public Mutex(IRuby runtime, RubyClass type) {
+        public Mutex(Ruby runtime, RubyClass type) {
             super(runtime, type);
         }
 
-        public static void setup(IRuby runtime) {
+        public static void setup(Ruby runtime) {
             RubyClass cMutex = runtime.defineClass("Mutex", runtime.getClass("Object"), new ObjectAllocator() {
-                public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+                public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                     return new Mutex(runtime, klass);
                 }
             });
@@ -150,13 +150,13 @@ public class ThreadLibrary implements Library {
             return result;
         }
 
-        public ConditionVariable(IRuby runtime, RubyClass type) {
+        public ConditionVariable(Ruby runtime, RubyClass type) {
             super(runtime, type);
         }
 
-        public static void setup(IRuby runtime) {
+        public static void setup(Ruby runtime) {
             RubyClass cConditionVariable = runtime.defineClass("ConditionVariable", runtime.getClass("Object"), new ObjectAllocator() {
-                public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+                public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                     return new ConditionVariable(runtime, klass);
                 }
             });
@@ -207,14 +207,14 @@ public class ThreadLibrary implements Library {
             return result;
         }
 
-        public Queue(IRuby runtime, RubyClass type) {
+        public Queue(Ruby runtime, RubyClass type) {
             super(runtime, type);
             entries = new LinkedList();
         }
 
-        public static void setup(IRuby runtime) {
+        public static void setup(Ruby runtime) {
             RubyClass cQueue = runtime.defineClass("Queue", runtime.getClass("Object"), new ObjectAllocator() {
-                public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+                public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                     return new Queue(runtime, klass);
                 }
             });
@@ -283,14 +283,14 @@ public class ThreadLibrary implements Library {
             return result;
         }
 
-        public SizedQueue(IRuby runtime, RubyClass type) {
+        public SizedQueue(Ruby runtime, RubyClass type) {
             super(runtime, type);
             capacity = 1;
         }
 
-        public static void setup(IRuby runtime) {
+        public static void setup(Ruby runtime) {
             RubyClass cSizedQueue = runtime.defineClass("SizedQueue", runtime.getClass("Queue"), new ObjectAllocator() {
-                public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+                public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                     return new SizedQueue(runtime, klass);
                 }
             });

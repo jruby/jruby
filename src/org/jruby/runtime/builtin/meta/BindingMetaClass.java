@@ -27,7 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.builtin.meta;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyBinding;
 import org.jruby.RubyClass;
 import org.jruby.runtime.ObjectAllocator;
@@ -35,7 +35,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public class BindingMetaClass extends ObjectMetaClass {
-    public BindingMetaClass(IRuby runtime) {
+    public BindingMetaClass(Ruby runtime) {
         super("Binding", RubyBinding.class, runtime.getObject(), BINDING_ALLOCATOR);
     }
     
@@ -57,7 +57,7 @@ public class BindingMetaClass extends ObjectMetaClass {
 	}
 
     private static ObjectAllocator BINDING_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             RubyBinding instance = runtime.newBinding();
 
             instance.setMetaClass(klass);

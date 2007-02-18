@@ -19,7 +19,6 @@ import java.util.Iterator;
 import java.util.List;
 import junit.framework.TestCase;
 import junit.framework.*;
-import org.jruby.IRuby;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.exceptions.RaiseException;
@@ -83,7 +82,7 @@ public class TestUnitTestSuite extends TestCase {
         private PrintStream printOut;
         private ByteArrayOutputStream err;
         private PrintStream printErr;
-        private IRuby runtime;
+        private Ruby runtime;
         private final String filename;
         private final File testDir;
 
@@ -116,7 +115,7 @@ public class TestUnitTestSuite extends TestCase {
             runtime = null;
         }
 
-        private void setupInterpreter(IRuby runtime) {
+        private void setupInterpreter(Ruby runtime) {
             ArrayList loadPath = new ArrayList();
             
             loadPath.add("test/externals/bfts");

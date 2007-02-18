@@ -33,7 +33,7 @@ package org.jruby.libraries;
 import java.io.IOException;
 
 import org.jruby.RubyYAML;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.runtime.load.Library;
 
 /**
@@ -41,7 +41,7 @@ import org.jruby.runtime.load.Library;
  * @version $Revision: $
  */
 public class YamlLibrary implements Library {
-    public void load(final IRuby runtime) throws IOException {
+    public void load(final Ruby runtime) throws IOException {
         RubyYAML.createYAMLModule(runtime);
     }
 }// YamlLibrary

@@ -32,7 +32,7 @@ import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 
 class OSEnvironmentReaderFromJava5SystemGetenv implements IOSEnvironmentReader {
 
@@ -62,14 +62,14 @@ class OSEnvironmentReaderFromJava5SystemGetenv implements IOSEnvironmentReader {
     /* (non-Javadoc)
      * @see org.jruby.IOSEnvironment#isAccessible()
      */
-    public boolean isAccessible(IRuby runtime) {
+    public boolean isAccessible(Ruby runtime) {
         return getSystemGetenvMethod() != null;
     }
 
     /* (non-Javadoc)
      * @see org.jruby.IOSEnvironment#getVariables()
      */
-    public Map getVariables(IRuby runtime) {
+    public Map getVariables(Ruby runtime) {
         Map returnMap = null;
         Method getenvMethod = getSystemGetenvMethod();
         try {

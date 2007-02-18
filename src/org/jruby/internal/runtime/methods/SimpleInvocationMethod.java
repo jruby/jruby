@@ -27,7 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
@@ -62,7 +62,7 @@ public abstract class SimpleInvocationMethod extends AbstractMethod implements C
         return null;
     }
     
-    private IRubyObject wrap(IRuby runtime, IRubyObject receiver, IRubyObject[] args) {
+    private IRubyObject wrap(Ruby runtime, IRubyObject receiver, IRubyObject[] args) {
         try {
             return call(receiver,args);
         } catch(RaiseException e) {
@@ -80,7 +80,7 @@ public abstract class SimpleInvocationMethod extends AbstractMethod implements C
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        IRuby runtime = context.getRuntime();
+        Ruby runtime = context.getRuntime();
         arity.checkArity(runtime, args);
 
         if(runtime.getTraceFunction() != null) {

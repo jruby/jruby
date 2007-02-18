@@ -7,7 +7,6 @@ import java.io.PipedOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 
-import org.jruby.IRuby;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 
@@ -27,7 +26,7 @@ public class DOMScriptingApplet extends Applet {
                 setError(new PrintStream(pipeOut));
                 setObjectSpaceEnabled(false);
             }};
-            final IRuby runtime = Ruby.newInstance(config);
+            final Ruby runtime = Ruby.newInstance(config);
 
             runtime.defineGlobalConstant("ARGV", runtime.newArray());
             //runtime.defineGlobalConstant("JSObject", JavaEmbedUtils.javaToRuby(runtime, JSObject.getWindow(this)));

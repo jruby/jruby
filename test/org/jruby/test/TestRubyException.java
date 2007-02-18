@@ -34,7 +34,6 @@ import java.util.List;
 
 import junit.framework.TestCase;
 
-import org.jruby.IRuby;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyException;
@@ -42,7 +41,7 @@ import org.jruby.RubyString;
 
 public class TestRubyException extends TestCase {
 
-	private IRuby interpreter;
+	private Ruby interpreter;
 	private RubyException exception;
 
 	public void setUp() {

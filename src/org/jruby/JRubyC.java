@@ -24,7 +24,7 @@ import org.jruby.compiler.impl.StandardASMCompiler;
 public class JRubyC {
     
     public static void main(String args[]) {
-        IRuby runtime = Ruby.getDefaultInstance();
+        Ruby runtime = Ruby.getDefaultInstance();
         
         try {
             if (args.length < 1 || args.length > 2) {

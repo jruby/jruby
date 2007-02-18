@@ -39,12 +39,12 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class RubyBigDecimal extends RubyNumeric {
     private static final ObjectAllocator BIGDECIMAL_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyBigDecimal(runtime, klass);
         }
     };
     
-    public static RubyClass createBigDecimal(IRuby runtime) {
+    public static RubyClass createBigDecimal(Ruby runtime) {
         RubyClass result = runtime.defineClass("BigDecimal",runtime.getClass("Numeric"), BIGDECIMAL_ALLOCATOR);
 
         result.setConstant("ROUND_DOWN",RubyNumeric.int2fix(runtime,BigDecimal.ROUND_DOWN));
@@ -136,11 +136,11 @@ public class RubyBigDecimal extends RubyNumeric {
 
     private BigDecimal value;
 
-    public RubyBigDecimal(IRuby runtime, RubyClass klass) {
+    public RubyBigDecimal(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
     }
 
-    public RubyBigDecimal(IRuby runtime, BigDecimal value) {
+    public RubyBigDecimal(Ruby runtime, BigDecimal value) {
         super(runtime, runtime.getClass("BigDecimal"));
         this.value = value;
     }

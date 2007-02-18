@@ -37,7 +37,7 @@ import java.util.Set;
 
 import javax.crypto.spec.IvParameterSpec;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
@@ -55,12 +55,12 @@ import org.jruby.util.ByteList;
  */
 public class Cipher extends RubyObject {
     private static ObjectAllocator CIPHER_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new Cipher(runtime, klass);
         }
     };
     
-    public static void createCipher(IRuby runtime, RubyModule ossl) {
+    public static void createCipher(Ruby runtime, RubyModule ossl) {
         RubyModule mCipher = ossl.defineModuleUnder("Cipher");
         RubyClass cCipher = mCipher.defineClassUnder("Cipher",runtime.getObject(), CIPHER_ALLOCATOR);
 
@@ -172,7 +172,7 @@ public class Cipher extends RubyObject {
     }
 
     private RubyClass ciphErr;
-    public Cipher(IRuby runtime, RubyClass type) {
+    public Cipher(Ruby runtime, RubyClass type) {
         super(runtime,type);
         ciphErr = (RubyClass)(((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("Cipher"))).getConstant("CipherError"));
     }

@@ -40,12 +40,12 @@ public class RubyNameError extends RubyException {
     private IRubyObject name;
     
     private static ObjectAllocator NAMEERROR_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyNameError(runtime, klass);
         }
     };
 
-    public static RubyClass createNameErrorClass(IRuby runtime, RubyClass standardErrorClass) {
+    public static RubyClass createNameErrorClass(Ruby runtime, RubyClass standardErrorClass) {
         RubyClass nameErrorClass = runtime.defineClass("NameError", standardErrorClass, NAMEERROR_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyNameError.class);
         
@@ -60,15 +60,15 @@ public class RubyNameError extends RubyException {
         return nameErrorClass;
     }
 
-    protected RubyNameError(IRuby runtime, RubyClass exceptionClass) {
+    protected RubyNameError(Ruby runtime, RubyClass exceptionClass) {
         this(runtime, exceptionClass, exceptionClass.getName().toString());
     }
 
-    public RubyNameError(IRuby runtime, RubyClass exceptionClass, String message) {
+    public RubyNameError(Ruby runtime, RubyClass exceptionClass, String message) {
         this(runtime, exceptionClass, message, null);
     }
 
-    public RubyNameError(IRuby runtime, RubyClass exceptionClass, String message, String name) {
+    public RubyNameError(Ruby runtime, RubyClass exceptionClass, String message, String name) {
         super(runtime, exceptionClass, message);
         this.name = name == null ? runtime.getNil() : runtime.newString(name);
     }

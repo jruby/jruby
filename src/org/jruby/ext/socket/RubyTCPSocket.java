@@ -36,7 +36,7 @@ import java.net.UnknownHostException;
 
 import java.nio.channels.SocketChannel;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyNumeric;
 import org.jruby.runtime.CallbackFactory;
@@ -48,7 +48,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class RubyTCPSocket extends RubyIPSocket {
-    static void createTCPSocket(IRuby runtime) {
+    static void createTCPSocket(Ruby runtime) {
         RubyClass rb_cTCPSocket = runtime.defineClass("TCPSocket", runtime.getClass("IPSocket"), TCPSOCKET_ALLOCATOR);
         CallbackFactory cfact = runtime.callbackFactory(RubyTCPSocket.class);
 
@@ -63,12 +63,12 @@ public class RubyTCPSocket extends RubyIPSocket {
     }
 
     private static ObjectAllocator TCPSOCKET_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyTCPSocket(runtime, klass);
         }
     };
 
-    public RubyTCPSocket(IRuby runtime, RubyClass type) {
+    public RubyTCPSocket(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
 
@@ -107,7 +107,7 @@ public class RubyTCPSocket extends RubyIPSocket {
     public static IRubyObject gethostbyname(IRubyObject recv, IRubyObject hostname) {
         try {
             IRubyObject[] ret = new IRubyObject[4];
-            IRuby r = recv.getRuntime();
+            Ruby r = recv.getRuntime();
             InetAddress addr = InetAddress.getByName(hostname.convertToString().toString());
             ret[0] = r.newString(addr.getCanonicalHostName());
             ret[1] = r.newArray();

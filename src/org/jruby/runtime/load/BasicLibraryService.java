@@ -28,7 +28,7 @@
 package org.jruby.runtime.load;
 
 import java.io.IOException;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 
 /**
  * This interface should be implemented by writers of Java extensions to JRuby.
@@ -43,5 +43,5 @@ import org.jruby.IRuby;
  * set to go.
  */
 public interface BasicLibraryService {
-    boolean basicLoad(IRuby runtime) throws IOException;
+    boolean basicLoad(Ruby runtime) throws IOException;
 }

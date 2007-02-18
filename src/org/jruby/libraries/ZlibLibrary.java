@@ -30,11 +30,11 @@ package org.jruby.libraries;
 import java.io.IOException;
 
 import org.jruby.RubyZlib;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.runtime.load.Library;
 
 public class ZlibLibrary implements Library {
-    public void load(final IRuby runtime) throws IOException {
+    public void load(final Ruby runtime) throws IOException {
         RubyZlib.createZlibModule(runtime);
     }
 }

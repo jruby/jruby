@@ -31,7 +31,7 @@ package org.jruby.javasupport.proxy;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
@@ -53,7 +53,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject {
 
     private final JavaProxyClass declaringProxyClass;
 
-    JavaProxyConstructor(IRuby runtime, JavaProxyClass pClass,
+    JavaProxyConstructor(Ruby runtime, JavaProxyClass pClass,
             Constructor constructor) {
         super(runtime, runtime.getModule("Java").getClass(
                 "JavaProxyConstructor"));
@@ -86,7 +86,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject {
         return proxyConstructor.newInstance(realArgs);
     }
 
-    public static RubyClass createJavaProxyConstructorClass(IRuby runtime,
+    public static RubyClass createJavaProxyConstructorClass(Ruby runtime,
             RubyModule javaProxyModule) {
         RubyClass result = javaProxyModule.defineClassUnder(
                                                             "JavaProxyConstructor", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);

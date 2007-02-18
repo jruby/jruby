@@ -58,11 +58,11 @@ public class RubyTime extends RubyObject {
 
     private static final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("-", Locale.US);
 
-    public RubyTime(IRuby runtime, RubyClass rubyClass) {
+    public RubyTime(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
     }
     
-    public RubyTime(IRuby runtime, RubyClass rubyClass, Calendar cal) {
+    public RubyTime(Ruby runtime, RubyClass rubyClass, Calendar cal) {
         super(runtime, rubyClass);
         this.cal = cal;
     }
@@ -80,7 +80,7 @@ public class RubyTime extends RubyObject {
         return cal.getTimeInMillis();  // For JDK 1.4 we can use "cal.getTimeInMillis()"
     }
     
-    public static RubyTime newTime(IRuby runtime, long milliseconds) {
+    public static RubyTime newTime(Ruby runtime, long milliseconds) {
         Calendar cal = Calendar.getInstance(); 
         RubyTime time = new RubyTime(runtime, runtime.getClass("Time"), cal);
         
@@ -89,7 +89,7 @@ public class RubyTime extends RubyObject {
         return time;
     }
     
-    public static RubyTime newTime(IRuby runtime, Calendar cal) {
+    public static RubyTime newTime(Ruby runtime, Calendar cal) {
         RubyTime time = new RubyTime(runtime, runtime.getClass("Time"), cal);
         
         return time;

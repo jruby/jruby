@@ -79,7 +79,7 @@ import org.jruby.util.UnsynchronizedStack;
 public class RubyKernel {
     public final static Class IRUBY_OBJECT = IRubyObject.class;
 
-    public static RubyModule createKernelModule(IRuby runtime) {
+    public static RubyModule createKernelModule(Ruby runtime) {
         RubyModule module = runtime.defineModule("Kernel");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyKernel.class);
         CallbackFactory objectCallbackFactory = runtime.callbackFactory(RubyObject.class);
@@ -233,9 +233,9 @@ public class RubyKernel {
                     return file.toString();
                 }
             /**
-             * @see org.jruby.runtime.load.IAutoloadMethod#load(IRuby, String)
+             * @see org.jruby.runtime.load.IAutoloadMethod#load(Ruby, String)
              */
-            public IRubyObject load(IRuby runtime, String name) {
+            public IRubyObject load(Ruby runtime, String name) {
                 loadService.require(file.toString());
                 if(recv instanceof RubyModule) {
                     return ((RubyModule)recv).getConstant(baseName);
@@ -247,7 +247,7 @@ public class RubyKernel {
     }
 
     public static IRubyObject method_missing(IRubyObject recv, IRubyObject[] args, Block block) {
-        IRuby runtime = recv.getRuntime();
+        Ruby runtime = recv.getRuntime();
         if (args.length == 0) {
             throw recv.getRuntime().newArgumentError("no id given");
         }
@@ -469,7 +469,7 @@ public class RubyKernel {
      * @throws TypeError if $_ is not a String or nil.
      * @return value of $_ as String.
      */
-    private static RubyString getLastlineString(IRuby runtime) {
+    private static RubyString getLastlineString(Ruby runtime) {
         IRubyObject line = runtime.getCurrentContext().getLastline();
 
         if (line.isNil()) {
@@ -609,7 +609,7 @@ public class RubyKernel {
      *
      */
     public static RubyArray local_variables(IRubyObject recv) {
-        final IRuby runtime = recv.getRuntime();
+        final Ruby runtime = recv.getRuntime();
         RubyArray localVariables = runtime.newArray();
         
         String[] names = runtime.getCurrentContext().getCurrentScope().getAllNamesInScope();
@@ -645,7 +645,7 @@ public class RubyKernel {
     public static IRubyObject raise(IRubyObject recv, IRubyObject[] args, Block block) {
         // FIXME: Pass block down?
         recv.checkArgumentCount(args, 0, 3); 
-        IRuby runtime = recv.getRuntime();
+        Ruby runtime = recv.getRuntime();
 
         if (args.length == 0) {
             IRubyObject lastException = runtime.getGlobalVariables().get("$!");
@@ -764,7 +764,7 @@ public class RubyKernel {
     }
 
     public static IRubyObject rbThrow(IRubyObject recv, IRubyObject[] args, Block block) {
-        IRuby runtime = recv.getRuntime();
+        Ruby runtime = recv.getRuntime();
 
         String tag = args[0].asSymbol();
         String[] catches = runtime.getCurrentContext().getActiveCatches();
@@ -854,7 +854,7 @@ public class RubyKernel {
     }
 
     public static IRubyObject backquote(IRubyObject recv, IRubyObject aString) {
-        IRuby runtime = recv.getRuntime();
+        Ruby runtime = recv.getRuntime();
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         
         int resultCode = runInShell(runtime, new IRubyObject[] {aString}, output);
@@ -950,7 +950,7 @@ public class RubyKernel {
     /**
      * Only run an in-process script if the script name has "ruby", ".rb", or "irb" in the name
      */
-    private static boolean shouldRunInProcess(IRuby runtime, String command) {
+    private static boolean shouldRunInProcess(Ruby runtime, String command) {
         command = command.trim();
         String [] spaceDelimitedTokens = command.split(" ", 2);
         String [] slashDelimitedTokens = spaceDelimitedTokens[0].split("/");
@@ -997,11 +997,11 @@ public class RubyKernel {
         }
     }
 
-    public static int runInShell(IRuby runtime, IRubyObject[] rawArgs) {
+    public static int runInShell(Ruby runtime, IRubyObject[] rawArgs) {
         return runInShell(runtime,rawArgs,runtime.getOutputStream());
     }
 
-    private static String[] getCurrentEnv(IRuby runtime) {
+    private static String[] getCurrentEnv(Ruby runtime) {
         Map h = ((RubyHash)runtime.getObject().getConstant("ENV")).getValueMap();
         String[] ret = new String[h.size()];
         int i=0;
@@ -1012,7 +1012,7 @@ public class RubyKernel {
         return ret;
     }
 
-    public static int runInShell(IRuby runtime, IRubyObject[] rawArgs, OutputStream output) {
+    public static int runInShell(Ruby runtime, IRubyObject[] rawArgs, OutputStream output) {
         OutputStream error = runtime.getErrorStream();
         InputStream input = runtime.getInputStream();
         try {
@@ -1127,7 +1127,7 @@ public class RubyKernel {
     }
 
     public static RubyInteger srand(IRubyObject recv, IRubyObject[] args) {
-        IRuby runtime = recv.getRuntime();
+        Ruby runtime = recv.getRuntime();
         long oldRandomSeed = runtime.getRandomSeed();
 
         if (args.length > 0) {
@@ -1168,7 +1168,7 @@ public class RubyKernel {
     }
 
     public static RubyBoolean system(IRubyObject recv, IRubyObject[] args) {
-        IRuby runtime = recv.getRuntime();
+        Ruby runtime = recv.getRuntime();
         int resultCode = runInShell(runtime, args);
         recv.getRuntime().getGlobalVariables().set("$?", RubyProcess.RubyStatus.newProcessStatus(runtime, resultCode));
         return runtime.newBoolean(resultCode == 0);

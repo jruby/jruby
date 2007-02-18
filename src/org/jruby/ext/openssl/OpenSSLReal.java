@@ -27,7 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 
@@ -35,7 +35,7 @@ import org.jruby.RubyModule;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class OpenSSLReal {
-    public static void createOpenSSL(IRuby runtime) {
+    public static void createOpenSSL(Ruby runtime) {
         RubyModule ossl = runtime.defineModule("OpenSSL");
         RubyClass standardError = runtime.getClass("StandardError");
         ossl.defineClassUnder("OpenSSLError",standardError,standardError.getAllocator());

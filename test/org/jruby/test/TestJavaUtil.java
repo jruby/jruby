@@ -31,7 +31,6 @@ package org.jruby.test;
 
 import junit.framework.TestCase;
 
-import org.jruby.IRuby;
 import org.jruby.Ruby;
 import org.jruby.javasupport.JavaUtil;
 
@@ -39,7 +38,7 @@ import org.jruby.javasupport.JavaUtil;
  * @author jpetersen
  */
 public class TestJavaUtil extends TestCase {
-    private IRuby runtime;
+    private Ruby runtime;
 
     public TestJavaUtil(String name) {
         super(name);

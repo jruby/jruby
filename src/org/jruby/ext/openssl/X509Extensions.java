@@ -46,7 +46,7 @@ import org.bouncycastle.asn1.DERString;
 import org.bouncycastle.asn1.DERUnknownTag;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -65,7 +65,7 @@ import org.jruby.util.ByteList;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class X509Extensions {
-    public static void createX509Ext(IRuby runtime, RubyModule mX509) {
+    public static void createX509Ext(Ruby runtime, RubyModule mX509) {
         RubyClass cX509ExtFactory = mX509.defineClassUnder("ExtensionFactory",runtime.getObject(),ExtensionFactory.ALLOCATOR);
         RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
         mX509.defineClassUnder("ExtensionError",openSSLError,openSSLError.getAllocator());
@@ -97,12 +97,12 @@ public class X509Extensions {
 
     public static class ExtensionFactory extends RubyObject {
         public static ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-                public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+                public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                     return new ExtensionFactory(runtime, klass);
                 }
             };
 
-        public ExtensionFactory(IRuby runtime, RubyClass type) {
+        public ExtensionFactory(Ruby runtime, RubyClass type) {
             super(runtime,type);
         }
 
@@ -390,12 +390,12 @@ public class X509Extensions {
 
     public static class Extension extends RubyObject {
         public static ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-                public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+                public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                     return new Extension(runtime, klass);
                 }
             };
 
-        public Extension(IRuby runtime, RubyClass type) {
+        public Extension(Ruby runtime, RubyClass type) {
             super(runtime,type);
         }
 

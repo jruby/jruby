@@ -35,7 +35,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Vector;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 
 class OSEnvironmentReaderFromApacheAnt implements IOSEnvironmentReader {
 
@@ -106,14 +106,14 @@ class OSEnvironmentReaderFromApacheAnt implements IOSEnvironmentReader {
     /* (non-Javadoc)
      * @see org.jruby.IOSEnvironment#isAccessible()
      */
-    public boolean isAccessible(IRuby runtime) {
+    public boolean isAccessible(Ruby runtime) {
     	return getProcEnvironmentMethod() != null;
     }
 
     /* (non-Javadoc)
      * @see org.jruby.IOSEnvironment#getVariables()
      */
-    public Map getVariables(IRuby runtime) {
+    public Map getVariables(Ruby runtime) {
         return getProcEnvironmentMethodV();
     }
 

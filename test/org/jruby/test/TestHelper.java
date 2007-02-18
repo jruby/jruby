@@ -37,7 +37,7 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -135,8 +135,8 @@ public class TestHelper {
             throws Throwable {
         Loader loader = new Loader();
         Class c = loader.loadClass(name, javaClass);
-        Method method = c.getMethod(methodName, new Class[] { IRuby.class, IRubyObject.class });
-        IRuby runtime = self.getRuntime();
+        Method method = c.getMethod(methodName, new Class[] { Ruby.class, IRubyObject.class });
+        Ruby runtime = self.getRuntime();
         ThreadContext tc = runtime.getCurrentContext();
         
         tc.pushRubyClass(self.getType());

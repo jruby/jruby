@@ -46,14 +46,14 @@ public class RubyMatchData extends RubyObject {
     private int[] begin;
     private int[] end;
 
-    public RubyMatchData(IRuby runtime, String str, int[] begin, int[] end) {
+    public RubyMatchData(Ruby runtime, String str, int[] begin, int[] end) {
         super(runtime, runtime.getClass("MatchData"));
         this.str = str;
         this.begin = begin;
         this.end = end;
     }
 
-    public static RubyClass createMatchDataClass(IRuby runtime) {
+    public static RubyClass createMatchDataClass(Ruby runtime) {
         // TODO: Is NOT_ALLOCATABLE_ALLOCATOR ok here, since you can't actually instanriate MatchData directly?
         RubyClass matchDataClass = runtime.defineClass("MatchData", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.defineGlobalConstant("MatchingData", matchDataClass);

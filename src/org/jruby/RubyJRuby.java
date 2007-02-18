@@ -37,7 +37,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Module which defines JRuby-specific methods for use. 
  */
 public class RubyJRuby {
-    public static RubyModule createJRuby(IRuby runtime) {
+    public static RubyModule createJRuby(Ruby runtime) {
         runtime.getModule("Kernel").callMethod(runtime.getCurrentContext(),"require", runtime.newString("java"));
         RubyModule comparableModule = runtime.defineModule("JRuby");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyJRuby.class);

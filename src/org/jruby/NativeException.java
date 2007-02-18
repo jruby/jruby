@@ -40,15 +40,15 @@ public class NativeException extends RubyException {
 
     private final Throwable cause;
     public static final String CLASS_NAME = "NativeException";
-	private final IRuby runtime;
+	private final Ruby runtime;
 
-    public NativeException(IRuby runtime, RubyClass rubyClass, Throwable cause) {
+    public NativeException(Ruby runtime, RubyClass rubyClass, Throwable cause) {
         super(runtime, rubyClass, cause.getClass().getName()+": "+cause.getMessage());
 		this.runtime = runtime;
         this.cause = cause;
     }
     
-    public static RubyClass createClass(IRuby runtime, RubyClass baseClass) {
+    public static RubyClass createClass(Ruby runtime, RubyClass baseClass) {
         // FIXME: If NativeException is expected to be used from Ruby code, it should provide
         // a real allocator to be used. Otherwise Class.new will fail, as will marshalling. JRUBY-415
     	RubyClass exceptionClass = runtime.defineClass(CLASS_NAME, baseClass, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);

@@ -31,7 +31,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -45,7 +45,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public abstract class PKey extends RubyObject {
-    public static void createPKey(IRuby runtime, RubyModule ossl) {
+    public static void createPKey(Ruby runtime, RubyModule ossl) {
         RubyModule mPKey = ossl.defineModuleUnder("PKey");
         // PKey is abstract
         RubyClass cPKey = mPKey.defineClassUnder("PKey",runtime.getObject(),ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
@@ -63,7 +63,7 @@ public abstract class PKey extends RubyObject {
         //        createPKeyDH(runtime,mPKey);
     }
 
-    public PKey(IRuby runtime, RubyClass type) {
+    public PKey(Ruby runtime, RubyClass type) {
         super(runtime,type);
     }
 

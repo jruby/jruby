@@ -36,7 +36,7 @@ import java.io.OutputStream;
 import java.io.IOException;
 import java.io.EOFException;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 
 /**
  */
@@ -44,7 +44,7 @@ public abstract class IOHandlerJavaIO extends IOHandler {
     // Last char to be 'ungot'.  <0 indicates nothing waiting to be re-got
     private int ungotc = -1;
 
-    protected IOHandlerJavaIO(IRuby runtime) {
+    protected IOHandlerJavaIO(Ruby runtime) {
     super(runtime);
     }
 

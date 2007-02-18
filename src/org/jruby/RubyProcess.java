@@ -40,7 +40,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class RubyProcess {
 
-    public static RubyModule createProcessModule(IRuby runtime) {
+    public static RubyModule createProcessModule(Ruby runtime) {
         RubyModule process = runtime.defineModule("Process");
         
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
@@ -119,13 +119,13 @@ public class RubyProcess {
         private long status = 0L;
         
         private static final long EXIT_SUCCESS = 0L;
-        public RubyStatus(IRuby runtime, RubyClass metaClass, long status) {
+        public RubyStatus(Ruby runtime, RubyClass metaClass, long status) {
             super(runtime, metaClass);
             
             this.status = status;
         }
         
-        public static RubyStatus newProcessStatus(IRuby runtime, long status) {
+        public static RubyStatus newProcessStatus(Ruby runtime, long status) {
             return new RubyStatus(runtime, runtime.getModule("Process").getClass("Status"), status);
         }
         
@@ -162,7 +162,7 @@ public class RubyProcess {
     }
     
     public static IRubyObject times(IRubyObject recv, Block unusedBlock) {
-        IRuby runtime = recv.getRuntime();
+        Ruby runtime = recv.getRuntime();
         double currentTime = System.currentTimeMillis() / 1000.0;
         double startTime = runtime.getStartTime() / 1000.0;
         RubyFloat zero = runtime.newFloat(0.0);

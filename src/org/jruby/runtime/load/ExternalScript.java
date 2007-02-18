@@ -34,7 +34,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.runtime.load.LoadServiceResource;
 import org.jruby.util.KCode;
 
@@ -45,7 +45,7 @@ public class ExternalScript implements Library {
         this.resource = resource;
     }
 
-    public void load(IRuby runtime) {
+    public void load(Ruby runtime) {
         try {
             // KCode.NONE is used because KCODE does not affect parse in Ruby 1.8
             // if Ruby 2.0 encoding pragmas are implemented, this will need to change

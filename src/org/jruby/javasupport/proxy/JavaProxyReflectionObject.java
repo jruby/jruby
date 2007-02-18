@@ -28,7 +28,7 @@
 
 package org.jruby.javasupport.proxy;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
@@ -41,11 +41,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class JavaProxyReflectionObject extends RubyObject {
 
-    public JavaProxyReflectionObject(IRuby runtime, RubyClass metaClass) {
+    public JavaProxyReflectionObject(Ruby runtime, RubyClass metaClass) {
         super(runtime, metaClass, false);
     }
 
-    protected static void registerRubyMethods(IRuby runtime, RubyClass result) {
+    protected static void registerRubyMethods(Ruby runtime, RubyClass result) {
         CallbackFactory callbackFactory = runtime
                 .callbackFactory(JavaProxyReflectionObject.class);
 

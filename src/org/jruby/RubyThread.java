@@ -76,7 +76,7 @@ public class RubyThread extends RubyObject {
     public Object killLock = new Object();
     private RubyThread joinedByCriticalThread;
     
-    public static RubyClass createThreadClass(IRuby runtime) {
+    public static RubyClass createThreadClass(Ruby runtime) {
         // FIXME: In order for Thread to play well with the standard 'new' behavior,
         // it must provide an allocator that can create empty object instances which
         // initialize then fills with appropriate data.
@@ -164,7 +164,7 @@ public class RubyThread extends RubyObject {
     }
 
     private static RubyThread adoptThread(final IRubyObject recv, Thread t, Block block) {
-        final IRuby runtime = recv.getRuntime();
+        final Ruby runtime = recv.getRuntime();
         final RubyThread rubyThread = new RubyThread(runtime, (RubyClass) recv, false);
         
         rubyThread.threadImpl = new NativeThread(rubyThread, t);
@@ -249,7 +249,7 @@ public class RubyThread extends RubyObject {
     	dieIfKilled();
     }
 
-    private RubyThread(IRuby runtime, RubyClass type) {
+    private RubyThread(Ruby runtime, RubyClass type) {
         super(runtime, type);
         this.threadService = runtime.getThreadService();
         // set to default thread group
@@ -258,7 +258,7 @@ public class RubyThread extends RubyObject {
         finalResult = runtime.getNil();
     }
 
-    private RubyThread(IRuby runtime, RubyClass type, boolean narf) {
+    private RubyThread(Ruby runtime, RubyClass type, boolean narf) {
         super(runtime, type);
         this.threadService = runtime.getThreadService();
         
@@ -275,7 +275,7 @@ public class RubyThread extends RubyObject {
      * Thread.abort_on_exception= .
      */
     public static RubyBoolean abort_on_exception(IRubyObject recv) {
-    	IRuby runtime = recv.getRuntime();
+    	Ruby runtime = recv.getRuntime();
         return runtime.isGlobalAbortOnExceptionEnabled() ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
     }
 
@@ -293,7 +293,7 @@ public class RubyThread extends RubyObject {
     }
 
     public static IRubyObject pass(IRubyObject recv) {
-        IRuby runtime = recv.getRuntime();
+        Ruby runtime = recv.getRuntime();
         ThreadService ts = runtime.getThreadService();
         RubyThread criticalThread = ts.getCriticalThread();
         RubyThread currentThread = ts.getCurrentContext().getThread();
@@ -588,7 +588,7 @@ public class RubyThread extends RubyObject {
     public void exceptionRaised(RaiseException exception) {
         assert isCurrent();
 
-        IRuby runtime = exception.getException().getRuntime();
+        Ruby runtime = exception.getException().getRuntime();
         if (abortOnException(runtime)) {
             // FIXME: printError explodes on some nullpointer
             //getRuntime().getRuntime().printError(exception.getException());
@@ -601,7 +601,7 @@ public class RubyThread extends RubyObject {
         }
     }
 
-    private boolean abortOnException(IRuby runtime) {
+    private boolean abortOnException(Ruby runtime) {
         return (runtime.isGlobalAbortOnExceptionEnabled() || abortOnException);
     }
 

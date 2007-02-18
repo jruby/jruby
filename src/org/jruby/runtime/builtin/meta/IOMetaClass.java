@@ -41,7 +41,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Channel;
 import java.nio.channels.Pipe;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -58,7 +58,7 @@ import org.jruby.util.collections.SinglyLinkedList;
 
 public class IOMetaClass extends ObjectMetaClass {
     
-    public IOMetaClass(IRuby runtime) {
+    public IOMetaClass(Ruby runtime) {
         this("IO", RubyIO.class, runtime.getObject(), IO_ALLOCATOR);
     }
     
@@ -152,7 +152,7 @@ public class IOMetaClass extends ObjectMetaClass {
     }
     
     private static ObjectAllocator IO_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyIO(runtime, klass);
         }
     };
@@ -217,7 +217,7 @@ public class IOMetaClass extends ObjectMetaClass {
         return select_static(getRuntime(), args);
     }
     
-    public static IRubyObject select_static(IRuby runtime, IRubyObject[] args) {
+    public static IRubyObject select_static(Ruby runtime, IRubyObject[] args) {
         try {
             boolean atLeastOneDescriptor = false;
             
@@ -348,7 +348,7 @@ public class IOMetaClass extends ObjectMetaClass {
     
     //XXX Hacked incomplete popen implementation to make
     public IRubyObject popen(IRubyObject[] args, Block block) {
-        IRuby runtime = getRuntime();
+        Ruby runtime = getRuntime();
         checkArgumentCount(args, 1, 2);
         IRubyObject cmdObj = args[0].convertToString();
         cmdObj.checkSafeString();
@@ -399,7 +399,7 @@ public class IOMetaClass extends ObjectMetaClass {
     
     // NIO based pipe
     public IRubyObject pipe() throws Exception {
-        IRuby runtime = getRuntime();
+        Ruby runtime = getRuntime();
         Pipe pipe = Pipe.open();
         return runtime.newArrayNoCopy(new IRubyObject[]{
             new RubyIO(runtime, pipe.source()),

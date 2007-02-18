@@ -27,7 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.runtime.CallbackFactory;
@@ -37,7 +37,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class Config {
-    public static void createConfig(IRuby runtime, RubyModule ossl) {
+    public static void createConfig(Ruby runtime, RubyModule ossl) {
         RubyClass cConfig = ossl.defineClassUnder("Config", runtime.getObject(), runtime.getObject().getAllocator());
         CallbackFactory confcb = runtime.callbackFactory(Config.class);
         cConfig.getMetaClass().defineFastMethod("parse",confcb.getFastOptSingletonMethod("parse"));

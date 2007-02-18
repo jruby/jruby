@@ -166,7 +166,7 @@ public class Main {
         Reader reader   = commandline.getScriptSource();
         String filename = commandline.displayedFileName();
         config.updateWithCommandline(commandline);
-        final IRuby runtime = Ruby.newInstance(config);
+        final Ruby runtime = Ruby.newInstance(config);
         runtime.setKCode(commandline.getKCode());
 
         // Add a shutdown hook that dumps the contents of the runtimeInformation map.
@@ -217,7 +217,7 @@ public class Main {
         }
     }
 
-    private void runInterpreter(IRuby runtime, Reader reader, String filename) {
+    private void runInterpreter(Ruby runtime, Reader reader, String filename) {
         try {
             initializeRuntime(runtime, filename);
             if(commandline.isYARVEnabled()) {
@@ -237,7 +237,7 @@ public class Main {
         }
     }
 
-    private Node getParsedScript(IRuby runtime, Reader reader, String filename) {
+    private Node getParsedScript(Ruby runtime, Reader reader, String filename) {
         // current scope is top-level scope (what we set TOPLEVEL_BINDING to).
         Node result = runtime.parse(reader, filename, runtime.getCurrentContext().getCurrentScope());
         if (commandline.isAssumePrinting()) {
@@ -249,7 +249,7 @@ public class Main {
         return result;
     }
 
-    private void initializeRuntime(final IRuby runtime, String filename) {
+    private void initializeRuntime(final Ruby runtime, String filename) {
         IRubyObject argumentArray = runtime.newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(runtime, commandline.getScriptArguments()));
         runtime.setVerbose(runtime.newBoolean(commandline.isVerbose()));
         runtime.setDebug(runtime.newBoolean(commandline.isDebug()));
@@ -277,7 +277,7 @@ public class Main {
         }
     }
 
-    private void defineGlobalVERBOSE(final IRuby runtime) {
+    private void defineGlobalVERBOSE(final Ruby runtime) {
         // $VERBOSE can be true, false, or nil.  Any non-false-nil value will get stored as true
         runtime.getGlobalVariables().define("$VERBOSE", new IAccessor() {
             public IRubyObject getValue() {
@@ -296,7 +296,7 @@ public class Main {
         });
     }
 
-    private void defineGlobalDEBUG(final IRuby runtime) {
+    private void defineGlobalDEBUG(final Ruby runtime) {
         IAccessor d = new IAccessor() {
             public IRubyObject getValue() {
                 return runtime.getDebug();
@@ -316,7 +316,7 @@ public class Main {
         runtime.getGlobalVariables().define("$-d", d);
     }
 
-    private void defineGlobal(IRuby runtime, String name, boolean value) {
+    private void defineGlobal(Ruby runtime, String name, boolean value) {
         runtime.getGlobalVariables().defineReadonly(name, new ValueAccessor(value ? runtime.getTrue() : runtime.getNil()));
     }
 

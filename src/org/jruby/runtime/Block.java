@@ -31,7 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
@@ -244,7 +244,7 @@ public class Block {
             return new IRubyObject[]{value};
         }
         
-        IRuby runtime = self.getRuntime();
+        Ruby runtime = self.getRuntime();
         
         switch (varNode.nodeId) {
             case NodeTypes.ZEROARGNODE:

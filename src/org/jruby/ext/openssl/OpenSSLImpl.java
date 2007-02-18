@@ -29,7 +29,7 @@ package org.jruby.ext.openssl;
 
 import java.security.MessageDigest;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -56,7 +56,7 @@ public class OpenSSLImpl {
         }
     }
 
-    public static void defaultObjects(IRuby runtime) {
+    public static void defaultObjects(Ruby runtime) {
 ASN1.addObject(runtime, 0, null, null,"1.2.840.113549.1.12.1");
 ASN1.addObject(runtime, 1, null, "rsadsi","1.2.840.113549");
 ASN1.addObject(runtime, 2, null, "pkcs","1.2.840.113549.1");

@@ -116,7 +116,7 @@ import org.jruby.util.collections.SinglyLinkedList;
 /**
  * The jruby runtime.
  */
-public final class Ruby implements IRuby {
+public final class Ruby {
     private static String[] BUILTIN_LIBRARIES = {"fcntl", "yaml", "etc", "nkf" };
 
     private CacheMap cacheMap = new CacheMap(this);
@@ -224,7 +224,7 @@ public final class Ruby implements IRuby {
      *
      * @return the JRuby runtime
      */
-    public static IRuby getDefaultInstance() {
+    public static Ruby getDefaultInstance() {
         return newInstance(new RubyInstanceConfig());
     }
 
@@ -234,7 +234,7 @@ public final class Ruby implements IRuby {
      * @param config the instance configuration
      * @return the JRuby runtime
      */
-    public static IRuby newInstance(RubyInstanceConfig config) {
+    public static Ruby newInstance(RubyInstanceConfig config) {
         Ruby ruby = new Ruby(config);
         ruby.init();
         return ruby;
@@ -248,7 +248,7 @@ public final class Ruby implements IRuby {
      * @param err the custom error stream
      * @return the JRuby runtime
      */
-    public static IRuby newInstance(InputStream in, PrintStream out, PrintStream err) {
+    public static Ruby newInstance(InputStream in, PrintStream out, PrintStream err) {
         RubyInstanceConfig config = new RubyInstanceConfig();
         config.setInput(in);
         config.setOutput(out);
@@ -496,7 +496,7 @@ public final class Ruby implements IRuby {
     }
 
     /**
-     * @see org.jruby.IRuby#getRuntimeInformation
+     * @see org.jruby.Ruby#getRuntimeInformation
      */
     public Map getRuntimeInformation() {
         return runtimeInformation == null ? runtimeInformation = new Hashtable() : runtimeInformation;
@@ -578,7 +578,7 @@ public final class Ruby implements IRuby {
     private void initLibraries() {
         loadService = new LoadService(this);
         registerBuiltin("java.rb", new Library() {
-                public void load(IRuby runtime) throws IOException {
+                public void load(Ruby runtime) throws IOException {
                     Java.createJavaModule(runtime);
                     new BuiltinScript("javasupport").load(runtime);
                 }

@@ -51,7 +51,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
  */
 public class RubyFixnum extends RubyInteger {
     
-    public static RubyClass createFixnumClass(IRuby runtime) {
+    public static RubyClass createFixnumClass(Ruby runtime) {
         RubyClass fixnum = runtime.defineClass("Fixnum", runtime.getClass("Integer"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         fixnum.index = ClassIndex.FIXNUM;
@@ -114,11 +114,11 @@ public class RubyFixnum extends RubyInteger {
     public static final byte OP_MINUS_SWITCHVALUE = 2;
     public static final byte OP_LT_SWITCHVALUE = 3;
 
-    public RubyFixnum(IRuby runtime) {
+    public RubyFixnum(Ruby runtime) {
         this(runtime, 0);
     }
 
-    public RubyFixnum(IRuby runtime, long value) {
+    public RubyFixnum(Ruby runtime, long value) {
         super(runtime, runtime.getFixnum());
         this.value = value;
     }
@@ -160,7 +160,7 @@ public class RubyFixnum extends RubyInteger {
         return value;
     }
 
-    public static RubyFixnum newFixnum(IRuby runtime, long value) {
+    public static RubyFixnum newFixnum(Ruby runtime, long value) {
         RubyFixnum fixnum;
         RubyFixnum[] fixnumCache = runtime.getFixnumCache();
 
@@ -180,15 +180,15 @@ public class RubyFixnum extends RubyInteger {
         return newFixnum(getRuntime(), newValue);
     }
 
-    public static RubyFixnum zero(IRuby runtime) {
+    public static RubyFixnum zero(Ruby runtime) {
         return newFixnum(runtime, 0);
     }
 
-    public static RubyFixnum one(IRuby runtime) {
+    public static RubyFixnum one(Ruby runtime) {
         return newFixnum(runtime, 1);
     }
 
-    public static RubyFixnum minus_one(IRuby runtime) {
+    public static RubyFixnum minus_one(Ruby runtime) {
         return newFixnum(runtime, -1);
     }
 
@@ -399,7 +399,7 @@ public class RubyFixnum extends RubyInteger {
         if (other instanceof RubyFixnum) {
             long x = value;
             long y = ((RubyFixnum) other).value;
-            final IRuby runtime = getRuntime();
+            final Ruby runtime = getRuntime();
 
             if (y == 0) {
                 throw runtime.newZeroDivisionError();

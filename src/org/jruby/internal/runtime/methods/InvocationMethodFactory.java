@@ -27,7 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyKernel;
 import org.jruby.runtime.Block;
 import org.objectweb.asm.ClassWriter;
@@ -104,7 +104,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         return cw;
     }
 
-    private Class tryClass(IRuby runtime, String name) {
+    private Class tryClass(Ruby runtime, String name) {
         try {
             return Class.forName(name,true,runtime.getJRubyClassLoader());
         } catch(Exception e) {
@@ -112,7 +112,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    private Class endCall(IRuby runtime, ClassWriter cw, MethodVisitor mv, String name) {
+    private Class endCall(Ruby runtime, ClassWriter cw, MethodVisitor mv, String name) {
         mv.visitMaxs(0,0);
         mv.visitEnd();
         cw.visitEnd();

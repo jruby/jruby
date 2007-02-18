@@ -49,7 +49,7 @@ import org.jruby.util.collections.SinglyLinkedList;
  */
 public class RubyClass extends RubyModule {
 	
-    private final IRuby runtime;
+    private final Ruby runtime;
     
     // the default allocator
     private final ObjectAllocator allocator;
@@ -57,7 +57,7 @@ public class RubyClass extends RubyModule {
     private ObjectMarshal marshal;
     
     private static final ObjectMarshal DEFAULT_OBJECT_MARSHAL = new ObjectMarshal() {
-        public void marshalTo(IRuby runtime, Object obj, RubyClass type,
+        public void marshalTo(Ruby runtime, Object obj, RubyClass type,
                               MarshalStream marshalStream) throws IOException {
             IRubyObject object = (IRubyObject)obj;
             
@@ -66,7 +66,7 @@ public class RubyClass extends RubyModule {
             marshalStream.dumpInstanceVars(iVars);
         }
 
-        public Object unmarshalFrom(IRuby runtime, RubyClass type,
+        public Object unmarshalFrom(Ruby runtime, RubyClass type,
                                     UnmarshalStream unmarshalStream) throws IOException {
             IRubyObject result = type.allocate();
             
@@ -99,15 +99,15 @@ public class RubyClass extends RubyModule {
         infectBy(superClass);
     }
 
-    protected RubyClass(IRuby runtime, RubyClass superClass, ObjectAllocator allocator) {
+    protected RubyClass(Ruby runtime, RubyClass superClass, ObjectAllocator allocator) {
         this(runtime, null, superClass, allocator, null, null);
     }
 
-    protected RubyClass(IRuby runtime, RubyClass metaClass, RubyClass superClass, ObjectAllocator allocator) {
+    protected RubyClass(Ruby runtime, RubyClass metaClass, RubyClass superClass, ObjectAllocator allocator) {
         this(runtime, metaClass, superClass, allocator, null, null);
     }
     
-    protected RubyClass(IRuby runtime, RubyClass metaClass, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef, String name) {
+    protected RubyClass(Ruby runtime, RubyClass metaClass, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef, String name) {
         super(runtime, metaClass, superClass, parentCRef, name);
         this.allocator = allocator;
         this.runtime = runtime;
@@ -144,9 +144,9 @@ public class RubyClass extends RubyModule {
         return getMarshal().unmarshalFrom(getRuntime(), this, unmarshalStream);
     }
     
-    public static RubyClass newClassClass(IRuby runtime, RubyClass moduleClass) {
+    public static RubyClass newClassClass(Ruby runtime, RubyClass moduleClass) {
         ObjectAllocator defaultAllocator = new ObjectAllocator() {
-            public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                 IRubyObject instance = new RubyObject(runtime, klass);
                 instance.setMetaClass(klass);
 
@@ -170,7 +170,7 @@ public class RubyClass extends RubyModule {
     /* (non-Javadoc)
 	 * @see org.jruby.RubyObject#getRuntime()
 	 */
-	public IRuby getRuntime() {
+	public Ruby getRuntime() {
 		return runtime;
 	}
 
@@ -225,11 +225,11 @@ public class RubyClass extends RubyModule {
         return this;
     }
 
-    public static RubyClass newClass(IRuby runtime, RubyClass superClass, SinglyLinkedList parentCRef, String name) {
+    public static RubyClass newClass(Ruby runtime, RubyClass superClass, SinglyLinkedList parentCRef, String name) {
         return new RubyClass(runtime, runtime.getClass("Class"), superClass, superClass.getAllocator(), parentCRef, name);
     }
 
-    public static RubyClass cloneClass(IRuby runtime, RubyClass metaClass, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef, String name) {
+    public static RubyClass cloneClass(Ruby runtime, RubyClass metaClass, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef, String name) {
         return new RubyClass(runtime, metaClass, superClass, allocator, parentCRef, name);
     }
 
@@ -262,7 +262,7 @@ public class RubyClass extends RubyModule {
      *
      */
     public static RubyClass newClass(IRubyObject recv, IRubyObject[] args, Block block) {
-        final IRuby runtime = recv.getRuntime();
+        final Ruby runtime = recv.getRuntime();
 
         RubyClass superClass;
         if (args.length > 0) {

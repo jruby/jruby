@@ -2,7 +2,7 @@ package org.jruby.libraries;
 
 import java.io.IOException;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyStringScanner;
 import org.jruby.runtime.load.Library;
 
@@ -13,9 +13,9 @@ import org.jruby.runtime.load.Library;
 public class StringScannerLibrary implements Library {
 
 	/**
-	 * @see org.jruby.runtime.load.Library#load(org.jruby.IRuby)
+	 * @see org.jruby.runtime.load.Library#load(org.jruby.Ruby)
 	 */
-	public void load(IRuby runtime) throws IOException {
+	public void load(Ruby runtime) throws IOException {
 		RubyStringScanner.createScannerClass(runtime);
 	}
 

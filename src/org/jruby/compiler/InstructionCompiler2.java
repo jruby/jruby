@@ -31,7 +31,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.ast.AliasNode;
 import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsCatNode;
@@ -143,7 +143,7 @@ import org.objectweb.asm.Type;
 public class InstructionCompiler2 implements NodeVisitor {
     private static final String RUBYMODULE = "org/jruby/RubyModule";
 
-    private static final String IRUBY = "org/jruby/IRuby";
+    private static final String RUBY = "org/jruby/Ruby";
 
     private static final String IRUBYOBJECT = "org/jruby/runtime/builtin/IRubyObject";
 
@@ -186,7 +186,7 @@ public class InstructionCompiler2 implements NodeVisitor {
         }
     }
     
-    public void defineModuleFunction(IRuby runtime, String module, String name, MultiStub stub, int index, Arity arity, Visibility visibility) {
+    public void defineModuleFunction(Ruby runtime, String module, String name, MultiStub stub, int index, Arity arity, Visibility visibility) {
         runtime.getModule(module).addMethod(name, new MultiStubMethod(stub, index, runtime.getModule(module), arity, visibility));
     }
     
@@ -285,7 +285,7 @@ public class InstructionCompiler2 implements NodeVisitor {
     private void newSymbol(String name) {
         loadRuntime();
         mv.visitLdcInsn(name);
-        invokeIRuby("newSymbol", "()Lorg/jruby/RubySymbol;");
+        invokeRuby("newSymbol", "()Lorg/jruby/RubySymbol;");
     }
 
     private void defineAlias(String newName, String oldName) {
@@ -297,7 +297,7 @@ public class InstructionCompiler2 implements NodeVisitor {
     private void newTypeError(String error) {
         loadRuntime();
         mv.visitLdcInsn(error);
-        invokeIRuby("newTypeError", "(Ljava/lang/String;)Lorg/jruby/exceptions/RaiseException;");
+        invokeRuby("newTypeError", "(Ljava/lang/String;)Lorg/jruby/exceptions/RaiseException;");
     }
 
     public Instruction visitAndNode(AndNode iVisited) {
@@ -318,8 +318,8 @@ public class InstructionCompiler2 implements NodeVisitor {
         mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBYOBJECT, methodName, signature);
     }
 
-    private void invokeIRuby(String methodName, String signature) {
-        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBY, methodName, signature);
+    private void invokeRuby(String methodName, String signature) {
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, RUBY, methodName, signature);
     }
 
     private void invokeThreadContext(String methodName, String signature) {
@@ -355,7 +355,7 @@ public class InstructionCompiler2 implements NodeVisitor {
         };
         buildObjectArray(IRUBYOBJECT, iVisited.childNodes().toArray(), callback);
 
-        invokeIRuby("newArray", "([Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/RubyArray;");
+        invokeRuby("newArray", "([Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/RubyArray;");
         
         return null;
     }
@@ -516,7 +516,7 @@ public class InstructionCompiler2 implements NodeVisitor {
         mv.visitLdcInsn(iVisited.getValue().toString());
         mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/math/BigInteger", "<init>", "(Ljava/lang/String;)V");
         
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/jruby/RubyBignum", "newBignum", "(Lorg/jruby/IRuby;Ljava/math/BigInteger;)Lorg/jruby/RubyBignum;");
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/jruby/RubyBignum", "newBignum", "(Lorg/jruby/Ruby;Ljava/math/BigInteger;)Lorg/jruby/RubyBignum;");
         
         return null;
     }
@@ -650,7 +650,7 @@ public class InstructionCompiler2 implements NodeVisitor {
         invokeRubyModule("setClassVar", "(Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)V");
         
         loadRuntime();
-        invokeIRuby("getNil", "()Lorg/jruby/runtime/builtin/IRubyObject;");
+        invokeRuby("getNil", "()Lorg/jruby/runtime/builtin/IRubyObject;");
         
         return null;
     }
@@ -892,12 +892,12 @@ public class InstructionCompiler2 implements NodeVisitor {
             // got class, compare to Object
             getRubyClass();
             loadRuntime();
-            invokeIRuby("getObject", "()Lorg/jruby/RubyClass;");
+            invokeRuby("getObject", "()Lorg/jruby/RubyClass;");
             // if class == Object
             mv.visitJumpInsn(Opcodes.IF_ACMPNE, l338);
             loadRuntime();
             // display warning about redefining Object#initialize
-            invokeIRuby("getWarnings", "()Lorg/jruby/common/RubyWarnings;");
+            invokeRuby("getWarnings", "()Lorg/jruby/common/RubyWarnings;");
             mv.visitLdcInsn("redefining Object#initialize may cause infinite loop");
             mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/jruby/common/RubyWarnings", "warn", "(Ljava/lang/String;)V");
         }
@@ -1004,7 +1004,7 @@ public class InstructionCompiler2 implements NodeVisitor {
 //        mv.visitLabel(l351);
 //        mv.visitLineNumber(554, l351);
         loadRuntime();
-        invokeIRuby("getNil", "()Lorg/jruby/runtime/builtin/IRubyObject;");
+        invokeRuby("getNil", "()Lorg/jruby/runtime/builtin/IRubyObject;");
         
         return null;
     }
@@ -1060,7 +1060,7 @@ public class InstructionCompiler2 implements NodeVisitor {
     public Instruction visitFalseNode(FalseNode iVisited) {
         lineNumber(iVisited);
         loadRuntime();
-        invokeIRuby("getFalse", "()Lorg/jruby/RubyBoolean;");
+        invokeRuby("getFalse", "()Lorg/jruby/RubyBoolean;");
         
         return null;
     }
@@ -1070,9 +1070,9 @@ public class InstructionCompiler2 implements NodeVisitor {
         loadThreadContext();
         mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
                 THREADCONTEXT, "getRuntime",
-                "()Lorg/jruby/IRuby;");
+                "()Lorg/jruby/Ruby;");
         mv.visitLdcInsn(new Long(iVisited.getValue()));
-        invokeIRuby("newFixnum", "(J)Lorg/jruby/RubyFixnum;");
+        invokeRuby("newFixnum", "(J)Lorg/jruby/RubyFixnum;");
 
         return null;
     }
@@ -1085,7 +1085,7 @@ public class InstructionCompiler2 implements NodeVisitor {
         lineNumber(iVisited);
         loadRuntime();
         mv.visitLdcInsn(new Double(iVisited.getValue()));
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/jruby/RubyFloat", "newFloat", "(Lorg/jruby/IRuby;D)Lorg/jruby/RubyFloat;");
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/jruby/RubyFloat", "newFloat", "(Lorg/jruby/Ruby;D)Lorg/jruby/RubyFloat;");
         
         return null;
     }
@@ -1210,7 +1210,7 @@ public class InstructionCompiler2 implements NodeVisitor {
     public Instruction visitNilNode(NilNode iVisited) {
         lineNumber(iVisited);
         loadRuntime();
-        invokeIRuby("getNil", "()Lorg/jruby/runtime/builtin/IRubyObject;");
+        invokeRuby("getNil", "()Lorg/jruby/runtime/builtin/IRubyObject;");
         
         return null;
     }
@@ -1223,9 +1223,9 @@ public class InstructionCompiler2 implements NodeVisitor {
         Label l1 = new Label();
         Label l2 = new Label();
         mv.visitJumpInsn(Opcodes.IFEQ, l1);
-        invokeIRuby("getFalse", "()Lorg/jruby/RubyBoolean;");
+        invokeRuby("getFalse", "()Lorg/jruby/RubyBoolean;");
         mv.visitLabel(l1);
-        invokeIRuby("getTrue", "()Lorg/jruby/RubyBoolean;");
+        invokeRuby("getTrue", "()Lorg/jruby/RubyBoolean;");
         mv.visitLabel(l2);
         
         return null;
@@ -1314,7 +1314,7 @@ public class InstructionCompiler2 implements NodeVisitor {
         lineNumber(iVisited);
         loadRuntime();
         mv.visitLdcInsn(iVisited.getValue());
-        invokeIRuby("newString", "(Ljava/lang/String;)Lorg/jruby/RubyString;");
+        invokeRuby("newString", "(Ljava/lang/String;)Lorg/jruby/RubyString;");
         
         return null;
     }
@@ -1338,7 +1338,7 @@ public class InstructionCompiler2 implements NodeVisitor {
     public Instruction visitTrueNode(TrueNode iVisited) {
         lineNumber(iVisited);
         loadRuntime();
-        invokeIRuby("getTrue", "()Lorg/jruby/RubyBoolean;");
+        invokeRuby("getTrue", "()Lorg/jruby/RubyBoolean;");
         
         return null;
     }
@@ -1354,7 +1354,7 @@ public class InstructionCompiler2 implements NodeVisitor {
         
         // leave nil on the stack when we're done
         loadRuntime();
-        invokeIRuby("getNil", "()Lorg/jruby/runtime/builtin/IRubyObject;");
+        invokeRuby("getNil", "()Lorg/jruby/runtime/builtin/IRubyObject;");
         
         if (iVisited.getBodyNode() != null) {
             Label l1 = new Label();
@@ -1408,7 +1408,7 @@ public class InstructionCompiler2 implements NodeVisitor {
         
         // leave nil on the stack when we're done
         loadRuntime();
-        invokeIRuby("getNil", "()Lorg/jruby/runtime/builtin/IRubyObject;");
+        invokeRuby("getNil", "()Lorg/jruby/runtime/builtin/IRubyObject;");
         
         if (iVisited.getBodyNode() != null) {
             Label l1 = new Label();
@@ -1517,7 +1517,7 @@ public class InstructionCompiler2 implements NodeVisitor {
 //        }
         // load ThreadContext param
         mv.visitVarInsn(Opcodes.ALOAD, 1);
-        invokeThreadContext("getRuntime", "()Lorg/jruby/IRuby;");
+        invokeThreadContext("getRuntime", "()Lorg/jruby/Ruby;");
 //        mv.visitInsn(Opcodes.DUP);
 //        mv.visitVarInsn(Opcodes.ASTORE, 50);
 //        // FIXME find a better way of caching, since the path that caches may be conditional

@@ -6,7 +6,7 @@
  */
 package org.jruby.runtime.builtin.meta;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -18,7 +18,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public class ModuleMetaClass extends ObjectMetaClass {
-    public ModuleMetaClass(IRuby runtime, RubyClass superClass) {
+    public ModuleMetaClass(Ruby runtime, RubyClass superClass) {
         super(runtime, null, superClass, MODULE_ALLOCATOR, runtime.getObject().getCRef(), "Module", RubyModule.class);
         
         this.index = ClassIndex.MODULE;
@@ -96,7 +96,7 @@ public class ModuleMetaClass extends ObjectMetaClass {
     }
 
     private static ObjectAllocator MODULE_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return RubyModule.newModule(runtime, klass, null);
         }
     };
@@ -115,7 +115,7 @@ public class ModuleMetaClass extends ObjectMetaClass {
     * Return an array of nested modules or classes.
     */
    public RubyArray nesting(Block block) {
-	   IRuby runtime = getRuntime();
+	   Ruby runtime = getRuntime();
        RubyModule object = runtime.getObject();
        SinglyLinkedList base = runtime.getCurrentContext().peekCRef();
        RubyArray result = runtime.newArray();

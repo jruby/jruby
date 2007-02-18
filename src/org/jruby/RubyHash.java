@@ -80,18 +80,18 @@ public class RubyHash extends RubyObject implements Map {
     
     private boolean isRehashing = false;
 
-    public RubyHash(IRuby runtime) {
+    public RubyHash(Ruby runtime) {
         this(runtime, runtime.getNil());
     }
 
-    public RubyHash(IRuby runtime, IRubyObject defaultValue) {
+    public RubyHash(Ruby runtime, IRubyObject defaultValue) {
         super(runtime, runtime.getClass("Hash"));
         this.valueMap = new HashMap();
         this.capturedDefaultProc = runtime.getNil();
         setDefaultValue(defaultValue);
     }
 
-    public RubyHash(IRuby runtime, Map valueMap, IRubyObject defaultValue) {
+    public RubyHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
         super(runtime, runtime.getClass("Hash"));
         this.valueMap = new HashMap(valueMap);
         this.capturedDefaultProc = runtime.getNil();
@@ -210,11 +210,11 @@ public class RubyHash extends RubyObject implements Map {
 
     // Hash methods
 
-    public static RubyHash newHash(IRuby runtime) {
+    public static RubyHash newHash(Ruby runtime) {
     	return new RubyHash(runtime);
     }
 
-	public static RubyHash newHash(IRuby runtime, Map valueMap, IRubyObject defaultValue) {
+	public static RubyHash newHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
 		assert defaultValue != null;
 		
 		return new RubyHash(runtime, valueMap, defaultValue);
@@ -719,9 +719,9 @@ public class RubyHash extends RubyObject implements Map {
      */
     private static class ConversionMapEntrySet extends AbstractSet {
 		protected Set mapEntrySet;
-		protected IRuby runtime;
+		protected Ruby runtime;
 
-		public ConversionMapEntrySet(IRuby runtime, Set mapEntrySet) {
+		public ConversionMapEntrySet(Ruby runtime, Set mapEntrySet) {
 			this.mapEntrySet = mapEntrySet;
 			this.runtime = runtime;
 		}
@@ -769,9 +769,9 @@ public class RubyHash extends RubyObject implements Map {
      */
     private static class ConversionMapEntryIterator implements Iterator {
         private Iterator iterator;
-		private IRuby runtime;
+		private Ruby runtime;
 
-        public ConversionMapEntryIterator(IRuby runtime, Iterator iterator) {
+        public ConversionMapEntryIterator(Ruby runtime, Iterator iterator) {
             this.iterator = iterator;
             this.runtime = runtime;            
         }
@@ -796,9 +796,9 @@ public class RubyHash extends RubyObject implements Map {
      */
     private static class ConversionMapEntry implements Map.Entry {
         private Entry entry;
-		private IRuby runtime;
+		private Ruby runtime;
 
-        public ConversionMapEntry(IRuby runtime, Map.Entry entry) {
+        public ConversionMapEntry(Ruby runtime, Map.Entry entry) {
             this.entry = entry;
             this.runtime = runtime;
         }

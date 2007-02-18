@@ -33,7 +33,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -50,7 +50,7 @@ import org.jruby.util.ByteList;
  */
 public class RubySocket extends RubyBasicSocket {
     public static class Service implements Library {
-        public void load(final IRuby runtime) throws IOException {
+        public void load(final Ruby runtime) throws IOException {
             runtime.defineClass("SocketError",runtime.getClass("StandardError"), org.jruby.runtime.builtin.meta.ObjectMetaClass.OBJECT_ALLOCATOR);
             RubyBasicSocket.createBasicSocket(runtime);
             RubySocket.createSocket(runtime);
@@ -61,12 +61,12 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     private static ObjectAllocator SOCKET_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubySocket(runtime, klass);
         }
     };
 
-    static void createSocket(IRuby runtime) {
+    static void createSocket(Ruby runtime) {
         RubyClass rb_cSocket = runtime.defineClass("Socket", runtime.getClass("BasicSocket"), SOCKET_ALLOCATOR);
         CallbackFactory cfact = runtime.callbackFactory(RubySocket.class);
         
@@ -120,7 +120,7 @@ public class RubySocket extends RubyBasicSocket {
         rb_cSocket.getMetaClass().defineFastMethod("getnameinfo", cfact.getFastOptSingletonMethod("getnameinfo"));
     }
 
-    public RubySocket(IRuby runtime, RubyClass type) {
+    public RubySocket(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
 
@@ -155,7 +155,7 @@ public class RubySocket extends RubyBasicSocket {
 
     public static IRubyObject gethostbyaddr(IRubyObject recv, IRubyObject[] args) {
         recv.checkArgumentCount(args,1,2);
-        IRuby runtime = recv.getRuntime();
+        Ruby runtime = recv.getRuntime();
         IRubyObject[] ret = new IRubyObject[4];
         ret[0] = runtime.newString(intoAddress(recv,args[0].convertToString().toString()).getCanonicalHostName());
         ret[1] = runtime.newArray();
@@ -167,7 +167,7 @@ public class RubySocket extends RubyBasicSocket {
     public static IRubyObject gethostbyname(IRubyObject recv, IRubyObject hostname) {
         try {
             InetAddress addr = InetAddress.getByName(hostname.convertToString().toString());
-            IRuby runtime = recv.getRuntime();
+            Ruby runtime = recv.getRuntime();
             IRubyObject[] ret = new IRubyObject[4];
             ret[0] = runtime.newString(addr.getCanonicalHostName());
             ret[1] = runtime.newArray();
@@ -183,7 +183,7 @@ public class RubySocket extends RubyBasicSocket {
     public static IRubyObject getaddrinfo(IRubyObject recv, IRubyObject[] args) {
         args = recv.scanArgs(args,2,4);
         try {
-            IRuby r = recv.getRuntime();
+            Ruby r = recv.getRuntime();
             IRubyObject host = args[0];
             IRubyObject port = args[1];
             //IRubyObject family = args[2];

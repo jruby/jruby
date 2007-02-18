@@ -39,7 +39,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyProc;
 import org.jruby.util.WeakIdentityHashMap;
 import org.jruby.util.JRubyClassLoader;
@@ -47,7 +47,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class JavaSupport {
-    private IRuby runtime;
+    private Ruby runtime;
 
     private Map exceptionHandlers = new HashMap();
 
@@ -55,7 +55,7 @@ public class JavaSupport {
 
     private Map instanceCache = Collections.synchronizedMap(new WeakIdentityHashMap(100));
 
-    public JavaSupport(IRuby ruby) {
+    public JavaSupport(Ruby ruby) {
         this.runtime = ruby;
         this.javaClassLoader = ruby.getJRubyClassLoader();
     }

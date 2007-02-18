@@ -41,7 +41,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author jpetersen
  */
 public class RubyUnboundMethod extends RubyMethod {
-    protected RubyUnboundMethod(IRuby runtime) {
+    protected RubyUnboundMethod(Ruby runtime) {
         super(runtime, runtime.getClass("UnboundMethod"));
     }
 
@@ -62,7 +62,7 @@ public class RubyUnboundMethod extends RubyMethod {
         return newMethod;
     }
 
-    public static RubyClass defineUnboundMethodClass(IRuby runtime) {
+    public static RubyClass defineUnboundMethodClass(Ruby runtime) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
         RubyClass newClass = 
         	runtime.defineClass("UnboundMethod", runtime.getClass("Method"), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);

@@ -32,7 +32,7 @@ package org.jruby.libraries;
 
 import java.io.IOException;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Constants;
@@ -45,7 +45,7 @@ public class RbConfigLibrary implements Library {
      * unit tests. The tests use <code>bindir</code>, <code>RUBY_INSTALL_NAME</code> and
      * <code>EXEEXT</code>.
      */
-    public void load(IRuby runtime) {
+    public void load(Ruby runtime) {
         RubyModule configModule = runtime.defineModule("Config");
         RubyHash configHash = RubyHash.newHash(runtime);
         configModule.defineConstant("CONFIG", configHash);
@@ -104,7 +104,7 @@ public class RbConfigLibrary implements Library {
     }
 
     private static void setConfig(RubyHash configHash, String key, String value) {
-        IRuby runtime = configHash.getRuntime();
+        Ruby runtime = configHash.getRuntime();
         configHash.aset(runtime.newString(key), runtime.newString(value));
     }
 

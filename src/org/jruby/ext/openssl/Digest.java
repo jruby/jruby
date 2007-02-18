@@ -30,7 +30,7 @@ package org.jruby.ext.openssl;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -46,12 +46,12 @@ import org.jruby.util.ByteList;
  */
 public class Digest extends RubyObject {
     private static ObjectAllocator DIGEST_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new Digest(runtime, klass);
         }
     };
     
-    public static void createDigest(IRuby runtime, RubyModule ossl) {
+    public static void createDigest(Ruby runtime, RubyModule ossl) {
         RubyModule mDigest = ossl.defineModuleUnder("Digest");
         RubyClass cDigest = mDigest.defineClassUnder("Digest",runtime.getObject(),DIGEST_ALLOCATOR);
         RubyClass openSSLError = ossl.getClass("OpenSSLError");
@@ -125,7 +125,7 @@ public class Digest extends RubyObject {
         }
     }
 
-    public Digest(IRuby runtime, RubyClass type) {
+    public Digest(Ruby runtime, RubyClass type) {
         super(runtime,type);
         data = new StringBuffer();
     }

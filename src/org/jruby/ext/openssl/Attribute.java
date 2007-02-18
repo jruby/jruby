@@ -32,7 +32,7 @@ import org.bouncycastle.asn1.DERObject;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -46,12 +46,12 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class Attribute extends RubyObject {
     private static ObjectAllocator ATTRIBUTE_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new Attribute(runtime, klass);
         }
     };
     
-    public static void createAttribute(IRuby runtime, RubyModule mX509) {
+    public static void createAttribute(Ruby runtime, RubyModule mX509) {
         RubyClass cAttribute = mX509.defineClassUnder("Attribute",runtime.getObject(), ATTRIBUTE_ALLOCATOR);
 
         RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
@@ -67,7 +67,7 @@ public class Attribute extends RubyObject {
         cAttribute.defineFastMethod("value=",attrcb.getFastMethod("set_value",IRubyObject.class));
     }
 
-    public Attribute(IRuby runtime, RubyClass type) {
+    public Attribute(Ruby runtime, RubyClass type) {
         super(runtime,type);
     }
 

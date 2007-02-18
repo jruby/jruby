@@ -28,13 +28,13 @@
 package org.jruby.test;
 
 import java.io.IOException;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.runtime.load.BasicLibraryService;
 
 public class BasicLibraryTestService implements BasicLibraryService {
     public static int counter = 0;
     
-    public boolean basicLoad(IRuby runtime) throws IOException {
+    public boolean basicLoad(Ruby runtime) throws IOException {
         counter++;
         return true;
     }    

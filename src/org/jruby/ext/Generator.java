@@ -29,7 +29,7 @@ package org.jruby.ext;
 
 import java.io.IOException;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
 import org.jruby.RubyProc;
@@ -51,12 +51,12 @@ import org.jruby.internal.runtime.methods.MultiStubMethod;
  */
 public class Generator {
     public static class Service implements Library {
-        public void load(final IRuby runtime) throws IOException {
+        public void load(final Ruby runtime) throws IOException {
             createGenerator(runtime);
         }
     }
 
-    public static void createGenerator(IRuby runtime) throws IOException {
+    public static void createGenerator(Ruby runtime) throws IOException {
         RubyClass cGen = runtime.defineClass("Generator",runtime.getObject(), runtime.getObject().getAllocator());
         cGen.includeModule(runtime.getModule("Enumerable"));
 

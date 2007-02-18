@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -52,12 +52,12 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class X509StoreCtx extends RubyObject {
     private static ObjectAllocator X509STORECTX_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new X509StoreCtx(runtime, klass);
         }
     };
     
-    public static void createX509StoreCtx(IRuby runtime, RubyModule mX509) {
+    public static void createX509StoreCtx(Ruby runtime, RubyModule mX509) {
         RubyClass cX509StoreContext = mX509.defineClassUnder("StoreContext",runtime.getObject(),X509STORECTX_ALLOCATOR);
         CallbackFactory storectxcb = runtime.callbackFactory(X509StoreCtx.class);
         cX509StoreContext.defineMethod("initialize",storectxcb.getOptMethod("_initialize"));
@@ -80,7 +80,7 @@ public class X509StoreCtx extends RubyObject {
     private RubyClass cStoreError;
     private RubyClass cX509Cert;
 
-    public X509StoreCtx(IRuby runtime, RubyClass type) {
+    public X509StoreCtx(Ruby runtime, RubyClass type) {
         super(runtime,type);
         ctx = new X509_STORE_CTX();
         cStoreError = (RubyClass)(((RubyModule)(runtime.getModule("OpenSSL").getConstant("X509"))).getConstant("StoreError")); 

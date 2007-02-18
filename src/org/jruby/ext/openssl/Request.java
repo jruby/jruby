@@ -39,7 +39,7 @@ import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERString;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -58,12 +58,12 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class Request extends RubyObject {
     private static ObjectAllocator REQUEST_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new Request(runtime, klass);
         }
     };
     
-    public static void createRequest(IRuby runtime, RubyModule mX509) {
+    public static void createRequest(Ruby runtime, RubyModule mX509) {
         RubyClass cRequest = mX509.defineClassUnder("Request",runtime.getObject(),REQUEST_ALLOCATOR);
         RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
         mX509.defineClassUnder("RequestError",openSSLError,openSSLError.getAllocator());
@@ -100,7 +100,7 @@ public class Request extends RubyObject {
 
     private PKCS10CertificationRequestExt req;
 
-    public Request(IRuby runtime, RubyClass type) {
+    public Request(Ruby runtime, RubyClass type) {
         super(runtime,type);
         attrs = new ArrayList();
     }

@@ -31,7 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
@@ -65,7 +65,7 @@ public class SimpleCallbackMethod extends AbstractMethod {
 
     public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
     	assert args != null;
-        IRuby runtime = context.getRuntime();
+        Ruby runtime = context.getRuntime();
         
         if (runtime.getTraceFunction() != null) {
             ISourcePosition position = context.getPosition();

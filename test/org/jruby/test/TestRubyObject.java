@@ -31,13 +31,12 @@ package org.jruby.test;
 
 import junit.framework.TestCase;
 
-import org.jruby.IRuby;
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class TestRubyObject extends TestCase {
-    private IRuby runtime;
+    private Ruby runtime;
     private IRubyObject rubyObject;
 
     public TestRubyObject(String name) {

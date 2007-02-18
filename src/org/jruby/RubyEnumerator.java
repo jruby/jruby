@@ -53,12 +53,12 @@ public class RubyEnumerator extends RubyObject {
     private IRubyObject[] methodArgs;
     
     private static ObjectAllocator ENUMERATOR_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyEnumerator(runtime, klass);
         }
     };
 
-    public static void defineEnumerator(IRuby runtime) {
+    public static void defineEnumerator(Ruby runtime) {
         RubyModule enumerableModule = runtime.getModule("Enumerable");
         RubyClass object = runtime.getObject();
         RubyClass enumeratorClass = enumerableModule.defineClassUnder("Enumerator", object, ENUMERATOR_ALLOCATOR);
@@ -79,7 +79,7 @@ public class RubyEnumerator extends RubyObject {
         enumerableModule.addMethod("enum_cons", enumeratorStub.enumerable__enum_cons);
     }
 
-    private RubyEnumerator(IRuby runtime, RubyClass type) {
+    private RubyEnumerator(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
 
@@ -121,9 +121,9 @@ public class RubyEnumerator extends RubyObject {
         protected RubyArray slice;
         protected final long sliceSize;
         protected final Block clientBlock;
-        protected final IRuby runtime;
+        protected final Ruby runtime;
 
-        public SlicedBlockCallback(IRuby runtime, Block clientBlock, long sliceSize) {
+        public SlicedBlockCallback(Ruby runtime, Block clientBlock, long sliceSize) {
             this.runtime = runtime;
             this.clientBlock = clientBlock;
             this.sliceSize = sliceSize;
@@ -164,10 +164,10 @@ public class RubyEnumerator extends RubyObject {
         protected final RubyArray cont;
         protected final long contSize;
         protected final Block clientBlock;
-        protected final IRuby runtime;
+        protected final Ruby runtime;
 
 
-        public ConsecutiveBlockCallback(IRuby runtime, Block clientBlock, long contSize) {
+        public ConsecutiveBlockCallback(Ruby runtime, Block clientBlock, long contSize) {
             this.runtime = runtime;
             this.clientBlock = clientBlock;
             this.contSize = contSize;
@@ -197,7 +197,7 @@ public class RubyEnumerator extends RubyObject {
     /** Multi-stub for all enumerator methods */
     public static class RubyEnumeratorStub0 extends NoopMultiStub {
         private final RubyModule enumerator;
-        private final IRuby runtime;
+        private final Ruby runtime;
         
         public static RubyEnumeratorStub0 createStub(RubyClass enumeratorClass,
                 RubyClass objectClass, RubyModule enumerableModule) {

@@ -160,11 +160,11 @@ public class RubyIO extends RubyObject {
 
     // This should only be called by this and RubyFile.
     // It allows this object to be created without a IOHandler.
-    public RubyIO(IRuby runtime, RubyClass type) {
+    public RubyIO(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
 
-    public RubyIO(IRuby runtime, OutputStream outputStream) {
+    public RubyIO(Ruby runtime, OutputStream outputStream) {
         super(runtime, runtime.getClass("IO"));
         
         // We only want IO objects with valid streams (better to error now). 
@@ -182,7 +182,7 @@ public class RubyIO extends RubyObject {
         registerIOHandler(handler);
     }
     
-    public RubyIO(IRuby runtime, InputStream inputStream) {
+    public RubyIO(Ruby runtime, InputStream inputStream) {
         super(runtime, runtime.getClass("IO"));
         
         if (inputStream == null) {
@@ -200,7 +200,7 @@ public class RubyIO extends RubyObject {
         registerIOHandler(handler);
     }
     
-    public RubyIO(IRuby runtime, Channel channel) {
+    public RubyIO(Ruby runtime, Channel channel) {
         super(runtime, runtime.getClass("IO"));
         
         // We only want IO objects with valid streams (better to error now). 
@@ -218,7 +218,7 @@ public class RubyIO extends RubyObject {
         registerIOHandler(handler);
     }
 
-    public RubyIO(IRuby runtime, Process process) {
+    public RubyIO(Ruby runtime, Process process) {
     	super(runtime, runtime.getClass("IO"));
 
         modes = new IOModes(runtime, "w+");
@@ -233,7 +233,7 @@ public class RubyIO extends RubyObject {
     	registerIOHandler(handler);
     }
     
-    public RubyIO(IRuby runtime, int descriptor) {
+    public RubyIO(Ruby runtime, int descriptor) {
         super(runtime, runtime.getClass("IO"));
 
         try {
@@ -250,7 +250,7 @@ public class RubyIO extends RubyObject {
      * <p>Open a file descriptor, unless it is already open, then return
      * it.</p> 
      */
-    public static IRubyObject fdOpen(IRuby runtime, int descriptor) {
+    public static IRubyObject fdOpen(Ruby runtime, int descriptor) {
         return new RubyIO(runtime, descriptor);
     }
 

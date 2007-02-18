@@ -32,7 +32,7 @@ package org.jruby.evaluator;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.ast.AttrAssignNode;
@@ -60,7 +60,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class AssignmentVisitor {
     public static IRubyObject assign(ThreadContext context, IRubyObject self, Node node, IRubyObject value, Block block, boolean check) {
         IRubyObject result = null;
-        IRuby runtime = context.getRuntime();
+        Ruby runtime = context.getRuntime();
         
         switch (node.nodeId) {
         case NodeTypes.ATTRASSIGNNODE: {
@@ -157,7 +157,7 @@ public class AssignmentVisitor {
     }
     
     public static IRubyObject multiAssign(ThreadContext context, IRubyObject self, MultipleAsgnNode node, RubyArray value, boolean callAsProc) {
-        IRuby runtime = context.getRuntime();
+        Ruby runtime = context.getRuntime();
         // Assign the values.
         int valueLen = value.getLength();
         int varLen = node.getHeadNode() == null ? 0 : node.getHeadNode().size();

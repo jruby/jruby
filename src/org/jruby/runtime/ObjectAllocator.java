@@ -9,7 +9,7 @@
 
 package org.jruby.runtime;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -18,10 +18,10 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author headius
  */
 public interface ObjectAllocator {
-    public IRubyObject allocate(IRuby runtime, RubyClass klazz);
+    public IRubyObject allocate(Ruby runtime, RubyClass klazz);
     
     public static final ObjectAllocator NOT_ALLOCATABLE_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             throw new RuntimeException("Ruby \"" + klass.getName() + "\" object can not be allocated");
         }
     };

@@ -52,7 +52,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 //   this seems so pathological I do not see the need to fix this now.
 public class RubyNumeric extends RubyObject {
     
-    public static RubyClass createNumericClass(IRuby runtime) {
+    public static RubyClass createNumericClass(Ruby runtime) {
         RubyClass numeric = runtime.defineClass("Numeric", runtime.getObject(), NUMERIC_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyNumeric.class);
         numeric.defineFastMethod("singleton_method_added", callbackFactory.getFastMethod("sadded",
@@ -87,14 +87,14 @@ public class RubyNumeric extends RubyObject {
     }
 
     protected static ObjectAllocator NUMERIC_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyNumeric(runtime, klass);
         }
     };
 
     public static double DBL_EPSILON=2.2204460492503131e-16;
 
-    public RubyNumeric(IRuby runtime, RubyClass metaClass) {
+    public RubyNumeric(Ruby runtime, RubyClass metaClass) {
         super(runtime, metaClass);
     }
 
@@ -109,7 +109,7 @@ public class RubyNumeric extends RubyObject {
         return 0;
     }
     
-    public static RubyNumeric newNumeric(IRuby runtime) {
+    public static RubyNumeric newNumeric(Ruby runtime) {
     	return new RubyNumeric(runtime, runtime.getClass("Numeric"));
     }
 
@@ -172,7 +172,7 @@ public class RubyNumeric extends RubyObject {
     /** rb_dbl2big + LONG2FIX at once (numeric.c)
      * 
      */
-    public static IRubyObject dbl2num(IRuby runtime, double val) {
+    public static IRubyObject dbl2num(Ruby runtime, double val) {
         if (Double.isInfinite(val)) {
             throw runtime.newFloatDomainError(val < 0 ? "-Infinity" : "Infinity");
         }
@@ -203,7 +203,7 @@ public class RubyNumeric extends RubyObject {
     /** rb_dbl_cmp (numeric.c)
      * 
      */
-    public static IRubyObject dbl_cmp(IRuby runtime, double a, double b) {
+    public static IRubyObject dbl_cmp(Ruby runtime, double a, double b) {
         if (Double.isNaN(a) || Double.isNaN(b)) {
             return runtime.getNil();
         }
@@ -227,11 +227,11 @@ public class RubyNumeric extends RubyObject {
         return (int) num;
         }
 
-    public static RubyInteger str2inum(IRuby runtime, RubyString str, int base) {
+    public static RubyInteger str2inum(Ruby runtime, RubyString str, int base) {
         return str2inum(runtime,str,base,false);
     }
 
-    public static RubyNumeric int2fix(IRuby runtime, long val) {
+    public static RubyNumeric int2fix(Ruby runtime, long val) {
         return RubyFixnum.newFixnum(runtime,val);
     }
 
@@ -273,7 +273,7 @@ public class RubyNumeric extends RubyObject {
      *          the result of the conversion, which will be zero if the 
      *          conversion failed.
      */
-    public static RubyInteger str2inum(IRuby runtime, RubyString str, int base, boolean raise) {
+    public static RubyInteger str2inum(Ruby runtime, RubyString str, int base, boolean raise) {
         StringBuffer sbuf = new StringBuffer(str.toString().trim());
         if (sbuf.length() == 0) {
             if(raise) {
@@ -350,7 +350,7 @@ public class RubyNumeric extends RubyObject {
         }
     }
 
-    public static RubyFloat str2fnum(IRuby runtime, RubyString arg) {
+    public static RubyFloat str2fnum(Ruby runtime, RubyString arg) {
         return str2fnum(runtime,arg,false);
     }
 
@@ -367,7 +367,7 @@ public class RubyNumeric extends RubyObject {
      * @return  a RubyFloat representing the result of the conversion, which
      *          will be 0.0 if the conversion failed.
      */
-    public static RubyFloat str2fnum(IRuby runtime, RubyString arg, boolean raise) {
+    public static RubyFloat str2fnum(Ruby runtime, RubyString arg, boolean raise) {
         String str = arg.toString().trim();
         double d = 0.0;
         int pos = str.length();

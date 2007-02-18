@@ -42,7 +42,7 @@ import java.security.spec.X509EncodedKeySpec;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.DERInteger;
 import org.bouncycastle.asn1.DERSequence;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
@@ -60,12 +60,12 @@ import org.jruby.util.ByteList;
  */
 public class PKeyDSA extends PKey {
     private static ObjectAllocator PKEYDSA_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new PKeyDSA(runtime, klass);
         }
     };
     
-    public static void createPKeyDSA(IRuby runtime, RubyModule mPKey) {
+    public static void createPKeyDSA(Ruby runtime, RubyModule mPKey) {
         RubyClass cDSA = mPKey.defineClassUnder("DSA",mPKey.getClass("PKey"),PKEYDSA_ALLOCATOR);
         RubyClass pkeyError = mPKey.getClass("PKeyError");
         mPKey.defineClassUnder("DSAError",pkeyError,pkeyError.getAllocator());
@@ -86,7 +86,7 @@ public class PKeyDSA extends PKey {
         cDSA.defineFastMethod("sysverify",dsacb.getFastMethod("sysverify",IRubyObject.class,IRubyObject.class));
     }
 
-    public PKeyDSA(IRuby runtime, RubyClass type) {
+    public PKeyDSA(Ruby runtime, RubyClass type) {
         super(runtime,type);
     }
 

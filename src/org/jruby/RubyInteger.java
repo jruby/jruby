@@ -45,7 +45,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public abstract class RubyInteger extends RubyNumeric { 
 
-    public static RubyClass createIntegerClass(IRuby runtime) {
+    public static RubyClass createIntegerClass(Ruby runtime) {
         RubyClass integer = runtime.defineClass("Integer", runtime.getClass("Numeric"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyInteger.class);
@@ -74,7 +74,7 @@ public abstract class RubyInteger extends RubyNumeric {
         return integer;
     }
 
-    public RubyInteger(IRuby runtime, RubyClass rubyClass) {
+    public RubyInteger(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
     }
     

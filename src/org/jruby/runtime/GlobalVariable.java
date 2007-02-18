@@ -31,14 +31,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class GlobalVariable {
     public static class Copy extends GlobalVariable {
         private GlobalVariable other;
 
-        public Copy(IRuby runtime, String name, GlobalVariable other) {
+        public Copy(Ruby runtime, String name, GlobalVariable other) {
             super(runtime, name, other.get());
             this.other = other;
         }
@@ -52,7 +52,7 @@ public class GlobalVariable {
         }
     }
 
-    protected final IRuby runtime;
+    protected final Ruby runtime;
 
     private final String name;
     private IRubyObject value;
@@ -61,7 +61,7 @@ public class GlobalVariable {
         return "$" + name;
     }
 
-    public GlobalVariable(IRuby runtime, String name, IRubyObject value) {
+    public GlobalVariable(Ruby runtime, String name, IRubyObject value) {
         assert name.startsWith("$");
 
         this.runtime = runtime;

@@ -48,7 +48,7 @@ import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.x509.X509V2CRLGenerator;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -69,12 +69,12 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class X509CRL extends RubyObject {
     private static ObjectAllocator X509CRL_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new X509CRL(runtime, klass);
         }
     };
     
-    public static void createX509CRL(IRuby runtime, RubyModule mX509) {
+    public static void createX509CRL(Ruby runtime, RubyModule mX509) {
         RubyClass cX509CRL = mX509.defineClassUnder("CRL",runtime.getObject(),X509CRL_ALLOCATOR);
         RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
         mX509.defineClassUnder("CRLError",openSSLError,openSSLError.getAllocator());
@@ -130,7 +130,7 @@ public class X509CRL extends RubyObject {
         return crl;
     }
 
-    public X509CRL(IRuby runtime, RubyClass type) {
+    public X509CRL(Ruby runtime, RubyClass type) {
         super(runtime,type);
     }
 

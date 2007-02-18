@@ -32,11 +32,11 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 
 public class IOHandlerNull extends IOHandler {
     
-    public IOHandlerNull(IRuby runtime, IOModes modes) {
+    public IOHandlerNull(Ruby runtime, IOModes modes) {
         super(runtime);
         
         this.modes = modes;

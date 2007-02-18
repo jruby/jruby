@@ -43,7 +43,7 @@ public class RubyObjectSpace {
     /** Create the ObjectSpace module and add it to the Ruby runtime.
      * 
      */
-    public static RubyModule createObjectSpaceModule(IRuby runtime) {
+    public static RubyModule createObjectSpaceModule(Ruby runtime) {
         RubyModule objectSpaceModule = runtime.defineModule("ObjectSpace");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyObjectSpace.class);
         objectSpaceModule.defineModuleFunction("each_object", callbackFactory.getOptSingletonMethod("each_object"));
@@ -81,7 +81,7 @@ public class RubyObjectSpace {
     }
 
     public static IRubyObject id2ref(IRubyObject recv, RubyFixnum id) {
-        IRuby runtime = id.getRuntime();
+        Ruby runtime = id.getRuntime();
         long longId = id.getLongValue();
         if (longId == 0) {
             return runtime.getFalse();

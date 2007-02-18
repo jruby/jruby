@@ -58,7 +58,7 @@ public class RubyRange extends RubyObject {
     private IRubyObject end;
     private boolean isExclusive;
 
-    public RubyRange(IRuby runtime, RubyClass impl) {
+    public RubyRange(Ruby runtime, RubyClass impl) {
         super(runtime, impl);
     }
 
@@ -77,7 +77,7 @@ public class RubyRange extends RubyObject {
     }
     
     private static ObjectAllocator RANGE_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyRange(runtime, klass);
         }
     };
@@ -87,7 +87,7 @@ public class RubyRange extends RubyObject {
     }
 
     private static final ObjectMarshal RANGE_MARSHAL = new ObjectMarshal() {
-        public void marshalTo(IRuby runtime, Object obj, RubyClass type,
+        public void marshalTo(Ruby runtime, Object obj, RubyClass type,
                               MarshalStream marshalStream) throws IOException {
             RubyRange range = (RubyRange)obj;
             
@@ -103,7 +103,7 @@ public class RubyRange extends RubyObject {
             marshalStream.dumpInstanceVars(iVars);
         }
 
-        public Object unmarshalFrom(IRuby runtime, RubyClass type,
+        public Object unmarshalFrom(Ruby runtime, RubyClass type,
                                     UnmarshalStream unmarshalStream) throws IOException {
             RubyRange range = (RubyRange)type.allocate();
             
@@ -119,7 +119,7 @@ public class RubyRange extends RubyObject {
         }
     };
     
-    public static RubyClass createRangeClass(IRuby runtime) {
+    public static RubyClass createRangeClass(Ruby runtime) {
         RubyClass result = runtime.defineClass("Range", runtime.getObject(), RANGE_ALLOCATOR);
         
         result.setMarshal(RANGE_MARSHAL);
@@ -258,7 +258,7 @@ public class RubyRange extends RubyObject {
         return new long[]{beg, len};
     }    
 
-    public static RubyRange newRange(IRuby runtime, IRubyObject begin, IRubyObject end, boolean isExclusive) {
+    public static RubyRange newRange(Ruby runtime, IRubyObject begin, IRubyObject end, boolean isExclusive) {
         RubyRange range = new RubyRange(runtime, runtime.getClass("Range"));
         range.init(begin, end, isExclusive ? runtime.getTrue() : runtime.getFalse());
         return range;

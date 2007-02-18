@@ -46,7 +46,7 @@ import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERString;
 import org.bouncycastle.asn1.DERTags;
 import org.bouncycastle.asn1.x509.X509DefaultEntryConverter;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
@@ -66,12 +66,12 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class X509Name extends RubyObject {
     private static ObjectAllocator X509NAME_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new X509Name(runtime, klass);
         }
     };
     
-    public static void createX509Name(IRuby runtime, RubyModule mX509) {
+    public static void createX509Name(Ruby runtime, RubyModule mX509) {
         RubyClass cX509Name = mX509.defineClassUnder("Name",runtime.getObject(),X509NAME_ALLOCATOR);
         RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
         mX509.defineClassUnder("NameError",openSSLError,openSSLError.getAllocator());
@@ -111,7 +111,7 @@ public class X509Name extends RubyObject {
     public static final int ONELINE = 8520479;
     public static final int MULTILINE = 44302342;
 
-    public X509Name(IRuby runtime, RubyClass type) {
+    public X509Name(Ruby runtime, RubyClass type) {
         super(runtime,type);
         oids = new ArrayList();
         values = new ArrayList();

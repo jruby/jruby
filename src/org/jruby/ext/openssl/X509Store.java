@@ -27,7 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
@@ -48,12 +48,12 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class X509Store extends RubyObject {
     private static ObjectAllocator X509STORE_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new X509Store(runtime, klass);
         }
     };
     
-    public static void createX509Store(IRuby runtime, RubyModule mX509) {
+    public static void createX509Store(Ruby runtime, RubyModule mX509) {
         RubyClass cX509Store = mX509.defineClassUnder("Store",runtime.getObject(),X509STORE_ALLOCATOR);
         RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
         mX509.defineClassUnder("StoreError",openSSLError,openSSLError.getAllocator());
@@ -81,7 +81,7 @@ public class X509Store extends RubyObject {
     private RubyClass cStoreError;
     private RubyClass cStoreContext;
 
-    public X509Store(IRuby runtime, RubyClass type) {
+    public X509Store(Ruby runtime, RubyClass type) {
         super(runtime,type);
         store = new X509_STORE();
         cStoreError = (RubyClass)(((RubyModule)(runtime.getModule("OpenSSL").getConstant("X509"))).getConstant("StoreError"));

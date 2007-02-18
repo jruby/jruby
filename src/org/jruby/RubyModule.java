@@ -91,7 +91,7 @@ public class RubyModule extends RubyObject {
     // with same name by one of its subclasses).
     private Map methods = new HashMap();
 
-    protected RubyModule(IRuby runtime, RubyClass metaClass, RubyClass superClass, SinglyLinkedList parentCRef, String name) {
+    protected RubyModule(Ruby runtime, RubyClass metaClass, RubyClass superClass, SinglyLinkedList parentCRef, String name) {
         super(runtime, metaClass);
 
         this.superClass = superClass;
@@ -442,7 +442,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public void undef(String name) {
-        IRuby runtime = getRuntime();
+        Ruby runtime = getRuntime();
         if (this == runtime.getObject()) {
             runtime.secure(4);
         }
@@ -824,7 +824,7 @@ public class RubyModule extends RubyObject {
             // FIXME warning
         }
         final String variableName = "@" + name;
-        final IRuby runtime = getRuntime();
+        final Ruby runtime = getRuntime();
         ThreadContext context = getRuntime().getCurrentContext();
         if (readable) {
             defineMethod(name, new Callback() {
@@ -1005,19 +1005,19 @@ public class RubyModule extends RubyObject {
 
     // Methods of the Module Class (rb_mod_*):
 
-    public static RubyModule newModule(IRuby runtime, String name) {
+    public static RubyModule newModule(Ruby runtime, String name) {
         return newModule(runtime, runtime.getClass("Module"), name, null);
     }
 
-    public static RubyModule newModule(IRuby runtime, RubyClass type, String name) {
+    public static RubyModule newModule(Ruby runtime, RubyClass type, String name) {
         return newModule(runtime, type, name, null);
     }
 
-    public static RubyModule newModule(IRuby runtime, String name, SinglyLinkedList parentCRef) {
+    public static RubyModule newModule(Ruby runtime, String name, SinglyLinkedList parentCRef) {
         return newModule(runtime, runtime.getClass("Module"), name, parentCRef);
     }
 
-    public static RubyModule newModule(IRuby runtime, RubyClass type, String name, SinglyLinkedList parentCRef) {
+    public static RubyModule newModule(Ruby runtime, RubyClass type, String name, SinglyLinkedList parentCRef) {
         RubyModule module = new RubyModule(runtime, type, null, parentCRef, name);
         
         return module;
@@ -1658,7 +1658,7 @@ public class RubyModule extends RubyObject {
 
     public static RubyModule unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         String name = RubyString.byteListToString(input.unmarshalString());
-        IRuby runtime = input.getRuntime();
+        Ruby runtime = input.getRuntime();
         RubyModule result = runtime.getClassFromPath(name);
         if (result == null) {
             throw runtime.newNameError("uninitialized constant " + name, name);

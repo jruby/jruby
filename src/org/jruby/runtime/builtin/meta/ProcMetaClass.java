@@ -27,7 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.builtin.meta;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyProc;
 import org.jruby.runtime.Arity;
@@ -37,7 +37,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public class ProcMetaClass extends ObjectMetaClass {
-    public ProcMetaClass(IRuby runtime) {
+    public ProcMetaClass(Ruby runtime) {
         super("Proc", RubyProc.class, runtime.getObject(), PROC_ALLOCATOR);
     }
     
@@ -84,7 +84,7 @@ public class ProcMetaClass extends ObjectMetaClass {
 	}
     
     private static ObjectAllocator PROC_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             RubyProc instance = RubyProc.newProc(runtime, false);
 
             instance.setMetaClass(klass);

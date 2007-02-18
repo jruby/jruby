@@ -30,7 +30,7 @@ package org.jruby.runtime;
 import java.util.WeakHashMap;
 import java.util.Iterator;
 import java.util.Map;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 
 import org.jruby.RubyModule;
 import org.jruby.util.WeakIdentityHashMap;
@@ -52,9 +52,9 @@ import org.jruby.util.WeakIdentityHashMap;
  */
 public class CacheMap {
 	private final Map mappings = new WeakHashMap();
-    private final IRuby runtime;
+    private final Ruby runtime;
     
-    public CacheMap(IRuby runtime) {
+    public CacheMap(Ruby runtime) {
         this.runtime = runtime;
     }
 

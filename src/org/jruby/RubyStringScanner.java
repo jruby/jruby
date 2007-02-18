@@ -15,12 +15,12 @@ public class RubyStringScanner extends RubyObject {
 	private StringScanner scanner;
     
     private static ObjectAllocator STRINGSCANNER_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyStringScanner(runtime, klass);
         }
     };
 	
-	public static RubyClass createScannerClass(final IRuby runtime) {
+	public static RubyClass createScannerClass(final Ruby runtime) {
 		RubyClass scannerClass = runtime.defineClass("StringScanner", runtime.getObject(), STRINGSCANNER_ALLOCATOR);
 		CallbackFactory callbackFactory = runtime.callbackFactory(RubyStringScanner.class);
 		
@@ -72,7 +72,7 @@ public class RubyStringScanner extends RubyObject {
 		return scannerClass;
 	}
 	
-	protected RubyStringScanner(IRuby runtime, RubyClass type) {
+	protected RubyStringScanner(Ruby runtime, RubyClass type) {
 		super(runtime, type);
 	}
 	

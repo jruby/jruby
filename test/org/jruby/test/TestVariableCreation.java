@@ -2,12 +2,11 @@ package org.jruby.test;
 
 import junit.framework.TestCase;
 
-import org.jruby.IRuby;
 import org.jruby.Ruby;
 import org.jruby.exceptions.RaiseException;
 
 public class TestVariableCreation  extends TestCase {
-    private static IRuby r;
+    private static Ruby r;
     private static RaiseException failed;
 	public  void testLocalVars() {
         r = Ruby.getDefaultInstance();

@@ -50,7 +50,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
  */
 public class RubyFloat extends RubyNumeric {
 
-    public static RubyClass createFloatClass(IRuby runtime) {
+    public static RubyClass createFloatClass(Ruby runtime) {
         RubyClass floatc = runtime.defineClass("Float", runtime.getClass("Numeric"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         floatc.index = ClassIndex.FLOAT;
@@ -121,11 +121,11 @@ public class RubyFloat extends RubyNumeric {
         return ClassIndex.FLOAT;
     }
 
-    public RubyFloat(IRuby runtime) {
+    public RubyFloat(Ruby runtime) {
         this(runtime, 0.0);
     }
 
-    public RubyFloat(IRuby runtime, double value) {
+    public RubyFloat(Ruby runtime, double value) {
         super(runtime, runtime.getClass("Float"));
         this.value = value;
     }
@@ -158,7 +158,7 @@ public class RubyFloat extends RubyNumeric {
         return getValue() > otherVal ? 1 : getValue() < otherVal ? -1 : 0;
     }
 
-    public static RubyFloat newFloat(IRuby runtime, double value) {
+    public static RubyFloat newFloat(Ruby runtime, double value) {
         return new RubyFloat(runtime, value);
     }
 
@@ -303,7 +303,7 @@ public class RubyFloat extends RubyNumeric {
                 mod += y;
                 div -= 1.0;
     	}
-            final IRuby runtime = getRuntime();
+            final Ruby runtime = getRuntime();
             IRubyObject car = dbl2num(runtime, div);
             RubyFloat cdr = RubyFloat.newFloat(runtime, mod);
             return RubyArray.newArray(runtime, car, cdr);

@@ -49,7 +49,7 @@ import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DERInteger;
 import org.bouncycastle.asn1.DERSequence;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
@@ -68,12 +68,12 @@ import org.jruby.util.ByteList;
  */
 public class PKeyRSA extends PKey {
     private static ObjectAllocator PKEYRSA_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new PKeyRSA(runtime, klass);
         }
     };
     
-    public static void createPKeyRSA(IRuby runtime, RubyModule mPKey) {
+    public static void createPKeyRSA(Ruby runtime, RubyModule mPKey) {
         RubyClass cRSA = mPKey.defineClassUnder("RSA",mPKey.getClass("PKey"),PKEYRSA_ALLOCATOR);
         RubyClass pkeyError = mPKey.getClass("PKeyError");
         mPKey.defineClassUnder("RSAError",pkeyError,pkeyError.getAllocator());
@@ -99,7 +99,7 @@ public class PKeyRSA extends PKey {
         cRSA.setConstant("PKCS1_OAEP_PADDING",runtime.newFixnum(4));
    }
 
-    public PKeyRSA(IRuby runtime, RubyClass type) {
+    public PKeyRSA(Ruby runtime, RubyClass type) {
         super(runtime,type);
     }
 

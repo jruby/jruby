@@ -1,6 +1,5 @@
 package org.jruby.ast.executable;
 
-import org.jruby.IRuby;
 import org.jruby.Ruby;
 import org.jruby.ast.executable.YARVMachine.Instruction;
 import org.jruby.parser.LocalStaticScope;
@@ -11,7 +10,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import junit.framework.TestCase;
 
 public class YARVMachineTest extends TestCase {
-    public static Instruction[] getSimpleTest(IRuby runtime) {
+    public static Instruction[] getSimpleTest(Ruby runtime) {
         return new Instruction[] {
             new Instruction(YARVInstructions.PUTSTRING, "Hello, YARV!"),
             new Instruction(YARVInstructions.DUP),
@@ -31,7 +30,7 @@ public class YARVMachineTest extends TestCase {
         };
     };
     
-    public static Instruction[] getFib(IRuby runtime, int n){
+    public static Instruction[] getFib(Ruby runtime, int n){
         return new Instruction[] {
             // local var n declared (argument)
             new Instruction(YARVInstructions.PUTOBJECT, runtime.newFixnum(n)), // fib index
@@ -77,7 +76,7 @@ public class YARVMachineTest extends TestCase {
     public void testSimpleExecution() {
         YARVMachine ym = new YARVMachine();
         
-        IRuby runtime = Ruby.newInstance(System.in, System.out, System.err);
+        Ruby runtime = Ruby.newInstance(System.in, System.out, System.err);
         ThreadContext context = runtime.getCurrentContext();
         
         StaticScope scope = new LocalStaticScope(null);
@@ -88,7 +87,7 @@ public class YARVMachineTest extends TestCase {
     public void testIterativeFib() {
         YARVMachine ym = new YARVMachine();
         
-        IRuby runtime = Ruby.newInstance(System.in, System.out, System.err);
+        Ruby runtime = Ruby.newInstance(System.in, System.out, System.err);
         ThreadContext context = runtime.getCurrentContext();
         
         StaticScope scope = new LocalStaticScope(null);

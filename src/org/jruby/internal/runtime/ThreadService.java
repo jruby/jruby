@@ -36,13 +36,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyThread;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.util.collections.WeakHashSet;
 
 public class ThreadService {
-    private IRuby runtime;
+    private Ruby runtime;
     private ThreadContext mainContext;
     private ThreadLocal localContext;
     private ThreadGroup rubyThreadGroup;
@@ -50,7 +50,7 @@ public class ThreadService {
     private Thread mainThread;
     private RubyThread criticalThread;
 
-    public ThreadService(IRuby runtime) {
+    public ThreadService(Ruby runtime) {
         this.runtime = runtime;
         this.mainContext = new ThreadContext(runtime);
         this.localContext = new ThreadLocal();

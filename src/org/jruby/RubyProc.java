@@ -48,7 +48,7 @@ public class RubyProc extends RubyObject {
     // be wrong and I suspect we can find a better way of dealing with this.
     private boolean isLambda = false;
 
-    public RubyProc(IRuby runtime, RubyClass rubyClass) {
+    public RubyProc(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
     }
 
@@ -62,7 +62,7 @@ public class RubyProc extends RubyObject {
 
     // Proc class
 
-    public static RubyProc newProc(IRuby runtime, boolean isLambda) {
+    public static RubyProc newProc(Ruby runtime, boolean isLambda) {
         RubyProc newProc = new RubyProc(runtime, runtime.getClass("Proc"));
         newProc.isLambda = isLambda;
 

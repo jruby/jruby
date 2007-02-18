@@ -52,7 +52,7 @@ public class RubySymbol extends RubyObject {
     private final String symbol;
     private final int id;
     
-    private RubySymbol(IRuby runtime, String symbol) {
+    private RubySymbol(Ruby runtime, String symbol) {
         super(runtime, runtime.getClass("Symbol"));
         this.symbol = symbol;
 
@@ -80,7 +80,7 @@ public class RubySymbol extends RubyObject {
         return false;
     }
 
-    public static String getSymbol(IRuby runtime, long id) {
+    public static String getSymbol(Ruby runtime, long id) {
         RubySymbol result = runtime.getSymbolTable().lookup(id);
         if (result != null) {
             return result.symbol;
@@ -92,7 +92,7 @@ public class RubySymbol extends RubyObject {
      * 
      */
 
-    public static RubySymbol newSymbol(IRuby runtime, String name) {
+    public static RubySymbol newSymbol(Ruby runtime, String name) {
         RubySymbol result;
         synchronized (RubySymbol.class) {
             // Locked to prevent the creation of multiple instances of

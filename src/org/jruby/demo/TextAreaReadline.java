@@ -23,7 +23,7 @@ import javax.swing.text.MutableAttributeSet;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ext.Readline;
 import org.jruby.runtime.Arity;
@@ -105,7 +105,7 @@ public class TextAreaReadline extends OutputStream implements KeyListener {
         }
     }
     
-    public void hookIntoRuntime(final IRuby runtime) {
+    public void hookIntoRuntime(final Ruby runtime) {
         /* Hack in to replace usual readline with this */
         runtime.getLoadService().require("readline");
         RubyModule readlineM = runtime.getModule("Readline");

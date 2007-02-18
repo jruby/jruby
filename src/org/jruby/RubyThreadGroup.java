@@ -49,7 +49,7 @@ public class RubyThreadGroup extends RubyObject {
     private boolean enclosed = false;
 
     // ENEBO: Can these be fast?
-    public static RubyClass createThreadGroupClass(IRuby runtime) {
+    public static RubyClass createThreadGroupClass(Ruby runtime) {
         RubyClass threadGroupClass = runtime.defineClass("ThreadGroup", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyThreadGroup.class);
         
@@ -105,7 +105,7 @@ public class RubyThreadGroup extends RubyObject {
     	return getRuntime().newArrayNoCopy((IRubyObject[])rubyThreadList.values().toArray(new IRubyObject[rubyThreadList.size()]));
     }
 
-    private RubyThreadGroup(IRuby runtime, RubyClass type) {
+    private RubyThreadGroup(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
 

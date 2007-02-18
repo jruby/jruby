@@ -33,7 +33,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.MetaClass;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
@@ -164,7 +164,7 @@ public class EvaluationState {
     
     /* Something like cvar_cbase() from eval.c, factored out for the benefit
      * of all the classvar-related node evaluations */
-    private static RubyModule getClassVariableBase(ThreadContext context, IRuby runtime) {
+    private static RubyModule getClassVariableBase(ThreadContext context, Ruby runtime) {
         SinglyLinkedList cref = context.peekCRef();
         RubyModule rubyClass = (RubyModule) cref.getValue();
         if (rubyClass.isSingleton()) {
@@ -178,7 +178,7 @@ public class EvaluationState {
     }
 
     private static IRubyObject evalInternal(ThreadContext context, Node node, IRubyObject self, Block aBlock) {
-        IRuby runtime = context.getRuntime();
+        Ruby runtime = context.getRuntime();
         
         bigloop: do {
             if (node == null) return runtime.getNil();
@@ -1718,7 +1718,7 @@ public class EvaluationState {
      */
     private static IRubyObject evalClassDefinitionBody(ThreadContext context, StaticScope scope, 
             Node bodyNode, RubyModule type, IRubyObject self, Block block) {
-        IRuby runtime = context.getRuntime();
+        Ruby runtime = context.getRuntime();
         context.preClassEval(scope, type);
 
         try {
@@ -1742,12 +1742,12 @@ public class EvaluationState {
      * test if a trace function is avaiable.
      *
      */
-    private static boolean isTrace(IRuby runtime) {
+    private static boolean isTrace(Ruby runtime) {
         return runtime.getTraceFunction() != null;
     }
 
     private static void callTraceFunction(ThreadContext context, String event, IRubyObject zelf) {
-        IRuby runtime = context.getRuntime();
+        Ruby runtime = context.getRuntime();
         String name = context.getFrameLastFunc();
         RubyModule type = context.getFrameLastClass();
         runtime.callTraceFunction(context, event, context.getPosition(), zelf, name, type);
@@ -1762,7 +1762,7 @@ public class EvaluationState {
     }
 
     public static IRubyObject aValueSplat(IRubyObject value) {
-        IRuby runtime = value.getRuntime();
+        Ruby runtime = value.getRuntime();
         if (!(value instanceof RubyArray) || ((RubyArray) value).length().getLongValue() == 0) {
             return runtime.getNil();
         }
@@ -1776,7 +1776,7 @@ public class EvaluationState {
         IRubyObject newValue = value.convertToType("Array", "to_ary", false);
 
         if (newValue.isNil()) {
-            IRuby runtime = value.getRuntime();
+            Ruby runtime = value.getRuntime();
             // Object#to_a is obsolete.  We match Ruby's hack until to_a goes away.  Then we can 
             // remove this hack too.
             if (value.getType().searchMethod("to_a").getImplementationClass() != runtime
@@ -1836,7 +1836,7 @@ public class EvaluationState {
 
     private static boolean isRescueHandled(ThreadContext context, RubyException currentException, ListNode exceptionNodes,
             IRubyObject self) {
-        IRuby runtime = context.getRuntime();
+        Ruby runtime = context.getRuntime();
         if (exceptionNodes == null) {
             return currentException.isKindOf(runtime.getClass("StandardError"));
         }

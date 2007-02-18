@@ -47,7 +47,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
@@ -100,11 +100,11 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         return this;
     }
 
-    private static IRuby getThreadLocalRuntime() {
-        return (IRuby) runtimeTLS.get();
+    private static Ruby getThreadLocalRuntime() {
+        return (Ruby) runtimeTLS.get();
     }
 
-    public static JavaProxyClass getProxyClass(IRuby runtime, Class superClass,
+    public static JavaProxyClass getProxyClass(Ruby runtime, Class superClass,
             Class[] interfaces) throws InvocationTargetException {
         Object save = runtimeTLS.get();
         runtimeTLS.set(runtime);
@@ -119,7 +119,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         }
     }
 
-    public static Object newProxyInstance(IRuby runtime, Class superClass,
+    public static Object newProxyInstance(Ruby runtime, Class superClass,
             Class[] interfaces, Class[] constructorParameters,
             Object[] constructorArgs, JavaProxyInvocationHandler handler)
             throws IllegalArgumentException, InstantiationException,
@@ -201,7 +201,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
         private final JavaProxyClass clazz;
 
-        public ProxyMethodImpl(IRuby runtime, JavaProxyClass clazz, Method m,
+        public ProxyMethodImpl(Ruby runtime, JavaProxyClass clazz, Method m,
                 Method sm) {
             super(runtime, runtime.getModule("Java")
                     .getClass("JavaProxyMethod"));
@@ -297,7 +297,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             return m.getReturnType();
         }
 
-        public static RubyClass createJavaProxyMethodClass(IRuby runtime,
+        public static RubyClass createJavaProxyMethodClass(Ruby runtime,
                 RubyModule javaProxyModule) {
 
             RubyClass result = javaProxyModule.defineClassUnder("JavaProxyMethod", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
@@ -528,7 +528,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     // Ruby-level methods
     //
         
-    public static RubyClass createJavaProxyClassClass(IRuby runtime,
+    public static RubyClass createJavaProxyClassClass(Ruby runtime,
             RubyModule javaModule) {
         RubyClass result = javaModule.defineClassUnder("JavaProxyClass",
                                                        runtime.getObject(),ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
@@ -594,7 +594,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         return buildRubyArray(getConstructors());
     }
 
-    public static void createJavaProxyModule(IRuby runtime) {
+    public static void createJavaProxyModule(Ruby runtime) {
         // TODO Auto-generated method stub
 
         RubyModule javaProxyModule = runtime.getModule("Java");

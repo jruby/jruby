@@ -36,7 +36,7 @@ import java.net.UnknownHostException;
 
 import java.nio.channels.ServerSocketChannel;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyNumeric;
@@ -48,7 +48,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class RubyTCPServer extends RubyTCPSocket {
-    static void createTCPServer(IRuby runtime) {
+    static void createTCPServer(Ruby runtime) {
         RubyClass rb_cTCPServer = runtime.defineClass("TCPServer", runtime.getClass("TCPSocket"), TCPSERVER_ALLOCATOR);
         CallbackFactory cfact = runtime.callbackFactory(RubyTCPServer.class);
 
@@ -64,12 +64,12 @@ public class RubyTCPServer extends RubyTCPSocket {
     }
 
     private static ObjectAllocator TCPSERVER_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyTCPServer(runtime, klass);
         }
     };
 
-    public RubyTCPServer(IRuby runtime, RubyClass type) {
+    public RubyTCPServer(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
 

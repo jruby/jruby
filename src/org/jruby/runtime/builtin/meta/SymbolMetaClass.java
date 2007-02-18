@@ -29,7 +29,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.builtin.meta;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.Arity;
@@ -39,7 +39,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public class SymbolMetaClass extends ObjectMetaClass {
-    public SymbolMetaClass(IRuby runtime) {
+    public SymbolMetaClass(Ruby runtime) {
         super("Symbol", RubySymbol.class, runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         this.index = ClassIndex.SYMBOL;
     }

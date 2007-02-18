@@ -36,7 +36,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyFile;
 import org.jruby.RubyArray;
 import org.jruby.RubyNumeric;
@@ -52,7 +52,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class YARVCompiledRunner {
-    private IRuby runtime;
+    private Ruby runtime;
     private YARVMachine ym = YARVMachine.INSTANCE;
 
     private YARVMachine.InstructionSequence iseq;
@@ -60,7 +60,7 @@ public class YARVCompiledRunner {
     private Map jumps = new IdentityHashMap();
     private Map labels = new HashMap();
 
-    public YARVCompiledRunner(IRuby runtime, Reader reader, String filename) {
+    public YARVCompiledRunner(Ruby runtime, Reader reader, String filename) {
         this.runtime = runtime;
         char[] first = new char[4];
         try {
@@ -76,7 +76,7 @@ public class YARVCompiledRunner {
         }
     }
 
-    public YARVCompiledRunner(IRuby runtime, YARVMachine.InstructionSequence iseq) {
+    public YARVCompiledRunner(Ruby runtime, YARVMachine.InstructionSequence iseq) {
         this.runtime = runtime;
         this.iseq = iseq;
     }

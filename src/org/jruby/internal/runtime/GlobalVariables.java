@@ -35,7 +35,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -45,10 +45,10 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author jpetersen
  */
 public class GlobalVariables {
-    private IRuby runtime;
+    private Ruby runtime;
     private Map globalVariables = new HashMap();
 
-    public GlobalVariables(IRuby runtime) {
+    public GlobalVariables(Ruby runtime) {
         this.runtime = runtime;
     }
 

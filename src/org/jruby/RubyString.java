@@ -85,19 +85,19 @@ public class RubyString extends RubyObject {
     private String stringValue;
 
     // @see IRuby.newString(...)
-    private RubyString(IRuby runtime, CharSequence value) {
+    private RubyString(Ruby runtime, CharSequence value) {
             this(runtime, runtime.getString(), value);
     }
 
-    private RubyString(IRuby runtime, byte[] value) {
+    private RubyString(Ruby runtime, byte[] value) {
             this(runtime, runtime.getString(), value);
     }
 
-    private RubyString(IRuby runtime, ByteList value) {
+    private RubyString(Ruby runtime, ByteList value) {
             this(runtime, runtime.getString(), value);
     }
 
-    private RubyString(IRuby runtime, RubyClass rubyClass, CharSequence value) {
+    private RubyString(Ruby runtime, RubyClass rubyClass, CharSequence value) {
         super(runtime, rubyClass);
 
         assert value != null;
@@ -105,7 +105,7 @@ public class RubyString extends RubyObject {
         this.value = new ByteList(ByteList.plain(value),false);
     }
 
-    private RubyString(IRuby runtime, RubyClass rubyClass, byte[] value) {
+    private RubyString(Ruby runtime, RubyClass rubyClass, byte[] value) {
         super(runtime, rubyClass);
 
         assert value != null;
@@ -113,7 +113,7 @@ public class RubyString extends RubyObject {
         this.value = new ByteList(value);
     }
 
-    private RubyString(IRuby runtime, RubyClass rubyClass, ByteList value) {
+    private RubyString(Ruby runtime, RubyClass rubyClass, ByteList value) {
         super(runtime, rubyClass);
 
         assert value != null;
@@ -251,7 +251,7 @@ public class RubyString extends RubyObject {
     }
 
     public IRubyObject equal(IRubyObject other) {
-        IRuby runtime = getRuntime();
+        Ruby runtime = getRuntime();
         if (other == this) {
             return runtime.getTrue();
         } else if (!(other instanceof RubyString)) {
@@ -265,7 +265,7 @@ public class RubyString extends RubyObject {
     }
 
     public IRubyObject veryEqual(IRubyObject other) {
-        IRuby runtime = getRuntime();
+        Ruby runtime = getRuntime();
         IRubyObject truth = callMethod(runtime.getCurrentContext(), "==", other);
 
         return truth == runtime.getNil() ? runtime.getFalse() : truth;
@@ -408,19 +408,19 @@ public class RubyString extends RubyObject {
     /** rb_str_new2
      *
      */
-    public static RubyString newString(IRuby runtime, CharSequence str) {
+    public static RubyString newString(Ruby runtime, CharSequence str) {
         return new RubyString(runtime, str);
     }
 
-    public static RubyString newString(IRuby runtime, byte[] bytes) {
+    public static RubyString newString(Ruby runtime, byte[] bytes) {
         return new RubyString(runtime, bytes);
     }
 
-    public static RubyString newString(IRuby runtime, ByteList bytes) {
+    public static RubyString newString(Ruby runtime, ByteList bytes) {
         return new RubyString(runtime, bytes);
     }
 
-    public static RubyString newString(IRuby runtime, byte[] bytes, int start, int length) {
+    public static RubyString newString(Ruby runtime, byte[] bytes, int start, int length) {
         byte[] bytes2 = new byte[length];
         System.arraycopy(bytes, start, bytes2, 0, length);
         return new RubyString(runtime, bytes2);
@@ -733,7 +733,7 @@ public class RubyString extends RubyObject {
 
     private RubyString inspect(boolean dump) {
         final int length = value.length();
-        IRuby runtime = getRuntime();
+        Ruby runtime = getRuntime();
 
         StringBuffer sb = new StringBuffer(length + 2 + length / 100);
 

@@ -46,7 +46,7 @@ import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.CMSSignedDataGenerator;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -65,12 +65,12 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class PKCS7 extends RubyObject {    
     private static ObjectAllocator PKCS7_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new PKCS7(runtime, klass);
         }
     };
 
-    public static void createPKCS7(IRuby runtime, RubyModule mOSSL) {
+    public static void createPKCS7(Ruby runtime, RubyModule mOSSL) {
         RubyModule mPKCS7 = mOSSL.defineModuleUnder("PKCS7");
         RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
         mPKCS7.defineClassUnder("PKCS7Error",openSSLError,openSSLError.getAllocator());
@@ -186,7 +186,7 @@ public class PKCS7 extends RubyObject {
         return recv.getRuntime().getNil();
     }
 
-    public PKCS7(IRuby runtime, RubyClass type) {
+    public PKCS7(Ruby runtime, RubyClass type) {
         super(runtime,type);
     }
 
@@ -390,12 +390,12 @@ public class PKCS7 extends RubyObject {
 
     public static class SignerInfo extends RubyObject {
         private static ObjectAllocator SIGNERINFO_ALLOCATOR = new ObjectAllocator() {
-            public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                 return new SignerInfo(runtime, klass);
             }
         };
     
-        public static void createSignerInfo(IRuby runtime, RubyModule mPKCS7) {
+        public static void createSignerInfo(Ruby runtime, RubyModule mPKCS7) {
             RubyClass cPKCS7Signer = mPKCS7.defineClassUnder("SignerInfo",runtime.getObject(),SIGNERINFO_ALLOCATOR);
             mPKCS7.defineConstant("Signer",cPKCS7Signer);
 
@@ -407,7 +407,7 @@ public class PKCS7 extends RubyObject {
             cPKCS7Signer.defineFastMethod("signed_time",p7scb.getFastMethod("signed_time"));
         }
 
-        public SignerInfo(IRuby runtime, RubyClass type) {
+        public SignerInfo(Ruby runtime, RubyClass type) {
             super(runtime,type);
         }
 
@@ -434,12 +434,12 @@ public class PKCS7 extends RubyObject {
 
     public static class RecipientInfo extends RubyObject {
         private static ObjectAllocator RECIPIENTINFO_ALLOCATOR = new ObjectAllocator() {
-            public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                 return new RecipientInfo(runtime, klass);
             }
         };
     
-        public static void createRecipientInfo(IRuby runtime, RubyModule mPKCS7) {
+        public static void createRecipientInfo(Ruby runtime, RubyModule mPKCS7) {
             RubyClass cPKCS7Recipient = mPKCS7.defineClassUnder("RecipientInfo",runtime.getObject(),RECIPIENTINFO_ALLOCATOR);
 
             CallbackFactory p7rcb = runtime.callbackFactory(RecipientInfo.class);
@@ -449,7 +449,7 @@ public class PKCS7 extends RubyObject {
             cPKCS7Recipient.defineFastMethod("enc_key",p7rcb.getFastMethod("enc_key"));
         }
 
-        public RecipientInfo(IRuby runtime, RubyClass type) {
+        public RecipientInfo(Ruby runtime, RubyClass type) {
             super(runtime,type);
         }
 

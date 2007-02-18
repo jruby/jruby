@@ -74,11 +74,11 @@ public class RubyObject implements Cloneable, IRubyObject {
     private boolean frozen;
     private boolean taint;
 
-    public RubyObject(IRuby runtime, RubyClass metaClass) {
+    public RubyObject(Ruby runtime, RubyClass metaClass) {
         this(runtime, metaClass, runtime.isObjectSpaceEnabled());
     }
 
-    public RubyObject(IRuby runtime, RubyClass metaClass, boolean useObjectSpace) {
+    public RubyObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace) {
         this.metaClass = metaClass;
         this.frozen = false;
         this.taint = false;
@@ -163,7 +163,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** Getter for property ruby.
      * @return Value of property ruby.
      */
-    public IRuby getRuntime() {
+    public Ruby getRuntime() {
         return metaClass.getRuntime();
     }
     

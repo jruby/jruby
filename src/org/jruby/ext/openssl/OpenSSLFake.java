@@ -27,13 +27,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class OpenSSLFake {
-    public static void createOpenSSL(IRuby runtime) {
+    public static void createOpenSSL(Ruby runtime) {
         throw runtime.newLoadError("No OpenSSL features available. (due to lack of Java 5, BouncyCastle or bad compilation)");
     }
 }// OpenSSLFake

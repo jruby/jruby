@@ -33,7 +33,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Map;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 
 class OSEnvironmentReaderFromRuntimeExec implements IOSEnvironmentReader {
 
@@ -42,7 +42,7 @@ class OSEnvironmentReaderFromRuntimeExec implements IOSEnvironmentReader {
     /* (non-Javadoc)
      * @see org.jruby.IOSEnvironment#isAccessible()
      */
-    public boolean isAccessible(IRuby runtime) {
+    public boolean isAccessible(Ruby runtime) {
     	return true;
     }
     
@@ -72,7 +72,7 @@ class OSEnvironmentReaderFromRuntimeExec implements IOSEnvironmentReader {
 	 * 
 	 * @see org.jruby.IOSEnvironment#getVariables()
 	 */
-    public Map getVariables(IRuby runtime) {
+    public Map getVariables(Ruby runtime) {
         try {
             Process process = Runtime.getRuntime().exec(getEnvCommand());
             return environmentReader.getVariablesFrom(

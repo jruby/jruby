@@ -41,7 +41,7 @@ import org.jruby.util.ByteList;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class RubyDigest {
-    public static void createDigest(IRuby runtime) {
+    public static void createDigest(Ruby runtime) {
         RubyModule mDigest = runtime.defineModule("Digest");
         RubyClass cDigestBase = mDigest.defineClassUnder("Base",runtime.getObject(), Base.BASE_ALLOCATOR);
 
@@ -62,7 +62,7 @@ public class RubyDigest {
         cDigestBase.defineFastMethod("==",basecb.getFastMethod("eq",RubyKernel.IRUBY_OBJECT));
     }
 
-    public static void createDigestMD5(IRuby runtime) {
+    public static void createDigestMD5(Ruby runtime) {
         runtime.getLoadService().require("digest.so");
         RubyModule mDigest = runtime.getModule("Digest");
         RubyClass cDigestBase = mDigest.getClass("Base");
@@ -70,7 +70,7 @@ public class RubyDigest {
         cDigest_MD5.setClassVar("metadata",runtime.newString("MD5"));
     }
 
-    public static void createDigestRMD160(IRuby runtime) {
+    public static void createDigestRMD160(Ruby runtime) {
         runtime.getLoadService().require("digest.so");
         RubyModule mDigest = runtime.getModule("Digest");
         RubyClass cDigestBase = mDigest.getClass("Base");
@@ -78,7 +78,7 @@ public class RubyDigest {
         cDigest_RMD160.setClassVar("metadata",runtime.newString("RIPEMD160"));
     }
 
-    public static void createDigestSHA1(IRuby runtime) {
+    public static void createDigestSHA1(Ruby runtime) {
         runtime.getLoadService().require("digest.so");
         RubyModule mDigest = runtime.getModule("Digest");
         RubyClass cDigestBase = mDigest.getClass("Base");
@@ -86,7 +86,7 @@ public class RubyDigest {
         cDigest_SHA1.setClassVar("metadata",runtime.newString("SHA1"));
     }
 
-    public static void createDigestSHA2(IRuby runtime) {
+    public static void createDigestSHA2(Ruby runtime) {
         try {
             MessageDigest.getInstance("SHA-256");
         } catch(NoSuchAlgorithmException e) {
@@ -105,7 +105,7 @@ public class RubyDigest {
 
     public static class Base extends RubyObject {
         protected static ObjectAllocator BASE_ALLOCATOR = new ObjectAllocator() {
-            public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+            public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                 return new Base(runtime, klass);
             }
         };
@@ -152,7 +152,7 @@ public class RubyDigest {
         private MessageDigest algo;
         private StringBuffer data;
 
-        public Base(IRuby runtime, RubyClass type) {
+        public Base(Ruby runtime, RubyClass type) {
             super(runtime,type);
             data = new StringBuffer();
         }

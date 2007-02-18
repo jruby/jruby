@@ -33,12 +33,11 @@ import java.util.ArrayList;
 
 import junit.framework.TestCase;
 
-import org.jruby.IRuby;
 import org.jruby.Ruby;
 import org.jruby.RubySymbol;
 
 public class TestRubySymbol extends TestCase {
-    private IRuby runtime;
+    private Ruby runtime;
 
     public TestRubySymbol(String name) {
 	super(name);

@@ -41,7 +41,7 @@ import org.apache.bsf.BSFException;
 import org.apache.bsf.BSFManager;
 import org.apache.bsf.util.BSFEngineImpl;
 import org.apache.bsf.util.BSFFunctions;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.ast.Node;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
@@ -61,7 +61,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author  jpetersen
  */
 public class JRubyEngine extends BSFEngineImpl {
-    private IRuby runtime;
+    private Ruby runtime;
 
     public Object apply(String file, int line, int col, Object funcBody, Vector paramNames, Vector args) {
         ThreadContext threadContext = runtime.getCurrentContext();
@@ -163,7 +163,7 @@ public class JRubyEngine extends BSFEngineImpl {
      *
      * @param exception An Exception thrown by JRuby
      */
-    private static void printException(IRuby runtime, Exception exception) {
+    private static void printException(Ruby runtime, Exception exception) {
     	if (exception instanceof JumpException) {
 	    	JumpException je = (JumpException)exception;
 	    	if (je.getJumpType() == JumpException.JumpType.RaiseJump) {
@@ -179,10 +179,10 @@ public class JRubyEngine extends BSFEngineImpl {
     }
 
     private static class BeanGlobalVariable implements IAccessor {
-        private IRuby runtime;
+        private Ruby runtime;
         private BSFDeclaredBean bean;
 
-        public BeanGlobalVariable(IRuby runtime, BSFDeclaredBean bean) {
+        public BeanGlobalVariable(Ruby runtime, BSFDeclaredBean bean) {
             this.runtime = runtime;
             this.bean = bean;
         }
@@ -202,10 +202,10 @@ public class JRubyEngine extends BSFEngineImpl {
     }
 
     private static class FunctionsGlobalVariable implements IAccessor {
-        private IRuby runtime;
+        private Ruby runtime;
         private BSFFunctions functions;
 
-        public FunctionsGlobalVariable(IRuby runtime, BSFFunctions functions) {
+        public FunctionsGlobalVariable(Ruby runtime, BSFFunctions functions) {
             this.runtime = runtime;
             this.functions = functions;
         }

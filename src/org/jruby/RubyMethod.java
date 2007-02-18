@@ -58,14 +58,14 @@ public class RubyMethod extends RubyObject {
     protected DynamicMethod method;
     protected IRubyObject receiver;
 
-    protected RubyMethod(IRuby runtime, RubyClass rubyClass) {
+    protected RubyMethod(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
     }
 
     /** Create the RubyMethod class and add it to the Ruby runtime.
      * 
      */
-    public static RubyClass createMethodClass(IRuby runtime) {
+    public static RubyClass createMethodClass(Ruby runtime) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
 		RubyClass methodClass = runtime.defineClass("Method", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
     	
@@ -89,7 +89,7 @@ public class RubyMethod extends RubyObject {
         String originName,
         DynamicMethod method,
         IRubyObject receiver) {
-        IRuby runtime = implementationModule.getRuntime();
+        Ruby runtime = implementationModule.getRuntime();
         RubyMethod newMethod = new RubyMethod(runtime, runtime.getClass("Method"));
 
         newMethod.implementationModule = implementationModule;
@@ -128,7 +128,7 @@ public class RubyMethod extends RubyObject {
      */
     public IRubyObject to_proc(Block unusedBlock) {
     	CallbackFactory f = getRuntime().callbackFactory(RubyMethod.class);
-		IRuby r = getRuntime();
+		Ruby r = getRuntime();
         ThreadContext tc = r.getCurrentContext();
         Block block = Block.createBlock(tc, null, tc.getCurrentScope().cloneScope(), 
                 new IterateCallable(f.getBlockMethod("bmcall"), this), r.getTopSelf());
@@ -158,7 +158,7 @@ public class RubyMethod extends RubyObject {
      *
      */
     public static IRubyObject mproc(IRubyObject recv, Block block) {
-    	IRuby runtime = recv.getRuntime();
+    	Ruby runtime = recv.getRuntime();
     	ThreadContext tc = runtime.getCurrentContext();
         
         tc.preMproc();

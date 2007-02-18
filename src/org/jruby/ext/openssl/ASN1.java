@@ -57,7 +57,7 @@ import org.bouncycastle.asn1.DERString;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DERUTCTime;
 import org.bouncycastle.asn1.DERUTF8String;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
@@ -87,7 +87,7 @@ public class ASN1 {
     private static Map NID_TO_LN = new IdentityHashMap();
 
 
-    static void addObject(IRuby runtime, int nid, String sn, String ln, String oid) {
+    static void addObject(Ruby runtime, int nid, String sn, String ln, String oid) {
         Map s2o = (Map)SYM_TO_OID.get(runtime);
         Map o2s = (Map)OID_TO_SYM.get(runtime);
         Map o2n = (Map)OID_TO_NID.get(runtime);
@@ -111,7 +111,7 @@ public class ASN1 {
         }        
     }
 
-    private synchronized static void initMaps(IRuby runtime) {
+    private synchronized static void initMaps(Ruby runtime) {
         Object val = new HashMap(org.bouncycastle.asn1.x509.X509Name.DefaultLookUp);
         Object val2 = new HashMap(org.bouncycastle.asn1.x509.X509Name.DefaultSymbols);
         SYM_TO_OID.put(runtime,val);
@@ -123,11 +123,11 @@ public class ASN1 {
         OpenSSLImpl.defaultObjects(runtime);
     }
 
-    synchronized static Integer obj2nid(IRuby runtime, String oid) {
+    synchronized static Integer obj2nid(Ruby runtime, String oid) {
         return obj2nid(runtime, new DERObjectIdentifier(oid));
     }
 
-    synchronized static Integer obj2nid(IRuby runtime, DERObjectIdentifier oid) {
+    synchronized static Integer obj2nid(Ruby runtime, DERObjectIdentifier oid) {
         Map o2n = (Map)OID_TO_NID.get(runtime);
         if(null == o2n) {
             initMaps(runtime);
@@ -136,7 +136,7 @@ public class ASN1 {
         return (Integer)o2n.get(oid);
     }
 
-    synchronized static String o2a(IRuby runtime, DERObjectIdentifier obj) {
+    synchronized static String o2a(Ruby runtime, DERObjectIdentifier obj) {
         Integer nid = obj2nid(runtime,obj);
         Map n2l = (Map)NID_TO_LN.get(runtime);
         Map n2s = (Map)NID_TO_SN.get(runtime);
@@ -147,11 +147,11 @@ public class ASN1 {
         return one;
     }
 
-    synchronized static String nid2ln(IRuby runtime, int nid) {
+    synchronized static String nid2ln(Ruby runtime, int nid) {
         return nid2ln(runtime, new Integer(nid));
     }
 
-    synchronized static String nid2ln(IRuby runtime, Integer nid) {
+    synchronized static String nid2ln(Ruby runtime, Integer nid) {
         Map n2l = (Map)NID_TO_LN.get(runtime);
         if(null == n2l) {
             initMaps(runtime);
@@ -160,7 +160,7 @@ public class ASN1 {
         return (String)n2l.get(nid);
     }
     
-    synchronized static Map getOIDLookup(IRuby runtime) {
+    synchronized static Map getOIDLookup(Ruby runtime) {
         Object val = SYM_TO_OID.get(runtime);
         if(null == val) {
             initMaps(runtime);
@@ -169,7 +169,7 @@ public class ASN1 {
         return (Map)val;
     }
 
-    synchronized static Map getSymLookup(IRuby runtime) {
+    synchronized static Map getSymLookup(Ruby runtime) {
         Object val = OID_TO_SYM.get(runtime);
         if(null == val) {
             initMaps(runtime);
@@ -245,7 +245,7 @@ public class ASN1 {
         return (Class)(ASN1_INFO[id][1]);
     }
     
-    public static void createASN1(IRuby runtime, RubyModule ossl) {
+    public static void createASN1(Ruby runtime, RubyModule ossl) {
         RubyModule mASN1 = ossl.defineModuleUnder("ASN1");
         RubyClass openSSLError = ossl.getClass("OpenSSLError");
         mASN1.defineClassUnder("ASN1Error",openSSLError, openSSLError.getAllocator());
@@ -362,7 +362,7 @@ public class ASN1 {
         return self.getRuntime().newString(getObjectIdentifier(self.getRuntime(),self.callMethod(self.getRuntime().getCurrentContext(),"value").toString()).getId());
     }
 
-    private static String getShortNameFor(IRuby runtime, String nameOrOid) {
+    private static String getShortNameFor(Ruby runtime, String nameOrOid) {
         DERObjectIdentifier oid = getObjectIdentifier(runtime,nameOrOid);
         Map em = getOIDLookup(runtime);
         String name = null;
@@ -377,7 +377,7 @@ public class ASN1 {
         return name;
     }
 
-    private static String getLongNameFor(IRuby runtime, String nameOrOid) {
+    private static String getLongNameFor(Ruby runtime, String nameOrOid) {
         DERObjectIdentifier oid = getObjectIdentifier(runtime,nameOrOid);
         Map em = getOIDLookup(runtime);
         String name = null;
@@ -392,7 +392,7 @@ public class ASN1 {
         return name;
     }
 
-    private static DERObjectIdentifier getObjectIdentifier(IRuby runtime, String nameOrOid) {
+    private static DERObjectIdentifier getObjectIdentifier(Ruby runtime, String nameOrOid) {
         Object val1 = ASN1.getOIDLookup(runtime).get(nameOrOid.toLowerCase());
         if(null != val1) {
             return (DERObjectIdentifier)val1;
@@ -578,11 +578,11 @@ public class ASN1 {
 
     public static class ASN1Data extends RubyObject {
         public static ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-                public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+                public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                     return new ASN1Data(runtime, klass);
                 }
             };
-        public ASN1Data(IRuby runtime, RubyClass type) {
+        public ASN1Data(Ruby runtime, RubyClass type) {
             super(runtime,type);
         }
 
@@ -674,11 +674,11 @@ public class ASN1 {
 
     public static class ASN1Primitive extends ASN1Data {
         public static ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-                public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+                public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                     return new ASN1Primitive(runtime, klass);
                 }
             };
-        public ASN1Primitive(IRuby runtime, RubyClass type) {
+        public ASN1Primitive(Ruby runtime, RubyClass type) {
             super(runtime,type);
         }
 
@@ -800,11 +800,11 @@ public class ASN1 {
 
     public static class ASN1Constructive extends ASN1Data {
         public static ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-                public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+                public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                     return new ASN1Constructive(runtime, klass);
                 }
             };
-        public ASN1Constructive(IRuby runtime, RubyClass type) {
+        public ASN1Constructive(Ruby runtime, RubyClass type) {
             super(runtime,type);
         }
 

@@ -36,7 +36,7 @@ import org.jruby.util.collections.SinglyLinkedList;
 
 public class MetaClass extends RubyClass {
 
-    public MetaClass(IRuby runtime, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+    public MetaClass(Ruby runtime, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
         super(runtime, runtime.getClass("Class"), superClass, allocator, parentCRef, null);
         
         this.index = ClassIndex.CLASS;

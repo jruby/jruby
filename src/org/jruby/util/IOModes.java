@@ -31,7 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 
 /**
  * @author enebo
@@ -49,10 +49,10 @@ public class IOModes implements Cloneable {
     public static final int NONBLOCK = 2048;
     public static final int BINARY = 4096;
     
-    private IRuby runtime;
+    private Ruby runtime;
     private int modes;
     
-    public IOModes(IRuby runtime) {
+    public IOModes(Ruby runtime) {
     	modes = 0;
         this.runtime = runtime;
     }
@@ -66,11 +66,11 @@ public class IOModes implements Cloneable {
     	}
     }
     
-    public IOModes(IRuby runtime, String modesString) {
+    public IOModes(Ruby runtime, String modesString) {
     	this(runtime, convertModesStringToModesInt(runtime, modesString));
     }
     
-    public IOModes(IRuby runtime, long modes) {
+    public IOModes(Ruby runtime, long modes) {
     	// TODO: Ruby does not seem to care about invalid numeric mode values
     	// I am not sure if ruby overflows here also...
         this.modes = (int)modes;
@@ -115,7 +115,7 @@ public class IOModes implements Cloneable {
         return ""+modes;
     }
     
-    public static int convertModesStringToModesInt(IRuby runtime, 
+    public static int convertModesStringToModesInt(Ruby runtime, 
     		String modesString) {
     	int modes = 0;
     	

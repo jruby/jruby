@@ -53,7 +53,7 @@ public class RaiseException extends JumpException {
         this(actException, false);
     }
 
-    public RaiseException(IRuby runtime, RubyClass excptnClass, String msg, boolean nativeException) {
+    public RaiseException(Ruby runtime, RubyClass excptnClass, String msg, boolean nativeException) {
         super(msg, JumpType.RaiseJump);
         if (msg == null) {
             msg = "No message available";
@@ -66,7 +66,7 @@ public class RaiseException extends JumpException {
         setException(exception, isNativeException);
     }
 
-    public static RaiseException createNativeRaiseException(IRuby runtime, Throwable cause) {
+    public static RaiseException createNativeRaiseException(Ruby runtime, Throwable cause) {
         NativeException nativeException = new NativeException(runtime, runtime.getClass(NativeException.CLASS_NAME), cause);
         return new RaiseException(cause, nativeException);
     }
@@ -101,7 +101,7 @@ public class RaiseException extends JumpException {
      * @param newException The exception to set
      */
     protected void setException(RubyException newException, boolean nativeException) {
-        IRuby runtime = newException.getRuntime();
+        Ruby runtime = newException.getRuntime();
         ThreadContext context = runtime.getCurrentContext();
 
         if (!context.isWithinDefined()) {
@@ -147,7 +147,7 @@ public class RaiseException extends JumpException {
             externalIndex = i;
         }
         IRubyObject backtrace = exception.backtrace();
-        IRuby runtime = backtrace.getRuntime();
+        Ruby runtime = backtrace.getRuntime();
         if (runtime.getNil() != backtrace) {
             String firstLine = backtrace.callMethod(runtime.getCurrentContext(), "first").callMethod(runtime.getCurrentContext(), "to_s").toString();
             ps.print(firstLine + ": ");

@@ -29,7 +29,7 @@ package org.jruby.environment;
 
 import java.util.Map;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 
 public interface IOSEnvironmentReader {
 
@@ -43,13 +43,13 @@ public interface IOSEnvironmentReader {
 	 * @return the operating system environment variables in a Map<String,String>.
      * @throws OSEnvironmentReaderExcepton if there is a problem accessing the environment variables.
 	 */
-	Map getVariables(IRuby runtime);
+	Map getVariables(Ruby runtime);
 
     /**
      * Determines whether the OS environment variables are accessible using a given implementation.
      * 
      * @return  whether the OS environment variables are accessible.
      */
-    boolean isAccessible(IRuby runtime);;
+    boolean isAccessible(Ruby runtime);;
 
 }

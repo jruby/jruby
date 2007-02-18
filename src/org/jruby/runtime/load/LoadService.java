@@ -48,7 +48,7 @@ import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Constants;
@@ -134,9 +134,9 @@ public class LoadService {
 
     private final Map autoloadMap = new HashMap();
 
-    private final IRuby runtime;
+    private final Ruby runtime;
     
-    public LoadService(IRuby runtime) {
+    public LoadService(Ruby runtime) {
         this.runtime = runtime;
         loadPath = RubyArray.newArray(runtime);
         loadedFeatures = RubyArray.newArray(runtime);    

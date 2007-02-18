@@ -35,7 +35,7 @@ package org.jruby.runtime.marshal;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
@@ -58,11 +58,11 @@ import org.jruby.util.ByteList;
  * @author Anders
  */
 public class UnmarshalStream extends BufferedInputStream {
-    protected final IRuby runtime;
+    protected final Ruby runtime;
     private UnmarshalCache cache;
     private IRubyObject proc;
 
-    public UnmarshalStream(IRuby runtime, InputStream in, IRubyObject proc) throws IOException {
+    public UnmarshalStream(Ruby runtime, InputStream in, IRubyObject proc) throws IOException {
         super(in);
         this.runtime = runtime;
         this.cache = new UnmarshalCache(runtime);
@@ -168,7 +168,7 @@ public class UnmarshalStream extends BufferedInputStream {
     }
 
 
-    public IRuby getRuntime() {
+    public Ruby getRuntime() {
         return runtime;
     }
 

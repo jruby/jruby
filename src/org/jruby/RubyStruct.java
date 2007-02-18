@@ -55,11 +55,11 @@ public class RubyStruct extends RubyObject {
      * @param runtime
      * @param rubyClass
      */
-    public RubyStruct(IRuby runtime, RubyClass rubyClass) {
+    public RubyStruct(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
     }
 
-    public static RubyClass createStructClass(IRuby runtime) {
+    public static RubyClass createStructClass(Ruby runtime) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR may be ok here, but it's unclear how Structs
         // work with marshalling. Confirm behavior and ensure we're doing this correctly. JRUBY-415
         RubyClass structClass = runtime.defineClass("Struct", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
@@ -161,7 +161,7 @@ public class RubyStruct extends RubyObject {
      */
     public static RubyClass newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
         String name = null;
-        IRuby runtime = recv.getRuntime();
+        Ruby runtime = recv.getRuntime();
 
         if (args.length > 0 && args[0] instanceof RubyString) {
             name = args[0].toString();
@@ -438,7 +438,7 @@ public class RubyStruct extends RubyObject {
     }
 
     public static RubyStruct unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-        IRuby runtime = input.getRuntime();
+        Ruby runtime = input.getRuntime();
 
         RubySymbol className = (RubySymbol) input.unmarshalObject();
         RubyClass rbClass = pathToClass(runtime, className.asSymbol());
@@ -459,7 +459,7 @@ public class RubyStruct extends RubyObject {
         return result;
     }
 
-    private static RubyClass pathToClass(IRuby runtime, String path) {
+    private static RubyClass pathToClass(Ruby runtime, String path) {
         // FIXME: Throw the right ArgumentError's if the class is missing
         // or if it's a module.
         return (RubyClass) runtime.getClassFromPath(path);

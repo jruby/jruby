@@ -33,14 +33,14 @@ import java.io.UnsupportedEncodingException;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ZlibInflate {
     private Inflater flater;
     private ByteList collected;
-    private IRuby runtime;
+    private Ruby runtime;
 
     public static final int BASE_SIZE = 100;
 

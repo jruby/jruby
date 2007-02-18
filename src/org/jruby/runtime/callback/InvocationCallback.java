@@ -27,7 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.callback;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -43,7 +43,7 @@ public abstract class InvocationCallback implements Callback {
     private Arity arity;
 
     public IRubyObject execute(IRubyObject recv, IRubyObject[] oargs, Block block) {
-        IRuby runtime = recv.getRuntime();
+        Ruby runtime = recv.getRuntime();
         arity.checkArity(runtime, oargs);
         try {
             return call(recv,oargs,block);

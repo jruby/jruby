@@ -27,7 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
@@ -59,7 +59,7 @@ public abstract class FullInvocationMethod extends AbstractMethod implements Clo
         context.postReflectedMethodInternalCall();
     }
 
-    private IRubyObject wrap(IRuby runtime, IRubyObject receiver, IRubyObject[] args, Block block) {
+    private IRubyObject wrap(Ruby runtime, IRubyObject receiver, IRubyObject[] args, Block block) {
         try {
             return call(receiver,args,block);
         } catch(RaiseException e) {
@@ -77,7 +77,7 @@ public abstract class FullInvocationMethod extends AbstractMethod implements Clo
     }
     
 	public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        IRuby runtime = context.getRuntime();
+        Ruby runtime = context.getRuntime();
         arity.checkArity(runtime, args);
 
         if(runtime.getTraceFunction() != null) {

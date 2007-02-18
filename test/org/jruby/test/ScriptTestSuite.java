@@ -40,7 +40,6 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import org.jruby.IRuby;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyString;
@@ -90,7 +89,7 @@ public class ScriptTestSuite extends TestSuite {
             
             // Ensure we have a new interpreter for each test. Previous we were using the
             //  same interpreter which caused problems as soon as one test failed.
-            IRuby runtime = setupInterpreter();
+            Ruby runtime = setupInterpreter();
             
             suite.addTest(new ScriptTest(runtime, testDir, line));
         }
@@ -98,8 +97,8 @@ public class ScriptTestSuite extends TestSuite {
         return suite;
     }
 
-    private static IRuby setupInterpreter() {
-        IRuby runtime = Ruby.getDefaultInstance();
+    private static Ruby setupInterpreter() {
+        Ruby runtime = Ruby.getDefaultInstance();
         
         runtime.getLoadService().init(new ArrayList());
         
@@ -107,11 +106,11 @@ public class ScriptTestSuite extends TestSuite {
     }
 
     private static class ScriptTest extends TestCase {
-        private final IRuby runtime;
+        private final Ruby runtime;
         private final File testDir;
         private final String filename;
 
-        public ScriptTest(IRuby runtime, File testDir, String filename) {
+        public ScriptTest(Ruby runtime, File testDir, String filename) {
             super(filename);
             this.runtime = runtime;
             this.testDir = testDir;

@@ -77,23 +77,23 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 	private String lastTarget = null;
 	private Matcher matcher = null;
 
-    public RubyRegexp(IRuby runtime, RubyClass klass) {
+    public RubyRegexp(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
     }
 
-    private RubyRegexp(IRuby runtime) {
+    private RubyRegexp(Ruby runtime) {
         super(runtime, runtime.getClass("Regexp"));
     }
     
     private static ObjectAllocator REGEXP_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             RubyRegexp instance = new RubyRegexp(runtime, klass);
             
             return instance;
         }
     };
 
-    public static RubyClass createRegexpClass(IRuby runtime) {
+    public static RubyClass createRegexpClass(Ruby runtime) {
         RubyClass regexpClass = runtime.defineClass("Regexp", runtime.getObject(), REGEXP_ALLOCATOR);
         regexpClass.index = ClassIndex.REGEXP;
         
@@ -176,14 +176,14 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         return newRegexp(str.getRuntime(), str.toString(), options, lang);
     }
     
-    public static RubyRegexp newRegexp(IRuby runtime, Pattern pattern, String lang) {
+    public static RubyRegexp newRegexp(Ruby runtime, Pattern pattern, String lang) {
         RubyRegexp re = new RubyRegexp(runtime);
         re.code = KCode.create(runtime, lang);
         re.pattern = pattern;
         return re;
     }
     
-    public static RubyRegexp newRegexp(IRuby runtime, String str, int options, String kcode) {
+    public static RubyRegexp newRegexp(Ruby runtime, String str, int options, String kcode) {
         RubyRegexp re = new RubyRegexp(runtime);
         re.code = KCode.create(runtime, kcode);
         re.initialize(str, options);

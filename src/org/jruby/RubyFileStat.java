@@ -59,12 +59,12 @@ public class RubyFileStat extends RubyObject {
     private RubyBoolean isSymlink;
 
     private static ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyFileStat(runtime, klass);
         }
     };
 
-    public static RubyClass createFileStatClass(IRuby runtime) {
+    public static RubyClass createFileStatClass(Ruby runtime) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
         final RubyClass fileStatClass = runtime.getClass("File").defineClassUnder("Stat",runtime.getObject(), ALLOCATOR);
         final CallbackFactory callbackFactory = runtime.callbackFactory(RubyFileStat.class);
@@ -114,13 +114,13 @@ public class RubyFileStat extends RubyObject {
         return fileStatClass;
     }
 
-    protected RubyFileStat(IRuby runtime, RubyClass clazz) {
+    protected RubyFileStat(Ruby runtime, RubyClass clazz) {
         super(runtime, clazz);
 
     }
 
     public IRubyObject initialize(IRubyObject fname, Block unusedBlock) {
-        IRuby runtime = getRuntime();
+        Ruby runtime = getRuntime();
         JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(),fname.toString());
 
         if(!file.exists()) {

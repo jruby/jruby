@@ -30,7 +30,6 @@ package org.jruby.javasupport;
 
 import java.util.List;
 
-import org.jruby.IRuby;
 import org.jruby.Ruby;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -50,8 +49,8 @@ public class JavaEmbedUtils {
 	 * @param loadPaths to specify where to look for Ruby modules. 
 	 * @return an instance
 	 */
-	public static IRuby initialize(List loadPaths) {
-        IRuby runtime = Ruby.getDefaultInstance();
+	public static Ruby initialize(List loadPaths) {
+        Ruby runtime = Ruby.getDefaultInstance();
         runtime.getLoadService().init(loadPaths);
         runtime.getLoadService().require("java");
         
@@ -63,7 +62,7 @@ public class JavaEmbedUtils {
 	 * 
 	 * @param runtime to be disposed of
 	 */
-	public static void terminate(IRuby runtime) {
+	public static void terminate(Ruby runtime) {
         runtime.tearDown();
         runtime.getThreadService().disposeCurrentThread();
 	}
@@ -78,7 +77,7 @@ public class JavaEmbedUtils {
 	 * @param returnType is the type we want it to conform to
 	 * @return the result of the invocation.
 	 */
-	public static Object invokeMethod(IRuby runtime, Object receiver, String method, Object[] args,
+	public static Object invokeMethod(Ruby runtime, Object receiver, String method, Object[] args,
 			Class returnType) {
         IRubyObject rubyReceiver = receiver != null ? 
         		JavaUtil.convertJavaToRuby(runtime, receiver) : runtime.getTopSelf();
@@ -105,14 +104,14 @@ public class JavaEmbedUtils {
 	 * Convert a Ruby object to a Java object.
 	 * 
 	 */
-	public static Object rubyToJava(IRuby runtime, IRubyObject value, Class type) {
+	public static Object rubyToJava(Ruby runtime, IRubyObject value, Class type) {
         return JavaUtil.convertArgument(Java.ruby_to_java(runtime.getObject(), value, Block.NULL_BLOCK), type);
     }
 
 	/**
 	 *  Convert a java object to a Ruby object.
 	 */
-    public static IRubyObject javaToRuby(IRuby runtime, Object value) {
+    public static IRubyObject javaToRuby(Ruby runtime, Object value) {
         if (value instanceof IRubyObject) {
             return (IRubyObject) value;
         }

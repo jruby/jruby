@@ -41,7 +41,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -57,7 +57,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class JavaMethod extends JavaCallable {
     private final Method method;
 
-    public static RubyClass createJavaMethodClass(IRuby runtime, RubyModule javaModule) {
+    public static RubyClass createJavaMethodClass(Ruby runtime, RubyModule javaModule) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here, since we don't intend for people to monkey with
         // this type and it can't be marshalled. Confirm. JRUBY-415
         RubyClass result = 
@@ -80,7 +80,7 @@ public class JavaMethod extends JavaCallable {
         return result;
     }
 
-    public JavaMethod(IRuby runtime, Method method) {
+    public JavaMethod(Ruby runtime, Method method) {
         super(runtime, (RubyClass) runtime.getModule("Java").getClass("JavaMethod"));
         this.method = method;
 
@@ -94,11 +94,11 @@ public class JavaMethod extends JavaCallable {
         }
     }
 
-    public static JavaMethod create(IRuby runtime, Method method) {
+    public static JavaMethod create(Ruby runtime, Method method) {
         return new JavaMethod(runtime, method);
     }
 
-    public static JavaMethod create(IRuby runtime, Class javaClass, String methodName, Class[] argumentTypes) {
+    public static JavaMethod create(Ruby runtime, Class javaClass, String methodName, Class[] argumentTypes) {
         try {
             Method method = javaClass.getMethod(methodName, argumentTypes);
             return create(runtime, method);
@@ -108,7 +108,7 @@ public class JavaMethod extends JavaCallable {
         }
     }
 
-    public static JavaMethod createDeclared(IRuby runtime, Class javaClass, String methodName, Class[] argumentTypes) {
+    public static JavaMethod createDeclared(Ruby runtime, Class javaClass, String methodName, Class[] argumentTypes) {
         try {
             Method method = javaClass.getDeclaredMethod(methodName, argumentTypes);
             return create(runtime, method);

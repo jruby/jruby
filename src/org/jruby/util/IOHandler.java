@@ -36,7 +36,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 
 /**
  */
@@ -51,13 +51,13 @@ public abstract class IOHandler {
     // these bytes should be the same in almost all encodings.
     public static final ByteList PARAGRAPH_DELIMETER = ByteList.create("PARAGRPH_DELIM_MRK_ER");
     
-    private IRuby runtime;
+    private Ruby runtime;
     protected IOModes modes;
     protected int fileno;
     protected boolean isOpen = false;
     protected boolean isSync = false;
     
-    protected IOHandler(IRuby runtime) {
+    protected IOHandler(Ruby runtime) {
         this.runtime = runtime;
     }
 
@@ -69,7 +69,7 @@ public abstract class IOHandler {
         this.fileno = fileno;
     }
 
-    protected IRuby getRuntime() {
+    protected Ruby getRuntime() {
         return runtime;
     }
     

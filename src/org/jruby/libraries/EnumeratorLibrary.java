@@ -29,13 +29,13 @@ package org.jruby.libraries;
 
 import java.io.IOException;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyEnumerator;
 
 import org.jruby.runtime.load.Library;
 
 public class EnumeratorLibrary implements Library {
-    public void load(final IRuby runtime) throws IOException {
+    public void load(final Ruby runtime) throws IOException {
         RubyEnumerator.defineEnumerator(runtime);
     }
 }

@@ -31,7 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast.util;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -61,7 +61,7 @@ public final class ArgsUtil {
      * @param value The value to convert
      * @param coerce Whether to coerce using to_ary or just wrap with an array
      */
-    public static RubyArray convertToRubyArray(IRuby runtime, IRubyObject value, boolean coerce) {
+    public static RubyArray convertToRubyArray(Ruby runtime, IRubyObject value, boolean coerce) {
         if (value == null) {
             return runtime.newArray(0);
         }

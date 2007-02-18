@@ -27,7 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.callback;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyKernel;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
@@ -45,7 +45,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
 
     private final Class type;
     private final String typePath;
-    private final IRuby runtime;
+    private final Ruby runtime;
 
     private final static String SUPER_CLASS = cg.p(InvocationCallback.class);
     private final static String FAST_SUPER_CLASS = cg.p(FastInvocationCallback.class);
@@ -56,7 +56,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     private final static String IRUB = cg.p(RubyKernel.IRUBY_OBJECT);
     private final static String IRUB_ID = cg.ci(RubyKernel.IRUBY_OBJECT);
     
-    public InvocationCallbackFactory(IRuby runtime, Class type) {
+    public InvocationCallbackFactory(Ruby runtime, Class type) {
         this.type = type;
         this.typePath = cg.p(type);
         this.runtime = runtime;

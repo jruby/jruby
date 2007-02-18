@@ -38,7 +38,7 @@ import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.runtime.CallbackFactory;
@@ -48,7 +48,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class JavaConstructor extends JavaCallable {
     private Constructor constructor;
 
-    public static RubyClass createJavaConstructorClass(IRuby runtime, RubyModule javaModule) {
+    public static RubyClass createJavaConstructorClass(Ruby runtime, RubyModule javaModule) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here, since we don't intend for people to monkey with
         // this type and it can't be marshalled. Confirm. JRUBY-415
         RubyClass result =
@@ -64,7 +64,7 @@ public class JavaConstructor extends JavaCallable {
         return result;
     }
 
-    public JavaConstructor(IRuby runtime, Constructor constructor) {
+    public JavaConstructor(Ruby runtime, Constructor constructor) {
         super(runtime, runtime.getModule("Java").getClass("JavaConstructor"));
         this.constructor = constructor;
     }

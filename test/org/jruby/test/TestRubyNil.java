@@ -35,7 +35,6 @@ import java.util.ArrayList;
 
 import junit.framework.TestCase;
 
-import org.jruby.IRuby;
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyNil;
@@ -45,7 +44,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 * @author chadfowler
 */
 public class TestRubyNil extends TestCase {
-    private IRuby runtime;
+    private Ruby runtime;
     private IRubyObject rubyNil;
 
     public TestRubyNil(String name) {

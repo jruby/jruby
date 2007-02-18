@@ -27,7 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
@@ -66,7 +66,7 @@ public abstract class CompiledMethod extends AbstractMethod implements Cloneable
         return null;
     }
     
-    private IRubyObject wrap(ThreadContext context, IRuby runtime, IRubyObject receiver, IRubyObject[] args, Block block) {
+    private IRubyObject wrap(ThreadContext context, Ruby runtime, IRubyObject receiver, IRubyObject[] args, Block block) {
         try {
             return call(context, receiver, args, block);
         } catch(RaiseException e) {
@@ -84,7 +84,7 @@ public abstract class CompiledMethod extends AbstractMethod implements Cloneable
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        IRuby runtime = context.getRuntime();
+        Ruby runtime = context.getRuntime();
         arity.checkArity(runtime, args);
 
         if(runtime.getTraceFunction() != null) {

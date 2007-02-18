@@ -34,7 +34,7 @@ import java.util.List;
 
 import javax.net.ssl.SSLEngine;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -59,12 +59,12 @@ public class SSLContext extends RubyObject {
     "client_cert_cb", "tmp_dh_callback", "session_id_context"};
 
     private static ObjectAllocator SSLCONTEXT_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new SSLContext(runtime, klass);
         }
     };
     
-    public static void createSSLContext(IRuby runtime, RubyModule mSSL) {
+    public static void createSSLContext(Ruby runtime, RubyModule mSSL) {
         RubyClass cSSLContext = mSSL.defineClassUnder("SSLContext",runtime.getObject(),SSLCONTEXT_ALLOCATOR);
         for(int i=0;i<ctx_attrs.length;i++) {
             cSSLContext.attr_accessor(new IRubyObject[]{runtime.newSymbol(ctx_attrs[i])});
@@ -76,7 +76,7 @@ public class SSLContext extends RubyObject {
         cSSLContext.defineFastMethod("ciphers=",ctxcb.getFastMethod("set_ciphers",IRubyObject.class));
     }
 
-    public SSLContext(IRuby runtime, RubyClass type) {
+    public SSLContext(Ruby runtime, RubyClass type) {
         super(runtime,type);
     }
 

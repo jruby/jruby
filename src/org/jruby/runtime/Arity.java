@@ -32,7 +32,7 @@ package org.jruby.runtime;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.ast.AttrAssignNode;
 import org.jruby.ast.CallNode;
 import org.jruby.ast.Node;
@@ -109,7 +109,7 @@ public final class Arity implements Serializable {
         return value;
     }
 
-    public void checkArity(IRuby runtime, IRubyObject[] args) {
+    public void checkArity(Ruby runtime, IRubyObject[] args) {
         if (isFixed()) {
             if (args.length != required()) {
                 throw runtime.newArgumentError("wrong number of arguments(" + args.length + " for " + required() + ")");

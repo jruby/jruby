@@ -31,7 +31,7 @@ import java.io.IOException;
 
 import java.lang.reflect.InvocationTargetException;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.runtime.load.Library;
 
 /**
@@ -39,7 +39,7 @@ import org.jruby.runtime.load.Library;
  */
 public class RubyOpenSSL {
     public static class Service implements Library {
-        public void load(final IRuby runtime) throws IOException {
+        public void load(final Ruby runtime) throws IOException {
             Class c = null;
             try {
                 Class.forName("javax.net.ssl.SSLEngine"); // Java >= 1.5
@@ -50,7 +50,7 @@ public class RubyOpenSSL {
                 c = org.jruby.ext.openssl.OpenSSLFake.class;
             }
             try {
-                c.getMethod("createOpenSSL",new Class[]{IRuby.class}).invoke(null,new Object[]{runtime});
+                c.getMethod("createOpenSSL",new Class[]{Ruby.class}).invoke(null,new Object[]{runtime});
             } catch(InvocationTargetException e) {
                 Throwable t = e.getTargetException();
                 if(t instanceof RuntimeException) {

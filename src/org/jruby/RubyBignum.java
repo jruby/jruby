@@ -52,7 +52,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
  * @author  jpetersen
  */
 public class RubyBignum extends RubyInteger {
-    public static RubyClass createBignumClass(IRuby runtime) {
+    public static RubyClass createBignumClass(Ruby runtime) {
         RubyClass bignum = runtime.defineClass("Bignum", runtime.getClass("Integer"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         bignum.index = ClassIndex.BIGNUM;
@@ -102,7 +102,7 @@ public class RubyBignum extends RubyInteger {
 
     private final BigInteger value;
 
-    public RubyBignum(IRuby runtime, BigInteger value) {
+    public RubyBignum(Ruby runtime, BigInteger value) {
         super(runtime, runtime.getClass("Bignum"));
         this.value = value;
     }
@@ -126,15 +126,15 @@ public class RubyBignum extends RubyInteger {
         return ClassIndex.BIGNUM;
     }
 
-    public static RubyBignum newBignum(IRuby runtime, long value) {
+    public static RubyBignum newBignum(Ruby runtime, long value) {
         return newBignum(runtime, BigInteger.valueOf(value));
     }
 
-    public static RubyBignum newBignum(IRuby runtime, double value) {
+    public static RubyBignum newBignum(Ruby runtime, double value) {
         return newBignum(runtime, new BigDecimal(value).toBigInteger());
         }
 
-    public static RubyBignum newBignum(IRuby runtime, BigInteger value) {
+    public static RubyBignum newBignum(Ruby runtime, BigInteger value) {
         return new RubyBignum(runtime, value);
     }
 
@@ -162,7 +162,7 @@ public class RubyBignum extends RubyInteger {
     /** rb_big_norm
      * 
      */
-    public static RubyInteger bignorm(IRuby runtime, BigInteger bi) {
+    public static RubyInteger bignorm(Ruby runtime, BigInteger bi) {
         if (bi.compareTo(LONG_MIN) < 0 || bi.compareTo(LONG_MAX) > 0) {
             return newBignum(runtime, bi);
         }
@@ -332,7 +332,7 @@ public class RubyBignum extends RubyInteger {
         if (results[0].signum() == -1 && results[1].signum() != 0) {
             return bignorm(getRuntime(), results[0].subtract(BigInteger.ONE));
     	}
-        final IRuby runtime = getRuntime();
+        final Ruby runtime = getRuntime();
         return RubyArray.newArray(getRuntime(), bignorm(runtime, results[0]), bignorm(runtime, results[1]));
     }
 

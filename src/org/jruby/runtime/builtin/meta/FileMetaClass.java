@@ -35,7 +35,7 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.util.regex.Pattern;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyDir;
@@ -66,7 +66,7 @@ public class FileMetaClass extends IOMetaClass {
     
     public static final PrintfFormat OCTAL_FORMATTER = new PrintfFormat("%o");
     
-    public FileMetaClass(IRuby runtime) {
+    public FileMetaClass(Ruby runtime) {
         super("File", RubyFile.class, runtime.getClass("IO"), FILE_ALLOCATOR);
     }
     
@@ -76,7 +76,7 @@ public class FileMetaClass extends IOMetaClass {
     
     protected class FileMeta extends Meta {
         protected void initializeClass() {
-            IRuby runtime = getRuntime();
+            Ruby runtime = getRuntime();
             RubyString separator = runtime.newString("/");
             separator.freeze();
             defineConstant("SEPARATOR", separator);
@@ -198,7 +198,7 @@ public class FileMetaClass extends IOMetaClass {
     }
     
     private static ObjectAllocator FILE_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             RubyFile instance = new RubyFile(runtime, klass);
             
             instance.setMetaClass(klass);
@@ -518,7 +518,7 @@ public class FileMetaClass extends IOMetaClass {
     
     public IRubyObject open(IRubyObject[] args, boolean tryToYield, Block block) {
         checkArgumentCount(args, 1, -1);
-        IRuby runtime = getRuntime();
+        Ruby runtime = getRuntime();
         ThreadContext tc = runtime.getCurrentContext();
         
         RubyString pathString = RubyString.stringValue(args[0]);

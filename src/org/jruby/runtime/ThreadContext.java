@@ -33,7 +33,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -51,7 +51,7 @@ import org.jruby.util.collections.SinglyLinkedList;
 public class ThreadContext {
     private final static int INITIAL_SIZE = 50;
     
-    private final IRuby runtime;
+    private final Ruby runtime;
 
     // Is this thread currently with in a function trace? 
     private boolean isWithinTrace;
@@ -90,7 +90,7 @@ public class ThreadContext {
     /**
      * Constructor for Context.
      */
-    public ThreadContext(IRuby runtime) {
+    public ThreadContext(Ruby runtime) {
         this.runtime = runtime;
         
         // TOPLEVEL self and a few others want a top-level scope.  We create this one right
@@ -101,7 +101,7 @@ public class ThreadContext {
     Visibility lastVis;
     CallType lastCallType;
     
-    public IRuby getRuntime() {
+    public Ruby getRuntime() {
         return runtime;
     }
 
@@ -815,7 +815,7 @@ public class ThreadContext {
      * Is this thread actively tracing at this moment.
      * 
      * @return true if so
-     * @see org.jruby.IRuby#callTraceFunction(String, ISourcePosition, IRubyObject, String, IRubyObject)
+     * @see org.jruby.Ruby#callTraceFunction(String, ISourcePosition, IRubyObject, String, IRubyObject)
      */
     public boolean isWithinTrace() {
         return isWithinTrace;
@@ -825,7 +825,7 @@ public class ThreadContext {
      * Set whether we are actively tracing or not on this thread.
      * 
      * @param isWithinTrace true is so
-     * @see org.jruby.IRuby#callTraceFunction(String, ISourcePosition, IRubyObject, String, IRubyObject)
+     * @see org.jruby.Ruby#callTraceFunction(String, ISourcePosition, IRubyObject, String, IRubyObject)
      */
     public void setWithinTrace(boolean isWithinTrace) {
         this.isWithinTrace = isWithinTrace;

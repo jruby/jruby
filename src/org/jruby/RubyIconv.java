@@ -44,17 +44,17 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
 public class RubyIconv extends RubyObject {
-    public RubyIconv(IRuby runtime, RubyClass type) {
+    public RubyIconv(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
     
     private static ObjectAllocator ICONV_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyIconv(runtime, klass);
         }
     };
 
-    public static void createIconv(IRuby runtime) {
+    public static void createIconv(Ruby runtime) {
         RubyClass iconvClass = runtime.defineClass("Iconv", runtime.getObject(), ICONV_ALLOCATOR);
 
         RubyClass argumentError = runtime.getClass("ArgumentError");

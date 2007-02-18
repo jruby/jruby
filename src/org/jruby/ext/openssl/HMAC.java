@@ -31,7 +31,7 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.jruby.IRuby;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -47,12 +47,12 @@ import org.jruby.util.ByteList;
  */
 public class HMAC extends RubyObject {
     private static ObjectAllocator HMAC_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(IRuby runtime, RubyClass klass) {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new HMAC(runtime, klass);
         }
     };
     
-    public static void createHMAC(IRuby runtime, RubyModule ossl) {
+    public static void createHMAC(Ruby runtime, RubyModule ossl) {
         RubyClass cHMAC = ossl.defineClassUnder("HMAC",runtime.getObject(),HMAC_ALLOCATOR);
         RubyClass openSSLError = ossl.getClass("OpenSSLError");
         ossl.defineClassUnder("HMACError",openSSLError,openSSLError.getAllocator());
@@ -98,7 +98,7 @@ public class HMAC extends RubyObject {
         }
     }
 
-    public HMAC(IRuby runtime, RubyClass type) {
+    public HMAC(Ruby runtime, RubyClass type) {
         super(runtime,type);
     }
 

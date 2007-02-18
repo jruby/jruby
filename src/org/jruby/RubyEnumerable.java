@@ -53,8 +53,8 @@ import org.jruby.internal.runtime.methods.MultiStubMethod;
 public class RubyEnumerable {
     private static class ListAddBlockCallback implements BlockCallback {
         private final List arr = new ArrayList();
-        private final IRuby runtime;
-        public ListAddBlockCallback(IRuby runtime) {
+        private final Ruby runtime;
+        public ListAddBlockCallback(Ruby runtime) {
             this.runtime = runtime;
         }
         public IRubyObject call(ThreadContext context, IRubyObject[] iargs, IRubyObject iself, Block block) {
@@ -79,7 +79,7 @@ public class RubyEnumerable {
     }
     private static class RubyYieldComparator implements Comparator {
         private final ThreadContext context;
-        private final IRuby runtime;
+        private final Ruby runtime;
         private final Block block;
         public RubyYieldComparator(ThreadContext context, Block block) {
             this.context = context;
@@ -310,7 +310,7 @@ public class RubyEnumerable {
             //EACH_WITH_INDEX
             int index = 0;
             List arr = eachToList(context,self,module);
-            IRuby rt = context.getRuntime();
+            Ruby rt = context.getRuntime();
             for(Iterator iter = arr.iterator();iter.hasNext();) {
                 context.yield(rt.newArray((IRubyObject)iter.next(),rt.newFixnum(index++)), block);
             }
@@ -476,7 +476,7 @@ public class RubyEnumerable {
         }
     }
 
-    public static RubyModule createEnumerableModule(IRuby runtime) {
+    public static RubyModule createEnumerableModule(Ruby runtime) {
         RubyModule enm = runtime.defineModule("Enumerable");
         RubyEnumerableStub0 stub0 = RubyEnumerableStub0.createStub(enm);
         RubyEnumerableStub1 stub1 = RubyEnumerableStub1.createStub(enm);
