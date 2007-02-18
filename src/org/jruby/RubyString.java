@@ -554,7 +554,7 @@ public class RubyString extends RubyObject {
         if (isEmpty()) {
             return getRuntime().getNil();
         }
-        int capital = value.get(0) & 0xFF;
+        char capital = value.charAt(0);
         boolean changed = false;
         if (Character.isLetter(capital) && Character.isLowerCase(capital)) {
             value.set(0, (byte)Character.toUpperCase(capital));
@@ -562,7 +562,7 @@ public class RubyString extends RubyObject {
         }
 
         for (int i = 1; i < value.length(); i++) {
-            capital = value.get(i) & 0xFF;
+            capital = value.charAt(i);
             if (Character.isLetter(capital) && Character.isUpperCase(capital)) {
                 value.set(i, (byte)Character.toLowerCase(capital));
                 changed = true;
@@ -626,7 +626,7 @@ public class RubyString extends RubyObject {
     public IRubyObject upcase_bang() {
         boolean changed = false;
         for (int i = 0; i < value.length(); i++) {
-            int c = value.get(i) & 0xFF;
+            char c = value.charAt(i);
             if (!Character.isLetter(c) || Character.isUpperCase(c)) continue;
             value.set(i, (byte)Character.toUpperCase(c));
             changed = true;
@@ -652,7 +652,7 @@ public class RubyString extends RubyObject {
     public IRubyObject downcase_bang() {
         boolean changed = false;
         for (int i = 0; i < value.length(); i++) {
-            int c = value.get(i) & 0xFF;
+            char c = value.charAt(i);
             if (!Character.isLetter(c) || Character.isLowerCase(c)) continue;
             value.set(i, (byte)Character.toLowerCase(c));
             changed = true;
@@ -682,7 +682,7 @@ public class RubyString extends RubyObject {
         boolean changesMade = false;
 
         for (int i = 0; i < value.length(); i++) {
-            int c = value.get(i) & 0xFF;
+            char c = value.charAt(i);
 
             if (!Character.isLetter(c)) {
                 continue;
@@ -2374,7 +2374,7 @@ public class RubyString extends RubyObject {
         int i = 0;
 
         for (; i < length; i++) {
-            if (!Character.isWhitespace(value.get(i) & 0xFF)) {
+            if (!Character.isWhitespace(value.charAt(i))) {
                 break;
             }
         }
@@ -2401,7 +2401,7 @@ public class RubyString extends RubyObject {
         int i = value.length() - 1;
 
         for (; i >= 0; i--) {
-            if (!Character.isWhitespace(value.get(i) & 0xFF)) {
+            if (!Character.isWhitespace(value.charAt(i))) {
                 break;
             }
         }
@@ -2453,9 +2453,9 @@ public class RubyString extends RubyObject {
 
     public ByteList stripInternal() {
         int head = 0;
-        while (head < value.length() && Character.isWhitespace(value.get(head) & 0xFF)) head++;
+        while (head < value.length() && Character.isWhitespace(value.charAt(head))) head++;
         int tail = value.length() - 1;
-        while (tail > head && Character.isWhitespace(value.get(tail) & 0xFF)) tail--;
+        while (tail > head && Character.isWhitespace(value.charAt(tail))) tail--;
 
         if (head == 0 && tail == value.length() - 1) {
             return null;

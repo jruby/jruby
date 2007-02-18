@@ -147,7 +147,7 @@ public class JavaUtil {
         } else if (javaClass == BigDecimal.class && !(rubyObject instanceof JavaObject)) {
          	if (rubyObject.respondsTo("to_f")) {
              	double double_value = ((RubyNumeric)rubyObject.callMethod(context,"to_f")).getDoubleValue();
-             	return BigDecimal.valueOf(double_value);
+             	return new BigDecimal(double_value);
          	}
         }
         try {

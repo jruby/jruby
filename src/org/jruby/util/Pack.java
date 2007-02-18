@@ -588,12 +588,12 @@ public class Pack {
                 if (next == '*') {
                     occurrences = IS_STAR;
                     next = safeGet(format);
-                } else if (Character.isDigit(next)) {
+                } else if (Character.isDigit((char)(next & 0xFF))) {
                     occurrences = 0;
                     do {
-                        occurrences = occurrences * 10 + Character.digit(next, 10);
+                        occurrences = occurrences * 10 + Character.digit((char)(next & 0xFF), 10);
                         next = safeGet(format);
-                    } while (next != 0 && Character.isDigit(next));
+                    } while (next != 0 && Character.isDigit((char)(next & 0xFF)));
                 } else {
                     occurrences = type == '@' ? 0 : 1;
                 }
@@ -851,7 +851,7 @@ public class Pack {
                                 if (c1 == '\n') continue;
                                 byte c2 = safeGet(encode);
                                 if (!encode.hasRemaining()) break;
-                                byte value = (byte)(Character.digit(c1, 16) * 16 + Character.digit(c2, 16));
+                                byte value = (byte)(Character.digit((char)(c1 & 0xFF), 16) * 16 + Character.digit((char)(c2 & 0xFF), 16));
                                 lElem[index++] = value;
                             }
                         }
@@ -1013,7 +1013,7 @@ public class Pack {
             int i = index;
 
             for (; i < buffer.length; i++) {
-                if (!Character.isDigit(buffer[i] & 0xFF)) {
+                if (!Character.isDigit((char)(buffer[i] & 0xFF))) {
                     break;
                 }
             }
@@ -1297,7 +1297,7 @@ public class Pack {
         mainLoop: while (next != 0) {
             type = next;
             next = safeGet(format);
-            while (Character.isWhitespace(type)) { // skip all spaces
+            while (Character.isWhitespace((char)(type&0xFF))) { // skip all spaces
                 if (next == 0) break mainLoop;
                 type = next;
                 next = safeGet(format);
@@ -1324,12 +1324,12 @@ public class Pack {
                         isStar = true;
                     }
                     next = safeGet(format);
-                } else if (Character.isDigit(next)) {
+                } else if (Character.isDigit((char)(next & 0xFF))) {
                     occurrences = 0;
                     do {
-                        occurrences = occurrences * 10 + Character.digit(next, 10);
+                        occurrences = occurrences * 10 + Character.digit((char)(next & 0xFF), 10);
                         next = safeGet(format);
-                    } while (next != 0 && Character.isDigit(next));
+                    } while (next != 0 && Character.isDigit((char)(next & 0xFF)));
                 }
             }
 
