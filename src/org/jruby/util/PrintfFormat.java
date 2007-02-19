@@ -18,6 +18,7 @@
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Derek Berner <derek.berner@state.nm.us>
+ * Copyright (C) 2007 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -33,11 +34,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
+import java.math.BigInteger;
 import java.text.DecimalFormatSymbols;
 import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Vector;
 
+import org.jruby.RubyBignum;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyNumeric;
+import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -184,10 +190,25 @@ public class PrintfFormat {
                     i++;
                 }
 
-                if (o[i] == null) {
+                if (c == 'p' || c == 'P') {
+                    sb.append(cs.internalsprintf(ro[i].callMethod(ro[i].getRuntime().getCurrentContext(),"inspect").objAsString().toString()));
+                } else if (c == 'c' || c == 'C') {
+                    sb.append(cs.internalsprintf(RubyNumeric.num2long(ro[i].convertToInteger())));
+                } else if (c == 'b' || c == 'B') {
+                    if(ro[i] instanceof RubyString) {
+                        sb.append(cs.internalsprintf(RubyNumeric.num2long(RubyNumeric.str2inum(ro[i].getRuntime(),(RubyString)ro[i],0,true))));
+                    } else {
+                        IRubyObject num = ro[i].convertToInteger();
+                        if(num instanceof RubyFixnum) {
+                            sb.append(cs.internalsprintf(RubyNumeric.fix2long(num)));
+                        } else if(num instanceof RubyBignum) {
+                            sb.append(cs.internalsprintf(((RubyBignum)num).getValue()));
+                        } else {
+                            sb.append(cs.internalsprintf(RubyNumeric.num2long(num)));
+                        }
+                    }
+                } else if (o[i] == null) {
                     // Nil is printed as nothing
-                } else if (c == 'p') {
-                    sb.append(ro[i].callMethod(ro[i].getRuntime().getCurrentContext(),"inspect"));
                 } else if (o[i] instanceof Byte) {
                     sb.append(cs.internalsprintf(((Byte) o[i]).byteValue()));
                 } else if (o[i] instanceof Short) {
@@ -649,6 +670,44 @@ public class PrintfFormat {
             return s2;
         }
 
+        String internalsprintf(BigInteger s) throws IllegalArgumentException {
+            String s2 = "";
+            switch (conversionCharacter) {
+                case 'd' :
+                case 'i' :
+                    s2 = printDFormat(s);
+                    break;
+                case 'x' :
+                case 'X' :
+                    s2 = printXFormat(s);
+                    break;
+                case 'o' :
+                    s2 = printOFormat(s);
+                    break;
+                case 's' :
+                case 'S' :
+                	s2 = printSFormat(s.toString());
+                    break;
+                case 'b' :
+                    s2 = printBFormat(s);
+                    break;
+                case 'f' :
+                    s2 = printFFormat(s);
+                    break;
+                case 'E' :
+                case 'e' :
+                    s2 = printEFormat(s);
+                    break;
+                case 'G' :
+                case 'g' :
+                    s2 = printGFormat(s);
+                    break;
+                default :
+                    throw new IllegalArgumentException("Cannot format a BigInteger with a format using a " + conversionCharacter + " conversion character.");
+            }
+            return s2;
+        }
+
         String internalsprintf(double s) throws IllegalArgumentException {
             String s2 = "";
             switch (conversionCharacter) {
@@ -688,6 +747,8 @@ public class PrintfFormat {
             switch (conversionCharacter) {
                 case 's':
                 case 'S':
+                case 'p':
+                case 'P':
                     s2 = printSFormat(s);
                     break;
                 case 'f': 
@@ -1454,6 +1515,18 @@ public class PrintfFormat {
             return ca5;
         }
 
+        private String printFFormat(BigInteger x) {
+            return printFFormat(x.doubleValue());
+        }
+
+        private String printEFormat(BigInteger x) {
+            return printEFormat(x.doubleValue());
+        }
+
+        private String printGFormat(BigInteger x) {
+            return printGFormat(x.doubleValue());
+        }
+
         private String printFFormat(double x) {
             return fFormatString(x);
         }
@@ -1590,13 +1663,20 @@ public class PrintfFormat {
             return printDFormat(Long.toString(x));
         }
 
+        private String printDFormat(BigInteger x) {
+            return printDFormat(x.toString());
+        }
+
         private String printBFormat(long x) {
-            StringBuffer sb = new StringBuffer(100);
-            if (alternateForm) {
-                sb.append("0b");
-            }
-            sb.append(Long.toBinaryString(x));
-            return sb.toString();
+            return printBFormat(Long.toString(x,2));
+        }
+
+        private String printBFormat(BigInteger x) {
+            return printBFormat(x.toString(2));
+        }
+
+        private String printBFormat(String sx) {
+            return printAltFormat(sx,"0b",'B');
         }
 
         private String printDFormat(int x) {
@@ -1754,6 +1834,10 @@ public class PrintfFormat {
             return printXFormat(sx);
         }
 
+        private String printXFormat(BigInteger x) {
+            return printXFormat(x.toString(16));
+        }
+
         private String printXFormat(long x) {
             String sx = null;
             if (x == Long.MIN_VALUE) {
@@ -1899,13 +1983,24 @@ public class PrintfFormat {
         }
 
         private String printXFormat(String sx) {
+            return printAltFormat(sx,"0x",'X');
+        }
+
+        private String printAltFormat(String sx, String alt, char bigChar) {
             int nLeadingZeros = 0;
             int nBlanks = 0;
+            boolean neg = sx.charAt(0) == '-';
             if (sx.equals("0") && precisionSet && precision == 0) {
                 sx = "";
             }
-            if (precisionSet) {
-                nLeadingZeros = precision - sx.length();
+            if (!neg) {
+                if (precisionSet && sx.length() < precision) {
+                    nLeadingZeros = precision - sx.length();
+                }
+            } else {
+                if (precisionSet && sx.length() - 1 < precision) {
+                    nLeadingZeros = precision - sx.length() + 1;
+                }
             }
             if (nLeadingZeros < 0) {
                 nLeadingZeros = 0;
@@ -1913,7 +2008,7 @@ public class PrintfFormat {
             if (fieldWidthSet) {
                 nBlanks = fieldWidth - nLeadingZeros - sx.length();
                 if (alternateForm) {
-                    nBlanks = nBlanks - 2;
+                    nBlanks = nBlanks - alt.length();
                 }
             }
             if (nBlanks < 0) {
@@ -1923,21 +2018,38 @@ public class PrintfFormat {
             if (alternateForm) {
                 n += 2;
             }
+            if (leadingSign) {
+                n++;
+            } else if (leadingSpace) {
+                n++;
+            }
             n += nLeadingZeros;
             n += sx.length();
             n += nBlanks;
+            if(neg) {
+                n--;
+            }
             char[] ca = new char[n];
             int i = 0;
             if (leftJustify) {
                 if (alternateForm) {
-                    ca[i++] = '0';
-                    ca[i++] = 'x';
+                    for(int k=0;k<alt.length();k++) {
+                        ca[i++] = alt.charAt(k);
+                    }
                 }
+                if (neg) {
+                    ca[i++] = '-';
+                } else if (leadingSign) {
+                    ca[i++] = '+';
+                } else if (leadingSpace) {
+                    ca[i++] = ' ';
+                }
+                int jFirst = neg ? 1 : 0;
                 for (int j = 0; j < nLeadingZeros; j++, i++) {
                     ca[i] = '0';
                 }
                 char[] csx = sx.toCharArray();
-                for (int j = 0; j < csx.length; j++, i++) {
+                for (int j = jFirst; j < csx.length; j++, i++) {
                     ca[i] = csx[j];
                 }
                 for (int j = 0; j < nBlanks; j++, i++) {
@@ -1950,8 +2062,16 @@ public class PrintfFormat {
                     }
                 }
                 if (alternateForm) {
-                    ca[i++] = '0';
-                    ca[i++] = 'x';
+                    for(int k=0;k<alt.length();k++) {
+                        ca[i++] = alt.charAt(k);
+                    }
+                }
+                if (neg) {
+                    ca[i++] = '-';
+                } else if (leadingSign) {
+                    ca[i++] = '+';
+                } else if (leadingSpace) {
+                    ca[i++] = ' ';
                 }
                 if (leadingZeros) {
                     for (int j = 0; j < nBlanks; j++, i++) {
@@ -1962,12 +2082,13 @@ public class PrintfFormat {
                     ca[i] = '0';
                 }
                 char[] csx = sx.toCharArray();
-                for (int j = 0; j < csx.length; j++, i++) {
+                int jFirst = neg ? 1 : 0;
+                for (int j = jFirst; j < csx.length; j++, i++) {
                     ca[i] = csx[j];
                 }
             }
             String caReturn = new String(ca);
-            if (conversionCharacter == 'X') {
+            if (conversionCharacter == bigChar) {
                 caReturn = caReturn.toUpperCase();
             }
             return caReturn;
@@ -2000,6 +2121,10 @@ public class PrintfFormat {
                 sx = Integer.toString(x, 8);
             }
             return printOFormat(sx);
+        }
+
+        private String printOFormat(BigInteger x) {
+            return printOFormat(x.toString(8));
         }
 
         private String printOFormat(long x) {
