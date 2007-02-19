@@ -203,19 +203,18 @@ end
 # This class enables the syntax arr = MyClass[n][n]...[n].new
 class ArrayJavaProxyCreator
   def initialize(java_class,*args)
-    unless args.length > 0 # shouldn't happen
-      raise ArgumentError,"empty array dimensions specified"    
-    end
     @java_class = java_class
     @dimensions = []
-    args.each do |arg|
-      unless arg.kind_of?(Fixnum)
-        raise ArgumentError,"array dimension length must be Fixnum"    
+    extract_dimensions(args)
       end
-      @dimensions << arg
-    end
-  end
+  
   def [](*args)
+    extract_dimensions(args)
+    self
+    end
+  
+  private
+  def extract_dimensions(args)
     unless args.length > 0
       raise ArgumentError,"empty array dimensions specified"    
     end
@@ -224,9 +223,10 @@ class ArrayJavaProxyCreator
         raise ArgumentError,"array dimension length must be Fixnum"    
       end
       @dimensions << arg
+    end  
     end
-    self
-  end
+  public
+  
   def new(fill_value=nil)
     array = @java_class.new_array(@dimensions)
     array_class = @java_class.array_class
@@ -304,6 +304,12 @@ class ArrayJavaProxy < JavaProxy
       block.call(self[index])
     end
   end
+  
+  def to_a
+    JavaArrayUtilities.java_to_ruby(self)
+  end
+
+  alias_method :to_ary, :to_a
 
 end
 
@@ -861,18 +867,16 @@ module JavaArrayUtilities
   
 private
   def get_class(class_name)
-    cls = @class_index[class_name.to_sym].proxy
-    cls ||= JavaUtilities.get_proxy_class(class_name.to_s)
-    cls
+    ref =  @class_index[class_name.to_sym]
+    ref ? ref.proxy : JavaUtilities.get_proxy_class(class_name.to_s)
   end
 public
   
   def ruby_to_java(*args,&block)
-    puts 'block = ' + block.to_s
     return JObject.proxy[].new(0) if args.length == 0
     ruby_array = args[0]
     unless ruby_array.kind_of?(::Array) || ruby_array.nil?
-      raise ArgumentError,"invalid arg[0] passed to java_array (#{args[0]})"    
+      raise ArgumentError,"invalid arg[0] passed to to_java (#{args[0]})"    
     end
     dims = nil
     fill_value = nil
@@ -888,7 +892,7 @@ public
       elsif arg.kind_of?(String) || arg.kind_of?(Symbol)
         cls = get_class(arg)
         unless cls
-          raise ArgumentError,"invalid class name (#{arg}) specified for java_array"      
+          raise ArgumentError,"invalid class name (#{arg}) specified for to_java"      
         end
         cls_name = arg
         index += 1
@@ -932,7 +936,7 @@ public
       dims = dimensions(ruby_array) if ruby_array
     end
     dims = [0] unless dims
-    java_array = cls[].new(dims)
+    java_array = ArrayJavaProxyCreator.new(cls.java_class,*dims).new
     if ruby_array
       copy_ruby_to_java(dims,ruby_array,java_array,converter,fill_value)          
     elsif fill_value
@@ -982,9 +986,37 @@ private
     end
     java_array
   end
+public
+
+  def java_to_ruby(java_array)
+    unless java_array.kind_of?(ArrayJavaProxy)
+      raise ArgumentError,"not a Java array: #{java_array}"
+    end
+    length = java_array.length
+    ruby_array = Array.new(length)
+    if length > 0
+      if java_array[0].kind_of?ArrayJavaProxy
+        length.times do |i|
+          ruby_array[i] = java_to_ruby(java_array[i])      
+        end
+      else
+        length.times do |i|
+          ruby_array[i] = java_array[i];      
+        end
+      end
+    end
+    ruby_array
+  end
 
  end #self
 end #JavaArrayUtilities
+
+# enable :to_java for arrays
+class Array
+  def to_java(*args,&block)
+    JavaArrayUtilities.ruby_to_java(*(args.unshift(self)),&block)
+  end
+end
 
 # Extensions to the standard Module package.
 
@@ -1068,7 +1100,6 @@ class Object
   end
 end
 
-
 class JavaInterfaceExtender
   def initialize(java_class_name, &block)
     @java_class = Java::JavaClass.for_name(java_class_name)
@@ -1096,15 +1127,6 @@ module Java
      end
    end
    
-   # these are temporary; I assume this will be enabled by 
-   # default once tested
-   def enable_extended_array_support
-     JavaArrayUtilities.enable_extended_array_support   
- end
-
-   def disable_extended_array_support
-     JavaArrayUtilities.disable_extended_array_support   
-   end
  end
 
  class Package
