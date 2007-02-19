@@ -81,6 +81,7 @@ public class RubyString extends RubyObject {
 
     private ByteList value;
     private int hash;
+    private RubyFixnum r_hash;
     private boolean validHash = false;
     private String stringValue;
 
@@ -321,12 +322,14 @@ public class RubyString extends RubyObject {
     }
 
     public RubyFixnum hash() {
-        return getRuntime().newFixnum(hashCode());
+        hashCode();
+        return r_hash;
     }
 
     public int hashCode() {
         if(!validHash) {
             hash = value.hashCode();
+            r_hash = getRuntime().newFixnum(hash);
             validHash = true;
         }
         return hash;
