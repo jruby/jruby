@@ -124,21 +124,20 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
     }
     
     public ByteList getsEntireStream() throws IOException {
-        ByteList result = new ByteList();
         int c;
 
         checkReopen();
         
-        while ((c = read()) != -1) {
-            result.append(c);
-        }
-        
+        int left = (int)(file.length() - file.getFilePointer());
+        byte[] buf = new byte[left];
+        file.readFully(buf);
+
         // We are already at EOF
-        if (result.length() == 0) {
+        if (buf.length == 0) {
             return null;
         }
         
-        return result;
+        return new ByteList(buf,false);
     }
 
 
@@ -275,6 +274,29 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
     public void sync() throws IOException {
         file.getFD().sync();
         // RandomAccessFile is always synced?
+    }
+
+    public ByteList sysread(int number) throws IOException, BadDescriptorException {
+        if (!isOpen()) {
+            throw new IOException("File not open");
+        }
+        checkReadable();
+        byte[] buf = new byte[number];
+        int read = 0;
+        int n;
+        while(read < number) {
+            n = file.read(buf,read,number-read);
+            if(n == -1) {
+                if(read == 0) {
+                    throw new java.io.EOFException();
+                } else {
+                    break;
+                }
+            }
+            read += n;
+        }
+        
+        return new ByteList(buf,0,read,false);
     }
     
     /**

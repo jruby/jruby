@@ -58,7 +58,7 @@ public class IOHandlerSocket extends IOHandlerUnseekable {
         len = len - 1 < available ? len - 1 : available;
         ByteList buf = new ByteList(len + 1);
         buf.append(c);
-        sysread(buf, len);
+        sysread(buf, 1, len);
         return buf;
     }
 }

@@ -261,6 +261,43 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
             ((FileOutputStream) output).getFD().sync();
         }
     }
+
+    protected void sysread(ByteList buf, int off, int length) throws IOException {
+        int read = 0;
+        int n;
+        while(read < length) {
+            n = input.read(buf.bytes,off+read,length-read);
+            if(n == -1) {
+                if(read == 0) {
+                    throw new java.io.EOFException();
+                } else {
+                    break;
+                }
+            }
+            read += n;
+        }
+        buf.realSize += read;
+    }    
+
+    public ByteList sysread(int number) throws IOException, BadDescriptorException {
+        checkReadable();
+        byte[] buf = new byte[number];
+        int read = 0;
+        int n;
+        while(read < number) {
+            n = input.read(buf,read,number-read);
+            if(n == -1) {
+                if(read == 0) {
+                    throw new java.io.EOFException();
+                } else {
+                    break;
+                }
+            }
+            read += n;
+        }
+        
+        return new ByteList(buf, 0, read, false);
+    }
     
     /**
      * @see org.jruby.util.IOHandler#sysread()

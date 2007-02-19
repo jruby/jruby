@@ -178,6 +178,26 @@ public class IOHandlerProcess extends IOHandlerJavaIO {
         return input.read();
     }
 
+    public ByteList sysread(int number) throws IOException, BadDescriptorException {
+        checkReadable();
+        byte[] buf = new byte[number];
+        int read = 0;
+        int n;
+        while(read < number) {
+            n = input.read(buf,read,number-read);
+            if(n == -1) {
+                if(read == 0) {
+                    throw new java.io.EOFException();
+                } else {
+                    break;
+                }
+            }
+            read += n;
+        }
+        
+        return new ByteList(buf, 0, read, false);
+    }
+
     /**
      * @throws IOException 
      * @throws BadDescriptorException 
