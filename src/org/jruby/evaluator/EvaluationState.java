@@ -13,6 +13,7 @@
  * Copyright (C) 2006 Charles Oliver Nutter <headius@headius.com>
  * Copytight (C) 2006-2007 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2007 Miguel Covarrubias <mlcovarrubias@gmail.com>
+ * Copyright (C) 2007 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"), or
@@ -43,6 +44,7 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
+import org.jruby.RubyObject;
 import org.jruby.RubyProc;
 import org.jruby.RubyRange;
 import org.jruby.RubyRegexp;
@@ -432,7 +434,14 @@ public class EvaluationState {
             case NodeTypes.CLASSNODE: {
                 ClassNode iVisited = (ClassNode) node;
                 Node superNode = iVisited.getSuperNode();
-                RubyClass superClass = superNode == null ? null : (RubyClass) evalInternal(context, superNode, self, aBlock);
+                RubyClass superClass = null;
+                if(superNode != null) {
+                    IRubyObject _super = evalInternal(context, superNode, self, aBlock);
+                    if(!(_super instanceof RubyClass)) {
+                        throw runtime.newTypeError("superclass must be a Class (" + RubyObject.trueFalseNil(_super) + ") given");
+                    }
+                    superClass = superNode == null ? null : (RubyClass)_super;
+                }
                 Node classNameNode = iVisited.getCPath();
                 String name = ((INameNode) classNameNode).getName();
                 RubyModule enclosingClass = getEnclosingModule(context, classNameNode, self, aBlock);

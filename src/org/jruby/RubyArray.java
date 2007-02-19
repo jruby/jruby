@@ -634,7 +634,7 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public final IRubyObject entry(long offset) {
-        return elt_f((offset < 0 ) ? offset + realLength : offset);
+        return (offset < 0 ) ? elt(offset + realLength) : elt_f(offset);
     }
 
 
@@ -642,7 +642,7 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public final IRubyObject entry(int offset) {
-        return elt((offset < 0 ) ? offset + realLength : offset);
+        return (offset < 0 ) ? elt(offset + realLength) : elt_f(offset);
     }
 
     /** rb_ary_fetch
