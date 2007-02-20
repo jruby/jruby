@@ -100,6 +100,7 @@ import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.Token;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
 
 /** 
@@ -212,7 +213,7 @@ public class ParserSupport {
         } else if (id.equals("false")) {
         	return new FalseNode(position);
         } else if (id.equals("__FILE__")) {
-            return new StrNode(position, position.getFile());
+            return new StrNode(position, ByteList.create(position.getFile()));
         } else if (id.equals("__LINE__")) {
             return new FixnumNode(position, position.getEndLine()+1);
         } 
@@ -245,7 +246,7 @@ public class ParserSupport {
                 if (isInDef() || isInSingle()) {
                     throw new SyntaxException(lhs.getPosition(), "dynamic constant assignment");
                 }
-                return new ConstDeclNode(lhs.getPosition(), null, id, value);
+                return new ConstDeclNode(lhs.getPosition(), id, null, value);
             case IdUtil.INSTANCE_VAR:
                 return new InstAsgnNode(lhs.getPosition(), id, value);
             case IdUtil.CLASS_VAR:
@@ -345,7 +346,7 @@ public class ParserSupport {
     public Node getOperatorCallNode(Node firstNode, String operator, Node secondNode) {
         checkExpression(firstNode);
         checkExpression(secondNode);
-
+        
         return new CallNode(union(firstNode.getPosition(), secondNode.getPosition()), firstNode, operator, new ArrayNode(secondNode.getPosition()).add(secondNode));
     }
 
@@ -617,7 +618,7 @@ public class ParserSupport {
         } else if (node instanceof StrNode) {
             ISourcePosition position = node.getPosition();
 
-            return new MatchNode(position, new RegexpNode(position, ((StrNode) node).getValue(), 0));
+            return new MatchNode(position, new RegexpNode(position, (ByteList) ((StrNode) node).getValue().clone(), 0));
         } 
 
         return node;
@@ -783,8 +784,7 @@ public class ParserSupport {
 
         if (tail instanceof StrNode) {
             if (head instanceof StrNode) {
-        	    return new StrNode(union(head, tail), 
-                       ((StrNode) head).getValue() + ((StrNode) tail).getValue());
+        	    return new StrNode(union(head, tail), (StrNode) head, (StrNode) tail);
             } 
             head.setPosition(union(head, tail));
             return ((ListNode) head).add(tail);
@@ -802,7 +802,7 @@ public class ParserSupport {
         if (head instanceof StrNode) {
         	
             //Do not add an empty string node
-            if(((StrNode) head).getValue().equals("")) {
+            if(((StrNode) head).getValue().length() == 0) {
                 head = new DStrNode(head.getPosition());
             } else {
                 // All first element StrNode's do not include syntacical sugar.

@@ -152,6 +152,7 @@ import org.jruby.runtime.ForBlock;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 import org.jruby.util.collections.SinglyLinkedList;
 
@@ -512,22 +513,23 @@ public class EvaluationState {
             }
             case NodeTypes.CONSTDECLNODE: {
                 ConstDeclNode iVisited = (ConstDeclNode) node;
+                Node constNode = iVisited.getConstNode();
     
                 IRubyObject result = evalInternal(context, iVisited.getValueNode(), self, aBlock);
                 IRubyObject module;
-    
-                if (iVisited.getPathNode() != null) {
-                    module = evalInternal(context, iVisited.getPathNode(), self, aBlock);
-                } else {
-                    
-    
+
+                if (constNode == null) {
                     // FIXME: why do we check RubyClass and then use CRef?
                     if (context.getRubyClass() == null) {
                         // TODO: wire into new exception handling mechanism
                         throw runtime.newTypeError("no class/module to define constant");
                     }
                     module = (RubyModule) context.peekCRef().getValue();
-                }
+                } else if (constNode instanceof Colon2Node) {
+                    module = evalInternal(context, ((Colon2Node) iVisited.getConstNode()).getLeftNode(), self, aBlock);
+                } else { // Colon3
+                    module = runtime.getObject();
+                } 
     
                 // FIXME: shouldn't we use the result of this set in setResult?
                 ((RubyModule) module).setConstant(iVisited.getName(), result);
@@ -661,11 +663,14 @@ public class EvaluationState {
             case NodeTypes.DREGEXPNODE: {
                 DRegexpNode iVisited = (DRegexpNode) node;
     
-                StringBuffer sb = new StringBuffer();
+                RubyString string = runtime.newString(new ByteList());
                 for (Iterator iterator = iVisited.iterator(); iterator.hasNext();) {
                     Node iterNode = (Node) iterator.next();
-    
-                    sb.append(evalInternal(context, iterNode, self, aBlock).objAsString().toString());
+                    if (iterNode instanceof StrNode) {
+                        string.getByteList().append(((StrNode) iterNode).getValue());
+                    } else {
+                        string.append(evalInternal(context, iterNode, self, aBlock));
+                    }
                 }
     
                 String lang = null;
@@ -678,31 +683,37 @@ public class EvaluationState {
                     lang = "u";
                 }
 
-                return RubyRegexp.newRegexp(runtime, sb.toString(), iVisited.getOptions(), lang);
+                return RubyRegexp.newRegexp(runtime, string.toString(), iVisited.getOptions(), lang);
             }
             case NodeTypes.DSTRNODE: {
                 DStrNode iVisited = (DStrNode) node;
     
-                StringBuffer sb = new StringBuffer();
+                RubyString string = runtime.newString(new ByteList());
                 for (Iterator iterator = iVisited.iterator(); iterator.hasNext();) {
                     Node iterNode = (Node) iterator.next();
-    
-                    sb.append(evalInternal(context, iterNode, self, aBlock).objAsString().toString());
+                    if (iterNode instanceof StrNode) {
+                        string.getByteList().append(((StrNode) iterNode).getValue());
+                    } else {
+                        string.append(evalInternal(context, iterNode, self, aBlock));
+                    }
                 }
     
-                return runtime.newString(sb.toString());
+                return string;
             }
             case NodeTypes.DSYMBOLNODE: {
                 DSymbolNode iVisited = (DSymbolNode) node;
     
-                StringBuffer sb = new StringBuffer();
-                for (Iterator iterator = iVisited.getNode().iterator(); iterator.hasNext();) {
+                RubyString string = runtime.newString(new ByteList());
+                for (Iterator iterator = iVisited.iterator(); iterator.hasNext();) {
                     Node iterNode = (Node) iterator.next();
-    
-                    sb.append(evalInternal(context, iterNode, self, aBlock).toString());
+                    if (iterNode instanceof StrNode) {
+                        string.getByteList().append(((StrNode) iterNode).getValue());
+                    } else {
+                        string.append(evalInternal(context, iterNode, self, aBlock));
+                    }
                 }
     
-                return runtime.newSymbol(sb.toString());
+                return runtime.newSymbol(string.toString());
             }
             case NodeTypes.DVARNODE: {
                 DVarNode iVisited = (DVarNode) node;
@@ -716,14 +727,17 @@ public class EvaluationState {
             case NodeTypes.DXSTRNODE: {
                 DXStrNode iVisited = (DXStrNode) node;
     
-                StringBuffer sb = new StringBuffer();
+                RubyString string = runtime.newString(new ByteList());
                 for (Iterator iterator = iVisited.iterator(); iterator.hasNext();) {
                     Node iterNode = (Node) iterator.next();
-    
-                    sb.append(evalInternal(context, iterNode, self, aBlock).toString());
+                    if (iterNode instanceof StrNode) {
+                        string.getByteList().append(((StrNode) iterNode).getValue());
+                    } else {
+                        string.append(evalInternal(context, iterNode, self, aBlock));
+                    }
                 }
     
-                return self.callMethod(context, "`", runtime.newString(sb.toString()));
+                return self.callMethod(context, "`", string);
             }
             case NodeTypes.ENSURENODE: {
                 EnsureNode iVisited = (EnsureNode) node;
@@ -747,8 +761,7 @@ public class EvaluationState {
             case NodeTypes.EVSTRNODE: {
                 EvStrNode iVisited = (EvStrNode) node;
     
-                node = iVisited.getBody();
-                continue bigloop;
+                return evalInternal(context, iVisited.getBody(), self, aBlock).objAsString();
             }
             case NodeTypes.FALSENODE: {
                 context.pollThreadEvents();
@@ -1354,7 +1367,7 @@ public class EvaluationState {
                 ////                break;
             case NodeTypes.STRNODE: {
                 StrNode iVisited = (StrNode) node;
-                return runtime.newString(iVisited.getValue());
+                return runtime.newString((ByteList) iVisited.getValue().clone());
             }
             case NodeTypes.SUPERNODE: {
                 SuperNode iVisited = (SuperNode) node;
@@ -1487,7 +1500,7 @@ public class EvaluationState {
             }
             case NodeTypes.XSTRNODE: {
                 XStrNode iVisited = (XStrNode) node;
-                return self.callMethod(context, "`", runtime.newString(iVisited.getValue()));
+                return self.callMethod(context, "`", runtime.newString((ByteList) iVisited.getValue().clone()));
             }
             case NodeTypes.YIELDNODE: {
                 YieldNode iVisited = (YieldNode) node;
@@ -1710,11 +1723,9 @@ public class EvaluationState {
         
         return null;
     }
-
+    
     private static IRubyObject aryToAry(IRubyObject value) {
-        if (value instanceof RubyArray) {
-            return value;
-        }
+        if (value instanceof RubyArray) return value;
 
         if (value.respondsTo("to_ary")) {
             return value.convertToType("Array", "to_ary", false);

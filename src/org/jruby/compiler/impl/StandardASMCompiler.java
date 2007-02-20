@@ -64,6 +64,7 @@ import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.collections.SinglyLinkedList;
@@ -590,11 +591,11 @@ public class StandardASMCompiler implements Compiler {
         mv.visitMethodInsn(Opcodes.INVOKESTATIC,cg.p(org.jruby.RubyBignum.class) , "newBignum", cg.sig(org.jruby.RubyBignum.class,cg.params(Ruby.class,String.class)));
     }
     
-    public void createNewString(String value) {
+    public void createNewString(ByteList value) {
         MethodVisitor mv = getMethodVisitor();
         
         loadRuntime();
-        mv.visitLdcInsn(value);
+        mv.visitLdcInsn(value.toString());
         
         invokeIRuby("newString", cg.sig(RubyString.class, cg.params(String.class)));
     }

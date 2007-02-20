@@ -346,7 +346,7 @@ public class StandardYARVCompiler implements NodeCompiler {
                 break compileLoop;
             case NodeTypes.STRNODE:
                 if(!poped) {
-                    ADD_INSN1(ret, nd_line(node), YARVInstructions.PUTSTRING, ((StrNode)node).getValue());
+                    ADD_INSN1(ret, nd_line(node), YARVInstructions.PUTSTRING, ((StrNode)node).getValue().toString());
                 }
                 break compileLoop;
             case NodeTypes.CONSTNODE:

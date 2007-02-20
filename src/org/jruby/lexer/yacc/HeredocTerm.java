@@ -29,6 +29,7 @@ package org.jruby.lexer.yacc;
 
 import org.jruby.ast.StrNode;
 import org.jruby.parser.Tokens;
+import org.jruby.util.ByteList;
 
 
 public class HeredocTerm extends StrTerm {
@@ -45,7 +46,7 @@ public class HeredocTerm extends StrTerm {
     public int parseString(RubyYaccLexer lexer, LexerSource src) throws java.io.IOException {
         char c;
         boolean indent = (func & RubyYaccLexer.STR_FUNC_INDENT) != 0;
-        StringBuffer str = new StringBuffer();
+        ByteList str = new ByteList();
 
         if ((c = src.read()) == RubyYaccLexer.EOF) {
             throw new SyntaxException(src.getPosition(), "can't find string \"" + eos + "\" anywhere before EOF");
@@ -76,15 +77,15 @@ public class HeredocTerm extends StrTerm {
              */
             src.unread(c);
             do {
-                str.append(src.readLine());
-                str.append("\n");
+                str.append(src.readLineBytes());
+                str.append('\n');
 
                 if (src.peek('\0')) {
                     throw new SyntaxException(src.getPosition(), "can't find string \"" + eos + "\" anywhere before EOF");
                 }
             } while (!src.matchString(eos + '\n', indent));
         } else {
-            StringBuffer buffer = new StringBuffer(100);
+            ByteList buffer = new ByteList();
             if (c == '#') {
                 switch (c = src.read()) {
                 case '$':
@@ -106,7 +107,7 @@ public class HeredocTerm extends StrTerm {
                     throw new SyntaxException(src.getPosition(), "can't find string \"" + eos + "\" anywhere before EOF");
                 }
                 if (c != '\n') {
-                    lexer.yaccValue = new StrNode(lexer.getPosition(), buffer.toString());
+                    lexer.yaccValue = new StrNode(lexer.getPosition(), buffer);
                     return Tokens.tSTRING_CONTENT;
                 }
                 buffer.append(src.read());
@@ -117,12 +118,12 @@ public class HeredocTerm extends StrTerm {
                 // lose a char during last EOF
                 src.unread(c);
             } while (!src.matchString(eos + '\n', indent));
-            str = new StringBuffer(buffer.toString());
+            str = buffer;
         }
 
         src.unreadMany(lastLine);
         lexer.setStrTerm(new StringTerm(-1, '\0', '\0'));
-        lexer.yaccValue = new StrNode(lexer.getPosition(), str.toString());
+        lexer.yaccValue = new StrNode(lexer.getPosition(), str);
         return Tokens.tSTRING_CONTENT;
     }
 }

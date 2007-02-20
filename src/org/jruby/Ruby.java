@@ -108,6 +108,7 @@ import org.jruby.runtime.builtin.meta.TimeMetaClass;
 import org.jruby.runtime.load.Library;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.util.BuiltinScript;
+import org.jruby.util.ByteList;
 import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.KCode;
 import org.jruby.util.NormalizedFile;
@@ -1378,6 +1379,10 @@ public final class Ruby {
 
     public RubyString newString(String string) {
         return RubyString.newString(this, string);
+    }
+    
+    public RubyString newString(ByteList byteList) {
+        return RubyString.newString(this, byteList);
     }
 
     public RubySymbol newSymbol(String string) {

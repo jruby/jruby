@@ -124,6 +124,7 @@ import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.Token;
 import org.jruby.runtime.Visibility;
 import org.jruby.util.IdUtil;
+import org.jruby.util.ByteList;
 
 public class DefaultRubyParser {
     private ParserSupport support;
@@ -558,17 +559,19 @@ mlhs_node     : variable {
                   if (support.isInDef() || support.isInSingle()) {
 		      yyerror("dynamic constant assignment");
 		  }
-			
-		  $$ = new ConstDeclNode(support.union($1, $3), $1, (String) $3.getValue(), null);
+
+		  ISourcePosition position = support.union($1, $3);
+
+                  $$ = new ConstDeclNode(position, null, new Colon2Node(position, $1, (String) $3.getValue()), null);
 	      }
  	      | tCOLON3 tCONSTANT {
                   if (support.isInDef() || support.isInSingle()) {
 		      yyerror("dynamic constant assignment");
 		  }
 
-		  /* ERROR:  VEry likely a big error. */
-                  $$ = new Colon3Node(support.union($1, $2), (String) $2.getValue());
-		  /* ruby $$ = NEW_CDECL(0, 0, NEW_COLON3($2)); */
+                  ISourcePosition position = support.union($1, $2);
+
+                  $$ = new ConstDeclNode(position, null, new Colon3Node(position, (String) $2.getValue()), null);
 	      }
               | backref {
 	          support.backrefAssignError($1);
@@ -594,16 +597,18 @@ lhs           : variable {
 		      yyerror("dynamic constant assignment");
 		  }
 			
-                  $$ = new ConstDeclNode(support.union($1, $3), $1, (String) $3.getValue(), null);
-	      }
+		  ISourcePosition position = support.union($1, $3);
+
+                  $$ = new ConstDeclNode(position, null, new Colon2Node(position, $1, (String) $3.getValue()), null);
+              }
 	      | tCOLON3 tCONSTANT {
                   if (support.isInDef() || support.isInSingle()) {
 		      yyerror("dynamic constant assignment");
 		  }
 
-		  /* ERROR:  VEry likely a big error. */
-                  $$ = new Colon3Node(support.union($1, $2), (String) $2.getValue());
-		  /* ruby $$ = NEW_CDECL(0, 0, NEW_COLON3($2)); */
+                  ISourcePosition position = support.union($1, $2);
+
+                  $$ = new ConstDeclNode(position, null, new Colon3Node(position, (String) $2.getValue()), null);
 	      }
               | backref {
                    support.backrefAssignError($1);
@@ -1350,15 +1355,14 @@ xstring	      : tXSTRING_BEG xstring_contents tSTRING_END {
 
 		  if ($2 == null) {
 		      $$ = new XStrNode(position, null);
-		  } else {
-		      if ($2 instanceof StrNode) {
-			  $$ = new XStrNode(position, $<StrNode>2.getValue());
-		      } else if ($2 instanceof DStrNode) {
-		          $2.setPosition(position);
-		          $$ = new DXStrNode(position).add($2);
-		      } else {
-			  $$ = new DXStrNode(position).add(new ArrayNode(position, $2));
-		      }
+		  } else if ($2 instanceof StrNode) {
+                      $$ = new XStrNode(position, (ByteList) $<StrNode>2.getValue().clone());
+		  } else if ($2 instanceof DStrNode) {
+                      $$ = new DXStrNode(position, $<DStrNode>2);
+
+                      $<Node>$.setPosition(position);
+                  } else {
+                      $$ = new DXStrNode(position).add($2);
 		  }
               }
 
@@ -1367,16 +1371,14 @@ regexp	      : tREGEXP_BEG xstring_contents tREGEXP_END {
 		  Node node = $2;
 
 		  if (node == null) {
-		      $$ = new RegexpNode(getPosition($1), "", options & ~ReOptions.RE_OPTION_ONCE);
+                      $$ = new RegexpNode(getPosition($1), ByteList.create(""), options & ~ReOptions.RE_OPTION_ONCE);
 		  } else if (node instanceof StrNode) {
-		      $$ = new RegexpNode($2.getPosition(), ((StrNode) node).getValue(), options & ~ReOptions.RE_OPTION_ONCE);
+                      $$ = new RegexpNode($2.getPosition(), (ByteList) ((StrNode) node).getValue().clone(), options & ~ReOptions.RE_OPTION_ONCE);
+		  } else if (node instanceof DStrNode) {
+                      $$ = new DRegexpNode(getPosition($1), (DStrNode) node, options, (options & ReOptions.RE_OPTION_ONCE) != 0);
 		  } else {
-		      if (node instanceof DStrNode == false) {
-			  node = new DStrNode(getPosition($1)).add(new ArrayNode(getPosition($1), node));
-		      } 
-
 		      $$ = new DRegexpNode(getPosition($1), options, (options & ReOptions.RE_OPTION_ONCE) != 0).add(node);
-		    }
+                  }
 	       }
 
 words	       : tWORDS_BEG ' ' tSTRING_END {
@@ -1415,7 +1417,7 @@ qword_list     : /* none */ {
 	       }
 
 string_contents: /* none */ {
-                   $$ = new StrNode($<Token>0.getPosition(), "");
+                   $$ = new StrNode($<Token>0.getPosition(), ByteList.create(""));
 	       }
 	       | string_contents string_content {
                    $$ = support.literal_concat(getPosition($1), $1, $2);
@@ -1482,19 +1484,19 @@ dsym	       : tSYMBEG xstring_contents tSTRING_END {
                    }
 
 		   if ($2 instanceof DStrNode) {
-		       node = (DStrNode) $2;
+		       $$ = new DSymbolNode(support.union($1, $3), $<DStrNode>2);
 		   } else {
                        ISourcePosition position = support.union($2, $3);
 
                        // We substract one since tsymbeg is longer than one
 		       // and we cannot union it directly so we assume quote
-                       // and subtract for it.
+                       // is one character long and subtract for it.
 		       position.adjustStartOffset(-1);
-		       node = new DStrNode(position);
-		       $2.setPosition(position);
-		       node.add(new ArrayNode(position, $2));
+                       $2.setPosition(position);
+		       
+		       $$ = new DSymbolNode(support.union($1, $3));
+                       $<DSymbolNode>$.add($2);
                    }
-		   $$ = new DSymbolNode(support.union($1, $3), node);
 	       }
 
 // Node:numeric - numeric value [!null]

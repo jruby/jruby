@@ -555,8 +555,8 @@ public class InstructionCompiler2 implements NodeVisitor {
         
         iVisited.getValueNode().accept(this);
         
-        if (iVisited.getPathNode() != null) {
-            iVisited.getPathNode().accept(this);
+        if (iVisited.getConstNode() != null) {
+            iVisited.getConstNode().accept(this);
         } else {
             getRubyClass();
             Label l1 = new Label();

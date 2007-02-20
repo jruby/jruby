@@ -28,8 +28,6 @@
  ***** END LICENSE BLOCK *****/
  package org.jruby.ast;
 
-import java.util.List;
-
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -37,28 +35,25 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /**
  * Node representing symbol in a form like ':"3jane"'.
  * 
- * @author enebo
  */
-public class DSymbolNode extends Node {
+public class DSymbolNode extends ListNode {
 	private static final long serialVersionUID = 3763093063878326071L;
 
-	private final DStrNode node;
-
+    /**
+     * For mutating from a DStr to a DSym (we just create a new one with same contents).
+     * 
+     * @param node to be copied
+     */
 	public DSymbolNode(ISourcePosition position, DStrNode node) {
 		super(position, NodeTypes.DSYMBOLNODE);
-		this.node = node;
+		addAll(node);
 	}
+    
+    public DSymbolNode(ISourcePosition position) {
+        super(position, NodeTypes.DSYMBOLNODE);
+    }
 
 	public Instruction accept(NodeVisitor visitor) {
 		return visitor.visitDSymbolNode(this);
 	}
-	
-	public DStrNode getNode() {
-		return node;
-	}
-    
-    public List childNodes() {
-        return createList(node);
-    }
-
 }

@@ -711,11 +711,10 @@ list = [
 nil,
 nil, #['NewlineNode',0,1,0,17],
   ['DXStrNode',0,0,0,16],
-    ['DStrNode',0,0,0,16],
-      ['StrNode',0,0,0,8],
-      ['EvStrNode',0,0,8,15],
-        nil, #['NewlineNode',0,0,10,16],
-          ['VCallNode',0,0,10,14]
+    ['StrNode',0,0,0,8],
+    ['EvStrNode',0,0,8,15],
+      nil, #['NewlineNode',0,0,10,16],
+        ['VCallNode',0,0,10,14]
 ]
 
 test_tree(list, <<'END', "simple string")
@@ -945,9 +944,7 @@ list = [
 nil,
 nil, #['NewlineNode',0,1,0,6],
   ['DSymbolNode',0,0,0,6],
-    ['DStrNode',0,0,1,6],
-      ['ArrayNode',0,0,1,6],
-        ['StrNode',0,0,1,6]
+     ['StrNode',0,0,1,6]
 ]
 test_tree(list, <<'EOF', "String-wrapped symbol")
 :"foo"

@@ -38,6 +38,7 @@ import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ByteList;
 
 /** Represents a simple regular expression literal.
  *
@@ -49,10 +50,10 @@ public class RegexpNode extends Node implements ILiteralNode {
     private static final RegexpTranslator translator = new RegexpTranslator();
     
     private Pattern pattern;
-    private final String value;
+    private final ByteList value;
     private final int options;
     
-    public RegexpNode(ISourcePosition position, String value, int options) {
+    public RegexpNode(ISourcePosition position, ByteList value, int options) {
         super(position, NodeTypes.REGEXPNODE);
         
         this.value = value;
@@ -73,15 +74,15 @@ public class RegexpNode extends Node implements ILiteralNode {
 
     /**
      * Gets the value.
-     * @return Returns a String
+     * @return Returns a ByteList
      */
-    public String getValue() {
+    public ByteList getValue() {
         return value;
     }
     
     public Pattern getPattern() throws java.util.regex.PatternSyntaxException {
         if (pattern == null) {
-            pattern = translator.translate(value, options, Pattern.UNIX_LINES);
+            pattern = translator.translate(value.toString(), options, Pattern.UNIX_LINES);
         }
         return pattern;
     }

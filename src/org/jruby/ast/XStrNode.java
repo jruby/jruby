@@ -36,6 +36,7 @@ import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ByteList;
 
 /**
  * Backtick string
@@ -45,11 +46,11 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class XStrNode extends Node implements ILiteralNode {
     static final long serialVersionUID = 1371310021447439748L;
 
-    private final String value;
+    private final ByteList value;
 
-    public XStrNode(ISourcePosition position, String value) {
+    public XStrNode(ISourcePosition position, ByteList value) {
         super(position, NodeTypes.XSTRNODE);
-        this.value = (value == null ? "" : value);
+        this.value = (value == null ? ByteList.create("") : value);
     }
 
     /**
@@ -64,7 +65,7 @@ public class XStrNode extends Node implements ILiteralNode {
      * Gets the value.
      * @return Returns a String
      */
-    public String getValue() {
+    public ByteList getValue() {
         return value;
     }
     

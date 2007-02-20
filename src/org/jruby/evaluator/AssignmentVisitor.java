@@ -39,6 +39,7 @@ import org.jruby.ast.AttrAssignNode;
 import org.jruby.ast.CallNode;
 import org.jruby.ast.ClassVarAsgnNode;
 import org.jruby.ast.ClassVarDeclNode;
+import org.jruby.ast.Colon2Node;
 import org.jruby.ast.ConstDeclNode;
 import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.GlobalAsgnNode;
@@ -111,11 +112,24 @@ public class AssignmentVisitor {
         }
         case NodeTypes.CONSTDECLNODE: {
             ConstDeclNode iVisited = (ConstDeclNode)node;
-            if (iVisited.getPathNode() == null) {
-                context.getRubyClass().defineConstant(iVisited.getName(), value);
-            } else {
-                ((RubyModule) EvaluationState.eval(context, iVisited.getPathNode(), self, block)).defineConstant(iVisited.getName(), value);
-            }
+            Node constNode = iVisited.getConstNode();
+
+            IRubyObject module;
+
+            if (constNode == null) {
+                // FIXME: why do we check RubyClass and then use CRef?
+                if (context.getRubyClass() == null) {
+                    // TODO: wire into new exception handling mechanism
+                    throw runtime.newTypeError("no class/module to define constant");
+                }
+                module = (RubyModule) context.peekCRef().getValue();
+            } else if (constNode instanceof Colon2Node) {
+                module = EvaluationState.eval(context, ((Colon2Node) iVisited.getConstNode()).getLeftNode(), self, block);
+            } else { // Colon3
+                module = runtime.getObject();
+            } 
+
+            ((RubyModule) module).setConstant(iVisited.getName(), value);
             break;
         }
         case NodeTypes.DASGNNODE: {

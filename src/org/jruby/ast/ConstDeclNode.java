@@ -46,12 +46,13 @@ public class ConstDeclNode extends AssignableNode implements INameNode {
     static final long serialVersionUID = -6260931203887158208L;
 
     private final String name;
-    private final Node pathNode;
+    private final INameNode constNode;
 
-    public ConstDeclNode(ISourcePosition position, Node pathNode, String name, Node valueNode) {
+    public ConstDeclNode(ISourcePosition position, String name, INameNode constNode, Node valueNode) {
         super(position, NodeTypes.CONSTDECLNODE);
-        this.name = name.intern();
-        this.pathNode = pathNode;
+        if (name != null) name.intern();
+        this.name = name;
+        this.constNode = constNode;
         setValueNode(valueNode);
     }
 
@@ -69,15 +70,15 @@ public class ConstDeclNode extends AssignableNode implements INameNode {
      * @return name
      */
     public String getName() {
-    	return name;
+    	return (name == null ? constNode.getName() : name);
     }
     
     /**
      * Get the path the name is associated with or null (in Foo::BAR it is Foo).
      * @return pathNode
      */
-    public Node getPathNode() {
-        return pathNode;
+    public Node getConstNode() {
+        return (Node) constNode;
     }
     
     public List childNodes() {

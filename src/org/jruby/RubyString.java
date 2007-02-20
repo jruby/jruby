@@ -1425,7 +1425,7 @@ public class RubyString extends RubyObject {
         }
     }
 
-    /* rb_str_to_str */
+    /* RubyString aka rb_string_value */
     public static RubyString stringValue(IRubyObject object) {
         return (RubyString) (object instanceof RubyString ? object :
             object.convertType(RubyString.class, "String", "to_str"));

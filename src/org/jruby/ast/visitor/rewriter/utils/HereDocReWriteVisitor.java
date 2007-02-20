@@ -39,7 +39,7 @@ public class HereDocReWriteVisitor extends ReWriteVisitor {
 	}
 	
 	public Instruction visitStrNode(StrNode iVisited) {
-		print(iVisited.getValue());
+		print(iVisited.getValue().toString());
 		return null;
 	}
 }

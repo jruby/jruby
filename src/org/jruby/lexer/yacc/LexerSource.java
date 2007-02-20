@@ -33,6 +33,8 @@ package org.jruby.lexer.yacc;
 import java.io.IOException;
 import java.io.Reader;
 
+import org.jruby.util.ByteList;
+
 /**
  * This class is what feeds the lexer.  It is primarily a wrapper around a
  * Reader that can unread() data back onto the source.  Originally, I thought
@@ -289,6 +291,15 @@ public class LexerSource {
             sb.append(c);
         }
         return sb.toString();
+    }
+    
+    public ByteList readLineBytes() throws IOException {
+        ByteList bytelist = new ByteList(80);
+
+        for (char c = read(); c != '\n' && c != '\0'; c = read()) {
+            bytelist.append(c);
+        }
+        return bytelist;
     }
 
     public void unreadMany(CharSequence buffer) {

@@ -37,6 +37,7 @@ import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ByteList;
 
 /** Representing a simple String literal.
  *
@@ -45,13 +46,21 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class StrNode extends Node implements ILiteralNode {
     static final long serialVersionUID = 4544779503072130759L;
 
-    private final String value;
+    private final ByteList value;
 
-    public StrNode(ISourcePosition position, String value) {
+    public StrNode(ISourcePosition position, ByteList value) {
         super(position, NodeTypes.STRNODE);
         this.value = value;
     }
 
+    public StrNode(ISourcePosition position, StrNode head, StrNode tail) {
+        super(position, NodeTypes.STRNODE);
+        
+        // ENEBO: In this case do we really need to clone?
+        this.value = (ByteList) head.getValue().clone();
+        
+        value.append(tail.getValue());
+    }
     /**
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
@@ -64,7 +73,7 @@ public class StrNode extends Node implements ILiteralNode {
      * Gets the value.
      * @return Returns a String
      */
-    public String getValue() {
+    public ByteList getValue() {
         return value;
     }
     

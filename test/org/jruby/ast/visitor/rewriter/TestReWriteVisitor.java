@@ -46,6 +46,7 @@ import org.jruby.ast.PostExeNode;
 import org.jruby.ast.RegexpNode;
 import org.jruby.ast.visitor.rewriter.ReWriteVisitor;
 import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.util.ByteList;
 
 public class TestReWriteVisitor extends TestCase {
 
@@ -60,7 +61,7 @@ public class TestReWriteVisitor extends TestCase {
 	}
 	
 	public void testVisitRegexpNode() {
-		RegexpNode n = new RegexpNode(new SourcePosition("", 0, 0, 2, 4), ".*", 0);
+		RegexpNode n = new RegexpNode(new SourcePosition("", 0, 0, 2, 4), ByteList.create(".*"), 0);
 		assertEquals("/.*/", visitNode(n));
 	}
 	

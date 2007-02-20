@@ -629,13 +629,7 @@ public class ReWriteVisitor implements NodeVisitor {
 		config.getPrintQuotesInString().set(false);
 		leaveCall();
 		for (Iterator it = iVisited.childNodes().iterator(); it.hasNext(); ) {
-			Node n = (Node) it.next();
-            
-			if (n instanceof ArrayNode) {
-				visitIter(((ArrayNode) n).childNodes().iterator());
-            } else {
-				visitNode(n);
-            }
+            visitNode((Node) it.next());
 		}
 		enterCall();
 		config.getPrintQuotesInString().revert();
@@ -647,7 +641,17 @@ public class ReWriteVisitor implements NodeVisitor {
 
 	public Instruction visitDSymbolNode(DSymbolNode iVisited) {
 		print(':');
-		visitNode(iVisited.getNode());
+        if (config.getPrintQuotesInString().isTrue()) print(getSeparatorForSym(iVisited));
+        
+        config.getPrintQuotesInString().set(false);
+        leaveCall();
+        for (Iterator it = iVisited.childNodes().iterator(); it.hasNext(); ) {
+            visitNode((Node) it.next());
+        }        
+        enterCall();
+        config.getPrintQuotesInString().revert();
+        
+        if (config.getPrintQuotesInString().isTrue()) print(getSeparatorForSym(iVisited));
 		return null;
 	}
 
@@ -1202,7 +1206,7 @@ public class ReWriteVisitor implements NodeVisitor {
 
 	public Instruction visitRegexpNode(RegexpNode iVisited) {
 		print(getFirstRegexpEnclosure(iVisited));
-		print(iVisited.getValue());
+		print(iVisited.getValue().toString());
 		print(getSecondRegexpEnclosure(iVisited));
 		printRegexpOptions(iVisited.getOptions());
 		return null;
@@ -1338,6 +1342,15 @@ public class ReWriteVisitor implements NodeVisitor {
             sourceRangeEquals(getStartOffset(n), getStartOffset(n) + 3, "<<-");
 	}
 
+    protected char getSeparatorForSym(Node n) {
+        // ENEBO: I added one since a sym will start with ':'...This seems like an incomplete assumption
+        if (config.getSource().length() >= (getStartOffset(n)+1) && 
+                config.getSource().charAt(getStartOffset(n)+1) == '\'') {
+            return '\'';
+        }
+        return '"';
+    }
+
 	protected char getSeparatorForStr(Node n) {
 		if (config.getSource().length() >= getStartOffset(n) && 
                 config.getSource().charAt(getStartOffset(n)) == '\'') {
@@ -1354,7 +1367,7 @@ public class ReWriteVisitor implements NodeVisitor {
 		// look for a here-document:
 		if (stringIsHereDocument(iVisited)) {
 			print("<<-EOF");
-			config.depositHereDocument(iVisited.getValue());
+			config.depositHereDocument(iVisited.getValue().toString());
 			return null;
 		}
 		
@@ -1368,15 +1381,15 @@ public class ReWriteVisitor implements NodeVisitor {
 		if (config.getPrintQuotesInString().isTrue()) print(getSeparatorForStr(iVisited));
 
 		if (inDRegxNode()) {
-			print(iVisited.getValue());
+			print(iVisited.getValue().toString());
         } else {
-			Matcher matcher = Pattern.compile("([\\\\\\n\\f\\r\\t\\\"\\\'])").matcher(iVisited.getValue());
+			Matcher matcher = Pattern.compile("([\\\\\\n\\f\\r\\t\\\"\\\'])").matcher(iVisited.getValue().toString());
 
 			if (matcher.find()) {
 				String unescChar = unescapeChar(matcher.group(1).charAt(0));
 				print(matcher.replaceAll("\\\\" + unescChar));
 			} else {
-				print(iVisited.getValue());
+				print(iVisited.getValue().toString());
 			}
 		}
 		if (config.getPrintQuotesInString().isTrue()) print(getSeparatorForStr(iVisited));
@@ -1543,7 +1556,7 @@ public class ReWriteVisitor implements NodeVisitor {
 
 	public Instruction visitXStrNode(XStrNode iVisited) {
 		print('`');
-		print(iVisited.getValue());
+		print(iVisited.getValue().toString());
 		print('`');
 		return null;
 	}

@@ -30,6 +30,7 @@ package org.jruby.compiler;
 
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
+import org.jruby.util.ByteList;
 
 /**
  * Compiler represents the current state of a compiler and all appropriate
@@ -129,7 +130,7 @@ public interface Compiler {
     /**
      * Generate a new "String" value.
      */
-    public void createNewString(String value);
+    public void createNewString(ByteList value);
 
     /**
      * Generate a new "Symbol" value (or fetch the existing one).

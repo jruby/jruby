@@ -29,12 +29,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
+import java.io.Serializable;
+
 
 /**
  *
  * @author headius
  */
-public class ByteList implements Comparable, CharSequence {
+public class ByteList implements Comparable, CharSequence, Serializable {
+    private static final long serialVersionUID = -1286166947275543731L;
+
     public static final byte[] NULL_ARRAY = new byte[0];
 
     public byte[] bytes;
@@ -305,7 +309,7 @@ public class ByteList implements Comparable, CharSequence {
         return new String(this.bytes,0,realSize);
     }
 
-    public static ByteList create(String s) {
+    public static ByteList create(CharSequence s) {
         return new ByteList(plain(s),false);
     }
 

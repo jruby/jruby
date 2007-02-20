@@ -31,6 +31,7 @@ import org.jruby.ast.RegexpNode;
 import org.jruby.ast.StrNode;
 import org.jruby.parser.ReOptions;
 import org.jruby.parser.Tokens;
+import org.jruby.util.ByteList;
 
 public class StringTerm extends StrTerm {
     /* bit flags to indicate the string type */
@@ -75,7 +76,7 @@ public class StringTerm extends StrTerm {
                 return ' ';
             }
             if ((func & RubyYaccLexer.STR_FUNC_REGEXP) != 0) {
-                lexer.setValue(new RegexpNode(src.getPosition(), "", parseRegexpFlags(src)));
+                lexer.setValue(new RegexpNode(src.getPosition(), ByteList.create(""), parseRegexpFlags(src)));
                 return Tokens.tREGEXP_END;
             }
             lexer.setValue(new Token("\"", lexer.getPosition()));
@@ -86,8 +87,8 @@ public class StringTerm extends StrTerm {
             lexer.getPosition();
             return ' ';
         }
-        StringBuffer buffer = lexer.getTokenBuffer();
-        buffer.setLength(0);
+        ByteList buffer = new ByteList();
+
         if ((func & RubyYaccLexer.STR_FUNC_EXPAND) != 0 && c == '#') {
             c = src.read();
             switch (c) {
@@ -107,7 +108,7 @@ public class StringTerm extends StrTerm {
             throw new SyntaxException(src.getPosition(), "unterminated string meets end of file");
         }
 
-        lexer.setValue(new StrNode(lexer.getPosition(), buffer.toString())); 
+        lexer.setValue(new StrNode(lexer.getPosition(), buffer)); 
         return Tokens.tSTRING_CONTENT;
     }
 
@@ -158,7 +159,7 @@ public class StringTerm extends StrTerm {
         return options | kcode;
     }
 
-    public char parseStringIntoBuffer(LexerSource src, StringBuffer buffer) throws java.io.IOException {
+    public char parseStringIntoBuffer(LexerSource src, ByteList buffer) throws java.io.IOException {
         char c;
 
         while ((c = src.read()) != RubyYaccLexer.EOF) {
@@ -230,7 +231,7 @@ public class StringTerm extends StrTerm {
     }
 
     // Was a goto in original ruby lexer
-    private void escaped(LexerSource src, StringBuffer buffer) throws java.io.IOException {
+    private void escaped(LexerSource src, ByteList buffer) throws java.io.IOException {
         char c;
 
         switch (c = src.read()) {
@@ -244,7 +245,7 @@ public class StringTerm extends StrTerm {
         }
     }
 
-    private void parseEscapeIntoBuffer(LexerSource src, StringBuffer buffer) throws java.io.IOException {
+    private void parseEscapeIntoBuffer(LexerSource src, ByteList buffer) throws java.io.IOException {
         char c;
 
         switch (c = src.read()) {
@@ -291,18 +292,18 @@ public class StringTerm extends StrTerm {
             if ((c = src.read()) != '-') {
                 throw new SyntaxException(src.getPosition(), "Invalid escape character syntax");
             }
-            buffer.append("\\M-");
+            buffer.append(new byte[] { '\\', 'M', '-' });
             escaped(src, buffer);
             break;
         case 'C':
             if ((c = src.read()) != '-') {
                 throw new SyntaxException(src.getPosition(), "Invalid escape character syntax");
             }
-            buffer.append("\\C-");
+            buffer.append(new byte[] { '\\', 'C', '-' });
             escaped(src, buffer);
             break;
         case 'c':
-            buffer.append("\\c");
+            buffer.append(new byte[] { '\\', 'c' });
             escaped(src, buffer);
             break;
         case 0:

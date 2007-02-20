@@ -44,6 +44,11 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class DXStrNode extends ListNode implements ILiteralNode {
     static final long serialVersionUID = 7165988969190553667L;
 
+    public DXStrNode(ISourcePosition position, DStrNode node) {
+        super(position, NodeTypes.DXSTRNODE);
+        addAll(node);
+    }
+    
     public DXStrNode(ISourcePosition position) {
         super(position, NodeTypes.DXSTRNODE);
     }
