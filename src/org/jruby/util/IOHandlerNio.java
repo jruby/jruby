@@ -321,7 +321,7 @@ public class IOHandlerNio extends IOHandler {
         if (eof && !inBuffer.hasRemaining() && ret.length() == 0) {
             throw new EOFException();
         }
-        if (idx > 0) {
+        if (idx >= 0) {
             ret.append(consumeInBuffer((idx + trigger.realSize) - inBuffer.position()));
         } else if (eof) {
             ret.append(consumeInBuffer(BLOCK_SIZE));

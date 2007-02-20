@@ -12,13 +12,21 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import junit.framework.Test;
 import junit.framework.TestCase;
-import junit.framework.*;
+import junit.framework.TestSuite;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.exceptions.RaiseException;
@@ -30,6 +38,8 @@ import org.jruby.exceptions.RaiseException;
 public class TestUnitTestSuite extends TestCase {
     private static final String TEST_DIR = "test";
     private static final String TEST_INDEX = "test_unit_index";
+    private static final String REGEXP_TEST_CASE_SUBCLASS = "^\\s*class\\s+([^\\s]+)\\s*<.*TestCase\\s*$";
+    private static final Pattern PATTERN_TEST_CASE_SUBCLASS = Pattern.compile(REGEXP_TEST_CASE_SUBCLASS);
 
     public TestUnitTestSuite(String testName) {
         super(testName);
@@ -137,6 +147,40 @@ public class TestUnitTestSuite extends TestCase {
 
             return prettyOut.toString();
         }
+        
+        private String getTestClassNameFromReadingTestScript(String filename) {
+            File f = new File(TEST_DIR + "/" + filename + ".rb");
+            BufferedReader reader = null;
+            try {
+                reader = new BufferedReader(new FileReader(f));
+                while (true) {
+                    String line = reader.readLine();
+                    if (line == null) break;
+                    Matcher m = PATTERN_TEST_CASE_SUBCLASS.matcher(line);
+                    if (m.find())
+                    {
+                        return m.group(1);
+                    }
+                }
+                    
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            finally {
+                if (reader != null) {
+                    try {
+                        reader.close();
+                    } catch (IOException e) {
+                        throw new RuntimeException("Could not close reader!", e);
+                    }
+                }
+                
+            }
+            throw new RuntimeException("No *TestCase derivative found in '" + filename + ".rb'!");
+        }
+        
 
         public void runTest() throws Throwable {
             StringBuffer script = new StringBuffer();
@@ -144,11 +188,7 @@ public class TestUnitTestSuite extends TestCase {
             try {
                 script.append("require 'test/junit_testrunner.rb'\n");
                 script.append("require '" + scriptName() + "'\n");
-                String classname = filename;
-                if (classname.lastIndexOf('/') != -1) {
-                    classname = filename.substring(filename.lastIndexOf('/') + 1);
-                }
-                script.append("runner = Test::Unit::UI::JUnit::TestRunner.new(eval('" + classname + "'.split('_').each {|s| s.capitalize! }.join))\n");
+                script.append("runner = Test::Unit::UI::JUnit::TestRunner.new(" + getTestClassNameFromReadingTestScript(filename) + ")\n");
                 script.append("runner.start\n");
                 script.append("runner.faults\n");
 
