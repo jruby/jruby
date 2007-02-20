@@ -1126,10 +1126,11 @@ module Java
        JavaUtilities.get_proxy_class "#{sym}"
      end
    end
-   
  end
 
  class Package
+   # this class should be a blank slate
+   
    def initialize(name)
      @name = name
    end
@@ -1157,7 +1158,7 @@ end
 # Create convenience methods for top-level java packages so we do not need to prefix
 # with 'Java::'.  We undef these methods within Package in case we run into 'com.foo.com'.
 [:java, :javax, :com, :org].each do |meth|
- Java::Package.create_package(meth, meth, Kernel)
+ Java::Package.create_package(meth, meth.to_s, Kernel)
  Java::Package.send(:undef_method, meth)
 end
 
