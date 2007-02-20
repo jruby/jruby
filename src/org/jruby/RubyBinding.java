@@ -73,7 +73,6 @@ public class RubyBinding extends RubyObject {
         Frame frame = context.getCurrentFrame();
 
         Block bindingBlock = Block.createBinding(wrapper, frame, context.getCurrentScope());
-
-        return new RubyBinding(runtime, runtime.getClass("Binding"), bindingBlock, context.getRubyClass());
+        return new RubyBinding(runtime, runtime.getClass("Binding"), bindingBlock, context.getBindingRubyClass());
     }
 }

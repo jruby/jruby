@@ -170,7 +170,7 @@ public class Block {
         
         // FIXME: Ruby also saves wrapper, which we do not
         return new Block(null, null, frame.getSelf(), frame, context.peekCRef(), frame.getVisibility(), 
-                context.getRubyClass(), extraScope);
+                context.getBindingRubyClass(), extraScope);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf) {

@@ -117,3 +117,17 @@ begin
 rescue LocalJumpError => e
   test_ok(e.message =~ /unexpected return$/)
 end
+
+# If getBindingRubyClass isn't used, this test case will fail,
+# since when eval gets called, Kernel will get pushed on the
+# parent-stack, and this will always become the RubyClass for
+# the evaled string, which is incorrect.
+class AbcTestFooAbc
+  eval <<-ENDT
+  def foofoo_foofoo
+  end
+ENDT
+end
+
+test_equal ["foofoo_foofoo"], AbcTestFooAbc.instance_methods.grep(/foofoo_foofoo/)
+test_equal [], Object.instance_methods.grep(/foofoo_foofoo/)

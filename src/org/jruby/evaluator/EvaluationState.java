@@ -567,6 +567,7 @@ public class EvaluationState {
                 }
     
                 String name = iVisited.getName();
+
                 if (containingClass == runtime.getObject() && name == "initialize") {
                     runtime.getWarnings().warn("redefining Object#initialize may cause infinite loop");
                 }
