@@ -92,6 +92,10 @@ public class RubyObject implements Cloneable, IRubyObject {
         // (mri: OBJSETUP)
         taint |= runtime.getSafeLevel() >= 3;
     }
+
+    public void attachToObjectSpace() {
+        getRuntime().getObjectSpace().add(this);
+    }
     
     /**
      * This is overridden in the other concrete Java builtins to provide a fast way

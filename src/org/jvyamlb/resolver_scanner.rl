@@ -32,9 +32,10 @@ public class ResolverScanner {
         Timestamp = digit{4} ("-" digit{1,2}){2} ([Tt] | [ \t]+) digit{1,2} ":" digit{2} ":" digit{2} timestampFract? timestampZone? %/timestamp_tag;
 
         exp = [eE] sign digit+;
-        Float = ((sign? ((digit digit2*    "." digit2* exp?)
-                     | ((digit digit2*)? "." digit2+ exp?)
-                     | (digit digit2* (":" [0-5]? digit)+ "." digit2*)
+
+        Float = ((sign? ((digit+ "." digit* exp?)
+                     | ((digit+)? "." digit+ exp?)
+                     | (digit+ (":" [0-5]? digit)+ "." digit*)
                      | "." ("inf" | "Inf" | "INF"))) 
                  | ("." ("nan" | "NaN" | "NAN"))) %/float_tag;
 

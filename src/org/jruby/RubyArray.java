@@ -341,6 +341,15 @@ public class RubyArray extends RubyObject implements List {
         realLength = ilength;
     }
 
+    /*
+     * just allocates the internal array, with optional objectspace
+     */
+    private RubyArray(Ruby runtime, long length, boolean objectSpace) {
+        super(runtime, runtime.getArray(), objectSpace);
+        checkLength(length);
+        alloc((int) length);
+    }
+
     /* NEWOBJ and OBJSETUP equivalent
      * fastest one, for shared arrays, optional objectspace
      */

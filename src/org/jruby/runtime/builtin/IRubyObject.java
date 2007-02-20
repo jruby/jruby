@@ -394,4 +394,6 @@ public interface IRubyObject {
     IRubyObject checkStringType();
 
     IRubyObject checkArrayType();    
+
+    void attachToObjectSpace();
 }
