@@ -1381,4 +1381,9 @@ public class RubyObject implements Cloneable, IRubyObject {
  
         return getRuntime().getFalse();
     }
+    
+    public final IRubyObject equalInternal(final ThreadContext context, final IRubyObject other){
+        if (this == other) return getRuntime().getTrue();
+        return callMethod(context, "==", other);
+    }
 }

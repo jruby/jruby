@@ -271,13 +271,12 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     public RubyArray to_a() {
-        RubyArray result = getRuntime().newArray(length());
+        Ruby runtime = getRuntime();
+        RubyArray result = RubyArray.newArray(runtime, length());
         
         for(Iterator iter = valueMap.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
-            IRubyObject key = (IRubyObject) entry.getKey();
-            IRubyObject value = (IRubyObject) entry.getValue();
-            result.append(getRuntime().newArray(key, value));
+            result.append(RubyArray.newArray(runtime, (IRubyObject) entry.getKey(), (IRubyObject) entry.getValue()));
         }
         return result;
     }
@@ -413,21 +412,21 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     public RubyArray indices(IRubyObject[] indices) {
-        ArrayList values = new ArrayList(indices.length);
+        RubyArray values = RubyArray.newArray(getRuntime(), indices.length);
 
         for (int i = 0; i < indices.length; i++) {
-            values.add(aref(indices[i]));
+            values.append(aref(indices[i]));
         }
 
-        return getRuntime().newArray(values);
+        return values;
     }
 
     public RubyArray keys() {
-        return getRuntime().newArray(new ArrayList(valueMap.keySet()));
+        return RubyArray.newArray(getRuntime(), valueMap.keySet());
     }
 
     public RubyArray rb_values() {
-        return getRuntime().newArray(new ArrayList(valueMap.values()));
+        return RubyArray.newArray(getRuntime(), valueMap.values());
     }
 
     public IRubyObject equal(IRubyObject other) {
@@ -456,7 +455,7 @@ public class RubyHash extends RubyObject implements Map {
         Iterator iter = modifiableEntryIterator();
         Map.Entry entry = (Map.Entry)iter.next();
         iter.remove();
-		return getRuntime().newArray((IRubyObject)entry.getKey(), (IRubyObject)entry.getValue());
+        return RubyArray.newArray(getRuntime(), (IRubyObject)entry.getKey(), (IRubyObject)entry.getValue());
     }
 
 	public IRubyObject delete(IRubyObject key, Block block) {
@@ -551,10 +550,9 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     public RubyArray values_at(IRubyObject[] argv) {
-        RubyArray result = getRuntime().newArray();
+        RubyArray result = RubyArray.newArray(getRuntime());
         for (int i = 0; i < argv.length; i++) {
-            IRubyObject key = argv[i];
-            result.append(aref(key));
+            result.append(aref(argv[i]));
         }
         return result;
     }

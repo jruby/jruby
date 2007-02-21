@@ -393,7 +393,9 @@ public interface IRubyObject {
 
     IRubyObject checkStringType();
 
-    IRubyObject checkArrayType();    
+    IRubyObject checkArrayType();
+    
+    public IRubyObject equalInternal(final ThreadContext context, final IRubyObject other);
 
     void attachToObjectSpace();
 }

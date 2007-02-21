@@ -31,6 +31,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
@@ -81,5 +82,9 @@ public class AliasMethod extends AbstractMethod {
     
     public boolean needsImplementer() {
         return oldMethod.needsImplementer();
+    }
+
+    public Arity getArity(){
+        return oldMethod.getArity();
     }
 }
