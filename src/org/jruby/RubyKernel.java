@@ -166,9 +166,9 @@ public class RubyKernel {
         module.defineFastPublicModuleFunction("nil?", objectCallbackFactory.getFastMethod("nil_p"));
         module.defineFastPublicModuleFunction("to_a", callbackFactory.getFastSingletonMethod("to_a"));
         module.defineFastPublicModuleFunction("hash", objectCallbackFactory.getFastMethod("hash"));
-        module.defineFastPublicModuleFunction("id", objectCallbackFactory.getFastMethod("id"));
-        module.defineAlias("__id__", "id");
-        module.defineAlias("object_id", "id");
+        module.defineFastPublicModuleFunction("id", objectCallbackFactory.getFastMethod("id_deprecated"));
+        module.defineFastPublicModuleFunction("object_id", objectCallbackFactory.getFastMethod("id"));
+        module.defineAlias("__id__", "object_id");
         module.defineFastPublicModuleFunction("is_a?", objectCallbackFactory.getFastMethod("kind_of", IRUBY_OBJECT));
         module.defineAlias("kind_of?", "is_a?");
         module.defineFastPublicModuleFunction("dup", objectCallbackFactory.getFastMethod("dup"));

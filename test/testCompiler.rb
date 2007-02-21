@@ -5,7 +5,7 @@ StandardASMCompiler = org.jruby.compiler.impl.StandardASMCompiler
 NodeCompilerFactory = org.jruby.compiler.NodeCompilerFactory
 
 def compile_to_class(src)
-  node = JRuby.parse(src, "EVAL#{src.id}")
+  node = JRuby.parse(src, "EVAL#{src.object_id}")
   context = StandardASMCompiler.new(node)
   NodeCompilerFactory.getCompiler(node).compile(node, context)
 

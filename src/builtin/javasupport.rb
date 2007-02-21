@@ -376,7 +376,7 @@ module JavaUtilities
 
   def JavaUtilities.get_proxy_class(java_class)
     java_class = Java::JavaClass.for_name(java_class) if java_class.kind_of?(String)
-    class_id = java_class.id
+    class_id = java_class.object_id
 
     java_class.synchronized do
       unless @proxy_classes[class_id]
