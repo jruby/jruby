@@ -15,6 +15,7 @@
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2007 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -58,13 +59,13 @@ public class RubyArgsFile extends RubyObject {
         getMetaClass().defineMethod("each", callbackFactory.getOptMethod("each_line"));
         getMetaClass().defineMethod("each_line", callbackFactory.getOptMethod("each_line"));
 
-        getMetaClass().defineMethod("filename", callbackFactory.getMethod("filename"));
-//      getMetaClass().defineMethod("gets", callbackFactory.getOptSingletonMethod(RubyGlobal.class, "gets"));
-//	getMetaClass().defineMethod("readline", callbackFactory.getOptSingletonMethod(RubyGlobal.class, "readline"));
-//	getMetaClass().defineMethod("readlines", callbackFactory.getOptSingletonMethod(RubyGlobal.class, "readlines"));
+        getMetaClass().defineFastMethod("filename", callbackFactory.getFastMethod("filename"));
+        getMetaClass().defineFastMethod("gets", callbackFactory.getFastOptMethod("gets"));
+        getMetaClass().defineFastMethod("readline", callbackFactory.getFastOptMethod("readline"));
+        getMetaClass().defineFastMethod("readlines", callbackFactory.getFastOptMethod("readlines"));
 		
-//	getMetaClass().defineMethod("to_a", callbackFactory.getOptSingletonMethod(RubyGlobal.class, "readlines"));
-	getMetaClass().defineMethod("to_s", callbackFactory.getMethod("filename"));
+        getMetaClass().defineFastMethod("to_a", callbackFactory.getFastOptMethod("readlines"));
+        getMetaClass().defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
 
         getRuntime().defineReadonlyVariable("$FILENAME", getRuntime().newString("-"));
 
@@ -74,7 +75,7 @@ public class RubyArgsFile extends RubyObject {
         // I hacked this to make a null currentFile indicate that things
         // have not been set up yet.  This seems fragile, but it at least
         // it passes tests now.
-        //currentFile = (RubyIO) runtime.getGlobalVariables().get("$stdin");
+        //        currentFile = (RubyIO) getRuntime().getGlobalVariables().get("$stdin");
     }
 
     protected boolean nextArgsFile() {
@@ -128,7 +129,55 @@ public class RubyArgsFile extends RubyObject {
     }
     
     // ARGF methods
+
+    /** Read a line.
+     * 
+     */
+    public IRubyObject gets(IRubyObject[] args) {
+        IRubyObject result = internalGets(args);
+
+        if (!result.isNil()) {
+            getRuntime().getCurrentContext().setLastline(result);
+        }
+
+        return result;
+    }
     
+    /** Read a line.
+     * 
+     */
+    public IRubyObject readline(IRubyObject[] args) {
+        IRubyObject line = gets(args);
+
+        if (line.isNil()) {
+            throw getRuntime().newEOFError();
+        }
+        
+        return line;
+    }
+
+    public RubyArray readlines(IRubyObject[] args) {
+        IRubyObject[] separatorArgument;
+        if (args.length > 0) {
+            if (!args[0].isKindOf(getRuntime().getNilClass()) &&
+                !args[0].isKindOf(getRuntime().getString())) {
+                throw getRuntime().newTypeError(args[0], 
+                        getRuntime().getString());
+            } 
+            separatorArgument = new IRubyObject[] { args[0] };
+        } else {
+            separatorArgument = IRubyObject.NULL_ARRAY;
+        }
+
+        RubyArray result = getRuntime().newArray();
+        IRubyObject line;
+        while (! (line = internalGets(separatorArgument)).isNil()) {
+            result.append(line);
+        }
+        return result;
+    }
+    
+
     /** Invoke a block for each line.
      * 
      */
@@ -143,7 +192,11 @@ public class RubyArgsFile extends RubyObject {
         return this;
     }
     
-	public RubyString filename(Block unusedBlock) {
+	public RubyString filename() {
         return (RubyString)getRuntime().getGlobalVariables().get("$FILENAME");
+    }
+
+	public IRubyObject to_s() {
+        return getRuntime().newString("ARGF");
     }
 }

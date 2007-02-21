@@ -1795,12 +1795,11 @@ public class EvaluationState {
 
     public static RubyArray arrayValue(IRubyObject value) {
         IRubyObject newValue = value.convertToType("Array", "to_ary", false);
-
         if (newValue.isNil()) {
             Ruby runtime = value.getRuntime();
             // Object#to_a is obsolete.  We match Ruby's hack until to_a goes away.  Then we can 
             // remove this hack too.
-            if (value.getType().searchMethod("to_a").getImplementationClass() != runtime
+            if (value.getMetaClass().searchMethod("to_a").getImplementationClass() != runtime
                     .getKernel()) {
                 newValue = value.convertToType("Array", "to_a", false);
                 if (newValue.getType() != runtime.getClass("Array")) {

@@ -306,13 +306,7 @@ public class RubyKernel {
     }
 
     public static IRubyObject gets(IRubyObject recv, IRubyObject[] args) {
-        RubyArgsFile argsFile = (RubyArgsFile) recv.getRuntime().getGlobalVariables().get("$<");
-
-        IRubyObject line = argsFile.internalGets(args);
-
-        recv.getRuntime().getCurrentContext().setLastline(line);
-
-        return line;
+        return ((RubyArgsFile) recv.getRuntime().getGlobalVariables().get("$<")).gets(args);
     }
 
     public static IRubyObject abort(IRubyObject recv, IRubyObject[] args) {
@@ -451,18 +445,7 @@ public class RubyKernel {
     }
 
     public static RubyArray readlines(IRubyObject recv, IRubyObject[] args) {
-        RubyArgsFile argsFile = (RubyArgsFile) recv.getRuntime().getGlobalVariables().get("$<");
-
-        RubyArray lines = recv.getRuntime().newArray();
-
-        IRubyObject line = argsFile.internalGets(args);
-        while (!line.isNil()) {
-            lines.append(line);
-
-            line = argsFile.internalGets(args);
-        }
-
-        return lines;
+        return ((RubyArgsFile) recv.getRuntime().getGlobalVariables().get("$<")).readlines(args);
     }
 
     /** Returns value of $_.

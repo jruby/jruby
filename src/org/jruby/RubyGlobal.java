@@ -148,10 +148,9 @@ public class RubyGlobal {
         if (runtime.getGlobalVariables().get("$*").isNil()) {
             runtime.getGlobalVariables().defineReadonly("$*", new ValueAccessor(runtime.newArray()));
         }
-        
+
         // ARGF, $< object
-        RubyArgsFile argsFile = new RubyArgsFile(runtime);
-        argsFile.initArgsFile();
+        new RubyArgsFile(runtime).initArgsFile();
     }
 
     private static void defineGlobalEnvConstants(Ruby runtime) {
