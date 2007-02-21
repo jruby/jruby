@@ -35,7 +35,6 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;

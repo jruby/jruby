@@ -481,7 +481,7 @@ public final class Ruby {
 
     public void secure(int level) {
         if (level <= safeLevel) {
-            throw newSecurityError("Insecure operation '" + getCurrentContext().getFrameLastFunc() + "' at level " + safeLevel);
+            throw newSecurityError("Insecure operation '" + getCurrentContext().getFrameName() + "' at level " + safeLevel);
         }
     }
 
@@ -1115,9 +1115,9 @@ public final class Ruby {
     private void printErrorPos(PrintStream errorStream) {
         ThreadContext tc = getCurrentContext();
         if (tc.getSourceFile() != null) {
-            if (tc.getFrameLastFunc() != null) {
+            if (tc.getFrameName() != null) {
                 errorStream.print(tc.getPosition());
-                errorStream.print(":in '" + tc.getFrameLastFunc() + '\'');
+                errorStream.print(":in '" + tc.getFrameName() + '\'');
             } else if (tc.getSourceLine() != 0) {
                 errorStream.print(tc.getPosition());
             } else {

@@ -28,9 +28,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 

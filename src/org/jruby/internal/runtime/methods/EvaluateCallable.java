@@ -54,8 +54,8 @@ public class EvaluateCallable extends AbstractCallable {
     	this(node, Arity.procArityOf(vars));
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject receiver, IRubyObject[] args, Block block) {
-        return EvaluationState.eval(context, node, receiver, block);
+    public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        return EvaluationState.eval(context, node, self, block);
     }
 
     public Node getNode() {

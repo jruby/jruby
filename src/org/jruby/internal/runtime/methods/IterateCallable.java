@@ -52,8 +52,8 @@ public class IterateCallable extends AbstractCallable {
         this.method = method;
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject receiver, IRubyObject[] args, Block block) {
-        return callback.execute(args[0], new IRubyObject[] { method, receiver }, block);
+    public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        return callback.execute(args[0], new IRubyObject[] { method, self }, block);
     }
     
     public ICallable dup() {

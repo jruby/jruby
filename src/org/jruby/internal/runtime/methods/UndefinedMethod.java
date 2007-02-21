@@ -30,7 +30,6 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -39,7 +38,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * 
  * @author jpetersen
  */
-public class UndefinedMethod extends AbstractMethod {
+public class UndefinedMethod extends DynamicMethod {
     private static final UndefinedMethod instance = new UndefinedMethod(Visibility.PUBLIC);
 
     /**
@@ -50,7 +49,7 @@ public class UndefinedMethod extends AbstractMethod {
         super(null, visibility);
     }
     
-    public void preMethod(ThreadContext context, RubyModule implementationClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper, Block block) {
+    public void preMethod(ThreadContext context, RubyModule implementationClass, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
         // do nothing
     }
     
@@ -58,15 +57,15 @@ public class UndefinedMethod extends AbstractMethod {
         // do nothing
     }
 
-    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
+    public IRubyObject internalCall(ThreadContext context, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * If UndefinedMethod gets invoked, don't do the usual method scoping/framing. It should never be invoked.
      */
-    public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper) {
-        return internalCall(context, receiver, lastClass, name, args, noSuper, Block.NULL_BLOCK);
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, boolean noSuper) {
+        return internalCall(context, klazz, self, name, args, noSuper, Block.NULL_BLOCK);
     }
 
     public boolean isUndefined() {

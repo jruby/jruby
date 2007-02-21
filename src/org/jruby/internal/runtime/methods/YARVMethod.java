@@ -36,7 +36,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -49,7 +48,7 @@ import org.jruby.ast.executable.ISeqPosition;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  * @version $Revision: 1.2 $
  */
-public class YARVMethod extends AbstractMethod {
+public class YARVMethod extends DynamicMethod {
     private SinglyLinkedList cref;
     private YARVMachine.InstructionSequence iseq;
     private StaticScope staticScope;
@@ -74,31 +73,32 @@ public class YARVMethod extends AbstractMethod {
         }
     }
     
-    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        context.preDefMethodInternalCall(lastClass, recv, name, args, noSuper, cref, staticScope, block);
+    public void preMethod(ThreadContext context, RubyModule clazz, IRubyObject self, String name, 
+            IRubyObject[] args, boolean noSuper, Block block) {
+        context.preDefMethodInternalCall(clazz, name, self, args, block, noSuper, cref, staticScope);
     }
     
     public void postMethod(ThreadContext context) {
         context.postDefMethodInternalCall();
     }
 
-    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
+    public IRubyObject internalCall(ThreadContext context, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
     	assert args != null;
         
         Ruby runtime = context.getRuntime();
         
         try {
-            prepareArguments(context, runtime, receiver, args);
+            prepareArguments(context, runtime, args);
             getArity().checkArity(runtime, args);
 
-            traceCall(context, runtime, receiver, name);
+            traceCall(context, runtime, self, name);
 
             DynamicScope sc = new DynamicScope(staticScope,null);
             for(int i = 0; i<args.length; i++) {
                 sc.setValue(i,args[i],0);
             }
 
-            return YARVMachine.INSTANCE.exec(context, receiver, sc, iseq.body);
+            return YARVMachine.INSTANCE.exec(context, self, sc, iseq.body);
         } catch (JumpException je) {
         	if (je.getJumpType() == JumpException.JumpType.ReturnJump && je.getTarget() == this) {
 	                return (IRubyObject) je.getValue();
@@ -106,11 +106,11 @@ public class YARVMethod extends AbstractMethod {
             
        		throw je;
         } finally {
-            traceReturn(context, runtime, receiver, name);
+            traceReturn(context, runtime, self, name);
         }
     }
 
-    private void prepareArguments(ThreadContext context, Ruby runtime, IRubyObject receiver, IRubyObject[] args) {
+    private void prepareArguments(ThreadContext context, Ruby runtime, IRubyObject[] args) {
         context.setPosition(new ISeqPosition(iseq));
 
         int expectedArgsCount = iseq.args_argc;

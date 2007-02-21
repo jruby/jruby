@@ -235,9 +235,9 @@ public class ThreadContext {
         pushFrame(getCurrentFrame().duplicate());
     }
     
-    private void pushCallFrame(IRubyObject self, IRubyObject[] args, 
-            String lastFunc, RubyModule lastClass, Block block) {
-        pushFrame(new Frame(self, args, lastFunc, lastClass, getPosition(), block));        
+    private void pushCallFrame(RubyModule clazz, String name, 
+            IRubyObject self, IRubyObject[] args, Block block) {
+        pushFrame(new Frame(clazz, self, name, args, block, getPosition()));        
     }
     
     private void pushFrame() {
@@ -268,8 +268,8 @@ public class ThreadContext {
         return frameIndex + 1;
     }
     
-    public String getFrameLastFunc() {
-        return getCurrentFrame().getLastFunc();
+    public String getFrameName() {
+        return getCurrentFrame().getName();
     }
     
     public IRubyObject[] getFrameArgs() {
@@ -288,20 +288,12 @@ public class ThreadContext {
         getCurrentFrame().setSelf(self);
     }
 
-    public IRubyObject getFramePreviousSelf() {
-        return getPreviousFrame().getSelf();
-    }
-
     public void setSelfToPrevious() {
         getCurrentFrame().setSelf(getPreviousFrame().getSelf());
     }
 
-    public RubyModule getFrameLastClass() {
-        return getCurrentFrame().getLastClass();
-    }
-    
-    public RubyModule getPreviousFrameLastClass() {
-        return getPreviousFrame().getLastClass();
+    public RubyModule getFrameKlazz() {
+        return getCurrentFrame().getKlazz();
     }
     
     public ISourcePosition getFramePosition() {
@@ -383,16 +375,16 @@ public class ThreadContext {
     public IRubyObject callSuper(IRubyObject[] args, Block block) {
         Frame frame = getCurrentFrame();
         
-        if (frame.getLastClass() == null) {
-            String name = frame.getLastFunc();
+        if (frame.getKlazz() == null) {
+            String name = frame.getName();
             throw runtime.newNameError("superclass method '" + name + "' must be enabled by enableSuper().", name);
         }
 
-        RubyClass superClass = frame.getLastClass().getSuperClass();
+        RubyClass superClass = frame.getKlazz().getSuperClass();
         
-        assert superClass != null : "Superclass should always be something for " + frame.getLastClass().getBaseName();
+        assert superClass != null : "Superclass should always be something for " + frame.getKlazz().getBaseName();
 
-        return frame.getSelf().callMethod(this, superClass, frame.getLastFunc(), args, CallType.SUPER, block);
+        return frame.getSelf().callMethod(this, superClass, frame.getName(), args, CallType.SUPER, block);
     }    
 
     /**
@@ -571,8 +563,8 @@ public class ThreadContext {
         StringBuffer sb = new StringBuffer(100);
         ISourcePosition position = frame.getPosition();
     
-        if(previousFrame != null && frame.getLastFunc() != null && previousFrame.getLastFunc() != null &&
-           frame.getLastFunc().equals(previousFrame.getLastFunc()) &&
+        if(previousFrame != null && frame.getName() != null && previousFrame.getName() != null &&
+           frame.getName().equals(previousFrame.getName()) &&
            frame.getPosition().getFile().equals(previousFrame.getPosition().getFile()) &&
            frame.getPosition().getEndLine() == previousFrame.getPosition().getEndLine()) {
             return;
@@ -580,10 +572,10 @@ public class ThreadContext {
     
         sb.append(position.getFile()).append(':').append(position.getEndLine());
     
-        if (previousFrame != null && previousFrame.getLastFunc() != null) {
-            sb.append(":in `").append(previousFrame.getLastFunc()).append('\'');
-        } else if (previousFrame == null && frame.getLastFunc() != null) {
-            sb.append(":in `").append(frame.getLastFunc()).append('\'');
+        if (previousFrame != null && previousFrame.getName() != null) {
+            sb.append(":in `").append(previousFrame.getName()).append('\'');
+        } else if (previousFrame == null && frame.getName() != null) {
+            sb.append(":in `").append(frame.getName()).append('\'');
         }
     
         backtrace.append(backtrace.getRuntime().newString(sb.toString()));
@@ -650,10 +642,10 @@ public class ThreadContext {
         popFrame();
     }
 
-    public void preMethodCall(RubyModule implementationClass, RubyModule lastClass, IRubyObject recv, 
-            String name, IRubyObject[] args, boolean noSuper, Block block) {
+    public void preMethodCall(RubyModule implementationClass, RubyModule clazz, 
+            IRubyObject self, String name, IRubyObject[] args, Block block, boolean noSuper) {
         pushRubyClass((RubyModule)implementationClass.getCRef().getValue());
-        pushCallFrame(recv, args, name, noSuper ? null : lastClass, block);
+        pushCallFrame(noSuper ? null : clazz, name, self, args, block);
     }
     
     public void postMethodCall() {
@@ -661,11 +653,12 @@ public class ThreadContext {
         popRubyClass();
     }
     
-    public void preDefMethodInternalCall(RubyModule lastClass, IRubyObject recv, String name, 
-            IRubyObject[] args, boolean noSuper, SinglyLinkedList cref, StaticScope staticScope, Block block) {
+    public void preDefMethodInternalCall(RubyModule clazz, String name, 
+            IRubyObject self, IRubyObject[] args, Block block, boolean noSuper, 
+            SinglyLinkedList cref, StaticScope staticScope) {
         RubyModule implementationClass = (RubyModule)cref.getValue();
         setCRef(cref);
-        pushCallFrame(recv, args, name, noSuper ? null : lastClass, block);
+        pushCallFrame(noSuper ? null : clazz, name, self, args, block);
         pushScope(new DynamicScope(staticScope, getCurrentScope()));
         pushRubyClass(implementationClass);
     }
@@ -689,9 +682,9 @@ public class ThreadContext {
     
     // NEW! Push a scope into the frame, since this is now required to use it
     // XXX: This is screwy...apparently Ruby runs internally-implemented methods in their own frames but in the *caller's* scope
-    public void preReflectedMethodInternalCall(RubyModule implementationClass, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper, Block block) {
+    public void preReflectedMethodInternalCall(RubyModule implementationClass, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
         pushRubyClass((RubyModule)implementationClass.getCRef().getValue());
-        pushCallFrame(recv, args, name, noSuper ? null : lastClass, block);
+        pushCallFrame(noSuper ? null : klazz, name, self, args, block);
         getCurrentFrame().setVisibility(getPreviousFrame().getVisibility());
     }
     
@@ -716,7 +709,7 @@ public class ThreadContext {
     public void preNodeEval(RubyModule newWrapper, RubyModule rubyClass, IRubyObject self) {
         setWrapper(newWrapper);
         pushRubyClass(rubyClass);
-        pushCallFrame(self, IRubyObject.NULL_ARRAY, null, null, Block.NULL_BLOCK);
+        pushCallFrame(null, null, self, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
         
         setCRef(rubyClass.getCRef());
     }
@@ -734,7 +727,7 @@ public class ThreadContext {
         
         pushRubyClass(executeUnderClass);
         pushCRef(executeUnderClass);
-        pushCallFrame(frame.getSelf(), frame.getArgs(), frame.getLastFunc(), frame.getLastClass(), block);
+        pushCallFrame(frame.getKlazz(), frame.getName(), frame.getSelf(), frame.getArgs(), block);
         getCurrentFrame().setVisibility(getPreviousFrame().getVisibility());
     }
     

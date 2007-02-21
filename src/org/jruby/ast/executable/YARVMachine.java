@@ -414,7 +414,7 @@ public class YARVMachine {
 
                 if(TAILCALL_OPT && (bytecodes[ip+1].bytecode == YARVInstructions.LEAVE || 
                                     (flags & YARVInstructions.TAILCALL_FLAG) == YARVInstructions.TAILCALL_FLAG) &&
-                   recv == self && name.equals(context.getFrameLastFunc())) {
+                   recv == self && name.equals(context.getFrameName())) {
                     stackTop = 0;
                     ip = -1;
                     

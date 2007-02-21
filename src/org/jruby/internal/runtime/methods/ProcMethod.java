@@ -35,7 +35,6 @@ import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -44,7 +43,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * 
  * @author jpetersen
  */
-public class ProcMethod extends AbstractMethod {
+public class ProcMethod extends DynamicMethod {
     private RubyProc proc;
 
     /**
@@ -57,8 +56,8 @@ public class ProcMethod extends AbstractMethod {
     }
     
     // ENEBO: I doubt this is right...it should be proc.block?
-    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        context.preMethodCall(implementationClass, lastClass, recv, name, args, noSuper, block);
+    public void preMethod(ThreadContext context, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
+        context.preMethodCall(implementationClass, klazz, self, name, args, block, noSuper);
     }
     
     public void postMethod(ThreadContext context) {
@@ -68,8 +67,8 @@ public class ProcMethod extends AbstractMethod {
     /**
      * @see org.jruby.runtime.ICallable#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
      */
-    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        return proc.call(args, receiver, Block.NULL_BLOCK);
+    public IRubyObject internalCall(ThreadContext context, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
+        return proc.call(args, self, Block.NULL_BLOCK);
     }
     
     public DynamicMethod dup() {

@@ -39,12 +39,11 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class FullFunctionReflectedMethod extends AbstractMethod {
+public class FullFunctionReflectedMethod extends DynamicMethod {
     private Method method;
     private Class type;
     private String methodName;
@@ -82,19 +81,19 @@ public class FullFunctionReflectedMethod extends AbstractMethod {
         assert method != null;
     }
 
-    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        context.preReflectedMethodInternalCall(implementationClass, lastClass, recv, name, args, noSuper, block);
+    public void preMethod(ThreadContext context, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
+        context.preReflectedMethodInternalCall(implementationClass, klazz, self, name, args, noSuper, block);
     }
     
     public void postMethod(ThreadContext context) {
         context.postReflectedMethodInternalCall();
     }
     
-	public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
+	public IRubyObject internalCall(ThreadContext context, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
         Ruby runtime = context.getRuntime();
         arity.checkArity(runtime, args);
         
-        assert receiver != null;
+        assert self != null;
         assert args != null;
         assert method != null;
         
@@ -108,7 +107,7 @@ public class FullFunctionReflectedMethod extends AbstractMethod {
         }
 
         try {
-            return (IRubyObject) method.invoke(receiver, methodArgs);
+            return (IRubyObject) method.invoke(self, methodArgs);
         } catch (InvocationTargetException e) {
             if (e.getTargetException() instanceof RaiseException) {
                 throw (RaiseException) e.getTargetException();
@@ -131,7 +130,7 @@ public class FullFunctionReflectedMethod extends AbstractMethod {
             message.append(e.getMessage());
             message.append(':');
             message.append(" methodName=").append(methodName);
-            message.append(" recv=").append(receiver.toString());
+            message.append(" recv=").append(self.toString());
             message.append(" type=").append(type.getName());
             message.append(" methodArgs=[");
             for (int i = 0; i < methodArgs.length; i++) {

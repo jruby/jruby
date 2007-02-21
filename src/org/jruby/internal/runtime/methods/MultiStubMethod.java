@@ -30,7 +30,6 @@ package org.jruby.internal.runtime.methods;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -40,7 +39,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * the Java methods directly invokable behind a MultiStub. It uses the
  * given index to switch and choose the correct MultiStub method to invoke.
  */
-public class MultiStubMethod extends AbstractMethod implements
+public class MultiStubMethod extends DynamicMethod implements
         Cloneable {
     private Arity arity;
     private MultiStub stub;
@@ -55,37 +54,37 @@ public class MultiStubMethod extends AbstractMethod implements
         assert arity != null;
     }
 
-    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        context.preReflectedMethodInternalCall(implementationClass, lastClass, recv, name, args, noSuper, block);
+    public void preMethod(ThreadContext context, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
+        context.preReflectedMethodInternalCall(implementationClass, klazz, self, name, args, noSuper, block);
     }
     
     public void postMethod(ThreadContext context) {
         context.postReflectedMethodInternalCall();
     }
     
-    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
+    public IRubyObject internalCall(ThreadContext context, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
         // FIXME: Uh uh
         switch (index) {
         case 0:
-            return stub.method0(context, receiver, args, block);
+            return stub.method0(context, self, args, block);
         case 1:
-            return stub.method1(context, receiver, args, block);
+            return stub.method1(context, self, args, block);
         case 2:
-            return stub.method2(context, receiver, args, block);
+            return stub.method2(context, self, args, block);
         case 3:
-            return stub.method3(context, receiver, args, block);
+            return stub.method3(context, self, args, block);
         case 4:
-            return stub.method4(context, receiver, args, block);
+            return stub.method4(context, self, args, block);
         case 5:
-            return stub.method5(context, receiver, args, block);
+            return stub.method5(context, self, args, block);
         case 6:
-            return stub.method6(context, receiver, args, block);
+            return stub.method6(context, self, args, block);
         case 7:
-            return stub.method7(context, receiver, args, block);
+            return stub.method7(context, self, args, block);
         case 8:
-            return stub.method8(context, receiver, args, block);
+            return stub.method8(context, self, args, block);
         case 9:
-            return stub.method9(context, receiver, args, block);
+            return stub.method9(context, self, args, block);
         }
         
         assert false;
@@ -99,9 +98,8 @@ public class MultiStubMethod extends AbstractMethod implements
 
     public DynamicMethod dup() {
         try {
-            MultiStubMethod msm = (MultiStubMethod)clone();
-            return msm;
-        } catch (CloneNotSupportedException cnse) {
+            return (MultiStubMethod) clone();
+        } catch (CloneNotSupportedException e) {
             return null;
         }
     }

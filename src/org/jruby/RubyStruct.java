@@ -270,7 +270,7 @@ public class RubyStruct extends RubyObject {
     }
 
     public IRubyObject set(IRubyObject value, Block block) {
-        String name = getRuntime().getCurrentContext().getFrameLastFunc();
+        String name = getRuntime().getCurrentContext().getFrameName();
         if (name.endsWith("=")) {
             name = name.substring(0, name.length() - 1);
         }
@@ -295,7 +295,7 @@ public class RubyStruct extends RubyObject {
     }
 
     public IRubyObject get(Block block) {
-        String name = getRuntime().getCurrentContext().getFrameLastFunc();
+        String name = getRuntime().getCurrentContext().getFrameName();
 
         RubyArray member = (RubyArray) getInstanceVariable(classOf(), "__member__");
 

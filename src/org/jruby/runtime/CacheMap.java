@@ -33,6 +33,7 @@ import java.util.Map;
 import org.jruby.Ruby;
 
 import org.jruby.RubyModule;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.util.WeakIdentityHashMap;
 
 /**

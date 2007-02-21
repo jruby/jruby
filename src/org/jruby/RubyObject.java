@@ -39,11 +39,11 @@ package org.jruby;
 import org.jruby.ast.Node;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -692,8 +692,8 @@ public class RubyObject implements Cloneable, IRubyObject {
     public void checkSafeString() {
         if (getRuntime().getSafeLevel() > 0 && isTaint()) {
             ThreadContext tc = getRuntime().getCurrentContext();
-            if (tc.getFrameLastFunc() != null) {
-                throw getRuntime().newSecurityError("Insecure operation - " + tc.getFrameLastFunc());
+            if (tc.getFrameName() != null) {
+                throw getRuntime().newSecurityError("Insecure operation - " + tc.getFrameName());
             }
             throw getRuntime().newSecurityError("Insecure operation: -r");
         }
@@ -718,7 +718,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         if (args.length == 0) {
 		    throw getRuntime().newArgumentError("block not supplied");
 		} else if (args.length > 3) {
-		    String lastFuncName = tc.getFrameLastFunc();
+		    String lastFuncName = tc.getFrameName();
 		    throw getRuntime().newArgumentError(
 		        "wrong # of arguments: " + lastFuncName + "(src) or " + lastFuncName + "{..}");
 		}

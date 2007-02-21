@@ -50,12 +50,24 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class Frame {
     /**
+     * The class for the method we are invoking for this frame.  Note: This may not be the
+     * class where the implementation of the method lives.
+     */
+    private RubyModule klazz;
+    
+    /**
      * The 'self' for this frame.
      */
     private IRubyObject self;
     
     /**
-     * The arguments passed into the method of this last frame.   The frame captures arguments
+     * The name of the method being invoked in this frame.  Note: Blocks are backed by frames
+     * and do not have a name.
+     */
+    private String name;
+    
+    /**
+     * The arguments passed into the method of this frame.   The frame captures arguments
      * so that they can be reused for things like super/zsuper.
      */
     private IRubyObject[] args;
@@ -73,22 +85,23 @@ public class Frame {
      */
     private Visibility visibility = Visibility.PUBLIC;
 
-    private String lastFunc;
-    private RubyModule lastClass;
+    /**
+     * The location in source where this block/method invocation is happening
+     */
     private final ISourcePosition position;
 
     public Frame(ISourcePosition position) {
-        this(null, IRubyObject.NULL_ARRAY, null, null, position, Block.NULL_BLOCK); 
+        this(null, null, null, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK, position); 
     }
 
-    public Frame(IRubyObject self, IRubyObject[] args, String lastFunc,
-                 RubyModule lastClass, ISourcePosition position, Block block) {
+    public Frame(RubyModule klazz, IRubyObject self, String name,
+                 IRubyObject[] args, Block block, ISourcePosition position) {
         assert block != null : "Block uses null object pattern.  It should NEVER be null";
         
         this.self = self;
         this.args = args;
-        this.lastFunc = lastFunc;
-        this.lastClass = lastClass;
+        this.name = name;
+        this.klazz = klazz;
         this.position = position;
         this.block = block;
     }
@@ -114,46 +127,75 @@ public class Frame {
         return position;
     }
 
-    /** Getter for property lastClass.
-     * @return Value of property lastClass.
+    /** 
+     * Return class that we are supposedly calling for this invocation
+     * 
+     * @return the current class
      */
-    RubyModule getLastClass() {
-        return lastClass;
-    }
-    
-    public void setLastClass(RubyModule lastClass) {
-        this.lastClass = lastClass;
-    }
-    
-    public void setLastFunc(String lastFunc) {
-        this.lastFunc = lastFunc;
+    RubyModule getKlazz() {
+        return klazz;
     }
 
-    /** Getter for property lastFunc.
-     * @return Value of property lastFunc.
+    /**
+     * Set class that this method is supposedly calling on.  Note: This is different than
+     * a native method's implementation class.
+     * 
+     * @param klazz the new class
      */
-    String getLastFunc() {
-        return lastFunc;
+    public void setKlazz(RubyModule klazz) {
+        this.klazz = klazz;
     }
 
-    /** Getter for property self.
-     * @return Value of property self.
+    /**
+     * Set the method name associated with this frame
+     * 
+     * @param name the new name
+     */
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    /** 
+     * Get the method name associated with this frame
+     * 
+     * @return the method name
+     */
+    String getName() {
+        return name;
+    }
+
+    /**
+     * Get the self associated with this frame
+     * 
+     * @return the self
      */
     IRubyObject getSelf() {
         return self;
     }
 
-    /** Setter for property self.
-     * @param self New value of property self.
+    /** 
+     * Set the self associated with this frame
+     * 
+     * @param self is the new value of self
      */
     void setSelf(IRubyObject self) {
         this.self = self;
     }
     
+    /**
+     * Get the visibility at the time of this frame
+     * 
+     * @return the visibility
+     */
     public Visibility getVisibility() {
         return visibility;
     }
     
+    /**
+     * Change the visibility associated with this frame
+     * 
+     * @param visibility the new visibility
+     */
     public void setVisibility(Visibility visibility) {
         this.visibility = visibility;
     }
@@ -176,7 +218,7 @@ public class Frame {
         	newArgs = args;
         }
 
-        return new Frame(self, newArgs, lastFunc, lastClass, position, block);
+        return new Frame(klazz, self, name, newArgs, block, position);
     }
 
     /* (non-Javadoc)
@@ -186,10 +228,10 @@ public class Frame {
         StringBuffer sb = new StringBuffer(50);
         sb.append(position != null ? position.toString() : "-1");
         sb.append(':');
-        sb.append(lastClass + " " + lastFunc);
-        if (lastFunc != null) {
+        sb.append(klazz + " " + name);
+        if (name != null) {
             sb.append("in ");
-            sb.append(lastFunc);
+            sb.append(name);
         }
         return sb.toString();
     }

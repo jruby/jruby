@@ -141,12 +141,12 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.JumpException.JumpType;
 import org.jruby.internal.runtime.methods.DefaultMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ForBlock;
 import org.jruby.runtime.ThreadContext;
@@ -1373,8 +1373,8 @@ public class EvaluationState {
                 SuperNode iVisited = (SuperNode) node;
                 
     
-                if (context.getFrameLastClass() == null) {
-                    String name = context.getFrameLastFunc();
+                if (context.getFrameKlazz() == null) {
+                    String name = context.getFrameName();
                     throw runtime.newNameError("Superclass method '" + name
                             + "' disabled.", name);
                 }
@@ -1521,8 +1521,8 @@ public class EvaluationState {
             case NodeTypes.ZSUPERNODE: {
                 
     
-                if (context.getFrameLastClass() == null) {
-                    String name = context.getFrameLastFunc();
+                if (context.getFrameKlazz() == null) {
+                    String name = context.getFrameName();
                     throw runtime.newNameError("superclass method '" + name
                             + "' disabled", name);
                 }
@@ -1684,10 +1684,9 @@ public class EvaluationState {
             return "state.getSelf()";
         case NodeTypes.SUPERNODE: {
             SuperNode iVisited = (SuperNode) node;
-            String lastMethod = context.getFrameLastFunc();
-            RubyModule lastClass = context.getFrameLastClass();
-            if (lastMethod != null && lastClass != null && 
-                    lastClass.getSuperClass().isMethodBound(lastMethod, false)) {
+            String name = context.getFrameName();
+            RubyModule klazz = context.getFrameKlazz();
+            if (name != null && klazz != null && klazz.getSuperClass().isMethodBound(name, false)) {
                 return getArgumentDefinition(context, iVisited.getArgsNode(), "super", self, aBlock);
             }
             
@@ -1706,10 +1705,9 @@ public class EvaluationState {
         case NodeTypes.YIELDNODE:
             return aBlock.isGiven() ? "yield" : null;
         case NodeTypes.ZSUPERNODE: {
-            String lastMethod = context.getFrameLastFunc();
-            RubyModule lastClass = context.getFrameLastClass();
-            if (lastMethod != null && lastClass != null && 
-                    lastClass.getSuperClass().isMethodBound(lastMethod, false)) {
+            String name = context.getFrameName();
+            RubyModule klazz = context.getFrameKlazz();
+            if (name != null && klazz != null && klazz.getSuperClass().isMethodBound(name, false)) {
                 return "super";
             }
             return null;
@@ -1769,8 +1767,8 @@ public class EvaluationState {
 
     private static void callTraceFunction(ThreadContext context, String event, IRubyObject zelf) {
         Ruby runtime = context.getRuntime();
-        String name = context.getFrameLastFunc();
-        RubyModule type = context.getFrameLastClass();
+        String name = context.getFrameName();
+        RubyModule type = context.getFrameKlazz();
         runtime.callTraceFunction(context, event, context.getPosition(), zelf, name, type);
     }
 

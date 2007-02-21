@@ -53,7 +53,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -62,7 +61,7 @@ import org.jruby.util.collections.SinglyLinkedList;
 /**
  *
  */
-public final class DefaultMethod extends AbstractMethod {
+public final class DefaultMethod extends DynamicMethod {
     private StaticScope staticScope;
     private Node body;
     private ArgsNode argsNode;
@@ -86,8 +85,9 @@ public final class DefaultMethod extends AbstractMethod {
 		assert argsNode != null;
     }
     
-    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        context.preDefMethodInternalCall(lastClass, recv, name, args, noSuper, cref, staticScope, block);
+    public void preMethod(ThreadContext context, RubyModule clazz, IRubyObject self, String name, 
+            IRubyObject[] args, boolean noSuper, Block block) {
+        context.preDefMethodInternalCall(clazz, name, self, args, block, noSuper, cref, staticScope);
     }
     
     public void postMethod(ThreadContext context) {
@@ -100,27 +100,29 @@ public final class DefaultMethod extends AbstractMethod {
     // FIXME: This is commented out because problems were found compiling methods that call protected code.
     // because eliminating the pre/post does not change the "self" on the current frame, this caused
     // visibility to be a larger problem. We must revisit this to examine how to avoid this trap for visibility checks.
-    public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, 
+            RubyModule clazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
         if (jitCompiledScript != null) {
             try {
                 context.preCompiledMethod(implementationClass, cref);
                 // FIXME: pass block when available
-                return jitCompiledScript.run(context, receiver, args, Block.NULL_BLOCK);
+                return jitCompiledScript.run(context, self, args, Block.NULL_BLOCK);
             } finally {
                 context.postCompiledMethod();
             }
-        } else {
-            return super.call(context, receiver, lastClass, name, args, noSuper, block);
-        }
+        } 
+          
+        return super.call(context, self, clazz, name, args, noSuper, block);
     }
 
     /**
      * @see AbstractCallable#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
      */
-    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
+    public IRubyObject internalCall(ThreadContext context, RubyModule clazz, 
+            IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
         	assert args != null;
         if (JIT_ENABLED && jitCompiledScript != null) {
-            return jitCompiledScript.run(context, receiver, args, Block.NULL_BLOCK);
+            return jitCompiledScript.run(context, self, args, Block.NULL_BLOCK);
         }
         
         Ruby runtime = context.getRuntime();
@@ -144,17 +146,15 @@ public final class DefaultMethod extends AbstractMethod {
         }
 
         try {
-            prepareArguments(context, runtime, receiver, args);
+            prepareArguments(context, runtime, args);
             
             getArity().checkArity(runtime, args);
 
-            traceCall(context, runtime, receiver, name);
+            traceCall(context, runtime, self, name);
 
-            if (JIT_ENABLED) {
-                runJIT(runtime, name);
-            }
+            if (JIT_ENABLED) runJIT(runtime, name);
                     
-            return EvaluationState.eval(context, body, receiver, block);
+            return EvaluationState.eval(context, body, self, block);
         } catch (JumpException je) {
         	if (je.getJumpType() == JumpException.JumpType.ReturnJump && je.getTarget() == this) {
 	                return (IRubyObject) je.getValue();
@@ -162,7 +162,7 @@ public final class DefaultMethod extends AbstractMethod {
             
        		throw je;
         } finally {
-            traceReturn(context, runtime, receiver, name);
+            traceReturn(context, runtime, self, name);
         }
     }
 
@@ -196,7 +196,7 @@ public final class DefaultMethod extends AbstractMethod {
         }
     }
 
-    private void prepareArguments(ThreadContext context, Ruby runtime, IRubyObject receiver, IRubyObject[] args) {
+    private void prepareArguments(ThreadContext context, Ruby runtime, IRubyObject[] args) {
         int expectedArgsCount = argsNode.getArgsCount();
 
         int restArg = argsNode.getRestArg();
@@ -246,7 +246,6 @@ public final class DefaultMethod extends AbstractMethod {
    
             Iterator iter = optArgs.iterator();
             for (int i = expectedArgsCount; i < args.length && iter.hasNext(); i++) {
-                //new AssignmentVisitor(new EvaluationState(runtime, receiver)).assign((Node)iter.next(), args[i], true);
                 // in-frame EvalState should already have receiver set as self, continue to use it
                 AssignmentVisitor.assign(context, context.getFrameSelf(), (Node)iter.next(), args[i], Block.NULL_BLOCK, true);
                 expectedArgsCount++;
@@ -254,8 +253,6 @@ public final class DefaultMethod extends AbstractMethod {
    
             // assign the default values, adding to the end of allArgs
             while (iter.hasNext()) {
-                //new EvaluationState(runtime, receiver).begin((Node)iter.next());
-                //EvaluateVisitor.getInstance().eval(receiver.getRuntime(), receiver, (Node)iter.next());
                 // in-frame EvalState should already have receiver set as self, continue to use it
                 allArgs.add(EvaluationState.eval(context, (Node) iter.next(), context.getFrameSelf(), Block.NULL_BLOCK));
             }
@@ -291,24 +288,21 @@ public final class DefaultMethod extends AbstractMethod {
         return args;
     }
 
-    private void traceReturn(ThreadContext context, Ruby runtime, IRubyObject receiver, String name) {
+    private void traceReturn(ThreadContext context, Ruby runtime, IRubyObject self, String name) {
         if (runtime.getTraceFunction() == null) {
             return;
         }
 
         ISourcePosition position = context.getPreviousFramePosition();
-        runtime.callTraceFunction(context, "return", position, receiver, name, getImplementationClass());
+        runtime.callTraceFunction(context, "return", position, self, name, getImplementationClass());
     }
 
-    private void traceCall(ThreadContext context, Ruby runtime, IRubyObject receiver, String name) {
-        if (runtime.getTraceFunction() == null) {
-            return;
-        }
+    private void traceCall(ThreadContext context, Ruby runtime, IRubyObject self, String name) {
+        if (runtime.getTraceFunction() == null) return;
 
-		ISourcePosition position = body != null ? 
-                body.getPosition() : context.getPosition(); 
+		ISourcePosition position = body != null ? body.getPosition() : context.getPosition(); 
 
-		runtime.callTraceFunction(context, "call", position, receiver, name, getImplementationClass());
+		runtime.callTraceFunction(context, "call", position, self, name, getImplementationClass());
     }
 
     public Arity getArity() {

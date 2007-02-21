@@ -41,6 +41,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.jruby.internal.runtime.methods.AliasMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.FullFunctionCallbackMethod;
 import org.jruby.internal.runtime.methods.SimpleCallbackMethod;
 import org.jruby.internal.runtime.methods.MethodMethod;
@@ -49,7 +50,6 @@ import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -959,8 +959,8 @@ public class RubyModule extends RubyObject {
             body = proc;
 
             proc.getBlock().isLambda = true;
-            proc.getBlock().getFrame().setLastClass(this);
-            proc.getBlock().getFrame().setLastFunc(name);
+            proc.getBlock().getFrame().setKlazz(this);
+            proc.getBlock().getFrame().setName(name);
 
             newMethod = new ProcMethod(this, proc, visibility);
         } else if (args[1].isKindOf(getRuntime().getClass("Method"))) {
@@ -1057,7 +1057,7 @@ public class RubyModule extends RubyObject {
             if (method.getImplementationClass() == realType) {
                 // A cloned method now belongs to a new class.  Set it.
                 // TODO: Make DynamicMethod immutable
-                DynamicMethod clonedMethod = (DynamicMethod)method.dup();
+                DynamicMethod clonedMethod = method.dup();
                 clonedMethod.setImplementationClass(clone);
                 clone.getMethods().put(entry.getKey(), clonedMethod);
             }

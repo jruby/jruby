@@ -33,7 +33,6 @@ package org.jruby.internal.runtime.methods;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -41,7 +40,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author  jpetersen
  */
-public class AliasMethod extends AbstractMethod {
+public class AliasMethod extends DynamicMethod {
     private DynamicMethod oldMethod;
     private String oldName;
 
@@ -60,20 +59,19 @@ public class AliasMethod extends AbstractMethod {
     	return oldName;
     }
 
-    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper, Block block) {
+    public void preMethod(ThreadContext context, RubyModule clazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
     }
 
     public void postMethod(ThreadContext context) {
     }
 
-    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
+    public IRubyObject internalCall(ThreadContext context, RubyModule clazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
         assert false;
         return null;
     }
     
-    public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        // FIXME: This should pass block
-        return oldMethod.call(context, receiver, lastClass, name, args, noSuper, block);
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
+        return oldMethod.call(context, self, clazz, name, args, noSuper, block);
     }
 
     public DynamicMethod dup() {

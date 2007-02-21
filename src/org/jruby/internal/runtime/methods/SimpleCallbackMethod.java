@@ -36,7 +36,6 @@ import org.jruby.RubyModule;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -44,7 +43,7 @@ import org.jruby.runtime.callback.Callback;
 
 /**
  */
-public class SimpleCallbackMethod extends AbstractMethod {
+public class SimpleCallbackMethod extends DynamicMethod {
     private Callback callback;
 
     public SimpleCallbackMethod(RubyModule implementationClass, Callback callback, Visibility visibility) {
@@ -52,32 +51,32 @@ public class SimpleCallbackMethod extends AbstractMethod {
         this.callback = callback;
     }
 
-    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper, Block block) {
+    public void preMethod(ThreadContext context, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
     }
     
     public void postMethod(ThreadContext context) {
     }
 
-    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
+    public IRubyObject internalCall(ThreadContext context, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
         assert false;
         return null;
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
     	assert args != null;
         Ruby runtime = context.getRuntime();
         
         if (runtime.getTraceFunction() != null) {
             ISourcePosition position = context.getPosition();
 
-            runtime.callTraceFunction(context, "c-call", position, receiver, name, getImplementationClass());
+            runtime.callTraceFunction(context, "c-call", position, self, name, getImplementationClass());
             try {
-                return callback.execute(receiver, args, Block.NULL_BLOCK);
+                return callback.execute(self, args, Block.NULL_BLOCK);
             } finally {
-                runtime.callTraceFunction(context, "c-return", position, receiver, name, getImplementationClass());
+                runtime.callTraceFunction(context, "c-return", position, self, name, getImplementationClass());
             }
         }
-		return callback.execute(receiver, args, Block.NULL_BLOCK);
+		return callback.execute(self, args, Block.NULL_BLOCK);
     }
 
     public Callback getCallback() {

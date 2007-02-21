@@ -28,6 +28,7 @@
 package org.jruby.runtime;
 
 import org.jruby.RubyModule;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.ReflectionMethodFactory;
 import org.jruby.internal.runtime.methods.InvocationMethodFactory;
 import org.jruby.util.collections.SinglyLinkedList;

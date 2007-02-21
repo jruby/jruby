@@ -33,7 +33,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyUnboundMethod;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -42,7 +41,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * 
  * @author jpetersen
  */
-public class MethodMethod extends AbstractMethod {
+public class MethodMethod extends DynamicMethod {
     private RubyUnboundMethod method;
 
     /**
@@ -54,8 +53,8 @@ public class MethodMethod extends AbstractMethod {
         this.method = method;
     }
     
-    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        context.preMethodCall(implementationClass, lastClass, recv, name, args, noSuper, block);
+    public void preMethod(ThreadContext context, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
+        context.preMethodCall(implementationClass, klazz, self, name, args, block, noSuper);
     }
     
     public void postMethod(ThreadContext context) {
@@ -65,8 +64,8 @@ public class MethodMethod extends AbstractMethod {
     /**
      * @see org.jruby.runtime.ICallable#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
      */
-    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        return method.bind(receiver, block).call(args, block);
+    public IRubyObject internalCall(ThreadContext context, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
+        return method.bind(self, block).call(args, block);
     }
     
     public DynamicMethod dup() {

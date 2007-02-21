@@ -32,7 +32,6 @@ import org.jruby.RubyModule;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -44,27 +43,27 @@ import org.jruby.exceptions.MainExitException;
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
-public abstract class SimpleInvocationMethod extends AbstractMethod implements Cloneable{
+public abstract class SimpleInvocationMethod extends DynamicMethod implements Cloneable{
     private Arity arity;
     public SimpleInvocationMethod(RubyModule implementationClass, Arity arity, Visibility visibility) {
     	super(implementationClass, visibility);
         this.arity = arity;
     }
 
-    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper, Block block) {
+    public void preMethod(ThreadContext context, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
     }
     
     public void postMethod(ThreadContext context) {
     }
     
-    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
+    public IRubyObject internalCall(ThreadContext context, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
         assert false;
         return null;
     }
     
-    private IRubyObject wrap(Ruby runtime, IRubyObject receiver, IRubyObject[] args) {
+    private IRubyObject wrap(Ruby runtime, IRubyObject self, IRubyObject[] args) {
         try {
-            return call(receiver,args);
+            return call(self,args);
         } catch(RaiseException e) {
             throw e;
         } catch(JumpException e) {
@@ -79,35 +78,34 @@ public abstract class SimpleInvocationMethod extends AbstractMethod implements C
         }        
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
         Ruby runtime = context.getRuntime();
         arity.checkArity(runtime, args);
 
         if(runtime.getTraceFunction() != null) {
             ISourcePosition position = context.getPosition();
 
-            runtime.callTraceFunction(context, "c-call", position, receiver, name, getImplementationClass());
+            runtime.callTraceFunction(context, "c-call", position, self, name, getImplementationClass());
             try {
-                return wrap(runtime,receiver,args);
+                return wrap(runtime,self,args);
             } finally {
-                runtime.callTraceFunction(context, "c-return", position, receiver, name, getImplementationClass());
+                runtime.callTraceFunction(context, "c-return", position, self, name, getImplementationClass());
             }
         }
-        return wrap(runtime,receiver,args);
+        return wrap(runtime,self,args);
     }
 
-    public abstract IRubyObject call(IRubyObject receiver, IRubyObject[] args);
+    public abstract IRubyObject call(IRubyObject self, IRubyObject[] args);
     
     public DynamicMethod dup() {
         try {
-            SimpleInvocationMethod msm = (SimpleInvocationMethod)clone();
-            return msm;
-        } catch (CloneNotSupportedException cnse) {
-        return null;
-    }
+            return (SimpleInvocationMethod) clone();
+        } catch (CloneNotSupportedException e) {
+            return null;
+        }
     }
 
     public Arity getArity() {
         return arity;
     }
-}// SimpleInvocationMethod
+}

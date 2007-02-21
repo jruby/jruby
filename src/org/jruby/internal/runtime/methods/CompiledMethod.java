@@ -31,7 +31,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -42,7 +41,7 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.Block;
 import org.jruby.util.collections.SinglyLinkedList;
 
-public abstract class CompiledMethod extends AbstractMethod implements Cloneable{
+public abstract class CompiledMethod extends DynamicMethod implements Cloneable{
     private Arity arity;
     private SinglyLinkedList cref;
     
@@ -52,7 +51,8 @@ public abstract class CompiledMethod extends AbstractMethod implements Cloneable
         this.cref = cref;
     }
 
-    public void preMethod(ThreadContext context, RubyModule lastClass, IRubyObject recv, String name, IRubyObject[] args, boolean noSuper) {
+    public void preMethod(ThreadContext context, RubyModule clazz, 
+            IRubyObject self, String name, IRubyObject[] args, boolean noSuper) {
         // needed for const lookups to work
         context.preCompiledMethod(implementationClass, cref);
     }
@@ -61,14 +61,14 @@ public abstract class CompiledMethod extends AbstractMethod implements Cloneable
         context.postCompiledMethod();
     }
     
-    public IRubyObject internalCall(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
+    public IRubyObject internalCall(ThreadContext context, RubyModule clazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
         assert false;
         return null;
     }
     
-    private IRubyObject wrap(ThreadContext context, Ruby runtime, IRubyObject receiver, IRubyObject[] args, Block block) {
+    private IRubyObject wrap(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject[] args, Block block) {
         try {
-            return call(context, receiver, args, block);
+            return call(context, self, args, block);
         } catch(RaiseException e) {
             throw e;
         } catch(JumpException e) {
@@ -83,24 +83,24 @@ public abstract class CompiledMethod extends AbstractMethod implements Cloneable
         }        
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject receiver, RubyModule lastClass, String name, IRubyObject[] args, boolean noSuper, Block block) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
         Ruby runtime = context.getRuntime();
         arity.checkArity(runtime, args);
 
         if(runtime.getTraceFunction() != null) {
             ISourcePosition position = context.getPosition();
 
-            runtime.callTraceFunction(context, "c-call", position, receiver, name, getImplementationClass());
+            runtime.callTraceFunction(context, "c-call", position, self, name, getImplementationClass());
             try {
-                return wrap(context, runtime, receiver, args, block);
+                return wrap(context, runtime, self, args, block);
             } finally {
-                runtime.callTraceFunction(context, "c-return", position, receiver, name, getImplementationClass());
+                runtime.callTraceFunction(context, "c-return", position, self, name, getImplementationClass());
             }
         }
-        return wrap(context, runtime, receiver, args, block);
+        return wrap(context, runtime, self, args, block);
     }
 
-    public abstract IRubyObject call(ThreadContext context, IRubyObject receiver, IRubyObject[] args, Block block);
+    public abstract IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block);
     
     public DynamicMethod dup() {
         try {
