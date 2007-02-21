@@ -58,7 +58,7 @@ test_block
 test_case
 test_comparable
 test_core_arities
-test_digest2
+#test_digest2
 test_dup_clone_taint_freeze
 test_globals
 test_hash
