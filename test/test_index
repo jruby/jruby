@@ -37,7 +37,6 @@ testFixnum.rb
 testFixnumBignumAutoconversion.rb
 testFloat.rb
 testGC.rb
-testGlobalVars.rb
 testHash.rb
 testHereDocument.rb
 testHigherJavaSupport.rb
