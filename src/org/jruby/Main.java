@@ -139,7 +139,7 @@ public class Main {
         out.print(" (");
         out.print(Constants.COMPILE_DATE);
         out.print(") [");
-        out.print("java");
+        out.print("java-jruby" + Constants.VERSION);
         out.println("]");
     }
 
