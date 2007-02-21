@@ -273,3 +273,40 @@ end
 SuperDerived.new.create_table("A") {  }
 
 
+class AZsuper
+  def foo
+    block_given?
+  end
+
+  def bar
+    test_equal(true, block_given?)
+  end
+
+  def gar
+     block_given?
+  end
+end
+
+class BZsuper < AZsuper
+  def foo
+    super { puts "A" }
+  end
+
+  def bar
+    super { puts "A" }
+  end
+
+  def gar
+    super
+  end
+end
+
+class CZsuper < BZsuper
+  def gar
+    super
+  end
+end
+
+test_equal(true, BZsuper.new.foo)
+BZsuper.new.bar
+test_equal(true,  CZsuper.new.gar { puts "B" })

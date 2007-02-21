@@ -135,6 +135,7 @@ import org.jruby.ast.WhenNode;
 import org.jruby.ast.WhileNode;
 import org.jruby.ast.XStrNode;
 import org.jruby.ast.YieldNode;
+import org.jruby.ast.ZSuperNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.JumpException;
@@ -1526,10 +1527,12 @@ public class EvaluationState {
                     throw runtime.newNameError("superclass method '" + name
                             + "' disabled", name);
                 }
-                
+
+                Block block = getBlock(context, self, aBlock, ((ZSuperNode) node).getIterNode());
+
                 // Has the method that is calling super received a block argument
-                Block block = context.getCurrentFrame().getBlock();
-                
+                if (!block.isGiven()) block = context.getCurrentFrame().getBlock(); 
+
                 return context.callSuper(context.getFrameArgs(), block);
             }
             default:
