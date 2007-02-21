@@ -458,18 +458,41 @@ public class RubyRange extends RubyObject {
 	    
 	    return array;
     }
-    
-    // this could have been easily written in Ruby --sma
-    public RubyBoolean include_p(IRubyObject obj, Block block) {
-        if (obj.isNil()) {
-            return getRuntime().getFalse();
+
+    private boolean r_lt(IRubyObject a, IRubyObject b) {
+        IRubyObject r = a.callMethod(getRuntime().getCurrentContext(),"<=>",b);
+        if(r.isNil()) {
+            return false;
         }
-    	String compareMethod = isExclusive ? ">" : ">=";
-    	IRubyObject[] arg = new IRubyObject[]{ obj };
-    	IRubyObject f = obj.getRuntime().getFalse();
-        ThreadContext context = getRuntime().getCurrentContext();
-        
-    	return f.getRuntime().newBoolean(
-    			f != first().callMethod(context, "<=", arg) && f != last().callMethod(context, compareMethod, arg));
+        if(RubyComparable.cmpint(r,a,b) < 0) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean r_le(IRubyObject a, IRubyObject b) {
+        IRubyObject r = a.callMethod(getRuntime().getCurrentContext(),"<=>",b);
+        if(r.isNil()) {
+            return false;
+        }
+        if(RubyComparable.cmpint(r,a,b) <= 0) {
+            return true;
+        }
+        return false;
+    }
+
+    public RubyBoolean include_p(IRubyObject obj, Block block) {
+        if(r_le(begin,obj)) {
+            if(isExclusive) {
+                if(r_lt(obj,end)) {
+                    return getRuntime().getTrue();
+                }
+            } else {
+                if(r_le(obj,end)) {
+                    return getRuntime().getTrue();
+                }
+            }
+        }
+        return getRuntime().getFalse();
     }
 }

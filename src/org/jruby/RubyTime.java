@@ -108,6 +108,12 @@ public class RubyTime extends RubyObject {
         return this;
     }
 
+    public RubyTime succ() {
+        Calendar newCal = (Calendar)cal.clone();
+        newCal.add(Calendar.SECOND,1);
+        return newTime(getRuntime(),newCal);
+    }
+
     public RubyTime gmtime() {
         cal.setTimeZone(TimeZone.getTimeZone(UTC));
         return this;
@@ -127,7 +133,7 @@ public class RubyTime extends RubyObject {
         newCal.setTimeZone(TimeZone.getTimeZone(UTC));
         return newTime(getRuntime(), newCal);
     }
-    
+
     public RubyTime getlocal() {
         Calendar newCal = (Calendar)cal.clone();
         newCal.setTimeZone(TimeZone.getDefault());

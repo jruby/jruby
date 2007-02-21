@@ -104,6 +104,7 @@ public class TimeMetaClass extends ObjectMetaClass {
             defineFastMethod("zone", Arity.noArguments()); 
             defineFastMethod("to_a", Arity.noArguments()); 
             defineFastMethod("to_f", Arity.noArguments()); 
+            defineFastMethod("succ", Arity.noArguments()); 
             defineFastMethod("to_i", Arity.noArguments());
             defineFastMethod("to_s", Arity.noArguments()); 
             defineFastMethod("inspect", Arity.noArguments()); 
