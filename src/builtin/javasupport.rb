@@ -18,6 +18,7 @@
 # Copyright (C) 2006 Michael Studman <me@michaelstudman.com>
 # Copyright (C) 2006 Kresten Krab Thorup <krab@gnu.org>
 # Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
+# Copyright (C) 2007 Miguel Covarrubias <mlcovarrubias@gmail.com>
 # 
 # Alternatively, the contents of this file may be used under the terms of
 # either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -149,14 +150,11 @@ class JavaProxy
     end
 
     def setup_inner_classes
-      def const_missing(constant)
-        inner_class = nil
-        begin
-          inner_class = Java::JavaClass.for_name(java_class.name + '$' + constant.to_s)
-        rescue NameError
-          return super
-        end
-        JavaUtilities.create_proxy_class(constant, inner_class, self)
+      # the select block filters out anonymous inner classes ($1 and friends)
+      # these have empty simple names, which don't really work as constant names
+      java_class.declared_classes.select{|c| !c.simple_name.empty?}.each do |clazz|
+        inner_class = Java::JavaClass.for_name(clazz.name)
+        JavaUtilities.create_proxy_class(clazz.simple_name.intern, inner_class, self)
       end
     end
     

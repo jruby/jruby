@@ -332,6 +332,11 @@ end
     javax.xml.xpath.XPathFactory.newInstance.newXPath.setNamespaceContext(NSCT.new(1))
   end
 
+# JRUBY-425: make sure we can reference inner class names that match
+# the names of toplevel constants
+ell = java.awt.geom.Ellipse2D
+test_no_exception {ell::Float.new}
+
 # Test that class methods are being camel_cased
 test_ok(java.lang.System.respond_to?("current_time_millis"))
 

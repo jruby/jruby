@@ -18,6 +18,7 @@
  * Copyright (C) 2004 David Corbin <dcorbin@users.sourceforge.net>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2006 Kresten Krab Thorup <krab@gnu.org>
+ * Copyright (C) 2007 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -112,6 +113,8 @@ public class JavaClass extends JavaObject {
                 callbackFactory.getFastMethod("array_p"));
         result.defineFastMethod("name", 
                 callbackFactory.getFastMethod("name"));
+        result.defineFastMethod("simple_name",
+                callbackFactory.getFastMethod("simple_name"));
         result.defineFastMethod("to_s", 
                 callbackFactory.getFastMethod("name"));
         result.defineFastMethod("superclass", 
@@ -156,6 +159,8 @@ public class JavaClass extends JavaObject {
                 callbackFactory.getFastMethod("declared_constructors"));
         result.defineFastMethod("declared_constructor", 
                 callbackFactory.getFastOptMethod("declared_constructor"));
+        result.defineFastMethod("declared_classes", 
+                callbackFactory.getFastMethod("declared_classes"));
         result.defineFastMethod("declared_method", 
                 callbackFactory.getFastOptMethod("declared_method"));
         result.defineFastMethod("define_instance_methods_for_proxy", 
@@ -377,6 +382,10 @@ public class JavaClass extends JavaObject {
     public RubyString name() {
         return getRuntime().newString(javaClass().getName());
     }
+    
+    public RubyString simple_name() {
+        return getRuntime().newString(javaClass().getSimpleName());
+    }
 
     public IRubyObject superclass() {
         Class superclass = javaClass().getSuperclass();
@@ -454,6 +463,19 @@ public class JavaClass extends JavaObject {
     public RubyArray constructors() {
         return buildConstructors(javaClass().getConstructors());
     }
+    
+    public RubyArray declared_classes() {
+        return buildClasses(javaClass().getDeclaredClasses());
+    }
+    
+    private RubyArray buildClasses(Class [] classes) {
+        RubyArray result = getRuntime().newArray(classes.length);
+        for (int i = 0; i < classes.length; i++) {
+            result.append(new JavaClass(getRuntime(), classes[i]));
+        }
+        return result;
+    }
+    
 
     public RubyArray declared_constructors() {
         return buildConstructors(javaClass().getDeclaredConstructors());
