@@ -28,7 +28,6 @@
     <exclude unless="jdk1.4+" name="**/XmlAstMarshal.java"/>
     <exclude unless="jdk1.4+" name="**/AstPersistenceDelegates.java"/>
     <exclude name="org/jruby/ext/openssl/**/*.java"/>
-    <exclude name="org/jruby/ext/openssl/**/*.java"/>
     <include name="org/jruby/ext/openssl/RubyOpenSSL.java"/>
     <include name="org/jruby/ext/openssl/OpenSSLFake.java"/>
   </patternset>

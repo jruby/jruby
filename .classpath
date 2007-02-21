@@ -9,7 +9,7 @@
 	<classpathentry kind="lib" path="lib/asm-commons-2.2.3.jar"/>
 	<classpathentry kind="lib" path="lib/asm-2.2.3.jar"/>
 	<classpathentry kind="lib" path="lib/jline-0.9.91-SNAPSHOT.jar"/>
-	<classpathentry kind="lib" path="lib/bcmail-jdk15-134.jar"/>
-	<classpathentry kind="lib" path="lib/bcprov-jdk15-134.jar"/>
+	<classpathentry kind="lib" path="lib/bcmail-jdk14-135.jar"/>
+	<classpathentry kind="lib" path="lib/bcprov-jdk14-135.jar"/>
 	<classpathentry kind="output" path="build/classes/jruby"/>
 </classpath>

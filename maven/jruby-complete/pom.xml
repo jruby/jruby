@@ -17,17 +17,17 @@
   <dependencies>
     <dependency>
       <groupId>bouncycastle</groupId>
-      <artifactId>bcprov-jdk15</artifactId>
-      <version>134</version>
+      <artifactId>bcprov-jdk14</artifactId>
+      <version>135</version>
       <scope>system</scope>
-      <systemPath>${project.basedir}/../../lib/bcprov-jdk15-134.jar</systemPath>
+      <systemPath>${project.basedir}/../../lib/bcprov-jdk14-135.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>bouncycastle</groupId>
-      <artifactId>bcmail-jdk15</artifactId>
-      <version>134</version>
+      <artifactId>bcmail-jdk14</artifactId>
+      <version>135</version>
       <scope>system</scope>
-      <systemPath>${project.basedir}/../../lib/bcmail-jdk15-134.jar</systemPath>
+      <systemPath>${project.basedir}/../../lib/bcmail-jdk14-135.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>jline</groupId>

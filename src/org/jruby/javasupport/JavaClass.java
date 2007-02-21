@@ -383,8 +383,27 @@ public class JavaClass extends JavaObject {
         return getRuntime().newString(javaClass().getName());
     }
     
+
+    private static String getSimpleName(Class class_) {
+ 		if (class_.isArray()) {
+ 			return getSimpleName(class_.getComponentType()) + "[]";
+ 		}
+ 
+ 		String className = class_.getName();
+ 
+        int i = className.lastIndexOf('$');
+ 		if (i != -1) {
+            do {
+ 				i++;
+ 			} while (i < className.length() && Character.isDigit(className.charAt(i)));
+ 			return className.substring(i);
+ 		}
+ 
+ 		return className.substring(className.lastIndexOf('.') + 1);
+ 	}
+
     public RubyString simple_name() {
-        return getRuntime().newString(javaClass().getSimpleName());
+        return getRuntime().newString(getSimpleName(javaClass()));
     }
 
     public IRubyObject superclass() {
