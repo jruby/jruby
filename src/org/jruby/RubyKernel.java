@@ -274,6 +274,7 @@ public class RubyKernel {
     }
 
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
+        recv.checkArgumentCount(args,1,1);
         String arg = args[0].convertToString().toString();
 
         // Should this logic be pushed into RubyIO Somewhere?
