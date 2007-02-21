@@ -121,4 +121,29 @@ public class JavaEmbedUtils {
         }
         return result;
     }   
+
+    public static IRubyObject javaToRuby(Ruby runtime, boolean value) {
+        return javaToRuby(runtime, value ? Boolean.TRUE : Boolean.FALSE);
+    }
+    public static IRubyObject javaToRuby(Ruby runtime, byte value) {
+        return javaToRuby(runtime, new Byte(value));
+    }
+    public static IRubyObject javaToRuby(Ruby runtime, char value) {
+        return javaToRuby(runtime, new Character(value));
+    }
+    public static IRubyObject javaToRuby(Ruby runtime, double value) {
+        return javaToRuby(runtime, new Double(value));
+    }
+    public static IRubyObject javaToRuby(Ruby runtime, float value) {
+        return javaToRuby(runtime, new Float(value));
+    }
+    public static IRubyObject javaToRuby(Ruby runtime, int value) {
+        return javaToRuby(runtime, new Integer(value));
+    }
+    public static IRubyObject javaToRuby(Ruby runtime, long value) {
+        return javaToRuby(runtime, new Long(value));
+    }
+    public static IRubyObject javaToRuby(Ruby runtime, short value) {
+        return javaToRuby(runtime, new Short(value));
+    }
 }
