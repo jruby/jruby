@@ -47,7 +47,7 @@ public final class ArgsUtil {
         }
         
         if (value instanceof RubyArray) {
-            return ((RubyArray) value).toJavaArray();
+            return ((RubyArray)value).toJavaArrayMaybeUnsafe();
         }
         
         return new IRubyObject[] { value };

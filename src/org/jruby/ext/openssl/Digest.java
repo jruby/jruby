@@ -59,12 +59,11 @@ public class Digest extends RubyObject {
 
         CallbackFactory digestcb = runtime.callbackFactory(Digest.class);
 
-        cDigest.getMetaClass().defineMethod("new",digestcb.getOptSingletonMethod("newInstance"));
+        //        cDigest.getMetaClass().defineMethod("new",digestcb.getOptSingletonMethod("newInstance"));
         cDigest.getMetaClass().defineFastMethod("digest",digestcb.getFastSingletonMethod("s_digest",IRubyObject.class,IRubyObject.class));
         cDigest.getMetaClass().defineFastMethod("hexdigest",digestcb.getFastSingletonMethod("s_hexdigest",IRubyObject.class,IRubyObject.class));
         cDigest.defineMethod("initialize",digestcb.getOptMethod("initialize"));
         cDigest.defineFastMethod("initialize_copy",digestcb.getFastMethod("initialize_copy",IRubyObject.class));
-        cDigest.defineFastMethod("clone",digestcb.getFastMethod("rbClone"));
         cDigest.defineFastMethod("update",digestcb.getFastMethod("update",IRubyObject.class));
         cDigest.defineFastMethod("<<",digestcb.getFastMethod("update",IRubyObject.class));
         cDigest.defineFastMethod("digest",digestcb.getFastMethod("digest"));
@@ -91,20 +90,6 @@ public class Digest extends RubyObject {
         return inp;
     }
 
-    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
-        Digest result = (Digest) ((RubyClass) recv).allocate();
-        if(!(recv.toString().equals("OpenSSL::Digest::Digest"))) {
-            try {
-                result.name = recv.toString();
-                result.md = MessageDigest.getInstance(transformDigest(recv.toString()));
-            } catch(NoSuchAlgorithmException e) {
-                throw recv.getRuntime().newNotImplementedError("Unsupported digest algorithm (" + recv.toString() + ")");
-            }
-        }
-        result.callInit(args, block);
-        return result;
-    }
-
     public static IRubyObject s_digest(IRubyObject recv, IRubyObject str, IRubyObject data) {
         String name = str.toString();
         try {
@@ -128,13 +113,22 @@ public class Digest extends RubyObject {
     public Digest(Ruby runtime, RubyClass type) {
         super(runtime,type);
         data = new StringBuffer();
+
+        if(!(type.toString().equals("OpenSSL::Digest::Digest"))) {
+            try {
+                name = type.toString();
+                md = MessageDigest.getInstance(transformDigest(type.toString()));
+            } catch(NoSuchAlgorithmException e) {
+                throw runtime.newNotImplementedError("Unsupported digest algorithm (" + type.toString() + ")");
+            }
+        }
     }
 
     private MessageDigest md;
     private StringBuffer data;
     private String name;
 
-    public IRubyObject initialize(IRubyObject[] args) {
+    public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
         IRubyObject type;
         IRubyObject data = getRuntime().getNil();
         if(checkArgumentCount(args,1,2) == 2) {
@@ -209,15 +203,6 @@ public class Digest extends RubyObject {
         }
 
         return ret ? getRuntime().getTrue() : getRuntime().getFalse();
-    }
-
-    public IRubyObject rbClone() {
-        IRubyObject clone = new Digest(getRuntime(),getMetaClass().getRealClass());
-        clone.setMetaClass(getMetaClass().getSingletonClassClone());
-        clone.setTaint(this.isTaint());
-        clone.initCopy(this);
-        clone.setFrozen(isFrozen());
-        return clone;
     }
 
     String getAlgorithm() {

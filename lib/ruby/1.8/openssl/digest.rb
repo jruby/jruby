@@ -25,7 +25,6 @@ module OpenSSL
     if OPENSSL_VERSION_NUMBER > 0x00908000
       alg += %w(SHA224 SHA256 SHA384 SHA512)
     end
-
     alg.each{|name|
       klass = Class.new(Digest){
         define_method(:initialize){|*data|

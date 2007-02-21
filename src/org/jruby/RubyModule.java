@@ -939,7 +939,7 @@ public class RubyModule extends RubyObject {
         return newMethod;
     }
 
-    // What is argument 1 for in this method?
+    // What is argument 1 for in this method? A Method or Proc object /OB
     public IRubyObject define_method(IRubyObject[] args, Block block) {
         if (args.length < 1 || args.length > 2) {
             throw getRuntime().newArgumentError("wrong # of arguments(" + args.length + " for 1)");

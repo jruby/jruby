@@ -36,6 +36,8 @@ import org.jruby.RubyModule;
  */
 public class OpenSSLReal {
     public static void createOpenSSL(Ruby runtime) {
+        java.security.Security.insertProviderAt(new org.bouncycastle.jce.provider.BouncyCastleProvider(),2);
+
         RubyModule ossl = runtime.defineModule("OpenSSL");
         RubyClass standardError = runtime.getClass("StandardError");
         ossl.defineClassUnder("OpenSSLError",standardError,standardError.getAllocator());

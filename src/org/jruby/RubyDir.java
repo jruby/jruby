@@ -118,7 +118,6 @@ public class RubyDir extends RubyObject {
      */
     public IRubyObject initialize(RubyString newPath, Block unusedBlock) {
         newPath.checkSafeString();
-
         dir = JRubyFile.create(getRuntime().getCurrentDirectory(),newPath.toString());
         if (!dir.isDirectory()) {
             dir = null;
