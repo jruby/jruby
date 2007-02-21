@@ -62,5 +62,7 @@ class TestGlobals < Test::Unit::TestCase
   
   def test_program_name
     assert_equal $0, $PROGRAM_NAME
+    old, $0 = $0, "abc"
+    $0 = old
   end
 end

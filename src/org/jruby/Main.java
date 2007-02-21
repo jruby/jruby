@@ -268,8 +268,11 @@ public class Main {
         runtime.getGlobalVariables().defineReadonly("$*", new ValueAccessor(argumentArray));
         // TODO this is a fake cause we have no real process number in Java
         runtime.getGlobalVariables().defineReadonly("$$", new ValueAccessor(runtime.newFixnum(runtime.hashCode())));
-        runtime.getGlobalVariables().defineReadonly("$0", new ValueAccessor(runtime.newString(filename)));
-        runtime.getGlobalVariables().defineReadonly("$PROGRAM_NAME", new ValueAccessor(runtime.newString(filename)));
+
+        IAccessor d = new ValueAccessor(runtime.newString(filename));
+        runtime.getGlobalVariables().define("$PROGRAM_NAME", d);
+        runtime.getGlobalVariables().define("$0", d);
+
         runtime.getLoadService().init(commandline.loadPaths());
         Iterator iter = commandline.requiredLibraries().iterator();
         while (iter.hasNext()) {
@@ -320,5 +323,4 @@ public class Main {
     private void defineGlobal(Ruby runtime, String name, boolean value) {
         runtime.getGlobalVariables().defineReadonly(name, new ValueAccessor(value ? runtime.getTrue() : runtime.getNil()));
     }
-
 }
