@@ -85,7 +85,6 @@ public class PKCS7 extends RubyObject {
         mPKCS7.getMetaClass().defineFastMethod("encrypt",p7cb.getFastOptSingletonMethod("encrypt"));
         cPKCS7.defineMethod("initialize",p7cb.getOptMethod("_initialize"));
         cPKCS7.defineFastMethod("initialize_copy",p7cb.getFastMethod("initialize_copy",IRubyObject.class));
-        cPKCS7.defineFastMethod("clone",p7cb.getFastMethod("rbClone"));
         cPKCS7.defineFastMethod("type=",p7cb.getFastMethod("set_type",IRubyObject.class));
         cPKCS7.defineFastMethod("type",p7cb.getFastMethod("get_type"));
         cPKCS7.defineFastMethod("detached=",p7cb.getFastMethod("set_detached",IRubyObject.class));
@@ -377,15 +376,6 @@ public class PKCS7 extends RubyObject {
 
     public IRubyObject to_der() throws Exception {
         return RubyString.newString(getRuntime(), signedData.getEncoded());
-    }
-
-    public IRubyObject rbClone() {
-        IRubyObject clone = new PKCS7(getRuntime(),getMetaClass().getRealClass());
-        clone.setMetaClass(getMetaClass().getSingletonClassClone());
-        clone.setTaint(this.isTaint());
-        clone.initCopy(this);
-        clone.setFrozen(isFrozen());
-        return clone;
     }
 
     public static class SignerInfo extends RubyObject {

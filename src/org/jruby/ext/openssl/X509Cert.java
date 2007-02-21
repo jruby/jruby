@@ -82,7 +82,6 @@ public class X509Cert extends RubyObject {
         CallbackFactory certcb = runtime.callbackFactory(X509Cert.class);
         cX509Cert.defineMethod("initialize",certcb.getOptMethod("_initialize"));
         cX509Cert.defineFastMethod("initialize_copy",certcb.getFastMethod("initialize_copy",IRubyObject.class));
-        cX509Cert.defineFastMethod("clone",certcb.getFastMethod("rbClone"));
         cX509Cert.defineFastMethod("to_der",certcb.getFastMethod("to_der"));
         cX509Cert.defineFastMethod("to_pem",certcb.getFastMethod("to_pem"));
         cX509Cert.defineFastMethod("to_s",certcb.getFastMethod("to_pem"));
@@ -396,15 +395,6 @@ public class X509Cert extends RubyObject {
             extensions.add(arg);
         }
         return arg;
-    }
-
-    public IRubyObject rbClone() {
-        IRubyObject clone = new X509Cert(getRuntime(),getMetaClass().getRealClass());
-        clone.setMetaClass(getMetaClass().getSingletonClassClone());
-        clone.setTaint(this.isTaint());
-        clone.initCopy(this);
-        clone.setFrozen(isFrozen());
-        return clone;
     }
 }// X509Cert
 

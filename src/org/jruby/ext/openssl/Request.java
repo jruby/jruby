@@ -72,7 +72,6 @@ public class Request extends RubyObject {
 
         cRequest.defineMethod("initialize",reqcb.getOptMethod("_initialize"));
         cRequest.defineFastMethod("initialize_copy",reqcb.getFastMethod("initialize_copy",IRubyObject.class));
-        cRequest.defineFastMethod("clone",reqcb.getFastMethod("rbClone"));
         cRequest.defineFastMethod("to_pem",reqcb.getFastMethod("to_pem"));
         cRequest.defineFastMethod("to_der",reqcb.getFastMethod("to_der"));
         cRequest.defineFastMethod("to_s",reqcb.getFastMethod("to_pem"));
@@ -277,14 +276,5 @@ public class Request extends RubyObject {
             req.setAttributes(new DERSet(v1));
         }
         return getRuntime().getNil();
-    }
-
-    public IRubyObject rbClone() {
-        IRubyObject clone = new Request(getRuntime(),getMetaClass().getRealClass());
-        clone.setMetaClass(getMetaClass().getSingletonClassClone());
-        clone.setTaint(this.isTaint());
-        clone.initCopy(this);
-        clone.setFrozen(isFrozen());
-        return clone;
     }
 }// Request

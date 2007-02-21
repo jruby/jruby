@@ -83,7 +83,6 @@ public class X509CRL extends RubyObject {
 
         cX509CRL.defineMethod("initialize",crlcb.getOptMethod("_initialize"));
         cX509CRL.defineFastMethod("initialize_copy",crlcb.getFastMethod("initialize_copy",IRubyObject.class));
-        cX509CRL.defineFastMethod("clone",crlcb.getFastMethod("rbClone"));
 
         cX509CRL.defineFastMethod("version",crlcb.getFastMethod("version"));
         cX509CRL.defineFastMethod("version=",crlcb.getFastMethod("set_version",IRubyObject.class));
@@ -412,14 +411,5 @@ public class X509CRL extends RubyObject {
         } catch(Exception e) {
             return getRuntime().getFalse();
         }
-    }
-
-    public IRubyObject rbClone() {
-        IRubyObject clone = new X509CRL(getRuntime(),getMetaClass().getRealClass());
-        clone.setMetaClass(getMetaClass().getSingletonClassClone());
-        clone.setTaint(this.isTaint());
-        clone.initCopy(this);
-        clone.setFrozen(isFrozen());
-        return clone;
     }
 }// X509CRL

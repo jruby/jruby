@@ -72,7 +72,6 @@ public class Cipher extends RubyObject {
         mCipher.getMetaClass().defineFastMethod("ciphers",ciphercb.getFastSingletonMethod("ciphers"));
         cCipher.defineMethod("initialize",ciphercb.getMethod("initialize",IRubyObject.class));
         cCipher.defineFastMethod("initialize_copy",ciphercb.getFastMethod("initialize_copy",IRubyObject.class));
-        cCipher.defineFastMethod("clone",ciphercb.getFastMethod("rbClone"));
         cCipher.defineFastMethod("name",ciphercb.getFastMethod("name"));
         cCipher.defineFastMethod("key_len",ciphercb.getFastMethod("key_len"));
         cCipher.defineFastMethod("key_len=",ciphercb.getFastMethod("set_key_len",IRubyObject.class));
@@ -471,15 +470,6 @@ public class Cipher extends RubyObject {
     public IRubyObject set_padding(IRubyObject padding) {
         this.padding = padding.toString();
         return padding;
-    }
-
-    public IRubyObject rbClone() {
-        IRubyObject clone = new Cipher(getRuntime(),getMetaClass().getRealClass());
-        clone.setMetaClass(getMetaClass().getSingletonClassClone());
-        clone.setTaint(this.isTaint());
-        clone.initCopy(this);
-        clone.setFrozen(isFrozen());
-        return clone;
     }
 
     String getAlgorithm() {

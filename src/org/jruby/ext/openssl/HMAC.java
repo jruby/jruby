@@ -63,7 +63,6 @@ public class HMAC extends RubyObject {
         cHMAC.getMetaClass().defineFastMethod("hexdigest",hmaccb.getFastSingletonMethod("s_hexdigest",IRubyObject.class,IRubyObject.class,IRubyObject.class));
         cHMAC.defineMethod("initialize",hmaccb.getMethod("initialize",IRubyObject.class,IRubyObject.class));
         cHMAC.defineFastMethod("initialize_copy",hmaccb.getFastMethod("initialize_copy",IRubyObject.class));
-        cHMAC.defineFastMethod("clone",hmaccb.getFastMethod("rbClone"));
         cHMAC.defineFastMethod("update",hmaccb.getFastMethod("update",IRubyObject.class));
         cHMAC.defineFastMethod("<<",hmaccb.getFastMethod("update",IRubyObject.class));
         cHMAC.defineFastMethod("digest",hmaccb.getFastMethod("digest"));
@@ -152,15 +151,6 @@ public class HMAC extends RubyObject {
     public IRubyObject hexdigest() {
         mac.reset();
         return RubyString.newString(getRuntime(), ByteList.plain(Utils.toHex(mac.doFinal(ByteList.plain(data)))));
-    }
-
-    public IRubyObject rbClone() {
-        IRubyObject clone = new HMAC(getRuntime(),getMetaClass().getRealClass());
-        clone.setMetaClass(getMetaClass().getSingletonClassClone());
-        clone.setTaint(this.isTaint());
-        clone.initCopy(this);
-        clone.setFrozen(isFrozen());
-        return clone;
     }
 
     String getAlgorithm() {
