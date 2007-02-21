@@ -59,7 +59,6 @@ public class Digest extends RubyObject {
 
         CallbackFactory digestcb = runtime.callbackFactory(Digest.class);
 
-        //        cDigest.getMetaClass().defineMethod("new",digestcb.getOptSingletonMethod("newInstance"));
         cDigest.getMetaClass().defineFastMethod("digest",digestcb.getFastSingletonMethod("s_digest",IRubyObject.class,IRubyObject.class));
         cDigest.getMetaClass().defineFastMethod("hexdigest",digestcb.getFastSingletonMethod("s_hexdigest",IRubyObject.class,IRubyObject.class));
         cDigest.defineMethod("initialize",digestcb.getOptMethod("initialize"));

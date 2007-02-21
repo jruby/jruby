@@ -50,13 +50,11 @@ public class RubyDigest {
 
         CallbackFactory basecb = runtime.callbackFactory(Base.class);
         
-        cDigestBase.getMetaClass().defineFastMethod("new",basecb.getFastOptSingletonMethod("newInstance"));
         cDigestBase.getMetaClass().defineFastMethod("digest",basecb.getFastSingletonMethod("s_digest",RubyKernel.IRUBY_OBJECT));
         cDigestBase.getMetaClass().defineFastMethod("hexdigest",basecb.getFastSingletonMethod("s_hexdigest",RubyKernel.IRUBY_OBJECT));
 
         cDigestBase.defineMethod("initialize",basecb.getOptMethod("initialize"));
         cDigestBase.defineFastMethod("initialize_copy",basecb.getFastMethod("initialize_copy",RubyKernel.IRUBY_OBJECT));
-        cDigestBase.defineFastMethod("clone",basecb.getFastMethod("rbClone"));
         cDigestBase.defineFastMethod("update",basecb.getFastMethod("update",RubyKernel.IRUBY_OBJECT));
         cDigestBase.defineFastMethod("<<",basecb.getFastMethod("update",RubyKernel.IRUBY_OBJECT));
         cDigestBase.defineFastMethod("digest",basecb.getFastMethod("digest"));
@@ -112,29 +110,6 @@ public class RubyDigest {
                 return new Base(runtime, klass);
             }
         };
-        
-        public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-            if(recv == recv.getRuntime().getModule("Digest").getClass("Base")) {
-                throw recv.getRuntime().newNotImplementedError("Digest::Base is an abstract class");
-            }
-
-            if(!((RubyClass)recv).isClassVarDefined("metadata")) {
-                throw recv.getRuntime().newNotImplementedError("the " + recv + "() function is unimplemented on this machine");
-            }
-
-            RubyClass klass = (RubyClass)recv;
-            
-            Base result = (Base) klass.allocate();
-            try {
-                result.setAlgorithm(((RubyClass)recv).getClassVar("metadata"));
-            } catch(NoSuchAlgorithmException e) {
-                throw recv.getRuntime().newNotImplementedError("the " + recv + "() function is unimplemented on this machine");
-            } catch(NoSuchProviderException e) {
-                throw recv.getRuntime().newNotImplementedError("the " + recv + "() function is unimplemented on this machine");
-            }
-            result.callInit(args, Block.NULL_BLOCK);
-            return result;
-        }
         public static IRubyObject s_digest(IRubyObject recv, IRubyObject str) {
             String name = ((RubyClass)recv).getClassVar("metadata").toString();
             try {
@@ -164,6 +139,21 @@ public class RubyDigest {
         public Base(Ruby runtime, RubyClass type) {
             super(runtime,type);
             data = new StringBuffer();
+
+            if(type == runtime.getModule("Digest").getClass("Base")) {
+                throw runtime.newNotImplementedError("Digest::Base is an abstract class");
+            }
+            if(!type.isClassVarDefined("metadata")) {
+                throw runtime.newNotImplementedError("the " + type + "() function is unimplemented on this machine");
+            }
+            try {
+                setAlgorithm(type.getClassVar("metadata"));
+            } catch(NoSuchAlgorithmException e) {
+                throw runtime.newNotImplementedError("the " + type + "() function is unimplemented on this machine");
+            } catch(NoSuchProviderException e) {
+                throw runtime.newNotImplementedError("the " + type + "() function is unimplemented on this machine");
+            }
+
         }
         
         public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
@@ -173,7 +163,7 @@ public class RubyDigest {
             return this;
         }
 
-        public IRubyObject initialize_copy(IRubyObject obj, Block unusedBlock) {
+        public IRubyObject initialize_copy(IRubyObject obj) {
             if(this == obj) {
                 return this;
             }
@@ -188,12 +178,11 @@ public class RubyDigest {
             } catch(NoSuchProviderException e) {
                 throw getRuntime().newNotImplementedError("Unsupported digest algorithm (" + name + ")");
             }
-            return this;
+             return this;
         }
 
         public IRubyObject update(IRubyObject obj) {
             data.append(obj);
-            algo.update(obj.convertToString().getBytes());
             return this;
         }
 
@@ -218,16 +207,7 @@ public class RubyDigest {
             return ret ? getRuntime().getTrue() : getRuntime().getFalse();
         }
 
-        public IRubyObject rbClone() {
-            IRubyObject clone = new Base(getRuntime(),getMetaClass().getRealClass());
-            clone.setMetaClass(getMetaClass().getSingletonClassClone());
-            clone.setTaint(this.isTaint());
-            clone.initCopy(this);
-            clone.setFrozen(isFrozen());
-            return clone;
-        }
-
-        private void setAlgorithm(IRubyObject algo) throws NoSuchAlgorithmException, NoSuchProviderException {
+       private void setAlgorithm(IRubyObject algo) throws NoSuchAlgorithmException, NoSuchProviderException {
             this.algo = MessageDigest.getInstance(algo.toString(),"BC");
         }
 
