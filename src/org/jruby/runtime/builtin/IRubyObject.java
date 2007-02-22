@@ -106,6 +106,9 @@ public interface IRubyObject {
     IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, String name, IRubyObject[] args, CallType callType, Block block);
     IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, byte switchvalue, String name, IRubyObject[] args, CallType callType);
     
+    IRubyObject callMethod(ThreadContext context, byte switchValue, String name, IRubyObject arg);
+    IRubyObject callMethod(ThreadContext context, byte switchValue, String name, IRubyObject[] args);
+    IRubyObject callMethod(ThreadContext context, byte switchValue, String name, IRubyObject[] args, CallType callType);
     IRubyObject callMethod(ThreadContext context, byte switchValue, String name, IRubyObject[] args, CallType callType, Block block);
     
     IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, CallType callType);

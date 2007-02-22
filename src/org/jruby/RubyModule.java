@@ -38,8 +38,10 @@ package org.jruby;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.FullFunctionCallbackMethod;
@@ -1351,6 +1353,7 @@ public class RubyModule extends RubyObject {
         boolean includeSuper = args.length > 0 ? args[0].isTrue() : true;
         RubyArray ary = getRuntime().newArray();
         HashMap undefinedMethods = new HashMap();
+        Set added = new HashSet();
 
         for (RubyModule type = this; type != null; type = type.getSuperClass()) {
             RubyModule realType = type.getNonIncludedClass();
@@ -1365,10 +1368,10 @@ public class RubyModule extends RubyObject {
                 }
                 if (method.getImplementationClass() == realType &&
                     method.getVisibility().is(visibility) && undefinedMethods.get(methodName) == null) {
-                    RubyString name = getRuntime().newString(methodName);
 
-                    if (!ary.includes(name)) {
-                        ary.append(name);
+                    if (!added.contains(methodName)) {
+                        ary.append(getRuntime().newString(methodName));
+                        added.add(methodName);
                     }
                 }
             }

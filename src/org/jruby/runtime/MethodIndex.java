@@ -14,21 +14,21 @@ package org.jruby.runtime;
  * @author headius
  */
 public class MethodIndex {
-    public static final int NO_INDEX = 0;
-    public static final int OP_PLUS = 1;
-    public static final int OP_MINUS = 2;
-    public static final int OP_LT = 3;
-    public static final int AREF = 4;
-    public static final int ASET = 5;
-    public static final int POP = 6;
-    public static final int PUSH = 7;
-    public static final int NIL_P = 8;
-    public static final int EQUALEQUAL = 9;
-    public static final int UNSHIFT = 10;
-    public static final int OP_GE = 11;
-    public static final int OP_LSHIFT = 12;
-    public static final int EMPTY_P = 13;
-    public static final int MAX_METHODS = 14;
+    public static final byte NO_INDEX = 0;
+    public static final byte OP_PLUS = 1;
+    public static final byte OP_MINUS = 2;
+    public static final byte OP_LT = 3;
+    public static final byte AREF = 4;
+    public static final byte ASET = 5;
+    public static final byte POP = 6;
+    public static final byte PUSH = 7;
+    public static final byte NIL_P = 8;
+    public static final byte EQUALEQUAL = 9;
+    public static final byte UNSHIFT = 10;
+    public static final byte OP_GE = 11;
+    public static final byte OP_LSHIFT = 12;
+    public static final byte EMPTY_P = 13;
+    public static final byte MAX_METHODS = 14;
     
     /** Creates a new instance of MethodIndex */
     public MethodIndex() {

@@ -30,6 +30,7 @@ package org.jruby;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -141,7 +142,7 @@ public class RubyProcess {
         }
         
         public IRubyObject op_eq(IRubyObject other, Block block) {
-            return other.callMethod(getRuntime().getCurrentContext(), "==", this.to_i(block));
+            return other.callMethod(getRuntime().getCurrentContext(), MethodIndex.EQUALEQUAL, "==", this.to_i(block));
         }
 
         public IRubyObject to_i(Block unusedBlock) {

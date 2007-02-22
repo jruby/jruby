@@ -53,6 +53,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -257,7 +258,7 @@ public class RubyString extends RubyObject {
             return runtime.getTrue();
         } else if (!(other instanceof RubyString)) {
             if(other.respondsTo("to_str")) {
-                return other.callMethod(runtime.getCurrentContext(), "==", this);
+                return other.callMethod(runtime.getCurrentContext(), MethodIndex.EQUALEQUAL, "==", this);
             }
             return runtime.getFalse();
         }

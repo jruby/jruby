@@ -40,6 +40,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.BlockCallback;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -320,7 +321,7 @@ public class RubyEnumerable {
             //INCLUDE?
             List arr = eachToList(context,self,module);
             for(Iterator iter = arr.iterator();iter.hasNext();) {
-                if(args[0].callMethod(context,"==", (IRubyObject)iter.next()).isTrue()) {
+                if(args[0].callMethod(context,MethodIndex.EQUALEQUAL, "==", (IRubyObject)iter.next()).isTrue()) {
                     return context.getRuntime().getTrue();
                 }
             }

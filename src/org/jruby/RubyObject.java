@@ -44,6 +44,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -157,7 +158,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      * HashMap object underlying RubyHash.
      */
     public boolean equals(Object other) {
-        return other == this || other instanceof IRubyObject && callMethod(getRuntime().getCurrentContext(), "==", (IRubyObject) other).isTrue();
+        return other == this || other instanceof IRubyObject && callMethod(getRuntime().getCurrentContext(), MethodIndex.EQUALEQUAL, "==", (IRubyObject) other).isTrue();
     }
 
     public String toString() {
@@ -399,6 +400,20 @@ public class RubyObject implements Cloneable, IRubyObject {
         return callMethod(context, getMetaClass(), name, args, callType, block);
     }
 
+    public IRubyObject callMethod(ThreadContext context, byte methodIndex, String name,
+                                  IRubyObject arg) {
+        return callMethod(context,methodIndex,name,new IRubyObject[]{arg},CallType.FUNCTIONAL, Block.NULL_BLOCK);
+    }
+
+    public IRubyObject callMethod(ThreadContext context, byte methodIndex, String name,
+                                  IRubyObject[] args) {
+        return callMethod(context,methodIndex,name,args,CallType.FUNCTIONAL, Block.NULL_BLOCK);
+    }
+
+    public IRubyObject callMethod(ThreadContext context, byte methodIndex, String name,
+                                  IRubyObject[] args, CallType callType) {
+        return callMethod(context,methodIndex,name,args,callType, Block.NULL_BLOCK);
+    }
     /**
      * Used by the compiler to ease calling indexed methods
      */
@@ -1375,7 +1390,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      * 
      */
     public IRubyObject equal(IRubyObject other) {
-        if(this == other || callMethod(getRuntime().getCurrentContext(), "==",other).isTrue()){
+        if(this == other || callMethod(getRuntime().getCurrentContext(), MethodIndex.EQUALEQUAL, "==",other).isTrue()){
             return getRuntime().getTrue();
         }
  
@@ -1384,6 +1399,6 @@ public class RubyObject implements Cloneable, IRubyObject {
     
     public final IRubyObject equalInternal(final ThreadContext context, final IRubyObject other){
         if (this == other) return getRuntime().getTrue();
-        return callMethod(context, "==", other);
+        return callMethod(context, MethodIndex.EQUALEQUAL, "==", other);
     }
 }
