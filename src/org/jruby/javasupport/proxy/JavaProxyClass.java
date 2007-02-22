@@ -483,6 +483,10 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                 type = Byte.TYPE;
                 break;
 
+            case 'C':
+                type = Character.TYPE;
+                break;
+
             case 'Z':
                 type = Boolean.TYPE;
                 break;
