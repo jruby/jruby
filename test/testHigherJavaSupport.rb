@@ -352,3 +352,6 @@ end
 test_no_exception {
   test_equal("foo", Test.new { "foo" }.bar)
 }
+
+# JRUBY-232, collision with Ruby allocate and Java allocate
+test_no_exception { java.nio.ByteBuffer.allocate(1) }

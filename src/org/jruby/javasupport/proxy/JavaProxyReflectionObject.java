@@ -69,6 +69,8 @@ public class JavaProxyReflectionObject extends RubyObject {
                 IRubyObject.class));
         result.defineFastMethod("[]=", callbackFactory.getFastMethod("aset",
                 IRubyObject.class, IRubyObject.class));
+
+        result.getMetaClass().defineAlias("__j_allocate","allocate");
     }
 
     public RubyFixnum hash() {

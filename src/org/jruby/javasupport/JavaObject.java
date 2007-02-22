@@ -98,6 +98,7 @@ public class JavaObject extends RubyObject {
     	registerRubyMethods(runtime, result);
 
         result.getMetaClass().undefineMethod("new");
+        result.getMetaClass().undefineMethod("allocate");
 
         return result;
     }

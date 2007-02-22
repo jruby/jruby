@@ -96,7 +96,7 @@ public class JavaClass extends JavaObject {
         result.includeModule(runtime.getModule("Comparable"));
         
         JavaObject.registerRubyMethods(runtime, result);
-        
+
         result.getMetaClass().defineFastMethod("for_name", 
                 callbackFactory.getFastSingletonMethod("for_name", IRubyObject.class));
         result.defineFastMethod("public?", 
@@ -167,6 +167,7 @@ public class JavaClass extends JavaObject {
                 callbackFactory.getFastMethod("define_instance_methods_for_proxy", IRubyObject.class));
         
         result.getMetaClass().undefineMethod("new");
+        result.getMetaClass().undefineMethod("allocate");
 
         return result;
     }
