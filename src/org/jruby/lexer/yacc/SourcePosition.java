@@ -184,7 +184,6 @@ public class SourcePosition implements ISourcePosition, Serializable {
     public ISourcePosition union(ISourcePosition other) {
         // Enebo: All AST nodes but IterNode are in ascending order position-wise.  We should not 
         // need to safe-guard that other is a smaller source position
-        
         return new SourcePosition(file, startLine, other.getEndLine(), startOffset, other.getEndOffset());
     }
 }

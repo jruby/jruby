@@ -46,6 +46,7 @@ import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyFloat;
+import org.jruby.RubyKernel;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -96,7 +97,7 @@ public class Pack {
                 return RubyFloat.newFloat(runtime, decodeFloatLittleEndian(enc));
             }
             public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
-                float f = o == runtime.getNil() ? 0 : (float) o.convertToFloat().getDoubleValue();
+                float f = o == runtime.getNil() ? 0 : (float) RubyKernel.new_float(o,o).convertToFloat().getDoubleValue();
                 encodeFloatLittleEndian(result, f);
             }};
         Converter tmp = new Converter(4) {
@@ -104,10 +105,11 @@ public class Pack {
                 return RubyFloat.newFloat(runtime, decodeFloatBigEndian(enc));
             }
             public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
-                float f = o == runtime.getNil() ? 0 : (float) o.convertToFloat().getDoubleValue();
+                float f = o == runtime.getNil() ? 0 : (float) RubyKernel.new_float(o,o).convertToFloat().getDoubleValue();
                 encodeFloatBigEndian(result, f);
             }
         };
+        converters['F'] = tmp; // single precision, native
         converters['f'] = tmp; // single precision, native
         converters['g'] = tmp; // single precision, native
         // double precision, little-endian
@@ -116,7 +118,7 @@ public class Pack {
                 return RubyFloat.newFloat(runtime, decodeDoubleLittleEndian(enc));
             }
             public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
-                double d = o == runtime.getNil() ? 0 : o.convertToFloat().getDoubleValue();
+                double d = o == runtime.getNil() ? 0 : RubyKernel.new_float(o,o).convertToFloat().getDoubleValue();
                 encodeDoubleLittleEndian(result, d);
             }};
         tmp = new Converter(8) {
@@ -124,10 +126,11 @@ public class Pack {
                 return RubyFloat.newFloat(runtime, decodeDoubleBigEndian(enc));
             }
             public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
-                double d = o == runtime.getNil() ? 0 : o.convertToFloat().getDoubleValue();
+                double d = o == runtime.getNil() ? 0 : RubyKernel.new_float(o,o).convertToFloat().getDoubleValue();
                 encodeDoubleBigEndian(result, d);
             }
         };
+        converters['D'] = tmp; // double precision native
         converters['d'] = tmp; // double precision native
         converters['G'] = tmp; // double precision bigendian
         converters['s'] = new Converter(2) { // signed short
@@ -1356,7 +1359,7 @@ public class Pack {
                         }
 
                         IRubyObject from = (IRubyObject) list.get(idx++);
-                        lCurElemString = from == runtime.getNil() ? "" : convert2String(from);
+                        lCurElemString = from == runtime.getNil() ? "" : from.convertToString().toString();
 
                         if (isStar) {
                             occurrences = lCurElemString.length();
@@ -1545,7 +1548,7 @@ public class Pack {
                             throw runtime.newArgumentError(sTooFew);
                         }
                         IRubyObject from = (IRubyObject) list.get(idx++);
-                        lCurElemString = from == runtime.getNil() ? "" : convert2String(from);
+                        lCurElemString = from == runtime.getNil() ? "" : from.convertToString().toString();
                         occurrences = occurrences <= 2 ? 45 : occurrences / 3 * 3;
 
                         for (;;) {
@@ -1566,7 +1569,7 @@ public class Pack {
                        }
 
                        IRubyObject from = (IRubyObject) list.get(idx++);
-                       lCurElemString = from == runtime.getNil() ? "" : convert2String(from);
+                       lCurElemString = from == runtime.getNil() ? "" : from.convertToString().toString();
 
                        if (occurrences <= 1) {
                            occurrences = 72;

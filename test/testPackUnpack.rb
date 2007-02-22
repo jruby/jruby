@@ -43,3 +43,10 @@ test_exception(ArgumentError) { ["A"].pack("X2") }
 test_exception(ArgumentError) { "A".unpack("X2") }
 test_exception(ArgumentError) { "A".unpack("x2") }
 
+test_equal("\000\000\000\000\000\000\000\000", [0].pack('D'))
+test_exception(ArgumentError){ ['test'].pack("D") }
+test_equal("\000\000\000\000", [0].pack('F'))
+test_exception(TypeError){ [0].pack("H") }
+test_exception(ArgumentError){ ['test'].pack("d") }
+test_exception(TypeError){ [0].pack("h") }
+test_exception(TypeError){ [-1, 0, 1, 128].pack("m") }
