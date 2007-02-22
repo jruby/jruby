@@ -413,8 +413,8 @@ module JavaUtilities
   		subclass.class.send :attr, :java_proxy_class, true
 
     class << subclass
-      def new(*args)
-        new_proxy *args
+      def new(*args,&block)
+        new_proxy *args,&block
       end
     end
 
