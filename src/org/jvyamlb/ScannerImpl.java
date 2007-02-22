@@ -390,6 +390,8 @@ public class ScannerImpl implements Scanner {
             this.pointer++;
             if(LINEBR[ch] || (ch == '\r' && (this.buffer.bytes[this.pointer] & 0xFF) != '\n')) {
                 this.column = 0;
+            } else {
+                this.column++;
             }
         }
     }
@@ -1497,8 +1499,8 @@ public class ScannerImpl implements Scanner {
         for(int i=0;i<1;i++) {
             final Scanner sce2 = new ScannerImpl(input);
             for(final Iterator iter = sce2.eachToken();iter.hasNext();) {
-                tokens++;iter.next();
-                //System.out.println(iter.next());
+                tokens++;//iter.next();
+                System.out.println(iter.next());
             }
         }
         final long after = System.currentTimeMillis();
