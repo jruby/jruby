@@ -783,7 +783,7 @@ public class RubyNumeric extends RubyObject {
             return getRuntime().getTrue();
     }
 
-        return other.callMethod(getRuntime().getCurrentContext(), MethodIndex.EQUALEQUAL, "==", this);
+        return other.callMethod(getRuntime().getCurrentContext(), "==", this);
     }
 
 	public boolean singletonMethodsAllowed() {

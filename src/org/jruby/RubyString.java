@@ -258,7 +258,7 @@ public class RubyString extends RubyObject {
             return runtime.getTrue();
         } else if (!(other instanceof RubyString)) {
             if(other.respondsTo("to_str")) {
-                return other.callMethod(runtime.getCurrentContext(), MethodIndex.EQUALEQUAL, "==", this);
+                return other.callMethod(runtime.getCurrentContext(), "==", this);
             }
             return runtime.getFalse();
         }

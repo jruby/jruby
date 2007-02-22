@@ -158,7 +158,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      * HashMap object underlying RubyHash.
      */
     public boolean equals(Object other) {
-        return other == this || other instanceof IRubyObject && callMethod(getRuntime().getCurrentContext(), MethodIndex.EQUALEQUAL, "==", (IRubyObject) other).isTrue();
+        return other == this || other instanceof IRubyObject && callMethod(getRuntime().getCurrentContext(), "==", (IRubyObject) other).isTrue();
     }
 
     public String toString() {
@@ -1390,7 +1390,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      * 
      */
     public IRubyObject equal(IRubyObject other) {
-        if(this == other || callMethod(getRuntime().getCurrentContext(), MethodIndex.EQUALEQUAL, "==",other).isTrue()){
+        if(this == other || callMethod(getRuntime().getCurrentContext(), "==",other).isTrue()){
             return getRuntime().getTrue();
         }
  
@@ -1399,6 +1399,6 @@ public class RubyObject implements Cloneable, IRubyObject {
     
     public final IRubyObject equalInternal(final ThreadContext context, final IRubyObject other){
         if (this == other) return getRuntime().getTrue();
-        return callMethod(context, MethodIndex.EQUALEQUAL, "==", other);
+        return callMethod(context, "==", other);
     }
 }

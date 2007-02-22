@@ -321,7 +321,7 @@ public class RubyEnumerable {
             //INCLUDE?
             List arr = eachToList(context,self,module);
             for(Iterator iter = arr.iterator();iter.hasNext();) {
-                if(args[0].callMethod(context,MethodIndex.EQUALEQUAL, "==", (IRubyObject)iter.next()).isTrue()) {
+                if(args[0].callMethod(context,"==", (IRubyObject)iter.next()).isTrue()) {
                     return context.getRuntime().getTrue();
                 }
             }
