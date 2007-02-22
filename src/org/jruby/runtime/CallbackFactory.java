@@ -35,6 +35,7 @@ import org.jruby.Ruby;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.callback.ReflectionCallbackFactory;
 import org.jruby.runtime.callback.InvocationCallbackFactory;
+import org.jruby.runtime.callback.DumpingInvocationCallbackFactory;
 
 /**
  * Helper class to build Callback method.
@@ -136,16 +137,24 @@ public abstract class CallbackFactory {
     public abstract Callback getFastOptMethod(String method);
 
     private static boolean reflection = false;
+    private static boolean dumping = false;
+    private static String dumpingPath = null;
 
     static {
         if(System.getProperty("jruby.reflection") != null && Boolean.getBoolean("jruby.reflection")) {
             reflection = true;
+        }
+        if(System.getProperty("jruby.dump_invocations") != null) {
+            dumping = true;
+            dumpingPath = System.getProperty("jruby.dump_invocations").toString();
         }
     }
 
     public static CallbackFactory createFactory(Ruby runtime, Class type) {
         if(reflection) {
             return new ReflectionCallbackFactory(type);
+        } else if(dumping) {
+            return new DumpingInvocationCallbackFactory(runtime, type, dumpingPath);
         } else {
             return new InvocationCallbackFactory(runtime, type);
         }

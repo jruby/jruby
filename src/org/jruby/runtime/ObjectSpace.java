@@ -160,10 +160,10 @@ public class ObjectSpace {
                 refl.remove(obj);
                 obj.setRan();
             }
-            finalize();
+            _finalize();
         }
 
-        public void finalize() {
+        public void _finalize() {
             synchronized(finalizersToRun) {
                 finalizersToRun.add(this);
                 finalizersToRun.notifyAll();
@@ -179,7 +179,7 @@ public class ObjectSpace {
         for(Iterator iter = finalizers.keySet().iterator();iter.hasNext();) {
             Object key = iter.next();
             for(Iterator iter2 = ((List)finalizers.get(key)).iterator();iter2.hasNext();) {
-                ((FinalizerEntry)iter2.next()).finalize();
+                ((FinalizerEntry)iter2.next())._finalize();
             }
         } 
         synchronized(finalizersToRun) {

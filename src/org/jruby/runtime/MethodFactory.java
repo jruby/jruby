@@ -31,6 +31,7 @@ import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.ReflectionMethodFactory;
 import org.jruby.internal.runtime.methods.InvocationMethodFactory;
+import org.jruby.internal.runtime.methods.DumpingInvocationMethodFactory;
 import org.jruby.util.collections.SinglyLinkedList;
 
 /**
@@ -42,16 +43,24 @@ public abstract class MethodFactory {
     public abstract DynamicMethod getCompiledMethod(RubyModule implementationClass, Class type, String method, Arity arity, Visibility visibility, SinglyLinkedList cref);
 
     private static boolean reflection = false;
+    private static boolean dumping = false;
+    private static String dumpingPath = null;
 
     static {
         if(System.getProperty("jruby.reflection") != null && Boolean.getBoolean("jruby.reflection")) {
             reflection = true;
+        }
+        if(System.getProperty("jruby.dump_invocations") != null) {
+            dumping = true;
+            dumpingPath = System.getProperty("jruby.dump_invocations").toString();
         }
     }
 
     public static MethodFactory createFactory() {
         if(reflection) {
             return new ReflectionMethodFactory();
+        } else if(dumping) {
+            return new DumpingInvocationMethodFactory(dumpingPath);
         } else {
             return new InvocationMethodFactory();
         }
