@@ -86,7 +86,7 @@ else
     CP_DELIMETER=":"
 
     # add necessary jars for command-line execution
-    for j in $JRUBY_HOME/lib/*.jar; do
+    for j in "$JRUBY_HOME"/lib/*.jar; do
         if [ "$CP" ]; then
             CP="$CP$CP_DELIMETER$j"
             else
