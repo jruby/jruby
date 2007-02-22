@@ -57,8 +57,7 @@ public class StringMetaClass extends ObjectMetaClass {
 	        includeModule(getRuntime().getModule("Enumerable"));
 	
             defineFastMethod("<=>", Arity.singleArgument(), "op_cmp");
-            defineFastMethod("==", Arity.singleArgument(), "equal");
-            defineFastMethod("===", Arity.singleArgument(), "veryEqual");
+            defineFastMethod("==", Arity.singleArgument(), "eql");
             defineFastMethod("+", Arity.singleArgument(), "op_plus");
             defineFastMethod("*", Arity.singleArgument(), "op_mul");
             defineFastMethod("%", Arity.singleArgument(), "format");

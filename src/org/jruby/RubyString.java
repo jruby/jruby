@@ -142,7 +142,7 @@ public class RubyString extends RubyObject {
                 return nil_p();
             case EQUALEQUAL_SWITCHVALUE:
                 Arity.singleArgument().checkArity(context.getRuntime(), args);
-                return equal(args[0]);
+                return eql(args[0]);
             case OP_GE_SWITCHVALUE:
                 Arity.singleArgument().checkArity(context.getRuntime(), args);
                 return op_ge(args[0]);
@@ -251,25 +251,18 @@ public class RubyString extends RubyObject {
         return getRuntime().getNil();
     }
 
-    public IRubyObject equal(IRubyObject other) {
+    public IRubyObject eql(IRubyObject other) {
         Ruby runtime = getRuntime();
         if (other == this) {
             return runtime.getTrue();
         } else if (!(other instanceof RubyString)) {
-            if(other.callMethod(runtime.getCurrentContext(),"respond_to?", runtime.newSymbol("to_str")).isTrue()) {
+            if(other.respondsTo("to_str")) {
                 return other.callMethod(runtime.getCurrentContext(), "==", this);
             }
             return runtime.getFalse();
         }
         /* use Java implementation if both different String instances */
         return runtime.newBoolean(value.equals(((RubyString) other).value));
-    }
-
-    public IRubyObject veryEqual(IRubyObject other) {
-        Ruby runtime = getRuntime();
-        IRubyObject truth = callMethod(runtime.getCurrentContext(), "==", other);
-
-        return truth == runtime.getNil() ? runtime.getFalse() : truth;
     }
 
     public IRubyObject op_plus(IRubyObject other) {
