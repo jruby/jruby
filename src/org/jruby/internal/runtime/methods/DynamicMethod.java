@@ -52,7 +52,7 @@ public abstract class DynamicMethod {
         this.implementationClass = implementationClass;
         if (implementationClass != null) {
             this.implIsClass = implementationClass.isClass();
-            this.implIsKernel = implementationClass.equals(implementationClass.getRuntime().getKernel());
+            this.implIsKernel = implementationClass == implementationClass.getRuntime().getKernel();
         }
     }
 
