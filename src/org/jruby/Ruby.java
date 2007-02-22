@@ -1242,7 +1242,6 @@ public final class Ruby {
             if (type == null) type = getFalse();
 
             context.preTrace();
-            System.err.println("tracing on position: " + position);
             try {
                 traceFunction.call(new IRubyObject[] { newString(event), newString(file),
                         newFixnum(position.getEndLine()),
