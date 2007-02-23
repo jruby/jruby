@@ -1470,7 +1470,7 @@ public class RubyArray extends RubyObject implements List {
                 values[i] = v;
             }
         } else {
-            Arrays.fill(values, (int) beg, (int) (beg + len), item);
+            if(len > 0) Arrays.fill(values, (int) beg, (int) (beg + len), item);
         }
         
         return this;

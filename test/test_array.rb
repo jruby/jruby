@@ -51,6 +51,14 @@ class TestArray < Test::Unit::TestCase
     assert_equal([1,2], arr2)
   end
   
+  def test_fill
+    arr = [1,2,3,4]
+    arr.fill(1,10)
+    assert_equal([1,2,3,4], arr)
+    arr.fill(1,0)
+    assert_equal([1,1,1,1], arr)
+  end
+  
   def test_flatten
     arr = []
     arr << [[[arr]]]
