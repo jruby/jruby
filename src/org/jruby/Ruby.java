@@ -577,6 +577,8 @@ public final class Ruby {
 
         // Load additional definitions and hacks from etc.rb
         getLoadService().smartLoad("builtin/etc.rb");
+
+        RubyKernel.autoload(topSelf, newSymbol("Java"), newString("java"));
     }
 
     private void initLibraries() {
@@ -587,7 +589,7 @@ public final class Ruby {
                     new BuiltinScript("javasupport").load(runtime);
                 }
             });
-
+        
         registerBuiltin("socket.rb", new RubySocket.Service());
         registerBuiltin("rbconfig.rb", new RbConfigLibrary());
 
