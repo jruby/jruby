@@ -35,6 +35,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharacterCodingException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jruby.parser.ReOptions;
@@ -120,7 +123,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
         regexpClass.getMetaClass().defineFastMethod("new", callbackFactory.getFastOptSingletonMethod("newInstance"));
         regexpClass.getMetaClass().defineFastMethod("compile", callbackFactory.getFastOptSingletonMethod("newInstance"));
-        regexpClass.getMetaClass().defineFastMethod("quote", callbackFactory.getFastSingletonMethod("quote", RubyString.class));
+        regexpClass.getMetaClass().defineFastMethod("quote", callbackFactory.getFastOptSingletonMethod("quote"));
         regexpClass.getMetaClass().defineFastMethod("escape", callbackFactory.getFastSingletonMethod("quote", RubyString.class));
         regexpClass.getMetaClass().defineFastMethod("last_match", callbackFactory.getFastSingletonMethod("last_match_s"));
         regexpClass.getMetaClass().defineFastMethod("union", callbackFactory.getFastOptSingletonMethod("union"));
@@ -225,7 +228,40 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /** rb_reg_s_quote
      * 
      */
-    public static RubyString quote(IRubyObject recv, RubyString str) {
+    public static RubyString quote(IRubyObject recv, IRubyObject[] args) {
+        if (args.length == 0 || args.length > 2) {
+            throw recv.getRuntime().newArgumentError(0, args.length);
+        }
+
+        KCode kcode = recv.getRuntime().getKCode();
+        
+        if (args.length > 1) {
+            kcode = KCode.create(recv.getRuntime(), args[1].toString());
+        }
+        
+        RubyString str = (RubyString) args[0];
+
+        if (kcode == KCode.NONE) {
+            return quote(recv, str);
+        }
+        
+        try {
+            // decode with the specified encoding, escape as appropriate, and reencode
+            // FIXME: This could probably be more efficent.
+            CharBuffer decoded = kcode.decoder().decode(ByteBuffer.wrap(str.getBytes()));
+            String escaped = escapeSpecialChars(decoded.toString());
+            ByteBuffer encoded = kcode.encoder().encode(CharBuffer.wrap(escaped));
+            
+            return (RubyString)RubyString.newString(recv.getRuntime(), encoded.array()).infectBy(str);
+        } catch (CharacterCodingException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    /**
+     * Utility version of quote that doesn't use encoding
+     */
+    public static RubyString quote(IRubyObject recv, RubyString str) {        
         return (RubyString) recv.getRuntime().newString(escapeSpecialChars(str.toString())).infectBy(str);
     }
 
