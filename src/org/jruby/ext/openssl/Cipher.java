@@ -308,6 +308,7 @@ public class Cipher extends RubyObject {
         try {
             this.key = key.convertToString().getBytes();
         } catch(Exception e) {
+            e.printStackTrace();
             throw new RaiseException(getRuntime(), ciphErr, null, true);
         }
         return key;
@@ -320,6 +321,7 @@ public class Cipher extends RubyObject {
         try {
             this.iv = iv.convertToString().getBytes();
         } catch(Exception e) {
+            e.printStackTrace();
             throw new RaiseException(getRuntime(), ciphErr, null, true);
         }
         return iv;
@@ -362,15 +364,14 @@ public class Cipher extends RubyObject {
 
     public IRubyObject pkcs5_keyivgen(IRubyObject[] args) {
         checkArgumentCount(args,1,4);
-        String pass = args[0].toString();
-        String salt = null;
-        byte[] ssalt = null;
+        byte[] pass = args[0].convertToString().getBytes();
+        byte[] salt = null;
         int iter = 2048;
         IRubyObject vdigest = getRuntime().getNil();
         MessageDigest digest = null;
         if(args.length>1) {
             if(!args[1].isNil()) {
-                salt = args[1].toString();
+                salt = args[1].convertToString().getBytes();;
             }
             if(args.length>2) {
                 if(!args[2].isNil()) {
@@ -383,10 +384,9 @@ public class Cipher extends RubyObject {
         }
         try {
             if(null != salt) {
-                if(salt.length() != 8) {
+                if(salt.length != 8) {
                     throw new RaiseException(getRuntime(), ciphErr, "salt must be an 8-octet string", true);
                 }
-                ssalt = ByteList.plain(salt);
             }
             if(vdigest.isNil()) {
                 digest = MessageDigest.getInstance("MD5","BC");
@@ -394,10 +394,11 @@ public class Cipher extends RubyObject {
                 digest = MessageDigest.getInstance(((Digest)vdigest).getAlgorithm(),"BC");
             }
 
-            OpenSSLImpl.KeyAndIv result = OpenSSLImpl.EVP_BytesToKey(keyLen/8,ivLen/8,digest,ssalt,ByteList.plain(pass),iter);
+            OpenSSLImpl.KeyAndIv result = OpenSSLImpl.EVP_BytesToKey(keyLen/8,ivLen/8,digest,salt,pass,iter);
             this.key = result.getKey();
             this.iv = result.getIv();
         } catch(Exception e) {
+            e.printStackTrace();
             throw new RaiseException(getRuntime(), ciphErr, null, true);
         }
 
@@ -415,6 +416,7 @@ public class Cipher extends RubyObject {
                 this.ciph.init(encryptMode ? javax.crypto.Cipher.ENCRYPT_MODE : javax.crypto.Cipher.DECRYPT_MODE, new SimpleSecretKey(this.key));
             }
         } catch(Exception e) {
+            e.printStackTrace();
             throw new RaiseException(getRuntime(), ciphErr, null, true);
         }
     }
@@ -430,17 +432,18 @@ public class Cipher extends RubyObject {
             doInitialize();
         }
 
-        byte[] out = null;
+        byte[] str = new byte[0];
         try {
-            out = ciph.update(val);
+            byte[] out = ciph.update(val);
             if(out != null) {
-                val = out;
+                str = out;
             }
         } catch(Exception e) {
+            e.printStackTrace();
             throw new RaiseException(getRuntime(), ciphErr, null, true);
         }
 
-        return RubyString.newString(getRuntime(), val);
+        return RubyString.newString(getRuntime(), new ByteList(str,false));
     }
 
     public IRubyObject update_deprecated(IRubyObject data) {
@@ -454,13 +457,14 @@ public class Cipher extends RubyObject {
         }
 
         //TODO: implement correctly
-        String str = "";
+        ByteList str = new ByteList(ByteList.NULL_ARRAY);
         try {
             byte[] out = ciph.doFinal();
             if(out != null) {
-                str = new String(ByteList.plain(out));
+                str = new ByteList(out,false);
             }
         } catch(Exception e) {
+            e.printStackTrace();
             throw new RaiseException(getRuntime(), ciphErr, null, true);
         }
 

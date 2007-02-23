@@ -10,7 +10,8 @@ rescue
 end
 
 if isFive
-  require 'test/openssl/test_ssl'
+# won't work, since kill and pid is used.
+#  require 'test/openssl/test_ssl'
   require 'test/openssl/test_asn1'
   require 'test/openssl/test_cipher'
   require 'test/openssl/test_digest'

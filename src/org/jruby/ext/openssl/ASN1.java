@@ -594,7 +594,7 @@ public class ASN1 {
             throw new RaiseException(getRuntime(), (RubyClass)(((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("ASN1"))).getConstant("ASN1Error")), msg, true);
         }
 
-        public IRubyObject initialize(IRubyObject[] args) {
+        public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
             checkArgumentCount(args,3,3);
             IRubyObject value = args[0];
             IRubyObject tag = args[1];
@@ -686,7 +686,7 @@ public class ASN1 {
             return this.callMethod(getRuntime().getCurrentContext(),"value").toString();
         }
 
-        public IRubyObject initialize(IRubyObject[] args) {
+        public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
             checkArgumentCount(args,1,4);
             IRubyObject value = args[0];
             IRubyObject tag = getRuntime().getNil();
@@ -808,7 +808,7 @@ public class ASN1 {
             super(runtime,type);
         }
 
-        public IRubyObject initialize(IRubyObject[] args) {
+        public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
             checkArgumentCount(args,1,4);
             IRubyObject value = args[0];
             IRubyObject tag = getRuntime().getNil();
