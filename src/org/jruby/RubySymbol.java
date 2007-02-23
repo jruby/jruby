@@ -46,9 +46,6 @@ import org.jruby.runtime.marshal.UnmarshalStream;
  * @author  jpetersen
  */
 public class RubySymbol extends RubyObject {
-	// FIXME can't use static; would interfere with other runtimes in the same JVM
-    private static int lastId = 0;
-
     private final String symbol;
     private final int id;
     
@@ -56,8 +53,8 @@ public class RubySymbol extends RubyObject {
         super(runtime, runtime.getClass("Symbol"));
         this.symbol = symbol;
 
-        lastId++;
-        this.id = lastId;
+        runtime.symbolLastId++;
+        this.id = runtime.symbolLastId;
     }
     
     public int getNativeTypeIndex() {

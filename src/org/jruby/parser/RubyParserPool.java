@@ -30,12 +30,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.parser;
 
-import java.lang.ref.Reference;
-import java.lang.ref.SoftReference;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-
 /**
  * 
  * @author jpetersen
@@ -43,13 +37,10 @@ import java.util.List;
 public class RubyParserPool {
     private static RubyParserPool instance = new RubyParserPool();
 
-    private List pool;
-
     /**
      * Constructor for RubyParserPool.
      */
     private RubyParserPool() {
-        pool = new LinkedList();
     }
 
     public static RubyParserPool getInstance() {
@@ -57,22 +48,9 @@ public class RubyParserPool {
     }
 
     public DefaultRubyParser borrowParser() {
-        synchronized (pool) {
-            Iterator iter = pool.iterator();
-            while (iter.hasNext()) {
-                DefaultRubyParser parser = (DefaultRubyParser) ((Reference) iter.next()).get();
-                iter.remove();
-                if (parser != null) {
-                    return parser;
-                }
-            }
-        }
         return new DefaultRubyParser();
     }
 
     public void returnParser(DefaultRubyParser parser) {
-        synchronized (pool) {
-            pool.add(new SoftReference(parser));
-        }
     }
 }

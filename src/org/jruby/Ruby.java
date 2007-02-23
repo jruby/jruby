@@ -207,6 +207,9 @@ public final class Ruby {
 
     private KCode kcode = KCode.NONE;
 
+    public int symbolLastId = 0;
+    public int moduleLastId = 0;
+
     /**
      * Create and initialize a new jruby Runtime.
      */

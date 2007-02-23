@@ -78,6 +78,8 @@ public class RubyModule extends RubyObject {
 
     public int index;
 
+    public final int id;
+
     // Containing class...The parent of Object is null. Object should always be last in chain.
     //public RubyModule parentModule;
 
@@ -107,6 +109,9 @@ public class RubyModule extends RubyObject {
             }
         }
         this.cref = new SinglyLinkedList(this, parentCRef);
+
+        runtime.moduleLastId++;
+        this.id = runtime.moduleLastId;
     }
     
     public int getNativeTypeIndex() {
