@@ -12,6 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Evan Buswell <ebuswell@gmail.com>
+ * Copyright (C) 2007 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -281,7 +282,7 @@ public class IOHandlerNio extends IOHandler {
         checkWritable();
 
         ByteBuffer buffer = ByteBuffer.wrap(string.bytes,0,string.realSize);
-        while (buffer.hasRemaining()) {
+        do {
             /* append data */
             while (buffer.hasRemaining() && outBuffer.hasRemaining()) {
                 outBuffer.put(buffer.get());
@@ -291,7 +292,8 @@ public class IOHandlerNio extends IOHandler {
             if ((buffer.hasRemaining() && !outBuffer.hasRemaining()) || isSync()) {
                 flushOutBuffer();
             }
-        }
+        } while (buffer.hasRemaining());
+        
         if(!isSync()) {
           flushOutBuffer();
         }

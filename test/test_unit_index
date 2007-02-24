@@ -112,7 +112,7 @@ externals/mri/ruby/test_method
 #externals/mri/ruby/test_objectspace
 #externals/mri/ruby/test_pack
 #externals/mri/ruby/test_path
-#externals/mri/ruby/test_pipe
+externals/mri/ruby/test_pipe
 externals/mri/ruby/test_proc
 #externals/mri/ruby/test_process
 #externals/mri/ruby/test_rand

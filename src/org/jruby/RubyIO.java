@@ -74,6 +74,7 @@ public class RubyIO extends RubyObject {
     // when it really isn't.  Keeping track of this yields
     // the right errors.
     protected boolean isOpen = true;
+    private boolean atEOF = false;
 
     /*
      * Random notes:
@@ -1010,24 +1011,66 @@ public class RubyIO extends RubyObject {
     }
     
     public IRubyObject read(IRubyObject[] args) {
-    	try {
-            ByteList buf = args.length > 0 ? 
-                handler.read(RubyNumeric.fix2int(args[0])) : handler.getsEntireStream();
+               
+        int argCount = checkArgumentCount(args, 0, 2);
+        RubyString callerBuffer = null;
+        boolean readEntireStream = (argCount == 0 || args[0].isNil());
 
-            if (buf == null) {
-                if (args.length > 0) {
-                    return getRuntime().getNil();
+        try {
+            // Reads when already at EOF keep us at EOF
+            // We do retain the possibility of un-EOFing if the handler
+            // gets new data
+            if (atEOF && handler.isEOF()) {
+                throw new EOFException();
+            }
+
+            if (argCount == 2) {
+                // rdocs say the second arg must be a String if present,
+                // it can't just walk and quack like one
+                if (!(args[1] instanceof RubyString)) {
+                    getRuntime().newTypeError(args[1], getRuntime().getString());
                 }
-                return getRuntime().newString("");
+                callerBuffer = (RubyString) args[1];
+            }
+
+            ByteList buf = readEntireStream ? handler.getsEntireStream() : handler.read(RubyNumeric
+                    .fix2int(args[0]));
+            
+            if (buf == null) {
+                throw new EOFException();
+            }
+
+            // If we get here then no EOFException was thrown in the handler.  We
+            // might still need to set our atEOF flag back to true depending on
+            // whether we were reading the entire stream (see the finally block below)
+            atEOF = false;
+            if (callerBuffer != null) {
+                callerBuffer.setValue(buf);
+                return callerBuffer;
             }
             
             return RubyString.newString(getRuntime(), buf);
+            
         } catch (IOHandler.BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
         } catch (EOFException e) {
-            return getRuntime().getNil();
+            // on EOF, IO#read():
+            // with no args or a nil first arg will return an empty string
+            // with a non-nil first arg will return nil
+            atEOF = true;
+            if (callerBuffer != null) {
+                callerBuffer.setValue("");
+                return readEntireStream ? callerBuffer : getRuntime().getNil();
+            }
+
+            return readEntireStream ? getRuntime().newString("") : getRuntime().getNil();
         } catch (IOException e) {
             throw getRuntime().newIOError(e.getMessage());
+        } finally {
+            // reading the entire stream always puts us at EOF
+            if (readEntireStream) {
+                atEOF = true;
+            }
         }
     }
 
