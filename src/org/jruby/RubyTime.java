@@ -120,7 +120,10 @@ public class RubyTime extends RubyObject {
     }
 
     public RubyTime localtime() {
+        long dump = cal.getTimeInMillis();
+        cal = Calendar.getInstance();
         cal.setTimeZone(TimeZone.getDefault());
+        cal.setTimeInMillis(dump);
         return this;
     }
     
