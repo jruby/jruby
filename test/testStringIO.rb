@@ -167,3 +167,8 @@ test_equal(nil, n.gets)
 test_equal(true, n.eof?)
 
 n = StringIO.new
+
+buf = ""
+s = StringIO.new(buf)
+s.puts "HEH"
+test_equal("HEH\n", buf)

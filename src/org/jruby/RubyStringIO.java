@@ -144,9 +144,11 @@ public class RubyStringIO extends RubyObject {
     private boolean closedWrite = false;
 
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        internal = new ByteList();
         if (checkArgumentCount(args, 0, 2) > 0) {
-            internal.append(args[0].convertToString().getByteList());
+            // Share bytelist since stringio is acting on this passed-in string.
+            internal = args[0].convertToString().getByteList();
+        } else {
+            internal = new ByteList();
         }
         return this;
     }
