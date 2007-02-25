@@ -200,7 +200,7 @@ public class RubySocket extends RubyBasicSocket {
                     sock_stream = false;
                 }
             }
-            InetAddress[] addrs = InetAddress.getAllByName(host.convertToString().toString());
+            InetAddress[] addrs = InetAddress.getAllByName(host.isNil() ? null : host.convertToString().toString());
             List l = new ArrayList();
             for(int i=0;i<addrs.length;i++) {
                 IRubyObject[] c;
