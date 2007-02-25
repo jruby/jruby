@@ -323,7 +323,7 @@ class InterfaceJavaProxy < JavaProxy
       proxy = new_proxy(*args, &block)
       proxy.java_object = Java.new_proxy_instance(proxy.class.java_class) { |proxy2, method, *args|
         args.collect! { |arg| Java.java_to_ruby(arg) }
-        Java.ruby_to_java(proxy.send(method.name, *args))
+        Java.ruby_to_java(proxy.__jsend!(method.name, *args))
       }
       proxy
     end
@@ -429,7 +429,7 @@ module JavaUtilities
 		    args.collect! { |v| Java.ruby_to_java(v) }
 			self.java_object = JavaUtilities.matching_method(constructors, args).new_instance(args) { |proxy, method, *args|
               args.collect! { |arg| Java.java_to_ruby(arg) } 
-              result = send(method.name, *args)
+              result = __jsend!(method.name, *args)
 		      Java.ruby_to_java(result)
 		    } 
 		}
@@ -492,7 +492,7 @@ module JavaUtilities
     @match_cache ||= {}
 
     arg_types = args.collect {|a| a.java_class }
-    
+
     @match_cache[methods] ||= {}
     method = @match_cache[methods][arg_types]
     return method if method

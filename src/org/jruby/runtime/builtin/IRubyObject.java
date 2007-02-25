@@ -398,7 +398,10 @@ public interface IRubyObject {
 
     IRubyObject checkArrayType();
     
-    public IRubyObject equalInternal(final ThreadContext context, final IRubyObject other);
+    IRubyObject equalInternal(final ThreadContext context, final IRubyObject other);
 
     void attachToObjectSpace();
+
+    IRubyObject send(IRubyObject[] args, Block block);
+    IRubyObject method(IRubyObject method);
 }

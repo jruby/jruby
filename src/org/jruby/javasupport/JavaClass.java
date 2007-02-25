@@ -58,10 +58,13 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
+import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -328,12 +331,34 @@ public class JavaClass extends JavaObject {
         return rubyCasedName;
     }
     
+    private static final Callback __jsend_method = new Callback() {
+            public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
+                int v = RubyNumeric.fix2int(((org.jruby.RubyMethod)self.method(((RubySymbol)args[0].callMethod(self.getRuntime().getCurrentContext(),"to_sym")))).arity());
+                String name = args[0].asSymbol();
+
+                IRubyObject[] newArgs = new IRubyObject[args.length - 1];
+                System.arraycopy(args, 1, newArgs, 0, newArgs.length);
+
+                if(v < 0 || v == (newArgs.length)) {
+                    return self.callMethod(self.getRuntime().getCurrentContext(), name, newArgs, CallType.FUNCTIONAL, block);
+                } else {
+                    return self.callMethod(self.getRuntime().getCurrentContext(),self.getMetaClass().getSuperClass(), name, newArgs, CallType.SUPER, block);
+                }
+            }
+
+            public Arity getArity() {
+                return Arity.optional();
+            }
+        };
+
     public IRubyObject define_instance_methods_for_proxy(IRubyObject arg) {
         assert arg instanceof RubyClass;
-        
+
         Map aliasesClump = getPropertysClumped();
         Map methodsClump = getMethodsClumped(false);
         RubyClass proxy = (RubyClass) arg;
+
+        proxy.defineFastMethod("__jsend!", __jsend_method);
         
         for (Iterator iter = methodsClump.keySet().iterator(); iter.hasNext(); ) {
             String name = (String) iter.next();

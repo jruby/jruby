@@ -347,7 +347,6 @@ public class JavaProxyClassFactory {
 
     private static void generateProxyMethod(Type selfType, Type superType,
             ClassVisitor cw, GeneratorAdapter clazzInit, MethodData md) {
-
         if (!md.generateProxyMethod()) {
             return;
         }
@@ -356,6 +355,7 @@ public class JavaProxyClassFactory {
         Type[] ex = toType(md.getExceptions());
 
         String field_name = "__mth$" + md.getName() + md.scrabmledSignature();
+
         // create static private method field
         FieldVisitor fv = cw.visitField(Opcodes.ACC_PRIVATE
                 | Opcodes.ACC_STATIC, field_name, PROXY_METHOD_TYPE

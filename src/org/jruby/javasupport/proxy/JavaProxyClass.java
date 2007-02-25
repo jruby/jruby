@@ -296,7 +296,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         public Class getReturnType() {
             return m.getReturnType();
         }
-
+        
         public static RubyClass createJavaProxyMethodClass(Ruby runtime,
                 RubyModule javaProxyModule) {
 
@@ -348,7 +348,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         }
 
         public RubyFixnum arity() {
-            return getRuntime().newFixnum(getParameterTypes().length);
+            return getRuntime().newFixnum(getArity());
         }
 
         protected String nameOnInspection() {
@@ -383,10 +383,6 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             Object receiver_value = ((JavaObject) invokee).getValue();
             Object[] arguments = new Object[nargs.length - 1];
             System.arraycopy(nargs, 1, arguments, 0, arguments.length);
-
-            if (getName().equals("nextInt")) {
-                System.out.println("xx");
-            }
 
             Class[] parameterTypes = getParameterTypes();
             for (int i = 0; i < arguments.length; i++) {
