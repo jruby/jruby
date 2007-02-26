@@ -128,6 +128,7 @@ public class LoadService {
     private final RubyArray loadPath;
     private final RubyArray loadedFeatures;
     private final Set loadedFeaturesInternal = Collections.synchronizedSet(new HashSet());
+    private final Set firstLineLoadedFeatures = Collections.synchronizedSet(new HashSet());
     private final Map builtinLibraries = new HashMap();
 
     private final Map jarFiles = new HashMap();
@@ -203,6 +204,9 @@ public class LoadService {
     }
 
     public boolean smartLoad(String file) {
+        if(firstLineLoadedFeatures.contains(file)) {
+            return false;
+        }
         Library library = null;
         String loadName = file;
         String[] extensionsToSearch = null;
@@ -265,6 +269,7 @@ public class LoadService {
         // attempt to load the found library
         try {
             loadedFeaturesInternal.add(loadName);
+            firstLineLoadedFeatures.add(file);
             synchronized(loadedFeatures) {
                 loadedFeatures.add(runtime.newString(loadName));
             }
@@ -273,6 +278,7 @@ public class LoadService {
             return true;
         } catch (Exception e) {
             loadedFeaturesInternal.remove(loadName);
+            firstLineLoadedFeatures.remove(file);
             synchronized(loadedFeatures) {
                 loadedFeatures.remove(runtime.newString(loadName));
             }
