@@ -30,9 +30,12 @@ package org.jruby.compiler.yarv;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.IdentityHashMap;
 
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArrayNode;
@@ -41,19 +44,24 @@ import org.jruby.ast.CallNode;
 import org.jruby.ast.ConstNode;
 import org.jruby.ast.DefnNode;
 import org.jruby.ast.NewlineNode;
+import org.jruby.ast.NotNode;
 import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FCallNode;
 import org.jruby.ast.IfNode;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.LocalVarNode;
+import org.jruby.ast.OrNode;
 import org.jruby.ast.VCallNode;
 import org.jruby.ast.IArgumentNode;
 import org.jruby.ast.HashNode;
+import org.jruby.ast.OptNNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.NodeTypes;
 import org.jruby.ast.RootNode;
 import org.jruby.ast.StrNode;
+import org.jruby.ast.UntilNode;
+import org.jruby.ast.WhileNode;
 import org.jruby.ast.executable.YARVInstructions;
 import org.jruby.ast.executable.YARVMachine;
 import org.jruby.ast.types.ILiteralNode;
@@ -124,9 +132,14 @@ public class StandardYARVCompiler implements NodeCompiler {
         }
     }
 
-    private static Label NEW_LABEL(int l) {
-        // TODO: implement
-        return null;
+    private int label_no = 0;
+    private Label NEW_LABEL(int l) {
+        Label labelobj = new Label();
+        labelobj.next = null;
+        labelobj.label_no = label_no++;
+        labelobj.sc_state = 0;
+        labelobj.sp = -1;
+        return labelobj;
     }
 
     private static void ADD_LABEL(LinkAnchor anchor, LinkElement elem) {
@@ -373,7 +386,7 @@ public class StandardYARVCompiler implements NodeCompiler {
                     ADD_INSN1(ret, nd_line(node), YARVInstructions.GETLOCAL, idx2);
                 }
                 break compileLoop;
-            case NodeTypes.IFNODE:
+            case NodeTypes.IFNODE: {
                 LinkAnchor cond_seq = DECL_ANCHOR();
                 LinkAnchor then_seq = DECL_ANCHOR();
                 LinkAnchor else_seq = DECL_ANCHOR();
@@ -399,6 +412,7 @@ public class StandardYARVCompiler implements NodeCompiler {
 
                 ADD_LABEL(ret, end_label);
                 break compileLoop;
+            }
             case NodeTypes.CALLNODE:
             case NodeTypes.FCALLNODE:
             case NodeTypes.VCALLNODE:
@@ -468,6 +482,52 @@ public class StandardYARVCompiler implements NodeCompiler {
                     ADD_INSN1(ret, nd_line(node), YARVInstructions.PUTOBJECT, iVisited.getFixnum(runtime));
                 }
                 break compileLoop;
+            case NodeTypes.OPTNNODE:
+            case NodeTypes.WHILENODE:
+            case NodeTypes.UNTILNODE:{
+                Label next_label = NEW_LABEL(nd_line(node));	/* next  */
+                Label redo_label = NEW_LABEL(nd_line(node));	/* redo  */
+                Label break_label = NEW_LABEL(nd_line(node));	/* break */
+                Label end_label = NEW_LABEL(nd_line(node));
+
+                if(node instanceof OptNNode) {
+                    ADD_INSNL(ret, nd_line(node), YARVInstructions.JUMP, next_label);
+                }
+
+                ADD_LABEL(ret, redo_label);
+
+                Node body = null;
+                if(node instanceof WhileNode) {
+                    body = ((WhileNode)node).getBodyNode();
+                } else if(node instanceof UntilNode) {
+                    body = ((UntilNode)node).getBodyNode();
+                } else if(node instanceof OptNNode) {
+                    body = ((OptNNode)node).getBodyNode();
+                }
+                COMPILE_POPED(ret, "while body", body);
+                ADD_LABEL(ret, next_label);	/* next */
+
+                if(node instanceof WhileNode) {
+                    compile_branch_condition(ret, ((WhileNode)node).getConditionNode(), redo_label, end_label);
+                } else if(node instanceof UntilNode) {
+                    /* untile */
+                    compile_branch_condition(ret, ((UntilNode)node).getConditionNode(),end_label, redo_label);
+                } else {
+                    ADD_CALL_RECEIVER(ret, nd_line(node));
+                    //TODO:                    ADD_CALL(ret, nd_line(node), ID2SYM(idGets), INT2FIX(0));
+                    ADD_INSNL(ret, nd_line(node), YARVInstructions.BRANCHIF, redo_label) ;
+                    /* opt_n */
+                }
+
+                ADD_LABEL(ret, end_label);
+                ADD_INSN(ret, nd_line(node), YARVInstructions.PUTNIL);
+                ADD_LABEL(ret, break_label);	/* braek */
+                if (poped) {
+                    ADD_INSN(ret, nd_line(node), YARVInstructions.POP);
+                }
+                break compileLoop;
+            }
+
             default:
                 debugs(" ... doesn't handle node: " + node);
                 break compileLoop;
@@ -478,8 +538,40 @@ public class StandardYARVCompiler implements NodeCompiler {
     }
 
     private int compile_branch_condition(LinkAnchor ret, Node cond, Label then_label, Label else_label) {
-        //TODO: implement
-        return COMPILE_NG;
+        switch(cond.nodeId) {
+        case NodeTypes.NOTNODE:
+            compile_branch_condition(ret, ((NotNode)cond).getConditionNode(), else_label, then_label);
+            break;
+        case NodeTypes.ANDNODE: {
+            Label label = NEW_LABEL(nd_line(cond));
+            compile_branch_condition(ret, ((AndNode)cond).getFirstNode(), label, else_label);
+            ADD_LABEL(ret, label);
+            compile_branch_condition(ret, ((AndNode)cond).getSecondNode(), then_label, else_label);
+            break;
+        }
+        case NodeTypes.ORNODE: {
+            Label label = NEW_LABEL(nd_line(cond));
+            compile_branch_condition(ret, ((OrNode)cond).getFirstNode(), then_label, label);
+            ADD_LABEL(ret, label);
+            compile_branch_condition(ret, ((OrNode)cond).getSecondNode(), then_label, else_label);
+            break;
+        }
+        case NodeTypes.TRUENODE:
+        case NodeTypes.STRNODE:
+            ADD_INSNL(ret, nd_line(cond), YARVInstructions.JUMP, then_label);
+            break;
+        case NodeTypes.FALSENODE:
+        case NodeTypes.NILNODE:
+            ADD_INSNL(ret, nd_line(cond), YARVInstructions.JUMP, else_label);
+            break;
+        default:
+            COMPILE(ret, "branch condition", cond);
+            ADD_INSNL(ret, nd_line(cond), YARVInstructions.BRANCHUNLESS, else_label);
+            ADD_INSNL(ret, nd_line(cond), YARVInstructions.JUMP, then_label);
+            break;
+        }
+
+        return COMPILE_OK;
     }
 
     private int compile_array(LinkAnchor ret, Node node_root, boolean opt_p) {
@@ -592,7 +684,11 @@ public class StandardYARVCompiler implements NodeCompiler {
     }
 
     private void ADD_INSNL(LinkAnchor seq, int line, int insn, Label l) {
-        // TODO: impl
+        YARVMachine.Instruction i = new YARVMachine.Instruction(insn);
+        i.line_no = line;
+        i._tmp = l;
+        debugs("ADD_INSNL(" + line + ", " + YARVInstructions.name(insn) + ", " + l + ")");
+        ADD_ELEM(seq, new_insn(i));
     }
 
     private void ADD_INSN1(LinkAnchor seq, int line, int insn, String obj) {
@@ -617,15 +713,36 @@ public class StandardYARVCompiler implements NodeCompiler {
         iseq = new YARVMachine.InstructionSequence(runtime, name, filename, level);
         List l = new ArrayList();
         LinkElement elm = current_iseq;
+        Map jumps = new IdentityHashMap();
+        Map labels = new IdentityHashMap();
+        int real=0;
         while(elm != null) {
             if(elm instanceof Insn) {
-                l.add(((Insn)elm).i);
+                Insn i = (Insn)elm;
+                if(isJump(i.i.bytecode)) {
+                    jumps.put(i, i.i._tmp);
+                }
+                l.add(i.i);
+                real++;
+            } else if(elm instanceof Label) {
+                labels.put(elm, new Integer(real+1));
             }
             elm = elm.next;
         }
+        for(Iterator iter = jumps.keySet().iterator();iter.hasNext();) {
+            Insn k = (Insn)iter.next();
+            k.i.l_op0 = ((Integer)labels.get(jumps.get(k))).intValue() - 1;
+            k.i._tmp = null;
+        }
+
         debugs("instructions: " + l);
         iseq.body = (YARVMachine.Instruction[])l.toArray(new YARVMachine.Instruction[l.size()]);
         iseq.locals = locals;
         return iseq;
+    }
+
+    private boolean isJump(int i) {
+        return i == YARVInstructions.JUMP || i == YARVInstructions.BRANCHIF || i == YARVInstructions.BRANCHUNLESS || 
+            i == YARVInstructions.GETINLINECACHE || i == YARVInstructions.SETINLINECACHE;
     }
 }// StandardYARVCompiler

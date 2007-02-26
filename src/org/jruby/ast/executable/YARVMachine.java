@@ -65,10 +65,11 @@ public class YARVMachine {
     }
 
     public static class Instruction {
-        final int bytecode;
+        final public int bytecode;
         public int line_no;
         public String s_op0;
         public IRubyObject o_op0;
+        public Object _tmp;
         public long l_op0;
         public long l_op1;
         public int i_op1;
@@ -121,7 +122,7 @@ public class YARVMachine {
     }
 
     public IRubyObject exec(ThreadContext context, IRubyObject self, DynamicScope scope, Instruction[] bytecodes) {
-        IRubyObject[] stack = new IRubyObject[50];
+        IRubyObject[] stack = new IRubyObject[255];
         int stackTop = 0;
         stack[stackTop] = context.getRuntime().getNil();
         int ip = 0;
@@ -403,6 +404,7 @@ public class YARVMachine {
                         recv = stack[stackTop--];
                         callType = CallType.NORMAL;
                     } else {
+                        stackTop--;
                         recv = self;
                         callType = CallType.FUNCTIONAL;
                     }
