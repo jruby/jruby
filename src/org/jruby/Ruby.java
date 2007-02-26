@@ -118,7 +118,7 @@ import org.jruby.util.collections.SinglyLinkedList;
  * The jruby runtime.
  */
 public final class Ruby {
-    private static String[] BUILTIN_LIBRARIES = {"fcntl", "yaml", "etc", "nkf" };
+    private static String[] BUILTIN_LIBRARIES = {"fcntl", "yaml", "nkf" };
 
     private CacheMap cacheMap = new CacheMap(this);
     private ThreadService threadService = new ThreadService(this);
@@ -575,9 +575,6 @@ public final class Ruby {
 
         getObject().defineConstant("TOPLEVEL_BINDING", newBinding());
 
-        // Load additional definitions and hacks from etc.rb
-        getLoadService().smartLoad("builtin/etc.rb");
-
         RubyKernel.autoload(topSelf, newSymbol("Java"), newString("java"));
     }
 
@@ -869,6 +866,14 @@ public final class Ruby {
 
         if(profile.allowClass("Data")) {
             defineClass("Data", objectClass, objectClass.getAllocator());
+        }
+
+        if(profile.allowModule("Signal")) {
+            RubySignal.createSignal(this);
+        }
+
+        if(profile.allowClass("Continuation")) {
+            RubyContinuation.createContinuation(this);
         }
     }
 
