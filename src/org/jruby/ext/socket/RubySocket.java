@@ -51,7 +51,7 @@ import org.jruby.util.ByteList;
 public class RubySocket extends RubyBasicSocket {
     public static class Service implements Library {
         public void load(final Ruby runtime) throws IOException {
-            runtime.defineClass("SocketError",runtime.getClass("StandardError"), org.jruby.runtime.builtin.meta.ObjectMetaClass.OBJECT_ALLOCATOR);
+            runtime.defineClass("SocketError",runtime.getClass("StandardError"), runtime.getClass("StandardError").getAllocator());
             RubyBasicSocket.createBasicSocket(runtime);
             RubySocket.createSocket(runtime);
             RubyIPSocket.createIPSocket(runtime);
