@@ -44,6 +44,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.Convert;
 
 /** Implementation of the Fixnum class.
  *
@@ -231,7 +232,7 @@ public class RubyFixnum extends RubyInteger {
         if (base < 2 || base > 36) {
             throw getRuntime().newArgumentError("illegal radix " + base);
             }
-        return getRuntime().newString(Long.toString(value, base));
+        return getRuntime().newString(Convert.longToByteList(value, base));
         }
 
     /** fix_id2name

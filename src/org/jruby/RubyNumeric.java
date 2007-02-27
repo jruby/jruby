@@ -44,6 +44,8 @@ import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
+import org.jruby.util.Convert;
 
 /**
  * Base class for all numerical types in ruby.
@@ -94,7 +96,7 @@ public class RubyNumeric extends RubyObject {
     };
 
     public static double DBL_EPSILON=2.2204460492503131e-16;
-
+    
     public RubyNumeric(Ruby runtime, RubyClass metaClass) {
         super(runtime, metaClass);
     }
@@ -266,83 +268,40 @@ public class RubyNumeric extends RubyObject {
      * 
      * @param runtime  the ruby runtime
      * @param str   the string to be converted
-     * @param base  the expected base of the number (2, 8, 10 or 16), or 0 
-     *              if the method should determine the base automatically 
-     *              (defaults to 10).
-     * @param raise if the string is not a valid integer, raise error, otherwise return 0
+     * @param base  the expected base of the number (for example, 2, 8, 10, 16),
+     *              or 0 if the method should determine the base automatically 
+     *              (defaults to 10). Values 0 and 2-36 are permitted. Any other
+     *              value will result in an ArgumentError.
+     * @param strict if true, enforce the strict criteria for String encoding of
+     *               numeric values, as required by Integer('n'), and raise an
+     *               exception when those criteria are not met. Otherwise, allow
+     *               lax expression of values, as permitted by String#to_i, and
+     *               return a value in almost all cases (excepting illegal radix).
+     *               TODO: describe the rules/criteria
      * @return  a RubyFixnum or (if necessary) a RubyBignum representing 
      *          the result of the conversion, which will be zero if the 
      *          conversion failed.
      */
-    public static RubyInteger str2inum(Ruby runtime, RubyString str, int base, boolean raise) {
-        StringBuffer sbuf = new StringBuffer(str.toString().trim());
-        if (sbuf.length() == 0) {
-            if(raise) {
-                throw runtime.newArgumentError("invalid value for Integer: "
-                        + str.callMethod(runtime.getCurrentContext(), "inspect").toString());
+    public static RubyInteger str2inum(Ruby runtime, RubyString str, int base, boolean strict) {
+        if (base != 0 && (base < 2 || base > 36)) {
+            throw runtime.newArgumentError("illegal radix " + base);
             }
-            return RubyFixnum.zero(runtime);
-        }
-        int pos = 0;
-        int radix = (base != 0) ? base : 10;
-        boolean digitsFound = false;
-        if (sbuf.charAt(pos) == '-') {
-            pos++;
-        } else if (sbuf.charAt(pos) == '+') {
-            sbuf.deleteCharAt(pos);
-        }
-        if (pos == sbuf.length()) {
-            if(raise) {
-                throw runtime.newArgumentError("invalid value for Integer: "
-                        + str.callMethod(runtime.getCurrentContext(), "inspect").toString());
-            }
-            return RubyFixnum.zero(runtime);
-        }
-        if (sbuf.charAt(pos) == '0') {
-            sbuf.deleteCharAt(pos);
-            if (pos == sbuf.length()) {
-                return RubyFixnum.zero(runtime);
-            }
-            if (sbuf.charAt(pos) == 'x' || sbuf.charAt(pos) == 'X') {
-                if (base == 0 || base == 16) {
-                    radix = 16;
-                    sbuf.deleteCharAt(pos);
-                }
-            } else if (sbuf.charAt(pos) == 'b' || sbuf.charAt(pos) == 'B') {
-                if (base == 0 || base == 2) {
-                    radix = 2;
-                    sbuf.deleteCharAt(pos);
-                }
-            } else {
-                radix = (base == 0) ? 8 : base;
-            }
-        }
-        while (pos < sbuf.length()) {
-            if (sbuf.charAt(pos) == '_') {
-                sbuf.deleteCharAt(pos);
-            } else if (Character.digit(sbuf.charAt(pos), radix) != -1) {
-                digitsFound = true;
-                pos++;
-            } else {
-                break;
-            }
-        }
-        if (!digitsFound) {
-            if(raise) {
-                throw runtime.newArgumentError("invalid value for Integer: "
-                        + str.callMethod(runtime.getCurrentContext(), "inspect").toString());
-            }
-            return RubyFixnum.zero(runtime);
-        }
+        ByteList bytes = str.getByteList();
         try {
-            long l = Long.parseLong(sbuf.substring(0, pos), radix);
-            return runtime.newFixnum(l);
-        } catch (NumberFormatException ex) {
-            try {
-                BigInteger bi = new BigInteger(sbuf.substring(0, pos), radix);
-                return new RubyBignum(runtime, bi);
-            } catch(NumberFormatException e) {
-                if(raise) {
+            return runtime.newFixnum(Convert.byteListToLong(bytes,base,strict));
+
+        } catch (InvalidIntegerException e) {
+            if (strict) {
+                throw runtime.newArgumentError("invalid value for Integer: "
+                        + str.callMethod(runtime.getCurrentContext(), "inspect").toString());
+            }
+            return RubyFixnum.zero(runtime);
+        } catch (NumberTooLargeException e) {
+        try {
+                BigInteger bi = Convert.byteListToBigInteger(bytes,base,strict);
+                return new RubyBignum(runtime,bi);
+            } catch (InvalidIntegerException e2) {
+                if(strict) {
                     throw runtime.newArgumentError("invalid value for Integer: "
                             + str.callMethod(runtime.getCurrentContext(), "inspect").toString());
                 }
@@ -789,4 +748,24 @@ public class RubyNumeric extends RubyObject {
 	public boolean singletonMethodsAllowed() {
 		return false;
 	}
+    
+    public static class InvalidIntegerException extends NumberFormatException {
+        public InvalidIntegerException() {
+            super();
+        }
+        public InvalidIntegerException(String message) {
+            super(message);
+        }
+    }
+    
+    public static class NumberTooLargeException extends NumberFormatException {
+        public NumberTooLargeException() {
+            super();
+        }
+        public NumberTooLargeException(String message) {
+            super(message);
+        }
+        
+    }
+    
 }

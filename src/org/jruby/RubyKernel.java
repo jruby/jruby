@@ -365,20 +365,8 @@ public class RubyKernel {
         ThreadContext context = recv.getRuntime().getCurrentContext();
         
         if(object instanceof RubyString) {
-            String val = object.toString();
-            if(val.length() > 0 && val.charAt(0) == '0') {
-                if(val.length() > 1) {
-                    if(val.charAt(1) == 'x') {
-                        return RubyNumeric.str2inum(recv.getRuntime(),recv.getRuntime().newString(val.substring(2)),16,true);
-                    } else if(val.charAt(1) == 'b') {
-                        return RubyNumeric.str2inum(recv.getRuntime(),recv.getRuntime().newString(val.substring(2)),2,true);
-                    } else {
-                        return RubyNumeric.str2inum(recv.getRuntime(),recv.getRuntime().newString(val.substring(1)),8,true);
+            return RubyNumeric.str2inum(recv.getRuntime(),(RubyString)object,0,true);
                     }
-                }
-            }
-            return RubyNumeric.str2inum(recv.getRuntime(),(RubyString)object,10,true);
-        }
         return object.callMethod(context,"to_i");
     }
     
