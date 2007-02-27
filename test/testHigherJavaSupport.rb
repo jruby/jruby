@@ -355,3 +355,30 @@ test_no_exception {
 
 # JRUBY-232, collision with Ruby allocate and Java allocate
 test_no_exception { java.nio.ByteBuffer.allocate(1) }
+
+# JRUBY-636 and other "extending Java classes"-issues
+class BigInt < java.math.BigInteger
+  def initialize(val)
+    super(val)
+  end
+  def test
+    "Bit count = #{bitCount}"
+  end
+end
+
+test_equal 2, BigInt.new("10").bitCount
+test_equal "Bit count = 2", BigInt.new("10").test
+
+class TestOS < java.io.OutputStream
+  attr_reader :written
+  def write(p)
+    @written = true
+  end
+end
+
+_anos = TestOS.new
+bos = java.io.BufferedOutputStream.new _anos
+bos.write 32
+bos.flush
+test_ok _anos.written
+

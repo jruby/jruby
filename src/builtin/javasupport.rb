@@ -345,14 +345,22 @@ class ConcreteJavaProxy < JavaProxy
   class << self
     alias_method :new_proxy, :new
 
-    def new(*args)
-      proxy = new_proxy
-      constructors = proxy.java_class.constructors.select {|c| c.arity == args.length }
-      raise NameError.new("wrong # of arguments for constructor") if constructors.empty?
-      args.collect! { |v| Java.ruby_to_java(v) }
-      proxy.java_object = JavaUtilities.matching_method(constructors, args).new_instance(*args)
+    def new(*args,&block)
+      proxy = new_proxy *args,&block
+      proxy.__jcreate!(*args) unless proxy.java_object
       proxy
     end
+  end
+  
+  def __jcreate!(*args)
+    constructors = self.java_class.constructors.select {|c| c.arity == args.length }
+    raise NameError.new("wrong # of arguments for constructor") if constructors.empty?
+    args.collect! { |v| Java.ruby_to_java(v) }
+    self.java_object = JavaUtilities.matching_method(constructors, args).new_instance(*args)
+  end
+  
+  def initialize(*args, &block)
+    __jcreate!(*args)
   end
 end
 
@@ -413,32 +421,25 @@ module JavaUtilities
 
   def JavaUtilities.setup_java_subclass(subclass, java_class)
   
-  		# add new class-variable to hold the JavaProxyClass instance
-  		subclass.class.send :attr, :java_proxy_class, true
-
-    class << subclass
-      def new(*args,&block)
-        new_proxy *args,&block
-      end
-    end
-
-        # override 
-  		subclass.send(:define_method, "initialize") {|*args|
-		    constructors = self.class.java_proxy_class.constructors.select {|c| c.arity == args.length }
-		    raise NameError.new("wrong # of arguments for constructor") if constructors.empty?
-		    args.collect! { |v| Java.ruby_to_java(v) }
-			self.java_object = JavaUtilities.matching_method(constructors, args).new_instance(args) { |proxy, method, *args|
-              args.collect! { |arg| Java.java_to_ruby(arg) } 
-              result = __jsend!(method.name, *args)
-		      Java.ruby_to_java(result)
-		    } 
-		}
+    # add new class-variable to hold the JavaProxyClass instance
+    subclass.class.send :attr, :java_proxy_class, true
+    
+    subclass.send(:define_method, "__jcreate!") {|*args|
+      constructors = self.class.java_proxy_class.constructors.select {|c| c.arity == args.length }
+      raise NameError.new("wrong # of arguments for constructor") if constructors.empty?
+      args.collect! { |v| Java.ruby_to_java(v) }
+      self.java_object = JavaUtilities.matching_method(constructors, args).new_instance(args) { |proxy, method, *args|
+        args.collect! { |arg| Java.java_to_ruby(arg) } 
+        result = __jsend!(method.name, *args)
+        Java.ruby_to_java(result)
+      } 
+    }
 		
-		subclass.send(:define_method, "setup_instance_methods") {
-			self.java_proxy_class.define_instance_methods_for_proxy(subclass)
-		}
-				  
-  		subclass.java_proxy_class = Java::JavaProxyClass.get(java_class)
+    subclass.send(:define_method, "setup_instance_methods") {
+      self.java_proxy_class.define_instance_methods_for_proxy(subclass)
+    }
+    
+    subclass.java_proxy_class = Java::JavaProxyClass.get(java_class)
   end
 
   def JavaUtilities.get_java_class(name)
@@ -516,7 +517,7 @@ module JavaUtilities
       notfirst = true
     end
 
-    name = methods.first.kind_of?(Java::JavaConstructor) ? 
+    name = methods.first.kind_of?(Java::JavaConstructor) || methods.first.kind_of?(Java::JavaProxyConstructor) ? 
       "constructor" : "method '" + methods.first.name + "'"
     raise NameError.new("no " + name + " with arguments matching " + arg_types.inspect)
   end
