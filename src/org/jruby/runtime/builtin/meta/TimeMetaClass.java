@@ -299,9 +299,12 @@ public class TimeMetaClass extends ObjectMetaClass {
 
         Calendar cal = gmt ? Calendar.getInstance(TimeZone.getTimeZone(RubyTime.UTC)) : 
             Calendar.getInstance(); 
-        RubyTime time = new RubyTime(getRuntime(), (RubyClass) this, cal);
         cal.set(year, month, int_args[0], int_args[1], int_args[2], int_args[3]);
         cal.set(Calendar.MILLISECOND, int_args[4] / 1000);
+        if (cal.getTimeInMillis() < 0) {
+            throw getRuntime().newArgumentError("time out of range");
+        }
+        RubyTime time = new RubyTime(getRuntime(), (RubyClass) this, cal);
         time.setUSec(int_args[4] % 1000);
 
         time.callInit(args, Block.NULL_BLOCK);
