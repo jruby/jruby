@@ -43,7 +43,12 @@ import org.jruby.util.ByteList;
  */
 public class RubyDigest {
     public static void createDigest(Ruby runtime) {
-        java.security.Security.insertProviderAt(new org.bouncycastle.jce.provider.BouncyCastleProvider(),2);
+        try {
+            Class c = Class.forName("org.bouncycastle.jce.provider.BouncyCastleProvider");
+            java.security.Security.insertProviderAt((java.security.Provider)c.newInstance(),2);
+        } catch(Exception e) {
+            runtime.getWarnings().warn("Couldn't find org.bouncycastle.jce.provider.BouncyCastleProvider. Digest will probably not be functional.");
+        }
 
         RubyModule mDigest = runtime.defineModule("Digest");
         RubyClass cDigestBase = mDigest.defineClassUnder("Base",runtime.getObject(), Base.BASE_ALLOCATOR);
