@@ -396,11 +396,16 @@ public class RubyBignum extends RubyInteger {
         double d;
         if (other instanceof RubyFixnum) {
             RubyFixnum fix = (RubyFixnum) other;
+            long fixValue = fix.getLongValue();
             // MRI issuses warning here on (RBIGNUM(x)->len * SIZEOF_BDIGITS * yy > 1024*1024)
-            if (((value.bitLength() + 7) / 8) * 4 * fix.getLongValue() > 1024 * 1024) {
+            if (((value.bitLength() + 7) / 8) * 4 * Math.abs(fixValue) > 1024 * 1024) {
                 getRuntime().getWarnings().warn("in a**b, b may be too big");
     	}
-            return bignorm(getRuntime(), value.pow((int) fix.getLongValue())); // num2int is also implemented
+            if (fixValue >= 0) {
+                return bignorm(getRuntime(), value.pow((int) fixValue)); // num2int is also implemented
+            } else {
+                return RubyFloat.newFloat(getRuntime(), Math.pow(big2dbl(this), (double)fixValue));
+            }
         } else if (other instanceof RubyBignum) {
             getRuntime().getWarnings().warn("in a**b, b may be too big");
             d = ((RubyBignum) other).getDoubleValue();
