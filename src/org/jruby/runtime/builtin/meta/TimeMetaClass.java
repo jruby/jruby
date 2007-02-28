@@ -296,12 +296,14 @@ public class TimeMetaClass extends ObjectMetaClass {
                 }
             }
         }
-
+        
+        if (year < 100) year += 2000;
+        
         Calendar cal = gmt ? Calendar.getInstance(TimeZone.getTimeZone(RubyTime.UTC)) : 
             Calendar.getInstance(); 
         cal.set(year, month, int_args[0], int_args[1], int_args[2], int_args[3]);
         cal.set(Calendar.MILLISECOND, int_args[4] / 1000);
-        if (cal.getTimeInMillis() < 0) {
+        if (cal.getTimeInMillis() / 1000 < -0x80000000) {
             throw getRuntime().newArgumentError("time out of range");
         }
         RubyTime time = new RubyTime(getRuntime(), (RubyClass) this, cal);
