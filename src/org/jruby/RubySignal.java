@@ -40,10 +40,10 @@ public class RubySignal {
     public static void createSignal(Ruby runtime) {
         RubyModule mSignal = runtime.defineModule("Signal");
         CallbackFactory cf = runtime.callbackFactory(RubySignal.class);
-        mSignal.getMetaClass().defineMethod("trap", cf.getSingletonMethod("trap",RubyKernel.IRUBY_OBJECT));
+        mSignal.getMetaClass().defineMethod("trap", cf.getOptSingletonMethod("trap"));
     }
 
-    public static IRubyObject trap(IRubyObject recv, IRubyObject sig, Block unusedBlock) {
+    public static IRubyObject trap(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         recv.getRuntime().getWarnings().warn("Signal.trap: Signals is currently not implemented in JRuby and will not work");
         return recv.getRuntime().getNil();
     }

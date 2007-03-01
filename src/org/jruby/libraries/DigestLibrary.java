@@ -31,18 +31,31 @@ import java.io.IOException;
 
 import org.jruby.Ruby;
 import org.jruby.runtime.load.Library;
+import org.jruby.util.BuiltinScript;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class DigestLibrary implements Library {
     public void load(final Ruby runtime) throws IOException {
-        org.jruby.RubyDigest.createDigest(runtime);
+        try {
+            Class.forName("org.bouncycastle.jce.provider.BouncyCastleProvider");
+            
+            org.jruby.RubyDigest.createDigest(runtime);
+        } catch(Exception e) {
+            new BuiltinScript("digest").load(runtime);
+        }
     }
 
     public static class MD5 implements Library {
         public void load(final Ruby runtime) throws IOException {
-            org.jruby.RubyDigest.createDigestMD5(runtime);
+            try {
+                Class.forName("org.bouncycastle.jce.provider.BouncyCastleProvider");
+                
+                org.jruby.RubyDigest.createDigestMD5(runtime);
+            } catch(Exception e) {
+                new BuiltinScript("digest/md5").load(runtime);
+            }
         }
     }
 
@@ -54,13 +67,25 @@ public class DigestLibrary implements Library {
 
     public static class SHA1 implements Library {
         public void load(final Ruby runtime) throws IOException {
-            org.jruby.RubyDigest.createDigestSHA1(runtime);
+            try {
+                Class.forName("org.bouncycastle.jce.provider.BouncyCastleProvider");
+                
+                org.jruby.RubyDigest.createDigestSHA1(runtime);
+            } catch(Exception e) {
+                new BuiltinScript("digest/sha1").load(runtime);
+            }
         }
     }
 
     public static class SHA2 implements Library {
         public void load(final Ruby runtime) throws IOException {
-            org.jruby.RubyDigest.createDigestSHA2(runtime);
+            try {
+                Class.forName("org.bouncycastle.jce.provider.BouncyCastleProvider");
+                
+                org.jruby.RubyDigest.createDigestSHA2(runtime);
+            } catch(Exception e) {
+                new BuiltinScript("digest/sha2").load(runtime);
+            }
         }
     }
 }// DigestLibrary
