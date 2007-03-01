@@ -380,7 +380,15 @@ class MultipleInterfaceJavaProxy
     }
     proxy
   end
-  
+
+  def ===(other)
+    if other.respond_to?(:java_object)
+      (@interfaces - other.java_object.java_class.interfaces) == []
+    else
+      super
+    end
+  end
+
   private
   def into_arr(other)
     case other
