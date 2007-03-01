@@ -12,6 +12,8 @@
 #openssl/test_x509name
 #openssl/test_x509req
 #openssl/test_x509store
+
+# Rubicon tests
 rubicon/test_access_control
 rubicon/test_array
 rubicon/test_assignment
@@ -52,6 +54,8 @@ rubicon/test_struct
 rubicon/test_symbol
 rubicon/test_thread_group
 rubicon/test_true_class
+
+# Our own test/unit-based tests
 test_array
 test_backquote
 test_block
@@ -69,19 +73,20 @@ test_symbol
 test_thread
 test_zlib
 
-# BFTS
-externals/bfts/test_array
-externals/bfts/test_comparable
-externals/bfts/test_exception
-externals/bfts/test_false_class
-#externals/bfts/test_file_test
-externals/bfts/test_hash
-externals/bfts/test_nil_class
-externals/bfts/test_range
-#externals/bfts/test_string
-#externals/bfts/test_struct
-#externals/bfts/test_time
-externals/bfts/test_true_class
+# BFTS working tests
+# Temporarily disabled until we can commit or externals them again
+#externals/bfts/test_array
+#externals/bfts/test_comparable
+#externals/bfts/test_exception
+#externals/bfts/test_false_class
+##externals/bfts/test_file_test
+#externals/bfts/test_hash
+#externals/bfts/test_nil_class
+#externals/bfts/test_range
+##externals/bfts/test_string
+##externals/bfts/test_struct
+##externals/bfts/test_time
+#externals/bfts/test_true_class
 
 # MRI's tests
 externals/mri/ruby/test_alias
