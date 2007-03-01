@@ -154,15 +154,15 @@
   </target>
 
   <target name="generate-method-classes" depends="serialize">
-    <touch file="__empty.rb" verbose="false"/>
-    <java classname="org.jruby.Main">
+    <touch file="${build.dir}/__empty.rb" verbose="false"/>
+    <java classname="org.jruby.Main" fork="true">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.dump_invocations" value="${jruby.classes.dir}"/>
       <arg value="-rjava"/>
-      <arg value="__empty.rb"/>
+      <arg value="${build.dir}/__empty.rb"/>
     </java>
-    <delete file="__empty.rb" quiet="true"/>
+    <delete file="${build.dir}/__empty.rb" quiet="true"/>
   </target>
 
   <target name="serialize.rubylib" depends="compile"
