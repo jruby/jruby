@@ -1101,8 +1101,8 @@ public class RubyObject implements Cloneable, IRubyObject {
                 for (Iterator iter = iVars.keySet().iterator(); iter.hasNext();) {
                     String name = (String) iter.next();
                     if(IdUtil.isInstanceVariable(name)) {
-                        part.append(" ");
                         part.append(sep);
+                        part.append(" ");
                         part.append(name);
                         part.append("=");
                         part.append(((IRubyObject)(iVars.get(name))).callMethod(getRuntime().getCurrentContext(), "inspect"));

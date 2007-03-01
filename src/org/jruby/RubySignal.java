@@ -44,7 +44,7 @@ public class RubySignal {
     }
 
     public static IRubyObject trap(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        recv.getRuntime().getWarnings().warn("Signal.trap: Signals is currently not implemented in JRuby and will not work");
+        recv.getRuntime().getWarnings().warning("Signal.trap: Signals is currently not implemented in JRuby and will not work");
         return recv.getRuntime().getNil();
     }
 }// RubySignal
