@@ -27,15 +27,6 @@
     <exclude unless="bsf.present" name="org/jruby/javasupport/bsf/**/*.java"/>
     <exclude unless="jdk1.4+" name="**/XmlAstMarshal.java"/>
     <exclude unless="jdk1.4+" name="**/AstPersistenceDelegates.java"/>
-    <exclude name="org/jruby/ext/openssl/**/*.java"/>
-    <include name="org/jruby/ext/openssl/RubyOpenSSL.java"/>
-    <include name="org/jruby/ext/openssl/OpenSSLFake.java"/>
-  </patternset>
-
-  <patternset id="java.openssl.src.pattern">
-    <include if="build.openssl" name="org/jruby/ext/openssl/**/*.java"/>
-    <exclude name="org/jruby/ext/openssl/RubyOpenSSL.java"/>
-    <exclude name="org/jruby/ext/openssl/OpenSSLFake.java"/>
   </patternset>
 
   <patternset id="ruby.src.pattern">
@@ -62,7 +53,6 @@
     <mkdir dir="${build.dir}"/>
     <mkdir dir="${classes.dir}"/>
     <mkdir dir="${jruby.classes.dir}"/>
-    <mkdir dir="${jruby.openssl.classes.dir}"/>
     <mkdir dir="${test.classes.dir}"/>
     <mkdir dir="${test.results.dir}"/>
     <mkdir dir="${html.test.results.dir}"/>
@@ -98,15 +88,6 @@
   <target name="check-for-optional-packages" if="jdk1.5+"
           description="check if specific libs and versions are avaiable"
           depends="check-for-optional-java4-packages">
-    <available property="bc.present" 
-               classname="org.bouncycastle.jce.provider.BouncyCastleProvider"
-               classpathref="build.classpath"/>
-    <condition property="build.openssl">
-      <and>
-        <isset property="bc.present"/>
-        <isset property="jdk1.5+"/>
-      </and>
-    </condition>
   </target>
 
   <target name="compile.tasks" depends="prepare"
@@ -133,16 +114,7 @@
     </javac>
   </target>
 
-  <target name="compile-openssl" if="build.openssl" depends="compile-jruby">
-    <javac destdir="${jruby.openssl.classes.dir}" debug="true" source="${javac.version}">
-       <classpath refid="build.classpath"/>
-       <classpath path="${jruby.classes.dir}"/>
-       <src path="${src.dir}"/>
-       <patternset refid="java.openssl.src.pattern"/>
-    </javac>
-  </target>
-
-  <target name="compile" depends="compile-jruby,compile-openssl"
+  <target name="compile" depends="compile-jruby"
           description="Compile the source files for the project.">
   </target>
 
@@ -236,7 +208,6 @@
 		          <exclude name="**/drb/**"/>
 		          <exclude name="**/io/**"/>
 		          <exclude name="**/net/**"/>
-		          <exclude name="**/openssl/**"/>
 		          <exclude name="**/racc/**"/>
 		          <exclude name="**/rexml/**"/>
 		          <exclude name="**/rinda/**"/>
@@ -266,15 +237,7 @@
           </antcall>
 	  </target>
 
-  <target name="jar-openssl" depends="generate-method-classes,jar-jruby" if="build.openssl">
-    <jar destfile="${lib.dir}/jruby-openssl.jar">
-      <fileset dir="${jruby.openssl.classes.dir}">
-        <include name="**/*.class"/>
-      </fileset>
-    </jar>
-  </target>
-
-  <target name="jar" depends="jar-jruby,jar-openssl" description="Create the jruby.jar file">
+  <target name="jar" depends="jar-jruby" description="Create the jruby.jar file">
   </target>
 
   <target name="jar.standalone" depends="generate-method-classes, serialize.rubylib, jar"
