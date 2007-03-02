@@ -349,7 +349,7 @@ public class RubyDateFormat extends DateFormat {
                     break;
                 case FORMAT_ZONE_OFF:
                     value = calendar.getTimeZone().getOffset(calendar.getTimeInMillis());
-                    if (value < 0) {
+                    if (value <= 0) {
                         toAppendTo.append('+');
                     } else {
                         toAppendTo.append('-');
