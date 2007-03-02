@@ -154,7 +154,7 @@ public final class DefaultMethod extends DynamicMethod {
 
             if (JIT_ENABLED) runJIT(runtime, name);
                     
-            return EvaluationState.eval(context, body, self, block);
+            return EvaluationState.eval(runtime, context, body, self, block);
         } catch (JumpException je) {
         	if (je.getJumpType() == JumpException.JumpType.ReturnJump && je.getTarget() == this) {
 	                return (IRubyObject) je.getValue();
@@ -247,14 +247,14 @@ public final class DefaultMethod extends DynamicMethod {
             Iterator iter = optArgs.iterator();
             for (int i = expectedArgsCount; i < args.length && iter.hasNext(); i++) {
                 // in-frame EvalState should already have receiver set as self, continue to use it
-                AssignmentVisitor.assign(context, context.getFrameSelf(), (Node)iter.next(), args[i], Block.NULL_BLOCK, true);
+                AssignmentVisitor.assign(runtime, context, context.getFrameSelf(), (Node)iter.next(), args[i], Block.NULL_BLOCK, true);
                 expectedArgsCount++;
             }
    
             // assign the default values, adding to the end of allArgs
             while (iter.hasNext()) {
                 // in-frame EvalState should already have receiver set as self, continue to use it
-                allArgs.add(EvaluationState.eval(context, (Node) iter.next(), context.getFrameSelf(), Block.NULL_BLOCK));
+                allArgs.add(EvaluationState.eval(runtime, context, (Node) iter.next(), context.getFrameSelf(), Block.NULL_BLOCK));
             }
         }
         

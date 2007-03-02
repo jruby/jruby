@@ -55,7 +55,7 @@ public class EvaluateCallable extends AbstractCallable {
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-        return EvaluationState.eval(context, node, self, block);
+        return EvaluationState.eval(context.getRuntime(), context, node, self, block);
     }
 
     public Node getNode() {

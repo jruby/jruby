@@ -565,7 +565,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     public IRubyObject eval(Node n) {
         //return new EvaluationState(getRuntime(), this).begin(n);
         // need to continue evaluation with a new self, so save the old one (should be a stack?)
-        return EvaluationState.eval(getRuntime().getCurrentContext(), n, this, Block.NULL_BLOCK);
+        return EvaluationState.eval(getRuntime(), getRuntime().getCurrentContext(), n, this, Block.NULL_BLOCK);
     }
 
     public void callInit(IRubyObject[] args, Block block) {
@@ -845,7 +845,7 @@ public class RubyObject implements Cloneable, IRubyObject {
             threadContext.preEvalWithBinding(blockOfBinding);
             newSelf = threadContext.getFrameSelf();
 
-            result = EvaluationState.eval(threadContext, getRuntime().parse(src.toString(), file, blockOfBinding.getDynamicScope()), newSelf, blockOfBinding);
+            result = EvaluationState.eval(getRuntime(), threadContext, getRuntime().parse(src.toString(), file, blockOfBinding.getDynamicScope()), newSelf, blockOfBinding);
         } catch (JumpException je) {
             if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
                 throw getRuntime().newLocalJumpError("unexpected return");
@@ -873,7 +873,7 @@ public class RubyObject implements Cloneable, IRubyObject {
 
         // no binding, just eval in "current" frame (caller's frame)
         try {
-            return EvaluationState.eval(context, getRuntime().parse(src.toString(), file, context.getCurrentScope()), this, Block.NULL_BLOCK);
+            return EvaluationState.eval(getRuntime(), context, getRuntime().parse(src.toString(), file, context.getCurrentScope()), this, Block.NULL_BLOCK);
         } catch (JumpException je) {
             if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
                 throw getRuntime().newLocalJumpError("unexpected return");

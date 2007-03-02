@@ -254,7 +254,7 @@ public class Block {
                     value = ArgsUtil.convertToRubyArray(runtime, value, ((MultipleAsgnNode)varNode).getHeadNode() != null);
                 }
 
-                value = AssignmentVisitor.multiAssign(context, self, (MultipleAsgnNode)varNode, (RubyArray)value, false);
+                value = AssignmentVisitor.multiAssign(runtime, context, self, (MultipleAsgnNode)varNode, (RubyArray)value, false);
                 break;
             default:
                 if (valueIsArray) {
@@ -274,7 +274,7 @@ public class Block {
                     runtime.getWarnings().warn("multiple values for a block parameter (0 for 1)");
                 }
 
-                AssignmentVisitor.assign(context, self, varNode, value, Block.NULL_BLOCK, false);
+                AssignmentVisitor.assign(runtime, context, self, varNode, value, Block.NULL_BLOCK, false);
         }
         return ArgsUtil.convertToJavaArray(value);
     }

@@ -158,11 +158,11 @@ import org.jruby.util.KCode;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public class EvaluationState {
-    public static IRubyObject eval(ThreadContext context, Node node, IRubyObject self, Block block) {
+    public static IRubyObject eval(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block block) {
         try {
-            return evalInternal(context, node, self, block);
+            return evalInternal(runtime, context, node, self, block);
         } catch (StackOverflowError sfe) {
-            throw context.getRuntime().newSystemStackError("stack level too deep");
+            throw runtime.newSystemStackError("stack level too deep");
         }
     }
     
@@ -181,9 +181,7 @@ public class EvaluationState {
         return rubyClass;
     }
 
-    private static IRubyObject evalInternal(ThreadContext context, Node node, IRubyObject self, Block aBlock) {
-        Ruby runtime = context.getRuntime();
-        
+    private static IRubyObject evalInternal(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         bigloop: do {
             if (node == null) return runtime.getNil();
 
@@ -203,7 +201,7 @@ public class EvaluationState {
             case NodeTypes.ANDNODE: {
                 BinaryOperatorNode iVisited = (BinaryOperatorNode) node;
     
-                IRubyObject result = evalInternal(context, iVisited.getFirstNode(), self, aBlock);
+                IRubyObject result = evalInternal(runtime,context, iVisited.getFirstNode(), self, aBlock);
                 if (!result.isTrue()) return result;
                 node = iVisited.getSecondNode();
                 continue bigloop;
@@ -211,8 +209,8 @@ public class EvaluationState {
             case NodeTypes.ARGSCATNODE: {
                 ArgsCatNode iVisited = (ArgsCatNode) node;
     
-                IRubyObject args = evalInternal(context, iVisited.getFirstNode(), self, aBlock);
-                IRubyObject secondArgs = splatValue(evalInternal(context, iVisited.getSecondNode(), self, aBlock));
+                IRubyObject args = evalInternal(runtime,context, iVisited.getFirstNode(), self, aBlock);
+                IRubyObject secondArgs = splatValue(runtime, evalInternal(runtime,context, iVisited.getSecondNode(), self, aBlock));
                 RubyArray list = args instanceof RubyArray ? (RubyArray) args : runtime.newArray(args);
     
                 return list.concat(secondArgs);
@@ -220,8 +218,8 @@ public class EvaluationState {
             case NodeTypes.ARGSPUSHNODE: {
                 ArgsPushNode iVisited = (ArgsPushNode) node;
                 
-                RubyArray args = (RubyArray) evalInternal(context, iVisited.getFirstNode(), self, aBlock).dup();
-                return args.append(evalInternal(context, iVisited.getSecondNode(), self, aBlock));
+                RubyArray args = (RubyArray) evalInternal(runtime,context, iVisited.getFirstNode(), self, aBlock).dup();
+                return args.append(evalInternal(runtime,context, iVisited.getSecondNode(), self, aBlock));
             }
                 //                case NodeTypes.ARGSNODE:
                 //                EvaluateVisitor.argsNodeVisitor.execute(this, node);
@@ -236,7 +234,7 @@ public class EvaluationState {
                 for (Iterator iterator = iVisited.iterator(); iterator.hasNext();) {
                     Node next = (Node) iterator.next();
     
-                    array[i++] = evalInternal(context, next, self, aBlock);
+                    array[i++] = evalInternal(runtime,context, next, self, aBlock);
                 }
     
                 return runtime.newArrayNoCopy(array);
@@ -247,8 +245,8 @@ public class EvaluationState {
             case NodeTypes.ATTRASSIGNNODE: {
                 AttrAssignNode iVisited = (AttrAssignNode) node;
     
-                IRubyObject receiver = evalInternal(context, iVisited.getReceiverNode(), self, aBlock);
-                IRubyObject[] args = setupArgs(context, iVisited.getArgsNode(), self);
+                IRubyObject receiver = evalInternal(runtime,context, iVisited.getReceiverNode(), self, aBlock);
+                IRubyObject[] args = setupArgs(runtime, context, iVisited.getArgsNode(), self);
                 
                 assert receiver.getMetaClass() != null : receiver.getClass().getName();
                 
@@ -297,7 +295,7 @@ public class EvaluationState {
     
                 IRubyObject result = runtime.getNil();
                 for (Iterator iter = iVisited.iterator(); iter.hasNext();) {
-                    result = evalInternal(context, (Node) iter.next(), self, aBlock);
+                    result = evalInternal(runtime,context, (Node) iter.next(), self, aBlock);
                 }
     
                 return result;
@@ -307,7 +305,7 @@ public class EvaluationState {
             case NodeTypes.BREAKNODE: {
                 BreakNode iVisited = (BreakNode) node;
     
-                IRubyObject result = evalInternal(context, iVisited.getValueNode(), self, aBlock);
+                IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
     
                 JumpException je = new JumpException(JumpException.JumpType.BreakJump);
     
@@ -318,12 +316,12 @@ public class EvaluationState {
             case NodeTypes.CALLNODE: {
                 CallNode iVisited = (CallNode) node;
     
-                IRubyObject receiver = evalInternal(context, iVisited.getReceiverNode(), self, aBlock);
-                IRubyObject[] args = setupArgs(context, iVisited.getArgsNode(), self);
+                IRubyObject receiver = evalInternal(runtime,context, iVisited.getReceiverNode(), self, aBlock);
+                IRubyObject[] args = setupArgs(runtime, context, iVisited.getArgsNode(), self);
                 
                 assert receiver.getMetaClass() != null : receiver.getClass().getName();
 
-                Block block = getBlock(context, self, aBlock, iVisited.getIterNode());
+                Block block = getBlock(runtime, context, self, aBlock, iVisited.getIterNode());
                 
                 // No block provided lets look at fast path for STI dispatch.
                 if (!block.isGiven()) {
@@ -363,7 +361,7 @@ public class EvaluationState {
                 CaseNode iVisited = (CaseNode) node;
                 IRubyObject expression = null;
                 if (iVisited.getCaseNode() != null) {
-                    expression = evalInternal(context, iVisited.getCaseNode(), self, aBlock);
+                    expression = evalInternal(runtime,context, iVisited.getCaseNode(), self, aBlock);
                 }
     
                 context.pollThreadEvents();
@@ -386,13 +384,13 @@ public class EvaluationState {
     
                             context.setPosition(tag.getPosition());
                             if (isTrace(runtime)) {
-                                callTraceFunction(context, "line", self);
+                                callTraceFunction(runtime, context, "line", self);
                             }
     
                             // Ruby grammar has nested whens in a case body because of
                             // productions case_body and when_args.
                             if (tag instanceof WhenNode) {
-                                RubyArray expressions = (RubyArray) evalInternal(context, ((WhenNode) tag)
+                                RubyArray expressions = (RubyArray) evalInternal(runtime,context, ((WhenNode) tag)
                                                 .getExpressionNodes(), self, aBlock);
     
                                 for (int j = 0; j < expressions.getLength(); j++) {
@@ -408,7 +406,7 @@ public class EvaluationState {
                                 continue;
                             }
     
-                            result = evalInternal(context, tag, self, aBlock);
+                            result = evalInternal(runtime,context, tag, self, aBlock);
     
                             if ((expression != null && result.callMethod(context, "===", expression).isTrue())
                                     || (expression == null && result.isTrue())) {
@@ -417,7 +415,7 @@ public class EvaluationState {
                             }
                         }
                     } else {
-                        result = evalInternal(context, whenNode.getExpressionNodes(), self, aBlock);
+                        result = evalInternal(runtime,context, whenNode.getExpressionNodes(), self, aBlock);
     
                         if ((expression != null && result.callMethod(context, "===", expression).isTrue())
                                 || (expression == null && result.isTrue())) {
@@ -438,7 +436,7 @@ public class EvaluationState {
                 Node superNode = iVisited.getSuperNode();
                 RubyClass superClass = null;
                 if(superNode != null) {
-                    IRubyObject _super = evalInternal(context, superNode, self, aBlock);
+                    IRubyObject _super = evalInternal(runtime,context, superNode, self, aBlock);
                     if(!(_super instanceof RubyClass)) {
                         throw runtime.newTypeError("superclass must be a Class (" + RubyObject.trueFalseNil(_super) + ") given");
                     }
@@ -446,18 +444,18 @@ public class EvaluationState {
                 }
                 Node classNameNode = iVisited.getCPath();
                 String name = ((INameNode) classNameNode).getName();
-                RubyModule enclosingClass = getEnclosingModule(context, classNameNode, self, aBlock);
+                RubyModule enclosingClass = getEnclosingModule(runtime, context, classNameNode, self, aBlock);
                 RubyClass rubyClass = enclosingClass.defineOrGetClassUnder(name, superClass);
     
                 if (context.getWrapper() != null) {
                     rubyClass.extendObject(context.getWrapper());
                     rubyClass.includeModule(context.getWrapper());
                 }
-                return evalClassDefinitionBody(context, iVisited.getScope(), iVisited.getBodyNode(), rubyClass, self, aBlock);
+                return evalClassDefinitionBody(runtime, context, iVisited.getScope(), iVisited.getBodyNode(), rubyClass, self, aBlock);
             }
             case NodeTypes.CLASSVARASGNNODE: {
                 ClassVarAsgnNode iVisited = (ClassVarAsgnNode) node;
-                IRubyObject result = evalInternal(context, iVisited.getValueNode(), self, aBlock);
+                IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
                 RubyModule rubyClass = getClassVariableBase(context, runtime);
     
                 if (rubyClass == null) {
@@ -475,7 +473,7 @@ public class EvaluationState {
                 if (rubyClass == null) {
                     throw runtime.newTypeError("no class/module to define class variable");
                 }
-                IRubyObject result = evalInternal(context, iVisited.getValueNode(), self, aBlock);
+                IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
                 rubyClass.setClassVar(iVisited.getName(), result);
     
                 return result;
@@ -500,7 +498,7 @@ public class EvaluationState {
                 if (leftNode == null) {
                     return runtime.getObject().getConstantFrom(iVisited.getName());
                 } else {
-                    IRubyObject result = evalInternal(context, iVisited.getLeftNode(), self, aBlock);
+                    IRubyObject result = evalInternal(runtime,context, iVisited.getLeftNode(), self, aBlock);
                     if (result instanceof RubyModule) {
                         return ((RubyModule) result).getConstantFrom(iVisited.getName());
                     } else {
@@ -516,7 +514,7 @@ public class EvaluationState {
                 ConstDeclNode iVisited = (ConstDeclNode) node;
                 Node constNode = iVisited.getConstNode();
     
-                IRubyObject result = evalInternal(context, iVisited.getValueNode(), self, aBlock);
+                IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
                 IRubyObject module;
 
                 if (constNode == null) {
@@ -527,7 +525,7 @@ public class EvaluationState {
                     }
                     module = (RubyModule) context.peekCRef().getValue();
                 } else if (constNode instanceof Colon2Node) {
-                    module = evalInternal(context, ((Colon2Node) iVisited.getConstNode()).getLeftNode(), self, aBlock);
+                    module = evalInternal(runtime,context, ((Colon2Node) iVisited.getConstNode()).getLeftNode(), self, aBlock);
                 } else { // Colon3
                     module = runtime.getObject();
                 } 
@@ -544,7 +542,7 @@ public class EvaluationState {
             case NodeTypes.DASGNNODE: {
                 DAsgnNode iVisited = (DAsgnNode) node;
     
-                IRubyObject result = evalInternal(context, iVisited.getValueNode(), self, aBlock);
+                IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
 
                 // System.out.println("DSetting: " + iVisited.getName() + " at index " + iVisited.getIndex() + " and at depth " + iVisited.getDepth() + " and set " + result);
                 context.getCurrentScope().setValue(iVisited.getIndex(), result, iVisited.getDepth());
@@ -553,7 +551,7 @@ public class EvaluationState {
             }
             case NodeTypes.DEFINEDNODE: {
                 DefinedNode iVisited = (DefinedNode) node;
-                String definition = getDefinition(context, iVisited.getExpressionNode(), self, aBlock);
+                String definition = getDefinition(runtime, context, iVisited.getExpressionNode(), self, aBlock);
                 if (definition != null) {
                     return runtime.newString(definition);
                 } else {
@@ -613,7 +611,7 @@ public class EvaluationState {
             }
             case NodeTypes.DEFSNODE: {
                 DefsNode iVisited = (DefsNode) node;
-                IRubyObject receiver = evalInternal(context, iVisited.getReceiverNode(), self, aBlock);
+                IRubyObject receiver = evalInternal(runtime,context, iVisited.getReceiverNode(), self, aBlock);
     
                 RubyClass rubyClass;
     
@@ -657,8 +655,8 @@ public class EvaluationState {
             case NodeTypes.DOTNODE: {
                 DotNode iVisited = (DotNode) node;
                 return RubyRange.newRange(runtime, 
-                        evalInternal(context, iVisited.getBeginNode(), self, aBlock), 
-                        evalInternal(context, iVisited.getEndNode(), self, aBlock), 
+                        evalInternal(runtime,context, iVisited.getBeginNode(), self, aBlock), 
+                        evalInternal(runtime,context, iVisited.getEndNode(), self, aBlock), 
                         iVisited.isExclusive());
             }
             case NodeTypes.DREGEXPNODE: {
@@ -670,7 +668,7 @@ public class EvaluationState {
                     if (iterNode instanceof StrNode) {
                         string.getByteList().append(((StrNode) iterNode).getValue());
                     } else {
-                        string.append(evalInternal(context, iterNode, self, aBlock));
+                        string.append(evalInternal(runtime,context, iterNode, self, aBlock));
                     }
                 }
     
@@ -695,7 +693,7 @@ public class EvaluationState {
                     if (iterNode instanceof StrNode) {
                         string.getByteList().append(((StrNode) iterNode).getValue());
                     } else {
-                        string.append(evalInternal(context, iterNode, self, aBlock));
+                        string.append(evalInternal(runtime,context, iterNode, self, aBlock));
                     }
                 }
     
@@ -710,7 +708,7 @@ public class EvaluationState {
                     if (iterNode instanceof StrNode) {
                         string.getByteList().append(((StrNode) iterNode).getValue());
                     } else {
-                        string.append(evalInternal(context, iterNode, self, aBlock));
+                        string.append(evalInternal(runtime,context, iterNode, self, aBlock));
                     }
                 }
     
@@ -734,7 +732,7 @@ public class EvaluationState {
                     if (iterNode instanceof StrNode) {
                         string.getByteList().append(((StrNode) iterNode).getValue());
                     } else {
-                        string.append(evalInternal(context, iterNode, self, aBlock));
+                        string.append(evalInternal(runtime,context, iterNode, self, aBlock));
                     }
                 }
     
@@ -748,9 +746,9 @@ public class EvaluationState {
                     IRubyObject result = runtime.getNil();
     
                     try {
-                        result = evalInternal(context, iVisited.getBodyNode(), self, aBlock);
+                        result = evalInternal(runtime,context, iVisited.getBodyNode(), self, aBlock);
                     } finally {
-                        evalInternal(context, iVisited.getEnsureNode(), self, aBlock);
+                        evalInternal(runtime,context, iVisited.getEnsureNode(), self, aBlock);
                     }
     
                     return result;
@@ -762,7 +760,7 @@ public class EvaluationState {
             case NodeTypes.EVSTRNODE: {
                 EvStrNode iVisited = (EvStrNode) node;
     
-                return evalInternal(context, iVisited.getBody(), self, aBlock).objAsString();
+                return evalInternal(runtime,context, iVisited.getBody(), self, aBlock).objAsString();
             }
             case NodeTypes.FALSENODE: {
                 context.pollThreadEvents();
@@ -771,8 +769,8 @@ public class EvaluationState {
             case NodeTypes.FCALLNODE: {
                 FCallNode iVisited = (FCallNode) node;
                 
-                IRubyObject[] args = setupArgs(context, iVisited.getArgsNode(), self);
-                Block block = getBlock(context, self, aBlock, iVisited.getIterNode());
+                IRubyObject[] args = setupArgs(runtime, context, iVisited.getArgsNode(), self);
+                Block block = getBlock(runtime, context, self, aBlock, iVisited.getIterNode());
 
                 try {
                     while (true) {
@@ -821,29 +819,29 @@ public class EvaluationState {
     
                 if (iVisited.isExclusive()) {
                     if (!context.getCurrentScope().getValue(iVisited.getIndex(), iVisited.getDepth()).isTrue()) {
-                        result = evalInternal(context, iVisited.getBeginNode(), self, aBlock).isTrue() ? runtime.getFalse()
+                        result = evalInternal(runtime,context, iVisited.getBeginNode(), self, aBlock).isTrue() ? runtime.getFalse()
                                 : runtime.getTrue();
                         context.getCurrentScope().setValue(iVisited.getIndex(), result, iVisited.getDepth());
                         return result;
                     } else {
-                        if (evalInternal(context, iVisited.getEndNode(), self, aBlock).isTrue()) {
+                        if (evalInternal(runtime,context, iVisited.getEndNode(), self, aBlock).isTrue()) {
                             context.getCurrentScope().setValue(iVisited.getIndex(), runtime.getFalse(), iVisited.getDepth());
                         }
                         return runtime.getTrue();
                     }
                 } else {
                     if (!context.getCurrentScope().getValue(iVisited.getIndex(), iVisited.getDepth()).isTrue()) {
-                        if (evalInternal(context, iVisited.getBeginNode(), self, aBlock).isTrue()) {
+                        if (evalInternal(runtime,context, iVisited.getBeginNode(), self, aBlock).isTrue()) {
                             context.getCurrentScope().setValue(
                                     iVisited.getIndex(),
-                                    evalInternal(context, iVisited.getEndNode(), self, aBlock).isTrue() ? runtime.getFalse()
+                                    evalInternal(runtime,context, iVisited.getEndNode(), self, aBlock).isTrue() ? runtime.getFalse()
                                             : runtime.getTrue(), iVisited.getDepth());
                             return runtime.getTrue();
                         } else {
                             return runtime.getFalse();
                         }
                     } else {
-                        if (evalInternal(context, iVisited.getEndNode(), self, aBlock).isTrue()) {
+                        if (evalInternal(runtime,context, iVisited.getEndNode(), self, aBlock).isTrue()) {
                             context.getCurrentScope().setValue(iVisited.getIndex(), runtime.getFalse(), iVisited.getDepth());
                         }
                         return runtime.getTrue();
@@ -867,7 +865,7 @@ public class EvaluationState {
     
                             IRubyObject recv = null;
                             try {
-                                recv = evalInternal(context, iVisited.getIterNode(), self, aBlock);
+                                recv = evalInternal(runtime,context, iVisited.getIterNode(), self, aBlock);
                             } finally {
                                 context.setPosition(position);
                             }
@@ -895,7 +893,7 @@ public class EvaluationState {
             case NodeTypes.GLOBALASGNNODE: {
                 GlobalAsgnNode iVisited = (GlobalAsgnNode) node;
     
-                IRubyObject result = evalInternal(context, iVisited.getValueNode(), self, aBlock);
+                IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
     
                 runtime.getGlobalVariables().set(iVisited.getName(), result);
     
@@ -920,8 +918,8 @@ public class EvaluationState {
                     for (Iterator iterator = iVisited.getListNode().iterator(); iterator.hasNext();) {
                         // insert all nodes in sequence, hash them in the final instruction
                         // KEY
-                        IRubyObject key = evalInternal(context, (Node) iterator.next(), self, aBlock);
-                        IRubyObject value = evalInternal(context, (Node) iterator.next(), self, aBlock);
+                        IRubyObject key = evalInternal(runtime,context, (Node) iterator.next(), self, aBlock);
+                        IRubyObject value = evalInternal(runtime,context, (Node) iterator.next(), self, aBlock);
     
                         hash.put(key, value);
                     }
@@ -935,7 +933,7 @@ public class EvaluationState {
             }
             case NodeTypes.IFNODE: {
                 IfNode iVisited = (IfNode) node;
-                IRubyObject result = evalInternal(context, iVisited.getCondition(), self, aBlock);
+                IRubyObject result = evalInternal(runtime,context, iVisited.getCondition(), self, aBlock);
     
                 if (result.isTrue()) {
                     node = iVisited.getThenBody();
@@ -948,7 +946,7 @@ public class EvaluationState {
             case NodeTypes.INSTASGNNODE: {
                 InstAsgnNode iVisited = (InstAsgnNode) node;
     
-                IRubyObject result = evalInternal(context, iVisited.getValueNode(), self, aBlock);
+                IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
                 self.setInstanceVariable(iVisited.getName(), result);
     
                 return result;
@@ -966,7 +964,7 @@ public class EvaluationState {
                 assert false: "Call nodes deal with these directly";
             case NodeTypes.LOCALASGNNODE: {
                 LocalAsgnNode iVisited = (LocalAsgnNode) node;
-                IRubyObject result = evalInternal(context, iVisited.getValueNode(), self, aBlock);
+                IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
                 
                 // System.out.println("LSetting: " + iVisited.getName() + " at index " + iVisited.getIndex() + " and at depth " + iVisited.getDepth() + " and set " + result);
                 context.getCurrentScope().setValue(iVisited.getIndex(), result, iVisited.getDepth());
@@ -983,15 +981,15 @@ public class EvaluationState {
             }
             case NodeTypes.MATCH2NODE: {
                 Match2Node iVisited = (Match2Node) node;
-                IRubyObject recv = evalInternal(context, iVisited.getReceiverNode(), self, aBlock);
-                IRubyObject value = evalInternal(context, iVisited.getValueNode(), self, aBlock);
+                IRubyObject recv = evalInternal(runtime,context, iVisited.getReceiverNode(), self, aBlock);
+                IRubyObject value = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
     
                 return ((RubyRegexp) recv).match(value);
             }
             case NodeTypes.MATCH3NODE: {
                 Match3Node iVisited = (Match3Node) node;
-                IRubyObject recv = evalInternal(context, iVisited.getReceiverNode(), self, aBlock);
-                IRubyObject value = evalInternal(context, iVisited.getValueNode(), self, aBlock);
+                IRubyObject recv = evalInternal(runtime,context, iVisited.getReceiverNode(), self, aBlock);
+                IRubyObject value = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
     
                 if (value instanceof RubyString) {
                     return ((RubyRegexp) recv).match(value);
@@ -1001,13 +999,13 @@ public class EvaluationState {
             }
             case NodeTypes.MATCHNODE: {
                 MatchNode iVisited = (MatchNode) node;
-                return ((RubyRegexp) evalInternal(context, iVisited.getRegexpNode(), self, aBlock)).match2();
+                return ((RubyRegexp) evalInternal(runtime,context, iVisited.getRegexpNode(), self, aBlock)).match2();
             }
             case NodeTypes.MODULENODE: {
                 ModuleNode iVisited = (ModuleNode) node;
                 Node classNameNode = iVisited.getCPath();
                 String name = ((INameNode) classNameNode).getName();
-                RubyModule enclosingModule = getEnclosingModule(context, classNameNode, self, aBlock);
+                RubyModule enclosingModule = getEnclosingModule(runtime, context, classNameNode, self, aBlock);
     
                 if (enclosingModule == null) {
                     throw runtime.newTypeError("no outer class/module");
@@ -1019,13 +1017,16 @@ public class EvaluationState {
                 } else {
                     module = enclosingModule.defineModuleUnder(name);
                 }
-                return evalClassDefinitionBody(context, iVisited.getScope(), iVisited.getBodyNode(), module, self, aBlock);
+                return evalClassDefinitionBody(runtime, context, iVisited.getScope(), iVisited.getBodyNode(), module, self, aBlock);
             }
             case NodeTypes.MULTIPLEASGNNODE: {
                 MultipleAsgnNode iVisited = (MultipleAsgnNode) node;
-                return AssignmentVisitor.assign(context, self, iVisited, 
-                        evalInternal(context, iVisited.getValueNode(), self, aBlock), 
-                        aBlock, false);
+                IRubyObject value = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
+
+                if (!(value instanceof RubyArray)) {
+                    value = RubyArray.newArray(runtime, value);
+                }
+                return AssignmentVisitor.multiAssign(runtime, context, self, iVisited, (RubyArray) value, false);
             }
             case NodeTypes.NEWLINENODE: {
                 NewlineNode iVisited = (NewlineNode) node;
@@ -1034,7 +1035,7 @@ public class EvaluationState {
                 context.setPosition(iVisited.getPosition());
     
                 if (isTrace(runtime)) {
-                    callTraceFunction(context, "line", self);
+                    callTraceFunction(runtime, context, "line", self);
                 }
     
                 // TODO: do above but not below for additional newline nodes
@@ -1046,7 +1047,7 @@ public class EvaluationState {
     
                 context.pollThreadEvents();
     
-                IRubyObject result = evalInternal(context, iVisited.getValueNode(), self, aBlock);
+                IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
     
                 // now used as an interpreter event
                 JumpException je = new JumpException(JumpException.JumpType.NextJump);
@@ -1061,7 +1062,7 @@ public class EvaluationState {
             case NodeTypes.NOTNODE: {
                 NotNode iVisited = (NotNode) node;
     
-                IRubyObject result = evalInternal(context, iVisited.getConditionNode(), self, aBlock);
+                IRubyObject result = evalInternal(runtime,context, iVisited.getConditionNode(), self, aBlock);
                 return result.isTrue() ? runtime.getFalse() : runtime.getTrue();
             }
             case NodeTypes.NTHREFNODE: {
@@ -1072,28 +1073,28 @@ public class EvaluationState {
                 BinaryOperatorNode iVisited = (BinaryOperatorNode) node;
     
                 // add in reverse order
-                IRubyObject result = evalInternal(context, iVisited.getFirstNode(), self, aBlock);
+                IRubyObject result = evalInternal(runtime,context, iVisited.getFirstNode(), self, aBlock);
                 if (!result.isTrue()) return result;
                 node = iVisited.getSecondNode();
                 continue bigloop;
             }
             case NodeTypes.OPASGNNODE: {
                 OpAsgnNode iVisited = (OpAsgnNode) node;
-                IRubyObject receiver = evalInternal(context, iVisited.getReceiverNode(), self, aBlock);
+                IRubyObject receiver = evalInternal(runtime,context, iVisited.getReceiverNode(), self, aBlock);
                 IRubyObject value = receiver.callMethod(context, iVisited.getVariableName());
     
                 if (iVisited.getOperatorName() == "||") {
                     if (value.isTrue()) {
                         return value;
                     }
-                    value = evalInternal(context, iVisited.getValueNode(), self, aBlock);
+                    value = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
                 } else if (iVisited.getOperatorName() == "&&") {
                     if (!value.isTrue()) {
                         return value;
                     }
-                    value = evalInternal(context, iVisited.getValueNode(), self, aBlock);
+                    value = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
                 } else {
-                    value = value.callMethod(context, iVisited.getOperatorName(), evalInternal(context,
+                    value = value.callMethod(context, iVisited.getOperatorName(), evalInternal(runtime,context,
                             iVisited.getValueNode(), self, aBlock));
                 }
     
@@ -1105,23 +1106,23 @@ public class EvaluationState {
             }
             case NodeTypes.OPASGNORNODE: {
                 OpAsgnOrNode iVisited = (OpAsgnOrNode) node;
-                String def = getDefinition(context, iVisited.getFirstNode(), self, aBlock);
+                String def = getDefinition(runtime, context, iVisited.getFirstNode(), self, aBlock);
     
                 IRubyObject result = runtime.getNil();
                 if (def != null) {
-                    result = evalInternal(context, iVisited.getFirstNode(), self, aBlock);
+                    result = evalInternal(runtime,context, iVisited.getFirstNode(), self, aBlock);
                 }
                 if (!result.isTrue()) {
-                    result = evalInternal(context, iVisited.getSecondNode(), self, aBlock);
+                    result = evalInternal(runtime,context, iVisited.getSecondNode(), self, aBlock);
                 }
     
                 return result;
             }
             case NodeTypes.OPELEMENTASGNNODE: {
                 OpElementAsgnNode iVisited = (OpElementAsgnNode) node;
-                IRubyObject receiver = evalInternal(context, iVisited.getReceiverNode(), self, aBlock);
+                IRubyObject receiver = evalInternal(runtime,context, iVisited.getReceiverNode(), self, aBlock);
     
-                IRubyObject[] args = setupArgs(context, iVisited.getArgsNode(), self);
+                IRubyObject[] args = setupArgs(runtime, context, iVisited.getArgsNode(), self);
     
                 IRubyObject firstValue = receiver.callMethod(context, "[]", args);
     
@@ -1129,14 +1130,14 @@ public class EvaluationState {
                     if (firstValue.isTrue()) {
                         return firstValue;
                     }
-                    firstValue = evalInternal(context, iVisited.getValueNode(), self, aBlock);
+                    firstValue = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
                 } else if (iVisited.getOperatorName() == "&&") {
                     if (!firstValue.isTrue()) {
                         return firstValue;
                     }
-                    firstValue = evalInternal(context, iVisited.getValueNode(), self, aBlock);
+                    firstValue = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
                 } else {
-                    firstValue = firstValue.callMethod(context, iVisited.getOperatorName(), evalInternal(context, iVisited
+                    firstValue = firstValue.callMethod(context, iVisited.getOperatorName(), evalInternal(runtime,context, iVisited
                                     .getValueNode(), self, aBlock));
                 }
     
@@ -1152,7 +1153,7 @@ public class EvaluationState {
                 while (RubyKernel.gets(runtime.getTopSelf(), IRubyObject.NULL_ARRAY).isTrue()) {
                     loop: while (true) { // Used for the 'redo' command
                         try {
-                            result = evalInternal(context, iVisited.getBodyNode(), self, aBlock);
+                            result = evalInternal(runtime,context, iVisited.getBodyNode(), self, aBlock);
                             break;
                         } catch (JumpException je) {
                             switch (je.getJumpType().getTypeId()) {
@@ -1176,10 +1177,10 @@ public class EvaluationState {
             case NodeTypes.ORNODE: {
                 OrNode iVisited = (OrNode) node;
     
-                IRubyObject result = evalInternal(context, iVisited.getFirstNode(), self, aBlock);
+                IRubyObject result = evalInternal(runtime,context, iVisited.getFirstNode(), self, aBlock);
     
                 if (!result.isTrue()) {
-                    result = evalInternal(context, iVisited.getSecondNode(), self, aBlock);
+                    result = evalInternal(runtime,context, iVisited.getSecondNode(), self, aBlock);
                 }
     
                 return result;
@@ -1226,14 +1227,14 @@ public class EvaluationState {
                     boolean anotherExceptionRaised = false;
                     try {
                         // Execute rescue block
-                        IRubyObject result = evalInternal(context, iVisited.getBodyNode(), self, aBlock);
+                        IRubyObject result = evalInternal(runtime,context, iVisited.getBodyNode(), self, aBlock);
 
                         // If no exception is thrown execute else block
                         if (iVisited.getElseNode() != null) {
                             if (iVisited.getRescueNode() == null) {
                                 runtime.getWarnings().warn(iVisited.getElseNode().getPosition(), "else without rescue is useless");
                             }
-                            result = evalInternal(context, iVisited.getElseNode(), self, aBlock);
+                            result = evalInternal(runtime,context, iVisited.getElseNode(), self, aBlock);
                         }
 
                         return result;
@@ -1251,14 +1252,14 @@ public class EvaluationState {
                             ListNode exceptionNodesList;
                             
                             if (exceptionNodes instanceof SplatNode) {                    
-                                exceptionNodesList = (ListNode) evalInternal(context, exceptionNodes, self, aBlock);
+                                exceptionNodesList = (ListNode) evalInternal(runtime,context, exceptionNodes, self, aBlock);
                             } else {
                                 exceptionNodesList = (ListNode) exceptionNodes;
                             }
                             
-                            if (isRescueHandled(context, raisedException, exceptionNodesList, self)) {
+                            if (isRescueHandled(runtime, context, raisedException, exceptionNodesList, self)) {
                                 try {
-                                    return evalInternal(context, rescueNode, self, aBlock);
+                                    return evalInternal(runtime,context, rescueNode, self, aBlock);
                                 } catch (JumpException je) {
                                     if (je.getJumpType() == JumpException.JumpType.RetryJump) {
                                         // should be handled in the finally block below
@@ -1295,7 +1296,7 @@ public class EvaluationState {
             case NodeTypes.RETURNNODE: {
                 ReturnNode iVisited = (ReturnNode) node;
     
-                IRubyObject result = evalInternal(context, iVisited.getValueNode(), self, aBlock);
+                IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
     
                 JumpException je = new JumpException(JumpException.JumpType.ReturnJump);
     
@@ -1321,14 +1322,14 @@ public class EvaluationState {
                 // FIXME: Wire up BEGIN and END nodes
 
                 try {
-                    return eval(context, iVisited.getBodyNode(), self, aBlock);
+                    return eval(runtime, context, iVisited.getBodyNode(), self, aBlock);
                 } finally {
                     context.postRootNode();
                 }
             }
             case NodeTypes.SCLASSNODE: {
                 SClassNode iVisited = (SClassNode) node;
-                IRubyObject receiver = evalInternal(context, iVisited.getReceiverNode(), self, aBlock);
+                IRubyObject receiver = evalInternal(runtime,context, iVisited.getReceiverNode(), self, aBlock);
     
                 RubyClass singletonClass;
     
@@ -1355,13 +1356,13 @@ public class EvaluationState {
                     singletonClass.includeModule(context.getWrapper());
                 }
     
-                return evalClassDefinitionBody(context, iVisited.getScope(), iVisited.getBodyNode(), singletonClass, self, aBlock);
+                return evalClassDefinitionBody(runtime, context, iVisited.getScope(), iVisited.getBodyNode(), singletonClass, self, aBlock);
             }
             case NodeTypes.SELFNODE:
                 return self;
             case NodeTypes.SPLATNODE: {
                 SplatNode iVisited = (SplatNode) node;
-                return splatValue(evalInternal(context, iVisited.getValue(), self, aBlock));
+                return splatValue(runtime, evalInternal(runtime,context, iVisited.getValue(), self, aBlock));
             }
                 ////                case NodeTypes.STARNODE:
                 ////                EvaluateVisitor.starNodeVisitor.execute(this, node);
@@ -1379,8 +1380,8 @@ public class EvaluationState {
                     throw runtime.newNameError("Superclass method '" + name
                             + "' disabled.", name);
                 }
-                IRubyObject[] args = setupArgs(context, iVisited.getArgsNode(), self);
-                Block block = getBlock(context, self, aBlock, iVisited.getIterNode());
+                IRubyObject[] args = setupArgs(runtime, context, iVisited.getArgsNode(), self);
+                Block block = getBlock(runtime, context, self, aBlock, iVisited.getIterNode());
                 
                 // If no explicit block passed to super, then use the one passed in.
                 if (!block.isGiven()) block = aBlock;
@@ -1389,7 +1390,7 @@ public class EvaluationState {
             }
             case NodeTypes.SVALUENODE: {
                 SValueNode iVisited = (SValueNode) node;
-                return aValueSplat(evalInternal(context, iVisited.getValue(), self, aBlock));
+                return aValueSplat(runtime, evalInternal(runtime,context, iVisited.getValue(), self, aBlock));
             }
             case NodeTypes.SYMBOLNODE: {
                 SymbolNode iVisited = (SymbolNode) node;
@@ -1397,7 +1398,7 @@ public class EvaluationState {
             }
             case NodeTypes.TOARYNODE: {
                 ToAryNode iVisited = (ToAryNode) node;
-                return aryToAry(evalInternal(context, iVisited.getValue(), self, aBlock));
+                return aryToAry(runtime, evalInternal(runtime,context, iVisited.getValue(), self, aBlock));
             }
             case NodeTypes.TRUENODE: {
                 context.pollThreadEvents();
@@ -1420,10 +1421,10 @@ public class EvaluationState {
     
                 IRubyObject result = runtime.getNil();
                 
-                while (!(result = evalInternal(context, iVisited.getConditionNode(), self, aBlock)).isTrue()) {
+                while (!(result = evalInternal(runtime,context, iVisited.getConditionNode(), self, aBlock)).isTrue()) {
                     loop: while (true) { // Used for the 'redo' command
                         try {
-                            result = evalInternal(context, iVisited.getBodyNode(), self, aBlock);
+                            result = evalInternal(runtime,context, iVisited.getBodyNode(), self, aBlock);
                             break loop;
                         } catch (JumpException je) {
                             switch (je.getJumpType().getTypeId()) {
@@ -1469,11 +1470,11 @@ public class EvaluationState {
                 IRubyObject result = runtime.getNil();
                 boolean firstTest = iVisited.evaluateAtStart();
                 
-                while (!firstTest || (result = evalInternal(context, iVisited.getConditionNode(), self, aBlock)).isTrue()) {
+                while (!firstTest || (result = evalInternal(runtime,context, iVisited.getConditionNode(), self, aBlock)).isTrue()) {
                     firstTest = true;
                     loop: while (true) { // Used for the 'redo' command
                         try {
-                            evalInternal(context, iVisited.getBodyNode(), self, aBlock);
+                            evalInternal(runtime,context, iVisited.getBodyNode(), self, aBlock);
                             break loop;
                         } catch (JumpException je) {
                             switch (je.getJumpType().getTypeId()) {
@@ -1506,7 +1507,7 @@ public class EvaluationState {
             case NodeTypes.YIELDNODE: {
                 YieldNode iVisited = (YieldNode) node;
     
-                IRubyObject result = evalInternal(context, iVisited.getArgsNode(), self, aBlock);
+                IRubyObject result = evalInternal(runtime,context, iVisited.getArgsNode(), self, aBlock);
                 if (iVisited.getArgsNode() == null) {
                     result = null;
                 }
@@ -1528,7 +1529,7 @@ public class EvaluationState {
                             + "' disabled", name);
                 }
 
-                Block block = getBlock(context, self, aBlock, ((ZSuperNode) node).getIterNode());
+                Block block = getBlock(runtime, context, self, aBlock, ((ZSuperNode) node).getIterNode());
 
                 // Has the method that is calling super received a block argument
                 if (!block.isGiven()) block = context.getCurrentFrame().getBlock(); 
@@ -1541,39 +1542,39 @@ public class EvaluationState {
         } while (true);
     }
     
-    private static String getArgumentDefinition(ThreadContext context, Node node, String type, IRubyObject self, Block block) {
+    private static String getArgumentDefinition(Ruby runtime, ThreadContext context, Node node, String type, IRubyObject self, Block block) {
         if (node == null) return type;
             
         if (node instanceof ArrayNode) {
             for (Iterator iter = ((ArrayNode)node).iterator(); iter.hasNext(); ) {
-                if (getDefinitionInner(context, (Node)iter.next(), self, block) == null) return null;
+                if (getDefinitionInner(runtime, context, (Node)iter.next(), self, block) == null) return null;
             }
-        } else if (getDefinitionInner(context, node, self, block) == null) {
+        } else if (getDefinitionInner(runtime, context, node, self, block) == null) {
             return null;
         }
 
         return type;
     }
     
-    private static String getDefinition(ThreadContext context, Node node, IRubyObject self, Block aBlock) {
+    private static String getDefinition(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         try {
             context.setWithinDefined(true);
-            return getDefinitionInner(context, node, self, aBlock);
+            return getDefinitionInner(runtime, context, node, self, aBlock);
         } finally {
             context.setWithinDefined(false);
         }
     }
     
-    private static String getDefinitionInner(ThreadContext context, Node node, IRubyObject self, Block aBlock) {
+    private static String getDefinitionInner(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         if (node == null) return "expression";
         
         switch(node.nodeId) {
         case NodeTypes.ATTRASSIGNNODE: {
             AttrAssignNode iVisited = (AttrAssignNode) node;
             
-            if (getDefinitionInner(context, iVisited.getReceiverNode(), self, aBlock) != null) {
+            if (getDefinitionInner(runtime, context, iVisited.getReceiverNode(), self, aBlock) != null) {
                 try {
-                    IRubyObject receiver = eval(context, iVisited.getReceiverNode(), self, aBlock);
+                    IRubyObject receiver = eval(runtime, context, iVisited.getReceiverNode(), self, aBlock);
                     RubyClass metaClass = receiver.getMetaClass();
                     DynamicMethod method = metaClass.searchMethod(iVisited.getName());
                     Visibility visibility = method.getVisibility();
@@ -1581,7 +1582,7 @@ public class EvaluationState {
                     if (!visibility.isPrivate() && 
                             (!visibility.isProtected() || self.isKindOf(metaClass.getRealClass()))) {
                         if (metaClass.isMethodBound(iVisited.getName(), false)) {
-                            return getArgumentDefinition(context, iVisited.getArgsNode(), "assignment", self, aBlock);
+                            return getArgumentDefinition(runtime,context, iVisited.getArgsNode(), "assignment", self, aBlock);
                         }
                     }
                 } catch (JumpException excptn) {
@@ -1595,9 +1596,9 @@ public class EvaluationState {
         case NodeTypes.CALLNODE: {
             CallNode iVisited = (CallNode) node;
             
-            if (getDefinitionInner(context, iVisited.getReceiverNode(), self, aBlock) != null) {
+            if (getDefinitionInner(runtime, context, iVisited.getReceiverNode(), self, aBlock) != null) {
                 try {
-                    IRubyObject receiver = eval(context, iVisited.getReceiverNode(), self, aBlock);
+                    IRubyObject receiver = eval(runtime, context, iVisited.getReceiverNode(), self, aBlock);
                     RubyClass metaClass = receiver.getMetaClass();
                     DynamicMethod method = metaClass.searchMethod(iVisited.getName());
                     Visibility visibility = method.getVisibility();
@@ -1605,7 +1606,7 @@ public class EvaluationState {
                     if (!visibility.isPrivate() && 
                             (!visibility.isProtected() || self.isKindOf(metaClass.getRealClass()))) {
                         if (metaClass.isMethodBound(iVisited.getName(), false)) {
-                            return getArgumentDefinition(context, iVisited.getArgsNode(), "method", self, aBlock);
+                            return getArgumentDefinition(runtime, context, iVisited.getArgsNode(), "method", self, aBlock);
                         }
                     }
                 } catch (JumpException excptn) {
@@ -1637,7 +1638,7 @@ public class EvaluationState {
             Colon2Node iVisited = (Colon2Node) node;
             
             try {
-                IRubyObject left = EvaluationState.eval(context, iVisited.getLeftNode(), self, aBlock);
+                IRubyObject left = EvaluationState.eval(runtime, context, iVisited.getLeftNode(), self, aBlock);
                 if (left instanceof RubyModule &&
                         ((RubyModule) left).getConstantAt(iVisited.getName()) != null) {
                     return "constant";
@@ -1660,13 +1661,13 @@ public class EvaluationState {
         case NodeTypes.FCALLNODE: {
             FCallNode iVisited = (FCallNode) node;
             if (self.getMetaClass().isMethodBound(iVisited.getName(), false)) {
-                return getArgumentDefinition(context, iVisited.getArgsNode(), "method", self, aBlock);
+                return getArgumentDefinition(runtime, context, iVisited.getArgsNode(), "method", self, aBlock);
             }
             
             return null;
         }
         case NodeTypes.GLOBALVARNODE:
-            if (context.getRuntime().getGlobalVariables().isDefined(((GlobalVarNode) node).getName())) {
+            if (runtime.getGlobalVariables().isDefined(((GlobalVarNode) node).getName())) {
                 return "global-variable";
             }
             return null;
@@ -1690,7 +1691,7 @@ public class EvaluationState {
             String name = context.getFrameName();
             RubyModule klazz = context.getFrameKlazz();
             if (name != null && klazz != null && klazz.getSuperClass().isMethodBound(name, false)) {
-                return getArgumentDefinition(context, iVisited.getArgsNode(), "super", self, aBlock);
+                return getArgumentDefinition(runtime, context, iVisited.getArgsNode(), "super", self, aBlock);
             }
             
             return null;
@@ -1717,7 +1718,7 @@ public class EvaluationState {
         }
         default:
             try {
-                EvaluationState.eval(context, node, self, aBlock);
+                EvaluationState.eval(runtime, context, node, self, aBlock);
                 return "expression";
             } catch (JumpException jumpExcptn) {}
         }
@@ -1725,35 +1726,34 @@ public class EvaluationState {
         return null;
     }
     
-    private static IRubyObject aryToAry(IRubyObject value) {
+    private static IRubyObject aryToAry(Ruby runtime, IRubyObject value) {
         if (value instanceof RubyArray) return value;
 
         if (value.respondsTo("to_ary")) {
             return value.convertToType("Array", "to_ary", false);
         }
 
-        return value.getRuntime().newArray(value);
+        return runtime.newArray(value);
     }
 
     /** Evaluates the body in a class or module definition statement.
      *
      */
-    private static IRubyObject evalClassDefinitionBody(ThreadContext context, StaticScope scope, 
+    private static IRubyObject evalClassDefinitionBody(Ruby runtime, ThreadContext context, StaticScope scope, 
             Node bodyNode, RubyModule type, IRubyObject self, Block block) {
-        Ruby runtime = context.getRuntime();
         context.preClassEval(scope, type);
 
         try {
             if (isTrace(runtime)) {
-                callTraceFunction(context, "class", type);
+                callTraceFunction(runtime, context, "class", type);
             }
 
-            return evalInternal(context, bodyNode, type, block);
+            return evalInternal(runtime,context, bodyNode, type, block);
         } finally {
             context.postClassEval();
 
             if (isTrace(runtime)) {
-                callTraceFunction(context, "end", null);
+                callTraceFunction(runtime, context, "end", null);
             }
         }
     }
@@ -1768,23 +1768,21 @@ public class EvaluationState {
         return runtime.getTraceFunction() != null;
     }
 
-    private static void callTraceFunction(ThreadContext context, String event, IRubyObject zelf) {
-        Ruby runtime = context.getRuntime();
+    private static void callTraceFunction(Ruby runtime, ThreadContext context, String event, IRubyObject zelf) {
         String name = context.getFrameName();
         RubyModule type = context.getFrameKlazz();
         runtime.callTraceFunction(context, event, context.getPosition(), zelf, name, type);
     }
 
-    public static IRubyObject splatValue(IRubyObject value) {
+    public static IRubyObject splatValue(Ruby runtime, IRubyObject value) {
         if (value.isNil()) {
-            return value.getRuntime().newArray(value);
+            return runtime.newArray(value);
         }
 
-        return arrayValue(value);
+        return arrayValue(runtime, value);
     }
 
-    public static IRubyObject aValueSplat(IRubyObject value) {
-        Ruby runtime = value.getRuntime();
+    public static IRubyObject aValueSplat(Ruby runtime, IRubyObject value) {
         if (!(value instanceof RubyArray) || ((RubyArray) value).length().getLongValue() == 0) {
             return runtime.getNil();
         }
@@ -1794,10 +1792,9 @@ public class EvaluationState {
         return array.getLength() == 1 ? array.first(IRubyObject.NULL_ARRAY) : array;
     }
 
-    public static RubyArray arrayValue(IRubyObject value) {
+    public static RubyArray arrayValue(Ruby runtime, IRubyObject value) {
         IRubyObject newValue = value.convertToType("Array", "to_ary", false);
         if (newValue.isNil()) {
-            Ruby runtime = value.getRuntime();
             // Object#to_a is obsolete.  We match Ruby's hack until to_a goes away.  Then we can 
             // remove this hack too.
             if (value.getMetaClass().searchMethod("to_a").getImplementationClass() != runtime
@@ -1814,7 +1811,7 @@ public class EvaluationState {
         return (RubyArray) newValue;
     }
 
-    private static IRubyObject[] setupArgs(ThreadContext context, Node node, IRubyObject self) {
+    private static IRubyObject[] setupArgs(Ruby runtime, ThreadContext context, Node node, IRubyObject self) {
         if (node == null) return IRubyObject.NULL_ARRAY;
 
         if (node instanceof ArrayNode) {
@@ -1824,7 +1821,7 @@ public class EvaluationState {
             IRubyObject[] argsArray = new IRubyObject[size];
 
             for (int i = 0; i < size; i++) {
-                argsArray[i] = evalInternal(context, argsArrayNode.get(i), self, Block.NULL_BLOCK);
+                argsArray[i] = evalInternal(runtime,context, argsArrayNode.get(i), self, Block.NULL_BLOCK);
             }
 
             context.setPosition(position);
@@ -1832,20 +1829,20 @@ public class EvaluationState {
             return argsArray;
         }
 
-        return ArgsUtil.convertToJavaArray(evalInternal(context, node, self, Block.NULL_BLOCK));
+        return ArgsUtil.convertToJavaArray(evalInternal(runtime,context, node, self, Block.NULL_BLOCK));
     }
 
-    private static RubyModule getEnclosingModule(ThreadContext context, Node node, IRubyObject self, Block block) {
+    private static RubyModule getEnclosingModule(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block block) {
         RubyModule enclosingModule = null;
 
         if (node instanceof Colon2Node) {
-            IRubyObject result = evalInternal(context, ((Colon2Node) node).getLeftNode(), self, block);
+            IRubyObject result = evalInternal(runtime,context, ((Colon2Node) node).getLeftNode(), self, block);
 
             if (result != null && !result.isNil()) {
                 enclosingModule = (RubyModule) result;
             }
         } else if (node instanceof Colon3Node) {
-            enclosingModule = context.getRuntime().getObject();
+            enclosingModule = runtime.getObject();
         }
 
         if (enclosingModule == null) {
@@ -1855,14 +1852,13 @@ public class EvaluationState {
         return enclosingModule;
     }
 
-    private static boolean isRescueHandled(ThreadContext context, RubyException currentException, ListNode exceptionNodes,
+    private static boolean isRescueHandled(Ruby runtime, ThreadContext context, RubyException currentException, ListNode exceptionNodes,
             IRubyObject self) {
-        Ruby runtime = context.getRuntime();
         if (exceptionNodes == null) {
             return currentException.isKindOf(runtime.getClass("StandardError"));
         }
 
-        IRubyObject[] args = setupArgs(context, exceptionNodes, self);
+        IRubyObject[] args = setupArgs(runtime, context, exceptionNodes, self);
 
         for (int i = 0; i < args.length; i++) {
             if (!args[i].isKindOf(runtime.getClass("Module"))) {
@@ -1873,7 +1869,7 @@ public class EvaluationState {
         return false;
     }
     
-    public static Block getBlock(ThreadContext context, IRubyObject self, Block currentBlock, Node blockNode) {
+    public static Block getBlock(Ruby runtime, ThreadContext context, IRubyObject self, Block currentBlock, Node blockNode) {
         if (blockNode == null) return Block.NULL_BLOCK;
         
         if (blockNode instanceof IterNode) {
@@ -1884,7 +1880,7 @@ public class EvaluationState {
                     iterNode.getCallable(), self);
         } else if (blockNode instanceof BlockPassNode) {
             BlockPassNode blockPassNode = (BlockPassNode) blockNode;
-            IRubyObject proc = evalInternal(context, blockPassNode.getBodyNode(), self, currentBlock);
+            IRubyObject proc = evalInternal(runtime,context, blockPassNode.getBodyNode(), self, currentBlock);
 
             // No block from a nil proc
             if (proc.isNil()) return Block.NULL_BLOCK;
@@ -1894,7 +1890,7 @@ public class EvaluationState {
                 proc = proc.convertToType("Proc", "to_proc", false);
 
                 if (!(proc instanceof RubyProc)) {
-                    throw context.getRuntime().newTypeError("wrong argument type "
+                    throw runtime.newTypeError("wrong argument type "
                             + proc.getMetaClass().getName() + " (expected Proc)");
                 }
             }

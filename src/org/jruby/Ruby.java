@@ -270,7 +270,7 @@ public final class Ruby {
         try {
             ThreadContext tc = getCurrentContext();
 
-            return EvaluationState.eval(tc, node, tc.getFrameSelf(), Block.NULL_BLOCK);
+            return EvaluationState.eval(this, tc, node, tc.getFrameSelf(), Block.NULL_BLOCK);
         } catch (JumpException je) {
             if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
                 throw newLocalJumpError("unexpected return");
