@@ -64,7 +64,7 @@ public final class ValueConverter {
             case 0:
                 return useUndefined ? null : runtime.getNil();
             case 1:
-                return ((RubyArray)value).entry(0);
+                return ((RubyArray)value).eltInternal(0);
             default:
                 return value;
         }
@@ -88,8 +88,8 @@ public final class ValueConverter {
             case 0:
                 return runtime.getNil();
             case 1:
-                if (!(((RubyArray)value).entry(0) instanceof RubyArray)) {
-                    return ((RubyArray)value).entry(0);
+                if (!(((RubyArray)value).eltInternal(0) instanceof RubyArray)) {
+                    return ((RubyArray)value).eltInternal(0);
                 }
             default:
                 return value;

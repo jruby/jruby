@@ -393,8 +393,8 @@ public class EvaluationState {
                                 RubyArray expressions = (RubyArray) evalInternal(runtime,context, ((WhenNode) tag)
                                                 .getExpressionNodes(), self, aBlock);
     
-                                for (int j = 0; j < expressions.getLength(); j++) {
-                                    IRubyObject condition = expressions.entry(j);
+                                for (int j = 0,k = expressions.getLength(); j < k; j++) {
+                                    IRubyObject condition = expressions.eltInternal(j);
     
                                     if ((expression != null && condition.callMethod(context, "===", expression)
                                             .isTrue())

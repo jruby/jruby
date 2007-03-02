@@ -177,7 +177,7 @@ public class AssignmentVisitor {
         Iterator iter = node.getHeadNode() != null ? node.getHeadNode().iterator() : Collections.EMPTY_LIST.iterator();
         for (int i = 0; i < valueLen && iter.hasNext(); i++) {
             Node lNode = (Node) iter.next();
-            assign(runtime, context, self, lNode, value.entry(i), Block.NULL_BLOCK, callAsProc);
+            assign(runtime, context, self, lNode, value.eltInternal(i), Block.NULL_BLOCK, callAsProc);
         }
 
         if (callAsProc && iter.hasNext()) {

@@ -655,6 +655,10 @@ public class RubyArray extends RubyObject implements List {
         return (offset < 0 ) ? elt(offset + realLength) : elt_f(offset);
     }
 
+    public final IRubyObject eltInternal(int offset) {
+        return values[begin + offset];
+    }
+
     /** rb_ary_fetch
      *
      */

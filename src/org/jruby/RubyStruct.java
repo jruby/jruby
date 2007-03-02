@@ -129,8 +129,8 @@ public class RubyStruct extends RubyObject {
 
         modify();
 
-        for (int i = 0; i < member.getLength(); i++) {
-            if (member.entry(i).asSymbol().equals(name)) {
+        for (int i = 0,k=member.getLength(); i < k; i++) {
+            if (member.eltInternal(i).asSymbol().equals(name)) {
                 return values[i] = value;
             }
         }
@@ -143,8 +143,8 @@ public class RubyStruct extends RubyObject {
 
         assert !member.isNil() : "uninitialized struct";
 
-        for (int i = 0; i < member.getLength(); i++) {
-            if (member.entry(i).asSymbol().equals(name)) {
+        for (int i = 0,k=member.getLength(); i < k; i++) {
+            if (member.eltInternal(i).asSymbol().equals(name)) {
                 return values[i];
             }
         }
@@ -258,8 +258,8 @@ public class RubyStruct extends RubyObject {
         assert !member.isNil() : "uninitialized struct";
 
         RubyArray result = recv.getRuntime().newArray(member.getLength());
-        for (int i = 0; i < member.getLength(); i++) {
-            result.append(recv.getRuntime().newString(member.entry(i).asSymbol()));
+        for (int i = 0,k=member.getLength(); i < k; i++) {
+            result.append(recv.getRuntime().newString(member.eltInternal(i).asSymbol()));
         }
 
         return result;
@@ -281,8 +281,8 @@ public class RubyStruct extends RubyObject {
 
         modify();
 
-        for (int i = 0; i < member.getLength(); i++) {
-            if (member.entry(i).asSymbol().equals(name)) {
+        for (int i = 0,k=member.getLength(); i < k; i++) {
+            if (member.eltInternal(i).asSymbol().equals(name)) {
                 return values[i] = value;
             }
         }
@@ -301,8 +301,8 @@ public class RubyStruct extends RubyObject {
 
         assert !member.isNil() : "uninitialized struct";
 
-        for (int i = 0; i < member.getLength(); i++) {
-            if (member.entry(i).asSymbol().equals(name)) {
+        for (int i = 0,k=member.getLength(); i < k; i++) {
+            if (member.eltInternal(i).asSymbol().equals(name)) {
                 return values[i];
             }
         }
@@ -352,12 +352,12 @@ public class RubyStruct extends RubyObject {
 
         sb.append("#<struct ").append(getMetaClass().getName()).append(' ');
 
-        for (int i = 0; i < member.getLength(); i++) {
+        for (int i = 0,k=member.getLength(); i < k; i++) {
             if (i > 0) {
                 sb.append(", ");
             }
 
-            sb.append(member.entry(i).asSymbol()).append("=");
+            sb.append(member.eltInternal(i).asSymbol()).append("=");
             sb.append(values[i].callMethod(getRuntime().getCurrentContext(), "inspect"));
         }
 
