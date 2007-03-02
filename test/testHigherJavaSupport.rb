@@ -382,3 +382,9 @@ bos.write 32
 bos.flush
 test_ok _anos.written
 
+has_run = false
+java.lang.Runnable.impl { 
+  has_run = true
+}.run
+
+test_ok has_run

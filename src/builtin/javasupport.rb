@@ -323,7 +323,7 @@ class InterfaceJavaProxy < JavaProxy
       proxy = new_proxy(*args, &block)
       proxy.java_object = Java.new_proxy_instance(proxy.class.java_class) { |proxy2, method, *args|
         args.collect! { |arg| Java.java_to_ruby(arg) }
-        Java.ruby_to_java(proxy.__jsend!(method.name, *args))
+        Java.ruby_to_java(proxy.send(method.name, *args))
       }
       proxy
     end
