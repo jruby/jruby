@@ -208,6 +208,7 @@ public class RubyTime extends RubyObject {
 
 		RubyTime newTime = new RubyTime(getRuntime(), getMetaClass());
 		newTime.cal = Calendar.getInstance();
+        newTime.cal.setTimeZone(cal.getTimeZone());
 		newTime.cal.setTime(new Date(time));
 
 		return newTime;
@@ -225,6 +226,7 @@ public class RubyTime extends RubyObject {
 
 		RubyTime newTime = new RubyTime(getRuntime(), getMetaClass());
 		newTime.cal = Calendar.getInstance();
+        newTime.cal.setTimeZone(cal.getTimeZone());
 		newTime.cal.setTime(new Date(time));
 
 		return newTime;
