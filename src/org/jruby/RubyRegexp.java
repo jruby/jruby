@@ -61,7 +61,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
     // \013 is a vertical tab. Java does not support the \v notation used by
     // Ruby.
-    private static final Pattern SPECIAL_CHARS = Pattern.compile("([\\\t\\\n\\\f\\\r\\ \\#\\\013\\+\\[\\]\\.\\?\\*\\(\\)\\{\\}\\|\\\\\\^\\$])");    
+    private static final Pattern SPECIAL_CHARS = Pattern.compile("([\\\t\\\n\\\f\\\r\\ \\#\\\013\\+\\-\\[\\]\\.\\?\\*\\(\\)\\{\\}\\|\\\\\\^\\$])");    
 
 	/** Class which represents the multibyte character set code.
 	 * (should be an enum in Java 5.0).
