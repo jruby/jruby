@@ -249,7 +249,8 @@ public class TimeMetaClass extends ObjectMetaClass {
         if (args.length == 10) {
             args = new IRubyObject[] { args[5], args[4], args[3], args[2], args[1], args[0] };
         } else {
-            len = checkArgumentCount(args, 1, 7);
+            // MRI accepts additional wday argument which appears to be ignored.
+            len = checkArgumentCount(args, 1, 8);
         }
         ThreadContext tc = getRuntime().getCurrentContext();
         if(!(args[0] instanceof RubyNumeric)) {
