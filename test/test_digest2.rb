@@ -109,12 +109,14 @@ module TestDigest
     }
   end
 
-  class TestRMD160 < Test::Unit::TestCase
-    include TestDigest
-    ALGO = RMD160
-    DATA = {
-      Data1 => "8eb208f7e05d987a9b044a8e98c6b087f15a0bfc",
-      Data2 => "12a053384a9c0c88e405a06c27dcf49ada62eb2b",
-    }
+  if Digest.const_defined?(:RMD160)
+    class TestRMD160 < Test::Unit::TestCase
+      include TestDigest
+      ALGO = RMD160
+      DATA = {
+        Data1 => "8eb208f7e05d987a9b044a8e98c6b087f15a0bfc",
+        Data2 => "12a053384a9c0c88e405a06c27dcf49ada62eb2b",
+      }
+    end
   end
 end
