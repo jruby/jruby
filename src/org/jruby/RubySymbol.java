@@ -73,10 +73,6 @@ public class RubySymbol extends RubyObject {
     	return true;
     }
     
-    public boolean singletonMethodsAllowed() {
-        return false;
-    }
-
     public static String getSymbol(Ruby runtime, long id) {
         RubySymbol result = runtime.getSymbolTable().lookup(id);
         if (result != null) {

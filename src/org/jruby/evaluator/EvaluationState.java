@@ -578,14 +578,6 @@ public class EvaluationState {
                     visibility = Visibility.PRIVATE;
                 }
                 
-                if (containingClass.isSingleton()) {
-                    IRubyObject attachedObject = ((MetaClass) containingClass).getAttachedObject();
-                    
-                    if (!attachedObject.singletonMethodsAllowed()) {
-                        throw runtime.newTypeError("can't define singleton method \"" + 
-                                iVisited.getName() + "\" for " + attachedObject.getType());
-                    }
-                }    
                 DefaultMethod newMethod = new DefaultMethod(containingClass, iVisited.getScope(), 
                         iVisited.getBodyNode(), (ArgsNode) iVisited.getArgsNode(), visibility, context.peekCRef());
     
@@ -628,7 +620,7 @@ public class EvaluationState {
                     if (receiver.isFrozen()) {
                         throw runtime.newFrozenError("object");
                     }
-                    if (!receiver.singletonMethodsAllowed()) {
+                    if (receiver.getMetaClass() == runtime.getFixnum() || receiver.getMetaClass() == runtime.getClass("Symbol")) {
                         throw runtime.newTypeError("can't define singleton method \"" + iVisited.getName()
                                                    + "\" for " + receiver.getType());
                     }

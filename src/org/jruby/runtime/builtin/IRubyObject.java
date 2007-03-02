@@ -351,10 +351,8 @@ public interface IRubyObject {
      */
     void defineSingletonMethod(String name, Callback callback);
 
-    boolean singletonMethodsAllowed();
     
     boolean isSingleton();
-
 	Iterator instanceVariableNames();
 
     /**

@@ -44,7 +44,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -138,10 +137,6 @@ public class RubyObject implements Cloneable, IRubyObject {
         
     public boolean isSingleton() {
         return false;
-    }
-
-    public boolean singletonMethodsAllowed() {
-        return true;
     }
 
     public Class getJavaClass() {

@@ -965,15 +965,6 @@ public class StandardASMCompiler implements Compiler {
             visibility = Visibility.PRIVATE;
         }
         
-        if (containingClass.isSingleton()) {
-            IRubyObject attachedObject = ((MetaClass) containingClass).getAttachedObject();
-            
-            if (!attachedObject.singletonMethodsAllowed()) {
-                throw runtime.newTypeError("can't define singleton method \"" +
-                        name + "\" for " + attachedObject.getType());
-            }
-        }
-        
         SinglyLinkedList cref = context.peekCRef();
         
         MethodFactory factory = MethodFactory.createFactory();

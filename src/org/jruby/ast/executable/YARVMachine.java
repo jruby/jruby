@@ -337,7 +337,7 @@ public class YARVMachine {
                 if (containingClass.isSingleton()) {
                     IRubyObject attachedObject = ((MetaClass) containingClass).getAttachedObject();
                     
-                    if (!attachedObject.singletonMethodsAllowed()) {
+                    if (attachedObject.getMetaClass() == runtime.getFixnum() || attachedObject.getMetaClass() == runtime.getClass("Symbol")) {
                         throw runtime.newTypeError("can't define singleton method \"" + 
                                 mname + "\" for " + attachedObject.getType());
                     }

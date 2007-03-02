@@ -135,3 +135,18 @@ test_ok(in_io.gets.chomp =~ /warning: class variable access from toplevel single
 test_equal(3, in_io.gets.chomp.to_i)
 test_ok(in_io.eof?)
 
+
+class Numeric
+  def singleton_method_added a # turn off the default behaviour
+  end
+end
+
+a = 1.0
+
+class << a
+  def hello
+    "hello"
+  end
+end
+
+test_equal("hello", a.hello)

@@ -40,7 +40,6 @@ import java.util.List;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -472,14 +471,14 @@ public class RubyNumeric extends RubyObject {
      *
      */
     public IRubyObject sadded(IRubyObject name) {
-        throw getRuntime().newTypeError("can't define singleton method " + name + " for " + getMetaClass().getName());
+        throw getRuntime().newTypeError("can't define singleton method " + name + " for " + getType().getName());
         } 
         
     /** num_init_copy
      *
      */
     public IRubyObject init_copy(IRubyObject arg) {
-        throw getRuntime().newTypeError("can't copy " + getMetaClass().getName());
+        throw getRuntime().newTypeError("can't copy " + getType().getName());
     }
     
     /** num_coerce
@@ -745,11 +744,9 @@ public class RubyNumeric extends RubyObject {
         return other.callMethod(getRuntime().getCurrentContext(), "==", this);
     }
 
-	public boolean singletonMethodsAllowed() {
-		return false;
-	}
-    
     public static class InvalidIntegerException extends NumberFormatException {
+        private static final long serialVersionUID = 55019452543252148L;
+        
         public InvalidIntegerException() {
             super();
         }
@@ -759,6 +756,7 @@ public class RubyNumeric extends RubyObject {
     }
     
     public static class NumberTooLargeException extends NumberFormatException {
+        private static final long serialVersionUID = -1835120694982699449L;
         public NumberTooLargeException() {
             super();
         }

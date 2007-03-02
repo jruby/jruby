@@ -33,11 +33,9 @@
 package org.jruby.javasupport;
 
 import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -45,11 +43,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.RubyTime;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.proxy.JavaProxyClass;
-import org.jruby.javasupport.proxy.JavaProxyConstructor;
-import org.jruby.javasupport.proxy.JavaProxyInvocationHandler;
-import org.jruby.javasupport.proxy.JavaProxyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;

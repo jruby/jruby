@@ -34,7 +34,6 @@ package org.jruby.javasupport;
 
 import java.lang.ref.WeakReference;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
