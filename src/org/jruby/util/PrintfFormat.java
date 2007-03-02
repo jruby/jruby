@@ -1714,10 +1714,12 @@ public class PrintfFormat {
             if (nBlanks < 0) {
                 nBlanks = 0;
             }
-            if (leadingSign) {
-                n++;
-            } else if (leadingSpace) {
-                n++;
+            if (!neg) {
+                if (leadingSign) {
+                    n++;
+                } else if (leadingSpace) {
+                    n++;
+                }
             }
             n += nBlanks;
             n += nLeadingZeros;
