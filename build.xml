@@ -60,12 +60,12 @@
     <mkdir dir="${api.docs.dir}"/>
   </target>
 
-  <target name="ragel" description="Standalone target that generates all our ragel based source files. Requires ragel and rlcodegen to be on the classpath">
+  <target name="ragel" description="Standalone target that generates all our ragel based source files. Requires ragel and rlgen-java to be on the classpath">
     <exec executable="ragel" output="__ragel_out">
       <arg line="-J"/>
       <arg line="${src.dir}/org/jvyamlb/resolver_scanner.rl"/>
     </exec>
-    <exec executable="rlcodegen" input="__ragel_out">
+    <exec executable="rlgen-java" input="__ragel_out">
       <arg line="-o ${src.dir}/org/jvyamlb/ResolverScanner.java"/>
     </exec>
     <delete file="__ragel_out" quiet="true"/>
