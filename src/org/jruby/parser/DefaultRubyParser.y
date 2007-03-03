@@ -968,7 +968,7 @@ command_args  : /* none */ {
 
 block_arg     : tAMPER arg_value {
                   support.checkExpression($2);
-                  $$ = new BlockPassNode(getPosition($1), $2);
+                  $$ = new BlockPassNode(support.union($1, $2), $2);
               }
 
 opt_block_arg : ',' block_arg {
@@ -1066,6 +1066,7 @@ primary       : literal
                       throw new SyntaxException(getPosition($1), "Both block arg and actual block given.");
 		  }
 		  $<BlockAcceptingNode>1.setIterNode($2);
+		  $<Node>1.setPosition(support.union($1, $2));
               }
               | kIF expr_value then compstmt if_tail kEND {
                   $$ = new IfNode(support.union($1, $6), support.getConditionNode($2), $4, $5);
@@ -1224,6 +1225,7 @@ block_call    : command do_block {
                       throw new SyntaxException(getPosition($1), "Both block arg and actual block given.");
                   }
 		  $<BlockAcceptingNode>1.setIterNode($2);
+		  $<Node>1.setPosition(support.union($1, $2));
               }
               | block_call tDOT operation2 opt_paren_args {
                   $$ = support.new_call($1, $3, $4, null);

@@ -363,7 +363,7 @@ END
 list = [
 nil,
 nil, #['NewlineNode',0,1,6,9],
-  ['FCallNode',0,0,0,5],
+  ['FCallNode',0,0,0,8],
     ['ArrayNode',0,0,3,5],
     ['IterNode',0,0,6,8]
 ]
@@ -1461,7 +1461,7 @@ END
 list = [
 nil,
 nil, #['NewlineNode', 0, 1, 0, 25],
-['CallNode', 0, 0, 0, 7],
+['CallNode', 0, 0, 0, 24],
 ['FixnumNode', 0, 0, 0, 1],
 ['IterNode', 0, 0, 8, 24],
 nil, #['NewlineNode', 0, 0, 10, 24],
@@ -1583,3 +1583,81 @@ leap = case
        end
 puts leap
 END
+
+
+list = [
+nil,
+nil,
+['CallNode', 0, 0, 0, 28],
+['FixnumNode', 0, 0, 0, 1],
+['IterNode', 0, 0, 8, 28],
+['DAsgnNode', 0, 0, 11, 12],
+['BlockNode', 0, 0, 14, 27],
+nil,
+['FCallNode', 0, 0, 14, 20],
+['ArrayNode', 0, 0, 19, 20],
+['DVarNode', 0, 0, 19, 20],
+nil,
+['BreakNode', 0, 0, 22, 27]
+]
+test_tree(list, <<END)
+3.times { |i| puts i; break}
+END
+
+list = [
+nil,
+nil,
+['FCallNode', 0, 0, 0, 29],
+['ArrayNode', 0, 0, 5, 8],
+['FixnumNode', 0, 0, 6, 7],
+['IterNode', 0, 0, 9, 29],
+['DAsgnNode', 0, 0, 12, 13],
+['BlockNode', 0, 0, 15, 28],
+nil,
+['FCallNode', 0, 0, 15, 21],
+['ArrayNode', 0, 0, 20, 21],
+['DVarNode', 0, 0, 20, 21],
+nil,
+['BreakNode', 0, 0, 23, 28]
+]
+test_tree(list, <<END)
+times(1) { |i| puts i; break}
+END
+
+list = [
+nil,
+nil,
+['CallNode', 0, 0, 0, 31],
+['FixnumNode', 0, 0, 0, 1],
+['ArrayNode', 0, 0, 7, 10],
+['FixnumNode', 0, 0, 8, 9],
+['IterNode', 0, 0, 11, 31],
+['DAsgnNode', 0, 0, 14, 15],
+['BlockNode', 0, 0, 17, 30],
+nil,
+['FCallNode', 0, 0, 17, 23],
+['ArrayNode', 0, 0, 22, 23],
+['DVarNode', 0, 0, 22, 23],
+nil,
+['BreakNode', 0, 0, 25, 30]
+]
+test_tree(list, <<END)
+3.times(1) { |i| puts i; break}
+END
+
+list = [
+nil,
+['BlockNode', 0, 2, 0, 13],
+nil,
+['FCallNode', 0, 0, 0, 4],
+['BlockPassNode', 0, 0, 2, 4],
+['VCallNode', 0, 0, 3, 4],
+nil,
+['VCallNode', 2, 2, 6, 13]
+]
+test_tree(list, <<END)
+a &i
+
+nothing
+END
+

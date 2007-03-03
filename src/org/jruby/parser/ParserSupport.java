@@ -678,7 +678,7 @@ public class ParserSupport {
                 throw new SyntaxException(iter.getPosition(), "Both block arg and actual block given.");
             }
                 
-            return new CallNode(union(receiver, name), receiver, (String) name.getValue(), 
+            return new CallNode(union(receiver, args), receiver, (String) name.getValue(), 
                     ((BlockPassNode) args).getArgsNode(), args);
         }
             

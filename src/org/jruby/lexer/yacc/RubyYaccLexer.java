@@ -932,8 +932,12 @@ public class RubyYaccLexer {
                     return Tokens.tOP_ASGN;
                 }
                 src.unread(c);
+                //tmpPosition is required because getPosition()'s side effects.
+                //if the warning is generated, the getPosition() on line 954 (this line + 18) will create
+                //a wrong position if the "inclusive" flag is not set.
+                ISourcePosition tmpPosition = getPosition();
                 if (lex_state.isArgument() && spaceSeen && !Character.isWhitespace(c)){
-                    warnings.warning(getPosition(), "`&' interpreted as argument prefix");
+                    warnings.warning(tmpPosition, "`&' interpreted as argument prefix");
                     c = Tokens.tAMPER;
                 } else if (lex_state == LexState.EXPR_BEG || 
                         lex_state == LexState.EXPR_MID) {
@@ -948,7 +952,7 @@ public class RubyYaccLexer {
                 } else {
                     lex_state = LexState.EXPR_BEG;
                 }
-                yaccValue = new Token("&", getPosition());
+                yaccValue = new Token("&", tmpPosition);
                 return c;
                 
             case '|':
