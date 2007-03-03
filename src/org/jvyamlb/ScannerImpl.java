@@ -525,7 +525,7 @@ public class ScannerImpl implements Scanner {
         }
 
         //TODO: this is probably incorrect...
-        if(STUPID_CHAR[this.buffer.bytes[this.pointer]] || (ensure(1,false) && (this.buffer.bytes[this.pointer] == '-' || this.buffer.bytes[this.pointer] == '?' || this.buffer.bytes[this.pointer] == ':') && !NULL_BL_T_LINEBR[this.buffer.bytes[this.pointer+1]])) {
+        if(STUPID_CHAR[this.buffer.bytes[this.pointer]&0xFF] || (ensure(1,false) && (this.buffer.bytes[this.pointer] == '-' || this.buffer.bytes[this.pointer] == '?' || this.buffer.bytes[this.pointer] == ':') && !NULL_BL_T_LINEBR[this.buffer.bytes[this.pointer+1]&0xFF])) {
             return fetchPlain();
         }
 
