@@ -300,8 +300,12 @@ public class TimeMetaClass extends ObjectMetaClass {
         
         if (year < 100) year += 2000;
         
-        Calendar cal = gmt ? Calendar.getInstance(TimeZone.getTimeZone(RubyTime.UTC)) : 
-            Calendar.getInstance(); 
+        Calendar cal;
+        if (gmt) {
+            cal = Calendar.getInstance(TimeZone.getTimeZone(RubyTime.UTC)); 
+        } else {
+            cal = Calendar.getInstance(RubyTime.getLocalTimeZone(getRuntime()));
+        }
         cal.set(year, month, int_args[0], int_args[1], int_args[2], int_args[3]);
         cal.set(Calendar.MILLISECOND, int_args[4] / 1000);
         if (cal.getTimeInMillis() / 1000 < -0x80000000) {

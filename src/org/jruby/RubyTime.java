@@ -40,6 +40,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TimeZone;
 
 import org.jruby.runtime.Block;
@@ -58,6 +59,18 @@ public class RubyTime extends RubyObject {
 
     private static final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("-", Locale.US);
 
+    public static TimeZone getLocalTimeZone(Ruby runtime) {
+        // TODO: cache the RubyString "TZ" so it doesn't need to be recreated for each call?
+        RubyString tzVar = runtime.newString("TZ");
+        Map h = ((RubyHash)runtime.getObject().getConstant("ENV")).getValueMap();
+        IRubyObject tz = (IRubyObject)h.get(tzVar);
+        if (tz == null || ! (tz instanceof RubyString)) {
+            return TimeZone.getDefault();
+        } else {
+            return TimeZone.getTimeZone(tz.toString());
+        }
+    }
+    
     public RubyTime(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
     }
@@ -121,8 +134,7 @@ public class RubyTime extends RubyObject {
 
     public RubyTime localtime() {
         long dump = cal.getTimeInMillis();
-        cal = Calendar.getInstance();
-        cal.setTimeZone(TimeZone.getDefault());
+        cal = Calendar.getInstance(getLocalTimeZone(getRuntime()));
         cal.setTimeInMillis(dump);
         return this;
     }
@@ -139,7 +151,7 @@ public class RubyTime extends RubyObject {
 
     public RubyTime getlocal() {
         Calendar newCal = (Calendar)cal.clone();
-        newCal.setTimeZone(TimeZone.getDefault());
+        newCal.setTimeZone(getLocalTimeZone(getRuntime()));
         return newTime(getRuntime(), newCal);
     }
 
