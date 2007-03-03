@@ -1494,6 +1494,10 @@ public final class Ruby {
     public RaiseException newNotImplementedError(String message) {
         return newRaiseException(getClass("NotImplementedError"), message);
     }
+    
+    public RaiseException newInvalidEncoding(String message) {
+        return newRaiseException(getClass("Iconv").getClass("InvalidEncoding"), message);
+    }
 
     public RaiseException newNoMethodError(String message, String name) {
         return new RaiseException(new RubyNameError(this, this.getClass("NoMethodError"), message, name), true);

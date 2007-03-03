@@ -35,6 +35,7 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.UnmappableCharacterException;
+import java.nio.charset.UnsupportedCharsetException;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -58,9 +59,9 @@ public class RubyIconv extends RubyObject {
         RubyClass iconvClass = runtime.defineClass("Iconv", runtime.getObject(), ICONV_ALLOCATOR);
 
         RubyClass argumentError = runtime.getClass("ArgumentError");
-        iconvClass.defineClassUnder("IllegalEncoding", argumentError, argumentError.getAllocator());
         iconvClass.defineClassUnder("IllegalSequence", argumentError, argumentError.getAllocator());
         iconvClass.defineClassUnder("InvalidCharacter", argumentError, argumentError.getAllocator());
+        iconvClass.defineClassUnder("InvalidEncoding", argumentError, argumentError.getAllocator());
         
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyIconv.class);
 
@@ -155,6 +156,8 @@ public class RubyIconv extends RubyObject {
             buf = encoder.encode(cbuf);
             byte[] arr = buf.array();
             return RubyString.newString(original.getRuntime(), new ByteList(arr,0,buf.limit()));
+        } catch (UnsupportedCharsetException e) {
+            throw original.getRuntime().newInvalidEncoding("invalid encoding");
         } catch (UnmappableCharacterException e) {
         } catch (CharacterCodingException e) {
         }
