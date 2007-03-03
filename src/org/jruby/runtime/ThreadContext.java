@@ -782,14 +782,14 @@ public class ThreadContext {
         pushRubyClass(block.getKlass()); 
     }
 
-    public void postEvalWithBinding(Block block) {
+    public void postEvalWithBinding() {
         popFrame();
         unsetCRef();
         popRubyClass();
         popBindingFrame();
     }
     
-    public void postYield(Block block) {
+    public void postYield() {
         popScope();
         popFrame();
         unsetCRef();

@@ -43,6 +43,7 @@ import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.exceptions.JumpException;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.internal.runtime.methods.EvaluateCallable;
 import org.jruby.util.collections.SinglyLinkedList;
 
 /**
@@ -186,7 +187,7 @@ public class Block {
     }
     
     protected void post(ThreadContext context) {
-        context.postYield(this);
+        context.postYield();
     }
 
     /**
@@ -209,8 +210,7 @@ public class Block {
         pre(context, klass);
 
         try {
-            IRubyObject[] args = getBlockArgs(context, value, self, aValue);
-        
+            IRubyObject[] args = (method instanceof EvaluateCallable) ? getBlockArgsEvaluate(context, value, self, aValue) : getBlockArgs(context, value, self, aValue);
             // This while loop is for restarting the block call in case a 'redo' fires.
             while (true) {
                 try {
@@ -265,7 +265,7 @@ public class Block {
                             value = runtime.getNil();
                             break;
                         case 1:
-                            value = ((RubyArray)value).first(IRubyObject.NULL_ARRAY);
+                            value = ((RubyArray)value).eltInternal(0);
                             break;
                         default:
                             runtime.getWarnings().warn("multiple values for a block parameter (" + length + " for 1)");
@@ -277,6 +277,56 @@ public class Block {
                 AssignmentVisitor.assign(runtime, context, self, varNode, value, Block.NULL_BLOCK, false);
         }
         return ArgsUtil.convertToJavaArray(value);
+    }
+
+    private IRubyObject[] getBlockArgsEvaluate(ThreadContext context, IRubyObject value, IRubyObject self, boolean valueIsArray) {
+        //FIXME: block arg handling is mucked up in strange ways and NEED to
+        // be fixed. Especially with regard to Enumerable. See RubyEnumerable#eachToList too.
+        if (varNode == null) {
+            return IRubyObject.NULL_ARRAY;
+        }
+        
+        Ruby runtime = self.getRuntime();
+
+
+        if(valueIsArray) {
+            switch (varNode.nodeId) {
+            case NodeTypes.ZEROARGNODE:
+                break;
+            case NodeTypes.MULTIPLEASGNNODE:
+                value = AssignmentVisitor.multiAssign(runtime, context, self, (MultipleAsgnNode)varNode, (RubyArray)value, false);
+                break;
+            default:
+                int length = arrayLength(value);
+                switch (length) {
+                case 0:
+                    value = runtime.getNil();
+                    break;
+                case 1:
+                    value = ((RubyArray)value).eltInternal(0);
+                    break;
+                default:
+                    runtime.getWarnings().warn("multiple values for a block parameter (" + length + " for 1)");
+                }
+                AssignmentVisitor.assign(runtime, context, self, varNode, value, Block.NULL_BLOCK, false);
+            }
+        } else {
+            switch (varNode.nodeId) {
+            case NodeTypes.ZEROARGNODE:
+                return IRubyObject.NULL_ARRAY;
+            case NodeTypes.MULTIPLEASGNNODE:
+                value = AssignmentVisitor.multiAssign(runtime, context, self, (MultipleAsgnNode)varNode,
+                                                      ArgsUtil.convertToRubyArray(runtime, value, ((MultipleAsgnNode)varNode).getHeadNode() != null)
+                                                      , false);
+                break;
+            default:
+                if (value == null) { 
+                    runtime.getWarnings().warn("multiple values for a block parameter (0 for 1)");
+                }
+                AssignmentVisitor.assign(runtime, context, self, varNode, value, Block.NULL_BLOCK, false);
+            }
+        }
+        return IRubyObject.NULL_ARRAY;
     }
     
     private int arrayLength(IRubyObject node) {
