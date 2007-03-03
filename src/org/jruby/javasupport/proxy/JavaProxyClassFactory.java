@@ -127,8 +127,12 @@ public class JavaProxyClassFactory {
             if (pkg.startsWith("java.") || pkg.startsWith("javax.")) {
                 pkg = packageName(JavaProxyClassFactory.class) + ".gen";
             }
-            targetClassName = pkg + "." + cName + "$Proxy"
+            if(ix == -1) {
+                targetClassName = cName + "$Proxy" + counter++;
+            } else {
+                targetClassName = pkg + "." + cName + "$Proxy"
                     + counter++;
+            }
         }
 
         Set key = new HashSet();
