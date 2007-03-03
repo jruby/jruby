@@ -783,7 +783,7 @@ public class ScannerImpl implements Scanner {
             int i = 0;
             for(;;i++) {
                 ensure(i+2,false);
-                if(r_check[this.buffer.bytes[this.pointer+i]] || (r_check2[this.buffer.bytes[this.pointer+i]] && r_check3[this.buffer.bytes[this.pointer+i+1]])) {
+                if(r_check[this.buffer.bytes[this.pointer+i]&0xFF] || (r_check2[this.buffer.bytes[this.pointer+i]&0xFF] && r_check3[this.buffer.bytes[this.pointer+i+1]&0xFF])) {
                     length = i;
                     break;
                 }
