@@ -143,7 +143,7 @@ fi
 
 #JAVA_OPTS="-Djruby.jit.enabled=true -Djruby.tailcall.enabled=true"
 
-"$JAVA_CMD" $JAVA_OPTS $DEBUG -Xmx256m -Xss1024k -ea -classpath "$CP" \
+"$JAVA_CMD" $JAVA_OPTS $DEBUG -Xmx192m -Xss1024k -da -classpath "$CP" \
 "-Djruby.base=$JRUBY_BASE" \
 "-Djruby.home=$JRUBY_HOME" \
 "-Djruby.lib=$JRUBY_BASE/lib" \
