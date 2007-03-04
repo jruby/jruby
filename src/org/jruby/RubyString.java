@@ -224,6 +224,10 @@ public class RubyString extends RubyObject {
     public static boolean isPrint(int c) {
         return c >= 0x20 && c <= 0x7E;
     }
+    
+    public IRubyObject checkStringType() {
+        return this;
+    }
 
     public IRubyObject to_s() {
         return this;
@@ -445,6 +449,9 @@ public class RubyString extends RubyObject {
     }
 
     public IRubyObject to_str() {
+        if (getMetaClass().getRealClass() != getRuntime().getString()) {
+            return newString(getRuntime(), value.bytes());
+        }
         return this;
     }
 

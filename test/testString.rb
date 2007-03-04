@@ -493,3 +493,25 @@ test_equal([184, 158, 8, 136, 165], bytes)
 
 # JRUBY-280
 test_equal("1234567890.51",("%01.2f" % 1234567890.506))
+
+# test protocol conversion
+class GooStr < String
+end
+
+f = GooStr.new("AAAA")
+g= f.to_str
+test_ok(f.object_id != g.object_id)
+test_equal(String, g.class)
+test_equal("AAAA", g)
+
+class FooStr < String
+  # Should not get called
+  def to_str
+    123
+  end
+end
+
+f = FooStr.new("AAAA")
+
+test_equal("AAAA", [f].join(','))
+
