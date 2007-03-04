@@ -1671,10 +1671,23 @@ public final class Ruby {
 
     public String getJRubyHome() {
         if (jrubyHome == null) {
-            jrubyHome = System.getProperty("jruby.home", System.getProperty("user.home") + "/.jruby");
-            new NormalizedFile(jrubyHome).mkdirs();
+            jrubyHome = verifyHome(System.getProperty("jruby.home", System.getProperty("user.home") + "/.jruby"));
         }
         return jrubyHome;
+    }
+    
+    public void setJRubyHome(String home) {
+        jrubyHome = verifyHome(home);
+    }
+
+    // We require the home directory to be absolute
+    private String verifyHome(String home) {
+        NormalizedFile f = new NormalizedFile(home);
+        if (!f.isAbsolute()) {
+            home = f.getAbsolutePath();
+        }
+        f.mkdirs();
+        return home;
     }
 
     public RubyInstanceConfig getInstanceConfig() {
