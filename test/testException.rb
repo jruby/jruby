@@ -99,3 +99,11 @@ rescue
   test_ok($!, 'Global exception ($!) should not be nil')
   test_ok($!.to_s.eql?('Something bad'), "Global exceptions should be 'Something bad', but is '#{$!}'")
 end
+
+class TypeError
+  def new(*args)
+     StandardError.new
+  end
+end
+
+test_exception(StandardError) { 5 + "A" }
