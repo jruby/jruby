@@ -190,7 +190,35 @@ public class PrintfFormat {
                     i++;
                 }
 
-                if (c == 'p' || c == 'P') {
+                if (o[i] == null) {
+                    // total hack for 0.9.8 Rails compliance
+                    // this program must die, and soon
+                    switch(c) {
+                    case 'c':
+                        throw ro[i].getRuntime().newTypeError("no implicit conversion from nil to integer");
+                    case 'e':
+                    case 'E':
+                    case 'f':
+                    case 'g':
+                    case 'G':
+                        throw ro[i].getRuntime().newTypeError("can't convert nil into Float");
+                    case 'b':
+                    case 'B':
+                    case 'd':
+                    case 'i':
+                    case 'u':
+                    case 'x':
+                    case 'X':
+                        sb.append(cs.internalsprintf(0L));
+                        break;
+                    case 's':
+                        sb.append(cs.internalsprintf(""));
+                        break;
+                    case 'p':
+                        sb.append(cs.internalsprintf("nil"));
+                        break;
+                    }
+                } else if (c == 'p' || c == 'P') {
                     sb.append(cs.internalsprintf(ro[i].callMethod(ro[i].getRuntime().getCurrentContext(),"inspect").objAsString().toString()));
                 } else if (c == 'c' || c == 'C') {
                     sb.append(cs.internalsprintf(RubyNumeric.num2long(ro[i].convertToInteger())));
@@ -207,8 +235,6 @@ public class PrintfFormat {
                             sb.append(cs.internalsprintf(RubyNumeric.num2long(num)));
                         }
                     }
-                } else if (o[i] == null) {
-                    // Nil is printed as nothing
                 } else if (o[i] instanceof Byte) {
                     sb.append(cs.internalsprintf(((Byte) o[i]).byteValue()));
                 } else if (o[i] instanceof Short) {

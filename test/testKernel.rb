@@ -153,3 +153,6 @@ test_exception(NameError) {
     throw :fred2
     test_fail("catch stack should have been cleaned up")
 }
+
+##### format %
+test_exception(TypeError) { "%01.3f" % nil }
