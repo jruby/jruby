@@ -96,3 +96,5 @@ test_equal((-Inf).to_s=="-Infinity",true)
 test_equal(NaN.to_s=="NaN",true)
 test_equal(NaN.to_s=="NaN",true)
 test_equal(NaN==NaN,false)
+
+test_exception(TypeError) {5.0.dup}
