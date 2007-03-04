@@ -952,7 +952,11 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public int hashCode() {
-    	return (int) RubyNumeric.fix2long(callMethod(getRuntime().getCurrentContext(), "hash"));
+        IRubyObject hashValue = callMethod(getRuntime().getCurrentContext(), "hash");
+        
+        if (hashValue instanceof RubyFixnum) return (int) RubyNumeric.fix2long(hashValue); 
+        
+        return System.identityHashCode(this);
     }
 
     /** rb_obj_type

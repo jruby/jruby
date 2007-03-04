@@ -99,3 +99,13 @@ test_no_exception do
   o2.object_id
   o2.hash
 end
+
+# This should not crash the interpreter
+class BadHash
+  def hash
+     "NOWAY"
+  end
+end
+
+b = BadHash.new
+{b => b}
