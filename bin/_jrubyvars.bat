@@ -56,7 +56,7 @@ set _STARTJAVA="%JAVA_HOME%\bin\%JAVA_COMMAND%"
 set _RUNJAVA="%JAVA_HOME%\bin\java"
 rem ----- Set Up The Runtime Classpath ----------------------------------------
 
-for /r %JRUBY_HOME%\lib %%i in (*.jar) do @call %~dp0_jrubysetcp %%i
+for /r "%JRUBY_HOME%\lib" %%i in (*.jar) do @call "%~dp0_jrubysetcp" %%i
 
 if not "%CLASSPATH%" == "" goto gotCP
 set CLASSPATH=%CP%

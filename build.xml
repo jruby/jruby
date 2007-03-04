@@ -179,6 +179,10 @@
         <fileset dir="${basedir}/lib/ruby/1.8">
           <include name="**/*.rb"/>
         </fileset>
+        <fileset dir="${basedir}/src">
+          <include name="**/*.rb"/>
+          <exclude name="builtin/**/*.rb"/>
+        </fileset>
         <zipfileset src="${lib.dir}/asm-2.2.3.jar"/>
         <zipfileset src="${lib.dir}/asm-commons-2.2.3.jar"/>
         <zipfileset src="${lib.dir}/jline-0.9.91-SNAPSHOT.jar"/>
