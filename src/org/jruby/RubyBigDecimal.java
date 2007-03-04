@@ -206,9 +206,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
         String ss = args[0].convertToString().toString();
-        if(ss.indexOf('.') != -1) {
-            ss = removeTrailingZeroes(ss);
-        }
+        
         try {
         this.value = new BigDecimal(ss);
         } catch(NumberFormatException e) {
@@ -585,6 +583,7 @@ public class RubyBigDecimal extends RubyNumeric {
                     index += groups;
                 }
                 if(null != after) {
+                    System.out.println("AFTER: " + after);
                     build.append(".");
                     index = 0;
                     sep = "";
