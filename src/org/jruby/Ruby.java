@@ -117,7 +117,7 @@ import org.jruby.util.collections.SinglyLinkedList;
  * The jruby runtime.
  */
 public final class Ruby {
-    private static String[] BUILTIN_LIBRARIES = {"fcntl", "yaml", "nkf" };
+    private static String[] BUILTIN_LIBRARIES = {"fcntl", "yaml", "nkf", "yaml/syck" };
 
     private CacheMap cacheMap = new CacheMap(this);
     private ThreadService threadService = new ThreadService(this);
