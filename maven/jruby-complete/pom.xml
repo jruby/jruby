@@ -97,7 +97,9 @@
                 <copy todir="${project.build.outputDirectory}/META-INF/jruby.home">
                   <fileset dir="${project.basedir}/../..">
                     <include name="bin/*"/>
-                    <include name="lib/ruby/gems/**/*"/>
+                    <include name="lib/ruby/gems/1.8/cache/sources*.gem"/>
+                    <include name="lib/ruby/gems/1.8/gems/sources*/**/*"/>
+                    <include name="lib/ruby/gems/1.8/specifications/sources*.gemspec"/>
                     <include name="lib/ruby/site_ruby/**/*"/>
                   </fileset>
                 </copy>

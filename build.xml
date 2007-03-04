@@ -102,7 +102,11 @@
     </taskdef>
 
     <copy todir="${jruby.classes.dir}">
-      <fileset dir="${src.dir}" includes="**/*.properties"/>
+      <fileset dir="${src.dir}">
+        <include name="**/*.properties"/>
+        <include name="**/*.rb"/>
+        <exclude name="builtin/**/*.rb"/>
+      </fileset>
     </copy>
   </target>
 
@@ -151,9 +155,6 @@
   <target name="jar-jruby" depends="generate-method-classes">
     <jar destfile="${lib.dir}/jruby.jar">
       <fileset dir="${jruby.classes.dir}">
-        <include name="**/*.class"/>
-  <include name="**/*.properties"/>
-  <include name="**/*.rb.ast.ser"/>
         <exclude name="org/jruby/util/ant/**/*.class"/>
       </fileset>
       <manifest>
@@ -171,17 +172,10 @@
       <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${lib.dir}/jarjar-0.7.jar"/>
       <jarjar destfile="${lib.dir}/${filename}">
         <fileset dir="${jruby.classes.dir}">
-          <include name="**/*.class"/>
-          <include name="**/*.properties"/>
-          <include name="**/*.rb.ast.ser"/>
           <exclude name="org/jruby/util/ant/**/*.class"/>
         </fileset>
         <fileset dir="${basedir}/lib/ruby/1.8">
           <include name="**/*.rb"/>
-        </fileset>
-        <fileset dir="${basedir}/src">
-          <include name="**/*.rb"/>
-          <exclude name="builtin/**/*.rb"/>
         </fileset>
         <zipfileset src="${lib.dir}/asm-2.2.3.jar"/>
         <zipfileset src="${lib.dir}/asm-commons-2.2.3.jar"/>
@@ -189,7 +183,9 @@
         <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
         <zipfileset dir="${basedir}" prefix="META-INF/jruby.home">
           <include name="bin/*"/>
-          <include name="lib/ruby/gems/**/*"/>
+          <include name="lib/ruby/gems/1.8/cache/sources*.gem"/>
+          <include name="lib/ruby/gems/1.8/gems/sources*/**/*"/>
+          <include name="lib/ruby/gems/1.8/specifications/sources*.gemspec"/>
           <include name="lib/ruby/site_ruby/**/*"/>
         </zipfileset>
         <manifest>
