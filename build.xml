@@ -121,7 +121,9 @@
   <target name="serialize" depends="compile"
           description="Serializes builting Ruby libraries into Java format">
     <jruby-serialize destdir="${jruby.classes.dir}">
-      <fileset dir="${src.dir}"><patternset refid="ruby.src.pattern"/></fileset>
+      <fileset dir="${src.dir}">
+        <include name="builtin/**/*.rb"/>
+      </fileset>
     </jruby-serialize>
   </target>
 
