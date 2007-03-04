@@ -16,20 +16,6 @@
 
   <dependencies>
     <dependency>
-      <groupId>bouncycastle</groupId>
-      <artifactId>bcprov-jdk14</artifactId>
-      <version>135</version>
-      <scope>system</scope>
-      <systemPath>${basedir}/../../lib/bcprov-jdk14-135.jar</systemPath>
-    </dependency>
-    <dependency>
-      <groupId>bouncycastle</groupId>
-      <artifactId>bcmail-jdk14</artifactId>
-      <version>135</version>
-      <scope>system</scope>
-      <systemPath>${basedir}/../../lib/bcmail-jdk14-135.jar</systemPath>
-    </dependency>
-    <dependency>
       <groupId>jline</groupId>
       <artifactId>jline</artifactId>
       <version>0.9.91-SNAPSHOT</version>

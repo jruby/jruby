@@ -16,20 +16,6 @@
 
   <dependencies>
     <dependency>
-      <groupId>bouncycastle</groupId>
-      <artifactId>bcprov-jdk14</artifactId>
-      <version>135</version>
-      <scope>system</scope>
-      <systemPath>${project.basedir}/../../lib/bcprov-jdk14-135.jar</systemPath>
-    </dependency>
-    <dependency>
-      <groupId>bouncycastle</groupId>
-      <artifactId>bcmail-jdk14</artifactId>
-      <version>135</version>
-      <scope>system</scope>
-      <systemPath>${project.basedir}/../../lib/bcmail-jdk14-135.jar</systemPath>
-    </dependency>
-    <dependency>
       <groupId>jline</groupId>
       <artifactId>jline</artifactId>
       <version>0.9.91-SNAPSHOT</version>
@@ -164,6 +150,7 @@
                   <zipfileset src="${project.basedir}/../../lib/asm-2.2.3.jar"/>
                   <zipfileset src="${project.basedir}/../../lib/asm-commons-2.2.3.jar"/>
                   <zipfileset src="${project.basedir}/../../lib/jline-0.9.91-SNAPSHOT.jar"/>
+                  <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
                   <manifest>
                     <attribute name="Built-By" value="${user.name}"/>
                     <attribute name="Main-Class" value="${jruby.main.class}"/>

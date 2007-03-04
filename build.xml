@@ -32,7 +32,7 @@
   <patternset id="ruby.src.pattern">
     <include name="**/*.rb"/>
   </patternset>
-	
+  
   <patternset id="other.src.pattern">
     <include name="**/*.properties"/>
   </patternset>
@@ -49,7 +49,7 @@
   </target>
 
   <target name="prepare" depends="init" 
-	  description="Creates the directories needed for building">
+    description="Creates the directories needed for building">
     <mkdir dir="${build.dir}"/>
     <mkdir dir="${classes.dir}"/>
     <mkdir dir="${jruby.classes.dir}"/>
@@ -91,7 +91,7 @@
   </target>
 
   <target name="compile.tasks" depends="prepare"
-	  description="Builds the Ant tasks that we need later on in the build">
+    description="Builds the Ant tasks that we need later on in the build">
     <javac destdir="${jruby.classes.dir}" debug="true" srcdir="${src.dir}"
            includes="org/jruby/util/ant/**/*.java" source="${javac.version}">
       <classpath refid="build.classpath"/>
@@ -150,8 +150,8 @@
     <jar destfile="${lib.dir}/jruby.jar">
       <fileset dir="${jruby.classes.dir}">
         <include name="**/*.class"/>
-	<include name="**/*.properties"/>
-	<include name="**/*.rb.ast.ser"/>
+  <include name="**/*.properties"/>
+  <include name="**/*.rb.ast.ser"/>
         <exclude name="org/jruby/util/ant/**/*.class"/>
       </fileset>
       <manifest>
@@ -163,85 +163,90 @@
   </target>
 
 
-	  <target name="jar-complete" depends="generate-method-classes" description="Create the 'complete' JRuby jar. Pass 'mainclass' and 'filename' to adjust.">
-        <property name="mainclass" value="org.jruby.Main"/>
-        <property name="filename" value="jruby-complete.jar"/>
-        <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${lib.dir}/jarjar-0.7.jar"/>
-	    <jarjar destfile="${lib.dir}/${filename}">
-	      <fileset dir="${jruby.classes.dir}">
-	        <include name="**/*.class"/>
-		    <include name="**/*.properties"/>
-		    <include name="**/*.rb.ast.ser"/>
-	        <exclude name="org/jruby/util/ant/**/*.class"/>
-	      </fileset>
-	      <fileset dir="${basedir}/lib/ruby/1.8">
-	        <include name="**/*.rb"/>
-	      </fileset>
-          <zipfileset src="${lib.dir}/asm-2.2.3.jar"/>
-          <zipfileset src="${lib.dir}/asm-commons-2.2.3.jar"/>
-          <zipfileset src="${lib.dir}/jline-0.9.91-SNAPSHOT.jar"/>
-          <zipfileset src="${lib.dir}/bsf.jar"/>
-	      <manifest>
-	        <attribute name="Built-By" value="${user.name}"/>
-	        <attribute name="Main-Class" value="${mainclass}"/>
-	      </manifest>
-	    </jarjar>
-	  </target>
+    <target name="jar-complete" depends="generate-method-classes" description="Create the 'complete' JRuby jar. Pass 'mainclass' and 'filename' to adjust.">
+      <property name="mainclass" value="org.jruby.Main"/>
+      <property name="filename" value="jruby-complete.jar"/>
+      <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${lib.dir}/jarjar-0.7.jar"/>
+      <jarjar destfile="${lib.dir}/${filename}">
+        <fileset dir="${jruby.classes.dir}">
+          <include name="**/*.class"/>
+          <include name="**/*.properties"/>
+          <include name="**/*.rb.ast.ser"/>
+          <exclude name="org/jruby/util/ant/**/*.class"/>
+        </fileset>
+        <fileset dir="${basedir}/lib/ruby/1.8">
+          <include name="**/*.rb"/>
+        </fileset>
+        <zipfileset src="${lib.dir}/asm-2.2.3.jar"/>
+        <zipfileset src="${lib.dir}/asm-commons-2.2.3.jar"/>
+        <zipfileset src="${lib.dir}/jline-0.9.91-SNAPSHOT.jar"/>
+        <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
+        <zipfileset dir="${basedir}" prefix="META-INF/jruby.home">
+          <include name="bin/*"/>
+          <include name="lib/ruby/gems/**/*"/>
+          <include name="lib/ruby/site_ruby/**/*"/>
+        </zipfileset>
+        <manifest>
+          <attribute name="Built-By" value="${user.name}"/>
+          <attribute name="Main-Class" value="${mainclass}"/>
+        </manifest>
+      </jarjar>
+    </target>
 
 
-	  <target name="jar-light" depends="generate-method-classes" description="Create the 'light' JRuby jar. Pass 'mainclass' and 'filename' to adjust.">
+    <target name="jar-light" depends="generate-method-classes" description="Create the 'light' JRuby jar. Pass 'mainclass' and 'filename' to adjust.">
         <property name="mainclass" value="org.jruby.Main"/>
         <property name="filename" value="jruby-light.jar"/>
         <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${lib.dir}/jarjar-0.7.jar"/>
-	    <jarjar destfile="${lib.dir}/${filename}">
-	      <fileset dir="${jruby.classes.dir}">
-	        <include name="**/*.class"/>
-		    <include name="**/*.properties"/>
-		    <include name="**/*.rb.ast.ser"/>
-	        <exclude name="org/jruby/util/ant/**/*.class"/>
-	      </fileset>
-	      <fileset dir="${basedir}/lib/ruby/1.8">
-	        <include name="**/*.rb"/>
-		          <exclude name="**/rdoc/**"/>
-		          <exclude name="**/cgi/**"/>
-		          <exclude name="**/bigdecimal/**"/>
-		          <exclude name="**/drb/**"/>
-		          <exclude name="**/io/**"/>
-		          <exclude name="**/net/**"/>
-		          <exclude name="**/racc/**"/>
-		          <exclude name="**/rexml/**"/>
-		          <exclude name="**/rinda/**"/>
-		          <exclude name="**/runit/**"/>
-		          <exclude name="**/shell/**"/>
-		          <exclude name="**/soap/**"/>
-		          <exclude name="**/test/**"/>
-		          <exclude name="**/uri/**"/>
-		          <exclude name="**/webrick/**"/>
-		          <exclude name="**/xmlrpc/**"/>
-		          <exclude name="**/xsd/**"/>
-	      </fileset>
+      <jarjar destfile="${lib.dir}/${filename}">
+        <fileset dir="${jruby.classes.dir}">
+          <include name="**/*.class"/>
+        <include name="**/*.properties"/>
+        <include name="**/*.rb.ast.ser"/>
+          <exclude name="org/jruby/util/ant/**/*.class"/>
+        </fileset>
+        <fileset dir="${basedir}/lib/ruby/1.8">
+          <include name="**/*.rb"/>
+              <exclude name="**/rdoc/**"/>
+              <exclude name="**/cgi/**"/>
+              <exclude name="**/bigdecimal/**"/>
+              <exclude name="**/drb/**"/>
+              <exclude name="**/io/**"/>
+              <exclude name="**/net/**"/>
+              <exclude name="**/racc/**"/>
+              <exclude name="**/rexml/**"/>
+              <exclude name="**/rinda/**"/>
+              <exclude name="**/runit/**"/>
+              <exclude name="**/shell/**"/>
+              <exclude name="**/soap/**"/>
+              <exclude name="**/test/**"/>
+              <exclude name="**/uri/**"/>
+              <exclude name="**/webrick/**"/>
+              <exclude name="**/xmlrpc/**"/>
+              <exclude name="**/xsd/**"/>
+        </fileset>
           <zipfileset src="${lib.dir}/asm-2.2.3.jar"/>
           <zipfileset src="${lib.dir}/asm-commons-2.2.3.jar"/>
           <zipfileset src="${lib.dir}/jline-0.9.91-SNAPSHOT.jar"/>
-	      <manifest>
-	        <attribute name="Built-By" value="${user.name}"/>
-	        <attribute name="Main-Class" value="${mainclass}"/>
-	      </manifest>
-	    </jarjar>
-	  </target>
+        <manifest>
+          <attribute name="Built-By" value="${user.name}"/>
+          <attribute name="Main-Class" value="${mainclass}"/>
+        </manifest>
+      </jarjar>
+    </target>
 
-	  <target name="jar-console" depends="generate-method-classes" description="Create the jruby graphical console jar">
+    <target name="jar-console" depends="generate-method-classes" description="Create the jruby graphical console jar">
           <antcall target="jar-light">
               <param name="mainclass" value="org.jruby.demo.IRBConsole"/>
               <param name="filename" value="jruby-console.jar"/>
           </antcall>
-	  </target>
+    </target>
 
   <target name="jar" depends="jar-jruby" description="Create the jruby.jar file">
   </target>
 
   <target name="jar.standalone" depends="generate-method-classes, serialize.rubylib, jar"
-	  description="Create a standalone jruby.jar file using libraries from RUBY_HOME/lib/ruby/1.8"/>
+    description="Create a standalone jruby.jar file using libraries from RUBY_HOME/lib/ruby/1.8"/>
 
   <target name="compile-test" depends="jar" description="Compile the unit tests">
     <javac destdir="${test.classes.dir}" deprecation="true" debug="true" 
@@ -257,7 +262,7 @@
   </target>
 
   <target name="copy-test-files" depends="compile-test" 
-	  description="Make tests fails available as resources">
+    description="Make tests fails available as resources">
     <copy todir="${test.classes.dir}">
       <fileset dir="${test.dir}" includes="org/**/*.rb"/>
     </copy>
@@ -268,20 +273,20 @@
                classname="com.vladium.app.IAppVersion"
                classpathref="emma.classpath"/>
     <taskdef resource="emma_ant.properties" classpathref="emma.classpath" />
-	
+  
     <property name="emma.enabled" value="true" />
 
     <path id="classes_to_instrument" >
       <pathelement location="${jruby.classes.dir}" />
-    </path>		
+    </path>   
   </target>
 
   <target name="instrument" if="emma.present">
     <emma enabled="${emma.enabled}" >
       <instr instrpathref="classes_to_instrument"
-             destdir="${jruby.instrumented.classes.dir}"	
+             destdir="${jruby.instrumented.classes.dir}"  
              metadatafile="${test.results.dir}/metadata.emma"
-  	     merge="false" />
+         merge="false" />
     </emma>
   </target>
 
@@ -289,7 +294,7 @@
     <emma enabled="${emma.enabled}" >
       <report sourcepath="${src.dir}" >
         <fileset dir="${test.results.dir}" >
-  	  <include name="*.emma" />
+      <include name="*.emma" />
         </fileset>
         <html outfile="${html.test.coverage.results.dir}/coverage.html" />
       </report>
@@ -336,10 +341,10 @@
     <javadoc destdir="${api.docs.dir}" author="true" version="true" use="true" 
              windowtitle="JRuby API" source="${javac.version}">
       <fileset dir="${src.dir}">
-      	<include name="**/*.java"/>
+        <include name="**/*.java"/>
       </fileset>
       <fileset dir="${test.dir}">
-		<include name="**/*.java"/>
+    <include name="**/*.java"/>
       </fileset>
       <doctitle><![CDATA[<h1>JRuby</h1>]]></doctitle>
       <bottom><![CDATA[<i>Copyright &#169; 2002-2006 JRuby Team. All Rights Reserved.</i>]]></bottom>
@@ -406,7 +411,7 @@
 
     <java classname="org.jruby.Main" maxmemory="256M" fork="true">
       <classpath>
-      	<pathelement location="${jruby.instrumented.classes.dir}" />
+        <pathelement location="${jruby.instrumented.classes.dir}" />
         <path refid="build.classpath"/>
         <pathelement path="${lib.dir}/jruby.jar"/>
         <pathelement path="${test.classes.dir}"/>
