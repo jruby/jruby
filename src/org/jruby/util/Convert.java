@@ -26,7 +26,6 @@
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
-import java.math.BigDecimal;
 import java.math.BigInteger;
 
 import org.jruby.RubyNumeric.InvalidIntegerException;
@@ -631,7 +630,7 @@ public class Convert {
                 state = i < buflen ? SDIGITS : SEOF;
                 break;
             case SDIGITS:
-                digit = Character.digit(bytes[i],radix);
+                digit = Character.digit((char) bytes[i],radix);
                 if (digit < 0) {
                     state = strict ? SEOD_STRICT : SEOF;
                     break;
@@ -647,7 +646,7 @@ public class Convert {
                 break;
 
             case SDIGIT:
-                while ((digit = Character.digit(bytes[i],radix)) >= 0) {
+                while ((digit = Character.digit((char) bytes[i],radix)) >= 0) {
                     if (result < multmin || ((result *= radix) < limit + digit)) {
                         state = SERR_TOO_BIG;
                         break states;
@@ -666,7 +665,7 @@ public class Convert {
                 break;
                 
             case SDIGIT_STRICT:
-                while ((digit = Character.digit(bytes[i],radix)) >= 0) {
+                while ((digit = Character.digit((char) bytes[i],radix)) >= 0) {
                     if (result < multmin || ((result *= radix) < limit + digit)) {
                         state = SERR_TOO_BIG;
                         break states;
@@ -864,7 +863,7 @@ public class Convert {
                 state = i < buflen ? SDIGITS : SEOF;
                 break;
             case SDIGITS:
-                digit = Character.digit(bytes[i],radix);
+                digit = Character.digit((char) bytes[i],radix);
                 if (digit < 0) {
                     state = strict ? SEOD_STRICT : SEOF;
                     break;
@@ -888,7 +887,7 @@ public class Convert {
                 break;
 
             case SDIGIT:
-                while ((digit = Character.digit(bytes[i],radix)) >= 0) {
+                while ((digit = Character.digit((char) bytes[i],radix)) >= 0) {
                     chars[offset++] = (char)bytes[i];
                     if (++i >= buflen) {
                         state = SCOMPLETE;
@@ -903,7 +902,7 @@ public class Convert {
                 break;
                 
             case SDIGIT_STRICT:
-                while ((digit = Character.digit(bytes[i],radix)) >= 0) {
+                while ((digit = Character.digit((char)bytes[i],radix)) >= 0) {
                     chars[offset++] = (char)bytes[i];
                     if (++i >= buflen) {
                         state = SCOMPLETE;
