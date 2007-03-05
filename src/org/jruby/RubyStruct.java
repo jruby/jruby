@@ -83,6 +83,7 @@ public class RubyStruct extends RubyObject {
         structClass.defineFastMethod("length", callbackFactory.getFastMethod("size"));
 
         structClass.defineMethod("each", callbackFactory.getMethod("each"));
+        structClass.defineMethod("each_pair", callbackFactory.getMethod("each_pair"));
         structClass.defineFastMethod("[]", callbackFactory.getFastMethod("aref", RubyKernel.IRUBY_OBJECT));
         structClass.defineFastMethod("[]=", callbackFactory.getFastMethod("aset", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
 
@@ -378,6 +379,19 @@ public class RubyStruct extends RubyObject {
         ThreadContext context = getRuntime().getCurrentContext();
         for (int i = 0; i < values.length; i++) {
             context.yield(values[i], block);
+        }
+
+        return this;
+    }
+
+    public IRubyObject each_pair(Block block) {
+        RubyArray member = (RubyArray) getInstanceVariable(classOf(), "__member__");
+
+        assert !member.isNil() : "uninitialized struct";
+
+        ThreadContext context = getRuntime().getCurrentContext();
+        for (int i = 0; i < values.length; i++) {
+            context.yield(getRuntime().newArrayNoCopy(new IRubyObject[]{member.eltInternal(i), values[i]}), block);
         }
 
         return this;
