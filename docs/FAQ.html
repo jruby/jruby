@@ -1,9 +1,0 @@
-<h1>Frequently Asked Questions</h1>
-
-<ul>
-<li>Why does samples/swing2.rb take so long to start?</li>  <p>JRuby currently is very slow at including large classes (classes which expose many methods).  We have a patch almost working which will speed up load time of large classes dramatically.  On 1GHz P3 laptop the load time for sample2.rb goes from approximately 2 minutes down to 5 seconds.  Expect this patch to land for JRuby 0.8.3</p>
-<li>I extended a java class within Ruby and passed an instance of the extended class to a Java method and it does not invoke an overridden method</li>
-<p>This is a bug that we are working on.  With any luck this will work for 0.8.3.  Note: Even though a java consumer will not see this method a ruby consumer WILL see this overriden method.</p>
-<li>I want to extend/instantiate an abstract class within Ruby</li> <p>This is currently not possible.  At some future point we may support this, but it requires generating bytecode to solve.  A work-around to this problem would be to define a concrete implementation of the abstract class and extend that.</p>
-<li>How can I load Ruby (C version) native shared libraries in JRuby</li> <p>You cannot now and you never will be able to.  However, we are slowly making our own versions in Java for modules which should be in a standard Ruby distribution.  For external libraries not distributed with Ruby you will always be out of luck.</p>
-</ul>

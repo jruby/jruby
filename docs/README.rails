@@ -1,7 +1,11 @@
+This document will give some information, but the most up to date information 
+can be found on this page:
+http://www.headius.com/jrubywiki/index.php/JRuby_on_Rails
+
 To get started:
 
-1. Install Rails gem (with dependencies)*:
- % gem install --no-rdoc --no-ri rails
+1. Install Rails gem:
+ % gem install --no-rdoc --no-ri -y rails
 2. Install ActiveRecord-JDBC gem:
  % gem install --no-rdoc --no-ri ActiveRecord-JDBC
 2. Generate your Rails application using JRuby
@@ -9,11 +13,15 @@ To get started:
 3. Start Rails: 
  % jruby scripts/server
 
-To get JDBC running you will need to do one special thing:
-1. Edit config/environment.rb and add "require 'jdbc_adapter'" on a line between
-"require File.join(File.dirname(__FILE__), 'boot')"
-and 
-"Rails::Initializer.run do |config|"
+To get JDBC running you will need to do add one code snippet:
+     if RUBY_PLATFORM =~ /java/
+       require 'rubygems'
+       RAILS_CONNECTION_ADAPTERS = %w(jdbc)
+     end
+
+right above the line:
+    "Rails::Initializer.run do |config|"
+    
 In time, it sounds like Rails will change in some way to make this unneccesary.
 
 To configure using the JDBC driver here is an example config.  It should give
@@ -30,6 +38,3 @@ a. Unix sh setting
 b. Dos setting
   set CLASSPATH=c:\foo\bar\driver.java
 
- *If you are explicitly installing an older rails version than 1.1.2 or 1.1.3 then you need
- to apply a patch in docs/rails to the Rails gem after it has been installed.  As of version
- 1.1.4 the patch is unneccesary.

@@ -10,40 +10,6 @@ The default build.xml is setup to look for the JUnit jar file under
 $JRUBY_HOME/lib.  The optional ant tasks should be put in 
 $ANT_HOME/lib/optional.jar.
 
-Testing 
--------
-
-Testing in jruby is based on two seperate unit test suites.  The first
-and foremost is rubicon (http://rubyforge.org/projects/rubytests).  This
-is the same test suite that ruby uses to verify the interpreter is running
-correctly.  The second is our own unit tests via ant/junit/minirunit.  This
-test suite is mostly for tests that we cannot or do not want to submit
-to rubicon (a good example is tests involving java integration).
-
-Using Rubicon
--------------
-
-a) Install rubicon (http://rubyforge.org/projects/rubytests).  To get 
-it from CVS:
-
-    cvs -d:pserver:anonymous@rubyforge.org:/var/cvs/rubytests login
-    cvs -z3 -d:pserver:anonymous@rubyforge.org:/var/cvs/rubytests co rubicon
-
-b) Run rubicon (unix CLI examples)
-
-    make RUBY={PATH_TO_JRUBY_HOME}/bin/jruby
-    OR
-    {PATH_TO_JRUBY_HOME}/bin/jruby AllTests.rb
-    
-  to run all tests OR
-    
-    {PATH_TO_JRUBY_HOME}/bin/jruby builtin/TestFloat.rb
-
-  to test a single file (TestFloat in this case). 
-
-  Read rubicon documentation for more details (or if rubicon changes
-something since this document was published).
-
 Using minirunit
 ---------------
 
