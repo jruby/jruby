@@ -15,9 +15,9 @@ end
 
 Benchmark.bm(25) { |b|
   b.report("500-element quicksort") { quicksort($small_array) }
-  b.report("500k-element quicksort") { quicksort($big_array) }
+  b.report("140k-element quicksort") { quicksort($big_array) }
 }
 Benchmark.bm(25) { |b|
   b.report("500-element quicksort") { quicksort($small_array) }
-  b.report("500k-element quicksort") { quicksort($big_array) }
+  b.report("140k-element quicksort") { quicksort($big_array) }
 }
