@@ -4,14 +4,14 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>shared</artifactId>
-    <version>0.9.3-SNAPSHOT</version>
+    <version>0.9.8</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.jruby</groupId>
   <artifactId>jruby</artifactId>
   <packaging>jar</packaging>
-  <version>0.9.3-SNAPSHOT</version>
+  <version>0.9.8</version>
   <name>JRuby</name>
 
   <dependencies>
@@ -39,7 +39,11 @@
         <directory>${basedir}/../../src</directory>
         <includes>
           <include>**/*.properties</include>
+          <include>**/*.rb</include>
         </includes>
+        <excludes>
+          <exclude>builtin/**/*.rb</exclude>
+        </excludes>
       </resource>
     </resources>
     <testResources>
@@ -78,8 +82,8 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <source>1.5</source>
-          <target>1.5</target>
+          <source>1.4</source>
+          <target>1.4</target>
         </configuration>
       </plugin>
       <plugin>
@@ -96,7 +100,7 @@
                 </taskdef>
                 <jruby-serialize destdir="${project.build.outputDirectory}">
                   <fileset dir="${project.build.sourceDirectory}">
-                    <include name="**/*.rb"/>
+                    <include name="builtin/**/*.rb"/>
                   </fileset>
                 </jruby-serialize>
               </tasks>
