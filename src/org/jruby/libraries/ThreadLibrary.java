@@ -232,6 +232,7 @@ public class ThreadLibrary implements Library {
             cQueue.defineAlias("deq", "pop");
             cQueue.defineAlias("shift", "pop");
             cQueue.defineAlias("size", "length");
+            cQueue.defineAlias("enq", "push");
         }
 
         public synchronized IRubyObject clear() {
