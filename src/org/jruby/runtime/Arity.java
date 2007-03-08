@@ -47,17 +47,42 @@ public final class Arity implements Serializable {
     private static final Map arities = new HashMap();
     private final int value;
     
-    public final static Arity NO_ARGUMENTS = createArity(0);
-    public final static Arity ONE_ARGUMENT = createArity(1);
-    public final static Arity TWO_ARGUMENTS = createArity(2);
-    public final static Arity THREE_ARGUMENTS = createArity(3);
-    public final static Arity OPTIONAL = createArity(-1);
+    public final static Arity NO_ARGUMENTS = newArity(0);
+    public final static Arity ONE_ARGUMENT = newArity(1);
+    public final static Arity TWO_ARGUMENTS = newArity(2);
+    public final static Arity THREE_ARGUMENTS = newArity(3);
+    public final static Arity OPTIONAL = newArity(-1);
+    public final static Arity ONE_REQUIRED = newArity(-2);
+    public final static Arity TWO_REQUIRED = newArity(-3);
+    public final static Arity THREE_REQUIRED = newArity(-3);
 
     private Arity(int value) {
         this.value = value;
     }
 
     public static Arity createArity(int value) {
+        switch (value) {
+        case -4:
+            return THREE_REQUIRED;
+        case -3:
+            return TWO_REQUIRED;
+        case -2:
+            return ONE_REQUIRED;
+        case -1:
+            return OPTIONAL;
+        case 0:
+            return NO_ARGUMENTS;
+        case 1:
+            return ONE_ARGUMENT;
+        case 2:
+            return TWO_ARGUMENTS;
+        case 3:
+            return THREE_ARGUMENTS;
+        }
+        return newArity(value);
+    }
+    
+    private static Arity newArity(int value) {
         Integer integerValue = new Integer(value);
         Arity result;
         synchronized (arities) {

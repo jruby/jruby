@@ -130,19 +130,18 @@ public class RubyFixnum extends RubyInteger {
             IRubyObject[] args, CallType callType, Block block) {
         switch (switchvalue) {
         case OP_PLUS_SWITCHVALUE:
-            Arity.singleArgument().checkArity(context.getRuntime(), args);
+            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
             return plus(args[0]);
         case OP_MINUS_SWITCHVALUE:
-            Arity.singleArgument().checkArity(context.getRuntime(), args);
+            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
             return minus(args[0]);
         case OP_LT_SWITCHVALUE:
-            Arity.singleArgument().checkArity(context.getRuntime(), args);
+            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
             return lt(args[0]);
         case TO_S_SWITCHVALUE:
-            Arity.optional().checkArity(context.getRuntime(), args);
             return to_s(args);
         case TO_I_SWITCHVALUE:
-            Arity.noArguments().checkArity(context.getRuntime(), args);
+            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
             return to_i();
         case 0:
         default:

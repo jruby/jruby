@@ -181,37 +181,33 @@ public class RubyArray extends RubyObject implements List {
             String name, IRubyObject[] args, CallType callType, Block block) {
         switch (switchvalue) {
         case OP_PLUS_SWITCHVALUE:
-            Arity.singleArgument().checkArity(context.getRuntime(), args);
+            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
             return op_plus(args[0]);
         case AREF_SWITCHVALUE:
-            Arity.optional().checkArity(context.getRuntime(), args);
             return aref(args);
         case ASET_SWITCHVALUE:
-            Arity.optional().checkArity(context.getRuntime(), args);
             return aset(args);
         case POP_SWITCHVALUE:
-            Arity.noArguments().checkArity(context.getRuntime(), args);
+            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
             return pop();
         case PUSH_SWITCHVALUE:
-            Arity.optional().checkArity(context.getRuntime(), args);
             return push_m(args);
         case NIL_P_SWITCHVALUE:
-            Arity.noArguments().checkArity(context.getRuntime(), args);
+            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
             return nil_p();
         case EQUALEQUAL_SWITCHVALUE:
-            Arity.singleArgument().checkArity(context.getRuntime(), args);
+            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
             return op_equal(args[0]);
         case UNSHIFT_SWITCHVALUE:
-            Arity.optional().checkArity(context.getRuntime(), args);
             return unshift_m(args);
         case OP_LSHIFT_SWITCHVALUE:
-            Arity.singleArgument().checkArity(context.getRuntime(), args);
+            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
             return append(args[0]);
         case EMPTY_P_SWITCHVALUE:
-            Arity.noArguments().checkArity(context.getRuntime(), args);
+            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
             return empty_p();
         case TO_S_SWITCHVALUE:
-            Arity.noArguments().checkArity(context.getRuntime(), args);
+            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
             return to_s();
         case 0:
         default:
