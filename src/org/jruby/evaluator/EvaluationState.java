@@ -322,20 +322,37 @@ public class EvaluationState {
                 assert receiver.getMetaClass() != null : receiver.getClass().getName();
 
                 Block block = getBlock(runtime, context, self, aBlock, iVisited.getIterNode());
+                RubyModule module = receiver.getMetaClass();
                 
                 // No block provided lets look at fast path for STI dispatch.
                 if (!block.isGiven()) {
-                    RubyModule module = receiver.getMetaClass();
-                    return receiver.callMethod(context, module,
-                            runtime.getSelectorTable().table[module.index][iVisited.index],
-                            iVisited.getName(), args, CallType.NORMAL, Block.NULL_BLOCK);
+                    if (module.index != 0 && iVisited.index != 0) {
+                        return receiver.callMethod(context, module,
+                                runtime.getSelectorTable().table[module.index][iVisited.index],
+                                iVisited.getName(), args, CallType.NORMAL, Block.NULL_BLOCK);
+                    } else {
+                        DynamicMethod method = module.searchMethod(iVisited.getName());
+        
+                        IRubyObject mmResult = RubyObject.callMethodMissingIfNecessary(context, receiver, method, iVisited.getName(), args, self, CallType.NORMAL, Block.NULL_BLOCK);
+                        if (mmResult != null) {
+                            return mmResult;
+                        }
+
+                        return method.call(context, receiver, module, iVisited.getName(), args, false, Block.NULL_BLOCK);
+                    }
                 }
                     
                 try {
                     while (true) {
                         try {
-                            return receiver.callMethod(context, iVisited.getName(), args,
-                                    CallType.NORMAL, block);
+                            DynamicMethod method = module.searchMethod(iVisited.getName());
+
+                            IRubyObject mmResult = RubyObject.callMethodMissingIfNecessary(context, receiver, method, iVisited.getName(), args, self, CallType.NORMAL, block);
+                            if (mmResult != null) {
+                                return mmResult;
+                            }
+
+                            return method.call(context, receiver, module, iVisited.getName(), args, false, block);
                         } catch (JumpException je) {
                             switch (je.getJumpType().getTypeId()) {
                             case JumpType.RETRY:
@@ -765,9 +782,20 @@ public class EvaluationState {
                 // No block provided lets look at fast path for STI dispatch.
                 if (!block.isGiven()) {
                     RubyModule module = self.getMetaClass();
-                    return self.callMethod(context, module,
-                            runtime.getSelectorTable().table[module.index][iVisited.index],
-                            iVisited.getName(), args, CallType.FUNCTIONAL, Block.NULL_BLOCK);
+                    if (module.index != 0 && iVisited.index != 0) {
+                        return self.callMethod(context, module,
+                                runtime.getSelectorTable().table[module.index][iVisited.index],
+                                iVisited.getName(), args, CallType.FUNCTIONAL, Block.NULL_BLOCK);
+                    } else {
+                        DynamicMethod method = module.searchMethod(iVisited.getName());
+
+                        IRubyObject mmResult = RubyObject.callMethodMissingIfNecessary(context, self, method, iVisited.getName(), args, self, CallType.FUNCTIONAL, Block.NULL_BLOCK);
+                        if (mmResult != null) {
+                            return mmResult;
+                        }
+
+                        return method.call(context, self, module, iVisited.getName(), args, false, Block.NULL_BLOCK);
+                    }
                 }
 
                 try {
@@ -1458,8 +1486,19 @@ public class EvaluationState {
             case NodeTypes.VCALLNODE: {
                 VCallNode iVisited = (VCallNode) node;
                 RubyModule module = self.getMetaClass();
-                return self.callMethod(context, module, runtime.getSelectorTable().table[module.index][iVisited.index], iVisited.getName(), 
-                        IRubyObject.NULL_ARRAY, CallType.VARIABLE, Block.NULL_BLOCK);
+                if (module.index != 0 && iVisited.index != 0) {
+                    return self.callMethod(context, module, runtime.getSelectorTable().table[module.index][iVisited.index], iVisited.getName(), 
+                            IRubyObject.NULL_ARRAY, CallType.VARIABLE, Block.NULL_BLOCK);
+                } else {
+                    DynamicMethod method = module.searchMethod(iVisited.getName());
+
+                    IRubyObject mmResult = RubyObject.callMethodMissingIfNecessary(context, self, method, iVisited.getName(), IRubyObject.NULL_ARRAY, self, CallType.VARIABLE, Block.NULL_BLOCK);
+                    if (mmResult != null) {
+                        return mmResult;
+                    }
+
+                    return method.call(context, self, module, iVisited.getName(), IRubyObject.NULL_ARRAY, false, Block.NULL_BLOCK);
+                }
             }
             case NodeTypes.WHENNODE:
                 assert false;
