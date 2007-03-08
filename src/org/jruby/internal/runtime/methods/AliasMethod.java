@@ -73,10 +73,6 @@ public class AliasMethod extends DynamicMethod {
     public DynamicMethod dup() {
         return new AliasMethod(oldMethod, oldName);
     }
-    
-    public boolean needsImplementer() {
-        return oldMethod.needsImplementer();
-    }
 
     public Arity getArity(){
         return oldMethod.getArity();

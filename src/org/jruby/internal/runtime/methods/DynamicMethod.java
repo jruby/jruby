@@ -44,7 +44,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public abstract class DynamicMethod {
     protected RubyModule implementationClass;
     protected Visibility visibility;
-    private final boolean needsImplementer;
+    private boolean needsImplementer;
     
     protected DynamicMethod(RubyModule implementationClass, Visibility visibility) {
         this.visibility = visibility;

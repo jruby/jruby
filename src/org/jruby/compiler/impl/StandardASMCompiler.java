@@ -250,8 +250,8 @@ public class StandardASMCompiler implements Compiler {
         mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, RUBY, "getCurrentContext", cg.sig(ThreadContext.class));
         mv.visitInsn(Opcodes.SWAP);
         mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, RUBY, "getTopSelf", cg.sig(IRubyObject.class));
-        mv.visitInsn(Opcodes.ACONST_NULL);
-        mv.visitInsn(Opcodes.ACONST_NULL);
+        mv.visitFieldInsn(Opcodes.GETSTATIC, cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
+        mv.visitFieldInsn(Opcodes.GETSTATIC, cg.p(Block.class), "NULL_BLOCK", cg.ci(Block.class));
         
         mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, classname, "run", METHOD_SIGNATURE);
         mv.visitInsn(Opcodes.RETURN);
