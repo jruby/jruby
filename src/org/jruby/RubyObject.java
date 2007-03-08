@@ -434,46 +434,37 @@ public class RubyObject implements Cloneable, IRubyObject {
         RubyModule rubyclass = getMetaClass();
         method = rubyclass.searchMethod(name);
         
-        IRubyObject mmResult = callMethodMissingIfNecessary(context, method, name, args, self, callType, block);
+        IRubyObject mmResult = callMethodMissingIfNecessary(context, this, method, name, args, self, callType, block);
         if (mmResult != null) {
             return mmResult;
         }
-        
-        RubyModule implementer = null;
-        if (method.needsImplementer()) {
-            // modules are included with a shim class; we must find that shim to handle super() appropriately
-            implementer = rubyclass.findImplementer(method.getImplementationClass());
-        } else {
-            // classes are directly in the hierarchy, so no special logic is necessary for implementer
-            implementer = method.getImplementationClass();
-        }
 
-        return method.call(context, this, implementer, name, args, false, block);
+        return method.call(context, this, rubyclass, name, args, false, block);
     }
     
-    public IRubyObject callMethodMissingIfNecessary(ThreadContext context, DynamicMethod method, String name,
+    public static IRubyObject callMethodMissingIfNecessary(ThreadContext context, IRubyObject receiver, DynamicMethod method, String name,
             IRubyObject[] args, IRubyObject self, CallType callType, Block block) {
         if (method.isUndefined() ||
             !(name.equals("method_missing") ||
               method.isCallableFrom(self, callType))) {
 
             if (callType == CallType.SUPER) {
-                throw getRuntime().newNameError("super: no superclass method '" + name + "'", name);
+                throw self.getRuntime().newNameError("super: no superclass method '" + name + "'", name);
             }
 
             // store call information so method_missing impl can use it
             context.setLastCallStatus(method.getVisibility(), callType);
 
             if (name.equals("method_missing")) {
-                return RubyKernel.method_missing(this, args, block);
+                return RubyKernel.method_missing(self, args, block);
             }
 
 
             IRubyObject[] newArgs = new IRubyObject[args.length + 1];
             System.arraycopy(args, 0, newArgs, 1, args.length);
-            newArgs[0] = RubySymbol.newSymbol(getRuntime(), name);
+            newArgs[0] = RubySymbol.newSymbol(self.getRuntime(), name);
 
-            return callMethod(context, "method_missing", newArgs, block);
+            return receiver.callMethod(context, "method_missing", newArgs, block);
         }
         
         // kludgy.
@@ -505,21 +496,12 @@ public class RubyObject implements Cloneable, IRubyObject {
         DynamicMethod method = null;
         method = rubyclass.searchMethod(name);
         
-        IRubyObject mmResult = callMethodMissingIfNecessary(context, method, name, args, context.getFrameSelf(), callType, block);
+        IRubyObject mmResult = callMethodMissingIfNecessary(context, this, method, name, args, context.getFrameSelf(), callType, block);
         if (mmResult != null) {
             return mmResult;
         }
 
-        RubyModule implementer = null;
-        if (method.needsImplementer()) {
-            // modules are included with a shim class; we must find that shim to handle super() appropriately
-            implementer = rubyclass.findImplementer(method.getImplementationClass());
-        } else {
-            // classes are directly in the hierarchy, so no special logic is necessary for implementer
-            implementer = method.getImplementationClass();
-        }
-
-        return method.call(context, this, implementer, name, args, false, block);
+        return method.call(context, this, rubyclass, name, args, false, block);
     }
 
     public IRubyObject callMethod(ThreadContext context, String name) {

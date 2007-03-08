@@ -63,10 +63,20 @@ public abstract class DynamicMethod {
      */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, 
             String name, IRubyObject[] args, boolean noSuper, Block block) {
-        preMethod(context, clazz, self, name, args, noSuper, block);
+        // FIXME: this potentially should go in overridden call impls too, but so far it hasn't appeared to be necessary
+        RubyModule implementer = null;
+        if (needsImplementer()) {
+            // modules are included with a shim class; we must find that shim to handle super() appropriately
+            implementer = clazz.findImplementer(getImplementationClass());
+        } else {
+            // classes are directly in the hierarchy, so no special logic is necessary for implementer
+            implementer = getImplementationClass();
+        }
+        
+        preMethod(context, implementer, self, name, args, noSuper, block);
 
         try {
-            return internalCall(context, clazz, self, name, args, noSuper, block);
+            return internalCall(context, implementer, self, name, args, noSuper, block);
         } finally {
             postMethod(context);
         }
