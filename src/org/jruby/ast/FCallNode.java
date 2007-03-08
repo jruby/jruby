@@ -33,11 +33,11 @@ package org.jruby.ast;
 
 import java.io.IOException;
 import java.util.List;
-
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.MethodIndex;
 
 /** 
  * Represents a method call with self as an implicit receiver.
@@ -46,6 +46,7 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
     static final long serialVersionUID = 3590332973770104094L;
 
     private String name;
+    public final int index;
     private Node argsNode;
     private Node iterNode;
 
@@ -58,6 +59,7 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
         this.name = name.intern();
         this.argsNode = argsNode;
         this.iterNode = iterNode;
+        this.index = MethodIndex.getIndex(this.name);
     }
     
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {

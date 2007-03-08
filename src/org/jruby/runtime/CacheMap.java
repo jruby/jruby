@@ -58,42 +58,41 @@ public class CacheMap {
     public CacheMap(Ruby runtime) {
         this.runtime = runtime;
     }
-
-	/**
-	 * Add another class to the list of classes which are caching the method.
-	 * 
-	 * @param method which is cached
-	 * @param module which is caching method
-	 */
-	public void add(DynamicMethod method, RubyModule module) {
-		Map classList = (Map) mappings.get(method);
-		
-		if (classList == null) {
-			classList = new WeakIdentityHashMap();
-			mappings.put(method, classList);
-		}
-		
-		classList.put(module,null);
-	}
-	
-	/**
-	 * Remove all method caches associated with the provided method.  This signature
-	 * relies on having the methods valid name passed with it since the caching classes
-	 * store the cache by name.
-	 * 
-	 * @param name of the method to remove
-	 * @param method to remove all caches of
-	 */
-	public void remove(String name, DynamicMethod method) {
-		Map classList = (Map) mappings.remove(method);
-		
-		// Removed method has never been used so it has not been cached
-		if (classList == null) {
-			return;
-		}
-		
-		for(Iterator iter = classList.keySet().iterator(); iter.hasNext();) {
-			RubyModule module = (RubyModule) iter.next();
+    
+    /**
+     * Add another class to the list of classes which are caching the method.
+     *
+     * @param method which is cached
+     * @param module which is caching method
+     */
+    public void add(DynamicMethod method, RubyModule module) {
+        Map classList = (Map) mappings.get(method);
+        
+        if (classList == null) {
+            classList = new WeakIdentityHashMap();
+            mappings.put(method, classList);
+        }
+        
+        classList.put(module,null);
+    }
+    
+    /**
+     * Remove all method caches associated with the provided method.  This signature
+     * relies on having the methods valid name passed with it since the caching classes
+     * store the cache by name.
+     *
+     * @param name of the method to remove
+     * @param method to remove all caches of
+     */
+    public void remove(String name, DynamicMethod method) {
+        Map classList = (Map) mappings.remove(method);
+        
+        // Removed method has never been used so it has not been cached
+        if (classList == null) {
+            return;
+        }
+        for(Iterator iter = classList.keySet().iterator(); iter.hasNext();) {
+            RubyModule module = (RubyModule) iter.next();
             if (module != null) {
                 module.removeCachedMethod(name);
                 
@@ -101,6 +100,6 @@ public class CacheMap {
                     runtime.getSelectorTable().table[module.index][MethodIndex.getIndex(name)] = 0;
                 }
             }
-		}
-	}
+        }
+    }
 }

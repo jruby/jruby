@@ -10,3 +10,9 @@ end
 
 puts Benchmark.measure { fib_ruby(30) }
 puts Benchmark.measure { fib_ruby(30) }
+puts Benchmark.measure { fib_ruby(30) }
+puts Benchmark.measure { fib_ruby(30) }
+puts Benchmark.measure { fib_ruby(30) }
+puts Benchmark.measure { fib_ruby(30) }
+puts Benchmark.measure { fib_ruby(30) }
+puts Benchmark.measure { fib_ruby(30) }

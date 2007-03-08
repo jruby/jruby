@@ -63,6 +63,7 @@ import org.jruby.util.IdUtil;
 import org.jruby.util.collections.SinglyLinkedList;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.MethodIndex;
 
 /**
  *
@@ -143,6 +144,12 @@ public class RubyModule extends RubyObject {
 
     public Map getMethods() {
         return methods;
+    }
+    
+    public void putMethod(Object name, DynamicMethod method) {
+        // FIXME: kinda hacky...flush STI here
+        getRuntime().getSelectorTable().table[index][MethodIndex.getIndex((String)name)] = 0;
+        getMethods().put(name, method);
     }
 
     public boolean isModule() {
@@ -492,7 +499,7 @@ public class RubyModule extends RubyObject {
         // Included modules modify the original 'included' modules class.  Since multiple
         // classes can include the same module, we cannot cache in the original included module.
         if (!isIncluded()) {
-            getMethods().put(name, method);
+            putMethod(name, method);
             getRuntime().getCacheMap().add(method, this);
         }
     }
@@ -518,7 +525,7 @@ public class RubyModule extends RubyObject {
                 getRuntime().getCacheMap().remove(name, existingMethod);
             }
 
-            getMethods().put(name, method);
+            putMethod(name, method);
         }
     }
 
@@ -720,7 +727,7 @@ public class RubyModule extends RubyObject {
             }
         }
         getRuntime().getCacheMap().remove(name, searchMethod(name));
-        getMethods().put(name, new AliasMethod(method, oldName));
+        putMethod(name, new AliasMethod(method, oldName));
     }
 
     public RubyClass defineOrGetClassUnder(String name, RubyClass superClazz) {
@@ -1066,7 +1073,7 @@ public class RubyModule extends RubyObject {
                 // TODO: Make DynamicMethod immutable
                 DynamicMethod clonedMethod = method.dup();
                 clonedMethod.setImplementationClass(clone);
-                clone.getMethods().put(entry.getKey(), clonedMethod);
+                clone.putMethod(entry.getKey(), clonedMethod);
             }
         }
 

@@ -33,11 +33,11 @@ package org.jruby.ast;
 
 import java.io.IOException;
 import java.util.List;
-
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.MethodIndex;
 
 /**
  * RubyMethod call without any arguments
@@ -48,10 +48,12 @@ public class VCallNode extends Node implements INameNode {
     static final long serialVersionUID = -7678578490000574578L;
 
     private String name;
+    public final int index;
 
     public VCallNode(ISourcePosition position, String name) {
         super(position, NodeTypes.VCALLNODE);
         this.name = name.intern();
+        this.index = MethodIndex.getIndex(this.name);
     }
     
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {

@@ -490,7 +490,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      */
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, byte switchvalue, String name,
             IRubyObject[] args, CallType callType) {
-        return callMethod(context, rubyclass, name, args, callType, Block.NULL_BLOCK);
+        return callMethod(context, rubyclass, switchvalue, name, args, callType, Block.NULL_BLOCK);
     }
 
     /**

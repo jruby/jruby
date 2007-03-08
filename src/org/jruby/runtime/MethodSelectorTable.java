@@ -21,18 +21,20 @@ import org.jruby.RubyString;
 public class MethodSelectorTable {
     public final byte[][] table = new byte[ClassIndex.MAX_CLASSES][MethodIndex.MAX_METHODS];
     
-    public MethodSelectorTable() {
+    public void init() {
         // Fixnum
         table[ClassIndex.FIXNUM] = new byte[MethodIndex.MAX_METHODS];
         table[ClassIndex.FIXNUM][MethodIndex.OP_PLUS] = RubyFixnum.OP_PLUS_SWITCHVALUE; 
         table[ClassIndex.FIXNUM][MethodIndex.OP_MINUS] = RubyFixnum.OP_MINUS_SWITCHVALUE; 
-        table[ClassIndex.FIXNUM][MethodIndex.OP_LT] = RubyFixnum.OP_LT_SWITCHVALUE; 
+        table[ClassIndex.FIXNUM][MethodIndex.OP_LT] = RubyFixnum.OP_LT_SWITCHVALUE;
+        table[ClassIndex.FIXNUM][MethodIndex.TO_S] = RubyFixnum.TO_S_SWITCHVALUE;
         
         // Bignum
         table[ClassIndex.BIGNUM] = new byte[MethodIndex.MAX_METHODS];
         table[ClassIndex.BIGNUM][MethodIndex.OP_PLUS] = RubyBignum.OP_PLUS_SWITCHVALUE; 
         table[ClassIndex.BIGNUM][MethodIndex.OP_MINUS] = RubyBignum.OP_MINUS_SWITCHVALUE; 
         table[ClassIndex.BIGNUM][MethodIndex.OP_LT] = RubyBignum.OP_LT_SWITCHVALUE;
+        table[ClassIndex.BIGNUM][MethodIndex.TO_S] = RubyBignum.TO_S_SWITCHVALUE;
         
         // Array
         table[ClassIndex.ARRAY] = new byte[MethodIndex.MAX_METHODS];
@@ -46,6 +48,7 @@ public class MethodSelectorTable {
         table[ClassIndex.ARRAY][MethodIndex.UNSHIFT] = RubyArray.UNSHIFT_SWITCHVALUE;
         table[ClassIndex.ARRAY][MethodIndex.OP_LSHIFT] = RubyArray.OP_LSHIFT_SWITCHVALUE;
         table[ClassIndex.ARRAY][MethodIndex.EMPTY_P] = RubyArray.EMPTY_P_SWITCHVALUE;
+        table[ClassIndex.ARRAY][MethodIndex.TO_S] = RubyArray.TO_S_SWITCHVALUE;
         
         // String
         table[ClassIndex.STRING] = new byte[MethodIndex.MAX_METHODS];
@@ -58,6 +61,6 @@ public class MethodSelectorTable {
         table[ClassIndex.STRING][MethodIndex.OP_GE] = RubyString.OP_GE_SWITCHVALUE;
         table[ClassIndex.STRING][MethodIndex.OP_LSHIFT] = RubyString.OP_LSHIFT_SWITCHVALUE;
         table[ClassIndex.STRING][MethodIndex.EMPTY_P] = RubyString.EMPTY_P_SWITCHVALUE;
+        table[ClassIndex.STRING][MethodIndex.TO_S] = RubyString.TO_S_SWITCHVALUE;
     }
-    
 }

@@ -114,6 +114,7 @@ public class RubyFixnum extends RubyInteger {
     public static final byte OP_PLUS_SWITCHVALUE = 1;
     public static final byte OP_MINUS_SWITCHVALUE = 2;
     public static final byte OP_LT_SWITCHVALUE = 3;
+    public static final byte TO_S_SWITCHVALUE = 4;
 
     public RubyFixnum(Ruby runtime) {
         this(runtime, 0);
@@ -127,18 +128,21 @@ public class RubyFixnum extends RubyInteger {
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, byte switchvalue, String name,
             IRubyObject[] args, CallType callType, Block block) {
         switch (switchvalue) {
-            case OP_PLUS_SWITCHVALUE:
-                Arity.singleArgument().checkArity(context.getRuntime(), args);
-                return plus(args[0]);
-            case OP_MINUS_SWITCHVALUE:
-                Arity.singleArgument().checkArity(context.getRuntime(), args);
-                return minus(args[0]);
-            case OP_LT_SWITCHVALUE:
-                Arity.singleArgument().checkArity(context.getRuntime(), args);
-                return lt(args[0]);
-            case 0:
-            default:
-                return super.callMethod(context, rubyclass, name, args, callType, block);
+        case OP_PLUS_SWITCHVALUE:
+            Arity.singleArgument().checkArity(context.getRuntime(), args);
+            return plus(args[0]);
+        case OP_MINUS_SWITCHVALUE:
+            Arity.singleArgument().checkArity(context.getRuntime(), args);
+            return minus(args[0]);
+        case OP_LT_SWITCHVALUE:
+            Arity.singleArgument().checkArity(context.getRuntime(), args);
+            return lt(args[0]);
+        case TO_S_SWITCHVALUE:
+            Arity.optional().checkArity(context.getRuntime(), args);
+            return to_s(args);
+        case 0:
+        default:
+            return super.callMethod(context, rubyclass, name, args, callType, block);
         }
     }
     public int getNativeTypeIndex() {

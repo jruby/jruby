@@ -561,6 +561,9 @@ public final class Ruby {
         tc.preInitCoreClasses();
 
         initCoreClasses();
+        
+        // init selector table, now that classes are done adding methods
+        selectorTable.init();
 
         initLibraries();
 

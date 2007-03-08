@@ -326,11 +326,9 @@ public class EvaluationState {
                 // No block provided lets look at fast path for STI dispatch.
                 if (!block.isGiven()) {
                     RubyModule module = receiver.getMetaClass();
-                    if (module.index != 0) {
-                         return receiver.callMethod(context, module,
-                                runtime.getSelectorTable().table[module.index][iVisited.index],
-                                iVisited.getName(), args, CallType.NORMAL);
-                    }                    
+                    return receiver.callMethod(context, module,
+                            runtime.getSelectorTable().table[module.index][iVisited.index],
+                            iVisited.getName(), args, CallType.NORMAL, Block.NULL_BLOCK);
                 }
                     
                 try {
@@ -763,11 +761,20 @@ public class EvaluationState {
                 
                 IRubyObject[] args = setupArgs(runtime, context, iVisited.getArgsNode(), self);
                 Block block = getBlock(runtime, context, self, aBlock, iVisited.getIterNode());
+                
+                // No block provided lets look at fast path for STI dispatch.
+                if (!block.isGiven()) {
+                    RubyModule module = self.getMetaClass();
+                    return self.callMethod(context, module,
+                            runtime.getSelectorTable().table[module.index][iVisited.index],
+                            iVisited.getName(), args, CallType.FUNCTIONAL, Block.NULL_BLOCK);
+                }
 
                 try {
                     while (true) {
                         try {
-                            IRubyObject result = self.callMethod(context, iVisited.getName(), args,
+                            RubyModule module = self.getMetaClass();
+                            IRubyObject result = self.callMethod(context, module, iVisited.getName(), args,
                                     CallType.FUNCTIONAL, block);
                             if (result == null) {
                                 result = runtime.getNil();
@@ -1450,8 +1457,9 @@ public class EvaluationState {
             }
             case NodeTypes.VCALLNODE: {
                 VCallNode iVisited = (VCallNode) node;
-                return self.callMethod(context, iVisited.getName(), 
-                        IRubyObject.NULL_ARRAY, CallType.VARIABLE);
+                RubyModule module = self.getMetaClass();
+                return self.callMethod(context, module, runtime.getSelectorTable().table[module.index][iVisited.index], iVisited.getName(), 
+                        IRubyObject.NULL_ARRAY, CallType.VARIABLE, Block.NULL_BLOCK);
             }
             case NodeTypes.WHENNODE:
                 assert false;

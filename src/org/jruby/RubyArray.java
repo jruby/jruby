@@ -175,43 +175,47 @@ public class RubyArray extends RubyObject implements List {
     public static final byte UNSHIFT_SWITCHVALUE = 8;
     public static final byte OP_LSHIFT_SWITCHVALUE = 9;
     public static final byte EMPTY_P_SWITCHVALUE = 10;
+    public static final byte TO_S_SWITCHVALUE = 11;
 
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, byte switchvalue,
             String name, IRubyObject[] args, CallType callType, Block block) {
         switch (switchvalue) {
-            case OP_PLUS_SWITCHVALUE:
-                Arity.singleArgument().checkArity(context.getRuntime(), args);
-                return op_plus(args[0]);
-            case AREF_SWITCHVALUE:
-                Arity.optional().checkArity(context.getRuntime(), args);
-                return aref(args);
-            case ASET_SWITCHVALUE:
-                Arity.optional().checkArity(context.getRuntime(), args);
-                return aset(args);
-            case POP_SWITCHVALUE:
-                Arity.noArguments().checkArity(context.getRuntime(), args);
-                return pop();
-            case PUSH_SWITCHVALUE:
-                Arity.optional().checkArity(context.getRuntime(), args);
+        case OP_PLUS_SWITCHVALUE:
+            Arity.singleArgument().checkArity(context.getRuntime(), args);
+            return op_plus(args[0]);
+        case AREF_SWITCHVALUE:
+            Arity.optional().checkArity(context.getRuntime(), args);
+            return aref(args);
+        case ASET_SWITCHVALUE:
+            Arity.optional().checkArity(context.getRuntime(), args);
+            return aset(args);
+        case POP_SWITCHVALUE:
+            Arity.noArguments().checkArity(context.getRuntime(), args);
+            return pop();
+        case PUSH_SWITCHVALUE:
+            Arity.optional().checkArity(context.getRuntime(), args);
             return push_m(args);
-            case NIL_P_SWITCHVALUE:
-                Arity.noArguments().checkArity(context.getRuntime(), args);
-                return nil_p();
-            case EQUALEQUAL_SWITCHVALUE:
-                Arity.singleArgument().checkArity(context.getRuntime(), args);
+        case NIL_P_SWITCHVALUE:
+            Arity.noArguments().checkArity(context.getRuntime(), args);
+            return nil_p();
+        case EQUALEQUAL_SWITCHVALUE:
+            Arity.singleArgument().checkArity(context.getRuntime(), args);
             return op_equal(args[0]);
-            case UNSHIFT_SWITCHVALUE:
-                Arity.optional().checkArity(context.getRuntime(), args);
+        case UNSHIFT_SWITCHVALUE:
+            Arity.optional().checkArity(context.getRuntime(), args);
             return unshift_m(args);
-            case OP_LSHIFT_SWITCHVALUE:
-                Arity.singleArgument().checkArity(context.getRuntime(), args);
-                return append(args[0]);
-            case EMPTY_P_SWITCHVALUE:
-                Arity.noArguments().checkArity(context.getRuntime(), args);
-                return empty_p();
-            case 0:
-            default:
-                return super.callMethod(context, rubyclass, name, args, callType, block);
+        case OP_LSHIFT_SWITCHVALUE:
+            Arity.singleArgument().checkArity(context.getRuntime(), args);
+            return append(args[0]);
+        case EMPTY_P_SWITCHVALUE:
+            Arity.noArguments().checkArity(context.getRuntime(), args);
+            return empty_p();
+        case TO_S_SWITCHVALUE:
+            Arity.noArguments().checkArity(context.getRuntime(), args);
+            return to_s();
+        case 0:
+        default:
+            return super.callMethod(context, rubyclass, name, args, callType, block);
         }
     }    
 
