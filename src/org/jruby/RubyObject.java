@@ -448,11 +448,6 @@ public class RubyObject implements Cloneable, IRubyObject {
             implementer = method.getImplementationClass();
         }
 
-        String originalName = method.getOriginalName();
-        if (originalName != null) {
-            name = originalName;
-        }
-
         return method.call(context, this, implementer, name, args, false, block);
     }
     
@@ -522,11 +517,6 @@ public class RubyObject implements Cloneable, IRubyObject {
         } else {
             // classes are directly in the hierarchy, so no special logic is necessary for implementer
             implementer = method.getImplementationClass();
-        }
-
-        String originalName = method.getOriginalName();
-        if (originalName != null) {
-            name = originalName;
         }
 
         return method.call(context, this, implementer, name, args, false, block);

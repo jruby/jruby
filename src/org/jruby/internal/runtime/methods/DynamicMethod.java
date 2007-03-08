@@ -97,10 +97,6 @@ public abstract class DynamicMethod {
         return !(implIsClass || implIsKernel);
     }
     
-    public String getOriginalName() {
-    	return null;
-    }
-    
     public RubyModule getImplementationClass() {
         return implementationClass;
     }

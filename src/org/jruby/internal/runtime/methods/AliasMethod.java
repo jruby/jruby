@@ -54,10 +54,6 @@ public class AliasMethod extends DynamicMethod {
         this.oldName = oldName;
         this.oldMethod = oldMethod;
     }
-    
-    public String getOriginalName() {
-    	return oldName;
-    }
 
     public void preMethod(ThreadContext context, RubyModule clazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
     }
@@ -71,7 +67,7 @@ public class AliasMethod extends DynamicMethod {
     }
     
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        return oldMethod.call(context, self, clazz, name, args, noSuper, block);
+        return oldMethod.call(context, self, clazz, oldName, args, noSuper, block);
     }
 
     public DynamicMethod dup() {
