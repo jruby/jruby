@@ -44,15 +44,15 @@ import org.jruby.runtime.builtin.IRubyObject;
 public abstract class DynamicMethod {
     protected RubyModule implementationClass;
     protected Visibility visibility;
-    private boolean implIsClass;
-    private boolean implIsKernel;
+    private final boolean needsImplementer;
     
     protected DynamicMethod(RubyModule implementationClass, Visibility visibility) {
         this.visibility = visibility;
         this.implementationClass = implementationClass;
         if (implementationClass != null) {
-            this.implIsClass = implementationClass.isClass();
-            this.implIsKernel = implementationClass == implementationClass.getRuntime().getKernel();
+            boolean implIsClass = implementationClass.isClass();
+            boolean implIsKernel = implementationClass == implementationClass.getRuntime().getKernel();
+            needsImplementer = !(implIsClass || implIsKernel);
         }
     }
 
@@ -65,7 +65,7 @@ public abstract class DynamicMethod {
             String name, IRubyObject[] args, boolean noSuper, Block block) {
         // FIXME: this potentially should go in overridden call impls too, but so far it hasn't appeared to be necessary
         RubyModule implementer = null;
-        if (needsImplementer()) {
+        if (needsImplementer) {
             // modules are included with a shim class; we must find that shim to handle super() appropriately
             implementer = clazz.findImplementer(getImplementationClass());
         } else {
@@ -101,10 +101,6 @@ public abstract class DynamicMethod {
         }
         
         return true;
-    }
-    
-    public boolean needsImplementer() {
-        return !(implIsClass || implIsKernel);
     }
     
     public RubyModule getImplementationClass() {
