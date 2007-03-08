@@ -53,7 +53,7 @@ public class Block {
     /**
      * All Block variables should either refer to a real block or this NULL_BLOCK.
      */
-    public static Block NULL_BLOCK = new Block() {
+    public static final Block NULL_BLOCK = new Block() {
         public boolean isGiven() {
             return false;
         }

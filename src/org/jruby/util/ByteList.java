@@ -306,7 +306,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     }
 
     public String toString() {
-        return new String(this.bytes,0,realSize);
+        return new String(plain(this.bytes),0,realSize);
     }
 
     public static ByteList create(CharSequence s) {

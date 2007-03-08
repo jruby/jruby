@@ -132,10 +132,14 @@ public class RubyBignum extends RubyInteger {
 
     public static RubyBignum newBignum(Ruby runtime, double value) {
         return newBignum(runtime, new BigDecimal(value).toBigInteger());
-        }
+    }
 
     public static RubyBignum newBignum(Ruby runtime, BigInteger value) {
         return new RubyBignum(runtime, value);
+    }
+
+    public static RubyBignum newBignum(Ruby runtime, String value) {
+        return new RubyBignum(runtime, new BigInteger(value));
     }
 
     public double getDoubleValue() {

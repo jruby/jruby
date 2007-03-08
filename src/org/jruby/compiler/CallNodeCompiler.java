@@ -13,6 +13,7 @@ import org.jruby.ast.CallNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.Node;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.CallType;
 
 /**
  *
@@ -29,6 +30,12 @@ public class CallNodeCompiler implements NodeCompiler {
         
         CallNode callNode = (CallNode)node;
         
+        if (NodeCompilerFactory.SAFE) {
+            if (NodeCompilerFactory.UNSAFE_CALLS.contains(callNode.getName())) {
+                throw new NotCompilableException("Can't compile call safely: " + node);
+            }
+        }
+        
         if (callNode.getIterNode() == null) {
             // no block, go for simple version
             
@@ -41,12 +48,16 @@ public class CallNodeCompiler implements NodeCompiler {
                 
                 argsCompiler.compile(callNode.getArgsNode(), context);
 
-                context.invokeDynamic(callNode.getName(), true, true, null);
+                context.invokeDynamic(callNode.getName(), true, true, CallType.NORMAL, null);
             } else {
-                context.invokeDynamic(callNode.getName(), true, false, null);
+                context.invokeDynamic(callNode.getName(), true, false, CallType.NORMAL, null);
             }
         } else {
             // FIXME: Missing blockpassnode handling
+            
+            // blocks aren't safe yet
+            if (NodeCompilerFactory.SAFE) throw new NotCompilableException("Can't compile node safely: " + node);
+            
             final IterNode iterNode = (IterNode) callNode.getIterNode();
 
             // create the closure class and instantiate it
@@ -71,9 +82,9 @@ public class CallNodeCompiler implements NodeCompiler {
                 
                 argsCompiler.compile(callNode.getArgsNode(), context);
 
-                context.invokeDynamic(callNode.getName(), true, true, closureArg);
+                context.invokeDynamic(callNode.getName(), true, true, CallType.NORMAL, closureArg);
             } else {
-                context.invokeDynamic(callNode.getName(), true, false, closureArg);
+                context.invokeDynamic(callNode.getName(), true, false, CallType.NORMAL, closureArg);
             }
         }
     }

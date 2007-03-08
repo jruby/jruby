@@ -47,6 +47,6 @@ public final class CallType {
     }
 
     public String toString() {
-        return "CallType." + name;
+        return name;
     }
 }

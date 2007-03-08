@@ -29,6 +29,7 @@ package org.jruby.compiler;
 
 import org.jruby.ast.AliasNode;
 import org.jruby.ast.Node;
+import org.jruby.runtime.CallType;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -42,5 +43,15 @@ public class AliasNodeCompiler implements NodeCompiler {
         final AliasNode alias = (AliasNode)node;
         
         context.defineAlias(alias.getNewName(),alias.getOldName());
+        context.retrieveSelfClass();
+        
+        context.createObjectArray(new Object[] {alias.getNewName()}, new ArrayCallback() {
+            public void nextValue(Compiler context, Object sourceArray,
+                                  int index) {
+                context.loadSymbol(alias.getNewName());
+            }
+        });
+        
+        context.invokeDynamic("method_added", true, true, CallType.FUNCTIONAL, null);
     }
 }// AliasNodeCompiler

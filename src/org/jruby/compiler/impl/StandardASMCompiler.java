@@ -32,10 +32,12 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.math.BigInteger;
 import java.util.Stack;
 import org.jruby.Ruby;
 import org.jruby.MetaClass;
 import org.jruby.RubyArray;
+import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
@@ -276,6 +278,18 @@ public class StandardASMCompiler implements Compiler {
         
         newMethod.visitCode();
         
+        // set up a local IRuby variable
+        newMethod.visitVarInsn(Opcodes.ALOAD, THREADCONTEXT_INDEX);
+        invokeThreadContext("getRuntime", cg.sig(Ruby.class));
+        newMethod.visitVarInsn(Opcodes.ASTORE, RUNTIME_INDEX);
+        
+        // check arity
+        newMethod.visitLdcInsn(new Integer(arity));
+        newMethod.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(Arity.class), "createArity", cg.sig(Arity.class, cg.params(Integer.TYPE)));
+        loadRuntime();
+        newMethod.visitVarInsn(Opcodes.ALOAD, ARGS_INDEX);
+        newMethod.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(Arity.class), "checkArity", cg.sig(Void.TYPE, cg.params(Ruby.class, IRubyObject[].class)));
+        
         // logic to start off the root node's code with local var slots and all
         newMethod.visitLdcInsn(new Integer(localVarCount));
         newMethod.visitTypeInsn(Opcodes.ANEWARRAY, cg.p(IRubyObject.class));
@@ -283,14 +297,18 @@ public class StandardASMCompiler implements Compiler {
         // store the local vars in a local variable
         newMethod.visitVarInsn(Opcodes.ASTORE, LOCAL_VARS_INDEX);
         
+        // arraycopy arguments into local vars array
+        newMethod.visitVarInsn(Opcodes.ALOAD, ARGS_INDEX);
+        newMethod.visitInsn(Opcodes.ICONST_0);
+        newMethod.visitVarInsn(Opcodes.ALOAD, LOCAL_VARS_INDEX);
+        newMethod.visitInsn(Opcodes.ICONST_2);
+        newMethod.visitLdcInsn(new Integer(arity));
+        
+        newMethod.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(System.class), "arraycopy", cg.sig(Void.TYPE, cg.params(Object.class, Integer.TYPE, Object.class, Integer.TYPE, Integer.TYPE)));
+        
         // put a null at register 4, for closure creation to know we're at top-level or local scope
         newMethod.visitInsn(Opcodes.ACONST_NULL);
         newMethod.visitVarInsn(Opcodes.ASTORE, SCOPE_INDEX);
-        
-        // set up a local IRuby variable
-        newMethod.visitVarInsn(Opcodes.ALOAD, THREADCONTEXT_INDEX);
-        invokeThreadContext("getRuntime", cg.sig(Ruby.class));
-        newMethod.visitVarInsn(Opcodes.ASTORE, RUNTIME_INDEX);
         
         // visit a label to start scoping for local vars in this method
         Label start = new Label();
@@ -333,11 +351,10 @@ public class StandardASMCompiler implements Compiler {
         mv.visitLineNumber(position.getEndLine(), l);
     }
     
-    public void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, ClosureCallback closureArg) {
+    public void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, CallType callType, ClosureCallback closureArg) {
         MethodVisitor mv = getMethodVisitor();
-        String callType = null;
-        String callSig = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, String.class, IRubyObject[].class, CallType.class, Block.class));
-        String callSigIndexed = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Byte.TYPE, String.class, IRubyObject[].class, CallType.class, Block.class));
+        String callSig = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, String.class, IRubyObject[].class, IRubyObject.class, CallType.class, Block.class));
+        String callSigIndexed = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Byte.TYPE, String.class, IRubyObject[].class, IRubyObject.class, CallType.class, Block.class));
         
         byte index = MethodIndex.getIndex(name);
         
@@ -349,8 +366,6 @@ public class StandardASMCompiler implements Compiler {
                 loadThreadContext();
                 // put under args
                 mv.visitInsn(Opcodes.SWAP);
-                
-                callType = "NORMAL";
             } else {
                 // FCall
                 // no receiver present, use self
@@ -361,8 +376,6 @@ public class StandardASMCompiler implements Compiler {
                 loadThreadContext();
                 // put under args
                 mv.visitInsn(Opcodes.SWAP);
-                
-                callType = "FUNCTIONAL";
             }
             
             if (index != 0) {
@@ -381,16 +394,12 @@ public class StandardASMCompiler implements Compiler {
                 // receiver already present
                 
                 loadThreadContext();
-                
-                callType = "FUNCTIONAL";
             } else {
                 // VCall
                 // no receiver present, use self
                 loadSelf();
                 
                 loadThreadContext();
-                
-                callType = "VARIABLE";
             }
             
             
@@ -405,18 +414,21 @@ public class StandardASMCompiler implements Compiler {
             mv.visitFieldInsn(Opcodes.GETSTATIC, cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
         }
         
-        mv.visitFieldInsn(Opcodes.GETSTATIC, cg.p(CallType.class), callType, cg.ci(CallType.class));
+        // load self for visibility checks
+        loadSelf();
+        
+        mv.visitFieldInsn(Opcodes.GETSTATIC, cg.p(CallType.class), callType.toString(), cg.ci(CallType.class));
         
         if (closureArg == null) {
-            mv.visitInsn(Opcodes.ACONST_NULL);
+            mv.visitFieldInsn(Opcodes.GETSTATIC, cg.p(Block.class), "NULL_BLOCK", cg.ci(Block.class));
         } else {
             closureArg.compile(this);
         }
         
         if (index != 0) {
-            invokeIRubyObject("callMethod", callSigIndexed);
+            invokeIRubyObject("compilerCallMethodWithIndex", callSigIndexed);
         } else {
-            invokeIRubyObject("callMethod", callSig);
+            invokeIRubyObject("compilerCallMethod", callSig);
         }
     }
     
@@ -477,12 +489,27 @@ public class StandardASMCompiler implements Compiler {
         invokeIRuby("getNil", cg.sig(IRubyObject.class));
     }
     
+    public void loadSymbol(String symbol) {
+        loadRuntime();
+        
+        MethodVisitor mv = getMethodVisitor();
+        
+        mv.visitLdcInsn(symbol);
+        
+        invokeIRuby("newSymbol", cg.sig(RubySymbol.class, cg.params(String.class)));
+    }
+    
     public void consumeCurrentValue() {
         getMethodVisitor().visitInsn(Opcodes.POP);
     }
     
     public void retrieveSelf() {
         loadSelf();
+    }
+    
+    public void retrieveSelfClass() {
+        loadSelf();
+        invokeIRubyObject("getMetaClass", cg.sig(RubyClass.class));
     }
     
     public void assignLocalVariable(int index) {
@@ -582,18 +609,19 @@ public class StandardASMCompiler implements Compiler {
         invokeIRuby("newFixnum", cg.sig(RubyFixnum.class, cg.params(Long.TYPE)));
     }
     
-    public void createNewBignum(java.math.BigInteger value) {
+    public void createNewBignum(BigInteger value) {
         MethodVisitor mv = getMethodVisitor();
         
         loadRuntime();
         mv.visitLdcInsn(value.toString());
         
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC,cg.p(org.jruby.RubyBignum.class) , "newBignum", cg.sig(org.jruby.RubyBignum.class,cg.params(Ruby.class,String.class)));
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC,cg.p(RubyBignum.class) , "newBignum", cg.sig(RubyBignum.class,cg.params(Ruby.class,String.class)));
     }
     
     public void createNewString(ByteList value) {
         MethodVisitor mv = getMethodVisitor();
         
+        // FIXME: this is sub-optimal, storing string value in a java.lang.String again
         loadRuntime();
         mv.visitLdcInsn(value.toString());
         
@@ -1001,12 +1029,6 @@ public class StandardASMCompiler implements Compiler {
         
         mv.visitCode();
         
-        // arraycopy arguments into local vars array
-        mv.visitVarInsn(Opcodes.ALOAD, ARGS_INDEX);
-        mv.visitInsn(Opcodes.ICONST_0);
-        mv.visitVarInsn(Opcodes.ALOAD, LOCAL_VARS_INDEX);
-        mv.visitInsn(Opcodes.ICONST_2);
-        mv.visitLdcInsn(new Integer(arity));
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(System.class), "arraycopy", cg.sig(Void.TYPE, cg.params(Object.class, Integer.TYPE, Object.class, Integer.TYPE, Integer.TYPE)));
         
         // put a null at register 4, for closure creation to know we're at top-level or local scope

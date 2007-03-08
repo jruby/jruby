@@ -13,6 +13,7 @@ import org.jruby.ast.FCallNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.Node;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.CallType;
 
 /**
  *
@@ -29,6 +30,12 @@ public class FCallNodeCompiler implements NodeCompiler {
         
         FCallNode fcallNode = (FCallNode)node;
         
+        if (NodeCompilerFactory.SAFE) {
+            if (NodeCompilerFactory.UNSAFE_CALLS.contains(fcallNode.getName())) {
+                throw new NotCompilableException("Can't compile call safely: " + node);
+            }
+        }
+        
         if (fcallNode.getIterNode() == null) {
             // no block, go for simple version
             if (fcallNode.getArgsNode() != null) {
@@ -37,12 +44,16 @@ public class FCallNodeCompiler implements NodeCompiler {
                 
                 argsCompiler.compile(fcallNode.getArgsNode(), context);
 
-                context.invokeDynamic(fcallNode.getName(), false, true, null);
+                context.invokeDynamic(fcallNode.getName(), false, true, CallType.FUNCTIONAL, null);
             } else {
-                context.invokeDynamic(fcallNode.getName(), false, false, null);
+                context.invokeDynamic(fcallNode.getName(), false, false, CallType.FUNCTIONAL, null);
             }
         } else {
             // FIXME: Missing blockpasnode stuff here
+            
+            // blocks aren't safe yet
+            if (NodeCompilerFactory.SAFE) throw new NotCompilableException("Can't compile node safely: " + node);
+            
             final IterNode iterNode = (IterNode) fcallNode.getIterNode();
 
             // create the closure class and instantiate it
@@ -63,10 +74,10 @@ public class FCallNodeCompiler implements NodeCompiler {
                 NodeCompiler argsCompiler = NodeCompilerFactory.getArgumentsCompiler(fcallNode.getArgsNode());
                 
                 argsCompiler.compile(fcallNode.getArgsNode(), context);
-
-                context.invokeDynamic(fcallNode.getName(), false, true, closureArg);
+                
+                context.invokeDynamic(fcallNode.getName(), false, true, CallType.FUNCTIONAL, closureArg);
             } else {
-                context.invokeDynamic(fcallNode.getName(), false, false, closureArg);
+                context.invokeDynamic(fcallNode.getName(), false, false, CallType.FUNCTIONAL, closureArg);
             }
         }
     }

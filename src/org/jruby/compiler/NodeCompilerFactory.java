@@ -28,6 +28,8 @@
 
 package org.jruby.compiler;
 
+import java.util.HashSet;
+import java.util.Set;
 import org.jruby.ast.Node;
 import org.jruby.ast.NodeTypes;
 
@@ -36,84 +38,133 @@ import org.jruby.ast.NodeTypes;
  * @author headius
  */
 public class NodeCompilerFactory {
+    public static final boolean SAFE = Boolean.parseBoolean(System.getProperty("jruby.jit.safe", "true"));
+    public static final Set UNSAFE_CALLS;
+    
+    static {
+        UNSAFE_CALLS = new HashSet();
+        
+        UNSAFE_CALLS.add("binding");
+        UNSAFE_CALLS.add("private");
+        UNSAFE_CALLS.add("public");
+        UNSAFE_CALLS.add("protected");
+        UNSAFE_CALLS.add("eval");
+    }
+    
     public static YARVNodesCompiler getYARVCompiler() {
         return new YARVNodesCompiler();
     }
     public static NodeCompiler getCompiler(Node node) {
         switch (node.nodeId) {
         case NodeTypes.ALIASNODE:
+            // safe
             return new AliasNodeCompiler();
         case NodeTypes.ANDNODE:
+            // safe
             return new AndNodeCompiler();
         case NodeTypes.ARRAYNODE:
+            // safe
             return new ArrayNodeCompiler();
         case NodeTypes.BEGINNODE:
+            // safe
             return new BeginNodeCompiler();
         case NodeTypes.BIGNUMNODE:
+            // safe
             return new BignumNodeCompiler();
         case NodeTypes.BLOCKNODE:
+            // safe
             return new BlockNodeCompiler();
         case NodeTypes.CALLNODE:
+            // safe; yield or block nodes that aren't should raise
             return new CallNodeCompiler();
         case NodeTypes.CONSTNODE:
+            if (SAFE) throw new NotCompilableException("Can't compile node safely: " + node);
             return new ConstNodeCompiler();
         case NodeTypes.DASGNNODE:
+            // safe
             return new DAsgnNodeCompiler();
         case NodeTypes.DEFNNODE:
+            if (SAFE) throw new NotCompilableException("Can't compile node safely: " + node);
             return new DefnNodeCompiler();
         case NodeTypes.DVARNODE:
+            // safe
             return new DVarNodeCompiler();
         case NodeTypes.FALSENODE:
+            // safe
             return new FalseNodeCompiler();
         case NodeTypes.FCALLNODE:
+            // safe
             return new FCallNodeCompiler();
         case NodeTypes.FIXNUMNODE:
+            // safe
             return new FixnumNodeCompiler();
         case NodeTypes.GLOBALASGNNODE:
+            // safe
             return new GlobalAsgnNodeCompiler();
         case NodeTypes.GLOBALVARNODE:
+            // safe
             return new GlobalVarNodeCompiler();
         case NodeTypes.IFNODE:
+            // safe
             return new IfNodeCompiler();
         case NodeTypes.INSTASGNNODE:
+            // safe
             return new InstAsgnNodeCompiler();
         case NodeTypes.INSTVARNODE:
+            // safe
             return new InstVarNodeCompiler();
         //case NodeTypes.ITERNODE:
         //    return new IterNodeCompiler();
         case NodeTypes.LOCALASGNNODE:
+            // safe
             return new LocalAsgnNodeCompiler();
         case NodeTypes.LOCALVARNODE:
+            // safe
             return new LocalVarNodeCompiler();
         case NodeTypes.NEWLINENODE:
+            // safe
             return new NewlineNodeCompiler();
         case NodeTypes.NILNODE:
+            // safe
             return new NilNodeCompiler();
         case NodeTypes.NOTNODE:
+            // safe
             return new NotNodeCompiler();
         case NodeTypes.ORNODE:
+            // safe
             return new OrNodeCompiler();
         case NodeTypes.ROOTNODE:
+            // safe
             return new RootNodeCompiler();
         case NodeTypes.SELFNODE:
+            // safe
             return new SelfNodeCompiler();
         case NodeTypes.SPLATNODE:
+            if (SAFE) throw new NotCompilableException("Can't compile node safely: " + node);
             return new SplatNodeCompiler();
         case NodeTypes.STRNODE:
+            // safe
             return new StringNodeCompiler();
         case NodeTypes.SVALUENODE:
+            if (SAFE) throw new NotCompilableException("Can't compile node safely: " + node);
             return new SValueNodeCompiler();
         case NodeTypes.SYMBOLNODE:
+            // safe
             return new SymbolNodeCompiler();
         case NodeTypes.TRUENODE:
+            // safe
             return new TrueNodeCompiler();
         case NodeTypes.VCALLNODE:
+            // safe
             return new VCallNodeCompiler();
         case NodeTypes.WHILENODE:
+            if (SAFE) throw new NotCompilableException("Can't compile node safely: " + node);
             return new WhileNodeCompiler();
         case NodeTypes.YIELDNODE:
+            if (SAFE) throw new NotCompilableException("Can't compile node safely: " + node);
             return new YieldNodeCompiler();
         case NodeTypes.ZARRAYNODE:
+            // safe
             return new ZArrayNodeCompiler();
         }
         

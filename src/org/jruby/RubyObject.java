@@ -395,32 +395,94 @@ public class RubyObject implements Cloneable, IRubyObject {
         return callMethod(context, getMetaClass(), name, args, callType, block);
     }
 
-    public IRubyObject callMethod(ThreadContext context, byte methodIndex, String name,
+    public IRubyObject callMethod(ThreadContext context,byte switchValue, String name,
                                   IRubyObject arg) {
-        return callMethod(context,methodIndex,name,new IRubyObject[]{arg},CallType.FUNCTIONAL, Block.NULL_BLOCK);
+        return callMethod(context,getMetaClass(),switchValue,name,new IRubyObject[]{arg},CallType.FUNCTIONAL, Block.NULL_BLOCK);
     }
 
-    public IRubyObject callMethod(ThreadContext context, byte methodIndex, String name,
+    public IRubyObject callMethod(ThreadContext context,byte switchValue, String name,
                                   IRubyObject[] args) {
-        return callMethod(context,methodIndex,name,args,CallType.FUNCTIONAL, Block.NULL_BLOCK);
+        return callMethod(context,getMetaClass(),switchValue,name,args,CallType.FUNCTIONAL, Block.NULL_BLOCK);
     }
 
-    public IRubyObject callMethod(ThreadContext context, byte methodIndex, String name,
+    public IRubyObject callMethod(ThreadContext context, byte switchValue, String name,
                                   IRubyObject[] args, CallType callType) {
-        return callMethod(context,methodIndex,name,args,callType, Block.NULL_BLOCK);
+        return callMethod(context,getMetaClass(),switchValue,name,args,callType, Block.NULL_BLOCK);
     }
+    
     /**
-     * Used by the compiler to ease calling indexed methods
+     * Used by the compiler to ease calling indexed methods, also to handle visibility.
+     * NOTE: THIS IS NOT THE SAME AS THE SWITCHVALUE VERSIONS.
      */
-    public IRubyObject callMethod(ThreadContext context, byte methodIndex, String name,
-            IRubyObject[] args, CallType callType, Block block) {
+    public IRubyObject compilerCallMethodWithIndex(ThreadContext context, byte methodIndex, String name, IRubyObject[] args, IRubyObject self, CallType callType, Block block) {
         RubyModule module = getMetaClass();
         
         if (module.index != 0) {
             return callMethod(context, module, getRuntime().getSelectorTable().table[module.index][methodIndex], name, args, callType, block);
         } 
-            
-        return callMethod(context, module, name, args, callType, block);
+        
+        return compilerCallMethod(context, name, args, self, callType, block);
+    }
+    
+    /**
+     * Used by the compiler to handle visibility
+     */
+    public IRubyObject compilerCallMethod(ThreadContext context, String name,
+            IRubyObject[] args, IRubyObject self, CallType callType, Block block) {
+        assert args != null;
+        DynamicMethod method = null;
+        RubyModule rubyclass = getMetaClass();
+        method = rubyclass.searchMethod(name);
+        
+        IRubyObject mmResult = callMethodMissingIfNecessary(context, method, name, args, self, callType, block);
+        if (mmResult != null) {
+            return mmResult;
+        }
+        
+        RubyModule implementer = null;
+        if (method.needsImplementer()) {
+            // modules are included with a shim class; we must find that shim to handle super() appropriately
+            implementer = rubyclass.findImplementer(method.getImplementationClass());
+        } else {
+            // classes are directly in the hierarchy, so no special logic is necessary for implementer
+            implementer = method.getImplementationClass();
+        }
+
+        String originalName = method.getOriginalName();
+        if (originalName != null) {
+            name = originalName;
+        }
+
+        return method.call(context, this, implementer, name, args, false, block);
+    }
+    
+    public IRubyObject callMethodMissingIfNecessary(ThreadContext context, DynamicMethod method, String name,
+            IRubyObject[] args, IRubyObject self, CallType callType, Block block) {
+        if (method.isUndefined() ||
+            !(name.equals("method_missing") ||
+              method.isCallableFrom(self, callType))) {
+
+            if (callType == CallType.SUPER) {
+                throw getRuntime().newNameError("super: no superclass method '" + name + "'", name);
+            }
+
+            // store call information so method_missing impl can use it
+            context.setLastCallStatus(method.getVisibility(), callType);
+
+            if (name.equals("method_missing")) {
+                return RubyKernel.method_missing(this, args, block);
+            }
+
+
+            IRubyObject[] newArgs = new IRubyObject[args.length + 1];
+            System.arraycopy(args, 0, newArgs, 1, args.length);
+            newArgs[0] = RubySymbol.newSymbol(getRuntime(), name);
+
+            return callMethod(context, "method_missing", newArgs, block);
+        }
+        
+        // kludgy.
+        return null;
     }
 
     /**
@@ -447,27 +509,10 @@ public class RubyObject implements Cloneable, IRubyObject {
         assert args != null;
         DynamicMethod method = null;
         method = rubyclass.searchMethod(name);
-        if (method.isUndefined() ||
-            !(name.equals("method_missing") ||
-              method.isCallableFrom(context.getFrameSelf(), callType))) {
-
-            if (callType == CallType.SUPER) {
-                throw getRuntime().newNameError("super: no superclass method '" + name + "'", name);
-            }
-
-            // store call information so method_missing impl can use it
-            context.setLastCallStatus(method.getVisibility(), callType);
-
-            if (name.equals("method_missing")) {
-                return RubyKernel.method_missing(this, args, block);
-            }
-
-
-            IRubyObject[] newArgs = new IRubyObject[args.length + 1];
-            System.arraycopy(args, 0, newArgs, 1, args.length);
-            newArgs[0] = RubySymbol.newSymbol(getRuntime(), name);
-
-            return callMethod(context, "method_missing", newArgs, block);
+        
+        IRubyObject mmResult = callMethodMissingIfNecessary(context, method, name, args, context.getFrameSelf(), callType, block);
+        if (mmResult != null) {
+            return mmResult;
         }
 
         RubyModule implementer = null;

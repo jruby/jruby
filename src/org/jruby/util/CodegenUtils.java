@@ -124,5 +124,8 @@ public class CodegenUtils {
     public static Class[] params(Class a, Class b, Class c, Class d, Class e, Class f) {
         return new Class[] {a,b,c,d,e,f};
     }
+    public static Class[] params(Class a, Class b, Class c, Class d, Class e, Class f, Class g) {
+        return new Class[] {a,b,c,d,e,f,g};
+    }
     
 }

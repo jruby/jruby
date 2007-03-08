@@ -62,17 +62,18 @@ import org.jruby.util.collections.SinglyLinkedList;
  *
  */
 public final class DefaultMethod extends DynamicMethod {
+    
     private StaticScope staticScope;
     private Node body;
     private ArgsNode argsNode;
     private SinglyLinkedList cref;
     private boolean hasBeenTargeted = false;
     private int callCount = 0;
-    private static final int COMPILE_COUNT = 50;
     private Script jitCompiledScript;
 
-    // change to true to enable JIT compilation
-    private static final boolean JIT_ENABLED = Boolean.getBoolean("jruby.jit.enabled");
+    private static final boolean JIT_ENABLED = Boolean.parseBoolean(System.getProperty("jruby.jit.enabled", "false"));
+    private static final boolean JIT_LOGGING = Boolean.parseBoolean(System.getProperty("jruby.jit.logging", "false"));
+    private static final int JIT_THRESHOLD = Integer.parseInt(System.getProperty("jruby.jit.threshold", "50"));
     
     public DefaultMethod(RubyModule implementationClass, StaticScope staticScope, Node body, 
             ArgsNode argsNode, Visibility visibility, SinglyLinkedList cref) {
@@ -97,9 +98,6 @@ public final class DefaultMethod extends DynamicMethod {
     /**
      * @see AbstractCallable#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
      */
-    // FIXME: This is commented out because problems were found compiling methods that call protected code.
-    // because eliminating the pre/post does not change the "self" on the current frame, this caused
-    // visibility to be a larger problem. We must revisit this to examine how to avoid this trap for visibility checks.
     public IRubyObject call(ThreadContext context, IRubyObject self, 
             RubyModule clazz, String name, IRubyObject[] args, boolean noSuper, Block block) {
         if (jitCompiledScript != null) {
@@ -120,12 +118,15 @@ public final class DefaultMethod extends DynamicMethod {
      */
     public IRubyObject internalCall(ThreadContext context, RubyModule clazz, 
             IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        	assert args != null;
+        assert args != null;
+        
+        Ruby runtime = context.getRuntime();
+        
+        if (JIT_ENABLED) runJIT(runtime, name);
+        
         if (JIT_ENABLED && jitCompiledScript != null) {
             return jitCompiledScript.run(context, self, args, Block.NULL_BLOCK);
         }
-        
-        Ruby runtime = context.getRuntime();
         
         if (!hasBeenTargeted) {
             CreateJumpTargetVisitor.setJumpTarget(this, body);
@@ -151,8 +152,6 @@ public final class DefaultMethod extends DynamicMethod {
             getArity().checkArity(runtime, args);
 
             traceCall(context, runtime, self, name);
-
-            if (JIT_ENABLED) runJIT(runtime, name);
                     
             return EvaluationState.eval(runtime, context, body, self, block);
         } catch (JumpException je) {
@@ -167,10 +166,10 @@ public final class DefaultMethod extends DynamicMethod {
     }
 
     private void runJIT(Ruby runtime, String name) {
-        if (callCount >= 0 && getArity().isFixed()) {
+        if (callCount >= 0 && getArity().isFixed() && argsNode.getBlockArgNode() == null && argsNode.getOptArgs() == null && argsNode.getRestArg() == -1) {
             callCount++;
-            if (callCount >= COMPILE_COUNT) {
-                //                System.err.println("trying to compile: " + getImplementationClass().getBaseName() + "." + name);
+            if (callCount >= JIT_THRESHOLD) {
+                //if (JIT_LOGGING) System.out.println("trying to compile: " + getImplementationClass().getBaseName() + "." + name);
                 try {
                     String cleanName = cleanJavaIdentifier(name);
                     StandardASMCompiler compiler = new StandardASMCompiler(cleanName + hashCode(), body.getPosition().getFile());
@@ -186,7 +185,7 @@ public final class DefaultMethod extends DynamicMethod {
                     if (className == null) {
                         className = "<anon class>";
                     }
-                    System.out.println("compiled: " + className + "." + name);
+                    if (JIT_LOGGING) System.out.println("compiled: " + className + "." + name);
                 } catch (Exception e) {
                     //                    e.printStackTrace();
                 } finally {

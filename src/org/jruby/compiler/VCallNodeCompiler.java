@@ -30,6 +30,7 @@ package org.jruby.compiler;
 
 import org.jruby.ast.Node;
 import org.jruby.ast.VCallNode;
+import org.jruby.runtime.CallType;
 
 /**
  *
@@ -46,6 +47,12 @@ public class VCallNodeCompiler implements NodeCompiler {
         
         VCallNode vcallNode = (VCallNode)node;
         
-        context.invokeDynamic(vcallNode.getName(), false, false, null);
+        if (NodeCompilerFactory.SAFE) {
+            if (NodeCompilerFactory.UNSAFE_CALLS.contains(vcallNode.getName())) {
+                throw new NotCompilableException("Can't compile call safely: " + node);
+            }
+        }
+        
+        context.invokeDynamic(vcallNode.getName(), false, false, CallType.VARIABLE, null);
     }
 }

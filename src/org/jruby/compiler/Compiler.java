@@ -30,6 +30,7 @@ package org.jruby.compiler;
 
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.CallType;
 import org.jruby.util.ByteList;
 
 /**
@@ -92,7 +93,7 @@ public interface Compiler {
      * to the compiler has prepared the exact number of argument values necessary for this
      * call. Those values will be consumed, and the result of the call will be generated.
      */
-    public void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, ClosureCallback closureArg);
+    public void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, CallType callType, ClosureCallback closureArg);
     
     /**
      * Invoke the block passed into this method, or throw an error if no block is present.
@@ -116,6 +117,8 @@ public interface Compiler {
     public void retrieveLocalVariable(int index, int depth);
     
     public void retrieveSelf();
+    
+    public void retrieveSelfClass();
     
     /**
      * Generate a new "Fixnum" value.
@@ -178,6 +181,8 @@ public interface Compiler {
     public void loadTrue();
     
     public void loadNil();
+    
+    public void loadSymbol(String symbol);
     
     public void retrieveInstanceVariable(String name);
     
