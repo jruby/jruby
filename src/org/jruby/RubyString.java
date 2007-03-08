@@ -79,6 +79,7 @@ public class RubyString extends RubyObject {
     public static final byte OP_LSHIFT_SWITCHVALUE = 8;
     public static final byte EMPTY_P_SWITCHVALUE = 9;
     public static final byte TO_S_SWITCHVALUE = 10;
+    public static final byte TO_I_SWITCHVALUE = 11;
 
     private ByteList value;
     private int hash;
@@ -156,6 +157,9 @@ public class RubyString extends RubyObject {
         case TO_S_SWITCHVALUE:
             Arity.noArguments().checkArity(context.getRuntime(), args);
             return to_s();
+        case TO_I_SWITCHVALUE:
+            Arity.optional().checkArity(context.getRuntime(), args);
+            return to_i(args);
         case 0:
         default:
             return super.callMethod(context, rubyclass, name, args, callType, block);

@@ -46,6 +46,12 @@ public final class Arity implements Serializable {
     private static final long serialVersionUID = 1L;
     private static final Map arities = new HashMap();
     private final int value;
+    
+    public final static Arity NO_ARGUMENTS = createArity(0);
+    public final static Arity ONE_ARGUMENT = createArity(1);
+    public final static Arity TWO_ARGUMENTS = createArity(2);
+    public final static Arity THREE_ARGUMENTS = createArity(3);
+    public final static Arity OPTIONAL = createArity(-1);
 
     private Arity(int value) {
         this.value = value;
@@ -70,7 +76,7 @@ public final class Arity implements Serializable {
     }
 
     public static Arity optional() {
-        return createArity(-1);
+        return OPTIONAL;
     }
 
     public static Arity required(int minimum) {
@@ -79,15 +85,15 @@ public final class Arity implements Serializable {
     }
 
     public static Arity noArguments() {
-        return createArity(0);
+        return NO_ARGUMENTS;
     }
 
     public static Arity singleArgument() {
-        return createArity(1);
+        return ONE_ARGUMENT;
     }
 
     public static Arity twoArguments() {
-        return createArity(2);
+        return TWO_ARGUMENTS;
     }
     
     public static Arity procArityOf(Node node) {
@@ -129,7 +135,7 @@ public final class Arity implements Serializable {
         if (value < 0) {
             return -(1 + value);
         }
-		return value;
+        return value;
     }
 
     public boolean equals(Object other) {

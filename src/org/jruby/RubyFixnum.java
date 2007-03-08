@@ -115,6 +115,7 @@ public class RubyFixnum extends RubyInteger {
     public static final byte OP_MINUS_SWITCHVALUE = 2;
     public static final byte OP_LT_SWITCHVALUE = 3;
     public static final byte TO_S_SWITCHVALUE = 4;
+    public static final byte TO_I_SWITCHVALUE = 5;
 
     public RubyFixnum(Ruby runtime) {
         this(runtime, 0);
@@ -140,6 +141,9 @@ public class RubyFixnum extends RubyInteger {
         case TO_S_SWITCHVALUE:
             Arity.optional().checkArity(context.getRuntime(), args);
             return to_s(args);
+        case TO_I_SWITCHVALUE:
+            Arity.noArguments().checkArity(context.getRuntime(), args);
+            return to_i();
         case 0:
         default:
             return super.callMethod(context, rubyclass, name, args, callType, block);

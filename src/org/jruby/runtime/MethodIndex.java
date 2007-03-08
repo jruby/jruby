@@ -29,7 +29,8 @@ public class MethodIndex {
     public static final byte OP_LSHIFT = 12;
     public static final byte EMPTY_P = 13;
     public static final byte TO_S = 14;
-    public static final byte MAX_METHODS = 15;
+    public static final byte TO_I = 15;
+    public static final byte MAX_METHODS = 16;
     
     /** Creates a new instance of MethodIndex */
     public MethodIndex() {
@@ -55,6 +56,7 @@ public class MethodIndex {
         if (methodName == "<<") return OP_LSHIFT;
         if (methodName == "empty?") return EMPTY_P;
         if (methodName == "to_s") return TO_S;
+        if (methodName == "to_i") return TO_I;
         return NO_INDEX;
     }
 }

@@ -419,7 +419,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         
         if (module.index != 0) {
             return callMethod(context, module, getRuntime().getSelectorTable().table[module.index][methodIndex], name, args, callType, block);
-        } 
+        }
         
         return compilerCallMethod(context, name, args, self, callType, block);
     }

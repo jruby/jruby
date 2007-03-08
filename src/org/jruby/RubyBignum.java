@@ -100,6 +100,7 @@ public class RubyBignum extends RubyInteger {
     public static final byte OP_MINUS_SWITCHVALUE = 2;
     public static final byte OP_LT_SWITCHVALUE = 3;
     public static final byte TO_S_SWITCHVALUE = 4;
+    public static final byte TO_I_SWITCHVALUE = 5;
 
     private final BigInteger value;
 
@@ -120,6 +121,9 @@ public class RubyBignum extends RubyInteger {
         case TO_S_SWITCHVALUE:
             Arity.optional().checkArity(context.getRuntime(), args);
             return to_s(args);
+        case TO_I_SWITCHVALUE:
+            Arity.noArguments().checkArity(context.getRuntime(), args);
+            return to_i();
         case 0:
         default:
             return super.callMethod(context, rubyclass, name, args, callType, block);
