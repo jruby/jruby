@@ -104,7 +104,7 @@ public final class DefaultMethod extends DynamicMethod {
             try {
                 context.preCompiledMethod(implementationClass, cref);
                 // FIXME: pass block when available
-                return jitCompiledScript.run(context, self, args, Block.NULL_BLOCK);
+                return jitCompiledScript.run(context, self, args, block);
             } finally {
                 context.postCompiledMethod();
             }
@@ -125,7 +125,7 @@ public final class DefaultMethod extends DynamicMethod {
         if (JIT_ENABLED) runJIT(runtime, name);
         
         if (JIT_ENABLED && jitCompiledScript != null) {
-            return jitCompiledScript.run(context, self, args, Block.NULL_BLOCK);
+            return jitCompiledScript.run(context, self, args, block);
         }
         
         if (!hasBeenTargeted) {

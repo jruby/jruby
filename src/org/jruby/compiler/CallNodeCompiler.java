@@ -55,10 +55,12 @@ public class CallNodeCompiler implements NodeCompiler {
         } else {
             // FIXME: Missing blockpassnode handling
             
-            // blocks aren't safe yet
-            if (NodeCompilerFactory.SAFE) throw new NotCompilableException("Can't compile node safely: " + node);
-            
             final IterNode iterNode = (IterNode) callNode.getIterNode();
+            
+            // blocks with args aren't safe yet
+            if (NodeCompilerFactory.SAFE) {
+                if (iterNode.getVarNode() != null) throw new NotCompilableException("Can't compile block with args at: " + node.getPosition());
+            }
 
             // create the closure class and instantiate it
             final ClosureCallback closureBody = new ClosureCallback() {

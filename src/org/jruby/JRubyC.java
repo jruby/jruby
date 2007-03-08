@@ -65,7 +65,7 @@ public class JRubyC {
         } catch (IOException ioe) {
             System.err.println("Error -- IO exception during compile: " + ioe.getMessage());
         } catch (NotCompilableException nce) {
-            System.err.println("Error -- Not compileable: " + nce.getMessage());
+            System.err.println("Error -- Not compilable: " + nce.getMessage());
         }
     }
     

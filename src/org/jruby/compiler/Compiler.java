@@ -243,4 +243,6 @@ public interface Compiler {
     public void performLTBranch(BranchCallback trueBranch, BranchCallback falseBranch);
     
     public void loadRubyArraySize();
+    
+    public void issueBreakEvent();
 }

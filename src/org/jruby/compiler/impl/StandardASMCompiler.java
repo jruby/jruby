@@ -49,6 +49,7 @@ import org.jruby.ast.executable.Script;
 import org.jruby.compiler.*;
 import org.jruby.compiler.Compiler;
 import org.jruby.evaluator.EvaluationState;
+import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -425,10 +426,75 @@ public class StandardASMCompiler implements Compiler {
             closureArg.compile(this);
         }
         
+        Label tryBegin = new Label();
+        Label tryEnd = new Label();
+        Label tryCatch = new Label();
+        if (closureArg != null) {
+            // wrap with try/catch for block flow-control exceptions
+            mv.visitTryCatchBlock(tryBegin, tryEnd, tryCatch, cg.p(JumpException.class));
+
+            mv.visitLabel(tryBegin);
+        }
+        
         if (index != 0) {
             invokeIRubyObject("compilerCallMethodWithIndex", callSigIndexed);
         } else {
             invokeIRubyObject("compilerCallMethod", callSig);
+        }
+        
+        if (closureArg != null) {
+            mv.visitLabel(tryEnd);
+
+            // no physical break, terminate loop and skip catch block
+            Label normalBreak = new Label();
+            mv.visitJumpInsn(Opcodes.GOTO, normalBreak);
+
+            mv.visitLabel(tryCatch);
+            {
+                // this logic is largely to handle the kernel "loop" behavior. See JRUBY-530.
+                mv.visitInsn(Opcodes.DUP);
+                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(JumpException.class), "getJumpType", cg.sig(JumpException.JumpType.class));
+                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(JumpException.JumpType.class), "getTypeId", cg.sig(Integer.TYPE));
+
+                Label tryDefault = new Label();
+                Label breakLabel = new Label();
+
+                mv.visitLookupSwitchInsn(tryDefault, new int[] {JumpException.JumpType.BREAK}, new Label[] {breakLabel});
+
+                // default is to just re-throw unhandled exception
+                mv.visitLabel(tryDefault);
+                mv.visitInsn(Opcodes.ATHROW);
+
+                // break just terminates the loop normally, unless it's a block break...
+                mv.visitLabel(breakLabel);
+
+                // Check if it's a break from the passed-in block
+                mv.visitInsn(Opcodes.DUP);
+                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(JumpException.class), "isBreakInKernelLoop", cg.sig(Boolean.TYPE));
+                Label notBreakInKernelLoop = new Label();
+                mv.visitJumpInsn(Opcodes.IFEQ, notBreakInKernelLoop);
+                mv.visitInsn(Opcodes.DUP);
+                // compare target with block
+                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(JumpException.class), "getTarget", cg.sig(Object.class));
+                loadClosure();
+                Label notBlockBreak = new Label();
+                mv.visitJumpInsn(Opcodes.IF_ACMPNE, notBlockBreak);
+                mv.visitInsn(Opcodes.DUP);
+                mv.visitLdcInsn(Boolean.FALSE);
+                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(JumpException.class), "setBreakInKernelLoop", cg.sig(Void.TYPE, cg.params(Boolean.TYPE)));
+
+                mv.visitLabel(notBlockBreak);
+                // target is not == closure, rethrow
+                mv.visitInsn(Opcodes.ATHROW);
+                
+                mv.visitLabel(notBreakInKernelLoop);
+                // not a "loop" break, get out value
+                
+                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(JumpException.class), "getValue", cg.sig(Object.class));
+                mv.visitTypeInsn(Opcodes.CHECKCAST, cg.p(IRubyObject.class));
+            }
+
+            mv.visitLabel(normalBreak);
         }
     }
     
@@ -436,12 +502,6 @@ public class StandardASMCompiler implements Compiler {
         loadClosure();
         
         MethodVisitor method = getMethodVisitor();
-        
-        method.visitInsn(Opcodes.DUP);
-        loadThreadContext();
-        method.visitInsn(Opcodes.SWAP);
-        
-        invokeThreadContext("raiseErrorIfNoBlock", cg.sig(Void.TYPE, cg.params(Block.class)));
         
         if (hasArgs) {
             method.visitInsn(Opcodes.SWAP);
@@ -740,36 +800,86 @@ public class StandardASMCompiler implements Compiler {
         // FIXME: handle next/continue, break, etc
         MethodVisitor mv = getMethodVisitor();
         
-        Label endJmp = new Label();
-        if (checkFirst) {
+        Label tryBegin = new Label();
+        Label tryEnd = new Label();
+        Label tryCatch = new Label();
+        
+        mv.visitTryCatchBlock(tryBegin, tryEnd, tryCatch, cg.p(JumpException.class));
+        
+        mv.visitLabel(tryBegin);
+        {
+            Label endJmp = new Label();
+            if (checkFirst) {
+                // calculate condition
+                condition.branch(this);
+                // call isTrue on the result
+                isTrue();
+
+                mv.visitJumpInsn(Opcodes.IFEQ, endJmp); // EQ == 0 (i.e. false)
+            }
+
+            Label topJmp = new Label();
+
+            mv.visitLabel(topJmp);
+
+            body.branch(this);
+
+            // clear result after each loop
+            mv.visitInsn(Opcodes.POP);
+
             // calculate condition
             condition.branch(this);
             // call isTrue on the result
             isTrue();
+
+            mv.visitJumpInsn(Opcodes.IFNE, topJmp); // NE == nonzero (i.e. true)
+
+            if (checkFirst) {
+                mv.visitLabel(endJmp);
+            }
+        }
+        
+        mv.visitLabel(tryEnd);
+        
+        // no physical break, terminate loop and skip catch block
+        Label normalBreak = new Label();
+        mv.visitJumpInsn(Opcodes.GOTO, normalBreak);
+        
+        mv.visitLabel(tryCatch);
+        {
+            mv.visitInsn(Opcodes.DUP);
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(JumpException.class), "getJumpType", cg.sig(JumpException.JumpType.class));
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(JumpException.JumpType.class), "getTypeId", cg.sig(Integer.TYPE));
+
+            Label tryDefault = new Label();
+            Label breakLabel = new Label();
+
+            mv.visitLookupSwitchInsn(tryDefault, new int[] {JumpException.JumpType.BREAK}, new Label[] {breakLabel});
+
+            // default is to just re-throw unhandled exception
+            mv.visitLabel(tryDefault);
+            mv.visitInsn(Opcodes.ATHROW);
+
+            // break just terminates the loop normally, unless it's a block break...
+            mv.visitLabel(breakLabel);
             
-            mv.visitJumpInsn(Opcodes.IFEQ, endJmp); // EQ == 0 (i.e. false)
+            // JRUBY-530 behavior
+            mv.visitInsn(Opcodes.DUP);
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(JumpException.class), "getTarget", cg.sig(Object.class));
+            loadClosure();
+            Label notBlockBreak = new Label();
+            mv.visitJumpInsn(Opcodes.IF_ACMPNE, notBlockBreak);
+            mv.visitInsn(Opcodes.DUP);
+            mv.visitInsn(Opcodes.ACONST_NULL);
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(JumpException.class), "setTarget", cg.sig(Void.TYPE, cg.params(Object.class)));
+            mv.visitInsn(Opcodes.ATHROW);
+
+            mv.visitLabel(notBlockBreak);
+            // target is not == closure, normal loop exit, pop remaining exception object
+            mv.visitInsn(Opcodes.POP);
         }
         
-        Label topJmp = new Label();
-        
-        mv.visitLabel(topJmp);
-        
-        body.branch(this);
-        
-        // clear result after each loop
-        mv.visitInsn(Opcodes.POP);
-        
-        // calculate condition
-        condition.branch(this);
-        // call isTrue on the result
-        isTrue();
-        
-        mv.visitJumpInsn(Opcodes.IFNE, topJmp); // NE == nonzero (i.e. true)
-        
-        if (checkFirst) {
-            mv.visitLabel(endJmp);
-        }
-        
+        mv.visitLabel(normalBreak);
         loadNil();
     }
     
@@ -1023,13 +1133,10 @@ public class StandardASMCompiler implements Compiler {
         // TODO: build arg list based on number of args, optionals, etc
         ++methodIndex;
         String methodName = name + "__" + methodIndex;
+        
         beginMethod(methodName, arity, localVarCount);
         
         MethodVisitor mv = getMethodVisitor();
-        
-        mv.visitCode();
-        
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(System.class), "arraycopy", cg.sig(Void.TYPE, cg.params(Object.class, Integer.TYPE, Object.class, Integer.TYPE, Integer.TYPE)));
         
         // put a null at register 4, for closure creation to know we're at top-level or local scope
         mv.visitInsn(Opcodes.ACONST_NULL);
@@ -1048,6 +1155,7 @@ public class StandardASMCompiler implements Compiler {
         
         loadSelf();
         
+        // load the class we're creating, for binding purposes
         mv.visitLdcInsn(classname.replace('/', '.'));
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(Class.class), "forName", cg.sig(Class.class, cg.params(String.class)));
         
@@ -1213,5 +1321,21 @@ public class StandardASMCompiler implements Compiler {
 
     public void loadRubyArraySize() {
         throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
+    public void issueBreakEvent() {
+        MethodVisitor mv = getMethodVisitor();
+        
+        mv.visitTypeInsn(Opcodes.NEW, cg.p(JumpException.class));
+        mv.visitInsn(Opcodes.DUP);
+        mv.visitFieldInsn(Opcodes.GETSTATIC, cg.p(JumpException.JumpType.class), "BreakJump", cg.ci(JumpException.JumpType.class));
+        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, cg.p(JumpException.class), "<init>", cg.sig(Void.TYPE, cg.params(JumpException.JumpType.class)));
+        
+        // set result into jump exception
+        mv.visitInsn(Opcodes.DUP_X1);
+        mv.visitInsn(Opcodes.SWAP);
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(JumpException.class), "setValue", cg.sig(Void.TYPE, cg.params(Object.class)));
+        
+        mv.visitInsn(Opcodes.ATHROW);
     }
 }

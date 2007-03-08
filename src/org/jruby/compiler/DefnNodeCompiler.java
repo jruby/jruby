@@ -31,13 +31,25 @@ public class DefnNodeCompiler implements NodeCompiler {
         
         ClosureCallback body = new ClosureCallback() {
             public void compile(Compiler context) {
-                NodeCompilerFactory.getCompiler(defnNode.getBodyNode()).compile(defnNode.getBodyNode(), context);
+                if (defnNode.getBodyNode() != null) {
+                    NodeCompilerFactory.getCompiler(defnNode.getBodyNode()).compile(defnNode.getBodyNode(), context);
+                } else {
+                    context.loadNil();
+                }
             }
         };
         
         int arity = 0;
         
         // FIXME: simple arity check assumes simple arg list; expand to support weirder arg lists
+        if (NodeCompilerFactory.SAFE) {
+            ArgsNode argsNode = (ArgsNode)defnNode.getArgsNode();
+            
+            if (argsNode.getBlockArgNode() != null) throw new NotCompilableException("Can't compile def with block arg at: " + node.getPosition());
+            if (argsNode.getOptArgs() != null) throw new NotCompilableException("Can't compile def with optional params at: " + node.getPosition());
+            if (argsNode.getRestArg() != -1) throw new NotCompilableException("Can't compile def with rest arg at: " + node.getPosition());
+        }
+
         arity = ((ArgsNode)defnNode.getArgsNode()).getArgsCount();
         
         context.defineNewMethod(defnNode.getName(), arity, defnNode.getScope().getNumberOfVariables(), body);

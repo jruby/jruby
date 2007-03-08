@@ -74,6 +74,9 @@ public class NodeCompilerFactory {
         case NodeTypes.BLOCKNODE:
             // safe
             return new BlockNodeCompiler();
+        case NodeTypes.BREAKNODE:
+            // safe
+            return new BreakNodeCompiler();
         case NodeTypes.CALLNODE:
             // safe; yield or block nodes that aren't should raise
             return new CallNodeCompiler();
@@ -84,7 +87,7 @@ public class NodeCompilerFactory {
             // safe
             return new DAsgnNodeCompiler();
         case NodeTypes.DEFNNODE:
-            if (SAFE) throw new NotCompilableException("Can't compile node safely: " + node);
+            // safe; it's primarily odd arg types that are problems, and defn compiler will catch those
             return new DefnNodeCompiler();
         case NodeTypes.DVARNODE:
             // safe
@@ -158,10 +161,10 @@ public class NodeCompilerFactory {
             // safe
             return new VCallNodeCompiler();
         case NodeTypes.WHILENODE:
-            if (SAFE) throw new NotCompilableException("Can't compile node safely: " + node);
+            // safe; things like next and closures that aren't complete yet will fail to compile
             return new WhileNodeCompiler();
         case NodeTypes.YIELDNODE:
-            if (SAFE) throw new NotCompilableException("Can't compile node safely: " + node);
+            // safe; arg types that can't be handled will fail to compile, but yield logic is correct
             return new YieldNodeCompiler();
         case NodeTypes.ZARRAYNODE:
             // safe

@@ -51,10 +51,12 @@ public class FCallNodeCompiler implements NodeCompiler {
         } else {
             // FIXME: Missing blockpasnode stuff here
             
-            // blocks aren't safe yet
-            if (NodeCompilerFactory.SAFE) throw new NotCompilableException("Can't compile node safely: " + node);
-            
             final IterNode iterNode = (IterNode) fcallNode.getIterNode();
+            
+            // blocks with args aren't safe yet
+            if (NodeCompilerFactory.SAFE) {
+                if (iterNode.getVarNode() != null) throw new NotCompilableException("Can't compile block with args at: " + node.getPosition());
+            }
 
             // create the closure class and instantiate it
             final ClosureCallback closureBody = new ClosureCallback() {

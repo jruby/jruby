@@ -57,14 +57,13 @@ test_equal('bar2', compile_and_run(fcallCode))
 test_equal('Bar', compile_and_run(callCode))
 test_equal(2, compile_and_run(ifCode))
 test_equal(3, compile_and_run(unlessCode))
-# disabling these until they are "safe"
-#test_equal(6, compile_and_run(whileCode))
-#test_no_exception {
-#  test_equal(nil, compile_and_run(whileNoBody))
-#}
-#test_equal('baz', compile_and_run(iterBasic))
-#compile_and_run(defBasic)
-#test_equal('hello2', foo3('hello'))
+test_equal(6, compile_and_run(whileCode))
+test_no_exception {
+  test_equal(nil, compile_and_run(whileNoBody))
+}
+test_equal('baz', compile_and_run(iterBasic))
+compile_and_run(defBasic)
+test_equal('hello2', foo3('hello'))
 
 test_equal(2, compile_and_run(andCode))
 test_equal(nil, compile_and_run(andShortCode));
@@ -108,4 +107,4 @@ x = 1
 arr << x
 EOS
 
-#test_equal([1,2,3,4,5,6], compile_and_run(blocksCode))
+test_equal([1,2,3,4,5,6], compile_and_run(blocksCode))
