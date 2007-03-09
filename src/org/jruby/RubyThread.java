@@ -197,7 +197,7 @@ public class RubyThread extends RubyObject {
     
     public void cleanTerminate(IRubyObject result) {
     	try {
-    		finalResult = result;
+    		synchronized (this) { finalResult = result; }
     		isStopped = true;
     		waitIfCriticalized();
     	} catch (InterruptedException ie) {
@@ -382,7 +382,9 @@ public class RubyThread extends RubyObject {
 
     public IRubyObject value() {
         join(new IRubyObject[0]);
-        return finalResult;
+        synchronized (this) {
+            return finalResult;
+        }
     }
 
     public IRubyObject group() {
