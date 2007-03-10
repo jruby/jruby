@@ -65,4 +65,17 @@ class TestGlobals < Test::Unit::TestCase
     old, $0 = $0, "abc"
     $0 = old
   end
+  
+  def test_locally_scoped_globals
+    $_ = 'one'
+    'one' =~ /one/
+    second_call
+    assert_equal('one', $_)
+    assert_equal('one', $~[0])
+  end
+  
+  def second_call
+    $_ = 'two'
+    'two' =~ /two/
+  end
 end

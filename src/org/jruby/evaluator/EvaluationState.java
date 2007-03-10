@@ -921,6 +921,17 @@ public class EvaluationState {
                 GlobalAsgnNode iVisited = (GlobalAsgnNode) node;
     
                 IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
+                
+                if (iVisited.getName().length() == 2) {
+                    switch (iVisited.getName().charAt(1)) {
+                    case '_':
+                        context.getCurrentScope().setLastLine(result);
+                        return result;
+                    case '~':
+                        context.getCurrentScope().setBackRef(result);
+                        return result;
+                    }
+                }
     
                 runtime.getGlobalVariables().set(iVisited.getName(), result);
     
@@ -933,6 +944,16 @@ public class EvaluationState {
             }
             case NodeTypes.GLOBALVARNODE: {
                 GlobalVarNode iVisited = (GlobalVarNode) node;
+                
+                if (iVisited.getName().length() == 2) {
+                    switch (iVisited.getName().charAt(1)) {
+                    case '_':
+                        return context.getCurrentScope().getLastLine();
+                    case '~':
+                        return context.getCurrentScope().getBackRef();
+                    }
+                }
+                
                 return runtime.getGlobalVariables().get(iVisited.getName());
             }
             case NodeTypes.HASHNODE: {
