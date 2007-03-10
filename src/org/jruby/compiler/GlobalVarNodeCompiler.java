@@ -26,6 +26,18 @@ public class GlobalVarNodeCompiler implements NodeCompiler {
         context.lineNumber(node.getPosition());
         
         GlobalVarNode globalVarNode = (GlobalVarNode)node;
+                
+        if (globalVarNode.getName().length() == 2) {
+            // FIXME: This is not aware of lexical scoping
+            switch (globalVarNode.getName().charAt(1)) {
+            case '_':
+                context.retrieveLocalVariable(0);
+                return;
+            case '~':
+                context.retrieveLocalVariable(1);
+                return;
+            }
+        }
         
         context.retrieveGlobalVariable(globalVarNode.getName());
     }

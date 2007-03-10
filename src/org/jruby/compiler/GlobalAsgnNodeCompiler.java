@@ -28,6 +28,18 @@ public class GlobalAsgnNodeCompiler implements NodeCompiler {
         GlobalAsgnNode globalAsgnNode = (GlobalAsgnNode)node;
         
         NodeCompilerFactory.getCompiler(globalAsgnNode.getValueNode()).compile(globalAsgnNode.getValueNode(), context);
+                
+        if (globalAsgnNode.getName().length() == 2) {
+            // FIXME: This is not aware of lexical scoping
+            switch (globalAsgnNode.getName().charAt(1)) {
+            case '_':
+                context.assignLocalVariable(0);
+                return;
+            case '~':
+                assert false: "Parser shouldn't allow assigning to $~";
+                return;
+            }
+        }
         
         context.assignGlobalVariable(globalAsgnNode.getName());
     }
