@@ -42,8 +42,9 @@ public class CompiledBlock extends Block {
     private ThreadContext context;
     private IRubyObject self;
     private IRubyObject[][] scopes;
+    private Block block;
 
-    public CompiledBlock(ThreadContext context, IRubyObject self, Arity arity, IRubyObject[][] scopes, CompiledBlockCallback callback) {
+    public CompiledBlock(ThreadContext context, IRubyObject self, Arity arity, IRubyObject[][] scopes, Block block, CompiledBlockCallback callback) {
         super(null,
                 null,
                 self,
@@ -57,18 +58,20 @@ public class CompiledBlock extends Block {
         this.context = context;
         this.self = self;
         this.scopes = scopes;
+        this.block = block;
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf) {
-        return callback.call(context, replacementSelf, args, Block.NULL_BLOCK, scopes);
+        // FIXME: This used replacementSelf before, but that's null in most cases...so why am I supposed to use it?
+        return callback.call(context, this.self, args, block, scopes);
     }
     
     public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue) {
-        return callback.call(context, this.self, ArgsUtil.convertToJavaArray(args), Block.NULL_BLOCK, scopes);
+        return callback.call(context, this.self, ArgsUtil.convertToJavaArray(args), block, scopes);
     }
 
     public Block cloneBlock() {
-        return new CompiledBlock(context, self, arity, scopes, callback);
+        return new CompiledBlock(context, self, arity, scopes, block, callback);
     }
 
     public Arity arity() {

@@ -108,3 +108,25 @@ arr << x
 EOS
 
 test_equal([1,2,3,4,5,6], compile_and_run(blocksCode))
+
+yieldInBlock = <<EOS
+def foo
+  bar { yield }
+end
+def bar
+  yield
+end
+foo { 1 }
+EOS
+
+test_equal(1, compile_and_run(yieldInBlock))
+
+yieldInProc = <<EOS
+def foo
+  proc { yield }
+end
+p = foo { 1 }
+p.call
+EOS
+
+test_equal(1, compile_and_run(yieldInProc))

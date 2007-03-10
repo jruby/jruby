@@ -883,8 +883,8 @@ public class StandardASMCompiler implements Compiler {
         loadNil();
     }
     
-    public static CompiledBlock createBlock(ThreadContext context, IRubyObject self, int arity, IRubyObject[][] scopes, CompiledBlockCallback callback) {
-        return new CompiledBlock(context, self, Arity.createArity(arity), scopes, callback);
+    public static CompiledBlock createBlock(ThreadContext context, IRubyObject self, int arity, IRubyObject[][] scopes, Block block, CompiledBlockCallback callback) {
+        return new CompiledBlock(context, self, Arity.createArity(arity), scopes, block, callback);
     }
     
     public void createNewClosure(StaticScope scope, int arity, ClosureCallback body) {
@@ -1017,10 +1017,12 @@ public class StandardASMCompiler implements Compiler {
         method.visitVarInsn(Opcodes.ALOAD, LOCAL_VARS_INDEX);
         method.visitInsn(Opcodes.AASTORE);
         
+        loadClosure();
+        
         method.visitFieldInsn(Opcodes.GETSTATIC, classname, closureFieldName, cg.ci(CompiledBlockCallback.class));
         
         method.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(StandardASMCompiler.class), "createBlock",
-                cg.sig(CompiledBlock.class, cg.params(ThreadContext.class, IRubyObject.class, Integer.TYPE, IRubyObject[][].class, CompiledBlockCallback.class)));
+                cg.sig(CompiledBlock.class, cg.params(ThreadContext.class, IRubyObject.class, Integer.TYPE, IRubyObject[][].class, Block.class, CompiledBlockCallback.class)));
     }
     
     private void invokeThreadContext(String methodName, String signature) {
