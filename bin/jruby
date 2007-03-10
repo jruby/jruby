@@ -141,14 +141,9 @@ if [ "$1" = "SERVER" ]; then
   shift
 fi
 
-#JAVA_OPTS="-Djruby.jit.enabled=true -Djruby.tailcall.enabled=true"
-
-"$JAVA_CMD" $JAVA_OPTS $DEBUG -Xmx256m -Xss1024k -da -classpath "$CP" \
-"-Djruby.base=$JRUBY_BASE" \
-"-Djruby.home=$JRUBY_HOME" \
-"-Djruby.lib=$JRUBY_BASE/lib" \
--Djruby.script=jruby \
-"-Djruby.shell=$JRUBY_SHELL" \
-$EN_US \
-org.jruby.Main $JRUBY_OPTS "$@" 
+exec "$JAVA_CMD" $JAVA_OPTS $DEBUG -Xmx256m -Xss1024k -da -classpath "$CP"	\
+  "-Djruby.base=$JRUBY_BASE" "-Djruby.home=$JRUBY_HOME"				\
+  "-Djruby.lib=$JRUBY_BASE/lib" -Djruby.script=jruby				\
+  "-Djruby.shell=$JRUBY_SHELL" $EN_US 						\
+  org.jruby.Main $JRUBY_OPTS "$@" 
 
