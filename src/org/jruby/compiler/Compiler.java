@@ -160,6 +160,12 @@ public interface Compiler {
      */
     public void createEmptyArray();
     
+    public void createEmptyHash();
+    
+    public void createNewHash(Object elements, ArrayCallback callback, int keyCount);
+    
+    public void createNewRange(boolean isExclusive);
+    
     public void performBooleanBranch(BranchCallback trueBranch, BranchCallback falseBranch);
     
     public void performLogicalAnd(BranchCallback longBranch);

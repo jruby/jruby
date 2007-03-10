@@ -31,7 +31,11 @@ public class IfNodeCompiler implements NodeCompiler {
         
         BranchCallback trueCallback = new BranchCallback() {
             public void branch(Compiler context) {
-                NodeCompilerFactory.getCompiler(ifNode.getThenBody()).compile(ifNode.getThenBody(), context);
+                if (ifNode.getThenBody() != null) {
+                    NodeCompilerFactory.getCompiler(ifNode.getThenBody()).compile(ifNode.getThenBody(), context);
+                } else {
+                    context.loadNil();
+                }
             }
         };
         

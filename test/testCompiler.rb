@@ -56,7 +56,9 @@ test_equal(['hello', 5, ['foo', 6]], compile_and_run(arrayCode))
 test_equal('bar2', compile_and_run(fcallCode))
 test_equal('Bar', compile_and_run(callCode))
 test_equal(2, compile_and_run(ifCode))
+test_equal(2, compile_and_run("2 if true"))
 test_equal(3, compile_and_run(unlessCode))
+test_equal(3, compile_and_run("3 unless false"))
 test_equal(6, compile_and_run(whileCode))
 test_no_exception {
   test_equal(nil, compile_and_run(whileNoBody))
@@ -130,3 +132,8 @@ p.call
 EOS
 
 test_equal(1, compile_and_run(yieldInProc))
+
+test_equal({}, compile_and_run("{}"))
+test_equal({:foo => :bar}, compile_and_run("{:foo => :bar}"))
+
+test_equal(1..2, compile_and_run("1..2"))

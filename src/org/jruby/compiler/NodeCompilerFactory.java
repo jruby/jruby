@@ -89,6 +89,9 @@ public class NodeCompilerFactory {
         case NodeTypes.DEFNNODE:
             // safe; it's primarily odd arg types that are problems, and defn compiler will catch those
             return new DefnNodeCompiler();
+        case NodeTypes.DOTNODE:
+            // safe
+            return new DotNodeCompiler();
         case NodeTypes.DVARNODE:
             // safe
             return new DVarNodeCompiler();
@@ -107,6 +110,9 @@ public class NodeCompilerFactory {
         case NodeTypes.GLOBALVARNODE:
             // safe
             return new GlobalVarNodeCompiler();
+        case NodeTypes.HASHNODE:
+            // safe
+            return new HashNodeCompiler();
         case NodeTypes.IFNODE:
             // safe
             return new IfNodeCompiler();

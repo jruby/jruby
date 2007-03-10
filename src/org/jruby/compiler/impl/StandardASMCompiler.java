@@ -33,6 +33,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Stack;
 import org.jruby.Ruby;
 import org.jruby.MetaClass;
@@ -41,7 +43,9 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyHash;
 import org.jruby.RubyModule;
+import org.jruby.RubyRange;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ast.Node;
@@ -731,6 +735,49 @@ public class StandardASMCompiler implements Compiler {
             mv.visitInsn(Opcodes.AASTORE);
         }
     }
+    
+    public void createEmptyHash() {
+        MethodVisitor mv = getMethodVisitor();
+
+        loadRuntime();
+        
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(RubyHash.class), "newHash", cg.sig(RubyHash.class, cg.params(Ruby.class)));
+    }
+    
+    public void createNewHash(Object elements, ArrayCallback callback, int keyCount) {
+        MethodVisitor mv = getMethodVisitor();
+        
+        loadRuntime();
+        
+        // create a new hashmap
+        mv.visitTypeInsn(Opcodes.NEW, cg.p(HashMap.class));
+        mv.visitInsn(Opcodes.DUP);       
+        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, cg.p(HashMap.class), "<init>", cg.sig(Void.TYPE));
+        
+        for (int i = 0; i < keyCount; i++) {
+            mv.visitInsn(Opcodes.DUP);       
+            callback.nextValue(this, elements, i);
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(HashMap.class), "put", cg.sig(Object.class, cg.params(Object.class, Object.class)));
+            mv.visitInsn(Opcodes.POP);
+        }
+        
+        loadNil();
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(RubyHash.class), "newHash", cg.sig(RubyHash.class, cg.params(Ruby.class, Map.class, IRubyObject.class)));
+    }
+    
+    public void createNewRange(boolean isExclusive) {
+        MethodVisitor mv = getMethodVisitor();
+        
+        loadRuntime();
+        
+        mv.visitInsn(Opcodes.DUP_X2);
+        mv.visitInsn(Opcodes.POP);
+
+        mv.visitLdcInsn(new Boolean(isExclusive));
+        
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(RubyRange.class), "newRange", cg.sig(RubyRange.class, cg.params(Ruby.class, IRubyObject.class, IRubyObject.class, Boolean.TYPE)));
+    }
+    
     /**
      * Invoke IRubyObject.isTrue
      */
