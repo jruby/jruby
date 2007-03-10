@@ -353,7 +353,8 @@ public class StandardASMCompiler implements Compiler {
         Label l = new Label();
         MethodVisitor mv = getMethodVisitor();
         mv.visitLabel(l);
-        mv.visitLineNumber(position.getEndLine(), l);
+        // line numbers are zero-based; add one for them to make sense in an editor
+        mv.visitLineNumber(position.getStartLine() + 1, l);
     }
     
     public void invokeAttrAssign(String name) {
