@@ -60,6 +60,8 @@ public interface Compiler {
      * Begin compilation for a method that has the specified number of local variables.
      * The returned value is a token that can be used to end the method later.
      * 
+     * @param friendlyName The outward user-readable name of the method. A unique name will be generated based on this.
+     * @param arity The arity of the method's argument list
      * @param localVarCount The number of local variables that will be used by the method.
      * @return An Object that represents the method within this compiler. Used in calls to
      * endMethod once compilation for this method is completed.
@@ -69,6 +71,8 @@ public interface Compiler {
     /**
      * End compilation for the method associated with the specified token. This should
      * close out all structures created for compilation of the method.
+     * 
+     * @param token A token identifying the method to be terminated.
      */
     public void endMethod(Object token);
     
@@ -80,16 +84,24 @@ public interface Compiler {
      */
     public void consumeCurrentValue();
     
+    /**
+     * Push a copy the topmost value on the stack.
+     */
     public void duplicateCurrentValue();
     
+    /**
+     * Swap the top and second values on the stack.
+     */
     public void swapValues();
     
     /**
      * This method provides a way to specify a line number for the current piece of code
      * being compiled. The compiler may use this information to create debugging
      * information in a bytecode-format-dependent way.
+     * 
+     * @param position The ISourcePosition information to use.
      */
-    public void lineNumber(ISourcePosition node);
+    public void lineNumber(ISourcePosition position);
     
     /**
      * Invoke the named method as a "function", i.e. as a method on the current "self"
@@ -99,6 +111,9 @@ public interface Compiler {
      */
     public void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, CallType callType, ClosureCallback closureArg);
     
+    /**
+     * Attr assign calls have slightly different semantics that normal calls, so this method handles those additional semantics.
+     */
     public void invokeAttrAssign(String name);
     
     /**
@@ -109,21 +124,47 @@ public interface Compiler {
     public void yield(boolean hasArgs);
     
     /**
-     * Assigns the previous value to a local variable at the specified index, consuming
-     * that value in the process.
+     * Assigns the value on top of the stack to a local variable at the specified index, consuming
+     * that value in the process. This assumes a lexical scoping depth of 0.
      * 
      * @param index The index of the local variable to which to assign the value.
      */
     public void assignLocalVariable(int index);
     
+    /**
+     * Retrieve the local variable at the specified index to the top of the stack, using whatever local variable store is appropriate.
+     * This assumes the local variable in question should be present at the current lexical scoping depth (0).
+     * 
+     * @param index The index of the local variable to retrieve
+     */
     public void retrieveLocalVariable(int index);
     
+    /**
+     * Assign the value on top of the stack to a local variable at the specified index and
+     * lexical scoping depth (0 = current scope), consuming that value in the process.
+     * 
+     * @param index The index in which to store the local variable
+     * @param depth The lexical scoping depth in which to store the variable
+     */
     public void assignLocalVariable(int index, int depth);
     
+    /**
+     * Retrieve the local variable as the specified index and lexical scoping depth to the top of the stack,
+     * using whatever local variable store is appropriate.
+     * 
+     * @param index The index of the local variable to retrieve
+     * @param depth The lexical scoping depth from which to retrieve the variable
+     */
     public void retrieveLocalVariable(int index, int depth);
     
+    /**
+     * Retrieve the current "self" and put a reference on top of the stack.
+     */
     public void retrieveSelf();
     
+    /**
+     * Retrieve the current "self" object's metaclass and put a reference on top of the stack
+     */
     public void retrieveSelfClass();
     
     /**
@@ -166,44 +207,164 @@ public interface Compiler {
      */
     public void createEmptyArray();
     
+    /**
+     * Create an empty Ruby Hash object and put a reference on top of the stack.
+     */
     public void createEmptyHash();
     
+    /**
+     * Create a new hash by calling back to the specified ArrayCallback. It is expected that the keyCount
+     * will be the actual count of key/value pairs, and the caller will handle passing an appropriate elements
+     * collection in and dealing with the sequential indices passed to the callback.
+     * 
+     * @param elements An object holding the elements from which to create the Hash.
+     * @param callback An ArrayCallback implementation to which the elements array and iteration counts
+     * are passed in sequence.
+     * @param keyCount the total count of key-value pairs to be constructed from the elements collection.
+     */
     public void createNewHash(Object elements, ArrayCallback callback, int keyCount);
     
+    /**
+     * Create a new range. It is expected that the stack will contain the end and begin values for the range as
+     * its topmost and second topmost elements.
+     * 
+     * @param isExclusive Whether the range is exclusive or not (inclusive)
+     */
     public void createNewRange(boolean isExclusive);
     
+    /**
+     * Perform a boolean branch operation based on the Ruby "true" value of the top value
+     * on the stack. If Ruby "true", invoke the true branch callback. Otherwise, invoke the false branch callback.
+     * 
+     * @param trueBranch The callback for generating code for the "true" condition
+     * @param falseBranch The callback for generating code for the "false" condition
+     */
     public void performBooleanBranch(BranchCallback trueBranch, BranchCallback falseBranch);
     
+    /**
+     * Perform a logical short-circuited Ruby "and" operation, using Ruby notions of true and false.
+     * If the value on top of the stack is false, it remains and the branch is not executed. If it is true,
+     * the top of the stack is replaced with the result of the branch.
+     * 
+     * @param longBranch The branch to execute if the "and" operation does not short-circuit.
+     */
     public void performLogicalAnd(BranchCallback longBranch);
     
+    
+    /**
+     * Perform a logical short-circuited Ruby "or" operation, using Ruby notions of true and false.
+     * If the value on top of the stack is true, it remains and the branch is not executed. If it is false,
+     * the top of the stack is replaced with the result of the branch.
+     * 
+     * @param longBranch The branch to execute if the "or" operation does not short-circuit.
+     */
     public void performLogicalOr(BranchCallback longBranch);
     
+    /**
+     * Perform a boolean loop using the given condition-calculating branch and body branch. For
+     * while loops, pass true for checkFirst. For statement-modifier while loops, pass false. For
+     * unless loops, reverse the result of the condition after calculating it.
+     * 
+     * @param condition The code to execute for calculating the loop condition. A Ruby true result will
+     * cause the body to be executed again.
+     * @param body The body to executed for the loop.
+     * @param checkFirst whether to check the condition the first time through or not.
+     */
     public void performBooleanLoop(BranchCallback condition, BranchCallback body, boolean checkFirst);
     
+    /**
+     * Create a new closure (block) using the given lexical scope information, call arity, and
+     * body generated by the body callback. The closure will capture containing scopes and related information.
+     * 
+     * @param scope The static scoping information
+     * @param arity The arity of the block's argument list
+     * @param body The callback which will generate the closure's body
+     */
     public void createNewClosure(StaticScope scope, int arity, ClosureCallback body);
     
+    /**
+     * Define a new method with the given name, arity, local variable count, and body callback.
+     * This will create a new compiled method and bind it to the given name at this point in
+     * the program's execution.
+     * 
+     * @param name The name to which to bind the resulting method.
+     * @param arity The arity of the method's argument list
+     * @param localVarCount The number of local variables within the method
+     * @param body The callback which will generate the method's body.
+     */
     public void defineNewMethod(String name, int arity, int localVarCount, ClosureCallback body);
     
+    /**
+     * Define an alias for a new name to an existing oldName'd method.
+     * 
+     * @param newName The new alias to create
+     * @param oldName The name of the existing method or alias
+     */
     public void defineAlias(String newName, String oldName);
     
+    /**
+     * Retrieve the constant with the specified name available at the current point in the
+     * program's execution.
+     * 
+     * @param name The name of the constant
+     */
     public void retrieveConstant(String name);
     
+    /**
+     * Load a Ruby "false" value on top of the stack.
+     */
     public void loadFalse();
     
+    /**
+     * Load a Ruby "true" value on top of the stack.
+     */
     public void loadTrue();
     
+    /**
+     * Load a Ruby "nil" value on top of the stack.
+     */
     public void loadNil();
     
+    /**
+     * Load the given string as a symbol on to the top of the stack.
+     * 
+     * @param symbol The symbol to load.
+     */
     public void loadSymbol(String symbol);
     
+    /**
+     * Retrieve the instance variable with the given name, based on the current "self".
+     * 
+     * @param name The name of the instance variable to retrieve.
+     */
     public void retrieveInstanceVariable(String name);
     
+    /**
+     * Assign the value on top of the stack to the instance variable with the specified name
+     * on the current "self". The value is consumed.
+     * 
+     * @param name The name of the value to assign.
+     */
     public void assignInstanceVariable(String name);
     
+    /**
+     * Assign the top of the stack to the global variable with the specified name.
+     * 
+     * @param name The name of the global variable.
+     */
     public void assignGlobalVariable(String name);
     
+    /**
+     * Retrieve the global variable with the specified name to the top of the stack.
+     * 
+     * @param name The name of the global variable.
+     */
     public void retrieveGlobalVariable(String name);
     
+    /**
+     * Perform a logical Ruby "not" operation on the value on top of the stack, leaving the
+     * negated result.
+     */
     public void negateCurrentValue();
     
     /**
