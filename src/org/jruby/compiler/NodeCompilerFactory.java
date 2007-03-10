@@ -65,6 +65,9 @@ public class NodeCompilerFactory {
         case NodeTypes.ARRAYNODE:
             // safe
             return new ArrayNodeCompiler();
+        case NodeTypes.ATTRASSIGNNODE:
+            // safe, I think :)
+            return new AttrAssignNodeCompiler();
         case NodeTypes.BEGINNODE:
             // safe
             return new BeginNodeCompiler();

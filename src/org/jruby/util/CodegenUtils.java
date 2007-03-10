@@ -128,4 +128,68 @@ public class CodegenUtils {
         return new Class[] {a,b,c,d,e,f,g};
     }
     
+    public static String cleanJavaIdentifier(String name) {
+        char[] characters = name.toCharArray();
+        StringBuffer cleanBuffer = new StringBuffer();
+        boolean prevWasReplaced = false;
+        for (int i = 0; i < characters.length; i++) {
+            if (Character.isJavaIdentifierStart(characters[i])) {
+                cleanBuffer.append(characters[i]);
+                prevWasReplaced = false;
+            } else {
+                if (!prevWasReplaced) {
+                    cleanBuffer.append("_");
+                }
+                prevWasReplaced = true;
+                switch (characters[i]) {
+                case '?':
+                    cleanBuffer.append("p_");
+                    continue;
+                case '!':
+                    cleanBuffer.append("b_");
+                    continue;
+                case '<':
+                    cleanBuffer.append("lt_");
+                    continue;
+                case '>':
+                    cleanBuffer.append("gt_");
+                    continue;
+                case '=':
+                    cleanBuffer.append("equal_");
+                    continue;
+                case '[':
+                    if ((i + 1) < characters.length && characters[i + 1] == ']') {
+                        cleanBuffer.append("aref_");
+                        i++;
+                    } else {
+                        // can this ever happen?
+                        cleanBuffer.append("lbracket_");
+                    }
+                    continue;
+                case ']':
+                    // given [ logic above, can this ever happen?
+                    cleanBuffer.append("rbracket_");
+                    continue;
+                case '+':
+                    cleanBuffer.append("plus_");
+                    continue;
+                case '-':
+                    cleanBuffer.append("minus_");
+                    continue;
+                case '*':
+                    cleanBuffer.append("times_");
+                    continue;
+                case '/':
+                    cleanBuffer.append("div_");
+                    continue;
+                case '&':
+                    cleanBuffer.append("and_");
+                    continue;
+                default:
+                    cleanBuffer.append(Integer.toHexString(characters[i])).append("_");
+                }
+            }
+        }
+        return cleanBuffer.toString();
+    }
 }

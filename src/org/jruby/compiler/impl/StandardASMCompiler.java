@@ -356,6 +356,23 @@ public class StandardASMCompiler implements Compiler {
         mv.visitLineNumber(position.getEndLine(), l);
     }
     
+    public void invokeAttrAssign(String name) {
+        MethodVisitor mv = getMethodVisitor();
+        
+        // get args[0] and stuff it under the receiver
+        mv.visitInsn(Opcodes.DUP);
+        mv.visitInsn(Opcodes.ICONST_0);
+        mv.visitInsn(Opcodes.AALOAD);
+        mv.visitInsn(Opcodes.DUP_X2);
+        mv.visitInsn(Opcodes.POP);
+        
+        // FIXME: I use VARIABLE here, but evaluator only does it if receiver == self...
+        invokeDynamic(name, true, true, CallType.VARIABLE, null);
+        
+        // pop result, use args[0] captured above
+        mv.visitInsn(Opcodes.POP);
+    }
+    
     public void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, CallType callType, ClosureCallback closureArg) {
         MethodVisitor mv = getMethodVisitor();
         String callSig = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, String.class, IRubyObject[].class, IRubyObject.class, CallType.class, Block.class));
@@ -1181,7 +1198,7 @@ public class StandardASMCompiler implements Compiler {
     public void defineNewMethod(String name, int arity, int localVarCount, ClosureCallback body) {
         // TODO: build arg list based on number of args, optionals, etc
         ++methodIndex;
-        String methodName = name + "__" + methodIndex;
+        String methodName = cg.cleanJavaIdentifier(name) + "__" + methodIndex;
         
         beginMethod(methodName, arity, localVarCount);
         

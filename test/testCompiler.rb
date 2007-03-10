@@ -137,3 +137,5 @@ test_equal({}, compile_and_run("{}"))
 test_equal({:foo => :bar}, compile_and_run("{:foo => :bar}"))
 
 test_equal(1..2, compile_and_run("1..2"))
+
+test_equal(1, compile_and_run("def a=(x); 2; end; self.a = 1"))

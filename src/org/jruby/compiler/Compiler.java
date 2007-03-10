@@ -95,6 +95,8 @@ public interface Compiler {
      */
     public void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, CallType callType, ClosureCallback closureArg);
     
+    public void invokeAttrAssign(String name);
+    
     /**
      * Invoke the block passed into this method, or throw an error if no block is present.
      * If arguments have been prepared for the block, specify true. Otherwise the default
