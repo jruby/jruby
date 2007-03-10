@@ -3,7 +3,7 @@ test_check "Test Time:"
 
 t1 = Time.at(981173106)
 t2 = Time.utc(2001, 2, 3, 4, 5, 6)
-t3 = Time.at(981201906)
+t3 = Time.at(981205506)
 t4 = Time.local(2001, 2, 3, 4, 5, 6)
 
 test_equal(true, t1 == t2)
