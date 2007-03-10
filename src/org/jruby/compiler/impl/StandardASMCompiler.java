@@ -363,17 +363,34 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         mv.dup_x2();
         mv.pop();
         
-        // FIXME: I use VARIABLE here, but evaluator only does it if receiver == self...
-        invokeDynamic(name, true, true, CallType.VARIABLE, null);
+        invokeDynamic(name, true, true, CallType.NORMAL, null);
         
         // pop result, use args[0] captured above
         mv.pop();
     }
     
+    public static IRubyObject doInvokeDynamic(IRubyObject receiver, IRubyObject[] args, ThreadContext context, String name, IRubyObject caller, CallType callType, Block block) {
+        // FIXME: This should not always be VARIABLE...only for attr assign that I know of
+        if (receiver == caller) {
+            callType = CallType.VARIABLE;
+        }
+        
+        return receiver.compilerCallMethod(context, name, args, caller, callType, block);
+    }
+    
+    public static IRubyObject doInvokeDynamicIndexed(IRubyObject receiver, IRubyObject[] args, ThreadContext context, byte methodIndex, String name, IRubyObject caller, CallType callType, Block block) {
+        // FIXME: This should not always be VARIABLE...only for attr assign that I know of
+        if (receiver == caller) {
+            callType = CallType.VARIABLE;
+        }
+        
+        return receiver.compilerCallMethodWithIndex(context, methodIndex, name, args, caller, callType, block);
+    }
+    
     public void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, CallType callType, ClosureCallback closureArg) {
         SkinnyMethodAdapter mv = getMethodAdapter();
-        String callSig = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, String.class, IRubyObject[].class, IRubyObject.class, CallType.class, Block.class));
-        String callSigIndexed = cg.sig(IRubyObject.class, cg.params(ThreadContext.class, Byte.TYPE, String.class, IRubyObject[].class, IRubyObject.class, CallType.class, Block.class));
+        String callSig = cg.sig(IRubyObject.class, cg.params(IRubyObject.class, IRubyObject[].class, ThreadContext.class, String.class, IRubyObject.class, CallType.class, Block.class));
+        String callSigIndexed = cg.sig(IRubyObject.class, cg.params(IRubyObject.class, IRubyObject[].class, ThreadContext.class, Byte.TYPE, String.class, IRubyObject.class, CallType.class, Block.class));
         
         byte index = MethodIndex.getIndex(name);
         
@@ -381,57 +398,37 @@ public class StandardASMCompiler implements Compiler, Opcodes {
             if (hasReceiver) {
                 // Call with args
                 // receiver already present
-                
-                loadThreadContext();
-                // put under args
-                mv.swap();
             } else {
                 // FCall
                 // no receiver present, use self
                 loadSelf();
                 // put self under args
                 mv.swap();
-                
-                loadThreadContext();
-                // put under args
-                mv.swap();
             }
-            
-            if (index != 0) {
-                // load method index
-                mv.ldc(new Byte(index));
-                // put under args
-                mv.swap();
-            }
-            
-            mv.ldc(name);
-            // put under args
-            mv.swap();
         } else {
             if (hasReceiver) {
-                // Call with no args
                 // receiver already present
+                // empty args list
+                mv.getstatic(cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
                 
-                loadThreadContext();
             } else {
                 // VCall
                 // no receiver present, use self
                 loadSelf();
                 
-                loadThreadContext();
+                // empty args list
+                mv.getstatic(cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
             }
-            
-            
-            if (index != 0) {
-                // load method index
-                mv.ldc(new Byte(index));
-            }
-            
-            mv.ldc(name);
-            
-            // empty args list
-            mv.getstatic(cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
         }
+
+        loadThreadContext();
+
+        if (index != 0) {
+            // load method index
+            mv.ldc(new Byte(index));
+        }
+
+        mv.ldc(name);
         
         // load self for visibility checks
         loadSelf();
@@ -455,9 +452,9 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         }
         
         if (index != 0) {
-            invokeIRubyObject("compilerCallMethodWithIndex", callSigIndexed);
+            invokeUtilityMethod("doInvokeDynamicIndexed", callSigIndexed);
         } else {
-            invokeIRubyObject("compilerCallMethod", callSig);
+            invokeUtilityMethod("doInvokeDynamic", callSig);
         }
         
         if (closureArg != null) {
@@ -579,6 +576,14 @@ public class StandardASMCompiler implements Compiler, Opcodes {
     
     public void consumeCurrentValue() {
         getMethodAdapter().pop();
+    }
+    
+    public void duplicateCurrentValue() {
+        getMethodAdapter().dup();
+    }
+    
+    public void swapValues() {
+        getMethodAdapter().swap();
     }
     
     public void retrieveSelf() {
@@ -1081,8 +1086,15 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         
         method.getstatic(classname, closureFieldName, cg.ci(CompiledBlockCallback.class));
         
-        method.invokestatic(cg.p(StandardASMCompiler.class), "createBlock",
-                cg.sig(CompiledBlock.class, cg.params(ThreadContext.class, IRubyObject.class, Integer.TYPE, IRubyObject[][].class, Block.class, CompiledBlockCallback.class)));
+        invokeUtilityMethod("createBlock", cg.sig(CompiledBlock.class, cg.params(ThreadContext.class, IRubyObject.class, Integer.TYPE, IRubyObject[][].class, Block.class, CompiledBlockCallback.class)));
+    }
+    
+    /**
+     * This is for utility methods used by the compiler, to reduce the amount of code generation necessary.
+     * Most of these currently live on StandardASMCompiler, but should be moved to a more appropriate location.
+     */
+    private void invokeUtilityMethod(String methodName, String signature) {
+        getMethodAdapter().invokestatic(cg.p(StandardASMCompiler.class), methodName, signature);
     }
     
     private void invokeThreadContext(String methodName, String signature) {

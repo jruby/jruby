@@ -80,6 +80,10 @@ public interface Compiler {
      */
     public void consumeCurrentValue();
     
+    public void duplicateCurrentValue();
+    
+    public void swapValues();
+    
     /**
      * This method provides a way to specify a line number for the current piece of code
      * being compiled. The compiler may use this information to create debugging

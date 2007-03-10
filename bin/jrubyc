@@ -136,7 +136,7 @@ if [ "$1" = "SERVER" ]; then
   shift
 fi
 
-"$JAVA_CMD" $DEBUG -Xmx256m -Xss1024k -ea -classpath "$CP" \
+"$JAVA_CMD" $JAVA_OPTS $DEBUG -Xmx256m -Xss1024k -ea -classpath "$CP" \
 "-Djruby.base=$JRUBY_BASE" \
 "-Djruby.home=$JRUBY_HOME" \
 "-Djruby.lib=$JRUBY_BASE/lib" \

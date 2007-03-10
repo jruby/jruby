@@ -142,6 +142,9 @@ public class NodeCompilerFactory {
         case NodeTypes.NOTNODE:
             // safe
             return new NotNodeCompiler();
+        case NodeTypes.OPASGNNODE:
+            // safe
+            return new OpAsgnNodeCompiler();
         case NodeTypes.ORNODE:
             // safe
             return new OrNodeCompiler();

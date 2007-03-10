@@ -138,4 +138,14 @@ test_equal({:foo => :bar}, compile_and_run("{:foo => :bar}"))
 
 test_equal(1..2, compile_and_run("1..2"))
 
+# FIXME: These tests aren't quite right..only the first one should allow self.a to be accessed
+# The other two should fail because the a accessor is private at top level. Only attr assigns
+# should be made into "variable" call types and allowed through. I need a better way to
+# test these, and the too-permissive visibility should be fixed.
 test_equal(1, compile_and_run("def a=(x); 2; end; self.a = 1"))
+
+test_equal(1, compile_and_run("def a; 1; end; def a=(arg); fail; end; self.a ||= 2"))
+test_equal([1, 1], compile_and_run("def a; @a; end; def a=(arg); @a = arg; 4; end; x = self.a ||= 1; [x, self.a]"))
+test_equal(nil, compile_and_run("def a; nil; end; def a=(arg); fail; end; self.a &&= 2"))
+test_equal([1, 1], compile_and_run("def a; @a; end; def a=(arg); @a = arg; end; @a = 3; x = self.a &&= 1; [x, self.a]"))
+
