@@ -55,7 +55,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOModes;
 import org.jruby.util.JRubyFile;
-import org.jruby.util.PrintfFormat;
+import org.jruby.util.Sprintf;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public class FileMetaClass extends IOMetaClass {
@@ -63,8 +63,6 @@ public class FileMetaClass extends IOMetaClass {
     private static final int FNM_PATHNAME = 2;
     private static final int FNM_DOTMATCH = 4;
     private static final int FNM_CASEFOLD = 8;
-    
-    public static final PrintfFormat OCTAL_FORMATTER = new PrintfFormat("%o");
     
     public FileMetaClass(Ruby runtime) {
         super("File", RubyFile.class, runtime.getClass("IO"), FILE_ALLOCATOR);
@@ -266,7 +264,7 @@ public class FileMetaClass extends IOMetaClass {
             }
             
             try {
-                Process chmod = Runtime.getRuntime().exec("chmod " + OCTAL_FORMATTER.sprintf(mode.getLongValue()) + " " + filename);
+                Process chmod = Runtime.getRuntime().exec("chmod " + Sprintf.sprintf(getRuntime(), "%o", mode.getLongValue()) + " " + filename);
                 chmod.waitFor();
                 int result = chmod.exitValue();
                 if (result == 0) {

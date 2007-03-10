@@ -69,7 +69,7 @@ import org.jruby.runtime.builtin.meta.FileMetaClass;
 import org.jruby.runtime.builtin.meta.IOMetaClass;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.load.LoadService;
-import org.jruby.util.PrintfFormat;
+import org.jruby.util.Sprintf;
 import org.jruby.util.UnsynchronizedStack;
 
 /**
@@ -268,9 +268,15 @@ public class RubyKernel {
         }
         CallType lastCallType = tc.getLastCallType();
         String format = lastVis.errorMessageFormat(lastCallType, name);
-        String msg = new PrintfFormat(format).sprintf(new Object[] { name, description, 
-                                                                     noClass ? "" : ":", noClass ? "" : recv.getType().getName()}, null);
-
+        // FIXME: Modify sprintf to accept Object[] as well...
+        String msg = Sprintf.sprintf(runtime.newString(format), 
+                runtime.newArray(new IRubyObject[] { 
+                        runtime.newString(name), 
+                        runtime.newString(description),
+                        runtime.newString(noClass ? "" : ":"), 
+                        runtime.newString(noClass ? "" : recv.getType().getName())
+                })).toString();
+        
         throw lastCallType == CallType.VARIABLE ? runtime.newNameError(msg, name) : runtime.newNoMethodError(msg, name);
     }
 

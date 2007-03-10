@@ -69,6 +69,35 @@ class TestFloats < Test::Unit::TestCase
       assert_equal(string.to_f, number, "case \"#{string}\" to #{number}")
     end
   end
+  # MRI compatibility
+  def test_whitespace_string_to_number
+    for string, number in [
+	[ "1_._0_",                        1.0,],
+	["  -3_._141__592__654  ", -3.141592654],
+	["  _._1 ",                          0.1],
+	["\n\r\t _2_._1_e_+_0",             2.1],
+	[" _2_._1_e_3",                  2100.0],
+      ]
+      assert_equal(number, string.to_f, "case \"#{string}\" to #{number}")
+    end
+  end
+  # MRI compatibility
+  def test_float_from_string
+    for string, number in [
+	[ "1.0",          1.0,],
+	["-3.141592654", -3.141592654],
+	["  .1",          0.1],
+	[" 2.1e+0",       2.1],
+	[" 2.1e3",     2100.0],
+	["-2.1E+0",      -2.1],
+	["-2.1E-3",      -0.0021],
+	["-2.1E10",      -2.1e+10],
+	["  -3.1_4_1_592_654  ", -3.141592654],
+	["\n\r\t 2.1e+0_1",             21.0],
+      ]
+      assert_equal(number, Float(string), "case \"#{string}\" to #{number}")
+    end
+  end
 end
 
 

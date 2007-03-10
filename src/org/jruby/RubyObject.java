@@ -49,7 +49,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.util.IdUtil;
-import org.jruby.util.PrintfFormat;
+import org.jruby.util.Sprintf;
 import org.jruby.util.collections.SinglyLinkedList;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -1290,15 +1290,20 @@ public class RubyObject implements Cloneable, IRubyObject {
             description = inspect().toString();
         }
         boolean noClass = description.length() > 0 && description.charAt(0) == '#';
-        ThreadContext tc = getRuntime().getCurrentContext();
+        Ruby runtime = getRuntime();
+        ThreadContext tc = runtime.getCurrentContext();
         Visibility lastVis = tc.getLastVisibility();
         if(null == lastVis) {
             lastVis = Visibility.PUBLIC;
         }
         CallType lastCallType = tc.getLastCallType();
         String format = lastVis.errorMessageFormat(lastCallType, name);
-        String msg = new PrintfFormat(format).sprintf(new Object[] { name, description,
-                                                                     noClass ? "" : ":", noClass ? "" : getType().getName()}, null);
+        String msg = Sprintf.sprintf(runtime.newString(format), 
+                runtime.newArray(new IRubyObject[] { 
+                        runtime.newString(name), runtime.newString(description),
+                        runtime.newString(noClass ? "" : ":"), 
+                        runtime.newString(noClass ? "" : getType().getName())
+                })).toString();
 
         if (lastCallType == CallType.VARIABLE) {
         	throw getRuntime().newNameError(msg, name);

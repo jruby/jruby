@@ -72,6 +72,7 @@ test_exception(TypeError) { load Object.new }
 #Previously Kernel.raise, Kernel.sprintf, Kernel.iterator? & Kernel.exec were all made private
 #as they were aliased rather than defined. Checking that this is no longer the case
 test_exception(RuntimeError) { Kernel.raise }
+test_exception(ArgumentError) { Kernel.printf "%d", 's' }
 test_no_exception { Kernel.sprintf "Helllo" }
 test_no_exception { Kernel.iterator? }
 if File.exists?("/bin/true")

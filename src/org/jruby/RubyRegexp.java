@@ -50,7 +50,7 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
-import org.jruby.util.PrintfFormat;
+import org.jruby.util.Sprintf;
 
 /**
  *
@@ -636,7 +636,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             } else if (c == '\u001B') {
                 sb.append('\\').append('e');
             } else {
-                sb.append(new PrintfFormat("\\%.3o").sprintf(c));
+                sb.append(Sprintf.sprintf(getRuntime(),"\\%.3o",c));
             }
         }
         sb.append('/');

@@ -36,7 +36,6 @@ package org.jruby;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
@@ -121,7 +120,7 @@ public class RubyBignum extends RubyInteger {
         case TO_S_SWITCHVALUE:
             return to_s(args);
         case TO_I_SWITCHVALUE:
-            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
+            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
             return to_i();
         case 0:
         default:

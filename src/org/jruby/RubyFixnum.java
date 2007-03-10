@@ -35,7 +35,6 @@
 package org.jruby;
 
 import java.math.BigInteger;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;

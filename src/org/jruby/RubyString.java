@@ -48,8 +48,6 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.jruby.javasupport.JavaUtil;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
@@ -59,7 +57,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 import org.jruby.util.Pack;
-import org.jruby.util.PrintfFormat;
+import org.jruby.util.Sprintf;
 
 /**
  *
@@ -308,19 +306,7 @@ public class RubyString extends RubyObject {
 
     public IRubyObject format(IRubyObject arg) {
         // FIXME: Should we make this work with platform's locale, or continue hardcoding US?
-        Object[] args;
-        IRubyObject[] rargs = null;
-        if (arg instanceof RubyArray) {
-            rargs = (IRubyObject[])((RubyArray)arg).getList().toArray(new IRubyObject[0]);
-            args = new Object[rargs.length];
-            for(int i=0;i<rargs.length;i++) {
-                args[i] = JavaUtil.convertRubyToJava(rargs[i]);
-            }
-        } else {
-            args = new Object[]{JavaUtil.convertRubyToJava(arg)};
-            rargs = new IRubyObject[]{arg};
-        }
-        return getRuntime().newString(new PrintfFormat(Locale.US, toString()).sprintf(args,rargs));
+        return getRuntime().newString((ByteList)Sprintf.sprintf(Locale.US,getByteList(),arg));
     }
 
     public RubyFixnum hash() {
@@ -782,7 +768,7 @@ public class RubyString extends RubyObject {
             } else if (c == '\u001B') {
                 sb.append('\\').append('e');
             } else {
-                sb.append(new PrintfFormat("\\%.3o").sprintf((char)c));
+                sb.append(Sprintf.sprintf(runtime,"\\%.3o",c));
             }
         }
 

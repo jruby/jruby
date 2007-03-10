@@ -322,39 +322,29 @@ public class RubyNumeric extends RubyObject {
      * 
      * @param runtime  the ruby runtime
      * @param arg   the string to be converted
-     * @param raise if the string is not a valid float, raise error, otherwise return 0.0
+     * @param strict if true, enforce the strict criteria for String encoding of
+     *               numeric values, as required by Float('n'), and raise an
+     *               exception when those criteria are not met. Otherwise, allow
+     *               lax expression of values, as permitted by String#to_f, and
+     *               return a value in all cases.
+     *               TODO: describe the rules/criteria
      * @return  a RubyFloat representing the result of the conversion, which
      *          will be 0.0 if the conversion failed.
      */
-    public static RubyFloat str2fnum(Ruby runtime, RubyString arg, boolean raise) {
-        String str = arg.toString().trim();
-        double d = 0.0;
-        int pos = str.length();
-        for (int i = 0; i < pos; i++) {
-            if ("0123456789eE+-.".indexOf(str.charAt(i)) == -1) {
-                if(raise) {
-                    throw runtime.newArgumentError("invalid value for Float(): "
-                            + arg.callMethod(runtime.getCurrentContext(), "inspect").toString());
-                }
-                pos = i + 1;
-                break;
+    public static RubyFloat str2fnum(Ruby runtime, RubyString arg, boolean strict) {
+        final double ZERO = 0.0;
+        
+        try {
+            return new RubyFloat(runtime,Convert.byteListToDouble(arg.getByteList(),strict));
+        } catch (NumberFormatException e) {
+            if (strict) {
+                throw runtime.newArgumentError("invalid value for Float(): "
+                        + arg.callMethod(runtime.getCurrentContext(), "inspect").toString());
             }
+            return new RubyFloat(runtime,ZERO);
         }
-        for (; pos > 0; pos--) {
-            try {
-                d = Double.parseDouble(str.substring(0, pos));
-            } catch (NumberFormatException ex) {
-                if(raise) {
-                    throw runtime.newArgumentError("invalid value for Float(): "
-                            + arg.callMethod(runtime.getCurrentContext(), "inspect").toString());
-                }
-                continue;
-            }
-            break;
-        }
-        return new RubyFloat(runtime, d);
     }
-
+    
     /** Numeric methods. (num_*)
      *
      */

@@ -14,13 +14,13 @@ class TestStringPrintf < Test::Unit::TestCase
     assert_equal("101", "%1b" % 5)
     assert_equal("00101", "%.5b" % 5)
     assert_equal("00101", "%05b" % 5)
-#    assert_equal("11011", "%05b" % -5)
+    assert_equal("11011", "%05b" % -5)
     assert_equal("101", "%b" % 5.5)
     assert_equal("0b101", "%#b" % 5)
-#    assert_equal("0b..1011", "%#b" % -5)
+    assert_equal("0b..1011", "%#b" % -5)
     assert_equal("+101", "%+b" % 5)
     assert_equal("101  ", "%-5b" % 5)
-#    assert_equal("0", "%b" % nil)
+    assert_equal("0", "%b" % nil)
     assert_equal("%b" % :howdy.to_i, "%b" % :howdy)
     assert_raises(ArgumentError) {"%b" % "a"}
     assert_raises(TypeError) {"%b" % true}
@@ -43,7 +43,9 @@ class TestStringPrintf < Test::Unit::TestCase
     assert_equal("A    ", "%-5c" % 65)
     assert_equal("A", "%c" % 65.8)
     assert_equal("%c" % :howdy.to_i, "%c" % :howdy)
-    assert_raises(TypeError) {"%c" % "65"}
+    # FIXME: validity of test pending decision on
+    # MRI vs. YARV compliance
+#    assert_raises(TypeError) {"%c" % "65"}
     assert_raises(TypeError) {"%c" % true}
     assert_raises(TypeError) {"%c" % nil}
     assert_raises(TypeError) {"%c" % [[1, 2]]}

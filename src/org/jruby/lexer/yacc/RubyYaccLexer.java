@@ -50,7 +50,6 @@ import org.jruby.parser.ParserSupport;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.Tokens;
 import org.jruby.util.IdUtil;
-import org.jruby.util.PrintfFormat;
 
 /** This is a port of the MRI lexer to Java it is compatible to Ruby 1.8.1.
  */
@@ -1409,7 +1408,7 @@ public class RubyYaccLexer {
 
             default:
                 if (!isIdentifierChar(c)) {
-                    throw new SyntaxException(getPosition(), "Invalid char `\\" + new PrintfFormat("%.3o").sprintf(c) + "' in expression");
+                    throw new SyntaxException(getPosition(), "Invalid char `\\" + Integer.parseInt(""+c, 8) + "' in expression");
                 }
             
                 tokenBuffer.setLength(0);

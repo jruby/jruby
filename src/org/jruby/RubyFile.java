@@ -46,13 +46,13 @@ import java.nio.channels.FileLock;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.builtin.meta.FileMetaClass;
 import org.jruby.util.IOHandler;
 import org.jruby.util.IOHandlerNull;
 import org.jruby.util.IOHandlerSeekable;
 import org.jruby.util.IOHandlerUnseekable;
 import org.jruby.util.IOModes;
 import org.jruby.util.JRubyFile;
+import org.jruby.util.Sprintf;
 import org.jruby.util.IOHandler.InvalidValueException;
 
 /**
@@ -224,7 +224,7 @@ public class RubyFile extends RubyIO {
         }
             
         try {
-            Process chown = Runtime.getRuntime().exec("chmod " + FileMetaClass.OCTAL_FORMATTER.sprintf(mode.getLongValue()) + " " + path);
+            Process chown = Runtime.getRuntime().exec("chmod " + Sprintf.sprintf(getRuntime(), "%o", mode.getLongValue()) + " " + path);
             chown.waitFor();
         } catch (IOException ioe) {
             // FIXME: ignore?
