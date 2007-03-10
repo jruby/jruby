@@ -85,7 +85,7 @@ import org.objectweb.asm.Opcodes;
  *
  * @author headius
  */
-public class StandardASMCompiler implements Compiler {
+public class StandardASMCompiler implements Compiler, Opcodes {
     private static final CodegenUtils cg = CodegenUtils.instance;
     private static final String THREADCONTEXT = cg.p(ThreadContext.class);
     private static final String RUBY = cg.p(Ruby.class);
@@ -213,7 +213,7 @@ public class StandardASMCompiler implements Compiler {
         classWriter = new ClassWriter(true);
         
         // Create the class with the appropriate class name and source file
-        classWriter.visit(Opcodes.V1_2, Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER, classname, null, cg.p(Object.class), new String[] {cg.p(Script.class)});
+        classWriter.visit(V1_2, ACC_PUBLIC + ACC_SUPER, classname, null, cg.p(Object.class), new String[] {cg.p(Script.class)});
         classWriter.visitSource(sourcename, null);
         
         createConstructor();
@@ -223,43 +223,43 @@ public class StandardASMCompiler implements Compiler {
         // add Script#run impl, used for running this script with a specified threadcontext and self
         // root method of a script is always in __load__ method
         String methodName = "__file__";
-        MethodVisitor mv = getClassVisitor().visitMethod(Opcodes.ACC_PUBLIC, "run", METHOD_SIGNATURE, null, null);
+        MethodVisitor mv = getClassVisitor().visitMethod(ACC_PUBLIC, "run", METHOD_SIGNATURE, null, null);
         mv.visitCode();
         
         // invoke __file__ with threadcontext, self, args (null), and block (null)
         // These are all +1 because run is an instance method where others are static
-        mv.visitVarInsn(Opcodes.ALOAD, THREADCONTEXT_INDEX + 1);
-        mv.visitVarInsn(Opcodes.ALOAD, SELF_INDEX + 1);
-        mv.visitVarInsn(Opcodes.ALOAD, ARGS_INDEX + 1);
-        mv.visitVarInsn(Opcodes.ALOAD, CLOSURE_INDEX + 1);
+        mv.visitVarInsn(ALOAD, THREADCONTEXT_INDEX + 1);
+        mv.visitVarInsn(ALOAD, SELF_INDEX + 1);
+        mv.visitVarInsn(ALOAD, ARGS_INDEX + 1);
+        mv.visitVarInsn(ALOAD, CLOSURE_INDEX + 1);
         
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC, classname, methodName, METHOD_SIGNATURE);
-        mv.visitInsn(Opcodes.ARETURN);
+        mv.visitMethodInsn(INVOKESTATIC, classname, methodName, METHOD_SIGNATURE);
+        mv.visitInsn(ARETURN);
         mv.visitMaxs(1, 1);
         mv.visitEnd();
         
         // add main impl, used for detached or command-line execution of this script with a new runtime
         // root method of a script is always in stub0, method0
-        mv = getClassVisitor().visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "main", cg.sig(Void.TYPE, cg.params(String[].class)), null, null);
+        mv = getClassVisitor().visitMethod(ACC_PUBLIC | ACC_STATIC, "main", cg.sig(Void.TYPE, cg.params(String[].class)), null, null);
         mv.visitCode();
         
         // new instance to invoke run against
-        mv.visitTypeInsn(Opcodes.NEW, classname);
-        mv.visitInsn(Opcodes.DUP);
-        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, classname, "<init>", cg.sig(Void.TYPE));
+        mv.visitTypeInsn(NEW, classname);
+        mv.visitInsn(DUP);
+        mv.visitMethodInsn(INVOKESPECIAL, classname, "<init>", cg.sig(Void.TYPE));
         
         // invoke run with threadcontext and topself
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(Ruby.class), "getDefaultInstance", cg.sig(Ruby.class));
-        mv.visitInsn(Opcodes.DUP);
+        mv.visitMethodInsn(INVOKESTATIC, cg.p(Ruby.class), "getDefaultInstance", cg.sig(Ruby.class));
+        mv.visitInsn(DUP);
         
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, RUBY, "getCurrentContext", cg.sig(ThreadContext.class));
-        mv.visitInsn(Opcodes.SWAP);
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, RUBY, "getTopSelf", cg.sig(IRubyObject.class));
-        mv.visitFieldInsn(Opcodes.GETSTATIC, cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
-        mv.visitFieldInsn(Opcodes.GETSTATIC, cg.p(Block.class), "NULL_BLOCK", cg.ci(Block.class));
+        mv.visitMethodInsn(INVOKEVIRTUAL, RUBY, "getCurrentContext", cg.sig(ThreadContext.class));
+        mv.visitInsn(SWAP);
+        mv.visitMethodInsn(INVOKEVIRTUAL, RUBY, "getTopSelf", cg.sig(IRubyObject.class));
+        mv.visitFieldInsn(GETSTATIC, cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
+        mv.visitFieldInsn(GETSTATIC, cg.p(Block.class), "NULL_BLOCK", cg.ci(Block.class));
         
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, classname, "run", METHOD_SIGNATURE);
-        mv.visitInsn(Opcodes.RETURN);
+        mv.visitMethodInsn(INVOKEVIRTUAL, classname, "run", METHOD_SIGNATURE);
+        mv.visitInsn(RETURN);
         mv.visitMaxs(1, 1);
         mv.visitEnd();
     }
@@ -267,53 +267,53 @@ public class StandardASMCompiler implements Compiler {
     private void createConstructor() {
         ClassVisitor cv = getClassVisitor();
         
-        MethodVisitor mv = cv.visitMethod(Opcodes.ACC_PUBLIC, "<init>", cg.sig(Void.TYPE), null, null);
+        MethodVisitor mv = cv.visitMethod(ACC_PUBLIC, "<init>", cg.sig(Void.TYPE), null, null);
         mv.visitCode();
-        mv.visitVarInsn(Opcodes.ALOAD, 0);
-        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, cg.p(Object.class), "<init>",
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitMethodInsn(INVOKESPECIAL, cg.p(Object.class), "<init>",
                 cg.sig(Void.TYPE));
-        mv.visitInsn(Opcodes.RETURN);
+        mv.visitInsn(RETURN);
         mv.visitMaxs(1, 1);
         mv.visitEnd();
     }
     
     public Object beginMethod(String friendlyName, int arity, int localVarCount) {
-        MethodVisitor newMethod = getClassVisitor().visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, friendlyName, METHOD_SIGNATURE, null, null);
+        MethodVisitor newMethod = getClassVisitor().visitMethod(ACC_PUBLIC | ACC_STATIC, friendlyName, METHOD_SIGNATURE, null, null);
         pushMethodVisitor(newMethod);
         
         newMethod.visitCode();
         
         // set up a local IRuby variable
-        newMethod.visitVarInsn(Opcodes.ALOAD, THREADCONTEXT_INDEX);
+        newMethod.visitVarInsn(ALOAD, THREADCONTEXT_INDEX);
         invokeThreadContext("getRuntime", cg.sig(Ruby.class));
-        newMethod.visitVarInsn(Opcodes.ASTORE, RUNTIME_INDEX);
+        newMethod.visitVarInsn(ASTORE, RUNTIME_INDEX);
         
         // check arity
         newMethod.visitLdcInsn(new Integer(arity));
-        newMethod.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(Arity.class), "createArity", cg.sig(Arity.class, cg.params(Integer.TYPE)));
+        newMethod.visitMethodInsn(INVOKESTATIC, cg.p(Arity.class), "createArity", cg.sig(Arity.class, cg.params(Integer.TYPE)));
         loadRuntime();
-        newMethod.visitVarInsn(Opcodes.ALOAD, ARGS_INDEX);
-        newMethod.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(Arity.class), "checkArity", cg.sig(Void.TYPE, cg.params(Ruby.class, IRubyObject[].class)));
+        newMethod.visitVarInsn(ALOAD, ARGS_INDEX);
+        newMethod.visitMethodInsn(INVOKEVIRTUAL, cg.p(Arity.class), "checkArity", cg.sig(Void.TYPE, cg.params(Ruby.class, IRubyObject[].class)));
         
         // logic to start off the root node's code with local var slots and all
         newMethod.visitLdcInsn(new Integer(localVarCount));
-        newMethod.visitTypeInsn(Opcodes.ANEWARRAY, cg.p(IRubyObject.class));
+        newMethod.visitTypeInsn(ANEWARRAY, cg.p(IRubyObject.class));
         
         // store the local vars in a local variable
-        newMethod.visitVarInsn(Opcodes.ASTORE, LOCAL_VARS_INDEX);
+        newMethod.visitVarInsn(ASTORE, LOCAL_VARS_INDEX);
         
         // arraycopy arguments into local vars array
-        newMethod.visitVarInsn(Opcodes.ALOAD, ARGS_INDEX);
-        newMethod.visitInsn(Opcodes.ICONST_0);
-        newMethod.visitVarInsn(Opcodes.ALOAD, LOCAL_VARS_INDEX);
-        newMethod.visitInsn(Opcodes.ICONST_2);
+        newMethod.visitVarInsn(ALOAD, ARGS_INDEX);
+        newMethod.visitInsn(ICONST_0);
+        newMethod.visitVarInsn(ALOAD, LOCAL_VARS_INDEX);
+        newMethod.visitInsn(ICONST_2);
         newMethod.visitLdcInsn(new Integer(arity));
         
-        newMethod.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(System.class), "arraycopy", cg.sig(Void.TYPE, cg.params(Object.class, Integer.TYPE, Object.class, Integer.TYPE, Integer.TYPE)));
+        newMethod.visitMethodInsn(INVOKESTATIC, cg.p(System.class), "arraycopy", cg.sig(Void.TYPE, cg.params(Object.class, Integer.TYPE, Object.class, Integer.TYPE, Integer.TYPE)));
         
         // put a null at register 4, for closure creation to know we're at top-level or local scope
-        newMethod.visitInsn(Opcodes.ACONST_NULL);
-        newMethod.visitVarInsn(Opcodes.ASTORE, SCOPE_INDEX);
+        newMethod.visitInsn(ACONST_NULL);
+        newMethod.visitVarInsn(ASTORE, SCOPE_INDEX);
         
         // visit a label to start scoping for local vars in this method
         Label start = new Label();
@@ -331,7 +331,7 @@ public class StandardASMCompiler implements Compiler {
         
         MethodVisitor mv = (MethodVisitor)token;
         // return last value from execution
-        mv.visitInsn(Opcodes.ARETURN);
+        mv.visitInsn(ARETURN);
         
         // end of variable scope
         Label end = new Label();
@@ -361,17 +361,17 @@ public class StandardASMCompiler implements Compiler {
         MethodVisitor mv = getMethodVisitor();
         
         // get args[0] and stuff it under the receiver
-        mv.visitInsn(Opcodes.DUP);
-        mv.visitInsn(Opcodes.ICONST_0);
-        mv.visitInsn(Opcodes.AALOAD);
-        mv.visitInsn(Opcodes.DUP_X2);
-        mv.visitInsn(Opcodes.POP);
+        mv.visitInsn(DUP);
+        mv.visitInsn(ICONST_0);
+        mv.visitInsn(AALOAD);
+        mv.visitInsn(DUP_X2);
+        mv.visitInsn(POP);
         
         // FIXME: I use VARIABLE here, but evaluator only does it if receiver == self...
         invokeDynamic(name, true, true, CallType.VARIABLE, null);
         
         // pop result, use args[0] captured above
-        mv.visitInsn(Opcodes.POP);
+        mv.visitInsn(POP);
     }
     
     public void invokeDynamic(String name, boolean hasReceiver, boolean hasArgs, CallType callType, ClosureCallback closureArg) {
@@ -388,29 +388,29 @@ public class StandardASMCompiler implements Compiler {
                 
                 loadThreadContext();
                 // put under args
-                mv.visitInsn(Opcodes.SWAP);
+                mv.visitInsn(SWAP);
             } else {
                 // FCall
                 // no receiver present, use self
                 loadSelf();
                 // put self under args
-                mv.visitInsn(Opcodes.SWAP);
+                mv.visitInsn(SWAP);
                 
                 loadThreadContext();
                 // put under args
-                mv.visitInsn(Opcodes.SWAP);
+                mv.visitInsn(SWAP);
             }
             
             if (index != 0) {
                 // load method index
                 mv.visitLdcInsn(new Byte(index));
                 // put under args
-                mv.visitInsn(Opcodes.SWAP);
+                mv.visitInsn(SWAP);
             }
             
             mv.visitLdcInsn(name);
             // put under args
-            mv.visitInsn(Opcodes.SWAP);
+            mv.visitInsn(SWAP);
         } else {
             if (hasReceiver) {
                 // Call with no args
@@ -434,16 +434,16 @@ public class StandardASMCompiler implements Compiler {
             mv.visitLdcInsn(name);
             
             // empty args list
-            mv.visitFieldInsn(Opcodes.GETSTATIC, cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
+            mv.visitFieldInsn(GETSTATIC, cg.p(IRubyObject.class), "NULL_ARRAY", cg.ci(IRubyObject[].class));
         }
         
         // load self for visibility checks
         loadSelf();
         
-        mv.visitFieldInsn(Opcodes.GETSTATIC, cg.p(CallType.class), callType.toString(), cg.ci(CallType.class));
+        mv.visitFieldInsn(GETSTATIC, cg.p(CallType.class), callType.toString(), cg.ci(CallType.class));
         
         if (closureArg == null) {
-            mv.visitFieldInsn(Opcodes.GETSTATIC, cg.p(Block.class), "NULL_BLOCK", cg.ci(Block.class));
+            mv.visitFieldInsn(GETSTATIC, cg.p(Block.class), "NULL_BLOCK", cg.ci(Block.class));
         } else {
             closureArg.compile(this);
         }
@@ -469,14 +469,14 @@ public class StandardASMCompiler implements Compiler {
 
             // no physical break, terminate loop and skip catch block
             Label normalBreak = new Label();
-            mv.visitJumpInsn(Opcodes.GOTO, normalBreak);
+            mv.visitJumpInsn(GOTO, normalBreak);
 
             mv.visitLabel(tryCatch);
             {
                 // this logic is largely to handle the kernel "loop" behavior. See JRUBY-530.
-                mv.visitInsn(Opcodes.DUP);
-                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(JumpException.class), "getJumpType", cg.sig(JumpException.JumpType.class));
-                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(JumpException.JumpType.class), "getTypeId", cg.sig(Integer.TYPE));
+                mv.visitInsn(DUP);
+                mv.visitMethodInsn(INVOKEVIRTUAL, cg.p(JumpException.class), "getJumpType", cg.sig(JumpException.JumpType.class));
+                mv.visitMethodInsn(INVOKEVIRTUAL, cg.p(JumpException.JumpType.class), "getTypeId", cg.sig(Integer.TYPE));
 
                 Label tryDefault = new Label();
                 Label breakLabel = new Label();
@@ -485,35 +485,35 @@ public class StandardASMCompiler implements Compiler {
 
                 // default is to just re-throw unhandled exception
                 mv.visitLabel(tryDefault);
-                mv.visitInsn(Opcodes.ATHROW);
+                mv.visitInsn(ATHROW);
 
                 // break just terminates the loop normally, unless it's a block break...
                 mv.visitLabel(breakLabel);
 
                 // Check if it's a break from the passed-in block
-                mv.visitInsn(Opcodes.DUP);
-                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(JumpException.class), "isBreakInKernelLoop", cg.sig(Boolean.TYPE));
+                mv.visitInsn(DUP);
+                mv.visitMethodInsn(INVOKEVIRTUAL, cg.p(JumpException.class), "isBreakInKernelLoop", cg.sig(Boolean.TYPE));
                 Label notBreakInKernelLoop = new Label();
-                mv.visitJumpInsn(Opcodes.IFEQ, notBreakInKernelLoop);
-                mv.visitInsn(Opcodes.DUP);
+                mv.visitJumpInsn(IFEQ, notBreakInKernelLoop);
+                mv.visitInsn(DUP);
                 // compare target with block
-                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(JumpException.class), "getTarget", cg.sig(Object.class));
+                mv.visitMethodInsn(INVOKEVIRTUAL, cg.p(JumpException.class), "getTarget", cg.sig(Object.class));
                 loadClosure();
                 Label notBlockBreak = new Label();
-                mv.visitJumpInsn(Opcodes.IF_ACMPNE, notBlockBreak);
-                mv.visitInsn(Opcodes.DUP);
+                mv.visitJumpInsn(IF_ACMPNE, notBlockBreak);
+                mv.visitInsn(DUP);
                 mv.visitLdcInsn(Boolean.FALSE);
-                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(JumpException.class), "setBreakInKernelLoop", cg.sig(Void.TYPE, cg.params(Boolean.TYPE)));
+                mv.visitMethodInsn(INVOKEVIRTUAL, cg.p(JumpException.class), "setBreakInKernelLoop", cg.sig(Void.TYPE, cg.params(Boolean.TYPE)));
 
                 mv.visitLabel(notBlockBreak);
                 // target is not == closure, rethrow
-                mv.visitInsn(Opcodes.ATHROW);
+                mv.visitInsn(ATHROW);
                 
                 mv.visitLabel(notBreakInKernelLoop);
                 // not a "loop" break, get out value
                 
-                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(JumpException.class), "getValue", cg.sig(Object.class));
-                mv.visitTypeInsn(Opcodes.CHECKCAST, cg.p(IRubyObject.class));
+                mv.visitMethodInsn(INVOKEVIRTUAL, cg.p(JumpException.class), "getValue", cg.sig(Object.class));
+                mv.visitTypeInsn(CHECKCAST, cg.p(IRubyObject.class));
             }
 
             mv.visitLabel(normalBreak);
@@ -526,44 +526,44 @@ public class StandardASMCompiler implements Compiler {
         MethodVisitor method = getMethodVisitor();
         
         if (hasArgs) {
-            method.visitInsn(Opcodes.SWAP);
+            method.visitInsn(SWAP);
             
             loadThreadContext();
-            method.visitInsn(Opcodes.SWAP);
+            method.visitInsn(SWAP);
             
             // args now here
         } else {
             loadThreadContext();
             
             // empty args
-            method.visitInsn(Opcodes.ACONST_NULL);
+            method.visitInsn(ACONST_NULL);
         }
         
         loadSelf();
         getRubyClass();
         method.visitLdcInsn(Boolean.FALSE);
         
-        method.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(Block.class), "yield", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, IRubyObject.class, RubyModule.class, Boolean.TYPE)));
+        method.visitMethodInsn(INVOKEVIRTUAL, cg.p(Block.class), "yield", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, IRubyObject.class, RubyModule.class, Boolean.TYPE)));
     }
     
     private void invokeIRubyObject(String methodName, String signature) {
-        getMethodVisitor().visitMethodInsn(Opcodes.INVOKEINTERFACE, IRUBYOBJECT, methodName, signature);
+        getMethodVisitor().visitMethodInsn(INVOKEINTERFACE, IRUBYOBJECT, methodName, signature);
     }
     
     public void loadThreadContext() {
-        getMethodVisitor().visitVarInsn(Opcodes.ALOAD, THREADCONTEXT_INDEX);
+        getMethodVisitor().visitVarInsn(ALOAD, THREADCONTEXT_INDEX);
     }
     
     public void loadClosure() {
-        getMethodVisitor().visitVarInsn(Opcodes.ALOAD, CLOSURE_INDEX);
+        getMethodVisitor().visitVarInsn(ALOAD, CLOSURE_INDEX);
     }
     
     public void loadSelf() {
-        getMethodVisitor().visitVarInsn(Opcodes.ALOAD, SELF_INDEX);
+        getMethodVisitor().visitVarInsn(ALOAD, SELF_INDEX);
     }
     
     public void loadRuntime() {
-        getMethodVisitor().visitVarInsn(Opcodes.ALOAD, RUNTIME_INDEX);
+        getMethodVisitor().visitVarInsn(ALOAD, RUNTIME_INDEX);
     }
     
     public void loadNil() {
@@ -582,7 +582,7 @@ public class StandardASMCompiler implements Compiler {
     }
     
     public void consumeCurrentValue() {
-        getMethodVisitor().visitInsn(Opcodes.POP);
+        getMethodVisitor().visitInsn(POP);
     }
     
     public void retrieveSelf() {
@@ -596,22 +596,22 @@ public class StandardASMCompiler implements Compiler {
     
     public void assignLocalVariable(int index) {
         MethodVisitor mv = getMethodVisitor();
-        mv.visitInsn(Opcodes.DUP);
+        mv.visitInsn(DUP);
         //if ((index - 2) < Math.abs(getArity())) {
             // load from the incoming params
             // index is 2-based, and our zero is runtime
             
             // load args array
-        //    mv.visitVarInsn(Opcodes.ALOAD, ARGS_INDEX);
+        //    mv.visitVarInsn(ALOAD, ARGS_INDEX);
         //    index = index - 2;
         //} else {
-            mv.visitVarInsn(Opcodes.ALOAD, LOCAL_VARS_INDEX);
+            mv.visitVarInsn(ALOAD, LOCAL_VARS_INDEX);
         //}
         
-        mv.visitInsn(Opcodes.SWAP);
+        mv.visitInsn(SWAP);
         mv.visitLdcInsn(new Integer(index));
-        mv.visitInsn(Opcodes.SWAP);
-        mv.visitInsn(Opcodes.AASTORE);
+        mv.visitInsn(SWAP);
+        mv.visitInsn(AASTORE);
     }
     
     public void retrieveLocalVariable(int index) {
@@ -624,13 +624,13 @@ public class StandardASMCompiler implements Compiler {
             // index is 2-based, and our zero is runtime
             
             // load args array
-        //    mv.visitVarInsn(Opcodes.ALOAD, ARGS_INDEX);
+        //    mv.visitVarInsn(ALOAD, ARGS_INDEX);
         //    mv.visitLdcInsn(new Integer(index - 2));
-        //    mv.visitInsn(Opcodes.AALOAD);
+        //    mv.visitInsn(AALOAD);
         //} else {
-            mv.visitVarInsn(Opcodes.ALOAD, LOCAL_VARS_INDEX);
+            mv.visitVarInsn(ALOAD, LOCAL_VARS_INDEX);
             mv.visitLdcInsn(new Integer(index));
-            mv.visitInsn(Opcodes.AALOAD);
+            mv.visitInsn(AALOAD);
         //}
     }
     
@@ -641,18 +641,18 @@ public class StandardASMCompiler implements Compiler {
         }
 
         MethodVisitor mv = getMethodVisitor();
-        mv.visitInsn(Opcodes.DUP);
+        mv.visitInsn(DUP);
         
         // get the appropriate array out of the scopes
-        mv.visitVarInsn(Opcodes.ALOAD, SCOPE_INDEX);
+        mv.visitVarInsn(ALOAD, SCOPE_INDEX);
         mv.visitLdcInsn(new Integer(depth - 1));
-        mv.visitInsn(Opcodes.AALOAD);
+        mv.visitInsn(AALOAD);
         
         // insert the value into the array at the specified index
-        mv.visitInsn(Opcodes.SWAP);
+        mv.visitInsn(SWAP);
         mv.visitLdcInsn(new Integer(index));
-        mv.visitInsn(Opcodes.SWAP);
-        mv.visitInsn(Opcodes.AASTORE);
+        mv.visitInsn(SWAP);
+        mv.visitInsn(AASTORE);
     }
     
     public void retrieveLocalVariable(int index, int depth) {
@@ -664,13 +664,13 @@ public class StandardASMCompiler implements Compiler {
         MethodVisitor mv = getMethodVisitor();
         
         // get the appropriate array out of the scopes
-        mv.visitVarInsn(Opcodes.ALOAD, SCOPE_INDEX);
+        mv.visitVarInsn(ALOAD, SCOPE_INDEX);
         mv.visitLdcInsn(new Integer(depth - 1));
-        mv.visitInsn(Opcodes.AALOAD);
+        mv.visitInsn(AALOAD);
         
         // load the value from the array at the specified index
         mv.visitLdcInsn(new Integer(index));
-        mv.visitInsn(Opcodes.AALOAD);
+        mv.visitInsn(AALOAD);
     }
     
     public void retrieveConstant(String name) {
@@ -697,7 +697,7 @@ public class StandardASMCompiler implements Compiler {
         loadRuntime();
         mv.visitLdcInsn(value.toString());
         
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC,cg.p(RubyBignum.class) , "newBignum", cg.sig(RubyBignum.class,cg.params(Ruby.class,String.class)));
+        mv.visitMethodInsn(INVOKESTATIC,cg.p(RubyBignum.class) , "newBignum", cg.sig(RubyBignum.class,cg.params(Ruby.class,String.class)));
     }
     
     public void createNewString(ByteList value) {
@@ -721,7 +721,7 @@ public class StandardASMCompiler implements Compiler {
         
         loadRuntime();
         // put under object array already present
-        mv.visitInsn(Opcodes.SWAP);
+        mv.visitInsn(SWAP);
         
         invokeIRuby("newArray", cg.sig(RubyArray.class, cg.params(IRubyObject[].class)));
     }
@@ -742,15 +742,15 @@ public class StandardASMCompiler implements Compiler {
         MethodVisitor mv = getMethodVisitor();
         
         mv.visitLdcInsn(new Integer(sourceArray.length));
-        mv.visitTypeInsn(Opcodes.ANEWARRAY, type);
+        mv.visitTypeInsn(ANEWARRAY, type);
         
         for (int i = 0; i < sourceArray.length; i++) {
-            mv.visitInsn(Opcodes.DUP);
+            mv.visitInsn(DUP);
             mv.visitLdcInsn(new Integer(i));
             
             callback.nextValue(this, sourceArray, i);
             
-            mv.visitInsn(Opcodes.AASTORE);
+            mv.visitInsn(AASTORE);
         }
     }
     
@@ -759,7 +759,7 @@ public class StandardASMCompiler implements Compiler {
 
         loadRuntime();
         
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(RubyHash.class), "newHash", cg.sig(RubyHash.class, cg.params(Ruby.class)));
+        mv.visitMethodInsn(INVOKESTATIC, cg.p(RubyHash.class), "newHash", cg.sig(RubyHash.class, cg.params(Ruby.class)));
     }
     
     public void createNewHash(Object elements, ArrayCallback callback, int keyCount) {
@@ -768,19 +768,19 @@ public class StandardASMCompiler implements Compiler {
         loadRuntime();
         
         // create a new hashmap
-        mv.visitTypeInsn(Opcodes.NEW, cg.p(HashMap.class));
-        mv.visitInsn(Opcodes.DUP);       
-        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, cg.p(HashMap.class), "<init>", cg.sig(Void.TYPE));
+        mv.visitTypeInsn(NEW, cg.p(HashMap.class));
+        mv.visitInsn(DUP);       
+        mv.visitMethodInsn(INVOKESPECIAL, cg.p(HashMap.class), "<init>", cg.sig(Void.TYPE));
         
         for (int i = 0; i < keyCount; i++) {
-            mv.visitInsn(Opcodes.DUP);       
+            mv.visitInsn(DUP);       
             callback.nextValue(this, elements, i);
-            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(HashMap.class), "put", cg.sig(Object.class, cg.params(Object.class, Object.class)));
-            mv.visitInsn(Opcodes.POP);
+            mv.visitMethodInsn(INVOKEVIRTUAL, cg.p(HashMap.class), "put", cg.sig(Object.class, cg.params(Object.class, Object.class)));
+            mv.visitInsn(POP);
         }
         
         loadNil();
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(RubyHash.class), "newHash", cg.sig(RubyHash.class, cg.params(Ruby.class, Map.class, IRubyObject.class)));
+        mv.visitMethodInsn(INVOKESTATIC, cg.p(RubyHash.class), "newHash", cg.sig(RubyHash.class, cg.params(Ruby.class, Map.class, IRubyObject.class)));
     }
     
     public void createNewRange(boolean isExclusive) {
@@ -788,12 +788,12 @@ public class StandardASMCompiler implements Compiler {
         
         loadRuntime();
         
-        mv.visitInsn(Opcodes.DUP_X2);
-        mv.visitInsn(Opcodes.POP);
+        mv.visitInsn(DUP_X2);
+        mv.visitInsn(POP);
 
         mv.visitLdcInsn(new Boolean(isExclusive));
         
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(RubyRange.class), "newRange", cg.sig(RubyRange.class, cg.params(Ruby.class, IRubyObject.class, IRubyObject.class, Boolean.TYPE)));
+        mv.visitMethodInsn(INVOKESTATIC, cg.p(RubyRange.class), "newRange", cg.sig(RubyRange.class, cg.params(Ruby.class, IRubyObject.class, IRubyObject.class, Boolean.TYPE)));
     }
     
     /**
@@ -812,9 +812,9 @@ public class StandardASMCompiler implements Compiler {
         // call isTrue on the result
         isTrue();
         
-        mv.visitJumpInsn(Opcodes.IFEQ, falseJmp); // EQ == 0 (i.e. false)
+        mv.visitJumpInsn(IFEQ, falseJmp); // EQ == 0 (i.e. false)
         trueBranch.branch(this);
-        mv.visitJumpInsn(Opcodes.GOTO, afterJmp);
+        mv.visitJumpInsn(GOTO, afterJmp);
         
         // FIXME: optimize for cases where we have no false branch
         mv.visitLabel(falseJmp);
@@ -830,14 +830,14 @@ public class StandardASMCompiler implements Compiler {
         MethodVisitor mv = getMethodVisitor();
         
         // dup it since we need to return appropriately if it's false
-        mv.visitInsn(Opcodes.DUP);
+        mv.visitInsn(DUP);
         
         // call isTrue on the result
         isTrue();
         
-        mv.visitJumpInsn(Opcodes.IFEQ, falseJmp); // EQ == 0 (i.e. false)
+        mv.visitJumpInsn(IFEQ, falseJmp); // EQ == 0 (i.e. false)
         // pop the extra result and replace with the send part of the AND
-        mv.visitInsn(Opcodes.POP);
+        mv.visitInsn(POP);
         longBranch.branch(this);
         mv.visitLabel(falseJmp);
     }
@@ -849,14 +849,14 @@ public class StandardASMCompiler implements Compiler {
         MethodVisitor mv = getMethodVisitor();
         
         // dup it since we need to return appropriately if it's false
-        mv.visitInsn(Opcodes.DUP);
+        mv.visitInsn(DUP);
         
         // call isTrue on the result
         isTrue();
         
-        mv.visitJumpInsn(Opcodes.IFNE, falseJmp); // EQ == 0 (i.e. false)
+        mv.visitJumpInsn(IFNE, falseJmp); // EQ == 0 (i.e. false)
         // pop the extra result and replace with the send part of the AND
-        mv.visitInsn(Opcodes.POP);
+        mv.visitInsn(POP);
         longBranch.branch(this);
         mv.visitLabel(falseJmp);
     }
@@ -880,7 +880,7 @@ public class StandardASMCompiler implements Compiler {
                 // call isTrue on the result
                 isTrue();
 
-                mv.visitJumpInsn(Opcodes.IFEQ, endJmp); // EQ == 0 (i.e. false)
+                mv.visitJumpInsn(IFEQ, endJmp); // EQ == 0 (i.e. false)
             }
 
             Label topJmp = new Label();
@@ -890,14 +890,14 @@ public class StandardASMCompiler implements Compiler {
             body.branch(this);
 
             // clear result after each loop
-            mv.visitInsn(Opcodes.POP);
+            mv.visitInsn(POP);
 
             // calculate condition
             condition.branch(this);
             // call isTrue on the result
             isTrue();
 
-            mv.visitJumpInsn(Opcodes.IFNE, topJmp); // NE == nonzero (i.e. true)
+            mv.visitJumpInsn(IFNE, topJmp); // NE == nonzero (i.e. true)
 
             if (checkFirst) {
                 mv.visitLabel(endJmp);
@@ -908,13 +908,13 @@ public class StandardASMCompiler implements Compiler {
         
         // no physical break, terminate loop and skip catch block
         Label normalBreak = new Label();
-        mv.visitJumpInsn(Opcodes.GOTO, normalBreak);
+        mv.visitJumpInsn(GOTO, normalBreak);
         
         mv.visitLabel(tryCatch);
         {
-            mv.visitInsn(Opcodes.DUP);
-            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(JumpException.class), "getJumpType", cg.sig(JumpException.JumpType.class));
-            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(JumpException.JumpType.class), "getTypeId", cg.sig(Integer.TYPE));
+            mv.visitInsn(DUP);
+            mv.visitMethodInsn(INVOKEVIRTUAL, cg.p(JumpException.class), "getJumpType", cg.sig(JumpException.JumpType.class));
+            mv.visitMethodInsn(INVOKEVIRTUAL, cg.p(JumpException.JumpType.class), "getTypeId", cg.sig(Integer.TYPE));
 
             Label tryDefault = new Label();
             Label breakLabel = new Label();
@@ -923,25 +923,25 @@ public class StandardASMCompiler implements Compiler {
 
             // default is to just re-throw unhandled exception
             mv.visitLabel(tryDefault);
-            mv.visitInsn(Opcodes.ATHROW);
+            mv.visitInsn(ATHROW);
 
             // break just terminates the loop normally, unless it's a block break...
             mv.visitLabel(breakLabel);
             
             // JRUBY-530 behavior
-            mv.visitInsn(Opcodes.DUP);
-            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(JumpException.class), "getTarget", cg.sig(Object.class));
+            mv.visitInsn(DUP);
+            mv.visitMethodInsn(INVOKEVIRTUAL, cg.p(JumpException.class), "getTarget", cg.sig(Object.class));
             loadClosure();
             Label notBlockBreak = new Label();
-            mv.visitJumpInsn(Opcodes.IF_ACMPNE, notBlockBreak);
-            mv.visitInsn(Opcodes.DUP);
-            mv.visitInsn(Opcodes.ACONST_NULL);
-            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(JumpException.class), "setTarget", cg.sig(Void.TYPE, cg.params(Object.class)));
-            mv.visitInsn(Opcodes.ATHROW);
+            mv.visitJumpInsn(IF_ACMPNE, notBlockBreak);
+            mv.visitInsn(DUP);
+            mv.visitInsn(ACONST_NULL);
+            mv.visitMethodInsn(INVOKEVIRTUAL, cg.p(JumpException.class), "setTarget", cg.sig(Void.TYPE, cg.params(Object.class)));
+            mv.visitInsn(ATHROW);
 
             mv.visitLabel(notBlockBreak);
             // target is not == closure, normal loop exit, pop remaining exception object
-            mv.visitInsn(Opcodes.POP);
+            mv.visitInsn(POP);
         }
         
         mv.visitLabel(normalBreak);
@@ -961,39 +961,39 @@ public class StandardASMCompiler implements Compiler {
         String closureFieldName = "_" + closureMethodName;
         
         // declare the field
-        cv.visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, closureFieldName, cg.ci(CompiledBlockCallback.class), null, null);
+        cv.visitField(ACC_PRIVATE | ACC_STATIC, closureFieldName, cg.ci(CompiledBlockCallback.class), null, null);
         
         ////////////////////////////
         // closure implementation
-        method = cv.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, closureMethodName, CLOSURE_SIGNATURE, null, null);
+        method = cv.visitMethod(ACC_PUBLIC | ACC_STATIC, closureMethodName, CLOSURE_SIGNATURE, null, null);
         pushMethodVisitor(method);
         
         method.visitCode();
         
         // logic to start off the closure with dvar slots
         method.visitLdcInsn(new Integer(scope.getNumberOfVariables()));
-        method.visitTypeInsn(Opcodes.ANEWARRAY, cg.p(IRubyObject.class));
+        method.visitTypeInsn(ANEWARRAY, cg.p(IRubyObject.class));
         
         // store the dvars in a local variable
-        method.visitVarInsn(Opcodes.ASTORE, LOCAL_VARS_INDEX);
+        method.visitVarInsn(ASTORE, LOCAL_VARS_INDEX);
         
         // arraycopy arguments into local vars array
         if (arity != 0) {
             // array index OOB for some reason; perhaps because we're not actually handling args right?
-            /*method.visitVarInsn(Opcodes.ALOAD, ARGS_INDEX);
-            method.visitInsn(Opcodes.ICONST_0);
-            method.visitVarInsn(Opcodes.ALOAD, LOCAL_VARS_INDEX);
-            mv.visitInsn(Opcodes.ICONST_2);
+            /*method.visitVarInsn(ALOAD, ARGS_INDEX);
+            method.visitInsn(ICONST_0);
+            method.visitVarInsn(ALOAD, LOCAL_VARS_INDEX);
+            mv.visitInsn(ICONST_2);
             method.visitLdcInsn(new Integer(arity));
-            method.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(System.class), "arraycopy", cg.sig(Void.TYPE, cg.params(Object.class, Integer.TYPE, Object.class, Integer.TYPE, Integer.TYPE)));*/
+            method.visitMethodInsn(INVOKESTATIC, cg.p(System.class), "arraycopy", cg.sig(Void.TYPE, cg.params(Object.class, Integer.TYPE, Object.class, Integer.TYPE, Integer.TYPE)));*/
         }
         
         // Containing scopes are passed as IRubyObject[][] in the SCOPE_INDEX var
         
         // set up a local IRuby variable
-        method.visitVarInsn(Opcodes.ALOAD, THREADCONTEXT_INDEX);
+        method.visitVarInsn(ALOAD, THREADCONTEXT_INDEX);
         invokeThreadContext("getRuntime", cg.sig(Ruby.class));
-        method.visitVarInsn(Opcodes.ASTORE, RUNTIME_INDEX);
+        method.visitVarInsn(ASTORE, RUNTIME_INDEX);
         
         // start of scoping for closure's vars
         Label start = new Label();
@@ -1002,7 +1002,7 @@ public class StandardASMCompiler implements Compiler {
         // visit the body of the closure
         body.compile(this);
         
-        method.visitInsn(Opcodes.ARETURN);
+        method.visitInsn(ARETURN);
         
         // end of scoping for closure's vars
         Label end = new Label();
@@ -1017,16 +1017,16 @@ public class StandardASMCompiler implements Compiler {
         // Now, store a compiled block object somewhere we can access it in the future
         
         // in current method, load the field to see if we've created a BlockCallback yet
-        method.visitFieldInsn(Opcodes.GETSTATIC, classname, closureFieldName, cg.ci(CompiledBlockCallback.class));
+        method.visitFieldInsn(GETSTATIC, classname, closureFieldName, cg.ci(CompiledBlockCallback.class));
         Label alreadyCreated = new Label();
-        method.visitJumpInsn(Opcodes.IFNONNULL, alreadyCreated);
+        method.visitJumpInsn(IFNONNULL, alreadyCreated);
         
         // no callback, construct it
         getCallbackFactory();
         
         method.visitLdcInsn(closureMethodName);
-        method.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(CallbackFactory.class), "getBlockCallback", cg.sig(CompiledBlockCallback.class, cg.params(String.class)));
-        method.visitFieldInsn(Opcodes.PUTSTATIC, classname, closureFieldName, cg.ci(CompiledBlockCallback.class));
+        method.visitMethodInsn(INVOKEVIRTUAL, cg.p(CallbackFactory.class), "getBlockCallback", cg.sig(CompiledBlockCallback.class, cg.params(String.class)));
+        method.visitFieldInsn(PUTSTATIC, classname, closureFieldName, cg.ci(CompiledBlockCallback.class));
         
         method.visitLabel(alreadyCreated);
         
@@ -1038,73 +1038,73 @@ public class StandardASMCompiler implements Compiler {
         // create an array of scopes to use
         
         // check if we have containing scopes
-        method.visitVarInsn(Opcodes.ALOAD, SCOPE_INDEX);
+        method.visitVarInsn(ALOAD, SCOPE_INDEX);
         Label noScopes = new Label();
         Label copyLocals = new Label();
-        method.visitJumpInsn(Opcodes.IFNULL, noScopes);
+        method.visitJumpInsn(IFNULL, noScopes);
         
         // we have containing scopes, include them
         
         // get length of current scopes array, add one
-        method.visitVarInsn(Opcodes.ALOAD, SCOPE_INDEX);
-        method.visitInsn(Opcodes.ARRAYLENGTH);
-        method.visitInsn(Opcodes.ICONST_1);
-        method.visitInsn(Opcodes.IADD);
+        method.visitVarInsn(ALOAD, SCOPE_INDEX);
+        method.visitInsn(ARRAYLENGTH);
+        method.visitInsn(ICONST_1);
+        method.visitInsn(IADD);
         
         // create new scopes array
-        method.visitTypeInsn(Opcodes.ANEWARRAY, cg.p(IRubyObject[].class));
+        method.visitTypeInsn(ANEWARRAY, cg.p(IRubyObject[].class));
         
         // copy containing scopes to index one and on
-        method.visitInsn(Opcodes.DUP);
-        method.visitVarInsn(Opcodes.ALOAD, SCOPE_INDEX);
-        method.visitInsn(Opcodes.SWAP);
-        method.visitInsn(Opcodes.ICONST_0);
-        method.visitInsn(Opcodes.SWAP);
+        method.visitInsn(DUP);
+        method.visitVarInsn(ALOAD, SCOPE_INDEX);
+        method.visitInsn(SWAP);
+        method.visitInsn(ICONST_0);
+        method.visitInsn(SWAP);
         // new scopes array is here now
-        method.visitInsn(Opcodes.ICONST_1);
-        method.visitVarInsn(Opcodes.ALOAD, SCOPE_INDEX);
-        method.visitInsn(Opcodes.ARRAYLENGTH);
-        method.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(System.class), "arraycopy", cg.sig(Void.TYPE, cg.params(Object.class, Integer.TYPE, Object.class, Integer.TYPE, Integer.TYPE)));
+        method.visitInsn(ICONST_1);
+        method.visitVarInsn(ALOAD, SCOPE_INDEX);
+        method.visitInsn(ARRAYLENGTH);
+        method.visitMethodInsn(INVOKESTATIC, cg.p(System.class), "arraycopy", cg.sig(Void.TYPE, cg.params(Object.class, Integer.TYPE, Object.class, Integer.TYPE, Integer.TYPE)));
 
-        method.visitJumpInsn(Opcodes.GOTO, copyLocals);
+        method.visitJumpInsn(GOTO, copyLocals);
         
         method.visitLabel(noScopes);
 
         // create new scopes array
-        method.visitInsn(Opcodes.ICONST_1);
-        method.visitTypeInsn(Opcodes.ANEWARRAY, cg.p(IRubyObject[].class));
+        method.visitInsn(ICONST_1);
+        method.visitTypeInsn(ANEWARRAY, cg.p(IRubyObject[].class));
         
         method.visitLabel(copyLocals);
 
         // store local vars at index zero
-        method.visitInsn(Opcodes.DUP);
-        method.visitInsn(Opcodes.ICONST_0);
-        method.visitVarInsn(Opcodes.ALOAD, LOCAL_VARS_INDEX);
-        method.visitInsn(Opcodes.AASTORE);
+        method.visitInsn(DUP);
+        method.visitInsn(ICONST_0);
+        method.visitVarInsn(ALOAD, LOCAL_VARS_INDEX);
+        method.visitInsn(AASTORE);
         
         loadClosure();
         
-        method.visitFieldInsn(Opcodes.GETSTATIC, classname, closureFieldName, cg.ci(CompiledBlockCallback.class));
+        method.visitFieldInsn(GETSTATIC, classname, closureFieldName, cg.ci(CompiledBlockCallback.class));
         
-        method.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(StandardASMCompiler.class), "createBlock",
+        method.visitMethodInsn(INVOKESTATIC, cg.p(StandardASMCompiler.class), "createBlock",
                 cg.sig(CompiledBlock.class, cg.params(ThreadContext.class, IRubyObject.class, Integer.TYPE, IRubyObject[][].class, Block.class, CompiledBlockCallback.class)));
     }
     
     private void invokeThreadContext(String methodName, String signature) {
         MethodVisitor mv = getMethodVisitor();
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, THREADCONTEXT, methodName, signature);
+        mv.visitMethodInsn(INVOKEVIRTUAL, THREADCONTEXT, methodName, signature);
     }
     
     private void invokeIRuby(String methodName, String signature) {
         MethodVisitor mv = getMethodVisitor();
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, RUBY, methodName, signature);
+        mv.visitMethodInsn(INVOKEVIRTUAL, RUBY, methodName, signature);
     }
     
     private void getCallbackFactory() {
         loadRuntime();
         MethodVisitor mv = getMethodVisitor();
         mv.visitLdcInsn(classname);
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(Class.class), "forName", cg.sig(Class.class, cg.params(String.class)));
+        mv.visitMethodInsn(INVOKESTATIC, cg.p(Class.class), "forName", cg.sig(Class.class, cg.params(String.class)));
         invokeIRuby("callbackFactory", cg.sig(CallbackFactory.class, cg.params(Class.class)));
     }
     
@@ -1134,18 +1134,18 @@ public class StandardASMCompiler implements Compiler {
     private void println() {
         MethodVisitor mv = getMethodVisitor();
         
-        mv.visitInsn(Opcodes.DUP);
-        mv.visitFieldInsn(Opcodes.GETSTATIC, cg.p(System.class), "out", cg.ci(PrintStream.class));
-        mv.visitInsn(Opcodes.SWAP);
+        mv.visitInsn(DUP);
+        mv.visitFieldInsn(GETSTATIC, cg.p(System.class), "out", cg.ci(PrintStream.class));
+        mv.visitInsn(SWAP);
         
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(PrintStream.class), "println", cg.sig(Void.TYPE, cg.params(Object.class)));
+        mv.visitMethodInsn(INVOKEVIRTUAL, cg.p(PrintStream.class), "println", cg.sig(Void.TYPE, cg.params(Object.class)));
     }
     
     public void defineAlias(String newName, String oldName) {
         getRubyClass();
         getMethodVisitor().visitLdcInsn(newName);
         getMethodVisitor().visitLdcInsn(oldName);
-        getMethodVisitor().visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(RubyModule.class), "defineAlias", cg.sig(Void.TYPE,cg.params(String.class,String.class)));
+        getMethodVisitor().visitMethodInsn(INVOKEVIRTUAL, cg.p(RubyModule.class), "defineAlias", cg.sig(Void.TYPE,cg.params(String.class,String.class)));
         loadNil();
         // TODO: should call method_added, and possibly push nil.
     }
@@ -1206,8 +1206,8 @@ public class StandardASMCompiler implements Compiler {
         MethodVisitor mv = getMethodVisitor();
         
         // put a null at register 4, for closure creation to know we're at top-level or local scope
-        mv.visitInsn(Opcodes.ACONST_NULL);
-        mv.visitVarInsn(Opcodes.ASTORE, SCOPE_INDEX);
+        mv.visitInsn(ACONST_NULL);
+        mv.visitVarInsn(ASTORE, SCOPE_INDEX);
         
         // callback to fill in method body
         body.compile(this);
@@ -1224,7 +1224,7 @@ public class StandardASMCompiler implements Compiler {
         
         // load the class we're creating, for binding purposes
         mv.visitLdcInsn(classname.replace('/', '.'));
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(Class.class), "forName", cg.sig(Class.class, cg.params(String.class)));
+        mv.visitMethodInsn(INVOKESTATIC, cg.p(Class.class), "forName", cg.sig(Class.class, cg.params(String.class)));
         
         mv.visitLdcInsn(name);
         
@@ -1232,7 +1232,7 @@ public class StandardASMCompiler implements Compiler {
         
         mv.visitLdcInsn(new Integer(arity));
         
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC,
+        mv.visitMethodInsn(INVOKESTATIC,
                 cg.p(StandardASMCompiler.class),
                 "def",
                 cg.sig(IRubyObject.class, cg.params(ThreadContext.class, IRubyObject.class, Class.class, String.class, String.class, Integer.TYPE)));
@@ -1257,12 +1257,12 @@ public class StandardASMCompiler implements Compiler {
         invokeIRubyObject("getInstanceVariable", cg.sig(IRubyObject.class, cg.params(String.class)));
         
         // check if it's null; if so, load nil
-        mv.visitInsn(Opcodes.DUP);
+        mv.visitInsn(DUP);
         Label notNull = new Label();
-        mv.visitJumpInsn(Opcodes.IFNONNULL, notNull);
+        mv.visitJumpInsn(IFNONNULL, notNull);
         
         // pop the dup'ed null
-        mv.visitInsn(Opcodes.POP);
+        mv.visitInsn(POP);
         // replace it with nil
         loadNil();
         
@@ -1273,10 +1273,10 @@ public class StandardASMCompiler implements Compiler {
         MethodVisitor mv = getMethodVisitor();
         
         loadSelf();
-        mv.visitInsn(Opcodes.SWAP);
+        mv.visitInsn(SWAP);
         
         mv.visitLdcInsn(name);
-        mv.visitInsn(Opcodes.SWAP);
+        mv.visitInsn(SWAP);
         
         invokeIRubyObject("setInstanceVariable", cg.sig(IRubyObject.class, cg.params(String.class, IRubyObject.class)));
     }
@@ -1288,7 +1288,7 @@ public class StandardASMCompiler implements Compiler {
         
         invokeIRuby("getGlobalVariables", cg.sig(GlobalVariables.class));
         mv.visitLdcInsn(name);
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(GlobalVariables.class), "get", cg.sig(IRubyObject.class, cg.params(String.class)));
+        mv.visitMethodInsn(INVOKEVIRTUAL, cg.p(GlobalVariables.class), "get", cg.sig(IRubyObject.class, cg.params(String.class)));
     }
     
     public void assignGlobalVariable(String name) {
@@ -1297,10 +1297,10 @@ public class StandardASMCompiler implements Compiler {
         MethodVisitor mv = getMethodVisitor();
         
         invokeIRuby("getGlobalVariables", cg.sig(GlobalVariables.class));
-        mv.visitInsn(Opcodes.SWAP);
+        mv.visitInsn(SWAP);
         mv.visitLdcInsn(name);
-        mv.visitInsn(Opcodes.SWAP);
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(GlobalVariables.class), "set", cg.sig(IRubyObject.class, cg.params(String.class, IRubyObject.class)));
+        mv.visitInsn(SWAP);
+        mv.visitMethodInsn(INVOKEVIRTUAL, cg.p(GlobalVariables.class), "set", cg.sig(IRubyObject.class, cg.params(String.class, IRubyObject.class)));
     }
     
     public void negateCurrentValue() {
@@ -1309,9 +1309,9 @@ public class StandardASMCompiler implements Compiler {
         isTrue();
         Label isTrue = new Label();
         Label end = new Label();
-        mv.visitJumpInsn(Opcodes.IFNE, isTrue);
+        mv.visitJumpInsn(IFNE, isTrue);
         loadTrue();
-        mv.visitJumpInsn(Opcodes.GOTO, end);
+        mv.visitJumpInsn(GOTO, end);
         mv.visitLabel(isTrue);
         loadFalse();
         mv.visitLabel(end);
@@ -1320,18 +1320,18 @@ public class StandardASMCompiler implements Compiler {
     public void splatCurrentValue() {
         MethodVisitor method = getMethodVisitor();
         
-        method.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(EvaluationState.class), "splatValue", cg.sig(IRubyObject.class, cg.params(IRubyObject.class)));
+        method.visitMethodInsn(INVOKESTATIC, cg.p(EvaluationState.class), "splatValue", cg.sig(IRubyObject.class, cg.params(IRubyObject.class)));
     }
     
     public void singlifySplattedValue() {
         MethodVisitor method = getMethodVisitor();
-        method.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(EvaluationState.class), "aValueSplat", cg.sig(IRubyObject.class, cg.params(IRubyObject.class)));
+        method.visitMethodInsn(INVOKESTATIC, cg.p(EvaluationState.class), "aValueSplat", cg.sig(IRubyObject.class, cg.params(IRubyObject.class)));
     }
     
     public void ensureRubyArray() {
         MethodVisitor method = getMethodVisitor();
         
-        method.visitMethodInsn(Opcodes.INVOKESTATIC, cg.p(StandardASMCompiler.class), "ensureRubyArray", cg.sig(RubyArray.class, cg.params(IRubyObject.class)));
+        method.visitMethodInsn(INVOKESTATIC, cg.p(StandardASMCompiler.class), "ensureRubyArray", cg.sig(RubyArray.class, cg.params(IRubyObject.class)));
     }
     
     public static RubyArray ensureRubyArray(IRubyObject value) {
@@ -1347,15 +1347,15 @@ public class StandardASMCompiler implements Compiler {
         Label noMoreArrayElements = new Label();
         for (; start < count; start++) {
             // confirm we're not past the end of the array
-            method.visitInsn(Opcodes.DUP); // dup the original array object
-            method.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(RubyArray.class), "getLength", cg.sig(Integer.TYPE, cg.params()));
+            method.visitInsn(DUP); // dup the original array object
+            method.visitMethodInsn(INVOKEVIRTUAL, cg.p(RubyArray.class), "getLength", cg.sig(Integer.TYPE, cg.params()));
             method.visitLdcInsn(new Integer(start));
-            method.visitJumpInsn(Opcodes.IFLE, noMoreArrayElements); // if length <= start, end loop
+            method.visitJumpInsn(IFLE, noMoreArrayElements); // if length <= start, end loop
             
             // extract item from array
-            method.visitInsn(Opcodes.DUP); // dup the original array object
+            method.visitInsn(DUP); // dup the original array object
             method.visitLdcInsn(new Integer(start)); // index for the item
-            method.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(RubyArray.class), "entry",
+            method.visitMethodInsn(INVOKEVIRTUAL, cg.p(RubyArray.class), "entry",
                     cg.sig(IRubyObject.class, cg.params(Long.TYPE))); // extract item
             callback.nextValue(this, source, start);
         }
@@ -1393,16 +1393,16 @@ public class StandardASMCompiler implements Compiler {
     public void issueBreakEvent() {
         MethodVisitor mv = getMethodVisitor();
         
-        mv.visitTypeInsn(Opcodes.NEW, cg.p(JumpException.class));
-        mv.visitInsn(Opcodes.DUP);
-        mv.visitFieldInsn(Opcodes.GETSTATIC, cg.p(JumpException.JumpType.class), "BreakJump", cg.ci(JumpException.JumpType.class));
-        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, cg.p(JumpException.class), "<init>", cg.sig(Void.TYPE, cg.params(JumpException.JumpType.class)));
+        mv.visitTypeInsn(NEW, cg.p(JumpException.class));
+        mv.visitInsn(DUP);
+        mv.visitFieldInsn(GETSTATIC, cg.p(JumpException.JumpType.class), "BreakJump", cg.ci(JumpException.JumpType.class));
+        mv.visitMethodInsn(INVOKESPECIAL, cg.p(JumpException.class), "<init>", cg.sig(Void.TYPE, cg.params(JumpException.JumpType.class)));
         
         // set result into jump exception
-        mv.visitInsn(Opcodes.DUP_X1);
-        mv.visitInsn(Opcodes.SWAP);
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cg.p(JumpException.class), "setValue", cg.sig(Void.TYPE, cg.params(Object.class)));
+        mv.visitInsn(DUP_X1);
+        mv.visitInsn(SWAP);
+        mv.visitMethodInsn(INVOKEVIRTUAL, cg.p(JumpException.class), "setValue", cg.sig(Void.TYPE, cg.params(Object.class)));
         
-        mv.visitInsn(Opcodes.ATHROW);
+        mv.visitInsn(ATHROW);
     }
 }
