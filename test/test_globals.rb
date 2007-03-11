@@ -67,6 +67,8 @@ class TestGlobals < Test::Unit::TestCase
   end
   
   def test_locally_scoped_globals
+    assert_no_exception { $_.to_s }
+    assert_no_exception { $~.to_s }
     $_ = 'one'
     'one' =~ /one/
     second_call
