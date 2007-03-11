@@ -185,6 +185,7 @@
                     <sysproperty key="jruby.home" value="${basedir}/../.."/>
                     <sysproperty key="jruby.base" value="${basedir}/../.."/>
                     <sysproperty key="jruby.lib" value="${basedir}/../../lib"/>
+                    <sysproperty key="jruby.inprocscript.disabled" value="true"/>
                     <test name="org.jruby.test.MainTestSuite" unless="maven.test.skip" todir="${project.build.directory}/surefire-reports"/>
                     <test name="org.jruby.test.ScriptTestSuite" unless="maven.test.skip" todir="${project.build.directory}/surefire-reports"/>
                     <test name="org.jruby.test.TestUnitTestSuite" unless="maven.test.skip" todir="${project.build.directory}/surefire-reports"/>
