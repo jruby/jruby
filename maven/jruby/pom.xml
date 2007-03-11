@@ -128,7 +128,6 @@
             <configuration>
               <tasks>
                 <mkdir dir="${project.build.directory}/surefire-reports"/>
-                <echo>jruby.home is ${basedir}/../..</echo>
                 <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask"
                   classpathref="maven.plugin.classpath"/>
                 <junit fork="yes" forkMode="once" haltonfailure="true" dir="${project.build.testOutputDirectory}" maxmemory="384M">
