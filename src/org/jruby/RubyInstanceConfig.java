@@ -42,16 +42,12 @@ public class RubyInstanceConfig {
     private boolean objectSpaceEnabled = true;
     private String currentDirectory;
     private Map environment;
-    private boolean inProcessScriptDisabled = false;
 
     {
         try {
             currentDirectory = JRubyFile.getFileProperty("user.dir");
             if (System.getProperty("jruby.objectspace.enabled") != null) {
                 objectSpaceEnabled = Boolean.getBoolean("jruby.objectspace.enabled");
-            }
-            if (System.getProperty("jruby.inprocscript.disabled") != null) {
-                objectSpaceEnabled = Boolean.getBoolean("jruby.inprocscript.disabled");
             }
         } catch (AccessControlException accessEx) {
             // default to "/" as current dir for applets (which can't read from FS anyway)
@@ -110,15 +106,6 @@ public class RubyInstanceConfig {
     public boolean isObjectSpaceEnabled() {
         return objectSpaceEnabled;
     }
-
-    public void setInProcessScriptDisabled(boolean newInProcessScriptDisabled) {
-        inProcessScriptDisabled = newInProcessScriptDisabled;
-    }
-
-    public boolean isInProcessScriptDisabled() {
-        return inProcessScriptDisabled;
-    }
-    
 
     public void setEnvironment(Map newEnvironment) {
         environment = newEnvironment;

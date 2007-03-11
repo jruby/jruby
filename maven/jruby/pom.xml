@@ -128,6 +128,7 @@
             <configuration>
               <tasks>
                 <mkdir dir="${project.build.directory}/surefire-reports"/>
+                <echo>jruby.home is ${basedir}/../..</echo>
                 <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask"
                   classpathref="maven.plugin.classpath"/>
                 <junit fork="yes" forkMode="once" haltonfailure="true" dir="${project.build.testOutputDirectory}" maxmemory="384M">
@@ -140,7 +141,6 @@
                   <sysproperty key="jruby.home" value="${basedir}/../.."/>
                   <sysproperty key="jruby.base" value="${basedir}/../.."/>
                   <sysproperty key="jruby.lib" value="${basedir}/../../lib"/>
-                  <sysproperty key="jruby.inprocscript.disabled" value="true"/>
                   <test name="org.jruby.test.MainTestSuite" unless="maven.test.skip" todir="${project.build.directory}/surefire-reports"/>
                   <test name="org.jruby.test.ScriptTestSuite" unless="maven.test.skip" todir="${project.build.directory}/surefire-reports"/>
                   <test name="org.jruby.test.TestUnitTestSuite" unless="maven.test.skip" todir="${project.build.directory}/surefire-reports"/>

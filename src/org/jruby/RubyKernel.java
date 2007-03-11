@@ -993,10 +993,6 @@ public class RubyKernel {
      * Only run an in-process script if the script name has "ruby", ".rb", or "irb" in the name
      */
     private static boolean shouldRunInProcess(Ruby runtime, String command) {
-        if (runtime.getInstanceConfig().isInProcessScriptDisabled()) {
-            return false;
-        }
-
         command = command.trim();
         String [] spaceDelimitedTokens = command.split(" ", 2);
         String [] slashDelimitedTokens = spaceDelimitedTokens[0].split("/");
