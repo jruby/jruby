@@ -45,8 +45,8 @@ import java.nio.charset.CodingErrorAction;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import jregex.Matcher;
+import jregex.Pattern;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -1451,14 +1451,6 @@ public class RubyString extends RubyObject {
         RubyRegexp pat = RubyRegexp.regexpValue(args[0]);
 
         String intern = toString();
-        boolean utf8 = pat.getCode() == KCode.UTF8;
-
-        if(utf8) {
-            try {
-                intern = new String(ByteList.plain(intern),"UTF8");
-            } catch(Exception e) {
-            }
-        }
 
         if (pat.search(intern, 0) >= 0) {
             RubyMatchData match = (RubyMatchData) tc.getBackref();
@@ -1466,12 +1458,6 @@ public class RubyString extends RubyObject {
             newStr.append(iter ? tc.yield(match.group(0), block) : pat.regsub(repl, match));
             newStr.append(match.post_match());
             newStr.setTaint(isTaint() || repl.isTaint());
-            if(utf8) {
-                try {
-                    newStr.setValue(new String(ByteList.plain(newStr.toString().getBytes("UTF8"))));
-                } catch(Exception e) {
-                }
-            }
             if (bang) {
                 value = newStr.value;
                 stringMutated();
@@ -1525,7 +1511,6 @@ public class RubyString extends RubyObject {
         // Fix for JRUBY-97: Temporary fix pending
         // decision on UTF8-based string implementation.
         ThreadContext tc = getRuntime().getCurrentContext();
-
         if(iter) {
             while (beg >= 0) {
                 match = (RubyMatchData) tc.getBackref();
@@ -2044,7 +2029,7 @@ public class RubyString extends RubyObject {
                         list.add(splitee.substring(startOfCurrentHit, endOfCurrentHit));
 
                         // add any matched groups found while splitting the first hit
-                        for (int groupIndex = 1; groupIndex <= matt.groupCount(); groupIndex++) {
+                        for (int groupIndex = 1; groupIndex < matt.groupCount(); groupIndex++) {
                             group = matt.group(groupIndex);
                             list.add(group);
                         }
@@ -2066,7 +2051,7 @@ public class RubyString extends RubyObject {
                         list.add(splitee.substring(startOfCurrentHit, endOfCurrentHit));
 
                         // add any matched groups found while splitting the current hit
-                        for (int groupIndex = 1; groupIndex <= matt.groupCount(); groupIndex++) {
+                        for (int groupIndex = 1; groupIndex < matt.groupCount(); groupIndex++) {
                             group = matt.group(groupIndex);
                             list.add(group);
                         }

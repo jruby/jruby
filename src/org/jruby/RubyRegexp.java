@@ -38,8 +38,9 @@ package org.jruby;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import jregex.Matcher;
+import jregex.Pattern;
+import jregex.REFlags;
 import org.jruby.parser.ReOptions;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -61,7 +62,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
     // \013 is a vertical tab. Java does not support the \v notation used by
     // Ruby.
-    private static final Pattern SPECIAL_CHARS = Pattern.compile("([\\\t\\\n\\\f\\\r\\ \\#\\\013\\+\\-\\[\\]\\.\\?\\*\\(\\)\\{\\}\\|\\\\\\^\\$])");    
+    private static final Pattern SPECIAL_CHARS = new Pattern("([\\\t\\\n\\\f\\\r\\ \\#\\\013\\+\\-\\[\\]\\.\\?\\*\\(\\)\\{\\}\\|\\\\\\^\\$])");    
 
 	/** Class which represents the multibyte character set code.
 	 * (should be an enum in Java 5.0).
@@ -71,6 +72,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
     private Pattern pattern;
     private KCode code;
+    private int flags;
 
     KCode getCode() {
         return code;
@@ -144,13 +146,16 @@ public class RubyRegexp extends RubyObject implements ReOptions {
                 }
             }
             pattern = REGEXP_TRANSLATOR.translate(regex, options, code.flags());
-        } catch(java.util.regex.PatternSyntaxException e) {
+            flags = REGEXP_TRANSLATOR.flagsFor(options, code.flags());
+        } catch(jregex.PatternSyntaxException e) {
+            System.err.println(regex);
+            e.printStackTrace();
             throw getRuntime().newSyntaxError(e.getMessage());
         }
     }
 
     public static String escapeSpecialChars(String original) {
-    	return SPECIAL_CHARS.matcher(original).replaceAll("\\\\$1");
+    	return SPECIAL_CHARS.replacer("\\\\$1").replace(original);
     }
 
     private void recompileIfNeeded() {
@@ -179,10 +184,11 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         return newRegexp(str.getRuntime(), str.toString(), options, lang);
     }
     
-    public static RubyRegexp newRegexp(Ruby runtime, Pattern pattern, String lang) {
+    public static RubyRegexp newRegexp(Ruby runtime, Pattern pattern, int flags, String lang) {
         RubyRegexp re = new RubyRegexp(runtime);
         re.code = KCode.create(runtime, lang);
         re.pattern = pattern;
+        re.flags = flags;
         return re;
     }
     
@@ -284,8 +290,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         }
         RubyRegexp re = (RubyRegexp) other;
         checkInitialized();
-        if (!(re.pattern.pattern().equals(pattern.pattern()) && 
-        	  re.pattern.flags() == pattern.flags())) {
+        if (!(re.pattern.toString().equals(pattern.toString()) && re.flags == this.flags)) {
             return getRuntime().getFalse();
         }
         
@@ -317,7 +322,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             }
         }
     	String string = RubyString.stringValue(target).toString();
-        if (string.length() == 0 && "^$".equals(pattern.pattern())) {
+        if (string.length() == 0 && "^$".equals(pattern.toString())) {
     		string = "\n";
         }
     	
@@ -339,7 +344,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     	}
     	
     	String string = RubyString.stringValue(target).toString();
-        if (string.length() == 0 && "^$".equals(pattern.pattern())) {
+        if (string.length() == 0 && "^$".equals(pattern.toString())) {
     		string = "\n";
         }
     	
@@ -365,7 +370,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      */
     public RubyString source() {
         checkInitialized();
-        return getRuntime().newString(pattern.pattern());
+        return getRuntime().newString(pattern.toString());
     }
 
     public IRubyObject kcode() {
@@ -381,7 +386,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      */
     public RubyBoolean casefold() {
         checkInitialized();
-        return getRuntime().newBoolean((pattern.flags() & Pattern.CASE_INSENSITIVE) != 0);
+        return getRuntime().newBoolean((flags & REFlags.IGNORE_CASE) != 0);
     }
 
     /** rb_reg_nth_match
@@ -480,12 +485,17 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 			return -1;
         }
 		
-		int count = matcher.groupCount() + 1;
+		int count = matcher.groupCount();
         int[] begin = new int[count];
         int[] end = new int[count];
         for (int i = 0; i < count; i++) {
-            begin[i] = matcher.start(i);
-            end[i] = matcher.end(i);
+            if(!matcher.isCaptured(i)) {
+                begin[i] = -1;
+                end[i] = -1;
+            } else {
+                begin[i] = matcher.start(i);
+                end[i] = matcher.end(i);
+            }
         }
 		
 		RubyMatchData match = new RubyMatchData(getRuntime(), target, begin, end);
@@ -507,13 +517,20 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
     	Matcher aMatcher = pattern.matcher(t);
     	
-        if (aMatcher.find(startPos)) {
-            int count = aMatcher.groupCount() + 1;
+        aMatcher.setPosition(startPos);
+
+        if (aMatcher.find()) {
+            int count = aMatcher.groupCount();
             int[] begin = new int[count];
             int[] end = new int[count];
             for (int i = 0; i < count; i++) {
-                begin[i] = aMatcher.start(i);
-                end[i] = aMatcher.end(i);
+                if(!aMatcher.isCaptured(i)) {
+                    begin[i] = -1;
+                    end[i] = -1;
+                } else {
+                    begin[i] = aMatcher.start(i);
+                    end[i] = aMatcher.end(i);
+                }
             }
             
             return new RubyMatchData(getRuntime(), target, begin, end);
@@ -604,7 +621,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      *
      */
     public IRubyObject inspect() {
-        final String regex = pattern.pattern();
+        final String regex = pattern.toString();
 		final int length = regex.length();
         StringBuffer sb = new StringBuffer(length + 2);
 
@@ -648,16 +665,15 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         } else if(code == KCode.SJIS) {
             sb.append('s');
         }
-  
-        if ((pattern.flags() & Pattern.CASE_INSENSITIVE) > 0) {
+        if ((flags & REFlags.IGNORE_CASE) > 0) {
             sb.append('i');
         }
   
-        if ((pattern.flags() & Pattern.DOTALL) > 0) {
+        if ((flags & REFlags.DOTALL) > 0) {
             sb.append('m');
         }
         
-        if ((pattern.flags() & Pattern.COMMENTS) > 0) {
+        if ((flags & REFlags.IGNORE_SPACES) > 0) {
             sb.append('x');
         }
 
@@ -706,16 +722,16 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     	
     	buffer.append("(?");
     	
-    	flagToString(buffer, off, Pattern.DOTALL, 'm');
-    	flagToString(buffer, off, Pattern.CASE_INSENSITIVE, 'i');
-    	flagToString(buffer, off, Pattern.COMMENTS, 'x');
+    	flagToString(buffer, off, REFlags.DOTALL, 'm');
+    	flagToString(buffer, off, REFlags.IGNORE_CASE, 'i');
+    	flagToString(buffer, off, REFlags.IGNORE_SPACES, 'x');
 
 		if (off.length() > 0) {
 			buffer.append('-').append(off);
 		}
 
     	buffer.append(':');
-        buffer.append(pattern.pattern().replaceAll("^/|([^\\\\])/", "$1\\\\/"));
+        buffer.append(pattern.toString().replaceAll("^/|([^\\\\])/", "$1\\\\/"));
 		buffer.append(')');
 
     	return buffer.toString();
@@ -730,7 +746,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 	 * @param c the char which represents the flag
 	 */
 	private void flagToString(StringBuffer buffer, StringBuffer off, int flag, char c) {
-		if ((pattern.flags() & flag) != 0) {
+		if ((flags & flag) != 0) {
     		buffer.append(c);
     	} else {
     		off.append(c);
@@ -745,19 +761,19 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     }
 
     public static void marshalTo(RubyRegexp regexp, MarshalStream output) throws java.io.IOException {
-        output.writeString(regexp.pattern.pattern());
+        output.writeString(regexp.pattern.toString());
 
-        int flags = 0;
-        if ((regexp.pattern.flags() & Pattern.DOTALL) > 0) {
-            flags |= RE_OPTION_MULTILINE;
+        int _flags = 0;
+        if ((regexp.flags & REFlags.DOTALL) > 0) {
+            _flags |= RE_OPTION_MULTILINE;
         }
-        if ((regexp.pattern.flags() & Pattern.CASE_INSENSITIVE) > 0) {
-            flags |= RE_OPTION_IGNORECASE;
+        if ((regexp.flags & REFlags.IGNORE_CASE) > 0) {
+            _flags |= RE_OPTION_IGNORECASE;
         }
-        if ((regexp.pattern.flags() & Pattern.COMMENTS) > 0) {
-            flags |= RE_OPTION_EXTENDED;
+        if ((regexp.flags & REFlags.IGNORE_SPACES) > 0) {
+            _flags |= RE_OPTION_EXTENDED;
         }
-        output.writeInt(flags);
+        output.writeInt(_flags);
     }
 	
 	public Pattern getPattern() {
@@ -765,6 +781,6 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 	}
 
     public RubyFixnum hash() {
-        return getRuntime().newFixnum(this.pattern.pattern().hashCode());
+        return getRuntime().newFixnum(this.pattern.toString().hashCode());
     }
 }

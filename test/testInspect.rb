@@ -8,7 +8,7 @@ class InspectOuter
   def initialize(foo); @b = foo; end
 end
 
-IRE = /(#<([^:]+):\S+(?:|\s@([^=]+)=([^#\s>]+))*>)/
+IRE = /(#<([^:]+):\S+(?:\s@([^=]+)=([^#\s>]+))*>)/
 
 def test_inspect_meat(inspect_string, *expected)
   match = IRE.match(inspect_string)

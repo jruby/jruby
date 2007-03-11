@@ -524,7 +524,6 @@ public class RubyModule extends RubyObject {
             if (existingMethod != null) {
                 getRuntime().getCacheMap().remove(name, existingMethod);
             }
-
             putMethod(name, method);
         }
     }

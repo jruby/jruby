@@ -1,7 +1,7 @@
 package org.jruby.util;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import jregex.Matcher;
+import jregex.Pattern;
 
 /**
  * @author kscott
@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
  */
 public class StringScanner {
 	
-	private CharSequence string;
+	private String string;
 	private Matcher matcher;
 	private int pos = 0;
 	private int lastPos = -1;
@@ -24,7 +24,7 @@ public class StringScanner {
 	}
 	
 	public StringScanner(CharSequence string) {
-		this.string = string;
+		this.string = string.toString();
 	}
 	
 	public boolean isEndOfString() {
@@ -58,7 +58,7 @@ public class StringScanner {
 	}
 	
 	public void setString(CharSequence string) {
-		this.string = string;
+		this.string = string.toString();
 		reset();
 	}
 	
@@ -109,7 +109,7 @@ public class StringScanner {
 			// Handle the getChar() is a match case
 			return string.subSequence(matchStart, matchEnd);
 		}
-		if (n > matcher.groupCount()) {
+		if (n >= matcher.groupCount()) {
 			return null;
 		}
 		return matcher.group(n);
@@ -158,8 +158,8 @@ public class StringScanner {
 	
 	public int matches(Pattern pattern) {
 		if (!isEndOfString()) {
-			matcher = pattern.matcher(string.subSequence(pos, string.length()));
-			if (matcher.lookingAt()) {
+			matcher = pattern.matcher(string.subSequence(pos, string.length()).toString());
+			if (matcher.find() && matcher.start() == 0) {
 				matchStart = pos;
 				matchEnd = matcher.end();
 				return matchEnd;
@@ -191,13 +191,13 @@ public class StringScanner {
 	
 	public CharSequence scan(Pattern pattern) {
 		if (!isEndOfString()) {
-			matcher = pattern.matcher(string.subSequence(pos, string.length()));
-			if (matcher.lookingAt()) {
+			matcher = pattern.matcher(string.subSequence(pos, string.length()).toString());
+			if (matcher.find() && matcher.start() == 0) {
 				lastPos = pos;
 				matchStart = pos;
 				pos += matcher.end();
 				matchEnd = pos;
-				return matcher.group();
+				return matcher.group(0);
 			} else {
 				lastPos = -1;
 				resetMatchData();
@@ -209,11 +209,11 @@ public class StringScanner {
 	
 	public CharSequence check(Pattern pattern) {
 		if (!isEndOfString()) {
-			matcher = pattern.matcher(string.subSequence(pos, string.length()));
-			if (matcher.lookingAt()) {
+			matcher = pattern.matcher(string.subSequence(pos, string.length()).toString());
+			if (matcher.find() && matcher.start() == 0) {
 				matchStart = pos;
 				matchEnd = matchStart + matcher.end();
-				return matcher.group();
+				return matcher.group(0);
 			} else {
 				resetMatchData();
 			}
@@ -239,8 +239,8 @@ public class StringScanner {
 	
 	public int skip(Pattern pattern) {
 		if (!isEndOfString()) {
-			matcher = pattern.matcher(string.subSequence(pos, string.length()));
-			if (matcher.lookingAt()) {
+			matcher = pattern.matcher(string.subSequence(pos, string.length()).toString());
+			if (matcher.find() && matcher.start() == 0) {
 				lastPos = pos;
 				matchStart = pos;
 				int end = matcher.end();

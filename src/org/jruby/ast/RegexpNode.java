@@ -31,7 +31,7 @@
 package org.jruby.ast;
 
 import java.util.List;
-import java.util.regex.Pattern;
+import jregex.Pattern;
 
 import org.jruby.RegexpTranslator;
 import org.jruby.ast.types.ILiteralNode;
@@ -50,6 +50,7 @@ public class RegexpNode extends Node implements ILiteralNode {
     private static final RegexpTranslator translator = new RegexpTranslator();
     
     private Pattern pattern;
+    private int flags;
     private final ByteList value;
     private final int options;
     
@@ -80,9 +81,18 @@ public class RegexpNode extends Node implements ILiteralNode {
         return value;
     }
     
-    public Pattern getPattern() throws java.util.regex.PatternSyntaxException {
+    public int getFlags() {
         if (pattern == null) {
-            pattern = translator.translate(value.toString(), options, Pattern.UNIX_LINES);
+            pattern = translator.translate(value.toString(), options, 0);
+            flags = translator.flagsFor(options,0);
+        }
+        return flags;
+    }
+
+    public Pattern getPattern() {
+        if (pattern == null) {
+            pattern = translator.translate(value.toString(), options, 0);
+            flags = translator.flagsFor(options,0);
         }
         return pattern;
     }

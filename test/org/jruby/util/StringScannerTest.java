@@ -1,7 +1,7 @@
 package org.jruby.util;
 
 
-import java.util.regex.Pattern;
+import jregex.Pattern;
 
 import junit.framework.TestCase;
 
@@ -11,8 +11,8 @@ import junit.framework.TestCase;
  */
 public class StringScannerTest extends TestCase {
 	
-	private final static Pattern WORD_CHARS = Pattern.compile("\\w+");
-	private final static Pattern WHITESPACE = Pattern.compile("\\s+");
+	private final static Pattern WORD_CHARS = new Pattern("\\w+");
+	private final static Pattern WHITESPACE = new Pattern("\\s+");
 	
 	private final static String DATE_STRING = "Fri Dec 12 1975 14:39";
 
@@ -125,7 +125,7 @@ public class StringScannerTest extends TestCase {
 	public void testScanUntil() throws Exception {
 		StringScanner ss = new StringScanner(DATE_STRING);
 		
-		CharSequence cs = ss.scanUntil(Pattern.compile("1"));
+		CharSequence cs = ss.scanUntil(new Pattern("1"));
 		
 		assertEquals("Fri Dec 1", cs);
 		
@@ -139,7 +139,7 @@ public class StringScannerTest extends TestCase {
 	public void testCheckUntil() throws Exception {
 		StringScanner ss = new StringScanner(DATE_STRING);
 		
-		CharSequence cs = ss.checkUntil(Pattern.compile("1"));
+		CharSequence cs = ss.checkUntil(new Pattern("1"));
 		
 		assertEquals("Fri Dec 1", cs);
 		
@@ -151,7 +151,7 @@ public class StringScannerTest extends TestCase {
 	public void testSkipUntil() throws Exception {
 		StringScanner ss = new StringScanner(DATE_STRING);
 		
-		assertEquals(9, ss.skipUntil(Pattern.compile("1")));
+		assertEquals(9, ss.skipUntil(new Pattern("1")));
 		
 		assertEquals("1", ss.matchedValue());
 	}
@@ -223,13 +223,13 @@ public class StringScannerTest extends TestCase {
 	public void testExists() throws Exception {
 		StringScanner ss = new StringScanner("test string");
 		
-		assertEquals(3, ss.exists(Pattern.compile("s")));
+		assertEquals(3, ss.exists(new Pattern("s")));
 		
 		assertEquals(0, ss.getPos());
 		
 		assertTrue(ss.matched());
 		
-		assertEquals(-1, ss.exists(Pattern.compile("z")));
+		assertEquals(-1, ss.exists(new Pattern("z")));
 	}
 	
 	public void testUnscan() throws Exception {
@@ -301,7 +301,7 @@ public class StringScannerTest extends TestCase {
 	public void testGrouping() throws Exception {
 		StringScanner ss = new StringScanner(DATE_STRING);
 		
-		ss.scan(Pattern.compile("(\\w+) (\\w+) (\\d+)"));
+		ss.scan(new Pattern("(\\w+) (\\w+) (\\d+)"));
 		
 		assertEquals("Fri", ss.group(1));
 		
@@ -340,7 +340,7 @@ public class StringScannerTest extends TestCase {
 		
 		ss.reset();
 		
-		ss.scanUntil(Pattern.compile("1"));
+		ss.scanUntil(new Pattern("1"));
 		
 		assertEquals("Fri Dec ", ss.preMatch());
 		assertEquals("2 1975 14:39", ss.postMatch());

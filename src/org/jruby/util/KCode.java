@@ -31,7 +31,6 @@ package org.jruby.util;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
-import java.util.regex.Pattern;
 import org.jruby.Ruby;
 import org.jruby.charset.PlainCharset;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -101,9 +100,9 @@ public class KCode {
     public int flags() {
         int flags = 0;
         if (this == UTF8) {
-            flags |= Pattern.UNICODE_CASE;
+            flags |= jregex.REFlags.UNICODE;
         }
-        flags |= Pattern.UNIX_LINES;
+        //        flags |= Pattern.UNIX_LINES;
 
         return flags;
     }

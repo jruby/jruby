@@ -1267,8 +1267,10 @@ public class EvaluationState {
                     lang = "u";
                 }
                 try {
-                    return RubyRegexp.newRegexp(runtime, iVisited.getPattern(), lang);
-                } catch(java.util.regex.PatternSyntaxException e) {
+                    return RubyRegexp.newRegexp(runtime, iVisited.getPattern(), iVisited.getFlags(), lang);
+                } catch(jregex.PatternSyntaxException e) {
+                    System.err.println(iVisited.getValue().toString());
+                    e.printStackTrace();
                     throw runtime.newSyntaxError(e.getMessage());
                 }
             }
