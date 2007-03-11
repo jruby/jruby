@@ -316,6 +316,7 @@
         <pathelement path="${test.dir}/requireTest.jar"/>
         <pathelement location="${test.dir}"/>
       </classpath>
+      <sysproperty key="java.awt.headless" value="true"/>
       <sysproperty key="jruby.base" value="${basedir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
       <sysproperty key="jruby.lib" value="${lib.dir}"/>
