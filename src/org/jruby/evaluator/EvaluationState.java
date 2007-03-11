@@ -946,11 +946,20 @@ public class EvaluationState {
                 GlobalVarNode iVisited = (GlobalVarNode) node;
                 
                 if (iVisited.getName().length() == 2) {
+                    IRubyObject value = null;
                     switch (iVisited.getName().charAt(1)) {
                     case '_':
-                        return context.getCurrentScope().getLastLine();
+                        value = context.getCurrentScope().getLastLine();
+                        if (value == null) {
+                            return runtime.getNil();
+                        }
+                        return value;
                     case '~':
-                        return context.getCurrentScope().getBackRef();
+                        value = context.getCurrentScope().getBackRef();
+                        if (value == null) {
+                            return runtime.getNil();
+                        }
+                        return value;
                     }
                 }
                 
