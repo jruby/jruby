@@ -78,10 +78,13 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <includes>
-            <include>org/jruby/test/MainTestSuite.java</include>
-            <!-- <include>org/jruby/test/ScriptTestSuite.java</include> -->
+            <!-- <include>org/jruby/test/MainTestSuite.java</include> -->
+            <!-- <include>org/jruby/test/ScriptTestSuite.java</include>  -->
             <!-- <include>org/jruby/test/TestUnitTestSuite.java</include> -->
           </includes>
+          <excludes>
+            <exclude>**/*.java</exclude>
+          </excludes>
         </configuration>
       </plugin>
       <plugin>
