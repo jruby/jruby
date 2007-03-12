@@ -665,11 +665,11 @@ public class RubyNumeric extends RubyObject {
             }
             if (diff > 0) {
                 for (long i = value; i <= end; i += diff) {
-                    context.yield(RubyFixnum.newFixnum(getRuntime(), i), block);
+                    block.yield(context, RubyFixnum.newFixnum(getRuntime(), i));
                 }
             } else {
                 for (long i = value; i >= end; i += diff) {
-                    context.yield(RubyFixnum.newFixnum(getRuntime(), i), block);
+                    block.yield(context, RubyFixnum.newFixnum(getRuntime(), i));
                 }
             }
         } else if (this instanceof RubyFloat || to instanceof RubyFloat || step instanceof RubyFloat) {
@@ -690,7 +690,7 @@ public class RubyNumeric extends RubyObject {
             n = Math.floor(n + err) + 1;
             
             for(double i = 0; i < n; i++){
-                context.yield(RubyFloat.newFloat(getRuntime(), i * unit + beg), block);
+                block.yield(context, RubyFloat.newFloat(getRuntime(), i * unit + beg));
             }
 
         } else {
@@ -707,7 +707,7 @@ public class RubyNumeric extends RubyObject {
                 if (i.callMethod(context, cmp, to).isTrue()) {
                     break;
                 }
-                context.yield(i, block);
+                block.yield(context, i);
                 i = (RubyNumeric) i.callMethod(context, "+", step);
             }
         }

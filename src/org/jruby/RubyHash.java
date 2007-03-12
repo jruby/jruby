@@ -335,7 +335,7 @@ public class RubyHash extends RubyObject implements Map {
         if (result == null) {
             if (args.length > 1) return args[1]; 
                 
-            if (block.isGiven()) return getRuntime().getCurrentContext().yield(key, block); 
+            if (block.isGiven()) return block.yield(getRuntime().getCurrentContext(), key); 
 
             throw getRuntime().newIndexError("key not found");
         }
@@ -382,7 +382,7 @@ public class RubyHash extends RubyObject implements Map {
 		for (Iterator iter = valueIterator(); iter.hasNext();) {
             checkRehashing();
 			IRubyObject value = (IRubyObject) iter.next();
-			context.yield(value, block);
+			block.yield(context, value);
 		}
 		return this;
 	}
@@ -392,7 +392,7 @@ public class RubyHash extends RubyObject implements Map {
 		for (Iterator iter = keyIterator(); iter.hasNext();) {
 			checkRehashing();
             IRubyObject key = (IRubyObject) iter.next();
-			context.yield(key, block);
+			block.yield(context, key);
 		}
 		return this;
 	}
@@ -463,7 +463,7 @@ public class RubyHash extends RubyObject implements Map {
 		IRubyObject result = (IRubyObject) valueMap.remove(key);
         
 		if (result != null) return result;
-		if (block.isGiven()) return getRuntime().getCurrentContext().yield(key, block);
+		if (block.isGiven()) return block.yield(getRuntime().getCurrentContext(), key);
 
 		return getDefaultValue(new IRubyObject[] {key}, null);
 	}
@@ -526,7 +526,7 @@ public class RubyHash extends RubyObject implements Map {
                 if(null == oval) {
                     valueMap.put(key,other.get(key));
                 } else {
-                    valueMap.put(key,ctx.yield(getRuntime().newArrayNoCopy(new IRubyObject[]{key,oval,(IRubyObject)other.get(key)}), block));
+                    valueMap.put(key,block.yield(ctx, getRuntime().newArrayNoCopy(new IRubyObject[]{key,oval,(IRubyObject)other.get(key)})));
                 }
             }
         } else {

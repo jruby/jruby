@@ -1105,7 +1105,7 @@ public class RubyIO extends RubyObject {
             ThreadContext context = getRuntime().getCurrentContext();
             for (int c = handler.getc(); c != -1; c = handler.getc()) {
                 assert c < 256;
-                context.yield(getRuntime().newFixnum(c), block);
+                block.yield(context, getRuntime().newFixnum(c));
             }
 
             return getRuntime().getNil();
@@ -1125,7 +1125,7 @@ public class RubyIO extends RubyObject {
         ThreadContext context = getRuntime().getCurrentContext();
         for (IRubyObject line = internalGets(args); !line.isNil(); 
         	line = internalGets(args)) {
-            context.yield(line, block);
+            block.yield(context, line);
         }
         
         return this;

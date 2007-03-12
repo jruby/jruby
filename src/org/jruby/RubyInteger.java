@@ -110,7 +110,7 @@ public abstract class RubyInteger extends RubyNumeric {
             RubyFixnum toFixnum = (RubyFixnum) to;
             long toValue = toFixnum.getLongValue();
             for (long i = getLongValue(); i <= toValue; i++) {
-                context.yield(RubyFixnum.newFixnum(getRuntime(), i), block);
+                block.yield(context, RubyFixnum.newFixnum(getRuntime(), i));
             }
         } else {
             RubyNumeric i = this;
@@ -119,7 +119,7 @@ public abstract class RubyInteger extends RubyNumeric {
                 if (i.callMethod(context, ">", to).isTrue()) {
                     break;
                 }
-                context.yield(i, block);
+                block.yield(context, i);
                 i = (RubyNumeric) i.callMethod(context, "+", RubyFixnum.one(getRuntime()));
             }
         }
@@ -137,7 +137,7 @@ public abstract class RubyInteger extends RubyNumeric {
             RubyFixnum toFixnum = (RubyFixnum) to;
             long toValue = toFixnum.getLongValue();
             for (long i = getLongValue(); i >= toValue; i--) {
-                context.yield(RubyFixnum.newFixnum(getRuntime(), i), block);
+                block.yield(context, RubyFixnum.newFixnum(getRuntime(), i));
             }
         } else {
             RubyNumeric i = this;
@@ -146,7 +146,7 @@ public abstract class RubyInteger extends RubyNumeric {
                 if (i.callMethod(context, "<", to).isTrue()) {
                     break;
                 }
-                context.yield(i, block);
+                block.yield(context, i);
                 i = (RubyNumeric) i.callMethod(context, "-", RubyFixnum.one(getRuntime()));
             }
         }
@@ -160,7 +160,7 @@ public abstract class RubyInteger extends RubyNumeric {
 
             long value = getLongValue();
             for (long i = 0; i < value; i++) {
-                context.yield(RubyFixnum.newFixnum(getRuntime(), i), block);
+                block.yield(context, RubyFixnum.newFixnum(getRuntime(), i));
             }
         } else {
             RubyNumeric i = RubyFixnum.zero(getRuntime());
@@ -168,7 +168,7 @@ public abstract class RubyInteger extends RubyNumeric {
                 if (!i.callMethod(context, "<", this).isTrue()) {
                     break;
                 }
-                context.yield(i, block);
+                block.yield(context, i);
                 i = (RubyNumeric) i.callMethod(context, "+", RubyFixnum.one(getRuntime()));
             }
         }

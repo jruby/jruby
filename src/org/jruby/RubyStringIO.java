@@ -124,7 +124,7 @@ public class RubyStringIO extends RubyObject {
         
         if (block.isGiven()) {
             try {
-                val = tc.yield(strio, block);
+                val = block.yield(tc, strio);
             } finally {
                 strio.close();
             }
@@ -197,7 +197,7 @@ public class RubyStringIO extends RubyObject {
        IRubyObject line = gets(args);
        ThreadContext context = getRuntime().getCurrentContext();
        while (!line.isNil()) {
-           context.yield(line, block);
+           block.yield(context, line);
            line = gets(args);
        }
        return this;

@@ -112,7 +112,7 @@ public class RubyObjectSpace {
         ThreadContext context = recv.getRuntime().getCurrentContext();
         while ((obj = (IRubyObject)iter.next()) != null) {
             count++;
-            context.yield(obj, block);
+            block.yield(context, obj);
         }
         return recv.getRuntime().newFixnum(count);
     }

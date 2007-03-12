@@ -372,7 +372,7 @@ public class RubyRange extends RubyObject {
             }
 
             for (; i < endLong; i++) {
-                context.yield(getRuntime().newFixnum(i), block);
+                block.yield(context, getRuntime().newFixnum(i));
             }
         } else if (begin instanceof RubyString) {
             ((RubyString) begin).upto(end, isExclusive, block);
@@ -381,7 +381,7 @@ public class RubyRange extends RubyObject {
                 end = end.callMethod(context, "+", RubyFixnum.one(getRuntime()));
             }
             while (begin.callMethod(context, "<", end).isTrue()) {
-                context.yield(begin, block);
+                block.yield(context, begin);
                 begin = begin.callMethod(context, "+", RubyFixnum.one(getRuntime()));
             }
         } else {
@@ -392,12 +392,12 @@ public class RubyRange extends RubyObject {
                     if (v.equals(end)) {
                         break;
                     }
-                    context.yield(v, block);
+                    block.yield(context, v);
                     v = v.callMethod(context, "succ");
                 }
             } else {
                 while (v.callMethod(context, "<=", end).isTrue()) {
-                    context.yield(v, block);
+                    block.yield(context, v);
                     if (v.equals(end)) {
                         break;
                     }
@@ -424,12 +424,12 @@ public class RubyRange extends RubyObject {
         if (begin instanceof RubyNumeric && end instanceof RubyNumeric) {
             RubyFixnum stepNum = getRuntime().newFixnum(stepSize);
             while (currentObject.callMethod(context, compareMethod, end).isTrue()) {
-                context.yield(currentObject, block);
+                block.yield(context, currentObject);
                 currentObject = currentObject.callMethod(context, "+", stepNum);
             }
         } else {
             while (currentObject.callMethod(context, compareMethod, end).isTrue()) {
-                context.yield(currentObject, block);
+                block.yield(context, currentObject);
                 
                 for (int i = 0; i < stepSize; i++) {
                     currentObject = currentObject.callMethod(context, "succ");

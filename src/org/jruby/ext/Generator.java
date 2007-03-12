@@ -322,7 +322,7 @@ public class Generator {
             // Generator#each
             self.callMethod(context,"rewind");
             while(self.callMethod(context,"next?").isTrue()) {
-                context.yield(self.callMethod(context,"next"), block);
+                block.yield(context, self.callMethod(context,"next"));
             }
             return self;
         }

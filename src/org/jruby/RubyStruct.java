@@ -378,7 +378,7 @@ public class RubyStruct extends RubyObject {
     public IRubyObject each(Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
         for (int i = 0; i < values.length; i++) {
-            context.yield(values[i], block);
+            block.yield(context, values[i]);
         }
 
         return this;
@@ -391,7 +391,7 @@ public class RubyStruct extends RubyObject {
 
         ThreadContext context = getRuntime().getCurrentContext();
         for (int i = 0; i < values.length; i++) {
-            context.yield(getRuntime().newArrayNoCopy(new IRubyObject[]{member.eltInternal(i), values[i]}), block);
+            block.yield(context, getRuntime().newArrayNoCopy(new IRubyObject[]{member.eltInternal(i), values[i]}));
         }
 
         return this;

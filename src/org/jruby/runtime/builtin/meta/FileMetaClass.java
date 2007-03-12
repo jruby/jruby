@@ -538,7 +538,7 @@ public class FileMetaClass extends IOMetaClass {
         
         if (tryToYield && block.isGiven()) {
             try {
-                return tc.yield(file, block);
+                return block.yield(tc, file);
             } finally {
                 file.close();
             }

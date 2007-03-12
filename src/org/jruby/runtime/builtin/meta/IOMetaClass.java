@@ -173,7 +173,7 @@ public class IOMetaClass extends ObjectMetaClass {
                 
                 IRubyObject nextLine = io.internalGets(newArgs);
                 while (!nextLine.isNil()) {
-                    getRuntime().getCurrentContext().yield(nextLine, block);
+                    block.yield(getRuntime().getCurrentContext(), nextLine);
                     nextLine = io.internalGets(newArgs);
                 }
             } finally {
@@ -382,7 +382,7 @@ public class IOMetaClass extends ObjectMetaClass {
             
             if (block.isGiven()) {
                 try {
-                    tc.yield(io, block);
+                    block.yield(tc, io);
                     return runtime.getNil();
                 } finally {
                     io.close();

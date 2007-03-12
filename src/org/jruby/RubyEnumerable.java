@@ -87,7 +87,7 @@ public class RubyEnumerable {
             this.block = block;
         }
         public int compare(Object o1, Object o2) {
-            return RubyFixnum.fix2int(context.yield(runtime.newArray((IRubyObject)o1,(IRubyObject)o2), block));
+            return RubyFixnum.fix2int(block.yield(context, runtime.newArray((IRubyObject)o1,(IRubyObject)o2)));
         }
     }
 
@@ -154,7 +154,7 @@ public class RubyEnumerable {
             int ix = 0;
             for(Iterator iter = result.iterator();iter.hasNext();ix++) {
                 IRubyObject iro = (IRubyObject)iter.next();
-                secResult[ix][0] = context.yield(iro, block);
+                secResult[ix][0] = block.yield(context, iro);
                 secResult[ix][1] = iro;
             }
             Arrays.sort(secResult, new RubyFirstArrayComparator());
@@ -181,7 +181,7 @@ public class RubyEnumerable {
                 for (Iterator iter = arr.iterator();iter.hasNext();) {
                     IRubyObject item = (IRubyObject)iter.next();
                     if (pattern.callMethod(context,"===", item).isTrue()) {
-                        result.add(context.yield(item, block));
+                        result.add(block.yield(context, item));
                     }
                 }                
             }
@@ -192,7 +192,7 @@ public class RubyEnumerable {
             List arr = eachToList(context,self,module);
             for(Iterator iter = arr.iterator();iter.hasNext();) {
                 IRubyObject element = (IRubyObject)iter.next();
-                if(context.yield(element, block).isTrue()) {
+                if(block.yield(context, element).isTrue()) {
                     return element;
                 }                
             }
@@ -207,7 +207,7 @@ public class RubyEnumerable {
             List result = new ArrayList(arr.size());
             for(Iterator iter = arr.iterator();iter.hasNext();) {
                 IRubyObject element = (IRubyObject)iter.next();
-                if(context.yield(element, block).isTrue()) {
+                if(block.yield(context, element).isTrue()) {
                     result.add(element);
                 }                
             }
@@ -219,7 +219,7 @@ public class RubyEnumerable {
             List result = new ArrayList(arr.size());
             for(Iterator iter = arr.iterator();iter.hasNext();) {
                 IRubyObject element = (IRubyObject)iter.next();
-                if(!context.yield(element, block).isTrue()) {
+                if(!block.yield(context, element).isTrue()) {
                     result.add(element);
                 }                
             }
@@ -232,7 +232,7 @@ public class RubyEnumerable {
             if (block.isGiven()) {
                 int i=0;
                 for (Iterator iter = arr.iterator();iter.hasNext();) {
-                    result[i++] = context.yield((IRubyObject)iter.next(), block);
+                    result[i++] = block.yield(context, (IRubyObject)iter.next());
                 }
             } else {
                 int i=0;
@@ -254,7 +254,7 @@ public class RubyEnumerable {
                 if(result == null) {
                     result = item;
                 } else {
-                    result = context.yield(context.getRuntime().newArray(result,item), block);
+                    result = block.yield(context, context.getRuntime().newArray(result,item));
                 }
             }
             if(null == result) {
@@ -269,7 +269,7 @@ public class RubyEnumerable {
             List arr_false = new ArrayList(arr.size()/2);
             for(Iterator iter = arr.iterator();iter.hasNext();) {
                 IRubyObject item = (IRubyObject)iter.next();
-                if(context.yield(item, block).isTrue()) {
+                if(block.yield(context, item).isTrue()) {
                     arr_true.add(item);
                 } else {
                     arr_false.add(item);
@@ -312,7 +312,7 @@ public class RubyEnumerable {
             List arr = eachToList(context,self,module);
             Ruby rt = context.getRuntime();
             for(Iterator iter = arr.iterator();iter.hasNext();) {
-                context.yield(rt.newArray((IRubyObject)iter.next(),rt.newFixnum(index++)), block);
+                block.yield(context, rt.newArray((IRubyObject)iter.next(),rt.newFixnum(index++)));
             }
             return self;
         }
@@ -334,7 +334,7 @@ public class RubyEnumerable {
             if(block.isGiven()) {
                 for(Iterator iter = arr.iterator();iter.hasNext();) {
                     IRubyObject item = (IRubyObject)iter.next();
-                    if(result == null || (context.yield(context.getRuntime().newArray(item,result), block).callMethod(context, ">", RubyFixnum.zero(context.getRuntime()))).isTrue()) {
+                    if(result == null || (block.yield(context, context.getRuntime().newArray(item,result)).callMethod(context, ">", RubyFixnum.zero(context.getRuntime()))).isTrue()) {
                         result = item;
                     }
                 }
@@ -359,7 +359,7 @@ public class RubyEnumerable {
             if(block.isGiven()) {
                 for(Iterator iter = arr.iterator();iter.hasNext();) {
                     IRubyObject item = (IRubyObject)iter.next();
-                    if(result == null || (context.yield(context.getRuntime().newArray(item,result), block).callMethod(context, "<", RubyFixnum.zero(context.getRuntime()))).isTrue()) {
+                    if(result == null || (block.yield(context, context.getRuntime().newArray(item,result)).callMethod(context, "<", RubyFixnum.zero(context.getRuntime()))).isTrue()) {
                         result = item;
                     }
                 }
@@ -383,7 +383,7 @@ public class RubyEnumerable {
 
             if (block.isGiven()) {
                 for(Iterator iter = arr.iterator();iter.hasNext();) {
-                    if(!context.yield((IRubyObject)iter.next(), block).isTrue()) {
+                    if(!block.yield(context, (IRubyObject)iter.next()).isTrue()) {
                         all = false;
                         break;
                     }
@@ -405,7 +405,7 @@ public class RubyEnumerable {
 
             if (block.isGiven()) {
                 for(Iterator iter = arr.iterator();iter.hasNext();) {
-                    if(context.yield((IRubyObject)iter.next(), block).isTrue()) {
+                    if(block.yield(context, (IRubyObject)iter.next()).isTrue()) {
                         any = true;
                         break;
                     }
@@ -434,7 +434,7 @@ public class RubyEnumerable {
                     for(int i=0,j=args.length;i<j;i++) {
                         array.add(args[i].callMethod(context,"[]", context.getRuntime().newFixnum(ix)));
                     }
-                    context.yield(context.getRuntime().newArray(array), block);
+                    block.yield(context, context.getRuntime().newArray(array));
                     ix++;
                 }
                 return context.getRuntime().getNil();
@@ -458,7 +458,7 @@ public class RubyEnumerable {
             Map results = new HashMap(arr.size());
             for(Iterator iter = arr.iterator();iter.hasNext();) {
                 IRubyObject item = (IRubyObject)iter.next();
-                IRubyObject key = context.yield(item, block);
+                IRubyObject key = block.yield(context, item);
                 IRubyObject curr = (IRubyObject)results.get(key);
                 if(curr == null) {
                     curr = context.getRuntime().newArray();

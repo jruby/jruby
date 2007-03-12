@@ -150,7 +150,7 @@ public class RubyDir extends RubyObject {
             ThreadContext context = recv.getRuntime().getCurrentContext();
             
             for (int i = 0; i < files.length; i++) {
-                context.yield(JavaUtil.convertJavaToRuby(recv.getRuntime(), files[i]), block);
+                block.yield(context, JavaUtil.convertJavaToRuby(recv.getRuntime(), files[i]));
             }
             return recv.getRuntime().getNil();
         }            
@@ -203,7 +203,7 @@ public class RubyDir extends RubyObject {
         	// FIXME: Don't allow multiple threads to do this at once
             recv.getRuntime().setCurrentDirectory(realPath);
             try {
-                result = recv.getRuntime().getCurrentContext().yield(path, block);
+                result = block.yield(recv.getRuntime().getCurrentContext(), path);
             } finally {
                 recv.getRuntime().setCurrentDirectory(oldCwd);
             }
@@ -295,7 +295,7 @@ public class RubyDir extends RubyObject {
         if (!block.isGiven()) return directory;
         
         try {
-            recv.getRuntime().getCurrentContext().yield(directory, block);
+            block.yield(recv.getRuntime().getCurrentContext(), directory);
         } finally {
             directory.close();
         }
@@ -322,7 +322,7 @@ public class RubyDir extends RubyObject {
         String[] contents = snapshot;
         ThreadContext context = getRuntime().getCurrentContext();
         for (int i=0; i<contents.length; i++) {
-            context.yield(getRuntime().newString(contents[i]), block);
+            block.yield(context, getRuntime().newString(contents[i]));
         }
         return this;
     }

@@ -189,6 +189,10 @@ public class Block {
     protected void post(ThreadContext context) {
         context.postYield();
     }
+    
+    public IRubyObject yield(ThreadContext context, IRubyObject value) {
+        return yield(context, value, null, null, false);
+    }
 
     /**
      * Yield to this block, usually passed to the current call.

@@ -1455,7 +1455,7 @@ public class RubyString extends RubyObject {
         if (pat.search(intern, 0) >= 0) {
             RubyMatchData match = (RubyMatchData) tc.getBackref();
             RubyString newStr = match.pre_match();
-            newStr.append(iter ? tc.yield(match.group(0), block) : pat.regsub(repl, match));
+            newStr.append(iter ? block.yield(tc, match.group(0)) : pat.regsub(repl, match));
             newStr.append(match.post_match());
             newStr.setTaint(isTaint() || repl.isTaint());
             if (bang) {
@@ -1515,7 +1515,7 @@ public class RubyString extends RubyObject {
             while (beg >= 0) {
                 match = (RubyMatchData) tc.getBackref();
                 sbuf.append(this.value,offset,beg-offset);
-                newStr = tc.yield(match.group(0), block);
+                newStr = block.yield(tc, match.group(0));
                 taint |= newStr.isTaint();
                 sbuf.append(newStr.objAsString().getByteList());
                 offset = match.matchEndPosition();
@@ -1868,7 +1868,7 @@ public class RubyString extends RubyObject {
 
         ThreadContext context = getRuntime().getCurrentContext();
         while (!current.equals(afterEnd)) {
-            context.yield(current, block);
+            block.yield(context, current);
             if (!excl && current.equals(end)) {
                 break;
             }
@@ -2136,7 +2136,7 @@ public class RubyString extends RubyObject {
 
         while (pattern.search(toString, start) != -1) {
             RubyMatchData md = (RubyMatchData) tc.getBackref();
-            tc.yield(md.getSize() == 1 ? md.group(0) : md.subseq(1, md.getSize()), block);
+            block.yield(tc, md.getSize() == 1 ? md.group(0) : md.subseq(1, md.getSize()));
 
             if (md.matchEndPosition() == md.matchStartPosition()) {
                 start++;
@@ -2717,11 +2717,11 @@ public class RubyString extends RubyObject {
 
         while (pat.search(toString, start) != -1) {
             RubyMatchData md = (RubyMatchData) tc.getBackref();
-            tc.yield(md.group(0), block);
+            block.yield(tc, md.group(0));
             start = md.matchEndPosition();
         }
         if (start < strLen) {
-            tc.yield(substr(start, strLen - start), block);
+            block.yield(tc, substr(start, strLen - start));
         }
         return this;
     }
@@ -2733,7 +2733,7 @@ public class RubyString extends RubyObject {
         int lLength = value.length();
         ThreadContext context = getRuntime().getCurrentContext();
         for (int i = 0; i < lLength; i++) {
-            context.yield(getRuntime().newFixnum(value.get(i) & 0xFF), block);
+            block.yield(context, getRuntime().newFixnum(value.get(i) & 0xFF));
         }
         return this;
     }

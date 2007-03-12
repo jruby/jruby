@@ -295,7 +295,7 @@ public class RubyKernel {
                 
                 if (block.isGiven()) {
                     try {
-                        recv.getRuntime().getCurrentContext().yield(io, block);
+                        block.yield(recv.getRuntime().getCurrentContext(), io);
                         
                         return recv.getRuntime().getNil();
                     } finally {
@@ -730,7 +730,7 @@ public class RubyKernel {
         ThreadContext context = recv.getRuntime().getCurrentContext();
         try {
             context.pushCatch(tag.asSymbol());
-            return context.yield(tag, block);
+            return block.yield(context, tag);
         } catch (JumpException je) {
             if (je.getJumpType() == JumpException.JumpType.ThrowJump &&
                 je.getTarget().equals(tag.asSymbol())) {
@@ -811,7 +811,7 @@ public class RubyKernel {
         ThreadContext context = recv.getRuntime().getCurrentContext();
         while (true) {
             try {
-                context.yield(recv.getRuntime().getNil(), block);
+                block.yield(context, recv.getRuntime().getNil());
 
                 Thread.yield();
             } catch (JumpException je) {

@@ -303,7 +303,7 @@ public class RubyYAML {
             }
             Constructor ctor = new JRubyConstructor(self,new ComposerImpl(new ParserImpl(scn,YAML.config().version("1.0")),new ResolverImpl()));
             while(ctor.checkData()) {
-                context.yield(JavaEmbedUtils.javaToRuby(self.getRuntime(),ctor.getData()), block);
+                block.yield(context, JavaEmbedUtils.javaToRuby(self.getRuntime(),ctor.getData()));
             }
             return self.getRuntime().getNil();
         }
@@ -318,7 +318,7 @@ public class RubyYAML {
             }
             Constructor ctor = new JRubyConstructor(self,new ComposerImpl(new ParserImpl(scn,YAML.config().version("1.0")),new ResolverImpl()));
             while(ctor.checkData()) {
-                context.yield(JavaEmbedUtils.javaToRuby(self.getRuntime(),ctor.getData()), block);
+                block.yield(context, JavaEmbedUtils.javaToRuby(self.getRuntime(),ctor.getData()));
             }
             return self.getRuntime().getNil();
         }
@@ -351,7 +351,7 @@ public class RubyYAML {
         }
         public IRubyObject method8(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             //yaml_quick_emit_node
-            return context.yield(args[0], block);
+            return block.yield(context, args[0]);
         }
         public IRubyObject method9(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             //yaml_quick_emit

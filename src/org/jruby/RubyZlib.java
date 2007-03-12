@@ -894,7 +894,7 @@ public class RubyZlib {
 
             ThreadContext context = getRuntime().getCurrentContext();
             while (!isEof()) {
-                context.yield(internalSepGets(sep), block);
+                block.yield(context, internalSepGets(sep));
             }
             
             return getRuntime().getNil();
@@ -926,7 +926,7 @@ public class RubyZlib {
 
             ThreadContext context = getRuntime().getCurrentContext();
             while (value != -1) {
-                context.yield(getRuntime().newFixnum(value), block);
+                block.yield(context, getRuntime().newFixnum(value));
                 value = io.read();
             }
             

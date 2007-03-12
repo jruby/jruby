@@ -193,7 +193,7 @@ public class JavaObject extends RubyObject {
     public IRubyObject ruby_synchronized(Block block) {
         Object lock = getValue();
         synchronized (lock != null ? lock : NULL_LOCK) {
-            return getRuntime().getCurrentContext().yield(null, block);
+            return block.yield(getRuntime().getCurrentContext(), null);
         }
     }
 }

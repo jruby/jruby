@@ -372,25 +372,6 @@ public class ThreadContext {
         getCurrentFrame().setVisibility(visibility);
     }
 
-    /**
-     * Yield to the block passed to the current frame.
-     * 
-     * @param value The value to yield, either a single value or an array of values
-     * @return The result of the yield
-     */
-    public IRubyObject yield(IRubyObject value, Block block) {
-        return block.yield(this, value, null, null, false);
-    }
-    
-    /**
-     * Used by compiler
-     * 
-     * @param block
-     */
-    public void raiseErrorIfNoBlock(Block block) {
-        if (!block.isGiven()) throw runtime.newLocalJumpError("yield called out of block");
-    }
-
     public void pollThreadEvents() {
         getThread().pollThreadEvents();
     }

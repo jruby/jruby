@@ -136,7 +136,7 @@ public class ThreadLibrary implements Library {
         public IRubyObject synchronize(Block block) throws InterruptedException {
             try {
                 lock();
-                return getRuntime().getCurrentContext().yield(null, block);
+                return block.yield(getRuntime().getCurrentContext(), null);
             } finally {
                 unlock();
             }

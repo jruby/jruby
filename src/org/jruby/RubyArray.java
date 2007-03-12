@@ -503,7 +503,7 @@ public class RubyArray extends RubyObject implements List {
 
             ThreadContext context = runtime.getCurrentContext();
             for (int i = 0; i < ilen; i++) {
-                store(i, context.yield(new RubyFixnum(runtime, i), block));
+                store(i, block.yield(context, new RubyFixnum(runtime, i)));
                 realLength = i + 1;
             }
         } else {
@@ -671,7 +671,7 @@ public class RubyArray extends RubyObject implements List {
         if (index < 0) index += realLength;
 
         if (index < 0 || index >= realLength) {
-            if (block.isGiven()) return getRuntime().getCurrentContext().yield(args[0], block);
+            if (block.isGiven()) return block.yield(getRuntime().getCurrentContext(), args[0]);
 
             if (args.length == 1) {
                 throw getRuntime().newIndexError("index " + index + " out of array");
@@ -1185,11 +1185,11 @@ public class RubyArray extends RubyObject implements List {
         ThreadContext context = getRuntime().getCurrentContext();
         if (shared) {
         for (int i = begin; i < begin + realLength; i++) {
-            context.yield(values[i], block);
+            block.yield(context, values[i]);
         }
         } else {
             for (int i = 0; i < realLength; i++) {
-                context.yield(values[i], block);
+                block.yield(context, values[i]);
             }
         }
         return this;
@@ -1202,7 +1202,7 @@ public class RubyArray extends RubyObject implements List {
         Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
         for (int i = 0; i < realLength; i++) {
-            context.yield(runtime.newFixnum(i), block);
+            block.yield(context, runtime.newFixnum(i));
         }
         return this;
     }
@@ -1216,7 +1216,7 @@ public class RubyArray extends RubyObject implements List {
         int len = realLength;
         
         while(len-- > 0) {
-            context.yield(values[begin + len], block);
+            block.yield(context, values[begin + len]);
             
             if (realLength < len) len = realLength;
         }
@@ -1467,7 +1467,7 @@ public class RubyArray extends RubyObject implements List {
             Ruby runtime = getRuntime();
             ThreadContext context = runtime.getCurrentContext();
             for (int i = (int) beg; i < (int) end; i++) {
-                IRubyObject v = context.yield(runtime.newFixnum(i), block);
+                IRubyObject v = block.yield(context, runtime.newFixnum(i));
                 if (i >= realLength) break;
 
                 values[i] = v;
@@ -1569,7 +1569,7 @@ public class RubyArray extends RubyObject implements List {
         RubyArray collect = new RubyArray(runtime, realLength);
         
         for (int i = begin; i < begin + realLength; i++) {
-            collect.append(context.yield(values[i], block));
+            collect.append(block.yield(context, values[i]));
         }
         
         return collect;
@@ -1582,7 +1582,7 @@ public class RubyArray extends RubyObject implements List {
         modify();
         ThreadContext context = getRuntime().getCurrentContext();
         for (int i = 0, len = realLength; i < len; i++) {
-            store(i, context.yield(values[begin + i], block));
+            store(i, block.yield(context, values[begin + i]));
         }
         return this;
     }
@@ -1597,11 +1597,11 @@ public class RubyArray extends RubyObject implements List {
         ThreadContext context = runtime.getCurrentContext();
         if (shared) {
             for (int i = begin; i < begin + realLength; i++) {
-                if (context.yield(values[i], block).isTrue()) result.append(elt(i - begin));
+                if (block.yield(context, values[i]).isTrue()) result.append(elt(i - begin));
             }
         } else {
             for (int i = 0; i < realLength; i++) {
-                if (context.yield(values[i], block).isTrue()) result.append(elt(i));
+                if (block.yield(context, values[i]).isTrue()) result.append(elt(i));
             }
         }
         return result;
@@ -1623,7 +1623,7 @@ public class RubyArray extends RubyObject implements List {
         }
         
         if (realLength == i2) {
-            if (block.isGiven()) return context.yield(item, block);
+            if (block.isGiven()) return block.yield(context, item);
 
             return runtime.getNil();
         }
@@ -1685,7 +1685,7 @@ public class RubyArray extends RubyObject implements List {
         ThreadContext context = getRuntime().getCurrentContext();
         for (int i1 = 0; i1 < realLength; i1++) {
             IRubyObject v = values[i1];
-            if (context.yield(v, block).isTrue()) continue;
+            if (block.yield(context, v).isTrue()) continue;
 
             if (i1 != i2) store(i2, v);
             i2++;
@@ -1722,7 +1722,7 @@ public class RubyArray extends RubyObject implements List {
                 for (int j = 0; j < args.length; j++) {
                     tmp.append(((RubyArray) args[j]).elt(i));
                 }
-                context.yield(tmp, block);
+                block.yield(context, tmp);
             }
             return runtime.getNil();
         }

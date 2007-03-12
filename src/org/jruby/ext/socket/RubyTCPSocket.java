@@ -98,7 +98,7 @@ public class RubyTCPSocket extends RubyIPSocket {
         if (!block.isGiven()) return sock;
 
         try {
-            return recv.getRuntime().getCurrentContext().yield(sock, block);
+            return block.yield(recv.getRuntime().getCurrentContext(), sock);
         } finally {
             if (sock.isOpen()) sock.close();
         }
