@@ -148,9 +148,9 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             pattern = REGEXP_TRANSLATOR.translate(regex, options, code.flags());
             flags = REGEXP_TRANSLATOR.flagsFor(options, code.flags());
         } catch(jregex.PatternSyntaxException e) {
-            System.err.println(regex);
-            e.printStackTrace();
-            throw getRuntime().newSyntaxError(e.getMessage());
+            //            System.err.println(regex);
+            //            e.printStackTrace();
+            throw getRuntime().newRegexpError(e.getMessage());
         }
     }
 

@@ -1490,6 +1490,10 @@ public final class Ruby {
         return newRaiseException(getClass("SyntaxError"), message);
     }
 
+    public RaiseException newRegexpError(String message) {
+        return newRaiseException(getClass("RegexpError"), message);
+    }
+
     public RaiseException newRangeError(String message) {
         return newRaiseException(getClass("RangeError"), message);
     }
