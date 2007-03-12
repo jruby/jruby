@@ -372,21 +372,6 @@ public class ThreadContext {
         getCurrentFrame().setVisibility(visibility);
     }
 
-    public IRubyObject callSuper(IRubyObject[] args, Block block) {
-        Frame frame = getCurrentFrame();
-        
-        if (frame.getKlazz() == null) {
-            String name = frame.getName();
-            throw runtime.newNameError("superclass method '" + name + "' must be enabled by enableSuper().", name);
-        }
-
-        RubyClass superClass = frame.getKlazz().getSuperClass();
-        
-        assert superClass != null : "Superclass should always be something for " + frame.getKlazz().getBaseName();
-
-        return frame.getSelf().callMethod(this, superClass, frame.getName(), args, CallType.SUPER, block);
-    }    
-
     /**
      * Yield to the block passed to the current frame.
      * 

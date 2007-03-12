@@ -57,6 +57,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Frame;
 
 /**
  *
@@ -370,6 +371,16 @@ public class RubyObject implements Cloneable, IRubyObject {
 
         return this;
     }
+
+    public IRubyObject callSuper(ThreadContext context, IRubyObject[] args, Block block) {
+        RubyModule klazz = context.getFrameKlazz();
+
+        RubyClass superClass = klazz.getSuperClass();
+        
+        assert superClass != null : "Superclass should always be something for " + klazz.getBaseName();
+
+        return callMethod(context, superClass, context.getFrameName(), args, CallType.SUPER, block);
+    }    
 
     /**
      *

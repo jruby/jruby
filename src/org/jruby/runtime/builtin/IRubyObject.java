@@ -114,8 +114,10 @@ public interface IRubyObject {
     IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, CallType callType, Block block);
     
     // Used by the compiler, to allow visibility checks
-    IRubyObject compilerCallMethod(ThreadContext context, String name, IRubyObject[] args, IRubyObject self, CallType callType, Block block);
-    IRubyObject compilerCallMethodWithIndex(ThreadContext context, byte methodIndex, String name, IRubyObject[] args, IRubyObject self, CallType callType, Block block);
+    IRubyObject compilerCallMethod(ThreadContext context, String name, IRubyObject[] args, IRubyObject caller, CallType callType, Block block);
+    IRubyObject compilerCallMethodWithIndex(ThreadContext context, byte methodIndex, String name, IRubyObject[] args, IRubyObject caller, CallType callType, Block block);
+    
+    IRubyObject callSuper(ThreadContext context, IRubyObject[] args, Block block);
     
     /**
      * RubyMethod funcall.

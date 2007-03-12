@@ -911,7 +911,7 @@ public class RubyModule extends RubyObject {
                 addMethod(name, new FullFunctionCallbackMethod(this, new Callback() {
                     public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
                         ThreadContext tc = self.getRuntime().getCurrentContext();
-                        return tc.callSuper(tc.getFrameArgs(), block);
+                        return self.callSuper(tc, tc.getFrameArgs(), block);
                     }
 
                     public Arity getArity() {

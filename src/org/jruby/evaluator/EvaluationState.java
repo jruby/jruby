@@ -1432,9 +1432,10 @@ public class EvaluationState {
             }
             case NodeTypes.SUPERNODE: {
                 SuperNode iVisited = (SuperNode) node;
-                
     
-                if (context.getFrameKlazz() == null) {
+                RubyModule klazz = context.getFrameKlazz();
+                
+                if (klazz == null) {
                     String name = context.getFrameName();
                     throw runtime.newNameError("Superclass method '" + name
                             + "' disabled.", name);
@@ -1445,7 +1446,7 @@ public class EvaluationState {
                 // If no explicit block passed to super, then use the one passed in.
                 if (!block.isGiven()) block = aBlock;
                 
-                return context.callSuper(args, block);
+                return self.callSuper(context, args, block);
             }
             case NodeTypes.SVALUENODE: {
                 SValueNode iVisited = (SValueNode) node;
@@ -1604,8 +1605,8 @@ public class EvaluationState {
 
                 // Has the method that is calling super received a block argument
                 if (!block.isGiven()) block = context.getCurrentFrame().getBlock(); 
-
-                return context.callSuper(context.getFrameArgs(), block);
+                
+                return self.callSuper(context, context.getFrameArgs(), block);
             }
             default:
                 throw new RuntimeException("Invalid node encountered in interpreter: \"" + node.getClass().getName() + "\", please report this at www.jruby.org");
