@@ -103,3 +103,12 @@ test_no_exception { StringScanner.new(f)  }
 test_ok(f.to_str_called)
 
 test_exception(TypeError) { StringScanner.new(Object.new) }
+
+### JRUBY-685: after moving to JRegex, find(int) doesn't work the same way as before
+strscan = StringScanner.new('AB')
+strscan.getch
+test_equal 1, strscan.skip_until(/B/)
+strscan = StringScanner.new('AA')
+strscan.getch
+test_equal 1, strscan.skip_until(/A/)
+

@@ -174,7 +174,8 @@ public class StringScanner {
 	public CharSequence scanUntil(Pattern pattern) {
 		if (!isEndOfString()) {
 			matcher = pattern.matcher(string);
-			if (matcher.find(pos)) {
+            matcher.setPosition(pos);
+			if (matcher.find()) {
 				lastPos = pos;
 				matchStart = matcher.start();
 				matchEnd = matcher.end();
@@ -225,7 +226,8 @@ public class StringScanner {
 	public CharSequence checkUntil(Pattern pattern) {
 		if (!isEndOfString()) {
 			matcher = pattern.matcher(string);
-			if (matcher.find(pos)) {
+            matcher.setPosition(pos);
+			if (matcher.find()) {
 				matchStart = matcher.start();
 				matchEnd = matcher.end();
 				return string.subSequence(pos, matcher.end());
@@ -258,7 +260,8 @@ public class StringScanner {
 	public int skipUntil(Pattern pattern) {
 		if (!isEndOfString()) {
 			matcher = pattern.matcher(string);
-			if (matcher.find(pos)) {
+            matcher.setPosition(pos);
+			if (matcher.find()) {
 				lastPos = pos;
 				pos = matcher.end();
 				matchStart = matcher.start();
@@ -275,7 +278,8 @@ public class StringScanner {
 	public int exists(Pattern pattern) {
 		if (!isEndOfString()) {
 			matcher = pattern.matcher(string);
-			if (matcher.find(pos)) {
+            matcher.setPosition(pos);
+			if (matcher.find()) {
 				matchStart = matcher.start();
 				matchEnd = matcher.end();
 				return matchEnd - pos;
