@@ -1820,13 +1820,13 @@ public class RubyString extends RubyObject {
                     break;
                 }
                 pos = i;
-                n = isDigit(c) ? '0' : (isLower(c) ? 'a' : 'A');
-                value.set(i, (byte)n);
+                n = isDigit(c) ? '1' : (isLower(c) ? 'a' : 'A');
+                value.set(i, (byte)(isDigit(c) ? '0' : (isLower(c) ? 'a' : 'A')));
             }
         }
         if (!alnumSeen) {
             for (int i = value.length() - 1; i >= 0; i--) {
-                c = value.get(i);
+                c = value.get(i) & 0xFF;
                 if (c < 0xff) {
                     value.set(i, (byte)(c + 1));
                     pos = -1;
@@ -1841,8 +1841,8 @@ public class RubyString extends RubyObject {
             // This represents left most digit in a set of incremented
             // values?  Therefore leftmost numeric must be '1' and not '0'
             // 999 -> 1000, not 999 -> 0000.  whereas chars should be
-            // zzz -> aaaa
-            value.prepend((byte)(isDigit(c) ? '1' : (isLower(c) ? 'a' : 'A')));
+            // zzz -> aaaa and non-alnum byte values should be "\377" -> "\001\000"
+            value.prepend((byte)n);
         }
         stringMutated();
         return this;
@@ -2046,6 +2046,8 @@ public class RubyString extends RubyObject {
                         // add any matched groups found while splitting the first hit
                         for (int groupIndex = 1; groupIndex < matt.groupCount(); groupIndex++) {
                             group = matt.group(groupIndex);
+                            if (group == null) continue;
+                            
                             list.add(group);
                         }
                     }
@@ -2068,6 +2070,8 @@ public class RubyString extends RubyObject {
                         // add any matched groups found while splitting the current hit
                         for (int groupIndex = 1; groupIndex < matt.groupCount(); groupIndex++) {
                             group = matt.group(groupIndex);
+                            if (group == null) continue;
+                            
                             list.add(group);
                         }
 
@@ -2088,7 +2092,8 @@ public class RubyString extends RubyObject {
             // Remove trailing whitespace when limit 0 is specified
             if (limit == 0 && list.size() > 0) {
                 for (int size = list.size() - 1;
-                size >= 0 && ((String) list.get(size)).length() == 0; size--) {
+                        size >= 0 && ((String) list.get(size)).length() == 0;
+                        size--) {
                     list.remove(size);
                 }
             }
@@ -2100,7 +2105,7 @@ public class RubyString extends RubyObject {
         RubyArray resultArray = getRuntime().newArray(result.length);
 
         for (int i = 0; i < result.length; i++) {
-            RubyString string = getRuntime().newString(result[i]);
+            RubyString string = runtime.newString(result[i]);
 
             // if we're in unicode mode and successfully converted to a unicode string before,
             // make sure to keep unicode in the split values
