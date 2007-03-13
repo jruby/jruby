@@ -2121,28 +2121,32 @@ public class RubyString extends RubyObject {
 
         if (!block.isGiven()) {
             RubyArray ary = getRuntime().newArray();
-            while (pattern.search(toString, start) != -1) {
+            if (pattern.search(toString, start) != -1) {
                 RubyMatchData md = (RubyMatchData) tc.getBackref();
-                ary.append(md.getSize() == 1 ? md.group(0) : md.subseq(1, md.getSize()));
+                do {
+                    ary.append(md.getSize() == 1 ? md.group(0) : md.subseq(1, md.getSize()));
+
+                    if (md.matchEndPosition() == md.matchStartPosition()) {
+                        start++;
+                    } else {
+                        start = md.matchEndPosition();
+                    }
+                } while (md.find());
+            }
+            return ary;
+        }
+
+        if (pattern.search(toString, start) != -1) {
+            RubyMatchData md = (RubyMatchData) tc.getBackref();
+            do {
+                block.yield(tc, md.getSize() == 1 ? md.group(0) : md.subseq(1, md.getSize()));
 
                 if (md.matchEndPosition() == md.matchStartPosition()) {
                     start++;
                 } else {
                     start = md.matchEndPosition();
                 }
-            }
-            return ary;
-        }
-
-        while (pattern.search(toString, start) != -1) {
-            RubyMatchData md = (RubyMatchData) tc.getBackref();
-            block.yield(tc, md.getSize() == 1 ? md.group(0) : md.subseq(1, md.getSize()));
-
-            if (md.matchEndPosition() == md.matchStartPosition()) {
-                start++;
-            } else {
-                start = md.matchEndPosition();
-            }
+            } while (md.find());
         }
         return this;
     }
@@ -2715,10 +2719,15 @@ public class RubyString extends RubyObject {
         // Move toString() call outside loop.
         String toString = toString();
 
-        while (pat.search(toString, start) != -1) {
+        if (pat.search(toString, start) != -1) {
             RubyMatchData md = (RubyMatchData) tc.getBackref();
+            
             block.yield(tc, md.group(0));
-            start = md.matchEndPosition();
+            start = md.end(0);
+            while (md.find()) {
+                block.yield(tc, md.group(0));
+                start = md.end(0);
+            }
         }
         if (start < strLen) {
             block.yield(tc, substr(start, strLen - start));

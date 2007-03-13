@@ -114,6 +114,14 @@ public class RubyMatchData extends RubyObject {
     public long getSize() {
         return matcher.groupCount();
     }
+    
+    public boolean proceed() {
+        return matcher.proceed();
+    }
+    
+    public boolean find() {
+        return matcher.find();
+    }
 
     public IRubyObject group(long n) {
     	// Request an invalid group OR group is an empty match
@@ -187,12 +195,12 @@ public class RubyMatchData extends RubyObject {
      */
     public IRubyObject begin(RubyFixnum index) {
         long lIndex = index.getLongValue();
-        long answer = begin(lIndex);
+        long answer = begin((int)lIndex);
         
         return answer == -1 ? getRuntime().getNil() : getRuntime().newFixnum(answer);
     }
     
-    public long begin(long index) {
+    public int begin(int index) {
         return outOfBounds(index) ? -1 : matcher.start((int)index);
     }
 
@@ -206,7 +214,7 @@ public class RubyMatchData extends RubyObject {
         return answer == -1 ? getRuntime().getNil() : getRuntime().newFixnum(answer);
     }
     
-    public long end(long index) {
+    public int end(int index) {
         return outOfBounds(index) ? -1 : matcher.end((int)index); 
     }
     
