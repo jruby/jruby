@@ -185,7 +185,6 @@ public class RubyString extends RubyObject {
     private void stringMutated() {
         stringValue = null;
         validHash = false;
-        taint();
     }
 
     public static String bytesToString(byte[] bytes, int beg, int len) {
@@ -277,7 +276,7 @@ public class RubyString extends RubyObject {
 
         ByteList newValue = new ByteList(value);
         newValue.append(str.value);
-        return (RubyString) newString(getRuntime(), newValue).infectBy(str);
+        return newString(getRuntime(), newValue).infectBy(other).infectBy(this);
     }
 
     public IRubyObject op_mul(IRubyObject other) {
@@ -458,7 +457,7 @@ public class RubyString extends RubyObject {
         }
         value.replace(newValue.value.bytes());
         stringMutated();
-        return (RubyString) infectBy(newValue);
+        return (RubyString) infectBy(other);
     }
 
     public RubyString reverse() {
@@ -479,7 +478,7 @@ public class RubyString extends RubyObject {
      *
      */
     public static RubyString newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
-        RubyString newString = recv.getRuntime().newString("");
+        RubyString newString = newString(recv.getRuntime(), "");
         newString.setMetaClass((RubyClass) recv);
         newString.callInit(args, block);
         return newString;
@@ -527,9 +526,14 @@ public class RubyString extends RubyObject {
         } else if (pattern instanceof RubyString) {
             RubyRegexp regexp = RubyRegexp.newRegexp((RubyString) pattern, 0, null);
             return regexp.search2(toString());
+        } else if (pattern.respondsTo("to_str")) {
+            // FIXME: is this cast safe?
+            RubyRegexp regexp = RubyRegexp.newRegexp((RubyString) pattern.callMethod(getRuntime().getCurrentContext(), "to_str"), 0, null);
+            return regexp.search2(toString());
         }
 
-        return getRuntime().getNil();
+        // not regexp and not string, can't convert
+        throw getRuntime().newTypeError("wrong argument type " + pattern.getMetaClass().getBaseName() + " (expected Regexp)");
     }
 
     /** rb_str_capitalize
@@ -746,7 +750,7 @@ public class RubyString extends RubyObject {
                 sb.append((char)(value.get(++i) & 0xFF));
             } else if (c == '\"' || c == '\\') {
                 sb.append('\\').append((char)c);
-            } else if (dump && c == '#') {
+            } else if (c == '#') {
                 sb.append('\\').append((char)c);
             } else if (isPrint(c)) {
                 sb.append((char)c);
@@ -1454,13 +1458,15 @@ public class RubyString extends RubyObject {
             RubyString newStr = match.pre_match();
             newStr.append(iter ? block.yield(tc, match.group(0)) : pat.regsub(repl, match));
             newStr.append(match.post_match());
-            newStr.setTaint(isTaint() || repl.isTaint());
             if (bang) {
                 value = newStr.value;
                 stringMutated();
+                infectBy(repl);
                 return this;
             }
 
+            newStr.setTaint(isTaint() || repl.isTaint());
+            
             return newStr;
         }
 
@@ -1948,12 +1954,20 @@ public class RubyString extends RubyObject {
      */
     public RubyArray split(IRubyObject[] args) {
         RubyRegexp pattern;
+        Ruby runtime = getRuntime();
         boolean isWhitespace = false;
 
         // get the pattern based on args
-        if (args.length == 0) {
+        if (args.length == 0 || args[0].isNil()) {
             isWhitespace = true;
-            pattern = RubyRegexp.newRegexp(getRuntime(), "\\s+", 0, null);
+            IRubyObject defaultPattern = runtime.getGlobalVariables().get("$;");
+            
+            if (defaultPattern.isNil()) {
+                pattern = RubyRegexp.newRegexp(runtime, "\\s+", 0, null);
+            } else {
+                // FIXME: Is toString correct here?
+                pattern = RubyRegexp.newRegexp(runtime, defaultPattern.toString(), 0, null);
+            }
         } else if (args[0] instanceof RubyRegexp) {
             // Even if we have whitespace-only explicit regexp we do not
             // mark it as whitespace.  Apparently, this is so ruby can
@@ -1992,7 +2006,11 @@ public class RubyString extends RubyObject {
 
 
         if (limit == 1) {
-            result = new String[] {splitee};
+            if (splitee.length() == 0) {
+                return runtime.newArray();
+            } else {
+                return runtime.newArray(this);
+            }
         } else {
             List list = new ArrayList();
             int numberOfHits = 0;
@@ -2150,10 +2168,6 @@ public class RubyString extends RubyObject {
 
     private IRubyObject justify(IRubyObject [] args, boolean leftJustify) {
         checkArgumentCount(args, 1, 2);
-        int length = RubyNumeric.fix2int(args[0]);
-        if (length <= value.length()) {
-            return dup();
-        }
 
         String paddingArg;
 
@@ -2164,6 +2178,11 @@ public class RubyString extends RubyObject {
             }
         } else {
             paddingArg = " ";
+        }
+        
+        int length = RubyNumeric.fix2int(args[0]);
+        if (length <= value.length()) {
+            return dup();
         }
 
         StringBuffer sbuf = new StringBuffer(length);

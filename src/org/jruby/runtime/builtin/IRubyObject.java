@@ -160,6 +160,11 @@ public interface IRubyObject {
      * @return boolean
      */
     boolean isTaint();
+    
+    /**
+     * Infect this object using the taint of another object
+     */
+    IRubyObject infectBy(IRubyObject obj);
 
     /**
      * RubyMethod isFrozen.
