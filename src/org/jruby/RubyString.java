@@ -2121,32 +2121,32 @@ public class RubyString extends RubyObject {
 
         if (!block.isGiven()) {
             RubyArray ary = getRuntime().newArray();
-            if (pattern.search(toString, start) != -1) {
+            while (pattern.search(toString, start) != -1) {
                 RubyMatchData md = (RubyMatchData) tc.getBackref();
-                do {
-                    ary.append(md.getSize() == 1 ? md.group(0) : md.subseq(1, md.getSize()));
 
-                    if (md.matchEndPosition() == md.matchStartPosition()) {
-                        start++;
-                    } else {
-                        start = md.matchEndPosition();
-                    }
-                } while (md.find());
-            }
-            return ary;
-        }
-
-        if (pattern.search(toString, start) != -1) {
-            RubyMatchData md = (RubyMatchData) tc.getBackref();
-            do {
-                block.yield(tc, md.getSize() == 1 ? md.group(0) : md.subseq(1, md.getSize()));
+                ary.append(md.getSize() == 1 ? md.group(0) : md.subseq(1, md.getSize()));
 
                 if (md.matchEndPosition() == md.matchStartPosition()) {
                     start++;
                 } else {
                     start = md.matchEndPosition();
                 }
-            } while (md.find());
+
+            }
+            return ary;
+        }
+
+        while (pattern.search(toString, start) != -1) {
+            RubyMatchData md = (RubyMatchData) tc.getBackref();
+
+            block.yield(tc, md.getSize() == 1 ? md.group(0) : md.subseq(1, md.getSize()));
+
+            if (md.matchEndPosition() == md.matchStartPosition()) {
+                start++;
+            } else {
+                start = md.matchEndPosition();
+            }
+
         }
         return this;
     }
