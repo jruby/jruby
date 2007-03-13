@@ -15,7 +15,7 @@
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -43,16 +43,16 @@ import org.jruby.runtime.Arity;
  */
 public class MultipleAsgnNode extends AssignableNode {
     static final long serialVersionUID = 5016291105152162748L;
-
+    
     private final ListNode headNode;
     private final Node argsNode;
-
+    
     public MultipleAsgnNode(ISourcePosition position, ListNode headNode, Node argsNode) {
         super(position, NodeTypes.MULTIPLEASGNNODE);
         this.headNode = headNode;
         this.argsNode = argsNode;
     }
-
+    
     /**
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
@@ -60,7 +60,7 @@ public class MultipleAsgnNode extends AssignableNode {
     public Instruction accept(NodeVisitor iVisitor) {
         return iVisitor.visitMultipleAsgnNode(this);
     }
-
+    
     /**
      * Gets the argsNode.
      * @return Returns a INode
@@ -68,7 +68,7 @@ public class MultipleAsgnNode extends AssignableNode {
     public Node getArgsNode() {
         return argsNode;
     }
-
+    
     /**
      * Gets the headNode.
      * @return Returns a ListNode
@@ -76,20 +76,20 @@ public class MultipleAsgnNode extends AssignableNode {
     public ListNode getHeadNode() {
         return headNode;
     }
-	
+    
     /**
      * Number of arguments is dependent on headNodes size
      */
-	public Arity getArity() {
-		if (argsNode != null) {
-			return Arity.required(headNode == null ? 0 : headNode.size());
-		}
-		
-		return Arity.fixed(headNode.size()); 
-	}
+    public Arity getArity() {
+        if (argsNode != null) {
+            return Arity.required(headNode == null ? 0 : headNode.size());
+        }
+        
+        return Arity.fixed(headNode.size());
+    }
     
     public List childNodes() {
         return Node.createList(headNode, argsNode, getValueNode());
     }
-
+    
 }

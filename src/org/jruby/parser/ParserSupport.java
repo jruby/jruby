@@ -428,7 +428,7 @@ public class ParserSupport {
             if (node instanceof BlockPassNode) {
                 throw new SyntaxException(position, "Dynamic constant assignment.");
             } else if (node instanceof ArrayNode && ((ArrayNode)node).size() == 1) {
-                node = (Node) ((ArrayNode)node).iterator().next();
+                node = (Node) ((ArrayNode)node).get(0);
             } else if (node instanceof SplatNode) {
                 node = new SValueNode(position, node);
             }
@@ -573,8 +573,8 @@ public class ParserSupport {
         if (warnings.isVerbose()) {
             Node lastNode = blockNode.getLast();
 
-            for (Iterator iterator = blockNode.iterator(); iterator.hasNext(); ) {
-                Node currentNode = (Node) iterator.next();
+            for (int i = 0; i < blockNode.size(); i++) {
+                Node currentNode = blockNode.get(i);
         		
                 if (lastNode != currentNode ) {
                     checkUselessStatement(currentNode);
@@ -660,7 +660,7 @@ public class ParserSupport {
 
     public Node getReturnArgsNode(Node node) {
         if (node instanceof ArrayNode && ((ArrayNode) node).size() == 1) { 
-            return (Node) ((ListNode) node).iterator().next();
+            return (Node) ((ListNode) node).get(0);
         } else if (node instanceof BlockPassNode) {
             throw new SyntaxException(node.getPosition(), "Block argument should not be given.");
         }
@@ -791,7 +791,7 @@ public class ParserSupport {
         	
         } else if (tail instanceof DStrNode) {
             if (head instanceof StrNode){
-                ((DStrNode)tail).childNodes().add(0, head);
+                ((DStrNode)tail).prepend(head);
                 return tail;
             } 
 
@@ -839,7 +839,7 @@ public class ParserSupport {
             }
             
             if (node instanceof ArrayNode && ((ArrayNode)node).size() == 1) {
-                node = (Node) ((ArrayNode)node).iterator().next();
+                node = (Node) ((ArrayNode)node).get(0);
                 state = false;
             }
             

@@ -14,7 +14,7 @@
  * Copyright (C) 2001-2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -37,22 +37,22 @@ import org.jruby.runtime.Arity;
  * Base class of any node which can be assigned to.
  */
 public abstract class AssignableNode extends Node implements IArityNode {
-	static final long serialVersionUID= 7997990944631594662L;
-	
+    static final long serialVersionUID= 7997990944631594662L;
+    
     private Node valueNode;
-
-	public AssignableNode(ISourcePosition position, int id) {
-		super(position, id);
-	}
-
-	/**
+    
+    public AssignableNode(ISourcePosition position, int id) {
+        super(position, id);
+    }
+    
+    /**
      * Gets the valueNode.
      * @return Returns a Node
      */
     public Node getValueNode() {
         return valueNode;
     }
-
+    
     /**
      * Sets the valueNode.
      * @param valueNode The valueNode to set
@@ -62,9 +62,9 @@ public abstract class AssignableNode extends Node implements IArityNode {
     }
     
     /**
-	 * Almost all assignables are only assigned a single value.
+     * Almost all assignables are only assigned a single value.
      */
     public Arity getArity() {
-    	return Arity.singleArgument();
+        return Arity.singleArgument();
     }
 }

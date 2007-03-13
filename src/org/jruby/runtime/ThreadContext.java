@@ -98,7 +98,6 @@ public class ThreadContext {
        pushScope(new DynamicScope(new LocalStaticScope(null), null));
     }
     
-    Visibility lastVis;
     CallType lastCallType;
     
     public Ruby getRuntime() {
@@ -109,13 +108,12 @@ public class ThreadContext {
      * Returns the lastCallStatus.
      * @return LastCallStatus
      */
-    public void setLastCallStatus(Visibility vis, CallType callType) {
-        lastVis = vis;
+    public void setLastCallStatus(CallType callType) {
         lastCallType = callType;
     }
     
     public Visibility getLastVisibility() {
-        return lastVis;
+        return getPreviousFrame().getVisibility();
     }
     
     public CallType getLastCallType() {
@@ -284,14 +282,6 @@ public class ThreadContext {
         return getCurrentFrame().getSelf();
     }
     
-    public void setFrameSelf(IRubyObject self) {
-        getCurrentFrame().setSelf(self);
-    }
-
-    public void setSelfToPrevious() {
-        getCurrentFrame().setSelf(getPreviousFrame().getSelf());
-    }
-
     public RubyModule getFrameKlazz() {
         return getCurrentFrame().getKlazz();
     }

@@ -36,8 +36,6 @@ public class MultipleAsgnNodeAsgnCompiler implements NodeCompiler {
         
         int varLen = multipleAsgnNode.getHeadNode() == null ? 0 : multipleAsgnNode.getHeadNode().size();
         
-        Iterator iter = multipleAsgnNode.getHeadNode() != null ? multipleAsgnNode.getHeadNode().iterator() : Collections.EMPTY_LIST.iterator();
-        
         { // normal items at the "head" of the masgn
             ArrayCallback headAssignCallback = new ArrayCallback() {
                 public void nextValue(Compiler context, Object sourceArray,

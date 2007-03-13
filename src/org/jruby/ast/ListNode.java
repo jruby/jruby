@@ -28,11 +28,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Arrays;
 import java.util.List;
-import java.util.ListIterator;
-
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -46,7 +43,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class ListNode extends Node {
     private static final long serialVersionUID = 1L;
     
-    private List list = null;
+    private Node[] list;
 
     /**
      * Create a new ListNode.
@@ -57,7 +54,7 @@ public class ListNode extends Node {
     public ListNode(ISourcePosition position, int id, Node firstNode) {
         this(position, id);
         
-        add(firstNode);
+        list = new Node[] {firstNode};
     }
     
     public ListNode(ISourcePosition position, int id) {
@@ -71,23 +68,37 @@ public class ListNode extends Node {
     public ListNode add(Node node) {
         // Ruby Grammar productions return plenty of nulls.
         if (node == null) return this;
-        if (list == null) list = new ArrayList();
+        if (list == null) {
+            list = new Node[1];
+        } else {
+            Node[] newList = new Node[list.length + 1];
+            System.arraycopy(list, 0, newList, 0, list.length);
+            list = newList;
+        }
 
-        list.add(node);
+        list[list.length - 1] = node;
         setPosition(getPosition().union(node.getPosition()));
         return this;
     }
-
-    public Iterator iterator() {
-        return list == null ? EMPTY_LIST.iterator() : list.iterator();
-    }
     
-    public ListIterator reverseIterator() {
-    	return list == null ? EMPTY_LIST.listIterator() : list.listIterator(list.size());
+    public ListNode prepend(Node node) {
+        // Ruby Grammar productions return plenty of nulls.
+        if (node == null) return this;
+        if (list == null) {
+            list = new Node[1];
+        } else {
+            Node[] newList = new Node[list.length + 1];
+            System.arraycopy(list, 0, newList, 1, list.length);
+            list = newList;
+        }
+
+        list[0] = node;
+        setPosition(getPosition().union(node.getPosition()));
+        return this;
     }
     
     public int size() {
-        return list == null ? 0 : list.size();
+        return list == null ? 0 : list.length;
     }
     
     
@@ -98,13 +109,18 @@ public class ListNode extends Node {
      * @return this instance for method chaining
      */
     public ListNode addAll(ListNode other) {
-        if (other != null) {
-            if (list == null) list = new ArrayList();
-            list.addAll(other.list);
-            
-            if (list.size() > 0) {
-                setPosition(getPosition().union(getLast().getPosition()));
+        if (other != null && other.size() > 0) {
+            if (list == null) {
+                list = new Node[other.size()];
+                System.arraycopy(other.list, 0, list, 0, other.list.length);
+            } else {
+                Node[] newList = new Node[list.length + other.size()];
+                System.arraycopy(list, 0, newList, 0, list.length);
+                System.arraycopy(other.list, 0, newList, list.length, other.list.length);
+                list = newList;
             }
+            
+            setPosition(getPosition().union(getLast().getPosition()));
         }
         return this;
     }
@@ -120,7 +136,7 @@ public class ListNode extends Node {
     }
     
     public Node getLast() {
-    	return list == null ? null : (Node) list.get(list.size() - 1);
+    	return list == null ? null : list[list.length - 1];
     }
     
     public String toString() {
@@ -129,9 +145,9 @@ public class ListNode extends Node {
     		return string + ": {}";
     	}
     	StringBuffer b = new StringBuffer();
-    	for (int i = 0; i < list.size(); i++) {
-    		b.append(list.get(i));
-            if (i + 1 < list.size()) {
+    	for (int i = 0; i < list.length; i++) {
+    		b.append(list[i]);
+            if (i + 1 < list.length) {
                 b.append(", ");
             }
     	}
@@ -139,7 +155,7 @@ public class ListNode extends Node {
     }
     
     public List childNodes() {
-    	return list == null ? EMPTY_LIST : list;
+    	return list == null ? EMPTY_LIST : Arrays.asList(list);
     }
     
     public Instruction accept(NodeVisitor visitor) {
@@ -147,6 +163,6 @@ public class ListNode extends Node {
     }
     
     public Node get(int idx) {
-        return (Node)list.get(idx);
+        return list[idx];
     }
 }

@@ -464,7 +464,7 @@ public class RubyObject implements Cloneable, IRubyObject {
             }
 
             // store call information so method_missing impl can use it
-            context.setLastCallStatus(method.getVisibility(), callType);
+            context.setLastCallStatus(callType);
 
             if (name.equals("method_missing")) {
                 return RubyKernel.method_missing(self, args, block);

@@ -340,8 +340,11 @@ public class StandardYARVCompiler implements NodeCompiler {
                 c.compile(((DefnNode)node).getBodyNode());
                 YARVMachine.InstructionSequence iseqval =  c.getInstructionSequence(((DefnNode)node).getName(), nd_file(node), "method");
                 List argNames = new ArrayList();
-                for(Iterator iter = ((ArgsNode)((DefnNode)node).getArgsNode()).getArgs().iterator();iter.hasNext();) {
-                    argNames.add(((ArgumentNode)iter.next()).getName());
+                ListNode argsNode = ((DefnNode)node).getArgsNode().getArgs();
+                for (int i = 0; i < argsNode.size(); i++) {
+                    ArgumentNode argumentNode = (ArgumentNode)argsNode.get(i);
+                    
+                    argNames.add(argumentNode.getName());
                 }
                 iseqval.args_argc = argNames.size();
                 String[] l1 = iseqval.locals;

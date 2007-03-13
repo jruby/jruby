@@ -174,13 +174,13 @@ public class AssignmentVisitor {
         int valueLen = value.getLength();
         int varLen = node.getHeadNode() == null ? 0 : node.getHeadNode().size();
         
-        Iterator iter = node.getHeadNode() != null ? node.getHeadNode().iterator() : Collections.EMPTY_LIST.iterator();
-        for (int i = 0; i < valueLen && iter.hasNext(); i++) {
-            Node lNode = (Node) iter.next();
-            assign(runtime, context, self, lNode, value.eltInternal(i), Block.NULL_BLOCK, callAsProc);
+        int j = 0;
+        for (; j < valueLen && j < varLen; j++) {
+            Node lNode = node.getHeadNode().get(j);
+            assign(runtime, context, self, lNode, value.eltInternal(j), Block.NULL_BLOCK, callAsProc);
         }
 
-        if (callAsProc && iter.hasNext()) {
+        if (callAsProc && j < varLen) {
             throw runtime.newArgumentError("Wrong # of arguments (" + valueLen + " for " + varLen + ")");
         }
 
@@ -198,8 +198,8 @@ public class AssignmentVisitor {
             throw runtime.newArgumentError("Wrong # of arguments (" + valueLen + " for " + varLen + ")");
         }
 
-        while (iter.hasNext()) {
-            assign(runtime, context, self, (Node)iter.next(), runtime.getNil(), Block.NULL_BLOCK, callAsProc);
+        while (j < varLen) {
+            assign(runtime, context, self, node.getHeadNode().get(j++), runtime.getNil(), Block.NULL_BLOCK, callAsProc);
         }
         
         return value;

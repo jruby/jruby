@@ -208,10 +208,10 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 
     public Instruction visitArrayNode(ArrayNode iVisited) {
 		iVisited.accept(_Payload);
-		Iterator iterator = iVisited.iterator();
-		while (iterator.hasNext()) {
-			((Node) iterator.next()).accept(this);
-		}
+                
+                for (int i = 0; i < iVisited.size(); i++) {
+                    iVisited.get(i).accept(this);
+                }
 
 		return null;
 	}
@@ -233,10 +233,11 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 
 	public Instruction visitBlockNode(BlockNode iVisited) {
 		iVisited.accept(_Payload);
-		Iterator iterator = iVisited.iterator();
-		while (iterator.hasNext()) {
-			((Node) iterator.next()).accept(this);
-		}
+                
+                for (int i = 0; i < iVisited.size(); i++) {
+                    iVisited.get(i).accept(this);
+                }
+                
 		return null;
 	}
 

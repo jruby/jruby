@@ -243,17 +243,17 @@ public final class DefaultMethod extends DynamicMethod {
         if (hasOptArgs) {
             ListNode optArgs = argsNode.getOptArgs();
    
-            Iterator iter = optArgs.iterator();
-            for (int i = expectedArgsCount; i < args.length && iter.hasNext(); i++) {
+            int j = 0;
+            for (int i = expectedArgsCount; i < args.length && j < optArgs.size(); i++, j++) {
                 // in-frame EvalState should already have receiver set as self, continue to use it
-                AssignmentVisitor.assign(runtime, context, context.getFrameSelf(), (Node)iter.next(), args[i], Block.NULL_BLOCK, true);
+                AssignmentVisitor.assign(runtime, context, context.getFrameSelf(), optArgs.get(j), args[i], Block.NULL_BLOCK, true);
                 expectedArgsCount++;
             }
    
             // assign the default values, adding to the end of allArgs
-            while (iter.hasNext()) {
+            while (j < optArgs.size()) {
                 // in-frame EvalState should already have receiver set as self, continue to use it
-                allArgs.add(EvaluationState.eval(runtime, context, (Node) iter.next(), context.getFrameSelf(), Block.NULL_BLOCK));
+                allArgs.add(EvaluationState.eval(runtime, context, optArgs.get(j++), context.getFrameSelf(), Block.NULL_BLOCK));
             }
         }
         

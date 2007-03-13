@@ -352,7 +352,7 @@ public class ReWriteVisitor implements NodeVisitor {
 	public Instruction visitArrayNode(ArrayNode iVisited) {
 		print('[');
 		enterCall();
-		visitAndPrintWithSeparator(iVisited.iterator());
+		visitAndPrintWithSeparator(iVisited.childNodes().iterator());
 		leaveCall();
 		print(']');
 		return null;
@@ -384,7 +384,7 @@ public class ReWriteVisitor implements NodeVisitor {
 	}
 
 	public Instruction visitBlockNode(BlockNode iVisited) {
-		visitIter(iVisited.iterator());
+		visitIter(iVisited.childNodes().iterator());
 		return null;
 	}
 
