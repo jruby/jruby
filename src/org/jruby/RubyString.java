@@ -762,9 +762,6 @@ public class RubyString extends RubyObject {
                 sb.append('\\').append('v');
             } else if (c == '\u0007') {
                 sb.append('\\').append('a');
-            } else if (c == '\u0008') {
-                // FIXME: This doesn't appear to be right; ruby fails a test related to this at testString.rb line 440
-                sb.append('\\').append('b');
             } else if (c == '\u001B') {
                 sb.append('\\').append('e');
             } else {
