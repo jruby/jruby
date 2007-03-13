@@ -477,32 +477,19 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 	
     public int searchAgain(String target) {
         if (matcher == null || !target.equals(lastTarget)) {
-			matcher = pattern.matcher(target);
-			lastTarget = target;
+            matcher = pattern.matcher(target);
+            lastTarget = target;
         }
-			
-	    if (!matcher.find()) {
-			return -1;
+        
+        if (!matcher.find()) {
+            return -1;
         }
-		
-		int count = matcher.groupCount();
-        int[] begin = new int[count];
-        int[] end = new int[count];
-        for (int i = 0; i < count; i++) {
-            if(!matcher.isCaptured(i)) {
-                begin[i] = -1;
-                end[i] = -1;
-            } else {
-                begin[i] = matcher.start(i);
-                end[i] = matcher.end(i);
-            }
-        }
-		
-		RubyMatchData match = new RubyMatchData(getRuntime(), target, begin, end);
-
-		getRuntime().getCurrentContext().setBackref(match);
-            
-		return match.matchStartPosition(); 
+        
+        RubyMatchData match = new RubyMatchData(getRuntime(), target, matcher);
+        
+        getRuntime().getCurrentContext().setBackref(match);
+        
+        return match.matchStartPosition();
     }
     
     public IRubyObject match(String target, int startPos) {
@@ -520,20 +507,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         aMatcher.setPosition(startPos);
 
         if (aMatcher.find()) {
-            int count = aMatcher.groupCount();
-            int[] begin = new int[count];
-            int[] end = new int[count];
-            for (int i = 0; i < count; i++) {
-                if(!aMatcher.isCaptured(i)) {
-                    begin[i] = -1;
-                    end[i] = -1;
-                } else {
-                    begin[i] = aMatcher.start(i);
-                    end[i] = aMatcher.end(i);
-                }
-            }
-            
-            return new RubyMatchData(getRuntime(), target, begin, end);
+            return new RubyMatchData(getRuntime(), target, aMatcher);
         }
         return getRuntime().getNil();
     }
