@@ -43,21 +43,13 @@ package org.jruby;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.util.Calendar;
 import java.util.Iterator;
-import java.util.List;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.StringTokenizer;
-import java.util.regex.Pattern;
 
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.JumpException;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.MainExitException;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -69,8 +61,8 @@ import org.jruby.runtime.builtin.meta.FileMetaClass;
 import org.jruby.runtime.builtin.meta.IOMetaClass;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.load.LoadService;
+import org.jruby.util.ShellLauncher;
 import org.jruby.util.Sprintf;
-import org.jruby.util.UnsynchronizedStack;
 
 /**
  * Note: For CVS history, see KernelModule.java.
@@ -283,21 +275,19 @@ public class RubyKernel {
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
         recv.checkArgumentCount(args,1,3);
         String arg = args[0].convertToString().toString();
+        Ruby runtime = recv.getRuntime();
 
-        // Should this logic be pushed into RubyIO Somewhere?
         if (arg.startsWith("|")) {
             String command = arg.substring(1);
             // exec process, create IO with process
             try {
-                // TODO: may need to part cli parms out ourself?
-                Process p = Runtime.getRuntime().exec(command,getCurrentEnv(recv.getRuntime()));
-                RubyIO io = new RubyIO(recv.getRuntime(), p);
+                Process p = new ShellLauncher(runtime).run(RubyString.newString(runtime,command));
+                RubyIO io = new RubyIO(runtime, p);
                 
                 if (block.isGiven()) {
                     try {
                         block.yield(recv.getRuntime().getCurrentContext(), io);
-                        
-                        return recv.getRuntime().getNil();
+                        return runtime.getNil();
                     } finally {
                         io.close();
                     }
@@ -305,11 +295,11 @@ public class RubyKernel {
 
                 return io;
             } catch (IOException ioe) {
-                throw recv.getRuntime().newIOErrorFromException(ioe);
+                throw runtime.newIOErrorFromException(ioe);
             }
         } 
 
-        return ((FileMetaClass) recv.getRuntime().getClass("File")).open(args, block);
+        return ((FileMetaClass) runtime.getClass("File")).open(args, block);
     }
 
     public static IRubyObject gets(IRubyObject recv, IRubyObject[] args) {
@@ -899,275 +889,13 @@ public class RubyKernel {
         Ruby runtime = recv.getRuntime();
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         
-        int resultCode = runInShell(runtime, new IRubyObject[] {aString}, output);
+        int resultCode = new ShellLauncher(runtime).runAndWait(new IRubyObject[] {aString}, output);
         
         recv.getRuntime().getGlobalVariables().set("$?", RubyProcess.RubyStatus.newProcessStatus(runtime, resultCode));
         
-        return recv.getRuntime().newString(output.toString());
+        return RubyString.newString(recv.getRuntime(), output.toByteArray());
     }
     
-    private static final Pattern PATH_SEPARATORS = Pattern.compile("[/\\\\]");
-    
-    /**
-     * For the first full token on the command, most likely the actual executable to run, replace
-     * all dir separators with that which is appropriate for the current platform. Return the new
-     * with this executable string at the beginning.
-     * 
-     * @param command The all-forward-slashes command to be "fixed"
-     * @return The "fixed" full command line
-     */
-    private static String repairDirSeps(String command) {
-        String executable = "", remainder = "";
-        command = command.trim();
-        if (command.startsWith("'")) {
-            String [] tokens = command.split("'", 3);
-            executable = "'"+tokens[1]+"'";
-            if (tokens.length > 2)
-                remainder = tokens[2];
-        } else if (command.startsWith("\"")) {
-            String [] tokens = command.split("\"", 3);
-            executable = "\""+tokens[1]+"\"";
-            if (tokens.length > 2)
-                remainder = tokens[2];
-        } else {
-            String [] tokens = command.split(" ", 2);
-            executable = tokens[0];
-            if (tokens.length > 1)
-                remainder = " "+tokens[1];
-        }
-        
-        // Matcher.replaceAll treats backslashes in the replacement string as escaped characters
-        String replacement = File.separator;
-        if (File.separatorChar == '\\')
-            replacement = "\\\\";
-            
-        return PATH_SEPARATORS.matcher(executable).replaceAll(replacement) + remainder;
-                }
-
-    private static List parseCommandLine(IRubyObject[] rawArgs) {
-        // first parse the first element of rawArgs since this may contain
-        // the whole command line
-        String command = rawArgs[0].toString();
-        UnsynchronizedStack args = new UnsynchronizedStack();
-        StringTokenizer st = new StringTokenizer(command, " ");
-        String quoteChar = null;
-
-        while (st.hasMoreTokens()) {
-            String token = st.nextToken();
-            if (quoteChar == null) {
-                // not currently in the middle of a quoted token
-                if (token.startsWith("'") || token.startsWith("\"")) {
-                    // note quote char and remove from beginning of token
-                    quoteChar = token.substring(0, 1);
-                    token = token.substring(1);
-                }
-                if (quoteChar!=null && token.endsWith(quoteChar)) {
-                    // quoted token self contained, remove from end of token
-                    token = token.substring(0, token.length()-1);
-                    quoteChar = null;
-                }
-                // add new token to list
-                args.push(token);
-            } else {
-                // in the middle of quoted token
-                if (token.endsWith(quoteChar)) {
-                    // end of quoted token
-                    token = token.substring(0, token.length()-1);
-                    quoteChar = null;
-                }
-                // update token at end of list
-                token = args.pop() + " " + token;
-                args.push(token);
-            }
-        }
-        
-        // now append the remaining raw args to the cooked arg list
-        for (int i=1;i<rawArgs.length;i++) {
-            args.push(rawArgs[i].toString());
-        }
-        
-        return args;
-    }
-        
-    /**
-     * Only run an in-process script if the script name has "ruby", ".rb", or "irb" in the name
-     */
-    private static boolean shouldRunInProcess(Ruby runtime, String command) {
-        command = command.trim();
-        String [] spaceDelimitedTokens = command.split(" ", 2);
-        String [] slashDelimitedTokens = spaceDelimitedTokens[0].split("/");
-        String finalToken = slashDelimitedTokens[slashDelimitedTokens.length-1];
-        return (finalToken.indexOf("ruby") != -1 || finalToken.endsWith(".rb") || finalToken.endsWith("irb"));
-    }
-    
-    private static class InProcessScript extends Thread {
-        private String[] argArray;
-        private int result;
-        private RubyInstanceConfig config;
-        
-        public InProcessScript(final String[] argArray, final InputStream in, 
-                               final OutputStream out, final OutputStream err, final String[] env, final File dir) {
-            this.argArray = argArray;
-            this.config   = new RubyInstanceConfig() {{
-                setInput(in);
-                setOutput(new PrintStream(out));
-                setError(new PrintStream(err));
-                setEnvironment(environmentMap(env));
-                setCurrentDirectory(dir.toString());
-            }};
-        }
-
-        public int getResult() {
-            return result;
-        }
-
-        public void setResult(int result) {
-            this.result = result;
-        }
-        
-        public void run() {
-            result = new Main(config).run(argArray);
-        }
-
-        private Map environmentMap(String[] env) {
-            Map m = new HashMap();
-            for (int i = 0; i < env.length; i++) {
-                String[] kv = env[i].split("=", 2);
-                m.put(kv[0], kv[1]);
-            }
-            return m;
-        }
-    }
-
-    public static int runInShell(Ruby runtime, IRubyObject[] rawArgs) {
-        return runInShell(runtime,rawArgs,runtime.getOutputStream());
-    }
-
-    private static String[] getCurrentEnv(Ruby runtime) {
-        Map h = ((RubyHash)runtime.getObject().getConstant("ENV")).getValueMap();
-        String[] ret = new String[h.size()];
-        int i=0;
-        for(Iterator iter = h.entrySet().iterator();iter.hasNext();i++) {
-            Map.Entry e = (Map.Entry)iter.next();
-            ret[i] = e.getKey().toString() + "=" + e.getValue().toString();
-        }
-        return ret;
-    }
-
-    public static int runInShell(Ruby runtime, IRubyObject[] rawArgs, OutputStream output) {
-        OutputStream error = runtime.getErrorStream();
-        InputStream input = runtime.getInputStream();
-        try {
-            String shell = runtime.evalScript("require 'rbconfig'; Config::CONFIG['SHELL']").toString();
-            rawArgs[0] = runtime.newString(repairDirSeps(rawArgs[0].toString()));
-            Process aProcess = null;
-            InProcessScript ipScript = null;
-            File pwd = new File(runtime.getCurrentDirectory());
-            
-            if (shouldRunInProcess(runtime, rawArgs[0].toString())) {
-                List args = parseCommandLine(rawArgs);
-                String command = (String)args.get(0);
-
-                // snip off ruby or jruby command from list of arguments
-                // leave alone if the command is the name of a script
-                int startIndex = command.endsWith(".rb") ? 0 : 1;
-                if(command.trim().endsWith("irb")) {
-                    startIndex = 0;
-                    args.set(0,runtime.getJRubyHome() + File.separator + "bin" + File.separator + "jirb");
-                }
-                String[] argArray = (String[])args.subList(startIndex,args.size()).toArray(new String[0]);
-                ipScript = new InProcessScript(argArray, input, output, error, getCurrentEnv(runtime), pwd);
-                
-                // execute ruby command in-process
-                ipScript.start();
-                ipScript.join();
-            } else if (shell != null && rawArgs.length == 1) {
-                // execute command with sh -c or cmd.exe /c
-                // this does shell expansion of wildcards
-                String shellSwitch = shell.endsWith("sh") ? "-c" : "/c";
-                String[] argArray = new String[3];
-                argArray[0] = shell;
-                argArray[1] = shellSwitch;
-                argArray[2] = rawArgs[0].toString();
-                aProcess = Runtime.getRuntime().exec(argArray, getCurrentEnv(runtime), pwd);
-            } else {
-                // execute command directly, no wildcard expansion
-                if (rawArgs.length > 1) {
-                    String[] argArray = new String[rawArgs.length];
-                    for (int i=0;i<rawArgs.length;i++) {
-                        argArray[i] = rawArgs[i].toString();
-                    }
-                    aProcess = Runtime.getRuntime().exec(argArray,getCurrentEnv(runtime), pwd);
-                } else {
-                    aProcess = Runtime.getRuntime().exec(rawArgs[0].toString(), getCurrentEnv(runtime), pwd);
-                }
-            }
-            
-            if (aProcess != null) {
-                handleStreams(aProcess,input,output,error);
-                return aProcess.waitFor();
-            } else if (ipScript != null) {
-                return ipScript.getResult();
-            } else {
-                return 0;
-            }
-        } catch (IOException e) {
-            throw runtime.newIOErrorFromException(e);
-        } catch (InterruptedException e) {
-            throw runtime.newThreadError("unexpected interrupt");
-        }
-    }
-    
-    private static void handleStreams(Process p, InputStream in, OutputStream out, OutputStream err) throws IOException {
-        InputStream pOut = p.getInputStream();
-        InputStream pErr = p.getErrorStream();
-        OutputStream pIn = p.getOutputStream();
-
-        boolean done = false;
-        int b;
-        boolean proc = false;
-        while(!done) {
-            if(pOut.available() > 0) {
-                byte[] input = new byte[pOut.available()];
-                if((b = pOut.read(input)) == -1) {
-                    done = true;
-                } else {
-                    out.write(input);
-                }
-                proc = true;
-            }
-            if(pErr.available() > 0) {
-                byte[] input = new byte[pErr.available()];
-                if((b = pErr.read(input)) != -1) {
-                    err.write(input);
-                }
-                proc = true;
-            }
-            if(in.available() > 0) {
-                byte[] input = new byte[in.available()];
-                if((b = in.read(input)) != -1) {
-                    pIn.write(input);
-                }
-                proc = true;
-            }
-            if(!proc) {
-                if((b = pOut.read()) == -1) {
-                    if((b = pErr.read()) == -1) {
-                        done = true;
-                    } else {
-                        err.write(b);
-                    }
-                } else {
-                    out.write(b);
-                }
-            }
-            proc = false;
-        }
-        pOut.close();
-        pErr.close();
-        pIn.close();
-    }
-
     public static RubyInteger srand(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         long oldRandomSeed = runtime.getRandomSeed();
@@ -1211,7 +939,7 @@ public class RubyKernel {
 
     public static RubyBoolean system(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
-        int resultCode = runInShell(runtime, args);
+        int resultCode = new ShellLauncher(runtime).runAndWait(args);
         recv.getRuntime().getGlobalVariables().set("$?", RubyProcess.RubyStatus.newProcessStatus(runtime, resultCode));
         return runtime.newBoolean(resultCode == 0);
     }

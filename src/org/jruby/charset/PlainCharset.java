@@ -52,4 +52,8 @@ public class PlainCharset extends Charset {
             return CoderResult.UNDERFLOW;
         }
     }
+
+    public int compareTo(Object arg) {
+        return arg instanceof PlainCharset ? 0 : 1;
+    }
 }

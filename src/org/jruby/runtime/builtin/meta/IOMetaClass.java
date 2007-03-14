@@ -54,6 +54,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOHandler;
+import org.jruby.util.ShellLauncher;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public class IOMetaClass extends ObjectMetaClass {
@@ -352,32 +353,10 @@ public class IOMetaClass extends ObjectMetaClass {
         checkArgumentCount(args, 1, 2);
         IRubyObject cmdObj = args[0].convertToString();
         cmdObj.checkSafeString();
-        String command = cmdObj.toString();
         ThreadContext tc = runtime.getCurrentContext();
         
-        /*
-        // only r works so throw error if anything else specified.
-        if (args.length >= 2) {
-            String mode = args[1].convertToString().toString();
-            if (!mode.equals("r")) {
-                throw runtime.newNotImplementedError("only 'r' currently supported");
-            }
-        }
-         */
         try {
-            //TODO Unify with runInShell()
-            Process process;
-            String shell = System.getProperty("jruby.shell");
-            if (shell != null) {
-                String shellSwitch = "-c";
-                if (!shell.endsWith("sh")) {
-                    shellSwitch = "/c";
-                }
-                process = Runtime.getRuntime().exec(new String[] { shell, shellSwitch, command });
-            } else {
-                process = Runtime.getRuntime().exec(command);
-            }
-            
+            Process process = new ShellLauncher(runtime).run(cmdObj);            
             RubyIO io = new RubyIO(runtime, process);
             
             if (block.isGiven()) {
