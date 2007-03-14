@@ -129,8 +129,9 @@ public class CreateJumpTargetVisitor {
                     continue bigloop;
                 case NodeTypes.CALLNODE:
                     setJumpTarget(target, ((CallNode)node).getIterNode());
-                    node = ((CallNode)node).getReceiverNode();
-                    continue bigloop;
+                    setJumpTarget(target, ((CallNode)node).getReceiverNode());
+                    setJumpTarget(target, ((CallNode)node).getArgsNode());
+                    return;
                 case NodeTypes.CASENODE:
                     setJumpTarget(target, ((CaseNode)node).getCaseNode());
                     node = ((CaseNode)node).getFirstWhenNode();
@@ -157,6 +158,7 @@ public class CreateJumpTargetVisitor {
                     continue bigloop;
                 case NodeTypes.FCALLNODE:
                     setJumpTarget(target, ((FCallNode)node).getIterNode());
+                    setJumpTarget(target, ((FCallNode)node).getArgsNode());
                     return;
                 case NodeTypes.FLIPNODE:
                     setJumpTarget(target, ((FlipNode)node).getBeginNode());

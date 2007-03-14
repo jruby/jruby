@@ -176,4 +176,21 @@ class TestBlock < Test::Unit::TestCase
     assert_nothing_raised {Holder.new.call_block(&block)}
     assert_equal("here", Holder.new.call_block(&block))
   end
+
+  def proc_call(&b)
+    b.call
+  end
+
+  def proc_return1
+    proc_call{return 42}+1
+  end
+
+  def proc_return2
+    proc_call{return 42}+1
+  end
+
+  def test_proc_or_block_return
+    assert_nothing_raised { assert_equal 42, proc_return1 }
+    assert_nothing_raised { assert_equal 42, proc_return2 }
+  end
 end
