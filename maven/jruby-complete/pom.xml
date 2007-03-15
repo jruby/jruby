@@ -18,9 +18,7 @@
     <dependency>
       <groupId>jline</groupId>
       <artifactId>jline</artifactId>
-      <version>0.9.91-SNAPSHOT</version>
-      <scope>system</scope>
-      <systemPath>${project.basedir}/../../lib/jline-0.9.91-SNAPSHOT.jar</systemPath>
+      <version>0.9.91</version>
     </dependency>
     <dependency>
       <groupId>requireTest</groupId>
@@ -154,7 +152,7 @@
                   </fileset>
                   <zipfileset src="${project.basedir}/../../lib/asm-2.2.3.jar"/>
                   <zipfileset src="${project.basedir}/../../lib/asm-commons-2.2.3.jar"/>
-                  <zipfileset src="${project.basedir}/../../lib/jline-0.9.91-SNAPSHOT.jar"/>
+                  <zipfileset src="${project.basedir}/../../lib/jline-0.9.91.jar"/>
                   <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
                   <manifest>
                     <attribute name="Built-By" value="${user.name}"/>

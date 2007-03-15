@@ -18,9 +18,7 @@
     <dependency>
       <groupId>jline</groupId>
       <artifactId>jline</artifactId>
-      <version>0.9.91-SNAPSHOT</version>
-      <scope>system</scope>
-      <systemPath>${project.basedir}/../../lib/jline-0.9.91-SNAPSHOT.jar</systemPath>
+      <version>0.9.91</version>
     </dependency>
   </dependencies>
 
