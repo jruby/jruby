@@ -74,6 +74,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     // The two properties frozen and taint
     private boolean frozen;
     private boolean taint;
+    protected boolean isTrue = true;
 
     public RubyObject(Ruby runtime, RubyClass metaClass) {
         this(runtime, metaClass, runtime.isObjectSpaceEnabled());
@@ -267,12 +268,12 @@ public class RubyObject implements Cloneable, IRubyObject {
         return false;
     }
 
-    public boolean isTrue() {
-        return !isNil();
+    public final boolean isTrue() {
+        return isTrue;
     }
 
-    public boolean isFalse() {
-        return isNil();
+    public final boolean isFalse() {
+        return !isTrue;
     }
 
     public boolean respondsTo(String name) {

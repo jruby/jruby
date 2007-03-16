@@ -17,7 +17,7 @@
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -43,14 +43,15 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class RubyNil extends RubyObject {
     private final Ruby runtime;
-
+    
     public RubyNil(Ruby runtime) {
-            super(runtime, null);
-            this.runtime = runtime;
+        super(runtime, null);
+        this.runtime = runtime;
+        this.isTrue = false;
     }
-
+    
     public Ruby getRuntime() {
-            return runtime;
+        return runtime;
     }
     
     public static ObjectAllocator NIL_ALLOCATOR = new ObjectAllocator() {
@@ -58,7 +59,7 @@ public class RubyNil extends RubyObject {
             return runtime.getNil();
         }
     };
-	
+    
     public static RubyClass createNilClass(Ruby runtime) {
         RubyClass nilClass = runtime.defineClass("NilClass", runtime.getObject(), NIL_ALLOCATOR);
         nilClass.index = ClassIndex.NIL;
@@ -78,7 +79,7 @@ public class RubyNil extends RubyObject {
         nilClass.defineFastMethod("id", callbackFactory.getFastSingletonMethod("id"));
         nilClass.defineFastMethod("taint", callbackFactory.getFastMethod("taint"));
         nilClass.defineFastMethod("freeze", callbackFactory.getFastMethod("freeze"));
-
+        
         nilClass.getMetaClass().undefineMethod("new");
         
         runtime.defineGlobalConstant("NIL", runtime.getNil());
@@ -93,9 +94,9 @@ public class RubyNil extends RubyObject {
     public RubyClass getMetaClass() {
         return runtime.getNilClass();
     }
-
+    
     public boolean isImmediate() {
-    	return true;
+        return true;
     }
     
     public boolean safeHasInstanceVariables() {
@@ -103,22 +104,22 @@ public class RubyNil extends RubyObject {
     }
     
     // Methods of the Nil Class (nil_*):
-        
+    
     /** nil_to_i
-    *
-    */
-   public static RubyFixnum to_i(IRubyObject recv) {
-       return RubyFixnum.zero(recv.getRuntime());
-   }
-
-   /**
-    * nil_to_f
-    *  
-    */
-	public static RubyFloat to_f(IRubyObject recv) {
-		return RubyFloat.newFloat(recv.getRuntime(), 0.0D);
-	}
-
+     *
+     */
+    public static RubyFixnum to_i(IRubyObject recv) {
+        return RubyFixnum.zero(recv.getRuntime());
+    }
+    
+    /**
+     * nil_to_f
+     *
+     */
+    public static RubyFloat to_f(IRubyObject recv) {
+        return RubyFloat.newFloat(recv.getRuntime(), 0.0D);
+    }
+    
     /** nil_to_s
      *
      */
@@ -160,42 +161,34 @@ public class RubyNil extends RubyObject {
     public static RubyBoolean op_or(IRubyObject recv, IRubyObject obj) {
         return recv.getRuntime().newBoolean(obj.isTrue());
     }
-
+    
     /** nil_xor
      *
      */
     public static RubyBoolean op_xor(IRubyObject recv, IRubyObject obj) {
         return recv.getRuntime().newBoolean(obj.isTrue());
     }
-
+    
     public static RubyFixnum id(IRubyObject recv) {
         return recv.getRuntime().newFixnum(4);
     }
-
+    
     public boolean isNil() {
         return true;
     }
     
-    public boolean isFalse() {
-    	return true;
-	}
-
-	public boolean isTrue() {
-		return false;
-	}
-	
-	public IRubyObject freeze() {
-		return this;
-	}
-	
-	public IRubyObject nil_p() {
-		return getRuntime().getTrue();
-	}
-	
-	public IRubyObject taint() {
-		return this;
-	}
-
+    public IRubyObject freeze() {
+        return this;
+    }
+    
+    public IRubyObject nil_p() {
+        return getRuntime().getTrue();
+    }
+    
+    public IRubyObject taint() {
+        return this;
+    }
+    
     public RubyFixnum id() {
         return getRuntime().newFixnum(4);
     }
