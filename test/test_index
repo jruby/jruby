@@ -39,7 +39,6 @@ testFloat.rb
 testGC.rb
 testHash.rb
 testHereDocument.rb
-testHigherJavaSupport.rb
 testHooks.rb
 testIconv.rb
 testIf.rb
@@ -49,7 +48,6 @@ testInteger.rb
 testIO.rb
 testJavaExtensions.rb
 testJavaProxy.rb
-testJavaSupport.rb
 testKernel.rb
 testLine.rb
 testLine_block_comment.rb

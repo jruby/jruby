@@ -410,8 +410,9 @@ class ConcreteJavaProxy < JavaProxy
   end
   
   def __jcreate!(*args)
+    raise NameError, "not instantiatable" if self.java_class.constructors.length == 0
     constructors = self.java_class.constructors.select {|c| c.arity == args.length }
-    raise NameError.new("wrong # of arguments for constructor") if constructors.empty?
+    raise NameError, "wrong # of arguments for constructor" if constructors.empty?
     args.collect! { |v| Java.ruby_to_java(v) }
     self.java_object = JavaUtilities.matching_method(constructors, args).new_instance(*args)
   end

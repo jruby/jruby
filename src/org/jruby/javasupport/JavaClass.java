@@ -510,7 +510,14 @@ public class JavaClass extends JavaObject {
     }
     
     public RubyArray declared_classes() {
-        return buildClasses(javaClass().getDeclaredClasses());
+        Class[] classes = javaClass().getDeclaredClasses();
+        List accessibleClasses = new ArrayList();
+        for (int i = 0; i < classes.length; i++) {
+            if (Modifier.isPublic(classes[i].getModifiers())) {
+                accessibleClasses.add(classes[i]);
+            }
+        }
+        return buildClasses((Class[]) accessibleClasses.toArray(new Class[accessibleClasses.size()]));
     }
     
     private RubyArray buildClasses(Class [] classes) {

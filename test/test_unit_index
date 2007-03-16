@@ -66,6 +66,7 @@ test_core_arities
 test_dup_clone_taint_freeze
 test_globals
 test_hash
+test_higher_javasupport
 #test_openssl
 test_primitive_to_java
 test_string_printf
