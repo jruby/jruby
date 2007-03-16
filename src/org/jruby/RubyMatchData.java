@@ -82,7 +82,11 @@ public class RubyMatchData extends RubyObject {
         RubyArray arr = getRuntime().newArray(matcher.groupCount());
         
         for (int i = 1; i < matcher.groupCount(); i++) {
-            arr.append(RubyString.newString(getRuntime(), matcher.group(i)));
+            if (matcher.group(i) == null) {
+                arr.append(RubyString.newString(getRuntime(), ""));
+            } else {
+                arr.append(RubyString.newString(getRuntime(), matcher.group(i)));
+            }
         }
         
         return arr;
@@ -269,7 +273,11 @@ public class RubyMatchData extends RubyObject {
         RubyArray arr = getRuntime().newArray(matcher.groupCount());
         
         for (int i = 0; i < matcher.groupCount(); i++) {
-            arr.append(RubyString.newString(getRuntime(), matcher.group(i)));
+            if (matcher.group(i) == null) {
+                arr.append(RubyString.newString(getRuntime(), ""));
+            } else {
+                arr.append(RubyString.newString(getRuntime(), matcher.group(i)));
+            }
         }
         
         return arr;
