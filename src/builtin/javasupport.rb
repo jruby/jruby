@@ -137,18 +137,17 @@ class JavaProxy
       class_methods = java_class.java_class_methods.collect! { |m| m.name } 
 
       fields.each do |field|
-        if field.static? and field.final? and JavaUtilities.valid_constant_name?(field.name)
-          const_set(field.name, Java.java_to_ruby(field.static_value))
-        elsif (field.static? and field.final? and !JavaUtilities.valid_constant_name?(field.name)) or
-            (field.public? and field.static? and !field.final? && !JavaUtilities.valid_constant_name?(field.name))
-            
+        next unless field.public? && field.static?
+
+        if field.final? && JavaUtilities.valid_constant_name?(field.name)
+          const_set(field.name, Java.java_to_ruby(field.static_value)) unless const_defined?(field.name)
+        else
           next if class_methods.detect {|m| m == field.name } 
           class_eval do
             singleton_class.send(:define_method, field.name) do |*args|
               Java.java_to_ruby(java_class.field(field.name).static_value)
             end
           end
-
         end
       end
     end
