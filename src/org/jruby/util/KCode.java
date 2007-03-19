@@ -32,7 +32,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import org.jruby.Ruby;
-import org.jruby.charset.PlainCharset;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class KCode {
@@ -86,7 +85,7 @@ public class KCode {
             return Charset.forName("UTF-8").newDecoder();
         } 
         
-        return new PlainCharset().newDecoder();
+        return Charset.forName("ISO-8859-1").newDecoder();
     }
     
     public CharsetEncoder encoder() {
@@ -94,7 +93,7 @@ public class KCode {
             return Charset.forName("UTF-8").newEncoder();
         }
         
-        return new PlainCharset().newEncoder();
+        return Charset.forName("ISO-8859-1").newEncoder();
     }
 
     public int flags() {
