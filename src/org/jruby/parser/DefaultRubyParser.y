@@ -299,7 +299,7 @@ stmts         : none
                   $$ = support.newline_node($1, getPosition($1, true));
               }
               | stmts terms stmt {
-	          $$ = support.appendToBlock($1, support.newline_node($3, getPosition($1, true)));
+	          $$ = support.appendToBlock($1, support.newline_node($3, getPosition($3, true)));
               }
               | error stmt {
                   $$ = $2;

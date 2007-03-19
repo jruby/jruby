@@ -979,7 +979,7 @@ case 6:
 case 7:
 					// line 301 "DefaultRubyParser.y"
   {
-	          yyVal = support.appendToBlock(((Node)yyVals[-2+yyTop]), support.newline_node(((Node)yyVals[0+yyTop]), getPosition(((Node)yyVals[-2+yyTop]), true)));
+	          yyVal = support.appendToBlock(((Node)yyVals[-2+yyTop]), support.newline_node(((Node)yyVals[0+yyTop]), getPosition(((Node)yyVals[0+yyTop]), true)));
               }
   break;
 case 8:
