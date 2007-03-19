@@ -14,6 +14,13 @@ test_equal(9, "alphabetagamma" =~ /gamma$/)
 test_equal(nil, "alphabetagamma" =~ /GAMMA$/)
 test_equal(false, "foo" == :foo)
 
+test_equal(11, "\v"[0])
+test_equal(27, "\e"[0])
+# Test round trip of each ASCII character
+0.upto(255) do |ch|
+  test_equal(ch,eval(ch.chr.inspect)[0])
+end
+
 ##### [] (aref) ######
 s = "hello there"
 

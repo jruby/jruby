@@ -354,11 +354,11 @@ public class LexerSource {
             case 'f' : // form feed
                 return '\f';
             case 'v' : // vertical tab
-                return '\u0013';
+                return '\u000B';
             case 'a' : // alarm(bell)
                 return '\u0007';
             case 'e' : // escape
-                return '\u0033';
+                return '\u001B';
             case '0' : case '1' : case '2' : case '3' : // octal constant
             case '4' : case '5' : case '6' : case '7' :
                 unread(c);
