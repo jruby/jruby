@@ -99,28 +99,30 @@ public class ObjectSpace {
     private Map finalizers         = new HashMap();
     private Map weakRefs           = new HashMap();
     private List finalizersToRun   = new ArrayList();
-    private Thread finalizerThread = new FinalizerThread();
+    private FinalizerThread finalizerThread = new FinalizerThread();
 
     {
         finalizerThread.start();
     }
 
     private class FinalizerThread extends Thread {
+        private boolean running;
         public FinalizerThread() {
             super("Ruby Finalizer Thread");
             setDaemon(true);
+            running = true;
         }
         public void run() {
-            while(true) {
+            while(running) {
                 try {
                     synchronized(finalizersToRun) {
-                        while(finalizersToRun.isEmpty()) {
+                        while(finalizersToRun.isEmpty() && running) {
                             try {
                                 finalizersToRun.wait();
                             } catch(InterruptedException e) {
                             }
                         }
-                        while(!finalizersToRun.isEmpty()) {
+                        while(!finalizersToRun.isEmpty() && running) {
                             ((Runnable)finalizersToRun.remove(0)).run();
                         }
                         finalizersToRun.notify();
@@ -129,6 +131,9 @@ public class ObjectSpace {
                     //Swallow, since there's no useful action to take here.
                 }
             }
+        }
+        public void stopRunning() {
+            running = false;
         }
     }
 
@@ -191,7 +196,8 @@ public class ObjectSpace {
                     Thread.currentThread().interrupt();
                 }
             }
-        } 
+        }
+        finalizerThread.stopRunning();
     }
 
     public synchronized void addFinalizer(IRubyObject obj, long id, RubyProc proc) {
