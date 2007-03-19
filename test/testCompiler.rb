@@ -60,9 +60,6 @@ test_equal(2, compile_and_run("2 if true"))
 test_equal(3, compile_and_run(unlessCode))
 test_equal(3, compile_and_run("3 unless false"))
 test_equal(6, compile_and_run(whileCode))
-test_no_exception {
-  test_equal(nil, compile_and_run(whileNoBody))
-}
 test_equal('baz', compile_and_run(iterBasic))
 compile_and_run(defBasic)
 test_equal('hello2', foo3('hello'))
@@ -150,3 +147,15 @@ test_equal(nil, compile_and_run("def a; nil; end; def a=(arg); fail; end; self.a
 test_equal([1, 1], compile_and_run("def a; @a; end; def a=(arg); @a = arg; end; @a = 3; x = self.a &&= 1; [x, self.a]"))
 
 test_equal(1, compile_and_run("def foo; $_ = 1; bar; $_; end; def bar; $_ = 2; end; foo"))
+
+# test empty bodies
+test_no_exception {
+  test_equal(nil, compile_and_run(whileNoBody))
+}
+
+test_no_exception {
+  # fcall with empty block
+  test_equal(nil, compile_and_run("proc { }.call"))
+  # call with empty block
+  test_equal(nil, compile_and_run("self.proc {}.call"))
+}

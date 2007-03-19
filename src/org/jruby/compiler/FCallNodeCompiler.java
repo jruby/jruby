@@ -61,7 +61,11 @@ public class FCallNodeCompiler implements NodeCompiler {
             // create the closure class and instantiate it
             final ClosureCallback closureBody = new ClosureCallback() {
                 public void compile(Compiler context) {
-                    NodeCompilerFactory.getCompiler(iterNode.getBodyNode()).compile(iterNode.getBodyNode(), context);
+                    if (iterNode.getBodyNode() != null) {
+                        NodeCompilerFactory.getCompiler(iterNode.getBodyNode()).compile(iterNode.getBodyNode(), context);
+                    } else {
+                        context.loadNil();
+                    }
                 }
             };
             
