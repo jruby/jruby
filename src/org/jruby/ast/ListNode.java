@@ -77,7 +77,13 @@ public class ListNode extends Node {
         }
 
         list[list.length - 1] = node;
-        setPosition(getPosition().union(node.getPosition()));
+
+        if (getPosition() == null) {
+            setPosition(node.getPosition());
+        } else {
+            setPosition(getPosition().union(node.getPosition()));
+        }
+
         return this;
     }
     
