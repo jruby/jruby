@@ -446,7 +446,9 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         Label tryCatch = new Label();
         if (closureArg != null) {
             // wrap with try/catch for block flow-control exceptions
-            mv.trycatch(tryBegin, tryEnd, tryCatch, cg.p(JumpException.class));
+            // FIXME: for flow-control from containing blocks, but it's not working right;
+            // stack is not as expected for invoke calls below...
+            //mv.trycatch(tryBegin, tryEnd, tryCatch, cg.p(JumpException.class));
 
             mv.label(tryBegin);
         }
@@ -461,56 +463,29 @@ public class StandardASMCompiler implements Compiler, Opcodes {
             mv.label(tryEnd);
 
             // no physical break, terminate loop and skip catch block
-            Label normalBreak = new Label();
-            mv.go_to(normalBreak);
+            Label normalEnd = new Label();
+            mv.go_to(normalEnd);
 
             mv.label(tryCatch);
             {
-                // this logic is largely to handle the kernel "loop" behavior. See JRUBY-530.
-                mv.dup();
-                mv.invokevirtual(cg.p(JumpException.class), "getJumpType", cg.sig(JumpException.JumpType.class));
-                mv.invokevirtual(cg.p(JumpException.JumpType.class), "getTypeId", cg.sig(Integer.TYPE));
-
-                Label tryDefault = new Label();
-                Label breakLabel = new Label();
-
-                mv.lookupswitch(tryDefault, new int[] {JumpException.JumpType.BREAK}, new Label[] {breakLabel});
-
-                // default is to just re-throw unhandled exception
-                mv.label(tryDefault);
-                mv.athrow();
-
-                // break just terminates the loop normally, unless it's a block break...
-                mv.label(breakLabel);
-
-                // Check if it's a break from the passed-in block
-                mv.dup();
-                mv.invokevirtual(cg.p(JumpException.class), "isBreakInKernelLoop", cg.sig(Boolean.TYPE));
-                Label notBreakInKernelLoop = new Label();
-                mv.ifeq(notBreakInKernelLoop);
-                mv.dup();
-                // compare target with block
-                mv.invokevirtual(cg.p(JumpException.class), "getTarget", cg.sig(Object.class));
                 loadClosure();
-                Label notBlockBreak = new Label();
-                mv.if_acmpne(notBlockBreak);
-                mv.dup();
-                mv.ldc(Boolean.FALSE);
-                mv.invokevirtual(cg.p(JumpException.class), "setBreakInKernelLoop", cg.sig(Void.TYPE, cg.params(Boolean.TYPE)));
-
-                mv.label(notBlockBreak);
-                // target is not == closure, rethrow
-                mv.athrow();
-                
-                mv.label(notBreakInKernelLoop);
-                // not a "loop" break, get out value
-                
-                mv.invokevirtual(cg.p(JumpException.class), "getValue", cg.sig(Object.class));
-                mv.checkcast(cg.p(IRubyObject.class));
+                invokeUtilityMethod("handleJumpException", cg.sig(IRubyObject.class, cg.params(JumpException.class, Block.class)));
             }
 
-            mv.label(normalBreak);
+            mv.label(normalEnd);
         }
+    }
+    
+    public static IRubyObject handleJumpException(JumpException je, Block block) {
+        // JRUBY-530, Kernel#loop case:
+        if (je.isBreakInKernelLoop()) {
+            // consume and rethrow or just keep rethrowing?
+            if (block == je.getTarget()) je.setBreakInKernelLoop(false);
+
+            throw je;
+        }
+
+        return (IRubyObject) je.getValue();
     }
     
     public void yield(boolean hasArgs) {
@@ -724,7 +699,7 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         // put under object array already present
         mv.swap();
         
-        invokeIRuby("newArray", cg.sig(RubyArray.class, cg.params(IRubyObject[].class)));
+        invokeIRuby("newArrayNoCopy", cg.sig(RubyArray.class, cg.params(IRubyObject[].class)));
     }
     
     public void createEmptyArray() {

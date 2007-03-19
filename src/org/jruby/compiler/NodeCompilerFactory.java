@@ -49,6 +49,8 @@ public class NodeCompilerFactory {
         UNSAFE_CALLS.add("public");
         UNSAFE_CALLS.add("protected");
         UNSAFE_CALLS.add("eval");
+        UNSAFE_CALLS.add("local_variables");
+        UNSAFE_CALLS.add("block_given?");
     }
     
     public static YARVNodesCompiler getYARVCompiler() {
@@ -78,7 +80,8 @@ public class NodeCompilerFactory {
             // safe
             return new BlockNodeCompiler();
         case NodeTypes.BREAKNODE:
-            // safe
+            // Not safe yet; something weird with break-handling try/catch and calls like "foo bar {}"
+            if (SAFE) throw new NotCompilableException("Can't compile node safely: " + node);
             return new BreakNodeCompiler();
         case NodeTypes.CALLNODE:
             // safe; yield or block nodes that aren't should raise
