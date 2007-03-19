@@ -219,28 +219,57 @@ public class ShellLauncher {
         return aProcess;
     }
 
+    private static class StreamCopier extends Thread {
+        private InputStream in;
+        private OutputStream out;
+        private boolean onlyIfAvailable;
+        private boolean quit;
+        StreamCopier(InputStream in, OutputStream out, boolean avail) {
+            this.in = in;
+            this.out = out;
+            this.onlyIfAvailable = avail;
+        }
+        public void run() {
+            byte[] buf = new byte[128];
+            int numRead;
+            try {
+                while (true) {
+                    synchronized(this) {
+                        if (quit) {
+                            break;
+                        }
+                    }
+                    if (onlyIfAvailable && in.available() == 0) {
+                        continue;
+                    }
+                    if ((numRead = in.read(buf)) == -1) {
+                        break;
+                    }
+                    out.write(buf, 0, numRead);
+                }
+            } catch (Exception e) {
+            }
+        }
+        public synchronized void quit() {
+            this.quit = true;
+        }
+    }
+
     private void handleStreams(Process p, InputStream in, OutputStream out, OutputStream err) throws IOException {
         InputStream pOut = p.getInputStream();
         InputStream pErr = p.getErrorStream();
         OutputStream pIn = p.getOutputStream();
-        
-        int b;
-        byte[] input = new byte[1024];
-        while(true) {
-            if ((b = pOut.read(input)) == -1) {
-                break;
-            } else {
-                out.write(input, 0, b);
-            }
 
-            if ((b = pErr.read(input)) != -1) {
-                err.write(input, 0, b);
-            }
+        StreamCopier t1 = new StreamCopier(pOut, out, false);
+        StreamCopier t2 = new StreamCopier(pErr, err, false);
+        StreamCopier t3 = new StreamCopier(in, pIn, true);
+        t1.start();
+        t2.start();
+        t3.start();
 
-            if (in.available() > 0 && (b = in.read(input)) != -1) {
-                pIn.write(input, 0, b);
-            }
-        }
+        try { t1.join(); } catch (InterruptedException ie) {}
+        try { t2.join(); } catch (InterruptedException ie) {}
+        t3.quit();
 
         pOut.close();
         pErr.close();
