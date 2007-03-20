@@ -166,14 +166,20 @@ public class EvaluationState {
     }
 
     private static IRubyObject evalInternal(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
-        if (node == null) return nilNode(runtime);
-
         do {
+            if (node == null) return nilNode(runtime);
+
             switch (node.nodeId) {
             case NodeTypes.ALIASNODE:
                 return aliasNode(runtime, context, node);
-            case NodeTypes.ANDNODE:
-                return andNode(runtime, context, node, self, aBlock);
+            case NodeTypes.ANDNODE: {
+                BinaryOperatorNode iVisited = (BinaryOperatorNode) node;
+   
+                IRubyObject result = evalInternal(runtime,context, iVisited.getFirstNode(), self, aBlock);
+                if (!result.isTrue()) return result;
+                node = iVisited.getSecondNode();
+                continue;
+            }
             case NodeTypes.ARGSCATNODE:
                 return argsCatNode(runtime, context, node, self, aBlock);
             case NodeTypes.ARGSPUSHNODE:
@@ -185,7 +191,8 @@ public class EvaluationState {
             case NodeTypes.BACKREFNODE:
                 return backRefNode(context, node);
             case NodeTypes.BEGINNODE: 
-                return beginNode(runtime, context, node, self, aBlock);
+                node = ((BeginNode)node).getBodyNode();
+                continue;
             case NodeTypes.BIGNUMNODE:
                 return bignumNode(runtime, node);
             case NodeTypes.BLOCKNODE:
@@ -256,8 +263,17 @@ public class EvaluationState {
                 return globalVarNode(runtime, context, node);
             case NodeTypes.HASHNODE:
                 return hashNode(runtime, context, node, self, aBlock);
-            case NodeTypes.IFNODE:
-                return ifNode(runtime, context, node, self, aBlock);
+            case NodeTypes.IFNODE: {
+                IfNode iVisited = (IfNode) node;
+                IRubyObject result = evalInternal(runtime,context, iVisited.getCondition(), self, aBlock);
+
+                if (result.isTrue()) {
+                    node = iVisited.getThenBody();
+                } else {
+                    node = iVisited.getElseBody();
+                }
+                continue;
+            }
             case NodeTypes.INSTASGNNODE:
                 return instAsgnNode(runtime, context, node, self, aBlock);
             case NodeTypes.INSTVARNODE:
@@ -300,8 +316,15 @@ public class EvaluationState {
                 return notNode(runtime, context, node, self, aBlock);
             case NodeTypes.NTHREFNODE:
                 return nthRefNode(context, node);
-            case NodeTypes.OPASGNANDNODE:
-                return opAsgnAndNode(runtime, context, node, self, aBlock);
+            case NodeTypes.OPASGNANDNODE: {
+                BinaryOperatorNode iVisited = (BinaryOperatorNode) node;
+        
+                // add in reverse order
+                IRubyObject result = evalInternal(runtime,context, iVisited.getFirstNode(), self, aBlock);
+                if (!result.isTrue()) return result;
+                node = iVisited.getSecondNode();
+                continue;
+            }
             case NodeTypes.OPASGNNODE:
                 return opAsgnNode(runtime, context, node, self, aBlock);
             case NodeTypes.OPASGNORNODE:
@@ -317,7 +340,8 @@ public class EvaluationState {
             case NodeTypes.REGEXPNODE:
                 return regexpNode(runtime, node);
             case NodeTypes.RESCUEBODYNODE:
-                return rescueBodyNode(runtime, context, node, self, aBlock);
+                node = ((RescueBodyNode)node).getBodyNode();
+                continue;
             case NodeTypes.RESCUENODE:
                 return rescueNode(runtime, context, node, self, aBlock);
             case NodeTypes.RETRYNODE:
@@ -384,15 +408,6 @@ public class EvaluationState {
         return runtime.getNil();
     }
     
-    private static IRubyObject andNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
-        BinaryOperatorNode iVisited = (BinaryOperatorNode) node;
-   
-        IRubyObject result = evalInternal(runtime,context, iVisited.getFirstNode(), self, aBlock);
-        if (!result.isTrue()) return result;
-        
-        return evalInternal(runtime, context, iVisited.getSecondNode(), self, aBlock);
-    }
-
     private static IRubyObject argsCatNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         ArgsCatNode iVisited = (ArgsCatNode) node;
    
@@ -486,10 +501,6 @@ public class EvaluationState {
             assert false: "backref with invalid type";
             return null;
         }
-    }
-
-    private static IRubyObject beginNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
-        return evalInternal(runtime, context, ((BeginNode)node).getBodyNode(), self, aBlock);
     }
 
     private static IRubyObject bignumNode(Ruby runtime, Node node) {
@@ -1209,19 +1220,6 @@ public class EvaluationState {
         return RubyHash.newHash(runtime, hash, runtime.getNil());
     }
 
-    private static IRubyObject ifNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
-        IfNode iVisited = (IfNode) node;
-        IRubyObject result = evalInternal(runtime,context, iVisited.getCondition(), self, aBlock);
-
-        if (result.isTrue()) {
-            node = iVisited.getThenBody();
-            return evalInternal(runtime, context, node, self, aBlock);
-        } else {
-            node = iVisited.getElseBody();
-            return evalInternal(runtime, context, node, self, aBlock);
-        }
-    }
-
     private static IRubyObject instAsgnNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         InstAsgnNode iVisited = (InstAsgnNode) node;
    
@@ -1339,16 +1337,6 @@ public class EvaluationState {
 
     private static IRubyObject nthRefNode(ThreadContext context, Node node) {
         return RubyRegexp.nth_match(((NthRefNode)node).getMatchNumber(), context.getBackref());
-    }
-
-    private static IRubyObject opAsgnAndNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
-        BinaryOperatorNode iVisited = (BinaryOperatorNode) node;
-        
-        // add in reverse order
-        IRubyObject result = evalInternal(runtime,context, iVisited.getFirstNode(), self, aBlock);
-        if (!result.isTrue()) return result;
-        node = iVisited.getSecondNode();
-        return evalInternal(runtime, context, node, self, aBlock);
     }
 
     private static IRubyObject opAsgnNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
@@ -1492,10 +1480,6 @@ public class EvaluationState {
             //                    e.printStackTrace();
             throw runtime.newRegexpError(e.getMessage());
         }
-    }
-
-    private static IRubyObject rescueBodyNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
-        return evalInternal(runtime, context, ((RescueBodyNode)node).getBodyNode(), self, aBlock);
     }
 
     private static IRubyObject rescueNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
