@@ -1450,8 +1450,12 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         return TRANS.flagsFor(options,0);
     }
 
-    public static Pattern regexpLiteral(String ptr, int options) {
-        return TRANS.translate(ptr, options, 0);
+    public static Pattern regexpLiteral(Ruby runtime, String ptr, int options) {
+        try {
+            return TRANS.translate(ptr, options, 0);
+        } catch(jregex.PatternSyntaxException e) {
+            throw runtime.newRegexpError(e.getMessage());
+        }
     }
 
     public void createNewRegexp(final ByteList value, final int options, final String lang) {
@@ -1473,9 +1477,10 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         invokeUtilityMethod("regexpLiteralFlags",cg.sig(Integer.TYPE,cg.params(Integer.TYPE)));
         mv.visitFieldInsn(PUTSTATIC, classname, name_flags, cg.ci(Integer.TYPE));
 
+        loadRuntime();
         mv.ldc(value.toString());
         mv.ldc(new Integer(options));
-        invokeUtilityMethod("regexpLiteral",cg.sig(Pattern.class,cg.params(String.class,Integer.TYPE)));
+        invokeUtilityMethod("regexpLiteral",cg.sig(Pattern.class,cg.params(Ruby.class,String.class,Integer.TYPE)));
         mv.dup();
 
         mv.visitFieldInsn(PUTSTATIC, classname, name, cg.ci(Pattern.class));
