@@ -548,33 +548,25 @@ public class EvaluationState {
             }
         }
             
-        try {
-            while (true) {
-                try {
-                    DynamicMethod method = module.searchMethod(iVisited.getName());
+        while (true) {
+            try {
+                DynamicMethod method = module.searchMethod(iVisited.getName());
 
-                    IRubyObject mmResult = RubyObject.callMethodMissingIfNecessary(context, receiver, method, iVisited.getName(), args, self, CallType.NORMAL, block);
-                    if (mmResult != null) {
-                        return mmResult;
-                    }
-
-                    return method.call(context, receiver, module, iVisited.getName(), args, false, block);
-                } catch (JumpException je) {
-                    switch (je.getJumpType().getTypeId()) {
-                    case JumpType.RETRY:
-                        // allow loop to retry
-                        break;
-                    default:
-                        throw je;
-                    }
+                IRubyObject mmResult = RubyObject.callMethodMissingIfNecessary(context, receiver, method, iVisited.getName(), args, self, CallType.NORMAL, block);
+                if (mmResult != null) {
+                    return mmResult;
                 }
-            }
-        } catch (JumpException je) {
-            switch (je.getJumpType().getTypeId()) {
-            case JumpType.BREAK:
-                return (IRubyObject) je.getValue();
-            default:
-                throw je;
+
+                return method.call(context, receiver, module, iVisited.getName(), args, false, block);
+            } catch (JumpException je) {
+                switch (je.getJumpType().getTypeId()) {
+                case JumpType.RETRY:
+                    // allow loop to retry
+                case JumpType.BREAK:
+                    return (IRubyObject) je.getValue();
+                default:
+                    throw je;
+                }
             }
         }
     }
@@ -1028,41 +1020,34 @@ public class EvaluationState {
             }
         }
 
-        try {
-            while (true) {
-                try {
-                    RubyModule module = self.getMetaClass();
-                    IRubyObject result = self.callMethod(context, module, iVisited.getName(), args,
-                            CallType.FUNCTIONAL, block);
-                    if (result == null) {
-                        result = runtime.getNil();
-                    }
+        while (true) {
+            try {
+                RubyModule module = self.getMetaClass();
+                IRubyObject result = self.callMethod(context, module, iVisited.getName(), args,
+                                                     CallType.FUNCTIONAL, block);
+                if (result == null) {
+                    result = runtime.getNil();
+                }
                     
-                    return result; 
-                } catch (JumpException je) {
-                    switch (je.getJumpType().getTypeId()) {
-                    case JumpType.RETRY:
-                        // allow loop to retry
-                        break;
-                    default:
+                return result; 
+            } catch (JumpException je) {
+                switch (je.getJumpType().getTypeId()) {
+                case JumpType.RETRY:
+                    // allow loop to retry
+                    break;
+                case JumpType.BREAK:
+                    // JRUBY-530, Kernel#loop case:
+                    if (je.isBreakInKernelLoop()) {
+                        // consume and rethrow or just keep rethrowing?
+                        if (block == je.getTarget()) je.setBreakInKernelLoop(false);
+                            
                         throw je;
                     }
-                }
-            }
-        } catch (JumpException je) {
-            switch (je.getJumpType().getTypeId()) {
-            case JumpType.BREAK:
-                // JRUBY-530, Kernel#loop case:
-                if (je.isBreakInKernelLoop()) {
-                    // consume and rethrow or just keep rethrowing?
-                    if (block == je.getTarget()) je.setBreakInKernelLoop(false);
-
+                        
+                    return (IRubyObject) je.getValue();
+                default:
                     throw je;
                 }
-                
-                return (IRubyObject) je.getValue();
-            default:
-                throw je;
             }
         }
     }
