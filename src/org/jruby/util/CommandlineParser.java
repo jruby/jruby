@@ -338,8 +338,7 @@ public class CommandlineParser {
     }
     
     public boolean isObjectSpaceEnabled() {
-        char trueChar = System.getProperty("jruby.objectspace.enabled", "true").charAt(0);
-        return objectSpaceEnabled && (trueChar =='t' || trueChar == 'T');
+        return objectSpaceEnabled;
     }
     
     public boolean isCompilerEnabled() {
