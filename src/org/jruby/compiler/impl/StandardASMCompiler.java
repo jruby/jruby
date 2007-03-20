@@ -83,6 +83,8 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+import jregex.Pattern;
+
 /**
  *
  * @author headius
@@ -1421,5 +1423,72 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         loadThreadContext();
         invokeThreadContext("getBackref", cg.sig(IRubyObject.class, cg.params()));
         mv.invokestatic(cg.p(RubyRegexp.class), "nth_match", cg.sig(IRubyObject.class, cg.params(Integer.TYPE,IRubyObject.class)));
+    }
+
+    public void match2() {
+        SkinnyMethodAdapter mv = getMethodAdapter();
+        mv.invokevirtual(cg.p(RubyRegexp.class), "match", cg.sig(IRubyObject.class, cg.params(IRubyObject.class)));
+    }
+
+    private int constants = 0;
+    private String getNewConstant(String type, String name_prefix) {
+        ClassVisitor cv = getClassVisitor();
+
+        String realName;
+        synchronized(this) {
+            realName = name_prefix + constants++;
+        }
+
+        // declare the field
+        cv.visitField(ACC_PRIVATE|ACC_STATIC, realName, type, null, null).visitEnd();
+        return realName;
+    }
+
+    private final static org.jruby.RegexpTranslator TRANS = new org.jruby.RegexpTranslator();
+
+    public static int regexpLiteralFlags(int options) {
+        return TRANS.flagsFor(options,0);
+    }
+
+    public static Pattern regexpLiteral(String ptr, int options) {
+        return TRANS.translate(ptr, options, 0);
+    }
+
+    public void createNewRegexp(final ByteList value, final int options, final String lang) {
+        SkinnyMethodAdapter mv = getMethodAdapter();
+        String name = getNewConstant(cg.ci(Pattern.class),"literal_re_");
+        String name_flags = getNewConstant(cg.ci(Integer.TYPE),"literal_re_flags_");
+
+        loadRuntime();
+
+        // in current method, load the field to see if we've created a Pattern yet
+
+        mv.visitFieldInsn(GETSTATIC, classname, name, cg.ci(Pattern.class));
+        mv.dup();
+
+        Label alreadyCreated = new Label();
+        mv.ifnonnull(alreadyCreated);
+        mv.pop();
+        mv.ldc(new Integer(options));
+        invokeUtilityMethod("regexpLiteralFlags",cg.sig(Integer.TYPE,cg.params(Integer.TYPE)));
+        mv.visitFieldInsn(PUTSTATIC, classname, name_flags, cg.ci(Integer.TYPE));
+
+        mv.ldc(value.toString());
+        mv.ldc(new Integer(options));
+        invokeUtilityMethod("regexpLiteral",cg.sig(Pattern.class,cg.params(String.class,Integer.TYPE)));
+        mv.dup();
+
+        mv.visitFieldInsn(PUTSTATIC, classname, name, cg.ci(Pattern.class));
+
+        mv.label(alreadyCreated);
+        
+        mv.visitFieldInsn(GETSTATIC, classname, name_flags, cg.ci(Integer.TYPE));
+        if(null == lang) {
+            mv.aconst_null();
+        } else {
+            mv.ldc(lang);
+        }
+
+        mv.invokestatic(cg.p(RubyRegexp.class), "newRegexp", cg.sig(RubyRegexp.class, cg.params(Ruby.class, Pattern.class, Integer.TYPE, String.class)));
     }
 }

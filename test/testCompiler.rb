@@ -36,6 +36,10 @@ andCode = "1 && 2"
 andShortCode = "nil && 3"
 beginCode = "begin; a = 4; end; a"
 
+regexpLiteral = "/foo/"
+
+match1 = "/foo/ =~ 'foo'"
+
 iterBasic = "foo2('baz') { 4 }"
 
 defBasic = "def foo3(arg); arg + '2'; end"
@@ -49,7 +53,9 @@ test_equal(5.5, compile_and_run(asgnFloatCode))
 test_equal('hello', compile_and_run(asgnStringCode))
 test_equal('hello42', compile_and_run(asgnDStringCode))
 test_equal('hello43', compile_and_run(asgnEvStringCode))
+test_equal(/foo/, compile_and_run(regexpLiteral))
 test_equal(nil, compile_and_run('$2'))
+test_equal(0, compile_and_run(match1))
 
 def foo(arg)
   arg + '2'

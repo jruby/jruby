@@ -145,6 +145,9 @@ public class NodeCompilerFactory {
         case NodeTypes.LOCALVARNODE:
             // safe
             return new LocalVarNodeCompiler();
+        case NodeTypes.MATCH2NODE:
+            // safe
+            return new Match2NodeCompiler();
         case NodeTypes.NEWLINENODE:
             // safe
             return new NewlineNodeCompiler();
@@ -163,6 +166,9 @@ public class NodeCompilerFactory {
         case NodeTypes.ORNODE:
             // safe
             return new OrNodeCompiler();
+        case NodeTypes.REGEXPNODE:
+            // safe
+            return new RegexpNodeCompiler();
         case NodeTypes.ROOTNODE:
             // safe
             return new RootNodeCompiler();

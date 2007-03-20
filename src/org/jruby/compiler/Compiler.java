@@ -432,4 +432,8 @@ public interface Compiler {
     public void objAsString();
 
     public void nthRef(int match);
+
+    public void match2();
+
+    public void createNewRegexp(ByteList value, int options, String lang);
 }
