@@ -39,6 +39,8 @@ beginCode = "begin; a = 4; end; a"
 regexpLiteral = "/foo/"
 
 match1 = "/foo/ =~ 'foo'"
+match2 = "'foo' =~ /foo/"
+match3 = ":aaa =~ /foo/"
 
 iterBasic = "foo2('baz') { 4 }"
 
@@ -56,6 +58,8 @@ test_equal('hello43', compile_and_run(asgnEvStringCode))
 test_equal(/foo/, compile_and_run(regexpLiteral))
 test_equal(nil, compile_and_run('$2'))
 test_equal(0, compile_and_run(match1))
+test_equal(0, compile_and_run(match2))
+test_equal(false, compile_and_run(match3))
 
 def foo(arg)
   arg + '2'

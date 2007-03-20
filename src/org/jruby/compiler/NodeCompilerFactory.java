@@ -151,6 +151,9 @@ public class NodeCompilerFactory {
         case NodeTypes.MATCH2NODE:
             // safe
             return new Match2NodeCompiler();
+        case NodeTypes.MATCH3NODE:
+            // safe
+            return new Match3NodeCompiler();
         case NodeTypes.NEWLINENODE:
             // safe
             return new NewlineNodeCompiler();

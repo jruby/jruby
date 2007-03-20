@@ -437,5 +437,7 @@ public interface Compiler {
 
     public void match2();
 
+    public void match3();
+
     public void createNewRegexp(ByteList value, int options, String lang);
 }

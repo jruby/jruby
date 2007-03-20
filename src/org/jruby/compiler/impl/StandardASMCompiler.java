@@ -1435,6 +1435,31 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         mv.invokevirtual(cg.p(RubyRegexp.class), "match", cg.sig(IRubyObject.class, cg.params(IRubyObject.class)));
     }
 
+    public void match3() {
+        SkinnyMethodAdapter mv = getMethodAdapter();
+
+        mv.dup();
+        mv.visitTypeInsn(INSTANCEOF, cg.p(RubyString.class));
+
+        Label l0 = new Label();
+        mv.visitJumpInsn(IFEQ, l0);
+
+        mv.invokevirtual(cg.p(RubyRegexp.class), "match", cg.sig(IRubyObject.class, cg.params(IRubyObject.class)));
+
+        Label l1 = new Label();
+        mv.visitJumpInsn(GOTO, l1);
+        mv.visitLabel(l0);
+
+        mv.swap();
+        loadThreadContext();
+        mv.swap();
+        mv.ldc("=~");
+        mv.swap();
+
+        mv.invokeinterface(cg.p(IRubyObject.class), "callMethod", cg.sig(IRubyObject.class, cg.params(ThreadContext.class, String.class, IRubyObject.class)));
+        mv.visitLabel(l1);
+    }
+
     private int constants = 0;
     private String getNewConstant(String type, String name_prefix) {
         ClassVisitor cv = getClassVisitor();
