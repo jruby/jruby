@@ -1394,6 +1394,10 @@ public final class Ruby {
         return RubyBinding.newBinding(this, block);
     }
 
+    public RubyString newString() {
+        return RubyString.newString(this, "");
+    }
+
     public RubyString newString(String string) {
         return RubyString.newString(this, string);
     }

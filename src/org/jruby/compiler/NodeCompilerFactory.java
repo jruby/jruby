@@ -98,9 +98,15 @@ public class NodeCompilerFactory {
         case NodeTypes.DOTNODE:
             // safe
             return new DotNodeCompiler();
+        case NodeTypes.DSTRNODE:
+            // safe
+            return new DStrNodeCompiler();
         case NodeTypes.DVARNODE:
             // safe
             return new DVarNodeCompiler();
+        case NodeTypes.EVSTRNODE:
+            // safe
+            return new EvStrNodeCompiler();
         case NodeTypes.FALSENODE:
             // safe
             return new FalseNodeCompiler();

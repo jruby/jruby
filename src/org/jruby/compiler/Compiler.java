@@ -183,6 +183,11 @@ public interface Compiler {
     public void createNewString(ByteList value);
 
     /**
+     * Generate a new dynamic "String" value.
+     */
+    public void createNewString(ArrayCallback callback, int count);
+
+    /**
      * Generate a new "Symbol" value (or fetch the existing one).
      */
     public void createNewSymbol(String name);
@@ -418,4 +423,6 @@ public interface Compiler {
     public void loadRubyArraySize();
     
     public void issueBreakEvent();
+
+    public void objAsString();
 }

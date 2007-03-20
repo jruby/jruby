@@ -676,6 +676,17 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         mv.invokestatic(cg.p(RubyBignum.class) , "newBignum", cg.sig(RubyBignum.class,cg.params(Ruby.class,String.class)));
     }
     
+    public void createNewString(ArrayCallback callback, int count) {
+        SkinnyMethodAdapter mv = getMethodAdapter();
+        loadRuntime();
+        invokeIRuby("newString", cg.sig(RubyString.class, cg.params()));
+        mv.dup();
+        for(int i = 0; i < count; i++) {
+            callback.nextValue(this, null, i);
+            mv.invokevirtual(cg.p(RubyString.class), "append", cg.sig(RubyString.class, cg.params(IRubyObject.class)));
+        }
+    }
+
     public void createNewString(ByteList value) {
         SkinnyMethodAdapter mv = getMethodAdapter();
         
@@ -1385,5 +1396,10 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         mv.invokevirtual(cg.p(JumpException.class), "setValue", cg.sig(Void.TYPE, cg.params(Object.class)));
         
         mv.athrow();
+    }
+
+    public void objAsString() {
+        SkinnyMethodAdapter mv = getMethodAdapter();
+        mv.invokeinterface(cg.p(IRubyObject.class), "objAsString", cg.sig(RubyString.class, cg.params()));
     }
 }
