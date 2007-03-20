@@ -36,12 +36,18 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.IOException;
 import java.io.PrintStream;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.UnmarshalStream;
 
 /**
  *
@@ -75,10 +81,39 @@ public class RubyException extends RubyObject {
             return instance;
         }
     };
+    
+    private static final ObjectMarshal EXCEPTION_MARSHAL = new ObjectMarshal() {
+        public void marshalTo(Ruby runtime, Object obj, RubyClass type,
+                              MarshalStream marshalStream) throws IOException {
+            RubyException exc = (RubyException)obj;
+            
+            Map iVars = new HashMap(exc.getInstanceVariables());
+            
+            iVars.put("mesg", exc.message);
+            iVars.put("bt", exc.backtrace);
+            
+            marshalStream.dumpInstanceVars(iVars);
+        }
+
+        public Object unmarshalFrom(Ruby runtime, RubyClass type,
+                                    UnmarshalStream unmarshalStream) throws IOException {
+            RubyException exc = (RubyException)type.allocate();
+            
+            unmarshalStream.registerLinkTarget(exc);
+            unmarshalStream.defaultInstanceVarsUnmarshal(exc);
+            
+            exc.message = exc.removeInstanceVariable("mesg");
+            exc.set_backtrace(exc.removeInstanceVariable("bt"));
+            
+            return exc;
+        }
+    };
 
     public static RubyClass createExceptionClass(Ruby runtime) {
         RubyClass exceptionClass = runtime.defineClass("Exception", runtime.getObject(), EXCEPTION_ALLOCATOR);
 
+        exceptionClass.setMarshal(EXCEPTION_MARSHAL);
+        
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyException.class);
         CallbackFactory classCB = runtime.callbackFactory(RubyClass.class);
         // TODO: could this just  be an alias for new?
