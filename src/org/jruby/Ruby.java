@@ -217,8 +217,7 @@ public final class Ruby {
         this.in                 = config.getInput();
         this.out                = config.getOutput();
         this.err                = config.getError();
-        char trueChar = System.getProperty("jruby.objectspace.enabled", "true").charAt(0);
-        this.objectSpaceEnabled = config.isObjectSpaceEnabled() && (trueChar =='t' || trueChar == 'T');
+        this.objectSpaceEnabled = config.isObjectSpaceEnabled();
         this.profile            = config.getProfile();
         this.currentDirectory   = config.getCurrentDirectory();;
     }
