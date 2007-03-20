@@ -116,6 +116,9 @@ public class NodeCompilerFactory {
         case NodeTypes.FIXNUMNODE:
             // safe
             return new FixnumNodeCompiler();
+        case NodeTypes.FLOATNODE:
+            // safe
+            return new FloatNodeCompiler();
         case NodeTypes.GLOBALASGNNODE:
             // safe
             return new GlobalAsgnNodeCompiler();

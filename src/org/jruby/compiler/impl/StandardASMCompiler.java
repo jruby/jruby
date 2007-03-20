@@ -43,6 +43,7 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyRange;
@@ -658,6 +659,15 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         invokeThreadContext("getConstant", cg.sig(IRubyObject.class, cg.params(String.class)));
     }
     
+    public void createNewFloat(double value) {
+        SkinnyMethodAdapter mv = getMethodAdapter();
+        
+        loadRuntime();
+        mv.ldc(new Double(value));
+        
+        invokeIRuby("newFloat", cg.sig(RubyFloat.class, cg.params(Double.TYPE)));
+    }
+
     public void createNewFixnum(long value) {
         SkinnyMethodAdapter mv = getMethodAdapter();
         

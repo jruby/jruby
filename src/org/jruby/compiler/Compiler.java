@@ -173,6 +173,11 @@ public interface Compiler {
     public void createNewFixnum(long value);
 
     /**
+     * Generate a new "Float" value.
+     */
+    public void createNewFloat(double value);
+
+    /**
      * Generate a new "Bignum" value.
      */
     public void createNewBignum(java.math.BigInteger value);

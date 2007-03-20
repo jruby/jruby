@@ -21,6 +21,7 @@ def compile_and_run(src)
 end
 
 asgnFixnumCode = "a = 5; a"
+asgnFloatCode = "a = 5.5; a"
 asgnStringCode = "a = 'hello'; a"
 asgnDStringCode = 'a = "hello#{42}"; a'
 asgnEvStringCode = 'a = "hello#{1+42}"; a'
@@ -44,6 +45,7 @@ test_no_exception {
 }
 
 test_equal(5, compile_and_run(asgnFixnumCode))
+test_equal(5.5, compile_and_run(asgnFloatCode))
 test_equal('hello', compile_and_run(asgnStringCode))
 test_equal('hello42', compile_and_run(asgnDStringCode))
 test_equal('hello43', compile_and_run(asgnEvStringCode))
