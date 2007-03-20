@@ -168,193 +168,207 @@ public class EvaluationState {
     private static IRubyObject evalInternal(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         if (node == null) return nilNode(runtime);
 
-        switch (node.nodeId) {
-        case NodeTypes.ALIASNODE:
-            return aliasNode(runtime, context, node);
-        case NodeTypes.ANDNODE:
-            return andNode(runtime, context, node, self, aBlock);
-        case NodeTypes.ARGSCATNODE:
-            return argsCatNode(runtime, context, node, self, aBlock);
-        case NodeTypes.ARGSPUSHNODE:
-            return argsPushNode(runtime, context, node, self, aBlock);
-        case NodeTypes.ARRAYNODE:
-            return arrayNode(runtime, context, node, self, aBlock);
-        case NodeTypes.ATTRASSIGNNODE:
-            return attrAssignNode(runtime, context, node, self, aBlock); 
-        case NodeTypes.BACKREFNODE:
-            return backRefNode(context, node);
-        case NodeTypes.BEGINNODE: 
-            return beginNode(runtime, context, node, self, aBlock);
-        case NodeTypes.BIGNUMNODE:
-            return bignumNode(runtime, node);
-        case NodeTypes.BLOCKNODE:
-            return blockNode(runtime, context, node, self, aBlock);
-        case NodeTypes.BLOCKPASSNODE:
+        do {
+            switch (node.nodeId) {
+            case NodeTypes.ALIASNODE:
+                return aliasNode(runtime, context, node);
+            case NodeTypes.ANDNODE:
+                return andNode(runtime, context, node, self, aBlock);
+            case NodeTypes.ARGSCATNODE:
+                return argsCatNode(runtime, context, node, self, aBlock);
+            case NodeTypes.ARGSPUSHNODE:
+                return argsPushNode(runtime, context, node, self, aBlock);
+            case NodeTypes.ARRAYNODE:
+                return arrayNode(runtime, context, node, self, aBlock);
+            case NodeTypes.ATTRASSIGNNODE:
+                return attrAssignNode(runtime, context, node, self, aBlock); 
+            case NodeTypes.BACKREFNODE:
+                return backRefNode(context, node);
+            case NodeTypes.BEGINNODE: 
+                return beginNode(runtime, context, node, self, aBlock);
+            case NodeTypes.BIGNUMNODE:
+                return bignumNode(runtime, node);
+            case NodeTypes.BLOCKNODE:
+                return blockNode(runtime, context, node, self, aBlock);
+            case NodeTypes.BLOCKPASSNODE:
             assert false: "Call nodes and friends deal with this";
-        case NodeTypes.BREAKNODE:
-            return breakNode(runtime, context, node, self, aBlock);
-        case NodeTypes.CALLNODE:
-            return callNode(runtime, context, node, self, aBlock);
-        case NodeTypes.CASENODE:
-            return caseNode(runtime, context, node, self, aBlock);
-        case NodeTypes.CLASSNODE:
-            return classNode(runtime, context, node, self, aBlock);
-        case NodeTypes.CLASSVARASGNNODE:
-            return classVarAsgnNode(runtime, context, node, self, aBlock);
-        case NodeTypes.CLASSVARDECLNODE:
-            return classVarDeclNode(runtime, context, node, self, aBlock);
-        case NodeTypes.CLASSVARNODE:
-            return classVarNode(runtime, context, node, self);
-        case NodeTypes.COLON2NODE:
-            return colon2Node(runtime, context, node, self, aBlock);
-        case NodeTypes.COLON3NODE:
-            return colon3Node(runtime, node);
-        case NodeTypes.CONSTDECLNODE:
-            return constDeclNode(runtime, context, node, self, aBlock);
-        case NodeTypes.CONSTNODE:
-            return constNode(context, node);
-        case NodeTypes.DASGNNODE:
-            return dAsgnNode(runtime, context, node, self, aBlock);
-        case NodeTypes.DEFINEDNODE:
-            return definedNode(runtime, context, node, self, aBlock);
-        case NodeTypes.DEFNNODE:
-            return defnNode(runtime, context, node);
-        case NodeTypes.DEFSNODE:
-            return defsNode(runtime, context, node, self, aBlock);
-        case NodeTypes.DOTNODE:
-            return dotNode(runtime, context, node, self, aBlock);
-        case NodeTypes.DREGEXPNODE:
-            return dregexpNode(runtime, context, node, self, aBlock);
-        case NodeTypes.DSTRNODE:
-            return dStrNode(runtime, context, node, self, aBlock);
-        case NodeTypes.DSYMBOLNODE:
-            return dSymbolNode(runtime, context, node, self, aBlock);
-        case NodeTypes.DVARNODE:
-            return dVarNode(runtime, context, node);
-        case NodeTypes.DXSTRNODE:
-            return dXStrNode(runtime, context, node, self, aBlock);
-        case NodeTypes.ENSURENODE:
-            return ensureNode(runtime, context, node, self, aBlock);
-        case NodeTypes.EVSTRNODE:
-            return evStrNode(runtime, context, node, self, aBlock);
-        case NodeTypes.FALSENODE:
-            return falseNode(runtime, context);
-        case NodeTypes.FCALLNODE:
-            return fCallNode(runtime, context, node, self, aBlock);
-        case NodeTypes.FIXNUMNODE:
-            return fixnumNode(runtime, node);
-        case NodeTypes.FLIPNODE:
-            return flipNode(runtime, context, node, self, aBlock);
-        case NodeTypes.FLOATNODE:
-            return floatNode(runtime, node);
-        case NodeTypes.FORNODE:
-            return forNode(runtime, context, node, self, aBlock);
-        case NodeTypes.GLOBALASGNNODE:
-            return globalAsgnNode(runtime, context, node, self, aBlock);
-        case NodeTypes.GLOBALVARNODE:
-            return globalVarNode(runtime, context, node);
-        case NodeTypes.HASHNODE:
-            return hashNode(runtime, context, node, self, aBlock);
-        case NodeTypes.IFNODE:
-            return ifNode(runtime, context, node, self, aBlock);
-        case NodeTypes.INSTASGNNODE:
-            return instAsgnNode(runtime, context, node, self, aBlock);
-        case NodeTypes.INSTVARNODE:
-            return instVarNode(runtime, node, self);
-        case NodeTypes.ITERNODE: 
+            case NodeTypes.BREAKNODE:
+                return breakNode(runtime, context, node, self, aBlock);
+            case NodeTypes.CALLNODE:
+                return callNode(runtime, context, node, self, aBlock);
+            case NodeTypes.CASENODE:
+                return caseNode(runtime, context, node, self, aBlock);
+            case NodeTypes.CLASSNODE:
+                return classNode(runtime, context, node, self, aBlock);
+            case NodeTypes.CLASSVARASGNNODE:
+                return classVarAsgnNode(runtime, context, node, self, aBlock);
+            case NodeTypes.CLASSVARDECLNODE:
+                return classVarDeclNode(runtime, context, node, self, aBlock);
+            case NodeTypes.CLASSVARNODE:
+                return classVarNode(runtime, context, node, self);
+            case NodeTypes.COLON2NODE:
+                return colon2Node(runtime, context, node, self, aBlock);
+            case NodeTypes.COLON3NODE:
+                return colon3Node(runtime, node);
+            case NodeTypes.CONSTDECLNODE:
+                return constDeclNode(runtime, context, node, self, aBlock);
+            case NodeTypes.CONSTNODE:
+                return constNode(context, node);
+            case NodeTypes.DASGNNODE:
+                return dAsgnNode(runtime, context, node, self, aBlock);
+            case NodeTypes.DEFINEDNODE:
+                return definedNode(runtime, context, node, self, aBlock);
+            case NodeTypes.DEFNNODE:
+                return defnNode(runtime, context, node);
+            case NodeTypes.DEFSNODE:
+                return defsNode(runtime, context, node, self, aBlock);
+            case NodeTypes.DOTNODE:
+                return dotNode(runtime, context, node, self, aBlock);
+            case NodeTypes.DREGEXPNODE:
+                return dregexpNode(runtime, context, node, self, aBlock);
+            case NodeTypes.DSTRNODE:
+                return dStrNode(runtime, context, node, self, aBlock);
+            case NodeTypes.DSYMBOLNODE:
+                return dSymbolNode(runtime, context, node, self, aBlock);
+            case NodeTypes.DVARNODE:
+                return dVarNode(runtime, context, node);
+            case NodeTypes.DXSTRNODE:
+                return dXStrNode(runtime, context, node, self, aBlock);
+            case NodeTypes.ENSURENODE:
+                return ensureNode(runtime, context, node, self, aBlock);
+            case NodeTypes.EVSTRNODE:
+                return evStrNode(runtime, context, node, self, aBlock);
+            case NodeTypes.FALSENODE:
+                return falseNode(runtime, context);
+            case NodeTypes.FCALLNODE:
+                return fCallNode(runtime, context, node, self, aBlock);
+            case NodeTypes.FIXNUMNODE:
+                return fixnumNode(runtime, node);
+            case NodeTypes.FLIPNODE:
+                return flipNode(runtime, context, node, self, aBlock);
+            case NodeTypes.FLOATNODE:
+                return floatNode(runtime, node);
+            case NodeTypes.FORNODE:
+                return forNode(runtime, context, node, self, aBlock);
+            case NodeTypes.GLOBALASGNNODE:
+                return globalAsgnNode(runtime, context, node, self, aBlock);
+            case NodeTypes.GLOBALVARNODE:
+                return globalVarNode(runtime, context, node);
+            case NodeTypes.HASHNODE:
+                return hashNode(runtime, context, node, self, aBlock);
+            case NodeTypes.IFNODE:
+                return ifNode(runtime, context, node, self, aBlock);
+            case NodeTypes.INSTASGNNODE:
+                return instAsgnNode(runtime, context, node, self, aBlock);
+            case NodeTypes.INSTVARNODE:
+                return instVarNode(runtime, node, self);
+            case NodeTypes.ITERNODE: 
             assert false: "Call nodes deal with these directly";
-        case NodeTypes.LOCALASGNNODE:
-            return localAsgnNode(runtime, context, node, self, aBlock);
-        case NodeTypes.LOCALVARNODE:
-            return localVarNode(runtime, context, node);
-        case NodeTypes.MATCH2NODE:
-            return match2Node(runtime, context, node, self, aBlock);
-        case NodeTypes.MATCH3NODE:
-            return match3Node(runtime, context, node, self, aBlock);
-        case NodeTypes.MATCHNODE:
-            return matchNode(runtime, context, node, self, aBlock);
-        case NodeTypes.MODULENODE:
-            return moduleNode(runtime, context, node, self, aBlock);
-        case NodeTypes.MULTIPLEASGNNODE:
-            return multipleAsgnNode(runtime, context, node, self, aBlock);
-        case NodeTypes.NEWLINENODE:
-            return newlineNode(runtime, context, node, self, aBlock);
-        case NodeTypes.NEXTNODE:
-            return nextNode(runtime, context, node, self, aBlock);
-        case NodeTypes.NILNODE:
-            return nilNode(runtime);
-        case NodeTypes.NOTNODE:
-            return notNode(runtime, context, node, self, aBlock);
-        case NodeTypes.NTHREFNODE:
-            return nthRefNode(context, node);
-        case NodeTypes.OPASGNANDNODE:
-            return opAsgnAndNode(runtime, context, node, self, aBlock);
-        case NodeTypes.OPASGNNODE:
-            return opAsgnNode(runtime, context, node, self, aBlock);
-        case NodeTypes.OPASGNORNODE:
-            return opAsgnOrNode(runtime, context, node, self, aBlock);
-        case NodeTypes.OPELEMENTASGNNODE:
-            return opElementAsgnNode(runtime, context, node, self, aBlock);
-        case NodeTypes.OPTNNODE:
-            return optNNode(runtime, context, node, self, aBlock);
-        case NodeTypes.ORNODE:
-            return orNode(runtime, context, node, self, aBlock);
-        case NodeTypes.REDONODE: 
-            return redoNode(context, node);
-        case NodeTypes.REGEXPNODE:
-            return regexpNode(runtime, node);
-        case NodeTypes.RESCUEBODYNODE:
-            return rescueBodyNode(runtime, context, node, self, aBlock);
-        case NodeTypes.RESCUENODE:
-            return rescueNode(runtime, context, node, self, aBlock);
-        case NodeTypes.RETRYNODE:
-            return retryNode(context);
-        case NodeTypes.RETURNNODE: 
-            return returnNode(runtime, context, node, self, aBlock);
-        case NodeTypes.ROOTNODE:
-            return rootNode(runtime, context, node, self, aBlock);
-        case NodeTypes.SCLASSNODE:
-            return sClassNode(runtime, context, node, self, aBlock);
-        case NodeTypes.SELFNODE:
-            return self;
-        case NodeTypes.SPLATNODE:
-            return splatNode(runtime, context, node, self, aBlock);
-        case NodeTypes.STRNODE:
-            return strNode(runtime, node);
-        case NodeTypes.SUPERNODE:
-            return superNode(runtime, context, node, self, aBlock);
-        case NodeTypes.SVALUENODE:
-            return sValueNode(runtime, context, node, self, aBlock);
-        case NodeTypes.SYMBOLNODE:
-            return symbolNode(runtime, node);
-        case NodeTypes.TOARYNODE:
-            return toAryNode(runtime, context, node, self, aBlock);
-        case NodeTypes.TRUENODE:
-            return trueNode(runtime, context);
-        case NodeTypes.UNDEFNODE:
-            return undefNode(runtime, context, node);
-        case NodeTypes.UNTILNODE:
-            return untilNode(runtime, context, node, self, aBlock);
-        case NodeTypes.VALIASNODE:
-            return valiasNode(runtime, node);
-        case NodeTypes.VCALLNODE:
-            return vcallNode(runtime, context, node, self);
-        case NodeTypes.WHENNODE:
-            assert false;
-            return null;
-        case NodeTypes.WHILENODE:
-            return whileNode(runtime, context, node, self, aBlock);
-        case NodeTypes.XSTRNODE:
-            return xStrNode(runtime, context, node, self);
-        case NodeTypes.YIELDNODE:
-            return yieldNode(runtime, context, node, self, aBlock);
-        case NodeTypes.ZARRAYNODE:
-            return zArrayNode(runtime);
-        case NodeTypes.ZSUPERNODE:
-            return zsuperNode(runtime, context, node, self, aBlock);
-        default:
-            throw new RuntimeException("Invalid node encountered in interpreter: \"" + node.getClass().getName() + "\", please report this at www.jruby.org");
-        }
+            case NodeTypes.LOCALASGNNODE:
+                return localAsgnNode(runtime, context, node, self, aBlock);
+            case NodeTypes.LOCALVARNODE:
+                return localVarNode(runtime, context, node);
+            case NodeTypes.MATCH2NODE:
+                return match2Node(runtime, context, node, self, aBlock);
+            case NodeTypes.MATCH3NODE:
+                return match3Node(runtime, context, node, self, aBlock);
+            case NodeTypes.MATCHNODE:
+                return matchNode(runtime, context, node, self, aBlock);
+            case NodeTypes.MODULENODE:
+                return moduleNode(runtime, context, node, self, aBlock);
+            case NodeTypes.MULTIPLEASGNNODE:
+                return multipleAsgnNode(runtime, context, node, self, aBlock);
+            case NodeTypes.NEWLINENODE: {
+                NewlineNode iVisited = (NewlineNode) node;
+        
+                // something in here is used to build up ruby stack trace...
+                context.setPosition(iVisited.getPosition());
+
+                if (isTrace(runtime)) {
+                    callTraceFunction(runtime, context, "line", self);
+                }
+
+                // TODO: do above but not below for additional newline nodes
+                node = iVisited.getNextNode();
+                continue;
+            }
+            case NodeTypes.NEXTNODE:
+                return nextNode(runtime, context, node, self, aBlock);
+            case NodeTypes.NILNODE:
+                return nilNode(runtime);
+            case NodeTypes.NOTNODE:
+                return notNode(runtime, context, node, self, aBlock);
+            case NodeTypes.NTHREFNODE:
+                return nthRefNode(context, node);
+            case NodeTypes.OPASGNANDNODE:
+                return opAsgnAndNode(runtime, context, node, self, aBlock);
+            case NodeTypes.OPASGNNODE:
+                return opAsgnNode(runtime, context, node, self, aBlock);
+            case NodeTypes.OPASGNORNODE:
+                return opAsgnOrNode(runtime, context, node, self, aBlock);
+            case NodeTypes.OPELEMENTASGNNODE:
+                return opElementAsgnNode(runtime, context, node, self, aBlock);
+            case NodeTypes.OPTNNODE:
+                return optNNode(runtime, context, node, self, aBlock);
+            case NodeTypes.ORNODE:
+                return orNode(runtime, context, node, self, aBlock);
+            case NodeTypes.REDONODE: 
+                return redoNode(context, node);
+            case NodeTypes.REGEXPNODE:
+                return regexpNode(runtime, node);
+            case NodeTypes.RESCUEBODYNODE:
+                return rescueBodyNode(runtime, context, node, self, aBlock);
+            case NodeTypes.RESCUENODE:
+                return rescueNode(runtime, context, node, self, aBlock);
+            case NodeTypes.RETRYNODE:
+                return retryNode(context);
+            case NodeTypes.RETURNNODE: 
+                return returnNode(runtime, context, node, self, aBlock);
+            case NodeTypes.ROOTNODE:
+                return rootNode(runtime, context, node, self, aBlock);
+            case NodeTypes.SCLASSNODE:
+                return sClassNode(runtime, context, node, self, aBlock);
+            case NodeTypes.SELFNODE:
+                return self;
+            case NodeTypes.SPLATNODE:
+                return splatNode(runtime, context, node, self, aBlock);
+            case NodeTypes.STRNODE:
+                return strNode(runtime, node);
+            case NodeTypes.SUPERNODE:
+                return superNode(runtime, context, node, self, aBlock);
+            case NodeTypes.SVALUENODE:
+                return sValueNode(runtime, context, node, self, aBlock);
+            case NodeTypes.SYMBOLNODE:
+                return symbolNode(runtime, node);
+            case NodeTypes.TOARYNODE:
+                return toAryNode(runtime, context, node, self, aBlock);
+            case NodeTypes.TRUENODE:
+                return trueNode(runtime, context);
+            case NodeTypes.UNDEFNODE:
+                return undefNode(runtime, context, node);
+            case NodeTypes.UNTILNODE:
+                return untilNode(runtime, context, node, self, aBlock);
+            case NodeTypes.VALIASNODE:
+                return valiasNode(runtime, node);
+            case NodeTypes.VCALLNODE:
+                return vcallNode(runtime, context, node, self);
+            case NodeTypes.WHENNODE:
+                assert false;
+                return null;
+            case NodeTypes.WHILENODE:
+                return whileNode(runtime, context, node, self, aBlock);
+            case NodeTypes.XSTRNODE:
+                return xStrNode(runtime, context, node, self);
+            case NodeTypes.YIELDNODE:
+                return yieldNode(runtime, context, node, self, aBlock);
+            case NodeTypes.ZARRAYNODE:
+                return zArrayNode(runtime);
+            case NodeTypes.ZSUPERNODE:
+                return zsuperNode(runtime, context, node, self, aBlock);
+            default:
+                throw new RuntimeException("Invalid node encountered in interpreter: \"" + node.getClass().getName() + "\", please report this at www.jruby.org");
+            }
+        } while(true);
     }
 
     private static IRubyObject aliasNode(Ruby runtime, ThreadContext context, Node node) {
@@ -1309,21 +1323,6 @@ public class EvaluationState {
             value = RubyArray.newArray(runtime, value);
         }
         return AssignmentVisitor.multiAssign(runtime, context, self, iVisited, (RubyArray) value, false);
-    }
-
-    private static IRubyObject newlineNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
-        NewlineNode iVisited = (NewlineNode) node;
-        
-        // something in here is used to build up ruby stack trace...
-        context.setPosition(iVisited.getPosition());
-
-        if (isTrace(runtime)) {
-            callTraceFunction(runtime, context, "line", self);
-        }
-
-        // TODO: do above but not below for additional newline nodes
-        node = iVisited.getNextNode();
-        return evalInternal(runtime, context, node, self, aBlock);
     }
 
     private static IRubyObject nextNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
