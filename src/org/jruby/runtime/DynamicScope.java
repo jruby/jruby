@@ -113,9 +113,7 @@ public class DynamicScope {
      * @param size is the number of values to assign as ordinary parm values
      */
     public void setArgValues(IRubyObject[] values, int size) {
-        for (int i = 0; i < size; i++) {
-            setValue(i + 2, values[i], 0);
-        }
+        System.arraycopy(values, 0, variableValues, 2, size);
     }
 
     /**
