@@ -49,6 +49,7 @@ test_equal(5.5, compile_and_run(asgnFloatCode))
 test_equal('hello', compile_and_run(asgnStringCode))
 test_equal('hello42', compile_and_run(asgnDStringCode))
 test_equal('hello43', compile_and_run(asgnEvStringCode))
+test_equal(nil, compile_and_run('$2'))
 
 def foo(arg)
   arg + '2'

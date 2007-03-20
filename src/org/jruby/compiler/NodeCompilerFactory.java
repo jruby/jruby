@@ -148,6 +148,9 @@ public class NodeCompilerFactory {
         case NodeTypes.NEWLINENODE:
             // safe
             return new NewlineNodeCompiler();
+        case NodeTypes.NTHREFNODE:
+            // safe
+            return new NthRefNodeCompiler();
         case NodeTypes.NILNODE:
             // safe
             return new NilNodeCompiler();

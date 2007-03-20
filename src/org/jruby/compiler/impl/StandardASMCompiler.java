@@ -47,6 +47,7 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyRange;
+import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ast.Node;
@@ -1411,5 +1412,14 @@ public class StandardASMCompiler implements Compiler, Opcodes {
     public void objAsString() {
         SkinnyMethodAdapter mv = getMethodAdapter();
         mv.invokeinterface(cg.p(IRubyObject.class), "objAsString", cg.sig(RubyString.class, cg.params()));
+    }
+
+    public void nthRef(int match) {
+        SkinnyMethodAdapter mv = getMethodAdapter();
+
+        mv.ldc(new Integer(match));
+        loadThreadContext();
+        invokeThreadContext("getBackref", cg.sig(IRubyObject.class, cg.params()));
+        mv.invokestatic(cg.p(RubyRegexp.class), "nth_match", cg.sig(IRubyObject.class, cg.params(Integer.TYPE,IRubyObject.class)));
     }
 }
