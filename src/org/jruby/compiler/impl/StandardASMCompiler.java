@@ -1425,6 +1425,11 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         mv.invokestatic(cg.p(RubyRegexp.class), "nth_match", cg.sig(IRubyObject.class, cg.params(Integer.TYPE,IRubyObject.class)));
     }
 
+    public void match() {
+        SkinnyMethodAdapter mv = getMethodAdapter();
+        mv.invokevirtual(cg.p(RubyRegexp.class), "match2", cg.sig(IRubyObject.class, cg.params()));
+    }
+
     public void match2() {
         SkinnyMethodAdapter mv = getMethodAdapter();
         mv.invokevirtual(cg.p(RubyRegexp.class), "match", cg.sig(IRubyObject.class, cg.params(IRubyObject.class)));

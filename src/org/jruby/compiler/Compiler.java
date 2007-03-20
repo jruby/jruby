@@ -433,6 +433,8 @@ public interface Compiler {
 
     public void nthRef(int match);
 
+    public void match();
+
     public void match2();
 
     public void createNewRegexp(ByteList value, int options, String lang);

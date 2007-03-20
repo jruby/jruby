@@ -145,6 +145,9 @@ public class NodeCompilerFactory {
         case NodeTypes.LOCALVARNODE:
             // safe
             return new LocalVarNodeCompiler();
+        case NodeTypes.MATCHNODE:
+            // safe
+            return new MatchNodeCompiler();
         case NodeTypes.MATCH2NODE:
             // safe
             return new Match2NodeCompiler();
