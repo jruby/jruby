@@ -56,6 +56,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOModes;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.Sprintf;
+import org.jruby.util.ShellLauncher;
 import org.jruby.util.collections.SinglyLinkedList;
 
 public class FileMetaClass extends IOMetaClass {
@@ -167,6 +168,7 @@ public class FileMetaClass extends IOMetaClass {
             defineFastSingletonMethod("size?", Arity.singleArgument(), "size_p");
             defineFastSingletonMethod("split", Arity.singleArgument());
             defineFastSingletonMethod("stat", Arity.singleArgument(), "lstat");
+            defineFastSingletonMethod("symlink", Arity.twoArguments(), "symlink");
             defineFastSingletonMethod("symlink?", Arity.singleArgument(), "symlink_p");
             defineFastSingletonMethod("truncate", Arity.twoArguments());
             defineFastSingletonMethod("utime", Arity.optional());
@@ -590,6 +592,18 @@ public class FileMetaClass extends IOMetaClass {
                 basename(new IRubyObject[] { filename }));
     }
     
+    public IRubyObject symlink(IRubyObject from, IRubyObject to) {
+        try {
+            Ruby runtime = getRuntime();
+            int result = new ShellLauncher(runtime).runAndWait(new IRubyObject[] {
+                runtime.newString("ln"), runtime.newString("-s"), from, to
+            });
+            return runtime.newFixnum(result);
+        } catch (Exception e) {
+            throw getRuntime().newNotImplementedError("symlinks");
+        }
+    }
+
     public IRubyObject symlink_p(IRubyObject arg1) {
         RubyString filename = RubyString.stringValue(arg1);
         
