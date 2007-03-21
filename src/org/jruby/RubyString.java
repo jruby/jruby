@@ -733,7 +733,7 @@ public class RubyString extends RubyObject {
         final int length = value.length();
         Ruby runtime = getRuntime();
 
-        StringBuffer sb = new StringBuffer(length + 2 + length / 100);
+        ByteList sb = new ByteList(length + 2 + length / 100);
 
         sb.append('\"');
 
@@ -769,12 +769,12 @@ public class RubyString extends RubyObject {
             } else if (c == '\u001B') {
                 sb.append('\\').append('e');
             } else {
-                sb.append(Sprintf.sprintf(runtime,"\\%.3o",c));
+                sb.append(ByteList.plain(Sprintf.sprintf(runtime,"\\%.3o",c)));
             }
         }
 
         sb.append('\"');
-        return getRuntime().newString(sb.toString());
+        return getRuntime().newString(sb);
     }
 
     /** rb_str_length
@@ -1593,12 +1593,12 @@ public class RubyString extends RubyObject {
                 dummy = ((RubyRegexp) args[0]).search(toString(), pos + 1);
             }
         } else if (args[0] instanceof RubyString) {
-            String sub = ((RubyString) args[0]).toString();
-            StringBuffer sb = new StringBuffer(toString());
+            ByteList sub = ((RubyString) args[0]).value;
+            ByteList sb = (ByteList)value.clone();
             pos = reverse ? sb.lastIndexOf(sub, pos) : sb.indexOf(sub, pos);
         } else if (args[0] instanceof RubyFixnum) {
             char c = (char) ((RubyFixnum) args[0]).getLongValue();
-            pos = reverse ? toString().lastIndexOf(c, pos) : toString().indexOf(c, pos);
+            pos = reverse ? value.lastIndexOf(c, pos) : value.indexOf(c, pos);
         } else {
             throw getRuntime().newArgumentError("wrong type of argument");
         }
@@ -1903,8 +1903,8 @@ public class RubyString extends RubyObject {
             }
             return getRuntime().getFalse();
         }
-        String str = stringValue(obj).toString();
-        return getRuntime().newBoolean(new StringBuffer(toString()).indexOf(str) != -1);
+        ByteList str = stringValue(obj).value;
+        return getRuntime().newBoolean(value.indexOf(str) != -1);
     }
 
     /** rb_str_to_i
@@ -2170,19 +2170,21 @@ public class RubyString extends RubyObject {
         }
         return this;
     }
+    
+    private static ByteList SPACE_BYTELIST = new ByteList(ByteList.plain(" "));
 
     private IRubyObject justify(IRubyObject [] args, boolean leftJustify) {
         checkArgumentCount(args, 1, 2);
 
-        String paddingArg;
+        ByteList paddingArg;
 
         if (args.length == 2) {
-            paddingArg = args[1].convertToString().toString();
+            paddingArg = args[1].convertToString().value;
             if (paddingArg.length() == 0) {
                 throw getRuntime().newArgumentError("zero width padding");
             }
         } else {
-            paddingArg = " ";
+            paddingArg = SPACE_BYTELIST;
         }
         
         int length = RubyNumeric.fix2int(args[0]);
@@ -2190,8 +2192,8 @@ public class RubyString extends RubyObject {
             return dup();
         }
 
-        StringBuffer sbuf = new StringBuffer(length);
-        String thisStr = toString();
+        ByteList sbuf = new ByteList(length);
+        ByteList thisStr = value;
 
         if (leftJustify) {
             sbuf.append(thisStr);
@@ -2206,14 +2208,14 @@ public class RubyString extends RubyObject {
         // Add fractional amount of padding to make up difference
         int fractionalLength = (length - thisStr.length()) % paddingArg.length();
         if (fractionalLength > 0) {
-            sbuf.append(paddingArg.substring(0, fractionalLength));
+            sbuf.append((ByteList)paddingArg.subSequence(0, fractionalLength));
         }
 
         if (!leftJustify) {
             sbuf.append(thisStr);
         }
 
-        RubyString ret = newString(sbuf.toString());
+        RubyString ret = newString(sbuf);
 
         if (args.length == 2) {
             ret.infectBy(args[1]);
@@ -2239,7 +2241,7 @@ public class RubyString extends RubyObject {
     public IRubyObject center(IRubyObject[] args) {
         checkArgumentCount(args, 1, 2);
         int len = RubyNumeric.fix2int(args[0]);
-        String pad = args.length == 2 ? args[1].convertToString().toString() : " ";
+        ByteList pad = args.length == 2 ? args[1].convertToString().value : SPACE_BYTELIST;
         int strLen = value.length();
         int padLen = pad.length();
 
@@ -2249,17 +2251,17 @@ public class RubyString extends RubyObject {
         if (len <= strLen) {
             return dup();
         }
-        StringBuffer sbuf = new StringBuffer(len);
+        ByteList sbuf = new ByteList(len);
         int lead = (len - strLen) / 2;
         for (int i = 0; i < lead; i++) {
             sbuf.append(pad.charAt(i % padLen));
         }
-        sbuf.append(getValue());
+        sbuf.append(value);
         int remaining = len - (lead + strLen);
         for (int i = 0; i < remaining; i++) {
             sbuf.append(pad.charAt(i % padLen));
         }
-        return newString(sbuf.toString());
+        return newString(sbuf);
     }
 
     public IRubyObject chop() {
@@ -2476,12 +2478,12 @@ public class RubyString extends RubyObject {
         return null;
     }
 
-    private static String expandTemplate(String spec, boolean invertOK) {
+    private static ByteList expandTemplate(ByteList spec, boolean invertOK) {
         int len = spec.length();
         if (len <= 1) {
             return spec;
         }
-        StringBuffer sbuf = new StringBuffer();
+        ByteList sbuf = new ByteList();
         int pos = (invertOK && spec.charAt(0) == '^') ? 1 : 0;
         while (pos < len) {
             char c1 = spec.charAt(pos), c2;
@@ -2497,14 +2499,14 @@ public class RubyString extends RubyObject {
             sbuf.append(c1);
             pos++;
         }
-        return sbuf.toString();
+        return sbuf;
     }
 
-    private String setupTable(String[] specs) {
+    private ByteList setupTable(ByteList[] specs) {
         int[] table = new int[256];
         int numSets = 0;
         for (int i = 0; i < specs.length; i++) {
-            String template = expandTemplate(specs[i], true);
+            ByteList template = expandTemplate(specs[i], true);
             boolean invert = specs[i].length() > 1 && specs[i].charAt(0) == '^';
             for (int j = 0; j < 256; j++) {
                 if (template.indexOf(j) != -1) {
@@ -2513,13 +2515,13 @@ public class RubyString extends RubyObject {
             }
             numSets += invert ? 0 : 1;
         }
-        StringBuffer sbuf = new StringBuffer();
+        ByteList sbuf = new ByteList();
         for (int k = 0; k < 256; k++) {
             if (table[k] == numSets) {
                 sbuf.append((char) k);
             }
         }
-        return sbuf.toString();
+        return sbuf;
     }
 
     /** rb_str_count
@@ -2527,11 +2529,11 @@ public class RubyString extends RubyObject {
      */
     public IRubyObject count(IRubyObject[] args) {
         int argc = checkArgumentCount(args, 1, -1);
-        String[] specs = new String[argc];
+        ByteList[] specs = new ByteList[argc];
         for (int i = 0; i < argc; i++) {
-            specs[i] = stringValue(args[i]).toString();
+            specs[i] = stringValue(args[i]).value;
         }
-        String table = setupTable(specs);
+        ByteList table = setupTable(specs);
 
         int count = 0;
         for (int j = 0; j < value.length(); j++) {
@@ -2544,14 +2546,14 @@ public class RubyString extends RubyObject {
 
     private ByteList getDelete(IRubyObject[] args) {
         int argc = checkArgumentCount(args, 1, -1);
-        String[] specs = new String[argc];
+        ByteList[] specs = new ByteList[argc];
         for (int i = 0; i < argc; i++) {
-            specs[i] = stringValue(args[i]).toString();
+            specs[i] = stringValue(args[i]).value;
         }
-        String table = setupTable(specs);
+        ByteList table = setupTable(specs);
 
         int strLen = value.length();
-        StringBuffer sbuf = new StringBuffer(strLen);
+        ByteList sbuf = new ByteList(strLen);
         int c;
         for (int j = 0; j < strLen; j++) {
             c = value.get(j) & 0xFF;
@@ -2559,7 +2561,7 @@ public class RubyString extends RubyObject {
                 sbuf.append((char)c);
             }
         }
-        return new ByteList(stringToBytes(sbuf.toString()));
+        return sbuf;
     }
 
     /** rb_str_delete
@@ -2584,20 +2586,20 @@ public class RubyString extends RubyObject {
 
     private ByteList getSqueeze(IRubyObject[] args) {
         int argc = args.length;
-        String[] specs = null;
+        ByteList[] specs = null;
         if (argc > 0) {
-            specs = new String[argc];
+            specs = new ByteList[argc];
             for (int i = 0; i < argc; i++) {
-                specs[i] = stringValue(args[i]).toString();
+                specs[i] = stringValue(args[i]).value;
             }
         }
-        String table = specs == null ? null : setupTable(specs);
+        ByteList table = specs == null ? null : setupTable(specs);
 
         int strLen = value.length();
         if (strLen <= 1) {
             return value;
         }
-        StringBuffer sbuf = new StringBuffer(strLen);
+        ByteList sbuf = new ByteList(strLen);
         int c1 = value.get(0) & 0xFF;
         sbuf.append((char)c1);
         int c2;
@@ -2609,7 +2611,7 @@ public class RubyString extends RubyObject {
             sbuf.append((char)c2);
             c1 = c2;
         }
-        return new ByteList(stringToBytes(sbuf.toString()));
+        return sbuf;
     }
 
     /** rb_str_squeeze
@@ -2633,26 +2635,26 @@ public class RubyString extends RubyObject {
     }
 
     private ByteList tr(IRubyObject search, IRubyObject replace, boolean squeeze) {
-        String srchSpec = search.convertToString().toString();
-        String srch = expandTemplate(srchSpec, true);
-        if (srchSpec.startsWith("^")) {
-            StringBuffer sbuf = new StringBuffer(256);
+        ByteList srchSpec = search.convertToString().value;
+        ByteList srch = expandTemplate(srchSpec, true);
+        if (srchSpec.charAt(0) == '^') {
+            ByteList sbuf = new ByteList(256);
             for (int i = 0; i < 256; i++) {
                 char c = (char) i;
                 if (srch.indexOf(c) == -1) {
                     sbuf.append(c);
                 }
             }
-            srch = sbuf.toString();
+            srch = sbuf;
         }
-        String repl = expandTemplate(replace.convertToString().toString(), false);
+        ByteList repl = expandTemplate(replace.convertToString().value, false);
 
         int strLen = value.length();
         if (strLen == 0 || srch.length() == 0) {
             return value;
         }
         int repLen = repl.length();
-        StringBuffer sbuf = new StringBuffer(strLen);
+        ByteList sbuf = new ByteList(strLen);
         int last = -1;
         for (int i = 0; i < strLen; i++) {
             int cs = value.get(i) & 0xFF;
@@ -2669,7 +2671,7 @@ public class RubyString extends RubyObject {
                 last = cr;
             }
         }
-        return new ByteList(stringToBytes(sbuf.toString()));
+        return sbuf;
     }
 
     /** rb_str_tr

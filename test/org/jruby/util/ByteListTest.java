@@ -255,4 +255,34 @@ public class ByteListTest extends TestCase {
         b.set(1, 0);
         assertFalse(b.equals(b2));
     }
+    
+    public void testIndexOf() {
+        ByteList b = new ByteList(ByteList.plain("hello bytelist"));
+        ByteList b2 = new ByteList(ByteList.plain("bytelist"));
+        ByteList b3 = new ByteList(ByteList.plain("el"));
+        
+        assertEquals(6, b.indexOf('b'));
+        assertEquals(6, b.indexOf(b2));
+        assertEquals(-1, b.indexOf('x'));
+        assertEquals(-1, b2.indexOf(b));
+        assertEquals(10, b.indexOf('l', 6));
+        assertEquals(9, b.indexOf(b3, 6));
+        assertEquals(-1, b.indexOf('b', 7));
+        assertEquals(-1, b.indexOf(b3, 10));
+    }
+    
+    public void testLastIndexOf() {
+        ByteList b = new ByteList(ByteList.plain("hello bytelist"));
+        ByteList b2 = new ByteList(ByteList.plain("bytelist"));
+        ByteList b3 = new ByteList(ByteList.plain("el"));
+        
+        assertEquals(10, b.lastIndexOf('l'));
+        assertEquals(6, b.lastIndexOf(b2));
+        assertEquals(-1, b.lastIndexOf('x'));
+        assertEquals(-1, b2.lastIndexOf(b));
+        assertEquals(3, b.lastIndexOf('l', 6));
+        assertEquals(1, b.lastIndexOf(b3, 6));
+        assertEquals(-1, b.lastIndexOf('b', 5));
+        assertEquals(-1, b.lastIndexOf(b2, 5));
+    }
 }

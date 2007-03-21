@@ -99,13 +99,15 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         System.arraycopy(bytes,start+len,bytes,start,realSize);
     }
 
-    public void append(byte b) {
+    public ByteList append(byte b) {
         grow(1);
         bytes[realSize++] = b;
+        return this;
     }
 
-    public void append(int b) {
+    public ByteList append(int b) {
         append((byte)b);
+        return this;
     }
 
     public void prepend(byte b) {
@@ -207,6 +209,78 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         System.arraycopy(bytes,index,bytes,index+1,realSize-index);
         bytes[index] = (byte)b;
         realSize++;
+    }
+    
+    public int indexOf(int c) {
+        return indexOf(c, 0);
+    }
+    
+    public int indexOf(int c, int pos) {
+        for (int i = pos; i < realSize; i++) {
+            if ((bytes[i] & 0xFF) == c) return i;
+        }
+        return -1;
+    }
+    
+    public int indexOf(ByteList find) {
+        return indexOf(find, 0);
+    }
+    
+    public int indexOf(ByteList find, int pos) {
+        // search main string
+        BigLoop: for (int j = pos; j < realSize; j++) {
+            // if we get a match for the first char
+            if ((bytes[j] & 0xFF) == find.bytes[0]) {
+                // try to match the remaining chars
+                for (int k = 1; k < find.realSize; k++) {
+                    // reached end of search string, break search loop
+                    if (j + k >= realSize) break BigLoop;
+                    
+                    //some character didn't match, back to main loop with next char
+                    if (bytes[j + k] != find.bytes[k]) continue BigLoop;
+                }
+                // got through find string successfully, return j
+                return j;
+            }
+        }
+
+        return -1;
+    }
+    
+    public int lastIndexOf(int c) {
+        return lastIndexOf(c, realSize - 1);
+    }
+    
+    public int lastIndexOf(int c, int pos) {
+        for (int i = Math.min(pos, realSize - 1); i >= 0; i--) {
+            if ((bytes[i] & 0xFF) == c) return i;
+        }
+        return -1;
+    }
+    
+    public int lastIndexOf(ByteList find) {
+        return lastIndexOf(find, realSize - 1);
+    }
+    
+    public int lastIndexOf(ByteList find, int pos) {
+        // search main string
+        BigLoop: for (int j = Math.min(pos, realSize - 1); j >= 0; j--) {
+            // if we get a match for the first char
+            if ((bytes[j] & 0xFF) == find.bytes[0]) {
+                // try to match the remaining chars
+                for (int k = 1; k < find.realSize; k++) {
+                    // reached end of search string, continue search loop at previous char
+                    if (j + k >= realSize) continue BigLoop;
+
+                    //some character didn't match, back to main loop with next char
+                    if (bytes[j + k] != find.bytes[k]) continue BigLoop;
+                }
+                // got through find string successfully, return j
+                return j;
+            }
+        }
+
+        return -1;
     }
 
     public boolean equals(Object other) {
