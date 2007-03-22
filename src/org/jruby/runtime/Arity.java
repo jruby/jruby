@@ -156,7 +156,7 @@ public final class Arity implements Serializable {
         return value >= 0;
     }
 
-    private int required() {
+    public int required() {
         if (value < 0) {
             return -(1 + value);
         }

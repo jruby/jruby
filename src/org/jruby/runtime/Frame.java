@@ -72,6 +72,8 @@ public class Frame {
      */
     private IRubyObject[] args;
 
+    private int requiredArgCount;
+
     /**
      * The block that was passed in for this frame (as either a block or a &amp;block argument).
      * The frame captures the block for super/zsuper, but also for Proc.new (with no arguments)
@@ -91,15 +93,16 @@ public class Frame {
     private final ISourcePosition position;
 
     public Frame(ISourcePosition position) {
-        this(null, null, null, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK, position); 
+        this(null, null, null, IRubyObject.NULL_ARRAY, 0, Block.NULL_BLOCK, position); 
     }
 
     public Frame(RubyModule klazz, IRubyObject self, String name,
-                 IRubyObject[] args, Block block, ISourcePosition position) {
+                 IRubyObject[] args, int requiredArgCount, Block block, ISourcePosition position) {
         assert block != null : "Block uses null object pattern.  It should NEVER be null";
         
         this.self = self;
         this.args = args;
+        this.requiredArgCount = requiredArgCount;
         this.name = name;
         this.klazz = klazz;
         this.position = position;
@@ -118,6 +121,14 @@ public class Frame {
      */
     void setArgs(IRubyObject[] args) {
         this.args = args;
+    }
+
+    public int getRequiredArgCount() {
+        return requiredArgCount;
+    }
+
+    void setRequiredArgCount(int req) {
+        this.requiredArgCount = req;
     }
 
     /**
@@ -218,7 +229,7 @@ public class Frame {
         	newArgs = args;
         }
 
-        return new Frame(klazz, self, name, newArgs, block, position);
+        return new Frame(klazz, self, name, newArgs, requiredArgCount, block, position);
     }
 
     /* (non-Javadoc)

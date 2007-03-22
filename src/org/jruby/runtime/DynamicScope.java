@@ -117,6 +117,15 @@ public class DynamicScope {
     }
 
     /**
+     * Copy variable values back for ZSuper call.
+     */
+    public void getArgValues(IRubyObject[] args, int size) {
+        if(variableValues != null && args != null && variableValues.length>=(size+2)) {
+            System.arraycopy(variableValues, 2, args, 0, size);
+        }
+    }
+
+    /**
      * 
      * Make a larger dynamic scope if the static scope grew.
      * 

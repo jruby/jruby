@@ -57,7 +57,7 @@ public class ProcMethod extends DynamicMethod {
     
     // ENEBO: I doubt this is right...it should be proc.block?
     public void preMethod(ThreadContext context, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        context.preMethodCall(implementationClass, klazz, self, name, args, block, noSuper);
+        context.preMethodCall(implementationClass, klazz, self, name, args, getArity().required(), block, noSuper);
     }
     
     public void postMethod(ThreadContext context) {

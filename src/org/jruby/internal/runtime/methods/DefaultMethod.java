@@ -88,7 +88,7 @@ public final class DefaultMethod extends DynamicMethod {
     
     public void preMethod(ThreadContext context, RubyModule clazz, IRubyObject self, String name, 
             IRubyObject[] args, boolean noSuper, Block block) {
-        context.preDefMethodInternalCall(clazz, name, self, args, block, noSuper, cref, staticScope);
+        context.preDefMethodInternalCall(clazz, name, self, args, getArity().required(), block, noSuper, cref, staticScope);
     }
     
     public void postMethod(ThreadContext context) {

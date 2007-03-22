@@ -310,3 +310,26 @@ end
 test_equal(true, BZsuper.new.foo)
 BZsuper.new.bar
 test_equal(true,  CZsuper.new.gar { puts "B" })
+
+
+
+#JRUBY-713
+
+$__val = "123foobar"
+
+class FOOZSuper
+  def cc(arg1, arg2)
+    $__val = arg2
+  end
+end
+
+class BARZSuper < FOOZSuper
+  def cc(arg1, arg2)
+    arg2 = "intervention"
+    super
+  end
+end
+
+test_equal "123foobar", $__val
+BARZSuper.new.cc "one","two"
+test_equal "intervention", $__val

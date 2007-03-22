@@ -52,7 +52,7 @@ public class FullFunctionCallbackMethod extends DynamicMethod {
     }
 
     public void preMethod(ThreadContext context, RubyModule clazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        context.preReflectedMethodInternalCall(implementationClass, clazz, self, name, args, noSuper, block);
+        context.preReflectedMethodInternalCall(implementationClass, clazz, self, name, args, getArity().required(), noSuper, block);
     }
     
     public void postMethod(ThreadContext context) {

@@ -55,7 +55,7 @@ public class MultiStubMethod extends DynamicMethod implements
     }
 
     public void preMethod(ThreadContext context, RubyModule klazz, IRubyObject self, String name, IRubyObject[] args, boolean noSuper, Block block) {
-        context.preReflectedMethodInternalCall(implementationClass, klazz, self, name, args, noSuper, block);
+        context.preReflectedMethodInternalCall(implementationClass, klazz, self, name, args, arity.required(), noSuper, block);
     }
     
     public void postMethod(ThreadContext context) {
