@@ -16,3 +16,7 @@ test_exception(LoadError) { require 'NonExistantRequriedFile'}
 
 test_ok require('test/requireTarget')
 test_ok !require('test/requireTarget')
+
+$loaded_foo_bar = false
+test_ok require('test/foo.bar')
+test_ok $loaded_foo_bar

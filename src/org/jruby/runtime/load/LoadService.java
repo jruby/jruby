@@ -227,8 +227,8 @@ public class LoadService {
                 // trim extension to try other options
                 file = matcher.group(1);
             } else {
-                // unknown extension
-                throw runtime.newLoadError("no such file to load -- " + file);
+                // unknown extension, fall back to search with extensions
+                extensionsToSearch = allSuffixes;
             }
         } else {
             // try all extensions
