@@ -1661,3 +1661,22 @@ a &i
 nothing
 END
 
+list = [
+nil,
+['BlockNode', 0, 1, 0, 26],
+nil,
+['OpAsgnOrNode', 0, 0, 0, 12],
+['LocalVarNode', 0, 0, 0, 3],
+['LocalAsgnNode', 0, 0, 0, 3],
+['TrueNode', 0, 0, 8, 12],
+nil,
+['OpAsgnAndNode', 1, 1, 13, 26],
+['LocalVarNode', 1, 1, 13, 16],
+['LocalAsgnNode', 1, 1, 13, 16],
+['FalseNode', 1, 1, 21, 26]
+]
+test_tree(list, <<END)
+var ||= true
+var &&= false
+END
+

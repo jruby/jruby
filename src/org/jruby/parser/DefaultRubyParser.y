@@ -383,12 +383,13 @@ stmt          : kALIAS fitem {
 		  String asgnOp = (String) $2.getValue();
 		  if (asgnOp.equals("||")) {
 	              $1.setValueNode($3);
-	              $$ = new OpAsgnOrNode(getPosition($1), support.gettable2(name, $1.getPosition()), $1);
+	              $$ = new OpAsgnOrNode(support.union($1, $3), support.gettable2(name, $1.getPosition()), $1);
 		  } else if (asgnOp.equals("&&")) {
 	              $1.setValueNode($3);
-                      $$ = new OpAsgnAndNode(getPosition($1), support.gettable2(name, $1.getPosition()), $1);
+                      $$ = new OpAsgnAndNode(support.union($1, $3), support.gettable2(name, $1.getPosition()), $1);
 		  } else {
                       $1.setValueNode(support.getOperatorCallNode(support.gettable2(name, $1.getPosition()), asgnOp, $3));
+                      $1.setPosition(support.union($1, $3));
 		      $$ = $1;
 		  }
 	      }
@@ -683,10 +684,10 @@ arg           : lhs '=' arg {
 
 		  if (asgnOp.equals("||")) {
 	              $1.setValueNode($3);
-	              $$ = new OpAsgnOrNode(getPosition($1), support.gettable2(name, $1.getPosition()), $1);
+	              $$ = new OpAsgnOrNode(support.union($1, $3), support.gettable2(name, $1.getPosition()), $1);
 		  } else if (asgnOp.equals("&&")) {
 	              $1.setValueNode($3);
-                      $$ = new OpAsgnAndNode(getPosition($1), support.gettable2(name, $1.getPosition()), $1);
+                      $$ = new OpAsgnAndNode(support.union($1, $3), support.gettable2(name, $1.getPosition()), $1);
 		  } else {
 		      $1.setValueNode(support.getOperatorCallNode(support.gettable2(name, $1.getPosition()), asgnOp, $3));
                       $1.setPosition(support.union($1, $3));
