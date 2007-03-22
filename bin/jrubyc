@@ -70,29 +70,34 @@ JRUBY_SHELL=/bin/sh
 
 # ----- Set Up The System Classpath -------------------------------------------
 
-if [ "$CLASSPATH" != "" ]; then
-  CP="$CLASSPATH"
-  if $cygwin; then
-    CP=`cygpath -p -w "$CP"`
-  fi
+if [ "$JRUBY_PARENT_CLASSPATH" != "" ]; then
+    # Use same classpath propagated from parent jruby
+    CP=$JRUBY_PARENT_CLASSPATH
 else
-  CP=""
-fi
-
-if $cygwin; then
-   CP_DELIMETER=";"
-else 
-   CP_DELIMETER=":"
-fi
-
-# add necessary jars for command-line execution
-for j in $JRUBY_HOME/lib/*.jar; do
-    if [ "$CP" ]; then
-        CP="$CP$CP_DELIMETER$j"
+    if [ "$CLASSPATH" != "" ]; then
+        CP="$CLASSPATH"
+        if $cygwin; then
+            CP=`cygpath -p -u "$CP"`
+        fi
     else
-        CP="$j"
+        CP=""
     fi
-done
+
+    CP_DELIMETER=":"
+
+    # add necessary jars for command-line execution
+    for j in "$JRUBY_HOME"/lib/*.jar; do
+        if [ "$CP" ]; then
+            CP="$CP$CP_DELIMETER$j"
+            else
+            CP="$j"
+        fi
+    done
+
+    if $cygwin; then
+	CP=`cygpath -p -w "$CP"`
+    fi
+fi
 
 # ----- Set Up JRUBY_BASE If Necessary -------------------------------------
 
@@ -136,12 +141,8 @@ if [ "$1" = "SERVER" ]; then
   shift
 fi
 
-"$JAVA_CMD" $JAVA_OPTS $DEBUG -Xmx256m -Xss1024k -ea -classpath "$CP" \
-"-Djruby.base=$JRUBY_BASE" \
-"-Djruby.home=$JRUBY_HOME" \
-"-Djruby.lib=$JRUBY_BASE/lib" \
--Djruby.script=jruby \
-"-Djruby.shell=$JRUBY_SHELL" \
-$EN_US \
-org.jruby.JRubyC $JRUBY_OPTS "$@" 
-
+exec "$JAVA_CMD" $JAVA_OPTS $DEBUG -Xmx256m -Xss1024k -ea -classpath "$CP"	\
+"-Djruby.base=$JRUBY_BASE" "-Djruby.home=$JRUBY_HOME"				\
+"-Djruby.lib=$JRUBY_BASE/lib" -Djruby.script=jruby				\
+"-Djruby.shell=$JRUBY_SHELL" $EN_US						\
+org.jruby.JRubyC $JRUBY_OPTS "$@"
