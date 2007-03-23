@@ -359,6 +359,18 @@ public class RubyThread extends RubyObject {
     }
 
     public RubyThread join(IRubyObject[] args) {
+        long timeoutMillis = 0;
+        if (args.length > 0) {
+            if (args.length > 1) {
+                throw getRuntime().newArgumentError(args.length,1);
+            }
+            // MRI behavior: value given in seconds; converted to Float; less
+            // than or equal to zero returns immediately; returns nil
+            timeoutMillis = (long)(1000.0D * args[0].convertToFloat().getValue());
+            if (timeoutMillis <= 0) {
+                return null;
+            }
+        }
         if (isCurrent()) {
             throw getRuntime().newThreadError("thread tried to join itself");
         }
@@ -370,14 +382,14 @@ public class RubyThread extends RubyObject {
                 joinedByCriticalThread = criticalThread;
                 threadImpl.interrupt(); // break target thread out of critical
             }
-            threadImpl.join();
+            threadImpl.join(timeoutMillis);
         } catch (InterruptedException iExcptn) {
             assert false : iExcptn;
         }
         if (exitingException != null) {
             throw exitingException;
         }
-        return this;
+        return null;
     }
 
     public IRubyObject value() {

@@ -34,8 +34,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.parser;
 
-import java.util.Iterator;
-
 import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArgsPushNode;
@@ -395,7 +393,7 @@ public class ParserSupport {
     }
 
     public Node arg_add(ISourcePosition position, Node node1, Node node2) {
-        if (node1 == null) return new ArrayNode(position, node2);
+        if (node1 == null) return new ArrayNode(node2.getPosition(), node2);
         if (node1 instanceof ArrayNode) return ((ArrayNode) node1).add(node2);
         
         return new ArgsPushNode(position, node1, node2);
@@ -428,7 +426,7 @@ public class ParserSupport {
             if (node instanceof BlockPassNode) {
                 throw new SyntaxException(position, "Dynamic constant assignment.");
             } else if (node instanceof ArrayNode && ((ArrayNode)node).size() == 1) {
-                node = (Node) ((ArrayNode)node).get(0);
+                node = ((ArrayNode)node).get(0);
             } else if (node instanceof SplatNode) {
                 node = new SValueNode(position, node);
             }
@@ -660,7 +658,7 @@ public class ParserSupport {
 
     public Node getReturnArgsNode(Node node) {
         if (node instanceof ArrayNode && ((ArrayNode) node).size() == 1) { 
-            return (Node) ((ListNode) node).get(0);
+            return ((ListNode) node).get(0);
         } else if (node instanceof BlockPassNode) {
             throw new SyntaxException(node.getPosition(), "Block argument should not be given.");
         }
@@ -839,7 +837,7 @@ public class ParserSupport {
             }
             
             if (node instanceof ArrayNode && ((ArrayNode)node).size() == 1) {
-                node = (Node) ((ArrayNode)node).get(0);
+                node = ((ArrayNode)node).get(0);
                 state = false;
             }
             
@@ -872,6 +870,10 @@ public class ParserSupport {
         floatNode.setValue(-floatNode.getValue());
         
         return floatNode;
+    }
+    
+    public ISourcePosition createEmptyArgsNodePosition(ISourcePosition pos) {
+        return new SourcePosition(pos.getFile(), pos.getStartLine(), pos.getEndLine(), pos.getEndOffset() - 1, pos.getEndOffset() - 1);
     }
     
     public Node unwrapNewlineNode(Node node) {

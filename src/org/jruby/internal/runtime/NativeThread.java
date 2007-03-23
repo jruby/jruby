@@ -65,6 +65,10 @@ public class NativeThread {
 		nativeThread.join();
 	}
 
+    public void join(long timeoutMillis) throws InterruptedException {
+        nativeThread.join(timeoutMillis);
+    }
+
 	public int getPriority() {
 		return nativeThread.getPriority();
 	}

@@ -871,7 +871,7 @@ opt_paren_args: none | paren_args
 
 // Node:call_args - Arguments for a function call
 call_args     : command {
-                  warnings.warn(getPosition($1), "parenthesize argument(s) for future version");
+                  warnings.warn($1.getPosition(), "parenthesize argument(s) for future version");
                   $$ = new ArrayNode(getPosition($1), $1);
               }
               | args opt_block_arg {
@@ -1592,8 +1592,7 @@ f_args         : f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg {
                    $$ = new ArgsNode(getPosition($1), null, null, -1, $1);
                }
                | /* none */ {
-                   //take the last position from the lexer, this isn't entirely correct, but more accurate then getPosition(null). 
-                   $$ = new ArgsNode(lexer.getPosition(), null, null, -1, null);
+                   $$ = new ArgsNode(support.createEmptyArgsNodePosition(getPosition(null)), null, null, -1, null);
                }
 
 f_norm_arg     : tCONSTANT {
