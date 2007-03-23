@@ -14,6 +14,7 @@ test_equal("str", YAML.load('"str"'))
 test_equal("str", YAML.load("'str'"))
 test_equal("str", YAML.load(" --- 'str'"))
 test_equal("1.0", YAML.load("!str 1.0"))
+test_equal(:str, YAML.load(":str"))
 
 test_equal(47, YAML.load("47"))
 test_equal(0, YAML.load("0"))
@@ -85,3 +86,5 @@ test_equal("--- true\n", true.to_yaml)
 test_equal("--- false\n", false.to_yaml)
 
 test_equal("--- \n", nil.to_yaml)
+
+test_equal("--- :foo\n", :foo.to_yaml)

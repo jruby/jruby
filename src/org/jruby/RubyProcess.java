@@ -60,7 +60,7 @@ public class RubyProcess {
 //        process.defineModuleFunction("waitpid2", processCallbackFactory.getOptSingletonMethod("waitpid2"));
 //        process.defineModuleFunction("waitall", processCallbackFactory.getSingletonMethod("waitall"));
 //        process.defineModuleFunction("detach", processCallbackFactory.getSingletonMethod("detach", RubyKernel.IRUBY_OBJECT));
-//        process.defineModuleFunction("pid", processCallbackFactory.getSingletonMethod("pid"));
+        process.defineModuleFunction("pid", processCallbackFactory.getFastSingletonMethod("pid"));
 //        process.defineModuleFunction("ppid", processCallbackFactory.getSingletonMethod("ppid"));
 //
 //        process.defineModuleFunction("getpgrp", processCallbackFactory.getSingletonMethod("getprgrp"));
@@ -172,7 +172,7 @@ public class RubyProcess {
     }
 
     public static IRubyObject pid(IRubyObject recv) {
-        return recv.getRuntime().newFixnum(0);
+        return recv.getRuntime().newFixnum(System.identityHashCode(recv.getRuntime()));
     }
 
     public static IRubyObject kill(IRubyObject recv, IRubyObject[] args) throws Exception {

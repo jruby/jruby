@@ -95,6 +95,11 @@ public class JRubyConstructor extends ConstructorImpl {
     }
 
     public Object constructRubyScalar(final Node node) {
+        ByteList sc = (ByteList)super.constructScalar(node);
+        if(sc.length() > 0 && sc.charAt(0) == ':') {
+            return runtime.newSymbol(sc.toString().substring(1));
+        }
+
         return RubyString.newString(runtime,(ByteList)super.constructScalar(node));
     }
 
@@ -131,8 +136,12 @@ public class JRubyConstructor extends ConstructorImpl {
     }
 
     public static Object constructYamlStr(final Constructor ctor, final Node node) {
-        final org.jruby.RubyString str = (org.jruby.RubyString)((JRubyConstructor)ctor).constructRubyScalar(node);
-        return (str.getValue().length() == 0 && ((org.jvyamlb.nodes.ScalarNode)node).getStyle() == 0) ? str.getRuntime().getNil() : str;
+        final Object _str = ((JRubyConstructor)ctor).constructRubyScalar(node);
+        if(_str instanceof org.jruby.RubyString) {
+            final org.jruby.RubyString str = (org.jruby.RubyString)_str;
+            return (str.getValue().length() == 0 && ((org.jvyamlb.nodes.ScalarNode)node).getStyle() == 0) ? str.getRuntime().getNil() : str;
+        }
+        return _str;
     }
 
     public static Object constructYamlSeq(final Constructor ctor, final Node node) {
