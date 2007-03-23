@@ -88,7 +88,7 @@ public class RubyKernel {
         module.defineFastPublicModuleFunction("autoload?", callbackFactory.getFastSingletonMethod("autoload_p", IRUBY_OBJECT));
         module.defineModuleFunction("binding", callbackFactory.getSingletonMethod("binding"));
         module.defineModuleFunction("block_given?", callbackFactory.getSingletonMethod("block_given"));
-        // TODO: Implement Kernel#callcc
+        module.defineModuleFunction("callcc", callbackFactory.getOptSingletonMethod("callcc"));
         module.defineModuleFunction("caller", callbackFactory.getOptSingletonMethod("caller"));
         module.defineModuleFunction("catch", callbackFactory.getSingletonMethod("rbCatch", IRUBY_OBJECT));
         module.defineFastModuleFunction("chomp", callbackFactory.getFastOptSingletonMethod("chomp"));
@@ -704,6 +704,14 @@ public class RubyKernel {
         }
         
         return recv.evalWithBinding(context, src, scope, file);
+    }
+
+    public static IRubyObject callcc(IRubyObject recv, IRubyObject[] args, Block block) {
+        Ruby runtime = recv.getRuntime();
+        runtime.getWarnings().warn("Kernel#callcc: Continuations are not implemented in JRuby and will not work");
+        IRubyObject cc = runtime.getClass("Continuation").callMethod(runtime.getCurrentContext(),"new");
+        cc.dataWrapStruct(block);
+        return block.yield(runtime.getCurrentContext(),cc);
     }
 
     public static IRubyObject caller(IRubyObject recv, IRubyObject[] args, Block block) {

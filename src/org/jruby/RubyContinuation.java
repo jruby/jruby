@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -45,7 +46,16 @@ public class RubyContinuation {
     }
 
     public static IRubyObject call(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        recv.getRuntime().getWarnings().warn("Continuation#call: Continuations are not implemented in JRuby and will not work");
-        return recv.getRuntime().getNil();
+        recv.getRuntime().getWarnings().warn("Continuation.call: Continuations are not implemented in JRuby and will not work");
+        JumpException je = new JumpException(JumpException.JumpType.BreakJump);
+        if(args.length == 1) {
+            je.setValue(args[0]);
+        } else {
+            je.setValue(recv.getRuntime().newArray(args));
+        }
+        je.setTarget(recv.dataGetStruct());
+
+
+        throw je;
     }
 }// RubyContinuation
