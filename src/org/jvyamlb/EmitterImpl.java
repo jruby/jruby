@@ -728,7 +728,7 @@ public class EmitterImpl implements Emitter {
                 analysis = analyzeScalar(ev.getValue());
             }
 
-            if(ev.getStyle() == '"' || this.canonical) {
+            if(ev.getStyle() == '"' || this.canonical || (analysis.empty && ev.getTag().equals("tag:yaml.org,2002:str"))) {
                 return '"';
             }
             

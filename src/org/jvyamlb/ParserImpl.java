@@ -263,7 +263,9 @@ public class ParserImpl implements Parser {
                     } else if(tok instanceof ScalarToken) {
                         parseStack.add(0,P_TABLE[P_SCALAR]);
                     } else {
-                        throw new ParserException("while scanning a node","expected the node content, but found " + tok.getClass().getName(),null);
+                        // Part of solution for JRUBY-718
+                        boolean[] implicit = new boolean[]{false,false};
+                        return new ScalarEvent((String)env.getAnchors().get(0),(String)env.getTags().get(0),implicit,new ByteList(new byte[0],false),'\'');
                     }
                     return null;
                 }

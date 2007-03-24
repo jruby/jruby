@@ -88,3 +88,8 @@ test_equal("--- false\n", false.to_yaml)
 test_equal("--- \n", nil.to_yaml)
 
 test_equal("--- :foo\n", :foo.to_yaml)
+
+# JRUBY-718
+test_equal("--- \"\"\n", ''.to_yaml)
+test_equal('', YAML.load("---\n!str"))
+
