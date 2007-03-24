@@ -525,7 +525,11 @@ public class ScannerImpl implements Scanner {
         }
 
         //TODO: this is probably incorrect...
-        if(STUPID_CHAR[this.buffer.bytes[this.pointer]&0xFF] || (ensure(1,false) && (this.buffer.bytes[this.pointer] == '-' || this.buffer.bytes[this.pointer] == '?' || this.buffer.bytes[this.pointer] == ':') && !NULL_BL_T_LINEBR[this.buffer.bytes[this.pointer+1]&0xFF])) {
+        if(STUPID_CHAR[this.buffer.bytes[this.pointer]&0xFF] || 
+           (ensure(1,false) && (this.buffer.bytes[this.pointer] == '-' || 
+                                this.buffer.bytes[this.pointer] == '?' || 
+                                this.buffer.bytes[this.pointer] == ':') && 
+            !NULL_BL_T_LINEBR[this.buffer.bytes[this.pointer+1]&0xFF])) {
             return fetchPlain();
         }
 
@@ -544,6 +548,7 @@ public class ScannerImpl implements Scanner {
         this.possibleSimpleKeys = new HashMap();
         this.tokens.add(Token.STREAM_END);
         this.done = true;
+        this.docStart = false;
         return Token.STREAM_END;
     }
 
@@ -614,6 +619,7 @@ public class ScannerImpl implements Scanner {
     }
     
     private Token fetchBlockEntry() {
+        this.docStart = false;
         if(this.flowLevel == 0) {
             if(!this.allowSimpleKey) {
                 throw new ScannerException(null,"sequence entries are not allowed here",null);
@@ -638,6 +644,7 @@ public class ScannerImpl implements Scanner {
     }
 
     private Token fetchTag() {
+        this.docStart = false;
         savePossibleSimpleKey();
         this.allowSimpleKey = false;
         final Token tok = scanTag();
@@ -757,6 +764,7 @@ public class ScannerImpl implements Scanner {
     }
 
     private Token fetchPlain() {
+        this.docStart = false;
         savePossibleSimpleKey();
         this.allowSimpleKey = false;
         final Token tok = scanPlain();
@@ -868,6 +876,7 @@ public class ScannerImpl implements Scanner {
     }
     
     private Token fetchFlowScalar(final char style) {
+        this.docStart = false;
         savePossibleSimpleKey();
         this.allowSimpleKey = false;
         final Token tok = scanFlowScalar(style);
@@ -1024,6 +1033,7 @@ public class ScannerImpl implements Scanner {
     }
 
     private Token fetchValue() {
+        this.docStart = false;
         final SimpleKey key = (SimpleKey)this.possibleSimpleKeys.get(new Integer(this.flowLevel));
         if(null == key) {
             if(this.flowLevel == 0 && !this.allowSimpleKey) {
@@ -1051,6 +1061,7 @@ public class ScannerImpl implements Scanner {
     }
 
     private Token fetchFlowCollectionStart(final Token tok) {
+        this.docStart = false;
         savePossibleSimpleKey();
         this.flowLevel++;
         this.allowSimpleKey = true;
@@ -1095,6 +1106,7 @@ public class ScannerImpl implements Scanner {
     }
     
     private Token fetchBlockScalar(final char style) {
+        this.docStart = false;
         this.allowSimpleKey = true;
         final Token tok = scanBlockScalar(style);
         this.tokens.add(tok);
