@@ -95,3 +95,4 @@ test_equal('', YAML.load("---\n!str"))
 
 # JRUBY-719
 test_equal('---', YAML.load("--- ---\n"))
+test_equal('---', YAML.load("---"))
