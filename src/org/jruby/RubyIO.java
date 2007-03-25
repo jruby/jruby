@@ -680,7 +680,7 @@ public class RubyIO extends RubyObject {
             return RubyFixnum.zero(getRuntime());
         }
         
-        return getRuntime().newFixnum(c);
+        return object;
     }
     
     // This was a getOpt with one mandatory arg, but it did not work
