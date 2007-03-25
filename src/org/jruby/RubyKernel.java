@@ -931,9 +931,6 @@ public class RubyKernel {
             RubyInteger integerCeil = (RubyInteger) args[0].convertToType("Integer", "to_i", true);
             ceil = integerCeil.getLongValue();
             ceil = Math.abs(ceil);
-            if (ceil > Integer.MAX_VALUE) {
-                throw recv.getRuntime().newNotImplementedError("Random values larger than Integer.MAX_VALUE not supported");
-            }
         } else {
             throw recv.getRuntime().newArgumentError("wrong # of arguments(" + args.length + " for 1)");
         }
@@ -942,7 +939,11 @@ public class RubyKernel {
             double result = recv.getRuntime().getRandom().nextDouble();
             return RubyFloat.newFloat(recv.getRuntime(), result);
         }
-        return recv.getRuntime().newFixnum(recv.getRuntime().getRandom().nextInt((int) ceil));
+        if(ceil > Integer.MAX_VALUE) {
+            return recv.getRuntime().newFixnum(recv.getRuntime().getRandom().nextLong()%ceil);
+        } else {
+            return recv.getRuntime().newFixnum(recv.getRuntime().getRandom().nextInt((int)ceil));
+        }
     }
 
     public static RubyBoolean system(IRubyObject recv, IRubyObject[] args) {
