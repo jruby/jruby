@@ -56,14 +56,41 @@ public class RubyArgsFile extends RubyObject {
         getRuntime().defineGlobalConstant("ARGF", this);
         
         CallbackFactory callbackFactory = getRuntime().callbackFactory(RubyArgsFile.class);
+        
+        getMetaClass().defineFastMethod("read", callbackFactory.getFastOptMethod("read"));
+        getMetaClass().defineFastMethod("getc", callbackFactory.getFastMethod("getc"));
+        getMetaClass().defineFastMethod("readchar", callbackFactory.getFastMethod("readchar"));
+        getMetaClass().defineFastMethod("seek", callbackFactory.getFastOptMethod("seek"));
+        getMetaClass().defineFastMethod("pos=", callbackFactory.getFastMethod("set_pos",IRubyObject.class));
+        getMetaClass().defineFastMethod("tell", callbackFactory.getFastMethod("tell"));
+        getMetaClass().defineFastMethod("pos", callbackFactory.getFastMethod("tell"));
+
+        getMetaClass().defineFastMethod("rewind", callbackFactory.getFastMethod("rewind"));
+
+        getMetaClass().defineFastMethod("eof", callbackFactory.getFastMethod("eof"));
+        getMetaClass().defineFastMethod("eof?", callbackFactory.getFastMethod("eof"));
+        getMetaClass().defineFastMethod("binmode", callbackFactory.getFastMethod("binmode"));
+
+        getMetaClass().defineFastMethod("fileno", callbackFactory.getFastMethod("fileno"));
+        getMetaClass().defineFastMethod("to_i", callbackFactory.getFastMethod("fileno"));
+        getMetaClass().defineFastMethod("to_io", callbackFactory.getFastMethod("to_io"));
+
+        getMetaClass().defineMethod("each_byte", callbackFactory.getMethod("each_byte"));
         getMetaClass().defineMethod("each", callbackFactory.getOptMethod("each_line"));
         getMetaClass().defineMethod("each_line", callbackFactory.getOptMethod("each_line"));
 
+        getMetaClass().defineFastMethod("path", callbackFactory.getFastMethod("filename"));
         getMetaClass().defineFastMethod("filename", callbackFactory.getFastMethod("filename"));
+        getMetaClass().defineFastMethod("file", callbackFactory.getFastMethod("file"));
+        getMetaClass().defineFastMethod("skip", callbackFactory.getFastMethod("skip"));
+        getMetaClass().defineFastMethod("close", callbackFactory.getFastMethod("close_m"));
+        getMetaClass().defineFastMethod("closed?", callbackFactory.getFastMethod("closed_p"));
         getMetaClass().defineFastMethod("gets", callbackFactory.getFastOptMethod("gets"));
         getMetaClass().defineFastMethod("readline", callbackFactory.getFastOptMethod("readline"));
         getMetaClass().defineFastMethod("readlines", callbackFactory.getFastOptMethod("readlines"));
 		
+        getMetaClass().defineFastMethod("lineno", callbackFactory.getFastMethod("lineno"));
+        getMetaClass().defineFastMethod("lineno=", callbackFactory.getFastMethod("set_lineno",IRubyObject.class));
         getMetaClass().defineFastMethod("to_a", callbackFactory.getFastOptMethod("readlines"));
         getMetaClass().defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
 
@@ -102,6 +129,20 @@ public class RubyArgsFile extends RubyObject {
         }
 
         return true;
+    }
+
+    public IRubyObject fileno() {
+        if(currentFile == null && !nextArgsFile()) {
+            throw getRuntime().newArgumentError("no stream");
+        }
+        return ((RubyIO)currentFile).fileno();
+    }
+
+    public IRubyObject to_io() {
+        if(currentFile == null && !nextArgsFile()) {
+            throw getRuntime().newArgumentError("no stream");
+        }
+        return currentFile;
     }
     
     public IRubyObject internalGets(IRubyObject[] args) {
@@ -177,6 +218,16 @@ public class RubyArgsFile extends RubyObject {
         return result;
     }
     
+    public IRubyObject each_byte(Block block) {
+        IRubyObject bt;
+        ThreadContext ctx = getRuntime().getCurrentContext();
+
+        while(!(bt = getc()).isNil()) {
+            block.yield(ctx, bt);
+        }
+
+        return this;
+    }
 
     /** Invoke a block for each line.
      * 
@@ -192,6 +243,168 @@ public class RubyArgsFile extends RubyObject {
         return this;
     }
     
+	public IRubyObject file() {
+        if(currentFile == null && !nextArgsFile()) {
+            return getRuntime().getNil();
+        }
+        
+        return currentFile;
+    }
+
+	public IRubyObject skip() {
+        currentFile = null;
+        return this;
+    }
+
+
+	public IRubyObject close_m() {
+        if(currentFile == null && !nextArgsFile()) {
+            return this;
+        }
+        currentFile = null;
+        currentLineNumber = 0;
+        return this;
+    }
+
+	public IRubyObject closed_p() {
+        if(currentFile == null && !nextArgsFile()) {
+            return this;
+        }
+        return ((RubyIO)currentFile).closed();
+    }
+
+	public IRubyObject binmode() {
+        if(currentFile == null && !nextArgsFile()) {
+            throw getRuntime().newArgumentError("no stream");
+        }
+        
+        return ((RubyIO)currentFile).binmode();
+    }
+
+	public IRubyObject lineno() {
+        return getRuntime().newFixnum(currentLineNumber);
+    }
+
+	public IRubyObject tell() {
+        if(currentFile == null && !nextArgsFile()) {
+            throw getRuntime().newArgumentError("no stream to tell");
+        }
+        return ((RubyIO)currentFile).pos();
+    }
+
+ 	public IRubyObject rewind() {
+        if(currentFile == null && !nextArgsFile()) {
+            throw getRuntime().newArgumentError("no stream to rewind");
+        }
+        return ((RubyIO)currentFile).rewind();
+    }
+
+	public IRubyObject eof() {
+        if(currentFile != null && !nextArgsFile()) {
+            return getRuntime().getTrue();
+        }
+        return ((RubyIO)currentFile).eof();
+    }
+
+	public IRubyObject set_pos(IRubyObject offset) {
+        if(currentFile == null && !nextArgsFile()) {
+            throw getRuntime().newArgumentError("no stream to set position");
+        }
+        return ((RubyIO)currentFile).pos_set(offset);
+    }
+
+ 	public IRubyObject seek(IRubyObject[] args) {
+        if(currentFile == null && !nextArgsFile()) {
+            throw getRuntime().newArgumentError("no stream to seek");
+        }
+        return ((RubyIO)currentFile).seek(args);
+    }
+
+	public IRubyObject set_lineno(IRubyObject line) {
+        currentLineNumber = RubyNumeric.fix2int(line);
+        return getRuntime().getNil();
+    }
+
+	public IRubyObject readchar() {
+        IRubyObject c = getc();
+        if(c.isNil()) {
+            throw getRuntime().newEOFError();
+        }
+        return c;
+    }
+
+	public IRubyObject getc() {
+        IRubyObject bt;
+        while(true) {
+            if(currentFile == null && !nextArgsFile()) {
+                return getRuntime().getNil();
+            }
+            if(!(currentFile instanceof RubyFile)) {
+                bt = currentFile.callMethod(getRuntime().getCurrentContext(),"getc");
+            } else {
+                bt = ((RubyIO)currentFile).getc();
+            }
+            if(bt.isNil()) {
+                currentFile = null;
+                continue;
+            }
+            return bt;
+        }
+    }
+
+ 	public IRubyObject read(IRubyObject[] args) {
+        IRubyObject tmp, str, length;
+        long len = 0;
+        checkArgumentCount(args,0,2);
+        if(args.length > 0) {
+            length = args[0];
+            if(args.length > 1) {
+                str = args[1];
+            } else {
+                str = getRuntime().getNil();
+            }
+        } else {
+            length = getRuntime().getNil();
+            str = getRuntime().getNil();
+        }
+
+        if(!length.isNil()) {
+            len = RubyNumeric.num2long(length);
+        }
+        if(!str.isNil()) {
+            str = str.convertToString();
+            ((RubyString)str).getByteList().length(0);
+            ((RubyString)str).stringMutated();
+            args[1] = getRuntime().getNil();
+        }
+        while(true) {
+            if(currentFile == null && !nextArgsFile()) {
+                return str;
+            }
+            if(!(currentFile instanceof RubyIO)) {
+                tmp = currentFile.callMethod(getRuntime().getCurrentContext(),"read",args);
+            } else {
+                tmp = ((RubyIO)currentFile).read(args);
+            }
+            if(str.isNil()) {
+                str = tmp;
+            } else if(!tmp.isNil()) {
+                ((RubyString)str).append(tmp);
+            }
+            if(tmp.isNil() || length.isNil()) {
+                currentFile = null;
+                continue;
+            } else if(args.length >= 1) {
+                if(((RubyString)str).getByteList().length() < len) {
+                    len -= ((RubyString)str).getByteList().length();
+                    args[0] = getRuntime().newFixnum(len);
+                    continue;
+                }
+            }
+            return str;
+        }
+    }
+
 	public RubyString filename() {
         return (RubyString)getRuntime().getGlobalVariables().get("$FILENAME");
     }

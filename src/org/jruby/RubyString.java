@@ -182,7 +182,7 @@ public class RubyString extends RubyObject {
     /**
      * This string has been changed, so invalidate stringValue.
      */
-    private void stringMutated() {
+    void stringMutated() {
         stringValue = null;
         validHash = false;
     }
