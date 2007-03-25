@@ -83,7 +83,7 @@ public class RubyMatchData extends RubyObject {
         
         for (int i = 1; i < matcher.groupCount(); i++) {
             if (matcher.group(i) == null) {
-                arr.append(RubyString.newString(getRuntime(), ""));
+                arr.append(getRuntime().getNil());
             } else {
                 arr.append(RubyString.newString(getRuntime(), matcher.group(i)));
             }

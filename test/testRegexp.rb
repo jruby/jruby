@@ -101,3 +101,7 @@ test_equal("\r", /./.match("\r")[0])
 test_equal(/a/.hash, /a/.hash)
 
 test_equal("\\-", Regexp.quote('-'))
+
+# JRUBY-722
+/a((abc)|(foo))d/ =~ "afood"
+test_equal ["foo", nil, "foo"], $~.captures
