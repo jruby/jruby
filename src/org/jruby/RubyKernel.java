@@ -119,6 +119,7 @@ public class RubyKernel {
         module.defineFastModuleFunction("printf", callbackFactory.getFastOptSingletonMethod("printf"));
         module.defineModuleFunction("proc", callbackFactory.getSingletonMethod("proc"));
         // TODO: implement Kernel#putc
+        module.defineFastModuleFunction("putc", callbackFactory.getFastSingletonMethod("putc", IRubyObject.class));
         module.defineFastModuleFunction("puts", callbackFactory.getFastOptSingletonMethod("puts"));
         module.defineModuleFunction("raise", callbackFactory.getOptSingletonMethod("raise"));
         module.defineFastModuleFunction("rand", callbackFactory.getFastOptSingletonMethod("rand"));
@@ -382,6 +383,13 @@ public class RubyKernel {
             }
         }
         return recv.getRuntime().getNil();
+    }
+
+    /** rb_f_putc
+     */
+    public static IRubyObject putc(IRubyObject recv, IRubyObject ch) {
+        IRubyObject defout = recv.getRuntime().getGlobalVariables().get("$>");
+        return defout.callMethod(recv.getRuntime().getCurrentContext(), "putc", ch);
     }
 
     public static IRubyObject puts(IRubyObject recv, IRubyObject[] args) {

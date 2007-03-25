@@ -160,6 +160,7 @@ public abstract class IOHandlerJavaIO extends IOHandler {
     public void putc(int c) throws IOException, BadDescriptorException {
         try {
             syswrite(c);
+            flush();
         } catch (IOException e) {
         }
     }
