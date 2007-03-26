@@ -42,6 +42,7 @@ import org.jruby.internal.runtime.ThreadService;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -94,7 +95,7 @@ public class RubyThread extends RubyObject {
         threadClass.defineFastMethod("key?", callbackFactory.getFastMethod("has_key", RubyKernel.IRUBY_OBJECT));
         threadClass.defineFastMethod("priority", callbackFactory.getFastMethod("priority"));
         threadClass.defineFastMethod("priority=", callbackFactory.getFastMethod("priority_set", RubyKernel.IRUBY_OBJECT));
-        threadClass.defineFastMethod("raise", callbackFactory.getFastMethod("raise", RubyKernel.IRUBY_OBJECT));
+        threadClass.defineMethod("raise", callbackFactory.getOptMethod("raise"));
         threadClass.defineFastMethod("run", callbackFactory.getFastMethod("run"));
         threadClass.defineFastMethod("status", callbackFactory.getFastMethod("status"));
         threadClass.defineFastMethod("stop?", callbackFactory.getFastMethod("isStopped"));
@@ -491,8 +492,53 @@ public class RubyThread extends RubyObject {
         return priority;
     }
 
-    public IRubyObject raise(IRubyObject exc) {
-        receivedException = exc;
+    public IRubyObject raise(IRubyObject[] args, Block block) {
+        Ruby runtime = getRuntime();
+        checkArgumentCount(args, 0, 3); 
+
+        if(args.length == 0) {
+            IRubyObject lastException = runtime.getGlobalVariables().get("$!");
+            if(lastException.isNil()) {
+                receivedException = new RaiseException(runtime, runtime.getClass("RuntimeError"), "", false).getException();
+                return this;
+            } 
+            receivedException = lastException;
+            return this;
+        }
+
+        IRubyObject exception;
+        ThreadContext context = getRuntime().getCurrentContext();
+        
+        if(args.length == 1) {
+            if(args[0] instanceof RubyString) {
+                receivedException = runtime.getClass("RuntimeError").newInstance(args, block);
+                return this;
+            }
+            
+            if(!args[0].respondsTo("exception")) {
+                receivedException = runtime.newTypeError("exception class/object expected").getException();
+                return this;
+            }
+            exception = args[0].callMethod(context, "exception");
+        } else {
+            if (!args[0].respondsTo("exception")) {
+                receivedException = runtime.newTypeError("exception class/object expected").getException();
+                return this;
+            }
+            
+            exception = args[0].callMethod(context, "exception", args[1]);
+        }
+        
+        if (!exception.isKindOf(runtime.getClass("Exception"))) {
+            receivedException = runtime.newTypeError("exception object expected").getException();
+            return this;
+        }
+        
+        if (args.length == 3) {
+            ((RubyException) exception).set_backtrace(args[2]);
+        }
+        
+        receivedException = exception;
 
         // FIXME: correct raise call
 
@@ -609,7 +655,7 @@ public class RubyThread extends RubyObject {
         	// TODO: Doesn't SystemExit have its own method to make this less wordy..
             RubyException re = RubyException.newException(getRuntime(), getRuntime().getClass("SystemExit"), exception.getMessage());
             re.setInstanceVariable("status", getRuntime().newFixnum(1));
-            threadService.getMainThread().raise(re);
+            threadService.getMainThread().raise(new IRubyObject[]{re}, Block.NULL_BLOCK);
         } else {
             exitingException = exception;
         }
