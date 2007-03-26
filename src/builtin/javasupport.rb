@@ -525,11 +525,6 @@ module JavaUtilities
     java_type.public? ? "public" : (java_type.protected? ? "protected" : "private")
   end
 
-  # Wrap a low-level java_object with a high-level java proxy  
-  def JavaUtilities.wrap(java_object)
-    get_proxy_class(java_object.java_class).new_instance_for(java_object)
-  end
-
   @@primitive_matches = {
     'int'     => ['java.lang.Integer','java.lang.Long','java.lang.Short','java.lang.Character'],
     'long'    => ['java.lang.Integer','java.lang.Long','java.lang.Short','java.lang.Character'],

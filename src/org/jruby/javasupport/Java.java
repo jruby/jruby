@@ -47,6 +47,7 @@ import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class Java {
@@ -69,8 +70,18 @@ public class Java {
        
         // also create the JavaProxy* classes
         JavaProxyClass.createJavaProxyModule(runtime);
-        
+
+        RubyModule javaUtils = runtime.defineModule("JavaUtilities");
+        javaUtils.defineFastModuleFunction("wrap", callbackFactory.getFastSingletonMethod("wrap",IRubyObject.class));
+
         return javaModule;
+    }
+    
+    // JavaUtilities
+    public static IRubyObject wrap(IRubyObject recv, IRubyObject java_object) {
+        Ruby runtime = recv.getRuntime();
+        ThreadContext ctx = runtime.getCurrentContext();
+        return recv.callMethod(ctx, "get_proxy_class", ((JavaObject)java_object).java_class()).callMethod(ctx,"new_instance_for",java_object);
     }
 
 	// Java methods
