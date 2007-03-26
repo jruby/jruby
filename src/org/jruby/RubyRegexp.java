@@ -738,7 +738,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         output.writeString(regexp.pattern.toString());
 
         int _flags = 0;
-        if ((regexp.flags & REFlags.DOTALL) > 0) {
+        if ((regexp.flags & REFlags.DOTALL) + (regexp.flags & REFlags.MULTILINE) > 0) {
             _flags |= RE_OPTION_MULTILINE;
         }
         if ((regexp.flags & REFlags.IGNORE_CASE) > 0) {

@@ -524,7 +524,6 @@ class Term implements REFlags{
                //if(tmp.type==START && i>(offset+1)){
                //   throw new PatternSyntaxException("'^' is not a first term in the group: <"+new String(data,offset,end-offset)+">");
                //}
-               
                current=append(tmp);
                break;
          }

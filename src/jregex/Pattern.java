@@ -395,15 +395,15 @@ public class Pattern implements Serializable,REFlags{
          case 'i':
             return IGNORE_CASE;
          case 'm':
-            return MULTILINE;
-         case 's':
-            return DOTALL;
+            return MULTILINE|DOTALL;
+            //         case 's':
+            //            return DOTALL;
          case 'x':
             return IGNORE_SPACES;
-         case 'u':
-            return UNICODE;
-         case 'X':
-            return XML_SCHEMA;
+            //         case 'u':
+            //            return UNICODE;
+            //         case 'X':
+            //            return XML_SCHEMA;
       }
       throw new PatternSyntaxException("unknown flag: "+c);
    }
