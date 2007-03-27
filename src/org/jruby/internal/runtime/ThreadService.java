@@ -126,6 +126,12 @@ public class ThreadService {
         rubyThreadList.add(Thread.currentThread());
     }
     
+    public synchronized void unregisterThread(RubyThread thread) {
+        rubyThreadList.remove(Thread.currentThread());
+        getCurrentContext().setThread(null);
+        localContext.set(null);
+    }
+    
     public synchronized void setCritical(boolean critical) {
         RubyThread currentThread = getCurrentContext().getThread();
         

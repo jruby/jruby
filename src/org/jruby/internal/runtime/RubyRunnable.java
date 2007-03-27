@@ -80,6 +80,7 @@ public class RubyRunnable implements Runnable {
             rubyThread.exceptionRaised(e);
         } finally {
             runtime.getThreadService().setCritical(false);
+            runtime.getThreadService().unregisterThread(rubyThread);
             ((RubyThreadGroup)rubyThread.group()).remove(rubyThread);
         }
     }
