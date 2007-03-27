@@ -33,6 +33,7 @@ import java.lang.reflect.AccessibleObject;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyObject;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -46,11 +47,28 @@ public abstract class JavaAccessibleObject extends RubyObject {
 	public static void registerRubyMethods(Ruby runtime, RubyClass result) {
         CallbackFactory callbackFactory = runtime.callbackFactory(JavaAccessibleObject.class);
 
+        result.defineFastMethod("==", callbackFactory.getFastMethod("equal", IRubyObject.class));
+        result.defineFastMethod("eql?", callbackFactory.getFastMethod("equal", IRubyObject.class));
+        result.defineFastMethod("equal?", callbackFactory.getFastMethod("same", IRubyObject.class));
+        result.defineFastMethod("hash", callbackFactory.getFastMethod("hash"));
+
         result.defineFastMethod("accessible?", callbackFactory.getFastMethod("isAccessible"));
         result.defineFastMethod("accessible=", callbackFactory.getFastMethod("setAccessible", IRubyObject.class));
 	}
 	protected abstract AccessibleObject accesibleObject();
-	
+
+	public RubyFixnum hash() {
+		return getRuntime().newFixnum(accesibleObject().hashCode());
+    }
+
+    public IRubyObject equal(IRubyObject other) {
+		return other instanceof JavaAccessibleObject && accesibleObject().equals(((JavaAccessibleObject)other).accesibleObject()) ? getRuntime().getTrue() : getRuntime().getFalse();
+    }
+   
+	public IRubyObject same(IRubyObject other) {
+		return other instanceof JavaAccessibleObject && accesibleObject() == ((JavaAccessibleObject)other).accesibleObject() ? getRuntime().getTrue() : getRuntime().getFalse();
+	}
+       
 	public RubyBoolean isAccessible() {
 		return new RubyBoolean(getRuntime(),accesibleObject().isAccessible());
 	}

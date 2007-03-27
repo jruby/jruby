@@ -132,7 +132,7 @@
   </target>
 
   <target name="generate-method-classes" depends="serialize">
-    <touch file="${build.dir}/__empty.rb" verbose="false"/>
+    <touch file="${build.dir}/__empty.rb"/>
     <java classname="org.jruby.Main" fork="true">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
