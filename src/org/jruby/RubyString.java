@@ -402,6 +402,10 @@ public class RubyString extends RubyObject {
         return new RubyString(runtime, str);
     }
 
+    public static RubyString newString(Ruby runtime, RubyClass clazz, CharSequence str) {
+        return new RubyString(runtime, clazz, str);
+    }
+
     public static RubyString newString(Ruby runtime, byte[] bytes) {
         return new RubyString(runtime, bytes);
     }
@@ -2105,7 +2109,7 @@ public class RubyString extends RubyObject {
         RubyArray resultArray = getRuntime().newArray(result.length);
 
         for (int i = 0; i < result.length; i++) {
-            RubyString string = runtime.newString(result[i]);
+            RubyString string = RubyString.newString(runtime, getMetaClass(), result[i]);
 
             // if we're in unicode mode and successfully converted to a unicode string before,
             // make sure to keep unicode in the split values

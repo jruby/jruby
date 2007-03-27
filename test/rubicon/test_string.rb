@@ -1028,6 +1028,9 @@ class TestString < Test::Unit::TestCase
     assert_equal(S("Bar"), a.slice!(S("Bar")))
     assert_equal(S("Foo"), a)
   end
+    
+  class MyString < String
+  end
 
   def test_split
     assert_nil($;)
@@ -1050,6 +1053,8 @@ class TestString < Test::Unit::TestCase
 
     assert_equal([S("a"), S(""), S("b"), S("c")], S("a||b|c|").split(S('|')))
     assert_equal([S("a"), S(""), S("b"), S("c"), S("")], S("a||b|c|").split(S('|'), -1))
+    
+    assert_equal(MyString, MyString.new("a|b").split(S('|'))[0].class)
   end
 
   def test_squeeze
