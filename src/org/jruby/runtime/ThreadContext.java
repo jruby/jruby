@@ -43,24 +43,16 @@ import org.jruby.lexer.yacc.SourcePositionFactory;
 import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.UnsynchronizedStack;
 import org.jruby.util.collections.SinglyLinkedList;
 
 /**
  * @author jpetersen
  */
 public class ThreadContext {
-    private static UnsynchronizedStack pool = new UnsynchronizedStack();
-    
     public static synchronized ThreadContext newContext(Ruby runtime) {
-        if (pool.isEmpty()) return new ThreadContext(runtime);
+        ThreadContext context = new ThreadContext(runtime);
         
-        return (ThreadContext)pool.pop();
-    }
-    
-    public static synchronized void releaseContext(ThreadContext context) {
-        context.reset();
-        pool.push(context);
+        return context;
     }
     
     private final static int INITIAL_SIZE = 50;
