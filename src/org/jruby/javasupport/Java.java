@@ -48,6 +48,7 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
+import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyProc;
@@ -61,6 +62,7 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callback.Callback;
 
 public class Java {
     public static RubyModule createJavaModule(Ruby runtime) {
@@ -89,6 +91,9 @@ public class Java {
         javaUtils.defineFastModuleFunction("primitive_match", callbackFactory.getFastSingletonMethod("primitive_match",IRubyObject.class,IRubyObject.class));
         javaUtils.defineFastModuleFunction("access", callbackFactory.getFastSingletonMethod("access",IRubyObject.class));
         javaUtils.defineFastModuleFunction("matching_method", callbackFactory.getFastSingletonMethod("matching_method", IRubyObject.class, IRubyObject.class));
+        javaUtils.defineFastModuleFunction("get_proxy_class", callbackFactory.getFastSingletonMethod("get_proxy_class", IRubyObject.class));
+
+        javaUtils.setInstanceVariable("@callback", JavaUtil.convertJavaToRuby(runtime, callbackFactory.getFastSingletonMethod("concrete_proxy_inherited", IRubyObject.class)));
 
         RubyClass javaProxy = runtime.defineClass("JavaProxy", runtime.getObject(), runtime.getObject().getAllocator());
         javaProxy.getMetaClass().defineFastMethod("new_instance_for", callbackFactory.getFastSingletonMethod("new_instance_for", IRubyObject.class));
@@ -104,6 +109,52 @@ public class Java {
     }
     
     // JavaUtilities
+    public static IRubyObject get_proxy_class(IRubyObject recv, IRubyObject java_class) {
+        if(java_class instanceof RubyString) {
+            java_class = JavaClass.for_name(recv, java_class);
+        }
+        RubyFixnum class_id = java_class.id();
+        Ruby runtime = recv.getRuntime();
+        RubyHash proxy_classes = (RubyHash)recv.getInstanceVariable("@proxy_classes");
+        synchronized(java_class) {
+            if(proxy_classes.aref(class_id).isNil()) {
+                Class c = ((JavaClass)java_class).javaClass();
+                RubyClass base_type;
+                boolean concrete = false;
+                if(c.isInterface()) {
+                    base_type = runtime.getClass("InterfaceJavaProxy");
+                } else if(c.isArray()) {
+                    base_type = runtime.getClass("ArrayJavaProxy");
+                } else {
+                    concrete = true;
+                    base_type = runtime.getClass("ConcreteJavaProxy");
+                }
+
+                RubyClass proxy_class = RubyClass.newClass(recv, new IRubyObject[]{base_type}, Block.NULL_BLOCK);
+                proxy_class.callMethod(runtime.getCurrentContext(), "java_class=", java_class);
+                if(concrete) {
+                    proxy_class.getMetaClass().defineFastMethod("inherited", (Callback)  JavaUtil.convertRubyToJava(recv.getInstanceVariable("@callback")));
+                }
+                proxy_classes.aset(class_id, proxy_class);
+                // We do not setup the proxy before we register it so that same-typed constants do
+                // not try and create a fresh proxy class and go into an infinite loop
+                proxy_class.callMethod(runtime.getCurrentContext(), "setup");
+                
+                RubyArray proxy_extenders = (RubyArray)recv.getInstanceVariable("@proxy_extenders");
+                for(int i=0,j=proxy_extenders.getLength();i<j;i++) {
+                    proxy_extenders.eltInternal(i).callMethod(runtime.getCurrentContext(), "extend_proxy", proxy_class);
+                }
+            }
+        }
+        return proxy_classes.aref(class_id);
+    }
+
+    public static IRubyObject concrete_proxy_inherited(IRubyObject recv, IRubyObject subclass) {
+        ThreadContext tc = recv.getRuntime().getCurrentContext();
+        recv.callMethod(tc,recv.getMetaClass().getSuperClass(), "inherited", new IRubyObject[]{subclass}, org.jruby.runtime.CallType.SUPER, Block.NULL_BLOCK);
+        return recv.getRuntime().getModule("JavaUtilities").callMethod(tc, "setup_java_subclass", new IRubyObject[]{subclass, recv.callMethod(tc,"java_class")});
+    }
+
     public static IRubyObject matching_method(IRubyObject recv, IRubyObject methods, IRubyObject args) {
         Map matchCache = (Map)recv.dataGetStruct();
         if(null == matchCache) {

@@ -62,7 +62,7 @@ public class JavaSupport {
     public Class loadJavaClass(String className) {
         try {
             Class result = primitiveClass(className);
-            if (result == null) {
+            if(result == null) {
                 return Class.forName(className, true, javaClassLoader);
             }
             return result;
@@ -70,7 +70,7 @@ public class JavaSupport {
             throw runtime.newNameError("cannot load Java class " + className, className);
         }
     }
-    
+
     public JavaClass getJavaClassFromCache(Class clazz) {
         WeakReference ref = (WeakReference) instanceCache.get(clazz);
         
