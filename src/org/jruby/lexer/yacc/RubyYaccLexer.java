@@ -395,7 +395,7 @@ public class RubyYaccLexer {
             if (!isIdentifierChar(c)) {
                 src.unread(c);
                 if ((func & STR_FUNC_INDENT) != 0) {
-                    src.unread(c);
+                    src.unread('-');
                 }
                 return 0;
             }
