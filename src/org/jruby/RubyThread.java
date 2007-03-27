@@ -34,16 +34,22 @@ package org.jruby;
 
 import java.util.HashMap;
 import java.util.Map;
-
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
+import org.jruby.internal.runtime.FutureThread;
 import org.jruby.internal.runtime.NativeThread;
+import org.jruby.internal.runtime.RubyNativeThread;
+import org.jruby.internal.runtime.RubyRunnable;
+import org.jruby.internal.runtime.ThreadLike;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import edu.emory.mathcs.backport.java.util.concurrent.ExecutionException;
+import edu.emory.mathcs.backport.java.util.concurrent.TimeoutException;
 
 /**
  * Implementation of Ruby's <code>Thread</code> class.  Each Ruby thread is
@@ -59,7 +65,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author Jason Voegele (jason@jvoegele.com)
  */
 public class RubyThread extends RubyObject {
-    private NativeThread threadImpl;
+    private ThreadLike threadImpl;
     private Map threadLocalVariables = new HashMap();
     private boolean abortOnException;
     private IRubyObject finalResult;
@@ -76,6 +82,8 @@ public class RubyThread extends RubyObject {
     private volatile boolean killed = false;
     public Object killLock = new Object();
     private RubyThread joinedByCriticalThread;
+    
+    private static final boolean USE_POOLING = Boolean.getBoolean("jruby.thread.pooling");
     
     public static RubyClass createThreadClass(Ruby runtime) {
         // FIXME: In order for Thread to play well with the standard 'new' behavior,
@@ -188,7 +196,11 @@ public class RubyThread extends RubyObject {
         
         if (callInit) rubyThread.callInit(args, block);
 
-        rubyThread.threadImpl = new NativeThread(rubyThread, args, block);
+        if (USE_POOLING) {
+            rubyThread.threadImpl = new FutureThread(rubyThread, new RubyRunnable(rubyThread, args, block));
+        } else {
+            rubyThread.threadImpl = new NativeThread(rubyThread, new RubyNativeThread(rubyThread, args, block));
+        }
         rubyThread.threadImpl.start();
         
         // make sure the thread has started before continuing, so it will appear "runnable" to the rest of Ruby
@@ -386,6 +398,10 @@ public class RubyThread extends RubyObject {
             }
             threadImpl.join(timeoutMillis);
         } catch (InterruptedException iExcptn) {
+            assert false : iExcptn;
+        } catch (TimeoutException iExcptn) {
+            assert false : iExcptn;
+        } catch (ExecutionException iExcptn) {
             assert false : iExcptn;
         }
         if (exitingException != null) {
@@ -611,6 +627,8 @@ public class RubyThread extends RubyObject {
                     threadImpl.join();
     			}
     		} catch (InterruptedException ie) {
+    			throw new ThreadKill();
+    		} catch (ExecutionException ie) {
     			throw new ThreadKill();
     		}
     	}

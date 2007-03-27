@@ -28,60 +28,62 @@
 package org.jruby.internal.runtime;
 
 import org.jruby.RubyThread;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.builtin.IRubyObject;
+
+import edu.emory.mathcs.backport.java.util.concurrent.ExecutionException;
+import edu.emory.mathcs.backport.java.util.concurrent.ExecutorService;
+import edu.emory.mathcs.backport.java.util.concurrent.Executors;
+import edu.emory.mathcs.backport.java.util.concurrent.Future;
+import edu.emory.mathcs.backport.java.util.concurrent.TimeUnit;
+import edu.emory.mathcs.backport.java.util.concurrent.TimeoutException;
 
 /**
  * @author cnutter
  */
-public class NativeThread implements ThreadLike {
-    private Thread nativeThread;
+public class FutureThread implements ThreadLike {
+    private Future future;
+    private Runnable runnable;
     public RubyThread rubyThread;
     
-    public NativeThread(RubyThread rubyThread, IRubyObject[] args, Block block) {
-        this.rubyThread = rubyThread;
-        
-        nativeThread = new RubyNativeThread(rubyThread, args, block);
-    }
+    private static ExecutorService executor = Executors.newCachedThreadPool();
     
-    public NativeThread(RubyThread rubyThread, Thread nativeThread) {
+    public FutureThread(RubyThread rubyThread, RubyRunnable runnable) {
         this.rubyThread = rubyThread;
-        this.nativeThread = nativeThread;
+        this.runnable = runnable;
     }
     
     public void start() {
-        nativeThread.start();
+        future = executor.submit(runnable);
     }
     
     public void interrupt() {
-        nativeThread.interrupt();
+        future.cancel(true);
     }
     
     public boolean isAlive() {
-        return nativeThread.isAlive();
+        return future != null && !future.isDone();
     }
     
-    public void join() throws InterruptedException {
-        nativeThread.join();
+    public void join() throws InterruptedException, ExecutionException {
+        future.get();
     }
     
-    public void join(long timeoutMillis) throws InterruptedException {
-        nativeThread.join(timeoutMillis);
+    public void join(long millis) throws InterruptedException, ExecutionException, TimeoutException {
+        future.get(millis, TimeUnit.MILLISECONDS);
     }
     
     public int getPriority() {
-        return nativeThread.getPriority();
+        return 1;
     }
     
     public void setPriority(int priority) {
-        nativeThread.setPriority(priority);
+        //nativeThread.setPriority(priority);
     }
     
     public boolean isCurrent() {
-        return Thread.currentThread() == nativeThread;
+        return rubyThread == rubyThread.getRuntime().getCurrentContext().getThread();
     }
     
     public boolean isInterrupted() {
-        return nativeThread.isInterrupted();
+        return future.isCancelled();
     }
 }

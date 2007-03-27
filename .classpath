@@ -9,5 +9,6 @@
 	<classpathentry kind="lib" path="lib/asm-commons-2.2.3.jar"/>
 	<classpathentry kind="lib" path="lib/asm-2.2.3.jar"/>
 	<classpathentry kind="lib" path="lib/jline-0.9.91.jar"/>
+	<classpathentry kind="lib" path="lib/backport-util-concurrent.jar"/>
 	<classpathentry kind="output" path="build/classes/jruby"/>
 </classpath>

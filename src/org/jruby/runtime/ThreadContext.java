@@ -18,7 +18,7 @@
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2006 Michael Studman <codehaus@michaelstudman.com>
  * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -43,28 +43,42 @@ import org.jruby.lexer.yacc.SourcePositionFactory;
 import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.UnsynchronizedStack;
 import org.jruby.util.collections.SinglyLinkedList;
 
 /**
  * @author jpetersen
  */
 public class ThreadContext {
+    private static UnsynchronizedStack pool = new UnsynchronizedStack();
+    
+    public static synchronized ThreadContext newContext(Ruby runtime) {
+        if (pool.isEmpty()) return new ThreadContext(runtime);
+        
+        return (ThreadContext)pool.pop();
+    }
+    
+    public static synchronized void releaseContext(ThreadContext context) {
+        context.reset();
+        pool.push(context);
+    }
+    
     private final static int INITIAL_SIZE = 50;
     
     private final Ruby runtime;
-
-    // Is this thread currently with in a function trace? 
+    
+    // Is this thread currently with in a function trace?
     private boolean isWithinTrace;
     
     // Is this thread currently doing an defined? defined should set things like $!
     private boolean isWithinDefined;
-
+    
     private RubyThread thread;
     
     //private UnsynchronizedStack parentStack;
     private RubyModule[] parentStack = new RubyModule[INITIAL_SIZE];
     private int parentIndex = -1;
-	
+    
     //private UnsynchronizedStack frameStack;
     private Frame[] frameStack = new Frame[INITIAL_SIZE];
     private int frameIndex = -1;
@@ -79,23 +93,46 @@ public class ThreadContext {
     
     private String[] catchStack = new String[INITIAL_SIZE];
     private int catchIndex = -1;
-
+    
     private int[] bindingFrameStack = new int[INITIAL_SIZE];
     private int bindingFrameIndex = -1;
-
+    
     private RubyModule wrapper;
-
+    
     private ISourcePosition sourcePosition = new SourcePositionFactory(null).getDummyPosition();
-
+    
+    private void reset() {
+        isWithinTrace = false;
+        
+        isWithinDefined = false;
+        
+        thread = null;
+        
+        parentIndex = -1;
+        
+        frameIndex = -1;
+        crefIndex = -1;
+        
+        scopeIndex = -1;
+        
+        catchIndex = -1;
+        
+        bindingFrameIndex = -1;
+        
+        wrapper = null;
+        
+        sourcePosition = new SourcePositionFactory(null).getDummyPosition();
+    }
+    
     /**
      * Constructor for Context.
      */
-    public ThreadContext(Ruby runtime) {
+    private ThreadContext(Ruby runtime) {
         this.runtime = runtime;
         
         // TOPLEVEL self and a few others want a top-level scope.  We create this one right
         // away and then pass it into top-level parse so it ends up being the top level.
-       pushScope(new DynamicScope(new LocalStaticScope(null), null));
+        pushScope(new DynamicScope(new LocalStaticScope(null), null));
     }
     
     CallType lastCallType;
@@ -103,7 +140,7 @@ public class ThreadContext {
     public Ruby getRuntime() {
         return runtime;
     }
-
+    
     /**
      * Returns the lastCallStatus.
      * @return LastCallStatus
@@ -119,7 +156,7 @@ public class ThreadContext {
     public CallType getLastCallType() {
         return lastCallType;
     }
-
+    
     public void printScope() {
         System.out.println("SCOPE STACK:");
         for (int i = 0; i <= scopeIndex; i++) {
@@ -172,7 +209,7 @@ public class ThreadContext {
     public void popScope() {
         scopeStack[scopeIndex--] = null;
     }
-
+    
     private void expandScopesIfNecessary() {
         if (scopeIndex + 1 == scopeStack.length) {
             int newSize = scopeStack.length * 2;
@@ -183,19 +220,19 @@ public class ThreadContext {
             scopeStack = newScopeStack;
         }
     }
-
+    
     public RubyThread getThread() {
         return thread;
     }
-
+    
     public void setThread(RubyThread thread) {
         this.thread = thread;
     }
-
+    
     public IRubyObject getLastline() {
         return getCurrentScope().getLastLine();
     }
-
+    
     public void setLastline(IRubyObject value) {
         getCurrentScope().setLastLine(value);
     }
@@ -205,7 +242,7 @@ public class ThreadContext {
         if (catchIndex + 1 == catchStack.length) {
             int newSize = catchStack.length * 2;
             String[] newCatchStack = new String[newSize];
-    
+            
             System.arraycopy(catchStack, 0, newCatchStack, 0, catchStack.length);
             catchStack = newCatchStack;
         }
@@ -215,14 +252,14 @@ public class ThreadContext {
         catchStack[++catchIndex] = catchSymbol;
         expandCatchIfNecessary();
     }
-
+    
     public void popCatch() {
         catchIndex--;
     }
-
+    
     public String[] getActiveCatches() {
         if (catchIndex < 0) return new String[0];
-
+        
         String[] activeCatches = new String[catchIndex + 1];
         System.arraycopy(catchStack, 0, activeCatches, 0, catchIndex + 1);
         return activeCatches;
@@ -249,7 +286,7 @@ public class ThreadContext {
     
     private void popFrame() {
         Frame frame = (Frame)frameStack[frameIndex--];
-
+        
         setPosition(frame.getPosition());
     }
     
@@ -293,12 +330,12 @@ public class ThreadContext {
     public ISourcePosition getPreviousFramePosition() {
         return getPreviousFrame().getPosition();
     }
-
+    
     private void expandBindingFrameIfNecessary() {
         if (bindingFrameIndex + 1 == bindingFrameStack.length) {
             int newSize = bindingFrameStack.length * 2;
             int[] newbindingFrameStack = new int[newSize];
-    
+            
             System.arraycopy(bindingFrameStack, 0, newbindingFrameStack, 0, bindingFrameStack.length);
             bindingFrameStack = newbindingFrameStack;
         }
@@ -308,12 +345,12 @@ public class ThreadContext {
         bindingFrameStack[++bindingFrameIndex] = bindingDepth;
         expandBindingFrameIfNecessary();
     }
-
+    
     public void popBindingFrame() {
         bindingFrameIndex--;
     }
-
-
+    
+    
     public int currentBindingFrame() {
         if(bindingFrameIndex == -1) {
             return 0;
@@ -321,7 +358,7 @@ public class ThreadContext {
             return bindingFrameStack[bindingFrameIndex];
         }
     }
-
+    
     public ISourcePosition getPosition() {
         return sourcePosition;
     }
@@ -333,27 +370,27 @@ public class ThreadContext {
     public int getSourceLine() {
         return sourcePosition.getEndLine();
     }
-
+    
     public void setPosition(ISourcePosition position) {
         sourcePosition = position;
     }
-
+    
     public IRubyObject getBackref() {
         IRubyObject value = getCurrentScope().getBackRef();
         
         // DynamicScope does not preinitialize these values since they are virtually
         // never used.
-        return value == null ? runtime.getNil() : value; 
+        return value == null ? runtime.getNil() : value;
     }
-
+    
     public void setBackref(IRubyObject backref) {
         getCurrentScope().setBackRef(backref);
     }
-
+    
     public Visibility getCurrentVisibility() {
         return getCurrentFrame().getVisibility();
     }
-
+    
     public Visibility getPreviousVisibility() {
         return getPreviousFrame().getVisibility();
     }
@@ -361,7 +398,7 @@ public class ThreadContext {
     public void setCurrentVisibility(Visibility visibility) {
         getCurrentFrame().setVisibility(visibility);
     }
-
+    
     public void pollThreadEvents() {
         getThread().pollThreadEvents();
     }
@@ -404,7 +441,7 @@ public class ThreadContext {
         
         return module;
     }
-
+    
     public void pushRubyClass(RubyModule currentModule) {
         assert currentModule != null : "Can't push null RubyClass";
         
@@ -417,52 +454,52 @@ public class ThreadContext {
         parentStack[parentIndex--] = null;
         return ret;
     }
-	
+    
     public RubyModule getRubyClass() {
         assert !(parentIndex == -1) : "Trying to get RubyClass from empty stack";
         
         RubyModule parentModule = (RubyModule)parentStack[parentIndex];
-
+        
         return parentModule.getNonIncludedClass();
     }
-
+    
     public RubyModule getBindingRubyClass() {
         RubyModule parentModule = null;
         if(parentIndex == 0) {
             parentModule = (RubyModule)parentStack[parentIndex];
         } else {
             parentModule = (RubyModule)parentStack[parentIndex-1];
-
+            
         }
         return parentModule.getNonIncludedClass();
     }
-
+    
     public boolean isTopLevel() {
         return parentIndex == 0;
     }
-
+    
     public RubyModule getWrapper() {
         return wrapper;
     }
-
+    
     public void setWrapper(RubyModule wrapper) {
         this.wrapper = wrapper;
     }
-
+    
     public boolean getConstantDefined(String name) {
         IRubyObject result = null;
         
         // flipped from while to do to search current class first
         for (SinglyLinkedList cbase = peekCRef(); cbase != null; cbase = cbase.getNext()) {
-          result = ((RubyModule) cbase.getValue()).getConstantAt(name);
-          if (result != null || runtime.getLoadService().autoload(name) != null) {
-              return true;
-          }
-        } 
+            result = ((RubyModule) cbase.getValue()).getConstantAt(name);
+            if (result != null || runtime.getLoadService().autoload(name) != null) {
+                return true;
+            }
+        }
         
         return false;
     }
-
+    
     public IRubyObject getConstant(String name) {
         //RubyModule self = state.threadContext.getRubyClass();
         SinglyLinkedList cbase = peekCRef();
@@ -471,24 +508,24 @@ public class ThreadContext {
         
         // flipped from while to do to search current class first
         do {
-          RubyModule klass = (RubyModule) cbase.getValue();
-          
-          // Not sure how this can happen
-          //if (NIL_P(klass)) return rb_const_get(CLASS_OF(self), id);
-          result = klass.getConstantAt(name);
-          if (result == null) {
-              if (runtime.getLoadService().autoload(name) != null) {
-                  continue;
-              }
-          } else {
-              return result;
-          }
-          cbase = cbase.getNext();
+            RubyModule klass = (RubyModule) cbase.getValue();
+            
+            // Not sure how this can happen
+            //if (NIL_P(klass)) return rb_const_get(CLASS_OF(self), id);
+            result = klass.getConstantAt(name);
+            if (result == null) {
+                if (runtime.getLoadService().autoload(name) != null) {
+                    continue;
+                }
+            } else {
+                return result;
+            }
+            cbase = cbase.getNext();
         } while (cbase != null && cbase.getValue() != object);
         
         return ((RubyModule) peekCRef().getValue()).getConstant(name);
     }
-
+    
     public IRubyObject getConstant(String name, RubyModule module) {
         //RubyModule self = state.threadContext.getRubyClass();
         SinglyLinkedList cbase = module.getCRef();
@@ -496,53 +533,53 @@ public class ThreadContext {
         
         // flipped from while to do to search current class first
         do {
-          RubyModule klass = (RubyModule) cbase.getValue();
-          
-          // Not sure how this can happen
-          //if (NIL_P(klass)) return rb_const_get(CLASS_OF(self), id);
-          result = klass.getConstantAt(name);
-          if (result == null) {
-              if (runtime.getLoadService().autoload(name) != null) {
-                  continue;
-              }
-          } else {
-              return result;
-          }
-          cbase = cbase.getNext();
+            RubyModule klass = (RubyModule) cbase.getValue();
+            
+            // Not sure how this can happen
+            //if (NIL_P(klass)) return rb_const_get(CLASS_OF(self), id);
+            result = klass.getConstantAt(name);
+            if (result == null) {
+                if (runtime.getLoadService().autoload(name) != null) {
+                    continue;
+                }
+            } else {
+                return result;
+            }
+            cbase = cbase.getNext();
         } while (cbase != null);
         
-        //System.out.println("CREF is " + state.threadContext.getCRef().getValue());  
+        //System.out.println("CREF is " + state.threadContext.getCRef().getValue());
         return ((RubyModule) peekCRef().getValue()).getConstant(name);
     }
-
+    
     private void addBackTraceElement(RubyArray backtrace, Frame frame, Frame previousFrame) {
         StringBuffer sb = new StringBuffer(100);
         ISourcePosition position = frame.getPosition();
-    
+        
         if(previousFrame != null && frame.getName() != null && previousFrame.getName() != null &&
-           frame.getName().equals(previousFrame.getName()) &&
-           frame.getPosition().getFile().equals(previousFrame.getPosition().getFile()) &&
-           frame.getPosition().getEndLine() == previousFrame.getPosition().getEndLine()) {
+                frame.getName().equals(previousFrame.getName()) &&
+                frame.getPosition().getFile().equals(previousFrame.getPosition().getFile()) &&
+                frame.getPosition().getEndLine() == previousFrame.getPosition().getEndLine()) {
             return;
         }
-    
+        
         sb.append(position.getFile()).append(':').append(position.getEndLine());
-    
+        
         if (previousFrame != null && previousFrame.getName() != null) {
             sb.append(":in `").append(previousFrame.getName()).append('\'');
         } else if (previousFrame == null && frame.getName() != null) {
             sb.append(":in `").append(frame.getName()).append('\'');
         }
-    
+        
         backtrace.append(backtrace.getRuntime().newString(sb.toString()));
     }
-
-    /** 
+    
+    /**
      * Create an Array with backtrace information.
      * @param runtime
      * @param level
      * @param nativeException
-     * @return an Array with the backtrace 
+     * @return an Array with the backtrace
      */
     public IRubyObject createBacktrace(int level, boolean nativeException) {
         RubyArray backtrace = runtime.newArray();
@@ -550,7 +587,7 @@ public class ThreadContext {
         int traceSize = frameIndex - level;
         
         if (traceSize <= 0) {
-        	return backtrace;
+            return backtrace;
         }
         
         if (nativeException) {
@@ -561,7 +598,7 @@ public class ThreadContext {
         for (int i = traceSize; i > base; i--) {
             addBackTraceElement(backtrace, (Frame) frameStack[i], (Frame) frameStack[i-1]);
         }
-    
+        
         return backtrace;
     }
     
@@ -571,10 +608,10 @@ public class ThreadContext {
         pushCRef(runtime.getObject());
         getCurrentFrame().setSelf(runtime.getTopSelf());
     }
-
+    
     public void preClassEval(StaticScope staticScope, RubyModule type) {
         pushCRef(type);
-        pushRubyClass(type); 
+        pushRubyClass(type);
         pushFrameCopy();
         getCurrentFrame().setVisibility(Visibility.PUBLIC);
         pushScope(new DynamicScope(staticScope, getCurrentScope()));
@@ -718,7 +755,7 @@ public class ThreadContext {
         setCRef(block.getCRef());
         getCurrentFrame().setVisibility(block.getVisibility());
         pushScope(block.getDynamicScope());
-        pushRubyClass((klass != null) ? klass : block.getKlass()); 
+        pushRubyClass((klass != null) ? klass : block.getKlass());
     }
     
     public void preYieldSpecificBlock(Block block, RubyModule klass) {
@@ -727,17 +764,17 @@ public class ThreadContext {
         setCRef(block.getCRef());
         getCurrentFrame().setVisibility(block.getVisibility());
         pushScope(block.getDynamicScope().cloneScope());
-        pushRubyClass((klass != null) ? klass : block.getKlass()); 
+        pushRubyClass((klass != null) ? klass : block.getKlass());
     }
     
     public void preEvalWithBinding(Block block) {
         pushBindingFrame(frameIndex);
         pushFrame(block.getFrame());
-        setCRef(block.getCRef());        
+        setCRef(block.getCRef());
         getCurrentFrame().setVisibility(block.getVisibility());
-        pushRubyClass(block.getKlass()); 
+        pushRubyClass(block.getKlass());
     }
-
+    
     public void postEvalWithBinding() {
         popFrame();
         unsetCRef();
@@ -750,29 +787,29 @@ public class ThreadContext {
         popFrame();
         unsetCRef();
         popRubyClass();
-     }
-
+    }
+    
     public void preRootNode(DynamicScope scope) {
         pushScope(scope);
     }
-
+    
     public void postRootNode() {
         popScope();
     }
-
+    
     /**
      * Is this thread actively tracing at this moment.
-     * 
+     *
      * @return true if so
      * @see org.jruby.Ruby#callTraceFunction(String, ISourcePosition, IRubyObject, String, IRubyObject)
      */
     public boolean isWithinTrace() {
         return isWithinTrace;
     }
-
+    
     /**
      * Set whether we are actively tracing or not on this thread.
-     * 
+     *
      * @param isWithinTrace true is so
      * @see org.jruby.Ruby#callTraceFunction(String, ISourcePosition, IRubyObject, String, IRubyObject)
      */
@@ -782,7 +819,7 @@ public class ThreadContext {
     
     /**
      * Is this thread actively in defined? at the moment.
-     * 
+     *
      * @return true if within defined?
      */
     public boolean isWithinDefined() {
@@ -791,7 +828,7 @@ public class ThreadContext {
     
     /**
      * Set whether we are actively within defined? or not.
-     * 
+     *
      * @param isWithinDefined true if so
      */
     public void setWithinDefined(boolean isWithinDefined) {

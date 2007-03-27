@@ -52,7 +52,7 @@ public class ThreadService {
 
     public ThreadService(Ruby runtime) {
         this.runtime = runtime;
-        this.mainContext = new ThreadContext(runtime);
+        this.mainContext = ThreadContext.newContext(runtime);
         this.localContext = new ThreadLocal();
         this.rubyThreadGroup = new ThreadGroup("Ruby Threads#" + runtime.hashCode());
         this.rubyThreadList = Collections.synchronizedSet(new WeakHashSet());
@@ -120,7 +120,7 @@ public class ThreadService {
     }
 
     public synchronized void registerNewThread(RubyThread thread) {
-        localContext.set(new ThreadContext(runtime));
+        localContext.set(ThreadContext.newContext(runtime));
         getCurrentContext().setThread(thread);
         // This requires register to be called from within the registree thread
         rubyThreadList.add(Thread.currentThread());

@@ -13,7 +13,7 @@
  *
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -40,33 +40,33 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class RubyNativeThread extends Thread {
-	private Ruby runtime;
+    private Ruby runtime;
     private Frame currentFrame;
     private RubyProc proc;
     private IRubyObject[] arguments;
     private RubyThread rubyThread;
     
-	protected RubyNativeThread(RubyThread rubyThread, IRubyObject[] args, Block currentBlock) {
-		super(rubyThread.getRuntime().getThreadService().getRubyThreadGroup(), "Ruby Thread" + rubyThread.hash());
+    public RubyNativeThread(RubyThread rubyThread, IRubyObject[] args, Block currentBlock) {
+        super(rubyThread.getRuntime().getThreadService().getRubyThreadGroup(), "Ruby Thread" + rubyThread.hash());
         this.rubyThread = rubyThread;
         this.runtime = rubyThread.getRuntime();
         ThreadContext tc = runtime.getCurrentContext();
-		
-		proc = runtime.newProc(false, currentBlock);
+        
+        proc = runtime.newProc(false, currentBlock);
         currentFrame = tc.getCurrentFrame();
         this.arguments = args;
-	}
-	
-	public RubyThread getRubyThread() {
-		return rubyThread;
-	}
-	
-	public void run() {
+    }
+    
+    public RubyThread getRubyThread() {
+        return rubyThread;
+    }
+    
+    public void run() {
         runtime.getThreadService().registerNewThread(rubyThread);
         ThreadContext context = runtime.getCurrentContext();
         
         context.preRunThread(currentFrame);
-
+        
         // Call the thread's code
         try {
             rubyThread.notifyStarted();
@@ -76,13 +76,14 @@ public class RubyNativeThread extends Thread {
         } catch (ThreadKill tk) {
             // notify any killer waiting on our thread that we're going bye-bye
             synchronized (rubyThread.killLock) {
-            	rubyThread.killLock.notifyAll();
+                rubyThread.killLock.notifyAll();
             }
         } catch (RaiseException e) {
             rubyThread.exceptionRaised(e);
         } finally {
             runtime.getThreadService().setCritical(false);
-        	((RubyThreadGroup)rubyThread.group()).remove(rubyThread);
+            ((RubyThreadGroup)rubyThread.group()).remove(rubyThread);
+            ThreadContext.releaseContext(context);
         }
     }
 }
