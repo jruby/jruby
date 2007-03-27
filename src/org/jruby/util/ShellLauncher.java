@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
@@ -316,7 +317,7 @@ public class ShellLauncher {
         // first parse the first element of rawArgs since this may contain
         // the whole command line
         String command = rawArgs[0].toString();
-        UnsynchronizedStack args = new UnsynchronizedStack();
+        Stack args = new Stack();
         StringTokenizer st = new StringTokenizer(command, " ");
         String quoteChar = null;
 
