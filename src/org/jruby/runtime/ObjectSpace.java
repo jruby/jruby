@@ -15,7 +15,7 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004-2006 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -79,7 +79,7 @@ public class ObjectSpace {
         identitiesByObject.put(object, longMaxId);
         return longMaxId;
     }
-    
+
     public IRubyObject id2ref(long id) {
         synchronized (identities) {
             cleanIdentities();
@@ -186,7 +186,7 @@ public class ObjectSpace {
             for(Iterator iter2 = ((List)finalizers.get(key)).iterator();iter2.hasNext();) {
                 ((FinalizerEntry)iter2.next())._finalize();
             }
-        } 
+        }
         synchronized(finalizersToRun) {
             while(!finalizersToRun.isEmpty()) {
                 finalizersToRun.notify();
@@ -207,7 +207,7 @@ public class ObjectSpace {
             finalizers.put(new Long(id),fins);
         }
         fins.add(new FinalizerEntry(obj,id,proc));
-    }    
+    }
 
     public synchronized void removeFinalizers(long id) {
         finalizers.remove(new Long(id));
@@ -226,25 +226,25 @@ public class ObjectSpace {
     }
 
     public synchronized Iterator iterator(RubyModule rubyClass) {
-    	final List objList = new ArrayList();
-    	WeakReferenceListNode current = top;
-    	while (current != null) {
-    		IRubyObject obj = (IRubyObject)current.get();
-    	    if (obj != null && obj.isKindOf(rubyClass)) {
-    	    	objList.add(current);
-    	    }
-    	    
-    	    current = current.next;
-    	}
-    	
-        return new Iterator() {
-        	private Iterator iter = objList.iterator();
-        	
-			public boolean hasNext() {
-			    throw new UnsupportedOperationException();
-			}
+        final List objList = new ArrayList();
+        WeakReferenceListNode current = top;
+        while (current != null) {
+            IRubyObject obj = (IRubyObject)current.get();
+            if (obj != null && obj.isKindOf(rubyClass)) {
+                objList.add(current);
+            }
 
-			public Object next() {
+            current = current.nextNode;
+        }
+
+        return new Iterator() {
+            private Iterator iter = objList.iterator();
+
+            public boolean hasNext() {
+                throw new UnsupportedOperationException();
+            }
+
+            public Object next() {
                 Object obj = null;
                 while (iter.hasNext()) {
                     WeakReferenceListNode node = (WeakReferenceListNode)iter.next();
@@ -254,15 +254,15 @@ public class ObjectSpace {
                     }
 
                     obj = node.get();
-                    
+
                     if (obj != null) break;
                 }
-				return obj;
-			}
+                return obj;
+            }
 
-			public void remove() {
-				throw new UnsupportedOperationException();
-			}
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
         };
     }
 
@@ -274,27 +274,26 @@ public class ObjectSpace {
     }
 
     private class WeakReferenceListNode extends WeakReference {
-        public WeakReferenceListNode prev;
-        public WeakReferenceListNode next;
+        private WeakReferenceListNode prevNode;
+        private WeakReferenceListNode nextNode;
         public WeakReferenceListNode(Object ref, ReferenceQueue queue, WeakReferenceListNode next) {
             super(ref, queue);
 
-            this.next = next;
+            this.nextNode = next;
             if (next != null) {
-                next.prev = this;
+                next.prevNode = this;
             }
         }
 
         public void remove() {
             synchronized (ObjectSpace.this) {
-                if (prev != null) {
-                    prev.next = next;
+                if (prevNode != null) {
+                    prevNode.nextNode = nextNode;
                 } else {
-                    top = next;
+                    top = nextNode;
                 }
-                
-                if (next != null) {
-                    next.prev = prev;
+                if (nextNode != null) {
+                    nextNode.prevNode = prevNode;
                 }
             }
         }
