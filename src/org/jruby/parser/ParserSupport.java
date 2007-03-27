@@ -340,8 +340,17 @@ public class ParserSupport {
 
         return new CallNode(firstNode.getPosition(), firstNode, operator, null);
     }
-
+    
     public Node getOperatorCallNode(Node firstNode, String operator, Node secondNode) {
+        return getOperatorCallNode(firstNode, operator, secondNode, null);
+    }
+
+    public Node getOperatorCallNode(Node firstNode, String operator, Node secondNode, ISourcePosition defaultPosition) {
+        if (defaultPosition != null) {
+            firstNode = checkForNilNode(firstNode, defaultPosition);
+        	secondNode = checkForNilNode(secondNode, defaultPosition);
+        }
+        
         checkExpression(firstNode);
         checkExpression(secondNode);
         
@@ -881,5 +890,9 @@ public class ParserSupport {
     		return ((NewlineNode) node).getNextNode();
     	}
     	return node;
+    }
+    
+    private Node checkForNilNode(Node node, ISourcePosition defaultPosition) {
+        return (node == null) ? new NilNode(defaultPosition) : node; 
     }
 }
