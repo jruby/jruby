@@ -728,9 +728,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                     argsAsArray.append(Java.ruby_to_java(proxy, argsArray[j + 1], Block.NULL_BLOCK));
                 }
 
-                IRubyObject[] mmArgs = new IRubyObject[] { methods, argsAsArray };
-                IRubyObject result = javaUtilities.callMethod(getRuntime().getCurrentContext(),
-                        "matching_method", mmArgs);
+                IRubyObject result = Java.matching_method(javaUtilities, methods, argsAsArray);
                 return Java.java_to_ruby(self, 
                         result.callMethod(getRuntime().getCurrentContext(),"invoke", argsArray),
                         Block.NULL_BLOCK);

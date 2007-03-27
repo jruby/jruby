@@ -288,8 +288,7 @@ public class JavaClass extends JavaObject {
                 
                 IRubyObject match = (IRubyObject)matchingMethods.get(argsKey);
                 if (match == null) {
-                    IRubyObject[] mmArgs = new IRubyObject[] {methods, argsAsArray};
-                    match = javaUtilities.callMethod(context, "matching_method", mmArgs);
+                    match = Java.matching_method(javaUtilities, methods, argsAsArray);
                     matchingMethods.put(argsKey, match);
                 }
                 
