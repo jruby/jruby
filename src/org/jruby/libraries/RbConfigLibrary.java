@@ -62,6 +62,7 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "ruby_install_name", jruby_script());
         setConfig(configHash, "SHELL", jruby_shell());
         setConfig(configHash, "prefix", new NormalizedFile(runtime.getJRubyHome()).getAbsolutePath());
+        setConfig(configHash, "exec_prefix", new NormalizedFile(runtime.getJRubyHome()).getAbsolutePath());
 
         setConfig(configHash, "host_os", System.getProperty("os.name"));
         setConfig(configHash, "LIBRUBY", "jruby");
@@ -91,6 +92,7 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "sitedir",        new NormalizedFile(libdir, "ruby/site_ruby").getAbsolutePath());
         setConfig(configHash, "sitelibdir",     new NormalizedFile(libdir, "ruby/site_ruby/1.8").getAbsolutePath());
         setConfig(configHash, "sitearchdir",    new NormalizedFile(libdir, "ruby/site_ruby/1.8/java").getAbsolutePath());
+        setConfig(configHash, "archdir",    new NormalizedFile(libdir, "ruby/site_ruby/1.8/java").getAbsolutePath());
         setConfig(configHash, "configure_args", "");
         setConfig(configHash, "datadir", new NormalizedFile(runtime.getJRubyHome(), "share").getAbsolutePath());
         setConfig(configHash, "mandir", new NormalizedFile(runtime.getJRubyHome(), "man").getAbsolutePath());
