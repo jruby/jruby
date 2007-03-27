@@ -435,12 +435,6 @@ module JavaUtilities
 	add_proxy_extender JavaInterfaceExtender.new(java_class_name, &block)
   end
 
-  def JavaUtilities.valid_constant_name?(name)
-    return false if name.empty?
-    first_char = name[0..0]
-    first_char == first_char.upcase && first_char != first_char.downcase
-  end
-
   def JavaUtilities.get_proxy_class(java_class)
     java_class = Java::JavaClass.for_name(java_class) if java_class.kind_of?(String)
     class_id = java_class.object_id
@@ -523,22 +517,6 @@ module JavaUtilities
 
   def JavaUtilities.access(java_type)
     java_type.public? ? "public" : (java_type.protected? ? "protected" : "private")
-  end
-
-  @@primitive_matches = {
-    'int'     => ['java.lang.Integer','java.lang.Long','java.lang.Short','java.lang.Character'],
-    'long'    => ['java.lang.Integer','java.lang.Long','java.lang.Short','java.lang.Character'],
-    'short'   => ['java.lang.Integer','java.lang.Long','java.lang.Short','java.lang.Character'],
-    'char'    => ['java.lang.Integer','java.lang.Long','java.lang.Short','java.lang.Character'],
-    'float'   => ['java.lang.Float','java.lang.Double'],
-    'double'  => ['java.lang.Float','java.lang.Double'],
-    'boolean' => ['java.lang.Boolean'] }
-
-  def JavaUtilities.primitive_match(t1,t2)
-    if t1.primitive?
-      return (matches = @@primitive_matches[t1.inspect]) && matches.include?(t2.inspect)
-    end
-    return true
   end
   
   def JavaUtilities.matching_method(methods, args)

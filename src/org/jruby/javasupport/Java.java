@@ -73,11 +73,41 @@ public class Java {
 
         RubyModule javaUtils = runtime.defineModule("JavaUtilities");
         javaUtils.defineFastModuleFunction("wrap", callbackFactory.getFastSingletonMethod("wrap",IRubyObject.class));
+        javaUtils.defineFastModuleFunction("valid_constant_name?", callbackFactory.getFastSingletonMethod("valid_constant_name_p",IRubyObject.class));
+        javaUtils.defineFastModuleFunction("primitive_match", callbackFactory.getFastSingletonMethod("primitive_match",IRubyObject.class,IRubyObject.class));
 
         return javaModule;
     }
     
     // JavaUtilities
+    public static IRubyObject valid_constant_name_p(IRubyObject recv, IRubyObject name) {
+        RubyString sname = name.convertToString();
+        if(sname.getByteList().length() == 0) {
+            return recv.getRuntime().getFalse();
+        }
+        return Character.isUpperCase(sname.getByteList().charAt(0)) ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
+    }
+
+    public static IRubyObject primitive_match(IRubyObject recv, IRubyObject t1, IRubyObject t2) {
+        if(((JavaClass)t1).primitive_p().isTrue()) {
+            Object v1 = ((JavaObject)t1).getValue();
+            Object v2 = ((JavaObject)t2).getValue();
+            if(v1 == Integer.TYPE || v1 == Long.TYPE || v1 == Short.TYPE || v1 == Character.TYPE) {
+                return (v2 == Integer.class ||
+                        v2 == Long.class ||
+                        v2 == Short.class ||
+                        v2 == Character.class) ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
+            } else if(v1 == Float.TYPE || v1 == Double.TYPE) {
+                return (v2 == Float.class ||
+                        v2 == Double.class) ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
+            } else if(v1 == Boolean.TYPE) {
+                return v2 == Boolean.class ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
+            }
+            return recv.getRuntime().getFalse();
+        }
+        return recv.getRuntime().getTrue();
+    }
+
     public static IRubyObject wrap(IRubyObject recv, IRubyObject java_object) {
         Ruby runtime = recv.getRuntime();
         ThreadContext ctx = runtime.getCurrentContext();
