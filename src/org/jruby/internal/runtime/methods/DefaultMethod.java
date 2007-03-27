@@ -71,8 +71,8 @@ public final class DefaultMethod extends DynamicMethod {
     private int callCount = 0;
     private Script jitCompiledScript;
 
-    private static final boolean JIT_ENABLED = Boolean.parseBoolean(System.getProperty("jruby.jit.enabled", "false"));
-    private static final boolean JIT_LOGGING = Boolean.parseBoolean(System.getProperty("jruby.jit.logging", "false"));
+    private static final boolean JIT_ENABLED = Boolean.getBoolean("jruby.jit.enabled");
+    private static final boolean JIT_LOGGING = Boolean.getBoolean("jruby.jit.logging");
     private static final int JIT_THRESHOLD = Integer.parseInt(System.getProperty("jruby.jit.threshold", "50"));
     
     public DefaultMethod(RubyModule implementationClass, StaticScope staticScope, Node body, 

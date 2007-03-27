@@ -38,7 +38,7 @@ import org.jruby.ast.NodeTypes;
  * @author headius
  */
 public class NodeCompilerFactory {
-    public static final boolean SAFE = Boolean.parseBoolean(System.getProperty("jruby.jit.safe", "true"));
+    public static final boolean SAFE = System.getProperty("jruby.jit.safe", "true").equals("true");
     public static final Set UNSAFE_CALLS;
     
     static {
