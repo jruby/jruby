@@ -471,7 +471,6 @@ module JavaUtilities
   end
 
   def JavaUtilities.setup_java_subclass(subclass, java_class)
-  
     # add new class-variable to hold the JavaProxyClass instance
     subclass.class.send :attr, :java_proxy_class, true
     
@@ -513,43 +512,6 @@ module JavaUtilities
         print_class(java_type.superclass, "  #{indent}")
         java_type = java_type.superclass
      end
-  end
-
-  def JavaUtilities.access(java_type)
-    java_type.public? ? "public" : (java_type.protected? ? "protected" : "private")
-  end
-  
-  def JavaUtilities.matching_method(methods, args)
-    @match_cache ||= {}
-
-    arg_types = args.collect {|a| a.java_class }
-
-    @match_cache[methods] ||= {}
-    method = @match_cache[methods][arg_types]
-    return method if method
-    
-    notfirst = false
-    2.times do
-      methods.each do |method|
-        types = method.argument_types
-        # Exact match
-        return @match_cache[methods][arg_types] = method if types == arg_types
-        
-        # Compatible (by inheritance)
-        if (types.length == arg_types.length)
-          match = true
-          0.upto(types.length - 1) do |i|
-            match = false unless types[i].assignable_from?(arg_types[i]) && (notfirst || primitive_match(types[i],arg_types[i]))
-          end
-          return @match_cache[methods][arg_types] = method if match
-        end
-      end
-      notfirst = true
-    end
-
-    name = methods.first.kind_of?(Java::JavaConstructor) || methods.first.kind_of?(Java::JavaProxyConstructor) ? 
-      "constructor" : "method '" + methods.first.name + "'"
-    raise NameError.new("no " + name + " with arguments matching " + arg_types.inspect)
   end
 
   @primitives = {

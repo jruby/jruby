@@ -32,18 +32,29 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Iterator;
+import java.util.HashMap;
+import java.util.Map;
+
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
+import org.jruby.RubyObject;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.javasupport.proxy.JavaProxyClass;
+import org.jruby.javasupport.proxy.JavaProxyConstructor;
+import org.jruby.javasupport.proxy.JavaProxyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
@@ -75,11 +86,91 @@ public class Java {
         javaUtils.defineFastModuleFunction("wrap", callbackFactory.getFastSingletonMethod("wrap",IRubyObject.class));
         javaUtils.defineFastModuleFunction("valid_constant_name?", callbackFactory.getFastSingletonMethod("valid_constant_name_p",IRubyObject.class));
         javaUtils.defineFastModuleFunction("primitive_match", callbackFactory.getFastSingletonMethod("primitive_match",IRubyObject.class,IRubyObject.class));
+        javaUtils.defineFastModuleFunction("access", callbackFactory.getFastSingletonMethod("access",IRubyObject.class));
+        javaUtils.defineFastModuleFunction("matching_method", callbackFactory.getFastSingletonMethod("matching_method", IRubyObject.class, IRubyObject.class));
 
         return javaModule;
     }
     
     // JavaUtilities
+    public static IRubyObject matching_method(IRubyObject recv, IRubyObject methods, IRubyObject args) {
+        Map matchCache = (Map)recv.dataGetStruct();
+        if(null == matchCache) {
+            matchCache = new HashMap();
+            recv.dataWrapStruct(matchCache);
+        }
+
+        List arg_types = new ArrayList();
+        int alen = ((RubyArray)args).getLength();
+        IRubyObject[] aargs = ((RubyArray)args).toJavaArrayMaybeUnsafe();
+        for(int i=0;i<alen;i++) {
+            arg_types.add(((JavaClass)((JavaObject)aargs[i]).java_class()).getValue());
+        }
+
+        Map ms = (Map)matchCache.get(methods);
+        if(ms == null) {
+            ms = new HashMap();
+            matchCache.put(methods, ms);
+        } else {
+            IRubyObject method = (IRubyObject)ms.get(arg_types);
+            if(method != null) {
+                return method;
+            }
+        }
+
+        int mlen = ((RubyArray)methods).getLength();
+        IRubyObject[] margs = ((RubyArray)methods).toJavaArrayMaybeUnsafe();
+
+        for(int i=0;i<2;i++) {
+            for(int k=0;k<mlen;k++) {
+                List types = null;
+                IRubyObject method = margs[k];
+                if(method instanceof JavaCallable) {
+                    types = java.util.Arrays.asList(((JavaCallable)method).parameterTypes());
+                } else if(method instanceof JavaProxyMethod) {
+                    types = java.util.Arrays.asList(((JavaProxyMethod)method).getParameterTypes());
+                } else if(method instanceof JavaProxyConstructor) {
+                    types = java.util.Arrays.asList(((JavaProxyConstructor)method).getParameterTypes());
+                }
+                // Exact match
+                if(types.equals(arg_types)) {
+                    ms.put(arg_types, method);
+                    return method;
+                }
+
+                // Compatible (by inheritance)
+                if(arg_types.size() == types.size()) {
+                    boolean match = true;
+                    for(int j=0; j<types.size(); j++) {
+                        if(!(
+                             JavaClass.assignable((Class)types.get(j),(Class)arg_types.get(j)) &&
+                             (i > 0 || primitive_match(types.get(j),arg_types.get(j)))
+                             )) {
+                            match = false;
+                        }
+                    }
+                    if(match) {
+                        ms.put(arg_types, method);
+                        return method;
+                    }
+                } // Could check for varargs here?
+            }
+        }
+
+        Object o1 = margs[0];
+
+        if(o1 instanceof JavaConstructor || o1 instanceof JavaProxyConstructor) {
+            throw recv.getRuntime().newNameError("no constructor with arguments matching " + arg_types, null);
+        } else {
+            throw recv.getRuntime().newNameError("no " + ((JavaMethod)o1).name() + " with arguments matching " + arg_types, null);
+        }
+    }
+
+    public static IRubyObject access(IRubyObject recv, IRubyObject java_type) {
+        int modifiers = ((JavaClass)java_type).javaClass().getModifiers();
+        return recv.getRuntime().newString(Modifier.isPublic(modifiers) ? "public" : (Modifier.isProtected(modifiers) ? "protected" : "private"));
+    }
+
     public static IRubyObject valid_constant_name_p(IRubyObject recv, IRubyObject name) {
         RubyString sname = name.convertToString();
         if(sname.getByteList().length() == 0) {
@@ -88,22 +179,29 @@ public class Java {
         return Character.isUpperCase(sname.getByteList().charAt(0)) ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
     }
 
+    public static boolean primitive_match(Object v1, Object v2) {
+        if(((Class)v1).isPrimitive()) {
+            if(v1 == Integer.TYPE || v1 == Long.TYPE || v1 == Short.TYPE || v1 == Character.TYPE) {
+                return v2 == Integer.class ||
+                    v2 == Long.class ||
+                    v2 == Short.class ||
+                    v2 == Character.class;
+            } else if(v1 == Float.TYPE || v1 == Double.TYPE) {
+                return v2 == Float.class ||
+                    v2 == Double.class;
+            } else if(v1 == Boolean.TYPE) {
+                return v2 == Boolean.class;
+            }
+            return false;
+        }
+        return true;
+    }
+
     public static IRubyObject primitive_match(IRubyObject recv, IRubyObject t1, IRubyObject t2) {
         if(((JavaClass)t1).primitive_p().isTrue()) {
             Object v1 = ((JavaObject)t1).getValue();
             Object v2 = ((JavaObject)t2).getValue();
-            if(v1 == Integer.TYPE || v1 == Long.TYPE || v1 == Short.TYPE || v1 == Character.TYPE) {
-                return (v2 == Integer.class ||
-                        v2 == Long.class ||
-                        v2 == Short.class ||
-                        v2 == Character.class) ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
-            } else if(v1 == Float.TYPE || v1 == Double.TYPE) {
-                return (v2 == Float.class ||
-                        v2 == Double.class) ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
-            } else if(v1 == Boolean.TYPE) {
-                return v2 == Boolean.class ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
-            }
-            return recv.getRuntime().getFalse();
+            return primitive_match(v1,v2) ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
         }
         return recv.getRuntime().getTrue();
     }

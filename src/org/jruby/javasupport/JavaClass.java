@@ -664,30 +664,35 @@ public class JavaClass extends JavaObject {
         }
 
         Class otherClass = ((JavaClass) other).javaClass();
+        return assignable(javaClass(), otherClass) ? getRuntime().getTrue() : getRuntime().getFalse();
+    }
 
-        if (!javaClass().isPrimitive() && otherClass == Void.TYPE ||
-            javaClass().isAssignableFrom(otherClass)) {
-            return getRuntime().getTrue();
+    static boolean assignable(Class thisClass, Class otherClass) {
+        if(!thisClass.isPrimitive() && otherClass == Void.TYPE ||
+            thisClass.isAssignableFrom(otherClass)) {
+            return true;
         }
+
         otherClass = JavaUtil.primitiveToWrapper(otherClass);
-        Class thisJavaClass = JavaUtil.primitiveToWrapper(javaClass());
-        if (thisJavaClass.isAssignableFrom(otherClass)) {
-            return getRuntime().getTrue();
+        thisClass = JavaUtil.primitiveToWrapper(thisClass);
+
+        if(thisClass.isAssignableFrom(otherClass)) {
+            return true;
         }
-        if (Number.class.isAssignableFrom(thisJavaClass)) {
-            if (Number.class.isAssignableFrom(otherClass)) {
-                return getRuntime().getTrue();
+        if(Number.class.isAssignableFrom(thisClass)) {
+            if(Number.class.isAssignableFrom(otherClass)) {
+                return true;
             }
-            if (otherClass.equals(Character.class)) {
-                return getRuntime().getTrue();
-            }
-        }
-        if (thisJavaClass.equals(Character.class)) {
-            if (Number.class.isAssignableFrom(otherClass)) {
-                return getRuntime().getTrue();
+            if(otherClass.equals(Character.class)) {
+                return true;
             }
         }
-        return getRuntime().getFalse();
+        if(thisClass.equals(Character.class)) {
+            if(Number.class.isAssignableFrom(otherClass)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean isPrimitive() {

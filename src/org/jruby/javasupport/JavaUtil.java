@@ -68,6 +68,10 @@ public class JavaUtil {
         	rubyObject = rubyObject.callMethod(context, "java_object");
         }
 
+        if (rubyObject.respondsTo("to_java_object")) {
+        	rubyObject = rubyObject.callMethod(context, "to_java_object");
+        }
+
         if (rubyObject instanceof JavaObject) {
             Object value =  ((JavaObject) rubyObject).getValue();
             
