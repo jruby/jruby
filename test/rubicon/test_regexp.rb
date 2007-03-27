@@ -112,6 +112,7 @@ class TestRegexp < Test::Unit::TestCase
 
   def test_s_quote
     assert_equal('\\\\\[\]\*\?\{\}\.', Regexp.quote('\\[]*?{}.'))
+    assert_raises(TypeError) { Regexp.quote(nil) }
   end
 
 end

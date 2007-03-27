@@ -245,7 +245,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             kcode = KCode.create(recv.getRuntime(), args[1].toString());
         }
         
-        RubyString str = (RubyString) args[0];
+        RubyString str = args[0].convertToString();
 
         if (kcode == KCode.NONE) {
             return quote(recv, str);
