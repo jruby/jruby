@@ -269,9 +269,7 @@ public class Java {
     }
 
     public static IRubyObject wrap(IRubyObject recv, IRubyObject java_object) {
-        Ruby runtime = recv.getRuntime();
-        ThreadContext ctx = runtime.getCurrentContext();
-        return recv.callMethod(ctx, "get_proxy_class", ((JavaObject)java_object).java_class()).callMethod(ctx,"new_instance_for",java_object);
+        return new_instance_for(get_proxy_class(recv, ((JavaObject)java_object).java_class()),java_object);
     }
 
 	// Java methods
