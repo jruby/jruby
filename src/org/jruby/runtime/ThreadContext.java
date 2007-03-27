@@ -93,29 +93,6 @@ public class ThreadContext {
     
     private ISourcePosition sourcePosition = new SourcePositionFactory(null).getDummyPosition();
     
-    private void reset() {
-        isWithinTrace = false;
-        
-        isWithinDefined = false;
-        
-        thread = null;
-        
-        parentIndex = -1;
-        
-        frameIndex = -1;
-        crefIndex = -1;
-        
-        scopeIndex = -1;
-        
-        catchIndex = -1;
-        
-        bindingFrameIndex = -1;
-        
-        wrapper = null;
-        
-        sourcePosition = new SourcePositionFactory(null).getDummyPosition();
-    }
-    
     /**
      * Constructor for Context.
      */
