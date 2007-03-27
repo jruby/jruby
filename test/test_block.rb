@@ -186,7 +186,7 @@ class TestBlock < Test::Unit::TestCase
   end
 
   def proc_return2
-    proc_call{return 42}+1
+    puts proc_call{return 42}+1
   end
 
   def test_proc_or_block_return
