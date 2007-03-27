@@ -80,6 +80,16 @@
 
   <dependencies>
     <dependency>
+      <groupId>backport-util-concurrent</groupId>
+      <artifactId>backport-util-concurrent</artifactId>
+      <version>3.0</version>
+    </dependency>
+    <dependency>
+      <groupId>jline</groupId>
+      <artifactId>jline</artifactId>
+      <version>0.9.91</version>
+    </dependency>
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>3.8.1</version>
@@ -101,13 +111,11 @@
       <groupId>asm</groupId>
       <artifactId>asm</artifactId>
       <version>2.2.3</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm-commons</artifactId>
       <version>2.2.3</version>
-      <scope>provided</scope>
     </dependency>
   </dependencies>
 

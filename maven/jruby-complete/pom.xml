@@ -16,11 +16,6 @@
 
   <dependencies>
     <dependency>
-      <groupId>jline</groupId>
-      <artifactId>jline</artifactId>
-      <version>0.9.91</version>
-    </dependency>
-    <dependency>
       <groupId>requireTest</groupId>
       <artifactId>requireTest</artifactId>
       <version>SNAPSHOT</version>
@@ -65,6 +60,42 @@
       </testResource>
     </testResources>
     <plugins>
+      <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>unpack</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>asm</groupId>
+                  <artifactId>asm</artifactId>
+                  <version>2.2.3</version>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>asm</groupId>
+                  <artifactId>asm-commons</artifactId>
+                  <version>2.2.3</version>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>backport-util-concurrent</groupId>
+                  <artifactId>backport-util-concurrent</artifactId>
+                  <version>3.0</version>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>jline</groupId>
+                  <artifactId>jline</artifactId>
+                  <version>0.9.91</version>
+                </artifactItem>
+              </artifactItems>
+              <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
@@ -150,9 +181,6 @@
                   <fileset dir="${project.basedir}/../../lib/ruby/1.8">
                     <include name="**/*.rb"/>
                   </fileset>
-                  <zipfileset src="${project.basedir}/../../lib/asm-2.2.3.jar"/>
-                  <zipfileset src="${project.basedir}/../../lib/asm-commons-2.2.3.jar"/>
-                  <zipfileset src="${project.basedir}/../../lib/jline-0.9.91.jar"/>
                   <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
                   <manifest>
                     <attribute name="Built-By" value="${user.name}"/>

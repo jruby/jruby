@@ -16,26 +16,11 @@
 
   <dependencies>
     <dependency>
-      <groupId>asm</groupId>
-      <artifactId>asm</artifactId>
-      <version>2.2.3</version>
-    </dependency>
-    <dependency>
-      <groupId>asm</groupId>
-      <artifactId>asm-commons</artifactId>
-      <version>2.2.3</version>
-    </dependency>
-    <dependency>
-      <groupId>jline</groupId>
-      <artifactId>jline</artifactId>
-      <version>0.9.91</version>
-    </dependency>
-    <dependency>
       <groupId>requireTest</groupId>
       <artifactId>requireTest</artifactId>
       <version>SNAPSHOT</version>
       <scope>system</scope>
-      <systemPath>${basedir}/../../test/requireTest.jar</systemPath>
+      <systemPath>${project.basedir}/../../test/requireTest.jar</systemPath>
     </dependency>
   </dependencies>
 
