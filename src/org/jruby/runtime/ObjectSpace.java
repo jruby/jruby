@@ -289,7 +289,10 @@ public class ObjectSpace {
             synchronized (ObjectSpace.this) {
                 if (prev != null) {
                     prev.next = next;
+                } else {
+                    top = next;
                 }
+                
                 if (next != null) {
                     next.prev = prev;
                 }
