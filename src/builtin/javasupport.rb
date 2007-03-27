@@ -39,20 +39,6 @@
 class JavaProxy
   class << self
     attr :java_class, true
-
-    # Allocate can collide with Java static methods named allocate, so
-    # we shouldn't ever use that.
-    alias jallocate! allocate
-
-    # Allocate a new instance for the provided java_object.  This is like a second 'new' to
-    # by-pass any 'initialize' methods we may have created for the proxy class (we already
-    # have the instance for the proxy...We don't want to re-create it).
-    def new_instance_for(java_object)
-      new_instance = jallocate!
-      new_instance.java_object = java_object
-      new_instance
-    end
-    
     # Carry the Java class as a class variable on the derived classes too, otherwise 
     # JavaProxy.java_class won't work.
     def inherited(subclass)

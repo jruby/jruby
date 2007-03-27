@@ -45,6 +45,7 @@ import java.lang.reflect.Proxy;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
+import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
@@ -89,7 +90,17 @@ public class Java {
         javaUtils.defineFastModuleFunction("access", callbackFactory.getFastSingletonMethod("access",IRubyObject.class));
         javaUtils.defineFastModuleFunction("matching_method", callbackFactory.getFastSingletonMethod("matching_method", IRubyObject.class, IRubyObject.class));
 
+        RubyClass javaProxy = runtime.defineClass("JavaProxy", runtime.getObject(), runtime.getObject().getAllocator());
+        javaProxy.getMetaClass().defineFastMethod("new_instance_for", callbackFactory.getFastSingletonMethod("new_instance_for", IRubyObject.class));
+
         return javaModule;
+    }
+
+    // JavaProxy
+    public static IRubyObject new_instance_for(IRubyObject recv, IRubyObject java_object) {
+        IRubyObject new_instance = ((RubyClass)recv).allocate();
+        new_instance.setInstanceVariable("@java_object",java_object);
+        return new_instance;
     }
     
     // JavaUtilities
