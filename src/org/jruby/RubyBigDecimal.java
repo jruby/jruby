@@ -292,7 +292,11 @@ public class RubyBigDecimal extends RubyNumeric {
         int e = 0;
         RubyBigDecimal rb = getVpValue(r,false);
         if(rb == null) {
-            e = RubyNumeric.fix2int(callCoerced("<=>",rb));
+            IRubyObject ee = callCoerced("<=>",r);
+            if(ee.isNil()) {
+                return getRuntime().getNil();
+            }
+            e = RubyNumeric.fix2int(ee);
         } else {
             e = value.compareTo(rb.value);
         }

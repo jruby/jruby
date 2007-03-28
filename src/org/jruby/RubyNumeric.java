@@ -372,11 +372,17 @@ public class RubyNumeric extends RubyObject {
 
     protected IRubyObject callCoerced(String method, IRubyObject other, boolean err) {
         IRubyObject[] args = getCoerced(other, err);
+        if(args == null) {
+            return getRuntime().getNil();
+        }
         return args[0].callMethod(getRuntime().getCurrentContext(), method, args[1]);
     }
 
     protected IRubyObject callCoerced(String method, IRubyObject other) {
-        IRubyObject[] args = getCoerced(other, true);
+        IRubyObject[] args = getCoerced(other, false);
+        if(args == null) {
+            return getRuntime().getNil();
+        }
         return args[0].callMethod(getRuntime().getCurrentContext(), method, args[1]);
     }
     

@@ -546,7 +546,7 @@ public class RubyArray extends RubyObject implements List {
         int begin = this.begin;
         
         for (int i = begin; i < begin + realLength; i++) {
-            if (item.equalInternal(context, values[i]).isTrue()) return true;
+            if (values[i].equalInternal(context,item ).isTrue()) return true;
     	}
         
         return false;
