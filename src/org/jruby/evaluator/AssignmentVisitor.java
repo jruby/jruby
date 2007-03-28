@@ -30,8 +30,6 @@
 package org.jruby.evaluator;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
@@ -63,112 +61,134 @@ public class AssignmentVisitor {
         IRubyObject result = null;
         
         switch (node.nodeId) {
-        case NodeTypes.ATTRASSIGNNODE: {
-            AttrAssignNode iVisited = (AttrAssignNode) node;
-            
-            IRubyObject receiver = EvaluationState.eval(runtime, context, iVisited.getReceiverNode(), self, block);
-            
-            // If reciever is self then we do the call the same way as vcall
-            CallType callType = (receiver == self ? CallType.VARIABLE : CallType.NORMAL);
-
-            if (iVisited.getArgsNode() == null) { // attribute set.
-                receiver.callMethod(context, iVisited.getName(), new IRubyObject[] {value}, callType);
-            } else { // element set
-                RubyArray args = (RubyArray)EvaluationState.eval(runtime, context, iVisited.getArgsNode(), self, block);
-                args.append(value);
-                receiver.callMethod(context, iVisited.getName(), args.toJavaArray(), callType);
-            }
+        case NodeTypes.ATTRASSIGNNODE:
+            attrAssignNode(runtime, context, self, node, value, block);
             break;
-        }
-        case NodeTypes.CALLNODE: {
-            CallNode iVisited = (CallNode)node;
-            
-            IRubyObject receiver = EvaluationState.eval(runtime, context, iVisited.getReceiverNode(), self, block);
-
-            if (iVisited.getArgsNode() == null) { // attribute set.
-                receiver.callMethod(context, iVisited.getName(), new IRubyObject[] {value}, CallType.NORMAL);
-            } else { // element set
-                RubyArray args = (RubyArray)EvaluationState.eval(runtime, context, iVisited.getArgsNode(), self, block);
-                args.append(value);
-                receiver.callMethod(context, iVisited.getName(), args.toJavaArray(), CallType.NORMAL);
-            }
+        case NodeTypes.CALLNODE:
+            callNode(runtime, context, self, node, value, block);
             break;
-        }
-        case NodeTypes.CLASSVARASGNNODE: {
-            ClassVarAsgnNode iVisited = (ClassVarAsgnNode)node;
-            context.getRubyClass().setClassVar(iVisited.getName(), value);
+        case NodeTypes.CLASSVARASGNNODE:
+            classVarAsgnNode(context, node, value);
             break;
-        }
-        case NodeTypes.CLASSVARDECLNODE: {
-            ClassVarDeclNode iVisited = (ClassVarDeclNode)node;
-            if (runtime.getVerbose().isTrue()
-                    && context.getRubyClass().isSingleton()) {
-                runtime.getWarnings().warn(iVisited.getPosition(),
-                        "Declaring singleton class variable.");
-            }
-            context.getRubyClass().setClassVar(iVisited.getName(), value);
+        case NodeTypes.CLASSVARDECLNODE:
+            classVarDeclNode(runtime, context, node, value);
             break;
-        }
-        case NodeTypes.CONSTDECLNODE: {
-            ConstDeclNode iVisited = (ConstDeclNode)node;
-            Node constNode = iVisited.getConstNode();
-
-            IRubyObject module;
-
-            if (constNode == null) {
-                // FIXME: why do we check RubyClass and then use CRef?
-                if (context.getRubyClass() == null) {
-                    // TODO: wire into new exception handling mechanism
-                    throw runtime.newTypeError("no class/module to define constant");
-                }
-                module = (RubyModule) context.peekCRef().getValue();
-            } else if (constNode instanceof Colon2Node) {
-                module = EvaluationState.eval(runtime, context, ((Colon2Node) iVisited.getConstNode()).getLeftNode(), self, block);
-            } else { // Colon3
-                module = runtime.getObject();
-            } 
-
-            ((RubyModule) module).setConstant(iVisited.getName(), value);
+        case NodeTypes.CONSTDECLNODE:
+            constDeclNode(runtime, context, self, node, value, block);
             break;
-        }
-        case NodeTypes.DASGNNODE: {
-            DAsgnNode iVisited = (DAsgnNode)node;
-            context.getCurrentScope().setValue(iVisited.getIndex(), value, iVisited.getDepth());
+        case NodeTypes.DASGNNODE:
+            dasgnNode(context, node, value);
             break;
-        }
-        case NodeTypes.GLOBALASGNNODE: {
-            GlobalAsgnNode iVisited = (GlobalAsgnNode)node;
-            runtime.getGlobalVariables().set(iVisited.getName(), value);
+        case NodeTypes.GLOBALASGNNODE:
+            globalAsgnNode(runtime, node, value);
             break;
-        }
-        case NodeTypes.INSTASGNNODE: {
-            InstAsgnNode iVisited = (InstAsgnNode)node;
-            self.setInstanceVariable(iVisited.getName(), value);
+        case NodeTypes.INSTASGNNODE:
+            instAsgnNode(self, node, value);
             break;
-        }
-        case NodeTypes.LOCALASGNNODE: {
-            LocalAsgnNode iVisited = (LocalAsgnNode)node;
-            
-            //System.out.println("Assigning to " + iVisited.getName() + "@"+ iVisited.getPosition());
-            //context.printScope();
-            context.getCurrentScope().setValue(iVisited.getIndex(), value, iVisited.getDepth());
+        case NodeTypes.LOCALASGNNODE:
+            localAsgnNode(context, node, value);
             break;
-        }
-        case NodeTypes.MULTIPLEASGNNODE: {
-            MultipleAsgnNode iVisited = (MultipleAsgnNode)node;
-            if (!(value instanceof RubyArray)) {
-                value = RubyArray.newArray(runtime, value);
-            }
-            result = multiAssign(runtime, context, self, iVisited, (RubyArray) value, check);
+        case NodeTypes.MULTIPLEASGNNODE:
+            result = multipleAsgnNode(runtime, context, self, node, value, check);
             break;
-        }
         default:
             throw new RuntimeException("Invalid node encountered in interpreter: \"" + node.getClass().getName() + "\", please report this at www.jruby.org");
         }
 
         return result;
     }
-    
+
+    private static void attrAssignNode(Ruby runtime, ThreadContext context, IRubyObject self, Node node, IRubyObject value, Block block) {
+        AttrAssignNode iVisited = (AttrAssignNode) node;
+        
+        IRubyObject receiver = EvaluationState.eval(runtime, context, iVisited.getReceiverNode(), self, block);
+        
+        // If reciever is self then we do the call the same way as vcall
+        CallType callType = (receiver == self ? CallType.VARIABLE : CallType.NORMAL);
+
+        if (iVisited.getArgsNode() == null) { // attribute set.
+            receiver.callMethod(context, iVisited.getName(), new IRubyObject[] {value}, callType);
+        } else { // element set
+            RubyArray args = (RubyArray)EvaluationState.eval(runtime, context, iVisited.getArgsNode(), self, block);
+            args.append(value);
+            receiver.callMethod(context, iVisited.getName(), args.toJavaArray(), callType);
+        }
+    }
+
+    private static void callNode(Ruby runtime, ThreadContext context, IRubyObject self, Node node, IRubyObject value, Block block) {
+        CallNode iVisited = (CallNode)node;
+        
+        IRubyObject receiver = EvaluationState.eval(runtime, context, iVisited.getReceiverNode(), self, block);
+
+        if (iVisited.getArgsNode() == null) { // attribute set.
+            receiver.callMethod(context, iVisited.getName(), new IRubyObject[] {value}, CallType.NORMAL);
+        } else { // element set
+            RubyArray args = (RubyArray)EvaluationState.eval(runtime, context, iVisited.getArgsNode(), self, block);
+            args.append(value);
+            receiver.callMethod(context, iVisited.getName(), args.toJavaArray(), CallType.NORMAL);
+        }
+    }
+
+    private static void classVarAsgnNode(ThreadContext context, Node node, IRubyObject value) {
+        ClassVarAsgnNode iVisited = (ClassVarAsgnNode)node;
+        context.getRubyClass().setClassVar(iVisited.getName(), value);
+    }
+
+    private static void classVarDeclNode(Ruby runtime, ThreadContext context, Node node, IRubyObject value) {
+        ClassVarDeclNode iVisited = (ClassVarDeclNode)node;
+        if (runtime.getVerbose().isTrue()
+                && context.getRubyClass().isSingleton()) {
+            runtime.getWarnings().warn(iVisited.getPosition(),
+                    "Declaring singleton class variable.");
+        }
+        context.getRubyClass().setClassVar(iVisited.getName(), value);
+    }
+
+    private static void constDeclNode(Ruby runtime, ThreadContext context, IRubyObject self, Node node, IRubyObject value, Block block) {
+        ConstDeclNode iVisited = (ConstDeclNode)node;
+        Node constNode = iVisited.getConstNode();
+
+        IRubyObject module;
+
+        if (constNode == null) {
+            // FIXME: why do we check RubyClass and then use CRef?
+            if (context.getRubyClass() == null) {
+                // TODO: wire into new exception handling mechanism
+                throw runtime.newTypeError("no class/module to define constant");
+            }
+            module = (RubyModule) context.peekCRef().getValue();
+        } else if (constNode instanceof Colon2Node) {
+            module = EvaluationState.eval(runtime, context, ((Colon2Node) iVisited.getConstNode()).getLeftNode(), self, block);
+        } else { // Colon3
+            module = runtime.getObject();
+        } 
+
+        ((RubyModule) module).setConstant(iVisited.getName(), value);
+    }
+
+    private static void dasgnNode(ThreadContext context, Node node, IRubyObject value) {
+        DAsgnNode iVisited = (DAsgnNode)node;
+        context.getCurrentScope().setValue(iVisited.getIndex(), value, iVisited.getDepth());
+    }
+
+    private static void globalAsgnNode(Ruby runtime, Node node, IRubyObject value) {
+        GlobalAsgnNode iVisited = (GlobalAsgnNode)node;
+        runtime.getGlobalVariables().set(iVisited.getName(), value);
+    }
+
+    private static void instAsgnNode(IRubyObject self, Node node, IRubyObject value) {
+        InstAsgnNode iVisited = (InstAsgnNode)node;
+        self.setInstanceVariable(iVisited.getName(), value);
+    }
+
+    private static void localAsgnNode(ThreadContext context, Node node, IRubyObject value) {
+        LocalAsgnNode iVisited = (LocalAsgnNode)node;
+        
+        //System.out.println("Assigning to " + iVisited.getName() + "@"+ iVisited.getPosition());
+        //context.printScope();
+        context.getCurrentScope().setValue(iVisited.getIndex(), value, iVisited.getDepth());
+    }
+
     public static IRubyObject multiAssign(Ruby runtime, ThreadContext context, IRubyObject self, MultipleAsgnNode node, RubyArray value, boolean callAsProc) {
         // Assign the values.
         int valueLen = value.getLength();
@@ -189,8 +209,7 @@ public class AssignmentVisitor {
             if (argsNode instanceof StarNode) {
                 // no check for '*'
             } else if (varLen < valueLen) {
-                ArrayList newList = new ArrayList(value.getList().subList(varLen, valueLen));
-                assign(runtime, context, self, argsNode, runtime.newArray(newList), Block.NULL_BLOCK, callAsProc);
+                assign(runtime, context, self, argsNode, value.subseq(varLen, valueLen), Block.NULL_BLOCK, callAsProc);
             } else {
                 assign(runtime, context, self, argsNode, runtime.newArray(0), Block.NULL_BLOCK, callAsProc);
             }
@@ -203,5 +222,15 @@ public class AssignmentVisitor {
         }
         
         return value;
+    }
+    
+    private static IRubyObject multipleAsgnNode(Ruby runtime, ThreadContext context, IRubyObject self, Node node, IRubyObject value, boolean check) {
+        IRubyObject result;
+        MultipleAsgnNode iVisited = (MultipleAsgnNode)node;
+        if (!(value instanceof RubyArray)) {
+            value = RubyArray.newArray(runtime, value);
+        }
+        result = multiAssign(runtime, context, self, iVisited, (RubyArray) value, check);
+        return result;
     }
 }
