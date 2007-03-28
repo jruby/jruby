@@ -49,6 +49,9 @@ public class YieldNode extends Node {
     public YieldNode(ISourcePosition position, Node argsNode, boolean checkState) {
         super(position, NodeTypes.YIELDNODE);
         this.argsNode = argsNode;
+        if (argsNode instanceof ArrayNode) {
+            ((ArrayNode)argsNode).setLightweight(true);
+        }
         this.checkState = checkState;
     }
 

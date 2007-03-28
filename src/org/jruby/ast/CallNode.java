@@ -64,6 +64,9 @@ public final class CallNode extends Node implements INameNode, IArgumentNode, Bl
         this.receiverNode = receiverNode;
         this.name = name.intern();
         this.argsNode = argsNode;
+        if (argsNode instanceof ArrayNode) {
+            ((ArrayNode)argsNode).setLightweight(true);
+        }
         this.iterNode = iterNode;
         this.index = MethodIndex.getIndex(this.name);
     }
@@ -106,6 +109,9 @@ public final class CallNode extends Node implements INameNode, IArgumentNode, Bl
      */
     public void setArgsNode(Node argsNode) {
         this.argsNode = argsNode;
+        if (argsNode instanceof ArrayNode) {
+            ((ArrayNode)argsNode).setLightweight(true);
+        }
     }
 
     /**

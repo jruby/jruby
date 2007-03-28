@@ -435,6 +435,10 @@ public class EvaluationState {
             array[i] = evalInternal(runtime,context, next, self, aBlock);
         }
    
+        if (iVisited.isLightweight()) {
+            return runtime.newArrayNoCopyLight(array);
+        }
+        
         return runtime.newArrayNoCopy(array);
     }
 

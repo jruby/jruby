@@ -58,6 +58,9 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
         super(position, NodeTypes.FCALLNODE);
         this.name = name.intern();
         this.argsNode = argsNode;
+        if (argsNode instanceof ArrayNode) {
+            ((ArrayNode)argsNode).setLightweight(true);
+        }
         this.iterNode = iterNode;
         this.index = MethodIndex.getIndex(this.name);
     }
@@ -103,6 +106,9 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
      */
     public void setArgsNode(Node argsNode) {
         this.argsNode = argsNode;
+        if (argsNode instanceof ArrayNode) {
+            ((ArrayNode)argsNode).setLightweight(true);
+        }
     }
 
     /**

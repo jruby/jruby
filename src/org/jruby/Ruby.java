@@ -1349,6 +1349,10 @@ public final class Ruby {
         return RubyArray.newArrayNoCopy(this, objects);
     }
     
+    public RubyArray newArrayNoCopyLight(IRubyObject[] objects) {
+        return RubyArray.newArrayNoCopyLight(this, objects);
+    }
+    
     public RubyArray newArray(List list) {
         return RubyArray.newArray(this, list);
     }

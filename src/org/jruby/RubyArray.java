@@ -279,6 +279,10 @@ public class RubyArray extends RubyObject implements List {
     public static RubyArray newArrayNoCopy(Ruby runtime, IRubyObject[] args) {
         return new RubyArray(runtime, args);
     }
+    
+    public static RubyArray newArrayNoCopyLight(Ruby runtime, IRubyObject[] args) {
+        return new RubyArray(runtime, args, false);
+    }
 
     public static RubyArray newArray(Ruby runtime, Collection collection) {
         RubyArray arr = new RubyArray(runtime, collection.size());
@@ -299,8 +303,17 @@ public class RubyArray extends RubyObject implements List {
     /* 
      * plain internal array assignment
      */
-    public RubyArray(Ruby runtime, IRubyObject[]vals){
+    public RubyArray(Ruby runtime, IRubyObject[] vals){
         super(runtime, runtime.getArray());
+        values = vals;
+        realLength = vals.length;
+    }
+
+    /* 
+     * plain internal array assignment with optional objectspace
+     */
+    public RubyArray(Ruby runtime, IRubyObject[] vals, boolean useObjectSpace){
+        super(runtime, runtime.getArray(), useObjectSpace);
         values = vals;
         realLength = vals.length;
     }
