@@ -1158,6 +1158,14 @@ public class RubyModule extends RubyObject {
         return false;
     }
 
+    public int hashCode() {
+        return id;
+    }
+
+    public RubyFixnum hash() {
+        return getRuntime().newFixnum(id);
+    }
+
     /** rb_mod_to_s
      *
      */

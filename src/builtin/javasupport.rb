@@ -50,11 +50,6 @@ class JavaProxy
       class << self; self; end 
     end
 
-    # If the proxy class itself is passed as a parameter this will be called by Java#ruby_to_java    
-    def to_java_object
-      self.java_class
-    end
-
     def [](*args)
       if args.length > 0
         # array creation should use this variant
@@ -408,15 +403,6 @@ class ConcreteJavaProxy < JavaProxy
 end
 
 module JavaUtilities
-  @proxy_classes = {}
-  @proxy_extenders = []
-  
-  def JavaUtilities.add_proxy_extender(extender)
-    @proxy_extenders << extender
-    # Already loaded proxies should be extended if they qualify
-    @proxy_classes.values.each {|proxy_class| extender.extend_proxy(proxy_class) }
-  end
-  
   def JavaUtilities.extend_proxy(java_class_name, &block)
 	add_proxy_extender JavaInterfaceExtender.new(java_class_name, &block)
   end

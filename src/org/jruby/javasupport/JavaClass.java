@@ -70,6 +70,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
+import org.jruby.util.collections.IntHashMap;
 
 public class JavaClass extends JavaObject {
 
@@ -266,33 +267,26 @@ public class JavaClass extends JavaObject {
             final RubyArray methods) {
         final RubyModule javaUtilities = getRuntime().getModule("JavaUtilities");
         Callback method = new Callback() {
-            private Map matchingMethods;
+                private IntHashMap matchingMethods = new IntHashMap();
             public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-                IRubyObject[] argsArray = new IRubyObject[args.length + 1];
-                ThreadContext context = self.getRuntime().getCurrentContext();
+                int len = args.length;
+                IRubyObject[] argsArray = new IRubyObject[len + 1];
                 
                 argsArray[0] = self.getInstanceVariable("@java_object");
-                RubyArray argsAsArray = RubyArray.newArrayLight(getRuntime());
-                int argsTypeHash = 0;
-                for (int j = 0; j < args.length; j++) {
-                    argsArray[j+1] = Java.ruby_to_java(proxy, args[j], Block.NULL_BLOCK);
-                    argsAsArray.append(argsArray[j+1]);
-                    // TODO: better hash combinator?
-                    argsTypeHash += System.identityHashCode(args[j].getMetaClass());
-                }
-                Integer argsKey = new Integer(argsTypeHash);
 
-                if (matchingMethods == null) {
-                    matchingMethods = new HashMap();
+                int argsTypeHash = 0;
+                for (int j = 0; j < len; j++) {
+                    argsArray[j+1] = Java.ruby_to_java(proxy, args[j], Block.NULL_BLOCK);
+                    argsTypeHash += 3*args[j].getMetaClass().id;
                 }
-                
-                IRubyObject match = (IRubyObject)matchingMethods.get(argsKey);
+
+                IRubyObject match = (IRubyObject)matchingMethods.get(argsTypeHash);
                 if (match == null) {
-                    match = Java.matching_method(javaUtilities, methods, argsAsArray);
-                    matchingMethods.put(argsKey, match);
+                    match = Java.matching_method_internal(javaUtilities, methods, argsArray, 1, len);
+                    matchingMethods.put(argsTypeHash, match);
                 }
-                
-                return Java.java_to_ruby(self, match.callMethod(context, "invoke", argsArray), Block.NULL_BLOCK);
+
+                return Java.java_to_ruby(self, ((JavaMethod)match).invoke(argsArray), Block.NULL_BLOCK);
             }
 
             public Arity getArity() {
