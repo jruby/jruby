@@ -536,11 +536,13 @@ public class JavaProxyClassFactory {
         Set methods = new HashSet();
 
         final Method mostSpecificMethod;
+        final Class[] mostSpecificParameterTypes;
 
         boolean hasPublicDecl = false;
 
         MethodData(Method method) {
             this.mostSpecificMethod = method;
+            this.mostSpecificParameterTypes = mostSpecificMethod.getParameterTypes();
             hasPublicDecl = method.getDeclaringClass().isInterface()
                     || Modifier.isPublic(method.getModifiers());
         }
@@ -581,7 +583,7 @@ public class JavaProxyClassFactory {
         }
 
         private Class[] getParameterTypes() {
-            return mostSpecificMethod.getParameterTypes();
+            return mostSpecificParameterTypes;
         }
 
         public Class[] getExceptions() {

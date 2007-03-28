@@ -386,15 +386,21 @@ public class Java {
         }
         
         return JavaObject.wrap(recv.getRuntime(), Proxy.newProxyInstance(recv.getRuntime().getJavaSupport().getJavaClassLoader(), interfaces, new InvocationHandler() {
+            private Map parameterTypeCache = new HashMap();
             public Object invoke(Object proxy, Method method, Object[] nargs) throws Throwable {
-            	int methodArgsLength = method.getParameterTypes().length;
+                Class[] parameterTypes = (Class[])parameterTypeCache.get(method);
+                if (parameterTypes == null) {
+                    parameterTypes = method.getParameterTypes();
+                    parameterTypeCache.put(method, parameterTypes);
+                }
+            	int methodArgsLength = parameterTypes.length;
             	String methodName = method.getName();
             	
                 if (methodName.equals("toString") && methodArgsLength == 0) {
                     return proxy.getClass().getName();
                 } else if (methodName.equals("hashCode") && methodArgsLength == 0) {
                     return new Integer(proxy.getClass().hashCode());
-                } else if (methodName.equals("equals") && methodArgsLength == 1 && method.getParameterTypes()[0].equals(Object.class)) {
+                } else if (methodName.equals("equals") && methodArgsLength == 1 && parameterTypes[0].equals(Object.class)) {
                     return Boolean.valueOf(proxy == nargs[0]);
                 }
                 int length = nargs == null ? 0 : nargs.length;

@@ -56,6 +56,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class JavaMethod extends JavaCallable {
     private final Method method;
+    private final Class[] parameterTypes;
 
     public static RubyClass createJavaMethodClass(Ruby runtime, RubyModule javaModule) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here, since we don't intend for people to monkey with
@@ -83,6 +84,7 @@ public class JavaMethod extends JavaCallable {
     public JavaMethod(Ruby runtime, Method method) {
         super(runtime, (RubyClass) runtime.getModule("Java").getClass("JavaMethod"));
         this.method = method;
+        this.parameterTypes = method.getParameterTypes();
 
         // Special classes like Collections.EMPTY_LIST are inner classes that are private but 
         // implement public interfaces.  Their methods are all public methods for the public 
@@ -123,7 +125,7 @@ public class JavaMethod extends JavaCallable {
     }
 
     protected int getArity() {
-        return method.getParameterTypes().length;
+        return parameterTypes.length;
     }
 
     public RubyBoolean public_p() {
@@ -162,8 +164,7 @@ public class JavaMethod extends JavaCallable {
                     .___getProxyClass();
             JavaProxyMethod jpm;
             try {
-                jpm = jpc.getMethod(method.getName(), method
-                        .getParameterTypes());
+                jpm = jpc.getMethod(method.getName(), parameterTypes);
             } catch (NoSuchMethodException e) {
                 RaiseException err = getRuntime().newTypeError(
                         "mismatch with proxy/super method?");
@@ -222,7 +223,7 @@ public class JavaMethod extends JavaCallable {
     }
 
     protected Class[] parameterTypes() {
-        return method.getParameterTypes();
+        return parameterTypes;
     }
 
     protected String nameOnInspection() {

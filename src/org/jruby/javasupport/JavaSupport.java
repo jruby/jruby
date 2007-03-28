@@ -37,6 +37,7 @@ import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
 
 import org.jruby.Ruby;
 import org.jruby.RubyProc;

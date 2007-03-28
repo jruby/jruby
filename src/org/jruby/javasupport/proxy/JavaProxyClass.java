@@ -198,6 +198,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         private Object state;
 
         private final Method sm;
+        private final Class[] parameterTypes;
 
         private final JavaProxyClass clazz;
 
@@ -206,6 +207,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             super(runtime, runtime.getModule("Java")
                     .getClass("JavaProxyMethod"));
             this.m = m;
+            this.parameterTypes = m.getParameterTypes();
             this.sm = sm;
             this.clazz = clazz;
         }
@@ -231,7 +233,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         }
 
         public Class[] getParameterTypes() {
-            return m.getParameterTypes();
+            return parameterTypes;
         }
 
         public Object getState() {
@@ -290,7 +292,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
         public boolean matches(String name, Class[] parameterTypes) {
             return m.getName().equals(name)
-                    && Arrays.equals(m.getParameterTypes(), parameterTypes);
+                    && Arrays.equals(this.parameterTypes, parameterTypes);
         }
 
         public Class getReturnType() {

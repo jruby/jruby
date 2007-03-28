@@ -46,7 +46,8 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class JavaConstructor extends JavaCallable {
-    private Constructor constructor;
+    private final Constructor constructor;
+    private final Class[] parameterTypes;
 
     public static RubyClass createJavaConstructorClass(Ruby runtime, RubyModule javaModule) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here, since we don't intend for people to monkey with
@@ -67,10 +68,11 @@ public class JavaConstructor extends JavaCallable {
     public JavaConstructor(Ruby runtime, Constructor constructor) {
         super(runtime, runtime.getModule("Java").getClass("JavaConstructor"));
         this.constructor = constructor;
+        this.parameterTypes = constructor.getParameterTypes();
     }
 
     public int getArity() {
-        return constructor.getParameterTypes().length;
+        return parameterTypes.length;
     }
 
     public IRubyObject new_instance(IRubyObject[] args) {
@@ -78,7 +80,7 @@ public class JavaConstructor extends JavaCallable {
             throw getRuntime().newArgumentError(args.length, getArity());
         }
         Object[] constructorArguments = new Object[args.length];
-        Class[] types = constructor.getParameterTypes();
+        Class[] types = parameterTypes;
         for (int i = 0; i < args.length; i++) {
             constructorArguments[i] = JavaUtil.convertArgument(args[i], types[i]);
         }
@@ -107,7 +109,7 @@ public class JavaConstructor extends JavaCallable {
     }
 
     protected Class[] parameterTypes() {
-        return constructor.getParameterTypes();
+        return parameterTypes;
     }
 
     protected int getModifiers() {

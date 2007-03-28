@@ -50,6 +50,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class JavaProxyConstructor extends JavaProxyReflectionObject {
 
     private final Constructor proxyConstructor;
+    private final Class[] parameterTypes;
 
     private final JavaProxyClass declaringProxyClass;
 
@@ -59,12 +60,12 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject {
                 "JavaProxyConstructor"));
         this.declaringProxyClass = pClass;
         this.proxyConstructor = constructor;
+        this.parameterTypes = proxyConstructor.getParameterTypes();
     }
 
     public Class[] getParameterTypes() {
-        Class[] decl = proxyConstructor.getParameterTypes();
-        Class[] result = new Class[decl.length - 1];
-        System.arraycopy(decl, 0, result, 0, result.length);
+        Class[] result = new Class[parameterTypes.length - 1];
+        System.arraycopy(parameterTypes, 0, result, 0, result.length);
         return result;
     }
 
@@ -75,7 +76,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject {
     public Object newInstance(Object[] args, JavaProxyInvocationHandler handler)
             throws IllegalArgumentException, InstantiationException,
             IllegalAccessException, InvocationTargetException {
-        if (args.length + 1 != proxyConstructor.getParameterTypes().length) {
+        if (args.length + 1 != parameterTypes.length) {
             throw new IllegalArgumentException("wrong number of parameters");
         }
 
