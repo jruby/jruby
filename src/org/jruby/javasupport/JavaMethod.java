@@ -147,8 +147,7 @@ public class JavaMethod extends JavaCallable {
         }
         Object javaInvokee = ((JavaObject) invokee).getValue();
         Object[] arguments = new Object[args.length - 1];
-        System.arraycopy(args, 1, arguments, 0, arguments.length);
-        convertArguments(arguments);
+        convertArguments(arguments, args, 1);
 
         if (! method.getDeclaringClass().isInstance(javaInvokee)) {
             throw getRuntime().newTypeError("invokee not instance of method's class (" +
@@ -187,7 +186,7 @@ public class JavaMethod extends JavaCallable {
         }
         Object[] arguments = new Object[args.length];
         System.arraycopy(args, 0, arguments, 0, arguments.length);
-        convertArguments(arguments);
+        convertArguments(arguments, args, 0);
         return invokeWithExceptionHandling(method, null, arguments);
     }
 
@@ -215,10 +214,10 @@ public class JavaMethod extends JavaCallable {
         }
     }
 
-    private void convertArguments(Object[] arguments) {
+    private void convertArguments(Object[] arguments, Object[] args, int from) {
         Class[] parameterTypes = parameterTypes();
         for (int i = 0; i < arguments.length; i++) {
-            arguments[i] = JavaUtil.convertArgument(arguments[i], parameterTypes[i]);
+            arguments[i] = JavaUtil.convertArgument(args[i+from], parameterTypes[i]);
         }
     }
 
