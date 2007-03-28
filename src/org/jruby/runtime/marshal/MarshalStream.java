@@ -212,7 +212,7 @@ public class MarshalStream extends FilterOutputStream {
             write('0');
             break;
         case ClassIndex.OBJECT:
-            dumpDefaultObjectHeader(value.getMetaClass());
+            dumpDefaultObjectHeader(value.getMetaClass().getRealClass());
             value.getMetaClass().marshal(value, this);
             break;
         case ClassIndex.REGEXP:
@@ -235,6 +235,7 @@ public class MarshalStream extends FilterOutputStream {
             write('T');
             break;
         default:
+            dumpDefaultObjectHeader(value.getMetaClass().getRealClass());
             dumpDefaultObjectHeader(value.getMetaClass());
             value.getMetaClass().marshal(value, this);
         }
