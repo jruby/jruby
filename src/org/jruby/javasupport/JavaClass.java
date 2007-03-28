@@ -266,33 +266,53 @@ public class JavaClass extends JavaObject {
     private void define_instance_method_for_proxy(final RubyClass proxy, List names, 
             final RubyArray methods) {
         final RubyModule javaUtilities = getRuntime().getModule("JavaUtilities");
-        Callback method = new Callback() {
-                private IntHashMap matchingMethods = new IntHashMap();
-            public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-                int len = args.length;
-                IRubyObject[] argsArray = new IRubyObject[len + 1];
+        Callback method;
+        if(methods.size()>1) {
+            method = new Callback() {
+                    private IntHashMap matchingMethods = new IntHashMap();
+                    public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
+                        int len = args.length;
+                        IRubyObject[] argsArray = new IRubyObject[len + 1];
                 
-                argsArray[0] = self.getInstanceVariable("@java_object");
+                        argsArray[0] = self.getInstanceVariable("@java_object");
 
-                int argsTypeHash = 0;
-                for (int j = 0; j < len; j++) {
-                    argsArray[j+1] = Java.ruby_to_java(proxy, args[j], Block.NULL_BLOCK);
-                    argsTypeHash += 3*args[j].getMetaClass().id;
-                }
+                        int argsTypeHash = 0;
+                        for (int j = 0; j < len; j++) {
+                            argsArray[j+1] = Java.ruby_to_java(proxy, args[j], Block.NULL_BLOCK);
+                            argsTypeHash += 3*args[j].getMetaClass().id;
+                        }
 
-                IRubyObject match = (IRubyObject)matchingMethods.get(argsTypeHash);
-                if (match == null) {
-                    match = Java.matching_method_internal(javaUtilities, methods, argsArray, 1, len);
-                    matchingMethods.put(argsTypeHash, match);
-                }
+                        IRubyObject match = (IRubyObject)matchingMethods.get(argsTypeHash);
+                        if (match == null) {
+                            match = Java.matching_method_internal(javaUtilities, methods, argsArray, 1, len);
+                            matchingMethods.put(argsTypeHash, match);
+                        }
 
-                return Java.java_to_ruby(self, ((JavaMethod)match).invoke(argsArray), Block.NULL_BLOCK);
-            }
+                        return Java.java_to_ruby(self, ((JavaMethod)match).invoke(argsArray), Block.NULL_BLOCK);
+                    }
 
-            public Arity getArity() {
-                return Arity.optional();
-            }
-        };
+                    public Arity getArity() {
+                        return Arity.optional();
+                    }
+                };
+        } else {
+            final JavaMethod METHOD = (JavaMethod)methods.eltInternal(0);
+            method = new Callback() {
+                    public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
+                        int len = args.length;
+                        IRubyObject[] argsArray = new IRubyObject[len + 1];
+                        argsArray[0] = self.getInstanceVariable("@java_object");
+                        for(int j = 0; j < len; j++) {
+                            argsArray[j+1] = Java.ruby_to_java(proxy, args[j], Block.NULL_BLOCK);
+                        }
+                        return Java.java_to_ruby(self, METHOD.invoke(argsArray), Block.NULL_BLOCK);
+                    }
+
+                    public Arity getArity() {
+                        return Arity.optional();
+                    }
+                };
+        }
         
         for(Iterator iter = names.iterator(); iter.hasNext(); ) {
             String methodName = (String) iter.next();
