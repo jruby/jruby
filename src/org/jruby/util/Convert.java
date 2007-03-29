@@ -1442,7 +1442,7 @@ public class Convert {
                         break; // switch
                     default:
                         // only whitespace allowed after value for strict
-                        for ( ; i < buflen && bytes[i++] <= ' ';  );
+                        for ( ; i < buflen && bytes[i] <= ' '; i++ );
                         state = i < buflen ? SERR_NOT_STRICT : SOPTCALC; 
                         break states;
                     } // switch
@@ -1524,7 +1524,7 @@ public class Convert {
                         break; // switch
                     default:
                         // only whitespace allowed after value for strict
-                        for ( ; i < buflen && bytes[i++] <= ' ';  );
+                        for ( ; i < buflen && bytes[i] <= ' '; i++);
                         state = i < buflen ? SERR_NOT_STRICT : SOPTCALC; 
                         break states;
                     } // switch
@@ -1586,7 +1586,7 @@ public class Convert {
                     default:
                         exponent += expSign * expSpec;
                         // only whitespace allowed after value for strict
-                        for ( ; i < buflen && bytes[i++] <= ' ';  );
+                        for ( ; i < buflen && bytes[i] <= ' ';  i++);
                         state = i < buflen ? SERR_NOT_STRICT : SOPTCALC; 
                         break states;
                     } // switch
@@ -1768,7 +1768,7 @@ public class Convert {
                         break; //switch
                     default:
                         // only whitespace allowed after value for strict
-                        for ( ; i < buflen && bytes[i++] <= ' ';  ) ;
+                        for ( ; i < buflen && bytes[i] <= ' ';  i++) ;
                         state = i < buflen ? SERR_NOT_STRICT : SCOMPLETE; 
                         break states;
                     } // switch
@@ -1811,7 +1811,7 @@ public class Convert {
                         }
                         break; //switch
                     default:
-                        for ( ; i < buflen && bytes[i++] <= ' ';  ) ;
+                        for ( ; i < buflen && bytes[i] <= ' ';  i++) ;
                         state = i < buflen ? SERR_NOT_STRICT : SCOMPLETE; 
                         break states;
                     } // switch
@@ -1865,7 +1865,7 @@ public class Convert {
                         }
                         break; //switch
                     default:
-                        for ( ; i < buflen && bytes[i++] <= ' ';  ) ;
+                        for ( ; i < buflen && bytes[i] <= ' ';  i++) ;
                         state = i < buflen ? SERR_NOT_STRICT : SCOMPLETE; 
                         break states;
                     }
