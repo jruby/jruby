@@ -66,7 +66,7 @@ def foo4
   foocall(1)
 end
 
-TIMES = 2
+TIMES = 5
 
 TIMES.times {
   puts Benchmark.measure {
