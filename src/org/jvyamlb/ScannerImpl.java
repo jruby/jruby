@@ -1122,7 +1122,7 @@ public class ScannerImpl implements Scanner {
         final ByteList chunks = new ByteList();
         forward();
         final Object[] chompi = scanBlockScalarIndicators();
-        final boolean chomping = ((Boolean)chompi[0]).booleanValue();
+        final Boolean chomping = (Boolean)chompi[0];
         final int increment = ((Integer)chompi[1]).intValue();
         scanBlockScalarIgnoredLine();
         int minIndent = this.indent+1;
@@ -1172,8 +1172,10 @@ public class ScannerImpl implements Scanner {
             }
         }
 
-        if(chomping) {
+        if(chomping != Boolean.FALSE) {
             chunks.append(lineBreak);
+        }
+        if(chomping == Boolean.TRUE) {
             chunks.append(breaks);
         }
 
@@ -1213,11 +1215,11 @@ public class ScannerImpl implements Scanner {
 
 
     private Object[] scanBlockScalarIndicators() {
-        boolean chomping = false;
+        Boolean chomping = null;
         int increment = -1;
         char ch = peek();
         if(ch == '-' || ch == '+') {
-            chomping = ch == '+';
+            chomping = ch == '+' ? Boolean.TRUE : Boolean.FALSE;
             forward();
             ch = peek();
             if(DIGIT[ch]) {
@@ -1235,14 +1237,14 @@ public class ScannerImpl implements Scanner {
             forward();
             ch = peek();
             if(ch == '-' || ch == '+') {
-                chomping = ch == '+';
+                chomping = ch == '+' ? Boolean.TRUE : Boolean.FALSE;
                 forward();
             }
         }
         if(!NULL_BL_LINEBR[peek()]) {
             throw new ScannerException("while scanning a block scalar","expected chomping or indentation indicators, but found " + peek() + "(" + ((int)peek()) + ")",null);
         }
-        return new Object[] {Boolean.valueOf(chomping),new Integer(increment)};
+        return new Object[] {chomping,new Integer(increment)};
     }
 
     private byte[] scanBlockScalarIgnoredLine() {
