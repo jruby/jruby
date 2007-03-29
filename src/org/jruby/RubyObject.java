@@ -613,6 +613,27 @@ public class RubyObject implements Cloneable, IRubyObject {
     /*
      * @see org.jruby.runtime.builtin.IRubyObject#convertToTypeWithCheck(java.lang.String, java.lang.String)
      */
+    public IRubyObject convertToTypeWithCheck(Class cls, String targetType, String convertMethod) {
+        if(cls.isInstance(this)) {
+            return this;
+        }
+
+        IRubyObject value = convertToType(targetType, convertMethod, false);
+        if (value.isNil()) {
+            return value;
+        }
+
+        if (!cls.isInstance(value)) {
+            throw getRuntime().newTypeError(value.getMetaClass().getName() + "#" + convertMethod +
+                    " should return " + targetType);
+        }
+
+        return value;
+    }
+
+    /*
+     * @see org.jruby.runtime.builtin.IRubyObject#convertToTypeWithCheck(java.lang.String, java.lang.String)
+     */
     public IRubyObject convertToTypeWithCheck(String targetType, String convertMethod) {
         if (targetType.equals(getMetaClass().getName())) {
             return this;
@@ -625,7 +646,7 @@ public class RubyObject implements Cloneable, IRubyObject {
 
         if (!targetType.equals(value.getMetaClass().getName())) {
             throw getRuntime().newTypeError(value.getMetaClass().getName() + "#" + convertMethod +
-                    "should return " + targetType);
+                    " should return " + targetType);
         }
 
         return value;

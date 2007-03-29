@@ -435,7 +435,8 @@ public interface IRubyObject {
      * @return the converted value
      */
     IRubyObject convertToTypeWithCheck(String targetType, String convertMethod);
-    
+    IRubyObject convertToTypeWithCheck(Class cls, String targetType, String convertMethod); 
+   
     /**
      * RubyMethod dup.
      * @return

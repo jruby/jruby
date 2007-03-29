@@ -114,3 +114,8 @@ x.replace(MyHash.new({:a => 10, :b => 20}))
 test_equal(10, x[:a])
 test_equal(20, x[:b])
 test_exception(TypeError) { x.replace(MyHash.new(4)) }
+
+class H1 < Hash
+end
+
+test_no_exception{ H1.new.clone }
