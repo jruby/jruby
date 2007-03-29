@@ -56,3 +56,5 @@ local2 = gmt.getlocal
 utc = local2.getutc
 test_equal(local, local2)
 test_equal(gmt, utc)
+
+test_exception { Time::utc(nil,nil,nil,nil,nil,nil,0) }

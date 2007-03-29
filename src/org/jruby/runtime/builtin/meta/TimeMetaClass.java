@@ -253,10 +253,11 @@ public class TimeMetaClass extends ObjectMetaClass {
             len = Arity.checkArgumentCount(getRuntime(), args, 1, 8);
         }
         ThreadContext tc = getRuntime().getCurrentContext();
-        if(!(args[0] instanceof RubyNumeric)) {
-            args[0] = args[0].callMethod(tc,"to_i");
+        if(args[0] instanceof RubyString) {
+            args[0] = RubyNumeric.str2inum(getRuntime(),(RubyString)args[0],10,false);
         }
         int year = (int)RubyNumeric.num2long(args[0]);
+
         int month = 0;
         
         if (len > 1) {
