@@ -274,7 +274,11 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public boolean respondsTo(String name) {
-        return getMetaClass().isMethodBound(name, false);
+        if(getMetaClass().searchMethod("respond_to?") == getRuntime().getRespondToMethod()) {
+            return getMetaClass().isMethodBound(name, false);
+        } else {
+            return callMethod(getRuntime().getCurrentContext(),"respond_to?",getRuntime().newSymbol(name)).isTrue();
+        }
     }
 
     public boolean isKindOf(RubyModule type) {

@@ -209,6 +209,8 @@ public final class Ruby {
     public int symbolLastId = 0;
     public int moduleLastId = 0;
 
+    private Object respondToMethod;
+
     /**
      * Create and initialize a new jruby Runtime.
      */
@@ -337,6 +339,14 @@ public final class Ruby {
                 
             throw je;
         }
+    }
+
+    Object getRespondToMethod() {
+        return respondToMethod;
+    }
+
+    void setRespondToMethod(Object rtm) {
+        this.respondToMethod = rtm;
     }
 
     public RubyClass getObject() {

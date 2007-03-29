@@ -197,6 +197,8 @@ public class RubyKernel {
         module.defineFastPublicModuleFunction("tainted?", objectCallbackFactory.getFastMethod("tainted"));
         module.defineFastPublicModuleFunction("untaint", objectCallbackFactory.getFastMethod("untaint"));
 
+        runtime.setRespondToMethod(module.searchMethod("respond_to?"));
+
         return module;
     }
 
