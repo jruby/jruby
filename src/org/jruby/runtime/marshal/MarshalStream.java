@@ -54,6 +54,7 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 
 /**
  * Marshals objects into Ruby's binary marshal format.
@@ -212,7 +213,7 @@ public class MarshalStream extends FilterOutputStream {
             write('0');
             break;
         case ClassIndex.OBJECT:
-            dumpDefaultObjectHeader(value.getMetaClass().getRealClass());
+            dumpDefaultObjectHeader(value.getMetaClass());
             value.getMetaClass().marshal(value, this);
             break;
         case ClassIndex.REGEXP:
@@ -235,10 +236,10 @@ public class MarshalStream extends FilterOutputStream {
             write('T');
             break;
         default:
-            dumpDefaultObjectHeader(value.getMetaClass().getRealClass());
             dumpDefaultObjectHeader(value.getMetaClass());
             value.getMetaClass().marshal(value, this);
         }
+        
     }
 
     private boolean hasNewUserDefinedMarshaling(IRubyObject value) {
@@ -296,9 +297,26 @@ public class MarshalStream extends FilterOutputStream {
         }
     }
     
+    private boolean hasSingletonMethods(RubyClass type) {
+        for(Iterator iter = type.getMethods().entrySet().iterator(); iter.hasNext(); ) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            DynamicMethod method = (DynamicMethod) entry.getValue();
+            // We do not want to capture cached methods
+            if(method.getImplementationClass() == type) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void dumpDefaultObjectHeader(RubyClass type) throws IOException {
+        if(type.isSingleton()) {
+            if(hasSingletonMethods(type) || type.getInstanceVariables().size() > 1) {
+                throw type.getRuntime().newTypeError("singleton can't be dumped");
+            }
+        }
         write('o');
-        RubySymbol classname = RubySymbol.newSymbol(runtime, type.getName());
+        RubySymbol classname = RubySymbol.newSymbol(runtime, type.getRealClass().getName());
         dumpObject(classname);
     }
 

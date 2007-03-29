@@ -95,7 +95,9 @@ public class RubyMarshal {
             }
 			ByteArrayOutputStream stringOutput = new ByteArrayOutputStream();
 			dumpToStream(objectToDump, stringOutput, depthLimit);
-			return RubyString.newString(recv.getRuntime(), new ByteList(stringOutput.toByteArray(),false));
+
+			RubyString str = RubyString.newString(recv.getRuntime(), new ByteList(stringOutput.toByteArray(),false));
+            return str;
 
         } catch (IOException ioe) {
             throw recv.getRuntime().newIOErrorFromException(ioe);

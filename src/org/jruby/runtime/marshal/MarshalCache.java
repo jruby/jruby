@@ -30,15 +30,15 @@
 package org.jruby.runtime.marshal;
 
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Map;
 
 import org.jruby.RubySymbol;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class MarshalCache {
-    private Map linkCache = new HashMap();
-    private Map symbolCache = new HashMap();
+    private Map linkCache = new IdentityHashMap();
+    private Map symbolCache = new IdentityHashMap();
 
     public boolean isRegistered(IRubyObject value) {
         return selectCache(value).containsKey(value);
