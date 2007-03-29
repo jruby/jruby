@@ -252,7 +252,7 @@ public class Generator {
             self.setInstanceVariable("@queue",self.getRuntime().newArray());
             self.setInstanceVariable("@index",self.getRuntime().newFixnum(0));
 
-            if(self.checkArgumentCount(args,0,1) == 1) {
+            if(Arity.checkArgumentCount(context.getRuntime(), args,0,1) == 1) {
                 d.setEnum(args[0]);
             } else {
                 d.setProc(self.getRuntime().newProc(false, Block.NULL_BLOCK));

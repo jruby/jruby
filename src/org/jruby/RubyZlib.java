@@ -37,6 +37,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Arity;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -554,7 +555,7 @@ public class RubyZlib {
         
         public IRubyObject flush(IRubyObject[] args) throws Exception {
             int flush = 2; // SYNC_FLUSH
-            if(checkArgumentCount(args,0,1) == 1) {
+            if(Arity.checkArgumentCount(getRuntime(), args,0,1) == 1) {
                 if(!args[0].isNil()) {
                     flush = RubyNumeric.fix2int(args[0]);
                 }

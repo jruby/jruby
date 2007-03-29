@@ -166,7 +166,7 @@ public class RubyEnumerable {
         }
         public IRubyObject method3(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             //GREP
-            self.checkArgumentCount(args,1,1);
+            Arity.checkArgumentCount(context.getRuntime(), args,1,1);
             List arr = eachToList(context,self,module);
             List result = new ArrayList();
             IRubyObject pattern = args[0];

@@ -36,7 +36,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import org.jruby.ast.Node;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -278,18 +277,6 @@ public class RubyObject implements Cloneable, IRubyObject {
         return getMetaClass().isMethodBound(name, false);
     }
 
-    // Some helper functions:
-
-    public int checkArgumentCount(IRubyObject[] args, int min, int max) {
-        if (args.length < min) {
-            throw getRuntime().newArgumentError("wrong number of arguments (" + args.length + " for " + min + ")");
-        }
-        if (max > -1 && args.length > max) {
-            throw getRuntime().newArgumentError("wrong number of arguments (" + args.length + " for " + max + ")");
-        }
-        return args.length;
-    }
-
     public boolean isKindOf(RubyModule type) {
         return getMetaClass().hasModuleInHierarchy(type);
     }
@@ -353,13 +340,13 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** init_copy
      * 
      */
-    public void initCopy(IRubyObject original) {
+    public static void initCopy(IRubyObject clone, IRubyObject original) {
         assert original != null;
-        assert !isFrozen() : "frozen object (" + getMetaClass().getName() + ") allocated";
+        assert !clone.isFrozen() : "frozen object (" + clone.getMetaClass().getName() + ") allocated";
 
-        setInstanceVariables(new HashMap(original.getInstanceVariables()));
+        clone.setInstanceVariables(new HashMap(original.getInstanceVariables()));
         /* FIXME: finalizer should be dupped here */
-        callMethod(getRuntime().getCurrentContext(), "initialize_copy", original);
+        clone.callMethod(clone.getRuntime().getCurrentContext(), "initialize_copy", original);
     }
 
     /** OBJ_INFECT
@@ -676,24 +663,6 @@ public class RubyObject implements Cloneable, IRubyObject {
 
         return (RubyString) str;
     }
-
-    /** rb_convert_type
-     *
-     */
-    public IRubyObject convertType(Class type, String targetType, String convertMethod) {
-        if (type.isAssignableFrom(getClass())) {
-            return this;
-        }
-
-        IRubyObject result = convertToType(targetType, convertMethod, true);
-
-        if (!type.isAssignableFrom(result.getClass())) {
-            throw getRuntime().newTypeError(
-                getMetaClass().getName() + "#" + convertMethod + " should return " + targetType + ".");
-        }
-
-        return result;
-    }
     
     /** rb_check_string_type
      *
@@ -924,7 +893,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      * @return true if this responds to the given method
      */
     public RubyBoolean respond_to(IRubyObject[] args) {
-        checkArgumentCount(args, 1, 2);
+        Arity.checkArgumentCount(getRuntime(), args, 1, 2);
 
         String name = args[0].asSymbol();
         boolean includePrivate = args.length > 1 ? args[1].isTrue() : false;
@@ -981,7 +950,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         IRubyObject clone = doClone();
         clone.setMetaClass(getSingletonClassClone());
         clone.setTaint(isTaint());
-        clone.initCopy(this);
+        initCopy(clone, this);
         clone.setFrozen(isFrozen());
         return clone;
     }
@@ -1016,7 +985,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         dup.setFrozen(false);
         dup.setTaint(isTaint());
         
-        dup.initCopy(this);
+        initCopy(dup, this);
 
         return dup;
     }
@@ -1154,7 +1123,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public IRubyObject methods(IRubyObject[] args) {
-    	checkArgumentCount(args, 0, 1);
+    	Arity.checkArgumentCount(getRuntime(), args, 0, 1);
 
     	if (args.length == 0) {
     		args = new IRubyObject[] { getRuntime().getTrue() };
@@ -1187,7 +1156,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     // TODO: This is almost RubyModule#instance_methods on the metaClass.  Perhaps refactor.
     public RubyArray singleton_methods(IRubyObject[] args) {
         boolean all = true;
-        if(checkArgumentCount(args,0,1) == 1) {
+        if(Arity.checkArgumentCount(getRuntime(), args,0,1) == 1) {
             all = args[0].isTrue();
         }
 
@@ -1235,7 +1204,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public IRubyObject extend(IRubyObject[] args) {
-        checkArgumentCount(args, 1, -1);
+        Arity.checkArgumentCount(getRuntime(), args, 1, -1);
 
         // Make sure all arguments are modules before calling the callbacks
         RubyClass module = getRuntime().getClass("Module");
@@ -1364,7 +1333,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      */
     public IRubyObject[] scanArgs(IRubyObject[] args, int required, int optional) {
         int total = required+optional;
-        int real = checkArgumentCount(args,required,total);
+        int real = Arity.checkArgumentCount(getRuntime(), args,required,total);
         IRubyObject[] narr = new IRubyObject[total];
         System.arraycopy(args,0,narr,0,real);
         for(int i=real; i<total; i++) {

@@ -28,6 +28,7 @@
 package org.jruby;
 
 import java.math.BigDecimal;
+import org.jruby.runtime.Arity;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -272,7 +273,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     public IRubyObject div(IRubyObject[] args) {
         int scale = 0;
-        if(checkArgumentCount(args,1,2) == 2) {
+        if(Arity.checkArgumentCount(getRuntime(), args,1,2) == 2) {
             scale = RubyNumeric.fix2int(args[1]);
         }
 

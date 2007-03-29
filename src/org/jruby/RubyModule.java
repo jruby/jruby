@@ -842,7 +842,7 @@ public class RubyModule extends RubyObject {
         if (readable) {
             defineMethod(name, new Callback() {
                 public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-                    checkArgumentCount(args, 0, 0);
+                    Arity.checkArgumentCount(getRuntime(), args, 0, 0);
 
                     IRubyObject variable = self.getInstanceVariable(variableName);
 
@@ -1284,7 +1284,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public IRubyObject attr(IRubyObject[] args) {
-        checkArgumentCount(args, 1, 2);
+        Arity.checkArgumentCount(getRuntime(), args, 1, 2);
         boolean writeable = args.length > 1 ? args[1].isTrue() : false;
 
         addAccessor(args[0].asSymbol(), true, writeable);

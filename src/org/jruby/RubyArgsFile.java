@@ -31,6 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ThreadContext;
@@ -355,7 +356,7 @@ public class RubyArgsFile extends RubyObject {
  	public IRubyObject read(IRubyObject[] args) {
         IRubyObject tmp, str, length;
         long len = 0;
-        checkArgumentCount(args,0,2);
+        Arity.checkArgumentCount(getRuntime(), args,0,2);
         if(args.length > 0) {
             length = args[0];
             if(args.length > 1) {

@@ -157,7 +157,7 @@ public class TimeMetaClass extends ObjectMetaClass {
     }
 
     public IRubyObject new_at(IRubyObject[] args) {
-        int len = checkArgumentCount(args, 1, 2);
+        int len = Arity.checkArgumentCount(getRuntime(), args, 1, 2);
 
         Calendar cal = Calendar.getInstance(); 
         RubyTime time = new RubyTime(getRuntime(), this, cal);
@@ -250,7 +250,7 @@ public class TimeMetaClass extends ObjectMetaClass {
             args = new IRubyObject[] { args[5], args[4], args[3], args[2], args[1], args[0] };
         } else {
             // MRI accepts additional wday argument which appears to be ignored.
-            len = checkArgumentCount(args, 1, 8);
+            len = Arity.checkArgumentCount(getRuntime(), args, 1, 8);
         }
         ThreadContext tc = getRuntime().getCurrentContext();
         if(!(args[0] instanceof RubyNumeric)) {

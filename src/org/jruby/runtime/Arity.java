@@ -178,4 +178,16 @@ public final class Arity implements Serializable {
             return "Opt";
         }
     }
+
+    // Some helper functions:
+
+    public static int checkArgumentCount(Ruby runtime, IRubyObject[] args, int min, int max) {
+        if (args.length < min) {
+            throw runtime.newArgumentError("wrong number of arguments (" + args.length + " for " + min + ")");
+        }
+        if (max > -1 && args.length > max) {
+            throw runtime.newArgumentError("wrong number of arguments (" + args.length + " for " + max + ")");
+        }
+        return args.length;
+    }
 }

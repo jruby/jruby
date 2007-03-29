@@ -34,6 +34,7 @@
 package org.jruby;
 
 import jregex.Matcher;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -169,7 +170,7 @@ public class RubyMatchData extends RubyObject {
      *
      */
     public IRubyObject aref(IRubyObject[] args) {
-        int argc = checkArgumentCount(args, 1, 2);
+        int argc = Arity.checkArgumentCount(getRuntime(), args, 1, 2);
         if (argc == 2) {
             int beg = RubyNumeric.fix2int(args[0]);
             int len = RubyNumeric.fix2int(args[1]);

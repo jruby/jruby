@@ -36,6 +36,7 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.UnmappableCharacterException;
 import java.nio.charset.UnsupportedCharsetException;
+import org.jruby.runtime.Arity;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -96,7 +97,7 @@ public class RubyIconv extends RubyObject {
     */
     
     public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
-        checkArgumentCount(args, 2, 2);
+        Arity.checkArgumentCount(getRuntime(), args, 2, 2);
         
         //toEncoding = args[0].convertToString().toString();
         //fromEncoding = args[1].convertToString().toString();
@@ -113,7 +114,7 @@ public class RubyIconv extends RubyObject {
     }
     
     public static RubyArray convertWithArgs(IRubyObject recv, IRubyObject[] args, String function) {
-        recv.checkArgumentCount(args, 3, -1);
+        Arity.checkArgumentCount(recv.getRuntime(), args, 3, -1);
 
         String fromEncoding = args[1].convertToString().toString();
         String toEncoding = args[0].convertToString().toString();

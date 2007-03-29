@@ -44,6 +44,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOHandler;
@@ -215,7 +216,7 @@ public class RubyFile extends RubyIO {
 	}
 
     public IRubyObject chmod(IRubyObject[] args) {
-        checkArgumentCount(args, 1, 1);
+        Arity.checkArgumentCount(getRuntime(), args, 1, 1);
         
         RubyInteger mode = args[0].convertToInteger();
 
@@ -236,7 +237,7 @@ public class RubyFile extends RubyIO {
     }
 
     public IRubyObject chown(IRubyObject[] args) {
-        checkArgumentCount(args, 1, 1);
+        Arity.checkArgumentCount(getRuntime(), args, 1, 1);
         
         RubyInteger owner = args[0].convertToInteger();
         if (!new File(path).exists()) {

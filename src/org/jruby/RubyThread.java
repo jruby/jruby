@@ -50,6 +50,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import edu.emory.mathcs.backport.java.util.concurrent.ExecutionException;
 import edu.emory.mathcs.backport.java.util.concurrent.TimeoutException;
+import org.jruby.runtime.Arity;
 
 /**
  * Implementation of Ruby's <code>Thread</code> class.  Each Ruby thread is
@@ -516,7 +517,7 @@ public class RubyThread extends RubyObject {
 
     public IRubyObject raise(IRubyObject[] args, Block block) {
         Ruby runtime = getRuntime();
-        checkArgumentCount(args, 0, 3); 
+        Arity.checkArgumentCount(getRuntime(), args, 0, 3); 
 
         if(args.length == 0) {
             IRubyObject lastException = runtime.getGlobalVariables().get("$!");

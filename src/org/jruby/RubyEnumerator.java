@@ -85,7 +85,7 @@ public class RubyEnumerator extends RubyObject {
 
     /** Primes the instance. Little validation is done at this stage */
     private IRubyObject initialize(ThreadContext tc, IRubyObject[] args, Block block) {
-        checkArgumentCount(args, 1, -1);
+        Arity.checkArgumentCount(tc.getRuntime(), args, 1, -1);
            
         object = args[0];
         methodArgs = new IRubyObject[Math.max(0, args.length - 2)];
@@ -111,7 +111,7 @@ public class RubyEnumerator extends RubyObject {
      * underlying method.
      */
     private IRubyObject each(ThreadContext tc, IRubyObject[] args, Block block) {
-        checkArgumentCount(args, 0, 0);
+        Arity.checkArgumentCount(tc.getRuntime(), args, 0, 0);
 
         return object.callMethod(tc, method.asSymbol(), methodArgs, block);
     }
@@ -270,7 +270,7 @@ public class RubyEnumerator extends RubyObject {
 
         /** Enumerable:#each_slice */
         public IRubyObject method4(final ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) {
-            self.checkArgumentCount(args, 1, 1);
+            Arity.checkArgumentCount(tc.getRuntime(), args, 1, 1);
 
             long sliceSize = args[0].convertToInteger().getLongValue();
 
@@ -291,7 +291,7 @@ public class RubyEnumerator extends RubyObject {
 
         /** Enumerable:#each_cons */
         public IRubyObject method5(final ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) {
-            self.checkArgumentCount(args, 1, 1);
+            Arity.checkArgumentCount(tc.getRuntime(), args, 1, 1);
 
             long consecutiveSize = args[0].convertToInteger().getLongValue();
 
@@ -307,7 +307,7 @@ public class RubyEnumerator extends RubyObject {
 
         /** Enumerable#enum_with_index */
         public IRubyObject method6(final ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) {
-            self.checkArgumentCount(args, 0, 0);
+            Arity.checkArgumentCount(tc.getRuntime(), args, 0, 0);
 
             return enumerator.callMethod(tc, "new", 
                     new IRubyObject[] { self, runtime.newSymbol("each_with_index") });
@@ -315,7 +315,7 @@ public class RubyEnumerator extends RubyObject {
 
         /** Enumerable#enum_slice */
         public IRubyObject method7(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) {
-            self.checkArgumentCount(args, 1, 1);
+            Arity.checkArgumentCount(tc.getRuntime(), args, 1, 1);
 
             return enumerator.callMethod(tc, "new", 
                     new IRubyObject[] { self, runtime.newSymbol("each_slice"), args[0] });
@@ -323,7 +323,7 @@ public class RubyEnumerator extends RubyObject {
 
         /** Enumerable#enum_cons */
         public IRubyObject method8(ThreadContext tc, IRubyObject self, IRubyObject[] args, Block block) {
-            self.checkArgumentCount(args, 1, 1);
+            Arity.checkArgumentCount(tc.getRuntime(), args, 1, 1);
 
             return enumerator.callMethod(tc, "new", 
                     new IRubyObject[] { self, runtime.newSymbol("each_cons"), args[0] });

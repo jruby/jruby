@@ -35,6 +35,7 @@
 package org.jruby;
 
 import java.math.BigInteger;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
@@ -232,7 +233,7 @@ public class RubyFixnum extends RubyInteger {
      * 
      */
     public RubyString to_s(IRubyObject[] args) {
-        checkArgumentCount(args, 0, 1);
+        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
         
         int base = args.length == 0 ? 10 : num2int(args[0]);
         if (base < 2 || base > 36) {

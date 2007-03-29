@@ -162,7 +162,7 @@ public class IOMetaClass extends ObjectMetaClass {
      *
      */
     public IRubyObject foreach(IRubyObject[] args, Block block) {
-        int count = checkArgumentCount(args, 1, -1);
+        int count = Arity.checkArgumentCount(getRuntime(), args, 1, -1);
         IRubyObject filename = args[0].convertToString();
         getRuntime().checkSafeString(filename);
         RubyIO io = (RubyIO) ((FileMetaClass) getRuntime().getClass("File")).open(new IRubyObject[] { filename }, false, block);
@@ -311,7 +311,7 @@ public class IOMetaClass extends ObjectMetaClass {
     }
     
     public IRubyObject read(IRubyObject[] args, Block block) {
-        checkArgumentCount(args, 1, 3);
+        Arity.checkArgumentCount(getRuntime(), args, 1, 3);
         IRubyObject[] fileArguments = new IRubyObject[] {args[0]};
         RubyIO file = (RubyIO) RubyKernel.open(this, fileArguments, block);
         IRubyObject[] readArguments;
@@ -335,7 +335,7 @@ public class IOMetaClass extends ObjectMetaClass {
     }
     
     public RubyArray readlines(IRubyObject[] args, Block block) {
-        int count = checkArgumentCount(args, 1, 2);
+        int count = Arity.checkArgumentCount(getRuntime(), args, 1, 2);
         
         IRubyObject[] fileArguments = new IRubyObject[] {args[0]};
         IRubyObject[] separatorArguments = count >= 2 ? new IRubyObject[]{args[1]} : IRubyObject.NULL_ARRAY;
@@ -350,7 +350,7 @@ public class IOMetaClass extends ObjectMetaClass {
     //XXX Hacked incomplete popen implementation to make
     public IRubyObject popen(IRubyObject[] args, Block block) {
         Ruby runtime = getRuntime();
-        checkArgumentCount(args, 1, 2);
+        Arity.checkArgumentCount(getRuntime(), args, 1, 2);
         IRubyObject cmdObj = args[0].convertToString();
         getRuntime().checkSafeString(cmdObj);
         ThreadContext tc = runtime.getCurrentContext();

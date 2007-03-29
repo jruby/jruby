@@ -40,6 +40,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.nio.channels.Channel;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -435,7 +436,7 @@ public class RubyIO extends RubyObject {
     // IO class methods.
 
     public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
-        int count = checkArgumentCount(args, 1, 2);
+        int count = Arity.checkArgumentCount(getRuntime(), args, 1, 2);
         int newFileno = RubyNumeric.fix2int(args[0]);
         String mode = null;
         
@@ -649,7 +650,7 @@ public class RubyIO extends RubyObject {
     }
 
     public IRubyObject printf(IRubyObject[] args) {
-    	checkArgumentCount(args, 1, -1);
+    	Arity.checkArgumentCount(getRuntime(), args, 1, -1);
         callMethod(getRuntime().getCurrentContext(), "write", RubyKernel.sprintf(this, args));
         return getRuntime().getNil();
     }
@@ -899,7 +900,7 @@ public class RubyIO extends RubyObject {
     }
 
     public IRubyObject puts(IRubyObject[] args) {
-    	checkArgumentCount(args, 0, -1);
+    	Arity.checkArgumentCount(getRuntime(), args, 0, -1);
         
     	ThreadContext context = getRuntime().getCurrentContext();
         
@@ -1012,7 +1013,7 @@ public class RubyIO extends RubyObject {
     
     public IRubyObject read(IRubyObject[] args) {
                
-        int argCount = checkArgumentCount(args, 0, 2);
+        int argCount = Arity.checkArgumentCount(getRuntime(), args, 0, 2);
         RubyString callerBuffer = null;
         boolean readEntireStream = (argCount == 0 || args[0].isNil());
 

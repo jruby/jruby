@@ -108,6 +108,13 @@ public interface IRubyObject {
      * @return
      */
     Map getInstanceVariables();
+    
+    /**
+     *
+     * @return
+     */
+    void setInstanceVariables(Map instanceVariables);
+    
     /**
      *
      * @return
@@ -288,6 +295,12 @@ public interface IRubyObject {
     boolean isFrozen();
     
     /**
+     * RubyMethod setFrozen.
+     * @param b
+     */
+    void setFrozen(boolean b);
+    
+    /**
      *
      * @return
      */
@@ -430,33 +443,10 @@ public interface IRubyObject {
     IRubyObject dup();
     
     /**
-     * RubyMethod setupClone.
-     * @param original
-     */
-    void initCopy(IRubyObject original);
-    
-    /**
-     * RubyMethod setFrozen.
-     * @param b
-     */
-    void setFrozen(boolean b);
-    
-    /**
      * RubyMethod inspect.
      * @return String
      */
     IRubyObject inspect();
-    
-    /**
-     * Make sure the arguments fit the range specified by minimum and maximum.  On
-     * a failure, The Ruby runtime will generate an ArgumentError.
-     *
-     * @param arguments to check
-     * @param minimum number of args
-     * @param maximum number of args (-1 for any number of args)
-     * @return the number of arguments in args
-     */
-    int checkArgumentCount(IRubyObject[] arguments, int minimum, int maximum);
     
     /**
      * RubyMethod rbClone.

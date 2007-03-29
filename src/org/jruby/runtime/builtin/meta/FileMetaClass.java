@@ -208,7 +208,7 @@ public class FileMetaClass extends IOMetaClass {
     };
     
     public IRubyObject basename(IRubyObject[] args) {
-        checkArgumentCount(args, 1, 2);
+        Arity.checkArgumentCount(getRuntime(), args, 1, 2);
         
         String name = RubyString.stringValue(args[0]).toString();
         if (name.length() > 1 && name.charAt(name.length() - 1) == '/') {
@@ -254,7 +254,7 @@ public class FileMetaClass extends IOMetaClass {
     }
     
     public IRubyObject chmod(IRubyObject[] args) {
-        checkArgumentCount(args, 2, -1);
+        Arity.checkArgumentCount(getRuntime(), args, 2, -1);
         
         int count = 0;
         RubyInteger mode = args[0].convertToInteger();
@@ -283,7 +283,7 @@ public class FileMetaClass extends IOMetaClass {
     }
     
     public IRubyObject chown(IRubyObject[] args) {
-        checkArgumentCount(args, 2, -1);
+        Arity.checkArgumentCount(getRuntime(), args, 2, -1);
         
         int count = 0;
         RubyInteger owner = args[0].convertToInteger();
@@ -351,7 +351,7 @@ public class FileMetaClass extends IOMetaClass {
     }
     
     public IRubyObject expand_path(IRubyObject[] args) {
-        checkArgumentCount(args, 1, 2);
+        Arity.checkArgumentCount(getRuntime(), args, 1, 2);
         String relativePath = RubyString.stringValue(args[0]).toString();
         int pathLength = relativePath.length();
         
@@ -427,7 +427,7 @@ public class FileMetaClass extends IOMetaClass {
      */
     // Fixme: implement FNM_PATHNAME, FNM_DOTMATCH, and FNM_CASEFOLD
     public IRubyObject fnmatch(IRubyObject[] args) {
-        checkArgumentCount(args, 2, -1);
+        Arity.checkArgumentCount(getRuntime(), args, 2, -1);
         String pattern = args[0].convertToString().toString();
         RubyString path = args[1].convertToString();
         int opts = (int) (args.length > 2 ? args[2].convertToInteger().getLongValue() : 0);
@@ -517,7 +517,7 @@ public class FileMetaClass extends IOMetaClass {
     }
     
     public IRubyObject open(IRubyObject[] args, boolean tryToYield, Block block) {
-        checkArgumentCount(args, 1, -1);
+        Arity.checkArgumentCount(getRuntime(), args, 1, -1);
         Ruby runtime = getRuntime();
         ThreadContext tc = runtime.getCurrentContext();
         
@@ -645,7 +645,7 @@ public class FileMetaClass extends IOMetaClass {
      * This method does NOT set atime, only mtime, since Java doesn't support anything else.
      */
     public IRubyObject utime(IRubyObject[] args) {
-        checkArgumentCount(args, 2, -1);
+        Arity.checkArgumentCount(getRuntime(), args, 2, -1);
         
         // Ignore access_time argument since Java does not support it.
         

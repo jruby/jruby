@@ -42,6 +42,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
@@ -139,7 +140,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject {
     }
 
     public RubyObject new_instance(IRubyObject[] args, Block block) {
-        int size = this.checkArgumentCount(args, 1, 2) - 1;
+        int size = Arity.checkArgumentCount(getRuntime(), args, 1, 2) - 1;
         final RubyProc proc;
 
         // Is there a supplied proc argument or do we assume a block was

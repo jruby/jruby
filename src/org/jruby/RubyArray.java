@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
@@ -479,7 +480,7 @@ public class RubyArray extends RubyObject implements List {
      * 
      */
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        int argc = checkArgumentCount(args, 0, 2);
+        int argc = Arity.checkArgumentCount(getRuntime(), args, 0, 2);
         Ruby runtime = getRuntime();
 
         if (argc == 0) {
@@ -675,7 +676,7 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public IRubyObject fetch(IRubyObject[] args, Block block) {
-        if (checkArgumentCount(args, 1, 2) == 2 && block.isGiven()) {
+        if (Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2 && block.isGiven()) {
             getRuntime().getWarnings().warn("block supersedes default value argument");
         }
 
@@ -1048,7 +1049,7 @@ public class RubyArray extends RubyObject implements List {
             return subseq(beg, len);
         }
 
-        if (args.length != 1) checkArgumentCount(args, 1, 2);
+        if (args.length != 1) Arity.checkArgumentCount(getRuntime(), args, 1, 2);
 
         IRubyObject arg = args[0];
 
@@ -1159,7 +1160,7 @@ public class RubyArray extends RubyObject implements List {
             return values[begin];
         } 
             
-        checkArgumentCount(args, 0, 1);
+        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
         long n = RubyNumeric.num2long(args[0]);
         if (n > realLength) {
             n = realLength;
@@ -1180,7 +1181,7 @@ public class RubyArray extends RubyObject implements List {
             return values[begin + realLength - 1];
         } 
             
-        checkArgumentCount(args, 0, 1);
+        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
         long n = RubyNumeric.num2long(args[0]);
         if (n > realLength) {
             n = realLength;
@@ -1292,7 +1293,7 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public RubyString join_m(IRubyObject[] args) {
-        int argc = checkArgumentCount(args, 0, 1);
+        int argc = Arity.checkArgumentCount(getRuntime(), args, 0, 1);
         IRubyObject sep = (argc == 1) ? args[0] : getRuntime().getGlobalVariables().get("$,");
         
         return join(sep);
@@ -1430,13 +1431,13 @@ public class RubyArray extends RubyObject implements List {
         int argc = args.length;
 
         if (block.isGiven()) {
-            checkArgumentCount(args, 0, 2);
+            Arity.checkArgumentCount(getRuntime(), args, 0, 2);
             item = null;
         	begObj = argc > 0 ? args[0] : null;
         	lenObj = argc > 1 ? args[1] : null;
         	argc++;
         } else {
-            checkArgumentCount(args, 1, 3);
+            Arity.checkArgumentCount(getRuntime(), args, 1, 3);
             item = args[0];
         	begObj = argc > 1 ? args[1] : null;
         	lenObj = argc > 2 ? args[2] : null;
@@ -1781,7 +1782,7 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public IRubyObject slice_bang(IRubyObject[] args) {
-        if (checkArgumentCount(args, 1, 2) == 2) {
+        if (Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2) {
             long pos = RubyNumeric.num2long(args[0]);
             long len = RubyNumeric.num2long(args[1]);
             

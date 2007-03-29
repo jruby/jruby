@@ -51,6 +51,7 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
@@ -274,7 +275,7 @@ public class RubyKernel {
     }
 
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
-        recv.checkArgumentCount(args,1,3);
+        Arity.checkArgumentCount(recv.getRuntime(), args,1,3);
         String arg = args[0].convertToString().toString();
         Ruby runtime = recv.getRuntime();
 
@@ -308,7 +309,7 @@ public class RubyKernel {
     }
 
     public static IRubyObject abort(IRubyObject recv, IRubyObject[] args) {
-        if(recv.checkArgumentCount(args,0,1) == 1) {
+        if(Arity.checkArgumentCount(recv.getRuntime(), args,0,1) == 1) {
             recv.getRuntime().getGlobalVariables().get("$stderr").callMethod(recv.getRuntime().getCurrentContext(),"puts",args[0]);
         }
         throw new MainExitException(1,true);
@@ -621,7 +622,7 @@ public class RubyKernel {
 
     public static IRubyObject raise(IRubyObject recv, IRubyObject[] args, Block block) {
         // FIXME: Pass block down?
-        recv.checkArgumentCount(args, 0, 3); 
+        Arity.checkArgumentCount(recv.getRuntime(), args, 0, 3); 
         Ruby runtime = recv.getRuntime();
 
         if (args.length == 0) {

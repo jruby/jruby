@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
@@ -182,7 +183,7 @@ public class RubyDir extends RubyObject {
 
     /** Changes the current directory to <code>path</code> */
     public static IRubyObject chdir(IRubyObject recv, IRubyObject[] args, Block block) {
-        recv.checkArgumentCount(args, 0, 1);
+        Arity.checkArgumentCount(recv.getRuntime(), args, 0, 1);
         RubyString path = args.length == 1 ? 
             (RubyString) args[0].convertToString() : getHomeDirectoryPath(recv); 
         JRubyFile dir = getDir(recv.getRuntime(), path.toString(), true);

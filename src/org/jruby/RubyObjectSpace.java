@@ -32,6 +32,7 @@
 package org.jruby;
 
 import java.util.Iterator;
+import org.jruby.runtime.Arity;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -59,7 +60,7 @@ public class RubyObjectSpace {
 
     public static IRubyObject define_finalizer(IRubyObject recv, IRubyObject[] args, Block block) {
         RubyProc proc = null;
-        if(recv.checkArgumentCount(args,1,2) == 2) {
+        if(Arity.checkArgumentCount(recv.getRuntime(), args,1,2) == 2) {
             if(args[1] instanceof RubyProc) {
                 proc = (RubyProc)args[1];
             } else {
@@ -75,7 +76,7 @@ public class RubyObjectSpace {
     }
 
     public static IRubyObject undefine_finalizer(IRubyObject recv, IRubyObject[] args, Block block) {
-        recv.checkArgumentCount(args,1,1);
+        Arity.checkArgumentCount(recv.getRuntime(), args,1,1);
         recv.getRuntime().getObjectSpace().removeFinalizers(RubyNumeric.fix2long(args[0].id()));
         return recv;
     }

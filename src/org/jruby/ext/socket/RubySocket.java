@@ -39,6 +39,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -154,7 +155,7 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     public static IRubyObject gethostbyaddr(IRubyObject recv, IRubyObject[] args) {
-        recv.checkArgumentCount(args,1,2);
+        Arity.checkArgumentCount(recv.getRuntime(), args,1,2);
         Ruby runtime = recv.getRuntime();
         IRubyObject[] ret = new IRubyObject[4];
         ret[0] = runtime.newString(intoAddress(recv,args[0].convertToString().toString()).getCanonicalHostName());

@@ -41,6 +41,7 @@ import org.jruby.RubyThread;
 import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
@@ -252,7 +253,7 @@ public class ThreadLibrary implements Library {
 
         public synchronized IRubyObject pop(IRubyObject[] args) {
             boolean should_block = true;
-            if ( checkArgumentCount(args, 0, 1) == 1 ) {
+            if ( Arity.checkArgumentCount(getRuntime(), args, 0, 1) == 1 ) {
                 should_block = args[0].isTrue();
             }
             if ( !should_block && entries.size() == 0 ) {

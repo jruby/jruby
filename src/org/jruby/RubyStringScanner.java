@@ -1,5 +1,6 @@
 package org.jruby;
 
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
@@ -77,7 +78,7 @@ public class RubyStringScanner extends RubyObject {
 	}
 	
 	public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
-		if (checkArgumentCount(args, 0, 2) > 0) {
+		if (Arity.checkArgumentCount(getRuntime(), args, 0, 2) > 0) {
 			scanner = new StringScanner(args[0].convertToString().getValue());
 		} else {
 			scanner = new StringScanner();

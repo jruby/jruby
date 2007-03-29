@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Locale;
 import jregex.Matcher;
 import jregex.Pattern;
+import org.jruby.runtime.Arity;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -489,7 +490,7 @@ public class RubyString extends RubyObject {
     }
 
     public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
-        if (checkArgumentCount(args, 0, 1) == 1) {
+        if (Arity.checkArgumentCount(getRuntime(), args, 0, 1) == 1) {
             replace(args[0]);
         }
         return this;
@@ -1585,7 +1586,7 @@ public class RubyString extends RubyObject {
         if (reverse) {
             pos = value.length();
         }
-        if (checkArgumentCount(args, 1, 2) == 2) {
+        if (Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2) {
             pos = RubyNumeric.fix2int(args[1]);
         }
         if (pos < 0) {
@@ -1653,7 +1654,7 @@ public class RubyString extends RubyObject {
      *
      */
     public IRubyObject aref(IRubyObject[] args) {
-        if (checkArgumentCount(args, 1, 2) == 2) {
+        if (Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2) {
             if (args[0] instanceof RubyRegexp) {
                 IRubyObject match = RubyRegexp.regexpValue(args[0]).match(toString(), 0);
                 long idx = args[1].convertToInteger().getLongValue();
@@ -1729,7 +1730,7 @@ public class RubyString extends RubyObject {
     public IRubyObject aset(IRubyObject[] args) {
         testFrozen("class");
         int strLen = value.length();
-        if (checkArgumentCount(args, 2, 3) == 3) {
+        if (Arity.checkArgumentCount(getRuntime(), args, 2, 3) == 3) {
             if (args[0] instanceof RubyFixnum) {
                 RubyString repl = stringValue(args[2]);
                 int beg = RubyNumeric.fix2int(args[0]);
@@ -1797,7 +1798,7 @@ public class RubyString extends RubyObject {
      *
      */
     public IRubyObject slice_bang(IRubyObject[] args) {
-        int argc = checkArgumentCount(args, 1, 2);
+        int argc = Arity.checkArgumentCount(getRuntime(), args, 1, 2);
         IRubyObject[] newArgs = new IRubyObject[argc + 1];
         newArgs[0] = args[0];
         if (argc > 1) {
@@ -1926,7 +1927,7 @@ public class RubyString extends RubyObject {
      *
      */
     public IRubyObject to_i(IRubyObject[] args) {
-        long base = checkArgumentCount(args, 0, 1) == 0 ? 10 : args[0].convertToInteger().getLongValue();
+        long base = Arity.checkArgumentCount(getRuntime(), args, 0, 1) == 0 ? 10 : args[0].convertToInteger().getLongValue();
         return RubyNumeric.str2inum(getRuntime(), this, (int) base);
     }
 
@@ -2188,7 +2189,7 @@ public class RubyString extends RubyObject {
     private static ByteList SPACE_BYTELIST = new ByteList(ByteList.plain(" "));
 
     private IRubyObject justify(IRubyObject [] args, boolean leftJustify) {
-        checkArgumentCount(args, 1, 2);
+        Arity.checkArgumentCount(getRuntime(), args, 1, 2);
 
         ByteList paddingArg;
 
@@ -2253,7 +2254,7 @@ public class RubyString extends RubyObject {
     }
 
     public IRubyObject center(IRubyObject[] args) {
-        checkArgumentCount(args, 1, 2);
+        Arity.checkArgumentCount(getRuntime(), args, 1, 2);
         int len = RubyNumeric.fix2int(args[0]);
         ByteList pad = args.length == 2 ? args[1].convertToString().value : SPACE_BYTELIST;
         int strLen = value.length();
@@ -2542,7 +2543,7 @@ public class RubyString extends RubyObject {
      *
      */
     public IRubyObject count(IRubyObject[] args) {
-        int argc = checkArgumentCount(args, 1, -1);
+        int argc = Arity.checkArgumentCount(getRuntime(), args, 1, -1);
         ByteList[] specs = new ByteList[argc];
         for (int i = 0; i < argc; i++) {
             specs[i] = stringValue(args[i]).value;
@@ -2559,7 +2560,7 @@ public class RubyString extends RubyObject {
     }
 
     private ByteList getDelete(IRubyObject[] args) {
-        int argc = checkArgumentCount(args, 1, -1);
+        int argc = Arity.checkArgumentCount(getRuntime(), args, 1, -1);
         ByteList[] specs = new ByteList[argc];
         for (int i = 0; i < argc; i++) {
             specs[i] = stringValue(args[i]).value;
@@ -2737,7 +2738,7 @@ public class RubyString extends RubyObject {
             return this;
         }
         String sep;
-        if (checkArgumentCount(args, 0, 1) == 1) {
+        if (Arity.checkArgumentCount(getRuntime(), args, 0, 1) == 1) {
             sep = RubyRegexp.escapeSpecialChars(stringValue(args[0]).toString());
         } else {
             sep = RubyRegexp.escapeSpecialChars(getRuntime().getGlobalVariables().get("$/").asSymbol());

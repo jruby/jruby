@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
@@ -410,7 +411,7 @@ public class RubyRange extends RubyObject {
     }
     
     public IRubyObject step(IRubyObject[] args, Block block) {
-        checkArgumentCount(args, 0, 1);
+        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
         
         IRubyObject currentObject = begin;
         String compareMethod = isExclusive ? "<" : "<=";

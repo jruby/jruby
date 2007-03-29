@@ -30,6 +30,7 @@ package org.jruby;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.jruby.runtime.Arity;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
@@ -144,7 +145,7 @@ public class RubyStringIO extends RubyObject {
     private boolean closedWrite = false;
 
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if (checkArgumentCount(args, 0, 2) > 0) {
+        if (Arity.checkArgumentCount(getRuntime(), args, 0, 2) > 0) {
             // Share bytelist since stringio is acting on this passed-in string.
             internal = args[0].convertToString().getByteList();
         } else {
