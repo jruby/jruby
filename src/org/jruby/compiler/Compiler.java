@@ -429,7 +429,7 @@ public interface Compiler {
     
     public void issueBreakEvent();
 
-    public void objAsString();
+    public void asString();
 
     public void nthRef(int match);
 

@@ -148,7 +148,7 @@ public class FileMetaClass extends IOMetaClass {
             // TODO Singleton methods: pipe?, readlink, setgid?, setuid?, socket?,
             // TODO Singleton methods: stat, sticky?, symlink, symlink?, umask, utime
             
-            extendObject(runtime.getModule("FileTest"));
+            runtime.getModule("FileTest").extend_object(FileMetaClass.this);
             
             defineFastSingletonMethod("basename", Arity.optional());
             defineFastSingletonMethod("chmod", Arity.required(2));
@@ -522,7 +522,7 @@ public class FileMetaClass extends IOMetaClass {
         ThreadContext tc = runtime.getCurrentContext();
         
         RubyString pathString = RubyString.stringValue(args[0]);
-        pathString.checkSafeString();
+        runtime.checkSafeString(pathString);
         String path = pathString.toString();
         
         IOModes modes =
@@ -552,8 +552,8 @@ public class FileMetaClass extends IOMetaClass {
     public IRubyObject rename(IRubyObject oldName, IRubyObject newName) {
         RubyString oldNameString = RubyString.stringValue(oldName);
         RubyString newNameString = RubyString.stringValue(newName);
-        oldNameString.checkSafeString();
-        newNameString.checkSafeString();
+        getRuntime().checkSafeString(oldNameString);
+        getRuntime().checkSafeString(newNameString);
         JRubyFile oldFile = JRubyFile.create(getRuntime().getCurrentDirectory(),oldNameString.toString());
         JRubyFile newFile = JRubyFile.create(getRuntime().getCurrentDirectory(),newNameString.toString());
         
@@ -660,7 +660,7 @@ public class FileMetaClass extends IOMetaClass {
         
         for (int i = 2, j = args.length; i < j; i++) {
             RubyString filename = RubyString.stringValue(args[i]);
-            filename.checkSafeString();
+            getRuntime().checkSafeString(filename);
             JRubyFile fileToTouch = JRubyFile.create(getRuntime().getCurrentDirectory(),filename.toString());
             
             if (!fileToTouch.exists()) {
@@ -677,7 +677,7 @@ public class FileMetaClass extends IOMetaClass {
     public IRubyObject unlink(IRubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
             RubyString filename = RubyString.stringValue(args[i]);
-            filename.checkSafeString();
+            getRuntime().checkSafeString(filename);
             JRubyFile lToDelete = JRubyFile.create(getRuntime().getCurrentDirectory(),filename.toString());
             if (!lToDelete.exists()) {
                 throw getRuntime().newErrnoENOENTError(" No such file or directory - \"" + filename + "\"");

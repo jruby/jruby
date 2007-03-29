@@ -57,14 +57,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.Frame;
 
 /**
  *
  * @author  jpetersen
  */
 public class RubyObject implements Cloneable, IRubyObject {
-	
     // The class of this object
     private RubyClass metaClass;
 
@@ -583,21 +581,8 @@ public class RubyObject implements Cloneable, IRubyObject {
         return getInstanceVariables().keySet().iterator();
     }
 
-    /** rb_eval
-     *
-     */
-    public IRubyObject eval(Node n) {
-        //return new EvaluationState(getRuntime(), this).begin(n);
-        // need to continue evaluation with a new self, so save the old one (should be a stack?)
-        return EvaluationState.eval(getRuntime(), getRuntime().getCurrentContext(), n, this, Block.NULL_BLOCK);
-    }
-
     public void callInit(IRubyObject[] args, Block block) {
         callMethod(getRuntime().getCurrentContext(), "initialize", args, block);
-    }
-
-    public void extendObject(RubyModule module) {
-        getSingletonClass().includeModule(module);
     }
 
     /** rb_to_id
@@ -605,6 +590,37 @@ public class RubyObject implements Cloneable, IRubyObject {
      */
     public String asSymbol() {
         throw getRuntime().newTypeError(inspect().toString() + " is not a symbol");
+    }
+
+    public static String trueFalseNil(IRubyObject v) {
+        return trueFalseNil(v.getMetaClass().getName());
+    }
+
+    public static String trueFalseNil(String v) {
+        if("TrueClass".equals(v)) {
+            return "true";
+        } else if("FalseClass".equals(v)) {
+            return "false";
+        } else if("NilClass".equals(v)) {
+            return "nil";
+        }
+        return v;
+    }
+
+    public RubyArray convertToArray() {
+        return (RubyArray) convertToType("Array", "to_ary", true);
+    }
+
+    public RubyFloat convertToFloat() {
+        return (RubyFloat) convertToType("Float", "to_f", true);
+    }
+
+    public RubyInteger convertToInteger() {
+        return (RubyInteger) convertToType("Integer", "to_int", true);
+    }
+
+    public RubyString convertToString() {
+        return (RubyString) convertToType("String", "to_str", true);
     }
 
     /*
@@ -649,40 +665,9 @@ public class RubyObject implements Cloneable, IRubyObject {
         return callMethod(getRuntime().getCurrentContext(), convertMethod);
     }
 
-    public static String trueFalseNil(IRubyObject v) {
-        return trueFalseNil(v.getMetaClass().getName());
-    }
-
-    public static String trueFalseNil(String v) {
-        if("TrueClass".equals(v)) {
-            return "true";
-        } else if("FalseClass".equals(v)) {
-            return "false";
-        } else if("NilClass".equals(v)) {
-            return "nil";
-        }
-        return v;
-    }
-
-    public RubyArray convertToArray() {
-        return (RubyArray) convertToType("Array", "to_ary", true);
-    }
-
-    public RubyFloat convertToFloat() {
-        return (RubyFloat) convertToType("Float", "to_f", true);
-    }
-
-    public RubyInteger convertToInteger() {
-        return (RubyInteger) convertToType("Integer", "to_int", true);
-    }
-
-    public RubyString convertToString() {
-        return (RubyString) convertToType("String", "to_str", true);
-    }
-
     /** rb_obj_as_string
      */
-    public RubyString objAsString() {
+    public RubyString asString() {
         if (this instanceof RubyString) return (RubyString) this;
         
         IRubyObject str = this.callMethod(getRuntime().getCurrentContext(), "to_s");
@@ -726,21 +711,6 @@ public class RubyObject implements Cloneable, IRubyObject {
     */    
     public IRubyObject checkArrayType() {
         return convertToTypeWithCheck("Array","to_ary");
-    }
-
-    public void checkSafeString() {
-        if (getRuntime().getSafeLevel() > 0 && isTaint()) {
-            ThreadContext tc = getRuntime().getCurrentContext();
-            if (tc.getFrameName() != null) {
-                throw getRuntime().newSecurityError("Insecure operation - " + tc.getFrameName());
-            }
-            throw getRuntime().newSecurityError("Insecure operation: -r");
-        }
-        getRuntime().secure(4);
-        if (!(this instanceof RubyString)) {
-            throw getRuntime().newTypeError(
-                "wrong argument type " + getMetaClass().getName() + " (expected String)");
-        }
     }
 
     /** specific_eval

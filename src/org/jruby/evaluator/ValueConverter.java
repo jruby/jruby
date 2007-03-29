@@ -103,7 +103,7 @@ public final class ValueConverter {
             return (RubyArray)value;
         }
         if (value.respondsTo("to_ary")) {
-            return (RubyArray)value.convertType(RubyArray.class, "Array", "to_ary");
+            return (RubyArray)value.convertToArray();
         }
         return runtime.newArray(value);
     }

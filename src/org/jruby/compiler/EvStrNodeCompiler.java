@@ -40,6 +40,6 @@ public class EvStrNodeCompiler implements NodeCompiler {
         final EvStrNode evStrNode = (EvStrNode)node;
         
         NodeCompilerFactory.getCompiler(evStrNode.getBody()).compile(evStrNode.getBody(), context);
-        context.objAsString();
+        context.asString();
     }
 }// EvStrNodeCompiler

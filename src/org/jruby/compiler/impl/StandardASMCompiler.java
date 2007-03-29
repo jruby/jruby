@@ -1411,9 +1411,9 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         mv.athrow();
     }
 
-    public void objAsString() {
+    public void asString() {
         SkinnyMethodAdapter mv = getMethodAdapter();
-        mv.invokeinterface(cg.p(IRubyObject.class), "objAsString", cg.sig(RubyString.class, cg.params()));
+        mv.invokeinterface(cg.p(IRubyObject.class), "asString", cg.sig(RubyString.class, cg.params()));
     }
 
     public void nthRef(int match) {

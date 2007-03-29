@@ -512,7 +512,7 @@ public class Sprintf {
                     if (fchar == 'p') {
                         arg = arg.callMethod(arg.getRuntime().getCurrentContext(),"inspect");
                     }
-                    ByteList bytes = arg.objAsString().getByteList();
+                    ByteList bytes = arg.asString().getByteList();
                     int len = bytes.length();
                     if ((flags & FLAG_PRECISION) != 0 && precision < len) {
                         len = precision;

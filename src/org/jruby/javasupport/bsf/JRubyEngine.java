@@ -43,6 +43,7 @@ import org.apache.bsf.util.BSFEngineImpl;
 import org.apache.bsf.util.BSFFunctions;
 import org.jruby.Ruby;
 import org.jruby.ast.Node;
+import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.Java;
@@ -85,7 +86,8 @@ public class JRubyEngine extends BSFEngineImpl {
             //runtime.setPosition(file, line);
 
             Node node = runtime.parse(file, funcBody.toString(), null);
-            return JavaEmbedUtils.rubyToJava(runtime, runtime.getTopSelf().eval(node), Object.class);
+            IRubyObject result = EvaluationState.eval(runtime, runtime.getCurrentContext(), node, runtime.getTopSelf(), Block.NULL_BLOCK);
+            return JavaEmbedUtils.rubyToJava(runtime, result, Object.class);
         } finally {
             threadContext.postBsfApply();
         }

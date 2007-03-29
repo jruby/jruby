@@ -118,7 +118,7 @@ public class RubyDir extends RubyObject {
      */
     public IRubyObject initialize(IRubyObject _newPath, Block unusedBlock) {
         RubyString newPath = _newPath.convertToString();
-        newPath.checkSafeString();
+        getRuntime().checkSafeString(newPath);
         dir = JRubyFile.create(getRuntime().getCurrentDirectory(),newPath.toString());
         if (!dir.isDirectory()) {
             dir = null;
@@ -243,7 +243,7 @@ public class RubyDir extends RubyObject {
      */
     public static IRubyObject foreach(IRubyObject recv, IRubyObject _path, Block block) {
         RubyString path = _path.convertToString();
-        path.checkSafeString();
+        recv.getRuntime().checkSafeString(path);
 
         RubyClass dirClass = recv.getRuntime().getClass("Dir");
         RubyDir dir = (RubyDir) dirClass.newInstance(new IRubyObject[] { path }, block);
@@ -270,7 +270,7 @@ public class RubyDir extends RubyObject {
             throw recv.getRuntime().newArgumentError(args.length, 2);
         }
 
-        args[0].checkSafeString();
+        recv.getRuntime().checkSafeString(args[0]);
         String path = args[0].toString();
 
         File newDir = getDir(recv.getRuntime(), path, false);

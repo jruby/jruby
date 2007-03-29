@@ -487,6 +487,23 @@ public final class Ruby {
         }
     }
 
+    // FIXME moved this hear to get what's obviously a utility method out of IRubyObject.
+    // perhaps security methods should find their own centralized home at some point.
+    public void checkSafeString(IRubyObject object) {
+        if (getSafeLevel() > 0 && object.isTaint()) {
+            ThreadContext tc = getCurrentContext();
+            if (tc.getFrameName() != null) {
+                throw newSecurityError("Insecure operation - " + tc.getFrameName());
+            }
+            throw newSecurityError("Insecure operation: -r");
+        }
+        secure(4);
+        if (!(object instanceof RubyString)) {
+            throw newTypeError(
+                "wrong argument type " + object.getMetaClass().getName() + " (expected String)");
+        }
+    }
+
     /**
      * Retrieve mappings of cached methods to where they have been cached.  When a cached
      * method needs to be invalidated this map can be used to remove all places it has been
@@ -1176,11 +1193,11 @@ public final class Ruby {
                 context.preNodeEval(RubyModule.newModule(this, null), context.getWrapper(), self);
 
                 self = getTopSelf().rbClone();
-                self.extendObject(context.getRubyClass());
+                context.getRubyClass().extend_object(self);
             }
 
             Node node = parse(source, scriptName, null);
-            self.eval(node);
+            EvaluationState.eval(this, context, node, self, Block.NULL_BLOCK);
         } catch (JumpException je) {
             if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
                 // Make sure this does not bubble out to java caller.
@@ -1210,10 +1227,10 @@ public final class Ruby {
                 context.preNodeEval(RubyModule.newModule(this, null), context.getWrapper(), self);
 
                 self = getTopSelf().rbClone();
-                self.extendObject(context.getRubyClass());
+                context.getRubyClass().extend_object(self);
             }
 
-            self.eval(node);
+            EvaluationState.eval(this, context, node, self, Block.NULL_BLOCK);
         } catch (JumpException je) {
             if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
                 // Make sure this does not bubble out to java caller.

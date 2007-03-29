@@ -92,3 +92,25 @@ end
         test_equal(:a,x[0])
         test_equal(:b,x[1])
 end
+
+# Test hash coercion
+class MyHash
+  def initialize(hash)
+    @hash = hash
+  end
+  def to_hash
+    @hash
+  end
+end
+
+x = {:a => 1, :b => 2}
+x.update(MyHash.new({:a => 10, :b => 20}))
+test_equal(10, x[:a])
+test_equal(20, x[:b])
+test_exception(TypeError) { x.update(MyHash.new(4)) }
+
+x = {:a => 1, :b => 2}
+x.replace(MyHash.new({:a => 10, :b => 20}))
+test_equal(10, x[:a])
+test_equal(20, x[:b])
+test_exception(TypeError) { x.replace(MyHash.new(4)) }

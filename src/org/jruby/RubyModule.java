@@ -1537,7 +1537,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public IRubyObject extend_object(IRubyObject obj) {
-        obj.extendObject(this);
+        obj.getSingletonClass().includeModule(this);
         return obj;
     }
 

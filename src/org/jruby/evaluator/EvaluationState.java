@@ -678,7 +678,7 @@ public class EvaluationState {
         RubyClass rubyClass = enclosingClass.defineOrGetClassUnder(name, superClass);
    
         if (context.getWrapper() != null) {
-            rubyClass.extendObject(context.getWrapper());
+            context.getWrapper().extend_object(rubyClass);
             rubyClass.includeModule(context.getWrapper());
         }
         return evalClassDefinitionBody(runtime, context, iVisited.getScope(), iVisited.getBodyNode(), rubyClass, self, aBlock);
@@ -1002,7 +1002,7 @@ public class EvaluationState {
     }
 
     private static IRubyObject evStrNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
-        return evalInternal(runtime,context, ((EvStrNode)node).getBody(), self, aBlock).objAsString();
+        return evalInternal(runtime,context, ((EvStrNode)node).getBody(), self, aBlock).asString();
     }
     
     private static IRubyObject falseNode(Ruby runtime, ThreadContext context) {
@@ -1622,7 +1622,7 @@ public class EvaluationState {
         
 
         if (context.getWrapper() != null) {
-            singletonClass.extendObject(context.getWrapper());
+            context.getWrapper().extend_object(singletonClass);
             singletonClass.includeModule(context.getWrapper());
         }
 

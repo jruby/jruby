@@ -50,7 +50,7 @@ public class RubyArgsFile extends RubyObject {
     }
     
     public void initArgsFile() {
-        extendObject(getRuntime().getModule("Enumerable"));
+        getRuntime().getModule("Enumerable").extend_object(this);
         
         getRuntime().defineReadonlyVariable("$<", this);
         getRuntime().defineGlobalConstant("ARGF", this);

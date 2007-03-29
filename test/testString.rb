@@ -447,24 +447,6 @@ test_equal("foa3VCPbMb8XQ", "foobar".crypt("foo"))
 
 test_exception(TypeError) { "this" =~ "that" }
 
-class MyString
-  include Comparable
-
-  def to_str
-    "foo"
-  end
-
-  def <=>(other)
-    return "foo".<=>(other)
-  end
-end
-
-# String#== should call other.==(str) when other respond_to "to_str"
-test_equal("foo", MyString.new)
-
-# ...but .eql? should still fail, since it only does a strict comparison between strings
-test_ok(!"foo".eql?(MyString.new))
-
 # UTF behavior around inspect, to_s, and split
 # NOTE: the "ffi" in the lines below is a single unicode character "ﬃ"; do not replace it with the normalized characters.
 
@@ -510,6 +492,24 @@ test_ok(f.object_id != g.object_id)
 test_equal(String, g.class)
 test_equal("AAAA", g)
 
+class MyString
+  include Comparable
+
+  def to_str
+    "foo"
+  end
+
+  def <=>(other)
+    return "foo".<=>(other)
+  end
+end
+
+# String#== should call other.==(str) when other respond_to "to_str"
+test_equal("foo", MyString.new)
+
+# ...but .eql? should still fail, since it only does a strict comparison between strings
+test_ok(!"foo".eql?(MyString.new))
+
 class FooStr < String
   # Should not get called
   def to_str
@@ -521,3 +521,75 @@ f = FooStr.new("AAAA")
 
 test_equal("AAAA", [f].join(','))
 
+# test coercion for multiple methods
+class Foo
+  def to_int
+    3
+  end
+  def to_str
+    "hello"
+  end
+end
+
+class Five
+  def to_str
+    "5"
+  end
+end
+
+class Unpack
+  def to_str
+    "A"
+  end
+end
+
+test_equal("strstrstr", "str" * Foo.new)
+test_equal("strhello", "str" + Foo.new)
+test_equal("hello", "str".replace(Foo.new))
+test_equal(0, "hello".casecmp(Foo.new))
+test_equal("heXHujxX8gm/M", "str".crypt(Foo.new))
+test_equal("shellor", "str".gsub("t", Foo.new))
+test_equal("str", "shellor".gsub(Foo.new, "t"))
+test_equal(108, "shellor"[Foo.new])
+x = "sxxxxxr"
+x[1, 5] = Foo.new
+test_equal("shellor", x)
+x = "str"
+x[/t/, 0] = Foo.new
+test_equal("shellor", x)
+x = "str"
+x[1] = Foo.new
+test_equal("shellor", x)
+x = "str"
+x[/t/] = Foo.new
+test_equal("shellor", x)
+x = "str"
+x["t"] = Foo.new
+test_equal("shellor", x)
+x = "shellor"
+z = Foo.new
+# this appears to be broken in MRI...potentially a bug there?
+#x[z] = "t"
+#test_equal("str", x)
+x = "str"
+x[1..2] = Foo.new
+test_equal("shello", x)
+x = []
+"1".upto(Five.new) {|y| x << y}
+test_equal(["1", "2", "3", "4", "5"], x)
+test_ok("shellor".include?(Foo.new))
+test_equal(["s", "r"], "shellor".split(Foo.new))
+test_equal(5, "shellor".count(Foo.new))
+test_equal("sr", "shellor".delete(Foo.new))
+test_equal("sr", "shellor".delete!(Foo.new))
+test_equal("shelor", "shellor".squeeze(Foo.new))
+test_equal("shelor", "shellor".squeeze!(Foo.new))
+# Broken in JRuby, but not due to coercion
+#test_equal("sgoddbr", "shellor".tr(Foo.new, "goodbye"))
+#test_equal("shlllooor", "sgoodbyer".tr("goodbye", Foo.new))
+a = []
+"shellor".each_line(Foo.new) { |x| a << x }
+test_equal(["shello", "r"], a)
+test_equal(["a"], s.unpack(Unpack.new))
+test_equal(291, "123".to_i(IntClass.new(16)))
+test_equal(345, "str".sum(IntClass.new(16)))

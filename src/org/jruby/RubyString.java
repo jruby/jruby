@@ -281,7 +281,7 @@ public class RubyString extends RubyObject {
 
     public IRubyObject op_mul(IRubyObject other) {
         RubyInteger otherInteger =
-                (RubyInteger) other.convertType(RubyInteger.class, "Integer", "to_i");
+                (RubyInteger) other.convertToInteger();
         long len = otherInteger.getLongValue();
 
         if (len < 0) {
@@ -1424,7 +1424,7 @@ public class RubyString extends RubyObject {
     /* RubyString aka rb_string_value */
     public static RubyString stringValue(IRubyObject object) {
         return (RubyString) (object instanceof RubyString ? object :
-            object.convertType(RubyString.class, "String", "to_str"));
+            object.convertToString());
     }
 
     /** rb_str_sub
@@ -1450,6 +1450,9 @@ public class RubyString extends RubyObject {
             iter = true;
         } else if (args.length == 2) {
             repl = args[1];
+            if (!repl.isKindOf(getRuntime().getString())) {
+                repl = repl.convertToString();
+            }
         } else {
             throw getRuntime().newArgumentError("wrong number of arguments");
         }
@@ -1504,7 +1507,15 @@ public class RubyString extends RubyObject {
             throw getRuntime().newArgumentError("wrong number of arguments");
         }
         boolean taint = repl.isTaint();
-        RubyRegexp pat = RubyRegexp.regexpValue(args[0]);
+        RubyRegexp pat = null;
+         if (args[0].isKindOf(getRuntime().getClass("Regexp"))) {
+            pat = (RubyRegexp)args[0];
+        } else if (args[0].isKindOf(getRuntime().getString())) {
+            pat = RubyRegexp.regexpValue(args[0]);
+        } else {
+            // FIXME: This should result in an error about not converting to regexp, no?
+            pat = RubyRegexp.regexpValue(args[0].convertToString());
+        }
 
         String str = toString();
         int beg = pat.search(str, 0);
@@ -1524,7 +1535,7 @@ public class RubyString extends RubyObject {
                 sbuf.append(this.value,offset,beg-offset);
                 newStr = block.yield(tc, match.group(0));
                 taint |= newStr.isTaint();
-                sbuf.append(newStr.objAsString().getByteList());
+                sbuf.append(newStr.asString().getByteList());
                 offset = match.matchEndPosition();
                 beg = pat.search(str, offset == beg ? beg + 1 : offset);
             }
@@ -1915,8 +1926,7 @@ public class RubyString extends RubyObject {
      *
      */
     public IRubyObject to_i(IRubyObject[] args) {
-        long base = checkArgumentCount(args, 0, 1) == 0 ? 10 : ((RubyInteger) args[0].convertType(RubyInteger.class,
-                "Integer", "to_i")).getLongValue();
+        long base = checkArgumentCount(args, 0, 1) == 0 ? 10 : args[0].convertToInteger().getLongValue();
         return RubyNumeric.str2inum(getRuntime(), this, (int) base);
     }
 
@@ -2795,8 +2805,7 @@ public class RubyString extends RubyObject {
     public RubyInteger sum(IRubyObject[] args) {
         long bitSize = 16;
         if (args.length > 0) {
-            bitSize = ((RubyInteger) args[0].convertType(RubyInteger.class,
-                    "Integer", "to_i")).getLongValue();
+            bitSize = ((RubyInteger) args[0].convertToInteger()).getLongValue();
         }
 
         long result = 0;

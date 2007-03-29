@@ -164,7 +164,7 @@ public class IOMetaClass extends ObjectMetaClass {
     public IRubyObject foreach(IRubyObject[] args, Block block) {
         int count = checkArgumentCount(args, 1, -1);
         IRubyObject filename = args[0].convertToString();
-        filename.checkSafeString();
+        getRuntime().checkSafeString(filename);
         RubyIO io = (RubyIO) ((FileMetaClass) getRuntime().getClass("File")).open(new IRubyObject[] { filename }, false, block);
         
         if (!io.isNil() && io.isOpen()) {
@@ -352,7 +352,7 @@ public class IOMetaClass extends ObjectMetaClass {
         Ruby runtime = getRuntime();
         checkArgumentCount(args, 1, 2);
         IRubyObject cmdObj = args[0].convertToString();
-        cmdObj.checkSafeString();
+        getRuntime().checkSafeString(cmdObj);
         ThreadContext tc = runtime.getCurrentContext();
         
         try {

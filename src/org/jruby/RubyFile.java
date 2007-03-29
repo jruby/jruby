@@ -195,7 +195,7 @@ public class RubyFile extends RubyIO {
 	        throw getRuntime().newArgumentError(0, 1);
 	    }
 
-	    args[0].checkSafeString();
+	    getRuntime().checkSafeString(args[0]);
 	    path = args[0].toString();
 	    modes = args.length > 1 ? getModes(args[1]) :
 	    	new IOModes(getRuntime(), IOModes.RDONLY);
