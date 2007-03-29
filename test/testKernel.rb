@@ -38,6 +38,7 @@ test_exception(TypeError) { Array(A4.new) }
 test_equal([5], Array(A5.new))
 test_exception(TypeError) { Array(A6.new) }
 a = A7.new
+
 test_equal([a], Array(a))
 a = A8.new
 test_equal([a], Array(a))

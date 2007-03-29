@@ -423,8 +423,30 @@ public interface IRubyObject {
      * @param convertMethod is the method to be called to try and convert to targeType
      * @param raiseOnError will throw an Error if conversion does not work
      * @return the converted value
+     * @deprecated
      */
     IRubyObject convertToType(String targetType, String convertMethod, boolean raiseOnError);
+    
+    /**
+     * Converts this object to type 'targetType' using 'convertMethod' method (MRI: convert_type).
+     *
+     * @param targetType is the type we are trying to convert to
+     * @param convertMethod is the method to be called to try and convert to targeType
+     * @param raiseOnError will throw an Error if conversion does not work
+     * @return the converted value
+     */
+    IRubyObject convertToType(RubyClass targetType, String convertMethod, boolean raiseOnError);
+    
+    /**
+     * Higher level conversion utility similiar to convertToType but it can throw an
+     * additional TypeError during conversion (MRI: rb_check_convert_type).
+     *
+     * @param targetType is the type we are trying to convert to
+     * @param convertMethod is the method to be called to try and convert to targeType
+     * @return the converted value
+     * @deprecated
+     */
+    IRubyObject convertToTypeWithCheck(String targetType, String convertMethod);
     
     /**
      * Higher level conversion utility similiar to convertToType but it can throw an
@@ -434,9 +456,18 @@ public interface IRubyObject {
      * @param convertMethod is the method to be called to try and convert to targeType
      * @return the converted value
      */
-    IRubyObject convertToTypeWithCheck(String targetType, String convertMethod);
-    IRubyObject convertToTypeWithCheck(Class cls, String targetType, String convertMethod); 
+    IRubyObject convertToTypeWithCheck(RubyClass targetType, String convertMethod);
    
+    /**
+     * 
+     * @param targetType 
+     * @param convertMethod 
+     * @param raiseOnMissingMethod 
+     * @param raiseOnWrongTypeResult 
+     * @return 
+     */
+    public IRubyObject convertToType(RubyClass targetType, String convertMethod, boolean raiseOnMissingMethod, boolean raiseOnWrongTypeResult, boolean allowNilThrough);
+
     /**
      * RubyMethod dup.
      * @return

@@ -599,82 +599,75 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public RubyArray convertToArray() {
-        return (RubyArray) convertToType("Array", "to_ary", true);
+        return (RubyArray) convertToType(getRuntime().getArray(), "to_ary", true);
     }
 
     public RubyFloat convertToFloat() {
-        return (RubyFloat) convertToType("Float", "to_f", true);
+        return (RubyFloat) convertToType(getRuntime().getClass("Float"), "to_f", true);
     }
 
     public RubyInteger convertToInteger() {
-        return (RubyInteger) convertToType("Integer", "to_int", true);
+        return (RubyInteger) convertToType(getRuntime().getClass("Integer"), "to_int", true);
     }
 
     public RubyString convertToString() {
-        return (RubyString) convertToType("String", "to_str", true);
-    }
-
-    /*
-     * @see org.jruby.runtime.builtin.IRubyObject#convertToTypeWithCheck(java.lang.String, java.lang.String)
-     */
-    public IRubyObject convertToTypeWithCheck(Class cls, String targetType, String convertMethod) {
-        if(cls.isInstance(this)) {
-            return this;
-        }
-
-        IRubyObject value = convertToType(targetType, convertMethod, false);
-        if (value.isNil()) {
-            return value;
-        }
-
-        if (!cls.isInstance(value)) {
-            throw getRuntime().newTypeError(value.getMetaClass().getName() + "#" + convertMethod +
-                    " should return " + targetType);
-        }
-
-        return value;
+        return (RubyString) convertToType(getRuntime().getString(), "to_str", true);
     }
 
     /*
      * @see org.jruby.runtime.builtin.IRubyObject#convertToTypeWithCheck(java.lang.String, java.lang.String)
      */
     public IRubyObject convertToTypeWithCheck(String targetType, String convertMethod) {
-        if (targetType.equals(getMetaClass().getName())) {
-            return this;
-        }
+        return convertToType(getRuntime().getClass(targetType), convertMethod, false, true, false);
+    }
 
-        IRubyObject value = convertToType(targetType, convertMethod, false);
-        if (value.isNil()) {
-            return value;
-        }
-
-        if (!targetType.equals(value.getMetaClass().getName())) {
-            throw getRuntime().newTypeError(value.getMetaClass().getName() + "#" + convertMethod +
-                    " should return " + targetType);
-        }
-
-        return value;
+    /*
+     * @see org.jruby.runtime.builtin.IRubyObject#convertToTypeWithCheck(java.lang.String, java.lang.String)
+     */
+    public IRubyObject convertToTypeWithCheck(RubyClass targetType, String convertMethod) {
+        return convertToType(targetType, convertMethod, false, true, false);
     }
 
     /*
      * @see org.jruby.runtime.builtin.IRubyObject#convertToType(java.lang.String, java.lang.String, boolean)
      */
     public IRubyObject convertToType(String targetType, String convertMethod, boolean raise) {
-        // No need to convert something already of the correct type.
-        // XXXEnebo - Could this pass actual class reference instead of String?
-        if (targetType.equals(getMetaClass().getName())) {
+        return convertToType(getRuntime().getClass(targetType), convertMethod, raise, false, false);
+    }
+
+    /*
+     * @see org.jruby.runtime.builtin.IRubyObject#convertToType(java.lang.String, java.lang.String, boolean)
+     */
+    public IRubyObject convertToType(RubyClass targetType, String convertMethod, boolean raise) {
+        return convertToType(targetType, convertMethod, raise, false, false);
+    }
+    
+    public IRubyObject convertToType(RubyClass targetType, String convertMethod, boolean raiseOnMissingMethod, boolean raiseOnWrongTypeResult, boolean allowNilThrough) {
+        if (isKindOf(targetType)) {
             return this;
         }
         
         if (!respondsTo(convertMethod)) {
-            if (raise) {
+            if (raiseOnMissingMethod) {
                 throw getRuntime().newTypeError(
                     "can't convert " + trueFalseNil(getMetaClass().getName()) + " into " + trueFalseNil(targetType));
             } 
 
             return getRuntime().getNil();
         }
-        return callMethod(getRuntime().getCurrentContext(), convertMethod);
+        
+        IRubyObject value = callMethod(getRuntime().getCurrentContext(), convertMethod);
+        
+        if (allowNilThrough && value.isNil()) {
+            return value;
+        }
+        
+        if (raiseOnWrongTypeResult && !value.isKindOf(targetType)) {
+            throw getRuntime().newTypeError(getMetaClass().getName() + "#" + convertMethod +
+                    " should return " + targetType);
+        }
+        
+        return value;
     }
 
     /** rb_obj_as_string

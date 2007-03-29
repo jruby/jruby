@@ -103,6 +103,9 @@ class MyHash
   end
 end
 
+class SubHash < Hash
+end
+
 x = {:a => 1, :b => 2}
 x.update(MyHash.new({:a => 10, :b => 20}))
 test_equal(10, x[:a])
@@ -110,10 +113,23 @@ test_equal(20, x[:b])
 test_exception(TypeError) { x.update(MyHash.new(4)) }
 
 x = {:a => 1, :b => 2}
+sub2 = SubHash.new()
+sub2[:a] = 10
+sub2[:b] = 20
+x.update(MyHash.new(sub2))
+test_equal(10, x[:a])
+test_equal(20, x[:b])
+
+x = {:a => 1, :b => 2}
 x.replace(MyHash.new({:a => 10, :b => 20}))
 test_equal(10, x[:a])
 test_equal(20, x[:b])
 test_exception(TypeError) { x.replace(MyHash.new(4)) }
+
+x = {:a => 1, :b => 2}
+x.replace(MyHash.new(sub2))
+test_equal(10, x[:a])
+test_equal(20, x[:b])
 
 class H1 < Hash
 end

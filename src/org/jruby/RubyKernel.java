@@ -318,7 +318,7 @@ public class RubyKernel {
     }
 
     public static IRubyObject new_array(IRubyObject recv, IRubyObject object) {
-        IRubyObject value = object.convertToTypeWithCheck("Array", "to_ary");
+        IRubyObject value = object.convertToType(recv.getRuntime().getArray(), "to_ary", false, true, true);
         
         if (value.isNil()) {
             DynamicMethod method = object.getMetaClass().searchMethod("to_a");

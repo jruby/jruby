@@ -515,8 +515,9 @@ public class RubyHash extends RubyObject implements Map {
 
     public RubyHash update(IRubyObject freshElements, Block block) {
         modify();
+        
         RubyHash freshElementsHash =
-            (RubyHash) freshElements.convertToTypeWithCheck(RubyHash.class, "Hash", "to_hash");
+            (RubyHash) freshElements.convertToTypeWithCheck(getRuntime().getClass("Hash"), "to_hash");
         ThreadContext ctx = getRuntime().getCurrentContext();
         if (block.isGiven()) {
             Map other = freshElementsHash.valueMap;
@@ -542,7 +543,7 @@ public class RubyHash extends RubyObject implements Map {
     public RubyHash replace(IRubyObject replacement) {
         modify();
         RubyHash replacementHash =
-            (RubyHash) replacement.convertToTypeWithCheck(RubyHash.class, "Hash", "to_hash");
+            (RubyHash) replacement.convertToTypeWithCheck(getRuntime().getClass("Hash"), "to_hash");
         valueMap.clear();
         valueMap.putAll(replacementHash.valueMap);
         defaultValueCallback = replacementHash.defaultValueCallback;
