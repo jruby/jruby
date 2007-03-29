@@ -106,6 +106,11 @@ test_equal("\\-", Regexp.quote('-'))
 /a((abc)|(foo))d/ =~ "afood"
 test_equal ["foo", nil, "foo"], $~.captures
 
+# JRUBY-741
+test_equal "foo", Regexp.last_match(1)
+
 # JRUBY-717
 test_equal nil, /./ =~ "\n"
 test_equal 0, /(?m:.)/ =~ "\n"
+
+
