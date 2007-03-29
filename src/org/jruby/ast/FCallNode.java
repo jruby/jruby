@@ -57,10 +57,7 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
     public FCallNode(ISourcePosition position, String name, Node argsNode, Node iterNode) {
         super(position, NodeTypes.FCALLNODE);
         this.name = name.intern();
-        this.argsNode = argsNode;
-        if (argsNode instanceof ArrayNode) {
-            ((ArrayNode)argsNode).setLightweight(true);
-        }
+        setArgsNode(argsNode);
         this.iterNode = iterNode;
         this.index = MethodIndex.getIndex(this.name);
     }
@@ -106,6 +103,7 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
      */
     public void setArgsNode(Node argsNode) {
         this.argsNode = argsNode;
+        // If we have more than one arg, make sure the array created to contain them is not ObjectSpaced
         if (argsNode instanceof ArrayNode) {
             ((ArrayNode)argsNode).setLightweight(true);
         }

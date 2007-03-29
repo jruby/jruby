@@ -49,6 +49,7 @@ public class YieldNode extends Node {
     public YieldNode(ISourcePosition position, Node argsNode, boolean checkState) {
         super(position, NodeTypes.YIELDNODE);
         this.argsNode = argsNode;
+        // If we have more than one arg, make sure the array created to contain them is not ObjectSpaced
         if (argsNode instanceof ArrayNode) {
             ((ArrayNode)argsNode).setLightweight(true);
         }

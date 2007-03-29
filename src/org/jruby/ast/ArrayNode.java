@@ -45,6 +45,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class ArrayNode extends ListNode implements ILiteralNode {
     static final long serialVersionUID = 6279246130032958596L;
     
+    // This field is used during argument processing to avoid putting RubyArray
+    // instances that are purely for utility purposes into ObjectSpace.
     private boolean lightweight = false;
     
     public ArrayNode(ISourcePosition position, Node firstNode) {
