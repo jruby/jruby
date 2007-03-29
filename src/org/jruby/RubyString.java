@@ -170,6 +170,10 @@ public class RubyString extends RubyObject {
         return String.class;
     }
 
+    public RubyString convertToString() {
+        return this;
+    }
+
     /**
      * Remembers toString value, which is expensive for StringBuffer.
      */
