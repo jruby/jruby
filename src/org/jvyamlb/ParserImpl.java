@@ -155,6 +155,7 @@ public class ParserImpl implements Parser {
     private final static Map DEFAULT_TAGS_1_1 = new HashMap();
     static {
         DEFAULT_TAGS_1_0.put("!","tag:yaml.org,2002:");
+        DEFAULT_TAGS_1_0.put("!!","");
 
         DEFAULT_TAGS_1_1.put("!","!");
         DEFAULT_TAGS_1_1.put("!!","tag:yaml.org,2002:");

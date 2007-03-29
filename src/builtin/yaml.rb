@@ -34,6 +34,23 @@ module YAML
     end
   end
 
+    #
+    # Default private type
+    #
+    class PrivateType
+        def self.tag_subclasses?; false; end
+        attr_accessor :type_id, :value
+        verbose, $VERBOSE = $VERBOSE, nil
+        def initialize( type, val )
+            @type_id = type; @value = val
+        end
+        def to_yaml_node(repr)
+          @value.to_yaml_node(repr)
+        end
+    ensure
+        $VERBOSE = verbose
+    end
+  
 # From yaml/tag.rb
     # A dictionary of taguris which map to
     # Ruby classes.

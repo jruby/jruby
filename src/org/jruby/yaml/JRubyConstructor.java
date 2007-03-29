@@ -103,6 +103,18 @@ public class JRubyConstructor extends ConstructorImpl {
         return RubyString.newString(runtime,(ByteList)super.constructScalar(node));
     }
 
+    public Object constructPrivateType(final Node node) {
+        Object val = null;
+        if(node.getValue() instanceof Map) {
+            val = constructRubyMapping(node);
+        } else if(node.getValue() instanceof List) {
+            val = constructRubySequence(node);
+        } else {
+            val = constructRubyScalar(node);
+        }
+        return runtime.getModule("YAML").getConstant("PrivateType").callMethod(runtime.getCurrentContext(),"new",new IRubyObject[]{runtime.newString(node.getTag()),(IRubyObject)val});
+    }
+
     public Object constructRubySequence(final Node node) {
         return runtime.newArray((List)super.constructSequence(node));
     }
