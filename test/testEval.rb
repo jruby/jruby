@@ -131,3 +131,15 @@ end
 
 test_equal ["foofoo_foofoo"], AbcTestFooAbc.instance_methods.grep(/foofoo_foofoo/)
 test_equal [], Object.instance_methods.grep(/foofoo_foofoo/)
+
+# test Binding.of_caller
+def foo
+  x = 1
+  bar
+end
+
+def bar
+  eval "x + 1", Binding.of_caller
+end
+
+test_equal(2, foo)

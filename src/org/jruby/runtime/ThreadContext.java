@@ -137,6 +137,10 @@ public class ThreadContext {
         return scopeStack[scopeIndex];
     }
     
+    public DynamicScope getPreviousScope() {
+        return scopeStack[scopeIndex - 1];
+    }
+    
     private void expandFramesIfNecessary() {
         if (frameIndex + 1 == frameStack.length) {
             int newSize = frameStack.length * 2;

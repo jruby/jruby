@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2005 Thomas E Enebo <enebo@acm.org>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -30,6 +30,8 @@ package org.jruby.runtime.builtin.meta;
 import org.jruby.Ruby;
 import org.jruby.RubyBinding;
 import org.jruby.RubyClass;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.SinglyLinkedList;
@@ -39,30 +41,35 @@ public class BindingMetaClass extends ObjectMetaClass {
         super("Binding", RubyBinding.class, runtime.getObject(), BINDING_ALLOCATOR);
     }
     
-	public BindingMetaClass(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
-		super(name, RubyBinding.class, superClass, allocator, parentCRef);
-	}
-
-	protected class BindingMeta extends Meta {
-		protected void initializeClass() {
-		}
-	};
-	
-	protected Meta getMeta() {
-		return new BindingMeta();
-	}
-	
-	public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
-		return new BindingMetaClass(name, this, BINDING_ALLOCATOR, parentCRef);
-	}
-
+    public BindingMetaClass(String name, RubyClass superClass, ObjectAllocator allocator, SinglyLinkedList parentCRef) {
+        super(name, RubyBinding.class, superClass, allocator, parentCRef);
+    }
+    
+    protected class BindingMeta extends Meta {
+        protected void initializeClass() {
+            defineSingletonMethod("of_caller", Arity.noArguments());
+        }
+    };
+    
+    protected Meta getMeta() {
+        return new BindingMeta();
+    }
+    
+    public RubyClass newSubClass(String name, SinglyLinkedList parentCRef) {
+        return new BindingMetaClass(name, this, BINDING_ALLOCATOR, parentCRef);
+    }
+    
     private static ObjectAllocator BINDING_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             RubyBinding instance = runtime.newBinding();
-
+            
             instance.setMetaClass(klass);
-
+            
             return instance;
         }
     };
+    
+    public IRubyObject of_caller(Block aBlock) {
+        return RubyBinding.newBindingOfCaller(getRuntime());
+    }
 }
