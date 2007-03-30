@@ -9,9 +9,11 @@ package org.jruby.runtime.builtin.meta;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -84,6 +86,10 @@ public class ModuleMetaClass extends ObjectMetaClass {
             defineFastPrivateMethod("undef_method", Arity.singleArgument());
             
             defineSingletonMethod("nesting", Arity.noArguments());
+
+            CallbackFactory callbackFactory = getRuntime().callbackFactory(RubyKernel.class);
+            defineFastMethod("autoload", callbackFactory.getFastSingletonMethod("autoload", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
+            defineFastMethod("autoload?", callbackFactory.getFastSingletonMethod("autoload_p", RubyKernel.IRUBY_OBJECT));
         }
     };
     
