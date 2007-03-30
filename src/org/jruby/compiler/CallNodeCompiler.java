@@ -10,7 +10,9 @@
 package org.jruby.compiler;
 
 import org.jruby.ast.CallNode;
+import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.IterNode;
+import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallType;
@@ -54,28 +56,11 @@ public class CallNodeCompiler implements NodeCompiler {
             }
         } else {
             // FIXME: Missing blockpassnode handling
-            
             final IterNode iterNode = (IterNode) callNode.getIterNode();
-            
-            // blocks with args aren't safe yet
-            if (NodeCompilerFactory.SAFE) {
-                if (iterNode.getVarNode() != null) throw new NotCompilableException("Can't compile block with args at: " + node.getPosition());
-            }
-
-            // create the closure class and instantiate it
-            final ClosureCallback closureBody = new ClosureCallback() {
-                public void compile(Compiler context) {
-                    if (iterNode.getBodyNode() != null) {
-                        NodeCompilerFactory.getCompiler(iterNode.getBodyNode()).compile(iterNode.getBodyNode(), context);
-                    } else {
-                        context.loadNil();
-                    }
-                }
-            };
             
             final ClosureCallback closureArg = new ClosureCallback() {
                 public void compile(Compiler context) {
-                    context.createNewClosure(iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(), closureBody);
+                    NodeCompilerFactory.getCompiler(iterNode).compile(iterNode, context);
                 }
             };
             

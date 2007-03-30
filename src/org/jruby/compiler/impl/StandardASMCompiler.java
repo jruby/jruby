@@ -594,6 +594,18 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         mv.arraystore();
     }
     
+    public void assignLocalVariableBlockArg(int argIndex, int varIndex) {
+        SkinnyMethodAdapter mv = getMethodAdapter();
+        
+        // this is copying values, but it would be more efficient to just use the args in-place
+        mv.aload(LOCAL_VARS_INDEX);
+        mv.ldc(new Integer(varIndex));
+        mv.aload(ARGS_INDEX);
+        mv.ldc(new Integer(argIndex));
+        mv.arrayload();
+        mv.arraystore();
+    }
+    
     public void retrieveLocalVariable(int index) {
         SkinnyMethodAdapter mv = getMethodAdapter();
         
@@ -623,15 +635,31 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         SkinnyMethodAdapter mv = getMethodAdapter();
         mv.dup();
         
-        // get the appropriate array out of the scopes
-        mv.aload(SCOPE_INDEX);
-        mv.ldc(new Integer(depth - 1));
-        mv.arrayload();
+        loadScope(depth);
         
         // insert the value into the array at the specified index
         mv.swap();
         mv.ldc(new Integer(index));
         mv.swap();
+        mv.arraystore();
+    }
+    
+    public void assignLocalVariableBlockArg(int argIndex, int varIndex, int depth) {
+        if (depth == 0) {
+            assignLocalVariableBlockArg(argIndex, varIndex);
+            return;
+        }
+
+        SkinnyMethodAdapter mv = getMethodAdapter();
+        
+        loadScope(depth);
+        
+        mv.ldc(new Integer(varIndex));
+        
+        mv.aload(ARGS_INDEX);
+        mv.ldc(new Integer(argIndex));
+        mv.arrayload();
+        
         mv.arraystore();
     }
     
@@ -643,13 +671,18 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         
         SkinnyMethodAdapter mv = getMethodAdapter();
         
-        // get the appropriate array out of the scopes
-        mv.aload(SCOPE_INDEX);
-        mv.ldc(new Integer(depth - 1));
-        mv.arrayload();
+        loadScope(depth);
         
         // load the value from the array at the specified index
         mv.ldc(new Integer(index));
+        mv.arrayload();
+    }
+    
+    private void loadScope(int depth) {
+        SkinnyMethodAdapter mv = getMethodAdapter();
+        // get the appropriate array out of the scopes
+        mv.aload(SCOPE_INDEX);
+        mv.ldc(new Integer(depth - 1));
         mv.arrayload();
     }
     
@@ -952,7 +985,7 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         return new CompiledBlock(context, self, Arity.createArity(arity), scopes, block, callback);
     }
     
-    public void createNewClosure(StaticScope scope, int arity, ClosureCallback body) {
+    public void createNewClosure(StaticScope scope, int arity, ClosureCallback body, ClosureCallback args) {
         // FIXME: This isn't quite done yet; waiting to have full support for passing closures so we can test it
         ClassVisitor cv = getClassVisitor();
         SkinnyMethodAdapter method;
@@ -977,23 +1010,15 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         // store the dvars in a local variable
         method.astore(LOCAL_VARS_INDEX);
         
-        // arraycopy arguments into local vars array
-        if (arity != 0) {
-            // array index OOB for some reason; perhaps because we're not actually handling args right?
-            /*method.aload(ARGS_INDEX);
-            method.iconst_0();
-            method.aload(LOCAL_VARS_INDEX);
-            mv.iconst_2();
-            method.ldc(new Integer(arity));
-            method.invokestatic(cg.p(System.class), "arraycopy", cg.sig(Void.TYPE, cg.params(Object.class, Integer.TYPE, Object.class, Integer.TYPE, Integer.TYPE)));*/
-        }
-        
         // Containing scopes are passed as IRubyObject[][] in the SCOPE_INDEX var
         
         // set up a local IRuby variable
         method.aload(THREADCONTEXT_INDEX);
         invokeThreadContext("getRuntime", cg.sig(Ruby.class));
         method.astore(RUNTIME_INDEX);
+        
+        // set up block arguments
+        args.compile(this);
         
         // start of scoping for closure's vars
         Label start = new Label();
@@ -1286,6 +1311,19 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         invokeIRubyObject("setInstanceVariable", cg.sig(IRubyObject.class, cg.params(String.class, IRubyObject.class)));
     }
     
+    public void assignInstanceVariableBlockArg(int argIndex, String name) {
+        SkinnyMethodAdapter mv = getMethodAdapter();
+        
+        loadSelf();
+        mv.ldc(name);
+        
+        mv.aload(ARGS_INDEX);
+        mv.ldc(new Integer(argIndex));
+        mv.arrayload();
+        
+        invokeIRubyObject("setInstanceVariable", cg.sig(IRubyObject.class, cg.params(String.class, IRubyObject.class)));
+    }
+    
     public void retrieveGlobalVariable(String name) {
         loadRuntime();
         
@@ -1305,6 +1343,21 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         mv.swap();
         mv.ldc(name);
         mv.swap();
+        mv.invokevirtual(cg.p(GlobalVariables.class), "set", cg.sig(IRubyObject.class, cg.params(String.class, IRubyObject.class)));
+    }
+    
+    public void assignGlobalVariableBlockArg(int argIndex, String name) {
+        loadRuntime();
+        
+        SkinnyMethodAdapter mv = getMethodAdapter();
+        
+        invokeIRuby("getGlobalVariables", cg.sig(GlobalVariables.class));
+        mv.ldc(name);
+        
+        mv.aload(ARGS_INDEX);
+        mv.ldc(new Integer(argIndex));
+        mv.arrayload();
+        
         mv.invokevirtual(cg.p(GlobalVariables.class), "set", cg.sig(IRubyObject.class, cg.params(String.class, IRubyObject.class)));
     }
     

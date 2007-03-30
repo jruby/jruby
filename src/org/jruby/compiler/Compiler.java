@@ -132,6 +132,14 @@ public interface Compiler {
     public void assignLocalVariable(int index);
     
     /**
+     * Assigns the value from incoming block args to a local variable at the specified index, consuming
+     * that value in the process. This assumes a lexical scoping depth of 0.
+     * 
+     * @param index The index of the local variable to which to assign the value.
+     */
+    public void assignLocalVariableBlockArg(int argIndex, int varIndex);
+    
+    /**
      * Retrieve the local variable at the specified index to the top of the stack, using whatever local variable store is appropriate.
      * This assumes the local variable in question should be present at the current lexical scoping depth (0).
      * 
@@ -147,6 +155,15 @@ public interface Compiler {
      * @param depth The lexical scoping depth in which to store the variable
      */
     public void assignLocalVariable(int index, int depth);
+    
+    /**
+     * Assign the value from incoming block args to a local variable at the specified index and
+     * lexical scoping depth (0 = current scope), consuming that value in the process.
+     * 
+     * @param index The index in which to store the local variable
+     * @param depth The lexical scoping depth in which to store the variable
+     */
+    public void assignLocalVariableBlockArg(int argIndex, int varIndex, int depth);
     
     /**
      * Retrieve the local variable as the specified index and lexical scoping depth to the top of the stack,
@@ -290,7 +307,7 @@ public interface Compiler {
      * @param arity The arity of the block's argument list
      * @param body The callback which will generate the closure's body
      */
-    public void createNewClosure(StaticScope scope, int arity, ClosureCallback body);
+    public void createNewClosure(StaticScope scope, int arity, ClosureCallback body, ClosureCallback args);
     
     /**
      * Define a new method with the given name, arity, local variable count, and body callback.
@@ -358,11 +375,28 @@ public interface Compiler {
     public void assignInstanceVariable(String name);
     
     /**
+     * Assign the value from incoming block args instance variable with the specified name
+     * on the current "self".
+     * 
+     * @param index The index in the incoming arguments from which to get the ivar value
+     * @param name The name of the ivar to assign.
+     */
+    public void assignInstanceVariableBlockArg(int index, String name);
+    
+    /**
      * Assign the top of the stack to the global variable with the specified name.
      * 
      * @param name The name of the global variable.
      */
     public void assignGlobalVariable(String name);
+    
+    /**
+     * Assign the value from incoming block args to the global variable with the specified name.
+     * 
+     * @param index The index in the incoming arguments from which to get the gvar value
+     * @param name The name of the global variable.
+     */
+    public void assignGlobalVariableBlockArg(int index, String name);
     
     /**
      * Retrieve the global variable with the specified name to the top of the stack.

@@ -1,4 +1,5 @@
 require 'jruby'
+require 'java'
 require 'test/minirunit'
 
 StandardASMCompiler = org.jruby.compiler.impl.StandardASMCompiler
@@ -175,4 +176,27 @@ test_no_exception {
   test_equal(nil, compile_and_run("proc { }.call"))
   # call with empty block
   test_equal(nil, compile_and_run("self.proc {}.call"))
+}
+
+# blocks with some basic single arguments
+test_no_exception {
+  test_equal(1, compile_and_run("a = 0; [1].each {|a|}; a"))
+  test_equal(1, compile_and_run("a = 0; [1].each {|x| a = x}; a"))
+  test_equal(1, compile_and_run("[1].each {|@a|}; @a"))
+  # make sure incoming array isn't treated as args array
+  test_equal([1], compile_and_run("[[1]].each {|@a|}; @a"))
+}
+
+# blocks with unsupported arg layouts should still raise error
+test_exception {
+  compile_and_run("1.times {|@@a|}")
+}
+test_exception {
+  compile_and_run("1.times {|a[0]|}")
+}
+test_exception {
+  compile_and_run("1.times {|x, y|}")
+}
+test_exception {
+  compile_and_run("1.times {|*x|}")
 }

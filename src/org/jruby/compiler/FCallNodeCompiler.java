@@ -53,25 +53,9 @@ public class FCallNodeCompiler implements NodeCompiler {
             
             final IterNode iterNode = (IterNode) fcallNode.getIterNode();
             
-            // blocks with args aren't safe yet
-            if (NodeCompilerFactory.SAFE) {
-                if (iterNode.getVarNode() != null) throw new NotCompilableException("Can't compile block with args at: " + node.getPosition());
-            }
-
-            // create the closure class and instantiate it
-            final ClosureCallback closureBody = new ClosureCallback() {
-                public void compile(Compiler context) {
-                    if (iterNode.getBodyNode() != null) {
-                        NodeCompilerFactory.getCompiler(iterNode.getBodyNode()).compile(iterNode.getBodyNode(), context);
-                    } else {
-                        context.loadNil();
-                    }
-                }
-            };
-            
             final ClosureCallback closureArg = new ClosureCallback() {
                 public void compile(Compiler context) {
-                    context.createNewClosure(iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(), closureBody);
+                    NodeCompilerFactory.getCompiler(iterNode).compile(iterNode, context);
                 }
             };
 

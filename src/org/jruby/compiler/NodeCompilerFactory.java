@@ -137,8 +137,8 @@ public class NodeCompilerFactory {
         case NodeTypes.INSTVARNODE:
             // safe
             return new InstVarNodeCompiler();
-        //case NodeTypes.ITERNODE:
-        //    return new IterNodeCompiler();
+        case NodeTypes.ITERNODE:
+            return new IterNodeCompiler();
         case NodeTypes.LOCALASGNNODE:
             // safe
             return new LocalAsgnNodeCompiler();
