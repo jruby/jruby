@@ -43,6 +43,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import edu.emory.mathcs.backport.java.util.concurrent.ConcurrentHashMap;
+import edu.emory.mathcs.backport.java.util.concurrent.LinkedBlockingQueue;
+import edu.emory.mathcs.backport.java.util.concurrent.TimeUnit;
+
 /**
  * FIXME: This version is faster than the previous, but both suffer from a
  * crucial flaw: It is impossible to create an ObjectSpace with an iterator
@@ -96,9 +100,9 @@ public class ObjectSpace {
             identities.remove(new Long(ref.id()));
     }
 
-    private Map finalizers         = new HashMap();
-    private Map weakRefs           = new HashMap();
-    private List finalizersToRun   = new ArrayList();
+    private Map finalizers          = new ConcurrentHashMap();
+    private Map weakRefs            = new ConcurrentHashMap();
+    private LinkedBlockingQueue finalizersToRun   = new LinkedBlockingQueue();
     private FinalizerThread finalizerThread = new FinalizerThread();
 
     {
@@ -112,31 +116,32 @@ public class ObjectSpace {
             setDaemon(true);
             running = true;
         }
+
         public void run() {
-            while(running) {
+            while (true) {
+                Runnable finalizer;
                 try {
-                    synchronized(finalizersToRun) {
-                        while(finalizersToRun.isEmpty() && running) {
-                            try {
-                                finalizersToRun.wait();
-                            } catch(InterruptedException e) {
-                            }
+                    while ((finalizer = (Runnable) finalizersToRun.poll(100, TimeUnit.MILLISECONDS)) != null) {
+                        try {
+                            finalizer.run();
+                        } catch (Exception e) {
                         }
-                        while(!finalizersToRun.isEmpty() && running) {
-                            ((Runnable)finalizersToRun.remove(0)).run();
-                        }
-                        finalizersToRun.notify();
                     }
-                } catch(Exception e) {
-                    //Swallow, since there's no useful action to take here.
+                } catch (InterruptedException ie) {
+                    break;
+                }
+                synchronized (this) {
+                    if (finalizersToRun.peek() == null && !running) {
+                        break;
+                    }
                 }
             }
         }
-        public void stopRunning() {
+
+        public synchronized void stopRunning() {
             running = false;
         }
     }
-
 
     private class FinalizerEntry implements Runnable {
         private long id;
@@ -146,33 +151,30 @@ public class ObjectSpace {
             this.id = id;
             this.proc = proc;
             this.fid = proc.getRuntime().newFixnum(id);
-            synchronized(ObjectSpace.this) {
-                FinalizerWeakReferenceListNode node = new FinalizerWeakReferenceListNode(obj,deadReferences,top,this);
-                Long key = new Long(id);
-                List refl = (List)weakRefs.get(key);
-                if(null == refl) {
-                    refl = new ArrayList();
-                    weakRefs.put(key,refl);
-                }
-                refl.add(node);
-                top = node;
+            FinalizerWeakReferenceListNode node = new FinalizerWeakReferenceListNode(obj,deadReferences,top,this);
+            Long key = new Long(id);
+            List refl = (List)weakRefs.get(key);
+            if (null == refl) {
+                refl = new ArrayList();
+                weakRefs.put(key,refl);
             }
+            synchronized(refl) {
+                refl.add(node);
+            }
+            top = node;
         }
 
         public void finalize(FinalizerWeakReferenceListNode obj) {
-            synchronized(ObjectSpace.this) {
-                List refl = (List)weakRefs.get(new Long(id));
+            List refl = (List)weakRefs.get(new Long(id));
+            synchronized(refl) {
                 refl.remove(obj);
-                obj.setRan();
             }
+            obj.setRan();
             _finalize();
         }
 
         public void _finalize() {
-            synchronized(finalizersToRun) {
-                finalizersToRun.add(this);
-                finalizersToRun.notifyAll();
-            }
+            finalizersToRun.offer(this);
         }
 
         public void run() {
@@ -187,34 +189,29 @@ public class ObjectSpace {
                 ((FinalizerEntry)iter2.next())._finalize();
             }
         }
-        synchronized(finalizersToRun) {
-            while(!finalizersToRun.isEmpty()) {
-                finalizersToRun.notify();
-                try {
-                    finalizersToRun.wait();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }
-        }
         finalizerThread.stopRunning();
+        try { finalizerThread.join(); } catch (InterruptedException ie) {}
     }
 
-    public synchronized void addFinalizer(IRubyObject obj, long id, RubyProc proc) {
+    public void addFinalizer(IRubyObject obj, long id, RubyProc proc) {
         List fins = (List)finalizers.get(new Long(id));
         if(fins == null) {
             fins = new ArrayList();
             finalizers.put(new Long(id),fins);
         }
-        fins.add(new FinalizerEntry(obj,id,proc));
+        synchronized(fins) {
+            fins.add(new FinalizerEntry(obj,id,proc));
+        }
     }
 
-    public synchronized void removeFinalizers(long id) {
+    public void removeFinalizers(long id) {
         finalizers.remove(new Long(id));
         List refl = (List)weakRefs.get(new Long(id));
         if(null != refl) {
-            for(Iterator iter = refl.iterator();iter.hasNext();) {
-                ((FinalizerWeakReferenceListNode)(iter.next())).setRan();
+            synchronized (refl) {
+                for(Iterator iter = refl.iterator();iter.hasNext();) {
+                    ((FinalizerWeakReferenceListNode)(iter.next())).setRan();
+                }
             }
         }
         weakRefs.remove(new Long(id));
