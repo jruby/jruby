@@ -39,7 +39,7 @@ module Scriptable
     end
   end
   
-  def script(sym, *args)
+  def eval_script(sym, *args)
     send sym, *args
   end
 end
