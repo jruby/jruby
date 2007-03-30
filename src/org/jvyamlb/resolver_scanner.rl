@@ -22,7 +22,7 @@ public class ResolverScanner {
 
         Merge = "<<" %/merge_tag;
         Value = "=" %/value_tag;
-        Null  = ("~" | "null" | "Null" | "null" | " ") %/null_tag;
+        Null  = ("~" | "null" | "Null" | "null" | "NULL" | " ") %/null_tag;
 
         digit2 = digit | "_";
         sign = "-" | "+";
