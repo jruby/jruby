@@ -50,6 +50,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
+import org.jruby.IncludedModuleWrapper;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -291,7 +292,6 @@ public class MarshalStream extends FilterOutputStream {
         for (Iterator iter = instanceVars.keySet().iterator(); iter.hasNext();) {
             String name = (String) iter.next();
             IRubyObject value = (IRubyObject)instanceVars.get(name);
-
             writeAndRegister(runtime.newSymbol(name));
             dumpObject(value);
         }
@@ -309,12 +309,25 @@ public class MarshalStream extends FilterOutputStream {
         return false;
     }
 
-    public void dumpDefaultObjectHeader(RubyClass type) throws IOException {
+    /** w_extended
+     * 
+     */
+    private void dumpExtended(RubyClass type) throws IOException {
         if(type.isSingleton()) {
             if(hasSingletonMethods(type) || type.getInstanceVariables().size() > 1) {
                 throw type.getRuntime().newTypeError("singleton can't be dumped");
             }
+            type = type.getSuperClass();
         }
+        while(type.isIncluded()) {
+            write('e');
+            dumpObject(RubySymbol.newSymbol(runtime, ((IncludedModuleWrapper)type).getNonIncludedClass().getName()));
+            type = type.getSuperClass();
+        }
+    }
+
+    public void dumpDefaultObjectHeader(RubyClass type) throws IOException {
+        dumpExtended(type);
         write('o');
         RubySymbol classname = RubySymbol.newSymbol(runtime, type.getRealClass().getName());
         dumpObject(classname);

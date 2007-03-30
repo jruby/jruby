@@ -73,18 +73,14 @@ public class UnmarshalStream extends BufferedInputStream {
     }
 
     public IRubyObject unmarshalObject() throws IOException {
-        try {
-            int type = readUnsignedByte();
-            IRubyObject result;
-            if (cache.isLinkType(type)) {
-                result = cache.readLink(this, type);
+        int type = readUnsignedByte();
+        IRubyObject result;
+        if (cache.isLinkType(type)) {
+            result = cache.readLink(this, type);
             } else {
-                result = unmarshalObjectDirectly(type);
-            }
-            return result;
-        } catch (IOException ioe) {
-            throw ioe;
+            result = unmarshalObjectDirectly(type);
         }
+        return result;
     }
 
     public void registerLinkTarget(IRubyObject newObject) {
@@ -137,6 +133,23 @@ public class UnmarshalStream extends BufferedInputStream {
                 break;
             case 'm' :
                 rubyObj = RubyModule.unmarshalFrom(this);
+                break;
+            case 'e':
+                RubySymbol moduleName = (RubySymbol) unmarshalObject();
+                RubyModule tp = null;
+                try {
+                    tp = runtime.getClassFromPath(moduleName.asSymbol());
+                } catch (RaiseException e) {
+                    if (e.getException().isKindOf(runtime.getModule("NameError"))) {
+                        throw runtime.newArgumentError("undefined class/module " + moduleName.asSymbol());
+                    } 
+                    throw e;
+                }
+
+                rubyObj = unmarshalObject();
+                
+                tp.extend_object(rubyObj);
+                tp.callMethod(runtime.getCurrentContext(),"extended", rubyObj);
                 break;
             case 'l' :
                 rubyObj = RubyBignum.unmarshalFrom(this);
