@@ -10,7 +10,8 @@ Authors: Stefan Matthias Aust, Anders Bengtsson, Geert Bevin,
 
 Project Contact: Thomas E Enebo <enebo@acm.org>
 
-We also use some code created by Yukihiro Matsumoto <matz@netlab.co.jp>.
+We also use code generously shared by the creator of the Ruby language, 
+Yukihiro Matsumoto <matz@netlab.co.jp>.
 
 JRuby is the effort to recreate the Ruby (http://www.ruby-lang.org) interpreter
 in Java.
@@ -23,22 +24,17 @@ See the 'docs' directory for more information.
 Run
 ===
 
-    java -jar jruby.jar rubyfile.rb
+    bin/jruby rubyfile.rb
 
 interprets the file 'rubyfile.rb'.
-
-Some globals depend on particular java properties to be set, so you
-may need to use on the utility scripts: 'jruby.sh', 'jruby.rb' or 'jruby.bat'
-to execute JRuby.
-
 
 Compiling from source
 =====================
 
 You will need:
 
-* JDK 1.4
-* Apache Ant (http://jakarta.apache.org/ant/).
+* JDK 1.4 or greater
+* Apache Ant (http://jakarta.apache.org/ant/) 1.6 or greater.
 
 To compile, just type:
 
@@ -56,7 +52,7 @@ See 'docs/README.test' for more information.
 More Information
 ================
 
-Visit http://jruby.sourceforge.net for more information.
+Visit http://jruby.codehaus.org for more information.
 
 License
 =======
