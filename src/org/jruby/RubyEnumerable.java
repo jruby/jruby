@@ -306,14 +306,29 @@ public class RubyEnumerable {
             this.group_by = new MultiStubMethod(RubyEnumerableStub1.this,7,recv,Arity.noArguments(), Visibility.PUBLIC);
         }
 
+        private static class EachWithIndex implements BlockCallback {
+            private int index = 0;
+            private Block block;
+            private Ruby runtime;
+            public EachWithIndex(ThreadContext ctx, Block block) {
+                this.block = block;
+                this.runtime = ctx.getRuntime();
+            }
+            public IRubyObject call(ThreadContext context, IRubyObject[] iargs, IRubyObject iself, Block block) {
+                IRubyObject val;
+                if(iargs.length > 1) {
+                    val = runtime.newArray(iargs);
+                } else {
+                    val = iargs[0];
+                }
+                this.block.yield(context, runtime.newArray(val, runtime.newFixnum(index++)));
+                return runtime.getNil();
+            }
+        }
+
         public IRubyObject method0(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             //EACH_WITH_INDEX
-            int index = 0;
-            List arr = eachToList(context,self,module);
-            Ruby rt = context.getRuntime();
-            for(Iterator iter = arr.iterator();iter.hasNext();) {
-                block.yield(context, rt.newArray((IRubyObject)iter.next(),rt.newFixnum(index++)));
-            }
+            self.callMethod(context, "each", new CallBlock(self,this.module,Arity.noArguments(),new EachWithIndex(context,block),context));
             return self;
         }
         public IRubyObject method1(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
