@@ -1762,8 +1762,16 @@ public class RubyString extends RubyObject {
                 return repl;
             }
         }
-        if (args[0] instanceof RubyFixnum) { // RubyNumeric?
-            int idx = RubyNumeric.fix2int(args[0]); // num2int?
+        if (args[0] instanceof RubyFixnum || args[0].respondsTo("to_int")) { // FIXME: RubyNumeric or RubyInteger instead?
+            int idx = 0;
+
+            // FIXME: second instanceof check adds overhead?
+            if (!(args[0] instanceof RubyFixnum)) {
+                // FIXME: ok to cast?
+                idx = (int)args[0].convertToInteger().getLongValue();
+            } else {
+                idx = RubyNumeric.fix2int(args[0]); // num2int?
+            }
             if (idx < 0) {
                 idx += value.length();
             }

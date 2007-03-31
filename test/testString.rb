@@ -568,9 +568,8 @@ x["t"] = Foo.new
 test_equal("shellor", x)
 x = "shellor"
 z = Foo.new
-# this appears to be broken in MRI...potentially a bug there?
-#x[z] = "t"
-#test_equal("str", x)
+x[z] = "t"
+test_equal("shetlor", x)
 x = "str"
 x[1..2] = Foo.new
 test_equal("shello", x)
