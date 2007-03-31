@@ -586,7 +586,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_store
      *
      */
-    private final IRubyObject store(long index, IRubyObject value) {
+    public final IRubyObject store(long index, IRubyObject value) {
         if (index < 0) {
             index += realLength;
             if (index < 0) {

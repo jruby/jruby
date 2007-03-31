@@ -249,7 +249,6 @@ public class ScannerImpl implements Scanner {
         STUPID_CHAR['>'] = false;
         STUPID_CHAR['\''] = false;
         STUPID_CHAR['"'] = false;
-        STUPID_CHAR['%'] = false;
         STUPID_CHAR['@'] = false;
         R_FLOWZERO1[':'] = true;
         R_FLOWNONZERO['\0'] = true;

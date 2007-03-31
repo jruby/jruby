@@ -435,6 +435,12 @@ public class RubyString extends RubyObject {
         return this;
     }
 
+    public RubyString cat(byte[] str, int beg, int len) {
+        value.append(str, beg, len);
+        stringMutated();
+        return this;
+    }
+
     public RubyString cat(ByteList str) {
         value.append(str);
         stringMutated();
