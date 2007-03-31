@@ -967,17 +967,36 @@ class Module
     end
     @included_packages = [package_name]
     @java_aliases = {} unless @java_aliases
+    
+    
+      def self.const_missing(constant)
+        real_name = @java_aliases[constant]
+        real_name = constant unless real_name
 
-    def self.const_missing(constant)
-      real_name = @java_aliases[constant]
-      real_name = constant unless real_name
-
-      java_class = nil
-      return super unless @included_packages.detect {|package|
-          java_class = JavaUtilities.get_java_class(package + '.' + real_name.to_s)
-      }
+        java_class = nil
+        return super unless @included_packages.detect {|package|
+            java_class = JavaUtilities.get_java_class(package + '.' + real_name.to_s)
+        }
+        
+        JavaUtilities.create_proxy_class(constant, java_class, self)
+      end
+  end
+  
+  # Imports the package specified by +package_name+, first by trying to scan JAR resources
+  # for the file in question, and failing that by adding a const_missing hook
+  # to try that package when constants are missing.
+  def import(package_name)
+    warn "importing full package name is *highly* experimental...proceed with caution"
+    class_list = org.jruby.util.PackageSearch.findClassesInPackage(package_name)
+    
+    return include_package(package_name) if class_list.empty?
+    
+    class_list.each do |fqclass|
+      class_name = fqclass.split(".").last
       
-      JavaUtilities.create_proxy_class(constant, java_class, self)
+      return if const_defined? class_name
+      
+      JavaUtilities.create_proxy_class(class_name, fqclass, self)
     end
   end
 
@@ -990,7 +1009,27 @@ class ConstantAlreadyExistsError < RuntimeError
 end
 
 class Object
+  # include the class specified by +include_class+ into the current namespace,
+  # using either its base name or by using a name returned from an optional block,
+  # passing all specified classes in turn and providing the block package name
+  # and base class name.
   def include_class(include_class)
+    if include_class.respond_to? "java_class"
+      # FIXME: When I changed this user const_set instead of eval below Comparator got lost
+      # which means I am missing something.
+      constant = include_class.java_class.to_s.split(".").last
+      if (respond_to?(:class_eval, true))
+        return class_eval("#{constant} = #{include_class.java_class}")
+      else
+        return eval("#{constant} = #{include_class.java_class}")
+      end
+    end
+    
+    if include_class.respond_to? "_name"
+      return self.class.instance_eval { import(include_class._name) };
+    end
+    
+    # else, pull in the class
     class_names = include_class.to_a
 
     class_names.each do |full_class_name|
@@ -1030,6 +1069,8 @@ class Object
       other.kind_of?(Module) && !self.kind_of?(Module) 
     return other.java_class.assignable_from?(self.java_class)
   end
+  
+  alias :import :include_class
 end
 
 class JavaInterfaceExtender
@@ -1066,6 +1107,8 @@ module Java
    def initialize(name)
      @name = name
    end
+   
+   def _name; @name; end
 
    def singleton; class << self; self; end; end 
 

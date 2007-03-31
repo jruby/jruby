@@ -468,6 +468,15 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert !defined?(OuterClass::DefaultInstanceInnerClass)
     assert !defined?(OuterClass::PrivateInstanceInnerClass)
   end
+  
+  # Test the new "import" syntax
+  def test_import
+    
+    assert_nothing_raised { 
+      import java.nio.ByteBuffer
+      ByteBuffer.allocate(10)
+    }
+  end
 
   # test case for JRUBY-679
   # class Weather < java.util.Observable
