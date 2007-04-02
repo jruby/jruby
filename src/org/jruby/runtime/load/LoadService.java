@@ -122,8 +122,8 @@ public class LoadService {
     private static final String[] sourceSuffixes = { ".rb", ".rb.ast.ser" };
     private static final String[] extensionSuffixes = { ".so", ".jar" };
     private static final String[] allSuffixes = { ".rb", ".rb.ast.ser", ".so", ".jar" };
-    private static final Pattern sourcePattern = Pattern.compile("^(.*)\\.(rb|rb\\.ast\\.ser)$");
-    private static final Pattern extensionPattern = Pattern.compile("^(.*)\\.(so|o|dll|jar)$");
+    private static final Pattern sourcePattern = Pattern.compile("\\.(?:rb|rb\\.ast\\.ser)$");
+    private static final Pattern extensionPattern = Pattern.compile("\\.(?:so|o|dll|jar)$");
 
     private final RubyArray loadPath;
     private final RubyArray loadedFeatures;
@@ -214,18 +214,18 @@ public class LoadService {
         // if an extension is specified, try more targetted searches
         if (file.lastIndexOf('.') > file.lastIndexOf('/')) {
             Matcher matcher = null;
-            if ((matcher = sourcePattern.matcher(file)).matches()) {
+            if ((matcher = sourcePattern.matcher(file)).find()) {
                 // source extensions
                 extensionsToSearch = sourceSuffixes;
                 
                 // trim extension to try other options
-                file = matcher.group(1);
-            } else if ((matcher = extensionPattern.matcher(file)).matches()) {
+                file = file.substring(0,matcher.start());
+            } else if ((matcher = extensionPattern.matcher(file)).find()) {
                 // extension extensions
                 extensionsToSearch = extensionSuffixes;
                 
                 // trim extension to try other options
-                file = matcher.group(1);
+                file = file.substring(0,matcher.start());
             } else {
                 // unknown extension, fall back to search with extensions
                 extensionsToSearch = allSuffixes;
