@@ -105,16 +105,11 @@ public class ObjectSpace {
     private LinkedBlockingQueue finalizersToRun   = new LinkedBlockingQueue();
     private FinalizerThread finalizerThread = new FinalizerThread();
 
-    {
-        finalizerThread.start();
-    }
-
     private class FinalizerThread extends Thread {
         private boolean running;
         public FinalizerThread() {
             super("Ruby Finalizer Thread");
             setDaemon(true);
-            running = true;
         }
 
         public void run() {
@@ -135,6 +130,13 @@ public class ObjectSpace {
                         break;
                     }
                 }
+            }
+        }
+
+        public synchronized void startRunning() {
+            if(!running) {
+                running = true;
+                start();
             }
         }
 
@@ -202,6 +204,7 @@ public class ObjectSpace {
         synchronized(fins) {
             fins.add(new FinalizerEntry(obj,id,proc));
         }
+        finalizerThread.startRunning();
     }
 
     public void removeFinalizers(long id) {
