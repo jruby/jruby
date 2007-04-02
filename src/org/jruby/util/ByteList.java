@@ -14,6 +14,7 @@
  * Copyright (C) 2007 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
  * Copyright (C) 2007 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -215,18 +216,35 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         return indexOf(c, 0);
     }
     
-    public int indexOf(int c, int pos) {
+    // leaving old version for now for comparisons, see 
+    // TestByteList.java attached to JRUBY-xxx
+    public int old_indexOf(int c, int pos) {
         for (int i = pos; i < realSize; i++) {
             if ((bytes[i] & 0xFF) == c) return i;
         }
         return -1;
     }
     
+    public int indexOf(final int c, int pos) {
+        // not sure if this is checked elsewhere,
+        // didn't see it in RubyString. RubyString does
+        // cast to char, so c will be >= 0.
+        if (c > 255)
+            return -1;
+        final byte b = (byte)(c&0xFF);
+        final int size = realSize;
+        final byte[] buf = bytes;
+        for ( ; pos < size && buf[pos] != b ; pos++ ) ;
+        return pos < size ? pos : -1;
+    }
+
     public int indexOf(ByteList find) {
         return indexOf(find, 0);
     }
     
-    public int indexOf(ByteList find, int pos) {
+    // leaving old version for now for comparisons, see 
+    // TestByteList.java attached to JRUBY-xxx
+    public int old_indexOf(ByteList find, int pos) {
         // search main string
         BigLoop: for (int j = pos; j < realSize; j++) {
             // if we get a match for the first char
@@ -243,26 +261,65 @@ public class ByteList implements Comparable, CharSequence, Serializable {
                 return j;
             }
         }
-
         return -1;
     }
     
+    public int indexOf(final ByteList find, int pos) {
+        final int len = find.realSize;
+        final byte first = find.bytes[0];
+        final byte[] buf = bytes;
+        final int max = realSize - len + 1;
+        for ( ; pos < max ; pos++ ) {
+            for ( ; pos < max && buf[pos] != first; pos++ ) ;
+            if (pos == max)
+                return -1;
+            int index = len;
+            // TODO: forward/backward scan as in #equals
+            for ( ; --index >= 0 && buf[index + pos] == find.bytes[index]; ) ;
+            if (index < 0)
+                return pos;
+        }
+        return -1;
+    }
+
     public int lastIndexOf(int c) {
         return lastIndexOf(c, realSize - 1);
     }
     
-    public int lastIndexOf(int c, int pos) {
+    public int old_lastIndexOf(int c, int pos) {
         for (int i = Math.min(pos, realSize - 1); i >= 0; i--) {
             if ((bytes[i] & 0xFF) == c) return i;
         }
         return -1;
     }
-    
+
+    // leaving old version for now for comparisons, see 
+    // TestByteList.java attached to JRUBY-xxx    
+    public int lastIndexOf(final int c, int pos) {
+        // not sure if this is checked elsewhere,
+        // didn't see it in RubyString. RubyString does
+        // cast to char, so c will be >= 0.
+        if (c > 255)
+            return -1;
+        final byte b = (byte)(c&0xFF);
+        final int size = realSize;
+        final byte[] buf = bytes;
+        if (pos >= size) {
+            pos = size;
+        } else {
+            pos++;
+        }
+        for ( ; --pos >= 0 && buf[pos] != b ; ) ;
+        return pos;
+    }
+
     public int lastIndexOf(ByteList find) {
         return lastIndexOf(find, realSize - 1);
     }
     
-    public int lastIndexOf(ByteList find, int pos) {
+    // leaving old version for now for comparisons, see 
+    // TestByteList.java attached to JRUBY-xxx
+    public int old_lastIndexOf(ByteList find, int pos) {
         // search main string
         BigLoop: for (int j = Math.min(pos, realSize - 1); j >= 0; j--) {
             // if we get a match for the first char
@@ -283,7 +340,27 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         return -1;
     }
 
-    public boolean equals(Object other) {
+    public int lastIndexOf(final ByteList find, int pos) {
+        final int len = find.realSize;
+        final byte first = find.bytes[0];
+        final byte[] buf = bytes;
+        pos = Math.min(pos,realSize-len);
+        for ( ; pos >= 0 ; pos-- ) {
+            for ( ; pos >= 0 && buf[pos] != first; pos-- ) ;
+            if (pos < 0)
+                return -1;
+            int index = len;
+            // TODO: forward/backward scan as in #equals
+            for ( ; --index >= 0 && buf[index + pos] == find.bytes[index]; ) ;
+            if (index < 0)
+                return pos;
+        }
+        return -1;
+    }
+    
+    // leaving old version for now for comparisons, see 
+    // TestByteList.java attached to JRUBY-xxx
+    public boolean old_equals(Object other) {
         if (other == this) return true;
         if (other instanceof ByteList) {
             ByteList b = (ByteList) other;
@@ -300,6 +377,56 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         return false;
     }
 
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if (other instanceof ByteList) {
+            ByteList b = (ByteList) other;
+            int first;
+            int last;
+            byte[] buf;
+            if ((last = realSize) == b.realSize) {
+                // scanning from front and back simultaneously, meeting in
+                // the middle. the object is to get a mismatch as quickly as
+                // possible. alternatives might be: scan from the middle outward
+                // (not great because it won't pick up common variations at the
+                // ends until late) or sample odd bytes forward and even bytes
+                // backward (I like this one, but it's more expensive for
+                // strings that are equal; see sample_equals below).
+                for (buf = bytes, first = -1; 
+                    --last > first && buf[last] == b.bytes[last] &&
+                    ++first < last && buf[first] == b.bytes[first] ; ) ;
+                return first >= last;
+            }
+        }
+        return false;
+    }
+
+    // an alternative to the new version of equals, should
+    // detect inequality faster (in many cases), but is slow
+    // in the case of equal values (all bytes visited), due to
+    // using n+=2, n-=2 vs. ++n, --n while iterating over the array.
+    public boolean sample_equals(Object other) {
+        if (other == this) return true;
+        if (other instanceof ByteList) {
+            ByteList b = (ByteList) other;
+            int first;
+            int last;
+            int size;
+            byte[] buf;
+            if ((size = realSize) == b.realSize) {
+                // scanning from front and back simultaneously, sampling odd
+                // bytes on the forward iteration and even bytes on the 
+                // reverse iteration. the object is to get a mismatch as quickly
+                // as possible. 
+                for (buf = bytes, first = -1, last = (size + 1) & ~1 ;
+                    (last -= 2) >= 0 && buf[last] == b.bytes[last] &&
+                    (first += 2) < size && buf[first] == b.bytes[first] ; ) ;
+                return last < 0 || first == size;
+            }
+        }
+        return false;
+    }
+
     /**
      * This comparison matches MRI comparison of Strings (rb_str_cmp).
      * I wish we had memcmp right now...
@@ -308,7 +435,9 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         return cmp((ByteList)other);
     }
 
-    public int cmp(ByteList other) {
+    // leaving old version for now for comparisons, see 
+    // TestByteList.java attached to JRUBY-xxx
+    public int old_cmp(ByteList other) {
         if (other == this || other.bytes == bytes) return 0;
         int len = Math.min(realSize,other.realSize);
         int retval = 0;
@@ -329,7 +458,25 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         return -1;
     }
 
-    /**
+    public int cmp(final ByteList other) {
+        if (other == this || bytes == other.bytes) return 0;
+        final int size = realSize;
+        final int len =  Math.min(size,other.realSize);
+        int offset = -1;
+        // a bit of VM/JIT weirdness here: though in most cases
+        // performance is improved if array references are kept in
+        // a local variable (saves an instruction per access, as I
+        // [slightly] understand it), in some cases, when two (or more?) 
+        // arrays are being accessed, the member reference is actually
+        // faster.  this is one of those cases...
+        for (  ; ++offset < len && bytes[offset] == other.bytes[offset]; ) ;
+        if (offset < len) {
+            return (bytes[offset]&0xFF) > (other.bytes[offset]&0xFF) ? 1 : -1;
+        }
+        return size == other.realSize ? 0 : size == len ? -1 : 1;
+    }
+
+   /**
      * Returns the internal byte array. This is unsafe unless you know what you're
      * doing. But it can improve performance for byte-array operations that
      * won't change the array.
@@ -366,7 +513,9 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * Implements the same hashcode as MRI ELFHASH in rb_str_hash.
      * No caching here. It's the clients responsibility to cache this value.
      */
-    public int hashCode() {
+    // leaving old version for now for comparisons, see 
+    // TestByteList.java attached to JRUBY-xxx
+    public int old_hashCode() {
         int key = 0;
         int g;
         for(int i = 0; i < realSize; i++) {
@@ -379,6 +528,21 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         return key;
     }
 
+    public int hashCode() {
+        int key = 0;
+        int g;
+        int size = realSize;
+        byte[] buf = bytes;
+        for(int i = 0; i < size; i++) {
+            key = (key << 4) + (((int)buf[i]) & 0xFF);
+            if((g = key & 0xF0000000) != 0) {
+                key ^= g >> 24;
+            }
+            key &= ~g;
+        }
+        return key;
+    }
+    
     public String toString() {
         return new String(plain(this.bytes),0,realSize);
     }

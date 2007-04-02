@@ -1620,6 +1620,8 @@ public class RubyString extends RubyObject {
             }
         } else if (args[0] instanceof RubyString) {
             ByteList sub = ((RubyString) args[0]).value;
+            // FIXME: any compelling reason to clone here? we don't
+            // for fixnum search below...
             ByteList sb = (ByteList)value.clone();
             pos = reverse ? sb.lastIndexOf(sub, pos) : sb.indexOf(sub, pos);
         } else if (args[0] instanceof RubyFixnum) {
