@@ -6,8 +6,9 @@ class TestPrimitiveToJava < Test::Unit::TestCase
     t = Time.now
 
     dc = org.jruby.javasupport.test.DateHolder.new
+    sdf = java.text.SimpleDateFormat.new("EEE MMM dd HH:mm:ss Z yyyy")
     dc.date = t
 
-    assert(t.to_s.eql?(dc.date.to_s), "Ruby time #{t} not converted to java date correctly: #{dc.date}")
+    assert(t.to_s.eql?(sdf.format(dc.date)), "Ruby time #{t} not converted to java date correctly: #{sdf.format(dc.date)}")
   end
 end
