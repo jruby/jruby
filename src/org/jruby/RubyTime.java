@@ -296,7 +296,7 @@ public class RubyTime extends RubyObject {
 
     public IRubyObject to_s() {
         simpleDateFormat.setCalendar(cal);
-        simpleDateFormat.applyPattern("EEE MMM dd HH:mm:ss z yyyy");
+        simpleDateFormat.applyPattern("EEE MMM dd HH:mm:ss Z yyyy");
         String result = simpleDateFormat.format(cal.getTime());
 
         return getRuntime().newString(result);
