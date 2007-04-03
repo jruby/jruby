@@ -63,19 +63,19 @@ public final class ArgsUtil {
      */
     public static RubyArray convertToRubyArray(Ruby runtime, IRubyObject value, boolean coerce) {
         if (value == null) {
-            return runtime.newArray(0);
+            return RubyArray.newArrayLight(runtime, 0);
         }
         
         if (!coerce) {
             // don't attempt to coerce to array, just wrap and return
-            return runtime.newArray(value);
+            return RubyArray.newArrayNoCopyLight(runtime, new IRubyObject[] {value});
         }
         
         // FIXME: I don't like this, but all consumers of this method do the same cast.
         IRubyObject newValue = value.convertToType("Array", "to_ary", false);
 
         if (newValue.isNil()) {
-            return runtime.newArray(value);
+            return RubyArray.newArrayNoCopyLight(runtime, new IRubyObject[] {value});
         }
         
         // empirically it appears that to_ary coersions always return array or nil, so this

@@ -1304,12 +1304,33 @@ public class EvaluationState {
 
     private static IRubyObject multipleAsgnNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         MultipleAsgnNode iVisited = (MultipleAsgnNode) node;
-        IRubyObject value = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
+        
+        switch (iVisited.getValueNode().nodeId) {
+        case NodeTypes.ARRAYNODE: {
+            ArrayNode iVisited2 = (ArrayNode) iVisited.getValueNode();
+            IRubyObject[] array = new IRubyObject[iVisited2.size()];
 
-        if (!(value instanceof RubyArray)) {
-            value = RubyArray.newArray(runtime, value);
+            for (int i = 0; i < iVisited2.size(); i++) {
+                Node next = iVisited2.get(i);
+
+                array[i] = evalInternal(runtime,context, next, self, aBlock);
+            }
+            return AssignmentVisitor.multiAssign(runtime, context, self, iVisited, RubyArray.newArrayNoCopyLight(runtime, array), false);
         }
-        return AssignmentVisitor.multiAssign(runtime, context, self, iVisited, (RubyArray) value, false);
+        case NodeTypes.SPLATNODE: {
+            SplatNode splatNode = (SplatNode)iVisited.getValueNode();
+            RubyArray rubyArray = splatValue(runtime, evalInternal(runtime, context, ((SplatNode) splatNode).getValue(), self, aBlock));
+            return AssignmentVisitor.multiAssign(runtime, context, self, iVisited, rubyArray, false);
+        }
+        default:
+            IRubyObject value = evalInternal(runtime, context, iVisited.getValueNode(), self, aBlock);
+
+            if (!(value instanceof RubyArray)) {
+                value = RubyArray.newArray(runtime, value);
+            }
+            
+            return AssignmentVisitor.multiAssign(runtime, context, self, iVisited, (RubyArray)value, false);
+        }
     }
 
     private static IRubyObject nextNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
@@ -2167,7 +2188,7 @@ public class EvaluationState {
         return ArgsUtil.convertToJavaArray(evalInternal(runtime,context, node, self, Block.NULL_BLOCK));
     }
 
-    public static IRubyObject splatValue(Ruby runtime, IRubyObject value) {
+    public static RubyArray splatValue(Ruby runtime, IRubyObject value) {
         if (value.isNil()) {
             return runtime.newArray(value);
         }

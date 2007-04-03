@@ -446,6 +446,19 @@ public class RubyArray extends RubyObject implements List {
         return sharedArray;        
     }
 
+    /** rb_ary_make_shared
+     *
+     */
+    private final RubyArray makeShared(int beg, int len, boolean objectSpace){
+        RubyArray sharedArray = new RubyArray(getRuntime(), objectSpace);
+        shared = true;
+        sharedArray.values = values;
+        sharedArray.shared = true;
+        sharedArray.begin = beg;
+        sharedArray.realLength = len;
+        return sharedArray;        
+    }
+
     /** rb_ary_modify_check
      *
      */
@@ -905,6 +918,24 @@ public class RubyArray extends RubyObject implements List {
         if (len == 0) return new RubyArray(getRuntime(), 0);
 
         return makeShared(begin + (int) beg, (int) len);
+    }
+
+    /** rb_ary_subseq
+     *
+     */
+    public IRubyObject subseq(long beg, long len, boolean light) {
+        if (beg > realLength || beg < 0 || len < 0) return getRuntime().getNil();
+
+        if (beg + len > realLength) {
+            len = realLength - beg;
+            
+            if (len < 0) len = 0;
+        }
+        
+        // MRI does klass = rb_obj_class(ary); here, what for ?
+        if (len == 0) return new RubyArray(getRuntime(), 0, light);
+
+        return makeShared(begin + (int) beg, (int) len, light);
     }
 
     /** rb_ary_length
