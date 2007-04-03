@@ -34,6 +34,7 @@ package org.jruby;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.jruby.javasupport.JavaUtil;
@@ -43,8 +44,9 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.Glob;
+import org.jruby.util.Dir;
 import org.jruby.util.JRubyFile;
+import org.jruby.util.ByteList;
 
 /**
  * .The Ruby built-in class Dir.
@@ -76,10 +78,9 @@ public class RubyDir extends RubyObject {
 
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyDir.class);
 
-        dirClass.getMetaClass().defineMethod("glob", callbackFactory.getSingletonMethod("glob", RubyKernel.IRUBY_OBJECT));
+        dirClass.getMetaClass().defineMethod("glob", callbackFactory.getOptSingletonMethod("glob"));
         dirClass.getMetaClass().defineFastMethod("entries", callbackFactory.getFastSingletonMethod("entries", RubyKernel.IRUBY_OBJECT));
-        dirClass.getMetaClass().defineMethod("[]", callbackFactory.getSingletonMethod("glob", RubyKernel.IRUBY_OBJECT));
-        // dirClass.defineAlias("[]", "glob");
+        dirClass.getMetaClass().defineMethod("[]", callbackFactory.getOptSingletonMethod("glob"));
         dirClass.getMetaClass().defineMethod("chdir", callbackFactory.getOptSingletonMethod("chdir"));
         dirClass.getMetaClass().defineFastMethod("chroot", callbackFactory.getFastSingletonMethod("chroot", RubyKernel.IRUBY_OBJECT));
         //dirClass.defineSingletonMethod("delete", callbackFactory.getSingletonMethod(RubyDir.class, "delete", RubyString.class));
@@ -144,18 +145,36 @@ public class RubyDir extends RubyObject {
      * with each filename is passed to the block in turn. In this case, Nil is
      * returned.  
      */
-    public static IRubyObject glob(IRubyObject recv, IRubyObject pat, Block block) {
-        String pattern = pat.convertToString().toString();
-        String[] files = new Glob(recv.getRuntime().getCurrentDirectory(), pattern).getNames();
-        if (block.isGiven()) {
+    public static IRubyObject glob(IRubyObject recv, IRubyObject[] args, Block block) {
+        String cwd = recv.getRuntime().getCurrentDirectory();
+        int flags = 0;
+        if(Arity.checkArgumentCount(recv.getRuntime(),args,1,2) == 2) {
+            flags = RubyNumeric.num2int(args[1]);
+        }
+        ByteList pt = args[0].convertToString().getByteList();
+
+        String cwd2;
+        try {
+            cwd2 = new org.jruby.util.NormalizedFile(cwd).getCanonicalPath();
+        } catch(Exception e) {
+            cwd2 = cwd;
+        }
+
+        List l = Dir.push_glob(cwd2, pt.bytes, 0, pt.realSize, flags);
+        
+        if(block.isGiven()) {
             ThreadContext context = recv.getRuntime().getCurrentContext();
-            
-            for (int i = 0; i < files.length; i++) {
-                block.yield(context, JavaUtil.convertJavaToRuby(recv.getRuntime(), files[i]));
+            for(Iterator iter = l.iterator(); iter.hasNext(); ) {
+                block.yield(context, RubyString.newString(recv.getRuntime(),(ByteList)iter.next()));
             }
             return recv.getRuntime().getNil();
-        }            
-        return recv.getRuntime().newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(recv.getRuntime(), files));
+        }
+        IRubyObject[] l2 = new IRubyObject[l.size()];
+        int i=0;
+        for(Iterator iter = l.iterator(); iter.hasNext(); i++) {
+            l2[i] = RubyString.newString(recv.getRuntime(),(ByteList)iter.next());
+        }
+        return recv.getRuntime().newArrayNoCopy(l2);
     }
 
     /**

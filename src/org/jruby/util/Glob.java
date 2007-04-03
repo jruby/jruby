@@ -336,19 +336,11 @@ public class Glob {
     public static void main(String[] args) {
         String PATTERN = "*/**/*{.rb,.so,.jar}";
         String CWD = new java.io.File(".").getAbsolutePath();
-        String[] nm = new Glob(CWD,PATTERN).getNames();
-        for(int i=0;i<nm.length;i++) {
-            System.err.println(nm[i]);
-        }
-        System.err.println("found: " + nm.length);
-
-        /*        
         long before = System.currentTimeMillis();
         for(int i=0;i<10;i++) {
             new Glob(CWD,PATTERN).getNames();
         }
         long after = System.currentTimeMillis();
         System.err.println("10 Globs took " + (after-before) + " millis");
-        */
     }
 }

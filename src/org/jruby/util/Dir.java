@@ -27,6 +27,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
+import java.io.File;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+
 /**
  * This class exists as a counterpart to the dir.c file in 
  * MRI source. It contains many methods useful for 
@@ -47,6 +54,11 @@ public class Dir {
 
     public final static int FNM_NOMATCH = 1;
     public final static int FNM_ERROR   = 2;
+
+    public final static byte[] EMPTY = new byte[0];
+    public final static byte[] SLASH = new byte[]{'/'};
+    public final static byte[] STAR = new byte[]{'*'};
+    public final static byte[] DOUBLE_STAR = new byte[]{'*','*'};
 
     private static boolean isdirsep(byte c) {
         return DOSISH ? (c == '\\' || c == '/') : c == '/';
@@ -190,5 +202,401 @@ public class Dir {
         }
 
         return ok == not ? -1 : pat + 1;
+    }
+
+
+    public static List push_glob(String cwd, byte[] str, int p, int pend, int flags) {
+        int buf;
+        int nest, maxnest;
+        int status = 0;
+        boolean noescape = (flags & FNM_NOESCAPE) != 0;
+        List ary = new ArrayList();
+        
+        while(p < pend) {
+            nest = maxnest = 0;
+            while(p<pend && str[p] == 0) {
+                p++;
+            }
+            buf = p;
+            while(p<pend && str[p] != 0) {
+                if(str[p] == '{') {
+                    nest++;
+                    maxnest++;
+                } else if(str[p] == '}') {
+                    nest--;
+                } else if(!noescape && str[p] == '\\') {
+                    if(++p == pend) {
+                        break;
+                    }
+                }
+                p++;
+            }
+            if(maxnest == 0) {
+                status = push_globs(cwd, ary, str, buf, pend, flags);
+                if(status != 0) {
+                    break;
+                }
+            } else if(nest == 0) {
+                status = push_braces(cwd, ary, str, buf, pend, flags);
+                if(status != 0) {
+                    break;
+                }
+            }
+            /* else unmatched braces */
+        }
+        return ary;
+    }
+
+    private static interface GlobFunc {
+        int call(byte[] ptr, int p, int len, Object ary);
+    }
+
+    private static class GlobArgs {
+        GlobFunc func;
+        int c = -1;
+        List v;
+    }
+
+    public final static GlobFunc push_pattern = new GlobFunc() {
+            public int call(byte[] ptr, int p, int len, Object ary) {
+                ((List)ary).add(new ByteList(ptr, p, len));
+                return 0;
+            }
+        };
+    public final static GlobFunc glob_caller = new GlobFunc() {
+            public int call(byte[] ptr, int p, int len, Object ary) {
+                GlobArgs args = (GlobArgs)ary;
+                args.c = p;
+                return args.func.call(ptr, args.c, len, args.v);
+            }
+        };
+
+    private static int push_braces(String cwd, List ary, byte[] str, int _s, int slen, int flags) {
+        ByteList buf = new ByteList();
+        int b;
+        int s, p, t, lbrace, rbrace;
+        int nest = 0;
+        int status = 0;
+        s = p = 0;
+
+        s = p = _s;
+        lbrace = rbrace = -1;
+
+        while(p<slen) {
+            if(str[p] == '{') {
+                lbrace = p;
+                break;
+            }
+            p++;
+        }
+        while(p<slen) {
+            if(str[p] == '{') {
+                nest++;
+            } else if(str[p] == '}' && --nest == 0) {
+                rbrace = p;
+                break;
+            }
+            p++;
+        }
+
+        if(lbrace != -1 && rbrace != -1) {
+            p = lbrace;
+            while(str[p] != '}') {
+                t = p + 1;
+                for(p = t; p<slen && str[p] != '}' && str[p]!=','; p++) {
+                    /* skip inner braces */
+                    if(str[p] == '{') {
+                        nest = 1;
+                        while(str[++p] != '}' || --nest != 0) {
+                            if(str[p] == '{') {
+                                nest++;
+                            }
+                        }
+                    }
+                }
+                buf.length(0);
+                buf.append(str,s,lbrace-s);
+                b = lbrace-s;
+                buf.append(str, t, p-t);
+                buf.append(str, rbrace+1, slen-(rbrace+1));
+                status = push_braces(cwd, ary, buf.bytes, 0, buf.realSize, flags);
+                if(status != 0) {
+                    break;
+                }
+            }
+        } else {
+            status = push_globs(cwd, ary, str, s, slen, flags);
+        }
+        return status;
+    }
+
+    private static int push_globs(String cwd, List ary, byte[] str, int s, int slen, int flags) {
+        return rb_glob2(cwd, str, s, slen, flags, push_pattern, ary);
+    }
+
+    private static int rb_glob2(String cwd, byte[] _path, int path, int plen, int flags, GlobFunc func, List arg) {
+        GlobArgs args = new GlobArgs();
+        args.func = func;
+        args.v = arg;
+        flags |= FNM_SYSCASE;
+        return glob_helper(cwd, _path, path, plen, -1, flags, glob_caller, args);
+    }
+
+    private static boolean has_magic(byte[] str, int s, int send, int slen, int flags) {
+        int p = s;
+        byte c;
+        int open = 0;
+        boolean escape = (flags & FNM_NOESCAPE) == 0;
+        boolean nocase = (flags & FNM_CASEFOLD) != 0;
+
+        while(p < slen) {
+            c = str[p++];
+            switch(c) {
+            case '?':
+            case '*':
+                return true;
+            case '[':	/* Only accept an open brace if there is a close */
+                open++;	/* brace to match it.  Bracket expressions must be */
+                continue;	/* complete, according to Posix.2 */
+            case ']':
+                if(open > 0) {
+                    return true;
+                }
+                continue;
+            case '\\':
+                if(escape && p == slen) {
+                    return false;
+                }
+                break;
+            default:
+                if(FNM_SYSCASE==0 && Character.isLetter((char)(c&0xFF)) && nocase) {
+                    return true;
+                }
+            }
+            if(send != -1 && p >= send) {
+                break;
+            }
+        }
+
+        return false;
+    }
+
+    private static int remove_backslashes(byte[] pa, int p, int len) {
+        int pend = len;
+        int t = p;
+        while(p < pend) {
+            if(pa[p] == '\\') {
+                if(++p == pend) {
+                    break;
+                }
+            }
+            pa[t++] = pa[p++];
+        }
+        return t;
+    }
+
+    private static int strchr(byte[] _s, int s, byte ch) {
+        for(int i=s,e=_s.length;i<e; i++) {
+            if(_s[i] == ch) {
+                return i-s;
+            }
+        }
+        return -1;
+    }
+
+    private static byte[] extract_path(byte[] _p, int p, int pend) {
+        byte[] alloc;
+        int len;
+        len = pend-p;
+        if(len > 1 && _p[pend-1] == '/' && (!DOSISH || (len < 2 || _p[pend-2] != ':'))) {
+            len--;
+        }
+        alloc = new byte[len];
+        System.arraycopy(_p,p,alloc,0,len);
+        return alloc;
+    }
+
+    private static byte[] extract_elem(byte[] _p, int p, int pend) {
+        int _pend = strchr(_p,p,(byte)'/');
+        if(_pend == -1 || (_pend+p) > pend) {
+            _pend = pend;
+        }else {
+            _pend+=p;
+        }
+        return extract_path(_p, p, _pend);
+    }
+
+    private static boolean BASE(byte[] base) {
+        return DOSISH ? 
+            (base.length > 0 && !((isdirsep(base[0]) && base.length < 2) || (base[1] == ':' && isdirsep(base[2]) && base.length < 4)))
+            :
+            (base.length > 0 && !(isdirsep(base[0]) && base.length < 2));
+    }
+
+    private static int glob_helper(String cwd, byte[] _path, int path, int plen, int sub, int flags, GlobFunc func, GlobArgs arg) {
+        int p,m;
+        int status = 0;
+        ByteList buf = new ByteList();
+        byte[] newpath = null;
+        File st;
+        List link = new ArrayList();
+        p = sub != -1 ? sub : path;
+        if(!has_magic(_path, p, -1, plen, flags)) {
+            if(DOSISH || (flags & FNM_NOESCAPE) == 0) {
+                newpath = new byte[plen];
+                System.arraycopy(_path,0,newpath,0,plen);
+                if(sub != -1) {
+                    p = (sub - path);
+                    plen = remove_backslashes(newpath, p, plen);
+                    sub = p;
+                } else {
+                    plen = remove_backslashes(newpath, 0, plen);
+                    _path = newpath;
+                }
+            }
+
+            if(_path[path] == '/') {
+                if(new File(new String(_path, path, plen - path)).exists()) {
+                    status = func.call(_path, path, plen, arg);
+                }
+            } else {
+                if(new File(cwd, new String(_path, path, plen - path)).exists()) {
+                    status = func.call(_path, path, plen, arg);
+                }
+            }
+
+            return status;
+        }
+        mainLoop: while(p != -1 && status == 0) {
+            if(_path[p] == '/') {
+                p++;
+            }
+            m = strchr(_path, p, (byte)'/');
+            if(has_magic(_path, p, (m == -1 ? m : p+m), plen, flags)) {
+                finalize: do {
+                    byte[] base = extract_path(_path, path, p);
+                    byte[] dir;
+                    byte[] magic;
+                    boolean recursive = false;
+                    if(path == p) {
+                        dir = new byte[]{'.'};
+                    } else {
+                        dir = base;
+                    }
+                    magic = extract_elem(_path,p,plen);
+                    if(dir[0] == '/') {
+                        st = new File(new String(dir));
+                    } else {
+                        st = new File(cwd, new String(dir));
+                    }
+
+                    if(!st.exists()) {
+                        break mainLoop;
+                    }
+                    if(st.isDirectory()) {
+                        if(m != -1 && Arrays.equals(magic, DOUBLE_STAR)) {
+                            int n = base.length;
+                            recursive = true;
+                            buf.length(0);
+                            buf.append(base);
+                            buf.append(_path, p + (base.length > 0 ? m : m + 1), plen - (p + (base.length > 0 ? m : m + 1)));
+                            status = glob_helper(cwd, buf.bytes, 0, buf.realSize, n, flags, func, arg);
+                            if(status != 0) {
+                                break finalize;
+                            }
+                        }
+                    } else {
+                        break mainLoop;
+                    }
+
+                    String[] dirp = st.list();
+                    for(int i=0;i<dirp.length;i++) {
+                        if(recursive) {
+                            byte[] bs = dirp[i].getBytes();
+                            if(fnmatch(STAR,0,1,bs,0,bs.length,flags) != 0) {
+                                continue;
+                            }
+                            buf.length(0);
+                            buf.append(base);
+                            buf.append( BASE(base) ? SLASH : EMPTY );
+                            buf.append(dirp[i].getBytes());
+                            if(buf.bytes[0] == '/') {
+                                st = new File(new String(buf.bytes,0,buf.realSize));
+                            } else {
+                                st = new File(cwd, new String(buf.bytes,0,buf.realSize));
+                            }
+
+                            if(!st.exists()) {
+                                continue;
+                            }
+                            if(st.isDirectory()) {
+                                int t = buf.realSize;
+                                buf.append(SLASH);
+                                buf.append(DOUBLE_STAR);
+                                buf.append(_path, p+m, plen-(p+m));
+                                status = glob_helper(cwd, buf.bytes, 0, buf.realSize, t, flags, func, arg);
+                                if(status != 0) {
+                                    break;
+                                }
+                            }
+                            continue;
+                        }
+
+                        byte[] bs = dirp[i].getBytes();
+                        if(fnmatch(magic,0,magic.length,bs,0,bs.length,flags) == 0) {
+                            buf.length(0);
+                            buf.append(base);
+                            buf.append( BASE(base) ? SLASH : EMPTY );
+                            buf.append(dirp[i].getBytes());
+                            if(m == -1) {
+                                status = func.call(buf.bytes,0,buf.realSize,arg);
+                                if(status != 0) {
+                                    break;
+                                }
+                                continue;
+                            }
+                            link.add(buf);
+                            buf = new ByteList();
+                        }
+                    }
+                } while(false);
+                if(link.size() > 0) {
+                    for(Iterator iter = link.iterator();iter.hasNext();) {
+                        if(status == 0) {
+                            ByteList b = (ByteList)iter.next();
+                            if(b.bytes[0] == '/') {
+                                st = new File(cwd, new String(b.bytes, 0, b.realSize));
+                            } else {
+                                st = new File(new String(b.bytes, 0, b.realSize));
+                            }
+
+                            if(st.exists() && st.isDirectory()) {
+                                int len = b.realSize;
+                                buf.length(0);
+                                buf.append(b);
+                                buf.append(_path, p+m, plen-(p+m));
+                                status = glob_helper(cwd,buf.bytes,0,buf.realSize,len,flags,func,arg);
+                            }
+                        }
+                    }
+                    break mainLoop;
+                }
+            }
+            p = (m == -1 ? m : p+m);
+        }
+        return status;
+    }
+
+
+    public static void main(String[] args) throws Exception {
+        String PATTERN = "*/**/*{.rb,.so,.jar}";
+        String CWD = new java.io.File(".").getAbsolutePath();
+        byte[] pt = PATTERN.getBytes("ISO8859-1");
+        long before = System.currentTimeMillis();
+        for(int i=0;i<5 ;i++) {
+            push_glob(CWD, pt, 0, pt.length, 0);
+        }
+        long after = System.currentTimeMillis();
+        System.err.println("10 Globs took " + (after-before) + " millis");
     }
 }// Dir
