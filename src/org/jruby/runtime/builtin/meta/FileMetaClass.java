@@ -54,6 +54,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.Chmod;
 import org.jruby.util.IOModes;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.Sprintf;
@@ -266,17 +267,10 @@ public class FileMetaClass extends IOMetaClass {
                 throw getRuntime().newErrnoENOENTError("No such file or directory - " + filename);
             }
             
-            try {
-                Process chmod = Runtime.getRuntime().exec("chmod " + Sprintf.sprintf(getRuntime(), "%o", mode.getLongValue()) + " " + filename);
-                chmod.waitFor();
-                int result = chmod.exitValue();
-                if (result == 0) {
-                    count++;
-                }
-            } catch (IOException ioe) {
-                // FIXME: ignore?
-            } catch (InterruptedException ie) {
-                // FIXME: ignore?
+            String modeString = Sprintf.sprintf(getRuntime(), "%o", mode.getLongValue()).toString();
+            boolean result = Chmod.chmod(JRubyFile.create(getRuntime().getCurrentDirectory(), filename.toString()), modeString);
+            if (result) {
+                count++;
             }
         }
         

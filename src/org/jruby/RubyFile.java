@@ -47,6 +47,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.Chmod;
 import org.jruby.util.IOHandler;
 import org.jruby.util.IOHandlerNull;
 import org.jruby.util.IOHandlerSeekable;
@@ -219,19 +220,14 @@ public class RubyFile extends RubyIO {
         Arity.checkArgumentCount(getRuntime(), args, 1, 1);
         
         RubyInteger mode = args[0].convertToInteger();
+        File file = new File(path);
 
-        if (!new File(path).exists()) {
+        if (!file.exists()) {
             throw getRuntime().newErrnoENOENTError("No such file or directory - " + path);
         }
-            
-        try {
-            Process chown = Runtime.getRuntime().exec("chmod " + Sprintf.sprintf(getRuntime(), "%o", mode.getLongValue()) + " " + path);
-            chown.waitFor();
-        } catch (IOException ioe) {
-            // FIXME: ignore?
-        } catch (InterruptedException ie) {
-            // FIXME: ignore?
-        }
+        
+        String modeString = Sprintf.sprintf(getRuntime(), "%o", mode.getLongValue()).toString();
+        Chmod.chmod(file, modeString);
         
         return getRuntime().newFixnum(0);
     }
