@@ -156,7 +156,7 @@ public final class Ruby {
     private RubyBoolean trueObject;
     private RubyBoolean falseObject;
     private RubyClass objectClass;
-    private StringMetaClass stringClass;
+    private RubyClass stringClass;
     private RubyClass systemCallError = null;
     private RubyModule errnoModule = null;
     private IRubyObject topSelf;
@@ -687,8 +687,7 @@ public final class Ruby {
         RubyBoolean.createTrueClass(this);
         RubyComparable.createComparable(this);
         RubyEnumerable.createEnumerableModule(this);
-        stringClass = new StringMetaClass(this);
-        stringClass.initializeClass();
+        stringClass = RubyString.createStringClass(this);
         new SymbolMetaClass(this).initializeClass();
         if(profile.allowClass("ThreadGroup")) {
             RubyThreadGroup.createThreadGroupClass(this);

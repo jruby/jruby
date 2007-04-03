@@ -51,7 +51,9 @@ import org.jruby.runtime.Arity;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -85,6 +87,123 @@ public class RubyString extends RubyObject {
     private RubyFixnum r_hash;
     private boolean validHash = false;
     private String stringValue;
+
+    private static ObjectAllocator STRING_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            RubyString newString = runtime.newString("");
+            
+            newString.setMetaClass(klass);
+            
+            return newString;
+        }
+    };
+    
+    public static RubyClass createStringClass(Ruby runtime) {
+        RubyClass stringClass = runtime.defineClass("String", runtime.getObject(), STRING_ALLOCATOR);
+        stringClass.index = ClassIndex.STRING;
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyString.class);
+        
+        stringClass.includeModule(runtime.getModule("Comparable"));
+        stringClass.includeModule(runtime.getModule("Enumerable"));
+        
+        stringClass.defineFastMethod("<=>", callbackFactory.getFastMethod("op_cmp", RubyKernel.IRUBY_OBJECT));
+        stringClass.defineFastMethod("==", callbackFactory.getFastMethod("eql", RubyKernel.IRUBY_OBJECT));
+        stringClass.defineFastMethod("+", callbackFactory.getFastMethod("op_plus", RubyKernel.IRUBY_OBJECT));
+        stringClass.defineFastMethod("*", callbackFactory.getFastMethod("op_mul", RubyKernel.IRUBY_OBJECT));
+        stringClass.defineFastMethod("%", callbackFactory.getFastMethod("format", RubyKernel.IRUBY_OBJECT));
+        stringClass.defineFastMethod("hash", callbackFactory.getFastMethod("hash"));
+        stringClass.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));
+        
+        // To override Comparable with faster String ones
+        stringClass.defineFastMethod(">=", callbackFactory.getFastMethod("op_ge", RubyKernel.IRUBY_OBJECT));
+        stringClass.defineFastMethod(">", callbackFactory.getFastMethod("op_gt", RubyKernel.IRUBY_OBJECT));
+        stringClass.defineFastMethod("<=", callbackFactory.getFastMethod("op_le", RubyKernel.IRUBY_OBJECT));
+        stringClass.defineFastMethod("<", callbackFactory.getFastMethod("op_lt", RubyKernel.IRUBY_OBJECT));
+        
+        stringClass.defineFastMethod("eql?", callbackFactory.getFastMethod("op_eql", RubyKernel.IRUBY_OBJECT));
+        
+        stringClass.defineFastMethod("[]", callbackFactory.getFastOptMethod("aref"));
+        stringClass.defineFastMethod("[]=", callbackFactory.getFastOptMethod("aset"));
+        stringClass.defineFastMethod("=~", callbackFactory.getFastMethod("match", RubyKernel.IRUBY_OBJECT));
+        stringClass.defineFastMethod("~", callbackFactory.getFastMethod("match2"));
+        stringClass.defineFastMethod("capitalize", callbackFactory.getFastMethod("capitalize"));
+        stringClass.defineFastMethod("capitalize!", callbackFactory.getFastMethod("capitalize_bang"));
+        stringClass.defineFastMethod("casecmp", callbackFactory.getFastMethod("casecmp", RubyKernel.IRUBY_OBJECT));
+        stringClass.defineFastMethod("center", callbackFactory.getFastOptMethod("center"));
+        stringClass.defineFastMethod("chop", callbackFactory.getFastMethod("chop"));
+        stringClass.defineFastMethod("chop!", callbackFactory.getFastMethod("chop_bang"));
+        stringClass.defineFastMethod("chomp", callbackFactory.getFastOptMethod("chomp"));
+        stringClass.defineFastMethod("chomp!", callbackFactory.getFastOptMethod("chomp_bang"));
+        stringClass.defineFastMethod("concat", callbackFactory.getFastMethod("concat", RubyKernel.IRUBY_OBJECT));
+        stringClass.defineFastMethod("count", callbackFactory.getFastOptMethod("count"));
+        stringClass.defineFastMethod("crypt", callbackFactory.getFastMethod("crypt", RubyKernel.IRUBY_OBJECT));
+        stringClass.defineFastMethod("delete", callbackFactory.getFastOptMethod("delete"));
+        stringClass.defineFastMethod("delete!", callbackFactory.getFastOptMethod("delete_bang"));
+        stringClass.defineFastMethod("downcase", callbackFactory.getFastMethod("downcase"));
+        stringClass.defineFastMethod("downcase!", callbackFactory.getFastMethod("downcase_bang"));
+        stringClass.defineFastMethod("dump", callbackFactory.getFastMethod("dump"));
+        stringClass.defineMethod("each_line", callbackFactory.getOptMethod("each_line"));
+        stringClass.defineMethod("each_byte", callbackFactory.getMethod("each_byte"));
+        stringClass.defineFastMethod("empty?", callbackFactory.getFastMethod("empty"));
+        stringClass.defineMethod("gsub", callbackFactory.getOptMethod("gsub"));
+        stringClass.defineMethod("gsub!", callbackFactory.getOptMethod("gsub_bang"));
+        stringClass.defineFastMethod("hex", callbackFactory.getFastMethod("hex"));
+        stringClass.defineFastMethod("include?", callbackFactory.getFastMethod("include", RubyKernel.IRUBY_OBJECT));
+        stringClass.defineFastMethod("index", callbackFactory.getFastOptMethod("index"));
+        stringClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
+        stringClass.defineFastMethod("initialize_copy", callbackFactory.getFastMethod("replace", RubyKernel.IRUBY_OBJECT));
+        stringClass.defineFastMethod("insert", callbackFactory.getFastMethod("insert", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
+        stringClass.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
+        stringClass.defineFastMethod("length", callbackFactory.getFastMethod("length"));
+        stringClass.defineFastMethod("ljust", callbackFactory.getFastOptMethod("ljust"));
+        stringClass.defineFastMethod("lstrip", callbackFactory.getFastMethod("lstrip"));
+        stringClass.defineFastMethod("lstrip!", callbackFactory.getFastMethod("lstrip_bang"));
+        stringClass.defineFastMethod("match", callbackFactory.getFastMethod("match3", RubyKernel.IRUBY_OBJECT));
+        stringClass.defineFastMethod("oct", callbackFactory.getFastMethod("oct"));
+        stringClass.defineFastMethod("replace", callbackFactory.getFastMethod("replace", RubyKernel.IRUBY_OBJECT));
+        stringClass.defineFastMethod("reverse", callbackFactory.getFastMethod("reverse"));
+        stringClass.defineFastMethod("reverse!", callbackFactory.getFastMethod("reverse_bang"));
+        stringClass.defineFastMethod("rindex", callbackFactory.getFastOptMethod("rindex"));
+        stringClass.defineFastMethod("rjust", callbackFactory.getFastOptMethod("rjust"));
+        stringClass.defineFastMethod("rstrip", callbackFactory.getFastMethod("rstrip"));
+        stringClass.defineFastMethod("rstrip!", callbackFactory.getFastMethod("rstrip_bang"));
+        stringClass.defineMethod("scan", callbackFactory.getMethod("scan", RubyKernel.IRUBY_OBJECT));
+        stringClass.defineFastMethod("slice!", callbackFactory.getFastOptMethod("slice_bang"));
+        stringClass.defineFastMethod("split", callbackFactory.getFastOptMethod("split"));
+        stringClass.defineFastMethod("strip", callbackFactory.getFastMethod("strip"));
+        stringClass.defineFastMethod("strip!", callbackFactory.getFastMethod("strip_bang"));
+        stringClass.defineFastMethod("succ", callbackFactory.getFastMethod("succ"));
+        stringClass.defineFastMethod("succ!", callbackFactory.getFastMethod("succ_bang"));
+        stringClass.defineFastMethod("squeeze", callbackFactory.getFastOptMethod("squeeze"));
+        stringClass.defineFastMethod("squeeze!", callbackFactory.getFastOptMethod("squeeze_bang"));
+        stringClass.defineMethod("sub", callbackFactory.getOptMethod("sub"));
+        stringClass.defineMethod("sub!", callbackFactory.getOptMethod("sub_bang"));
+        stringClass.defineFastMethod("sum", callbackFactory.getFastOptMethod("sum"));
+        stringClass.defineFastMethod("swapcase", callbackFactory.getFastMethod("swapcase"));
+        stringClass.defineFastMethod("swapcase!", callbackFactory.getFastMethod("swapcase_bang"));
+        stringClass.defineFastMethod("to_f", callbackFactory.getFastMethod("to_f"));
+        stringClass.defineFastMethod("to_i", callbackFactory.getFastOptMethod("to_i"));
+        stringClass.defineFastMethod("to_str", callbackFactory.getFastMethod("to_str"));
+        stringClass.defineFastMethod("to_sym", callbackFactory.getFastMethod("to_sym"));
+        stringClass.defineFastMethod("tr", callbackFactory.getFastMethod("tr", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
+        stringClass.defineFastMethod("tr!", callbackFactory.getFastMethod("tr_bang", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
+        stringClass.defineFastMethod("tr_s", callbackFactory.getFastMethod("tr_s", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
+        stringClass.defineFastMethod("tr_s!", callbackFactory.getFastMethod("tr_s_bang", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
+        stringClass.defineFastMethod("unpack", callbackFactory.getFastMethod("unpack", RubyKernel.IRUBY_OBJECT));
+        stringClass.defineFastMethod("upcase", callbackFactory.getFastMethod("upcase"));
+        stringClass.defineFastMethod("upcase!", callbackFactory.getFastMethod("upcase_bang"));
+        stringClass.defineMethod("upto", callbackFactory.getMethod("upto", RubyKernel.IRUBY_OBJECT));
+        
+        stringClass.defineAlias("<<", "concat");
+        stringClass.defineAlias("each", "each_line");
+        stringClass.defineAlias("intern", "to_sym");
+        stringClass.defineAlias("next", "succ");
+        stringClass.defineAlias("next!", "succ!");
+        stringClass.defineAlias("size", "length");
+        stringClass.defineAlias("slice", "[]");
+        
+        return stringClass;
+    }
 
     // @see IRuby.newString(...)
     private RubyString(Ruby runtime, CharSequence value) {
