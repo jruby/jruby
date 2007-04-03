@@ -12,11 +12,11 @@ class TestTraceFunc < Test::Unit::TestCase
 
     set_trace_func nil
 
-    expected = ["    line test/test_trace_func.rb.rb:10 test_class TestTraceFunc\n",
-      "   class test/test_trace_func.rb.rb:10 test_class TestTraceFunc\n",
-      "     end test/test_trace_func.rb.rb:10 test_class TestTraceFunc\n",
-      "    line test/test_trace_func.rb.rb:13 test_class TestTraceFunc\n",
-      "  c-call test/test_trace_func.rb.rb:13 set_trace_func Kernel  \n"]
+    expected = ["    line test/test_trace_func.rb:10 test_class TestTraceFunc\n",
+    "   class test/test_trace_func.rb:10 test_class TestTraceFunc\n",
+    "     end test/test_trace_func.rb:10 test_class TestTraceFunc\n",
+    "    line test/test_trace_func.rb:13 test_class TestTraceFunc\n",
+    "  c-call test/test_trace_func.rb:13 set_trace_func Kernel  \n"]
     assert_equal(expected, output);
   end
 
@@ -33,13 +33,13 @@ class TestTraceFunc < Test::Unit::TestCase
 
     set_trace_func nil
 
-    expected = ["    line test/test_trace_func.rb.rb:29 test_block_and_vars TestTraceFunc\n",
-      "  c-call test/test_trace_func.rb.rb:29      times  Integer\n",
-      "    line test/test_trace_func.rb.rb:30 test_block_and_vars TestTraceFunc\n",
-      "    line test/test_trace_func.rb.rb:31 test_block_and_vars TestTraceFunc\n",
-      "c-return test/test_trace_func.rb.rb:29      times  Integer\n",
-      "    line test/test_trace_func.rb.rb:34 test_block_and_vars TestTraceFunc\n",
-      "  c-call test/test_trace_func.rb.rb:34 set_trace_func   Kernel\n"]
+    expected = ["    line test/test_trace_func.rb:29 test_block_and_vars TestTraceFunc\n",
+    "  c-call test/test_trace_func.rb:29      times  Integer\n",
+    "    line test/test_trace_func.rb:30 test_block_and_vars TestTraceFunc\n",
+    "    line test/test_trace_func.rb:31 test_block_and_vars TestTraceFunc\n",
+    "c-return test/test_trace_func.rb:29      times  Integer\n",
+    "    line test/test_trace_func.rb:34 test_block_and_vars TestTraceFunc\n",
+    "  c-call test/test_trace_func.rb:34 set_trace_func   Kernel\n"]
     assert_equal(expected, output)
   end
 end
