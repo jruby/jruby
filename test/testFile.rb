@@ -70,6 +70,19 @@ test_equal(true, File.fnmatch('*', 'dave/.profile'))
 test_equal(true, File.fnmatch('*', 'dave/.profile', File::FNM_DOTMATCH))
 test_equal(false, File.fnmatch('*', 'dave/.profile', File::FNM_PATHNAME))
 
+test_equal(false, File.fnmatch("/.ht*",""))
+test_equal(false, File.fnmatch("/*~",""))
+test_equal(false, File.fnmatch("/.ht*","/"))
+test_equal(false, File.fnmatch("/*~","/"))
+test_equal(false, File.fnmatch("/.ht*",""))
+test_equal(false, File.fnmatch("/*~",""))
+test_equal(false, File.fnmatch("/.ht*","/stylesheets"))
+test_equal(false, File.fnmatch("/*~","/stylesheets"))
+test_equal(false, File.fnmatch("/.ht*",""))
+test_equal(false, File.fnmatch("/*~",""))
+test_equal(false, File.fnmatch("/.ht*","/favicon.ico"))
+test_equal(false, File.fnmatch("/*~","/favicon.ico"))
+
 # join
 [
   ["a", "b", "c", "d"],

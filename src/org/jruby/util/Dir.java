@@ -94,10 +94,10 @@ public class Dir {
                 break;
             case '*':
                 while(pat < len && (c = _pat[pat++]) == '*');
-                if((period && string[s] == '.' && (s == 0 || (pathname && isdirsep(string[s-1]))))) {
+                if(s < slen && (period && string[s] == '.' && (s == 0 || (pathname && isdirsep(string[s-1]))))) {
                     return FNM_NOMATCH;
                 }
-                if(pat >= len) {
+                if(pat > len || (pat == len && c == '*')) {
                     if(pathname && rb_path_next(string, s, slen) < slen) {
                         return FNM_NOMATCH;
                     } else {
@@ -111,8 +111,7 @@ public class Dir {
                     }
                     return FNM_NOMATCH;
                 }
-
-                test = (char)((escape && c == '\\' ? _pat[pat] : c)&0xFF);
+                test = (char)((escape && c == '\\' && pat < len ? _pat[pat] : c)&0xFF);
                 test = Character.toLowerCase(test);
                 pat--;
                 while(s < slen) {
