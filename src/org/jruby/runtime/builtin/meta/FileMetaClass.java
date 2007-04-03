@@ -53,6 +53,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 import org.jruby.util.IOModes;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.Sprintf;
@@ -415,7 +416,7 @@ public class FileMetaClass extends IOMetaClass {
         }
         return getRuntime().newString(extractedPath);
     }
-    
+
     /**
      * Returns true if path matches against pattern The pattern is not a regular expression;
      * instead it follows rules similar to shell filename globbing. It may contain the following
@@ -425,34 +426,21 @@ public class FileMetaClass extends IOMetaClass {
      *   [set]:  Matches a single char in a set (re: [...]).
      *
      */
-    // Fixme: implement FNM_PATHNAME, FNM_DOTMATCH, and FNM_CASEFOLD
     public IRubyObject fnmatch(IRubyObject[] args) {
-        Arity.checkArgumentCount(getRuntime(), args, 2, -1);
-        String pattern = args[0].convertToString().toString();
-        RubyString path = args[1].convertToString();
-        int opts = (int) (args.length > 2 ? args[2].convertToInteger().getLongValue() : 0);
-        
-        boolean dot = pattern.startsWith(".");
-        
-        pattern = pattern.replaceAll("(\\.)", "\\\\$1");
-        pattern = pattern.replaceAll("(?<=[^\\\\])\\*", ".*");
-        pattern = pattern.replaceAll("^\\*", ".*");
-        pattern = pattern.replaceAll("(?<=[^\\\\])\\?", ".");
-        pattern = pattern.replaceAll("^\\?", ".");
-        if ((opts & FNM_NOESCAPE) != FNM_NOESCAPE) {
-            pattern = pattern.replaceAll("\\\\([^\\\\*\\\\?])", "$1");
+        int flags;
+        if(Arity.checkArgumentCount(getRuntime(), args, 2, 3) == 3) {
+            flags = RubyNumeric.num2int(args[2]);
+        } else {
+            flags = 0;
         }
-        pattern = pattern.replaceAll("\\{", "\\\\{");
-        pattern = pattern.replaceAll("\\}", "\\\\}");
-        pattern = "^" + pattern + "$";
-        
-        if (path.toString().startsWith(".") && !dot) {
-            return getRuntime().newBoolean(false);
+        ByteList pattern = args[0].convertToString().getByteList();
+        ByteList path = args[1].convertToString().getByteList();
+        if(org.jruby.util.Dir.fnmatch(pattern.bytes, 0, pattern.realSize , path.bytes, 0, path.realSize, flags) == 0) {
+            return getRuntime().getTrue();
         }
-        
-        return getRuntime().newBoolean(Pattern.matches(pattern, path.toString()));
+        return getRuntime().getFalse();
     }
-    
+
     /*
      * Fixme:  This does not have exact same semantics as RubyArray.join, but they
      * probably could be consolidated (perhaps as join(args[], sep, doChomp)).
