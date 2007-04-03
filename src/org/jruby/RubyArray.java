@@ -236,6 +236,9 @@ public class RubyArray extends RubyObject implements List {
     public static final RubyArray newArray(final Ruby runtime, final long len) {
         return new RubyArray(runtime, len);
     }
+    public static final RubyArray newArrayLight(final Ruby runtime, final long len) {
+        return new RubyArray(runtime, len, false);
+    }
 
     /** rb_ary_new
      *

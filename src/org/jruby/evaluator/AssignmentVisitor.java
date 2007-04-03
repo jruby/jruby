@@ -29,7 +29,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.evaluator;
 
-import java.util.ArrayList;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
@@ -211,7 +210,7 @@ public class AssignmentVisitor {
             } else if (varLen < valueLen) {
                 assign(runtime, context, self, argsNode, value.subseq(varLen, valueLen), Block.NULL_BLOCK, callAsProc);
             } else {
-                assign(runtime, context, self, argsNode, runtime.newArray(0), Block.NULL_BLOCK, callAsProc);
+                assign(runtime, context, self, argsNode, RubyArray.newArrayLight(runtime, 0), Block.NULL_BLOCK, callAsProc);
             }
         } else if (callAsProc && valueLen < varLen) {
             throw runtime.newArgumentError("Wrong # of arguments (" + valueLen + " for " + varLen + ")");
@@ -228,7 +227,7 @@ public class AssignmentVisitor {
         IRubyObject result;
         MultipleAsgnNode iVisited = (MultipleAsgnNode)node;
         if (!(value instanceof RubyArray)) {
-            value = RubyArray.newArray(runtime, value);
+            value = RubyArray.newArrayNoCopyLight(runtime, new IRubyObject[] {value});
         }
         result = multiAssign(runtime, context, self, iVisited, (RubyArray) value, check);
         return result;
