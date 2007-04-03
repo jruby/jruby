@@ -332,15 +332,4 @@ public class Glob {
 			return pattern;
 		}
 	}
-
-    public static void main(String[] args) {
-        String PATTERN = "*/**/*{.rb,.so,.jar}";
-        String CWD = new java.io.File(".").getAbsolutePath();
-        long before = System.currentTimeMillis();
-        for(int i=0;i<10;i++) {
-            new Glob(CWD,PATTERN).getNames();
-        }
-        long after = System.currentTimeMillis();
-        System.err.println("10 Globs took " + (after-before) + " millis");
-    }
 }

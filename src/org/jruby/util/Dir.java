@@ -540,7 +540,6 @@ public class Dir {
                             }
                             continue;
                         }
-
                         byte[] bs = dirp[i].getBytes();
                         if(fnmatch(magic,0,magic.length,bs,0,bs.length,flags) == 0) {
                             buf.length(0);
@@ -564,9 +563,9 @@ public class Dir {
                         if(status == 0) {
                             ByteList b = (ByteList)iter.next();
                             if(b.bytes[0] == '/'  || (DOSISH && 2<b.realSize && b.bytes[1] == ':' && isdirsep(b.bytes[2]))) {
-                                st = new File(cwd, new String(b.bytes, 0, b.realSize));
-                            } else {
                                 st = new File(new String(b.bytes, 0, b.realSize));
+                            } else {
+                                st = new File(cwd, new String(b.bytes, 0, b.realSize));
                             }
 
                             if(st.exists() && st.isDirectory()) {
@@ -584,18 +583,5 @@ public class Dir {
             p = (m == -1 ? m : p+m);
         }
         return status;
-    }
-
-
-    public static void main(String[] args) throws Exception {
-        String PATTERN = "*/**/*{.rb,.so,.jar}";
-        String CWD = new java.io.File(".").getAbsolutePath();
-        byte[] pt = PATTERN.getBytes("ISO8859-1");
-        long before = System.currentTimeMillis();
-        for(int i=0;i<5 ;i++) {
-            push_glob(CWD, pt, 0, pt.length, 0);
-        }
-        long after = System.currentTimeMillis();
-        System.err.println("10 Globs took " + (after-before) + " millis");
     }
 }// Dir
