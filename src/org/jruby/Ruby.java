@@ -1287,11 +1287,14 @@ public final class Ruby {
 
             context.preTrace();
             try {
-                traceFunction.call(new IRubyObject[] { newString(event), newString(file),
-                        newFixnum(position.getEndLine()),
-                        name != null ? RubySymbol.newSymbol(this, name) : getNil(),
-                        self != null ? self : getNil(),
-                        type });
+                traceFunction.call(new IRubyObject[] {
+                    newString(event), // event name
+                    newString(file), // filename
+                    newFixnum(position.getStartLine() + 1), // line numbers should be 1-based
+                    name != null ? RubySymbol.newSymbol(this, name) : getNil(),
+                    self != null ? self : getNil(),
+                    type
+                });
             } finally {
                 context.postTrace();
                 context.setPosition(savePosition);

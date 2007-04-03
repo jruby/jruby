@@ -1871,11 +1871,11 @@ public class EvaluationState {
 
             return evalInternal(runtime,context, bodyNode, type, block);
         } finally {
-            context.postClassEval();
-
             if (isTrace(runtime)) {
                 callTraceFunction(runtime, context, "end", null);
             }
+            
+            context.postClassEval();
         }
     }
 
