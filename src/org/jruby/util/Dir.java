@@ -455,7 +455,7 @@ public class Dir {
                 }
             }
 
-            if(_path[path] == '/') {
+            if(_path[path] == '/' || (DOSISH && path+2<plen && _path[path+1] == ':' && isdirsep(_path[path+2]))) {
                 if(new File(new String(_path, path, plen - path)).exists()) {
                     status = func.call(_path, path, plen, arg);
                 }
@@ -484,7 +484,7 @@ public class Dir {
                         dir = base;
                     }
                     magic = extract_elem(_path,p,plen);
-                    if(dir[0] == '/') {
+                    if(dir[0] == '/'  || (DOSISH && 2<dir.length && dir[1] == ':' && isdirsep(dir[2]))) {
                         st = new File(new String(dir));
                     } else {
                         st = new File(cwd, new String(dir));
@@ -520,7 +520,7 @@ public class Dir {
                             buf.append(base);
                             buf.append( BASE(base) ? SLASH : EMPTY );
                             buf.append(dirp[i].getBytes());
-                            if(buf.bytes[0] == '/') {
+                            if(buf.bytes[0] == '/' || (DOSISH && 2<buf.realSize && buf.bytes[1] == ':' && isdirsep(buf.bytes[2]))) {
                                 st = new File(new String(buf.bytes,0,buf.realSize));
                             } else {
                                 st = new File(cwd, new String(buf.bytes,0,buf.realSize));
@@ -564,7 +564,7 @@ public class Dir {
                     for(Iterator iter = link.iterator();iter.hasNext();) {
                         if(status == 0) {
                             ByteList b = (ByteList)iter.next();
-                            if(b.bytes[0] == '/') {
+                            if(b.bytes[0] == '/'  || (DOSISH && 2<b.realSize && b.bytes[1] == ':' && isdirsep(b.bytes[2]))) {
                                 st = new File(cwd, new String(b.bytes, 0, b.realSize));
                             } else {
                                 st = new File(new String(b.bytes, 0, b.realSize));
