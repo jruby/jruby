@@ -39,7 +39,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * The point is that the IRubyObject could exhibit duck typing, in the style of IO versus StringIO, for example.
  *
  * At the moment, the only functionality supported is writing, and the only requirement on the io-object is
- * that it responds to write() like IO.
+ * that it responds to write() and close() like IO.
  * 
  * @author <a href="mailto:Ola.Bini@ki.se">Ola Bini</a>
  */
@@ -68,5 +68,9 @@ public class IOOutputStream extends OutputStream {
 
     public void write(final byte[] b,final int off, final int len) throws IOException {
         io.callMethod(io.getRuntime().getCurrentContext(),"write", RubyString.newString(io.getRuntime(), new ByteList(b, off, len, false)));
+    }
+    
+    public void close() throws IOException {
+        io.callMethod(io.getRuntime().getCurrentContext(), "close");
     }
 }
