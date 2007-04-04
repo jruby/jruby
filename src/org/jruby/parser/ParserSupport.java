@@ -285,6 +285,10 @@ public class ParserSupport {
         	return first.getPosition();
         }
         
+        if(first == null){
+            return second.getPosition();
+        }
+        
         return first.getPosition().union(second.getPosition());
     }
     
