@@ -71,8 +71,7 @@ public final class ArgsUtil {
             return RubyArray.newArrayNoCopyLight(runtime, new IRubyObject[] {value});
         }
         
-        // FIXME: I don't like this, but all consumers of this method do the same cast.
-        IRubyObject newValue = value.convertToType("Array", "to_ary", false);
+        IRubyObject newValue = value.convertToType(runtime.getArray(), "to_ary", false);
 
         if (newValue.isNil()) {
             return RubyArray.newArrayNoCopyLight(runtime, new IRubyObject[] {value});

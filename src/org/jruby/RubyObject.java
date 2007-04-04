@@ -688,7 +688,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public IRubyObject checkStringType() {
-        IRubyObject str = convertToTypeWithCheck("String","to_str");
+        IRubyObject str = convertToTypeWithCheck(getRuntime().getString(), "to_str");
         if(!str.isNil() && !(str instanceof RubyString)) {
             str = getRuntime().newString("");
         }
@@ -699,7 +699,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     *
     */    
     public IRubyObject checkArrayType() {
-        return convertToTypeWithCheck("Array","to_ary");
+        return convertToTypeWithCheck(getRuntime().getArray(), "to_ary");
     }
 
     /** specific_eval

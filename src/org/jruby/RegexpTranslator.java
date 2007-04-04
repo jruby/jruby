@@ -3,7 +3,6 @@
  */
 package org.jruby;
 
-import jregex.Matcher;
 import jregex.MatchResult;
 import jregex.Pattern;
 import jregex.REFlags;

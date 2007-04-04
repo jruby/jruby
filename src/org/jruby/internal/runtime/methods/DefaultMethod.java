@@ -33,7 +33,6 @@
 package org.jruby.internal.runtime.methods;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;

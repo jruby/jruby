@@ -43,7 +43,6 @@ import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
-import org.jruby.ast.Node;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
@@ -423,30 +422,8 @@ public interface IRubyObject {
      * @param convertMethod is the method to be called to try and convert to targeType
      * @param raiseOnError will throw an Error if conversion does not work
      * @return the converted value
-     * @deprecated
-     */
-    IRubyObject convertToType(String targetType, String convertMethod, boolean raiseOnError);
-    
-    /**
-     * Converts this object to type 'targetType' using 'convertMethod' method (MRI: convert_type).
-     *
-     * @param targetType is the type we are trying to convert to
-     * @param convertMethod is the method to be called to try and convert to targeType
-     * @param raiseOnError will throw an Error if conversion does not work
-     * @return the converted value
      */
     IRubyObject convertToType(RubyClass targetType, String convertMethod, boolean raiseOnError);
-    
-    /**
-     * Higher level conversion utility similiar to convertToType but it can throw an
-     * additional TypeError during conversion (MRI: rb_check_convert_type).
-     *
-     * @param targetType is the type we are trying to convert to
-     * @param convertMethod is the method to be called to try and convert to targeType
-     * @return the converted value
-     * @deprecated
-     */
-    IRubyObject convertToTypeWithCheck(String targetType, String convertMethod);
     
     /**
      * Higher level conversion utility similiar to convertToType but it can throw an

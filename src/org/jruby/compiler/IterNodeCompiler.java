@@ -9,14 +9,8 @@
 
 package org.jruby.compiler;
 
-import org.jruby.ast.DAsgnNode;
-import org.jruby.ast.GlobalAsgnNode;
-import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.IterNode;
-import org.jruby.ast.LocalAsgnNode;
-import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
-import org.jruby.ast.NodeTypes;
 import org.jruby.runtime.Arity;
 
 /**

@@ -80,7 +80,6 @@ import org.jruby.util.collections.SinglyLinkedList;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
-import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 import jregex.Pattern;

@@ -33,7 +33,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
-import java.util.regex.Pattern;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -614,7 +613,7 @@ public class FileMetaClass extends IOMetaClass {
     // Can we produce IOError which bypasses a close?
     public IRubyObject truncate(IRubyObject arg1, IRubyObject arg2) {
         RubyString filename = RubyString.stringValue(arg1);
-        RubyFixnum newLength = (RubyFixnum) arg2.convertToType("Fixnum", "to_int", true);
+        RubyFixnum newLength = (RubyFixnum) arg2.convertToType(getRuntime().getFixnum(), "to_int", true);
         IRubyObject[] args = new IRubyObject[] { filename, getRuntime().newString("w+") };
         RubyFile file = (RubyFile) open(args, false, null);
         file.truncate(newLength);

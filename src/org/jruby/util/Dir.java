@@ -80,7 +80,7 @@ public class Dir {
         boolean escape = (flags & FNM_NOESCAPE) == 0;
         boolean pathname = (flags & FNM_PATHNAME) != 0;
         boolean period = (flags & FNM_DOTMATCH) == 0;
-        boolean nocase = (flags & FNM_CASEFOLD) != 0;
+        //boolean nocase = (flags & FNM_CASEFOLD) != 0;
 
         while(pat<len) {
             c = _pat[pat++];
@@ -165,7 +165,7 @@ public class Dir {
     public static int range(byte[] _pat, int pat, int len, char test, int flags) {
         boolean not;
         boolean ok = false;
-        boolean nocase = (flags & FNM_CASEFOLD) != 0;
+        //boolean nocase = (flags & FNM_CASEFOLD) != 0;
         boolean escape = (flags & FNM_NOESCAPE) == 0;
 
         not = _pat[pat] == '!' || _pat[pat] == '^';
@@ -272,7 +272,6 @@ public class Dir {
 
     private static int push_braces(String cwd, List ary, byte[] str, int _s, int slen, int flags) {
         ByteList buf = new ByteList(20);
-        int b;
         int s, p, t, lbrace, rbrace;
         int nest = 0;
         int status = 0;
@@ -315,7 +314,6 @@ public class Dir {
                 }
                 buf.length(0);
                 buf.append(str,s,lbrace-s);
-                b = lbrace-s;
                 buf.append(str, t, p-t);
                 buf.append(str, rbrace+1, slen-(rbrace+1));
                 status = push_braces(cwd, ary, buf.bytes, 0, buf.realSize, flags);

@@ -42,7 +42,6 @@ import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**

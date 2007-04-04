@@ -183,7 +183,7 @@ public class Sprintf {
             }
 
             // basically just forcing a TypeError here to match MRI
-            obj = obj.convertToType("Fixnum", "to_int", true);
+            obj = obj.convertToType(obj.getRuntime().getFixnum(), "to_int", true);
             return (int)((RubyFixnum)obj).getLongValue();
         }
         
@@ -565,7 +565,7 @@ public class Sprintf {
                             arg = RubyNumeric.str2inum(arg.getRuntime(),(RubyString)arg,0,true);
                             break;
                         default:
-                            arg = arg.convertToType("Integer","to_i",true);
+                            arg = arg.convertToType(arg.getRuntime().getClass("Integer"),"to_i",true);
                             break;
                         }
                         type = arg.getMetaClass().index;
@@ -1217,6 +1217,7 @@ public class Sprintf {
     }
 
     // debugging code, keeping for now
+    /*
     private static final void showLiteral(byte[] format, int start, int offset) {
         System.out.println("literal: ["+ new String(format,start,offset-start)+ "], " +
                 " s="+ start + " o="+ offset);
@@ -1237,13 +1238,10 @@ public class Sprintf {
         .toString());
         
     }
+    */
     
     private static final void raiseArgumentError(Args args, String message) {
         args.raiseArgumentError(message);
-    }
-    
-    private static final void warn(Args args, String message) {
-        args.warn(message);
     }
     
     private static final void warning(Args args, String message) {

@@ -859,13 +859,10 @@ public class RubyModule extends RubyObject {
             name = name + "=";
             defineMethod(name, new Callback() {
                 public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-                    IRubyObject[] fargs = runtime.getCurrentContext().getFrameArgs();
+                    // ENEBO: Can anyone get args to be anything but length 1?
+                    Arity.checkArgumentCount(getRuntime(), args, 1, 1);
 
-                    if (fargs.length != 1) {
-                        throw runtime.newArgumentError("wrong # of arguments(" + fargs.length + "for 1)");
-                    }
-
-                    return self.setInstanceVariable(variableName, fargs[0]);
+                    return self.setInstanceVariable(variableName, args[0]);
                 }
 
                 public Arity getArity() {

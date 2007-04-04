@@ -317,7 +317,7 @@ public class IOMetaClass extends ObjectMetaClass {
         IRubyObject[] readArguments;
         
         if (args.length >= 2) {
-            readArguments = new IRubyObject[] {args[1].convertToType("Fixnum", "to_int", true)};
+            readArguments = new IRubyObject[] {args[1].convertToType(getRuntime().getFixnum(), "to_int", true)};
         } else {
             readArguments = new IRubyObject[] {};
         }
@@ -325,7 +325,7 @@ public class IOMetaClass extends ObjectMetaClass {
         try {
             
             if (args.length == 3) {
-                file.seek(new IRubyObject[] {args[2].convertToType("Fixnum", "to_int", true)});
+                file.seek(new IRubyObject[] {args[2].convertToType(getRuntime().getFixnum(), "to_int", true)});
             }
             
             return file.read(readArguments);

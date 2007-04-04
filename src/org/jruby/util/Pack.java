@@ -322,7 +322,7 @@ public class Pack {
     private static String convert2String(IRubyObject l2Conv) {
         Ruby runtime = l2Conv.getRuntime();
         if (l2Conv.getMetaClass() != runtime.getString()) {
-            l2Conv = l2Conv.convertToType("String", "to_s", true); //we may need a false here, not sure
+            l2Conv = l2Conv.convertToType(runtime.getString(), "to_s", true); //we may need a false here, not sure
         }
         return ((RubyString) l2Conv).toString();
     }

@@ -2198,8 +2198,6 @@ public class Convert {
       100000000000000000L
     };
     
-    private static final Long LONG_ZERO = new Long(0);
-    
     private static final BigInteger BIG_INT_ZERO = BigInteger.valueOf(0L);
     
     private static final byte[] EMPTY_BYTES = {};
@@ -2309,7 +2307,5 @@ public class Convert {
     };
     private static final int MAX_SMALL_10 = SMALL_10_POWERS.length - 1;
     private static final int  MAX_DECIMAL_DIGITS = 15;
-    private static final int  BIG_DECIMAL_EXPONENT = 324;
-    private static final int  INT_DECIMAL_DIGITS = 9;
 
 }

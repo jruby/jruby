@@ -145,7 +145,7 @@ public class RubyFile extends RubyIO {
 
 	public IRubyObject flock(IRubyObject lockingConstant) {
         FileChannel fileChannel = handler.getFileChannel();
-        int lockMode = (int) ((RubyFixnum) lockingConstant.convertToType("Fixnum", "to_int", 
+        int lockMode = (int) ((RubyFixnum) lockingConstant.convertToType(getRuntime().getFixnum(), "to_int", 
             true)).getLongValue();
 
         try {
@@ -265,7 +265,7 @@ public class RubyFile extends RubyIO {
 	}
 	
     public IRubyObject truncate(IRubyObject arg) {
-    	RubyFixnum newLength = (RubyFixnum) arg.convertToType("Fixnum", "to_int", true);
+    	RubyFixnum newLength = (RubyFixnum) arg.convertToType(getRuntime().getFixnum(), "to_int", true);
         try {
             handler.truncate(newLength.getLongValue());
         } catch (IOHandler.PipeException e) {

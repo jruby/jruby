@@ -9,8 +9,6 @@
 
 package org.jruby.compiler;
 
-import java.util.Collections;
-import java.util.Iterator;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;

@@ -443,13 +443,13 @@ public class EvaluationState {
     }
 
     public static RubyArray arrayValue(Ruby runtime, IRubyObject value) {
-        IRubyObject newValue = value.convertToType("Array", "to_ary", false);
+        IRubyObject newValue = value.convertToType(runtime.getArray(), "to_ary", false);
         if (newValue.isNil()) {
             // Object#to_a is obsolete.  We match Ruby's hack until to_a goes away.  Then we can 
             // remove this hack too.
             if (value.getMetaClass().searchMethod("to_a").getImplementationClass() != runtime
                     .getKernel()) {
-                newValue = value.convertToType("Array", "to_a", false);
+                newValue = value.convertToType(runtime.getArray(), "to_a", false);
                 if (newValue.getType() != runtime.getClass("Array")) {
                     throw runtime.newTypeError("`to_a' did not return Array");
                 }
@@ -465,7 +465,7 @@ public class EvaluationState {
         if (value instanceof RubyArray) return value;
 
         if (value.respondsTo("to_ary")) {
-            return value.convertToType("Array", "to_ary", false);
+            return value.convertToType(runtime.getArray(), "to_ary", false);
         }
 
         return runtime.newArray(value);
@@ -1912,7 +1912,7 @@ public class EvaluationState {
 
             // If not already a proc then we should try and make it one.
             if (!(proc instanceof RubyProc)) {
-                proc = proc.convertToType("Proc", "to_proc", false);
+                proc = proc.convertToType(runtime.getClass("Proc"), "to_proc", false);
 
                 if (!(proc instanceof RubyProc)) {
                     throw runtime.newTypeError("wrong argument type "

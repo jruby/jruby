@@ -59,19 +59,20 @@ public class RubyObjectSpace {
     }
 
     public static IRubyObject define_finalizer(IRubyObject recv, IRubyObject[] args, Block block) {
+        Ruby runtime = recv.getRuntime();
         RubyProc proc = null;
-        if(Arity.checkArgumentCount(recv.getRuntime(), args,1,2) == 2) {
+        if(Arity.checkArgumentCount(runtime, args,1,2) == 2) {
             if(args[1] instanceof RubyProc) {
                 proc = (RubyProc)args[1];
             } else {
-                proc = (RubyProc)args[1].convertToType("Proc","to_proc",true);
+                proc = (RubyProc)args[1].convertToType(runtime.getClass("Proc"), "to_proc", true);
             }
         } else {
-            proc = recv.getRuntime().newProc(false, block);
+            proc = runtime.newProc(false, block);
         }
         IRubyObject obj = args[0];
         long id = RubyNumeric.fix2long(obj.id());
-        recv.getRuntime().getObjectSpace().addFinalizer(obj,id,proc);
+        runtime.getObjectSpace().addFinalizer(obj, id, proc);
         return recv;
     }
 

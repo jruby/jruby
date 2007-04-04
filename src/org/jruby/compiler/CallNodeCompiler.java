@@ -10,11 +10,8 @@
 package org.jruby.compiler;
 
 import org.jruby.ast.CallNode;
-import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.IterNode;
-import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallType;
 
 /**

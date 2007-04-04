@@ -12,7 +12,6 @@ package org.jruby.compiler;
 import org.jruby.ast.FCallNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.Node;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallType;
 
 /**

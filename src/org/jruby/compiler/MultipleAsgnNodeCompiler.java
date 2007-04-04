@@ -9,10 +9,8 @@
 
 package org.jruby.compiler;
 
-import org.jruby.ast.AttrAssignNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
-import org.jruby.ast.NodeTypes;
 
 /**
  *

@@ -786,8 +786,9 @@ public class RubyKernel {
     }
     
     public static IRubyObject warn(IRubyObject recv, IRubyObject message) {
-        IRubyObject out = recv.getRuntime().getObject().getConstant("STDERR");
-        RubyIO io = (RubyIO) out.convertToType("IO", "to_io", true); 
+        Ruby runtime = recv.getRuntime();
+        IRubyObject out = runtime.getObject().getConstant("STDERR");
+        RubyIO io = (RubyIO) out.convertToType(runtime.getClass("IO"), "to_io", true); 
 
         io.puts(new IRubyObject[] { message });
         return recv.getRuntime().getNil();
@@ -926,7 +927,7 @@ public class RubyKernel {
 
         if (args.length > 0) {
             RubyInteger integerSeed = 
-                (RubyInteger) args[0].convertToType("Integer", "to_i", true);
+                (RubyInteger) args[0].convertToType(runtime.getClass("Integer"), "to_i", true);
             runtime.setRandomSeed(integerSeed.getLongValue());
         } else {
             // Not sure how well this works, but it works much better than
@@ -940,26 +941,26 @@ public class RubyKernel {
     }
 
     public static RubyNumeric rand(IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = recv.getRuntime();
         long ceil;
         if (args.length == 0) {
             ceil = 0;
         } else if (args.length == 1) {
-            RubyInteger integerCeil = (RubyInteger) args[0].convertToType("Integer", "to_i", true);
+            RubyInteger integerCeil = (RubyInteger) args[0].convertToType(runtime.getClass("Integer"), "to_i", true);
             ceil = integerCeil.getLongValue();
             ceil = Math.abs(ceil);
         } else {
-            throw recv.getRuntime().newArgumentError("wrong # of arguments(" + args.length + " for 1)");
+            throw runtime.newArgumentError("wrong # of arguments(" + args.length + " for 1)");
         }
 
         if (ceil == 0) {
-            double result = recv.getRuntime().getRandom().nextDouble();
-            return RubyFloat.newFloat(recv.getRuntime(), result);
+            return RubyFloat.newFloat(runtime, runtime.getRandom().nextDouble()); 
         }
-        if(ceil > Integer.MAX_VALUE) {
-            return recv.getRuntime().newFixnum(recv.getRuntime().getRandom().nextLong()%ceil);
-        } else {
-            return recv.getRuntime().newFixnum(recv.getRuntime().getRandom().nextInt((int)ceil));
+        if (ceil > Integer.MAX_VALUE) {
+            return runtime.newFixnum(runtime.getRandom().nextLong()%ceil);
         }
+            
+        return runtime.newFixnum(runtime.getRandom().nextInt((int)ceil));
     }
 
     public static RubyBoolean system(IRubyObject recv, IRubyObject[] args) {
