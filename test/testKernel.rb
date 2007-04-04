@@ -158,3 +158,6 @@ test_exception(NameError) {
 
 ##### format %
 test_exception(TypeError) { "%01.3f" % nil }
+
+# test bare srand (JRUBY-487)
+srand
