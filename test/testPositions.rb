@@ -1680,3 +1680,14 @@ var ||= true
 var &&= false
 END
 
+list = [
+nil,
+nil,
+['DefnNode', 0, 1, 0, 10],
+['ArgumentNode', 0, 0, 4, 6],
+['ArgsNode', 1, 1, 6, 6]
+]
+test_tree(list, <<END)
+def []
+end
+END

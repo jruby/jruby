@@ -1222,12 +1222,12 @@ public class RubyYaccLexer {
                     lex_state == LexState.EXPR_DOT) {
                     lex_state = LexState.EXPR_ARG;
                     if ((c = src.read()) == ']') {
-                        if ((c = src.read()) == '=') {
+                        if (src.peek('=')) {
+                            c = src.read();
                             yaccValue = new Token("[]=", getPosition());
                             return Tokens.tASET;
                         }
                         yaccValue = new Token("[]", getPosition());
-                        src.unread(c);
                         return Tokens.tAREF;
                     }
                     src.unread(c);
