@@ -23,3 +23,5 @@ end
 
 abc_proc = proc { :abc }
 test_same_proc(abc_proc.__id__, &abc_proc)
+
+test_exception(ArgumentError) {Proc.new(1) {}}

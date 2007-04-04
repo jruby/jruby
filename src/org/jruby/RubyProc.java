@@ -18,6 +18,7 @@
  * Copyright (C) 2002-2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2007 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -34,6 +35,7 @@
 package org.jruby;
 
 import org.jruby.exceptions.JumpException;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -70,6 +72,7 @@ public class RubyProc extends RubyObject {
     }
     
     public IRubyObject initialize(IRubyObject[] args, Block procBlock) {
+        Arity.checkArgumentCount(getRuntime(), args, 0, 0);
         if (procBlock == null) {
             throw getRuntime().newArgumentError("tried to create Proc object without a block");
         }
