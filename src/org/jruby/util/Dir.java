@@ -271,7 +271,7 @@ public class Dir {
         };
 
     private static int push_braces(String cwd, List ary, byte[] str, int _s, int slen, int flags) {
-        ByteList buf = new ByteList();
+        ByteList buf = new ByteList(20);
         int b;
         int s, p, t, lbrace, rbrace;
         int nest = 0;
@@ -435,7 +435,7 @@ public class Dir {
     private static int glob_helper(String cwd, byte[] _path, int path, int plen, int sub, int flags, GlobFunc func, GlobArgs arg) {
         int p,m;
         int status = 0;
-        ByteList buf = new ByteList();
+        ByteList buf = new ByteList(20);
         byte[] newpath = null;
         File st;
         List link = new ArrayList();
@@ -489,9 +489,6 @@ public class Dir {
                         st = new File(cwd, new String(dir));
                     }
 
-                    if(!st.exists()) {
-                        break mainLoop;
-                    }
                     if(st.isDirectory()) {
                         if(m != -1 && Arrays.equals(magic, DOUBLE_STAR)) {
                             int n = base.length;
@@ -524,10 +521,6 @@ public class Dir {
                             } else {
                                 st = new File(cwd, new String(buf.bytes,0,buf.realSize));
                             }
-
-                            if(!st.exists()) {
-                                continue;
-                            }
                             if(st.isDirectory()) {
                                 int t = buf.realSize;
                                 buf.append(SLASH);
@@ -554,7 +547,7 @@ public class Dir {
                                 continue;
                             }
                             link.add(buf);
-                            buf = new ByteList();
+                            buf = new ByteList(20);
                         }
                     }
                 } while(false);
@@ -568,7 +561,7 @@ public class Dir {
                                 st = new File(cwd, new String(b.bytes, 0, b.realSize));
                             }
 
-                            if(st.exists() && st.isDirectory()) {
+                            if(st.isDirectory()) {
                                 int len = b.realSize;
                                 buf.length(0);
                                 buf.append(b);
