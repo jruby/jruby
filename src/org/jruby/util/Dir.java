@@ -427,7 +427,7 @@ public class Dir {
 
     private static boolean BASE(byte[] base) {
         return DOSISH ? 
-            (base.length > 0 && !((isdirsep(base[0]) && base.length < 2) || (base[1] == ':' && isdirsep(base[2]) && base.length < 4)))
+            (base.length > 0 && !((isdirsep(base[0]) && base.length < 2) || (base.length > 2 && base[1] == ':' && isdirsep(base[2]) && base.length < 4)))
             :
             (base.length > 0 && !(isdirsep(base[0]) && base.length < 2));
     }
