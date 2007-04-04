@@ -55,6 +55,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import org.jruby.ast.Node;
+import org.jruby.evaluator.CreateJumpTargetVisitor;
 import org.jruby.runtime.ClassIndex;
 
 /**
@@ -825,12 +827,12 @@ public class RubyObject implements Cloneable, IRubyObject {
             // Binding provided for scope, use it
             threadContext.preEvalWithBinding(blockOfBinding);
             newSelf = threadContext.getFrameSelf();
+            Node node = getRuntime().parse(src.toString(), file, blockOfBinding.getDynamicScope());
+            CreateJumpTargetVisitor.setJumpTarget(context.getFrameJumpTarget(), node);
 
-            result = EvaluationState.eval(getRuntime(), threadContext, getRuntime().parse(src.toString(), file, blockOfBinding.getDynamicScope()), newSelf, blockOfBinding);
+            result = EvaluationState.eval(getRuntime(), threadContext, node, newSelf, blockOfBinding);
         } catch (JumpException je) {
-            if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
-                throw getRuntime().newLocalJumpError("unexpected return");
-            } else if (je.getJumpType() == JumpException.JumpType.BreakJump) {
+            if (je.getJumpType() == JumpException.JumpType.BreakJump) {
                 throw getRuntime().newLocalJumpError("unexpected break");
             }
             throw je;
@@ -854,11 +856,12 @@ public class RubyObject implements Cloneable, IRubyObject {
 
         // no binding, just eval in "current" frame (caller's frame)
         try {
-            return EvaluationState.eval(getRuntime(), context, getRuntime().parse(src.toString(), file, context.getCurrentScope()), this, Block.NULL_BLOCK);
+            Node node = getRuntime().parse(src.toString(), file, context.getCurrentScope());
+            CreateJumpTargetVisitor.setJumpTarget(context.getFrameJumpTarget(), node);
+            
+            return EvaluationState.eval(getRuntime(), context, node, this, Block.NULL_BLOCK);
         } catch (JumpException je) {
-            if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
-                throw getRuntime().newLocalJumpError("unexpected return");
-            } else if (je.getJumpType() == JumpException.JumpType.BreakJump) {
+            if (je.getJumpType() == JumpException.JumpType.BreakJump) {
                 throw getRuntime().newLocalJumpError("unexpected break");
             }
             throw je;

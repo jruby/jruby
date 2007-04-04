@@ -1588,7 +1588,7 @@ public class EvaluationState {
         IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
    
         JumpException je = new JumpException(JumpException.JumpType.ReturnJump);
-   
+
         je.setTarget(iVisited.getTarget());
         je.setValue(result);
    

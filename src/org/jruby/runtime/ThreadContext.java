@@ -292,6 +292,14 @@ public class ThreadContext {
         return getCurrentFrame().getSelf();
     }
     
+    public Object getFrameJumpTarget() {
+        return getCurrentFrame().getJumpTarget();
+    }
+    
+    public void setFrameJumpTarget(Object target) {
+        getCurrentFrame().setJumpTarget(target);
+    }
+    
     public RubyModule getFrameKlazz() {
         return getCurrentFrame().getKlazz();
     }

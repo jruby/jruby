@@ -86,6 +86,16 @@ public class Frame {
      * The current visibility for anything defined under this frame
      */
     private Visibility visibility = Visibility.PUBLIC;
+    
+    private Object jumpTarget;
+
+    public Object getJumpTarget() {
+        return jumpTarget;
+    }
+
+    public void setJumpTarget(Object jumpTarget) {
+        this.jumpTarget = jumpTarget;
+    }
 
     /**
      * The location in source where this block/method invocation is happening

@@ -716,7 +716,7 @@ public class RubyKernel {
         ThreadContext context = recv.getRuntime().getCurrentContext();
         
         if (scope == null) {
-            scope = recv.getRuntime().newBinding();
+            scope = RubyBinding.newBindingForEval(recv.getRuntime());
         }
         
         return recv.evalWithBinding(context, src, scope, file);

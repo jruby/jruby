@@ -100,6 +100,7 @@ public class CreateJumpTargetVisitor {
                 case NodeTypes.DSYMBOLNODE:
                 case NodeTypes.DXSTRNODE:
                 case NodeTypes.HASHNODE:
+                case NodeTypes.ROOTNODE:
                     for (Iterator iter = node.childNodes().iterator(); iter.hasNext();) {
                         setJumpTarget(target, (Node)iter.next());
                     }

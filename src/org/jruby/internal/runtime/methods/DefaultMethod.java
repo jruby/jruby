@@ -132,6 +132,9 @@ public final class DefaultMethod extends DynamicMethod {
             CreateJumpTargetVisitor.setJumpTarget(this, body);
             hasBeenTargeted = true;
         }
+        
+        // set jump target for returns that show up later, like from evals
+        context.setFrameJumpTarget(this);
 
         if (argsNode.getBlockArgNode() != null && block.isGiven()) {
             RubyProc blockArg;

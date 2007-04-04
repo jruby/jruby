@@ -143,3 +143,18 @@ def bar
 end
 
 test_equal(2, foo)
+
+# test returns within an eval
+def foo
+  eval 'return 1'
+  return 2
+end
+def foo2
+  x = "blah"
+  x.instance_eval "return 1"
+  return 2
+end
+
+test_equal(1, foo)
+# this case is still broken
+#test_equal(1, foo2)
