@@ -398,7 +398,7 @@ public class RubyNumeric extends RubyObject {
     /** do_coerce
      * 
      */
-    protected final List doCoerce(IRubyObject other, boolean err) {
+    protected final RubyArray doCoerce(IRubyObject other, boolean err) {
         IRubyObject result;
         try {
             result = coerceBody(other);
@@ -413,38 +413,35 @@ public class RubyNumeric extends RubyObject {
         if (!(result instanceof RubyArray) || ((RubyArray) result).getLength() != 2) {
             throw getRuntime().newTypeError("coerce must return [x, y]");
     }
-        return ((RubyArray) result).getList();
+        return (RubyArray) result;
     }
 
     /** rb_num_coerce_bin
      *  coercion taking two arguments
      */
     protected final IRubyObject coerceBin(String method, IRubyObject other) {
-        List list = doCoerce(other, true);
-        return ((RubyObject) list.get(0))
-                .callMethod(getRuntime().getCurrentContext(), method, (RubyObject) list.get(1));
+        RubyArray ary = doCoerce(other, true);
+        return (ary.eltInternal(0)).callMethod(getRuntime().getCurrentContext(), method, ary.eltInternal(1));
     }
     
     /** rb_num_coerce_cmp
      *  coercion used for comparisons
      */
     protected final IRubyObject coerceCmp(String method, IRubyObject other) {
-        List list = doCoerce(other, false);
-        if (list == null) {
+        RubyArray ary = doCoerce(other, false);
+        if (ary == null) {
             return getRuntime().getNil(); // MRI does it!
         } 
-        return ((RubyObject) list.get(0))
-                .callMethod(getRuntime().getCurrentContext(), method, (RubyObject) list.get(1));
+        return (ary.eltInternal(0)).callMethod(getRuntime().getCurrentContext(), method, ary.eltInternal(1));
     }
         
     /** rb_num_coerce_relop
      *  coercion used for relative operators
      */
     protected final IRubyObject coerceRelOp(String method, IRubyObject other) {
-        List list = doCoerce(other, false);
-        if (list != null) {
-            IRubyObject result = ((RubyObject) list.get(0)).callMethod(getRuntime().getCurrentContext(), method,
-                    (RubyObject) list.get(1));
+        RubyArray ary = doCoerce(other, false);
+        if (ary != null) {
+            IRubyObject result = (ary.eltInternal(0)).callMethod(getRuntime().getCurrentContext(), method,ary.eltInternal(1));
             if (!result.isNil()) {
                 return result;
     }
