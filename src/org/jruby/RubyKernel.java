@@ -538,10 +538,15 @@ public class RubyKernel {
         long startTime = System.currentTimeMillis();
         
         RubyThread rubyThread = recv.getRuntime().getThreadService().getCurrentContext().getThread();
-        try {
-            rubyThread.sleep(milliseconds);
-        } catch (InterruptedException iExcptn) {
+        // TODO: fix so that when run is called, we won't continue sleeping
+        while(milliseconds > 0) {
+            try {
+                rubyThread.sleep(milliseconds);
+            } catch (InterruptedException iExcptn) {
+            }
+            milliseconds -= (System.currentTimeMillis()-startTime);
         }
+
 
         return recv.getRuntime().newFixnum(
                 Math.round((System.currentTimeMillis() - startTime) / 1000.0));

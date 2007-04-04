@@ -104,8 +104,8 @@ public class RubyThread extends RubyObject {
         threadClass.defineFastMethod("key?", callbackFactory.getFastMethod("has_key", RubyKernel.IRUBY_OBJECT));
         threadClass.defineFastMethod("priority", callbackFactory.getFastMethod("priority"));
         threadClass.defineFastMethod("priority=", callbackFactory.getFastMethod("priority_set", RubyKernel.IRUBY_OBJECT));
-        //        threadClass.defineMethod("raise", callbackFactory.getOptMethod("raise"));
-        threadClass.defineFastMethod("raise", callbackFactory.getFastMethod("raise", RubyKernel.IRUBY_OBJECT));
+        threadClass.defineMethod("raise", callbackFactory.getOptMethod("raise"));
+        //threadClass.defineFastMethod("raise", callbackFactory.getFastMethod("raise", RubyKernel.IRUBY_OBJECT));
         threadClass.defineFastMethod("run", callbackFactory.getFastMethod("run"));
         threadClass.defineFastMethod("status", callbackFactory.getFastMethod("status"));
         threadClass.defineFastMethod("stop?", callbackFactory.getFastMethod("isStopped"));
@@ -590,7 +590,7 @@ public class RubyThread extends RubyObject {
     	try {
 	    	synchronized (stopLock) {
 	    		isStopped = true;
-	    		stopLock.wait(millis);
+                stopLock.wait(millis);
 	    	}
     	} finally {
     		isStopped = false;
