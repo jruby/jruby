@@ -208,7 +208,7 @@ public class AssignmentVisitor {
             if (argsNode instanceof StarNode) {
                 // no check for '*'
             } else if (varLen < valueLen) {
-                assign(runtime, context, self, argsNode, value.subseq(varLen, valueLen, false), Block.NULL_BLOCK, callAsProc);
+                assign(runtime, context, self, argsNode, value.subseqLight(varLen, valueLen), Block.NULL_BLOCK, callAsProc);
             } else {
                 assign(runtime, context, self, argsNode, RubyArray.newArrayLight(runtime, 0), Block.NULL_BLOCK, callAsProc);
             }
