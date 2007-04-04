@@ -75,7 +75,13 @@ public class Sprintf {
     private static final BigInteger BIG_MINUS_32 = BigInteger.valueOf((long)Integer.MIN_VALUE << 1);
     private static final BigInteger BIG_MINUS_64 = BIG_MINUS_32.shiftLeft(32);
 
-    private static final int INITIAL_BUFFER_SIZE = 128; // try to avoid reallocs
+    private static final int INITIAL_BUFFER_SIZE = 32;
+    
+    private static final String ERR_MALFORMED_FORMAT = "malformed format string";
+    private static final String ERR_MALFORMED_NUM = "malformed format string - %[0-9]";
+    private static final String ERR_MALFORMED_DOT_NUM = "malformed format string - %.[0-9]";
+    private static final String ERR_MALFORMED_STAR_NUM = "malformed format string - %*[0-9]";
+    private static final String ERR_ILLEGAL_FORMAT_CHAR = "illegal format character - %";
     
     
     private static class Args {
@@ -129,8 +135,9 @@ public class Sprintf {
             if (numbered > 0) {
                 raiseArgumentError("unnumbered" + (unnumbered + 1) + "mixed with numbered");
             }
-            
-            if (unnumbered >= length) raiseArgumentError("too few arguments");
+            if (unnumbered >= length) {
+                raiseArgumentError("too few arguments");
+            }
 
             IRubyObject object = rubyArray == null ? rubyObject : 
                 (IRubyObject)rubyArray.get(unnumbered);
@@ -141,10 +148,14 @@ public class Sprintf {
         final IRubyObject get(int index) {
             // this is the order in which MRI does these tests
             if (unnumbered > 0) {
-                raiseArgumentError("numbered("+(numbered+1)+") after unnumbered("+unnumbered+")");
+                raiseArgumentError("numbered("+numbered+") after unnumbered("+unnumbered+")");
             }
-            if (index < 0) raiseArgumentError("invalid index - " + (index + 1) + '$');
-            if (index >= length) raiseArgumentError("too few arguments");
+            if (index < 0) {
+                raiseArgumentError("invalid index - " + (index + 1) + '$');
+            }
+            if (index >= length) {
+                raiseArgumentError("too few arguments");
+            }
 
             numbered = index + 1;
             return (rubyArray == null ? rubyObject : (IRubyObject)rubyArray.get(index));
@@ -167,7 +178,9 @@ public class Sprintf {
         }
         
         final int intValue(IRubyObject obj) {
-            if (obj instanceof RubyNumeric) return (int)((RubyNumeric)obj).getLongValue();
+            if (obj instanceof RubyNumeric) {
+                return (int)((RubyNumeric)obj).getLongValue();
+            }
 
             // basically just forcing a TypeError here to match MRI
             obj = obj.convertToType("Fixnum", "to_int", true);
@@ -308,12 +321,10 @@ public class Sprintf {
             for ( ; offset < length && format[offset] != '%'; offset++) ;
             if (offset > start) {
                 buf.write(format,start,offset-start);
-                //showLiteral(format,start,offset);
                 start = offset;
             }
-            if (offset >= length)
+            if (offset++ >= length)
                 break;
-            checkOffset(args,++offset,length);
 
             IRubyObject arg = null;
             int flags = 0;
@@ -328,29 +339,29 @@ public class Sprintf {
                     if (isPrintable(fchar)) {
                         raiseArgumentError(args,"malformed format string - %" + (char)fchar);
                     } else {
-                        raiseArgumentError(args,"malformed format string");
+                        raiseArgumentError(args,ERR_MALFORMED_FORMAT);
                     }
                     break;
 
                 case ' ':
                     flags |= FLAG_SPACE;
-                    checkOffset(args,++offset,length);
+                    offset++;
                     break;
                 case '0':
                     flags |= FLAG_ZERO;
-                    checkOffset(args,++offset,length);
+                    offset++;
                     break;
                 case '+':
                     flags |= FLAG_PLUS;
-                    checkOffset(args,++offset,length);
+                    offset++;
                     break;
                 case '-':
                     flags |= FLAG_MINUS;
-                    checkOffset(args,++offset,length);
+                    offset++;
                     break;
                 case '#':
                     flags |= FLAG_SHARP;
-                    checkOffset(args,++offset,length);
+                    offset++;
                     break;
                 case '1':
                 case '2':
@@ -367,43 +378,39 @@ public class Sprintf {
                     for ( ; offset < length && isDigit(fchar = format[offset]); offset++) {
                         number = extendWidth(args, number, fchar);
                     }
-                    
-                    if (offset >= length) raiseArgumentError(args, "malformed format string - %[0-9]");
-
+                    checkOffset(args,offset,length,ERR_MALFORMED_NUM);
                     if (fchar == '$') {
                         if (arg != null) {
                             raiseArgumentError(args,"value given twice - " + number + "$");
                         }
                         arg = args.getNth(number);
-                        checkOffset(args, ++offset, length);
+                        offset++;
                     } else {
                         width = number;
-                        checkOffset(args, offset, length);
                         flags |= FLAG_WIDTH;
                     }
                     break;
                 
                 case '*':
-                    if ((flags & FLAG_WIDTH) != 0) raiseArgumentError(args,"width given twice");
-
+                    if ((flags & FLAG_WIDTH) != 0) {
+                        raiseArgumentError(args,"width given twice");
+                    }
                     flags |= FLAG_WIDTH;
                     // TODO: factor this chunk as in MRI/YARV GETASTER
-                    checkOffset(args,++offset,length);
+                    checkOffset(args,++offset,length,ERR_MALFORMED_STAR_NUM);
                     mark = offset;
                     number = 0;
                     for ( ; offset < length && isDigit(fchar = format[offset]); offset++) {
                         number = extendWidth(args,number,fchar);
                     }
-                    if (offset >= length) {
-                        raiseArgumentError(args,"malformed format string - %*[0-9]");
-                    }
+                    checkOffset(args,offset,length,ERR_MALFORMED_STAR_NUM);
                     if (fchar == '$') {
                         width = args.getNthInt(number);
                         if (width < 0) {
                             flags |= FLAG_MINUS;
                             width = -width;
                         }
-                        checkOffset(args,++offset,length);
+                        offset++;
                     } else {
                         width = args.nextInt();
                         if (width < 0) {
@@ -421,25 +428,23 @@ public class Sprintf {
                         raiseArgumentError(args,"precision given twice");
                     }
                     flags |= FLAG_PRECISION;
-                    checkOffset(args,++offset,length);
+                    checkOffset(args,++offset,length,ERR_MALFORMED_DOT_NUM);
                     fchar = format[offset];
                     if (fchar == '*') {
                         // TODO: factor this chunk as in MRI/YARV GETASTER
-                        checkOffset(args,++offset,length);
+                        checkOffset(args,++offset,length,ERR_MALFORMED_STAR_NUM);
                         mark = offset;
                         number = 0;
                         for ( ; offset < length && isDigit(fchar = format[offset]); offset++) {
                             number = extendWidth(args,number,fchar);
                         }
-                        if (offset >= length) {
-                            raiseArgumentError(args,"malformed format string - %*[0-9]");
-                        }
+                        checkOffset(args,offset,length,ERR_MALFORMED_STAR_NUM);
                         if (fchar == '$') {
                             precision = args.getNthInt(number);
                             if (precision < 0) {
                                 flags &= ~FLAG_PRECISION;
                             }
-                            checkOffset(args,++offset,length);
+                            offset++;
                         } else {
                             precision = args.nextInt();
                             if (precision < 0) {
@@ -454,19 +459,16 @@ public class Sprintf {
                         for ( ; offset < length && isDigit(fchar = format[offset]); offset++) {
                             number = extendWidth(args,number,fchar);
                         }
-                        if (offset >= length) {
-                            raiseArgumentError(args,"malformed format string - %.[0-9]");
-                        }
+                        checkOffset(args,offset,length,ERR_MALFORMED_DOT_NUM);
                         precision = number;
                     }
                     break;
 
                 case '\n':
                     offset--;
-                case '\0':
                 case '%':
                     if (flags != FLAG_NONE) {
-                        raiseArgumentError(args,"illegal format character - %");
+                        raiseArgumentError(args,ERR_ILLEGAL_FORMAT_CHAR);
                     }
                     buf.write('%');
                     offset++;
@@ -1199,6 +1201,16 @@ public class Sprintf {
                 } // block (case E,e,f,G,g)
                 } // switch (each format char in spec)
             } // for (each format spec)
+            
+            // equivalent to MRI case '\0':
+            if (incomplete) {
+                if (flags == FLAG_NONE) {
+                    // dangling '%' char
+                    buf.write('%');
+                } else {
+                    raiseArgumentError(args,ERR_ILLEGAL_FORMAT_CHAR);
+                }
+            }
         } // main while loop (offset < length)
         
         return buf.toByteList();
@@ -1230,11 +1242,6 @@ public class Sprintf {
         args.raiseArgumentError(message);
     }
     
-    /**
-     * 
-     * @param args
-     * @param message
-     */
     private static final void warn(Args args, String message) {
         args.warn(message);
     }
@@ -1243,12 +1250,12 @@ public class Sprintf {
         args.warning(message);
     }
     
-    private static final void checkOffset(Args args, int offset, int length) {
+    private static final void checkOffset(Args args, int offset, int length, String message) {
         if (offset >= length) {
-            raiseArgumentError(args,"malformed format string");
+            raiseArgumentError(args,message);
         }
     }
-    
+
     private static final int extendWidth(Args args, int oldWidth, byte newChar) {
         int newWidth = oldWidth * 10 + (newChar - '0');
         if (newWidth / 10 != oldWidth) {
