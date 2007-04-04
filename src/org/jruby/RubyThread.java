@@ -510,23 +510,26 @@ public class RubyThread extends RubyObject {
         return priority;
     }
 
-    public IRubyObject raise(IRubyObject exc) {
-        receivedException = exc;
+    public IRubyObject raise(IRubyObject[] args, Block block) {
+        Ruby runtime = getRuntime();
+        
+        receivedException = prepareRaiseException(runtime, args, block);
+        
+        // interrupt the target thread in case it's blocking or waiting
+        threadImpl.interrupt();
+
         return this;
     }
 
-    public IRubyObject raise(IRubyObject[] args, Block block) {
-        Ruby runtime = getRuntime();
+    private IRubyObject prepareRaiseException(Ruby runtime, IRubyObject[] args, Block block) {
         Arity.checkArgumentCount(getRuntime(), args, 0, 3); 
 
         if(args.length == 0) {
             IRubyObject lastException = runtime.getGlobalVariables().get("$!");
             if(lastException.isNil()) {
-                receivedException = new RaiseException(runtime, runtime.getClass("RuntimeError"), "", false).getException();
-                return this;
+                return new RaiseException(runtime, runtime.getClass("RuntimeError"), "", false).getException();
             } 
-            receivedException = lastException;
-            return this;
+            return lastException;
         }
 
         IRubyObject exception;
@@ -534,50 +537,40 @@ public class RubyThread extends RubyObject {
         
         if(args.length == 1) {
             if(args[0] instanceof RubyString) {
-                receivedException = runtime.getClass("RuntimeError").newInstance(args, block);
-                return this;
+                return runtime.getClass("RuntimeError").newInstance(args, block);
             }
             
             if(!args[0].respondsTo("exception")) {
-                receivedException = runtime.newTypeError("exception class/object expected").getException();
-                return this;
+                return runtime.newTypeError("exception class/object expected").getException();
             }
             exception = args[0].callMethod(context, "exception");
         } else {
             if (!args[0].respondsTo("exception")) {
-                receivedException = runtime.newTypeError("exception class/object expected").getException();
-                return this;
+                return runtime.newTypeError("exception class/object expected").getException();
             }
             
             exception = args[0].callMethod(context, "exception", args[1]);
         }
         
         if (!exception.isKindOf(runtime.getClass("Exception"))) {
-            receivedException = runtime.newTypeError("exception object expected").getException();
-            return this;
+            return runtime.newTypeError("exception object expected").getException();
         }
         
         if (args.length == 3) {
             ((RubyException) exception).set_backtrace(args[2]);
         }
         
-        receivedException = exception;
-
-        // FIXME: correct raise call
-
-        // FIXME: call the IRaiseListener#exceptionRaised method
-
-        return this;
+        return exception;
     }
     
     public IRubyObject run() {
-    	// if stopped, unstop
-    	if (isStopped) {
-    		synchronized (stopLock) {
-    			isStopped = false;
-    			stopLock.notifyAll();
-    		}
-    	}
+        // if stopped, unstop
+        synchronized (stopLock) {
+            if (isStopped) {
+                isStopped = false;
+                stopLock.notifyAll();
+            }
+        }
     	
     	// Abort any sleep()s
     	// CON: Sleep now waits on the same stoplock, so it will have been woken up by the notify above
@@ -587,14 +580,15 @@ public class RubyThread extends RubyObject {
     }
     
     public void sleep(long millis) throws InterruptedException {
-    	try {
-	    	synchronized (stopLock) {
-	    		isStopped = true;
+        synchronized (stopLock) {
+            try {
+                isStopped = true;
                 stopLock.wait(millis);
-	    	}
-    	} finally {
-    		isStopped = false;
-    	}
+            } finally {
+                isStopped = false;
+                pollThreadEvents();
+            }
+        }
     }
 
     public IRubyObject status() {
@@ -615,26 +609,26 @@ public class RubyThread extends RubyObject {
 
     public IRubyObject kill() {
     	// need to reexamine this
-    	synchronized (this) {
-    		if (killed) return this;
-    		
-    		killed = true;
+        synchronized (this) {
+            if (killed) return this;
             
-    		threadImpl.interrupt(); // break out of wait states and blocking IO
-    		try {
-    			if (!threadImpl.isInterrupted()) {
+            killed = true;
+            
+            threadImpl.interrupt(); // break out of wait states and blocking IO
+            try {
+                if (!threadImpl.isInterrupted()) {
                     // we did not interrupt the thread, so wait for it to complete
                     // TODO: test that this is correct...should killer wait for killee to die?
                     threadImpl.join();
-    			}
-    		} catch (InterruptedException ie) {
-    			throw new ThreadKill();
-    		} catch (ExecutionException ie) {
-    			throw new ThreadKill();
-    		}
-    	}
-
-    	return this;
+                }
+            } catch (InterruptedException ie) {
+                throw new ThreadKill();
+            } catch (ExecutionException ie) {
+                throw new ThreadKill();
+            }
+        }
+        
+        return this;
     }
     
     public IRubyObject exit(Block block) {
@@ -654,17 +648,13 @@ public class RubyThread extends RubyObject {
         // and isAlive() give the wrong result if the thread
         // hasn't started yet. We give it a chance to start
         // before we try to do anything.
-
-
-        // Yes, I know double-check locking is broken.
-        if (!hasStarted) {
-            synchronized (hasStartedLock) {
-                while (!hasStarted) {
-                    try {
-                        hasStartedLock.wait();
-                    } catch (InterruptedException iExcptn) {
-                        //                        assert false : iExcptn;
-                    }
+        
+        synchronized (hasStartedLock) {
+            while (!hasStarted) {
+                try {
+                    hasStartedLock.wait();
+                } catch (InterruptedException iExcptn) {
+                    //                        assert false : iExcptn;
                 }
             }
         }

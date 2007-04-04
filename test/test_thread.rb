@@ -93,6 +93,16 @@ class TestThread < Test::Unit::TestCase
       e = error
     end
     assert(e.kind_of?(RuntimeError))
+    
+    # test raising in a sleeping thread
+    e = 1
+    begin
+      t = Thread.new { e = 2; sleep(100); e = 2 }
+      t.raise("Die")
+    rescue; end
+    
+    assert_equal(2, e)
+    assert_raise(RuntimeError) { t.value }
   end
 
   def test_thread_value
