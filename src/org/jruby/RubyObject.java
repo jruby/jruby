@@ -619,22 +619,8 @@ public class RubyObject implements Cloneable, IRubyObject {
     /*
      * @see org.jruby.runtime.builtin.IRubyObject#convertToTypeWithCheck(java.lang.String, java.lang.String)
      */
-    public IRubyObject convertToTypeWithCheck(String targetType, String convertMethod) {
-        return convertToType(getRuntime().getClass(targetType), convertMethod, false, true, false);
-    }
-
-    /*
-     * @see org.jruby.runtime.builtin.IRubyObject#convertToTypeWithCheck(java.lang.String, java.lang.String)
-     */
     public IRubyObject convertToTypeWithCheck(RubyClass targetType, String convertMethod) {
         return convertToType(targetType, convertMethod, false, true, false);
-    }
-
-    /*
-     * @see org.jruby.runtime.builtin.IRubyObject#convertToType(java.lang.String, java.lang.String, boolean)
-     */
-    public IRubyObject convertToType(String targetType, String convertMethod, boolean raise) {
-        return convertToType(getRuntime().getClass(targetType), convertMethod, raise, false, false);
     }
 
     /*
@@ -807,11 +793,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         assert file != null;
 
         ThreadContext threadContext = getRuntime().getCurrentContext();
-
         ISourcePosition savedPosition = threadContext.getPosition();
-        IRubyObject result = getRuntime().getNil();
-
-        IRubyObject newSelf = null;
 
         if (!(scope instanceof RubyBinding)) {
             if (scope instanceof RubyProc) {
@@ -826,11 +808,11 @@ public class RubyObject implements Cloneable, IRubyObject {
         try {
             // Binding provided for scope, use it
             threadContext.preEvalWithBinding(blockOfBinding);
-            newSelf = threadContext.getFrameSelf();
+            IRubyObject newSelf = threadContext.getFrameSelf();
             Node node = getRuntime().parse(src.toString(), file, blockOfBinding.getDynamicScope());
             CreateJumpTargetVisitor.setJumpTarget(context.getFrameJumpTarget(), node);
 
-            result = EvaluationState.eval(getRuntime(), threadContext, node, newSelf, blockOfBinding);
+            return EvaluationState.eval(getRuntime(), threadContext, node, newSelf, blockOfBinding);
         } catch (JumpException je) {
             if (je.getJumpType() == JumpException.JumpType.BreakJump) {
                 throw getRuntime().newLocalJumpError("unexpected break");
@@ -842,7 +824,6 @@ public class RubyObject implements Cloneable, IRubyObject {
             // restore position
             threadContext.setPosition(savedPosition);
         }
-        return result;
     }
 
     /* (non-Javadoc)
