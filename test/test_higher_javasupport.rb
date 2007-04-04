@@ -478,6 +478,16 @@ class TestHigherJavasupport < Test::Unit::TestCase
     }
   end
 
+  def test_java_exception_handling
+    list = ArrayList.new
+    begin
+      list.get(5)
+      assert(false)
+    rescue java.lang.IndexOutOfBoundsException => e
+      assert_equal("java.lang.IndexOutOfBoundsException: Index: 5, Size: 0", e.message)
+    end
+  end
+
   # test case for JRUBY-679
   # class Weather < java.util.Observable
   #   def initialize(temp)
