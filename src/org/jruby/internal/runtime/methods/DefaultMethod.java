@@ -127,10 +127,8 @@ public final class DefaultMethod extends DynamicMethod {
             return jitCompiledScript.run(context, self, args, block);
         }
         
-        if (!hasBeenTargeted) {
-            CreateJumpTargetVisitor.setJumpTarget(this, body);
-            hasBeenTargeted = true;
-        }
+        // FIXME: This is going to slow down execution of all code, but see 
+        CreateJumpTargetVisitor.setJumpTarget(this, body);
         
         // set jump target for returns that show up later, like from evals
         context.setFrameJumpTarget(this);
