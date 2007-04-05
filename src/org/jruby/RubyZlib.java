@@ -244,7 +244,7 @@ public class RubyZlib {
     }
 
     public static IRubyObject crc32(IRubyObject recv, IRubyObject[] args) throws Exception {
-        args = recv.scanArgs(args,0,2);
+        args = Arity.scanArgs(recv.getRuntime(),args,0,2);
         int crc = 0;
         byte[] bytes = null;
         if(!args[0].isNil()) {
@@ -261,7 +261,7 @@ public class RubyZlib {
     }
 
     public static IRubyObject adler32(IRubyObject recv, IRubyObject[] args) throws Exception {
-        args = recv.scanArgs(args,0,2);
+        args = Arity.scanArgs(recv.getRuntime(),args,0,2);
         int adler = 1;
         byte[] bytes = null;
         if(!args[0].isNil()) {
@@ -503,7 +503,7 @@ public class RubyZlib {
         };
 
         public static IRubyObject s_deflate(IRubyObject recv, IRubyObject[] args) throws Exception {
-            args = recv.scanArgs(args,1,1);
+            args = Arity.scanArgs(recv.getRuntime(),args,1,1);
             int level = -1;
             if(!args[1].isNil()) {
                 level = RubyNumeric.fix2int(args[1]);
@@ -518,7 +518,7 @@ public class RubyZlib {
         private ZlibDeflate defl;
 
         public IRubyObject _initialize(IRubyObject[] args) throws Exception {
-            args = scanArgs(args,0,4);
+            args = Arity.scanArgs(getRuntime(),args,0,4);
             int level = -1;
             int window_bits = 15;
             int memlevel = 8;
@@ -564,7 +564,7 @@ public class RubyZlib {
         }
 
         public IRubyObject deflate(IRubyObject[] args) throws Exception {
-            args = scanArgs(args,1,1);
+            args = Arity.scanArgs(getRuntime(),args,1,1);
             int flush = 0; // NO_FLUSH
             if(!args[1].isNil()) {
                 flush = RubyNumeric.fix2int(args[1]);

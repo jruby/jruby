@@ -182,7 +182,7 @@ public class RubySocket extends RubyBasicSocket {
 
     //def self.getaddrinfo(host, port, family = nil, socktype = nil, protocol = nil, flags = nil)
     public static IRubyObject getaddrinfo(IRubyObject recv, IRubyObject[] args) {
-        args = recv.scanArgs(args,2,4);
+        args = Arity.scanArgs(recv.getRuntime(),args,2,4);
         try {
             Ruby r = recv.getRuntime();
             IRubyObject host = args[0];
@@ -235,7 +235,7 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     public static IRubyObject getnameinfo(IRubyObject recv, IRubyObject[] args) {
-        args = recv.scanArgs(args,1,1); // 0 == addr, 1 == flags
+        args = Arity.scanArgs(recv.getRuntime(),args,1,1); // 0 == addr, 1 == flags
         
         if (args[0] instanceof RubyArray) {
             try {

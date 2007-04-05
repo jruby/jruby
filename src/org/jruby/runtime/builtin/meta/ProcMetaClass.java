@@ -75,7 +75,7 @@ public class ProcMetaClass extends ObjectMetaClass {
             block = getRuntime().getCurrentContext().getPreviousFrame().getBlock();
         }
         
-        obj.callInit(args, block);
+        obj.callMethod(getRuntime().getCurrentContext(), "initialize", args, block);
         return obj;
     }
     

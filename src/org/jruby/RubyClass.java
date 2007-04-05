@@ -250,7 +250,7 @@ public class RubyClass extends RubyModule {
      */
     public IRubyObject newInstance(IRubyObject[] args, Block block) {
         IRubyObject obj = (IRubyObject) allocate();
-        obj.callInit(args, block);
+        obj.callMethod(getRuntime().getCurrentContext(), "initialize", args, block);
         return obj;
     }
     

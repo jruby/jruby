@@ -59,9 +59,9 @@ public class RubyMarshal {
         RubyModule module = runtime.defineModule("Marshal");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyMarshal.class);
 
-        module.defineSingletonMethod("dump", callbackFactory.getOptSingletonMethod("dump"));
-        module.defineSingletonMethod("load", callbackFactory.getOptSingletonMethod("load"));
-        module.defineSingletonMethod("restore", callbackFactory.getOptSingletonMethod("load"));
+        module.getSingletonClass().defineMethod("dump", callbackFactory.getOptSingletonMethod("dump"));
+        module.getSingletonClass().defineMethod("load", callbackFactory.getOptSingletonMethod("load"));
+        module.getSingletonClass().defineMethod("restore", callbackFactory.getOptSingletonMethod("load"));
         module.defineConstant("MAJOR_VERSION", runtime.newFixnum(Constants.MARSHAL_MAJOR));
         module.defineConstant("MINOR_VERSION", runtime.newFixnum(Constants.MARSHAL_MINOR));
 

@@ -46,7 +46,6 @@ import org.jruby.RubyString;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.callback.Callback;
 
 /** Object is the parent class of all classes in Ruby. Its methods are
  * therefore available to all objects unless explicitly overridden.
@@ -110,7 +109,8 @@ public interface IRubyObject {
     
     /**
      *
-     * @return
+     * 
+     * @param instanceVariables 
      */
     void setInstanceVariables(Map instanceVariables);
     
@@ -441,9 +441,28 @@ public interface IRubyObject {
      * @param convertMethod 
      * @param raiseOnMissingMethod 
      * @param raiseOnWrongTypeResult 
+     * @param allowNilThrough 
      * @return 
      */
     public IRubyObject convertToType(RubyClass targetType, String convertMethod, boolean raiseOnMissingMethod, boolean raiseOnWrongTypeResult, boolean allowNilThrough);
+    
+    /**
+     *
+     * @return
+     */
+    IRubyObject anyToString();
+    
+    /**
+     *
+     * @return
+     */
+    IRubyObject checkStringType();
+    
+    /**
+     *
+     * @return
+     */
+    IRubyObject checkArrayType();
 
     /**
      * RubyMethod dup.
@@ -466,21 +485,6 @@ public interface IRubyObject {
     
     /**
      *
-     * @param args
-     * @param block
-     */
-    public void callInit(IRubyObject[] args, Block block);
-    
-    /**
-     * RubyMethod defineSingletonMethod.
-     * @param name
-     * @param callback
-     */
-    void defineSingletonMethod(String name, Callback callback);
-    
-    
-    /**
-     *
      * @return
      */
     boolean isSingleton();
@@ -490,20 +494,6 @@ public interface IRubyObject {
      * @return
      */
     Iterator instanceVariableNames();
-    
-    /**
-     * rb_scan_args
-     *
-     * This method will take the arguments specified, fill in an array and return it filled
-     * with nils for every argument not provided. It's guaranteed to always return a new array.
-     *
-     * @param args the arguments to check
-     * @param required the amount of required arguments
-     * @param optional the amount of optional arguments
-     * @return a new array containing all arguments provided, and nils in those spots not provided.
-     *
-     */
-    IRubyObject[] scanArgs(IRubyObject[] args, int required, int optional);
     
     /**
      * Our version of Data_Wrap_Struct.
@@ -532,46 +522,9 @@ public interface IRubyObject {
     
     /**
      *
-     * @return
-     */
-    IRubyObject anyToString();
-    
-    /**
-     *
-     * @return
-     */
-    IRubyObject checkStringType();
-    
-    /**
-     *
-     * @return
-     */
-    IRubyObject checkArrayType();
-    
-    /**
-     *
      * @param context
      * @param other
      * @return
      */
     IRubyObject equalInternal(final ThreadContext context, final IRubyObject other);
-    
-    /**
-     *
-     */
-    void attachToObjectSpace();
-    
-    /**
-     *
-     * @param args
-     * @param block
-     * @return
-     */
-    IRubyObject send(IRubyObject[] args, Block block);
-    /**
-     *
-     * @param method
-     * @return
-     */
-    IRubyObject method(IRubyObject method);
 }

@@ -198,9 +198,9 @@ public class RubyStruct extends RubyObject {
         newStruct.setInstanceVariable("__member__", member);
 
         CallbackFactory callbackFactory = recv.getRuntime().callbackFactory(RubyStruct.class);
-        newStruct.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod("newStruct"));
-        newStruct.defineSingletonMethod("[]", callbackFactory.getOptSingletonMethod("newStruct"));
-        newStruct.defineSingletonMethod("members", callbackFactory.getSingletonMethod("members"));
+        newStruct.getSingletonClass().defineMethod("new", callbackFactory.getOptSingletonMethod("newStruct"));
+        newStruct.getSingletonClass().defineMethod("[]", callbackFactory.getOptSingletonMethod("newStruct"));
+        newStruct.getSingletonClass().defineMethod("members", callbackFactory.getSingletonMethod("members"));
 
         // define access methods.
         for (int i = name == null ? 0 : 1; i < args.length; i++) {

@@ -76,9 +76,9 @@ public class Readline {
         mReadline.module_function(new IRubyObject[]{runtime.newSymbol("completion_proc=")});
         IRubyObject hist = runtime.getObject().callMethod(runtime.getCurrentContext(), "new");
         mReadline.setConstant("HISTORY",hist);
-        hist.defineSingletonMethod("push",readlinecb.getFastOptSingletonMethod("s_push"));
-        hist.defineSingletonMethod("pop",readlinecb.getFastSingletonMethod("s_pop"));
-        hist.defineSingletonMethod("to_a",readlinecb.getFastSingletonMethod("s_hist_to_a"));
+        hist.getSingletonClass().defineMethod("push",readlinecb.getFastOptSingletonMethod("s_push"));
+        hist.getSingletonClass().defineMethod("pop",readlinecb.getFastSingletonMethod("s_pop"));
+        hist.getSingletonClass().defineMethod("to_a",readlinecb.getFastSingletonMethod("s_hist_to_a"));
     }
     
     // We lazily initialise this in case Readline.readline has been overriden in ruby (s_readline)

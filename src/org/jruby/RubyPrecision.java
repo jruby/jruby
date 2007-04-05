@@ -43,7 +43,7 @@ public class RubyPrecision {
     public static RubyModule createPrecisionModule(Ruby runtime) {
         RubyModule precisionModule = runtime.defineModule("Precision");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyPrecision.class);
-        precisionModule.defineSingletonMethod("append_features", callbackFactory.getSingletonMethod("append_features", RubyKernel.IRUBY_OBJECT));
+        precisionModule.getSingletonClass().defineMethod("append_features", callbackFactory.getSingletonMethod("append_features", RubyKernel.IRUBY_OBJECT));
         precisionModule.defineMethod("prec", callbackFactory.getSingletonMethod("prec", RubyKernel.IRUBY_OBJECT));
         precisionModule.defineMethod("prec_i", callbackFactory.getSingletonMethod("prec_i"));
         precisionModule.defineMethod("prec_f", callbackFactory.getSingletonMethod("prec_f"));
@@ -58,7 +58,7 @@ public class RubyPrecision {
         if (include instanceof RubyModule) {
             ((RubyModule) include).includeModule(receiver);
             CallbackFactory f = receiver.getRuntime().callbackFactory(RubyPrecision.class);
-            include.defineSingletonMethod("induced_from", f.getSingletonMethod("induced_from", RubyKernel.IRUBY_OBJECT));
+            include.getSingletonClass().defineMethod("induced_from", f.getSingletonMethod("induced_from", RubyKernel.IRUBY_OBJECT));
         }
         return receiver;
     }

@@ -190,4 +190,18 @@ public final class Arity implements Serializable {
         }
         return args.length;
     }
+
+    /**
+     * @see org.jruby.runtime.builtin.IRubyObject#scanArgs()
+     */
+    public static IRubyObject[] scanArgs(Ruby runtime, IRubyObject[] args, int required, int optional) {
+        int total = required+optional;
+        int real = checkArgumentCount(runtime, args,required,total);
+        IRubyObject[] narr = new IRubyObject[total];
+        System.arraycopy(args,0,narr,0,real);
+        for(int i=real; i<total; i++) {
+            narr[i] = runtime.getNil();
+        }
+        return narr;
+    }
 }

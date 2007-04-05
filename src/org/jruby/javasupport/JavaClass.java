@@ -57,6 +57,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
+import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
@@ -345,7 +346,9 @@ public class JavaClass extends JavaObject {
     
     private static final Callback __jsend_method = new Callback() {
             public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-                int v = RubyNumeric.fix2int(((org.jruby.RubyMethod)self.method(((RubySymbol)args[0].callMethod(self.getRuntime().getCurrentContext(),"to_sym")))).arity());
+                String methodSymbol = args[0].asSymbol();
+                RubyMethod method = (org.jruby.RubyMethod)self.getMetaClass().newMethod(self, methodSymbol, true);
+                int v = RubyNumeric.fix2int(method.arity());
                 String name = args[0].asSymbol();
 
                 IRubyObject[] newArgs = new IRubyObject[args.length - 1];

@@ -69,6 +69,8 @@ public class RubyObject implements Cloneable, IRubyObject {
     // The instance variables of this object.
     protected Map instanceVariables;
 
+    private transient Object dataStruct;
+
     // The two properties frozen and taint
     private boolean frozen;
     private boolean taint;
@@ -333,13 +335,6 @@ public class RubyObject implements Cloneable, IRubyObject {
        clone.getMetaClass().setInstanceVariable("__attached__", clone);
 
        return clone;
-    }    
-
-    /** rb_define_singleton_method
-     *
-     */
-    public void defineSingletonMethod(String name, Callback method) {
-        getSingletonClass().defineMethod(name, method);
     }
 
     /** init_copy
@@ -1326,22 +1321,6 @@ public class RubyObject implements Cloneable, IRubyObject {
     public RubyClass getType() {
         return type();
     }
-
-    /**
-     * @see org.jruby.runtime.builtin.IRubyObject#scanArgs()
-     */
-    public IRubyObject[] scanArgs(IRubyObject[] args, int required, int optional) {
-        int total = required+optional;
-        int real = Arity.checkArgumentCount(getRuntime(), args,required,total);
-        IRubyObject[] narr = new IRubyObject[total];
-        System.arraycopy(args,0,narr,0,real);
-        for(int i=real; i<total; i++) {
-            narr[i] = getRuntime().getNil();
-        }
-        return narr;
-    }
-
-    private transient Object dataStruct;
 
     /**
      * @see org.jruby.runtime.builtin.IRubyObject#dataWrapStruct()

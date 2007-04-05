@@ -241,7 +241,7 @@ public class Generator {
             // Generator#new
             IRubyObject result = new RubyObject(self.getRuntime(),(RubyClass)self);
             result.dataWrapStruct(new GeneratorData(result));
-            result.callInit(args, block);
+            result.callMethod(self.getRuntime().getCurrentContext(), "initialize", args, block);
             return result;
         }
 

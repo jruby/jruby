@@ -51,7 +51,7 @@ public final class TopSelfFactory {
     public static IRubyObject createTopSelf(final Ruby runtime) {
         IRubyObject topSelf = new RubyObject(runtime, runtime.getObject());
         
-        topSelf.defineSingletonMethod("to_s", new Callback() {
+        topSelf.getSingletonClass().defineMethod("to_s", new Callback() {
             /**
              * @see org.jruby.runtime.callback.Callback#execute(IRubyObject, IRubyObject[])
              */
@@ -67,7 +67,7 @@ public final class TopSelfFactory {
             }
         });
         
-        topSelf.defineSingletonMethod("include", new Callback() {
+        topSelf.getSingletonClass().defineMethod("include", new Callback() {
             /**
              * @see org.jruby.runtime.callback.Callback#execute(IRubyObject, IRubyObject[])
              */
@@ -84,7 +84,7 @@ public final class TopSelfFactory {
             }
         });
         
-        topSelf.defineSingletonMethod("public", new Callback() {
+        topSelf.getSingletonClass().defineMethod("public", new Callback() {
             /**
              * @see org.jruby.runtime.callback.Callback#execute(IRubyObject, IRubyObject[])
              */
@@ -100,7 +100,7 @@ public final class TopSelfFactory {
             }
         });
         
-        topSelf.defineSingletonMethod("private", new Callback() {
+        topSelf.getSingletonClass().defineMethod("private", new Callback() {
             /**
              * @see org.jruby.runtime.callback.Callback#execute(IRubyObject, IRubyObject[])
              */
