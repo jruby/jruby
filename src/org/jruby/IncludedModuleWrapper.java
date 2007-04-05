@@ -52,6 +52,7 @@ public final class IncludedModuleWrapper extends RubyClass {
         // FIXME: The null makes me nervous, but it makes sense that an included wrapper would never have an allocator
 
         this.delegate = delegate;
+        this.metaClass = delegate.metaClass;
     }
 
     /**
@@ -87,9 +88,9 @@ public final class IncludedModuleWrapper extends RubyClass {
         return true;
     }
 
-    public RubyClass getMetaClass() {
-		return delegate.getMetaClass();
-    }
+//    public RubyClass getMetaClass() {
+//		return delegate.getMetaClass();
+//    }
 
     public void setMetaClass(RubyClass newRubyClass) {
         throw new UnsupportedOperationException("An included class is only a wrapper for a module");

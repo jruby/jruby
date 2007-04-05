@@ -45,7 +45,7 @@ public class RubyNil extends RubyObject {
     private final Ruby runtime;
     
     public RubyNil(Ruby runtime) {
-        super(runtime, null);
+        super(runtime, runtime.getNilClass());
         this.runtime = runtime;
         this.isTrue = false;
     }
@@ -82,8 +82,6 @@ public class RubyNil extends RubyObject {
         
         nilClass.getMetaClass().undefineMethod("new");
         
-        runtime.defineGlobalConstant("NIL", runtime.getNil());
-        
         return nilClass;
     }
     
@@ -91,9 +89,9 @@ public class RubyNil extends RubyObject {
         return ClassIndex.NIL;
     }
     
-    public RubyClass getMetaClass() {
-        return runtime.getNilClass();
-    }
+//    public RubyClass getMetaClass() {
+//        return runtime.getNilClass();
+//    }
     
     public boolean isImmediate() {
         return true;

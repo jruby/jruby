@@ -215,11 +215,11 @@ public class RubyClass extends RubyModule {
         return false;
     }
 
-    public RubyClass getMetaClass() {
-        RubyClass type = super.getMetaClass();
-
-        return type != null ? type : getRuntime().getClass("Class");
-    }
+//    public RubyClass getMetaClass() {
+//        RubyClass type = super.getMetaClass();
+//
+//        return type != null ? type : getRuntime().getClass("Class");
+//    }
 
     public RubyClass getRealClass() {
         return this;

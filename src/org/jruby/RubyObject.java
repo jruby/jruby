@@ -64,7 +64,7 @@ import org.jruby.runtime.ClassIndex;
  */
 public class RubyObject implements Cloneable, IRubyObject {
     // The class of this object
-    private RubyClass metaClass;
+    protected RubyClass metaClass;
 
     // The instance variables of this object.
     protected Map instanceVariables;
@@ -209,7 +209,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      * if exist return the meta-class else return the type of the object.
      *
      */
-    public RubyClass getMetaClass() {
+    public final RubyClass getMetaClass() {
         return metaClass;
     }
 

@@ -575,18 +575,15 @@ public final class Ruby {
     // TODO: Figure out real dependencies between vars and reorder/refactor into better methods
     private void init() {
         ThreadContext tc = getCurrentContext();
-        nilObject = new RubyNil(this);
-        trueObject = new RubyBoolean(this, true);
-        falseObject = new RubyBoolean(this, false);
-
-        verbose = falseObject;
-        debug = falseObject;
 
         javaSupport = new JavaSupport(this);
 
         tc.preInitCoreClasses();
 
         initCoreClasses();
+
+        verbose = falseObject;
+        debug = falseObject;
         
         // init selector table, now that classes are done adding methods
         selectorTable.init();
@@ -598,6 +595,10 @@ public final class Ruby {
         tc.preInitBuiltinClasses(objectClass, topSelf);
 
         RubyGlobal.createGlobals(this);
+        
+        defineGlobalConstant("TRUE", trueObject);
+        defineGlobalConstant("FALSE", falseObject);
+        defineGlobalConstant("NIL", nilObject);
 
         initBuiltinClasses();
 
@@ -666,6 +667,10 @@ public final class Ruby {
         objectClass.setConstant("Module", moduleClass);
         RubyClass classClass = RubyClass.newClassClass(this, moduleClass);
         objectClass.setConstant("Class", classClass);
+        
+        classClass.setMetaClass(classClass);
+        moduleClass.setMetaClass(classClass);
+        objectClass.setMetaClass(classClass);
 
         // I don't think the containment is correct here (parent cref)
         RubyClass metaClass = objectClass.makeMetaClass(classClass, objectMetaClass.getCRef());
@@ -684,6 +689,11 @@ public final class Ruby {
         // Pre-create the core classes we know we will get referenced by starting up the runtime.
         RubyBoolean.createFalseClass(this);
         RubyBoolean.createTrueClass(this);
+        
+        nilObject = new RubyNil(this);
+        trueObject = new RubyBoolean(this, true);
+        falseObject = new RubyBoolean(this, false);
+        
         RubyComparable.createComparable(this);
         RubyEnumerable.createEnumerableModule(this);
         stringClass = RubyString.createStringClass(this);

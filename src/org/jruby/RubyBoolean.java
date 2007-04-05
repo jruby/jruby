@@ -45,7 +45,8 @@ public class RubyBoolean extends RubyObject {
     private final Ruby runtime;
     
     public RubyBoolean(Ruby runtime, boolean value) {
-        super(runtime, null, // Don't initialize with class
+        super(runtime,
+                (value ? runtime.getClass("TrueClass") : runtime.getClass("FalseClass")), // Don't initialize with class
                 false); // Don't put in object space
         this.isTrue = value;
         this.runtime = runtime;
@@ -67,11 +68,11 @@ public class RubyBoolean extends RubyObject {
         return Boolean.TYPE;
     }
     
-    public RubyClass getMetaClass() {
-        return isTrue
-                ? getRuntime().getClass("TrueClass")
-                : getRuntime().getClass("FalseClass");
-    }
+//    public RubyClass getMetaClass() {
+//        return isTrue
+//                ? getRuntime().getClass("TrueClass")
+//                : getRuntime().getClass("FalseClass");
+//    }
     
     public RubyFixnum id() {
         return getRuntime().newFixnum(isTrue ? 2 : 0);
@@ -90,8 +91,6 @@ public class RubyBoolean extends RubyObject {
         falseClass.defineFastMethod("id", fact.getFastMethod("false_id"));
         falseClass.defineFastMethod("to_s", fact.getFastMethod("false_to_s"));
         
-        runtime.defineGlobalConstant("FALSE", runtime.getFalse());
-        
         return falseClass;
     }
     
@@ -107,8 +106,6 @@ public class RubyBoolean extends RubyObject {
         trueClass.defineFastMethod("^", fact.getFastMethod("true_xor", RubyKernel.IRUBY_OBJECT));
         trueClass.defineFastMethod("id", fact.getFastMethod("true_id"));
         trueClass.defineFastMethod("to_s", fact.getFastMethod("true_to_s"));
-        
-        runtime.defineGlobalConstant("TRUE", runtime.getTrue());
         
         return trueClass;
     }
