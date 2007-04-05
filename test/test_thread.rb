@@ -98,6 +98,7 @@ class TestThread < Test::Unit::TestCase
     e = 1
     begin
       t = Thread.new { e = 2; sleep(100); e = 2 }
+      sleep(3)
       t.raise("Die")
     rescue; end
     

@@ -140,6 +140,34 @@ public class IOHandlerUnseekable extends IOHandlerJavaIO {
         this.fileno = fileno;
     }
     
+    
+    public ByteList getsEntireStream() throws IOException {
+        ByteList b1 = new ByteList();
+        byte[] buf = new byte[2048];
+        boolean read = false;
+        int n = 0;
+        if(ungotc != -1) {
+            b1.append(ungotc);
+            read = true;
+            ungotc = -1;
+        }
+        while(true) {
+            n = input.read(buf,0,2048);
+            if(n == -1) {
+                if(!read) {
+                    throw new java.io.EOFException();
+                } else {
+                    break;
+                }
+            }
+            read = true;
+            b1.append(buf,0,n);
+        }
+        
+        return b1;
+    }
+
+
     public IOHandler cloneIOHandler() throws IOException {
         return new IOHandlerUnseekable(getRuntime(), input, output); 
     }

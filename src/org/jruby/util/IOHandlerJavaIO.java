@@ -42,7 +42,7 @@ import org.jruby.Ruby;
  */
 public abstract class IOHandlerJavaIO extends IOHandler {
     // Last char to be 'ungot'.  <0 indicates nothing waiting to be re-got
-    private int ungotc = -1;
+    protected int ungotc = -1;
 
     protected IOHandlerJavaIO(Ruby runtime) {
     super(runtime);
