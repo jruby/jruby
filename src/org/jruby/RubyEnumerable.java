@@ -54,7 +54,7 @@ public class RubyEnumerable {
         public ListAddBlockCallback(Ruby runtime) {
             this.runtime = runtime;
         }
-        public IRubyObject call(ThreadContext context, IRubyObject[] iargs, IRubyObject iself, Block block) {
+        public IRubyObject call(ThreadContext context, IRubyObject[] iargs, Block block) {
             if(iargs.length > 1) {
                 arr.add(runtime.newArrayNoCopy(iargs));
             } else {
@@ -287,7 +287,7 @@ public class RubyEnumerable {
             this.block = block;
             this.runtime = ctx.getRuntime();
         }
-        public IRubyObject call(ThreadContext context, IRubyObject[] iargs, IRubyObject iself, Block block) {
+        public IRubyObject call(ThreadContext context, IRubyObject[] iargs, Block block) {
             IRubyObject val;
             if(iargs.length > 1) {
                 val = runtime.newArray(iargs);

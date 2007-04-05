@@ -245,7 +245,7 @@ public class ThreadContext {
     
     private void pushCallFrame(RubyModule clazz, String name, 
                                IRubyObject self, IRubyObject[] args, int req, Block block) {
-        pushFrame(new Frame(clazz, self, name, args, req, block, getPosition()));        
+        pushFrame(new Frame(clazz, self, name, args, req, block, getPosition(), null));        
     }
     
     private void pushFrame() {

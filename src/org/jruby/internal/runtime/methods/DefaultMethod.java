@@ -44,7 +44,6 @@ import org.jruby.ast.executable.Script;
 import org.jruby.compiler.NodeCompilerFactory;
 import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.evaluator.AssignmentVisitor;
-import org.jruby.evaluator.CreateJumpTargetVisitor;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -126,9 +125,6 @@ public final class DefaultMethod extends DynamicMethod {
         if (JIT_ENABLED && jitCompiledScript != null) {
             return jitCompiledScript.run(context, self, args, block);
         }
-        
-        // FIXME: This is going to slow down execution of all code, but see 
-        CreateJumpTargetVisitor.setJumpTarget(this, body);
         
         // set jump target for returns that show up later, like from evals
         context.setFrameJumpTarget(this);

@@ -61,7 +61,7 @@ public class CompiledBlock extends Block {
         this.block = block;
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf) {
+    public IRubyObject call(ThreadContext context, IRubyObject[] args) {
         // FIXME: This used replacementSelf before, but that's null in most cases...so why am I supposed to use it?
         return callback.call(context, this.self, args, block, scopes);
     }

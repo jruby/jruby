@@ -1589,7 +1589,7 @@ public class EvaluationState {
    
         JumpException je = new JumpException(JumpException.JumpType.ReturnJump);
 
-        je.setTarget(iVisited.getTarget());
+        je.setTarget(context.getFrameJumpTarget());
         je.setValue(result);
    
         throw je;

@@ -111,37 +111,42 @@ public class RubyProc extends RubyObject {
     public IRubyObject call(IRubyObject[] args, Block unusedBlock) {
         return call(args, null, Block.NULL_BLOCK);
     }
-
+    
     public IRubyObject call(IRubyObject[] args, IRubyObject self, Block unusedBlock) {
-    	assert args != null;
-    	
+        assert args != null;
+        
         ThreadContext context = getRuntime().getCurrentContext();
         RubyModule oldWrapper = context.getWrapper();
         context.setWrapper(wrapper);
         try {
-        	if (block.isLambda) {
-        		block.arity().checkArity(getRuntime(), args);
-        	}
-        	
-        	return block.call(context, args, self);
+            if (block.isLambda) {
+                block.arity().checkArity(getRuntime(), args);
+            }
+            
+            Block newBlock = block.cloneBlock();
+            if (self != null) newBlock.setSelf(self);
+            
+            // if lambda, set new jump target in (duped) frame for returns
+            if (newBlock.isLambda) newBlock.getFrame().setJumpTarget(this);
+            
+            return newBlock.call(context, args);
         } catch (JumpException je) {
-        	if (je.getJumpType() == JumpException.JumpType.BreakJump) {
-        		if (block.isLambda) return (IRubyObject) je.getValue();
-
-		        throw getRuntime().newLocalJumpError("unexpected return");
-        	} else if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
-        		Object target = je.getTarget();
-                //System.out.println("TARGET: " + target);
-	
-	            if (target == this || block.isLambda) return (IRubyObject) je.getValue();
-	            
-	            if (target == null) {
-	            	throw getRuntime().newLocalJumpError("unexpected return");
-	            }
-	            throw je;
-        	} else {
-        		throw je;
-        	}
+            if (je.getJumpType() == JumpException.JumpType.BreakJump) {
+                if (block.isLambda) return (IRubyObject) je.getValue();
+                
+                throw getRuntime().newLocalJumpError("unexpected return");
+            } else if (je.getJumpType() == JumpException.JumpType.ReturnJump) {
+                Object target = je.getTarget();
+                
+                if (target == this || block.isLambda) return (IRubyObject) je.getValue();
+                
+                if (target == null) {
+                    throw getRuntime().newLocalJumpError("unexpected return");
+                }
+                throw je;
+            } else {
+                throw je;
+            }
         } finally {
             context.setWrapper(oldWrapper);
         }

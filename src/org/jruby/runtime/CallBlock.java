@@ -59,8 +59,8 @@ public class CallBlock extends Block {
         this.tc = ctx;
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf) {
-        return callback.call(context, args, replacementSelf, Block.NULL_BLOCK);
+    public IRubyObject call(ThreadContext context, IRubyObject[] args) {
+        return callback.call(context, args, Block.NULL_BLOCK);
     }
 
     public Block cloneBlock() {
@@ -78,7 +78,7 @@ public class CallBlock extends Block {
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject receiver, IRubyObject[] args, Block block) {
-            return callback.call(context, args,receiver, block);
+            return callback.call(context, args, block);
         }
 
         public ICallable dup() {

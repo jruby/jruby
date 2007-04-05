@@ -56,7 +56,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import org.jruby.ast.Node;
-import org.jruby.evaluator.CreateJumpTargetVisitor;
 import org.jruby.runtime.ClassIndex;
 
 /**
@@ -810,7 +809,6 @@ public class RubyObject implements Cloneable, IRubyObject {
             threadContext.preEvalWithBinding(blockOfBinding);
             IRubyObject newSelf = threadContext.getFrameSelf();
             Node node = getRuntime().parse(src.toString(), file, blockOfBinding.getDynamicScope());
-            CreateJumpTargetVisitor.setJumpTarget(context.getFrameJumpTarget(), node);
 
             return EvaluationState.eval(getRuntime(), threadContext, node, newSelf, blockOfBinding);
         } catch (JumpException je) {
@@ -838,7 +836,6 @@ public class RubyObject implements Cloneable, IRubyObject {
         // no binding, just eval in "current" frame (caller's frame)
         try {
             Node node = getRuntime().parse(src.toString(), file, context.getCurrentScope());
-            CreateJumpTargetVisitor.setJumpTarget(context.getFrameJumpTarget(), node);
             
             return EvaluationState.eval(getRuntime(), context, node, this, Block.NULL_BLOCK);
         } catch (JumpException je) {

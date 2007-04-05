@@ -184,7 +184,7 @@ public class Generator {
 
         private class IterBlockCallback implements BlockCallback {
             private IRubyObject obj;
-            public IRubyObject call(ThreadContext context, IRubyObject[] iargs, IRubyObject iself, Block block) {
+            public IRubyObject call(ThreadContext context, IRubyObject[] iargs, Block block) {
                 boolean inter = true;
                 synchronized(mutex) {
                     mutex.notifyAll();

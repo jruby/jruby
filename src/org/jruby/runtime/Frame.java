@@ -103,11 +103,11 @@ public class Frame {
     private final ISourcePosition position;
 
     public Frame(ISourcePosition position) {
-        this(null, null, null, IRubyObject.NULL_ARRAY, 0, Block.NULL_BLOCK, position); 
+        this(null, null, null, IRubyObject.NULL_ARRAY, 0, Block.NULL_BLOCK, position, null); 
     }
 
     public Frame(RubyModule klazz, IRubyObject self, String name,
-                 IRubyObject[] args, int requiredArgCount, Block block, ISourcePosition position) {
+                 IRubyObject[] args, int requiredArgCount, Block block, ISourcePosition position, Object jumpTarget) {
         assert block != null : "Block uses null object pattern.  It should NEVER be null";
         
         this.self = self;
@@ -117,6 +117,7 @@ public class Frame {
         this.klazz = klazz;
         this.position = position;
         this.block = block;
+        this.jumpTarget = jumpTarget;
     }
 
     /** Getter for property args.
@@ -239,7 +240,7 @@ public class Frame {
         	newArgs = args;
         }
 
-        return new Frame(klazz, self, name, newArgs, requiredArgCount, block, position);
+        return new Frame(klazz, self, name, newArgs, requiredArgCount, block, position, jumpTarget);
     }
 
     /* (non-Javadoc)

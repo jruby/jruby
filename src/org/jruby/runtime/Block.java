@@ -174,12 +174,8 @@ public class Block {
                 context.getBindingRubyClass(), extraScope);
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf) {
-        Block newBlock = this.cloneBlock();
-            
-        if (replacementSelf != null) newBlock.self = replacementSelf; 
-
-        return newBlock.yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true);
+    public IRubyObject call(ThreadContext context, IRubyObject[] args) {
+        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true);
     }
     
     protected void pre(ThreadContext context, RubyModule klass) {
@@ -365,6 +361,10 @@ public class Block {
 
     public void setVisibility(Visibility visibility) {
         this.visibility = visibility;
+    }
+    
+    public void setSelf(IRubyObject self) {
+        this.self = self;
     }
 
     public SinglyLinkedList getCRef() {
