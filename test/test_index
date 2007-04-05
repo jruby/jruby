@@ -46,6 +46,7 @@ testInspect.rb
 testInstantiatingInterfaces.rb
 testInteger.rb
 testIO.rb
+testJavaArraySupport.rb
 testJavaExtensions.rb
 testJavaProxy.rb
 testKernel.rb

@@ -266,6 +266,8 @@ class ArrayJavaProxy < JavaProxy
     java_object.length
   end
   
+  alias_method :size, :length
+  
   def [](*args)
     if (args.length == 1 && args[0].kind_of?(Integer))
       Java.java_to_ruby(java_object[args[0]])
