@@ -30,7 +30,8 @@ public class MethodIndex {
     public static final byte EMPTY_P = 13;
     public static final byte TO_S = 14;
     public static final byte TO_I = 15;
-    public static final byte MAX_METHODS = 16;
+    public static final byte AT = 16;
+    public static final byte MAX_METHODS = 17;
     
     /** Creates a new instance of MethodIndex */
     public MethodIndex() {
@@ -57,6 +58,7 @@ public class MethodIndex {
         if (methodName == "empty?") return EMPTY_P;
         if (methodName == "to_s") return TO_S;
         if (methodName == "to_i") return TO_I;
+        if (methodName == "at") return AT;
         return NO_INDEX;
     }
 }

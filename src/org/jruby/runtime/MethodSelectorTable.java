@@ -51,6 +51,7 @@ public class MethodSelectorTable {
         table[ClassIndex.ARRAY][MethodIndex.OP_LSHIFT] = RubyArray.OP_LSHIFT_SWITCHVALUE;
         table[ClassIndex.ARRAY][MethodIndex.EMPTY_P] = RubyArray.EMPTY_P_SWITCHVALUE;
         table[ClassIndex.ARRAY][MethodIndex.TO_S] = RubyArray.TO_S_SWITCHVALUE;
+        table[ClassIndex.ARRAY][MethodIndex.AT] = RubyArray.AT_SWITCHVALUE;
         
         // String
         table[ClassIndex.STRING] = new byte[MethodIndex.MAX_METHODS];

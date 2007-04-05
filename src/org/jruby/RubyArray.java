@@ -176,6 +176,7 @@ public class RubyArray extends RubyObject implements List {
     public static final byte OP_LSHIFT_SWITCHVALUE = 9;
     public static final byte EMPTY_P_SWITCHVALUE = 10;
     public static final byte TO_S_SWITCHVALUE = 11;
+    public static final byte AT_SWITCHVALUE = 12;
 
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, byte switchvalue,
             String name, IRubyObject[] args, CallType callType, Block block) {
@@ -209,6 +210,9 @@ public class RubyArray extends RubyObject implements List {
         case TO_S_SWITCHVALUE:
             if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
             return to_s();
+        case AT_SWITCHVALUE:
+            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
+            return at(args[0]);
         case 0:
         default:
             return super.callMethod(context, rubyclass, name, args, callType, block);
