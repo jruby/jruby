@@ -149,6 +149,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ForBlock;
+import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.MethodSelectorTable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -1380,7 +1382,7 @@ public class EvaluationState {
             }
             value = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
         } else {
-            value = value.callMethod(context, iVisited.getOperatorName(), evalInternal(runtime,context,
+            value = value.callMethod(context, runtime.getSelectorTable().table[value.getMetaClass().index][iVisited.index], iVisited.getOperatorName(), evalInternal(runtime,context,
                     iVisited.getValueNode(), self, aBlock));
         }
    
@@ -1411,8 +1413,11 @@ public class EvaluationState {
         IRubyObject receiver = evalInternal(runtime,context, iVisited.getReceiverNode(), self, aBlock);
    
         IRubyObject[] args = setupArgs(runtime, context, iVisited.getArgsNode(), self);
+        
+        RubyModule receiverModule = receiver.getMetaClass();
+        MethodSelectorTable selectorTable = runtime.getSelectorTable();
    
-        IRubyObject firstValue = receiver.callMethod(context, "[]", args);
+        IRubyObject firstValue = receiver.callMethod(context, selectorTable.table[receiverModule.index][MethodIndex.AREF], "[]", args);
    
         if (iVisited.getOperatorName() == "||") {
             if (firstValue.isTrue()) {
@@ -1425,14 +1430,14 @@ public class EvaluationState {
             }
             firstValue = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
         } else {
-            firstValue = firstValue.callMethod(context, iVisited.getOperatorName(), evalInternal(runtime,context, iVisited
+            firstValue = firstValue.callMethod(context, selectorTable.table[firstValue.getMetaClass().index][iVisited.index], iVisited.getOperatorName(), evalInternal(runtime,context, iVisited
                             .getValueNode(), self, aBlock));
         }
    
         IRubyObject[] expandedArgs = new IRubyObject[args.length + 1];
         System.arraycopy(args, 0, expandedArgs, 0, args.length);
         expandedArgs[expandedArgs.length - 1] = firstValue;
-        return receiver.callMethod(context, "[]=", expandedArgs);
+        return receiver.callMethod(context, selectorTable.table[receiverModule.index][MethodIndex.ASET], "[]=", expandedArgs);
     }
 
     private static IRubyObject optNNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {

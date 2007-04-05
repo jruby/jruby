@@ -57,6 +57,7 @@ import java.util.Iterator;
 import java.util.Map;
 import org.jruby.ast.Node;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.MethodIndex;
 
 /**
  *
@@ -155,11 +156,13 @@ public class RubyObject implements Cloneable, IRubyObject {
      * HashMap object underlying RubyHash.
      */
     public boolean equals(Object other) {
-        return other == this || other instanceof IRubyObject && callMethod(getRuntime().getCurrentContext(), "==", (IRubyObject) other).isTrue();
+        return other == this || 
+                other instanceof IRubyObject && 
+                callMethod(getRuntime().getCurrentContext(), getRuntime().getSelectorTable().table[metaClass.index][MethodIndex.EQUALEQUAL], "==", (IRubyObject) other).isTrue();
     }
 
     public String toString() {
-        return callMethod(getRuntime().getCurrentContext(), "to_s").toString();
+        return callMethod(getRuntime().getCurrentContext(), getRuntime().getSelectorTable().table[metaClass.index][MethodIndex.TO_S], "to_s", IRubyObject.NULL_ARRAY).toString();
     }
 
     /** Getter for property ruby.
@@ -657,7 +660,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     public RubyString asString() {
         if (this instanceof RubyString) return (RubyString) this;
         
-        IRubyObject str = this.callMethod(getRuntime().getCurrentContext(), "to_s");
+        IRubyObject str = this.callMethod(getRuntime().getCurrentContext(), getRuntime().getSelectorTable().table[metaClass.index][MethodIndex.TO_S], "to_s", IRubyObject.NULL_ARRAY);
         
         if (!(str instanceof RubyString)) str = anyToString();
 
@@ -1076,7 +1079,7 @@ public class RubyObject implements Cloneable, IRubyObject {
                 getRuntime().unregisterInspecting(this);
             }
         }
-        return callMethod(getRuntime().getCurrentContext(), "to_s");
+        return callMethod(getRuntime().getCurrentContext(), getRuntime().getSelectorTable().table[metaClass.index][MethodIndex.TO_S], "to_s", IRubyObject.NULL_ARRAY);
     }
 
     /** rb_obj_is_instance_of
@@ -1340,7 +1343,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      * 
      */
     public IRubyObject equal(IRubyObject other) {
-        if(this == other || callMethod(getRuntime().getCurrentContext(), "==",other).isTrue()){
+        if(this == other || callMethod(getRuntime().getCurrentContext(), getRuntime().getSelectorTable().table[metaClass.index][MethodIndex.EQUALEQUAL], "==",other).isTrue()){
             return getRuntime().getTrue();
         }
  
@@ -1349,6 +1352,6 @@ public class RubyObject implements Cloneable, IRubyObject {
     
     public final IRubyObject equalInternal(final ThreadContext context, final IRubyObject other){
         if (this == other) return getRuntime().getTrue();
-        return callMethod(context, "==", other);
+        return callMethod(context, getRuntime().getSelectorTable().table[metaClass.index][MethodIndex.EQUALEQUAL], "==", other);
     }
 }

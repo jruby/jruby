@@ -36,6 +36,7 @@ import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.MethodIndex;
 
 /** Represents an operator assignment to an element.
  * 
@@ -55,6 +56,7 @@ public class OpElementAsgnNode extends Node {
     private String operatorName;
     private final Node argsNode;
     private final Node valueNode;
+    public final int index;
 
     public OpElementAsgnNode(ISourcePosition position, Node receiverNode, String operatorName, Node argsNode, Node valueNode) {
         super(position, NodeTypes.OPELEMENTASGNNODE);
@@ -62,6 +64,7 @@ public class OpElementAsgnNode extends Node {
         this.operatorName = operatorName.intern();
         this.argsNode = argsNode;
         this.valueNode = valueNode;
+        this.index = MethodIndex.getIndex(this.operatorName);
     }
     
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {

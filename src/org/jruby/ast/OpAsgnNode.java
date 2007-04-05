@@ -36,6 +36,7 @@ import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.Instruction;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.MethodIndex;
 
 /**
  *
@@ -49,6 +50,7 @@ public class OpAsgnNode extends Node {
     private String variableName;
     private String operatorName;
     private String variableNameAsgn;
+    public final int index;
 
     public OpAsgnNode(ISourcePosition position, Node receiverNode, Node valueNode, String variableName, String methodName) {
         super(position, NodeTypes.OPASGNNODE);
@@ -57,6 +59,7 @@ public class OpAsgnNode extends Node {
         this.variableName = variableName.intern();
         this.operatorName = methodName.intern();
         this.variableNameAsgn = (variableName + "=").intern();
+        this.index = MethodIndex.getIndex(this.operatorName);
     }
     
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
