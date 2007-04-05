@@ -72,7 +72,12 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "host_vendor", System.getProperty("java.vendor"));
         setConfig(configHash, "host_cpu", System.getProperty("os.arch"));
         setConfig(configHash, "target_cpu", System.getProperty("os.arch"));
-
+        String targetOs = System.getProperty("os.name").toLowerCase();
+        if(targetOs.indexOf("win") != -1) {
+            targetOs = "mswin32";
+        }
+        setConfig(configHash, "target_os", targetOs);
+        
         String libdir = System.getProperty("jruby.lib");
         if (libdir == null) {
             libdir = new NormalizedFile(runtime.getJRubyHome(), "lib").getAbsolutePath();

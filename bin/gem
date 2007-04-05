@@ -5,7 +5,6 @@
 # See LICENSE.txt for permissions.
 #++
 
-
 require 'rubygems'
 Gem.manage_gems
 
