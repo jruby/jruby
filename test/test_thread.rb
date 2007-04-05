@@ -96,9 +96,12 @@ class TestThread < Test::Unit::TestCase
     
     # test raising in a sleeping thread
     e = 1
+    set = false
     begin
-      t = Thread.new { e = 2; sleep(100); e = 2 }
-      sleep(3)
+      t = Thread.new { e = 2; set = true; sleep(100); e = 3 }
+      while !set
+        sleep(1)
+      end
       t.raise("Die")
     rescue; end
     
