@@ -49,6 +49,7 @@ import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -613,7 +614,7 @@ public class FileMetaClass extends IOMetaClass {
     // Can we produce IOError which bypasses a close?
     public IRubyObject truncate(IRubyObject arg1, IRubyObject arg2) {
         RubyString filename = RubyString.stringValue(arg1);
-        RubyFixnum newLength = (RubyFixnum) arg2.convertToType(getRuntime().getFixnum(), "to_int", true);
+        RubyFixnum newLength = (RubyFixnum) arg2.convertToType(getRuntime().getFixnum(), MethodIndex.TO_INT, "to_int", true);
         IRubyObject[] args = new IRubyObject[] { filename, getRuntime().newString("w+") };
         RubyFile file = (RubyFile) open(args, false, null);
         file.truncate(newLength);

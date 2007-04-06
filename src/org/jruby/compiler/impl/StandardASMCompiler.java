@@ -395,7 +395,7 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         String callSig = cg.sig(IRubyObject.class, cg.params(IRubyObject.class, IRubyObject[].class, ThreadContext.class, String.class, IRubyObject.class, CallType.class, Block.class));
         String callSigIndexed = cg.sig(IRubyObject.class, cg.params(IRubyObject.class, IRubyObject[].class, ThreadContext.class, Byte.TYPE, String.class, IRubyObject.class, CallType.class, Block.class));
         
-        byte index = MethodIndex.getIndex(name);
+        int index = MethodIndex.getIndex(name);
         
         if (hasArgs) {
             if (hasReceiver) {
@@ -428,7 +428,7 @@ public class StandardASMCompiler implements Compiler, Opcodes {
 
         if (index != 0) {
             // load method index
-            mv.ldc(new Byte(index));
+            mv.ldc(new Integer(index));
         }
 
         mv.ldc(name);

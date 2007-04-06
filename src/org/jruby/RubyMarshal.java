@@ -42,6 +42,7 @@ import java.io.OutputStream;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Constants;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -129,7 +130,7 @@ public class RubyMarshal {
             if (in instanceof RubyIO) {
                 rawInput = ((RubyIO) in).getInStream();
             } else if (in.respondsTo("to_str")) {
-                RubyString inString = (RubyString) in.callMethod(recv.getRuntime().getCurrentContext(), "to_str");
+                RubyString inString = (RubyString) in.callMethod(recv.getRuntime().getCurrentContext(), MethodIndex.TO_STR, "to_str", IRubyObject.NULL_ARRAY);
                 rawInput = new ByteArrayInputStream(inString.getBytes());
             } else {
                 throw recv.getRuntime().newTypeError("instance of IO needed");

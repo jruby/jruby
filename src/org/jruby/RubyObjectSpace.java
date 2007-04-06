@@ -65,7 +65,7 @@ public class RubyObjectSpace {
             if(args[1] instanceof RubyProc) {
                 proc = (RubyProc)args[1];
             } else {
-                proc = (RubyProc)args[1].convertToType(runtime.getClass("Proc"), "to_proc", true);
+                proc = (RubyProc)args[1].convertToType(runtime.getClass("Proc"), 0, "to_proc", true);
             }
         } else {
             proc = runtime.newProc(false, block);

@@ -42,6 +42,7 @@ import org.jruby.RubyKernel;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.builtin.IRubyObject;
 
 
@@ -183,7 +184,7 @@ public class Sprintf {
             }
 
             // basically just forcing a TypeError here to match MRI
-            obj = obj.convertToType(obj.getRuntime().getFixnum(), "to_int", true);
+            obj = obj.convertToType(obj.getRuntime().getFixnum(), MethodIndex.TO_ARY, "to_int", true);
             return (int)((RubyFixnum)obj).getLongValue();
         }
         
@@ -565,7 +566,7 @@ public class Sprintf {
                             arg = RubyNumeric.str2inum(arg.getRuntime(),(RubyString)arg,0,true);
                             break;
                         default:
-                            arg = arg.convertToType(arg.getRuntime().getClass("Integer"),"to_i",true);
+                            arg = arg.convertToType(arg.getRuntime().getClass("Integer"), MethodIndex.TO_I, "to_i", true);
                             break;
                         }
                         type = arg.getMetaClass().index;

@@ -43,6 +43,7 @@ import org.jruby.environment.OSEnvironment;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.GlobalVariable;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ReadonlyGlobalVariable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -69,7 +70,7 @@ public class RubyGlobal {
                 throw getRuntime().newTypeError("can't convert " + key.getMetaClass() + " into String");
             }
 
-            return super.aref(key.callMethod(getRuntime().getCurrentContext(), "to_str"));
+            return super.aref(key.callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_STR, "to_str", IRubyObject.NULL_ARRAY));
         }
 
         public IRubyObject aset(IRubyObject key, IRubyObject value) {
@@ -82,8 +83,8 @@ public class RubyGlobal {
 
             ThreadContext context = getRuntime().getCurrentContext();
             
-            return super.aset(key.callMethod(context, "to_str"),
-                    value.isNil() ? getRuntime().getNil() : value.callMethod(context, "to_str"));
+            return super.aset(key.callMethod(context, MethodIndex.TO_STR, "to_str", IRubyObject.NULL_ARRAY),
+                    value.isNil() ? getRuntime().getNil() : value.callMethod(context, MethodIndex.TO_STR, "to_str", IRubyObject.NULL_ARRAY));
         }
     }
     

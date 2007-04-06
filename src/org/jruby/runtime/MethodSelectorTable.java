@@ -29,6 +29,8 @@ public class MethodSelectorTable {
         table[ClassIndex.FIXNUM][MethodIndex.OP_LT] = RubyFixnum.OP_LT_SWITCHVALUE;
         table[ClassIndex.FIXNUM][MethodIndex.TO_S] = RubyFixnum.TO_S_SWITCHVALUE;
         table[ClassIndex.FIXNUM][MethodIndex.TO_I] = RubyFixnum.TO_I_SWITCHVALUE;
+        table[ClassIndex.FIXNUM][MethodIndex.TO_INT] = RubyFixnum.TO_INT_SWITCHVALUE;
+        table[ClassIndex.FIXNUM][MethodIndex.HASH] = RubyFixnum.HASH_SWITCHVALUE;
         
         // Bignum
         table[ClassIndex.BIGNUM] = new byte[MethodIndex.MAX_METHODS];
@@ -37,6 +39,7 @@ public class MethodSelectorTable {
         table[ClassIndex.BIGNUM][MethodIndex.OP_LT] = RubyBignum.OP_LT_SWITCHVALUE;
         table[ClassIndex.BIGNUM][MethodIndex.TO_S] = RubyBignum.TO_S_SWITCHVALUE;
         table[ClassIndex.BIGNUM][MethodIndex.TO_I] = RubyBignum.TO_I_SWITCHVALUE;
+        table[ClassIndex.BIGNUM][MethodIndex.HASH] = RubyBignum.HASH_SWITCHVALUE;
         
         // Array
         table[ClassIndex.ARRAY] = new byte[MethodIndex.MAX_METHODS];
@@ -52,6 +55,9 @@ public class MethodSelectorTable {
         table[ClassIndex.ARRAY][MethodIndex.EMPTY_P] = RubyArray.EMPTY_P_SWITCHVALUE;
         table[ClassIndex.ARRAY][MethodIndex.TO_S] = RubyArray.TO_S_SWITCHVALUE;
         table[ClassIndex.ARRAY][MethodIndex.AT] = RubyArray.AT_SWITCHVALUE;
+        table[ClassIndex.ARRAY][MethodIndex.TO_ARY] = RubyArray.TO_ARY_SWITCHVALUE;
+        table[ClassIndex.ARRAY][MethodIndex.TO_A] = RubyArray.TO_A_SWITCHVALUE;
+        table[ClassIndex.ARRAY][MethodIndex.HASH] = RubyArray.HASH_SWITCHVALUE;
         
         // String
         table[ClassIndex.STRING] = new byte[MethodIndex.MAX_METHODS];
@@ -66,5 +72,8 @@ public class MethodSelectorTable {
         table[ClassIndex.STRING][MethodIndex.EMPTY_P] = RubyString.EMPTY_P_SWITCHVALUE;
         table[ClassIndex.STRING][MethodIndex.TO_S] = RubyString.TO_S_SWITCHVALUE;
         table[ClassIndex.STRING][MethodIndex.TO_I] = RubyString.TO_I_SWITCHVALUE;
+        table[ClassIndex.STRING][MethodIndex.TO_STR] = RubyString.TO_STR_SWITCHVALUE;
+        table[ClassIndex.STRING][MethodIndex.TO_SYM] = RubyString.TO_SYM_SWITCHVALUE;
+        table[ClassIndex.STRING][MethodIndex.HASH] = RubyString.HASH_SWITCHVALUE;
     }
 }

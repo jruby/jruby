@@ -126,6 +126,11 @@ public class Java {
     }
 
     // JavaUtilities
+    
+    /**
+     * Add a new proxy extender. This is used by JavaUtilities to allow adding methods
+     * to a given type's proxy and all types descending from that proxy's Java class.
+     */
     public static IRubyObject add_proxy_extender(IRubyObject recv, IRubyObject extender) {
         ProxyData pdata = ((ProxyData)recv.dataGetStruct());
         pdata.extenders.add(extender);

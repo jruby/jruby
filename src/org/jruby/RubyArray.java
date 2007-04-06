@@ -177,10 +177,13 @@ public class RubyArray extends RubyObject implements List {
     public static final byte EMPTY_P_SWITCHVALUE = 10;
     public static final byte TO_S_SWITCHVALUE = 11;
     public static final byte AT_SWITCHVALUE = 12;
+    public static final byte TO_ARY_SWITCHVALUE = 13;
+    public static final byte TO_A_SWITCHVALUE = 14;
+    public static final byte HASH_SWITCHVALUE = 15;
 
-    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, byte switchvalue,
+    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex,
             String name, IRubyObject[] args, CallType callType, Block block) {
-        switch (switchvalue) {
+        switch (getRuntime().getSelectorTable().table[ClassIndex.ARRAY][methodIndex]) {
         case OP_PLUS_SWITCHVALUE:
             if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
             return op_plus(args[0]);
@@ -213,6 +216,15 @@ public class RubyArray extends RubyObject implements List {
         case AT_SWITCHVALUE:
             if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
             return at(args[0]);
+        case TO_ARY_SWITCHVALUE:
+            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
+            return to_ary();
+        case TO_A_SWITCHVALUE:
+            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
+            return to_a();
+        case HASH_SWITCHVALUE:
+            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
+            return hash();
         case 0:
         default:
             return super.callMethod(context, rubyclass, name, args, callType, block);

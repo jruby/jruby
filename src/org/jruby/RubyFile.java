@@ -46,6 +46,7 @@ import java.nio.channels.FileLock;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Chmod;
 import org.jruby.util.IOHandler;
@@ -145,7 +146,7 @@ public class RubyFile extends RubyIO {
 
 	public IRubyObject flock(IRubyObject lockingConstant) {
         FileChannel fileChannel = handler.getFileChannel();
-        int lockMode = (int) ((RubyFixnum) lockingConstant.convertToType(getRuntime().getFixnum(), "to_int", 
+        int lockMode = (int) ((RubyFixnum) lockingConstant.convertToType(getRuntime().getFixnum(), MethodIndex.TO_INT, "to_int", 
             true)).getLongValue();
 
         try {
@@ -265,7 +266,7 @@ public class RubyFile extends RubyIO {
 	}
 	
     public IRubyObject truncate(IRubyObject arg) {
-    	RubyFixnum newLength = (RubyFixnum) arg.convertToType(getRuntime().getFixnum(), "to_int", true);
+    	RubyFixnum newLength = (RubyFixnum) arg.convertToType(getRuntime().getFixnum(), MethodIndex.TO_INT, "to_int", true);
         try {
             handler.truncate(newLength.getLongValue());
         } catch (IOHandler.PipeException e) {

@@ -670,7 +670,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         }
         
         if (args.length == 1) {
-            IRubyObject arg = args[0].convertToType(runtime.getClass("Regexp"), "to_regexp", false);
+            IRubyObject arg = args[0].convertToType(runtime.getClass("Regexp"), 0, "to_regexp", false);
             if (!arg.isNil()) {
                 return arg;
             }
@@ -682,7 +682,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         	if (i > 0) {
         		buffer.append("|");
             }
-        	IRubyObject arg = args[i].convertToType(runtime.getClass("Regexp"), "to_regexp", false);
+        	IRubyObject arg = args[i].convertToType(runtime.getClass("Regexp"), 0, "to_regexp", false);
             if (arg.isNil()) {
                 arg = quote(recv, args[i].convertToString());
             }

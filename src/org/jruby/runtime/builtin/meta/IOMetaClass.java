@@ -50,6 +50,7 @@ import org.jruby.RubyIO;
 import org.jruby.RubyKernel;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -317,7 +318,7 @@ public class IOMetaClass extends ObjectMetaClass {
         IRubyObject[] readArguments;
         
         if (args.length >= 2) {
-            readArguments = new IRubyObject[] {args[1].convertToType(getRuntime().getFixnum(), "to_int", true)};
+            readArguments = new IRubyObject[] {args[1].convertToType(getRuntime().getFixnum(), MethodIndex.TO_INT, "to_int", true)};
         } else {
             readArguments = new IRubyObject[] {};
         }
@@ -325,7 +326,7 @@ public class IOMetaClass extends ObjectMetaClass {
         try {
             
             if (args.length == 3) {
-                file.seek(new IRubyObject[] {args[2].convertToType(getRuntime().getFixnum(), "to_int", true)});
+                file.seek(new IRubyObject[] {args[2].convertToType(getRuntime().getFixnum(), MethodIndex.TO_INT, "to_int", true)});
             }
             
             return file.read(readArguments);

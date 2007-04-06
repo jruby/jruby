@@ -55,6 +55,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -318,7 +319,7 @@ public class RubyKernel {
     }
 
     public static IRubyObject new_array(IRubyObject recv, IRubyObject object) {
-        IRubyObject value = object.convertToType(recv.getRuntime().getArray(), "to_ary", false, true, true);
+        IRubyObject value = object.convertToType(recv.getRuntime().getArray(), MethodIndex.TO_ARY, "to_ary", false, true, true);
         
         if (value.isNil()) {
             DynamicMethod method = object.getMetaClass().searchMethod("to_a");
@@ -784,7 +785,7 @@ public class RubyKernel {
     public static IRubyObject warn(IRubyObject recv, IRubyObject message) {
         Ruby runtime = recv.getRuntime();
         IRubyObject out = runtime.getObject().getConstant("STDERR");
-        RubyIO io = (RubyIO) out.convertToType(runtime.getClass("IO"), "to_io", true); 
+        RubyIO io = (RubyIO) out.convertToType(runtime.getClass("IO"), 0, "to_io", true); 
 
         io.puts(new IRubyObject[] { message });
         return recv.getRuntime().getNil();
@@ -923,7 +924,7 @@ public class RubyKernel {
 
         if (args.length > 0) {
             RubyInteger integerSeed = 
-                (RubyInteger) args[0].convertToType(runtime.getClass("Integer"), "to_i", true);
+                (RubyInteger) args[0].convertToType(runtime.getClass("Integer"), MethodIndex.TO_I, "to_i", true);
             runtime.setRandomSeed(integerSeed.getLongValue());
         } else {
             // Not sure how well this works, but it works much better than
@@ -942,7 +943,7 @@ public class RubyKernel {
         if (args.length == 0) {
             ceil = 0;
         } else if (args.length == 1) {
-            RubyInteger integerCeil = (RubyInteger) args[0].convertToType(runtime.getClass("Integer"), "to_i", true);
+            RubyInteger integerCeil = (RubyInteger) args[0].convertToType(runtime.getClass("Integer"), MethodIndex.TO_I, "to_i", true);
             ceil = integerCeil.getLongValue();
             ceil = Math.abs(ceil);
         } else {

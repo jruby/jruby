@@ -445,13 +445,13 @@ public class EvaluationState {
     }
 
     public static RubyArray arrayValue(Ruby runtime, IRubyObject value) {
-        IRubyObject newValue = value.convertToType(runtime.getArray(), "to_ary", false);
+        IRubyObject newValue = value.convertToType(runtime.getArray(), MethodIndex.TO_ARY, "to_ary", false);
         if (newValue.isNil()) {
             // Object#to_a is obsolete.  We match Ruby's hack until to_a goes away.  Then we can 
             // remove this hack too.
             if (value.getMetaClass().searchMethod("to_a").getImplementationClass() != runtime
                     .getKernel()) {
-                newValue = value.convertToType(runtime.getArray(), "to_a", false);
+                newValue = value.convertToType(runtime.getArray(), MethodIndex.TO_A, "to_a", false);
                 if (newValue.getType() != runtime.getClass("Array")) {
                     throw runtime.newTypeError("`to_a' did not return Array");
                 }
@@ -467,7 +467,7 @@ public class EvaluationState {
         if (value instanceof RubyArray) return value;
 
         if (value.respondsTo("to_ary")) {
-            return value.convertToType(runtime.getArray(), "to_ary", false);
+            return value.convertToType(runtime.getArray(), MethodIndex.TO_A, "to_ary", false);
         }
 
         return runtime.newArray(value);
@@ -549,10 +549,8 @@ public class EvaluationState {
         
         // No block provided lets look at fast path for STI dispatch.
         if (!block.isGiven()) {
-            if (module.index != 0 && iVisited.index != 0) {
-                return receiver.callMethod(context, module,
-                        runtime.getSelectorTable().table[module.index][iVisited.index],
-                        iVisited.getName(), args, CallType.NORMAL, Block.NULL_BLOCK);
+            if (iVisited.index != 0) {
+                return receiver.callMethod(context, module, iVisited.index, iVisited.getName(), args, CallType.NORMAL, Block.NULL_BLOCK);
             } else {
                 DynamicMethod method = module.searchMethod(iVisited.getName());
       
@@ -1022,9 +1020,7 @@ public class EvaluationState {
         if (!block.isGiven()) {
             RubyModule module = self.getMetaClass();
             if (module.index != 0 && iVisited.index != 0) {
-                return self.callMethod(context, module,
-                        runtime.getSelectorTable().table[module.index][iVisited.index],
-                        iVisited.getName(), args, CallType.FUNCTIONAL, Block.NULL_BLOCK);
+                return self.callMethod(context, module, iVisited.index, iVisited.getName(), args, CallType.FUNCTIONAL, Block.NULL_BLOCK);
             } else {
                 DynamicMethod method = module.searchMethod(iVisited.getName());
 
@@ -1382,7 +1378,7 @@ public class EvaluationState {
             }
             value = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
         } else {
-            value = value.callMethod(context, runtime.getSelectorTable().table[value.getMetaClass().index][iVisited.index], iVisited.getOperatorName(), evalInternal(runtime,context,
+            value = value.callMethod(context, iVisited.index, iVisited.getOperatorName(), evalInternal(runtime,context,
                     iVisited.getValueNode(), self, aBlock));
         }
    
@@ -1413,11 +1409,8 @@ public class EvaluationState {
         IRubyObject receiver = evalInternal(runtime,context, iVisited.getReceiverNode(), self, aBlock);
    
         IRubyObject[] args = setupArgs(runtime, context, iVisited.getArgsNode(), self);
-        
-        RubyModule receiverModule = receiver.getMetaClass();
-        MethodSelectorTable selectorTable = runtime.getSelectorTable();
    
-        IRubyObject firstValue = receiver.callMethod(context, selectorTable.table[receiverModule.index][MethodIndex.AREF], "[]", args);
+        IRubyObject firstValue = receiver.callMethod(context, MethodIndex.AREF, "[]", args);
    
         if (iVisited.getOperatorName() == "||") {
             if (firstValue.isTrue()) {
@@ -1430,14 +1423,14 @@ public class EvaluationState {
             }
             firstValue = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
         } else {
-            firstValue = firstValue.callMethod(context, selectorTable.table[firstValue.getMetaClass().index][iVisited.index], iVisited.getOperatorName(), evalInternal(runtime,context, iVisited
+            firstValue = firstValue.callMethod(context, iVisited.index, iVisited.getOperatorName(), evalInternal(runtime,context, iVisited
                             .getValueNode(), self, aBlock));
         }
    
         IRubyObject[] expandedArgs = new IRubyObject[args.length + 1];
         System.arraycopy(args, 0, expandedArgs, 0, args.length);
         expandedArgs[expandedArgs.length - 1] = firstValue;
-        return receiver.callMethod(context, selectorTable.table[receiverModule.index][MethodIndex.ASET], "[]=", expandedArgs);
+        return receiver.callMethod(context, MethodIndex.ASET, "[]=", expandedArgs);
     }
 
     private static IRubyObject optNNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
@@ -1758,7 +1751,7 @@ public class EvaluationState {
         VCallNode iVisited = (VCallNode) node;
         RubyModule module = self.getMetaClass();
         if (module.index != 0 && iVisited.index != 0) {
-            return self.callMethod(context, module, runtime.getSelectorTable().table[module.index][iVisited.index], iVisited.getName(), 
+            return self.callMethod(context, module, iVisited.index, iVisited.getName(), 
                     IRubyObject.NULL_ARRAY, CallType.VARIABLE, Block.NULL_BLOCK);
         } else {
             DynamicMethod method = module.searchMethod(iVisited.getName());
@@ -1917,7 +1910,7 @@ public class EvaluationState {
 
             // If not already a proc then we should try and make it one.
             if (!(proc instanceof RubyProc)) {
-                proc = proc.convertToType(runtime.getClass("Proc"), "to_proc", false);
+                proc = proc.convertToType(runtime.getClass("Proc"), 0, "to_proc", false);
 
                 if (!(proc instanceof RubyProc)) {
                     throw runtime.newTypeError("wrong argument type "

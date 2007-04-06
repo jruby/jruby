@@ -49,6 +49,7 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyKernel;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class Pack {
@@ -322,7 +323,7 @@ public class Pack {
     private static String convert2String(IRubyObject l2Conv) {
         Ruby runtime = l2Conv.getRuntime();
         if (l2Conv.getMetaClass() != runtime.getString()) {
-            l2Conv = l2Conv.convertToType(runtime.getString(), "to_s", true); //we may need a false here, not sure
+            l2Conv = l2Conv.convertToType(runtime.getString(), MethodIndex.TO_S, "to_s", true); //we may need a false here, not sure
         }
         return ((RubyString) l2Conv).toString();
     }

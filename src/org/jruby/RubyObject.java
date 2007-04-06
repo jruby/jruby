@@ -158,11 +158,11 @@ public class RubyObject implements Cloneable, IRubyObject {
     public boolean equals(Object other) {
         return other == this || 
                 other instanceof IRubyObject && 
-                callMethod(getRuntime().getCurrentContext(), getRuntime().getSelectorTable().table[metaClass.index][MethodIndex.EQUALEQUAL], "==", (IRubyObject) other).isTrue();
+                callMethod(getRuntime().getCurrentContext(), MethodIndex.EQUALEQUAL, "==", (IRubyObject) other).isTrue();
     }
 
     public String toString() {
-        return callMethod(getRuntime().getCurrentContext(), getRuntime().getSelectorTable().table[metaClass.index][MethodIndex.TO_S], "to_s", IRubyObject.NULL_ARRAY).toString();
+        return callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s", IRubyObject.NULL_ARRAY).toString();
     }
 
     /** Getter for property ruby.
@@ -395,30 +395,30 @@ public class RubyObject implements Cloneable, IRubyObject {
         return callMethod(context, getMetaClass(), name, args, callType, block);
     }
 
-    public IRubyObject callMethod(ThreadContext context,byte switchValue, String name,
+    public IRubyObject callMethod(ThreadContext context, int methodIndex, String name,
                                   IRubyObject arg) {
-        return callMethod(context,getMetaClass(),switchValue,name,new IRubyObject[]{arg},CallType.FUNCTIONAL, Block.NULL_BLOCK);
+        return callMethod(context,getMetaClass(),methodIndex,name,new IRubyObject[]{arg},CallType.FUNCTIONAL, Block.NULL_BLOCK);
     }
 
-    public IRubyObject callMethod(ThreadContext context,byte switchValue, String name,
+    public IRubyObject callMethod(ThreadContext context, int methodIndex, String name,
                                   IRubyObject[] args) {
-        return callMethod(context,getMetaClass(),switchValue,name,args,CallType.FUNCTIONAL, Block.NULL_BLOCK);
+        return callMethod(context,getMetaClass(),methodIndex,name,args,CallType.FUNCTIONAL, Block.NULL_BLOCK);
     }
 
-    public IRubyObject callMethod(ThreadContext context, byte switchValue, String name,
+    public IRubyObject callMethod(ThreadContext context, int methodIndex, String name,
                                   IRubyObject[] args, CallType callType) {
-        return callMethod(context,getMetaClass(),switchValue,name,args,callType, Block.NULL_BLOCK);
+        return callMethod(context,getMetaClass(),methodIndex,name,args,callType, Block.NULL_BLOCK);
     }
     
     /**
      * Used by the compiler to ease calling indexed methods, also to handle visibility.
      * NOTE: THIS IS NOT THE SAME AS THE SWITCHVALUE VERSIONS.
      */
-    public IRubyObject compilerCallMethodWithIndex(ThreadContext context, byte methodIndex, String name, IRubyObject[] args, IRubyObject self, CallType callType, Block block) {
+    public IRubyObject compilerCallMethodWithIndex(ThreadContext context, int methodIndex, String name, IRubyObject[] args, IRubyObject self, CallType callType, Block block) {
         RubyModule module = getMetaClass();
         
         if (module.index != 0) {
-            return callMethod(context, module, getRuntime().getSelectorTable().table[module.index][methodIndex], name, args, callType, block);
+            return callMethod(context, module, methodIndex, name, args, callType, block);
         }
         
         return compilerCallMethod(context, name, args, self, callType, block);
@@ -474,15 +474,15 @@ public class RubyObject implements Cloneable, IRubyObject {
     /**
      *
      */
-    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, byte switchvalue, String name,
+    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name,
             IRubyObject[] args, CallType callType) {
-        return callMethod(context, rubyclass, switchvalue, name, args, callType, Block.NULL_BLOCK);
+        return callMethod(context, rubyclass, methodIndex, name, args, callType, Block.NULL_BLOCK);
     }
 
     /**
      *
      */
-    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, byte switchvalue, String name,
+    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name,
             IRubyObject[] args, CallType callType, Block block) {
         return callMethod(context, rubyclass, name, args, callType, block);
     }
@@ -598,36 +598,43 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public RubyArray convertToArray() {
-        return (RubyArray) convertToType(getRuntime().getArray(), "to_ary", true);
+        return (RubyArray) convertToType(getRuntime().getArray(), MethodIndex.TO_ARY, true);
     }
 
     public RubyFloat convertToFloat() {
-        return (RubyFloat) convertToType(getRuntime().getClass("Float"), "to_f", true);
+        return (RubyFloat) convertToType(getRuntime().getClass("Float"), MethodIndex.TO_F, true);
     }
 
     public RubyInteger convertToInteger() {
-        return (RubyInteger) convertToType(getRuntime().getClass("Integer"), "to_int", true);
+        return (RubyInteger) convertToType(getRuntime().getClass("Integer"), MethodIndex.TO_INT, true);
     }
 
     public RubyString convertToString() {
-        return (RubyString) convertToType(getRuntime().getString(), "to_str", true);
+        return (RubyString) convertToType(getRuntime().getString(), MethodIndex.TO_STR, true);
     }
 
     /*
      * @see org.jruby.runtime.builtin.IRubyObject#convertToTypeWithCheck(java.lang.String, java.lang.String)
      */
-    public IRubyObject convertToTypeWithCheck(RubyClass targetType, String convertMethod) {
-        return convertToType(targetType, convertMethod, false, true, false);
+    public IRubyObject convertToTypeWithCheck(RubyClass targetType, int convertMethodIndex, String convertMethod) {
+        return convertToType(targetType, convertMethodIndex, convertMethod, false, true, false);
     }
 
     /*
      * @see org.jruby.runtime.builtin.IRubyObject#convertToType(java.lang.String, java.lang.String, boolean)
      */
-    public IRubyObject convertToType(RubyClass targetType, String convertMethod, boolean raise) {
-        return convertToType(targetType, convertMethod, raise, false, false);
+    public IRubyObject convertToType(RubyClass targetType, int convertMethodIndex, String convertMethod, boolean raise) {
+        return convertToType(targetType, convertMethodIndex, convertMethod, raise, false, false);
+    }
+
+    /*
+     * @see org.jruby.runtime.builtin.IRubyObject#convertToType(java.lang.String, java.lang.String, boolean)
+     */
+    public IRubyObject convertToType(RubyClass targetType, int convertMethodIndex, boolean raise) {
+        return convertToType(targetType, convertMethodIndex, MethodIndex.NAMES[convertMethodIndex], raise, false, false);
     }
     
-    public IRubyObject convertToType(RubyClass targetType, String convertMethod, boolean raiseOnMissingMethod, boolean raiseOnWrongTypeResult, boolean allowNilThrough) {
+    public IRubyObject convertToType(RubyClass targetType, int convertMethodIndex, String convertMethod, boolean raiseOnMissingMethod, boolean raiseOnWrongTypeResult, boolean allowNilThrough) {
         if (isKindOf(targetType)) {
             return this;
         }
@@ -641,7 +648,7 @@ public class RubyObject implements Cloneable, IRubyObject {
             return getRuntime().getNil();
         }
         
-        IRubyObject value = callMethod(getRuntime().getCurrentContext(), convertMethod);
+        IRubyObject value = callMethod(getRuntime().getCurrentContext(), convertMethodIndex, convertMethod, IRubyObject.NULL_ARRAY);
         
         if (allowNilThrough && value.isNil()) {
             return value;
@@ -660,7 +667,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     public RubyString asString() {
         if (this instanceof RubyString) return (RubyString) this;
         
-        IRubyObject str = this.callMethod(getRuntime().getCurrentContext(), getRuntime().getSelectorTable().table[metaClass.index][MethodIndex.TO_S], "to_s", IRubyObject.NULL_ARRAY);
+        IRubyObject str = this.callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s", IRubyObject.NULL_ARRAY);
         
         if (!(str instanceof RubyString)) str = anyToString();
 
@@ -671,7 +678,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public IRubyObject checkStringType() {
-        IRubyObject str = convertToTypeWithCheck(getRuntime().getString(), "to_str");
+        IRubyObject str = convertToTypeWithCheck(getRuntime().getString(), MethodIndex.TO_STR, "to_str");
         if(!str.isNil() && !(str instanceof RubyString)) {
             str = getRuntime().newString("");
         }
@@ -682,7 +689,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     *
     */    
     public IRubyObject checkArrayType() {
-        return convertToTypeWithCheck(getRuntime().getArray(), "to_ary");
+        return convertToTypeWithCheck(getRuntime().getArray(), MethodIndex.TO_ARY, "to_ary");
     }
 
     /** specific_eval
@@ -1079,7 +1086,7 @@ public class RubyObject implements Cloneable, IRubyObject {
                 getRuntime().unregisterInspecting(this);
             }
         }
-        return callMethod(getRuntime().getCurrentContext(), getRuntime().getSelectorTable().table[metaClass.index][MethodIndex.TO_S], "to_s", IRubyObject.NULL_ARRAY);
+        return callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s", IRubyObject.NULL_ARRAY);
     }
 
     /** rb_obj_is_instance_of
@@ -1343,7 +1350,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      * 
      */
     public IRubyObject equal(IRubyObject other) {
-        if(this == other || callMethod(getRuntime().getCurrentContext(), getRuntime().getSelectorTable().table[metaClass.index][MethodIndex.EQUALEQUAL], "==",other).isTrue()){
+        if(this == other || callMethod(getRuntime().getCurrentContext(), MethodIndex.EQUALEQUAL, "==",other).isTrue()){
             return getRuntime().getTrue();
         }
  
@@ -1352,6 +1359,6 @@ public class RubyObject implements Cloneable, IRubyObject {
     
     public final IRubyObject equalInternal(final ThreadContext context, final IRubyObject other){
         if (this == other) return getRuntime().getTrue();
-        return callMethod(context, getRuntime().getSelectorTable().table[metaClass.index][MethodIndex.EQUALEQUAL], "==", other);
+        return callMethod(context, MethodIndex.EQUALEQUAL, "==", other);
     }
 }

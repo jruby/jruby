@@ -54,6 +54,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -70,18 +71,6 @@ import org.jruby.util.Sprintf;
 public class RubyString extends RubyObject {
     // Default record seperator
     private static final String DEFAULT_RS = "\n";
-
-    public static final byte OP_PLUS_SWITCHVALUE = 1;
-    public static final byte OP_LT_SWITCHVALUE = 2;
-    public static final byte AREF_SWITCHVALUE = 3;
-    public static final byte ASET_SWITCHVALUE = 4;
-    public static final byte NIL_P_SWITCHVALUE = 5;
-    public static final byte EQUALEQUAL_SWITCHVALUE = 6;
-    public static final byte OP_GE_SWITCHVALUE = 7;
-    public static final byte OP_LSHIFT_SWITCHVALUE = 8;
-    public static final byte EMPTY_P_SWITCHVALUE = 9;
-    public static final byte TO_S_SWITCHVALUE = 10;
-    public static final byte TO_I_SWITCHVALUE = 11;
 
     private ByteList value;
     private int hash;
@@ -206,6 +195,69 @@ public class RubyString extends RubyObject {
         return stringClass;
     }
 
+    public static final byte OP_PLUS_SWITCHVALUE = 1;
+    public static final byte OP_LT_SWITCHVALUE = 2;
+    public static final byte AREF_SWITCHVALUE = 3;
+    public static final byte ASET_SWITCHVALUE = 4;
+    public static final byte NIL_P_SWITCHVALUE = 5;
+    public static final byte EQUALEQUAL_SWITCHVALUE = 6;
+    public static final byte OP_GE_SWITCHVALUE = 7;
+    public static final byte OP_LSHIFT_SWITCHVALUE = 8;
+    public static final byte EMPTY_P_SWITCHVALUE = 9;
+    public static final byte TO_S_SWITCHVALUE = 10;
+    public static final byte TO_I_SWITCHVALUE = 11;
+    public static final byte TO_STR_SWITCHVALUE = 12;
+    public static final byte TO_SYM_SWITCHVALUE = 13;
+    public static final byte HASH_SWITCHVALUE = 14;
+    
+    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name,
+            IRubyObject[] args, CallType callType, Block block) {
+        switch (getRuntime().getSelectorTable().table[ClassIndex.STRING][methodIndex]) {
+        case OP_PLUS_SWITCHVALUE:
+            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
+            return op_plus(args[0]);
+        case OP_LT_SWITCHVALUE:
+            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
+            return op_lt(args[0]);
+        case AREF_SWITCHVALUE:
+            return aref(args);
+        case ASET_SWITCHVALUE:
+            return aset(args);
+        case NIL_P_SWITCHVALUE:
+            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
+            return nil_p();
+        case EQUALEQUAL_SWITCHVALUE:
+            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
+            return eql(args[0]);
+        case OP_GE_SWITCHVALUE:
+            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
+            return op_ge(args[0]);
+        case OP_LSHIFT_SWITCHVALUE:
+            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
+            return concat(args[0]);
+        case EMPTY_P_SWITCHVALUE:
+            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
+            return empty();
+        case TO_S_SWITCHVALUE:
+            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
+            return to_s();
+        case TO_I_SWITCHVALUE:
+            return to_i(args);
+        case TO_STR_SWITCHVALUE:
+            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
+            return to_str();
+        case TO_SYM_SWITCHVALUE:
+            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
+            return to_sym();
+        case HASH_SWITCHVALUE:
+            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
+            return hash();
+        case 0:
+        default:
+            return super.callMethod(context, rubyclass, name, args, callType, block);
+        }
+    }
+
     // @see IRuby.newString(...)
     private RubyString(Ruby runtime, CharSequence value) {
             this(runtime, runtime.getString(), value);
@@ -241,45 +293,6 @@ public class RubyString extends RubyObject {
         assert value != null;
 
         this.value = value;
-    }
-
-    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, byte switchvalue, String name,
-            IRubyObject[] args, CallType callType, Block block) {
-        switch (switchvalue) {
-        case OP_PLUS_SWITCHVALUE:
-            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
-            return op_plus(args[0]);
-        case OP_LT_SWITCHVALUE:
-            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
-            return op_lt(args[0]);
-        case AREF_SWITCHVALUE:
-            return aref(args);
-        case ASET_SWITCHVALUE:
-            return aset(args);
-        case NIL_P_SWITCHVALUE:
-            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
-            return nil_p();
-        case EQUALEQUAL_SWITCHVALUE:
-            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
-            return eql(args[0]);
-        case OP_GE_SWITCHVALUE:
-            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
-            return op_ge(args[0]);
-        case OP_LSHIFT_SWITCHVALUE:
-            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
-            return concat(args[0]);
-        case EMPTY_P_SWITCHVALUE:
-            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
-            return empty();
-        case TO_S_SWITCHVALUE:
-            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
-            return to_s();
-        case TO_I_SWITCHVALUE:
-            return to_i(args);
-        case 0:
-        default:
-            return super.callMethod(context, rubyclass, name, args, callType, block);
-        }
     }
 
     public int getNativeTypeIndex() {
@@ -671,7 +684,7 @@ public class RubyString extends RubyObject {
             return regexp.search2(toString());
         } else if (pattern.respondsTo("to_str")) {
             // FIXME: is this cast safe?
-            RubyRegexp regexp = RubyRegexp.newRegexp((RubyString) pattern.callMethod(getRuntime().getCurrentContext(), "to_str"), 0, null);
+            RubyRegexp regexp = RubyRegexp.newRegexp((RubyString) pattern.callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_STR, "to_str", IRubyObject.NULL_ARRAY), 0, null);
             return regexp.search2(toString());
         }
 

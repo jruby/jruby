@@ -135,42 +135,42 @@ public interface IRubyObject {
      *
      * @param context
      * @param rubyclass
-     * @param switchvalue
+     * @param methodIndex
      * @param name
      * @param args
      * @param callType
      * @param block
      * @return
      */
-    IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, byte switchvalue, String name, IRubyObject[] args, CallType callType, Block block);
+    IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name, IRubyObject[] args, CallType callType, Block block);
     /**
      *
      * @param context
-     * @param switchValue
+     * @param methodIndex
      * @param name
      * @param arg
      * @return
      */
-    IRubyObject callMethod(ThreadContext context, byte switchValue, String name, IRubyObject arg);
+    IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject arg);
     /**
      *
      * @param context
-     * @param switchValue
+     * @param methodIndex
      * @param name
      * @param args
      * @return
      */
-    IRubyObject callMethod(ThreadContext context, byte switchValue, String name, IRubyObject[] args);
+    IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject[] args);
     /**
      *
      * @param context
-     * @param switchValue
+     * @param methodIndex
      * @param name
      * @param args
      * @param callType
      * @return
      */
-    IRubyObject callMethod(ThreadContext context, byte switchValue, String name, IRubyObject[] args, CallType callType);
+    IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject[] args, CallType callType);
     /**
      *
      * @param context
@@ -213,7 +213,7 @@ public interface IRubyObject {
      * @param block
      * @return
      */
-    IRubyObject compilerCallMethodWithIndex(ThreadContext context, byte methodIndex, String name, IRubyObject[] args, IRubyObject caller, CallType callType, Block block);
+    IRubyObject compilerCallMethodWithIndex(ThreadContext context, int methodIndex, String name, IRubyObject[] args, IRubyObject caller, CallType callType, Block block);
     /**
      *
      * @param context
@@ -423,7 +423,7 @@ public interface IRubyObject {
      * @param raiseOnError will throw an Error if conversion does not work
      * @return the converted value
      */
-    IRubyObject convertToType(RubyClass targetType, String convertMethod, boolean raiseOnError);
+    IRubyObject convertToType(RubyClass targetType, int convertMethodIndex, String convertMethod, boolean raiseOnError);
     
     /**
      * Higher level conversion utility similiar to convertToType but it can throw an
@@ -433,7 +433,7 @@ public interface IRubyObject {
      * @param convertMethod is the method to be called to try and convert to targeType
      * @return the converted value
      */
-    IRubyObject convertToTypeWithCheck(RubyClass targetType, String convertMethod);
+    IRubyObject convertToTypeWithCheck(RubyClass targetType, int convertMethodIndex, String convertMethod);
    
     /**
      * 
@@ -444,7 +444,7 @@ public interface IRubyObject {
      * @param allowNilThrough 
      * @return 
      */
-    public IRubyObject convertToType(RubyClass targetType, String convertMethod, boolean raiseOnMissingMethod, boolean raiseOnWrongTypeResult, boolean allowNilThrough);
+    public IRubyObject convertToType(RubyClass targetType, int convertMethodIndex, String convertMethod, boolean raiseOnMissingMethod, boolean raiseOnWrongTypeResult, boolean allowNilThrough);
     
     /**
      *
