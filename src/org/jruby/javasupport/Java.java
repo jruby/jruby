@@ -32,6 +32,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
@@ -423,7 +424,11 @@ public class Java {
             javaObject = new Double(((RubyFloat) object).getValue());
             break;
         case ClassIndex.STRING:
-            javaObject = ((RubyString) object).toString();
+            try {
+                javaObject = new String(((RubyString) object).getBytes(), "UTF8");
+            } catch (UnsupportedEncodingException uee) {
+                javaObject = object.toString();
+            }
             break;
         case ClassIndex.TRUE:
             javaObject = Boolean.TRUE;

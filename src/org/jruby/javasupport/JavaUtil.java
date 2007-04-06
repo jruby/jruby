@@ -33,6 +33,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
@@ -136,7 +137,12 @@ public class JavaUtil {
             }
 			return new Character('\0');
         } else if (javaClass == String.class) {
-            return ((RubyString) rubyObject.callMethod(context, "to_s")).toString();
+            RubyString rubyString = (RubyString) rubyObject.callMethod(context, "to_s");
+            try {
+                return new String(rubyString.getBytes(), "UTF8");
+            } catch (UnsupportedEncodingException uee) {
+                return new String(rubyString.getBytes());
+            }
         } else if (javaClass == ByteList.class) {
             return rubyObject.convertToString().getByteList();
         } else if (javaClass == BigInteger.class) {
@@ -183,9 +189,9 @@ public class JavaUtil {
         }
         
         if (object instanceof IRubyObject) {
-        	return (IRubyObject) object;
+            return (IRubyObject) object;
         }
-
+        
         if (javaClass.isPrimitive()) {
             String cName = javaClass.getName();
             if (cName == "boolean") {
@@ -198,24 +204,36 @@ public class JavaUtil {
                 // else it's one of the integral types
                 return runtime.newFixnum(((Number) object).longValue());
             }
+            
         } else if (javaClass == Boolean.class) {
             return RubyBoolean.newBoolean(runtime, ((Boolean) object).booleanValue());
+            
         } else if (javaClass == Float.class || javaClass == Double.class) {
             return RubyFloat.newFloat(runtime, ((Number) object).doubleValue());
+            
         } else if (javaClass == Character.class) {
             return runtime.newFixnum(((Character) object).charValue());
+            
         } else if (Number.class.isAssignableFrom(javaClass) && javaClass != BigDecimal.class) {
             return runtime.newFixnum(((Number) object).longValue());
+            
         } else if (javaClass == String.class) {
-            return runtime.newString(object.toString());
+            String str = object.toString();
+            
+            return RubyString.newUnicodeString(runtime, str);
+            
         } else if (javaClass == ByteList.class) {
             return RubyString.newString(runtime,((ByteList)object));
+            
         } else if (IRubyObject.class.isAssignableFrom(javaClass)) {
             return (IRubyObject) object;
+            
         } else if (javaClass == BigInteger.class) {
-        	return RubyBignum.newBignum(runtime, (BigInteger)object);
+            return RubyBignum.newBignum(runtime, (BigInteger)object);
+            
         } else if (javaClass == BigDecimal.class) {
-        	return JavaObject.wrap(runtime, object);
+            return JavaObject.wrap(runtime, object);
+            
         } else {
             return JavaObject.wrap(runtime, object);
         }

@@ -37,6 +37,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
@@ -524,6 +525,14 @@ public class RubyString extends RubyObject {
      */
     public static RubyString newString(Ruby runtime, CharSequence str) {
         return new RubyString(runtime, str);
+    }
+
+    public static RubyString newUnicodeString(Ruby runtime, String str) {
+        try {
+            return new RubyString(runtime, str.getBytes("UTF8"));
+        } catch (UnsupportedEncodingException uee) {
+            return new RubyString(runtime, str);
+        }
     }
 
     public static RubyString newString(Ruby runtime, RubyClass clazz, CharSequence str) {
