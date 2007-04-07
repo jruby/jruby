@@ -102,6 +102,7 @@ public class RubyBignum extends RubyInteger {
     public static final byte TO_S_SWITCHVALUE = 4;
     public static final byte TO_I_SWITCHVALUE = 5;
     public static final byte HASH_SWITCHVALUE = 6;
+    public static final byte OP_TIMES_SWITCHVALUE = 7;
 
     private final BigInteger value;
 
@@ -127,6 +128,9 @@ public class RubyBignum extends RubyInteger {
         case HASH_SWITCHVALUE:
             if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
             return hash();
+        case OP_TIMES_SWITCHVALUE:
+            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
+            return mul(args[0]);
         case 0:
         default:
             return super.callMethod(context, rubyclass, name, args, callType, block);

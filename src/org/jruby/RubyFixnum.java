@@ -35,6 +35,7 @@
 package org.jruby;
 
 import java.math.BigInteger;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -118,6 +119,9 @@ public class RubyFixnum extends RubyInteger {
     public static final byte TO_I_SWITCHVALUE = 5;
     public static final byte TO_INT_SWITCHVALUE = 6;
     public static final byte HASH_SWITCHVALUE = 7;
+    public static final byte OP_GT_SWITCHVALUE = 8;
+    public static final byte OP_TIMES_SWITCHVALUE = 9;
+    public static final byte EQUALEQUAL_SWITCHVALUE = 10;
 
     public RubyFixnum(Ruby runtime) {
         this(runtime, 0);
@@ -128,9 +132,9 @@ public class RubyFixnum extends RubyInteger {
         this.value = value;
     }
     
-    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name,
+    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int switchValue, String name,
             IRubyObject[] args, CallType callType, Block block) {
-        switch (getRuntime().getSelectorTable().table[ClassIndex.FIXNUM][methodIndex]) {
+        switch (getRuntime().getSelectorTable().table[ClassIndex.FIXNUM][switchValue]) {
         case OP_PLUS_SWITCHVALUE:
             if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
             return plus(args[0]);
@@ -151,11 +155,21 @@ public class RubyFixnum extends RubyInteger {
         case HASH_SWITCHVALUE:
             if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
             return hash();
+        case OP_GT_SWITCHVALUE:
+            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
+            return gt(args[0]);
+        case OP_TIMES_SWITCHVALUE:
+            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
+            return mul(args[0]);
+        case EQUALEQUAL_SWITCHVALUE:
+            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
+            return equal(args[0]);
         case 0:
         default:
             return super.callMethod(context, rubyclass, name, args, callType, block);
         }
     }
+    
     public int getNativeTypeIndex() {
         return ClassIndex.FIXNUM;
     }

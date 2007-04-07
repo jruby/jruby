@@ -31,6 +31,8 @@ public class MethodSelectorTable {
         table[ClassIndex.FIXNUM][MethodIndex.TO_I] = RubyFixnum.TO_I_SWITCHVALUE;
         table[ClassIndex.FIXNUM][MethodIndex.TO_INT] = RubyFixnum.TO_INT_SWITCHVALUE;
         table[ClassIndex.FIXNUM][MethodIndex.HASH] = RubyFixnum.HASH_SWITCHVALUE;
+        table[ClassIndex.FIXNUM][MethodIndex.OP_GT] = RubyFixnum.OP_GT_SWITCHVALUE;
+        table[ClassIndex.FIXNUM][MethodIndex.OP_TIMES] = RubyFixnum.OP_TIMES_SWITCHVALUE;
         
         // Bignum
         table[ClassIndex.BIGNUM] = new byte[MethodIndex.MAX_METHODS];
@@ -75,5 +77,7 @@ public class MethodSelectorTable {
         table[ClassIndex.STRING][MethodIndex.TO_STR] = RubyString.TO_STR_SWITCHVALUE;
         table[ClassIndex.STRING][MethodIndex.TO_SYM] = RubyString.TO_SYM_SWITCHVALUE;
         table[ClassIndex.STRING][MethodIndex.HASH] = RubyString.HASH_SWITCHVALUE;
+        table[ClassIndex.STRING][MethodIndex.OP_GT] = RubyString.OP_GT_SWITCHVALUE;
+        table[ClassIndex.STRING][MethodIndex.OP_TIMES] = RubyString.OP_TIMES_SWITCHVALUE;
     }
 }

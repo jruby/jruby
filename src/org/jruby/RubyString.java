@@ -209,6 +209,8 @@ public class RubyString extends RubyObject {
     public static final byte TO_STR_SWITCHVALUE = 12;
     public static final byte TO_SYM_SWITCHVALUE = 13;
     public static final byte HASH_SWITCHVALUE = 14;
+    public static final byte OP_GT_SWITCHVALUE = 15;
+    public static final byte OP_TIMES_SWITCHVALUE = 16;
     
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name,
             IRubyObject[] args, CallType callType, Block block) {
@@ -252,6 +254,12 @@ public class RubyString extends RubyObject {
         case HASH_SWITCHVALUE:
             if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
             return hash();
+        case OP_GT_SWITCHVALUE:
+            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
+            return op_gt(args[0]);
+        case OP_TIMES_SWITCHVALUE:
+            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
+            return op_mul(args[0]);
         case 0:
         default:
             return super.callMethod(context, rubyclass, name, args, callType, block);

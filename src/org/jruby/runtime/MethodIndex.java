@@ -41,7 +41,9 @@ public class MethodIndex {
     public static final int TO_SYM = 21;
     public static final int TO_A = 22;
     public static final int HASH = 23;
-    public static final int MAX_METHODS = 24;
+    public static final int OP_GT = 24;
+    public static final int OP_TIMES = 25;
+    public static final int MAX_METHODS = 26;
     
     public static final String[] NAMES = new String[MAX_METHODS];
     public static final Map NUMBERS = new HashMap();
@@ -71,6 +73,8 @@ public class MethodIndex {
         NAMES[21] = "to_sym";
         NAMES[22] = "to_a";
         NAMES[23] = "hash";
+        NAMES[24] = ">";
+        NAMES[25] = "*";
         
         for (int i = 0; i < MAX_METHODS; i++) {
             NUMBERS.put(NAMES[i], new Integer(i));
@@ -86,10 +90,12 @@ public class MethodIndex {
         switch (methodName.length()) {
         case 1:
             switch (methodName.charAt(0)) {
-                case '+': return OP_PLUS;
-                case '-': return OP_MINUS;
-                case '<': return OP_LT;
-                default: return NO_INDEX;
+            case '+': return OP_PLUS;
+            case '-': return OP_MINUS;
+            case '<': return OP_LT;
+            case '>': return OP_GT;
+            case '*': return OP_TIMES;
+            default: return NO_INDEX;
             }
         default:
             if (NUMBERS.containsKey(methodName)) return ((Integer)NUMBERS.get(methodName)).intValue();

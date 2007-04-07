@@ -35,6 +35,7 @@ package org.jruby;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -103,24 +104,26 @@ public abstract class RubyInteger extends RubyNumeric {
      * 
      */
     public IRubyObject upto(IRubyObject to, Block block) {
-        ThreadContext context = getRuntime().getCurrentContext();
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
 
         if (this instanceof RubyFixnum && to instanceof RubyFixnum) {
 
             RubyFixnum toFixnum = (RubyFixnum) to;
             long toValue = toFixnum.getLongValue();
-            for (long i = getLongValue(); i <= toValue; i++) {
-                block.yield(context, RubyFixnum.newFixnum(getRuntime(), i));
+            long fromValue = getLongValue();
+            for (long i = fromValue; i <= toValue; i++) {
+                block.yield(context, RubyFixnum.newFixnum(runtime, i));
             }
         } else {
             RubyNumeric i = this;
 
             while (true) {
-                if (i.callMethod(context, ">", to).isTrue()) {
+                if (i.callMethod(context, MethodIndex.OP_GT, ">", to).isTrue()) {
                     break;
                 }
                 block.yield(context, i);
-                i = (RubyNumeric) i.callMethod(context, "+", RubyFixnum.one(getRuntime()));
+                i = (RubyNumeric) i.callMethod(context, MethodIndex.OP_PLUS, "+", RubyFixnum.one(runtime));
             }
         }
         return this;
@@ -143,11 +146,11 @@ public abstract class RubyInteger extends RubyNumeric {
             RubyNumeric i = this;
 
             while (true) {
-                if (i.callMethod(context, "<", to).isTrue()) {
+                if (i.callMethod(context, MethodIndex.OP_LT, "<", to).isTrue()) {
                     break;
                 }
                 block.yield(context, i);
-                i = (RubyNumeric) i.callMethod(context, "-", RubyFixnum.one(getRuntime()));
+                i = (RubyNumeric) i.callMethod(context, MethodIndex.OP_MINUS, "-", RubyFixnum.one(getRuntime()));
             }
         }
         return this;
