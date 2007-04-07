@@ -14,6 +14,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.internal.runtime.methods.YARVMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
+import org.jruby.runtime.MethodIndex;
 
 public class YARVMachine {
     private static final boolean TAILCALL_OPT = Boolean.getBoolean("jruby.tailcall.enabled");
@@ -232,7 +233,7 @@ public class YARVMachine {
             }
             case YARVInstructions.TOSTRING:
                 if(!(stack[stackTop] instanceof RubyString)) {
-                    stack[stackTop] = (stack[stackTop]).callMethod(context, "to_s");
+                    stack[stackTop] = (stack[stackTop]).callMethod(context, MethodIndex.TO_S, "to_s");
                 }
                 break;
             case YARVInstructions.TOREGEXP:
@@ -478,26 +479,26 @@ public class YARVMachine {
                 bytecodes[we].o_op0 = stack[stackTop];
                 bytecodes[we].l_op1 = runtime.getGlobalState();
                 break;
-            case YARVInstructions.OPT_CASE_DISPATCH: 
+            case YARVInstructions.OPT_CASE_DISPATCH:
                 System.err.println("Not implemented, YARVMachine." +YARVInstructions.name(bytecodes[ip].bytecode));
-break;
-            case YARVInstructions.OPT_CHECKENV: 
+                break;
+            case YARVInstructions.OPT_CHECKENV:
                 System.err.println("Not implemented, YARVMachine." +YARVInstructions.name(bytecodes[ip].bytecode));
-break;
+                break;
             case YARVInstructions.OPT_PLUS:
                 other = stack[stackTop--];
                 recv = stack[stackTop--];
-                stack[++stackTop] = recv.callMethod(context,"+",other);
+                stack[++stackTop] = recv.callMethod(context,MethodIndex.OP_PLUS, "+",other);
                 break;
             case YARVInstructions.OPT_MINUS: 
                 other = stack[stackTop--];
                 recv = stack[stackTop--];
-                stack[++stackTop] = recv.callMethod(context,"-",other);
+                stack[++stackTop] = recv.callMethod(context,MethodIndex.OP_MINUS, "-",other);
                 break;
             case YARVInstructions.OPT_MULT: 
                 other = stack[stackTop--];
                 recv = stack[stackTop--];
-                stack[++stackTop] = recv.callMethod(context,"*",other);
+                stack[++stackTop] = recv.callMethod(context,MethodIndex.OP_TIMES, "*",other);
                 break;
             case YARVInstructions.OPT_DIV: 
                 other = stack[stackTop--];
@@ -512,34 +513,34 @@ break;
             case YARVInstructions.OPT_EQ:
                 other = stack[stackTop--];
                 recv = stack[stackTop--];
-                stack[++stackTop] = recv.callMethod(context,"==",other);
+                stack[++stackTop] = recv.callMethod(context,MethodIndex.EQUALEQUAL, "==",other);
                 break;
             case YARVInstructions.OPT_LT:
                 other = stack[stackTop--];
                 recv = stack[stackTop--];
-                stack[++stackTop] = recv.callMethod(context,"<",other);
+                stack[++stackTop] = recv.callMethod(context,MethodIndex.OP_LT, "<",other);
                 break;
             case YARVInstructions.OPT_LE: 
                 other = stack[stackTop--];
                 recv = stack[stackTop--];
-                stack[++stackTop] = recv.callMethod(context,"<=",other);
+                stack[++stackTop] = recv.callMethod(context,MethodIndex.OP_LE, "<=",other);
                 break;
             case YARVInstructions.OPT_LTLT: 
                 other = stack[stackTop--];
                 recv = stack[stackTop--];
-                stack[++stackTop] = recv.callMethod(context,"<<",other);
+                stack[++stackTop] = recv.callMethod(context,MethodIndex.OP_LSHIFT, "<<",other);
                 break;
             case YARVInstructions.OPT_AREF: 
                 other = stack[stackTop--];
                 recv = stack[stackTop--];
-                stack[++stackTop] = recv.callMethod(context,"[]",other);
+                stack[++stackTop] = recv.callMethod(context,MethodIndex.AREF, "[]",other);
                 break;
             case YARVInstructions.OPT_ASET: 
                 //YARV will never emit this, for some reason.
                 IRubyObject value = stack[stackTop--];
                 other = stack[stackTop--];
                 recv = stack[stackTop--];
-                stack[++stackTop] = recv.callMethod(context,"[]=",new IRubyObject[]{other,value});
+                stack[++stackTop] = recv.callMethod(context,MethodIndex.ASET, "[]=",new IRubyObject[]{other,value});
                 break;
             case YARVInstructions.OPT_LENGTH: 
                 recv = stack[stackTop--];

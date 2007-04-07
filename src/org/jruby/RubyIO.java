@@ -42,6 +42,7 @@ import java.lang.ref.WeakReference;
 import java.nio.channels.Channel;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -535,7 +536,7 @@ public class RubyIO extends RubyObject {
      */
     public IRubyObject addString(IRubyObject anObject) {
         // Claims conversion is done via 'to_s' in docs.
-        IRubyObject strObject = anObject.callMethod(getRuntime().getCurrentContext(), "to_s");
+        IRubyObject strObject = anObject.callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s");
 
         write(strObject);
         
@@ -670,7 +671,7 @@ public class RubyIO extends RubyObject {
         } else if (object.isKindOf(getRuntime().getFixnum())){
             c = RubyNumeric.fix2int(object);
         } else { // What case will this work for?
-            c = RubyNumeric.fix2int(object.callMethod(getRuntime().getCurrentContext(), "to_i"));
+            c = RubyNumeric.fix2int(object.callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_I, "to_i"));
         }
 
         try {
@@ -977,7 +978,7 @@ public class RubyIO extends RubyObject {
             ByteList buf = ((IOHandlerNio)handler).readpartial(RubyNumeric.fix2int(args[0]));
             IRubyObject strbuf = RubyString.newString(getRuntime(), buf == null ? new ByteList(ByteList.NULL_ARRAY) : buf);
             if(args.length > 1) {
-                args[1].callMethod(getRuntime().getCurrentContext(),"<<", strbuf);
+                args[1].callMethod(getRuntime().getCurrentContext(),MethodIndex.OP_LSHIFT, "<<", strbuf);
                 return args[1];
             } 
 

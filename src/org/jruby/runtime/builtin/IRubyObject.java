@@ -233,6 +233,13 @@ public interface IRubyObject {
      *
      * @param context
      * @param string
+     * @return
+     */
+    IRubyObject callMethod(ThreadContext context, int methodIndex, String string);
+    /**
+     *
+     * @param context
+     * @param string
      * @param aBlock
      * @return
      */

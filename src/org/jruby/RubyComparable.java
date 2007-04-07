@@ -35,6 +35,7 @@ package org.jruby;
 
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -80,10 +81,10 @@ public class RubyComparable {
         final Ruby runtime = val.getRuntime();
         final ThreadContext tc = runtime.getCurrentContext();
         final RubyFixnum zero = RubyFixnum.one(runtime);
-        if (val.callMethod(tc, ">", zero).isTrue()) {
+        if (val.callMethod(tc, MethodIndex.OP_GT, ">", zero).isTrue()) {
             return 1;
         }
-        if (val.callMethod(tc, "<", zero).isTrue()) {
+        if (val.callMethod(tc, MethodIndex.OP_LT, "<", zero).isTrue()) {
             return -1;
         }
         return 0;
@@ -118,7 +119,7 @@ public class RubyComparable {
         Ruby runtime = recv.getRuntime();
         IRubyObject result = null;
         try {
-            result = recv.callMethod(runtime.getCurrentContext(), "<=>", other);
+            result = recv.callMethod(runtime.getCurrentContext(), MethodIndex.OP_SPACESHIP, "<=>", other);
         } catch (RaiseException e) {
             return recv.getRuntime().getFalse();
         }
@@ -136,7 +137,7 @@ public class RubyComparable {
     // <=> may return nil in many circumstances, e.g. 3 <=> NaN        
     public static RubyBoolean op_gt(IRubyObject recv, IRubyObject other) {
         final Ruby runtime = recv.getRuntime();
-        IRubyObject result = recv.callMethod(runtime.getCurrentContext(), "<=>", other);
+        IRubyObject result = recv.callMethod(runtime.getCurrentContext(), MethodIndex.OP_SPACESHIP, "<=>", other);
         
         if (result.isNil()) {
             cmperr(recv, other);
@@ -150,7 +151,7 @@ public class RubyComparable {
      */
     public static RubyBoolean op_ge(IRubyObject recv, IRubyObject other) {
         final Ruby runtime = recv.getRuntime();
-        IRubyObject result = recv.callMethod(runtime.getCurrentContext(), "<=>", other);
+        IRubyObject result = recv.callMethod(runtime.getCurrentContext(), MethodIndex.OP_SPACESHIP, "<=>", other);
         
         if (result.isNil()) {
             cmperr(recv, other);
@@ -164,7 +165,7 @@ public class RubyComparable {
      */
     public static RubyBoolean op_lt(IRubyObject recv, IRubyObject other) {
         final Ruby runtime = recv.getRuntime();
-        IRubyObject result = recv.callMethod(runtime.getCurrentContext(), "<=>", other);
+        IRubyObject result = recv.callMethod(runtime.getCurrentContext(), MethodIndex.OP_SPACESHIP, "<=>", other);
 
         if (result.isNil()) {
             cmperr(recv, other);
@@ -178,7 +179,7 @@ public class RubyComparable {
      */
     public static RubyBoolean op_le(IRubyObject recv, IRubyObject other) {
         final Ruby runtime = recv.getRuntime();
-        IRubyObject result = recv.callMethod(runtime.getCurrentContext(), "<=>", other);
+        IRubyObject result = recv.callMethod(runtime.getCurrentContext(), MethodIndex.OP_SPACESHIP, "<=>", other);
 
         if (result.isNil()) {
             cmperr(recv, other);

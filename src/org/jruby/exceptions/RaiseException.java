@@ -41,6 +41,7 @@ import java.io.StringWriter;
 
 import org.jruby.*;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -149,7 +150,7 @@ public class RaiseException extends JumpException {
         IRubyObject backtrace = exception.backtrace();
         Ruby runtime = backtrace.getRuntime();
         if (runtime.getNil() != backtrace) {
-            String firstLine = backtrace.callMethod(runtime.getCurrentContext(), "first").callMethod(runtime.getCurrentContext(), "to_s").toString();
+            String firstLine = backtrace.callMethod(runtime.getCurrentContext(), "first").callMethod(runtime.getCurrentContext(), MethodIndex.TO_S, "to_s").toString();
             ps.print(firstLine + ": ");
         }
         ps.println(exception.message + " (" + exception.getMetaClass().toString() + ")");

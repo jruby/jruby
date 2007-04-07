@@ -32,6 +32,7 @@ import org.jruby.runtime.Arity;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -422,7 +423,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     public IRubyObject inspect() {
         StringBuffer val = new StringBuffer("#<BigDecimal:").append(Integer.toHexString(System.identityHashCode(this))).append(",");
-        val.append("'").append(this.callMethod(getRuntime().getCurrentContext(), "to_s")).append("'").append(",");
+        val.append("'").append(this.callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s")).append("'").append(",");
         int len = value.abs().unscaledValue().toString().length();
         int pow = len/4;
         val.append(len).append("(").append((pow+1)*4).append(")").append(">");

@@ -329,7 +329,7 @@ public class RubyKernel {
             }
             
             // Strange that Ruby has custom code here and not convertToTypeWithCheck equivalent.
-            value = object.callMethod(recv.getRuntime().getCurrentContext(), "to_a");
+            value = object.callMethod(recv.getRuntime().getCurrentContext(), MethodIndex.TO_A, "to_a");
             if (value.getMetaClass() != recv.getRuntime().getClass("Array")) {
                 throw recv.getRuntime().newTypeError("`to_a' did not return Array");
                
@@ -368,11 +368,11 @@ public class RubyKernel {
         if(object instanceof RubyString) {
             return RubyNumeric.str2inum(recv.getRuntime(),(RubyString)object,0,true);
                     }
-        return object.callMethod(context,"to_i");
+        return object.callMethod(context,MethodIndex.TO_I, "to_i");
     }
     
     public static IRubyObject new_string(IRubyObject recv, IRubyObject object) {
-        return object.callMethod(recv.getRuntime().getCurrentContext(), "to_s");
+        return object.callMethod(recv.getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s");
     }
     
     

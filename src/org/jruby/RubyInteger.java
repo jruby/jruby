@@ -168,11 +168,11 @@ public abstract class RubyInteger extends RubyNumeric {
         } else {
             RubyNumeric i = RubyFixnum.zero(getRuntime());
             while (true) {
-                if (!i.callMethod(context, "<", this).isTrue()) {
+                if (!i.callMethod(context, MethodIndex.OP_LT, "<", this).isTrue()) {
                     break;
                 }
                 block.yield(context, i);
-                i = (RubyNumeric) i.callMethod(context, "+", RubyFixnum.one(getRuntime()));
+                i = (RubyNumeric) i.callMethod(context, MethodIndex.OP_PLUS, "+", RubyFixnum.one(getRuntime()));
             }
         }
 
@@ -186,7 +186,7 @@ public abstract class RubyInteger extends RubyNumeric {
         if (this instanceof RubyFixnum) {
             return RubyFixnum.newFixnum(getRuntime(), getLongValue() + 1L);
         } else {
-            return callMethod(getRuntime().getCurrentContext(), "+", RubyFixnum.one(getRuntime()));
+            return callMethod(getRuntime().getCurrentContext(), MethodIndex.OP_PLUS, "+", RubyFixnum.one(getRuntime()));
         }
     }
 
@@ -219,7 +219,7 @@ public abstract class RubyInteger extends RubyNumeric {
         if (other instanceof RubyFixnum || other instanceof RubyBignum) {
             return other;
         } else if (other instanceof RubyFloat) {
-            return other.callMethod(recv.getRuntime().getCurrentContext(), "to_i");
+            return other.callMethod(recv.getRuntime().getCurrentContext(), MethodIndex.TO_I, "to_i");
         } else {
             throw recv.getRuntime().newTypeError(
                     "failed to convert " + other.getMetaClass().getName() + " into Integer");

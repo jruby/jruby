@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.TimeZone;
 
 import org.jruby.runtime.Block;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.RubyDateFormat;
 import org.jruby.util.ByteList;
@@ -245,7 +246,7 @@ public class RubyTime extends RubyObject {
     }
 
     public IRubyObject same2(IRubyObject other) {
-        return (RubyNumeric.fix2int(callMethod(getRuntime().getCurrentContext(), "<=>", other)) == 0) ? getRuntime().getTrue() : getRuntime().getFalse();
+        return (RubyNumeric.fix2int(callMethod(getRuntime().getCurrentContext(), MethodIndex.OP_SPACESHIP, "<=>", other)) == 0) ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
     public IRubyObject op_cmp(IRubyObject other) {

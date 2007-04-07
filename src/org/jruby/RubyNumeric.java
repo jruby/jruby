@@ -40,6 +40,7 @@ import java.util.List;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -498,7 +499,7 @@ public class RubyNumeric extends RubyObject {
     public IRubyObject uminus() {
         RubyFixnum zero = RubyFixnum.zero(getRuntime());
         List list = zero.doCoerce(this, true);
-        return ((RubyObject) list.get(0)).callMethod(getRuntime().getCurrentContext(), "-", (RubyObject) list.get(1));
+        return ((RubyObject) list.get(0)).callMethod(getRuntime().getCurrentContext(), MethodIndex.OP_MINUS, "-", (RubyObject) list.get(1));
     }
     
     /** num_cmp
@@ -562,11 +563,11 @@ public class RubyNumeric extends RubyObject {
         RubyFixnum zero = RubyFixnum.zero(getRuntime());
 
         if (!(((RubyNumeric)z).equal(zero).isTrue())
-            && ((x.callMethod(context, "<", zero)).isTrue()
-                && (y.callMethod(context, ">", zero)).isTrue()) 
-            || ((x.callMethod(context, ">", zero)).isTrue()
-                && (y.callMethod(context, "<", zero)).isTrue())) {
-            return z.callMethod(context, "-",y);
+            && ((x.callMethod(context, MethodIndex.OP_LT, "<", zero)).isTrue()
+                && (y.callMethod(context, MethodIndex.OP_GT, ">", zero)).isTrue()) 
+            || ((x.callMethod(context, MethodIndex.OP_GT, ">", zero)).isTrue()
+                && (y.callMethod(context, MethodIndex.OP_LT, "<", zero)).isTrue())) {
+            return z.callMethod(context, MethodIndex.OP_MINUS, "-",y);
         }
 
         return z;
@@ -577,7 +578,7 @@ public class RubyNumeric extends RubyObject {
      */
     public IRubyObject abs() {
         ThreadContext context = getRuntime().getCurrentContext();
-        if (callMethod(context, "<", RubyFixnum.zero(getRuntime())).isTrue()) {
+        if (callMethod(context, MethodIndex.OP_LT, "<", RubyFixnum.zero(getRuntime())).isTrue()) {
             return (RubyNumeric) callMethod(context, "-@");
     	}
         return this;
@@ -587,7 +588,7 @@ public class RubyNumeric extends RubyObject {
      * 
      */
     public IRubyObject to_int() {
-        return callMethod(getRuntime().getCurrentContext(), "to_i", IRubyObject.NULL_ARRAY);
+        return callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_I, "to_i", IRubyObject.NULL_ARRAY);
     }
 
     /** num_int_p
@@ -699,19 +700,21 @@ public class RubyNumeric extends RubyObject {
         } else {
             RubyNumeric i = this;
             
-            String cmp;
-            if (((RubyBoolean) step.callMethod(context, ">", RubyFixnum.zero(getRuntime()))).isTrue()) {
-                cmp = ">";
+            int cmp;
+            String cmpString;
+            if (((RubyBoolean) step.callMethod(context, MethodIndex.OP_GT, ">", RubyFixnum.zero(getRuntime()))).isTrue()) {
+                cmp = MethodIndex.OP_GT;
             } else {
-                cmp = "<";
-                }
+                cmp = MethodIndex.OP_LT;
+            }
+            cmpString = MethodIndex.NAMES[cmp];
 
             while (true) {
-                if (i.callMethod(context, cmp, to).isTrue()) {
+                if (i.callMethod(context, cmp, cmpString, to).isTrue()) {
                     break;
                 }
                 block.yield(context, i);
-                i = (RubyNumeric) i.callMethod(context, "+", step);
+                i = (RubyNumeric) i.callMethod(context, MethodIndex.OP_PLUS, "+", step);
             }
         }
         return this;
@@ -734,7 +737,7 @@ public class RubyNumeric extends RubyObject {
             return getRuntime().getTrue();
     }
 
-        return other.callMethod(getRuntime().getCurrentContext(), "==", this);
+        return other.callMethod(getRuntime().getCurrentContext(), MethodIndex.EQUALEQUAL, "==", this);
     }
 
     public static class InvalidIntegerException extends NumberFormatException {

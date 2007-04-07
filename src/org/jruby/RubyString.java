@@ -211,6 +211,8 @@ public class RubyString extends RubyObject {
     public static final byte HASH_SWITCHVALUE = 14;
     public static final byte OP_GT_SWITCHVALUE = 15;
     public static final byte OP_TIMES_SWITCHVALUE = 16;
+    public static final byte OP_LE_SWITCHVALUE = 17;
+    public static final byte OP_SPACESHIP_SWITCHVALUE = 18;
     
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name,
             IRubyObject[] args, CallType callType, Block block) {
@@ -260,6 +262,12 @@ public class RubyString extends RubyObject {
         case OP_TIMES_SWITCHVALUE:
             if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
             return op_mul(args[0]);
+        case OP_LE_SWITCHVALUE:
+            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
+            return op_le(args[0]);
+        case OP_SPACESHIP_SWITCHVALUE:
+            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
+            return op_cmp(args[0]);
         case 0:
         default:
             return super.callMethod(context, rubyclass, name, args, callType, block);
@@ -387,19 +395,6 @@ public class RubyString extends RubyObject {
             return getRuntime().newFixnum(cmp((RubyString)other));
         }
 
-        // FIXME: This code does not appear to be applicable for <=> according to ri.
-        // ri docs claim the other operand *must* be a String.
-        /*ThreadContext context = getRuntime().getCurrentContext();
-
-        if (other.respondsTo("to_str") && other.respondsTo("<=>")) {
-            IRubyObject tmp = other.callMethod(context, "<=>", this);
-
-            if (!tmp.isNil()) {
-                return tmp instanceof RubyFixnum ? tmp.callMethod(context, "-") :
-                    getRuntime().newFixnum(0).callMethod(context, "-", tmp);
-            }
-        }*/
-
         return getRuntime().getNil();
     }
 
@@ -409,7 +404,7 @@ public class RubyString extends RubyObject {
             return runtime.getTrue();
         } else if (!(other instanceof RubyString)) {
             if(other.respondsTo("to_str")) {
-                return other.callMethod(runtime.getCurrentContext(), "==", this);
+                return other.callMethod(runtime.getCurrentContext(), MethodIndex.EQUALEQUAL, "==", this);
             }
             return runtime.getFalse();
         }
@@ -495,7 +490,7 @@ public class RubyString extends RubyObject {
     public static RubyString objAsString(IRubyObject obj) {
         if (obj instanceof RubyString) return (RubyString) obj;
 
-        IRubyObject str = obj.callMethod(obj.getRuntime().getCurrentContext(), "to_s");
+        IRubyObject str = obj.callMethod(obj.getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s");
 
         if (!(str instanceof RubyString)) return (RubyString) obj.anyToString();
 

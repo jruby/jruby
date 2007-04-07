@@ -46,6 +46,7 @@ import jline.Completor;
 import jline.FileNameCompletor;
 import jline.CandidateListCompletionHandler;
 import jline.History;
+import org.jruby.runtime.MethodIndex;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -165,7 +166,7 @@ public class Readline {
             if (index != -1) buffer = buffer.substring(index + 1);
             ThreadContext context = procCompletor.getRuntime().getCurrentContext();
             
-            IRubyObject comps = procCompletor.callMethod(context, "call", new IRubyObject[] { procCompletor.getRuntime().newString(buffer) }).callMethod(context, "to_a");
+            IRubyObject comps = procCompletor.callMethod(context, "call", new IRubyObject[] { procCompletor.getRuntime().newString(buffer) }).callMethod(context, MethodIndex.TO_A, "to_a");
             if (comps instanceof List) {
                 for (Iterator i = ((List) comps).iterator(); i.hasNext();) {
                     Object obj = i.next();

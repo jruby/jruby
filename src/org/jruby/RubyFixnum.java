@@ -122,6 +122,8 @@ public class RubyFixnum extends RubyInteger {
     public static final byte OP_GT_SWITCHVALUE = 8;
     public static final byte OP_TIMES_SWITCHVALUE = 9;
     public static final byte EQUALEQUAL_SWITCHVALUE = 10;
+    public static final byte OP_LE_SWITCHVALUE = 11;
+    public static final byte OP_SPACESHIP_SWITCHVALUE = 12;
 
     public RubyFixnum(Ruby runtime) {
         this(runtime, 0);
@@ -132,9 +134,9 @@ public class RubyFixnum extends RubyInteger {
         this.value = value;
     }
     
-    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int switchValue, String name,
+    public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name,
             IRubyObject[] args, CallType callType, Block block) {
-        switch (getRuntime().getSelectorTable().table[ClassIndex.FIXNUM][switchValue]) {
+        switch (getRuntime().getSelectorTable().table[ClassIndex.FIXNUM][methodIndex]) {
         case OP_PLUS_SWITCHVALUE:
             if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
             return plus(args[0]);
@@ -164,6 +166,12 @@ public class RubyFixnum extends RubyInteger {
         case EQUALEQUAL_SWITCHVALUE:
             if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
             return equal(args[0]);
+        case OP_LE_SWITCHVALUE:
+            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
+            return le(args[0]);
+        case OP_SPACESHIP_SWITCHVALUE:
+            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
+            return cmp(args[0]);
         case 0:
         default:
             return super.callMethod(context, rubyclass, name, args, callType, block);

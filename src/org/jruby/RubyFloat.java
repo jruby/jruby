@@ -39,6 +39,7 @@ import java.text.DecimalFormat;
 
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -172,7 +173,7 @@ public class RubyFloat extends RubyNumeric {
      */
     public static IRubyObject induced_from(IRubyObject recv, IRubyObject number) {
         if (number instanceof RubyFixnum || number instanceof RubyBignum) {
-            return number.callMethod(recv.getRuntime().getCurrentContext(), "to_f");
+            return number.callMethod(recv.getRuntime().getCurrentContext(), MethodIndex.TO_F, "to_f");
     }
         if (number instanceof RubyFloat) {
             return number;

@@ -43,6 +43,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
@@ -66,7 +67,7 @@ public class RubyRange extends RubyObject {
     public void init(IRubyObject aBegin, IRubyObject aEnd, RubyBoolean aIsExclusive) {
         if (!(aBegin instanceof RubyFixnum && aEnd instanceof RubyFixnum)) {
             try {
-                aBegin.callMethod(getRuntime().getCurrentContext(), "<=>", aEnd);
+                aBegin.callMethod(getRuntime().getCurrentContext(), MethodIndex.OP_SPACESHIP, "<=>", aEnd);
             } catch (RaiseException rExcptn) {
                 throw getRuntime().newArgumentError("bad value for range");
             }
@@ -287,8 +288,8 @@ public class RubyRange extends RubyObject {
     public RubyFixnum hash() {
         ThreadContext context = getRuntime().getCurrentContext();
         long baseHash = (isExclusive ? 1 : 0);
-        long beginHash = ((RubyFixnum) begin.callMethod(context, "hash")).getLongValue();
-        long endHash = ((RubyFixnum) end.callMethod(context, "hash")).getLongValue();
+        long beginHash = ((RubyFixnum) begin.callMethod(context, MethodIndex.HASH, "hash")).getLongValue();
+        long endHash = ((RubyFixnum) end.callMethod(context, MethodIndex.HASH, "hash")).getLongValue();
         
         long hash = baseHash;
         hash = hash ^ (beginHash << 1);
@@ -325,7 +326,7 @@ public class RubyRange extends RubyObject {
         long size = 0;
         ThreadContext context = getRuntime().getCurrentContext();
 
-        if (begin.callMethod(context, ">", end).isTrue()) {
+        if (begin.callMethod(context, MethodIndex.OP_GT, ">", end).isTrue()) {
             return getRuntime().newFixnum(0);
         }
 
@@ -336,9 +337,9 @@ public class RubyRange extends RubyObject {
             }
         } else { // Support length for arbitrary classes
             IRubyObject currentObject = begin;
-	    String compareMethod = isExclusive ? "<" : "<=";
+	    int compareMethod = isExclusive ? MethodIndex.OP_LT : MethodIndex.OP_LE;
 
-	    while (currentObject.callMethod(context, compareMethod, end).isTrue()) {
+	    while (currentObject.callMethod(context, compareMethod, MethodIndex.NAMES[compareMethod], end).isTrue()) {
 		size++;
 		if (currentObject.equals(end)) {
 		    break;
@@ -379,17 +380,17 @@ public class RubyRange extends RubyObject {
             ((RubyString) begin).upto(end, isExclusive, block);
         } else if (begin.isKindOf(getRuntime().getClass("Numeric"))) {
             if (!isExclusive) {
-                end = end.callMethod(context, "+", RubyFixnum.one(getRuntime()));
+                end = end.callMethod(context, MethodIndex.OP_PLUS, "+", RubyFixnum.one(getRuntime()));
             }
-            while (begin.callMethod(context, "<", end).isTrue()) {
+            while (begin.callMethod(context, MethodIndex.OP_LT, "<", end).isTrue()) {
                 block.yield(context, begin);
-                begin = begin.callMethod(context, "+", RubyFixnum.one(getRuntime()));
+                begin = begin.callMethod(context, MethodIndex.OP_PLUS, "+", RubyFixnum.one(getRuntime()));
             }
         } else {
             IRubyObject v = begin;
 
             if (isExclusive) {
-                while (v.callMethod(context, "<", end).isTrue()) {
+                while (v.callMethod(context, MethodIndex.OP_LT, "<", end).isTrue()) {
                     if (v.equals(end)) {
                         break;
                     }
@@ -397,7 +398,7 @@ public class RubyRange extends RubyObject {
                     v = v.callMethod(context, "succ");
                 }
             } else {
-                while (v.callMethod(context, "<=", end).isTrue()) {
+                while (v.callMethod(context, MethodIndex.OP_LE, "<=", end).isTrue()) {
                     block.yield(context, v);
                     if (v.equals(end)) {
                         break;
@@ -414,7 +415,7 @@ public class RubyRange extends RubyObject {
         Arity.checkArgumentCount(getRuntime(), args, 0, 1);
         
         IRubyObject currentObject = begin;
-        String compareMethod = isExclusive ? "<" : "<=";
+        int compareMethod = isExclusive ? MethodIndex.OP_LT : MethodIndex.OP_LE;
         int stepSize = (int) (args.length == 0 ? 1 : args[0].convertToInteger().getLongValue());
         
         if (stepSize <= 0) {
@@ -424,12 +425,12 @@ public class RubyRange extends RubyObject {
         ThreadContext context = getRuntime().getCurrentContext();
         if (begin instanceof RubyNumeric && end instanceof RubyNumeric) {
             RubyFixnum stepNum = getRuntime().newFixnum(stepSize);
-            while (currentObject.callMethod(context, compareMethod, end).isTrue()) {
+            while (currentObject.callMethod(context, compareMethod, MethodIndex.NAMES[compareMethod], end).isTrue()) {
                 block.yield(context, currentObject);
-                currentObject = currentObject.callMethod(context, "+", stepNum);
+                currentObject = currentObject.callMethod(context, MethodIndex.OP_PLUS, "+", stepNum);
             }
         } else {
-            while (currentObject.callMethod(context, compareMethod, end).isTrue()) {
+            while (currentObject.callMethod(context, compareMethod, MethodIndex.NAMES[compareMethod], end).isTrue()) {
                 block.yield(context, currentObject);
                 
                 for (int i = 0; i < stepSize; i++) {
@@ -461,7 +462,7 @@ public class RubyRange extends RubyObject {
     }
 
     private boolean r_lt(IRubyObject a, IRubyObject b) {
-        IRubyObject r = a.callMethod(getRuntime().getCurrentContext(),"<=>",b);
+        IRubyObject r = a.callMethod(getRuntime().getCurrentContext(),MethodIndex.OP_SPACESHIP, "<=>",b);
         if(r.isNil()) {
             return false;
         }
@@ -472,7 +473,7 @@ public class RubyRange extends RubyObject {
     }
 
     private boolean r_le(IRubyObject a, IRubyObject b) {
-        IRubyObject r = a.callMethod(getRuntime().getCurrentContext(),"<=>",b);
+        IRubyObject r = a.callMethod(getRuntime().getCurrentContext(),MethodIndex.OP_SPACESHIP, "<=>",b);
         if(r.isNil()) {
             return false;
         }

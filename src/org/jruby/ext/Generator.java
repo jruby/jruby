@@ -45,6 +45,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.internal.runtime.methods.MultiStub;
 import org.jruby.internal.runtime.methods.MultiStubMethod;
+import org.jruby.runtime.MethodIndex;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -292,13 +293,13 @@ public class Generator {
                 throw self.getRuntime().newEOFError();
             }
             d.generate();
-            self.setInstanceVariable("@index",self.getInstanceVariable("@index").callMethod(context,"+",self.getRuntime().newFixnum(1)));
+            self.setInstanceVariable("@index",self.getInstanceVariable("@index").callMethod(context,MethodIndex.OP_PLUS, "+",self.getRuntime().newFixnum(1)));
             return self.getInstanceVariable("@queue").callMethod(context,"shift");
         }
 
         public IRubyObject method7(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             // Generator#current
-            if(self.getInstanceVariable("@queue").callMethod(context,"empty?").isTrue()) {
+            if(self.getInstanceVariable("@queue").callMethod(context,MethodIndex.EMPTY_P, "empty?").isTrue()) {
                 throw self.getRuntime().newEOFError();
             }
             return self.getInstanceVariable("@queue").callMethod(context,"first");

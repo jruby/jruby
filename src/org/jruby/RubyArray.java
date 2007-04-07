@@ -52,6 +52,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -181,6 +182,7 @@ public class RubyArray extends RubyObject implements List {
     public static final byte TO_A_SWITCHVALUE = 14;
     public static final byte HASH_SWITCHVALUE = 15;
     public static final byte OP_TIMES_SWITCHVALUE = 16;
+    public static final byte OP_SPACESHIP_SWITCHVALUE = 17;
 
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex,
             String name, IRubyObject[] args, CallType callType, Block block) {
@@ -229,6 +231,9 @@ public class RubyArray extends RubyObject implements List {
         case OP_TIMES_SWITCHVALUE:
             if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
             return op_times(args[0]);
+        case OP_SPACESHIP_SWITCHVALUE:
+            if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
+            return op_cmp(args[0]);
         case 0:
         default:
             return super.callMethod(context, rubyclass, name, args, callType, block);
@@ -612,7 +617,7 @@ public class RubyArray extends RubyObject implements List {
         int begin = this.begin;
         for (int i = begin; i < begin + realLength; i++) {
             h = (h << 1) | (h < 0 ? 1 : 0);
-            h ^= RubyNumeric.num2long(values[i].callMethod(context, "hash"));
+            h ^= RubyNumeric.num2long(values[i].callMethod(context, MethodIndex.HASH, "hash"));
         }
 
         return runtime.newFixnum(h);
@@ -1827,7 +1832,7 @@ public class RubyArray extends RubyObject implements List {
         Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
         for (int i = 0; i < len; i++) {
-            IRubyObject v = elt(i).callMethod(context, "<=>", ary2.elt(i));
+            IRubyObject v = elt(i).callMethod(context, MethodIndex.OP_SPACESHIP, "<=>", ary2.elt(i));
             if (!(v instanceof RubyFixnum) || ((RubyFixnum) v).getLongValue() != 0) return v;
         }
         len = realLength - ary2.realLength;
@@ -2185,7 +2190,7 @@ public class RubyArray extends RubyObject implements List {
             IRubyObject obj1 = (IRubyObject) o1;
             IRubyObject obj2 = (IRubyObject) o2;
 
-            IRubyObject ret = obj1.callMethod(obj1.getRuntime().getCurrentContext(), "<=>", obj2);
+            IRubyObject ret = obj1.callMethod(obj1.getRuntime().getCurrentContext(), MethodIndex.OP_SPACESHIP, "<=>", obj2);
             int n = RubyComparable.cmpint(ret, obj1, obj2);
             //TODO: ary_sort_check should be done here
             return n;

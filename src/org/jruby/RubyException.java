@@ -43,6 +43,7 @@ import java.util.Map;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -177,7 +178,7 @@ public class RubyException extends RubyObject {
             return getRuntime().newString(getMetaClass().getName());
         }
         message.setTaint(isTaint());
-        return (RubyString) message.callMethod(getRuntime().getCurrentContext(), "to_s");
+        return (RubyString) message.callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s");
     }
 
     /** inspects an object and return a kind of debug information

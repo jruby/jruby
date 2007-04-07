@@ -505,11 +505,15 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public IRubyObject callMethod(ThreadContext context, String name) {
-        return callMethod(context, name, IRubyObject.NULL_ARRAY, null, Block.NULL_BLOCK);
+        return callMethod(context, getMetaClass(), name, IRubyObject.NULL_ARRAY, null, Block.NULL_BLOCK);
+    }
+
+    public IRubyObject callMethod(ThreadContext context, int methodIndex, String name) {
+        return callMethod(context, getMetaClass(), methodIndex, name, IRubyObject.NULL_ARRAY, null, Block.NULL_BLOCK);
     }
 
     public IRubyObject callMethod(ThreadContext context, String name, Block block) {
-        return callMethod(context, name, IRubyObject.NULL_ARRAY, null, block);
+        return callMethod(context, getMetaClass(), name, IRubyObject.NULL_ARRAY, null, block);
     }
 
     /**
@@ -924,7 +928,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public int hashCode() {
-        IRubyObject hashValue = callMethod(getRuntime().getCurrentContext(), "hash");
+        IRubyObject hashValue = callMethod(getRuntime().getCurrentContext(), MethodIndex.HASH, "hash");
         
         if (hashValue instanceof RubyFixnum) return (int) RubyNumeric.fix2long(hashValue); 
         

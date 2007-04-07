@@ -34,6 +34,7 @@ import org.jruby.runtime.Arity;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -155,7 +156,7 @@ public class RubyStringIO extends RubyObject {
     }
 
     public IRubyObject append(IRubyObject obj) {
-        ByteList val = ((RubyString)obj.callMethod(obj.getRuntime().getCurrentContext(),"to_s")).getByteList();
+        ByteList val = ((RubyString)obj.callMethod(obj.getRuntime().getCurrentContext(),MethodIndex.TO_S, "to_s")).getByteList();
         int left = internal.length()-(int)pos;
         internal.replace((int)pos,Math.min(val.length(),left),val);
         pos += val.length();
