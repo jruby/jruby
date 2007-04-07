@@ -48,6 +48,7 @@ public class RubyNativeThread extends Thread {
     
     public RubyNativeThread(RubyThread rubyThread, IRubyObject[] args, Block currentBlock) {
         super(rubyThread.getRuntime().getThreadService().getRubyThreadGroup(), "Ruby Thread" + rubyThread.hash());
+        setDaemon(true);
         this.rubyThread = rubyThread;
         this.runtime = rubyThread.getRuntime();
         ThreadContext tc = runtime.getCurrentContext();

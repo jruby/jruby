@@ -33,6 +33,7 @@ import edu.emory.mathcs.backport.java.util.concurrent.ExecutionException;
 import edu.emory.mathcs.backport.java.util.concurrent.ExecutorService;
 import edu.emory.mathcs.backport.java.util.concurrent.Executors;
 import edu.emory.mathcs.backport.java.util.concurrent.Future;
+import edu.emory.mathcs.backport.java.util.concurrent.ThreadFactory;
 import edu.emory.mathcs.backport.java.util.concurrent.TimeUnit;
 import edu.emory.mathcs.backport.java.util.concurrent.TimeoutException;
 
@@ -44,7 +45,16 @@ public class FutureThread implements ThreadLike {
     private Runnable runnable;
     public RubyThread rubyThread;
     
-    private static ExecutorService executor = Executors.newCachedThreadPool();
+    private static class DaemonThreadFactory implements ThreadFactory {
+        public Thread newThread(Runnable runnable) {
+            Thread thread = new Thread(runnable);
+            thread.setDaemon(true);
+            
+            return thread;
+        }
+    }
+    
+    private static ExecutorService executor = Executors.newCachedThreadPool(new DaemonThreadFactory());
     
     public FutureThread(RubyThread rubyThread, RubyRunnable runnable) {
         this.rubyThread = rubyThread;
