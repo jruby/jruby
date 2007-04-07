@@ -71,6 +71,11 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
         mv.visitInsn(SWAP);
     }
     
+    public void swap2() {
+        dup2_x2();
+        pop2();
+    }
+    
     public void getstatic(String arg1, String arg2, String arg3) {
         mv.visitFieldInsn(GETSTATIC, arg1, arg2, arg3);
     }
@@ -109,6 +114,10 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
     
     public void pop() {
         mv.visitInsn(POP);
+    }
+    
+    public void pop2() {
+        mv.visitInsn(POP2);
     }
     
     public void arrayload() {

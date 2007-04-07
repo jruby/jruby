@@ -481,6 +481,9 @@ public class ThreadContext {
         return false;
     }
     
+    /**
+     * Used by the evaluator and the compiler to look up a constant by name
+     */
     public IRubyObject getConstant(String name) {
         //RubyModule self = state.threadContext.getRubyClass();
         SinglyLinkedList cbase = peekCRef();
@@ -505,6 +508,47 @@ public class ThreadContext {
         } while (cbase != null && cbase.getValue() != object);
         
         return ((RubyModule) peekCRef().getValue()).getConstant(name);
+    }
+    
+    /**
+     * Used by the evaluator and the compiler to set a constant by name
+     * This is for a null const decl
+     */
+    public IRubyObject setConstantInCurrent(String name, IRubyObject result) {
+        RubyModule module;
+
+        // FIXME: why do we check RubyClass and then use CRef?
+        if (getRubyClass() == null) {
+            // TODO: wire into new exception handling mechanism
+            throw runtime.newTypeError("no class/module to define constant");
+        }
+        module = (RubyModule) peekCRef().getValue();
+   
+        setConstantInModule(name, module, result);
+   
+        return result;
+    }
+    
+    /**
+     * Used by the evaluator and the compiler to set a constant by name.
+     * This is for a Colon2 const decl
+     */
+    public IRubyObject setConstantInModule(String name, RubyModule module, IRubyObject result) {
+        ((RubyModule) module).setConstant(name, result);
+   
+        return result;
+    }
+    
+    /**
+     * Used by the evaluator and the compiler to set a constant by name
+     * This is for a Colon2 const decl
+     */
+    public IRubyObject setConstantInObject(String name, IRubyObject result) {
+        IRubyObject module;
+
+        setConstantInModule(name, runtime.getObject(), result);
+   
+        return result;
     }
     
     public IRubyObject getConstant(String name, RubyModule module) {

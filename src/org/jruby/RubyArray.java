@@ -183,6 +183,7 @@ public class RubyArray extends RubyObject implements List {
     public static final byte HASH_SWITCHVALUE = 15;
     public static final byte OP_TIMES_SWITCHVALUE = 16;
     public static final byte OP_SPACESHIP_SWITCHVALUE = 17;
+    public static final byte LENGTH_SWITCHVALUE = 18;
 
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex,
             String name, IRubyObject[] args, CallType callType, Block block) {
@@ -234,6 +235,9 @@ public class RubyArray extends RubyObject implements List {
         case OP_SPACESHIP_SWITCHVALUE:
             if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
             return op_cmp(args[0]);
+        case LENGTH_SWITCHVALUE:
+            if (args.length != 0) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 0 + ")");
+            return length();
         case 0:
         default:
             return super.callMethod(context, rubyclass, name, args, callType, block);

@@ -62,6 +62,7 @@ public class MethodSelectorTable {
         table[ClassIndex.ARRAY][MethodIndex.TO_ARY] = RubyArray.TO_ARY_SWITCHVALUE;
         table[ClassIndex.ARRAY][MethodIndex.TO_A] = RubyArray.TO_A_SWITCHVALUE;
         table[ClassIndex.ARRAY][MethodIndex.HASH] = RubyArray.HASH_SWITCHVALUE;
+        table[ClassIndex.ARRAY][MethodIndex.LENGTH] = RubyArray.LENGTH_SWITCHVALUE;
         
         // String
         table[ClassIndex.STRING] = new byte[MethodIndex.MAX_METHODS];
@@ -82,5 +83,6 @@ public class MethodSelectorTable {
         table[ClassIndex.STRING][MethodIndex.OP_GT] = RubyString.OP_GT_SWITCHVALUE;
         table[ClassIndex.STRING][MethodIndex.OP_TIMES] = RubyString.OP_TIMES_SWITCHVALUE;
         table[ClassIndex.STRING][MethodIndex.OP_LE] = RubyString.OP_LE_SWITCHVALUE;
+        table[ClassIndex.STRING][MethodIndex.LENGTH] = RubyString.LENGTH_SWITCHVALUE;
     }
 }

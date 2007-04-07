@@ -86,8 +86,11 @@ public class NodeCompilerFactory {
         case NodeTypes.CALLNODE:
             // safe; yield or block nodes that aren't should raise
             return new CallNodeCompiler();
+        case NodeTypes.CONSTDECLNODE:
+            // this should be safe as well with TC doing the right thing
+            return new ConstDeclNodeCompiler();
         case NodeTypes.CONSTNODE:
-            if (SAFE) throw new NotCompilableException("Can't compile node safely: " + node);
+            // I think this is safe now that cref and class are being pushed on TC
             return new ConstNodeCompiler();
         case NodeTypes.DASGNNODE:
             // safe
@@ -175,6 +178,9 @@ public class NodeCompilerFactory {
         case NodeTypes.REGEXPNODE:
             // safe
             return new RegexpNodeCompiler();
+        case NodeTypes.RETURNNODE:
+            // safe; throws error if non-local
+            return new ReturnNodeCompiler();
         case NodeTypes.ROOTNODE:
             // safe
             return new RootNodeCompiler();

@@ -123,6 +123,11 @@ public class StandardASMCompiler implements Compiler, Opcodes {
     
     int lastLine = -1;
     
+    /**
+     * Used to make determinations about non-local returns and similar flow control
+     */
+    boolean isCompilingClosure;
+    
     /** Creates a new instance of StandardCompilerContext */
     public StandardASMCompiler(String classname, String sourcename) {
         this.classname = classname;
@@ -677,21 +682,50 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         mv.arrayload();
     }
     
+    public void assignConstantInCurrent(String name) {
+        SkinnyMethodAdapter mv = getMethodAdapter();
+        
+        loadThreadContext();
+        mv.ldc(name);
+        mv.dup2_x1();
+        mv.pop2();
+        invokeThreadContext("setConstantInCurrent", cg.sig(IRubyObject.class, cg.params(String.class, IRubyObject.class)));
+    }
+    
+    public void assignConstantInModule(String name) {
+        SkinnyMethodAdapter mv = getMethodAdapter();
+        
+        loadThreadContext();
+        mv.ldc(name);
+        mv.swap2();
+        invokeThreadContext("setConstantInCurrent", cg.sig(IRubyObject.class, cg.params(String.class, RubyModule.class, IRubyObject.class)));
+    }
+    
+    public void assignConstantInObject(String name) {
+        SkinnyMethodAdapter mv = getMethodAdapter();
+        
+        // load Object under value
+        loadRuntime();
+        invokeIRuby("getObject", cg.sig(RubyClass.class, cg.params()));
+        mv.swap();
+        
+        assignConstantInModule(name);
+    }
+    
+    public void retrieveConstant(String name) {
+        SkinnyMethodAdapter mv = getMethodAdapter();
+        
+        loadThreadContext();
+        mv.ldc(name);
+        invokeThreadContext("getConstant", cg.sig(IRubyObject.class, cg.params(String.class)));
+    }
+    
     private void loadScope(int depth) {
         SkinnyMethodAdapter mv = getMethodAdapter();
         // get the appropriate array out of the scopes
         mv.aload(SCOPE_INDEX);
         mv.ldc(new Integer(depth - 1));
         mv.arrayload();
-    }
-    
-    public void retrieveConstant(String name) {
-        SkinnyMethodAdapter mv = getMethodAdapter();
-        
-        // FIXME this doesn't work right yet since TC.getConstant depends on TC state
-        loadThreadContext();
-        mv.ldc(name);
-        invokeThreadContext("getConstant", cg.sig(IRubyObject.class, cg.params(String.class)));
     }
     
     public void createNewFloat(double value) {
@@ -725,7 +759,6 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         SkinnyMethodAdapter mv = getMethodAdapter();
         loadRuntime();
         invokeIRuby("newString", cg.sig(RubyString.class, cg.params()));
-        mv.dup();
         for(int i = 0; i < count; i++) {
             callback.nextValue(this, null, i);
             mv.invokevirtual(cg.p(RubyString.class), "append", cg.sig(RubyString.class, cg.params(IRubyObject.class)));
@@ -980,6 +1013,16 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         loadNil();
     }
     
+    public void performReturn() {
+        if (isCompilingClosure) {
+            throw new NotCompilableException("Can't compile non-local return");
+        }
+        
+        // otherwise, just do a local return
+        SkinnyMethodAdapter mv = getMethodAdapter();
+        mv.areturn();
+    }
+    
     public static CompiledBlock createBlock(ThreadContext context, IRubyObject self, int arity, IRubyObject[][] scopes, Block block, CompiledBlockCallback callback) {
         return new CompiledBlock(context, self, Arity.createArity(arity), scopes, block, callback);
     }
@@ -998,6 +1041,11 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         ////////////////////////////
         // closure implementation
         method = new SkinnyMethodAdapter(cv.visitMethod(ACC_PUBLIC | ACC_STATIC, closureMethodName, CLOSURE_SIGNATURE, null, null));
+     
+        // FIXME: I don't like this pre/post state management.
+        boolean previousIsCompilingClosure = isCompilingClosure;
+        isCompilingClosure = true;
+        
         pushMethodAdapter(method);
         
         method.start();
@@ -1035,7 +1083,13 @@ public class StandardASMCompiler implements Compiler, Opcodes {
         
         popMethodAdapter();
         
+        // FIXME: I don't like this pre/post state management.
+        isCompilingClosure = previousIsCompilingClosure;
+        
         method = getMethodAdapter();
+        
+        // Done with closure compilation
+        /////////////////////////////////////////////////////////////////////////////
         
         // Now, store a compiled block object somewhere we can access it in the future
         

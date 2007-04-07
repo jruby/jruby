@@ -749,25 +749,15 @@ public class EvaluationState {
         Node constNode = iVisited.getConstNode();
    
         IRubyObject result = evalInternal(runtime,context, iVisited.getValueNode(), self, aBlock);
-        IRubyObject module;
-
+        
         if (constNode == null) {
-            // FIXME: why do we check RubyClass and then use CRef?
-            if (context.getRubyClass() == null) {
-                // TODO: wire into new exception handling mechanism
-                throw runtime.newTypeError("no class/module to define constant");
-            }
-            module = (RubyModule) context.peekCRef().getValue();
-        } else if (constNode instanceof Colon2Node) {
-            module = evalInternal(runtime,context, ((Colon2Node) iVisited.getConstNode()).getLeftNode(), self, aBlock);
-        } else { // Colon3
-            module = runtime.getObject();
-        } 
-   
-        // FIXME: shouldn't we use the result of this set in setResult?
-        ((RubyModule) module).setConstant(iVisited.getName(), result);
-   
-        return result;
+            return context.setConstantInCurrent(iVisited.getName(), result);
+        } else if (constNode.nodeId == NodeTypes.COLON2NODE) {
+            RubyModule module = (RubyModule)evalInternal(runtime,context, ((Colon2Node) iVisited.getConstNode()).getLeftNode(), self, aBlock);
+            return context.setConstantInModule(iVisited.getName(), module, result);
+        } else { // colon3
+            return context.setConstantInObject(iVisited.getName(), result);
+        }
     }
 
     private static IRubyObject constNode(ThreadContext context, Node node) {
