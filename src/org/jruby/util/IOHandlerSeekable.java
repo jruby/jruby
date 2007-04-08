@@ -16,7 +16,6 @@
  * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
- * Copyright (C) 2007 Damian Steer <pldms@mac.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -39,7 +38,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 import org.jruby.Ruby;
@@ -51,17 +49,13 @@ import org.jruby.RubyIO;
  * @author Thomas E Enebo (enebo@acm.org)
  */
 public class IOHandlerSeekable extends IOHandlerJavaIO {
-    private final static int BUFSIZE = 1024;
-    
     protected RandomAccessFile file;
     protected String path;
     protected String cwd;
-    protected ByteBuffer buffer; // r/w buffer
-    protected boolean reading; // are we reading or writing?
-    protected FileChannel channel;
+
     
     public IOHandlerSeekable(Ruby runtime, String path, IOModes modes) 
-        throws IOException, InvalidValueException {
+    	throws IOException, InvalidValueException {
         super(runtime);
         
         this.path = path;
@@ -83,20 +77,16 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
             }
         }
 
-        // Do not open as 'rw' if we don't need to since a file with permissions for read-only
-        // will barf if opened 'rw'.
-        String javaMode = "r";
-        if (modes.isWriteable()) {
-            javaMode += "w";
-        }
-        
+		// Do not open as 'rw' if we don't need to since a file with permissions for read-only
+		// will barf if opened 'rw'.
+		String javaMode = "r";
+		if (modes.isWriteable()) {
+			javaMode += "w";
+		}
+		
         // We always open this rw since we can only open it r or rw.
         file = new RandomAccessFile(theFile, javaMode);
-        channel = file.getChannel();
         isOpen = true;
-        buffer = ByteBuffer.allocate(BUFSIZE);
-        buffer.flip();
-        reading = true;
         
         if (modes.isAppendable()) {
             seek(0, SEEK_END);
@@ -110,20 +100,16 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
     private void reopen() throws IOException {
         long pos = pos();
 
-        String javaMode = "r";
-        if (modes.isWriteable()) {
-            javaMode += "w";
-        }
-        
+		String javaMode = "r";
+		if (modes.isWriteable()) {
+			javaMode += "w";
+		}
+		
         JRubyFile theFile = JRubyFile.create(cwd,path);
         file.close();
         file = new RandomAccessFile(theFile, javaMode);
-        channel = file.getChannel();
         isOpen = true;
-        buffer.clear();
-        buffer.flip();
-        reading = true;
-        
+
         try {
             seek(pos,SEEK_SET);
         } catch(Exception e) {
@@ -138,17 +124,20 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
     }
     
     public ByteList getsEntireStream() throws IOException {
+        int c;
+
         checkReopen();
-        invalidateBuffer();
-        long left = channel.size() - channel.position();
-        if (left == 0) return null;
         
-        try {
-        // let's hope no one grabs big files...
-        return sysread((int)left);
-        } catch (BadDescriptorException e) {
-            throw new IOException(e.getMessage()); // Ugh! But why rewrite the same code?
+        int left = (int)(file.length() - file.getFilePointer());
+        byte[] buf = new byte[left];
+        file.readFully(buf);
+
+        // We are already at EOF
+        if (buf.length == 0) {
+            return null;
         }
+        
+        return new ByteList(buf,false);
     }
 
 
@@ -169,12 +158,11 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
      */
     public void close() throws IOException, BadDescriptorException {
         if (!isOpen()) {
-            throw new BadDescriptorException();
+        	throw new BadDescriptorException();
         }
         
         isOpen = false;
-        flushWrite();
-        channel.close();
+
         file.close();
     }
 
@@ -185,19 +173,8 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
      */
     public void flush() throws IOException, BadDescriptorException {
         checkWriteable();
-        flushWrite();
-    }
-    
-    /**
-     * Flush the write buffer to the channel (if needed)
-     * @throws IOException
-     */
-    private void flushWrite() throws IOException {
-        if (reading || !modes.isWritable() || buffer.position() == 0) // Don't bother
-            return;
-        buffer.flip();
-        channel.write(buffer);
-        buffer.clear();
+
+        // No flushing a random access file.
     }
 
     /**
@@ -221,10 +198,13 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
      */
     public boolean isEOF() throws IOException, BadDescriptorException {
         checkReadable();
-        
-        if (reading && buffer.hasRemaining()) return false;
-        
-        return (channel.size() == channel.position());
+
+        int c = file.read();
+        if (c == -1) {
+            return true;
+        }
+        file.seek(file.getFilePointer() - 1);
+        return false;
     }
     
     /**
@@ -242,7 +222,7 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
     public long pos() throws IOException {
         checkOpen();
         
-        return channel.position();
+        return file.getFilePointer();
     }
     
     public void resetByModes(IOModes newModes) throws IOException, InvalidValueException {
@@ -269,21 +249,22 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
      */
     public void seek(long offset, int type) throws IOException, InvalidValueException {
         checkOpen();
-        invalidateBuffer();
+
+        // TODO:  This seems wrong...Invalid value should be for switch..not any IOError?
         try {
             switch (type) {
             case SEEK_SET:
-                channel.position(offset);
+                file.seek(offset);
                 break;
             case SEEK_CUR:
-                channel.position(channel.position() + offset);
+                file.seek(file.getFilePointer() + offset);
                 break;
             case SEEK_END:
-                channel.position(channel.size() + offset);
+                file.seek(file.length() + offset);
                 break;
             }
-        } catch (IllegalArgumentException e) {
-            throw new InvalidValueException();
+        } catch (IOException e) {
+        	throw new InvalidValueException();
         }
     }
 
@@ -291,8 +272,8 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
      * @see org.jruby.util.IOHandler#sync()
      */
     public void sync() throws IOException {
-        flushWrite();
-        channel.force(false);
+        file.getFD().sync();
+        // RandomAccessFile is always synced?
     }
 
     public ByteList sysread(int number) throws IOException, BadDescriptorException {
@@ -300,84 +281,29 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
             throw new IOException("File not open");
         }
         checkReadable();
-        ensureRead();
-        
-        ByteBuffer buf = ByteBuffer.allocate(number);
-        if (buffer.hasRemaining()) {// already have some bytes buffered
-            putInto(buf, buffer);
-        }
-        
-        if (buf.position() != buf.capacity()) { // not complete. try to read more
-            if (buf.capacity() > buffer.capacity()) // big read. just do it.
-                channel.read(buf);
-            else { // buffer it
-                buffer.clear();
-                channel.read(buffer);
-                buffer.flip();
-                putInto(buf, buffer); // get what we need
+        byte[] buf = new byte[number];
+        int read = 0;
+        int n;
+        while(read < number) {
+            n = file.read(buf,read,number-read);
+            if(n == -1) {
+                if(read == 0) {
+                    throw new java.io.EOFException();
+                } else {
+                    break;
+                }
             }
+            read += n;
         }
         
-        if (buf.position() == 0) throw new java.io.EOFException();
-        return new ByteList(buf.array(),0,buf.position(),false);
-    }
-
-    /**
-     * Put one buffer into another, truncating the put (rather than throwing an exception)
-     * if src doesn't fit into dest. Shame this doesn't exist already.
-     * @param dest The destination buffer which will receive bytes
-     * @param src The buffer to read bytes from
-     */
-    private static void putInto(ByteBuffer dest, ByteBuffer src) {
-        int destAvail = dest.capacity() - dest.position();
-        if (src.remaining() > destAvail) { // already have more than enough bytes available
-            // ByteBuffer seems to be missing a useful method here
-            int oldLimit = src.limit();
-            src.limit(src.position() + destAvail);
-            dest.put(src);
-            src.limit(oldLimit);
-        } else {
-            dest.put(src);
-        }
-    }
-
-    /**
-     * Ensure buffer is ready for reading, flushing remaining writes if required
-     * @throws IOException
-     */
-    private void ensureRead() throws IOException {
-        if (reading) return;
-        flushWrite();
-        buffer.clear();
-        buffer.flip();
-        reading = true;
-    }
-    
-    /**
-     * Ensure buffer is ready for writing.
-     * @throws IOException
-     */
-    private void ensureWrite() throws IOException {
-        if (!reading) return;
-        if (buffer.hasRemaining()) // we have read ahead, and need to back up
-            channel.position(channel.position() - buffer.remaining());
-        buffer.clear();
-        reading = false;
+        return new ByteList(buf,0,read,false);
     }
     
     /**
      * @see org.jruby.util.IOHandler#sysread()
      */
     public int sysread() throws IOException {
-        ensureRead();
-        
-        if (!buffer.hasRemaining()) {
-            buffer.clear();
-            int read = channel.read(buffer);
-            buffer.flip();
-            if (read == -1) return -1;
-        }
-        return buffer.get();
+        return file.read();
     }
     
     /**
@@ -388,24 +314,18 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
     public int syswrite(ByteList buf) throws IOException, BadDescriptorException {
         getRuntime().secure(4);
         checkWriteable();
-        ensureWrite();
         
         // Ruby ignores empty syswrites
-        if (buf == null || buf.length() == 0) {
+        if (buf == null || buf.realSize == 0) {
             return 0;
         }
         
-        if (buf.length() > buffer.capacity()) { // Doesn't fit in buffer. Write immediately.
-            flushWrite(); // ensure nothing left to write
-            channel.write(ByteBuffer.wrap(buf.unsafeBytes(), 0, buf.length()));
+        file.write(buf.bytes,0,buf.realSize);
+            
+        if (isSync()) {
+            sync();
         }
-        else {
-            if (buf.length() > buffer.remaining()) flushWrite();
-            buffer.put(buf.unsafeBytes(), 0, buf.length());
-        }
-        
-        if (isSync()) sync();
-        
+            
         return buf.realSize;
     }
     
@@ -417,39 +337,21 @@ public class IOHandlerSeekable extends IOHandlerJavaIO {
     public int syswrite(int c) throws IOException, BadDescriptorException {
         getRuntime().secure(4);
         checkWriteable();
-        ensureWrite();
-
-        if (!buffer.hasRemaining()) flushWrite();
         
-        buffer.put((byte) c);
+        file.write(c);
             
-        if (isSync()) sync();
+        if (isSync()) {
+            sync();
+        }
             
         return 1;
     }
     
     public void truncate(long newLength) throws IOException {
-        invalidateBuffer();
-        channel.truncate(newLength);
+        file.setLength(newLength);
     }
     
     public FileChannel getFileChannel() {
-        return channel;
-    }
-    
-    /**
-     * Invalidate buffer before a position change has occurred (e.g. seek),
-     * flushing writes if required, and correcting file position if reading
-     * @throws IOException 
-     */
-    private void invalidateBuffer() throws IOException {
-        if (!reading) flushWrite();
-        int posOverrun = buffer.remaining(); // how far ahead we are when reading
-        buffer.clear();
-        if (reading) {
-            buffer.flip();
-            // if the read buffer is ahead, back up
-            if (posOverrun != 0) channel.position(channel.position() - posOverrun);
-        }
+        return file.getChannel();
     }
 }
