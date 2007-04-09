@@ -1155,7 +1155,7 @@ class Term implements REFlags{
                case 'b':   // word boundary
                   CharacterClass.makeWordBoundary(term,inv,(flags&UNICODE)>0);
                   return i;
-                  
+                  /* NOT SUPPORTED IN RUBY                  
                case '<':   // non-(word boundary)
                   CharacterClass.makeWordStart(term,(flags&UNICODE)>0);
                   return i;
@@ -1163,7 +1163,7 @@ class Term implements REFlags{
                case '>':   // word boundary
                   CharacterClass.makeWordEnd(term,(flags&UNICODE)>0);
                   return i;
-                  
+                  */
                case 'A':   // text beginning
                   term.type=START;
                   return i;
