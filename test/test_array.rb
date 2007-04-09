@@ -19,8 +19,16 @@ class TestArray < Test::Unit::TestCase
     assert("second" == arr.shift());
   end
   
+  class MyArray < Array
+    def [](arg)
+      arg
+    end
+  end
+
   def test_aref
     assert_equal(nil, [].slice(-1..1))
+    # test that overriding in child works correctly
+    assert_equal(2, MyArray.new[2])
   end
 
   def test_class

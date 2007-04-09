@@ -136,7 +136,7 @@ public class RubyFixnum extends RubyInteger {
     
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name,
             IRubyObject[] args, CallType callType, Block block) {
-        switch (getRuntime().getSelectorTable().table[ClassIndex.FIXNUM][methodIndex]) {
+        switch (getRuntime().getSelectorTable().table[rubyclass.index][methodIndex]) {
         case OP_PLUS_SWITCHVALUE:
             if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
             return plus(args[0]);

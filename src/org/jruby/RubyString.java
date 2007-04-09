@@ -217,7 +217,7 @@ public class RubyString extends RubyObject {
     
     public IRubyObject callMethod(ThreadContext context, RubyModule rubyclass, int methodIndex, String name,
             IRubyObject[] args, CallType callType, Block block) {
-        switch (getRuntime().getSelectorTable().table[ClassIndex.STRING][methodIndex]) {
+        switch (getRuntime().getSelectorTable().table[rubyclass.index][methodIndex]) {
         case OP_PLUS_SWITCHVALUE:
             if (args.length != 1) throw context.getRuntime().newArgumentError("wrong number of arguments(" + args.length + " for " + 1 + ")");
             return op_plus(args[0]);

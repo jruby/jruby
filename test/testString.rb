@@ -439,9 +439,15 @@ test_equal("  ", '%2s' % nil)
 
 # test that extensions of the base classes are typed correctly
 class StringExt < String
+  def [](arg)
+    arg
+  end
 end
 test_equal(StringExt, StringExt.new.class)
 test_equal(StringExt, StringExt.new("test").class)
+
+# test that methods are overridden correctly
+test_equal(2, StringExt.new[2])
 
 test_equal("foa3VCPbMb8XQ", "foobar".crypt("foo"))
 
