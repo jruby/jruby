@@ -97,13 +97,7 @@ public class KCode {
     }
 
     public int flags() {
-        int flags = 0;
-        if (this == UTF8) {
-            flags |= jregex.REFlags.UNICODE;
-        }
-        //        flags |= Pattern.UNIX_LINES;
-
-        return flags;
+        return 0;
     }
 }
 	

@@ -114,3 +114,10 @@ test_equal nil, /./ =~ "\n"
 test_equal 0, /(?m:.)/ =~ "\n"
 
 
+NAME_STR= '[\w]*'
+TAG_MATCH = /^<#{NAME_STR}\s*>/u
+input = <<-EOL
+<path
+  >
+EOL
+test_ok TAG_MATCH =~ input
