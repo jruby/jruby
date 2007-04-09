@@ -71,6 +71,7 @@ public final class DefaultMethod extends DynamicMethod {
 
     private static final boolean JIT_ENABLED = Boolean.getBoolean("jruby.jit.enabled");
     private static final boolean JIT_LOGGING = Boolean.getBoolean("jruby.jit.logging");
+    private static final boolean JIT_LOGGING_VERBOSE = Boolean.getBoolean("jruby.jit.logging.verbose");
     private static final int JIT_THRESHOLD = Integer.parseInt(System.getProperty("jruby.jit.threshold", "50"));
     
     public DefaultMethod(RubyModule implementationClass, StaticScope staticScope, Node body, 
@@ -165,7 +166,14 @@ public final class DefaultMethod extends DynamicMethod {
         if (callCount >= 0 && getArity().isFixed() && argsNode.getBlockArgNode() == null && argsNode.getOptArgs() == null && argsNode.getRestArg() == -1) {
             callCount++;
             if (callCount >= JIT_THRESHOLD) {
-                //if (JIT_LOGGING) System.out.println("trying to compile: " + getImplementationClass().getBaseName() + "." + name);
+                String className = null;
+                if (JIT_LOGGING) {
+                    className = getImplementationClass().getBaseName();
+                    if (className == null) {
+                        className = "<anon class>";
+                    }
+                }
+                
                 try {
                     String cleanName = CodegenUtils.cleanJavaIdentifier(name);
                     StandardASMCompiler compiler = new StandardASMCompiler(cleanName + hashCode(), body.getPosition().getFile());
@@ -177,13 +185,9 @@ public final class DefaultMethod extends DynamicMethod {
                     Class sourceClass = compiler.loadClass(runtime);
                     jitCompiledScript = (Script)sourceClass.newInstance();
                     
-                    String className = getImplementationClass().getBaseName();
-                    if (className == null) {
-                        className = "<anon class>";
-                    }
-                    if (JIT_LOGGING) System.out.println("compiled: " + className + "." + name);
+                    if (JIT_LOGGING) System.err.println("compiled: " + className + "." + name);
                 } catch (Exception e) {
-                    //                    e.printStackTrace();
+                    if (JIT_LOGGING_VERBOSE) System.err.println("could not compile: " + className + "." + name + " because of: \"" + e.getMessage() + '"');
                 } finally {
                     callCount = -1;
                 }
