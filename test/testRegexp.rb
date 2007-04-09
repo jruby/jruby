@@ -121,3 +121,6 @@ input = <<-EOL
   >
 EOL
 test_ok TAG_MATCH =~ input
+
+xy = /(.*).*\1\}/
+xy =~ "12}"

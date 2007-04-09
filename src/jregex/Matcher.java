@@ -947,7 +947,6 @@ new Exception().printStackTrace();
      */
             int memreg,cntreg;
             char c;
-//System.out.print("("+term.instanceNum+"/"+i+")");
             switch(term.type){
                case Term.FIND:{
                   int jump=find(data,i+term.distance,end,term.target); //don't eat the last match
@@ -1550,7 +1549,7 @@ new Exception().printStackTrace();
                         continue;
                      }
                      else if(sampleLen==0){
-                        back=-1;
+                        back=1;
                      }
                      else{
                         back=findBackReg(data,i+term.distance,sampleOff,sampleLen,cnt-minCnt,term.target,end);
