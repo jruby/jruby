@@ -30,6 +30,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime;
 
+import java.lang.ref.WeakReference;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -59,7 +61,7 @@ public class ThreadService {
         
         // Must be called from main thread (it is currently, but this bothers me)
         mainThread = Thread.currentThread();
-        localContext.set(mainContext);
+        localContext.set(new WeakReference(mainContext));
         rubyThreadList.add(mainThread);
     }
 
@@ -68,21 +70,23 @@ public class ThreadService {
     }
 
     public ThreadContext getCurrentContext() {
-        ThreadContext tc = (ThreadContext) localContext.get();
+        WeakReference wr = (WeakReference) localContext.get();
         
-        if (tc == null) {
-            tc = adoptCurrentThread();
+        if (wr == null) {
+            wr = adoptCurrentThread();
+        } else if(wr.get() == null) {
+            wr = adoptCurrentThread();
         }
-        
-        return tc;
+
+        return (ThreadContext)wr.get();
     }
     
-    private ThreadContext adoptCurrentThread() {
+    private WeakReference adoptCurrentThread() {
         Thread current = Thread.currentThread();
         
         RubyThread.adopt(runtime.getClass("Thread"), current);
         
-        return (ThreadContext) localContext.get();
+        return (WeakReference) localContext.get();
     }
 
     public RubyThread getMainThread() {
@@ -120,7 +124,7 @@ public class ThreadService {
     }
 
     public synchronized void registerNewThread(RubyThread thread) {
-        localContext.set(ThreadContext.newContext(runtime));
+        localContext.set(new WeakReference(ThreadContext.newContext(runtime)));
         getCurrentContext().setThread(thread);
         // This requires register to be called from within the registree thread
         rubyThreadList.add(Thread.currentThread());
