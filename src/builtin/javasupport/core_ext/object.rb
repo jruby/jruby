@@ -64,4 +64,5 @@ class Object
   end
   
   alias :import :include_class
+  private :import
 end
