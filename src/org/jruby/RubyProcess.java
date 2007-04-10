@@ -154,7 +154,7 @@ public class RubyProcess {
         }
         
         public IRubyObject inspect(Block unusedBlock) {
-            return to_s();
+            return getRuntime().newString("#<Process::Status: pid=????,exited(" + String.valueOf(status) + ")>");
         }
         
         public IRubyObject success_p(Block unusedBlock) {

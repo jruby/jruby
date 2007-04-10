@@ -48,6 +48,7 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyClass;
 import org.jruby.RubyIO;
 import org.jruby.RubyKernel;
+import org.jruby.RubyProcess;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.MethodIndex;
@@ -366,7 +367,7 @@ public class IOMetaClass extends ObjectMetaClass {
                     return runtime.getNil();
                 } finally {
                     io.close();
-                    runtime.getGlobalVariables().set("$?", runtime.newFixnum(process.waitFor() * 256));
+                    runtime.getGlobalVariables().set("$?",  RubyProcess.RubyStatus.newProcessStatus(runtime, (process.waitFor() * 256)));
                 }
             }
             return io;
