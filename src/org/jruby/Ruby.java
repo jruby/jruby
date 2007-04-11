@@ -47,10 +47,12 @@ import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Stack;
+import java.util.WeakHashMap;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
 import org.jruby.ast.executable.YARVCompiledRunner;
@@ -209,6 +211,11 @@ public final class Ruby {
     public int moduleLastId = 0;
 
     private Object respondToMethod;
+    
+    /**
+     * A list of finalizers, weakly referenced, to be executed on tearDown
+     */
+    private Map finalizers;
 
     /**
      * Create and initialize a new jruby Runtime.
@@ -1343,6 +1350,26 @@ public final class Ruby {
         atExitBlocks.push(proc);
         return proc;
     }
+    
+    public void addFinalizer(RubyObject.Finalizer finalizer) {
+        synchronized (this) {
+            if (finalizers == null) {
+                finalizers = new WeakHashMap();
+            }
+        }
+        
+        synchronized (finalizers) {
+            finalizers.put(finalizer, null);
+        }
+    }
+    
+    public void removeFinalizer(RubyObject.Finalizer finalizer) {
+        if (finalizers != null) {
+            synchronized (finalizers) {
+                finalizers.remove(finalizer);
+            }
+        }
+    }
 
     /**
      * Make sure Kernel#at_exit procs get invoked on runtime shutdown.
@@ -1358,7 +1385,14 @@ public final class Ruby {
 
             proc.call(IRubyObject.NULL_ARRAY);
         }
-        getObjectSpace().finishFinalizers();
+        if (finalizers != null) {
+            synchronized (finalizers) {
+                for (Iterator finalIter = finalizers.keySet().iterator(); finalIter.hasNext();) {
+                    ((RubyObject.Finalizer)finalIter.next()).finalize();
+                    finalIter.remove();
+                }
+            }
+        }
     }
 
     // new factory methods ------------------------------------------------------------------------

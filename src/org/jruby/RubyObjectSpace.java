@@ -71,8 +71,7 @@ public class RubyObjectSpace {
             proc = runtime.newProc(false, block);
         }
         IRubyObject obj = args[0];
-        long id = RubyNumeric.fix2long(obj.id());
-        runtime.getObjectSpace().addFinalizer(obj, id, proc);
+        runtime.getObjectSpace().addFinalizer(obj, proc);
         return recv;
     }
 

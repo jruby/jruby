@@ -42,6 +42,7 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -534,4 +535,8 @@ public interface IRubyObject {
      * @return
      */
     IRubyObject equalInternal(final ThreadContext context, final IRubyObject other);
+        
+    public void addFinalizer(RubyProc finalizer);
+
+    public void removeFinalizers();
 }

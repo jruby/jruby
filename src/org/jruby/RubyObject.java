@@ -54,6 +54,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import org.jruby.ast.Node;
 import org.jruby.runtime.ClassIndex;
@@ -76,6 +77,38 @@ public class RubyObject implements Cloneable, IRubyObject {
     private boolean frozen;
     private boolean taint;
     protected boolean isTrue = true;
+    
+    private Finalizer finalizer;
+    
+    public class Finalizer {
+        private long id;
+        private List finalizers;
+        
+        public Finalizer(long id) {
+            this.id = id;
+        }
+        
+        public void addFinalizer(RubyProc finalizer) {
+            if (finalizers == null) {
+                finalizers = new ArrayList();
+            }
+            finalizers.add(finalizer);
+        }
+
+        public void removeFinalizers() {
+            finalizers = null;
+        }
+    
+        public void finalize() {
+            if (finalizers != null) {
+                IRubyObject idFixnum = getRuntime().newFixnum(id);
+                for (int i = 0; i < finalizers.size(); i++) {
+                    ((RubyProc)finalizers.get(i)).call(
+                            new IRubyObject[] {idFixnum});
+                }
+            }
+        }
+    }
 
     public RubyObject(Ruby runtime, RubyClass metaClass) {
         this(runtime, metaClass, runtime.isObjectSpaceEnabled());
@@ -1364,5 +1397,21 @@ public class RubyObject implements Cloneable, IRubyObject {
     public final IRubyObject equalInternal(final ThreadContext context, final IRubyObject other){
         if (this == other) return getRuntime().getTrue();
         return callMethod(context, MethodIndex.EQUALEQUAL, "==", other);
+    }
+        
+    public void addFinalizer(RubyProc finalizer) {
+        if (this.finalizer == null) {
+            this.finalizer = new Finalizer(getRuntime().getObjectSpace().idOf(this));
+            getRuntime().addFinalizer(this.finalizer);
+        }
+        this.finalizer.addFinalizer(finalizer);
+    }
+
+    public void removeFinalizers() {
+        if (finalizer != null) {
+            finalizer.removeFinalizers();
+            finalizer = null;
+            getRuntime().removeFinalizer(this.finalizer);
+        }
     }
 }

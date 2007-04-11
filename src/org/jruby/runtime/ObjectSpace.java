@@ -100,101 +100,18 @@ public class ObjectSpace {
         while ((ref = (IdReference) deadIdentityReferences.poll()) != null)
             identities.remove(new Long(ref.id()));
     }
-
-    private Map finalizableWeakRefs          = new ConcurrentHashMap();
-    private Map weakRefs            = new ConcurrentHashMap();
-    private LinkedBlockingQueue finalizersToRun   = new LinkedBlockingQueue();
-    private FinalizerThread finalizerThread = new FinalizerThread();
-
-    private class FinalizerThread extends Thread {
-        private boolean running;
-        public FinalizerThread() {
-            super("Ruby Finalizer Thread");
-            setDaemon(true);
-        }
-
-        public void run() {
-            while (true) {
-                Runnable finalizer;
-                try {
-                    while ((finalizer = (Runnable) finalizersToRun.poll(100, TimeUnit.MILLISECONDS)) != null) {
-                        try {
-                            finalizer.run();
-                        } catch (Exception e) {
-                        }
-                    }
-                } catch (InterruptedException ie) {
-                    break;
-                }
-                synchronized (this) {
-                    if (finalizersToRun.peek() == null && !running) {
-                        break;
-                    }
-                }
-            }
-        }
-
-        public synchronized void startRunning() {
-            if(!running) {
-                running = true;
-                start();
-            }
-        }
-
-        public synchronized void stopRunning() {
-            running = false;
-        }
+    
+    public void addFinalizer(IRubyObject object, RubyProc proc) {
+        object.addFinalizer(proc);
     }
-
-    private class FinalizerEntry implements Runnable {
-        private long id;
-        private RubyProc proc;
-        private IRubyObject fid;
-        public FinalizerEntry(long id, RubyProc proc) {
-            this.id = id;
-            this.proc = proc;
-            this.fid = proc.getRuntime().newFixnum(id);
-        }
-
-        public void _finalize() {
-            finalizersToRun.offer(this);
-        }
-
-        public void run() {
-            proc.call(new IRubyObject[]{fid});
-        }
-    }
-
-    public void finishFinalizers() {
-        for(Iterator iter = finalizableWeakRefs.keySet().iterator();iter.hasNext();) {
-            Object key = iter.next();
-            WeakReferenceListNode weakRef = (WeakReferenceListNode)finalizableWeakRefs.get(key);
-            weakRef.finishFinalizers();
-        }
-        finalizerThread.stopRunning();
-        try { finalizerThread.join(); } catch (InterruptedException ie) {}
-    }
-
-    public void addFinalizer(IRubyObject obj, long id, RubyProc proc) {
-        WeakReferenceListNode finalizableWeakRef = (WeakReferenceListNode)finalizableWeakRefs.get(new Long(id));
-        if(finalizableWeakRef == null) {
-            finalizableWeakRef = new WeakReferenceListNode(obj, deadReferences, top);
-            finalizableWeakRefs.put(new Long(id),finalizableWeakRef);
-        }
-        synchronized(finalizableWeakRef) {
-            finalizableWeakRef.addFinalizer(new FinalizerEntry(id,proc));
-        }
-        finalizerThread.startRunning();
-    }
-
+    
     public void removeFinalizers(long id) {
-        WeakReferenceListNode fins = (WeakReferenceListNode)finalizableWeakRefs.get(new Long(id));
-        if(null != fins) {
-            fins.removeFinalizers();
+        IRubyObject object = id2ref(id);
+        if (object != null) {
+            object.removeFinalizers();
         }
-        finalizableWeakRefs.remove(new Long(id));
     }
-
+    
     public synchronized void add(IRubyObject object) {
         cleanup();
         top = new WeakReferenceListNode(object, deadReferences, top);
@@ -247,8 +164,6 @@ public class ObjectSpace {
     private class WeakReferenceListNode extends WeakReference {
         private WeakReferenceListNode prevNode;
         private WeakReferenceListNode nextNode;
-        private List finalizers;
-        private long finalizerID;
 
         public WeakReferenceListNode(Object ref, ReferenceQueue queue, WeakReferenceListNode next) {
             super(ref, queue);
@@ -270,27 +185,6 @@ public class ObjectSpace {
                     nextNode.prevNode = prevNode;
                 }
             }
-            
-            if (finalizerID != 0) {
-                finalizersToRun.addAll(finalizers);
-                finalizableWeakRefs.remove(new Long(finalizerID));
-            }
-        }
-        
-        public void addFinalizer(FinalizerEntry finalizer) {
-            if (finalizers == null) {
-                finalizers = new ArrayList();
-            }
-            finalizerID = finalizer.id;
-            finalizers.add(finalizer);
-        }
-        
-        public void removeFinalizers() {
-            finalizers = null;
-        }
-        
-        public void finishFinalizers() {
-            finalizersToRun.addAll(finalizers);
         }
     }
 
