@@ -56,6 +56,17 @@ class TestThread < Test::Unit::TestCase
     t.join
     assert_equal("run", v)
     assert_equal(false, t.status)
+    
+    # check that "run", sleep", and "dead" appear in inspected output
+    x = nil
+    t = Thread.new { x = Thread.current.inspect; sleep 4; x = false }
+    Thread.pass until t.status == "sleep"
+    assert(x["run"])
+    assert(t.inspect["sleep"])
+    
+    t.kill
+    Thread.pass while t.alive?
+    assert(t.inspect["dead"])
   end
 
   def thread_foo()

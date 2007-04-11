@@ -101,6 +101,7 @@ public class RubyThread extends RubyObject {
         threadClass.defineFastMethod("group", callbackFactory.getFastMethod("group"));
         threadClass.defineFastMethod("join", callbackFactory.getFastOptMethod("join"));
         threadClass.defineFastMethod("value", callbackFactory.getFastMethod("value"));
+        threadClass.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
         threadClass.defineFastMethod("key?", callbackFactory.getFastMethod("has_key", RubyKernel.IRUBY_OBJECT));
         threadClass.defineFastMethod("keys", callbackFactory.getFastMethod("keys"));
         threadClass.defineFastMethod("priority", callbackFactory.getFastMethod("priority"));
@@ -415,6 +416,29 @@ public class RubyThread extends RubyObject {
     
     void setThreadGroup(RubyThreadGroup rubyThreadGroup) {
     	threadGroup = rubyThreadGroup;
+    }
+    
+    public IRubyObject inspect() {
+        // FIXME: There's some code duplication here with RubyObject#inspect
+        StringBuffer part = new StringBuffer();
+        String cname = getMetaClass().getRealClass().getName();
+        part.append("#<").append(cname).append(":0x");
+        part.append(Integer.toHexString(System.identityHashCode(this)));
+        
+        if (threadImpl.isAlive()) {
+            if (isStopped) {
+                part.append(getRuntime().newString(" sleep"));
+            } else if (killed) {
+                part.append(getRuntime().newString(" aborting"));
+            } else {
+                part.append(getRuntime().newString(" run"));
+            }
+        } else {
+            part.append(" dead");
+        }
+        
+        part.append(">");
+        return getRuntime().newString(part.toString());
     }
 
     public RubyBoolean has_key(IRubyObject key) {
