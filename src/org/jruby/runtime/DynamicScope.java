@@ -38,7 +38,12 @@ public class DynamicScope {
 
     public DynamicScope(StaticScope staticScope, DynamicScope parent) {
         this.staticScope = staticScope;
-        this.parent = parent;
+        
+        // Only use the given DynamicScope as our parent if it's based on our StaticScope's parent
+        // FIXME: This is kinda hacky...we shouldn't have to do this check
+        if (parent != null && parent.getStaticScope() == staticScope.getEnclosingScope()) {
+            this.parent = parent;
+        }
         
         int size = staticScope.getNumberOfVariables();
         if (size > 0) variableValues = new IRubyObject[size];

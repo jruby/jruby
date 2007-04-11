@@ -258,7 +258,8 @@ public class ThreadContext {
     }
     
     private void popFrame() {
-        Frame frame = (Frame)frameStack[frameIndex--];
+        Frame frame = (Frame)frameStack[frameIndex];
+        frameStack[frameIndex--] = null;
         
         setPosition(frame.getPosition());
     }

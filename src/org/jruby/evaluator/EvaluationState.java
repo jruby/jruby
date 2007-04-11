@@ -1888,6 +1888,7 @@ public class EvaluationState {
         if (blockNode instanceof IterNode) {
             IterNode iterNode = (IterNode) blockNode;
             // Create block for this iter node
+            // FIXME: We shouldn't use the current scope if it's not actually from the same hierarchy of static scopes
             return Block.createBlock(context, iterNode.getVarNode(),
                     new DynamicScope(iterNode.getScope(), context.getCurrentScope()),
                     iterNode.getCallable(), self);
