@@ -474,13 +474,29 @@ public class RubyYAML {
             }
             return self.toString().indexOf('\0') != -1 ? self.getRuntime().getTrue() : self.getRuntime().getFalse();
         }
+        private org.jruby.yaml.JRubyRepresenter into(IRubyObject arg) {
+            IRubyObject jobj = arg.getInstanceVariable("@java_object");
+            if(jobj != null) {
+                return (org.jruby.yaml.JRubyRepresenter)(((org.jruby.javasupport.JavaObject)jobj).getValue());
+            }
+            return null;
+        }
         public IRubyObject method6(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             Ruby rt = self.getRuntime();
             if(self.callMethod(context, "is_binary_data?").isTrue()) {
                 return args[0].callMethod(context,"scalar", new IRubyObject[]{rt.newString("tag:yaml.org,2002:binary"),rt.newArray(self).callMethod(context,"pack", rt.newString("m")),rt.newString("|")});
             }
             if(((List)self.callMethod(context, "to_yaml_properties")).isEmpty()) {
-                return args[0].callMethod(context,"scalar", new IRubyObject[]{self.callMethod(context, "taguri"),self,self.toString().startsWith(":") ? rt.newString("\"") : self.callMethod(context, "to_yaml_style")});
+                org.jruby.yaml.JRubyRepresenter rep = into(args[0]);
+                if(rep != null) {
+                    try {
+                        return org.jruby.javasupport.JavaUtil.convertJavaToRuby(rt,rep.scalar(self.callMethod(context, "taguri").toString(),self.convertToString().getByteList(),self.toString().startsWith(":") ? "\"" : self.callMethod(context, "to_yaml_style").toString()));
+                    } catch(IOException e) {
+                        throw rt.newIOErrorFromException(e);
+                    }
+                } else {
+                    return args[0].callMethod(context,"scalar", new IRubyObject[]{self.callMethod(context, "taguri"),self,self.toString().startsWith(":") ? rt.newString("\"") : self.callMethod(context, "to_yaml_style")});
+                }
             }
             
             Map mep = (Map)(new RubyHash(self.getRuntime()));
