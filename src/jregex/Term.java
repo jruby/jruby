@@ -414,9 +414,16 @@ class Term implements REFlags{
             case '*':
                if(current==null) throw new PatternSyntaxException("missing term before *");
                i++;
-               if(i<end && data[i]=='?'){
-                  greedy^=true;
-                  i++;
+               if(i<end){
+                   switch(data[i]) {
+                   case '?':
+                       greedy^=true;
+                       i++;
+                       break;
+                   case '*':
+                   case '+':
+                       throw new PatternSyntaxException("nested *?+ in regexp");
+                   }
                }
                tmp=greedy? makeGreedyStar(vars,current,iterators):
                              makeLazyStar(vars,current);
@@ -426,9 +433,16 @@ class Term implements REFlags{
             case '+':
                if(current==null) throw new PatternSyntaxException("missing term before +");
                i++;
-               if(i<end && data[i]=='?'){
-                  greedy^=true;
-                  i++;
+               if(i<end){
+                   switch(data[i]) {
+                   case '?':
+                       greedy^=true;
+                       i++;
+                       break;
+                   case '*':
+                   case '+':
+                       throw new PatternSyntaxException("nested *?+ in regexp");
+                   }
                }
                tmp=greedy? makeGreedyPlus(vars,current,iterators):
                                makeLazyPlus(vars,current);
@@ -438,9 +452,16 @@ class Term implements REFlags{
             case '?':
                if(current==null) throw new PatternSyntaxException("missing term before ?");
                i++;
-               if(i<end && data[i]=='?'){
-                  greedy^=true;
-                  i++;
+               if(i<end){
+                   switch(data[i]) {
+                   case '?':
+                       greedy^=true;
+                       i++;
+                       break;
+                   case '*':
+                   case '+':
+                       throw new PatternSyntaxException("nested *?+ in regexp");
+                   }
                }
                
                tmp=greedy? makeGreedyQMark(vars,current):
@@ -698,6 +719,11 @@ class Term implements REFlags{
    private final static Term makeGreedyStar(int[] vars,Term term,Vector iterators) throws PatternSyntaxException{
       //vars[STACK_SIZE]++;
       switch(term.type){
+         case REPEAT_0_INF:
+         case REPEAT_MIN_INF:
+         case REPEAT_MIN_MAX:
+         case REPEAT_REG_MIN_INF:
+         case REPEAT_REG_MIN_MAX:
          case INDEPENDENT_IN:
          case GROUP_IN:{
             Term b=new Branch();
@@ -721,6 +747,11 @@ class Term implements REFlags{
    private final static Term makeLazyStar(int[] vars,Term term){
       //vars[STACK_SIZE]++;
       switch(term.type){
+         case REPEAT_0_INF:
+         case REPEAT_MIN_INF:
+         case REPEAT_MIN_MAX:
+         case REPEAT_REG_MIN_INF:
+         case REPEAT_REG_MIN_MAX:
          case GROUP_IN:{
             Term b=new Branch();
             b.failNext=term.in;
@@ -751,6 +782,11 @@ class Term implements REFlags{
    private final static Term makeGreedyPlus(int[] vars,Term term,Vector iterators) throws PatternSyntaxException{
       //vars[STACK_SIZE]++;
       switch(term.type){
+         case REPEAT_0_INF:
+         case REPEAT_MIN_INF:
+         case REPEAT_MIN_MAX:
+         case REPEAT_REG_MIN_INF:
+         case REPEAT_REG_MIN_MAX:
          case INDEPENDENT_IN://?
          case GROUP_IN:{
 //System.out.println("makeGreedyPlus():");
@@ -778,6 +814,11 @@ class Term implements REFlags{
    private final static Term makeLazyPlus(int[] vars,Term term){
       //vars[STACK_SIZE]++;
       switch(term.type){
+         case REPEAT_0_INF:
+         case REPEAT_MIN_INF:
+         case REPEAT_MIN_MAX:
+         case REPEAT_REG_MIN_INF:
+         case REPEAT_REG_MIN_MAX:
          case GROUP_IN:{
             Term b=new Branch();
             term.out.next=b;
@@ -809,6 +850,11 @@ class Term implements REFlags{
    private final static Term makeGreedyQMark(int[] vars,Term term){
       //vars[STACK_SIZE]++;
       switch(term.type){
+         case REPEAT_0_INF:
+         case REPEAT_MIN_INF:
+         case REPEAT_MIN_MAX:
+         case REPEAT_REG_MIN_INF:
+         case REPEAT_REG_MIN_MAX:
          case GROUP_IN:{
             Term b=new Branch();
             b.next=term.in;
@@ -838,6 +884,11 @@ class Term implements REFlags{
    private final static Term makeLazyQMark(int[] vars,Term term){
       //vars[STACK_SIZE]++;
       switch(term.type){
+         case REPEAT_0_INF:
+         case REPEAT_MIN_INF:
+         case REPEAT_MIN_MAX:
+         case REPEAT_REG_MIN_INF:
+         case REPEAT_REG_MIN_MAX:
          case GROUP_IN:{
             Term b=new Branch();
             b.failNext=term.in;
@@ -869,6 +920,11 @@ class Term implements REFlags{
       int m=limits[0];
       int n=limits[1];
       switch(term.type){
+         case REPEAT_0_INF:
+         case REPEAT_MIN_INF:
+         case REPEAT_MIN_MAX:
+         case REPEAT_REG_MIN_INF:
+         case REPEAT_REG_MIN_MAX:
          case GROUP_IN:{
             int cntreg=vars[CNTREG_COUNT]++;
             Term reset=new Term(CR_SET_0);
@@ -923,6 +979,11 @@ class Term implements REFlags{
       int m=limits[0];
       int n=limits[1];
       switch(term.type){
+         case REPEAT_0_INF:
+         case REPEAT_MIN_INF:
+         case REPEAT_MIN_MAX:
+         case REPEAT_REG_MIN_INF:
+         case REPEAT_REG_MIN_MAX:
          case GROUP_IN:{
             int cntreg=vars[CNTREG_COUNT]++;
             Term reset=new Term(CR_SET_0);
