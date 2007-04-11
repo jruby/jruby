@@ -102,6 +102,7 @@ public class RubyThread extends RubyObject {
         threadClass.defineFastMethod("join", callbackFactory.getFastOptMethod("join"));
         threadClass.defineFastMethod("value", callbackFactory.getFastMethod("value"));
         threadClass.defineFastMethod("key?", callbackFactory.getFastMethod("has_key", RubyKernel.IRUBY_OBJECT));
+        threadClass.defineFastMethod("keys", callbackFactory.getFastMethod("keys"));
         threadClass.defineFastMethod("priority", callbackFactory.getFastMethod("priority"));
         threadClass.defineFastMethod("priority=", callbackFactory.getFastMethod("priority_set", RubyKernel.IRUBY_OBJECT));
         threadClass.defineMethod("raise", callbackFactory.getOptMethod("raise"));
@@ -335,29 +336,15 @@ public class RubyThread extends RubyObject {
     }
 
     public IRubyObject aref(IRubyObject key) {
-        String name = keyName(key);
-        if (!threadLocalVariables.containsKey(name)) {
+        if (!threadLocalVariables.containsKey(key)) {
             return getRuntime().getNil();
         }
-        return (IRubyObject) threadLocalVariables.get(name);
+        return (IRubyObject) threadLocalVariables.get(key);
     }
 
     public IRubyObject aset(IRubyObject key, IRubyObject value) {
-        String name = keyName(key);
-        threadLocalVariables.put(name, value);
+        threadLocalVariables.put(key, value);
         return value;
-    }
-
-    private String keyName(IRubyObject key) {
-        String name;
-        if (key instanceof RubySymbol) {
-            name = key.asSymbol();
-        } else if (key instanceof RubyString) {
-            name = ((RubyString) key).toString();
-        } else {
-            throw getRuntime().newArgumentError(key.inspect() + " is not a symbol");
-        }
-        return name;
     }
 
     public RubyBoolean abort_on_exception() {
@@ -431,8 +418,13 @@ public class RubyThread extends RubyObject {
     }
 
     public RubyBoolean has_key(IRubyObject key) {
-        String name = keyName(key);
-        return getRuntime().newBoolean(threadLocalVariables.containsKey(name));
+        return getRuntime().newBoolean(threadLocalVariables.containsKey(key));
+    }
+
+    public RubyArray keys() {
+        IRubyObject[] keys = new IRubyObject[threadLocalVariables.size()];
+        
+        return RubyArray.newArrayNoCopy(getRuntime(), (IRubyObject[])threadLocalVariables.keySet().toArray(keys));
     }
     
     public static IRubyObject critical_set(IRubyObject receiver, RubyBoolean value) {

@@ -40,6 +40,12 @@ class TestThread < Test::Unit::TestCase
     }
     t.join
     assert(! Thread.current.key?(:x))
+    Thread.current[:x] = 1
+    assert_equal([:x], Thread.current.keys)
+    Thread.current["y"] = 2
+    Thread.current[3] = "three"
+    assert(Thread.current.key?("y"))
+    assert(Thread.current.key?(3))
   end
 
   def test_status
