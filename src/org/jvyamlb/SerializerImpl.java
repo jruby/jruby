@@ -181,12 +181,8 @@ public class SerializerImpl implements Serializer {
             node = ((LinkNode)node).getAnchor();
         }
         String tAlias = (String)this.anchors.get(node);
-        if(this.serializedNodes.containsKey(node)) {
-            if(tAlias != null) {
-                this.emitter.emit(new AliasEvent(tAlias));
-            } else {
-                throw new RuntimeException("Shouldn't happen");
-            }
+        if(this.serializedNodes.containsKey(node) && tAlias != null) {
+            this.emitter.emit(new AliasEvent(tAlias));
         } else {
             this.serializedNodes.put(node,null);
             this.resolver.descendResolver(parent,index);
