@@ -183,7 +183,7 @@ public class RubyThread extends RubyObject {
         
         runtime.getCurrentContext().preAdoptThread();
         
-        rubyThread.callInit(new IRubyObject[0], block);
+        rubyThread.callInit(IRubyObject.NULL_ARRAY, block);
         
         rubyThread.notifyStarted();
         
@@ -195,7 +195,7 @@ public class RubyThread extends RubyObject {
 
         RubyThread rubyThread = new RubyThread(recv.getRuntime(), (RubyClass) recv);
         
-        if (callInit) rubyThread.callInit(args, block);
+        if (callInit) rubyThread.callInit(IRubyObject.NULL_ARRAY, block);
 
         if (USE_POOLING) {
             rubyThread.threadImpl = new FutureThread(rubyThread, new RubyRunnable(rubyThread, args, block));

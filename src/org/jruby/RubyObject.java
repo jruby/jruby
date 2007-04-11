@@ -1270,7 +1270,9 @@ public class RubyObject implements Cloneable, IRubyObject {
     public IRubyObject inherited(IRubyObject arg, Block block) {
     	return getRuntime().getNil();
     }
+    
     public IRubyObject initialize(IRubyObject[] args, Block block) {
+        Arity.checkArgumentCount(getRuntime(), args, 0, 0);
     	return getRuntime().getNil();
     }
 

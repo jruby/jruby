@@ -189,7 +189,7 @@ public class TimeMetaClass extends ObjectMetaClass {
             cal.setTimeInMillis(seconds * 1000 + millisecs);
         }
 
-        time.callInit(args, Block.NULL_BLOCK);
+        time.callInit(IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
 
         return time;
     }
@@ -315,7 +315,7 @@ public class TimeMetaClass extends ObjectMetaClass {
         RubyTime time = new RubyTime(getRuntime(), (RubyClass) this, cal);
         time.setUSec(int_args[4] % 1000);
 
-        time.callInit(args, Block.NULL_BLOCK);
+        time.callInit(IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
 
         return time;
     }

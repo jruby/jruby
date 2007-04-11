@@ -109,3 +109,9 @@ end
 
 b = BadHash.new
 {b => b}
+
+# JRUBY-800: default initialize should not accept arguments
+test_exception(ArgumentError) { Object.new(1) }
+class NoArgClass
+end
+test_exception(ArgumentError) { NoArgClass.new(1) }
