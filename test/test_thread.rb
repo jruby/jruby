@@ -43,9 +43,12 @@ class TestThread < Test::Unit::TestCase
     Thread.current[:x] = 1
     assert_equal([:x], Thread.current.keys)
     Thread.current["y"] = 2
-    Thread.current[3] = "three"
     assert(Thread.current.key?("y"))
-    assert(Thread.current.key?(3))
+    assert([:x, :y], Thread.current.keys.sort {|x, y| x.to_s <=> y.to_s})
+    assert_raises(ArgumentError) { Thread.current[Object.new] }
+    assert_raises(ArgumentError) { Thread.current[Object.new] = 1 }
+    assert_raises(ArgumentError) { Thread.current[1] }
+    assert_raises(ArgumentError) { Thread.current[1]  = 1}
   end
 
   def test_status

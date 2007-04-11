@@ -335,8 +335,23 @@ public class RubyThread extends RubyObject {
         
         return recv.getRuntime().newArrayNoCopy(activeThreads);
     }
+    
+    private IRubyObject getSymbolKey(IRubyObject originalKey) {
+        if (originalKey instanceof RubySymbol) {
+            return originalKey;
+        } else if (originalKey instanceof RubyString) {
+            return RubySymbol.newSymbol(getRuntime(), originalKey.asSymbol());
+        } else if (originalKey instanceof RubyFixnum) {
+            getRuntime().getWarnings().warn("Do not use Fixnums as Symbols");
+            throw getRuntime().newArgumentError(originalKey + " is not a symbol");
+        } else {
+            throw getRuntime().newArgumentError(originalKey + " is not a symbol");
+        }
+    }
 
     public IRubyObject aref(IRubyObject key) {
+        key = getSymbolKey(key);
+        
         if (!threadLocalVariables.containsKey(key)) {
             return getRuntime().getNil();
         }
@@ -344,6 +359,8 @@ public class RubyThread extends RubyObject {
     }
 
     public IRubyObject aset(IRubyObject key, IRubyObject value) {
+        key = getSymbolKey(key);
+        
         threadLocalVariables.put(key, value);
         return value;
     }
@@ -442,6 +459,8 @@ public class RubyThread extends RubyObject {
     }
 
     public RubyBoolean has_key(IRubyObject key) {
+        key = getSymbolKey(key);
+        
         return getRuntime().newBoolean(threadLocalVariables.containsKey(key));
     }
 
