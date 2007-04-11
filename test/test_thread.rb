@@ -59,7 +59,7 @@ class TestThread < Test::Unit::TestCase
     
     # check that "run", sleep", and "dead" appear in inspected output
     x = nil
-    t = Thread.new { x = Thread.current.inspect; sleep 4; x = false }
+    t = Thread.new { x = Thread.current.inspect; sleep 4 }
     Thread.pass until t.status == "sleep"
     assert(x["run"])
     assert(t.inspect["sleep"])
