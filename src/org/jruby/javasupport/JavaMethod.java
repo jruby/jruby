@@ -204,7 +204,9 @@ public class JavaMethod extends JavaCallable {
             Object result = method.invoke(javaInvokee, arguments);
             return JavaObject.wrap(getRuntime(), result);
         } catch (IllegalArgumentException iae) {
-            throw getRuntime().newTypeError("expected " + argument_types().inspect());
+            throw getRuntime().newTypeError("expected " + argument_types().inspect() + "; got: "
+                        + dumpArgTypes(arguments)
+                        + "; error: " + iae.getMessage());
         } catch (IllegalAccessException iae) {
             throw getRuntime().newTypeError("illegal access on '" + method.getName() + "': " + iae.getMessage());
         } catch (InvocationTargetException ite) {
@@ -212,6 +214,22 @@ public class JavaMethod extends JavaCallable {
             // This point is only reached if there was an exception handler installed.
             return getRuntime().getNil();
         }
+    }
+
+    private String dumpArgTypes(Object[] arguments) {
+        StringBuffer str = new StringBuffer("[");
+        for (int i = 0; i < arguments.length; i++) {
+            if (i > 0) {
+                str.append(",");
+            }
+            if (arguments[i] == null) {
+                str.append("null");
+            } else {
+                str.append(arguments[i].getClass().getName());
+            }
+        }
+        str.append("]");
+        return str.toString();
     }
 
     private void convertArguments(Object[] arguments, Object[] args, int from) {
