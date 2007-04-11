@@ -36,6 +36,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import edu.emory.mathcs.backport.java.util.concurrent.atomic.AtomicBoolean;
 import org.jruby.evaluator.EvaluationState;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -83,9 +84,11 @@ public class RubyObject implements Cloneable, IRubyObject {
     public class Finalizer {
         private long id;
         private List finalizers;
+        private AtomicBoolean finalized;
         
         public Finalizer(long id) {
             this.id = id;
+            this.finalized = new AtomicBoolean(false);
         }
         
         public void addFinalizer(RubyProc finalizer) {
@@ -100,11 +103,13 @@ public class RubyObject implements Cloneable, IRubyObject {
         }
     
         public void finalize() {
-            if (finalizers != null) {
-                IRubyObject idFixnum = getRuntime().newFixnum(id);
-                for (int i = 0; i < finalizers.size(); i++) {
-                    ((RubyProc)finalizers.get(i)).call(
-                            new IRubyObject[] {idFixnum});
+            if (finalized.compareAndSet(false, true)) {
+                if (finalizers != null) {
+                    IRubyObject idFixnum = getRuntime().newFixnum(id);
+                    for (int i = 0; i < finalizers.size(); i++) {
+                        ((RubyProc)finalizers.get(i)).call(
+                                new IRubyObject[] {idFixnum});
+                    }
                 }
             }
         }
