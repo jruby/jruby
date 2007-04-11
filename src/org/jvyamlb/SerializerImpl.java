@@ -34,6 +34,7 @@ import java.text.MessageFormat;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.IdentityHashMap;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.HashSet;
@@ -50,6 +51,7 @@ import org.jvyamlb.events.StreamEndEvent;
 import org.jvyamlb.events.StreamStartEvent;
 
 import org.jvyamlb.nodes.Node;
+import org.jvyamlb.nodes.LinkNode;
 import org.jvyamlb.nodes.CollectionNode;
 import org.jvyamlb.nodes.MappingNode;
 import org.jvyamlb.nodes.ScalarNode;
@@ -69,7 +71,7 @@ public class SerializerImpl implements Serializer {
     private int[] useVersion;
     private boolean useTags;
     private String anchorTemplate;
-    private Set serializedNodes;
+    private Map serializedNodes;
     private Map anchors;
     private int lastAnchorId;
     private boolean closed;
@@ -92,9 +94,9 @@ public class SerializerImpl implements Serializer {
         }
         this.useVersion = version;
         this.useTags = opts.useHeader();
-        this.anchorTemplate = opts.anchorFormat() == null ? "id{0,number,####}" : opts.anchorFormat();
-        this.serializedNodes = new HashSet();
-        this.anchors = new HashMap();
+        this.anchorTemplate = opts.anchorFormat() == null ? "id{0,number,000}" : opts.anchorFormat();
+        this.serializedNodes = new IdentityHashMap();
+        this.anchors = new IdentityHashMap();
         this.lastAnchorId = 0;
         this.closed = false;
         this.opened = false;
@@ -135,12 +137,15 @@ public class SerializerImpl implements Serializer {
         anchorNode(node);
         serializeNode(node,null,null);
         this.emitter.emit(new DocumentEndEvent(this.useExplicitEnd));
-        this.serializedNodes = new HashSet();
-        this.anchors = new HashMap();
+        this.serializedNodes = new IdentityHashMap();
+        this.anchors = new IdentityHashMap();
         this.lastAnchorId = 0;
     }
 
-    private void anchorNode(final Node node) {
+    private void anchorNode(Node node) {
+        while(node instanceof LinkNode) {
+            node = ((LinkNode)node).getAnchor();
+        }
         if(!ignoreAnchor(node)) {
             if(this.anchors.containsKey(node)) {
                 String anchor = (String)this.anchors.get(node);
@@ -156,10 +161,10 @@ public class SerializerImpl implements Serializer {
                     }
                 } else if(node instanceof MappingNode) {
                     final Map value = (Map)node.getValue();
-                    for(final Iterator iter = value.keySet().iterator();iter.hasNext();) {
-                        final Node key = (Node)iter.next();
-                        anchorNode(key);
-                        anchorNode((Node)value.get(key));
+                    for(final Iterator iter = value.entrySet().iterator();iter.hasNext();) {
+                        final Map.Entry me = (Map.Entry)iter.next();
+                        anchorNode((Node)me.getKey());
+                        anchorNode((Node)me.getValue());
                     }
                 }
             }
@@ -171,12 +176,19 @@ public class SerializerImpl implements Serializer {
         return new MessageFormat(this.anchorTemplate).format(new Object[]{new Integer(this.lastAnchorId)});
     }
 
-    private void serializeNode(final Node node, final Node parent, final Object index) throws IOException {
-        final String tAlias = (String)this.anchors.get(node);
-        if(this.serializedNodes.contains(node) && tAlias != null) {
-            this.emitter.emit(new AliasEvent(tAlias));
+    private void serializeNode(Node node, final Node parent, final Object index) throws IOException {
+        while(node instanceof LinkNode) {
+            node = ((LinkNode)node).getAnchor();
+        }
+        String tAlias = (String)this.anchors.get(node);
+        if(this.serializedNodes.containsKey(node)) {
+            if(tAlias != null) {
+                this.emitter.emit(new AliasEvent(tAlias));
+            } else {
+                throw new RuntimeException("Shouldn't happen");
+            }
         } else {
-            this.serializedNodes.add(node);
+            this.serializedNodes.put(node,null);
             this.resolver.descendResolver(parent,index);
             if(node instanceof ScalarNode) {
                 final String detectedTag = this.resolver.resolve(ScalarNode.class,(ByteList)node.getValue(),new boolean[]{true,false});
@@ -199,10 +211,12 @@ public class SerializerImpl implements Serializer {
                 final boolean implicit = !options.explicitTypes() && (node.getTag().equals(this.resolver.resolve(MappingNode.class,null,new boolean[]{true,true})));
                 this.emitter.emit(new MappingStartEvent(tAlias,node.getTag(),implicit,((CollectionNode)node).getFlowStyle()));
                 final Map value = (Map)node.getValue();
-                for(final Iterator iter = value.keySet().iterator();iter.hasNext();) {
-                    final Node key = (Node)iter.next();
+                for(final Iterator iter = value.entrySet().iterator();iter.hasNext();) {
+                    final Map.Entry entry = (Map.Entry)iter.next();
+                    final Node key = (Node)entry.getKey();
+                    final Node val = (Node)entry.getValue();
                     serializeNode(key,node,null);
-                    serializeNode((Node)value.get(key),node,key);
+                    serializeNode(val,node,key);
                 }
                 this.emitter.emit(new MappingEndEvent());
             }

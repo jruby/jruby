@@ -46,6 +46,7 @@ import java.util.Date;
 import java.util.Calendar;
 
 import org.jvyamlb.nodes.Node;
+import org.jvyamlb.nodes.LinkNode;
 import org.jvyamlb.nodes.CollectionNode;
 import org.jvyamlb.nodes.MappingNode;
 import org.jvyamlb.nodes.ScalarNode;
@@ -60,11 +61,13 @@ public class RepresenterImpl implements Representer {
     private final Serializer serializer;
     private final char defaultStyle;
     private final Map representedObjects;
+    private final Map links;
 
     public RepresenterImpl(final Serializer serializer, final YAMLConfig opts) {
         this.serializer = serializer;
         this.defaultStyle = opts.useDouble() ? '"' : (opts.useSingle() ? '\'' : 0);
         this.representedObjects = new HashMap();
+        this.links = new HashMap();
     }
 
     private Node representData(final Object data) throws IOException {
@@ -72,14 +75,20 @@ public class RepresenterImpl implements Representer {
         Node node = null;
 
         if(!ignoreAliases(data)) {
-            aliasKey = ""+System.identityHashCode(data);
+            aliasKey = ""+System.identityHashCode(data)+(""+data.hashCode());
         }
 
         if(null != aliasKey) {
             if(this.representedObjects.containsKey(aliasKey)) {
                 node = (Node)this.representedObjects.get(aliasKey);
                 if(null == node) {
-                    throw new RepresenterException("recursive objects are not allowed: " + data);
+                    node = new LinkNode();
+                    List ll = (List)links.get(aliasKey);
+                    if(ll == null) {
+                        ll = new ArrayList();
+                        links.put(aliasKey,ll);
+                    }
+                    ll.add(node);
                 }
                 return node;
             }
@@ -90,6 +99,13 @@ public class RepresenterImpl implements Representer {
 
         if(aliasKey != null) {
             this.representedObjects.put(aliasKey,node);
+            List ll = (List)this.links.get(aliasKey);
+            if(ll != null) {
+                this.links.remove(aliasKey);
+                for(Iterator iter = ll.iterator();iter.hasNext();) {
+                    ((LinkNode)iter.next()).setAnchor(node);
+                }
+            }
         }
 
         return node;

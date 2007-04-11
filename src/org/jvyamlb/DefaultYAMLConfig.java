@@ -37,7 +37,7 @@ public class DefaultYAMLConfig implements YAMLConfig {
     private String version = "1.1";
     private boolean expStart = true;
     private boolean expEnd = false;
-    private String format = "id{0,number,####}";
+    private String format = "id{0,number,000}";
     private boolean expTypes = false;
     private boolean canonical = false;
     private int bestWidth = 80;

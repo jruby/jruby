@@ -33,6 +33,7 @@ import org.jvyamlb.Resolver;
 import org.jvyamlb.YAMLConfig;
 
 import org.jvyamlb.nodes.Node;
+import org.jvyamlb.nodes.CollectionNode;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -43,6 +44,6 @@ public class JRubySerializer extends SerializerImpl {
     }
 
     protected boolean ignoreAnchor(Node node) {
-        return true;
+        return !(node instanceof CollectionNode);
     }
 }// JRubySerializer

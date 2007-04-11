@@ -41,6 +41,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.jvyamlb.nodes.Node;
+import org.jvyamlb.nodes.LinkNode;
 import org.jvyamlb.nodes.ScalarNode;
 import org.jvyamlb.nodes.SequenceNode;
 import org.jvyamlb.nodes.MappingNode;
@@ -142,7 +143,7 @@ public class BaseConstructorImpl implements Constructor {
         if(recursiveObjects.containsKey(node)) {
             throw new ConstructorException(null,"found recursive node",null);
         }
-        recursiveObjects.put(node,null);
+        recursiveObjects.put(node,new ArrayList());
         YamlConstructor ctor = getYamlConstructor(node.getTag());
         if(ctor == null) {
             boolean through = true;
@@ -222,7 +223,8 @@ public class BaseConstructorImpl implements Constructor {
         final List internal = (List)node.getValue();
         final List val = new ArrayList(internal.size());
         for(final Iterator iter = internal.iterator();iter.hasNext();) {
-            val.add(constructObject((Node)iter.next()));
+            final Object obj = constructObject((Node)iter.next());
+            val.add(obj);
         }
         return val;
     }
@@ -231,7 +233,7 @@ public class BaseConstructorImpl implements Constructor {
         if(!(node instanceof MappingNode)) {
             throw new ConstructorException(null,"expected a mapping node, but found " + node.getClass().getName(),null);
         }
-        Map mapping = new HashMap();
+        final Map[] mapping = new Map[]{new HashMap()};
         List merge = null;
         final Map val = (Map)node.getValue();
         for(final Iterator iter = val.keySet().iterator();iter.hasNext();) {
@@ -258,22 +260,24 @@ public class BaseConstructorImpl implements Constructor {
                     throw new ConstructorException("while constructing a mapping","expected a mapping or list of mappings for merging, but found " + value_v.getClass().getName(),null);
                 }
             } else if(key_v.getTag().equals("tag:yaml.org,2002:value")) {
-                if(mapping.containsKey("=")) {
+                if(mapping[0].containsKey("=")) {
                     throw new ConstructorException("while construction a mapping", "found duplicate value key", null);
                 }
-                mapping.put("=",constructObject(value_v));
+                mapping[0].put("=",constructObject(value_v));
             } else {
-                mapping.put(constructObject(key_v),constructObject(value_v));
+                final Object kk = constructObject(key_v);
+                final Object vv = constructObject(value_v);
+                mapping[0].put(kk,vv);
             }
         }
         if(null != merge) {
-            merge.add(mapping);
-            mapping = new HashMap();
+            merge.add(mapping[0]);
+            mapping[0] = new HashMap();
             for(final Iterator iter = merge.iterator();iter.hasNext();) {
-                mapping.putAll((Map)iter.next());
+                mapping[0].putAll((Map)iter.next());
             }
         }
-        return mapping;
+        return mapping[0];
     }
 
     public Object constructPairs(final Node node) {
