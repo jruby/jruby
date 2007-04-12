@@ -35,6 +35,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.jvyamlb.events.*;
 import org.jvyamlb.tokens.*;
@@ -160,7 +161,7 @@ public class ParserImpl implements Parser {
         DEFAULT_TAGS_1_1.put("!","!");
         DEFAULT_TAGS_1_1.put("!!","tag:yaml.org,2002:");
     }
-
+    private final static Pattern ONLY_WORD = Pattern.compile("^\\w+$");
     static {
         P_TABLE[P_STREAM] = new Production() {
                 public Event produce(final List parseStack, final ProductionEnvironment env, final Scanner scanner) {
@@ -288,12 +289,30 @@ public class ParserImpl implements Parser {
                     }
                     if(tag != null && !tag.equals("!")) {
                         final String handle = ScannerImpl.into(((ByteList[])tag)[0]);
-                        final String suffix = ScannerImpl.into(((ByteList[])tag)[1]);
+                        String suffix = ScannerImpl.into(((ByteList[])tag)[1]);
+                        int ix = -1;
+                        if((ix = suffix.indexOf("^")) != -1) {
+                            suffix = suffix.substring(0,ix) + suffix.substring(ix+1);
+                        }
                         if(handle != null) {
                             if(!env.getTagHandles().containsKey(handle)) {
                                 throw new ParserException("while parsing a node","found undefined tag handle " + handle,null);
                             }
-                            tag = ((String)env.getTagHandles().get(handle)) + suffix;
+                            if((ix = suffix.indexOf("/")) != -1) {
+                                String before = suffix.substring(0,ix);
+                                String after = suffix.substring(ix+1);
+                                if(ONLY_WORD.matcher(before).matches()) {
+                                    tag = "tag:" + before + ".yaml.org,2002:" + after;
+                                } else {
+                                    if(before.startsWith("tag:")) {
+                                        tag = before + ":" + after;
+                                    } else {
+                                        tag = "tag:" + before + ":" + after;
+                                    }
+                                }
+                            } else {
+                                tag = ((String)env.getTagHandles().get(handle)) + suffix;
+                            }
                         } else {
                             tag = suffix;
                         }
