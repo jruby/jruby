@@ -215,7 +215,7 @@ public class JavaUtil {
         } else if (javaClass == Character.class) {
             return runtime.newFixnum(((Character) object).charValue());
             
-        } else if (Number.class.isAssignableFrom(javaClass) && javaClass != BigDecimal.class) {
+        } else if (Number.class.isAssignableFrom(javaClass) && javaClass != BigDecimal.class && javaClass != BigInteger.class) {
             return runtime.newFixnum(((Number) object).longValue());
             
         } else if (javaClass == String.class) {

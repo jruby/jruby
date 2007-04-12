@@ -116,7 +116,7 @@ public class RubyTime extends RubyObject {
         
         RubyTime originalTime = (RubyTime) original;
         
-        cal = originalTime.cal;
+        cal = (Calendar)(originalTime.cal.clone());
         usec = originalTime.usec;
         
         return this;

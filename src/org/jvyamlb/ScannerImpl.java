@@ -143,6 +143,7 @@ public class ScannerImpl implements Scanner {
         ALPHA['-'] = true;
         ALPHA['_'] = true;
         STRANGE_CHAR['-'] = true;
+        STRANGE_CHAR['_'] = true;
         STRANGE_CHAR['['] = true;
         STRANGE_CHAR[']'] = true;
         STRANGE_CHAR['('] = true;

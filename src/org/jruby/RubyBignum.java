@@ -237,7 +237,6 @@ public class RubyBignum extends RubyInteger {
      */
     public IRubyObject to_s(IRubyObject[] args) {
         Arity.checkArgumentCount(getRuntime(), args, 0, 1);
-
         int base = args.length == 0 ? 10 : num2int(args[0]);
         if (base < 2 || base > 36) {
             throw getRuntime().newArgumentError("illegal radix " + base);

@@ -114,6 +114,7 @@ public class RubyYAML {
         RubyClass date = runtime.getClass("Date"); 
         RubyClass numeric = runtime.getClass("Numeric"); 
         RubyClass fixnum = runtime.getClass("Fixnum"); 
+        RubyClass bignum = runtime.getClass("Bignum"); 
         RubyClass flt = runtime.getClass("Float"); 
         RubyClass trueClass = runtime.getClass("TrueClass"); 
         RubyClass falseClass = runtime.getClass("FalseClass"); 
@@ -196,9 +197,13 @@ public class RubyYAML {
         date.addMethod("to_yaml_node",stub2.date_to_yaml_node);
         date.addMethod("taguri",stub2.date_taguri);
 
-        numeric.addMethod("to_yaml_node",stub1.numeric_to_yaml_node);
+        bignum.addMethod("to_yaml_node",stub1.numeric_to_yaml_node);
+        bignum.addMethod("taguri",stub2.fixnum_taguri);
 
+        fixnum.addMethod("to_yaml_node",stub1.numeric_to_yaml_node);
         fixnum.addMethod("taguri",stub2.fixnum_taguri);
+
+        flt.addMethod("to_yaml_node",stub1.numeric_to_yaml_node);
         flt.addMethod("taguri",stub2.float_taguri);
 
         trueClass.addMethod("to_yaml_node",stub3.true_to_yaml_node);
@@ -565,8 +570,9 @@ public class RubyYAML {
         public IRubyObject method4(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             IRubyObject tz = self.getRuntime().newString("Z");
             IRubyObject difference_sign = self.getRuntime().newString("-");
+            self = self.dup();
             if(!self.callMethod(context, "utc?").isTrue()) {
-                IRubyObject utc_same_instant = self.callMethod(context, "dup").callMethod(context, "utc");
+                IRubyObject utc_same_instant = self.callMethod(context, "utc");
                 IRubyObject utc_same_writing = self.getRuntime().getClass("Time").callMethod(context,"utc", new IRubyObject[]{
                         self.callMethod(context, "year"),self.callMethod(context, "month"),self.callMethod(context, "day"),self.callMethod(context, "hour"),
                         self.callMethod(context, "min"),self.callMethod(context, "sec"),self.callMethod(context, "usec")});

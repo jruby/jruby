@@ -223,6 +223,7 @@ public class SafeConstructorImpl extends BaseConstructorImpl {
                 if(timezonem_s != null) {
                     zone += Integer.parseInt(timezonem_s)*60000;
                 }
+                cal.setTimeZone(java.util.TimeZone.getTimeZone("GMT"));
                 cal.set(Calendar.ZONE_OFFSET,sign*zone);
             }
         }
@@ -244,9 +245,8 @@ public class SafeConstructorImpl extends BaseConstructorImpl {
         if(sec_s != null) {
             cal.set(Calendar.SECOND,Integer.parseInt(sec_s));
         }
-        cal.set(Calendar.MILLISECOND,usec);
-
-        return cal.getTime();
+        cal.set(Calendar.MILLISECOND,usec/1000);
+        return cal;
     }
 
     public static Object constructYamlInt(final Constructor ctor, final Node node) {
@@ -281,9 +281,25 @@ public class SafeConstructorImpl extends BaseConstructorImpl {
             }
             return new Integer(sign*val);
         } else {
-            return new Long(sign * Long.parseLong(value));
+            try {
+                return new Long(sign * Long.parseLong(value));
+            } catch(Exception e) {
+                if(sign < 0) {
+                    return new java.math.BigInteger(value).negate();
+                } else {
+                    return new java.math.BigInteger(value);
+                }
+            }
         }
-        return new Long(sign * Long.parseLong(value,base));
+        try {
+            return new Long(sign * Long.parseLong(value,base));
+        } catch(Exception e) {
+            if(sign < 0) {
+                return new java.math.BigInteger(value,base).negate();
+            } else {
+                return new java.math.BigInteger(value,base);
+            }
+        }
     }
 
     private final static Double INF_VALUE_POS = new Double(Double.POSITIVE_INFINITY);
