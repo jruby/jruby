@@ -810,7 +810,7 @@ public class ParserImpl implements Parser {
         return null;
     }
 
-    public static void main(final String[] args) throws Exception {
+    public static void tmainx(final String[] args) throws Exception {
         final String filename = args[0];
         System.out.println("Reading of file: \"" + filename + "\"");
 
@@ -856,11 +856,11 @@ public class ParserImpl implements Parser {
         System.out.println("Walking through the events for the file: " + filename + " took " + time + "ms, or " + timeS + " seconds"); 
     }
 
-    public static void tmain2(final String[] args) throws Exception {
+    public static void main(final String[] args) throws Exception {
         final String filename = args[0];
         final Parser pars = new ParserImpl(new ScannerImpl(new FileInputStream(filename)));
         for(final Iterator iter = pars.eachEvent();iter.hasNext();) {
-            System.out.println(iter.next().getClass().getName());
+            System.out.println(iter.next());
         }
     }
 }// ParserImpl

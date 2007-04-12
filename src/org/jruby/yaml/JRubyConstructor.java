@@ -210,7 +210,12 @@ public class JRubyConstructor extends ConstructorImpl {
         return ((JRubyConstructor)ctor).runtime.newFloat(((Double)SafeConstructorImpl.constructYamlFloat(ctor,node)).doubleValue());
     }
     public static Object constructYamlBinary(final Constructor ctor, final Node node) {
-        return ((JRubyConstructor)ctor).runtime.newString(((String)SafeConstructorImpl.constructYamlBinary(ctor,node)));
+        Object b = SafeConstructorImpl.constructYamlBinary(ctor,node);
+        if(b instanceof byte[]) {
+            return RubyString.newString(((JRubyConstructor)ctor).runtime, new ByteList((byte[])b,false));
+        } else {
+            return ((JRubyConstructor)ctor).runtime.newString((String)b);
+        }
     }
     public static Object constructJava(final Constructor ctor, final String pref, final Node node) {
         return SafeConstructorImpl.constructJava(ctor,pref,node);

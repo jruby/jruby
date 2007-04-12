@@ -45,6 +45,10 @@ class SimpleKey {
         this.column = column;
     }
 
+    public boolean isRequired() {
+        return required;
+    }
+
     public int getTokenNumber() {
         return this.tokenNumber;
     }

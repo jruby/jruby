@@ -375,6 +375,7 @@ public class ScannerImpl implements Scanner {
         ensure(2,true);
         final char ch1 = (char)((int)this.buffer.bytes[this.pointer++] & 0xFF);
         if(ch1 == '\n' || ch1 == '\u0085' || (ch1 == '\r' && (((int)this.buffer.bytes[this.pointer] & 0xFF) != '\n'))) {
+            this.possibleSimpleKeys.clear();
             this.column = 0;
         } else {
             this.column++;
@@ -388,6 +389,7 @@ public class ScannerImpl implements Scanner {
             ch = this.buffer.bytes[this.pointer] & 0xFF;
             this.pointer++;
             if(LINEBR[ch] || (ch == '\r' && (this.buffer.bytes[this.pointer] & 0xFF) != '\n')) {
+                this.possibleSimpleKeys.clear();
                 this.column = 0;
             } else {
                 this.column++;
@@ -615,6 +617,7 @@ public class ScannerImpl implements Scanner {
 
     private Token fetchDocumentIndicator(final Token tok) {
         unwindIndent(-1);
+        removePossibleSimpleKey();
         this.allowSimpleKey = false;
         forward(3);
         this.tokens.add(tok);
@@ -632,6 +635,7 @@ public class ScannerImpl implements Scanner {
             }
         }
         this.allowSimpleKey = true;
+        removePossibleSimpleKey();
         forward();
         this.tokens.add(Token.BLOCK_ENTRY);
         return Token.BLOCK_ENTRY;
@@ -655,8 +659,18 @@ public class ScannerImpl implements Scanner {
         return tok;
     }
     
+    private void removePossibleSimpleKey() {
+        SimpleKey key = (SimpleKey)this.possibleSimpleKeys.remove(new Integer(this.flowLevel));
+        if(key != null) {
+            if(key.isRequired()) {
+                throw new ScannerException("while scanning a simple key","could not find expected ':'",null);
+            }
+        }
+    }
+
     private void savePossibleSimpleKey() {
         if(this.allowSimpleKey) {
+            this.removePossibleSimpleKey();
             this.possibleSimpleKeys.put(new Integer(this.flowLevel),new SimpleKey(this.tokensTaken+this.tokens.size(),(this.flowLevel == 0) && this.indent == this.column,-1,-1,this.column));
         }
     }
@@ -1042,6 +1056,8 @@ public class ScannerImpl implements Scanner {
             if(this.flowLevel == 0 && !this.allowSimpleKey) {
                 throw new ScannerException(null,"mapping values are not allowed here",null);
             }
+            this.allowSimpleKey = this.flowLevel == 0;
+            removePossibleSimpleKey();
         } else {
             this.possibleSimpleKeys.remove(new Integer(this.flowLevel));
             this.tokens.add(key.getTokenNumber()-this.tokensTaken,Token.KEY);
@@ -1086,6 +1102,7 @@ public class ScannerImpl implements Scanner {
     }
     
     private Token fetchFlowCollectionEnd(final Token tok) {
+        removePossibleSimpleKey();
         this.flowLevel--;
         this.allowSimpleKey = false;
         forward(1);
@@ -1095,6 +1112,7 @@ public class ScannerImpl implements Scanner {
     
     private Token fetchFlowEntry() {
         this.allowSimpleKey = true;
+        removePossibleSimpleKey();
         forward(1);
         this.tokens.add(Token.FLOW_ENTRY);
         return Token.FLOW_ENTRY;
@@ -1111,6 +1129,7 @@ public class ScannerImpl implements Scanner {
     private Token fetchBlockScalar(final char style) {
         this.docStart = false;
         this.allowSimpleKey = true;
+        this.removePossibleSimpleKey();
         final Token tok = scanBlockScalar(style);
         this.tokens.add(tok);
         return tok;
@@ -1263,6 +1282,7 @@ public class ScannerImpl implements Scanner {
 
     private Token fetchDirective() {
         unwindIndent(-1);
+        removePossibleSimpleKey();
         this.allowSimpleKey = false;
         final Token tok = scanDirective();
         this.tokens.add(tok);
@@ -1279,6 +1299,7 @@ public class ScannerImpl implements Scanner {
             }
         }
         this.allowSimpleKey = this.flowLevel == 0;
+        removePossibleSimpleKey();
         forward();
         this.tokens.add(Token.KEY);
         return Token.KEY;
