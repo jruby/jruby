@@ -86,9 +86,6 @@ public class ThreadContext {
     private String[] catchStack = new String[INITIAL_SIZE];
     private int catchIndex = -1;
     
-    private int[] bindingFrameStack = new int[INITIAL_SIZE];
-    private int bindingFrameIndex = -1;
-    
     private ISourcePosition sourcePosition = new SourcePositionFactory(null).getDummyPosition();
     
     /**
@@ -309,34 +306,6 @@ public class ThreadContext {
     
     public ISourcePosition getPreviousFramePosition() {
         return getPreviousFrame().getPosition();
-    }
-    
-    private void expandBindingFrameIfNecessary() {
-        if (bindingFrameIndex + 1 == bindingFrameStack.length) {
-            int newSize = bindingFrameStack.length * 2;
-            int[] newbindingFrameStack = new int[newSize];
-            
-            System.arraycopy(bindingFrameStack, 0, newbindingFrameStack, 0, bindingFrameStack.length);
-            bindingFrameStack = newbindingFrameStack;
-        }
-    }
-    
-    public void pushBindingFrame(int bindingDepth) {
-        bindingFrameStack[++bindingFrameIndex] = bindingDepth;
-        expandBindingFrameIfNecessary();
-    }
-    
-    public void popBindingFrame() {
-        bindingFrameIndex--;
-    }
-    
-    
-    public int currentBindingFrame() {
-        if(bindingFrameIndex == -1) {
-            return 0;
-        } else {
-            return bindingFrameStack[bindingFrameIndex];
-        }
     }
     
     public ISourcePosition getPosition() {
@@ -597,20 +566,22 @@ public class ThreadContext {
      */
     public IRubyObject createBacktrace(int level, boolean nativeException) {
         RubyArray backtrace = runtime.newArray();
-        int base = currentBindingFrame();
         int traceSize = frameIndex - level;
         
-        if (traceSize <= 0) {
-            return backtrace;
-        }
+        if (traceSize <= 0) return backtrace;
         
         if (nativeException) {
             // assert level == 0;
             addBackTraceElement(backtrace, frameStack[frameIndex], null);
         }
         
-        for (int i = traceSize; i > base; i--) {
-            addBackTraceElement(backtrace, (Frame) frameStack[i], (Frame) frameStack[i-1]);
+        for (int i = traceSize; i > 0; i--) {
+            Frame frame = frameStack[i];
+            
+            // We are in eval with binding break out early
+            if (frame.isBindingFrame()) break;
+
+            addBackTraceElement(backtrace, frame, (Frame) frameStack[i-1]);
         }
         
         return backtrace;
@@ -779,18 +750,20 @@ public class ThreadContext {
     }
     
     public void preEvalWithBinding(Block block) {
-        pushBindingFrame(frameIndex);
+        Frame frame = block.getFrame();
+        
+        frame.setIsBindingFrame(true);
         pushFrame(block.getFrame());
         setCRef(block.getCRef());
         getCurrentFrame().setVisibility(block.getVisibility());
         pushRubyClass(block.getKlass());
     }
     
-    public void postEvalWithBinding() {
+    public void postEvalWithBinding(Block block) {
+        block.getFrame().setIsBindingFrame(false);
         popFrame();
         unsetCRef();
         popRubyClass();
-        popBindingFrame();
     }
     
     public void postYield() {

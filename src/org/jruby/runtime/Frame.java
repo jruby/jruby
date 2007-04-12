@@ -81,6 +81,11 @@ public class Frame {
      * previous frame to work.
      */ 
     private Block block;
+    
+    /**
+     * Does this delimit a frame where an eval with binding occurred.  Used for stack traces.
+     */
+    private boolean isBindingFrame = false;
 
     /**
      * The current visibility for anything defined under this frame
@@ -136,10 +141,6 @@ public class Frame {
 
     public int getRequiredArgCount() {
         return requiredArgCount;
-    }
-
-    void setRequiredArgCount(int req) {
-        this.requiredArgCount = req;
     }
 
     /**
@@ -220,6 +221,24 @@ public class Frame {
      */
     public void setVisibility(Visibility visibility) {
         this.visibility = visibility;
+    }
+    
+    /**
+     * Is this frame the frame which started a binding eval?
+     * 
+     * @return true if it is a binding frame
+     */
+    public boolean isBindingFrame() {
+        return isBindingFrame;
+    }
+    
+    /**
+     * Set whether this is a binding frame or not
+     * 
+     * @param isBindingFrame true if it is
+     */
+    public void setIsBindingFrame(boolean isBindingFrame) {
+        this.isBindingFrame = isBindingFrame;
     }
     
     /**

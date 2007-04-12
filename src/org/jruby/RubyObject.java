@@ -864,7 +864,7 @@ public class RubyObject implements Cloneable, IRubyObject {
             }
             throw je;
         } finally {
-            threadContext.postEvalWithBinding();
+            threadContext.postEvalWithBinding(blockOfBinding);
 
             // restore position
             threadContext.setPosition(savedPosition);
