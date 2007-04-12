@@ -253,11 +253,31 @@ public class JRubyConstructor extends ConstructorImpl {
 
     public static Object constructRubyRange(final Constructor ctor, final Node node) {
         final Ruby runtime = ((JRubyConstructor)ctor).runtime;
-        final Map vars = (Map)(ctor.constructMapping(node));
-        IRubyObject beg = (IRubyObject)vars.get(runtime.newString("begin"));
-        IRubyObject end = (IRubyObject)vars.get(runtime.newString("end"));
-        boolean excl = ((IRubyObject)vars.get(runtime.newString("excl"))).isTrue();
-        return RubyRange.newRange(runtime, beg, end, excl);
+        if(node instanceof org.jvyamlb.nodes.ScalarNode) {
+            String s1 = ctor.constructScalar(node).toString();
+            String first;
+            String second;
+            boolean exc = false;
+            int ix = -1;
+            if((ix = s1.indexOf("...")) != -1) {
+                first = s1.substring(0,ix);
+                second = s1.substring(ix+3);
+                exc = true;
+            } else {
+                ix = s1.indexOf("..");
+                first = s1.substring(0,ix);
+                second = s1.substring(ix+2);
+            }
+            IRubyObject fist = runtime.getModule("YAML").callMethod(runtime.getCurrentContext(),"load",runtime.newString(first));
+            IRubyObject sic = runtime.getModule("YAML").callMethod(runtime.getCurrentContext(),"load",runtime.newString(second));
+            return RubyRange.newRange(runtime, fist, sic, exc);
+        } else {
+            final Map vars = (Map)(ctor.constructMapping(node));
+            IRubyObject beg = (IRubyObject)vars.get(runtime.newString("begin"));
+            IRubyObject end = (IRubyObject)vars.get(runtime.newString("end"));
+            boolean excl = ((IRubyObject)vars.get(runtime.newString("excl"))).isTrue();
+            return RubyRange.newRange(runtime, beg, end, excl);
+        }
     }
 
     public static Object constructRubyMap(final Constructor ctor, final String tag, final Node node) {

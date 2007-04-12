@@ -6,6 +6,14 @@ module YAML
   def self.parse(obj)
     Proxy.new(YAML::load(obj))
   end
+
+  def self.add_domain_type(*args)
+      warn "YAML::add_domain_type isn't supported on JRuby"
+  end
+
+  def self.parse_documents(*args)
+      warn "YAML::parse_documents isn't supported on JRuby"
+  end
   
   class Proxy
     def initialize(v)
@@ -14,6 +22,12 @@ module YAML
     
     def transform
       @value
+    end
+  end
+
+  class YPath
+    def self.each_path(*args)
+      warn "YAML::YPath.each_path isn't supported on JRuby"
     end
   end
   

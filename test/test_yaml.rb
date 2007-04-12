@@ -631,7 +631,7 @@ EOY
 		assert_equal( doc_ct, 3 )
 	end
 
-	def test_spec_domain_prefix
+	def _test_spec_domain_prefix
         customer_proc = proc { |type, val|
             if Hash === val
                 scheme, domain, type = type.split( ':', 3 )
@@ -687,7 +687,7 @@ EOY
 		)
 	end
 
-	def test_spec_private_types
+	def _test_spec_private_types
 		doc_ct = 0
 		YAML::parse_documents( <<EOY
 # Private types are per-document.
@@ -713,7 +713,7 @@ EOY
 		assert_equal( doc_ct, 2 )
 	end
 
-	def test_spec_url_escaping
+	def _test_spec_url_escaping
 		YAML.add_domain_type( "domain.tld,2002", "type0" ) { |type, val|
 			"ONE: #{val}"
 		}
@@ -745,7 +745,7 @@ EOY
 		)
 	end
 
-	def test_spec_explicit_families
+	def _test_spec_explicit_families
         YAML.add_domain_type( "somewhere.com,2002", 'type' ) { |type, val|
             "SOMEWHERE: #{val}"
         }
@@ -765,7 +765,7 @@ EOY
 		)
 	end
 
-	def test_spec_application_family
+	def _test_spec_application_family
 		# Testing the clarkevans.com graphs
 		YAML.add_domain_type( "clarkevans.com,2002", 'graph/shape' ) { |type, val|
 			if Array === val
@@ -1136,7 +1136,7 @@ EOY
     #
     # Test YPath choices parsing
     #
-    def test_ypath_parsing
+    def _test_ypath_parsing
         assert_path_segments( "/*/((one|three)/name|place)|//place",
           [ ["*", "one", "name"],
             ["*", "three", "name"],
