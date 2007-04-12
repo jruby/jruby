@@ -112,7 +112,6 @@ public class ComposerImpl implements Composer {
             final AliasEvent event = (AliasEvent)parser.getEvent();
             final String anchor = event.getAnchor();
             if(!anchors.containsKey(anchor)) {
-                System.err.println(" for aliasEvent: " + event);
                 throw new ComposerException(null,"found undefined alias " + anchor,null);
             }
             return (Node)anchors.get(anchor);
@@ -121,11 +120,6 @@ public class ComposerImpl implements Composer {
         String anchor = null;
         if(event instanceof NodeEvent) {
             anchor = ((NodeEvent)event).getAnchor();
-        }
-        if(null != anchor) {
-            if(anchors.containsKey(anchor)) {
-                throw new ComposerException("found duplicate anchor "+anchor+"; first occurence",null,null);
-            }
         }
         resolver.descendResolver(parent,index);
         Node node = null;
