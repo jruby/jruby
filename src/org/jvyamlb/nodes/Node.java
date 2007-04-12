@@ -48,7 +48,7 @@ public abstract class Node {
         return this.value;
     }
 
-    protected void setValue(Object v) {
+    public void setValue(Object v) {
         this.value = v;
     }
 

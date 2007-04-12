@@ -141,7 +141,10 @@ public class BaseConstructorImpl implements Constructor {
             return constructedObjects.get(node);
         }
         if(recursiveObjects.containsKey(node)) {
-            throw new ConstructorException(null,"found recursive node",null);
+            LinkNode n = new LinkNode();
+            n.setValue(node);
+            return n;
+            //            throw new ConstructorException(null,"found recursive node",null);
         }
         recursiveObjects.put(node,new ArrayList());
         YamlConstructor ctor = getYamlConstructor(node.getTag());
@@ -171,8 +174,17 @@ public class BaseConstructorImpl implements Constructor {
         }
         final Object data = ctor.call(this,node);
         constructedObjects.put(node,data);
-        recursiveObjects.remove(node);
+        doRecursionFix(node,data);
         return data;
+    }
+
+    public void doRecursionFix(Node node, Object obj) {
+        List ll = (List)recursiveObjects.remove(node);
+        if(null != ll) {
+            for(Iterator iter = ll.iterator();iter.hasNext();) {
+                ((RecursiveFixer)iter.next()).replace(node, obj);
+            }
+        }
     }
 
     public Object constructPrimitive(final Node node) {
@@ -224,6 +236,14 @@ public class BaseConstructorImpl implements Constructor {
         final List val = new ArrayList(internal.size());
         for(final Iterator iter = internal.iterator();iter.hasNext();) {
             final Object obj = constructObject((Node)iter.next());
+            if(obj instanceof LinkNode) {
+                final int ix = val.size();
+                addFixer((Node)(((LinkNode)obj).getValue()), new RecursiveFixer() {
+                        public void replace(Node node, Object real) {
+                            val.set(ix, real);
+                        }
+                    });
+            }
             val.add(obj);
         }
         return val;
@@ -267,6 +287,13 @@ public class BaseConstructorImpl implements Constructor {
             } else {
                 final Object kk = constructObject(key_v);
                 final Object vv = constructObject(value_v);
+                if(vv instanceof LinkNode) {
+                    addFixer((Node)((LinkNode)vv).getValue(), new RecursiveFixer() {
+                            public void replace(Node node, Object real) {
+                                mapping[0].put(kk, real);
+                            }
+                        });
+                }
                 mapping[0].put(kk,vv);
             }
         }
@@ -278,6 +305,15 @@ public class BaseConstructorImpl implements Constructor {
             }
         }
         return mapping[0];
+    }
+
+    public void addFixer(Node node, RecursiveFixer fixer) {
+        List ll = (List)recursiveObjects.get(node);
+        if(ll == null) {
+            ll = new ArrayList();
+            recursiveObjects.put(node, ll);
+        }
+        ll.add(fixer);
     }
 
     public Object constructPairs(final Node node) {

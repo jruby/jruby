@@ -47,6 +47,11 @@ public interface Constructor {
     Object constructSequence(final Node node);
     Object constructMapping(final Node node);
     Object constructPairs(final Node node);
+    void doRecursionFix(Node node, Object obj);
+    void addFixer(Node node, RecursiveFixer fixer);
+    interface RecursiveFixer {
+        void replace(final Node node, final Object real);
+    }
     interface YamlConstructor {
         Object call(final Constructor self, final Node node);
     }

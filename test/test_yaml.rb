@@ -1220,7 +1220,7 @@ EOY
     #
     # Circular references
     #
-    def _test_circular_references
+    def test_circular_references
         a = []; a[0] = a; a[1] = a
         inspect_str = "[[...], [...]]"
         assert_equal( inspect_str, YAML::load( a.to_yaml ).inspect )

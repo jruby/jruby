@@ -37,6 +37,7 @@ import java.text.SimpleDateFormat;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.IdentityHashMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
@@ -53,6 +54,7 @@ import org.jvyamlb.nodes.ScalarNode;
 import org.jvyamlb.nodes.SequenceNode;
 
 import org.jruby.util.ByteList;
+import org.jruby.util.collections.IntHashMap;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -63,19 +65,42 @@ public class RepresenterImpl implements Representer {
     private final Map representedObjects;
     private final Map links;
 
+    private final IntHashMap aliases;
+
     public RepresenterImpl(final Serializer serializer, final YAMLConfig opts) {
         this.serializer = serializer;
         this.defaultStyle = opts.useDouble() ? '"' : (opts.useSingle() ? '\'' : 0);
         this.representedObjects = new HashMap();
         this.links = new HashMap();
+        this.aliases = new IntHashMap();
     }
+
+    private String getAliasFor(Object data) {
+        int i1 = System.identityHashCode(data);
+        if(!this.aliases.containsKey(i1)) {
+            Map m = new IdentityHashMap();
+            m.put(data, new Integer(0));
+            this.aliases.put(i1, m);
+            return ""+i1 + "--0";
+        } else {
+            Map m = (Map)this.aliases.get(i1);
+            int nn = 0;
+            if(!m.containsKey(data)) {
+                m.put(data, new Integer(m.size()));
+            } else {
+                nn = ((Integer)m.get(data)).intValue();
+            }
+            return ""+i1+"--"+nn;
+        }
+    }  
+
 
     private Node representData(final Object data) throws IOException {
         String aliasKey = null;
         Node node = null;
 
         if(!ignoreAliases(data)) {
-            aliasKey = ""+System.identityHashCode(data)+(""+data.hashCode());
+            aliasKey = getAliasFor(data);
         }
 
         if(null != aliasKey) {
@@ -99,15 +124,13 @@ public class RepresenterImpl implements Representer {
 
         if(aliasKey != null) {
             this.representedObjects.put(aliasKey,node);
-            List ll = (List)this.links.get(aliasKey);
+            List ll = (List)this.links.remove(aliasKey);
             if(ll != null) {
-                this.links.remove(aliasKey);
                 for(Iterator iter = ll.iterator();iter.hasNext();) {
                     ((LinkNode)iter.next()).setAnchor(node);
                 }
             }
         }
-
         return node;
     }
 

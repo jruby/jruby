@@ -44,8 +44,10 @@ import org.jvyamlb.ConstructorImpl;
 import org.jvyamlb.SafeConstructorImpl;
 
 import org.jvyamlb.nodes.Node;
+import org.jvyamlb.nodes.LinkNode;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -117,11 +119,31 @@ public class JRubyConstructor extends ConstructorImpl {
     }
 
     public Object constructRubySequence(final Node node) {
-        return runtime.newArray((List)super.constructSequence(node));
+        final RubyArray arr = runtime.newArray();
+        List l = (List)super.constructSequence(node);
+        doRecursionFix(node, arr);
+        int i = 0;
+        for(Iterator iter = l.iterator();iter.hasNext();i++) {
+            Object oo = iter.next();
+            if(oo instanceof LinkNode) {
+                arr.append(runtime.getNil());
+                final IRubyObject ix = runtime.newFixnum(i);
+                addFixer((Node)(((LinkNode)oo).getValue()), new RecursiveFixer() {
+                        public void replace(Node node, Object real) {
+                            arr.aset(new IRubyObject[]{ix, (IRubyObject)real});
+                        }
+                    });
+            } else {
+                arr.append((IRubyObject)oo);
+            }
+        }
+        return arr;
     }
 
     public Object constructRubyMapping(final Node node) {
-        return RubyHash.newHash(runtime,(Map)super.constructMapping(node),runtime.getNil());
+        RubyHash h1 = RubyHash.newHash(runtime);
+        h1.setValueMap((Map)super.constructMapping(node));
+        return h1;
     }
 
     public Object constructRubyPairs(final Node node) {
@@ -205,9 +227,20 @@ public class JRubyConstructor extends ConstructorImpl {
         final RubyClass theCls = (RubyClass)objClass;
         final RubyObject oo = (RubyObject)theCls.getAllocator().allocate(runtime, theCls);
         final Map vars = (Map)(ctor.constructMapping(node));
+        ctor.doRecursionFix(node, oo);
         for(final Iterator iter = vars.keySet().iterator();iter.hasNext();) {
             final IRubyObject key = (IRubyObject)iter.next();
-            oo.setInstanceVariable("@" + key.toString(),(IRubyObject)vars.get(key));
+            final Object val = vars.get(key);
+            if(val instanceof LinkNode) {
+                final String KEY = "@" + key.toString();
+                ctor.addFixer((Node)(((LinkNode)val).getValue()), new RecursiveFixer() {
+                        public void replace(Node node, Object real) {
+                            oo.setInstanceVariable(KEY,(IRubyObject)real);
+                        }
+                    });
+            } else {
+                oo.setInstanceVariable("@" + key.toString(),(IRubyObject)val);
+            }
         }
         return oo;
     }
