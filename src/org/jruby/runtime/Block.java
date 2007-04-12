@@ -137,7 +137,7 @@ public class Block {
         this.dynamicScope = dynamicScope;
     }
     
-    public static Block createBinding(RubyModule wrapper, Frame frame, DynamicScope dynamicScope) {
+    public static Block createBinding(Frame frame, DynamicScope dynamicScope) {
         ThreadContext context = frame.getSelf().getRuntime().getCurrentContext();
         
         // We create one extra dynamicScope on a binding so that when we 'eval "b=1", binding' the

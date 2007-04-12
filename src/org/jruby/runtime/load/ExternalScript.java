@@ -50,7 +50,7 @@ public class ExternalScript implements Library {
             // KCode.NONE is used because KCODE does not affect parse in Ruby 1.8
             // if Ruby 2.0 encoding pragmas are implemented, this will need to change
             Reader reader = new BufferedReader(new InputStreamReader(resource.getURL().openStream(), KCode.NONE.decoder()));
-            runtime.loadScript(resource.getName(), reader, false);
+            runtime.loadScript(resource.getName(), reader);
             reader.close();
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);

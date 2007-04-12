@@ -45,30 +45,22 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class RubyProc extends RubyObject {
     private Block block = Block.NULL_BLOCK;
-    private RubyModule wrapper = null;
-    // FIXME: I added it here since I wanted initialize to deal with it and not newProc.  I could
-    // be wrong and I suspect we can find a better way of dealing with this.
-    private boolean isLambda = false;
+    private boolean isLambda;
 
-    public RubyProc(Ruby runtime, RubyClass rubyClass) {
+    public RubyProc(Ruby runtime, RubyClass rubyClass, boolean isLambda) {
         super(runtime, rubyClass);
+        
+        this.isLambda = isLambda;
     }
 
     public Block getBlock() {
         return block;
     }
 
-    public RubyModule getWrapper() {
-        return wrapper;
-    }
-
     // Proc class
 
     public static RubyProc newProc(Ruby runtime, boolean isLambda) {
-        RubyProc newProc = new RubyProc(runtime, runtime.getClass("Proc"));
-        newProc.isLambda = isLambda;
-
-        return newProc;
+        return new RubyProc(runtime, runtime.getClass("Proc"), isLambda);
     }
     
     public IRubyObject initialize(IRubyObject[] args, Block procBlock) {
@@ -82,7 +74,6 @@ public class RubyProc extends RubyObject {
         }
         
         block = procBlock.cloneBlock();
-        wrapper = getRuntime().getCurrentContext().getWrapper();
         block.isLambda = isLambda;
         block.setProcObject(this);
 
@@ -90,11 +81,9 @@ public class RubyProc extends RubyObject {
     }
     
     protected IRubyObject doClone() {
-    	RubyProc newProc = 
-    		new RubyProc(getRuntime(), getRuntime().getClass("Proc"));
+    	RubyProc newProc = new RubyProc(getRuntime(), getRuntime().getClass("Proc"), isLambda);
     	
     	newProc.block = getBlock();
-    	newProc.wrapper = getWrapper();
     	
     	return newProc;
     }
@@ -116,8 +105,7 @@ public class RubyProc extends RubyObject {
         assert args != null;
         
         ThreadContext context = getRuntime().getCurrentContext();
-        RubyModule oldWrapper = context.getWrapper();
-        context.setWrapper(wrapper);
+        
         try {
             if (block.isLambda) {
                 block.arity().checkArity(getRuntime(), args);
@@ -147,9 +135,7 @@ public class RubyProc extends RubyObject {
             } else {
                 throw je;
             }
-        } finally {
-            context.setWrapper(oldWrapper);
-        }
+        } 
     }
 
     public RubyFixnum arity() {

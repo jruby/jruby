@@ -51,7 +51,7 @@ public class BuiltinScript implements Library {
     }
 
     public void load(Ruby runtime) throws IOException {
-        runtime.loadNode("jruby builtin", getNode(runtime), false);
+        runtime.loadNode("jruby builtin", getNode(runtime));
     }
 
     private Node getNode(Ruby runtime) throws IOException {

@@ -467,10 +467,6 @@ public final class Ruby {
             throw newSecurityError("Extending module prohibited.");
         }
 
-        if (tc.getWrapper() != null) {
-            module.getSingletonClass().includeModule(tc.getWrapper());
-            module.includeModule(tc.getWrapper());
-        }
         return module;
     }
 
@@ -1192,34 +1188,23 @@ public final class Ruby {
      *  It can be used if you want to use JRuby as a Macro language.
      *
      */
-    public void loadScript(RubyString scriptName, RubyString source, boolean wrap) {
-        loadScript(scriptName.toString(), new StringReader(source.toString()), wrap);
+    public void loadScript(RubyString scriptName, RubyString source) {
+        loadScript(scriptName.toString(), new StringReader(source.toString()));
     }
 
-    public void loadScript(String scriptName, Reader source, boolean wrap) {
+    public void loadScript(String scriptName, Reader source) {
         File f = new File(scriptName);
         if(f.exists() && !f.isAbsolute() && !scriptName.startsWith("./")) {
             scriptName = "./" + scriptName;
         }
 
         IRubyObject self = getTopSelf();
-
         ThreadContext context = getCurrentContext();
 
-        RubyModule wrapper = context.getWrapper();
-
         try {
-            if (!wrap) {
-                secure(4); /* should alter global state */
+            secure(4); /* should alter global state */
 
-                context.preNodeEval(null, objectClass, self);
-            } else {
-                /* load in anonymous module as toplevel */
-                context.preNodeEval(RubyModule.newModule(this, null), context.getWrapper(), self);
-
-                self = getTopSelf().rbClone();
-                context.getRubyClass().extend_object(self);
-            }
+            context.preNodeEval(objectClass, self);
 
             Node node = parse(source, scriptName, null);
             EvaluationState.eval(this, context, node, self, Block.NULL_BLOCK);
@@ -1230,30 +1215,18 @@ public final class Ruby {
                 throw je;
             }
         } finally {
-            context.postNodeEval(wrapper);
+            context.postNodeEval();
         }
     }
 
-    public void loadNode(String scriptName, Node node, boolean wrap) {
+    public void loadNode(String scriptName, Node node) {
         IRubyObject self = getTopSelf();
-
         ThreadContext context = getCurrentContext();
 
-        RubyModule wrapper = context.getWrapper();
-
         try {
-            if (!wrap) {
-                secure(4); /* should alter global state */
+            secure(4); /* should alter global state */
 
-                context.preNodeEval(null, objectClass, self);
-            } else {
-
-                /* load in anonymous module as toplevel */
-                context.preNodeEval(RubyModule.newModule(this, null), context.getWrapper(), self);
-
-                self = getTopSelf().rbClone();
-                context.getRubyClass().extend_object(self);
-            }
+            context.preNodeEval(objectClass, self);
 
             EvaluationState.eval(this, context, node, self, Block.NULL_BLOCK);
         } catch (JumpException je) {
@@ -1263,7 +1236,7 @@ public final class Ruby {
                 throw je;
             }
         } finally {
-            context.postNodeEval(wrapper);
+            context.postNodeEval();
         }
     }
 
@@ -1273,11 +1246,11 @@ public final class Ruby {
      *
      *  @mri rb_load
      */
-    public void loadFile(File file, boolean wrap) {
+    public void loadFile(File file) {
         assert file != null : "No such file to load";
         try {
             BufferedReader source = new BufferedReader(new FileReader(file));
-            loadScript(file.getPath().replace(File.separatorChar, '/'), source, wrap);
+            loadScript(file.getPath().replace(File.separatorChar, '/'), source);
             source.close();
         } catch (IOException ioExcptn) {
             throw newIOErrorFromException(ioExcptn);

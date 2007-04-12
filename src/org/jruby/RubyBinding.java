@@ -41,39 +41,32 @@ import org.jruby.runtime.ThreadContext;
  * @author  jpetersen
  */
 public class RubyBinding extends RubyObject {
-    private Block block = null;
-    private RubyModule wrapper = null;
+    private Block block;
 
-    public RubyBinding(Ruby runtime, RubyClass rubyClass, Block block, RubyModule wrapper) {
+    public RubyBinding(Ruby runtime, RubyClass rubyClass, Block block) {
         super(runtime, rubyClass);
         
         this.block = block;
-        this.wrapper = wrapper;
     }
 
     public Block getBlock() {
         return block;
     }
 
-    public RubyModule getWrapper() {
-        return wrapper;
-    }
-
     // Proc class
     
     public static RubyBinding newBinding(Ruby runtime, Block block) {
-        return new RubyBinding(runtime, runtime.getClass("Binding"), block, block.getKlass());
+        return new RubyBinding(runtime, runtime.getClass("Binding"), block);
     }
 
     public static RubyBinding newBinding(Ruby runtime) {
         ThreadContext context = runtime.getCurrentContext();
         
         // FIXME: We should be cloning, not reusing: frame, scope, dynvars, and potentially iter/block info
-        RubyModule wrapper = context.getWrapper();
         Frame frame = context.getCurrentFrame();
-
-        Block bindingBlock = Block.createBinding(wrapper, frame, context.getCurrentScope());
-        return new RubyBinding(runtime, runtime.getClass("Binding"), bindingBlock, context.getBindingRubyClass());
+        Block bindingBlock = Block.createBinding(frame, context.getCurrentScope());
+        
+        return new RubyBinding(runtime, runtime.getClass("Binding"), bindingBlock);
     }
 
     /**
@@ -84,21 +77,19 @@ public class RubyBinding extends RubyObject {
         ThreadContext context = runtime.getCurrentContext();
         
         // FIXME: We should be cloning, not reusing: frame, scope, dynvars, and potentially iter/block info
-        RubyModule wrapper = context.getWrapper();
         Frame frame = context.getPreviousFrame();
-
-        Block bindingBlock = Block.createBinding(wrapper, frame, context.getCurrentScope());
-        return new RubyBinding(runtime, runtime.getClass("Binding"), bindingBlock, context.getBindingRubyClass());
+        Block bindingBlock = Block.createBinding(frame, context.getCurrentScope());
+        
+        return new RubyBinding(runtime, runtime.getClass("Binding"), bindingBlock);
     }
 
     public static RubyBinding newBindingOfCaller(Ruby runtime) {
         ThreadContext context = runtime.getCurrentContext();
         
         // FIXME: We should be cloning, not reusing: frame, scope, dynvars, and potentially iter/block info
-        RubyModule wrapper = context.getWrapper();
         Frame frame = context.getPreviousFrame();
-
-        Block bindingBlock = Block.createBinding(wrapper, frame, context.getPreviousScope());
-        return new RubyBinding(runtime, runtime.getClass("Binding"), bindingBlock, context.getBindingRubyClass());
+        Block bindingBlock = Block.createBinding(frame, context.getPreviousScope());
+        
+        return new RubyBinding(runtime, runtime.getClass("Binding"), bindingBlock);
     }
 }

@@ -150,7 +150,6 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ForBlock;
 import org.jruby.runtime.MethodIndex;
-import org.jruby.runtime.MethodSelectorTable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -677,10 +676,6 @@ public class EvaluationState {
         RubyModule enclosingClass = getEnclosingModule(runtime, context, classNameNode, self, aBlock);
         RubyClass rubyClass = enclosingClass.defineOrGetClassUnder(name, superClass);
    
-        if (context.getWrapper() != null) {
-            context.getWrapper().extend_object(rubyClass);
-            rubyClass.includeModule(context.getWrapper());
-        }
         return evalClassDefinitionBody(runtime, context, iVisited.getScope(), iVisited.getBodyNode(), rubyClass, self, aBlock);
     }
 
@@ -1626,13 +1621,6 @@ public class EvaluationState {
             }
 
             singletonClass = receiver.getSingletonClass();
-        }
-
-        
-
-        if (context.getWrapper() != null) {
-            context.getWrapper().extend_object(singletonClass);
-            singletonClass.includeModule(context.getWrapper());
         }
 
         return evalClassDefinitionBody(runtime, context, iVisited.getScope(), iVisited.getBodyNode(), singletonClass, self, aBlock);

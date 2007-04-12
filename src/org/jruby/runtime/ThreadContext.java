@@ -89,8 +89,6 @@ public class ThreadContext {
     private int[] bindingFrameStack = new int[INITIAL_SIZE];
     private int bindingFrameIndex = -1;
     
-    private RubyModule wrapper;
-    
     private ISourcePosition sourcePosition = new SourcePositionFactory(null).getDummyPosition();
     
     /**
@@ -460,14 +458,6 @@ public class ThreadContext {
         return parentIndex == 0;
     }
     
-    public RubyModule getWrapper() {
-        return wrapper;
-    }
-    
-    public void setWrapper(RubyModule wrapper) {
-        this.wrapper = wrapper;
-    }
-    
     public boolean getConstantDefined(String name) {
         IRubyObject result = null;
         
@@ -545,8 +535,6 @@ public class ThreadContext {
      * This is for a Colon2 const decl
      */
     public IRubyObject setConstantInObject(String name, IRubyObject result) {
-        IRubyObject module;
-
         setConstantInModule(name, runtime.getObject(), result);
    
         return result;
@@ -725,18 +713,15 @@ public class ThreadContext {
         frame.setSelf(topSelf);
     }
     
-    public void preNodeEval(RubyModule newWrapper, RubyModule rubyClass, IRubyObject self) {
-        setWrapper(newWrapper);
+    public void preNodeEval(RubyModule rubyClass, IRubyObject self) {
         pushRubyClass(rubyClass);
         pushCallFrame(null, null, self, IRubyObject.NULL_ARRAY, 0, Block.NULL_BLOCK);
-        
         setCRef(rubyClass.getCRef());
     }
     
-    public void postNodeEval(RubyModule newWrapper) {
+    public void postNodeEval() {
         popFrame();
         popRubyClass();
-        setWrapper(newWrapper);
         unsetCRef();
     }
     

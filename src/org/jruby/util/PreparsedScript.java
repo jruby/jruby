@@ -50,7 +50,7 @@ public class PreparsedScript implements Library {
     }
 
     public void load(Ruby runtime) throws IOException {
-        runtime.loadNode("preparsed", getNode(runtime), false);
+        runtime.loadNode("preparsed", getNode(runtime));
     }
 
     private Node getNode(Ruby runtime) throws IOException {
