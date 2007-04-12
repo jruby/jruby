@@ -53,6 +53,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
+import org.jruby.RubyRange;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -250,6 +251,15 @@ public class JRubyConstructor extends ConstructorImpl {
         return oo;
     }
 
+    public static Object constructRubyRange(final Constructor ctor, final Node node) {
+        final Ruby runtime = ((JRubyConstructor)ctor).runtime;
+        final Map vars = (Map)(ctor.constructMapping(node));
+        IRubyObject beg = (IRubyObject)vars.get(runtime.newString("begin"));
+        IRubyObject end = (IRubyObject)vars.get(runtime.newString("end"));
+        boolean excl = ((IRubyObject)vars.get(runtime.newString("excl"))).isTrue();
+        return RubyRange.newRange(runtime, beg, end, excl);
+    }
+
     public static Object constructRubyMap(final Constructor ctor, final String tag, final Node node) {
         final Ruby runtime = ((JRubyConstructor)ctor).runtime;
         RubyModule objClass = runtime.getModule("Object");
@@ -353,6 +363,11 @@ public class JRubyConstructor extends ConstructorImpl {
                     return constructYamlMap(self,node);
                 }
             });
+        addConstructor("tag:ruby.yaml.org,2002:range",new YamlConstructor() {
+                public Object call(final Constructor self, final Node node) {
+                    return constructRubyRange(self,node);
+                }
+            });
         addConstructor(null,new YamlConstructor() {
                 public Object call(final Constructor self, final Node node) {
                     return self.constructPrivateType(node);
@@ -373,7 +388,17 @@ public class JRubyConstructor extends ConstructorImpl {
                     return constructRuby(self,pref,node);
                 }
             });
+        addMultiConstructor("tag:ruby.yaml.org,2002:object:",new YamlMultiConstructor() {
+                public Object call(final Constructor self, final String pref, final Node node) {
+                    return constructRuby(self,pref,node);
+                }
+            });
         addMultiConstructor("tag:yaml.org,2002:java/object:",new YamlMultiConstructor() {
+                public Object call(final Constructor self, final String pref, final Node node) {
+                    return constructJava(self,pref,node);
+                }
+            });
+        addMultiConstructor("tag:java.yaml.org,2002:object:",new YamlMultiConstructor() {
                 public Object call(final Constructor self, final String pref, final Node node) {
                     return constructJava(self,pref,node);
                 }

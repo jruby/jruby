@@ -487,6 +487,11 @@ public class SafeConstructorImpl extends BaseConstructorImpl {
                     return constructJava(self,pref,node);
                 }
             });
+        addMultiConstructor("tag:java.yaml.org,2002:object:",new YamlMultiConstructor() {
+                public Object call(final Constructor self, final String pref, final Node node) {
+                    return constructJava(self,pref,node);
+                }
+            });
     }
 
     public static void main(final String[] args) throws Exception {

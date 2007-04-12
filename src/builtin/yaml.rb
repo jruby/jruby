@@ -2,6 +2,7 @@ require 'java' #needed for the module JavaUtilities, which JavaEmbedUtils have a
 require 'yaml_internal'
 
 module YAML
+  # This is not really correct. Fix pending
   def self.parse(obj)
     Proxy.new(YAML::load(obj))
   end
