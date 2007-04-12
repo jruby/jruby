@@ -1146,8 +1146,8 @@ public class ScannerImpl implements Scanner {
         final int increment = ((Integer)chompi[1]).intValue();
         scanBlockScalarIgnoredLine();
         int minIndent = this.indent+1;
-        if(minIndent < 1) {
-            minIndent = 1;
+        if(minIndent < 0) {
+            minIndent = 0;
         }
         ByteList breaks = null;
         int maxIndent = 0;
