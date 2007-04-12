@@ -34,8 +34,6 @@ import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.ast.AttrAssignNode;
 import org.jruby.ast.CallNode;
-import org.jruby.ast.ClassVarAsgnNode;
-import org.jruby.ast.ClassVarDeclNode;
 import org.jruby.ast.Colon2Node;
 import org.jruby.ast.ConstDeclNode;
 import org.jruby.ast.DAsgnNode;
@@ -67,10 +65,10 @@ public class AssignmentVisitor {
             callNode(runtime, context, self, node, value, block);
             break;
         case NodeTypes.CLASSVARASGNNODE:
-            classVarAsgnNode(context, node, value);
+            EvaluationState.classVarAsgnNode(runtime, context, node, self, Block.NULL_BLOCK);
             break;
         case NodeTypes.CLASSVARDECLNODE:
-            classVarDeclNode(runtime, context, node, value);
+            EvaluationState.classVarDeclNode(runtime, context, node, self, Block.NULL_BLOCK);
             break;
         case NodeTypes.CONSTDECLNODE:
             constDeclNode(runtime, context, self, node, value, block);
@@ -126,21 +124,6 @@ public class AssignmentVisitor {
             args.append(value);
             receiver.callMethod(context, iVisited.getName(), args.toJavaArray(), CallType.NORMAL);
         }
-    }
-
-    private static void classVarAsgnNode(ThreadContext context, Node node, IRubyObject value) {
-        ClassVarAsgnNode iVisited = (ClassVarAsgnNode)node;
-        context.getRubyClass().setClassVar(iVisited.getName(), value);
-    }
-
-    private static void classVarDeclNode(Ruby runtime, ThreadContext context, Node node, IRubyObject value) {
-        ClassVarDeclNode iVisited = (ClassVarDeclNode)node;
-        if (runtime.getVerbose().isTrue()
-                && context.getRubyClass().isSingleton()) {
-            runtime.getWarnings().warn(iVisited.getPosition(),
-                    "Declaring singleton class variable.");
-        }
-        context.getRubyClass().setClassVar(iVisited.getName(), value);
     }
 
     private static void constDeclNode(Ruby runtime, ThreadContext context, IRubyObject self, Node node, IRubyObject value, Block block) {
