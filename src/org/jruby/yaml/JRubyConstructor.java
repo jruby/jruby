@@ -97,7 +97,7 @@ public class JRubyConstructor extends ConstructorImpl {
 
     public Object constructRubyScalar(final Node node) {
         ByteList sc = (ByteList)super.constructScalar(node);
-        if(sc.length() > 0 && sc.charAt(0) == ':') {
+        if(sc.length() > 0 && sc.charAt(0) == ':' && ((org.jvyamlb.nodes.ScalarNode)node).getStyle() == 0) {
             return runtime.newSymbol(sc.toString().substring(1));
         }
 

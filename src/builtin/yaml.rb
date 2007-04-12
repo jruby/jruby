@@ -2,6 +2,21 @@ require 'java' #needed for the module JavaUtilities, which JavaEmbedUtils have a
 require 'yaml_internal'
 
 module YAML
+  def self.parse(obj)
+    Proxy.new(YAML::load(obj))
+  end
+  
+  class Proxy
+    def initialize(v)
+      @value = v
+    end
+    
+    def transform
+      @value
+    end
+  end
+  
+  
   #
   # YAML::Stream -- for emitting many documents
   #
