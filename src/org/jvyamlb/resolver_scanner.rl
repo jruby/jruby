@@ -24,7 +24,8 @@ public class ResolverScanner {
         Value = "=" %/value_tag;
         Null  = ("~" | "null" | "Null" | "null" | "NULL" | " ") %/null_tag;
 
-        digit2 = digit | "_";
+        digitF = digit | ",";
+        digit2 = digit | "_" | ",";
         sign = "-" | "+";
         timestampFract = "." digit*;
         timestampZone = [ \t]* ("Z" | (sign digit{1,2} ( ":" digit{2} )?));
@@ -33,8 +34,8 @@ public class ResolverScanner {
 
         exp = [eE] sign digit+;
 
-        Float = ((sign? ((digit+ "." digit* exp?)
-                     | ((digit+)? "." digit+ exp?)
+        Float = ((sign? ((digitF+ "." digit* exp?)
+                     | ((digitF+)? "." digit+ exp?)
                      | (digit+ (":" [0-5]? digit)+ "." digit*)
                      | "." ("inf" | "Inf" | "INF"))) 
                  | ("." ("nan" | "NaN" | "NAN"))) %/float_tag;
@@ -43,7 +44,7 @@ public class ResolverScanner {
         octalInt = "0" [0-7_]+;
         decimalInt = "0" |
                      [1-9]digit2* (":" [0-5]? digit)*;
-        hexaInt = "0x" [0-9a-fA-F_]+;
+        hexaInt = "0x" [0-9a-fA-F_,]+;
         Int = sign? (binaryInt | octalInt | decimalInt | hexaInt) %/int_tag;
 
         Scalar = Bool | Null | Int | Float | Merge | Value | Timestamp | TimestampYMD;

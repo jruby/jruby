@@ -204,7 +204,7 @@ public class JRubyConstructor extends ConstructorImpl {
     }
 
     public static Object constructYamlInt(final Constructor ctor, final Node node) {
-        return ((JRubyConstructor)ctor).runtime.newFixnum(((Long)SafeConstructorImpl.constructYamlInt(ctor,node)).longValue());
+        return ((JRubyConstructor)ctor).runtime.newFixnum(((Number)SafeConstructorImpl.constructYamlInt(ctor,node)).longValue());
     }
     public static Object constructYamlFloat(final Constructor ctor, final Node node) {
         return ((JRubyConstructor)ctor).runtime.newFloat(((Double)SafeConstructorImpl.constructYamlFloat(ctor,node)).doubleValue());

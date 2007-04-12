@@ -250,7 +250,7 @@ public class SafeConstructorImpl extends BaseConstructorImpl {
     }
 
     public static Object constructYamlInt(final Constructor ctor, final Node node) {
-        String value = ctor.constructScalar(node).toString().replaceAll("_","");
+        String value = ctor.constructScalar(node).toString().replaceAll("_","").replaceAll(",","");;
         int sign = +1;
         char first = value.charAt(0);
         if(first == '-') {
@@ -291,7 +291,7 @@ public class SafeConstructorImpl extends BaseConstructorImpl {
     private final static Double NAN_VALUE = new Double(Double.NaN);
 
     public static Object constructYamlFloat(final Constructor ctor, final Node node) {
-        String value = ctor.constructScalar(node).toString().replaceAll("_","");
+        String value = ctor.constructScalar(node).toString().replaceAll("_","").replaceAll(",","");
         int sign = +1;
         char first = value.charAt(0);
         if(first == '-') {
