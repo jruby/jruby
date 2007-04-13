@@ -76,6 +76,7 @@ test_symbol
 test_thread
 test_trace_func
 test_zlib
+test_yaml
 
 # BFTS working tests
 externals/bfts/test_array

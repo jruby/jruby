@@ -49,14 +49,22 @@ module Timeout
     raise ThreadError, "timeout within critical session" if Thread.critical
     begin
       x = Thread.current
+puts "adding timeout on #{x}"
       y = Thread.start {
         sleep sec
-        x.raise exception, "execution expired" if x.alive?
+        if x.alive?
+puts "raising on #{x}"
+        x.raise exception, "execution expired"
+puts "have raised on #{x}"
+        end
       }
+puts "t1: #{y}"
       yield sec
       #    return true
     ensure
+puts "finishing timeout on #{x}"
       y.kill if y and y.alive?
+puts "have finished timeout on #{x} by killing #{y}"
     end
   end
 
