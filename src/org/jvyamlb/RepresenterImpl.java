@@ -65,66 +65,40 @@ public class RepresenterImpl implements Representer {
     private final Map representedObjects;
     private final Map links;
 
-    private final IntHashMap aliases;
-
     public RepresenterImpl(final Serializer serializer, final YAMLConfig opts) {
         this.serializer = serializer;
         this.defaultStyle = opts.useDouble() ? '"' : (opts.useSingle() ? '\'' : 0);
         this.representedObjects = new IdentityHashMap();
         this.links = new IdentityHashMap();
-        this.aliases = new IntHashMap();
     }
 
-    private String getAliasFor(Object data) {
-        int i1 = System.identityHashCode(data);
-        if(!this.aliases.containsKey(i1)) {
-            Map m = new IdentityHashMap();
-            m.put(data, new Integer(0));
-            this.aliases.put(i1, m);
-            return ""+i1 + "--0";
-        } else {
-            Map m = (Map)this.aliases.get(i1);
-            int nn = 0;
-            if(!m.containsKey(data)) {
-                m.put(data, new Integer(m.size()));
-            } else {
-                nn = ((Integer)m.get(data)).intValue();
-            }
-            return ""+i1+"--"+nn;
-        }
-    }  
-
-
     private Node representData(final Object data) throws IOException {
-        String aliasKey = null;
         Node node = null;
 
-        if(!ignoreAliases(data)) {
-            aliasKey = getAliasFor(data);
-        }
+        boolean ignoreAlias = ignoreAliases(data);
 
-        if(null != aliasKey) {
-            if(this.representedObjects.containsKey(aliasKey)) {
-                node = (Node)this.representedObjects.get(aliasKey);
+        if(!ignoreAlias) {
+            if(this.representedObjects.containsKey(data)) {
+                node = (Node)this.representedObjects.get(data);
                 if(null == node) {
                     node = new LinkNode();
-                    List ll = (List)links.get(aliasKey);
+                    List ll = (List)links.get(data);
                     if(ll == null) {
                         ll = new ArrayList();
-                        links.put(aliasKey,ll);
+                        links.put(data,ll);
                     }
                     ll.add(node);
                 }
                 return node;
             }
-            this.representedObjects.put(aliasKey,null);
+            this.representedObjects.put(data,null);
         }
 
         node = getNodeCreatorFor(data).toYamlNode(this);
 
-        if(aliasKey != null) {
-            this.representedObjects.put(aliasKey,node);
-            List ll = (List)this.links.remove(aliasKey);
+        if(!ignoreAlias) {
+            this.representedObjects.put(data,node);
+            List ll = (List)this.links.remove(data);
             if(ll != null) {
                 for(Iterator iter = ll.iterator();iter.hasNext();) {
                     ((LinkNode)iter.next()).setAnchor(node);
