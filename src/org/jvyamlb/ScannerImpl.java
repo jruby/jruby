@@ -204,7 +204,7 @@ public class ScannerImpl implements Scanner {
         ESCAPE_REPLACEMENTS['f'] = 12;
         ESCAPE_REPLACEMENTS['r'] = 13;
         ESCAPE_REPLACEMENTS['e'] = 27;
-        ESCAPE_REPLACEMENTS[' '] = 32;
+        //        ESCAPE_REPLACEMENTS[' '] = 32;
         ESCAPE_REPLACEMENTS['"'] = (byte)'"';
         ESCAPE_REPLACEMENTS['\\'] = (byte)'\\';
         ESCAPE_REPLACEMENTS['N'] = (byte)133;
@@ -219,7 +219,7 @@ public class ScannerImpl implements Scanner {
         IS_ESCAPE_REPLACEMENT['f'] = true;
         IS_ESCAPE_REPLACEMENT['r'] = true;
         IS_ESCAPE_REPLACEMENT['e'] = true;
-        IS_ESCAPE_REPLACEMENT[' '] = true;
+        //        IS_ESCAPE_REPLACEMENT[' '] = true;
         IS_ESCAPE_REPLACEMENT['"'] = true;
         IS_ESCAPE_REPLACEMENT['\\'] = true;
         IS_ESCAPE_REPLACEMENT['N'] = true;
@@ -999,7 +999,7 @@ public class ScannerImpl implements Scanner {
                     scanLineBreak();
                     chunks.append(scanFlowScalarBreaks());
                 } else {
-                    throw new ScannerException("while scanning a double-quoted scalar","found unknown escape character " + ch + "(" + ((int)ch) + ")",null);
+                    chunks.append('\\');
                 }
             } else {
                 return chunks;
