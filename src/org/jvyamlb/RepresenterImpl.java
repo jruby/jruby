@@ -70,8 +70,8 @@ public class RepresenterImpl implements Representer {
     public RepresenterImpl(final Serializer serializer, final YAMLConfig opts) {
         this.serializer = serializer;
         this.defaultStyle = opts.useDouble() ? '"' : (opts.useSingle() ? '\'' : 0);
-        this.representedObjects = new HashMap();
-        this.links = new HashMap();
+        this.representedObjects = new IdentityHashMap();
+        this.links = new IdentityHashMap();
         this.aliases = new IntHashMap();
     }
 
