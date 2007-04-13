@@ -53,7 +53,9 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
+import org.jruby.RubyStruct;
 import org.jruby.RubyRange;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -219,9 +221,56 @@ public class JRubyConstructor extends ConstructorImpl {
             return ((JRubyConstructor)ctor).runtime.newString((String)b);
         }
     }
+
     public static Object constructJava(final Constructor ctor, final String pref, final Node node) {
         return SafeConstructorImpl.constructJava(ctor,pref,node);
     }
+
+    public static Object constructRubyStruct(final Constructor ctor, final String tag, final Node node) {
+        final Ruby runtime = ((JRubyConstructor)ctor).runtime;
+        RubyModule sClass = runtime.getModule("Struct");
+        RubyClass struct_type;
+        String[] nms = tag.split("::");
+        for(int i=0,j=nms.length;i<j && sClass != null;i++) {
+            sClass = (RubyModule)sClass.getConstant(nms[i]);
+        }
+
+        Map props = new HashMap();
+        Map val = (Map)(ctor.constructMapping(node));
+        for(Iterator iter = val.entrySet().iterator();iter.hasNext();) {
+            Map.Entry em = (Map.Entry)iter.next();
+            if(em.getKey().toString().startsWith("@")) {
+                props.put(em.getKey(),em.getValue());
+                iter.remove();
+            }
+        }
+
+        // If no such struct exists...
+        if(sClass == null) {
+            IRubyObject[] params = new IRubyObject[val.size()+1];
+            params[0] = runtime.newString(tag);
+            int i = 1;
+            for(Iterator iter = val.entrySet().iterator();iter.hasNext();i++) {
+                Map.Entry em = (Map.Entry)iter.next();
+                params[i] = ((RubyString)em.getKey()).intern();
+            }
+            struct_type = RubyStruct.newInstance(runtime.getModule("Struct"),params,Block.NULL_BLOCK);
+        } else {
+            struct_type = (RubyClass)sClass;
+        }
+        IRubyObject st = struct_type.callMethod(runtime.getCurrentContext(),"new");
+        RubyArray members = RubyStruct.members(struct_type,Block.NULL_BLOCK);
+        for(int i=0,j=members.size();i<j;i++) {
+            IRubyObject m = members.eltInternal(i);
+            st.callMethod(runtime.getCurrentContext(), m.toString() + "=", (IRubyObject)val.get(m));
+        }
+        for(Iterator iter = props.entrySet().iterator();iter.hasNext();) {
+            Map.Entry em = (Map.Entry)iter.next();
+            ((RubyObject)st).instance_variable_set((IRubyObject)em.getKey(),(IRubyObject)em.getValue());
+        }
+        return st;
+    }
+
     public static Object constructRuby(final Constructor ctor, final String tag, final Node node) {
         final Ruby runtime = ((JRubyConstructor)ctor).runtime;
         RubyModule objClass = runtime.getModule("Object");
@@ -454,6 +503,11 @@ public class JRubyConstructor extends ConstructorImpl {
         addMultiConstructor("tag:java.yaml.org,2002:object:",new YamlMultiConstructor() {
                 public Object call(final Constructor self, final String pref, final Node node) {
                     return constructJava(self,pref,node);
+                }
+            });
+        addMultiConstructor("tag:ruby.yaml.org,2002:struct:",new YamlMultiConstructor() {
+                public Object call(final Constructor self, final String pref, final Node node) {
+                    return constructRubyStruct(self,pref,node);
                 }
             });
     }
