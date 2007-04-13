@@ -1,48 +1,33 @@
+== Writing Tests
 
-Software Requirements
----------------------
+1. There are actually *3* core test suites:
 
-Testing is done with JUnit (http://www.junit.org).
-To run the JUnit ant tasks, you also need the optional ant tasks jar file from
-http://jakarta.apache.org/site/binindex.html
+   a) org.jruby.test.MainTestSuite, a suite of pure-java tests;
 
-The default build.xml is setup to look for the JUnit jar file under 
-$JRUBY_HOME/lib.  The optional ant tasks should be put in 
-$ANT_HOME/lib/optional.jar.
+   b) org.jruby.test.ScriptTestSuite, which runs a suite of files named
+   one-per-line in test/test_index (these are the so-called "minirunit" tests
+   which use an antiquated testing framework);
 
-Using minirunit
----------------
+   c) org.jruby.test.TestUnitTestSuite, which runs a suite of files named
+   one-per-line in test/test_unit_index (note: some are currently commented).
 
-When implementing new methods on the builtin classes the easiest way is to write the tests in Ruby.
-It also makes it possible to verify the tests against the original Ruby interpreter (MRI).
+2. If you'd like to contribute new tests, we'd prefer you write them in
+Test::Unit and add to the test/test_unit_index file.
 
-In the folder "test" you will find JRuby's own tests, and in "test/mri" some tests taken from MRI.
-Run all of them with:
+3. Naming conventions: testCamelCased.rb files are currently for
+minirunit-based tests; test_under_scored.rb for Test::Unit tests.
 
-        jruby test/testSuite.rb
+4. We're also interested in running tests for other ruby software suites; if
+you want to grab your favorite ruby software and run its own tests under JRuby
+and report to the mailing list at dev@jruby.codehaus.org, that would be great.
 
-Writing Java Tests
-------------------
+5. Please file any and all patches in JIRA:
+http://jira.codehaus.org/browse/JRUBY
 
-1) Java unit tests with JUnit:
+== Running Tests
 
-Tests for classes should be put in a "test" subpackage of the original class's package.  For
-example, org.jruby.RubyModule's tests should go in org.jruby.test.  Test files should be named:
-Test${classname}.java (e.g. TestRubyModule.java).  After creating individual tests, each test class
-should be added to the main test suite at org.jruby.test.MainTestSuite.
+Using ant, type
 
-Before checking in your changes, be sure to run the full test suite with the following command line:
+  ant test
 
-	ant test
-
-..or, if you don't have the ant JUnit task:
-
-	java junit.textui.TestRunner org.jruby.test.MainTestSuite
-
-This will ensure that your changes not only work by themselves but haven't caused problems elsewhere
-in the source.
-
-Unit tests should ALWAYS run at 100% pass rate when checked into CVS.
-
-
-
+The three test suites should be run in order.
