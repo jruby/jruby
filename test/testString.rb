@@ -598,3 +598,8 @@ test_equal(["shello", "r"], a)
 test_equal(["a"], s.unpack(Unpack.new))
 test_equal(291, "123".to_i(IntClass.new(16)))
 test_equal(345, "str".sum(IntClass.new(16)))
+
+# JRUBY-816
+test_exception(TypeError) { "s" << -1 }
+test_exception(TypeError) { "s" << 256 }
+test_equal("s\001", "s" << 1)

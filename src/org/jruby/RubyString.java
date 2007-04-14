@@ -970,8 +970,11 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyString concat(IRubyObject other) {
-        if ((other instanceof RubyFixnum) && ((RubyFixnum) other).getLongValue() < 256) {
-            return cat((byte) ((RubyFixnum) other).getLongValue());
+        if (other instanceof RubyFixnum) {
+            long value = ((RubyFixnum) other).getLongValue();
+            if (value >= 0 && value < 256) {
+                return cat((byte) value);
+            }
         }
         return append(other);
     }
