@@ -684,7 +684,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         if (!respondsTo(convertMethod)) {
             if (raiseOnMissingMethod) {
                 throw getRuntime().newTypeError(
-                    "can't convert " + trueFalseNil(getMetaClass().getName()) + " into " + trueFalseNil(targetType));
+                                                "can't convert " + trueFalseNil(this) + " into " + trueFalseNil(targetType.getName()));
             } 
 
             return getRuntime().getNil();
