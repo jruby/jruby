@@ -1667,7 +1667,7 @@ public class RubyString extends RubyObject {
         }
         boolean taint = repl.isTaint();
         RubyRegexp pat = null;
-         if (args[0].isKindOf(getRuntime().getClass("Regexp"))) {
+         if (args[0] instanceof RubyRegexp) {
             pat = (RubyRegexp)args[0];
         } else if (args[0].isKindOf(getRuntime().getString())) {
             pat = RubyRegexp.regexpValue(args[0]);
