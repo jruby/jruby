@@ -13,7 +13,7 @@
  *
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Copyright (C) 2002-2007 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2003 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
@@ -48,6 +48,8 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
 import org.jruby.util.ByteList;
+import org.jruby.util.IOInputStream;
+import org.jruby.util.IOOutputStream;
 
 /**
  * Marshal module
@@ -75,14 +77,16 @@ public class RubyMarshal {
         }
         IRubyObject objectToDump = args[0];
 
-        RubyIO io = null;
+        IRubyObject io = null;
         int depthLimit = -1;
 
         if (args.length >= 2) {
-            if (args[1] instanceof RubyIO) {
-                io = (RubyIO) args[1];
+            if (args[1].respondsTo("write")) {
+                io = args[1];
             } else if (args[1] instanceof RubyFixnum) {
                 depthLimit = (int) ((RubyFixnum) args[1]).getLongValue();
+            } else {
+                throw recv.getRuntime().newTypeError("Instance of IO needed");
             }
             if (args.length == 3) {
                 depthLimit = (int) ((RubyFixnum) args[2]).getLongValue();
@@ -91,19 +95,32 @@ public class RubyMarshal {
 
         try {
             if (io != null) {
-                dumpToStream(objectToDump, io.getOutStream(), depthLimit);
+                dumpToStream(objectToDump, outputStream(io), depthLimit);
                 return io;
             }
 			ByteArrayOutputStream stringOutput = new ByteArrayOutputStream();
 			dumpToStream(objectToDump, stringOutput, depthLimit);
 
-			RubyString str = RubyString.newString(recv.getRuntime(), new ByteList(stringOutput.toByteArray(),false));
-            return str;
+            return RubyString.newString(recv.getRuntime(), new ByteList(stringOutput.toByteArray(),false));
 
         } catch (IOException ioe) {
             throw recv.getRuntime().newIOErrorFromException(ioe);
         }
 
+    }
+
+    private static OutputStream outputStream(IRubyObject out) {
+        setBinmodeIfPossible(out);
+        if (out instanceof RubyIO) {
+            return ((RubyIO) out).getOutStream();
+        }
+        return new IOOutputStream(out);
+    }
+
+    private static void setBinmodeIfPossible(IRubyObject io) {
+        if (io.respondsTo("binmode")) {
+            io.callMethod(io.getRuntime().getCurrentContext(), "binmode");
+        }
     }
 
     public static IRubyObject load(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
@@ -127,9 +144,9 @@ public class RubyMarshal {
             }
 
             InputStream rawInput;
-            if (in instanceof RubyIO) {
-                rawInput = ((RubyIO) in).getInStream();
-            } else if (in.respondsTo("to_str")) {
+            if (in != null && in.respondsTo("read")) {
+                rawInput = inputStream(in);
+            } else if (in != null && in.respondsTo("to_str")) {
                 RubyString inString = (RubyString) in.callMethod(recv.getRuntime().getCurrentContext(), MethodIndex.TO_STR, "to_str", IRubyObject.NULL_ARRAY);
                 rawInput = new ByteArrayInputStream(inString.getBytes());
             } else {
@@ -145,6 +162,14 @@ public class RubyMarshal {
         } catch (IOException ioe) {
             throw recv.getRuntime().newIOErrorFromException(ioe);
         }
+    }
+
+    private static InputStream inputStream(IRubyObject in) {
+        setBinmodeIfPossible(in);
+        if (in instanceof RubyIO) {
+            return ((RubyIO) in).getInStream();
+        }
+        return new IOInputStream(in);
     }
 
     private static void dumpToStream(IRubyObject object, OutputStream rawOutput, int depthLimit)

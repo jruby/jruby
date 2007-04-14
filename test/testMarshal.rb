@@ -335,3 +335,54 @@ test_equal("a message", e3.message)
 test_equal(e1.backtrace, e3.backtrace)
 test_equal(42, e3.ivar)
 
+require 'stringio'
+class MTStream < StringIO
+  attr :binmode_called
+
+  def binmode
+    @binmode_called = true
+  end
+end
+
+class BinmodeLessMTStream < StringIO
+  undef_method :binmode
+end
+
+# Checking for stream
+begin
+  Marshal.dump("hi", :not_an_io)
+rescue TypeError
+else
+  test_fail
+end
+
+# Writing to non-IO stream
+stream = MTStream.new
+Marshal.dump("hi", stream)
+test_ok(stream.size > 0)
+
+# Calling binmode if available
+stream = MTStream.new
+Marshal.dump("hi", stream)
+test_ok(stream.binmode_called)
+
+# Ignoring binmode if unavailable
+stream = BinmodeLessMTStream.new
+Marshal.dump("hi", stream)
+
+# Loading from non-IO stream
+stream = MTStream.new
+Marshal.dump("hi", stream)
+stream.rewind
+test_equal("hi", Marshal.load(stream))
+
+# Setting binmode on input
+stream = MTStream.new
+Marshal.dump("hi", stream)
+stream.rewind
+s = stream.read
+in_stream = MTStream.new
+in_stream.write(s)
+in_stream.rewind
+Marshal.load(in_stream)
+test_ok(in_stream.binmode_called)
