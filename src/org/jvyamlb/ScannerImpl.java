@@ -773,7 +773,7 @@ public class ScannerImpl implements Scanner {
             forward();
             try {
                 ensure(2,false);
-                bytes.append(Integer.parseInt(new String(ByteList.plain(this.buffer.bytes),this.pointer,2),16));
+                bytes.append(Integer.parseInt(new String(ByteList.plain(this.buffer.bytes,this.pointer,2)),16));
             } catch(final NumberFormatException nfe) {
                 throw new ScannerException("while scanning a " + name,"expected URI escape sequence of 2 hexadecimal numbers, but found " + peek(1) + "(" + ((int)peek(1)) + ") and "+ peek(2) + "(" + ((int)peek(2)) + ")",null);
             }

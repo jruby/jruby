@@ -35,7 +35,6 @@
 package org.jruby;
 
 import java.math.BigInteger;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -233,11 +232,11 @@ public class RubyFixnum extends RubyInteger {
     public RubyFixnum hash() {
         return newFixnum(hashCode());
     }
-    
-    public int hashCode() {
-        return (int) value ^ (int) (value >> 32);
+
+    public final int hashCode() {
+        return (int)(value ^ value >>> 32);
     }
-    
+
     public boolean equals(Object other) {
         if (other == this) {
             return true;

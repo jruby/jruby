@@ -40,7 +40,6 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
-import java.util.Map;
 import java.util.TimeZone;
 
 import org.jruby.runtime.Block;
@@ -63,8 +62,8 @@ public class RubyTime extends RubyObject {
     public static TimeZone getLocalTimeZone(Ruby runtime) {
         // TODO: cache the RubyString "TZ" so it doesn't need to be recreated for each call?
         RubyString tzVar = runtime.newString("TZ");
-        Map h = ((RubyHash)runtime.getObject().getConstant("ENV")).getValueMap();
-        IRubyObject tz = (IRubyObject)h.get(tzVar);
+        RubyHash h = ((RubyHash)runtime.getObject().getConstant("ENV"));
+        IRubyObject tz = h.aref(tzVar);
         if (tz == null || ! (tz instanceof RubyString)) {
             return TimeZone.getDefault();
         } else {

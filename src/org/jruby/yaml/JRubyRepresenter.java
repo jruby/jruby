@@ -30,7 +30,6 @@ package org.jruby.yaml;
 import java.io.IOException;
 
 import org.jruby.RubyArray;
-import org.jruby.RubyHash;
 
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -64,9 +63,6 @@ public class JRubyRepresenter extends SafeRepresenterImpl {
     }
 
     public Node map(String tag, java.util.Map mapping, Object flowStyle) throws IOException {
-        if(mapping instanceof RubyHash) {
-            mapping = ((RubyHash)mapping).getValueMap();
-        }
         if(null == flowStyle) {
             return map(tag,mapping,false);
         } else {

@@ -997,7 +997,7 @@ public class Pack {
             }
 
             String substring = null;
-            substring = new String(ByteList.plain(buffer), index, length);
+            substring = new String(ByteList.plain(buffer, index, length));
 
             index += length;
 
@@ -1024,7 +1024,7 @@ public class Pack {
 
             // An exception will occur if no number is at ptr....
             int number = 0;
-            Integer.parseInt(new String(ByteList.plain(buffer), index, i - index));
+            Integer.parseInt(new String(ByteList.plain(buffer, index, i - index)));
 
             // An exception may occur here if an int can't hold this but ...
             index = i;

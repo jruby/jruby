@@ -1186,9 +1186,9 @@ public class EvaluationState {
     private static IRubyObject hashNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
         HashNode iVisited = (HashNode) node;
    
-        Map hash = null;
+        RubyHash hash = null;
         if (iVisited.getListNode() != null) {
-            hash = new HashMap(iVisited.getListNode().size() / 2);
+            hash = RubyHash.newHash(runtime);
    
         for (int i = 0; i < iVisited.getListNode().size();) {
                 // insert all nodes in sequence, hash them in the final instruction
@@ -1196,7 +1196,7 @@ public class EvaluationState {
                 IRubyObject key = evalInternal(runtime,context, iVisited.getListNode().get(i++), self, aBlock);
                 IRubyObject value = evalInternal(runtime,context, iVisited.getListNode().get(i++), self, aBlock);
    
-                hash.put(key, value);
+                hash.fastASet(key, value);
             }
         }
    
@@ -1204,7 +1204,7 @@ public class EvaluationState {
             return RubyHash.newHash(runtime);
         }
    
-        return RubyHash.newHash(runtime, hash, runtime.getNil());
+        return hash;
     }
 
     private static IRubyObject instAsgnNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
@@ -1631,7 +1631,7 @@ public class EvaluationState {
     }
 
     private static IRubyObject strNode(Ruby runtime, Node node) {
-        return runtime.newString((ByteList) ((StrNode) node).getValue().clone());
+        return runtime.newStringShared((ByteList) ((StrNode) node).getValue());
     }
     
     private static IRubyObject superNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
@@ -1781,7 +1781,7 @@ public class EvaluationState {
     }
 
     private static IRubyObject xStrNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self) {
-        return self.callMethod(context, "`", runtime.newString((ByteList) ((XStrNode) node).getValue().clone()));
+        return self.callMethod(context, "`", runtime.newStringShared((ByteList) ((XStrNode) node).getValue()));
     }
 
     private static IRubyObject yieldNode(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {

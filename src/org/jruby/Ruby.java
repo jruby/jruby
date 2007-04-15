@@ -98,7 +98,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.meta.BindingMetaClass;
 import org.jruby.runtime.builtin.meta.FileMetaClass;
-import org.jruby.runtime.builtin.meta.HashMetaClass;
 import org.jruby.runtime.builtin.meta.IOMetaClass;
 import org.jruby.runtime.builtin.meta.ModuleMetaClass;
 import org.jruby.runtime.builtin.meta.ObjectMetaClass;
@@ -198,6 +197,8 @@ public final class Ruby {
     private RubyClass fixnumClass;
     
     private RubyClass arrayClass;
+    
+    private RubyClass hashClass;    
 
     private IRubyObject tmsStruct;
 
@@ -371,6 +372,10 @@ public final class Ruby {
         return fixnumClass;
     }
 
+    public RubyClass getHash() {
+        return hashClass;
+    }    
+    
     public RubyClass getArray() {
         return arrayClass;
     }    
@@ -726,7 +731,11 @@ public final class Ruby {
         if(profile.allowClass("Fixnum")) {
             fixnumClass = RubyFixnum.createFixnumClass(this);
         }
-        new HashMetaClass(this).initializeClass();
+
+        if(profile.allowClass("Hash")) {
+            hashClass = RubyHash.createHashClass(this);
+        }
+        
         new IOMetaClass(this).initializeClass();
 
         if(profile.allowClass("Array")) {
@@ -1455,6 +1464,10 @@ public final class Ruby {
     public RubyString newString(ByteList byteList) {
         return RubyString.newString(this, byteList);
     }
+    
+    public RubyString newStringShared(ByteList byteList) {
+        return RubyString.newStringShared(this, byteList);
+    }    
 
     public RubySymbol newSymbol(String string) {
         return RubySymbol.newSymbol(this, string);
@@ -1464,6 +1477,10 @@ public final class Ruby {
         return RubyTime.newTime(this, milliseconds);
     }
 
+    public RaiseException newRuntimeError(String message) {
+        return newRaiseException(getClass("RuntimeError"), message);
+    }    
+    
     public RaiseException newArgumentError(String message) {
         return newRaiseException(getClass("ArgumentError"), message);
     }

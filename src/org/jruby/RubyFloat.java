@@ -414,10 +414,14 @@ public class RubyFloat extends RubyNumeric {
      * 
      */
     public RubyFixnum hash() {
+        return getRuntime().newFixnum(hashCode());
+    }
+
+    public final int hashCode() {
         long l = Double.doubleToLongBits(value);
-        return getRuntime().newFixnum((long) (l ^ l >>> 32));
-            }
-            
+        return (int)(l ^ l >>> 32);
+    }    
+
     /** flo_fo 
      * 
      */

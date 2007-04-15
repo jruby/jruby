@@ -374,8 +374,8 @@ public class RubyArgsFile extends RubyObject {
         }
         if(!str.isNil()) {
             str = str.convertToString();
+            ((RubyString)str).modify();
             ((RubyString)str).getByteList().length(0);
-            ((RubyString)str).stringMutated();
             args[1] = getRuntime().getNil();
         }
         while(true) {

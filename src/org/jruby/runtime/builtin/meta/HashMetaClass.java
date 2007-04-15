@@ -120,7 +120,7 @@ public class HashMetaClass extends ObjectMetaClass {
         RubyHash hash = (RubyHash) klass.allocate();
 
         if (args.length == 1) {
-            hash.setValueMap(new HashMap(((RubyHash) args[0]).getValueMap()));
+            // hash.setValueMap(new HashMap(((RubyHash) args[0]).getValueMap()));
         } else if (args.length % 2 != 0) {
             throw runtime.newArgumentError("odd number of args for Hash");
         } else {

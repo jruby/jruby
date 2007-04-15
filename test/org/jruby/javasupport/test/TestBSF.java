@@ -198,7 +198,7 @@ public class TestBSF extends RubyTestCase {
 			Iterator valuesIterator = map.values().iterator();
 			assertTrue(valuesIterator.hasNext());
 
-			// Iterate over the RubyHash keySet, simultaneously iterating over the values()  
+			// Iterate over the RubyHash keySet, simultaneously iterating over the values()
 			for (Iterator keySetIterator = map.keySet().iterator(); keySetIterator.hasNext(); ) {
 				Object key = keySetIterator.next();
 				
@@ -280,7 +280,7 @@ public class TestBSF extends RubyTestCase {
                 }
             }
             // Check the entry.setValue values come back out ok
-            
+
             iteration = 1;
             for (Iterator e = map.entrySet().iterator(); e.hasNext();) {
                 Object o = e.next();

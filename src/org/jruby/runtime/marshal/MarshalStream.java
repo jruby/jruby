@@ -196,13 +196,15 @@ public class MarshalStream extends FilterOutputStream {
             break;
         case ClassIndex.HASH: {
             RubyHash hash = (RubyHash)value;
-            
-            if (hash.hasNonProcDefault()) {
-                write('}');
+
+            if(hash.getIfNone().isNil()){
+                write('{');
+            }else if (hash.hasDefaultProc()) {
+                throw hash.getRuntime().newTypeError("can't dump hash with default proc");
             } else {
-		write('{');
+                write('}');
             }
-            
+
             RubyHash.marshalTo(hash, this);
             break;
         }

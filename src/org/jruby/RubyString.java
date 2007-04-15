@@ -78,6 +78,12 @@ public class RubyString extends RubyObject {
     private boolean validHash = false;
     private String stringValue;
 
+    private static final int SHARE_LEVEL_NONE = 0;      // nothing shared, string is independant
+    private static final int SHARE_LEVEL_BYTELIST = 1;  // string doesnt have it's own ByteList (values)
+    private static final int SHARE_LEVEL_BUFFER = 2;    // string has it's own ByteList, but it's pointing to a shared buffer (byte[]) 
+
+    private int shareLevel = 0;    
+
     private static ObjectAllocator STRING_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             RubyString newString = runtime.newString("");
@@ -332,7 +338,7 @@ public class RubyString extends RubyObject {
      */
     public String toString() {
         if (stringValue == null) {
-            stringValue = new String(ByteList.plain(value.bytes),0,value.realSize);
+            stringValue = new String(ByteList.plain(value.bytes,value.begin,value.realSize));
         }
         return stringValue;
     }
@@ -340,17 +346,108 @@ public class RubyString extends RubyObject {
     /**
      * This string has been changed, so invalidate stringValue.
      */
-    void stringMutated() {
+    void modified() {
         stringValue = null;
         validHash = false;
     }
+    
+    /** rb_str_dup
+     * 
+     */
+    public final RubyString strDup() {
+        return strDup(getMetaClass());
+    }
+    
+    private final RubyString strDup(RubyClass clazz) {
+        RubyString dup = new RubyString(getRuntime(), clazz, value);
+        dup.stringValue = stringValue;
+        dup.hash = hash;
+        dup.validHash = validHash;
+        dup.r_hash = r_hash;
+        dup.shareLevel = SHARE_LEVEL_BYTELIST;
+        if (shareLevel == SHARE_LEVEL_NONE) shareLevel = SHARE_LEVEL_BYTELIST;
+        dup.infectBy(this);        
+        return dup;        
+    }    
+    
+    private final RubyString makeShared(int index, int len) {
+        RubyString shared = new RubyString(getRuntime(), getMetaClass(), value.makeShared(index, len));
+        shared.shareLevel = SHARE_LEVEL_BUFFER;
+        if (shareLevel == SHARE_LEVEL_NONE) shareLevel = SHARE_LEVEL_BUFFER;
+        shared.infectBy(this);
+        return shared;
+    }
+    
+    
+    private final void modifyCheck() {
+        // TODO: tmp lock here!
+        testFrozen("string");
+
+        if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
+            throw getRuntime().newSecurityError("Insecure: can't modify string");
+        }
+    }
+    
+    /** rb_str_modify
+     * 
+     */
+    public final void modify() {
+        modifyCheck();
+        
+        if(shareLevel != SHARE_LEVEL_NONE){
+            if(shareLevel == SHARE_LEVEL_BYTELIST) {            
+                value = value.dup();
+            } else if(shareLevel == SHARE_LEVEL_BUFFER) {
+                value.modify();
+            }
+            shareLevel = SHARE_LEVEL_NONE;
+        }
+        
+        modified();
+    }
+    
+    private final void view(ByteList bytes) {
+        modifyCheck();
+
+        value = bytes;
+        shareLevel = SHARE_LEVEL_NONE;
+
+        modified();        
+    }
+
+    private final void view(byte[]bytes) {
+        modifyCheck();        
+        
+        value.replace(bytes);
+        shareLevel = SHARE_LEVEL_NONE;
+        
+        modified();        
+    }
+    
+    private final void view(int index, int len) {
+        modifyCheck();
+        
+        if (shareLevel != SHARE_LEVEL_NONE) {
+            if (shareLevel == SHARE_LEVEL_BYTELIST) {
+                value = value.makeShared(index, len);
+                shareLevel = SHARE_LEVEL_BUFFER; 
+            } else if (shareLevel == SHARE_LEVEL_BUFFER) {
+                value.view(index, len);
+            }
+            
+        } else {        
+            value.view(index, len);
+        }
+
+        modified();
+    }
 
     public static String bytesToString(byte[] bytes, int beg, int len) {
-        return new String(ByteList.plain(bytes), beg, len);
+        return new String(ByteList.plain(bytes, beg, len));
     }
 
     public static String byteListToString(ByteList bytes) {
-        return bytesToString(bytes.unsafeBytes(),0,bytes.length());
+        return bytesToString(bytes.unsafeBytes(),bytes.begin,bytes.length());
     }
 
     public static String bytesToString(byte[] bytes) {
@@ -535,7 +632,7 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyString newString(ByteList s) {
-        return new RubyString(getRuntime(), getType(), s);
+        return new RubyString(getRuntime(), getMetaClass(), s);
     }
 
     // Methods of the String class (rb_str_*):
@@ -566,6 +663,12 @@ public class RubyString extends RubyObject {
     public static RubyString newString(Ruby runtime, ByteList bytes) {
         return new RubyString(runtime, bytes);
     }
+    
+    public static RubyString newStringShared(Ruby runtime, ByteList bytes) {
+        RubyString str = new RubyString(runtime, bytes);
+        str.shareLevel = SHARE_LEVEL_BYTELIST;
+        return str;
+    }    
 
     public static RubyString newString(Ruby runtime, byte[] bytes, int start, int length) {
         byte[] bytes2 = new byte[length];
@@ -574,36 +677,37 @@ public class RubyString extends RubyObject {
     }
 
     public IRubyObject doClone(){
-        return newString(getRuntime(), (ByteList)value.clone());
+        return newString(getRuntime(), value.dup());
     }
 
+    // FIXME: cat methods should be more aware of sharing to prevent unnecessary reallocations in certain situations 
     public RubyString cat(byte[] str) {
+        modify();
         value.append(str);
-        stringMutated();
         return this;
     }
 
     public RubyString cat(byte[] str, int beg, int len) {
+        modify();        
         value.append(str, beg, len);
-        stringMutated();
         return this;
     }
 
     public RubyString cat(ByteList str) {
+        modify();        
         value.append(str);
-        stringMutated();
         return this;
     }
 
     public RubyString cat(byte ch) {
+        modify();        
         value.append(ch);
-        stringMutated();
         return this;
     }
 
     public IRubyObject to_str() {
         if (getMetaClass().getRealClass() != getRuntime().getString()) {
-            return newString(getRuntime(), value.bytes());
+            return strDup(getRuntime().getString());
         }
         return this;
     }
@@ -612,28 +716,49 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyString replace(IRubyObject other) {
-        testFrozen("String");
+        modifyCheck();
+
+        if (this == other) return this;
          
-        RubyString newValue = stringValue(other);
-        if (this == other || sameAs(newValue)) {
+        RubyString otherStr =  stringValue(other);
+        
+        value = otherStr.value;
+        validHash = otherStr.validHash;
+        hash = otherStr.hash;
+        r_hash = otherStr.r_hash;
+        stringValue = otherStr.stringValue;
+        
+        shareLevel = SHARE_LEVEL_BYTELIST;
+        if (otherStr.shareLevel == SHARE_LEVEL_NONE) otherStr.shareLevel = SHARE_LEVEL_BYTELIST;
+        
+        infectBy(other);
             return this;
         }
-        value.replace(newValue.value.bytes());
-        stringMutated();
-        return (RubyString) infectBy(other);
-    }
 
     public RubyString reverse() {
-        return newString(getRuntime(), (ByteList)value.clone()).reverse_bang();
+        if (value.length() <= 1) return strDup();
+
+        ByteList buf = new ByteList(value.length()+2);
+        buf.realSize = value.length();
+        int src = value.length() - 1;
+        int dst = 0;
+        
+        while (src >= 0) buf.set(dst++, value.get(src--));
+
+        RubyString rev = new RubyString(getRuntime(), getMetaClass(), buf);
+        rev.infectBy(this);
+        return rev;
     }
 
     public RubyString reverse_bang() {
+        if (value.length() > 1){
+            modify();
         for (int i = 0; i < (value.length() / 2); i++) {
             byte b = (byte)value.get(i);
             value.set(i, value.get(value.length() - i - 1));
             value.set(value.length() - i - 1, b);
         }
-        stringMutated();
+        }
         return this;
     }
 
@@ -703,18 +828,19 @@ public class RubyString extends RubyObject {
      *
      */
     public IRubyObject capitalize() {
-        RubyString result = (RubyString) dup();
-        result.capitalize_bang();
-        return result;
+        RubyString str = strDup();
+        str.capitalize_bang();
+        return str;
     }
 
     /** rb_str_capitalize_bang
      *
      */
     public IRubyObject capitalize_bang() {
-        if (isEmpty()) {
-            return getRuntime().getNil();
-        }
+        if (value.length() == 0)  return getRuntime().getNil();
+        
+        modify();
+        
         char capital = value.charAt(0);
         boolean changed = false;
         if (Character.isLetter(capital) && Character.isLowerCase(capital)) {
@@ -730,13 +856,8 @@ public class RubyString extends RubyObject {
             }
         }
 
-        if (changed) {
-            stringMutated();
-            return this;
-        } else {
-            return getRuntime().getNil();
+        return changed ? this : getRuntime().getNil();
         }
-    }
 
     public IRubyObject op_ge(IRubyObject other) {
         if (other instanceof RubyString) {
@@ -778,69 +899,77 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyString upcase() {
-        return newString(toString().toUpperCase());
+        RubyString str = strDup();
+        str.upcase_bang();
+        return str;
     }
 
     /** rb_str_upcase_bang
      *
      */
     public IRubyObject upcase_bang() {
+        if (value.length() == 0)  return getRuntime().getNil();
+        
         boolean changed = false;
+        
+        modify();
+        
         for (int i = 0; i < value.length(); i++) {
             char c = value.charAt(i);
             if (!Character.isLetter(c) || Character.isUpperCase(c)) continue;
             value.set(i, (byte)Character.toUpperCase(c));
             changed = true;
         }
-        if (changed) {
-            stringMutated();
-            return this;
-        } else {
-            return getRuntime().getNil();
+        return changed ? this : getRuntime().getNil();
         }
-    }
 
     /** rb_str_downcase
      *
      */
     public RubyString downcase() {
-        return newString(toString().toLowerCase());
+        RubyString str = strDup();
+        str.downcase_bang();
+        return str;
     }
 
     /** rb_str_downcase_bang
      *
      */
     public IRubyObject downcase_bang() {
+        if (value.length() == 0)  return getRuntime().getNil();        
+        
         boolean changed = false;
+        
+        modify();
+        
         for (int i = 0; i < value.length(); i++) {
             char c = value.charAt(i);
             if (!Character.isLetter(c) || Character.isLowerCase(c)) continue;
             value.set(i, (byte)Character.toLowerCase(c));
             changed = true;
         }
-        if (changed) {
-            stringMutated();
-            return this;
-        } else {
-            return getRuntime().getNil();
+        
+        return changed ? this : getRuntime().getNil();
         }
-    }
 
     /** rb_str_swapcase
      *
      */
     public RubyString swapcase() {
-        RubyString newString = newString(getRuntime(), (ByteList)value.clone());
-        IRubyObject swappedString = newString.swapcase_bang();
-
-        return (RubyString) (swappedString.isNil() ? newString : swappedString);
+        RubyString str = strDup();
+        str.swapcase_bang();
+        return str;
     }
 
     /** rb_str_swapcase_bang
      *
      */
     public IRubyObject swapcase_bang() {
-        boolean changesMade = false;
+        if (value.length() == 0)  return getRuntime().getNil();        
+        
+        boolean changed = false;
+        
+        modify();        
 
         for (int i = 0; i < value.length(); i++) {
             char c = value.charAt(i);
@@ -848,19 +977,16 @@ public class RubyString extends RubyObject {
             if (!Character.isLetter(c)) {
                 continue;
             } else if (Character.isLowerCase(c)) {
-                changesMade = true;
+                changed = true;
                 value.set(i, (byte)Character.toUpperCase(c));
             } else {
-                changesMade = true;
+                changed = true;
                 value.set(i, (byte)Character.toLowerCase(c));
             }
         }
-        if (changesMade) {
-            stringMutated();
-            return this;
+        
+        return changed ? this : getRuntime().getNil();
         }
-        return getRuntime().getNil();
-    }
 
     /** rb_str_dump
      *
@@ -879,9 +1005,10 @@ public class RubyString extends RubyObject {
             throw getRuntime().newIndexError("index " + index + " out of range");
         }
 
+        modify();
+        
         ByteList insert = ((RubyString)stringArg.convertToString()).value;
         value.unsafeReplace(index, 0, insert);
-        stringMutated();
         return this;
     }
 
@@ -951,7 +1078,7 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyBoolean empty() {
-        return getRuntime().newBoolean(isEmpty());
+        return isEmpty() ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
     private boolean isEmpty() {
@@ -1593,7 +1720,9 @@ public class RubyString extends RubyObject {
      *
      */
     public IRubyObject sub(IRubyObject[] args, Block block) {
-        return sub(args, false, block);
+        RubyString str = strDup();
+        str.sub_bang(args, block);
+        return str;
     }
 
     /** rb_str_sub_bang
@@ -1628,8 +1757,7 @@ public class RubyString extends RubyObject {
             newStr.append(iter ? block.yield(tc, match.group(0)) : pat.regsub(repl, match));
             newStr.append(match.post_match());
             if (bang) {
-                value = newStr.value;
-                stringMutated();
+                view(newStr.value);
                 infectBy(repl);
                 return this;
             }
@@ -1682,7 +1810,7 @@ public class RubyString extends RubyObject {
         String str = toString();
         int beg = pat.search(str, 0);
         if (beg < 0) {
-            return bang ? getRuntime().getNil() : dup();
+            return bang ? getRuntime().getNil() : strDup();
         }
         ByteList sbuf = new ByteList(this.value.length());
         IRubyObject newStr;
@@ -1715,11 +1843,11 @@ public class RubyString extends RubyObject {
         sbuf.append(this.value,offset,this.value.length()-offset);
 
         if (bang) {
-            setTaint(isTaint() || taint);
-            setValue(sbuf);
+            view(sbuf);
+            setTaint(isTaint() || taint);            
             return this;
         }
-        RubyString result = newString(sbuf);
+        RubyString result = new RubyString(getRuntime(), getMetaClass(), sbuf); 
         result.setTaint(isTaint() || taint);
         return result;
     }
@@ -1771,9 +1899,12 @@ public class RubyString extends RubyObject {
             }
         } else if (args[0] instanceof RubyString) {
             ByteList sub = ((RubyString) args[0]).value;
+            // the empty string is always found at the beginning of a string
+            if (sub.realSize == 0) return getRuntime().newFixnum(0);
+
             // FIXME: any compelling reason to clone here? we don't
             // for fixnum search below...
-            ByteList sb = (ByteList)value.clone();
+            ByteList sb = value.dup();
             pos = reverse ? sb.lastIndexOf(sub, pos) : sb.indexOf(sub, pos);
         } else if (args[0] instanceof RubyFixnum) {
             char c = (char) ((RubyFixnum) args[0]).getLongValue();
@@ -1786,7 +1917,7 @@ public class RubyString extends RubyObject {
     }
 
     /* rb_str_substr */
-    public IRubyObject substr(int beg, int len) {
+    private IRubyObject substr(int beg, int len) {
         int length = value.length();
         if (len < 0 || beg > length) {
             return getRuntime().getNil();
@@ -1798,8 +1929,7 @@ public class RubyString extends RubyObject {
             }
         }
         int end = Math.min(length, beg + len);
-        ByteList newValue = new ByteList(value, beg, end - beg);
-        return newString(getRuntime(), newValue).infectBy(this);
+        return makeShared(beg, end - beg);
     }
 
     /* rb_str_replace */
@@ -1808,8 +1938,9 @@ public class RubyString extends RubyObject {
             len = value.length() - beg;
         }
 
+        modify();
         value.unsafeReplace(beg,len,replaceWith.value);
-        stringMutated();
+
         return infectBy(replaceWith);
     }
 
@@ -1891,7 +2022,6 @@ public class RubyString extends RubyObject {
      *
      */
     public IRubyObject aset(IRubyObject[] args) {
-        testFrozen("class");
         int strLen = value.length();
         if (Arity.checkArgumentCount(getRuntime(), args, 2, 3) == 3) {
             if (args[0] instanceof RubyFixnum) {
@@ -1938,8 +2068,8 @@ public class RubyString extends RubyObject {
                 throw getRuntime().newIndexError("string index out of bounds");
             }
             if (args[1] instanceof RubyFixnum) {
+                modify();
                 value.set(idx, (byte) RubyNumeric.fix2int(args[1]));
-                stringMutated();
             } else {
                 replace(idx, 1, stringValue(args[1]));
             }
@@ -1985,14 +2115,14 @@ public class RubyString extends RubyObject {
     }
 
     public IRubyObject succ() {
-        return ((RubyString) dup()).succ_bang();
+        return strDup().succ_bang();
     }
 
     public IRubyObject succ_bang() {
-        if (value.length() == 0) {
-            return this;
-        }
+        if (value.length() == 0) return this;
 
+        modify();
+        
         boolean alnumSeen = false;
         int pos = -1;
         int c = 0;
@@ -2031,7 +2161,6 @@ public class RubyString extends RubyObject {
             // zzz -> aaaa and non-alnum byte values should be "\377" -> "\001\000"
             value.prepend((byte)n);
         }
-        stringMutated();
         return this;
     }
 
@@ -2161,12 +2290,12 @@ public class RubyString extends RubyObject {
             pattern = RubyRegexp.regexpValue(args[0]);
         } else {
             String stringPattern = RubyString.stringValue(args[0]).toString();
-
+            
             if (stringPattern.equals(" ")) {
                 isWhitespace = true;
-                pattern = RubyRegexp.newRegexp(getRuntime(), "\\s+", 0, null);
+                pattern = RubyRegexp.newRegexp(runtime, "\\s+", 0, null);
             } else {
-                pattern = RubyRegexp.newRegexp(getRuntime(), RubyRegexp.escapeSpecialChars(stringPattern), 0, null);
+                pattern = RubyRegexp.newRegexp(runtime, RubyRegexp.escapeSpecialChars(stringPattern), 0, null);
             }
         }
 
@@ -2174,8 +2303,9 @@ public class RubyString extends RubyObject {
         String[] result = null;
         // attempt to convert to Unicode when appropriate
         String splitee = toString();
+
         boolean unicodeSuccess = false;
-        if (getRuntime().getKCode() == KCode.UTF8) {
+        if (runtime.getKCode() == KCode.UTF8) {
             // We're in UTF8 mode; try to convert the string to UTF8, but fall back on raw bytes if we can't decode
             // TODO: all this decoder and charset stuff could be centralized...in KCode perhaps?
             CharsetDecoder decoder = Charset.forName("UTF-8").newDecoder();
@@ -2288,14 +2418,15 @@ public class RubyString extends RubyObject {
         }
 
         // convert arraylist of strings to RubyArray of RubyStrings
-        RubyArray resultArray = getRuntime().newArray(result.length);
+        RubyArray resultArray = runtime.newArray(result.length);
 
         for (int i = 0; i < result.length; i++) {
-            RubyString string = RubyString.newString(runtime, getMetaClass(), result[i]);
+            
+            RubyString string = new RubyString(runtime, getMetaClass(), result[i]);
 
             // if we're in unicode mode and successfully converted to a unicode string before,
             // make sure to keep unicode in the split values
-            if (unicodeSuccess && getRuntime().getKCode() == KCode.UTF8) {
+            if (unicodeSuccess && runtime.getKCode() == KCode.UTF8) {
                 string.setUnicodeValue(result[i]);
             }
 
@@ -2375,7 +2506,7 @@ public class RubyString extends RubyObject {
         
         int length = RubyNumeric.fix2int(args[0]);
         if (length <= value.length()) {
-            return dup();
+            return strDup();
         }
 
         ByteList sbuf = new ByteList(length);
@@ -2401,11 +2532,10 @@ public class RubyString extends RubyObject {
             sbuf.append(thisStr);
         }
 
-        RubyString ret = newString(sbuf);
+        RubyString ret = new RubyString(getRuntime(), getMetaClass(), sbuf);
 
-        if (args.length == 2) {
-            ret.infectBy(args[1]);
-        }
+        ret.infectBy(this);
+        if (args.length == 2) ret.infectBy(args[1]);
 
         return ret;
     }
@@ -2435,7 +2565,7 @@ public class RubyString extends RubyObject {
             throw getRuntime().newArgumentError("zero width padding");
         }
         if (len <= strLen) {
-            return dup();
+            return strDup();
         }
         ByteList sbuf = new ByteList(len);
         int lead = (len - strLen) / 2;
@@ -2447,41 +2577,32 @@ public class RubyString extends RubyObject {
         for (int i = 0; i < remaining; i++) {
             sbuf.append(pad.charAt(i % padLen));
         }
-        return newString(sbuf);
+        return new RubyString(getRuntime(), getMetaClass(), sbuf);
     }
 
     public IRubyObject chop() {
-        RubyString newString = (RubyString) dup();
-
-        newString.chop_bang();
-
-        return newString;
+        RubyString str = strDup();
+        str.chop_bang();
+        return str;
     }
 
     public IRubyObject chop_bang() {
         int end = value.length() - 1;
 
-        if (end < 0) {
-            return getRuntime().getNil();
-        }
+        if (end < 0) return getRuntime().getNil(); 
 
         if ((value.get(end) & 0xFF) == '\n') {
-            if (end > 0 && (value.get(end-1) & 0xFF) == '\r') {
-                end--;
+            if (end > 0 && (value.get(end-1) & 0xFF) == '\r') end--;
             }
-        }
 
-        value.length(end);
-        stringMutated();
+        view(0, end);
         return this;
     }
 
     public RubyString chomp(IRubyObject[] args) {
-        RubyString result = (RubyString) dup();
-
-        result.chomp_bang(args);
-
-        return result;
+        RubyString str = strDup();
+        str.chomp_bang(args);
+        return str;
     }
 
     /**
@@ -2525,8 +2646,7 @@ public class RubyString extends RubyObject {
                 return getRuntime().getNil();
             }
 
-            value.length(end - removeCount + 1);
-            stringMutated();
+            view(0, end - removeCount + 1);
             return this;
         }
 
@@ -2543,126 +2663,107 @@ public class RubyString extends RubyObject {
                 return getRuntime().getNil();
             }
 
-            value.length(end - removeCount + 1);
-            stringMutated();
+            view(0, end - removeCount + 1);
             return this;
         }
 
         // Uncommon case of str.chomp!("xxx")
         if (toString().endsWith(separator)) {
-            value.length(value.length() - separator.length());
-            stringMutated();
+            view(0, value.length() - separator.length());
             return this;
         }
         return getRuntime().getNil();
     }
 
+    /** rb_str_lstrip
+     * 
+     */
     public IRubyObject lstrip() {
-        return newString(getRuntime(), lstripInternal());
+        RubyString str = strDup();
+        str.lstrip_bang();
+        return str;
     }
 
-    public ByteList lstripInternal() {
-        int length = value.length();
-        int i = 0;
-
-        for (; i < length; i++) {
-            if (!Character.isWhitespace(value.charAt(i))) {
-                break;
-            }
-        }
-
-        return new ByteList(value, i, value.length() - i);
-    }
-
+    /** rb_str_lstrip_bang
+     * FIXME support buffer shared
+     */
     public IRubyObject lstrip_bang() {
-        ByteList newBytes = lstripInternal();
-        if (value.equals(newBytes)) {
-            return getRuntime().getNil();
-        }
-        value = newBytes;
-        stringMutated();
-
-        return this;
-    }
-
-    public IRubyObject rstrip() {
-        return newString(getRuntime(), rstripInternal());
-    }
-
-    public ByteList rstripInternal() {
-        int i = value.length() - 1;
-
-        for (; i >= 0; i--) {
-            if (!Character.isWhitespace(value.charAt(i))) {
-                break;
+        if (value.length() == 0) return getRuntime().getNil();
+        
+        int i=0;
+        while (i < value.length() && Character.isWhitespace(value.charAt(i))) i++;
+        
+        if (i > 0) {
+            view(i, value.length() - i);
+            return this;
             }
-        }
-
-        return new ByteList(value, 0, i + 1);
-    }
-
-    public IRubyObject rstrip_bang() {
-        ByteList newBytes = rstripInternal();
-        if (value.equals(newBytes)) {
+        
             return getRuntime().getNil();
         }
-        value = newBytes;
-        stringMutated();
 
-        return this;
+    /** rb_str_rstrip
+     *  
+     */
+    public IRubyObject rstrip() {
+        RubyString str = strDup();
+        str.rstrip_bang();
+        return str;
     }
+
+    /** rb_str_rstrip_bang
+     * FIXME support buffer shared
+     */ 
+    public IRubyObject rstrip_bang() {
+        if (value.length() == 0) return getRuntime().getNil();
+        int i=value.length() - 1;
+        
+        while (i >= 0 && Character.isWhitespace(value.charAt(i))) i--;
+        
+        if (i < value.length() - 1) {
+            view(0, i + 1);
+            return this;
+            }
+
+            return getRuntime().getNil();
+        }
 
     /** rb_str_strip
      *
      */
     public IRubyObject strip() {
-        if (isEmpty()) {
-            return dup();
+        RubyString str = strDup();
+        str.strip_bang();
+        return str;
         }
-        ByteList bytes = stripInternal();
-        if (bytes == null) {
-            return newString(getRuntime(), (ByteList)value.clone());
-        }
-
-        return newString(getRuntime(), bytes);
-    }
 
     /** rb_str_strip_bang
-     *
+     *  FIXME support buffer shared
      */
     public IRubyObject strip_bang() {
-        if (isEmpty()) {
+        if (value.length() == 0) return getRuntime().getNil();
+        
+        int left = 0;
+        while (left < value.length() && Character.isWhitespace(value.charAt(left))) left++;
+        
+        int right = value.length() - 1;
+        while (right > left && Character.isWhitespace(value.charAt(right))) right--;
+        
+        if (left == 0 && right == value.length() - 1) {
             return getRuntime().getNil();
-        }
-        ByteList bytes = stripInternal();
-        if (bytes == null) {
-            return getRuntime().getNil();
-        }
-        value = bytes;
-        stringMutated();
-        return this;
-    }
-
-    public ByteList stripInternal() {
-        int head = 0;
-        while (head < value.length() && Character.isWhitespace(value.charAt(head))) head++;
-        int tail = value.length() - 1;
-        while (tail > head && Character.isWhitespace(value.charAt(tail))) tail--;
-
-        if (head == 0 && tail == value.length() - 1) {
-            return null;
-        }
-
-        if (head <= tail) {
-            return new ByteList(value, head, tail - head + 1);
         }
         
-        if (head > tail) {
-            return new ByteList();
-        }
-
-        return null;
+        if (left <= right) {
+            view(left, right - left + 1);
+        return this;
     }
+        
+        if (left > right) {
+            view(new ByteList());
+            return this;            
+        }        
+        
+        return getRuntime().getNil();
+        }
 
     private static ByteList expandTemplate(ByteList spec, boolean invertOK) {
         int len = spec.length();
@@ -2754,7 +2855,9 @@ public class RubyString extends RubyObject {
      *
      */
     public IRubyObject delete(IRubyObject[] args) {
-        return newString(getRuntime(), getDelete(args)).infectBy(this);
+        RubyString str = strDup();
+        str.delete_bang(args);
+        return str;
     }
 
     /** rb_str_delete_bang
@@ -2765,8 +2868,7 @@ public class RubyString extends RubyObject {
         if (value.equals(newStr)) {
             return getRuntime().getNil();
         }
-        value = newStr;
-        stringMutated();
+        view(newStr);
         return this;
     }
 
@@ -2804,7 +2906,9 @@ public class RubyString extends RubyObject {
      *
      */
     public IRubyObject squeeze(IRubyObject[] args) {
-        return newString(getRuntime(), getSqueeze(args)).infectBy(this);
+        RubyString str = strDup();
+        str.squeeze_bang(args);        
+        return str;        
     }
 
     /** rb_str_squeeze_bang
@@ -2815,8 +2919,7 @@ public class RubyString extends RubyObject {
         if (value.equals(newStr)) {
             return getRuntime().getNil();
         }
-        value = newStr;
-        stringMutated();
+        view(newStr);
         return this;
     }
 
@@ -2864,7 +2967,9 @@ public class RubyString extends RubyObject {
      *
      */
     public IRubyObject tr(IRubyObject search, IRubyObject replace) {
-        return newString(getRuntime(), tr(search, replace, false)).infectBy(this);
+        RubyString str = strDup();
+        str.tr_bang(search, replace);        
+        return str;        
     }
 
     /** rb_str_tr_bang
@@ -2875,8 +2980,7 @@ public class RubyString extends RubyObject {
         if (value.equals(newStr)) {
             return getRuntime().getNil();
         }
-        value = newStr;
-        stringMutated();
+        view(newStr);
         return this;
     }
 
@@ -2895,8 +2999,7 @@ public class RubyString extends RubyObject {
         if (value.equals(newStr)) {
             return getRuntime().getNil();
         }
-        value = newStr;
-        stringMutated();
+        view(newStr);
         return this;
     }
 
@@ -2949,9 +3052,10 @@ public class RubyString extends RubyObject {
      */
     public RubyString each_byte(Block block) {
         int lLength = value.length();
-        ThreadContext context = getRuntime().getCurrentContext();
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
         for (int i = 0; i < lLength; i++) {
-            block.yield(context, getRuntime().newFixnum(value.get(i) & 0xFF));
+            block.yield(context, runtime.newFixnum(value.get(i) & 0xFF));
         }
         return this;
     }
@@ -3006,13 +3110,11 @@ public class RubyString extends RubyObject {
      * @param value The new java.lang.String this RubyString should encapsulate
      */
     public void setValue(CharSequence value) {
-        this.value.replace(ByteList.plain(value));
-        stringMutated();
+        view(ByteList.plain(value));
     }
 
     public void setValue(ByteList value) {
-        this.value = value;
-        stringMutated();
+        view(value);
     }
 
     public CharSequence getValue() {
@@ -3021,7 +3123,7 @@ public class RubyString extends RubyObject {
 
     public String getUnicodeValue() {
         try {
-            return new String(value.bytes,0,value.realSize, "UTF8");
+            return new String(value.bytes,value.begin,value.realSize, "UTF8");
         } catch (Exception e) {
             throw new RuntimeException("Something's seriously broken with encodings", e);
         }
@@ -3029,8 +3131,7 @@ public class RubyString extends RubyObject {
 
     public void setUnicodeValue(String newValue) {
         try {
-            value.replace(newValue.getBytes("UTF8"));
-            stringMutated();
+            view(newValue.getBytes("UTF8"));
         } catch (Exception e) {
             throw new RuntimeException("Something's seriously broken with encodings", e);
         }

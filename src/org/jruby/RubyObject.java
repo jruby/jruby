@@ -66,6 +66,11 @@ import org.jruby.runtime.MethodIndex;
  * @author  jpetersen
  */
 public class RubyObject implements Cloneable, IRubyObject {
+    
+    private RubyObject(){};
+    // An instance that never equals any other instance
+    public static final IRubyObject NEVER = new RubyObject();
+    
     // The class of this object
     protected RubyClass metaClass;
 
@@ -385,7 +390,10 @@ public class RubyObject implements Cloneable, IRubyObject {
         assert original != null;
         assert !clone.isFrozen() : "frozen object (" + clone.getMetaClass().getName() + ") allocated";
 
+        if (original.safeHasInstanceVariables()) {
         clone.setInstanceVariables(new HashMap(original.getInstanceVariables()));
+        }
+
         /* FIXME: finalizer should be dupped here */
         clone.callMethod(clone.getRuntime().getCurrentContext(), "initialize_copy", original);
     }
@@ -643,6 +651,10 @@ public class RubyObject implements Cloneable, IRubyObject {
         return (RubyArray) convertToType(getRuntime().getArray(), MethodIndex.TO_ARY, true);
     }
 
+    public RubyHash convertToHash() {
+        return (RubyHash)convertToType(getRuntime().getHash(), 0, "to_hash", true, true, false);
+    }
+    
     public RubyFloat convertToFloat() {
         return (RubyFloat) convertToType(getRuntime().getClass("Float"), MethodIndex.TO_F, true);
     }
@@ -683,8 +695,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         
         if (!respondsTo(convertMethod)) {
             if (raiseOnMissingMethod) {
-                throw getRuntime().newTypeError(
-                                                "can't convert " + trueFalseNil(this) + " into " + trueFalseNil(targetType.getName()));
+                throw getRuntime().newTypeError("can't convert " + trueFalseNil(this) + " into " + trueFalseNil(targetType.getName()));
             } 
 
             return getRuntime().getNil();
@@ -962,7 +973,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
     
     public RubyFixnum hash() {
-        return getRuntime().newFixnum(System.identityHashCode(this));
+        return getRuntime().newFixnum(super.hashCode());
     }
 
     public int hashCode() {
@@ -970,7 +981,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         
         if (hashValue instanceof RubyFixnum) return (int) RubyNumeric.fix2long(hashValue); 
         
-        return System.identityHashCode(this);
+        return super.hashCode();
     }
 
     /** rb_obj_type

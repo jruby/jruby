@@ -39,6 +39,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFloat;
+import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyFixnum;
@@ -411,6 +412,11 @@ public interface IRubyObject {
      *
      * @return
      */
+    RubyHash convertToHash();    
+    /**
+    *
+    * @return
+    */    
     RubyFloat convertToFloat();
     /**
      *

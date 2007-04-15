@@ -143,13 +143,15 @@ public class ShellLauncher {
     }
 
     private String[] getCurrentEnv() {
-        Map h = ((RubyHash)runtime.getObject().getConstant("ENV")).getValueMap();
-        String[] ret = new String[h.size()];
+        RubyHash hash = (RubyHash)runtime.getObject().getConstant("ENV");
+        String[] ret = new String[hash.size()];
         int i=0;
-        for(Iterator iter = h.entrySet().iterator();iter.hasNext();i++) {
+
+        for(Iterator iter = hash.directEntrySet().iterator();iter.hasNext();i++) {
             Map.Entry e = (Map.Entry)iter.next();
             ret[i] = e.getKey().toString() + "=" + e.getValue().toString();
         }
+
         return ret;
     }
 

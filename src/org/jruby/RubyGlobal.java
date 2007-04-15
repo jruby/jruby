@@ -82,10 +82,14 @@ public class RubyGlobal {
             }
 
             ThreadContext context = getRuntime().getCurrentContext();
-            
+            //return super.aset(getRuntime().newString("sadfasdF"), getRuntime().newString("sadfasdF"));
             return super.aset(key.callMethod(context, MethodIndex.TO_STR, "to_str", IRubyObject.NULL_ARRAY),
                     value.isNil() ? getRuntime().getNil() : value.callMethod(context, MethodIndex.TO_STR, "to_str", IRubyObject.NULL_ARRAY));
         }
+        
+        public IRubyObject to_s(){
+            return getRuntime().newString("ENV");
+    }
     }
     
     public static void createGlobals(Ruby runtime) {

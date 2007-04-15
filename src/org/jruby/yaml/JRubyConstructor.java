@@ -144,8 +144,7 @@ public class JRubyConstructor extends ConstructorImpl {
     }
 
     public Object constructRubyMapping(final Node node) {
-        RubyHash h1 = RubyHash.newHash(runtime);
-        h1.setValueMap((Map)super.constructMapping(node));
+        RubyHash h1 = RubyHash.newHash(runtime, (Map)super.constructMapping(node), runtime.getNil());
         return h1;
     }
 

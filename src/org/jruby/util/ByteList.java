@@ -37,12 +37,13 @@ import java.io.Serializable;
  *
  * @author headius
  */
-public class ByteList implements Comparable, CharSequence, Serializable {
+public final class ByteList implements Comparable, CharSequence, Serializable {
     private static final long serialVersionUID = -1286166947275543731L;
 
     public static final byte[] NULL_ARRAY = new byte[0];
 
     public byte[] bytes;
+    public int begin;
     public int realSize;
 
     private static final int DEFAULT_SIZE = 4;
@@ -94,6 +95,10 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     public ByteList(ByteList wrap, int index, int len) {
         this(wrap.bytes, index, len);
     }
+    
+    private ByteList(boolean flag) {
+        
+    }
 
     public void delete(int start, int len) {
         realSize-=len;
@@ -125,11 +130,11 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     }
 
     public void append(ByteList moreBytes) {
-        append(moreBytes.bytes, 0, moreBytes.realSize);
+        append(moreBytes.bytes, moreBytes.begin, moreBytes.realSize);
     }
 
     public void append(ByteList moreBytes, int index, int len) {
-        append(moreBytes.bytes, index, len);
+        append(moreBytes.bytes, moreBytes.begin + index, len);
     }
 
     public void append(byte[] moreBytes, int start, int len) {
@@ -149,7 +154,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
 
     public int get(int index) {
         if (index >= realSize) throw new IndexOutOfBoundsException();
-        return bytes[index];
+        return bytes[begin + index];
     }
 
     public void set(int index, int b) {
@@ -219,8 +224,10 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     // leaving old version for now for comparisons, see 
     // TestByteList.java attached to JRUBY-xxx
     public int old_indexOf(int c, int pos) {
-        for (int i = pos; i < realSize; i++) {
-            if ((bytes[i] & 0xFF) == c) return i;
+        final int end = begin + realSize;
+        pos += begin;
+        for (int i = pos; i < end; i++) {
+            if ((bytes[i] & 0xFF) == c) return i - begin;
         }
         return -1;
     }
@@ -232,10 +239,11 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         if (c > 255)
             return -1;
         final byte b = (byte)(c&0xFF);
-        final int size = realSize;
+        final int size = begin + realSize;
         final byte[] buf = bytes;
+        pos += begin;
         for ( ; pos < size && buf[pos] != b ; pos++ ) ;
-        return pos < size ? pos : -1;
+        return pos < size ? pos - begin : -1;
     }
 
     public int indexOf(ByteList find) {
@@ -246,19 +254,19 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     // TestByteList.java attached to JRUBY-xxx
     public int old_indexOf(ByteList find, int pos) {
         // search main string
-        BigLoop: for (int j = pos; j < realSize; j++) {
+        BigLoop: for (int j = begin + pos; j < begin + realSize; j++) {
             // if we get a match for the first char
             if ((bytes[j] & 0xFF) == find.bytes[0]) {
                 // try to match the remaining chars
-                for (int k = 1; k < find.realSize; k++) {
+                for (int k = begin + 1; k < begin + find.realSize; k++) {
                     // reached end of search string, break search loop
-                    if (j + k >= realSize) break BigLoop;
+                    if (j + k >= begin + realSize) break BigLoop;
                     
                     //some character didn't match, back to main loop with next char
                     if (bytes[j + k] != find.bytes[k]) continue BigLoop;
                 }
                 // got through find string successfully, return j
-                return j;
+                return j - begin;
             }
         }
         return -1;
@@ -266,16 +274,18 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     
     public int indexOf(final ByteList find, int pos) {
         final int len = find.realSize;
-        final byte first = find.bytes[0];
+        if (len == 0) return -1;
+
+        final byte first = find.bytes[find.begin];
         final byte[] buf = bytes;
         final int max = realSize - len + 1;
         for ( ; pos < max ; pos++ ) {
-            for ( ; pos < max && buf[pos] != first; pos++ ) ;
+            for ( ; pos < max && buf[begin + pos] != first; pos++ ) ;
             if (pos == max)
                 return -1;
             int index = len;
             // TODO: forward/backward scan as in #equals
-            for ( ; --index >= 0 && buf[index + pos] == find.bytes[index]; ) ;
+            for ( ; --index >= 0 && buf[begin + index + pos] == find.bytes[find.begin + index]; ) ;
             if (index < 0)
                 return pos;
         }
@@ -288,7 +298,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     
     public int old_lastIndexOf(int c, int pos) {
         for (int i = Math.min(pos, realSize - 1); i >= 0; i--) {
-            if ((bytes[i] & 0xFF) == c) return i;
+            if ((bytes[begin + i] & 0xFF) == c) return i;
         }
         return -1;
     }
@@ -302,15 +312,16 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         if (c > 255)
             return -1;
         final byte b = (byte)(c&0xFF);
-        final int size = realSize;
+        final int size = begin + realSize;
+        pos += begin;
         final byte[] buf = bytes;
         if (pos >= size) {
             pos = size;
         } else {
             pos++;
         }
-        for ( ; --pos >= 0 && buf[pos] != b ; ) ;
-        return pos;
+        for ( ; --pos >= begin && buf[pos] != b ; ) ;
+        return pos - begin;
     }
 
     public int lastIndexOf(ByteList find) {
@@ -323,14 +334,14 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         // search main string
         BigLoop: for (int j = Math.min(pos, realSize - 1); j >= 0; j--) {
             // if we get a match for the first char
-            if ((bytes[j] & 0xFF) == find.bytes[0]) {
+            if ((bytes[begin + j] & 0xFF) == find.bytes[find.begin]) {
                 // try to match the remaining chars
                 for (int k = 1; k < find.realSize; k++) {
                     // reached end of search string, continue search loop at previous char
                     if (j + k >= realSize) continue BigLoop;
 
                     //some character didn't match, back to main loop with next char
-                    if (bytes[j + k] != find.bytes[k]) continue BigLoop;
+                    if (bytes[begin + j + k] != find.bytes[find.begin + k]) continue BigLoop;
                 }
                 // got through find string successfully, return j
                 return j;
@@ -342,16 +353,18 @@ public class ByteList implements Comparable, CharSequence, Serializable {
 
     public int lastIndexOf(final ByteList find, int pos) {
         final int len = find.realSize;
-        final byte first = find.bytes[0];
+        if (len == 0) return -1;
+
+        final byte first = find.bytes[find.begin];
         final byte[] buf = bytes;
         pos = Math.min(pos,realSize-len);
         for ( ; pos >= 0 ; pos-- ) {
-            for ( ; pos >= 0 && buf[pos] != first; pos-- ) ;
+            for ( ; pos >= 0 && buf[begin + pos] != first; pos-- ) ;
             if (pos < 0)
                 return -1;
             int index = len;
             // TODO: forward/backward scan as in #equals
-            for ( ; --index >= 0 && buf[index + pos] == find.bytes[index]; ) ;
+            for ( ; --index >= 0 && buf[begin + index + pos] == find.bytes[find.begin + index]; ) ;
             if (index < 0)
                 return pos;
         }
@@ -368,7 +381,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
                 return false;
             }
             for (int i = 0; i < realSize; i++) {
-                if (bytes[i] != b.bytes[i]) {
+                if (bytes[begin + i] != b.bytes[b.begin + i]) {
                     return false;
                 }
             }
@@ -393,8 +406,8 @@ public class ByteList implements Comparable, CharSequence, Serializable {
                 // backward (I like this one, but it's more expensive for
                 // strings that are equal; see sample_equals below).
                 for (buf = bytes, first = -1; 
-                    --last > first && buf[last] == b.bytes[last] &&
-                    ++first < last && buf[first] == b.bytes[first] ; ) ;
+                    --last > first && buf[begin + last] == b.bytes[b.begin + last] &&
+                    ++first < last && buf[begin + first] == b.bytes[b.begin + first] ; ) ;
                 return first >= last;
             }
         }
@@ -419,8 +432,8 @@ public class ByteList implements Comparable, CharSequence, Serializable {
                 // reverse iteration. the object is to get a mismatch as quickly
                 // as possible. 
                 for (buf = bytes, first = -1, last = (size + 1) & ~1 ;
-                    (last -= 2) >= 0 && buf[last] == b.bytes[last] &&
-                    (first += 2) < size && buf[first] == b.bytes[first] ; ) ;
+                    (last -= 2) >= 0 && buf[begin + last] == b.bytes[b.begin + last] &&
+                    (first += 2) < size && buf[begin + first] == b.bytes[b.begin + first] ; ) ;
                 return last < 0 || first == size;
             }
         }
@@ -442,7 +455,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         int len = Math.min(realSize,other.realSize);
         int retval = 0;
         for(int i=0;i<len && retval == 0;i++) {
-            retval = (bytes[i]&0xFF) - (other.bytes[i]&0xFF);
+            retval = (bytes[begin + i]&0xFF) - (other.bytes[other.begin + i]&0xFF);
         }
         if(retval == 0) {
             if(realSize == other.realSize) {
@@ -469,9 +482,9 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         // [slightly] understand it), in some cases, when two (or more?) 
         // arrays are being accessed, the member reference is actually
         // faster.  this is one of those cases...
-        for (  ; ++offset < len && bytes[offset] == other.bytes[offset]; ) ;
+        for (  ; ++offset < len && bytes[begin + offset] == other.bytes[other.begin + offset]; ) ;
         if (offset < len) {
-            return (bytes[offset]&0xFF) > (other.bytes[offset]&0xFF) ? 1 : -1;
+            return (bytes[begin + offset]&0xFF) > (other.bytes[other.begin + offset]&0xFF) ? 1 : -1;
         }
         return size == other.realSize ? 0 : size == len ? -1 : 1;
     }
@@ -484,17 +497,46 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * @return the internal byte array
      */
     public byte[] unsafeBytes() {
-        return bytes;
+        return begin == 0 ? bytes : bytes();  
     }
 
     public byte[] bytes() {
         byte[] newBytes = new byte[realSize];
-        System.arraycopy(bytes, 0, newBytes, 0, realSize);
+        System.arraycopy(bytes, begin, newBytes, 0, realSize);
         return newBytes;
     }
 
     public Object clone() {
-        return new ByteList(bytes, 0, realSize);
+        return dup();
+    }
+    
+    public ByteList dup() {
+        ByteList dup = new ByteList(false);
+        dup.bytes = new byte[realSize];
+        System.arraycopy(bytes, begin, dup.bytes, 0, realSize);
+        dup.realSize = realSize;
+        dup.begin = 0;
+        return dup;        
+    }
+    
+    public ByteList makeShared(int index, int len) {
+        ByteList shared = new ByteList(false);        
+        shared.bytes = bytes;
+        shared.realSize = len;        
+        shared.begin = begin + index;        
+        return shared;
+    }
+    
+    public void modify() {
+        byte[] tmp = new byte[realSize];
+        System.arraycopy(bytes, begin, tmp, 0, realSize);
+        bytes = tmp;
+        begin = 0;
+    }
+    
+    public void view(int index, int len) {
+        realSize = len;
+        begin = begin + index;
     }
 
     private void grow(int increaseRequested) {
@@ -518,7 +560,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     public int old_hashCode() {
         int key = 0;
         int g;
-        for(int i = 0; i < realSize; i++) {
+        for(int i = begin; i < begin + realSize; i++) {
             key = (key << 4) + (((int)bytes[i]) & 0xFF);
             if((g = key & 0xF0000000) != 0) {
                 key ^= g >> 24;
@@ -530,21 +572,18 @@ public class ByteList implements Comparable, CharSequence, Serializable {
 
     public int hashCode() {
         int key = 0;
-        int g;
-        int size = realSize;
-        byte[] buf = bytes;
-        for(int i = 0; i < size; i++) {
-            key = (key << 4) + (((int)buf[i]) & 0xFF);
-            if((g = key & 0xF0000000) != 0) {
-                key ^= g >> 24;
+        int index = begin;
+        final int end = begin + realSize; 
+        while (index < end) {
+            // equivalent of: key = key * 65599 + byte;
+            key = ((key << 16) + (key << 6) - key) + (int)(bytes[index++]); // & 0xFF ? 
             }
-            key &= ~g;
-        }
+        key = key + (key >> 5);
         return key;
     }
     
     public String toString() {
-        return new String(plain(this.bytes),0,realSize);
+        return new String(plain(this.bytes, begin, realSize));
     }
 
     public static ByteList create(CharSequence s) {
@@ -567,6 +606,14 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         return bytes;
     }
     
+    public static char[] plain(byte[] b, int start, int length) {
+        char[] chars = new char[length];
+        for (int i = 0; i < length; i++) {
+            chars[i] = (char) (b[start + i] & 0xFF);
+        }
+        return chars;
+    }
+    
     public static char[] plain(byte[] b) {
         char[] chars = new char[b.length];
         for (int i = 0; i < b.length; i++) {
@@ -576,7 +623,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     }
 
     public char charAt(int ix) {
-        return (char)(this.bytes[ix] & 0xFF);
+        return (char)(this.bytes[begin + ix] & 0xFF);
     }
 
     public CharSequence subSequence(int start, int end) {

@@ -40,19 +40,19 @@ package org.jruby;
 import java.io.IOException;
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
@@ -61,228 +61,681 @@ import org.jruby.runtime.marshal.UnmarshalStream;
  * @author  jpetersen
  */
 public class RubyHash extends RubyObject implements Map {
-    private Map valueMap;
-    // Place we capture any explicitly set proc so we can return it for default_proc
-    private IRubyObject capturedDefaultProc;
-    private static final Callback NIL_DEFAULT_VALUE  = new Callback() {
-        public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-            return recv.getRuntime().getNil();
-        }
     
-        public Arity getArity() {
-            return Arity.optional();
+    public static RubyClass createHashClass(Ruby runtime) {
+        RubyClass hashc = runtime.defineClass("Hash", runtime.getObject(), HASH_ALLOCATOR);
+        hashc.index = ClassIndex.HASH;
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyHash.class);
+
+        hashc.includeModule(runtime.getModule("Enumerable"));
+        hashc.getMetaClass().defineMethod("[]", callbackFactory.getOptSingletonMethod("create"));
+
+        hashc.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
+        hashc.defineFastMethod("initialize_copy", callbackFactory.getFastMethod("replace", RubyKernel.IRUBY_OBJECT));
+        hashc.defineFastMethod("rehash", callbackFactory.getFastMethod("rehash"));
+
+        hashc.defineFastMethod("to_hash", callbackFactory.getFastMethod("to_hash"));        
+        hashc.defineFastMethod("to_a", callbackFactory.getFastMethod("to_a"));
+        hashc.defineFastMethod("to_s", callbackFactory.getFastMethod("to_s"));        
+        hashc.defineFastMethod("inspect", callbackFactory.getFastMethod("inspect"));
+
+        hashc.defineFastMethod("==", callbackFactory.getFastMethod("equal", RubyKernel.IRUBY_OBJECT));
+        hashc.defineFastMethod("[]", callbackFactory.getFastMethod("aref", RubyKernel.IRUBY_OBJECT));
+        hashc.defineMethod("fetch", callbackFactory.getOptMethod("fetch"));
+        hashc.defineFastMethod("[]=", callbackFactory.getFastMethod("aset", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
+        hashc.defineFastMethod("store", callbackFactory.getFastMethod("aset", RubyKernel.IRUBY_OBJECT, RubyKernel.IRUBY_OBJECT));
+        hashc.defineMethod("default", callbackFactory.getOptMethod("default_value_get"));
+        hashc.defineFastMethod("default=", callbackFactory.getFastMethod("default_value_set", RubyKernel.IRUBY_OBJECT));
+        hashc.defineMethod("default_proc", callbackFactory.getMethod("default_proc"));
+        hashc.defineFastMethod("index", callbackFactory.getFastMethod("index", RubyKernel.IRUBY_OBJECT));
+        hashc.defineFastMethod("indexes", callbackFactory.getFastOptMethod("indices"));
+        hashc.defineFastMethod("indices", callbackFactory.getFastOptMethod("indices"));
+        hashc.defineFastMethod("size", callbackFactory.getFastMethod("rb_size"));
+        hashc.defineFastMethod("length", callbackFactory.getFastMethod("rb_size"));        
+        hashc.defineFastMethod("empty?", callbackFactory.getFastMethod("empty_p"));
+
+        hashc.defineMethod("each", callbackFactory.getMethod("each"));
+        hashc.defineMethod("each_value", callbackFactory.getMethod("each_value"));
+        hashc.defineMethod("each_key", callbackFactory.getMethod("each_key"));
+        hashc.defineMethod("each_pair", callbackFactory.getMethod("each_pair"));        
+        hashc.defineMethod("sort", callbackFactory.getMethod("sort"));
+
+        hashc.defineFastMethod("keys", callbackFactory.getFastMethod("keys"));
+        hashc.defineFastMethod("values", callbackFactory.getFastMethod("rb_values"));
+        hashc.defineFastMethod("values_at", callbackFactory.getFastOptMethod("values_at"));
+
+        hashc.defineFastMethod("shift", callbackFactory.getFastMethod("shift"));
+        hashc.defineMethod("delete", callbackFactory.getMethod("delete", RubyKernel.IRUBY_OBJECT));
+        hashc.defineMethod("delete_if", callbackFactory.getMethod("delete_if"));
+        hashc.defineMethod("select", callbackFactory.getOptMethod("select"));
+        hashc.defineMethod("reject", callbackFactory.getMethod("reject"));
+        hashc.defineMethod("reject!", callbackFactory.getMethod("reject_bang"));
+        hashc.defineFastMethod("clear", callbackFactory.getFastMethod("rb_clear"));
+        hashc.defineFastMethod("invert", callbackFactory.getFastMethod("invert"));
+        hashc.defineMethod("update", callbackFactory.getMethod("update", RubyKernel.IRUBY_OBJECT));
+        hashc.defineFastMethod("replace", callbackFactory.getFastMethod("replace", RubyKernel.IRUBY_OBJECT));
+        hashc.defineMethod("merge!", callbackFactory.getMethod("update", RubyKernel.IRUBY_OBJECT));
+        hashc.defineMethod("merge", callbackFactory.getMethod("merge", RubyKernel.IRUBY_OBJECT));
+
+        hashc.defineFastMethod("include?", callbackFactory.getFastMethod("has_key", RubyKernel.IRUBY_OBJECT));
+        hashc.defineFastMethod("member?", callbackFactory.getFastMethod("has_key", RubyKernel.IRUBY_OBJECT));
+        hashc.defineFastMethod("has_key?", callbackFactory.getFastMethod("has_key", RubyKernel.IRUBY_OBJECT));
+        hashc.defineFastMethod("has_value?", callbackFactory.getFastMethod("has_value", RubyKernel.IRUBY_OBJECT));
+        hashc.defineFastMethod("key?", callbackFactory.getFastMethod("has_key", RubyKernel.IRUBY_OBJECT));
+        hashc.defineFastMethod("value?", callbackFactory.getFastMethod("has_value", RubyKernel.IRUBY_OBJECT));
+
+        return hashc;
+        }
+
+    private final static ObjectAllocator HASH_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new RubyHash(runtime, klass);
         }
     };
+
+    public int getNativeTypeIndex() {
+        return ClassIndex.HASH;
+    }    
+
+    /** rb_hash_s_create
+     * 
+     */
+    public static IRubyObject create(IRubyObject recv, IRubyObject[] args, Block block) {
+        RubyClass klass = (RubyClass) recv;
+        RubyHash hash;
+
+        if (args.length == 1 && args[0] instanceof RubyHash) {
+            RubyHash otherHash = (RubyHash)args[0];
+            return new RubyHash(recv.getRuntime(), klass, otherHash.internalCopyTable(), otherHash.size); // hash_alloc0
+        }
+
+        if ((args.length & 1) != 0) throw recv.getRuntime().newArgumentError("odd number of args for Hash");
+
+        hash = (RubyHash)klass.allocate();
+        for (int i=0; i < args.length; i+=2) hash.aset(args[i], args[i+1]);
+
+        return hash;
+    }
+
+    /** rb_hash_new
+     * 
+     */
+    public static final RubyHash newHash(Ruby runtime) {
+        return new RubyHash(runtime);
+    }
+
+    /** rb_hash_new
+     * 
+     */
+    public static final RubyHash newHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
+        assert defaultValue != null;
     
-    // Holds either default value or default proc.  Executing whatever is here will return the
-    // correct default value.
-    private Callback defaultValueCallback;
-    
-    private boolean isRehashing = false;
+        return new RubyHash(runtime, valueMap, defaultValue);
+    }
+
+    private RubyHashEntry[] table;
+    private int size = 0;
+    private int threshold;
+
+    private int iterLevel = 0;
+    private boolean deleted = false;
+
+    private boolean procDefault = false;
+    private IRubyObject ifNone;
+
+    private RubyHash(Ruby runtime, RubyClass klass, RubyHashEntry[]newTable, int newSize) {
+        super(runtime, klass);
+        this.ifNone = runtime.getNil();
+        threshold = INITIAL_THRESHOLD;
+        table = newTable;
+        size = newSize;
+    }    
+
+    public RubyHash(Ruby runtime, RubyClass klass) {
+        super(runtime, klass);
+        this.ifNone = runtime.getNil();
+        alloc();
+    }
 
     public RubyHash(Ruby runtime) {
         this(runtime, runtime.getNil());
     }
 
     public RubyHash(Ruby runtime, IRubyObject defaultValue) {
-        super(runtime, runtime.getClass("Hash"));
-        this.valueMap = new HashMap();
-        this.capturedDefaultProc = runtime.getNil();
-        setDefaultValue(defaultValue);
+        super(runtime, runtime.getHash());
+        this.ifNone = defaultValue;
+        alloc();
     }
 
+    // TODO should this be deprecated ? (to be efficient, internals should deal with RubyHash directly) 
     public RubyHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
-        super(runtime, runtime.getClass("Hash"));
-        this.valueMap = new HashMap(valueMap);
-        this.capturedDefaultProc = runtime.getNil();
-        setDefaultValue(defaultValue);
+        super(runtime, runtime.getHash());
+        this.ifNone = runtime.getNil();
+        alloc();
+
+        for (Iterator iter = valueMap.entrySet().iterator();iter.hasNext();) {
+            Map.Entry e = (Map.Entry)iter.next();
+            internalPut((IRubyObject)e.getKey(), (IRubyObject)e.getValue());
     }
-    
-    public int getNativeTypeIndex() {
-        return ClassIndex.HASH;
-    }
-    
-    public IRubyObject getDefaultValue(IRubyObject[] args, Block unusedBlock) {
-        if(defaultValueCallback == null || (args.length == 0 && !capturedDefaultProc.isNil())) {
-            return getRuntime().getNil();
-        }
-        return defaultValueCallback.execute(this, args, Block.NULL_BLOCK);
     }
 
-    public IRubyObject setDefaultValue(final IRubyObject defaultValue) {
-        capturedDefaultProc = getRuntime().getNil();
-        if (defaultValue == getRuntime().getNil()) {
-            defaultValueCallback = NIL_DEFAULT_VALUE;
+    private final void alloc() {
+        threshold = INITIAL_THRESHOLD;
+        table = new RubyHashEntry[MRI_HASH_RESIZE ? MRI_INITIAL_CAPACITY : JAVASOFT_INITIAL_CAPACITY];
+    }    
+
+    /* ============================
+     * Here are hash internals 
+     * (This could be extracted to a separate class but it's not too large though)
+     * ============================
+     */    
+
+    private static final int MRI_PRIMES[] = {
+        8 + 3, 16 + 3, 32 + 5, 64 + 3, 128 + 3, 256 + 27, 512 + 9, 1024 + 9, 2048 + 5, 4096 + 3,
+        8192 + 27, 16384 + 43, 32768 + 3, 65536 + 45, 131072 + 29, 262144 + 3, 524288 + 21, 1048576 + 7,
+        2097152 + 17, 4194304 + 15, 8388608 + 9, 16777216 + 43, 33554432 + 35, 67108864 + 15,
+        134217728 + 29, 268435456 + 3, 536870912 + 11, 1073741824 + 85, 0
+    };    
+
+    private static final int JAVASOFT_INITIAL_CAPACITY = 8; // 16 ?
+    private static final int MRI_INITIAL_CAPACITY = MRI_PRIMES[0];
+
+    private static final int INITIAL_THRESHOLD = JAVASOFT_INITIAL_CAPACITY - (JAVASOFT_INITIAL_CAPACITY >> 2);
+    private static final int MAXIMUM_CAPACITY = 1 << 30;
+
+    static final class RubyHashEntry implements Map.Entry {
+        private IRubyObject key; 
+        private IRubyObject value; 
+        private RubyHashEntry next; 
+        private int hash;
+
+        RubyHashEntry(int h, IRubyObject k, IRubyObject v, RubyHashEntry e) {
+            key = k; value = v; next = e; hash = h;
+        }
+        public Object getKey() {
+            return key;
+    }
+        public Object getJavaifiedKey(){
+            return JavaUtil.convertRubyToJava(key);
+        }
+        public Object getValue() {
+            return value;            
+        }
+        public Object getPlainValue() {
+            return JavaUtil.convertRubyToJava(value);
+        }
+        public Object setValue(Object value) {            
+            IRubyObject oldValue = this.value;
+            if (value instanceof IRubyObject) {
+                this.value = (IRubyObject)value; 
         } else {
-            defaultValueCallback = new Callback() {
-                public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-                    return defaultValue;
+                throw new UnsupportedOperationException("directEntrySet() doesn't support setValue for non IRubyObject instance entries, convert them manually or use entrySet() instead");                
                 }
-
-                public Arity getArity() {
-                    return Arity.optional();
-                }
-            };
+            return oldValue;
         }
+        public boolean equals(Object other){
+            if(!(other instanceof RubyHashEntry)) return false;
+            RubyHashEntry otherEntry = (RubyHashEntry)other;
+            if(key == otherEntry.key && key != NEVER && key.equals(otherEntry.key)){
+                if(value == otherEntry.value || value.equals(otherEntry.value)) return true;
+            }            
+            return false;
+        }
+        public int hashCode(){
+            return key.hashCode() ^ value.hashCode();
+        }
+    }
+
+    private static int JavaSoftHashValue(int h) {
+        h ^= (h >>> 20) ^ (h >>> 12);
+        return h ^ (h >>> 7) ^ (h >>> 4);
+                }
+
+    private static int JavaSoftBucketIndex(final int h, final int length) {
+        return h & (length - 1);
+        }
+
+    private static int MRIHashValue(int h) {
+        return h & HASH_SIGN_BIT_MASK;
+    }
+
+    private static final int HASH_SIGN_BIT_MASK = ~(1 << 31);
+    private static int MRIBucketIndex(final int h, final int length) {
+        return (h % length);
+    }
+
+    private final void resize(int newCapacity) {
+        final RubyHashEntry[] oldTable = table;
+        final RubyHashEntry[] newTable = new RubyHashEntry[newCapacity];
+        for (int j = 0; j < oldTable.length; j++) {
+            RubyHashEntry entry = oldTable[j];
+            oldTable[j] = null;
+            while (entry != null) {    
+                RubyHashEntry next = entry.next;
+                int i = bucketIndex(entry.hash, newCapacity);
+                entry.next = newTable[i];
+                newTable[i] = entry;
+                entry = next;
+            }
+        }
+        table = newTable;
+    }
+
+    private final void JavaSoftCheckResize() {
+        if (size > threshold) {
+            int oldCapacity = table.length; 
+            if (oldCapacity == MAXIMUM_CAPACITY) {
+                threshold = Integer.MAX_VALUE;
+                return;
+            }
+            int newCapacity = table.length << 1;
+            resize(newCapacity);
+            threshold = newCapacity - (newCapacity >> 2);
+    }
+    }
+
+    private static final int MIN_CAPA = 8;
+    private static final int ST_DEFAULT_MAX_DENSITY = 5;    
+    private final void MRICheckResize() {
+        if (size / table.length > ST_DEFAULT_MAX_DENSITY) {           
+            int forSize = table.length + 1; // size + 1;         
+            for (int i=0, newCapacity = MIN_CAPA; i < MRI_PRIMES.length; i++, newCapacity <<= 1) {
+                if (newCapacity > forSize) {                  
+                    resize(MRI_PRIMES[i]);                  
+                    return;                 
+    }
+            }
+            return; // suboptimal for large hashes (> 1073741824 + 85 entries) not very likely to happen
+        }
+    }
+    // ------------------------------   
+    private static boolean MRI_HASH = true; 
+    private static boolean MRI_HASH_RESIZE = true;
+
+    private static int hashValue(final int h) {
+        return MRI_HASH ? MRIHashValue(h) : JavaSoftHashValue(h);
+    }
+
+    private static int bucketIndex(final int h, final int length) {
+        return MRI_HASH ? MRIBucketIndex(h, length) : JavaSoftBucketIndex(h, length); 
+    }   
+
+    private void checkResize() {
+        if (MRI_HASH_RESIZE) MRICheckResize(); else JavaSoftCheckResize();
+	}
+    // ------------------------------
+    public static long collisions = 0;
+
+    private final void internalPut(final IRubyObject key, final IRubyObject value) {
+        checkResize();
+        final int hash = hashValue(key.hashCode());
+        final int i = bucketIndex(hash, table.length);
+
+        // if (table[i] != null) collisions++;
+
+        for (RubyHashEntry entry = table[i]; entry != null; entry = entry.next) {
+            Object k;
+            if (entry.hash == hash && ((k = entry.key) == key || key.equals(k))) {
+                entry.value = value;
+                return;
+	}
+        }
+
+        table[i] = new RubyHashEntry(hash, key, value, table[i]);
+        size++;
+    }
+
+    private final void internalPutDirect(final IRubyObject key, final IRubyObject value){
+        checkResize();
+        final int hash = hashValue(key.hashCode());
+        final int i = bucketIndex(hash, table.length);
+        table[i] = new RubyHashEntry(hash, key, value, table[i]);
+        size++;
+	}
+
+    private final IRubyObject internalGet(IRubyObject key) { // specialized for value
+        final int hash = hashValue(key.hashCode());
+        for (RubyHashEntry entry = table[bucketIndex(hash, table.length)]; entry != null; entry = entry.next) {
+            Object k;
+            if (entry.hash == hash && ((k = entry.key) == key || key.equals(k))) return entry.value;
+	}
+        return null;
+    }
+
+    private final RubyHashEntry internalGetEntry(IRubyObject key) {
+        final int hash = hashValue(key.hashCode());
+        for (RubyHashEntry entry = table[bucketIndex(hash, table.length)]; entry != null; entry = entry.next) {
+            Object k;
+            if (entry.hash == hash && ((k = entry.key) == key || key.equals(k))) return entry;
+        }
+        return null;
+    }
+
+    private final RubyHashEntry internalDelete(IRubyObject key) {
+        final int hash = hashValue(key.hashCode());
+        final int i = bucketIndex(hash, table.length);
+        RubyHashEntry entry = table[i];
+
+        if (entry == null) return null;
+
+        IRubyObject k;
+        if (entry.hash == hash && ((k = entry.key) == key || key.equals(k))) {
+            table[i] = entry.next;
+            size--;
+            return entry;
+    }
+        for (; entry.next != null; entry = entry.next) {
+            RubyHashEntry tmp = entry.next;
+            if (tmp.hash == hash && ((k = tmp.key) == key || key.equals(k))) {
+                entry.next = entry.next.next;
+                size--;
+                return tmp;
+            }
+        }
+        return null;
+    }
+
+    private final RubyHashEntry internalDeleteSafe(IRubyObject key) {
+        final int hash = hashValue(key.hashCode());
+        RubyHashEntry entry = table[bucketIndex(hash, table.length)];
+
+        if (entry == null) return null;
+        IRubyObject k;
+
+        for (; entry != null; entry = entry.next) {           
+            if (entry.key != NEVER && entry.hash == hash && ((k = entry.key) == key || key.equals(k))) {
+                entry.key = NEVER; // make it a skip node 
+                size--;             
+                return entry;
+    }
+        }
+        return null;
+    }   
+
+    private final RubyHashEntry internalDeleteEntry(RubyHashEntry entry) {
+        final int hash = hashValue(entry.key.hashCode());
+        final int i = bucketIndex(hash, table.length);
+        RubyHashEntry prev = table[i];
+        RubyHashEntry e = prev;
+        while (e != null){
+            RubyHashEntry next = e.next;
+            if (e.hash == hash && e.equals(entry)) {
+                size--;
+                if(iterLevel > 0){
+                    if (prev == e) table[i] = next; else prev.next = next;
+                } else {
+                    e.key = NEVER;
+                }
+                return e;
+            }
+            prev = e;
+            e = next;
+        }
+        return e;
+    }
+
+    private final void internalCleanupSafe() { // synchronized ?
+        for (int i=0; i < table.length; i++) {
+            RubyHashEntry entry = table[i];
+            while (entry != null && entry.key == NEVER) table[i] = entry = entry.next;
+            if (entry != null) {
+                RubyHashEntry prev = entry;
+                entry = entry.next;
+                while (entry != null) {
+                    if (entry.key == NEVER) { 
+                        prev.next = entry.next;
+                    } else {
+                        prev = prev.next;
+                    }
+                    entry = prev.next;
+                }
+            }
+        }        
+    }
+
+    private final RubyHashEntry[] internalCopyTable() {
+         RubyHashEntry[]newTable = new RubyHashEntry[table.length];
+
+         for (int i=0; i < table.length; i++) {
+             for (RubyHashEntry entry = table[i]; entry != null; entry = entry.next) {
+                 if (entry.key != NEVER) newTable[i] = new RubyHashEntry(entry.hash, entry.key, entry.value, newTable[i]);
+             }
+         }
+         return newTable;
+    }
+
+    // flags for callback based interation
+    public static final int ST_CONTINUE = 0;    
+    public static final int ST_STOP = 1;
+    public static final int ST_DELETE = 2;
+    public static final int ST_CHECK = 3;
+
+    private void rehashOccured(){
+        throw getRuntime().newRuntimeError("rehash occurred during iteration");
+    }
+
+    public static abstract class Callback { // a class to prevent invokeinterface
+        public abstract int call(RubyHash hash, RubyHashEntry entry);
+    }    
+
+    private final int hashForEachEntry(final RubyHashEntry entry, final Callback callback) {
+        if (entry.key == NEVER) return ST_CONTINUE;
+        RubyHashEntry[]ltable = table;
+		
+        int status = callback.call(this, entry);
         
-        return defaultValue;
+        if (ltable != table) rehashOccured();
+        
+        switch (status) {
+        case ST_DELETE:
+            internalDeleteSafe(entry.key);
+            deleted = true;
+        case ST_CONTINUE:
+            break;
+        case ST_STOP:
+            return ST_STOP;
+	}
+        return ST_CHECK;
+    }    
+
+    private final boolean internalForEach(final Callback callback) {
+        RubyHashEntry entry, last, tmp;
+        int length = table.length;
+        for (int i = 0; i < length; i++) {
+            last = null;
+            for (entry = table[i]; entry != null;) {
+                switch (hashForEachEntry(entry, callback)) {
+                case ST_CHECK:
+                    tmp = null;
+                    if (i < length) for (tmp = table[i]; tmp != null && tmp != entry; tmp = tmp.next);
+                    if (tmp == null) return true;
+                case ST_CONTINUE:
+                    last = entry;
+                    entry = entry.next;
+                    break;
+                case ST_STOP:
+                    return false;
+                case ST_DELETE:
+                    tmp = entry;
+                    if (last == null) table[i] = entry.next; else last.next = entry.next;
+                    entry = entry.next;
+                    size--;
+                }
+            }
+        }
+        return false;
     }
 
-    public void setDefaultProc(final RubyProc newProc) {
-        final IRubyObject self = this;
-        capturedDefaultProc = newProc;
-        defaultValueCallback = new Callback() {
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-                IRubyObject[] nargs = args.length == 0 ? new IRubyObject[] { self } :
-                     new IRubyObject[] { self, args[0] };
-
-                return newProc.call(nargs);
-            }
-
-            public Arity getArity() {
-                return Arity.optional();
-            }
-        };
+    public final void forEach(final Callback callback) {
+        try{
+            preIter();
+            if (internalForEach(callback)) rehashOccured();
+        }finally{
+            postIter();
+        }
     }
-    
+
+    private final void preIter() {
+        iterLevel++;
+    }
+
+    private final void postIter() {
+        iterLevel--;
+        if (deleted) {
+            internalCleanupSafe();
+            deleted = false;
+        }
+    }
+
+    private final RubyHashEntry checkIter(RubyHashEntry[]ltable, RubyHashEntry node) {
+        while (node != null && node.key == NEVER) node = node.next;
+        if (ltable != table) rehashOccured();
+        return node;
+    }      
+
+    /* ============================
+     * End of hash internals
+     * ============================
+     */
+
+    /*  ================
+     *  Instance Methods
+     *  ================ 
+     */
+
+    /** rb_hash_initialize
+     * 
+     */
+    public IRubyObject initialize(IRubyObject[] args, final Block block) {
+            modify();
+
+        if (block.isGiven()) {
+            if (args.length > 0) throw getRuntime().newArgumentError("wrong number of arguments");
+            ifNone = getRuntime().newProc(false, block);
+            procDefault = true;
+        } else {
+            Arity.checkArgumentCount(getRuntime(), args, 0, 1);
+            if (args.length == 1) ifNone = args[0];
+        }
+        return this;
+    }
+
+    /** rb_hash_default
+     * 
+     */
+    public IRubyObject default_value_get(IRubyObject[] args, Block unusedBlock) {
+        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
+
+        if (procDefault) {
+            if (args.length == 0) return getRuntime().getNil();
+            return ifNone.callMethod(getRuntime().getCurrentContext(), "call", new IRubyObject[]{this, args[0]});
+        }
+        return ifNone;
+    }
+
+    /** rb_hash_set_default
+     * 
+     */
+    public IRubyObject default_value_set(final IRubyObject defaultValue) {
+        modify();
+
+        ifNone = defaultValue;
+        procDefault = false;
+
+        return ifNone;
+    }
+
+    /** rb_hash_default_proc
+     * 
+     */    
     public IRubyObject default_proc(Block unusedBlock) {
-        return capturedDefaultProc;
+        return procDefault ? ifNone : getRuntime().getNil();
     }
-
-    public Map getValueMap() {
-        return valueMap;
-    }
-
-    public void setValueMap(Map valueMap) {
-        this.valueMap = valueMap;
-    }
-
-	/**
-	 * gets an iterator on a copy of the keySet.
-	 * modifying the iterator will NOT modify the map.
-	 * if the map is modified while iterating on this iterator, the iterator
-	 * will not be invalidated but the content will be the same as the old one.
-	 * @return the iterator
-	 **/
-	private Iterator keyIterator() {
-		return new ArrayList(valueMap.keySet()).iterator();
-	}
-
-	private Iterator valueIterator() {
-		return new ArrayList(valueMap.values()).iterator();
-	}
-
-
-	/**
-	 * gets an iterator on the entries.
-	 * modifying this iterator WILL modify the map.
-	 * the iterator will be invalidated if the map is modified.
-	 * @return the iterator
-	 */
-	private Iterator modifiableEntryIterator() {
-		return valueMap.entrySet().iterator();
-	}
-
-	/**
-	 * gets an iterator on a copy of the entries.
-	 * modifying this iterator will NOT modify the map.
-	 * if the map is modified while iterating on this iterator, the iterator
-	 * will not be invalidated but the content will be the same as the old one.
-	 * @return the iterator
-	 */
-	private Iterator entryIterator() {
-		return new ArrayList(valueMap.entrySet()).iterator();		//in general we either want to modify the map or make sure we don't when we use this, so skip the copy
-	}
 
     /** rb_hash_modify
      *
      */
     public void modify() {
-    	testFrozen("Hash");
+    	testFrozen("hash");
         if (isTaint() && getRuntime().getSafeLevel() >= 4) {
             throw getRuntime().newSecurityError("Insecure: can't modify hash");
         }
     }
 
-    private int length() {
-        return valueMap.size();
-    }
-
-    // Hash methods
-
-    public static RubyHash newHash(Ruby runtime) {
-    	return new RubyHash(runtime);
-    }
-
-	public static RubyHash newHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
-		assert defaultValue != null;
-		
-		return new RubyHash(runtime, valueMap, defaultValue);
-	}
-
-    public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if (block.isGiven()) {
-            setDefaultProc(getRuntime().newProc(false, block));
-        } else if (args.length > 0) {
-            modify();
-
-            setDefaultValue(args[0]);
-        }
-        return this;
-    }
-    
+    /** rb_hash_inspect
+     * 
+     */
     public IRubyObject inspect() {
-        if(!getRuntime().registerInspecting(this)) {
-            return getRuntime().newString("{...}");
+        Ruby runtime = getRuntime();
+        if (!runtime.registerInspecting(this)) {
+            return runtime.newString("{...}");
         }
+
         try {
             final String sep = ", ";
             final String arrow = "=>";
             final StringBuffer sb = new StringBuffer("{");
             boolean firstEntry = true;
         
-            ThreadContext context = getRuntime().getCurrentContext();
-        
-            for (Iterator iter = valueMap.entrySet().iterator(); iter.hasNext(); ) {
-                Map.Entry entry = (Map.Entry) iter.next();
-                IRubyObject key = (IRubyObject) entry.getKey();
-                IRubyObject value = (IRubyObject) entry.getValue();
-                if (!firstEntry) {
-                    sb.append(sep);
-                }
-            
-                sb.append(key.callMethod(context, "inspect")).append(arrow);
-                sb.append(value.callMethod(context, "inspect"));
+            ThreadContext context = runtime.getCurrentContext();
+            preIter();
+            RubyHashEntry[]ltable = table;
+            for (int i = 0; i < ltable.length; i++) {
+                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                    if (!firstEntry) sb.append(sep);
+                    sb.append(entry.key.callMethod(context, "inspect")).append(arrow);
+                    sb.append(entry.value.callMethod(context, "inspect"));
                 firstEntry = false;
             }
+            }
             sb.append("}");
-            return getRuntime().newString(sb.toString());
+            return runtime.newString(sb.toString());
         } finally {
-            getRuntime().unregisterInspecting(this);
+            postIter();
+            runtime.unregisterInspecting(this);
         }
     }
 
+    /** rb_hash_size
+     * 
+     */    
     public RubyFixnum rb_size() {
-        return getRuntime().newFixnum(length());
+        return getRuntime().newFixnum(size);
     }
 
+    /** rb_hash_empty_p
+     * 
+     */
     public RubyBoolean empty_p() {
-        return length() == 0 ? getRuntime().getTrue() : getRuntime().getFalse();
+        return size == 0 ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
+    /** rb_hash_to_a
+     * 
+     */
     public RubyArray to_a() {
         Ruby runtime = getRuntime();
-        RubyArray result = RubyArray.newArray(runtime, length());
-        
-        for(Iterator iter = valueMap.entrySet().iterator(); iter.hasNext();) {
-            Map.Entry entry = (Map.Entry) iter.next();
-            result.append(RubyArray.newArray(runtime, (IRubyObject) entry.getKey(), (IRubyObject) entry.getValue()));
+        RubyArray result = RubyArray.newArray(runtime, size);
+
+        try {
+            preIter();
+            RubyHashEntry[]ltable = table;
+            for (int i = 0; i < ltable.length; i++) {
+                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {                
+                    result.append(RubyArray.newArray(runtime, entry.key, entry.value));
         }
+            }
+        } finally {postIter();}
+
+        result.setTaint(isTaint());
         return result;
     }
 
+    /** rb_hash_to_s
+     * 
+     */
     public IRubyObject to_s() {
-        if(!getRuntime().registerInspecting(this)) {
+        if (!getRuntime().registerInspecting(this)) {
             return getRuntime().newString("{...}");
         }
         try {
@@ -292,125 +745,236 @@ public class RubyHash extends RubyObject implements Map {
         }
     }
 
+    /** rb_hash_rehash
+     * 
+     */
     public RubyHash rehash() {
         modify();
-        try {
-            isRehashing = true;
-            valueMap = new HashMap(valueMap);
-        } finally {
-            isRehashing = false;
+        final RubyHashEntry[] oldTable = table;
+        final RubyHashEntry[] newTable = new RubyHashEntry[oldTable.length];
+        for (int j = 0; j < oldTable.length; j++) {
+            RubyHashEntry entry = oldTable[j];
+            oldTable[j] = null;
+            while (entry != null) {    
+                RubyHashEntry next = entry.next;
+                if (entry.key != NEVER) {
+                    entry.hash = entry.key.hashCode(); // update the hash value
+                    int i = bucketIndex(entry.hash, newTable.length);
+                    entry.next = newTable[i];
+                    newTable[i] = entry;
         }
+                entry = next;
+            }
+        }
+        table = newTable;
         return this;
     }
 
+    /** rb_hash_to_hash
+     * 
+     */
     public RubyHash to_hash() {
+        return this;        
+    }
+
+    public RubyHash convertToHash() {    
         return this;
     }
 
+    public final void fastASet(IRubyObject key, IRubyObject value) {
+        internalPut(key, value);
+    }
+
+    /** rb_hash_aset
+     * 
+     */
     public IRubyObject aset(IRubyObject key, IRubyObject value) {
         modify();
-        
-        if (!(key instanceof RubyString) || valueMap.get(key) != null) {
-            valueMap.put(key, value);
+
+        if (!(key instanceof RubyString)) {
+            internalPut(key, value);
+            return value;
+        } 
+
+        RubyHashEntry entry = null;        
+        if ((entry = internalGetEntry(key)) != null) {
+            entry.value = value;
         } else {
-            IRubyObject realKey = key.dup();
+          IRubyObject realKey = ((RubyString)key).strDup();
             realKey.setFrozen(true);
-            valueMap.put(realKey, value);
+          internalPutDirect(realKey, value);
+        }
+
+        return value;
+    }
+
+    public final IRubyObject fastARef(IRubyObject key) { // retuns null when not found to avoid unnecessary getRuntime().getNil() call
+        return internalGet(key);
+    }
+
+    /** rb_hash_aref
+     * 
+     */
+    public IRubyObject aref(IRubyObject key) {        
+        IRubyObject value;        
+        return ((value = internalGet(key)) == null) ? callMethod(getRuntime().getCurrentContext(), "default", key) : value;        
+    }
+
+    /** rb_hash_fetch
+     * 
+     */
+    public IRubyObject fetch(IRubyObject[] args, Block block) {
+        if (Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2 && block.isGiven()) {
+            getRuntime().getWarnings().warn("block supersedes default value argument");
+        }
+
+        IRubyObject value;
+        if ((value = internalGet(args[0])) == null) {
+            if (block.isGiven()) return block.yield(getRuntime().getCurrentContext(), args[0]);
+            if (args.length == 1) throw getRuntime().newIndexError("key not found");
+            return args[1];
         }
         return value;
     }
 
-    public IRubyObject aref(IRubyObject key) {
-        IRubyObject value = (IRubyObject) valueMap.get(key);
-
-        return value != null ? value : callMethod(getRuntime().getCurrentContext(), "default", new IRubyObject[] {key});
-    }
-
-    public IRubyObject fetch(IRubyObject[] args, Block block) {
-        if (args.length < 1) {
-            throw getRuntime().newArgumentError(args.length, 1);
-        }
-        IRubyObject key = args[0];
-        IRubyObject result = (IRubyObject) valueMap.get(key);
-        if (result == null) {
-            if (args.length > 1) return args[1]; 
-                
-            if (block.isGiven()) return block.yield(getRuntime().getCurrentContext(), key); 
-
-            throw getRuntime().newIndexError("key not found");
-        }
-        return result;
-    }
-
-
+    /** rb_hash_has_key
+     * 
+     */
     public RubyBoolean has_key(IRubyObject key) {
-        return getRuntime().newBoolean(valueMap.containsKey(key));
+        return internalGetEntry(key) == null ? getRuntime().getFalse() : getRuntime().getTrue();
     }
 
+    /** rb_hash_has_value
+     * 
+     */
     public RubyBoolean has_value(IRubyObject value) {
-        return getRuntime().newBoolean(valueMap.containsValue(value));
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
+
+        try {
+            preIter();
+            RubyHashEntry[]ltable = table;
+            for (int i = 0; i < ltable.length; i++) {
+                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                    if (entry.value.equalInternal(context, value).isTrue()) return runtime.getTrue();
+    }
+            }
+        } finally {postIter();}
+        return runtime.getFalse();
     }
 
+    /** rb_hash_each
+     * 
+     */
 	public RubyHash each(Block block) {
-		return eachInternal(false, block);
-	}
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
 
-	public RubyHash each_pair(Block block) {
-		return eachInternal(true, block);
+        try {
+            preIter();
+            RubyHashEntry[]ltable = table;
+            for (int i = 0; i < ltable.length; i++) {
+                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                    // rb_assoc_new equivalent
+                    block.yield(context, RubyArray.newArray(runtime, entry.key, entry.value), null, null, false);
 	}
+            }
+        } finally {postIter();}
 
-    protected RubyHash eachInternal(boolean aValue, Block block) {
-        ThreadContext context = getRuntime().getCurrentContext();
-        for (Iterator iter = entryIterator(); iter.hasNext();) {
-            checkRehashing();
-            Map.Entry entry = (Map.Entry) iter.next();
-            block.yield(context, getRuntime().newArray((IRubyObject)entry.getKey(), (IRubyObject)entry.getValue()), null, null, aValue);
-        }
         return this;
     }
 
-	
+    /** rb_hash_each_pair
+     * 
+     */
+	public RubyHash each_pair(Block block) {
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
 
-    private void checkRehashing() {
-        if (isRehashing) {
-            throw getRuntime().newIndexError("rehash occured during iteration");
+        try {
+            preIter();
+            RubyHashEntry[]ltable = table;
+            for (int i = 0; i < ltable.length; i++) {
+                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                    // rb_yield_values(2,...) equivalent
+                    block.yield(context, RubyArray.newArray(runtime, entry.key, entry.value), null, null, true);                    
         }
     }
+        } finally {postIter();}
 
+        return this;	
+	}
+
+    /** rb_hash_each_value
+     * 
+     */
     public RubyHash each_value(Block block) {
-        ThreadContext context = getRuntime().getCurrentContext();
-		for (Iterator iter = valueIterator(); iter.hasNext();) {
-            checkRehashing();
-			IRubyObject value = (IRubyObject) iter.next();
-			block.yield(context, value);
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
+
+        try {
+            preIter();
+            RubyHashEntry[]ltable = table;
+            for (int i = 0; i < ltable.length; i++) {
+                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                    block.yield(context, entry.value);
 		}
-		return this;
+	}
+        } finally {postIter();}
+
+        return this;        
 	}
 
+    /** rb_hash_each_key
+     * 
+     */
 	public RubyHash each_key(Block block) {
-        ThreadContext context = getRuntime().getCurrentContext();
-		for (Iterator iter = keyIterator(); iter.hasNext();) {
-			checkRehashing();
-            IRubyObject key = (IRubyObject) iter.next();
-			block.yield(context, key);
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
+
+        try {
+            preIter();
+            RubyHashEntry[]ltable = table;
+            for (int i = 0; i < ltable.length; i++) {
+                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                    block.yield(context, entry.key);
 		}
-		return this;
+	}
+        } finally {postIter();}
+
+        return this;  
 	}
 
+    /** rb_hash_sort
+     * 
+     */
 	public RubyArray sort(Block block) {
-		return (RubyArray) to_a().sort_bang(block);
+		return to_a().sort_bang(block);
 	}
 
+    /** rb_hash_index
+     * 
+     */
     public IRubyObject index(IRubyObject value) {
-        for (Iterator iter = valueMap.keySet().iterator(); iter.hasNext(); ) {
-            Object key = iter.next();
-            if (value.equals(valueMap.get(key))) {
-                return (IRubyObject) key;
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
+
+        try {
+            preIter();
+            RubyHashEntry[]ltable = table;
+            for (int i = 0; i < ltable.length; i++) {
+                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                    if (entry.value.equalInternal(context, value).isTrue()) return entry.key;
             }
         }
-        return getRuntime().getNil();
+        } finally {postIter();}
+
+        return getRuntime().getNil();        
     }
 
+    /** rb_hash_indexes
+     * 
+     */
     public RubyArray indices(IRubyObject[] indices) {
         RubyArray values = RubyArray.newArray(getRuntime(), indices.length);
 
@@ -421,163 +985,327 @@ public class RubyHash extends RubyObject implements Map {
         return values;
     }
 
+    /** rb_hash_keys 
+     * 
+     */
     public RubyArray keys() {
-        return RubyArray.newArray(getRuntime(), valueMap.keySet());
+        Ruby runtime = getRuntime();
+        RubyArray keys = RubyArray.newArray(runtime, size);
+
+        try {
+            preIter();
+            RubyHashEntry[]ltable = table;
+            for (int i = 0; i < ltable.length; i++) {
+                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                    keys.append(entry.key);
+    }
+            }
+        } finally {postIter();}
+
+        return keys;          
     }
 
+    /** rb_hash_values
+     * 
+     */
     public RubyArray rb_values() {
-        return RubyArray.newArray(getRuntime(), valueMap.values());
+        RubyArray values = RubyArray.newArray(getRuntime(), size);
+
+        try {
+            preIter();
+            RubyHashEntry[]ltable = table;
+            for (int i = 0; i < ltable.length; i++) {
+                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                    values.append(entry.value);
     }
+            }
+        } finally {postIter();}
+
+        return values;
+    }
+
+    /** rb_hash_equal
+     * 
+     */
+
+    private static final boolean EQUAL_CHECK_DEFAULT_VALUE = false; 
 
     public IRubyObject equal(IRubyObject other) {
-        if (this == other) {
-            return getRuntime().getTrue();
-        } else if (!(other instanceof RubyHash)) {
-            return getRuntime().getFalse();
-        } else if (length() != ((RubyHash)other).length()) {
-            return getRuntime().getFalse();
+        if (this == other ) return getRuntime().getTrue();
+        if (!(other instanceof RubyHash)) {
+            if (!other.respondsTo("to_hash")) return getRuntime().getFalse();
+            return other.equalInternal(getRuntime().getCurrentContext(), this);
         }
 
-        for (Iterator iter = modifiableEntryIterator(); iter.hasNext();) {
-            checkRehashing();
-            Map.Entry entry = (Map.Entry) iter.next();
+        RubyHash otherHash = (RubyHash)other;
+        if (size != otherHash.size) return getRuntime().getFalse();
 
-            Object value = ((RubyHash)other).valueMap.get(entry.getKey());
-            if (value == null || !entry.getValue().equals(value)) {
-                return getRuntime().getFalse();
+        Ruby runtime = getRuntime();        
+        ThreadContext context = runtime.getCurrentContext();
+
+        if (EQUAL_CHECK_DEFAULT_VALUE) {
+            if (!ifNone.equalInternal(context, otherHash.ifNone).isTrue() &&
+               procDefault != otherHash.procDefault) return runtime.getFalse();
             }
+
+        try {            
+            preIter();
+            RubyHashEntry[]ltable = table;
+            for (int i = 0; i < ltable.length; i++) {
+                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                    IRubyObject value = otherHash.internalGet(entry.key);
+                    if (value == null) return runtime.getFalse();
+                    if (!entry.value.equalInternal(context, value).isTrue()) return runtime.getFalse();
         }
-        return getRuntime().getTrue();
+    }
+        } finally {postIter();}        
+
+        return runtime.getTrue();
     }
 
-    public RubyArray shift() {
+    /** rb_hash_shift
+     * 
+     */
+    public IRubyObject shift() {
 		modify();
-        Iterator iter = modifiableEntryIterator();
-        Map.Entry entry = (Map.Entry)iter.next();
-        iter.remove();
-        return RubyArray.newArray(getRuntime(), (IRubyObject)entry.getKey(), (IRubyObject)entry.getValue());
+
+        try {            
+            preIter();
+            RubyHashEntry[]ltable = table;
+            for (int i = 0; i < ltable.length; i++) {
+                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                    RubyArray result = RubyArray.newArray(getRuntime(), entry.key, entry.value);
+                    internalDeleteSafe(entry.key);
+                    deleted = true;
+                    return result;
+    }
+            }
+        } finally {postIter();}          
+
+        if (procDefault) return ifNone.callMethod(getRuntime().getCurrentContext(), "call", new IRubyObject[]{this, getRuntime().getNil()});
+        return ifNone;
     }
 
+    /** rb_hash_delete
+     * 
+     */
 	public IRubyObject delete(IRubyObject key, Block block) {
 		modify();
-		IRubyObject result = (IRubyObject) valueMap.remove(key);
-        
-		if (result != null) return result;
+
+        RubyHashEntry entry;
+        if (iterLevel > 0) {
+            if ((entry = internalDeleteSafe(key)) != null) {
+                deleted = true;
+                return entry.value;                
+            }
+        } else if ((entry = internalDelete(key)) != null) return entry.value;
+
 		if (block.isGiven()) return block.yield(getRuntime().getCurrentContext(), key);
+        return getRuntime().getNil();
+    }
 
-		return getDefaultValue(new IRubyObject[] {key}, null);
+    /** rb_hash_select
+     * 
+     */
+    public IRubyObject select(IRubyObject[] args, Block block) {
+        if (args.length > 0) throw getRuntime().newArgumentError("wrong number of arguments (" + args.length + " for 0)");
+        RubyArray result = getRuntime().newArray();
+
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
+
+        try {            
+            preIter();
+            RubyHashEntry[]ltable = table;
+            for (int i = 0; i < ltable.length; i++) {            
+                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                    if (block.yield(context, runtime.newArray(entry.key, entry.value)).isTrue())
+                        result.append(runtime.newArray(entry.key, entry.value));
 	}
+            }
+        } finally {postIter();}
+        return result;
+    }
 
+    /** rb_hash_delete_if
+     * 
+     */
 	public RubyHash delete_if(Block block) {
-		reject_bang(block);
-		return this;
-	}
-
-	public RubyHash reject(Block block) {
-		RubyHash result = (RubyHash) dup();
-		result.reject_bang(block);
-		return result;
-	}
-
-	public IRubyObject reject_bang(Block block) {
-		modify();
-		boolean isModified = false;
-        ThreadContext context = getRuntime().getCurrentContext();
-		for (Iterator iter = keyIterator(); iter.hasNext();) {
-			IRubyObject key = (IRubyObject) iter.next();
-			IRubyObject value = (IRubyObject) valueMap.get(key);
-			IRubyObject shouldDelete = block.yield(context, getRuntime().newArray(key, value), null, null, true);
-			if (shouldDelete.isTrue()) {
-				valueMap.remove(key);
-				isModified = true;
-			}
-		}
-
-		return isModified ? this : getRuntime().getNil(); 
-	}
-
-	public RubyHash rb_clear() {
-		modify();
-		valueMap.clear();
-		return this;
-	}
-
-	public RubyHash invert() {
-		RubyHash result = newHash(getRuntime());
-		
-		for (Iterator iter = modifiableEntryIterator(); iter.hasNext();) {
-			Map.Entry entry = (Map.Entry) iter.next();
-			result.aset((IRubyObject) entry.getValue(), 
-					(IRubyObject) entry.getKey());
-		}
-		return result;
-	}
-
-    public RubyHash update(IRubyObject freshElements, Block block) {
         modify();
-        
-        RubyHash freshElementsHash =
-            (RubyHash) freshElements.convertToTypeWithCheck(getRuntime().getClass("Hash"), 0, "to_hash");
-        ThreadContext ctx = getRuntime().getCurrentContext();
-        if (block.isGiven()) {
-            Map other = freshElementsHash.valueMap;
-            for(Iterator iter = other.keySet().iterator();iter.hasNext();) {
-                IRubyObject key = (IRubyObject)iter.next();
-                IRubyObject oval = (IRubyObject)valueMap.get(key);
-                if(null == oval) {
-                    valueMap.put(key,other.get(key));
-                } else {
-                    valueMap.put(key,block.yield(ctx, getRuntime().newArrayNoCopy(new IRubyObject[]{key,oval,(IRubyObject)other.get(key)})));
+
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
+
+        try {            
+            preIter();
+            RubyHashEntry[]ltable = table;
+            for (int i = 0; i < ltable.length; i++) {            
+                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                    if (block.yield(context, RubyArray.newArray(runtime, entry.key, entry.value), null, null, true).isTrue())
+                        delete(entry.key, block);
                 }
             }
-        } else {
-            valueMap.putAll(freshElementsHash.valueMap);
-        }
-        return this;
-    }
-    
-    public RubyHash merge(IRubyObject freshElements, Block block) {
-        return ((RubyHash) dup()).update(freshElements, block);
-    }
+        } finally {postIter();}        
 
-    public RubyHash replace(IRubyObject replacement) {
+		return this;
+	}
+
+    /** rb_hash_reject
+     * 
+     */
+	public RubyHash reject(Block block) {
+        return ((RubyHash)dup()).delete_if(block);
+	}
+
+    /** rb_hash_reject_bang
+     * 
+     */
+	public IRubyObject reject_bang(Block block) {
+        int n = size;
+        delete_if(block);
+        if (n == size) return getRuntime().getNil();
+        return this;
+			}
+
+    /** rb_hash_clear
+     * 
+     */
+	public RubyHash rb_clear() {
+		modify();
+
+        if (size > 0) { 
+            alloc();
+            size = 0;
+            deleted = false;
+	}
+
+		return this;
+	}
+
+    /** rb_hash_invert
+     * 
+     */
+	public RubyHash invert() {
+		RubyHash result = newHash(getRuntime());
+
+        try {
+            preIter();
+            RubyHashEntry[]ltable = table;
+            for (int i = 0; i < ltable.length; i++) {
+                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                    result.aset(entry.value, entry.key);
+		}
+	}
+        } finally {postIter();}        
+
+        return result;        
+	}
+
+    /** rb_hash_update
+     * 
+     */
+    public RubyHash update(IRubyObject other, Block block) {
         modify();
-        RubyHash replacementHash =
-            (RubyHash) replacement.convertToTypeWithCheck(getRuntime().getClass("Hash"), 0, "to_hash");
-        valueMap.clear();
-        valueMap.putAll(replacementHash.valueMap);
-        defaultValueCallback = replacementHash.defaultValueCallback;
+
+        RubyHash otherHash = other.convertToHash();
+
+        try {
+             otherHash.preIter();
+             RubyHashEntry[]ltable = otherHash.table;
+        if (block.isGiven()) {
+                 Ruby runtime = getRuntime();
+                 ThreadContext context = runtime.getCurrentContext();
+
+                 for (int i = 0; i < ltable.length; i++) {
+                     for (RubyHashEntry entry = ltable[i]; entry != null && (entry = otherHash.checkIter(ltable, entry)) != null; entry = entry.next) {
+                         IRubyObject value;
+                         if (internalGet(entry.key) != null)
+                             value = block.yield(context, RubyArray.newArrayNoCopy(runtime, new IRubyObject[]{entry.key, aref(entry.key), entry.value}));
+                         else
+                             value = entry.value;
+                         aset(entry.key, value);
+                }
+            }
+            } else { 
+                for (int i = 0; i < ltable.length; i++) {
+                    for (RubyHashEntry entry = ltable[i]; entry != null && (entry = otherHash.checkIter(ltable, entry)) != null; entry = entry.next) {
+                        aset(entry.key, entry.value);
+        }
+                }
+            }  
+        } finally {otherHash.postIter();}
+
         return this;
     }
 
-    public RubyArray values_at(IRubyObject[] argv) {
-        RubyArray result = RubyArray.newArray(getRuntime());
-        for (int i = 0; i < argv.length; i++) {
-            result.append(aref(argv[i]));
+    /** rb_hash_merge
+     * 
+     */
+    public RubyHash merge(IRubyObject other, Block block) {
+        return ((RubyHash)dup()).update(other, block);
+    }
+
+    /** rb_hash_replace
+     * 
+     */
+    public RubyHash replace(IRubyObject other) {
+        RubyHash otherHash = other.convertToHash();
+
+        if (this == otherHash) return this;
+
+        rb_clear();
+
+        try {
+            otherHash.preIter();
+            RubyHashEntry[]ltable = otherHash.table;
+            for (int i = 0; i < ltable.length; i++) {
+                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = otherHash.checkIter(ltable, entry)) != null; entry = entry.next) {
+                    aset(entry.key, entry.value);
+                }
+            }
+        } finally {otherHash.postIter();}
+
+        ifNone = otherHash.ifNone;
+        procDefault = otherHash.procDefault;
+
+        return this;
+    }
+
+    /** rb_hash_values_at
+     * 
+     */
+    public RubyArray values_at(IRubyObject[] args) {
+        RubyArray result = RubyArray.newArray(getRuntime(), args.length);
+        for (int i = 0; i < args.length; i++) {
+            result.append(aref(args[i]));
         }
         return result;
     }
-    
-    public boolean hasNonProcDefault() {
-        return defaultValueCallback != NIL_DEFAULT_VALUE;
+
+    public boolean hasDefaultProc() {
+        return procDefault;
+    }
+
+    public IRubyObject getIfNone(){
+        return ifNone;
     }
 
     // FIXME:  Total hack to get flash in Rails marshalling/unmarshalling in session ok...We need
     // to totally change marshalling to work with overridden core classes.
     public static void marshalTo(RubyHash hash, MarshalStream output) throws IOException {
-        output.writeInt(hash.getValueMap().size());
-
-        for (Iterator iter = hash.entryIterator(); iter.hasNext();) {
-                Map.Entry entry = (Map.Entry) iter.next();
-
-                output.dumpObject((IRubyObject) entry.getKey());
-                output.dumpObject((IRubyObject) entry.getValue());
+        output.writeInt(hash.size);
+        try {
+            hash.preIter();
+            RubyHashEntry[]ltable = hash.table;
+            for (int i = 0; i < ltable.length; i++) {
+                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = hash.checkIter(ltable, entry)) != null; entry = entry.next) {
+                    output.dumpObject(entry.key);
+                    output.dumpObject(entry.value);
         }
-		
-        // handle default value
-        if (hash.hasNonProcDefault()) {
-            output.dumpObject(hash.defaultValueCallback.execute(null, NULL_ARRAY, null));
         }
+        } finally {hash.postIter();}         
+
+        if (!hash.ifNone.isNil()) output.dumpObject(hash.ifNone);
     }
 
     public static RubyHash unmarshalFrom(UnmarshalStream input, boolean defaultValue) throws IOException {
@@ -585,236 +1313,312 @@ public class RubyHash extends RubyObject implements Map {
         input.registerLinkTarget(result);
         int size = input.unmarshalInt();
         for (int i = 0; i < size; i++) {
-            IRubyObject key = input.unmarshalObject();
-            IRubyObject value = input.unmarshalObject();
-            result.aset(key, value);
+            result.aset(input.unmarshalObject(), input.unmarshalObject());
         }
-        if (defaultValue) {
-            result.setDefaultValue(input.unmarshalObject());
-        }
+        if (defaultValue) result.default_value_set(input.unmarshalObject());
         return result;
     }
 
     public Class getJavaClass() {
         return Map.class;
     }
-	
+
     // Satisfy java.util.Set interface (for Java integration)
 
-	public boolean isEmpty() {
-		return valueMap.isEmpty();
+    public int size() {
+        return size;
 	}
 
+    public boolean isEmpty() {
+        return size == 0;
+    }    
+
 	public boolean containsKey(Object key) {
-		return keySet().contains(key);
+		return internalGet(JavaUtil.convertJavaToRuby(getRuntime(), key)) != null;
 	}
 
 	public boolean containsValue(Object value) {
-		IRubyObject element = JavaUtil.convertJavaToRuby(getRuntime(), value);
-		
-		for (Iterator iter = valueMap.values().iterator(); iter.hasNext(); ) {
-			if (iter.next().equals(element)) {
-				return true;
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
+		IRubyObject element = JavaUtil.convertJavaToRuby(runtime, value);
+
+        try {
+            preIter();
+            RubyHashEntry[]ltable = table;
+            for (int i = 0; i < ltable.length; i++) {
+                for (RubyHashEntry entry = ltable[i]; entry != null && (entry = checkIter(ltable, entry)) != null; entry = entry.next) {
+                    if (entry.value.equalInternal(context, element).isTrue()) return true;
 			}
 		}
+        } finally {postIter();}        
+
 		return false;
 	}
 
 	public Object get(Object key) {
-		return JavaUtil.convertRubyToJava((IRubyObject) valueMap.get(JavaUtil.convertJavaToRuby(getRuntime(), key)));
+		return JavaUtil.convertRubyToJava(internalGet(JavaUtil.convertJavaToRuby(getRuntime(), key)));
 	}
 
 	public Object put(Object key, Object value) {
-		return valueMap.put(JavaUtil.convertJavaToRuby(getRuntime(), key),
-				JavaUtil.convertJavaToRuby(getRuntime(), value));
+		internalPut(JavaUtil.convertJavaToRuby(getRuntime(), key), JavaUtil.convertJavaToRuby(getRuntime(), value));
+        return value;
 	}
 
 	public Object remove(Object key) {
-		return valueMap.remove(JavaUtil.convertJavaToRuby(getRuntime(), key));
+        IRubyObject rubyKey = JavaUtil.convertJavaToRuby(getRuntime(), key);
+        RubyHashEntry entry;
+        if (iterLevel > 0) {
+            entry = internalDeleteSafe(rubyKey);
+            deleted = true;
+        } else {
+            entry = internalDelete(rubyKey);
+	}
+		 
+        return entry != null ? entry.value : null;
 	}
 
 	public void putAll(Map map) {
+        Ruby runtime = getRuntime();
 		for (Iterator iter = map.keySet().iterator(); iter.hasNext();) {
 			Object key = iter.next();
-			
-			put(key, map.get(key));
+			internalPut(JavaUtil.convertJavaToRuby(runtime, key), JavaUtil.convertJavaToRuby(runtime, map.get(key))); 
 		}
-	}
-
-
-	public Set entrySet() {
-		return new ConversionMapEntrySet(getRuntime(), valueMap.entrySet());
-	}
-
-	public int size() {
-		return valueMap.size();
 	}
 
 	public void clear() {
-		valueMap.clear();
+        rb_clear();
 	}
 
-	public Collection values() {
-		return new AbstractCollection() {
-			public Iterator iterator() {
-				return new IteratorAdapter(entrySet().iterator()) {
-					public Object next() {
-						return ((Map.Entry) super.next()).getValue();
-					}
-				};
-			}
-
-			public int size() {
-				return RubyHash.this.size();
-			}
-
-			public boolean contains(Object v) {
-				return RubyHash.this.containsValue(v);
-			}
-		};
-	}
-	
-	public Set keySet() {
-		return new AbstractSet() {
-			public Iterator iterator() {
-				return new IteratorAdapter(entrySet().iterator()) {
-					public Object next() {
-						return ((Map.Entry) super.next()).getKey();
-					}
-				};
-			}
-
-			public int size() {
-				return RubyHash.this.size();
-			}
-		};
-	}	
-
-	/**
-	 * Convenience adaptor for delegating to an Iterator.
-	 *
-	 */
-	private static class IteratorAdapter implements Iterator {
-		private Iterator iterator;
-		
-		public IteratorAdapter(Iterator iterator) {
-			this.iterator = iterator;
-		}
-		public boolean hasNext() {
-			return iterator.hasNext();
-		}
-		public Object next() {
-			return iterator.next();
-		}
-		public void remove() {
-			iterator.remove();
-		}		
-	}
-	
-	
-    /**
-     * Wraps a Set of Map.Entry (See #entrySet) such that JRuby types are mapped to Java types and vice verce.
-     *
-     */
-    private static class ConversionMapEntrySet extends AbstractSet {
-		protected Set mapEntrySet;
-		protected Ruby runtime;
-
-		public ConversionMapEntrySet(Ruby runtime, Set mapEntrySet) {
-			this.mapEntrySet = mapEntrySet;
-			this.runtime = runtime;
-		}
-        public Iterator iterator() {
-            return new ConversionMapEntryIterator(runtime, mapEntrySet.iterator());
-        }
-        public boolean contains(Object o) {
-            if (!(o instanceof Map.Entry)) {
-                return false;
-            }
-            return mapEntrySet.contains(getRubifiedMapEntry((Map.Entry) o));
-        }
+    private abstract class RubyHashIterator implements Iterator {
+        RubyHashEntry entry, current;
+        int index;
+        RubyHashEntry[]iterTable;
+        Ruby runtime = getRuntime();
         
-        public boolean remove(Object o) {
-            if (!(o instanceof Map.Entry)) {
-                return false;
-            }
-            return mapEntrySet.remove(getRubifiedMapEntry((Map.Entry) o));
-        }
-		public int size() {
-			return mapEntrySet.size();
-		}
-        public void clear() {
-        	mapEntrySet.clear();
-        }
-		private Entry getRubifiedMapEntry(final Map.Entry mapEntry) {
-			return new Map.Entry(){
-				public Object getKey() {
-					return JavaUtil.convertJavaToRuby(runtime, mapEntry.getKey());
-				}
-				public Object getValue() {
-					return JavaUtil.convertJavaToRuby(runtime, mapEntry.getValue());
-				}
-				public Object setValue(Object arg0) {
-					// This should never get called in this context, but if it did...
-					throw new UnsupportedOperationException("unexpected call in this context");
-				}
-            };
-		}
-    }    
-    
-    /**
-     * Wraps a RubyHash#entrySet#iterator such that the Map.Entry returned by next() will have its key and value 
-     * mapped from JRuby types to Java types where applicable.
-     */
-    private static class ConversionMapEntryIterator implements Iterator {
-        private Iterator iterator;
-		private Ruby runtime;
+        public RubyHashIterator(){
+            iterTable = table;
+            if(size > 0) seekNextValidEntry();
+	}
 
-        public ConversionMapEntryIterator(Ruby runtime, Iterator iterator) {
-            this.iterator = iterator;
-            this.runtime = runtime;            
-        }
+        private final void seekNextValidEntry(){
+            do {
+                while (index < iterTable.length && (entry = iterTable[index++]) == null);
+                while (entry != null && entry.key == NEVER) entry = entry.next;
+            } while (entry == null && index < iterTable.length);
+	}
 
         public boolean hasNext() {
-            return iterator.hasNext();
-        }
+            return entry != null;
+	}
 
-        public Object next() {
-            return new ConversionMapEntry(runtime, ((Map.Entry) iterator.next())); 
+        public final RubyHashEntry nextEntry() {
+            if (entry == null) throw new NoSuchElementException();
+            RubyHashEntry e = current = entry;
+            if ((entry = checkIter(iterTable, entry.next)) == null) seekNextValidEntry(); 
+            return e;
         }
 
         public void remove() {
-            iterator.remove();
+            if (current == null) throw new IllegalStateException();
+            internalDeleteSafe(current.key);
+            deleted = true;
         }
+        
     }
-    
-   
-    /**
-     * Wraps a Map.Entry from RubyHash#entrySet#iterator#next such that the the key and value 
-     * are mapped from/to JRuby/Java types where applicable.
-     */
-    private static class ConversionMapEntry implements Map.Entry {
-        private Entry entry;
-		private Ruby runtime;
 
-        public ConversionMapEntry(Ruby runtime, Map.Entry entry) {
+    private final class KeyIterator extends RubyHashIterator {
+					public Object next() {
+            return JavaUtil.convertRubyToJava(nextEntry().key);
+					}
+			}
+
+    private class KeySet extends AbstractSet {
+        public Iterator iterator() {
+            return new KeyIterator();
+        }
+			public int size() {
+            return size;
+			}
+        public boolean contains(Object o) {
+            return containsKey(o);
+			}
+        public boolean remove(Object o) {
+            return RubyHash.this.remove(o) != null;
+	}
+        public void clear() {
+            RubyHash.this.clear();
+        }
+    }    
+
+	public Set keySet() {
+        return new KeySet();
+					}
+
+    private final class DirectKeyIterator extends RubyHashIterator {
+        public Object next() {
+            return nextEntry().key;
+			}
+	}	
+
+    private final class DirectKeySet extends KeySet {
+        public Iterator iterator() {
+            return new DirectKeyIterator();
+        }        
+		}
+
+    public Set directKeySet() {
+        return new DirectKeySet();
+		}
+
+    private final class ValueIterator extends RubyHashIterator {
+		public Object next() {
+            return JavaUtil.convertRubyToJava(nextEntry().value);
+		}
+		}		
+
+    private class Values extends AbstractCollection {
+        public Iterator iterator() {
+            return new ValueIterator();
+        }
+        public int size() {
+            return size;
+        }
+        public boolean contains(Object o) {
+            return containsValue(o);
+            }
+        public void clear() {
+            RubyHash.this.clear();
+        }
+            }
+
+    public Collection values() {
+        return new Values();
+        }
+
+    private final class DirectValueIterator extends RubyHashIterator {
+        public Object next() {
+            return nextEntry().value;
+		}
+        }
+
+    private final class DirectValues extends Values {
+        public Iterator iterator() {
+            return new DirectValueIterator();
+        }        
+    }
+
+    public Collection directValues() {
+        return new DirectValues();
+    }    
+
+    static final class ConversionMapEntry implements Map.Entry {
+        private final RubyHashEntry entry;
+        private final Ruby runtime;
+
+        public ConversionMapEntry(Ruby runtime, RubyHashEntry entry) {
             this.entry = entry;
             this.runtime = runtime;
         }
-        
-        public Object getKey() {
-            IRubyObject rubyObject = (IRubyObject) entry.getKey();
-            return JavaUtil.convertRubyToJava(rubyObject, Object.class); 
-        }
-        
-        public Object getValue() {
-            IRubyObject rubyObject = (IRubyObject) entry.getValue();
-            return JavaUtil.convertRubyToJava(rubyObject, Object.class); 
-        }
-        
+
+				public Object getKey() {
+            return JavaUtil.convertRubyToJava(entry.key, Object.class); 
+				}
+
+				public Object getValue() {
+            return JavaUtil.convertRubyToJava(entry.value, Object.class);
+				}
+
         public Object setValue(Object value) {
-            return entry.setValue(JavaUtil.convertJavaToRuby(runtime, value));            
+            return entry.value = JavaUtil.convertJavaToRuby(runtime, value);            
+				}
+
+        public boolean equals(Object other){
+            if(!(other instanceof RubyHashEntry)) return false;
+            RubyHashEntry otherEntry = (RubyHashEntry)other;
+            if(entry.key != NEVER && entry.key == otherEntry.key && entry.key.equals(otherEntry.key)){
+                if(entry.value == otherEntry.value || entry.value.equals(otherEntry.value)) return true;
+            }            
+            return false;
+		}
+        public int hashCode(){
+            return entry.hashCode();
+        }
+    }    
+
+    private final class EntryIterator extends RubyHashIterator {
+        public Object next() {
+            return new ConversionMapEntry(runtime, nextEntry());
         }
     }
-    
+
+    private final class EntrySet extends AbstractSet {
+        public Iterator iterator() {
+            return new EntryIterator();
+        }
+        public boolean contains(Object o) {
+            if (!(o instanceof ConversionMapEntry))
+                return false;
+            ConversionMapEntry entry = (ConversionMapEntry)o;
+            if (entry.entry.key == NEVER) return false;
+            RubyHashEntry candidate = internalGetEntry(entry.entry.key);
+            return candidate != null && candidate.equals(entry.entry);
+        }
+        public boolean remove(Object o) {
+            if (!(o instanceof ConversionMapEntry)) return false;
+            return internalDeleteEntry(((ConversionMapEntry)o).entry) != null;
+        }
+        public int size() {
+            return size;
+        }
+        public void clear() {
+            RubyHash.this.clear();
+        }
+    }    
+
+    public Set entrySet() {
+        return new EntrySet();
+    }    
+
+    private final class DirectEntryIterator extends RubyHashIterator {
+        public Object next() {
+            return nextEntry();
+        }
+    }    
+
+    private final class DirectEntrySet extends AbstractSet {
+        public Iterator iterator() {
+            return new DirectEntryIterator();
+        }
+        public boolean contains(Object o) {
+            if (!(o instanceof RubyHashEntry))
+                return false;
+            RubyHashEntry entry = (RubyHashEntry)o;
+            if (entry.key == NEVER) return false;
+            RubyHashEntry candidate = internalGetEntry(entry.key);
+            return candidate != null && candidate.equals(entry);
+    }
+        public boolean remove(Object o) {
+            if (!(o instanceof RubyHashEntry)) return false;
+            return internalDeleteEntry((RubyHashEntry)o) != null;
+        }
+        public int size() {
+            return size;
+        }
+        public void clear() {
+            RubyHash.this.clear();
+        }
+    }    
+
+    /** return an entry set who's entries do not convert their values, faster
+     * 
+     */
+    public Set directEntrySet() {
+        return new DirectEntrySet();
+    }       
+
+    public boolean equals(Object other){
+        if (!(other instanceof RubyHash)) return false;
+        if (this == other) return true;
+        return equal((RubyHash)other).isTrue() ? true : false;
+        }
 }
