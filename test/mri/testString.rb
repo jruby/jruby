@@ -37,6 +37,7 @@ END
 $x.gsub!(/((.|\n)*?)B((.|\n)*?)D/){$1+$3}
 test_ok($x == "AC\nAC\n")
 
+
 test_ok("foobar" =~ /foo(?=(bar)|(baz))/)
 test_ok("foobaz" =~ /foo(?=(bar)|(baz))/)
 

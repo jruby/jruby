@@ -810,14 +810,14 @@ public class RubyString extends RubyObject {
      */
     public IRubyObject match3(IRubyObject pattern) {
         if (pattern instanceof RubyRegexp) {
-            return ((RubyRegexp)pattern).search2(toString());
+            return ((RubyRegexp)pattern).search2(toString(), this);
         } else if (pattern instanceof RubyString) {
             RubyRegexp regexp = RubyRegexp.newRegexp((RubyString) pattern, 0, null);
-            return regexp.search2(toString());
+            return regexp.search2(toString(), this);
         } else if (pattern.respondsTo("to_str")) {
             // FIXME: is this cast safe?
             RubyRegexp regexp = RubyRegexp.newRegexp((RubyString) pattern.callMethod(getRuntime().getCurrentContext(), MethodIndex.TO_STR, "to_str", IRubyObject.NULL_ARRAY), 0, null);
-            return regexp.search2(toString());
+            return regexp.search2(toString(), this);
         }
 
         // not regexp and not string, can't convert
@@ -1751,7 +1751,7 @@ public class RubyString extends RubyObject {
 
         String intern = toString();
 
-        if (pat.search(intern, 0) >= 0) {
+        if (pat.search(intern, this, 0) >= 0) {
             RubyMatchData match = (RubyMatchData) tc.getBackref();
             RubyString newStr = match.pre_match();
             newStr.append(iter ? block.yield(tc, match.group(0)) : pat.regsub(repl, match));
@@ -1808,7 +1808,7 @@ public class RubyString extends RubyObject {
         }
 
         String str = toString();
-        int beg = pat.search(str, 0);
+        int beg = pat.search(str, this, 0);
         if (beg < 0) {
             return bang ? getRuntime().getNil() : strDup();
         }
@@ -1827,7 +1827,7 @@ public class RubyString extends RubyObject {
                 taint |= newStr.isTaint();
                 sbuf.append(newStr.asString().getByteList());
                 offset = match.matchEndPosition();
-                beg = pat.search(str, offset == beg ? beg + 1 : offset);
+                beg = pat.search(str, this, offset == beg ? beg + 1 : offset);
             }
         } else {
             RubyString r = stringValue(repl);
@@ -1836,7 +1836,7 @@ public class RubyString extends RubyObject {
                 sbuf.append(this.value,offset,beg-offset);
                 pat.regsub(r, match, sbuf);
                 offset = match.matchEndPosition();
-                beg = pat.search(str, offset == beg ? beg + 1 : offset);
+                beg = pat.search(str, this, offset == beg ? beg + 1 : offset);
             }
         }
 
@@ -1890,12 +1890,12 @@ public class RubyString extends RubyObject {
             // RubyRegexp doesn't (yet?) support reverse searches, so we
             // find all matches and use the last one--very inefficient.
             // XXX - find a better way
-            pos = ((RubyRegexp) args[0]).search(toString(), reverse ? 0 : pos);
+            pos = ((RubyRegexp) args[0]).search(toString(), this, reverse ? 0 : pos);
 
             int dummy = pos;
             while (reverse && dummy > -1 && dummy <= doNotLookPastIfReverse) {
                 pos = dummy;
-                dummy = ((RubyRegexp) args[0]).search(toString(), pos + 1);
+                dummy = ((RubyRegexp) args[0]).search(toString(), this, pos + 1);
             }
         } else if (args[0] instanceof RubyString) {
             ByteList sub = ((RubyString) args[0]).value;
@@ -1917,7 +1917,7 @@ public class RubyString extends RubyObject {
     }
 
     /* rb_str_substr */
-    private IRubyObject substr(int beg, int len) {
+    IRubyObject substr(int beg, int len) {
         int length = value.length();
         if (len < 0 || beg > length) {
             return getRuntime().getNil();
@@ -1950,7 +1950,7 @@ public class RubyString extends RubyObject {
     public IRubyObject aref(IRubyObject[] args) {
         if (Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2) {
             if (args[0] instanceof RubyRegexp) {
-                IRubyObject match = RubyRegexp.regexpValue(args[0]).match(toString(), 0);
+                IRubyObject match = RubyRegexp.regexpValue(args[0]).match(toString(), this, 0);
                 long idx = args[1].convertToInteger().getLongValue();
                 getRuntime().getCurrentContext().setBackref(match);
                 return RubyRegexp.nth_match((int) idx, match);
@@ -1959,7 +1959,7 @@ public class RubyString extends RubyObject {
         }
 
         if (args[0] instanceof RubyRegexp) {
-            return RubyRegexp.regexpValue(args[0]).search(toString(), 0) >= 0 ?
+            return RubyRegexp.regexpValue(args[0]).search(toString(), this, 0) >= 0 ?
                 RubyRegexp.last_match(getRuntime().getCurrentContext().getBackref()) :
                 getRuntime().getNil();
         } else if (args[0] instanceof RubyString) {
@@ -1987,7 +1987,7 @@ public class RubyString extends RubyObject {
      *
      */
     private void subpatSet(RubyRegexp regexp, int nth, IRubyObject repl) {
-        int found = regexp.search(this.toString(), 0);
+        int found = regexp.search(this.toString(), this, 0);
         if (found == -1) {
             throw getRuntime().newIndexError("regexp not matched");
         }
@@ -2458,7 +2458,7 @@ public class RubyString extends RubyObject {
 
         if (!block.isGiven()) {
             RubyArray ary = getRuntime().newArray();
-            while (pattern.search(toString, start) != -1) {
+            while (pattern.search(toString, this, start) != -1) {
                 RubyMatchData md = (RubyMatchData) tc.getBackref();
 
                 ary.append(md.getSize() == 1 ? md.group(0) : md.subseq(1, md.getSize()));
@@ -2473,7 +2473,7 @@ public class RubyString extends RubyObject {
             return ary;
         }
 
-        while (pattern.search(toString, start) != -1) {
+        while (pattern.search(toString, this, start) != -1) {
             RubyMatchData md = (RubyMatchData) tc.getBackref();
 
             block.yield(tc, md.getSize() == 1 ? md.group(0) : md.subseq(1, md.getSize()));
@@ -3031,7 +3031,7 @@ public class RubyString extends RubyObject {
         // Move toString() call outside loop.
         String toString = toString();
 
-        if (pat.search(toString, start) != -1) {
+        if (pat.search(toString, this, start) != -1) {
             RubyMatchData md = (RubyMatchData) tc.getBackref();
             
             block.yield(tc, md.group(0));

@@ -326,12 +326,13 @@ public class RubyRegexp extends RubyObject implements ReOptions {
                 return getRuntime().getFalse();
             }
         }
-    	String string = RubyString.stringValue(target).toString();
+        RubyString ss = RubyString.stringValue(target);
+    	String string = ss.toString();
         if (string.length() == 0 && "^$".equals(pattern.toString())) {
     		string = "\n";
         }
     	
-        int result = search(string, 0);
+        int result = search(string, ss, 0);
         
         return result < 0 ? getRuntime().getFalse() : getRuntime().getTrue();
     }
@@ -347,13 +348,13 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     	if (target instanceof RubySymbol || target instanceof RubyHash || target instanceof RubyArray) {
     		return getRuntime().getFalse();
     	}
-    	
-    	String string = RubyString.stringValue(target).toString();
+    	RubyString ss = RubyString.stringValue(target);
+    	String string = ss.toString();
         if (string.length() == 0 && "^$".equals(pattern.toString())) {
     		string = "\n";
         }
     	
-        int result = search(string, 0);
+        int result = search(string, ss, 0);
         
         return result < 0 ? getRuntime().getNil() :
         	getRuntime().newFixnum(result);
@@ -458,29 +459,29 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /** rb_reg_search
      *
      */
-    public int search(String target, int pos) {
+    public int search(String target, RubyString rtarget, int pos) {
         if (pos > target.length()) {
             return -1;
         }
         recompileIfNeeded();
 
         // If nothing match then nil will be returned
-        IRubyObject result = match(target, pos);
+        IRubyObject result = match(target, rtarget, pos);
         getRuntime().getCurrentContext().setBackref(result);
 
         // If nothing match then -1 will be returned
         return result instanceof RubyMatchData ? ((RubyMatchData) result).matchStartPosition() : -1;
     }
     
-    public IRubyObject search2(String str) {
-        IRubyObject result = match(str, 0);
+    public IRubyObject search2(String str, RubyString rtarget) {
+        IRubyObject result = match(str, rtarget, 0);
         
         getRuntime().getCurrentContext().setBackref(result);
         
     	return result;
     }
 	
-    public int searchAgain(String target) {
+    public int searchAgain(String target, RubyString rtarget, boolean utf) {
         if (matcher == null || !target.equals(lastTarget)) {
             matcher = pattern.matcher(target);
             lastTarget = target;
@@ -490,14 +491,18 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             return -1;
         }
         
-        RubyMatchData match = new RubyMatchData(getRuntime(), target, matcher);
+        RubyMatchData match = (utf) ? 
+            ((RubyMatchData)new RubyMatchData.JavaString(getRuntime(), target, matcher))
+            :
+            ((RubyMatchData)new RubyMatchData.RString(getRuntime(), rtarget, matcher));
+
         
         getRuntime().getCurrentContext().setBackref(match);
         
         return match.matchStartPosition();
     }
     
-    public IRubyObject match(String target, int startPos) {
+    public IRubyObject match(String target, RubyString rtarget, int startPos) {
         boolean utf8 = getCode() == KCode.UTF8;
         String t = target;
         if(utf8) {
@@ -512,7 +517,11 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         aMatcher.setPosition(startPos);
 
         if (aMatcher.find()) {
-            return new RubyMatchData(getRuntime(), target, aMatcher);
+            return (utf8) ? 
+                ((RubyMatchData)new RubyMatchData.JavaString(getRuntime(), target, aMatcher))
+                :
+                ((RubyMatchData)new RubyMatchData.RString(getRuntime(), rtarget, aMatcher));
+
         }
         return getRuntime().getNil();
     }

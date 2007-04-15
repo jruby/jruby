@@ -43,16 +43,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author  amoore
  */
-public class RubyMatchData extends RubyObject {
-    private String original;
-    private Matcher matcher;
-
-    public RubyMatchData(Ruby runtime, String original, Matcher matcher) {
-        super(runtime, runtime.getClass("MatchData"));
-        this.matcher = matcher;
-        this.original = original;
-    }
-
+public abstract class RubyMatchData extends RubyObject {
     public static RubyClass createMatchDataClass(Ruby runtime) {
         // TODO: Is NOT_ALLOCATABLE_ALLOCATOR ok here, since you can't actually instanriate MatchData directly?
         RubyClass matchDataClass = runtime.defineClass("MatchData", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
@@ -78,27 +69,22 @@ public class RubyMatchData extends RubyObject {
 
         return matchDataClass;
     }
-    
-    public IRubyObject captures() {
-        RubyArray arr = getRuntime().newArray(matcher.groupCount());
-        
-        for (int i = 1; i < matcher.groupCount(); i++) {
-            if (matcher.group(i) == null) {
-                arr.append(getRuntime().getNil());
-            } else {
-                arr.append(RubyString.newString(getRuntime(), matcher.group(i)));
-            }
-        }
-        
-        return arr;
+
+    protected Matcher matcher;
+
+    public RubyMatchData(Ruby runtime, Matcher matcher) {
+        super(runtime, runtime.getClass("MatchData"));
+        this.matcher = matcher;
     }
+    
+    public abstract IRubyObject captures();
 
     public IRubyObject subseq(long beg, long len) {
-    	// Subsequence begins at a valid index and a positive length
+        // Subsequence begins at a valid index and a positive length
         if (beg < 0 || beg > getSize() || len < 0) {
             getRuntime().getNil();
         }
-
+        
         if (beg + len > getSize()) {
             len = getSize() - beg;
         }
@@ -108,9 +94,8 @@ public class RubyMatchData extends RubyObject {
         if (len == 0) {
             return getRuntime().newArray();
         }
-        
-        RubyArray arr = getRuntime().newArray(0);
-        for (long i = beg; i < beg + len; i++) {
+        RubyArray arr = RubyArray.newArray(getRuntime(), len);
+        for (long i = beg, j = beg+len; i < j; i++) {
             arr.append(group(i));
         }
         return arr;
@@ -121,29 +106,21 @@ public class RubyMatchData extends RubyObject {
     }
     
     public boolean proceed() {
-        return matcher.proceed();
+        boolean b = matcher.proceed();
+        invalidateRegs();
+        return b;
     }
     
     public boolean find() {
-        return matcher.find();
+        boolean b = matcher.find();
+        invalidateRegs();
+        return b;
     }
 
-    public IRubyObject group(long n) {
-    	// Request an invalid group OR group is an empty match
-        if (n < 0 || n >= getSize() || matcher.group((int)n) == null) {
-            return getRuntime().getNil();
-        }
-        // Fix for JRUBY-97: Temporary fix pending 
-        // decision on UTF8-based string implementation.
-        // String#substring reuses the storage of the original string
-        // <http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4513622> 
-        // Wrapping the String#substring in new String prevents this.
-        // This wrapping alone was enough to fix the failing test cases in
-        // JRUBY-97, but at the same time the testcase remained very slow
-        // The additional minor optimizations to RubyString as part of the fix
-        // dramatically improve the performance. 
-        return getRuntime().newString(matcher.group((int)n));
+    public void invalidateRegs() {
     }
+
+    public abstract IRubyObject group(long n);
 
     public int matchStartPosition() {
         return matcher.start();
@@ -206,7 +183,7 @@ public class RubyMatchData extends RubyObject {
     }
     
     public int begin(int index) {
-        return outOfBounds(index) ? -1 : matcher.start((int)index);
+        return outOfBounds(index) || !matcher.isCaptured(index) ? -1 : matcher.start(index);
     }
 
     /** match_end
@@ -220,7 +197,7 @@ public class RubyMatchData extends RubyObject {
     }
     
     public int end(int index) {
-        return outOfBounds(index) ? -1 : matcher.end((int)index); 
+        return outOfBounds(index) || !matcher.isCaptured(index) ? -1 : matcher.end(index); 
     }
     
     public IRubyObject inspect() {
@@ -247,51 +224,227 @@ public class RubyMatchData extends RubyObject {
     /** match_pre_match
      *
      */
-    public RubyString pre_match() {
-        return getRuntime().newString(matcher.prefix());
-    }
+    public abstract RubyString pre_match();
 
     /** match_post_match
      *
      */
-    public RubyString post_match() {
-        return getRuntime().newString(matcher.suffix());
-    }
+    public abstract RubyString post_match();
 
     /** match_string
      *
      */
-    public RubyString string() {
-        RubyString frozenString = getRuntime().newString(original);
-        frozenString.freeze();
-        return frozenString;
-    }
+    public abstract RubyString string();
 
     /** match_to_a
      *
      */
-    public RubyArray to_a() {
-        RubyArray arr = getRuntime().newArray(matcher.groupCount());
-        
-        for (int i = 0; i < matcher.groupCount(); i++) {
-            if (matcher.group(i) == null) {
-                arr.append(getRuntime().getNil());
-            } else {
-                arr.append(RubyString.newString(getRuntime(), matcher.group(i)));
-            }
-        }
-        
-        return arr;
-    }
+    public abstract RubyArray to_a();
 
     /** match_to_s
      *
      */
-    public IRubyObject to_s() {
-        return getRuntime().newString(matcher.group(0));
+    public abstract IRubyObject to_s();
+    public abstract IRubyObject doClone();
+
+    public static class JavaString extends RubyMatchData {
+        private String original;
+        public JavaString(Ruby runtime, String original, Matcher matcher) {
+            super(runtime, matcher);
+            this.original = original;
+        }
+
+        public IRubyObject captures() {
+            RubyArray arr = getRuntime().newArray(matcher.groupCount());
+        
+            for (int i = 1; i < matcher.groupCount(); i++) {
+                if (matcher.group(i) == null) {
+                    arr.append(getRuntime().getNil());
+                } else {
+                    arr.append(RubyString.newString(getRuntime(), matcher.group(i)));
+                }
+            }
+        
+            return arr;
+        }
+
+        public IRubyObject group(long n) {
+            // Request an invalid group OR group is an empty match
+            if (n < 0 || n >= getSize() || matcher.group((int)n) == null) {
+                return getRuntime().getNil();
+            }
+            // Fix for JRUBY-97: Temporary fix pending 
+            // decision on UTF8-based string implementation.
+            // String#substring reuses the storage of the original string
+            // <http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4513622> 
+            // Wrapping the String#substring in new String prevents this.
+            // This wrapping alone was enough to fix the failing test cases in
+            // JRUBY-97, but at the same time the testcase remained very slow
+            // The additional minor optimizations to RubyString as part of the fix
+            // dramatically improve the performance. 
+            return getRuntime().newString(matcher.group((int)n));
+        }
+
+        public RubyString pre_match() {
+            return getRuntime().newString(matcher.prefix());
+        }
+        public RubyString post_match() {
+            return getRuntime().newString(matcher.suffix());
+        }
+
+        public RubyString string() {
+            RubyString frozenString = getRuntime().newString(original);
+            frozenString.freeze();
+            return frozenString;
+        }
+
+        public RubyArray to_a() {
+            RubyArray arr = getRuntime().newArray(matcher.groupCount());
+        
+            for (int i = 0; i < matcher.groupCount(); i++) {
+                if (matcher.group(i) == null) {
+                    arr.append(getRuntime().getNil());
+                } else {
+                    arr.append(RubyString.newString(getRuntime(), matcher.group(i)));
+                }
+            }
+        
+            return arr;
+        }
+
+        public IRubyObject to_s() {
+            return getRuntime().newString(matcher.group(0));
+        }
+
+        public IRubyObject doClone() {
+            return new JavaString(getRuntime(), original, matcher);
+        }
     }
 
-    public IRubyObject doClone() {
-        return new RubyMatchData(getRuntime(), original, matcher);
+    public static class RString extends RubyMatchData {
+        private RubyString original;
+        private int len;
+        private int[] start;
+        private int[] end;
+
+        public RString(Ruby runtime, RubyString original, Matcher matcher) {
+            super(runtime, matcher);
+            this.original = (RubyString)(((RubyString)original.dup()).freeze());
+            invalidateRegs();
+        }
+
+        public void invalidateRegs() {
+            len = matcher.groupCount();
+            if(start == null || start.length != len) {
+                start = new int[len];
+                end = new int[len];
+            }
+            for(int i=0;i<len;i++) {
+                if(matcher.isCaptured(i)) {
+                    start[i] = matcher.start(i);
+                    end[i] = matcher.end(i);
+                } else {
+                    start[i] = -1;
+                    end[i] = -1;
+                }
+            }
+        }
+
+        public long getSize() {
+            return len;
+        }
+
+        private RubyArray match_array(int st) {
+            RubyArray ary = RubyArray.newArray(getRuntime(),len);
+            RubyString target = original;
+            boolean taint = isTaint();
+            for(int i=st; i<len; i++) {
+                if(start[i] == -1) {
+                    ary.append(getRuntime().getNil());
+                } else {
+                    IRubyObject str = target.substr(start[i], end[i]-start[i]);
+                    if(taint) {
+                        str.setTaint(true);
+                    }
+                    ary.append(str);
+                }
+            }
+            return ary;
+        }
+
+        public IRubyObject captures() {
+            return match_array(1);
+        }
+
+        public IRubyObject group(long n) {
+            return nth_match((int)n);
+        }
+
+        public RubyString pre_match() {
+            RubyString str = (RubyString)original.substr(0,start[0]);
+            if(isTaint()) {
+                str.setTaint(true);
+            }
+            return str;
+        }
+        public RubyString post_match() {
+            RubyString str = original;
+            int pos = end[0];
+            str = (RubyString)str.substr(pos,str.getByteList().length()-pos);
+            if(isTaint()) {
+                str.setTaint(true);
+            }
+            return str;
+        }
+
+        public RubyString string() {
+            return original;
+        }
+
+        public RubyArray to_a() {
+            return match_array(0);
+        }
+
+        private IRubyObject nth_match(int nth) {
+            if(nth >= len) {
+                return getRuntime().getNil();
+            }
+            if(nth < 0) {
+                nth += len;
+                if(nth <= 0) {
+                    return getRuntime().getNil();
+                }
+            }
+            if(start[nth] == -1) {
+                return getRuntime().getNil();
+            }
+            int st = start[nth];
+            int len = end[nth] - st;
+            IRubyObject str = original.substr(st,len);
+            str.infectBy(this);
+            return str;
+        }
+
+        private IRubyObject last_match() {
+            return nth_match(0);
+        }
+
+        public IRubyObject to_s() {
+            IRubyObject str = last_match();
+            if(str.isNil()) {
+                str = getRuntime().newString();
+            }
+            if(isTaint()) {
+                str.setTaint(true);
+            }
+            if(original.isTaint()) {
+                str.setTaint(true);
+            }
+            return str;
+        }
+
+        public IRubyObject doClone() {
+            return new RString(getRuntime(), original, matcher);
+        }
     }
 }

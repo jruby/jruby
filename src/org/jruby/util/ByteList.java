@@ -74,7 +74,7 @@ public final class ByteList implements Comparable, CharSequence, Serializable {
     }
 
     public ByteList(ByteList wrap) {
-        this(wrap.bytes, 0, wrap.realSize);
+        this(wrap.bytes, wrap.begin, wrap.realSize);
     }
 
     public ByteList(byte[] wrap, int index, int len) {
