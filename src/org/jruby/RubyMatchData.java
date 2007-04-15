@@ -329,7 +329,7 @@ public abstract class RubyMatchData extends RubyObject {
 
         public RString(Ruby runtime, RubyString original, Matcher matcher) {
             super(runtime, matcher);
-            this.original = (RubyString)(((RubyString)original.dup()).freeze());
+            this.original = (RubyString)(runtime.newStringShared(original.getByteList()).freeze());
             invalidateRegs();
         }
 
