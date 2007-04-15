@@ -1917,7 +1917,7 @@ public class RubyString extends RubyObject {
     }
 
     /* rb_str_substr */
-    IRubyObject substr(int beg, int len) {
+    public IRubyObject substr(int beg, int len) {
         int length = value.length();
         if (len < 0 || beg > length) {
             return getRuntime().getNil();
