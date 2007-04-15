@@ -49,7 +49,7 @@ class TestBean
 end
 
 test_ok(["--- !ruby/object:TestBean\nvalue: 13\nkey: 42\n",
-        "--- !ruby/object:TestBean\nkey: 42\nvalue: 13\n"].include?(TestBean.new(13,42).to_yaml))
+         "--- !ruby/object:TestBean\nkey: 42\nvalue: 13\n"].include?(TestBean.new(13,42).to_yaml))
 test_equal(TestBean.new(13,42),YAML.load("--- !ruby/object:TestBean \nvalue: 13\nkey: 42\n"))
 
 TestStruct = Struct.new(:foo,:bar)
@@ -96,3 +96,8 @@ test_equal('', YAML.load("---\n!str"))
 # JRUBY-719
 test_equal('---', YAML.load("--- ---\n"))
 test_equal('---', YAML.load("---"))
+
+astr = "abcde"
+shared = astr[2..-1]
+test_equal('cde', YAML.load(shared))
+test_equal("--- cde\n", shared.to_yaml)

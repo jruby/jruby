@@ -295,7 +295,7 @@ public class ScannerImpl implements Scanner {
     }
 
     public ScannerImpl(final ByteList stream) {
-        this.buffer = stream;
+        this.buffer = new ByteList(stream.bytes,stream.begin,stream.realSize);
         this.stream = null;
         this.tokens = new LinkedList();
         this.indents = new LinkedList();
