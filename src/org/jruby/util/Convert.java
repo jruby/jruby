@@ -1118,7 +1118,7 @@ public class Convert {
             throw new NumberFormatException();
         }
         int i = 0;
-        byte ival;
+        byte ival = -1;
         boolean negative = false;
 
         // fields used for direct (optimistic) calculation
@@ -1311,6 +1311,19 @@ public class Convert {
             case SOPTCALC:
                 // calculation for simple (and typical) case,
                 // adapted from sun.misc.FloatingDecimal
+                if(nDigits == 0 &&
+                   (i+1 < buflen) &&
+                   (ival == 'n' || ival == 'N') && 
+                   (bytes[i] == 'a' || bytes[i] == 'A') &&
+                   (bytes[i+1] == 'n' || bytes[i+1] == 'N')) {
+                    return Double.NaN;
+                } else if(nDigits == 0 &&
+                   (i+1 < buflen) &&
+                   (ival == 'i' || ival == 'I') && 
+                   (bytes[i] == 'n' || bytes[i] == 'N') &&
+                   (bytes[i+1] == 'f' || bytes[i+1] == 'F')) {
+                    return negative ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
+                }
                 if (nDigits == 0) {
                     return negative ? -0.0d : 0.0d;
                 }

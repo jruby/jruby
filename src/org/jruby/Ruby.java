@@ -1099,9 +1099,8 @@ public final class Ruby {
     }
 
     public RubyModule getClassFromPath(String path) {
-        if (path.charAt(0) == '#') {
-            //throw newArgumentError("can't retrieve anonymous class " + path);
-            throw new RuntimeException();
+        if (path.length() == 0 || path.charAt(0) == '#') {
+            throw newTypeError("can't retrieve anonymous class " + path);
         }
         IRubyObject type = evalScript(path);
         if (!(type instanceof RubyModule)) {

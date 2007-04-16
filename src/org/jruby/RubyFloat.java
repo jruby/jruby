@@ -527,7 +527,9 @@ public class RubyFloat extends RubyNumeric {
     }
         
     public static RubyFloat unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-        return RubyFloat.newFloat(input.getRuntime(), Double.parseDouble(RubyString.byteListToString(input.unmarshalString())));
+        RubyFloat result = RubyFloat.newFloat(input.getRuntime(), org.jruby.util.Convert.byteListToDouble(input.unmarshalString(),false));
+        input.registerLinkTarget(result);
+        return result;
     }
     
 }

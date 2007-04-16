@@ -109,8 +109,6 @@ public class MarshalStream extends FilterOutputStream {
             return false;
         } else if (value instanceof RubyFixnum) {
             return false;
-        } else if (value instanceof RubyFloat) {
-            return false;
         }
         return true;
     }
@@ -130,11 +128,11 @@ public class MarshalStream extends FilterOutputStream {
         }
     }
 
-    private void writeDirectly(IRubyObject value) throws IOException {
+    private Map getInstanceVariables(IRubyObject value) throws IOException {
         Map instanceVariables = null;
         
         if (value.getNativeTypeIndex() != ClassIndex.OBJECT) {
-            if (value.safeHasInstanceVariables() && value.getNativeTypeIndex() != ClassIndex.CLASS) {
+            if (!value.isImmediate() && value.safeHasInstanceVariables() && value.getNativeTypeIndex() != ClassIndex.CLASS) {
                 // object has instance vars and isn't a class, get a snapshot to be marshalled
                 // and output the ivar header here
 
@@ -149,7 +147,13 @@ public class MarshalStream extends FilterOutputStream {
                 writeUserClass(value);
             }
         } // Object's instance var logic is handled in the metaclass's marshal
-        
+
+        return instanceVariables;
+    }
+
+    private void writeDirectly(IRubyObject value) throws IOException {
+        Map instanceVariables = getInstanceVariables(value);
+       
         writeObjectData(value);
         
         if (instanceVariables != null) {

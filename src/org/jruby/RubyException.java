@@ -90,8 +90,8 @@ public class RubyException extends RubyObject {
             
             Map iVars = new HashMap(exc.getInstanceVariables());
             
-            iVars.put("mesg", exc.message);
-            iVars.put("bt", exc.backtrace);
+            iVars.put("mesg", exc.message == null ? runtime.getNil() : exc.message);
+            iVars.put("bt", exc.backtrace == null ? runtime.getNil() : exc.backtrace);
             
             marshalStream.dumpInstanceVars(iVars);
         }
