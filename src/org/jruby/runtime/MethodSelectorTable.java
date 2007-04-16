@@ -17,6 +17,7 @@ import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 
 /**
  *
@@ -68,6 +69,7 @@ public class MethodSelectorTable {
         table[ClassIndex.ARRAY][MethodIndex.HASH] = RubyArray.HASH_SWITCHVALUE;
         table[ClassIndex.ARRAY][MethodIndex.LENGTH] = RubyArray.LENGTH_SWITCHVALUE;
         table[ClassIndex.ARRAY][MethodIndex.LAST] = RubyArray.LAST_SWITCHVALUE;
+        table[ClassIndex.ARRAY][MethodIndex.SHIFT] = RubyArray.SHIFT_SWITCHVALUE;
         
         // String
         table[ClassIndex.STRING] = new byte[MethodIndex.MAX_METHODS];
@@ -91,6 +93,15 @@ public class MethodSelectorTable {
         table[ClassIndex.STRING][MethodIndex.LENGTH] = RubyString.LENGTH_SWITCHVALUE;
         table[ClassIndex.STRING][MethodIndex.OP_MATCH] = RubyString.MATCH_SWITCHVALUE;
         table[ClassIndex.STRING][MethodIndex.OP_EQQ] = RubyString.EQQ_SWITCHVALUE;
+
+        // Symbol
+        table[ClassIndex.SYMBOL] = new byte[MethodIndex.MAX_METHODS];
+        table[ClassIndex.SYMBOL][MethodIndex.NIL_P] = RubySymbol.NIL_P_SWITCHVALUE;
+        table[ClassIndex.SYMBOL][MethodIndex.EQUALEQUAL] = RubySymbol.EQUALEQUAL_SWITCHVALUE;
+        table[ClassIndex.SYMBOL][MethodIndex.TO_S] = RubySymbol.TO_S_SWITCHVALUE;
+        table[ClassIndex.SYMBOL][MethodIndex.TO_I] = RubySymbol.TO_I_SWITCHVALUE;
+        table[ClassIndex.SYMBOL][MethodIndex.TO_SYM] = RubySymbol.TO_SYM_SWITCHVALUE;
+        table[ClassIndex.SYMBOL][MethodIndex.HASH] = RubySymbol.HASH_SWITCHVALUE;
 
         // Regexp
         table[ClassIndex.REGEXP] = new byte[MethodIndex.MAX_METHODS];

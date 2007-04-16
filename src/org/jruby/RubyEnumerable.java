@@ -168,14 +168,14 @@ public class RubyEnumerable {
         if (!block.isGiven()) {
             for (Iterator iter = arr.iterator();iter.hasNext();) {
                 IRubyObject item = (IRubyObject)iter.next();
-                if (pattern.callMethod(context,"===", item).isTrue()) {
+                if (pattern.callMethod(context,MethodIndex.OP_EQQ,"===", item).isTrue()) {
                     result.add(item);
                 }
             }                
         } else {
             for (Iterator iter = arr.iterator();iter.hasNext();) {
                 IRubyObject item = (IRubyObject)iter.next();
-                if (pattern.callMethod(context,"===", item).isTrue()) {
+                if (pattern.callMethod(context,MethodIndex.OP_EQQ,"===", item).isTrue()) {
                     result.add(block.yield(context, item));
                 }
             }                

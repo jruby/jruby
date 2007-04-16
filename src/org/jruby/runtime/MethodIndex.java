@@ -49,7 +49,8 @@ public class MethodIndex {
     public static final int OP_MATCH = 29;
     public static final int OP_EQQ = 30;
     public static final int LAST = 31;
-    public static final int MAX_METHODS = 32;
+    public static final int SHIFT = 32;
+    public static final int MAX_METHODS = 33;
     
     public static final String[] NAMES = new String[MAX_METHODS];
     public static final Map NUMBERS = new HashMap();
@@ -87,6 +88,7 @@ public class MethodIndex {
         NAMES[OP_MATCH] = "=~";
         NAMES[OP_EQQ] = "===";
         NAMES[LAST] = "last";
+        NAMES[SHIFT] = "shift";
         
         for (int i = 0; i < MAX_METHODS; i++) {
             NUMBERS.put(NAMES[i], new Integer(i));

@@ -499,7 +499,7 @@ public class RubyIO extends RubyObject {
                 return getRuntime().newFixnum(
                         handler.syswrite(
                         ((RubyString)obj.callMethod(
-                        obj.getRuntime().getCurrentContext(), "to_s")).getByteList()));
+                            obj.getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s")).getByteList()));
             }
         } catch (IOHandler.BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
@@ -522,7 +522,7 @@ public class RubyIO extends RubyObject {
                 return getRuntime().newFixnum(
                         handler.write(
                         ((RubyString)obj.callMethod(
-                        obj.getRuntime().getCurrentContext(), "to_s")).getByteList()));
+                            obj.getRuntime().getCurrentContext(), MethodIndex.TO_S, "to_s")).getByteList()));
             }
         } catch (IOHandler.BadDescriptorException e) {
             return RubyFixnum.zero(getRuntime());
